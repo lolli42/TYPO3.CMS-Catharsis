@@ -22,21 +22,13 @@ declare(ENCODING = 'utf-8');
  *                                                                        */
 
 /**
- * @package FLOW3
- * @subpackage Persistence
- * @version $Id:$
- */
-
-/**
  * Contract for a repository
  *
- * @package FLOW3
- * @subpackage Persistence
  * @version $Id:$
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @author Robert Lemke <robert@typo3.org>
  */
-interface RepositoryInterface {
+interface TX_EXTMVC_Persistence_RepositoryInterface {
 
 	/**
 	 * Adds an object to this repository.
@@ -53,22 +45,6 @@ interface RepositoryInterface {
 	 * @return void
 	 */
 	public function remove($object);
-
-	/**
-	 * Returns all objects of this repository add()ed but not yet persisted to
-	 * the storage layer.
-	 *
-	 * @return array An array of objects
-	 */
-	public function getObjects();
-
-	/**
-	 * Returns an array with objects remove()d from the repository that
-	 * had been persisted to the storage layer before.
-	 *
-	 * @return array
-	 */
-	public function getRemovedObjects();
 
 }
 ?>
