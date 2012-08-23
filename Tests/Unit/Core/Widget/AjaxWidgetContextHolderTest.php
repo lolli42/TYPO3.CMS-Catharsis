@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,12 +20,10 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Testcase for AjaxWidgetContextHolder
- *
  */
-class Tx_Fluid_Tests_Unit_Core_Widget_AjaxWidgetContextHolderTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class AjaxWidgetContextHolderTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
@@ -32,5 +31,8 @@ class Tx_Fluid_Tests_Unit_Core_Widget_AjaxWidgetContextHolderTest extends Tx_Ext
 	public function foo() {
 		$this->markTestIncomplete();
 	}
+
 }
+
+
 ?>

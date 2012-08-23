@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\Fixtures;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,12 +10,10 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Example domain class which can be used to test different view helpers, e.g. the "select" view helper.
- *
  */
-class Tx_Fluid_ViewHelpers_Fixtures_UserDomainClass {
+class Fixture_UserDomainClass {
 
 	protected $id;
 
@@ -61,6 +60,7 @@ class Tx_Fluid_ViewHelpers_Fixtures_UserDomainClass {
 	public function getLastName() {
 		return $this->lastName;
 	}
+
 }
 
 

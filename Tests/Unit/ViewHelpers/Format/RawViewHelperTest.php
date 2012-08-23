@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,18 +10,18 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_Format_RawViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class RawViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Fluid_ViewHelpers_Format_RawViewHelper
+	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\RawViewHelper
 	 */
 	protected $viewHelper;
 
 	public function setUp() {
-		$this->viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_RawViewHelper', array('renderChildren'));
+		$this->viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\RawViewHelper', array('renderChildren'));
 	}
 
 	/**
@@ -49,5 +50,8 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_RawViewHelperTest extends Tx_Extbas
 		$actualResult = $this->viewHelper->render();
 		$this->assertEquals($childNodes, $actualResult);
 	}
+
 }
+
+
 ?>

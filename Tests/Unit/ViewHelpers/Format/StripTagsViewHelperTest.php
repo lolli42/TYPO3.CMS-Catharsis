@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,18 +10,18 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_Format_StripTagsViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class StripTagsViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Fluid_ViewHelpers_Format_StripTagsViewHelper
+	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\StripTagsViewHelper
 	 */
 	protected $viewHelper;
 
 	public function setUp() {
-		$this->viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_StripTagsViewHelper', array('renderChildren'));
+		$this->viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\StripTagsViewHelper', array('renderChildren'));
 	}
 
 	/**
@@ -74,9 +75,12 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_StripTagsViewHelperTest extends Tx_
 	 * @test
 	 */
 	public function renderReturnsUnmodifiedSourceIfItIsNoString() {
-		$source = new stdClass();
+		$source = new \stdClass();
 		$actualResult = $this->viewHelper->render($source);
 		$this->assertSame($source, $actualResult);
 	}
+
 }
+
+
 ?>

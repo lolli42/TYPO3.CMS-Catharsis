@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,16 +10,16 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_Format_NumberViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class NumberViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
 	 */
 	public function formatNumberDefaultsToEnglishNotationWithTwoDecimals() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_NumberViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\NumberViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(10000.0 / 3.0));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('3,333.33', $actualResult);
@@ -28,10 +29,13 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_NumberViewHelperTest extends Tx_Ext
 	 * @test
 	 */
 	public function formatNumberWithDecimalsDecimalPointAndSeparator() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_NumberViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\NumberViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(10000.0 / 3.0));
 		$actualResult = $viewHelper->render(3, ',', '.');
 		$this->assertEquals('3.333,333', $actualResult);
 	}
+
 }
+
+
 ?>

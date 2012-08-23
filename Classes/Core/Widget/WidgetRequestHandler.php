@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\Widget;
 
 /*
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,64 +20,61 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Widget request handler, which handles the request if
  * f3-fluid-widget-id is found.
  *
  * This Request Handler gets the WidgetRequestBuilder injected.
- *
  */
-class Tx_Fluid_Core_Widget_WidgetRequestHandler extends Tx_Extbase_MVC_Web_AbstractRequestHandler {
+class WidgetRequestHandler extends \TYPO3\CMS\Extbase\Mvc\Web\AbstractRequestHandler {
 
 	/**
-	 * @var Tx_Fluid_Core_Widget_AjaxWidgetContextHolder
+	 * @var \TYPO3\CMS\Fluid\Core\Widget\AjaxWidgetContextHolder
 	 */
 	protected $ajaxWidgetContextHolder;
 
 	/**
-	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 	}
 
 	/**
-	 * @param Tx_Fluid_Core_Widget_AjaxWidgetContextHolder $ajaxWidgetContextHolder
+	 * @param \TYPO3\CMS\Fluid\Core\Widget\AjaxWidgetContextHolder $ajaxWidgetContextHolder
 	 * @return void
 	 */
-	public function injectAjaxWidgetContextHolder(Tx_Fluid_Core_Widget_AjaxWidgetContextHolder $ajaxWidgetContextHolder) {
+	public function injectAjaxWidgetContextHolder(\TYPO3\CMS\Fluid\Core\Widget\AjaxWidgetContextHolder $ajaxWidgetContextHolder) {
 		$this->ajaxWidgetContextHolder = $ajaxWidgetContextHolder;
 	}
 
 	/**
 	 * Injects the request handler
 	 *
-	 * @param Tx_Fluid_Core_Widget_WidgetRequestBuilder $requestBuilder
+	 * @param \TYPO3\CMS\Fluid\Core\Widget\WidgetRequestBuilder $requestBuilder
 	 * @return void
 	 */
-	public function injectRequestBuilder(Tx_Fluid_Core_Widget_WidgetRequestBuilder $requestBuilder) {
+	public function injectRequestBuilder(\TYPO3\CMS\Fluid\Core\Widget\WidgetRequestBuilder $requestBuilder) {
 		$this->requestBuilder = $requestBuilder;
 	}
 
 	/**
 	 * Handles the web request. The response will automatically be sent to the client.
 	 *
-	 * @return Tx_Extbase_MVC_Web_Response
+	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Response
 	 */
 	public function handleRequest() {
 		$request = $this->requestBuilder->build();
 		if (isset($this->cObj->data) && is_array($this->cObj->data)) {
 			$request->setContentObjectData($this->cObj->data);
 		}
-		$response = $this->objectManager->create('Tx_Extbase_MVC_Web_Response');
-
+		$response = $this->objectManager->create('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Response');
 		$this->dispatcher->dispatch($request, $response);
 		return $response;
 	}
@@ -85,7 +83,7 @@ class Tx_Fluid_Core_Widget_WidgetRequestHandler extends Tx_Extbase_MVC_Web_Abstr
 	 * @return boolean TRUE if it is an AJAX widget request
 	 */
 	public function canHandleRequest() {
-		$rawGetArguments = t3lib_div::_GET();
+		$rawGetArguments = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET();
 		return isset($rawGetArguments['fluid-widget-id']);
 	}
 
@@ -97,6 +95,8 @@ class Tx_Fluid_Core_Widget_WidgetRequestHandler extends Tx_Extbase_MVC_Web_Abstr
 	public function getPriority() {
 		return 200;
 	}
+
 }
+
 
 ?>

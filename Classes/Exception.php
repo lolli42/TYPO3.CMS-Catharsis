@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Fluid;
+
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
  *                                                                        *
@@ -11,10 +13,11 @@
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Exception extends Exception {
+class Exception extends \Exception {
+
 
 }
 

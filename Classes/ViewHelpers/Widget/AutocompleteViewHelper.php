@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,14 +20,13 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Simple paginate widget
  * Note: Make sure to include jQuery and jQuery UI in the HTML, like that:
- *    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
- *    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.4/jquery-ui.min.js"></script>
- *    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.3/themes/base/jquery-ui.css" type="text/css" media="all" />
- *    <link rel="stylesheet" href="http://static.jquery.com/ui/css/demo-docs-theme/ui.theme.css" type="text/css" media="all" />
+ * <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+ * <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.4/jquery-ui.min.js"></script>
+ * <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.3/themes/base/jquery-ui.css" type="text/css" media="all" />
+ * <link rel="stylesheet" href="http://static.jquery.com/ui/css/demo-docs-theme/ui.theme.css" type="text/css" media="all" />
  * You can include the provided TS template that includes the above snippet to the pages headerData.
  *
  * = Examples =
@@ -37,14 +37,12 @@
  * </code>
  * <output>
  * <input type="text" id="name" />
- * // the input field and the required JavaScript for the Ajax communication (see Resources/Private/Templates/ViewHelpers/Widget/Autocomplete/Index.html
+ * the input field and the required JavaScript for the Ajax communication (see Resources/Private/Templates/ViewHelpers/Widget/Autocomplete/Index.html
  * </output>
- *
-
  *
  * @api
  */
-class Tx_Fluid_ViewHelpers_Widget_AutocompleteViewHelper extends Tx_Fluid_Core_Widget_AbstractWidgetViewHelper {
+class AutocompleteViewHelper extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetViewHelper {
 
 	/**
 	 * @var bool
@@ -52,27 +50,29 @@ class Tx_Fluid_ViewHelpers_Widget_AutocompleteViewHelper extends Tx_Fluid_Core_W
 	protected $ajaxWidget = TRUE;
 
 	/**
-	 * @var Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController
+	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\AutocompleteController
 	 */
 	protected $controller;
 
 	/**
-	 * @param Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController $controller
+	 * @param \TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\AutocompleteController $controller
 	 * @return void
 	 */
-	public function injectController(Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController $controller) {
+	public function injectController(\TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller\AutocompleteController $controller) {
 		$this->controller = $controller;
 	}
 
 	/**
-	 *
-	 * @param Tx_Extbase_Persistence_QueryResult $objects
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QueryResult $objects
 	 * @param string $for
 	 * @param string $searchProperty
 	 * @return string
 	 */
-	public function render(Tx_Extbase_Persistence_QueryResult $objects, $for, $searchProperty) {
+	public function render(\TYPO3\CMS\Extbase\Persistence\Generic\QueryResult $objects, $for, $searchProperty) {
 		return $this->initiateSubRequest();
 	}
+
 }
+
+
 ?>

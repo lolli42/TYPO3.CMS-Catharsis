@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,22 +20,21 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Testcase for WidgetContext
- *
  */
-class Tx_Fluid_Tests_Unit_Core_Widget_WidgetContextTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class WidgetContextTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Fluid_Core_Widget_WidgetContext
+	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetContext
 	 */
 	protected $widgetContext;
 
 	/**
+
 	 */
 	public function setUp() {
-		$this->widgetContext = new Tx_Fluid_Core_Widget_WidgetContext();
+		$this->widgetContext = new \TYPO3\CMS\Fluid\Core\Widget\WidgetContext();
 	}
 
 	/**
@@ -73,12 +73,14 @@ class Tx_Fluid_Tests_Unit_Core_Widget_WidgetContextTest extends Tx_Extbase_Tests
 	 * @test
 	 */
 	public function viewHelperChildNodesCanBeReadAgain() {
-		$viewHelperChildNodes = $this->getMock('Tx_Fluid_Core_Parser_SyntaxTree_RootNode');
-		$renderingContext = $this->getMock('Tx_Fluid_Core_Rendering_RenderingContextInterface');
-
+		$viewHelperChildNodes = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\RootNode');
+		$renderingContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContextInterface');
 		$this->widgetContext->setViewHelperChildNodes($viewHelperChildNodes, $renderingContext);
 		$this->assertSame($viewHelperChildNodes, $this->widgetContext->getViewHelperChildNodes());
 		$this->assertSame($renderingContext, $this->widgetContext->getViewHelperChildNodeRenderingContext());
 	}
+
 }
+
+
 ?>

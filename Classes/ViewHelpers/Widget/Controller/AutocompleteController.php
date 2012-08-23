@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Widget\Controller;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,10 +20,10 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController extends Tx_Fluid_Core_Widget_AbstractWidgetController {
+class AutocompleteController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetController {
 
 	/**
 	 * @return void
@@ -39,23 +40,15 @@ class Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController extends Tx_F
 		$searchProperty = $this->widgetConfiguration['searchProperty'];
 		$query = $this->widgetConfiguration['objects']->getQuery();
 		$constraint = $query->getConstraint();
-
 		if ($constraint !== NULL) {
-			$query->matching($query->logicalAnd(
-				$constraint,
-				$query->like($searchProperty, '%' . $term . '%', FALSE)
-			));
+			$query->matching($query->logicalAnd($constraint, $query->like($searchProperty, ('%' . $term) . '%', FALSE)));
 		} else {
-			$query->matching(
-				$query->like($searchProperty, '%' . $term . '%', FALSE)
-			);
+			$query->matching($query->like($searchProperty, ('%' . $term) . '%', FALSE));
 		}
-
 		$results = $query->execute();
-
 		$output = array();
 		foreach ($results as $singleResult) {
-			$val = Tx_Extbase_Reflection_ObjectAccess::getProperty($singleResult, $searchProperty);
+			$val = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($singleResult, $searchProperty);
 			$output[] = array(
 				'id' => $val,
 				'label' => $val,
@@ -64,6 +57,8 @@ class Tx_Fluid_ViewHelpers_Widget_Controller_AutocompleteController extends Tx_F
 		}
 		return json_encode($output);
 	}
+
 }
+
 
 ?>

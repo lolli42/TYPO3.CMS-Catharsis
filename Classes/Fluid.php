@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -12,13 +13,15 @@
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-
 /**
- */
-class Tx_Fluid_Fluid {
-	const NAMESPACE_SEPARATOR = '_';
 
-	public static $debugMode = FALSE;
+ */
+class Fluid {
+
+	const LEGACY_NAMESPACE_SEPARATOR = '_';
+	const NAMESPACE_SEPARATOR = '\\';
+	static public $debugMode = FALSE;
+
 }
 
 

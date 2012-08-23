@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\ViewHelper;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,10 +20,11 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-interface Tx_Fluid_Core_ViewHelper_ViewHelperInterface {
+interface ViewHelperInterface
+{
 
 }
 

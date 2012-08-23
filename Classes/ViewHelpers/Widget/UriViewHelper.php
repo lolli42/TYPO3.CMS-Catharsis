@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Widget;
 
 /*
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A view helper for creating URIs to extbase actions within widgets.
  *
@@ -32,9 +32,10 @@
  * index.php?id=123&tx_myextension_plugin[widgetIdentifier][action]=show&tx_myextension_plugin[widgetIdentifier][controller]=Standard&cHash=xyz
  * (depending on the current page, widget and your TS configuration)
  * </output>
+ *
  * @api
  */
-class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
+class UriViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
 
 	/**
 	 * Render the Uri.
@@ -42,7 +43,7 @@ class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper
 	 * @param string $action Target action
 	 * @param array $arguments Arguments
 	 * @param string $section The anchor to be added to the URI
-	 * @param string $format The requested format, e.g. ".html"
+	 * @param string $format The requested format, e.g. ".html
 	 * @param boolean $ajax TRUE if the URI should be to an AJAX widget, FALSE otherwise.
 	 * @return string The rendered link
 	 * @api
@@ -63,7 +64,6 @@ class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper
 	protected function getAjaxUri() {
 		$action = $this->arguments['action'];
 		$arguments = $this->arguments['arguments'];
-
 		if ($action === NULL) {
 			$action = $this->controllerContext->getRequest()->getControllerActionName();
 		}
@@ -72,7 +72,6 @@ class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper
 		$arguments['type'] = 7076;
 		$arguments['fluid-widget-id'] = $this->controllerContext->getRequest()->getWidgetContext()->getAjaxWidgetIdentifier();
 		$arguments['action'] = $action;
-
 		return '?' . http_build_query($arguments, NULL, '&');
 	}
 
@@ -83,7 +82,6 @@ class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper
 	 */
 	protected function getWidgetUri() {
 		$uriBuilder = $this->controllerContext->getUriBuilder();
-
 		$argumentPrefix = $this->controllerContext->getRequest()->getArgumentPrefix();
 		$arguments = $this->hasArgument('arguments') ? $this->arguments['arguments'] : array();
 		if ($this->hasArgument('action')) {
@@ -92,15 +90,10 @@ class Tx_Fluid_ViewHelpers_Widget_UriViewHelper extends Tx_Fluid_Core_ViewHelper
 		if ($this->hasArgument('format') && $this->arguments['format'] !== '') {
 			$arguments['format'] = $this->arguments['format'];
 		}
-		return $uriBuilder
-			->reset()
-			->setArguments(array($argumentPrefix => $arguments))
-			->setSection($this->arguments['section'])
-			->setAddQueryString(TRUE)
-			->setArgumentsToBeExcludedFromQueryString(array($argumentPrefix, 'cHash'))
-			->setFormat($this->arguments['format'])
-			->build();
+		return $uriBuilder->reset()->setArguments(array($argumentPrefix => $arguments))->setSection($this->arguments['section'])->setAddQueryString(TRUE)->setArgumentsToBeExcludedFromQueryString(array($argumentPrefix, 'cHash'))->setFormat($this->arguments['format'])->build();
 	}
+
 }
+
 
 ?>

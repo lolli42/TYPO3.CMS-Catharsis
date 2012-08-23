@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,21 +20,22 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Deprecated. Use <f:flashMessages> instead!
  *
  * @deprecated since Extbase 1.3.0; will be removed in Extbase 1.5.0
  */
-class Tx_Fluid_ViewHelpers_RenderFlashMessagesViewHelper extends Tx_Fluid_ViewHelpers_FlashMessagesViewHelper {
+class RenderFlashMessagesViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\FlashMessagesViewHelper {
 
 	/**
 	 * @return void
 	 */
 	public function initialize() {
-		t3lib_div::logDeprecatedFunction();
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		return parent::initialize();
 	}
+
 }
+
 
 ?>

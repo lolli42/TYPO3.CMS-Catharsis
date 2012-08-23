@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,8 +10,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-
 /**
  * Loop view helper which can be used to interate over array.
  * Implements what a basic foreach()-PHP-method does.
@@ -26,39 +25,39 @@
  *
  * <code title="Output array key">
  * <ul>
- *   <f:for each="{fruit1: 'apple', fruit2: 'pear', fruit3: 'banana', fruit4: 'cherry'}" as="fruit" key="label">
- *     <li>{label}: {fruit}</li>
- *   </f:for>
+ * <f:for each="{fruit1: 'apple', fruit2: 'pear', fruit3: 'banana', fruit4: 'cherry'}" as="fruit" key="label">
+ * <li>{label}: {fruit}</li>
+ * </f:for>
  * </ul>
  * </code>
  * <output>
  * <ul>
- *   <li>fruit1: apple</li>
- *   <li>fruit2: pear</li>
- *   <li>fruit3: banana</li>
- *   <li>fruit4: cherry</li>
+ * <li>fruit1: apple</li>
+ * <li>fruit2: pear</li>
+ * <li>fruit3: banana</li>
+ * <li>fruit4: cherry</li>
  * </ul>
  * </output>
  *
  * <code title="Iteration information">
  * <ul>
- *   <f:for each="{0:1, 1:2, 2:3, 3:4}" as="foo" iteration="fooIterator">
- *     <li>Index: {fooIterator.index} Cycle: {fooIterator.cycle} Total: {fooIterator.total}{f:if(condition: fooIterator.isEven, then: ' Even')}{f:if(condition: fooIterator.isOdd, then: ' Odd')}{f:if(condition: fooIterator.isFirst, then: ' First')}{f:if(condition: fooIterator.isLast, then: ' Last')}</li>
- *   </f:for>
+ * <f:for each="{0:1, 1:2, 2:3, 3:4}" as="foo" iteration="fooIterator">
+ * <li>Index: {fooIterator.index} Cycle: {fooIterator.cycle} Total: {fooIterator.total}{f:if(condition: fooIterator.isEven, then: ' Even')}{f:if(condition: fooIterator.isOdd, then: ' Odd')}{f:if(condition: fooIterator.isFirst, then: ' First')}{f:if(condition: fooIterator.isLast, then: ' Last')}</li>
+ * </f:for>
  * </ul>
  * </code>
  * <output>
  * <ul>
- *   <li>Index: 0 Cycle: 1 Total: 4 Odd First</li>
- *   <li>Index: 1 Cycle: 2 Total: 4 Even</li>
- *   <li>Index: 2 Cycle: 3 Total: 4 Odd</li>
- *   <li>Index: 3 Cycle: 4 Total: 4 Even Last</li>
+ * <li>Index: 0 Cycle: 1 Total: 4 Odd First</li>
+ * <li>Index: 1 Cycle: 2 Total: 4 Even</li>
+ * <li>Index: 2 Cycle: 3 Total: 4 Odd</li>
+ * <li>Index: 3 Cycle: 4 Total: 4 Even Last</li>
  * </ul>
  * </output>
  *
  * @api
  */
-class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper implements Tx_Fluid_Core_ViewHelper_Facets_CompilableInterface {
+class ForViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper implements \TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface {
 
 	/**
 	 * Iterates through elements of $each and renders child nodes
@@ -78,20 +77,19 @@ class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_Abstra
 	/**
 	 * @param array $arguments
 	 * @param Closure $renderChildrenClosure
-	 * @param Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext
+	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
 	 * @return string
 	 */
-	static public function renderStatic(array $arguments, Closure $renderChildrenClosure, Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext) {
+	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext) {
 		$templateVariableContainer = $renderingContext->getTemplateVariableContainer();
 		if ($arguments['each'] === NULL) {
 			return '';
 		}
-		if (is_object($arguments['each']) && !$arguments['each'] instanceof Traversable) {
-			throw new Tx_Fluid_Core_ViewHelper_Exception('ForViewHelper only supports arrays and objects implementing Traversable interface' , 1248728393);
+		if (is_object($arguments['each']) && !$arguments['each'] instanceof \Traversable) {
+			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception('ForViewHelper only supports arrays and objects implementing Traversable interface', 1248728393);
 		}
-
 		if ($arguments['reverse'] === TRUE) {
-				// array_reverse only supports arrays
+			// array_reverse only supports arrays
 			if (is_object($arguments['each'])) {
 				$arguments['each'] = iterator_to_array($arguments['each']);
 			}
@@ -102,7 +100,6 @@ class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_Abstra
 			'cycle' => 1,
 			'total' => count($arguments['each'])
 		);
-
 		$output = '';
 		foreach ($arguments['each'] as $keyValue => $singleElement) {
 			$templateVariableContainer->add($arguments['as'], $singleElement);
@@ -115,8 +112,8 @@ class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_Abstra
 				$iterationData['isEven'] = $iterationData['cycle'] % 2 === 0;
 				$iterationData['isOdd'] = !$iterationData['isEven'];
 				$templateVariableContainer->add($arguments['iteration'], $iterationData);
-				$iterationData['index'] ++;
-				$iterationData['cycle'] ++;
+				$iterationData['index']++;
+				$iterationData['cycle']++;
 			}
 			$output .= $renderChildrenClosure();
 			$templateVariableContainer->remove($arguments['as']);
@@ -129,6 +126,8 @@ class Tx_Fluid_ViewHelpers_ForViewHelper extends Tx_Fluid_Core_ViewHelper_Abstra
 		}
 		return $output;
 	}
+
 }
+
 
 ?>

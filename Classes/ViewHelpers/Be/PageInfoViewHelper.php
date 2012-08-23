@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
+
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
  *                                                                        *
@@ -18,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * View helper which return page info icon as known from TYPO3 backend modules
  * Note: This view helper is experimental!
@@ -31,10 +32,8 @@
  * <output>
  * Page info icon with context menu
  * </output>
- *
  */
-class Tx_Fluid_ViewHelpers_Be_PageInfoViewHelper extends Tx_Fluid_ViewHelpers_Be_AbstractBackendViewHelper {
-
+class PageInfoViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
 
 	/**
 	 * Render javascript in header
@@ -44,28 +43,31 @@ class Tx_Fluid_ViewHelpers_Be_PageInfoViewHelper extends Tx_Fluid_ViewHelpers_Be
 	 */
 	public function render() {
 		$doc = $this->getDocInstance();
-		$id = t3lib_div::_GP('id');
-		$pageRecord = t3lib_BEfunc::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
-
-				// Add icon with clickmenu, etc:
-		if ($pageRecord['uid'])	{	// If there IS a real page
-			$alttext = t3lib_BEfunc::getRecordIconAltText($pageRecord, 'pages');
-			$iconImg = t3lib_iconWorks::getSpriteIconForRecord('pages', $pageRecord, array('title' => htmlspecialchars($alttext)));
-				// Make Icon:
+		$id = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id');
+		$pageRecord = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess($id, $GLOBALS['BE_USER']->getPagePermsClause(1));
+		// Add icon with clickmenu, etc:
+		if ($pageRecord['uid']) {
+			// If there IS a real page
+			$alttext = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordIconAltText($pageRecord, 'pages');
+			$iconImg = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('pages', $pageRecord, array('title' => htmlspecialchars($alttext)));
+			// Make Icon:
 			$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($iconImg, 'pages', $pageRecord['uid']);
-		} else {	// On root-level of page tree
-				// Make Icon
-			$iconImg = '<img' . t3lib_iconWorks::skinImg($this->backPath, 'gfx/i/_icon_website.gif') . ' alt="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '" />';
-			if($BE_USER->user['admin']) {
+		} else {
+			// On root-level of page tree
+			// Make Icon
+			$iconImg = ((('<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, 'gfx/i/_icon_website.gif')) . ' alt="') . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'])) . '" />';
+			if ($BE_USER->user['admin']) {
 				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($iconImg, 'pages', 0);
 			} else {
 				$theIcon = $iconImg;
 			}
 		}
-
-			// Setting icon with clickmenu + uid
-		$pageInfo = $theIcon . '<em>[pid: ' . $pageRecord['uid'] . ']</em>';
+		// Setting icon with clickmenu + uid
+		$pageInfo = (($theIcon . '<em>[pid: ') . $pageRecord['uid']) . ']</em>';
 		return $pageInfo;
 	}
+
 }
+
+
 ?>

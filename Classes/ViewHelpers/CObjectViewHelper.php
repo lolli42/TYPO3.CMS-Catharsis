@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -12,7 +13,6 @@
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-
 /**
  * This ViewHelper renders CObjects from the global TypoScript configuration.
  *
@@ -22,25 +22,24 @@
  * <f:cObject typoscriptObjectPath="lib.someLibObject" />
  * </code>
  * <output>
- * // rendered lib.someLibObject
+ * rendered lib.someLibObject
  * </output>
  *
  * <code title="Specify cObject data & current value">
  * <f:cObject typoscriptObjectPath="lib.customHeader" data="{article}" current="{article.title}" />
  * </code>
  * <output>
- * // rendered lib.customHeader. data and current value will be available in TypoScript
+ * rendered lib.customHeader. data and current value will be available in TypoScript
  * </output>
  *
  * <code title="inline notation">
  * {article -> f:cObject(typoscriptObjectPath: 'lib.customHeader')}
  * </code>
  * <output>
- * // rendered lib.customHeader. data will be available in TypoScript
+ * rendered lib.customHeader. data will be available in TypoScript
  * </output>
- *
  */
-class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
+class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
 
 	/**
 	 * Disable the escaping interceptor because otherwise the child nodes would be escaped before this view helper
@@ -56,22 +55,22 @@ class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_Ab
 	protected $typoScriptSetup;
 
 	/**
-	 * @var	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
+	 * @var 	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
 	 */
 	protected $tsfeBackup;
 
 	/**
-	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
-		$this->typoScriptSetup = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
+		$this->typoScriptSetup = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
 	}
 
 	/**
@@ -86,40 +85,36 @@ class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_Ab
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
-
 		if ($data === NULL) {
 			$data = $this->renderChildren();
 		}
 		$currentValue = NULL;
 		if (is_object($data)) {
-			$data = Tx_Extbase_Reflection_ObjectAccess::getGettableProperties($data);
+			$data = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettableProperties($data);
 		} elseif (is_string($data) || is_numeric($data)) {
 			$currentValue = (string) $data;
 			$data = array($data);
 		}
-		$contentObject = t3lib_div::makeInstance('tslib_cObj');
+		$contentObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
 		$contentObject->start($data);
 		if ($currentValue !== NULL) {
 			$contentObject->setCurrentVal($currentValue);
 		} elseif ($currentValueKey !== NULL && isset($data[$currentValueKey])) {
 			$contentObject->setCurrentVal($data[$currentValueKey]);
 		}
-
-		$pathSegments = t3lib_div::trimExplode('.', $typoscriptObjectPath);
+		$pathSegments = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('.', $typoscriptObjectPath);
 		$lastSegment = array_pop($pathSegments);
 		$setup = $this->typoScriptSetup;
 		foreach ($pathSegments as $segment) {
-			if (!array_key_exists($segment . '.', $setup)) {
-				throw new Tx_Fluid_Core_ViewHelper_Exception('TypoScript object path "' . htmlspecialchars($typoscriptObjectPath) . '" does not exist' , 1253191023);
+			if (!array_key_exists(($segment . '.'), $setup)) {
+				throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception(('TypoScript object path "' . htmlspecialchars($typoscriptObjectPath)) . '" does not exist', 1253191023);
 			}
 			$setup = $setup[$segment . '.'];
 		}
 		$content = $contentObject->cObjGetSingle($setup[$lastSegment], $setup[$lastSegment . '.']);
-
 		if (TYPO3_MODE === 'BE') {
 			$this->resetFrontendEnvironment();
 		}
-
 		return $content;
 	}
 
@@ -131,7 +126,7 @@ class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_Ab
 	 */
 	protected function simulateFrontendEnvironment() {
 		$this->tsfeBackup = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE'] : NULL;
-		$GLOBALS['TSFE'] = new stdClass();
+		$GLOBALS['TSFE'] = new \stdClass();
 		$GLOBALS['TSFE']->cObjectDepthCounter = 100;
 	}
 
@@ -144,6 +139,8 @@ class Tx_Fluid_ViewHelpers_CObjectViewHelper extends Tx_Fluid_Core_ViewHelper_Ab
 	protected function resetFrontendEnvironment() {
 		$GLOBALS['TSFE'] = $this->tsfeBackup;
 	}
+
 }
+
 
 ?>

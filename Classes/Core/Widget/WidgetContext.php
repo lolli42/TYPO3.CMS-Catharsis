@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\Widget;
 
 /*
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * The WidgetContext stores all information a widget needs to know about the
  * environment.
@@ -30,9 +30,8 @@
  * to get knowledge over the current widget's configuration.
  *
  * It is a purely internal class which should not be used outside of Fluid.
- *
  */
-class Tx_Fluid_Core_Widget_WidgetContext {
+class WidgetContext {
 
 	/**
 	 * Uniquely idenfies a Widget Instance on a certain page.
@@ -67,16 +66,17 @@ class Tx_Fluid_Core_Widget_WidgetContext {
 	 * The child nodes of the Widget ViewHelper.
 	 * Only available inside non-AJAX requests.
 	 *
-	 * @var Tx_Fluid_Core_Parser_SyntaxTree_RootNode
+	 * @var \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
 	 * @transient
 	 */
-	protected $viewHelperChildNodes; // TODO: rename to something more meaningful.
+	protected $viewHelperChildNodes;
 
+	// TODO: rename to something more meaningful.
 	/**
 	 * The rendering context of the ViewHelperChildNodes.
 	 * Only available inside non-AJAX requests.
 	 *
-	 * @var Tx_Fluid_Core_Rendering_RenderingContextInterface
+	 * @var \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface
 	 * @transient
 	 */
 	protected $viewHelperChildNodeRenderingContext;
@@ -238,24 +238,24 @@ class Tx_Fluid_Core_Widget_WidgetContext {
 	}
 
 	/**
-	 * @param Tx_Fluid_Core_Parser_SyntaxTree_RootNode $viewHelperChildNodes
-	 * @param Tx_Fluid_Core_Rendering_RenderingContextInterface $viewHelperChildNodeRenderingContext
+	 * @param \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes
+	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext
 	 * @return void
 	 */
-	public function setViewHelperChildNodes(Tx_Fluid_Core_Parser_SyntaxTree_RootNode $viewHelperChildNodes, Tx_Fluid_Core_Rendering_RenderingContextInterface $viewHelperChildNodeRenderingContext) {
+	public function setViewHelperChildNodes(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode $viewHelperChildNodes, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $viewHelperChildNodeRenderingContext) {
 		$this->viewHelperChildNodes = $viewHelperChildNodes;
 		$this->viewHelperChildNodeRenderingContext = $viewHelperChildNodeRenderingContext;
 	}
 
 	/**
-	 * @return Tx_Fluid_Core_Parser_SyntaxTree_RootNode
+	 * @return \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode
 	 */
 	public function getViewHelperChildNodes() {
 		return $this->viewHelperChildNodes;
 	}
 
 	/**
-	 * @return Tx_Fluid_Core_Rendering_RenderingContextInterface
+	 * @return \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface
 	 */
 	public function getViewHelperChildNodeRenderingContext() {
 		return $this->viewHelperChildNodeRenderingContext;
@@ -267,5 +267,8 @@ class Tx_Fluid_Core_Widget_WidgetContext {
 	public function __sleep() {
 		return array('widgetIdentifier', 'ajaxWidgetIdentifier', 'widgetConfiguration', 'controllerObjectName', 'parentPluginNamespace', 'parentExtensionName', 'parentPluginName', 'widgetViewHelperClassName');
 	}
+
 }
+
+
 ?>

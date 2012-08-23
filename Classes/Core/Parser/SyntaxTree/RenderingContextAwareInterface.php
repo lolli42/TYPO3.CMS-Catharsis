@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\Parser\SyntaxTree;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,22 +10,20 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Interface for objects which are aware of Fluid's rendering context. All objects
  * marked with this interface will get the current rendering context injected
  * by the ObjectAccessorNode on trying to evaluate them.
- *
  */
-interface Tx_Fluid_Core_Parser_SyntaxTree_RenderingContextAwareInterface {
-
+interface RenderingContextAwareInterface
+{
 	/**
 	 * Sets the current rendering context
 	 *
-	 * @param Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext
+	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
 	 * @return void
 	 */
-	public function setRenderingContext(Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext);
+	public function setRenderingContext(\TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext);
 
 }
 

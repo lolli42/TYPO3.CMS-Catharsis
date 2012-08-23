@@ -1,6 +1,7 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Fixtures;
 
-class Tx_Fluid_Core_Fixtures_TestViewHelper2 extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
+class TestViewHelper2 extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
 
 	/**
 	 * My comments. Bla blubb.
@@ -9,9 +10,11 @@ class Tx_Fluid_Core_Fixtures_TestViewHelper2 extends Tx_Fluid_Core_ViewHelper_Ab
 	 * @param array $param2 P2 Stuff
 	 * @param string $param3 P3 Stuff
 	 */
-	public function render($param1, array $param2, $param3 = "default") {
+	public function render($param1, array $param2, $param3 = 'default') {
 
 	}
+
 }
+
 
 ?>

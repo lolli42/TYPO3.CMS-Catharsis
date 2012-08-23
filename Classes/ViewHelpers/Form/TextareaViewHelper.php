@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,8 +10,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-
 /**
  * Textarea view helper.
  * The value of the text area needs to be set via the "value" attribute, as with all other form ViewHelpers.
@@ -26,7 +25,7 @@
  *
  * @api
  */
-class Tx_Fluid_ViewHelpers_Form_TextareaViewHelper extends Tx_Fluid_ViewHelpers_Form_AbstractFormFieldViewHelper {
+class TextareaViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper {
 
 	/**
 	 * @var string
@@ -57,15 +56,14 @@ class Tx_Fluid_ViewHelpers_Form_TextareaViewHelper extends Tx_Fluid_ViewHelpers_
 	public function render() {
 		$name = $this->getName();
 		$this->registerFieldNameForFormTokenGeneration($name);
-
 		$this->tag->forceClosingTag(TRUE);
 		$this->tag->addAttribute('name', $name);
 		$this->tag->setContent(htmlspecialchars($this->getValue()));
-
 		$this->setErrorClassAttribute();
-
 		return $this->tag->render();
 	}
+
 }
+
 
 ?>

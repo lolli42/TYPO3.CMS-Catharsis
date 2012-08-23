@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is part of the TYPO3 project - inspiring people to share!  *
@@ -12,10 +13,9 @@
  * TABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General      *
  * Public License for more details.                                       *
  *                                                                        */
-
 /**
- */
 
+ */
 /**
  * Use this view helper to crop the text between its opening and closing tags.
  *
@@ -56,30 +56,29 @@
  * someLongText cropped after 10 characters...
  * (depending on the value of {someLongText})
  * </output>
- *
  */
-class Tx_Fluid_ViewHelpers_Format_CropViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractViewHelper {
+class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
 
 	/**
-	 * @var	tslib_cObj
+	 * @var 	tslib_cObj
 	 */
 	protected $contentObject;
 
 	/**
-	 * @var	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
+	 * @var 	t3lib_fe contains a backup of the current $GLOBALS['TSFE'] if used in BE mode
 	 */
 	protected $tsfeBackup;
 
 	/**
-	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 		$this->contentObject = $this->configurationManager->getContentObject();
 	}
@@ -98,13 +97,11 @@ class Tx_Fluid_ViewHelpers_Format_CropViewHelper extends Tx_Fluid_Core_ViewHelpe
 		if (TYPO3_MODE === 'BE') {
 			$this->simulateFrontendEnvironment();
 		}
-
 		if ($respectHtml) {
-			$content = $this->contentObject->cropHTML($stringToTruncate, $maxCharacters . '|' . $append . '|' . $respectWordBoundaries);
+			$content = $this->contentObject->cropHTML($stringToTruncate, ((($maxCharacters . '|') . $append) . '|') . $respectWordBoundaries);
 		} else {
-			$content = $this->contentObject->crop($stringToTruncate, $maxCharacters . '|' . $append . '|' . $respectWordBoundaries);
+			$content = $this->contentObject->crop($stringToTruncate, ((($maxCharacters . '|') . $append) . '|') . $respectWordBoundaries);
 		}
-
 		if (TYPO3_MODE === 'BE') {
 			$this->resetFrontendEnvironment();
 		}
@@ -119,18 +116,16 @@ class Tx_Fluid_ViewHelpers_Format_CropViewHelper extends Tx_Fluid_Core_ViewHelpe
 	 */
 	protected function simulateFrontendEnvironment() {
 		$this->tsfeBackup = isset($GLOBALS['TSFE']) ? $GLOBALS['TSFE'] : NULL;
-		$GLOBALS['TSFE'] = new stdClass();
-
-			// preparing csConvObj
+		$GLOBALS['TSFE'] = new \stdClass();
+		// preparing csConvObj
 		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
 			if (is_object($GLOBALS['LANG'])) {
 				$GLOBALS['TSFE']->csConvObj = $GLOBALS['LANG']->csConvObj;
 			} else {
-				$GLOBALS['TSFE']->csConvObj = t3lib_div::makeInstance('t3lib_cs');
+				$GLOBALS['TSFE']->csConvObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
 			}
 		}
-
-			// preparing renderCharset
+		// preparing renderCharset
 		if (!is_object($GLOBALS['TSFE']->renderCharset)) {
 			if (is_object($GLOBALS['LANG'])) {
 				$GLOBALS['TSFE']->renderCharset = $GLOBALS['LANG']->charSet;
@@ -149,6 +144,7 @@ class Tx_Fluid_ViewHelpers_Format_CropViewHelper extends Tx_Fluid_Core_ViewHelpe
 	protected function resetFrontendEnvironment() {
 		$GLOBALS['TSFE'] = $this->tsfeBackup;
 	}
+
 }
 
 

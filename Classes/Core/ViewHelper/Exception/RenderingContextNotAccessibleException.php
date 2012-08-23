@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,13 +10,15 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A "Rendering Context not Accessible" exception.
  *
  * @api
  */
-class Tx_Fluid_Core_ViewHelper_Exception_RenderingContextNotAccessibleException extends Tx_Fluid_Core_ViewHelper_Exception {
+class RenderingContextNotAccessibleException extends \TYPO3\CMS\Fluid\Core\ViewHelper\Exception {
+
+
 }
+
 
 ?>

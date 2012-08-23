@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\ViewHelper\Facets;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,7 +10,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * If a ViewHelper implements CompilableInterface, it can directly influence the way
  * the syntax tree is compiled to a static PHP file.
@@ -44,8 +44,8 @@
  * A ViewHelper which wants to directly influence the resulting PHP code must implement
  * the CompilableInterface, and only implement the compile() method.
  */
-interface Tx_Fluid_Core_ViewHelper_Facets_CompilableInterface {
-
+interface CompilableInterface
+{
 	/**
 	 * Here follows a more detailed description of the arguments of this function:
 	 *
@@ -62,10 +62,10 @@ interface Tx_Fluid_Core_ViewHelper_Facets_CompilableInterface {
 	 *
 	 * @var array $arguments
 	 * @var Closure $renderChildrenClosure
-	 * @var Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext
+	 * @var \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
 	 * @return string the resulting string which is directly shown
 	 */
-	static public function renderStatic(array $arguments, Closure $renderChildrenClosure, Tx_Fluid_Core_Rendering_RenderingContextInterface $renderingContext);
+	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext);
 
 	/**
 	 * This method is called on compilation time.
@@ -93,11 +93,12 @@ interface Tx_Fluid_Core_ViewHelper_Facets_CompilableInterface {
 	 * @param string $argumentsVariableName Name of the variable in which the ViewHelper arguments are stored
 	 * @param string $renderChildrenClosureVariableName Name of the closure which can be executed to render the child nodes
 	 * @param string $initializationPhpCode
-	 * @param Tx_Fluid_Core_Parser_SyntaxTree_AbstractNode $syntaxTreeNode
-	 * @param Tx_Fluid_Core_Compiler_TemplateCompiler $templateCompiler
+	 * @param \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode $syntaxTreeNode
+	 * @param \TYPO3\CMS\Fluid\Core\Compiler\TemplateCompiler $templateCompiler
 	 * @return string
 	 */
-	public function compile($argumentsVariableName, $renderChildrenClosureVariableName, &$initializationPhpCode, Tx_Fluid_Core_Parser_SyntaxTree_AbstractNode $syntaxTreeNode, Tx_Fluid_Core_Compiler_TemplateCompiler $templateCompiler);
+	public function compile($argumentsVariableName, $renderChildrenClosureVariableName, &$initializationPhpCode, \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode $syntaxTreeNode, \TYPO3\CMS\Fluid\Core\Compiler\TemplateCompiler $templateCompiler);
+
 }
 
 ?>

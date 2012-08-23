@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\Widget;
 
 /*
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,30 +20,28 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Represents a widget request.
- *
  */
-class Tx_Fluid_Core_Widget_WidgetRequest extends Tx_Extbase_MVC_Web_Request {
+class WidgetRequest extends \TYPO3\CMS\Extbase\Mvc\Web\Request {
 
 	/**
-	 * @var Tx_Fluid_Core_Widget_WidgetContext
+	 * @var \TYPO3\CMS\Fluid\Core\Widget\WidgetContext
 	 */
 	protected $widgetContext;
 
 	/**
-	 * @return Tx_Fluid_Core_Widget_WidgetContext
+	 * @return \TYPO3\CMS\Fluid\Core\Widget\WidgetContext
 	 */
 	public function getWidgetContext() {
 		return $this->widgetContext;
 	}
 
 	/**
-	 * @param Tx_Fluid_Core_Widget_WidgetContext $widgetContext
+	 * @param \TYPO3\CMS\Fluid\Core\Widget\WidgetContext $widgetContext
 	 * @return void
 	 */
-	public function setWidgetContext(Tx_Fluid_Core_Widget_WidgetContext $widgetContext) {
+	public function setWidgetContext(\TYPO3\CMS\Fluid\Core\Widget\WidgetContext $widgetContext) {
 		$this->widgetContext = $widgetContext;
 		$this->setControllerObjectName($widgetContext->getControllerObjectName());
 	}
@@ -53,7 +52,10 @@ class Tx_Fluid_Core_Widget_WidgetRequest extends Tx_Extbase_MVC_Web_Request {
 	 * @return string
 	 */
 	public function getArgumentPrefix() {
-		return $this->widgetContext->getParentPluginNamespace() . '[' . $this->widgetContext->getWidgetIdentifier() . ']';
+		return (($this->widgetContext->getParentPluginNamespace() . '[') . $this->widgetContext->getWidgetIdentifier()) . ']';
 	}
+
 }
+
+
 ?>

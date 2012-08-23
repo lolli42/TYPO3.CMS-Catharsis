@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form\Fixtures;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,12 +10,10 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * [Enter description here]
- *
  */
-class Tx_Fluid_ViewHelpers_Fixtures_EmptySyntaxTreeNode extends Tx_Fluid_Core_Parser_SyntaxTree_ViewHelperNode {
+class EmptySyntaxTreeNode extends \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode {
 
 	public function __construct() {
 

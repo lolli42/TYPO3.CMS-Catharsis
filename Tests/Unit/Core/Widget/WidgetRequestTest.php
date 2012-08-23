@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Widget;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,36 +20,33 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Testcase for WidgetRequest
- *
  */
-class Tx_Fluid_Tests_Unit_Core_Widget_WidgetRequestTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class WidgetRequestTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
 	 */
 	public function setWidgetContextAlsoSetsControllerObjectName() {
-		$widgetContext = $this->getMock('Tx_Fluid_Core_Widget_WidgetContext', array('getControllerObjectName'));
+		$widgetContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetContext', array('getControllerObjectName'));
 		$widgetContext->expects($this->once())->method('getControllerObjectName')->will($this->returnValue('Tx_Fluid_ControllerObjectName'));
-
-		$widgetRequest = $this->getMock('Tx_Fluid_Core_Widget_WidgetRequest', array('setControllerObjectName'));
+		$widgetRequest = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequest', array('setControllerObjectName'));
 		$widgetRequest->expects($this->once())->method('setControllerObjectName')->with('Tx_Fluid_ControllerObjectName');
-
 		$widgetRequest->setWidgetContext($widgetContext);
 	}
 
 	/**
 	 * @test
 	 */
-	 public function widgetContextCanBeReadAgain() {
-		$widgetContext = $this->getMock('Tx_Fluid_Core_Widget_WidgetContext');
-
-		$widgetRequest = $this->getMock('Tx_Fluid_Core_Widget_WidgetRequest', array('setControllerObjectName'));
+	public function widgetContextCanBeReadAgain() {
+		$widgetContext = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetContext');
+		$widgetRequest = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequest', array('setControllerObjectName'));
 		$widgetRequest->setWidgetContext($widgetContext);
-
 		$this->assertSame($widgetContext, $widgetRequest->getWidgetContext());
-	 }
+	}
+
 }
+
+
 ?>

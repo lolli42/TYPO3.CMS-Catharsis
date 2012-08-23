@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\Widget\Exception;
 
 /*
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,11 +20,13 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * An exception if no widget Request could be found inside <f:renderChildren>.
- *
  */
-class Tx_Fluid_Core_Widget_Exception_WidgetRequestNotFoundException extends Tx_Fluid_Core_Widget_Exception {
+class WidgetRequestNotFoundException extends \TYPO3\CMS\Fluid\Core\Widget\Exception {
+
+
 }
+
+
 ?>

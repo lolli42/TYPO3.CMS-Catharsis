@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -19,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * View helper which renders the flash messages (if there are any) as an unsorted list.
  *
@@ -40,7 +40,7 @@
  * </code>
  * <output>
  * <ul class="specialClass">
- *  ...
+ * ...
  * </ul>
  * </output>
  *
@@ -49,38 +49,37 @@
  * </code>
  * <output>
  * <div class="typo3-messages">
- *   <div class="typo3-message message-ok">
- *     <div class="message-header">Some Message Header</div>
- *     <div class="message-body">Some message body</div>
- *   </div>
- *   <div class="typo3-message message-notice">
- *     <div class="message-body">Some notice message without header</div>
- *   </div>
+ * <div class="typo3-message message-ok">
+ * <div class="message-header">Some Message Header</div>
+ * <div class="message-body">Some message body</div>
+ * </div>
+ * <div class="typo3-message message-notice">
+ * <div class="message-body">Some notice message without header</div>
+ * </div>
  * </div>
  * </output>
  *
  * @api
  */
-class Tx_Fluid_ViewHelpers_FlashMessagesViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper {
+class FlashMessagesViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
 
 	const RENDER_MODE_UL = 'ul';
 	const RENDER_MODE_DIV = 'div';
-
 	/**
-	 * @var tslib_cObj
+	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
 	 */
 	protected $contentObject;
 
 	/**
-	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 		$this->contentObject = $this->configurationManager->getContentObject();
 	}
@@ -99,8 +98,8 @@ class Tx_Fluid_ViewHelpers_FlashMessagesViewHelper extends Tx_Fluid_Core_ViewHel
 	 * Renders FlashMessages and flushes the FlashMessage queue
 	 * Note: This disables the current page cache in order to prevent FlashMessage output
 	 * from being cached.
-	 * @see tslib_fe::no_cache
 	 *
+	 * @see tslib_fe::no_cache
 	 * @param string $renderMode one of the RENDER_MODE_* constants
 	 * @return string rendered Flash Messages, if there are any.
 	 * @api
@@ -110,17 +109,16 @@ class Tx_Fluid_ViewHelpers_FlashMessagesViewHelper extends Tx_Fluid_Core_ViewHel
 		if ($flashMessages === NULL || count($flashMessages) === 0) {
 			return '';
 		}
-		if (isset($GLOBALS['TSFE']) && $this->contentObject->getUserObjectType() === tslib_cObj::OBJECTTYPE_USER) {
+		if (isset($GLOBALS['TSFE']) && $this->contentObject->getUserObjectType() === \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::OBJECTTYPE_USER) {
 			$GLOBALS['TSFE']->no_cache = 1;
 		}
-
 		switch ($renderMode) {
-			case self::RENDER_MODE_UL:
-				return $this->renderUl($flashMessages);
-			case self::RENDER_MODE_DIV:
-				return $this->renderDiv($flashMessages);
-			default:
-				throw new Tx_Fluid_Core_ViewHelper_Exception('Invalid render mode "' . $renderMode . '" passed to FlashMessageViewhelper', 1290697924);
+		case self::RENDER_MODE_UL:
+			return $this->renderUl($flashMessages);
+		case self::RENDER_MODE_DIV:
+			return $this->renderDiv($flashMessages);
+		default:
+			throw new \TYPO3\CMS\Fluid\Core\ViewHelper\Exception(('Invalid render mode "' . $renderMode) . '" passed to FlashMessageViewhelper', 1290697924);
 		}
 	}
 
@@ -137,7 +135,7 @@ class Tx_Fluid_ViewHelpers_FlashMessagesViewHelper extends Tx_Fluid_Core_ViewHel
 		}
 		$tagContent = '';
 		foreach ($flashMessages as $singleFlashMessage) {
-			$tagContent .= '<li>' . htmlspecialchars($singleFlashMessage->getMessage()) . '</li>';
+			$tagContent .= ('<li>' . htmlspecialchars($singleFlashMessage->getMessage())) . '</li>';
 		}
 		$this->tag->setContent($tagContent);
 		return $this->tag->render();
@@ -163,6 +161,8 @@ class Tx_Fluid_ViewHelpers_FlashMessagesViewHelper extends Tx_Fluid_Core_ViewHel
 		$this->tag->setContent($tagContent);
 		return $this->tag->render();
 	}
+
 }
+
 
 ?>

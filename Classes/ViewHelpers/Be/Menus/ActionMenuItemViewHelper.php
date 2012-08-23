@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
+
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
  *                                                                        *
@@ -18,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * View helper which returns a option tag.
  * This view helper only works in conjunction with Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuViewHelper
@@ -28,9 +29,9 @@
  *
  * <code title="Simple">
  * <f:be.menus.actionMenu>
- *   <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
- *   <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
- *   <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
+ * <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
+ * <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
+ * <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
@@ -39,16 +40,15 @@
  *
  * <code title="Localized">
  * <f:be.menus.actionMenu>
- *   <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
- *   <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
+ * <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
+ * <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
  * localized selectbox
  * <output>
- *
  */
-class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuItemViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper {
+class ActionMenuItemViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
 
 	/**
 	 * @var string
@@ -67,21 +67,19 @@ class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuItemViewHelper extends Tx_Fluid_Co
 	 */
 	public function render($label, $controller, $action, array $arguments = array()) {
 		$uriBuilder = $this->controllerContext->getUriBuilder();
-		$uri = $uriBuilder
-			->reset()
-			->uriFor($action, $arguments, $controller);
+		$uri = $uriBuilder->reset()->uriFor($action, $arguments, $controller);
 		$this->tag->addAttribute('value', $uri);
-
 		$currentRequest = $this->controllerContext->getRequest();
 		$currentController = $currentRequest->getControllerName();
 		$currentAction = $currentRequest->getControllerActionName();
 		if ($action === $currentAction && $controller === $currentController) {
 			$this->tag->addAttribute('selected', 'selected');
 		}
-
 		$this->tag->setContent($label);
-
 		return $this->tag->render();
 	}
+
 }
+
+
 ?>

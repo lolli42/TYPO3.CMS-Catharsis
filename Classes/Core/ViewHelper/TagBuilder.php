@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Core\ViewHelper;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,14 +10,12 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-
 /**
  * Tag builder. Can be easily accessed in AbstractTagBasedViewHelper
  *
  * @api
  */
-class Tx_Fluid_Core_ViewHelper_TagBuilder {
+class TagBuilder {
 
 	/**
 	 * Name of the Tag to be rendered
@@ -150,7 +149,7 @@ class Tx_Fluid_Core_ViewHelper_TagBuilder {
 	 * @api
 	 */
 	public function addAttributes(array $attributes, $escapeSpecialCharacters = TRUE) {
-		foreach($attributes as $attributeName => $attributeValue) {
+		foreach ($attributes as $attributeName => $attributeValue) {
 			$this->addAttribute($attributeName, $attributeValue, $escapeSpecialCharacters);
 		}
 	}
@@ -190,15 +189,18 @@ class Tx_Fluid_Core_ViewHelper_TagBuilder {
 			return '';
 		}
 		$output = '<' . $this->tagName;
-		foreach($this->attributes as $attributeName => $attributeValue) {
-			$output .= ' ' . $attributeName . '="' . $attributeValue . '"';
+		foreach ($this->attributes as $attributeName => $attributeValue) {
+			$output .= (((' ' . $attributeName) . '="') . $attributeValue) . '"';
 		}
 		if ($this->hasContent() || $this->forceClosingTag) {
-			$output .= '>' . $this->content . '</' . $this->tagName . '>';
+			$output .= ((('>' . $this->content) . '</') . $this->tagName) . '>';
 		} else {
 			$output .= ' />';
 		}
 		return $output;
 	}
+
 }
+
+
 ?>

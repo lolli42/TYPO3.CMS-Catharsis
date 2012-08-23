@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Form;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,8 +10,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-
 /**
  * View Helper which creates a text field (<input type="text">).
  *
@@ -25,7 +24,7 @@
  *
  * @api
  */
-class Tx_Fluid_ViewHelpers_Form_TextfieldViewHelper extends Tx_Fluid_ViewHelpers_Form_AbstractFormFieldViewHelper {
+class TextfieldViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Form\AbstractFormFieldViewHelper {
 
 	/**
 	 * @var string
@@ -60,29 +59,23 @@ class Tx_Fluid_ViewHelpers_Form_TextfieldViewHelper extends Tx_Fluid_ViewHelpers
 	public function render($required = NULL, $type = 'text', $placeholder = NULL) {
 		$name = $this->getName();
 		$this->registerFieldNameForFormTokenGeneration($name);
-
 		$this->tag->addAttribute('type', $type);
 		$this->tag->addAttribute('name', $name);
-
 		$value = $this->getValue();
-
 		if ($placeholder !== NULL) {
 			$this->tag->addAttribute('placeholder', $placeholder);
 		}
-
 		if ($value !== NULL) {
 			$this->tag->addAttribute('value', $value);
 		}
-
 		if ($required !== NULL) {
 			$this->tag->addAttribute('required', 'required');
 		}
-
 		$this->setErrorClassAttribute();
-
 		return $this->tag->render();
 	}
 
 }
+
 
 ?>

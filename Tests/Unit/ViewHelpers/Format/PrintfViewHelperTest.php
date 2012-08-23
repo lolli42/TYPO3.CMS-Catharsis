@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,16 +10,16 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_Format_PrintfViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class PrintfViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
 	 */
 	public function viewHelperCanUseArrayAsArgument() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_PrintfViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\PrintfViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue('%04d-%02d-%02d'));
 		$actualResult = $viewHelper->render(array('year' => 2009, 'month' => 4, 'day' => 5));
 		$this->assertEquals('2009-04-05', $actualResult);
@@ -28,10 +29,13 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_PrintfViewHelperTest extends Tx_Ext
 	 * @test
 	 */
 	public function viewHelperCanSwapMultipleArguments() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_PrintfViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\PrintfViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue('%2$s %1$d %3$s %2$s'));
 		$actualResult = $viewHelper->render(array(123, 'foo', 'bar'));
 		$this->assertEquals('foo 123 bar foo', $actualResult);
 	}
+
 }
+
+
 ?>

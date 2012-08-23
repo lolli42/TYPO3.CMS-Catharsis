@@ -1,5 +1,4 @@
 <?php
-
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
  *                                                                        *
@@ -9,28 +8,27 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-require_once(dirname(__FILE__) . '/ViewHelperBaseTestcase.php');
+require_once dirname(__FILE__) . '/ViewHelperBaseTestcase.php';
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers;
 
 /**
  * Testcase for IfViewHelper
- *
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_IfViewHelperTest extends Tx_Fluid_ViewHelpers_ViewHelperBaseTestcase {
+class IfViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase {
 
 	/**
-	 * @var Tx_Fluid_ViewHelpers_IfViewHelper
+	 * @var \TYPO3\CMS\Fluid\ViewHelpers\IfViewHelper
 	 */
 	protected $viewHelper;
 
 	/**
-	 * @var Tx_Fluid_Core_ViewHelper_Arguments
+	 * @var \TYPO3\CMS\Fluid\Core\ViewHelper\Arguments
 	 */
 	protected $mockArguments;
 
 	public function setUp() {
 		parent::setUp();
-		$this->viewHelper = $this->getAccessibleMock('Tx_Fluid_ViewHelpers_IfViewHelper', array('renderThenChild', 'renderElseChild'));
+		$this->viewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\IfViewHelper', array('renderThenChild', 'renderElseChild'));
 		$this->injectDependenciesIntoViewHelper($this->viewHelper);
 		$this->viewHelper->initializeArguments();
 	}
@@ -40,21 +38,20 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_IfViewHelperTest extends Tx_Fluid_ViewHelp
 	 */
 	public function viewHelperRendersThenChildIfConditionIsTrue() {
 		$this->viewHelper->expects($this->at(0))->method('renderThenChild')->will($this->returnValue('foo'));
-
 		$actualResult = $this->viewHelper->render(TRUE);
 		$this->assertEquals('foo', $actualResult);
 	}
-
 
 	/**
 	 * @test
 	 */
 	public function viewHelperRendersElseChildIfConditionIsFalse() {
 		$this->viewHelper->expects($this->at(0))->method('renderElseChild')->will($this->returnValue('foo'));
-
 		$actualResult = $this->viewHelper->render(FALSE);
 		$this->assertEquals('foo', $actualResult);
 	}
+
 }
+
 
 ?>

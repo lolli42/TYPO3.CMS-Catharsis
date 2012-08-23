@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
 
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
@@ -9,16 +10,16 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
+
  */
-class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class CurrencyViewHelperTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
 	 * @test
 	 */
 	public function viewHelperRoundsFloatCorrectly() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(123.456));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('123,46', $actualResult);
@@ -28,7 +29,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersCurrencySign() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(123));
 		$actualResult = $viewHelper->render('foo');
 		$this->assertEquals('123,00 foo', $actualResult);
@@ -38,9 +39,9 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersPrependedCurrencySign() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(123));
-		$actualResult = $viewHelper->render('foo',',', '.',TRUE);
+		$actualResult = $viewHelper->render('foo', ',', '.', TRUE);
 		$this->assertEquals('foo 123,00', $actualResult);
 	}
 
@@ -48,18 +49,17 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRespectsCurrencySeparator() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(123));
-		$actualResult = $viewHelper->render('foo', ',', '.', TRUE,FALSE);
+		$actualResult = $viewHelper->render('foo', ',', '.', TRUE, FALSE);
 		$this->assertEquals('foo123,00', $actualResult);
 	}
-
 
 	/**
 	 * @test
 	 */
 	public function viewHelperRespectsDecimalSeparator() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(12345));
 		$actualResult = $viewHelper->render('', '|');
 		$this->assertEquals('12.345|00', $actualResult);
@@ -69,7 +69,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRespectsThousandsSeparator() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(12345));
 		$actualResult = $viewHelper->render('', ',', '|');
 		$this->assertEquals('12|345,00', $actualResult);
@@ -79,7 +79,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersNullValues() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(NULL));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('0,00', $actualResult);
@@ -89,7 +89,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersEmptyString() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(''));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('0,00', $actualResult);
@@ -99,7 +99,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersZeroValues() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(0));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('0,00', $actualResult);
@@ -109,7 +109,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersNegativeAmounts() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue(-123.456));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('-123,46', $actualResult);
@@ -119,7 +119,7 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersStringsToZeroValueFloat() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue('TYPO3'));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('0,00', $actualResult);
@@ -129,10 +129,13 @@ class Tx_Fluid_Tests_Unit_ViewHelpers_Format_CurrencyViewHelperTest extends Tx_E
 	 * @test
 	 */
 	public function viewHelperRendersCommaValuesToValueBeforeComma() {
-		$viewHelper = $this->getMock('Tx_Fluid_ViewHelpers_Format_CurrencyViewHelper', array('renderChildren'));
+		$viewHelper = $this->getMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Format\\CurrencyViewHelper', array('renderChildren'));
 		$viewHelper->expects($this->once())->method('renderChildren')->will($this->returnValue('12,34.00'));
 		$actualResult = $viewHelper->render();
 		$this->assertEquals('12,00', $actualResult);
 	}
+
 }
+
+
 ?>

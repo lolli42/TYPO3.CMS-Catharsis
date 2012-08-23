@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Menus;
+
 /*                                                                        *
  * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
  *                                                                        *
@@ -18,7 +20,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * View helper which returns a select box, that can be used to switch between
  * multiple actions and controllers and looks similar to TYPO3s funcMenu.
@@ -28,9 +29,9 @@
  *
  * <code title="Simple">
  * <f:be.menus.actionMenu>
- *   <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
- *   <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
- *   <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
+ * <f:be.menus.actionMenuItem label="Overview" controller="Blog" action="index" />
+ * <f:be.menus.actionMenuItem label="Create new Blog" controller="Blog" action="new" />
+ * <f:be.menus.actionMenuItem label="List Posts" controller="Post" action="index" arguments="{blog: blog}" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
@@ -39,16 +40,15 @@
  *
  * <code title="Localized">
  * <f:be.menus.actionMenu>
- *   <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
- *   <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
+ * <f:be.menus.actionMenuItem label="{f:translate(key='overview')}" controller="Blog" action="index" />
+ * <f:be.menus.actionMenuItem label="{f:translate(key='create_blog')}" controller="Blog" action="new" />
  * </f:be.menus.actionMenu>
  * </code>
  * <output>
  * localized selectbox
  * <output>
- *
  */
-class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuViewHelper extends Tx_Fluid_Core_ViewHelper_AbstractTagBasedViewHelper implements Tx_Fluid_Core_ViewHelper_Facets_ChildNodeAccessInterface {
+class ActionMenuViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper implements \TYPO3\CMS\Fluid\Core\ViewHelper\Facets\ChildNodeAccessInterface {
 
 	/**
 	 * @var string
@@ -57,6 +57,7 @@ class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuViewHelper extends Tx_Fluid_Core_V
 
 	/**
 	 * An array of Tx_Fluid_Core_Parser_SyntaxTree_AbstractNode
+	 *
 	 * @var array
 	 */
 	protected $childNodes = array();
@@ -82,12 +83,15 @@ class Tx_Fluid_ViewHelpers_Be_Menus_ActionMenuViewHelper extends Tx_Fluid_Core_V
 		$this->tag->addAttribute('onchange', 'jumpToUrl(this.options[this.selectedIndex].value, this);');
 		$options = '';
 		foreach ($this->childNodes as $childNode) {
-			if ($childNode instanceof Tx_Fluid_Core_Parser_SyntaxTree_ViewHelperNode) {
+			if ($childNode instanceof \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode) {
 				$options .= $childNode->evaluate($this->renderingContext);
 			}
 		}
 		$this->tag->setContent($options);
-		return '<div class="docheader-funcmenu">' . $this->tag->render() . '</div>';
+		return ('<div class="docheader-funcmenu">' . $this->tag->render()) . '</div>';
 	}
+
 }
+
+
 ?>
