@@ -1,27 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * The storage for objects. It ensures the uniqueness of an object in the storage. It's a remake of the
  * SplObjectStorage introduced in PHP 5.3.
@@ -31,7 +32,7 @@
  * @package Extbase
  * @subpackage Persistence
  */
-class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, ArrayAccess, Tx_Extbase_Persistence_ObjectMonitoringInterface {
+class ObjectStorage implements \Countable, \Iterator, \ArrayAccess, \TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface {
 
 	/**
 	 * This field is only needed to make debugging easier:
@@ -41,18 +42,18 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	 *
 	 * @var string
 	 */
-	private $warning = 'You should never see this warning. If you do, you probably used PHP array functions like current() on the Tx_Extbase_Persistence_ObjectStorage. To retrieve the first result, you can use the rewind() and current() methods.';
+	private $warning = 'You should never see this warning. If you do, you probably used PHP array functions like current() on the TYPO3\\CMS\\Extbase\\Persistence\\Generic\\ObjectStorage. To retrieve the first result, you can use the rewind() and current() methods.';
 
 	/**
 	 * An array holding the objects and the stored information. The key of the array items ist the
 	 * spl_object_hash of the given object.
 	 *
 	 * array(
-	 * 	spl_object_hash =>
-	 * 		array(
-	 *			'obj' => $object,
-	 * 			'inf' => $information
-	 *		)
+	 * spl_object_hash =>
+	 * array(
+	 * 'obj' => $object,
+	 * 'inf' => $information
+	 * )
 	 * )
 	 *
 	 * @var array
@@ -61,6 +62,7 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 
 	/**
 	 * A flag indication if the object storage was modified after reconstitution (eg. by adding a new object)
+	 *
 	 * @var boolean
 	 */
 	protected $isModified = FALSE;
@@ -80,13 +82,14 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	 * @return boolean
 	 */
 	public function valid() {
-		return (current($this->storage) !== FALSE);
+		return current($this->storage) !== FALSE;
 	}
 
 	/**
 	 * Returns the index at which the iterator currently is.
 	 *
 	 * This is different from the SplObjectStorage as the key in this implementation is the object hash (string).
+	 *
 	 * @return string The index corresponding to the position of the iterator.
 	 */
 	public function key() {
@@ -213,16 +216,16 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	public function setInfo($data) {
 		$this->isModified = TRUE;
 		$key = key($this->storage);
-		$this->storage[$key]['inf']  = $data;
+		$this->storage[$key]['inf'] = $data;
 	}
 
 	/**
 	 * Adds all objects-data pairs from a different storage in the current storage.
 	 *
-	 * @param Tx_Extbase_Persistence_ObjectStorage $objectStorage
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage $objectStorage
 	 * @return void
 	 */
-	public function addAll(Tx_Extbase_Persistence_ObjectStorage $objectStorage) {
+	public function addAll(\TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage $objectStorage) {
 		foreach ($objectStorage as $object) {
 			$this->attach($object, $objectStorage->getInfo());
 		}
@@ -231,10 +234,10 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	/**
 	 * Removes objects contained in another storage from the current storage.
 	 *
-	 * @param Tx_Extbase_Persistence_ObjectStorage $objectStorage The storage containing the elements to remove.
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage $objectStorage The storage containing the elements to remove.
 	 * @return void
 	 */
-	public function removeAll(Tx_Extbase_Persistence_ObjectStorage $objectStorage) {
+	public function removeAll(\TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage $objectStorage) {
 		foreach ($objectStorage as $object) {
 			$this->detach($object);
 		}
@@ -261,7 +264,7 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	 * @throws RuntimeException
 	 */
 	public function serialize() {
-		throw new RuntimeException('An ObjectStorage instance cannot be serialized.', 1267700868);
+		throw new \RuntimeException('An ObjectStorage instance cannot be serialized.', 1267700868);
 	}
 
 	/**
@@ -271,7 +274,7 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	 * @throws RuntimeException
 	 */
 	public function unserialize($serialized) {
-		throw new RuntimeException('A ObjectStorage instance cannot be unserialized.', 1267700870);
+		throw new \RuntimeException('A ObjectStorage instance cannot be unserialized.', 1267700870);
 	}
 
 	/**
@@ -291,5 +294,8 @@ class Tx_Extbase_Persistence_ObjectStorage implements Countable, Iterator, Array
 	public function _isDirty() {
 		return $this->isModified;
 	}
+
 }
+
+
 ?>

@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Tests\Unit\Property\TypeConverter;
 
 /*                                                                        *
  * This script belongs to the Extbase framework.                            *
@@ -19,22 +20,21 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Testcase for the Float converter
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @covers Tx_Extbase_Property_TypeConverter_StringToIntegerConverter<extended>
  */
-class Tx_Extbase_Tests_Unit_Property_TypeConverter_FloatConverterTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class FloatConverterTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Extbase_Property_TypeConverterInterface
+	 * @var \TYPO3\CMS\Extbase\Property\TypeConverterInterface
 	 */
 	protected $converter;
 
 	public function setUp() {
-		$this->converter = new Tx_Extbase_Property_TypeConverter_FloatConverter();
+		$this->converter = new \TYPO3\CMS\Extbase\Property\TypeConverter\FloatConverter();
 	}
 
 	/**
@@ -70,5 +70,8 @@ class Tx_Extbase_Tests_Unit_Property_TypeConverter_FloatConverterTest extends Tx
 	public function getSourceChildPropertiesToBeConvertedShouldReturnEmptyArray() {
 		$this->assertEquals(array(), $this->converter->getSourceChildPropertiesToBeConverted('myString'));
 	}
+
 }
+
+
 ?>

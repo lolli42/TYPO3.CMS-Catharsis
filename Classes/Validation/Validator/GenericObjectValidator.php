@@ -1,30 +1,31 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This class is a backport of the corresponding class of FLOW3.
-*  All credits go to the v5 team.
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Validation\Validator;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * A generic object validator which allows for specifying property validators
  *
@@ -33,17 +34,15 @@
  * @version $Id$
  * @scope prototype
  */
-class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_Validation_Validator_AbstractObjectValidator {
+class GenericObjectValidator extends \TYPO3\CMS\Extbase\Validation\Validator\AbstractObjectValidator {
 
 	/**
 	 * @var array
 	 */
 	protected $propertyValidators = array();
 
-
 	/**
-	 *
-	 * @var Tx_Extbase_Persistence_ObjectStorage
+	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage
 	 */
 	static protected $instancesCurrentlyUnderValidation;
 
@@ -53,36 +52,30 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 * If at least one error occurred, the result is FALSE.
 	 *
 	 * @param mixed $object
-	 * @return Tx_Extbase_Error_Result
+	 * @return \TYPO3\CMS\Extbase\Error\Result
 	 * @api
 	 */
 	public function validate($object) {
-		$messages = new Tx_Extbase_Error_Result();
-
+		$messages = new \TYPO3\CMS\Extbase\Error\Result();
 		if (self::$instancesCurrentlyUnderValidation === NULL) {
-			self::$instancesCurrentlyUnderValidation = new Tx_Extbase_Persistence_ObjectStorage();
+			self::$instancesCurrentlyUnderValidation = new \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage();
 		}
-
 		if ($object === NULL) {
 			return $messages;
 		}
-
 		if (!is_object($object)) {
-			$messages->addError(new Tx_Extbase_Validation_Error('Object expected, "%1$d" given.', 1241099149, array(gettype($object))));
+			$messages->addError(new \TYPO3\CMS\Extbase\Validation\Error('Object expected, "%1$d" given.', 1241099149, array(gettype($object))));
 			return $messages;
 		}
-
 		if (self::$instancesCurrentlyUnderValidation->contains($object)) {
 			return $messages;
 		} else {
 			self::$instancesCurrentlyUnderValidation->attach($object);
 		}
-
 		foreach ($this->propertyValidators as $propertyName => $validators) {
 			$propertyValue = $this->getPropertyValue($object, $propertyName);
 			$this->checkProperty($propertyValue, $validators, $messages->forProperty($propertyName));
 		}
-
 		self::$instancesCurrentlyUnderValidation->detach($object);
 		return $messages;
 	}
@@ -97,12 +90,11 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 * @return mixed
 	 */
 	protected function getPropertyValue($object, $propertyName) {
-			// TODO: add support for lazy loading proxies, if needed
-
-		if (Tx_Extbase_Reflection_ObjectAccess::isPropertyGettable($object, $propertyName)) {
-			return Tx_Extbase_Reflection_ObjectAccess::getProperty($object, $propertyName);
+		// TODO: add support for lazy loading proxies, if needed
+		if (\TYPO3\CMS\Extbase\Reflection\ObjectAccess::isPropertyGettable($object, $propertyName)) {
+			return \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($object, $propertyName);
 		} else {
-			return Tx_Extbase_Reflection_ObjectAccess::getProperty($object, $propertyName, TRUE);
+			return \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($object, $propertyName, TRUE);
 		}
 	}
 
@@ -112,12 +104,11 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 *
 	 * @param mixed $value The value to be validated
 	 * @param array $validators The validators to be called on the value
-	 * @param Tx_Extbase_Error_Result $messages the result object to which the validation errors should be added
+	 * @param \TYPO3\CMS\Extbase\Error\Result $messages the result object to which the validation errors should be added
 	 * @return void
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-
-	protected function checkProperty($value, $validators, Tx_Extbase_Error_Result $messages) {
+	protected function checkProperty($value, $validators, \TYPO3\CMS\Extbase\Error\Result $messages) {
 		foreach ($validators as $validator) {
 			$messages->merge($validator->validate($value));
 		}
@@ -138,7 +129,6 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 			$this->addError('Value is no object.', 1241099148);
 			return FALSE;
 		}
-
 		$result = TRUE;
 		foreach (array_keys($this->propertyValidators) as $propertyName) {
 			if ($this->isPropertyValid($value, $propertyName) === FALSE) {
@@ -171,12 +161,15 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 * @deprecated since Extbase 1.4.0, will be removed in Extbase 6.0
 	 */
 	public function isPropertyValid($object, $propertyName) {
-		if (!is_object($object)) throw new InvalidArgumentException('Object expected, ' . gettype($object) . ' given.', 1241099149);
-		if (!isset($this->propertyValidators[$propertyName])) return TRUE;
-
+		if (!is_object($object)) {
+			throw new \InvalidArgumentException(('Object expected, ' . gettype($object)) . ' given.', 1241099149);
+		}
+		if (!isset($this->propertyValidators[$propertyName])) {
+			return TRUE;
+		}
 		$result = TRUE;
 		foreach ($this->propertyValidators[$propertyName] as $validator) {
-			if ($validator->isValid(Tx_Extbase_Reflection_ObjectAccess::getProperty($object, $propertyName)) === FALSE) {
+			if ($validator->isValid(\TYPO3\CMS\Extbase\Reflection\ObjectAccess::getProperty($object, $propertyName)) === FALSE) {
 				$this->addErrorsForProperty($validator->getErrors(), $propertyName);
 				$result = FALSE;
 			}
@@ -192,7 +185,7 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 */
 	protected function addErrorsForProperty($errors, $propertyName) {
 		if (!isset($this->errors[$propertyName])) {
-			$this->errors[$propertyName] = new Tx_Extbase_Validation_PropertyError($propertyName);
+			$this->errors[$propertyName] = new \TYPO3\CMS\Extbase\Validation\PropertyError($propertyName);
 		}
 		$this->errors[$propertyName]->addErrors($errors);
 	}
@@ -201,16 +194,18 @@ class Tx_Extbase_Validation_Validator_GenericObjectValidator extends Tx_Extbase_
 	 * Adds the given validator for validation of the specified property.
 	 *
 	 * @param string $propertyName Name of the property to validate
-	 * @param Tx_Extbase_Validation_Validator_ValidatorInterface $validator The property validator
+	 * @param \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface $validator The property validator
 	 * @return void
 	 * @api
 	 */
-	public function addPropertyValidator($propertyName, Tx_Extbase_Validation_Validator_ValidatorInterface $validator) {
+	public function addPropertyValidator($propertyName, \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface $validator) {
 		if (!isset($this->propertyValidators[$propertyName])) {
-			$this->propertyValidators[$propertyName] = new Tx_Extbase_Persistence_ObjectStorage;
+			$this->propertyValidators[$propertyName] = new \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage();
 		}
 		$this->propertyValidators[$propertyName]->attach($validator);
 	}
+
 }
+
 
 ?>

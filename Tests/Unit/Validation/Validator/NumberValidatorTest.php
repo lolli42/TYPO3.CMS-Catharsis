@@ -1,5 +1,4 @@
 <?php
-
 /*                                                                        *
  * This script belongs to the Extbase framework.                            *
  *                                                                        *
@@ -19,23 +18,23 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-require_once('AbstractValidatorTestcase.php');
+require_once 'AbstractValidatorTestcase.php';
+namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /**
  * Testcase for the number validator
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Tx_Extbase_Tests_Unit_Validation_Validator_NumberValidatorTest extends Tx_Extbase_Tests_Unit_Validation_Validator_AbstractValidatorTestcase {
+class NumberValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
-	protected $validatorClassName = 'Tx_Extbase_Validation_Validator_NumberValidator';
+	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\NumberValidator';
 
 	/**
 	 * @test
 	 */
 	public function numberValidatorReturnsTrueForASimpleInteger() {
-		$numberValidator = new Tx_Extbase_Validation_Validator_NumberValidator();
+		$numberValidator = new \Tx_Extbase_Validation_Validator_NumberValidator();
 		$this->assertFalse($numberValidator->validate(1029437)->hasErrors());
 	}
 
@@ -43,11 +42,13 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_NumberValidatorTest extends Tx_
 	 * @test
 	 */
 	public function numberValidatorReturnsFalseForAString() {
-		$expectedResult = new Tx_Extbase_Error_Result();
-		$expectedResult->addError(new Tx_Extbase_Validation_Error('The given subject was not a valid number.', 1221563685));
-		$numberValidator = new Tx_Extbase_Validation_Validator_NumberValidator();
+		$expectedResult = new \Tx_Extbase_Error_Result();
+		$expectedResult->addError(new \Tx_Extbase_Validation_Error('The given subject was not a valid number.', 1221563685));
+		$numberValidator = new \Tx_Extbase_Validation_Validator_NumberValidator();
 		$this->assertEquals($expectedResult, $numberValidator->validate('not a number'));
 	}
+
 }
+
 
 ?>

@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Tests\Unit\Domain\Model;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -23,27 +25,24 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * Testcase for Tx_Extbase_Domain_Model_FileMount.
  *
  * @author Markus Günther <mail@markus-guenther.de>
- *
  * @package Extbase
- *
  * @scope prototype
  * @entity
  * @api
  */
-class Tx_Extbase_Tests_Unit_Domain_Model_FileMountTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class FileMountTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Extbase_Domain_Model_FileMount
+	 * @var \TYPO3\CMS\Extbase\Domain\Model\FileMount
 	 */
 	protected $fixture = NULL;
 
 	public function setUp() {
-		$this->fixture = new Tx_Extbase_Domain_Model_FileMount();
+		$this->fixture = new \TYPO3\CMS\Extbase\Domain\Model\FileMount();
 	}
 
 	public function tearDown() {
@@ -54,10 +53,7 @@ class Tx_Extbase_Tests_Unit_Domain_Model_FileMountTest extends Tx_Extbase_Tests_
 	 * @test
 	 */
 	public function getTitleInitiallyReturnsEmptyString() {
-		$this->assertSame(
-			'',
-			$this->fixture->getTitle()
-		);
+		$this->assertSame('', $this->fixture->getTitle());
 	}
 
 	/**
@@ -66,21 +62,14 @@ class Tx_Extbase_Tests_Unit_Domain_Model_FileMountTest extends Tx_Extbase_Tests_
 	public function setTitleSetsTitle() {
 		$title = 'foobar mount';
 		$this->fixture->setTitle($title);
-
-		$this->assertSame(
-			$title,
-			$this->fixture->getTitle()
-		);
+		$this->assertSame($title, $this->fixture->getTitle());
 	}
 
 	/**
 	 * @test
 	 */
 	public function getPathInitiallyReturnsEmptyString() {
-		$this->assertSame(
-			'',
-			$this->fixture->getPath()
-		);
+		$this->assertSame('', $this->fixture->getPath());
 	}
 
 	/**
@@ -89,20 +78,14 @@ class Tx_Extbase_Tests_Unit_Domain_Model_FileMountTest extends Tx_Extbase_Tests_
 	public function setPathSetsPath() {
 		$path = 'foo/bar/';
 		$this->fixture->setPath($path);
-
-		$this->assertSame(
-			$path,
-			$this->fixture->getPath()
-		);
+		$this->assertSame($path, $this->fixture->getPath());
 	}
 
 	/**
 	 * @test
 	 */
 	public function getIsAbsolutePathInitiallyReturnsFalse() {
-		$this->assertFalse(
-			$this->fixture->getIsAbsolutePath()
-		);
+		$this->assertFalse($this->fixture->getIsAbsolutePath());
 	}
 
 	/**
@@ -110,10 +93,10 @@ class Tx_Extbase_Tests_Unit_Domain_Model_FileMountTest extends Tx_Extbase_Tests_
 	 */
 	public function setIsAbsolutePathCanSetBaseIsAbsolutePathToTrue() {
 		$this->fixture->setIsAbsolutePath(TRUE);
-
-		$this->assertTrue(
-			$this->fixture->getIsAbsolutePath()
-		);
+		$this->assertTrue($this->fixture->getIsAbsolutePath());
 	}
+
 }
+
+
 ?>

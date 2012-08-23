@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Property;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,15 +20,14 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Configuration object for the property mapper.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-interface Tx_Extbase_Property_PropertyMappingConfigurationInterface {
-
+interface PropertyMappingConfigurationInterface
+{
 	/**
 	 * @param string $propertyName
 	 * @return TRUE if the given propertyName should be mapped, FALSE otherwise.
@@ -39,7 +39,7 @@ interface Tx_Extbase_Property_PropertyMappingConfigurationInterface {
 	 * Returns the sub-configuration for the passed $propertyName. Must ALWAYS return a valid configuration object!
 	 *
 	 * @param string $propertyName
-	 * @return Tx_Extbase_Property_PropertyMappingConfigurationInterface the property mapping configuration for the given $propertyName.
+	 * @return \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface the property mapping configuration for the given $propertyName.
 	 * @api
 	 */
 	public function getConfigurationFor($propertyName);
@@ -65,10 +65,11 @@ interface Tx_Extbase_Property_PropertyMappingConfigurationInterface {
 	/**
 	 * This method can be used to explicitely force a TypeConverter to be used for this Configuration.
 	 *
-	 * @return Tx_Extbase_Property_TypeConverterInterface The type converter to be used for this particular PropertyMappingConfiguration, or NULL if the system-wide configured type converter should be used.
+	 * @return \TYPO3\CMS\Extbase\Property\TypeConverterInterface The type converter to be used for this particular PropertyMappingConfiguration, or NULL if the system-wide configured type converter should be used.
 	 * @api
 	 */
 	public function getTypeConverter();
+
 }
 
 ?>

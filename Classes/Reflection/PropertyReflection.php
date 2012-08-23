@@ -1,27 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Christopher Hlubek <hlubek@networkteam.com>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Reflection;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Christopher Hlubek <hlubek@networkteam.com>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Extended version of the ReflectionProperty
  *
@@ -29,7 +30,7 @@
  * @subpackage Reflection
  * @version $Id$
  */
-class Tx_Extbase_Reflection_PropertyReflection extends ReflectionProperty {
+class PropertyReflection extends \ReflectionProperty {
 
 	/**
 	 * @var Tx_Extbase_Reflection_DocCommentParser: An instance of the doc comment parser
@@ -82,18 +83,19 @@ class Tx_Extbase_Reflection_PropertyReflection extends ReflectionProperty {
 	 *
 	 * @param object $object Instance of the declaring class Tx_Extbase_Reflection_to read the value from
 	 * @return mixed Value of the property
-	 * @throws Tx_Extbase_Reflection_Exception
+	 * @throws \TYPO3\CMS\Extbase\Reflection\Exception
 	 * @todo Maybe support private properties as well, as of PHP 5.3.0 we can do
-	 *   $obj = new Foo;
-	 *   $prop = new ReflectionProperty('Foo', 'y'); // y is private member
-	 *   $prop->setAccessible(true);
-	 *   var_dump($prop->getValue($obj)); // int(2)
 	 */
 	public function getValue($object = NULL) {
-		if (!is_object($object)) throw new Tx_Extbase_Reflection_Exception('$object is of type ' . gettype($object) . ', instance of class ' . $this->class . ' expected.', 1210859212);
-		if ($this->isPublic()) return parent::getValue($object);
-		if ($this->isPrivate()) throw new Tx_Extbase_Reflection_Exception('Cannot return value of private property "' . $this->name . '.', 1210859206);
-
+		if (!is_object($object)) {
+			throw new \TYPO3\CMS\Extbase\Reflection\Exception(((('$object is of type ' . gettype($object)) . ', instance of class ') . $this->class) . ' expected.', 1210859212);
+		}
+		if ($this->isPublic()) {
+			return parent::getValue($object);
+		}
+		if ($this->isPrivate()) {
+			throw new \TYPO3\CMS\Extbase\Reflection\Exception(('Cannot return value of private property "' . $this->name) . '.', 1210859206);
+		}
 		parent::setAccessible(TRUE);
 		return parent::getValue($object);
 	}
@@ -102,15 +104,17 @@ class Tx_Extbase_Reflection_PropertyReflection extends ReflectionProperty {
 	 * Returns an instance of the doc comment parser and
 	 * runs the parse() method.
 	 *
-	 * @return Tx_Extbase_Reflection_DocCommentParser
+	 * @return \TYPO3\CMS\Extbase\Reflection\DocCommentParser
 	 */
 	protected function getDocCommentParser() {
 		if (!is_object($this->docCommentParser)) {
-			$this->docCommentParser = new Tx_Extbase_Reflection_DocCommentParser;
+			$this->docCommentParser = new \TYPO3\CMS\Extbase\Reflection\DocCommentParser();
 			$this->docCommentParser->parseDocComment($this->getDocComment());
 		}
 		return $this->docCommentParser;
 	}
+
 }
+
 
 ?>

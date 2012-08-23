@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Domain\Model;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -23,19 +25,16 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * This model represents a file mount.
  *
  * @author Markus Günther <mail@markus-guenther.de>
- *
  * @package Extbase
- *
  * @scope prototype
  * @entity
  * @api
  */
-class Tx_Extbase_Domain_Model_FileMount extends Tx_Extbase_DomainObject_AbstractEntity {
+class FileMount extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
 	/**
 	 * Title of the file mount.
@@ -120,5 +119,8 @@ class Tx_Extbase_Domain_Model_FileMount extends Tx_Extbase_DomainObject_Abstract
 	public function setIsAbsolutePath($value) {
 		$this->isAbsolutePath = $value;
 	}
+
 }
+
+
 ?>

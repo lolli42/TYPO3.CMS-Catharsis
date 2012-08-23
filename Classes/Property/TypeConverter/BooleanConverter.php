@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Property\TypeConverter;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,14 +20,13 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Converter which transforms simple types to a boolean, by simply casting it.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class Tx_Extbase_Property_TypeConverter_BooleanConverter extends Tx_Extbase_Property_TypeConverter_AbstractTypeConverter implements t3lib_Singleton {
+class BooleanConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\AbstractTypeConverter implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var array<string>
@@ -49,12 +49,15 @@ class Tx_Extbase_Property_TypeConverter_BooleanConverter extends Tx_Extbase_Prop
 	 * @param string $source
 	 * @param string $targetType
 	 * @param array $convertedChildProperties
-	 * @param Tx_Extbase_Property_PropertyMappingConfigurationInterface $configuration
+	 * @param \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration
 	 * @return boolean
 	 * @api
 	 */
-	public function convertFrom($source, $targetType, array $convertedChildProperties = array(), Tx_Extbase_Property_PropertyMappingConfigurationInterface $configuration = NULL) {
-		return (boolean)$source;
+	public function convertFrom($source, $targetType, array $convertedChildProperties = array(), \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration = NULL) {
+		return (bool) $source;
 	}
+
 }
+
+
 ?>

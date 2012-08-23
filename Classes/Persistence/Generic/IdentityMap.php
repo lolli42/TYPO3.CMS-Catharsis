@@ -1,30 +1,31 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This class is a backport of the corresponding class of FLOW3.
-*  All credits go to the v5 team.
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * An identity mapper to map nodes to objects
  *
@@ -32,10 +33,10 @@
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @see Tx_Extbase_Persistence_Mapper_DataMapper , Tx_Extbase_Persistence_Backend
  */
-class Tx_Extbase_Persistence_IdentityMap implements t3lib_Singleton {
+class IdentityMap implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
-	 * @var Tx_Extbase_Persistence_ObjectStorage
+	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage
 	 */
 	protected $objectMap;
 
@@ -50,7 +51,7 @@ class Tx_Extbase_Persistence_IdentityMap implements t3lib_Singleton {
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
 	public function __construct() {
-		$this->objectMap = new Tx_Extbase_Persistence_ObjectStorage();
+		$this->objectMap = new \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage();
 	}
 
 	/**
@@ -98,9 +99,11 @@ class Tx_Extbase_Persistence_IdentityMap implements t3lib_Singleton {
 	 * @author Karsten Dambekalns <karsten@typo3.org>
 	 */
 	public function getIdentifierByObject($object) {
-		if (!is_object($object)) throw new InvalidArgumentException('Object expected, ' . gettype($object) . ' given.', 1246892972);
+		if (!is_object($object)) {
+			throw new \InvalidArgumentException(('Object expected, ' . gettype($object)) . ' given.', 1246892972);
+		}
 		if (!isset($this->objectMap[$object])) {
-			throw new Tx_Extbase_Persistence_Exception_UnknownObject('The given object (class: ' . get_class($object) . ') is not registered in this Identity Map.', 1246892970);
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnknownObjectException(('The given object (class: ' . get_class($object)) . ') is not registered in this Identity Map.', 1246892970);
 		}
 		return $this->objectMap[$object];
 	}
@@ -130,4 +133,6 @@ class Tx_Extbase_Persistence_IdentityMap implements t3lib_Singleton {
 	}
 
 }
+
+
 ?>

@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Error;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,10 +20,9 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
- */
 
+ */
 /**
  * An object representation of a generic warning. Subclass this to create
  * more specific warnings if necessary.
@@ -30,11 +30,14 @@
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class Tx_Extbase_Error_Warning extends Tx_Extbase_Error_Message {
+class Warning extends \TYPO3\CMS\Extbase\Error\Message {
 
 	/**
 	 * @var string
 	 */
 	protected $message = 'Unknown warning';
+
 }
+
+
 ?>

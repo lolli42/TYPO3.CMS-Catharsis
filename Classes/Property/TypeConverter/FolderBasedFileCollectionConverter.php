@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Property\TypeConverter;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,13 +23,13 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * Converter which transforms simple types to Tx_Extbase_Domain_Model_FileCollection.
  *
  * @api experimental! This class is experimental and subject to change!
  */
-class Tx_Extbase_Property_TypeConverter_FolderBasedFileCollectionConverter extends Tx_Extbase_Property_TypeConverter_AbstractFileCollectionConverter implements t3lib_Singleton {
+class FolderBasedFileCollectionConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\AbstractFileCollectionConverter implements \TYPO3\CMS\Core\SingletonInterface {
+
 	/**
 	 * @var array<string>
 	 */
@@ -36,19 +38,22 @@ class Tx_Extbase_Property_TypeConverter_FolderBasedFileCollectionConverter exten
 	/**
 	 * @var string
 	 */
-	protected $targetType = 'Tx_Extbase_Domain_Model_FolderBasedFileCollection';
+	protected $targetType = 'TYPO3\\CMS\\Extbase\\Domain\\Model\\FolderBasedFileCollection';
 
 	/**
 	 * @var string
 	 */
-	protected $expectedObjectType = 't3lib_file_Collection_FolderBasedFileCollection';
+	protected $expectedObjectType = 'TYPO3\\CMS\\Core\\Resource\\Collection\\FolderBasedFileCollection';
 
 	/**
 	 * @param integer $source
-	 * @return t3lib_file_Collection_FolderBasedFileCollection
+	 * @return \TYPO3\CMS\Core\Resource\Collection\FolderBasedFileCollection
 	 */
 	protected function getObject($source) {
 		return $this->fileFactory->getCollectionObject($source);
 	}
+
 }
+
+
 ?>

@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence;
+
 /*                                                                        *
  * This script belongs to the Extbase framework.                          *
  *                                                                        *
@@ -11,7 +13,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A persistence query interface
  *
@@ -19,92 +20,87 @@
  * @subpackage Persistence
  * @api
  */
-interface Tx_Extbase_Persistence_QueryInterface {
-
+interface QueryInterface
+{
 	/**
 	 * The '=' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_EQUAL_TO = 1;
-
 	/**
 	 * The '!=' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_NOT_EQUAL_TO = 2;
-
 	/**
 	 * The '<' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_LESS_THAN = 3;
-
 	/**
 	 * The '<=' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_LESS_THAN_OR_EQUAL_TO = 4;
-
 	/**
 	 * The '>' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_GREATER_THAN = 5;
-
 	/**
 	 * The '>=' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_GREATER_THAN_OR_EQUAL_TO = 6;
-
 	/**
 	 * The 'like' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_LIKE = 7;
-
 	/**
 	 * The 'contains' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_CONTAINS = 8;
-
 	/**
 	 * The 'in' comparison operator.
+	 *
 	 * @api
-	*/
+	 */
 	const OPERATOR_IN = 9;
-
 	/**
 	 * Constants representing the direction when ordering result sets.
 	 */
 	const ORDER_ASCENDING = 'ASC';
 	const ORDER_DESCENDING = 'DESC';
-
 	/**
 	 * An inner join.
 	 */
 	const JCR_JOIN_TYPE_INNER = '{http://www.jcp.org/jcr/1.0}joinTypeInner';
-
 	/**
 	 * A left-outer join.
 	 */
 	const JCR_JOIN_TYPE_LEFT_OUTER = '{http://www.jcp.org/jcr/1.0}joinTypeLeftOuter';
-
 	/**
 	 * A right-outer join.
 	 */
 	const JCR_JOIN_TYPE_RIGHT_OUTER = '{http://www.jcp.org/jcr/1.0}joinTypeRightOuter';
-
 	/**
 	 * Charset of strings in QOM
 	 */
 	const CHARSET = 'utf-8';
-
 	/**
 	 * Gets the node-tuple source for this query.
 	 *
-	 * @return Tx_Extbase_Persistence_QOM_SourceInterface the node-tuple source; non-NULL
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\SourceInterface the node-tuple source; non-NULL
 	 */
 	public function getSource();
 
@@ -119,12 +115,12 @@ interface Tx_Extbase_Persistence_QueryInterface {
 	/**
 	 * Sets the property names to order the result by. Expected like this:
 	 * array(
-	 *  'foo' => Tx_Extbase_Persistence_QueryInterface::ORDER_ASCENDING,
-	 *  'bar' => Tx_Extbase_Persistence_QueryInterface::ORDER_DESCENDING
+	 * 'foo' => Tx_Extbase_Persistence_QueryInterface::ORDER_ASCENDING,
+	 * 'bar' => Tx_Extbase_Persistence_QueryInterface::ORDER_DESCENDING
 	 * )
 	 *
 	 * @param array $orderings The property names to order by
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function setOrderings(array $orderings);
@@ -134,7 +130,7 @@ interface Tx_Extbase_Persistence_QueryInterface {
 	 * for chaining (fluid interface)
 	 *
 	 * @param integer $limit
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function setLimit($limit);
@@ -144,7 +140,7 @@ interface Tx_Extbase_Persistence_QueryInterface {
 	 * allow for chaining (fluid interface)
 	 *
 	 * @param integer $offset
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function setOffset($offset);
@@ -154,7 +150,7 @@ interface Tx_Extbase_Persistence_QueryInterface {
 	 * for chaining (fluid interface)
 	 *
 	 * @param object $constraint Some constraint, depending on the backend
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function matching($constraint);
@@ -281,18 +277,20 @@ interface Tx_Extbase_Persistence_QueryInterface {
 	 * Sets the Query Settings. These Query settings must match the settings expected by
 	 * the specific Storage Backend.
 	 *
-	 * @param Tx_Extbase_Persistence_QuerySettingsInterface $querySettings The Query Settings
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The Query Settings
 	 * @return void
 	 * @api This method is not part of FLOW3 API
 	 */
-	public function setQuerySettings(Tx_Extbase_Persistence_QuerySettingsInterface $querySettings);
+	public function setQuerySettings(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings);
 
 	/**
 	 * Returns the Query Settings.
 	 *
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface $querySettings The Query Settings
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The Query Settings
 	 * @api This method is not part of FLOW3 API
 	 */
 	public function getQuerySettings();
+
 }
+
 ?>

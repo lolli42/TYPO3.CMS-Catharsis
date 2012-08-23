@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Domain\Repository;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -23,18 +25,16 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * Repository for Tx_Extbase_Domain_Model_BackendUser.
  *
  * @author Markus Günther <mail@markus-guenther.de>
  * @author Oliver Klee <typo3-coding@oliverklee.de>
- *
  * @package Extbase
  * @subpackage Domain\Repository
  * @api
  */
-class Tx_Extbase_Domain_Repository_BackendUserRepository extends Tx_Extbase_Persistence_Repository {
+class BackendUserRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 
 	/**
 	 * Initializes the repository.
@@ -42,10 +42,13 @@ class Tx_Extbase_Domain_Repository_BackendUserRepository extends Tx_Extbase_Pers
 	 * @return void
 	 */
 	public function initializeObject() {
-		/** @var $querySettings Tx_Extbase_Persistence_Typo3QuerySettings */
-		$querySettings = $this->objectManager->create('Tx_Extbase_Persistence_Typo3QuerySettings');
+		/** @var $querySettings \TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings */
+		$querySettings = $this->objectManager->create('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Typo3QuerySettings');
 		$querySettings->setRespectStoragePage(FALSE);
 		$this->setDefaultQuerySettings($querySettings);
 	}
+
 }
+
+
 ?>

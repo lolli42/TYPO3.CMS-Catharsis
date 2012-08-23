@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Error;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,38 +20,41 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
- */
 
+ */
 /**
  * An object representation of a generic message. Usually, you will use Error, Warning or Notice instead of this one.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class Tx_Extbase_Error_Message {
+class Message {
 
 	/**
 	 * The default (english) error message
+	 *
 	 * @var string
 	 */
 	protected $message = 'Unknown message';
 
 	/**
 	 * The error code
+	 *
 	 * @var string
 	 */
 	protected $code;
 
 	/**
 	 * The message arguments. Will be replaced in the message body.
+	 *
 	 * @var array
 	 */
 	protected $arguments = array();
 
 	/**
 	 * An optional title for the message (used eg. in flashMessages).
+	 *
 	 * @var string
 	 */
 	protected $title = '';
@@ -73,6 +77,7 @@ class Tx_Extbase_Error_Message {
 
 	/**
 	 * Returns the error message
+	 *
 	 * @return string The error message
 	 * @api
 	 */
@@ -82,6 +87,7 @@ class Tx_Extbase_Error_Message {
 
 	/**
 	 * Returns the error code
+	 *
 	 * @return string The error code
 	 * @api
 	 */
@@ -117,7 +123,7 @@ class Tx_Extbase_Error_Message {
 	 */
 	public function render() {
 		if (!empty($this->arguments)) {
-			 return vsprintf($this->message, $this->arguments);
+			return vsprintf($this->message, $this->arguments);
 		} else {
 			return $this->message;
 		}
@@ -132,6 +138,8 @@ class Tx_Extbase_Error_Message {
 	public function __toString() {
 		return $this->render();
 	}
+
 }
+
 
 ?>

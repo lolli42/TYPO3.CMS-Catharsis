@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Property\Exception;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,13 +20,15 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A "Duplicate Type Converter" Exception
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Tx_Extbase_Property_Exception_DuplicateTypeConverterException extends Tx_Extbase_Property_Exception {
+class DuplicateTypeConverterException extends \TYPO3\CMS\Extbase\Property\Exception {
+
 
 }
+
+
 ?>

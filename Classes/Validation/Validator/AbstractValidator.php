@@ -1,30 +1,31 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This class is a backport of the corresponding class of FLOW3.
-*  All credits go to the v5 team.
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Validation\Validator;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Abstract validator
  *
@@ -32,7 +33,8 @@
  * @subpackage Validation\Validator
  * @version $Id$
  */
-abstract class Tx_Extbase_Validation_Validator_AbstractValidator implements Tx_Extbase_Validation_Validator_ValidatorInterface {
+abstract class AbstractValidator implements \TYPO3\CMS\Extbase\Validation\Validator\ValidatorInterface {
+
 	/**
 	 * @var array
 	 */
@@ -45,7 +47,7 @@ abstract class Tx_Extbase_Validation_Validator_AbstractValidator implements Tx_E
 	protected $errors = array();
 
 	/**
-	 * @var Tx_Extbase_Error_Result
+	 * @var \TYPO3\CMS\Extbase\Error\Result
 	 */
 	protected $result;
 
@@ -64,11 +66,11 @@ abstract class Tx_Extbase_Validation_Validator_AbstractValidator implements Tx_E
 	 * the Error Messages object which occured.
 	 *
 	 * @param mixed $value The value that should be validated
-	 * @return Tx_Extbase_Error_Result
+	 * @return \TYPO3\CMS\Extbase\Error\Result
 	 * @api
 	 */
 	public function validate($value) {
-		$this->result = new Tx_Extbase_Error_Result();
+		$this->result = new \TYPO3\CMS\Extbase\Error\Result();
 		$this->isValid($value);
 		return $this->result;
 	}
@@ -114,12 +116,14 @@ abstract class Tx_Extbase_Validation_Validator_AbstractValidator implements Tx_E
 	 */
 	protected function addError($message, $code, array $arguments = array(), $title = '') {
 		if ($this->result !== NULL) {
-				// backwards compatibility before Extbase 1.4.0: we cannot expect the "result" object to be there.
-			$this->result->addError(new Tx_Extbase_Validation_Error($message, $code, $arguments, $title));
+			// backwards compatibility before Extbase 1.4.0: we cannot expect the "result" object to be there.
+			$this->result->addError(new \TYPO3\CMS\Extbase\Validation\Error($message, $code, $arguments, $title));
 		}
 		// the following is @deprecated since Extbase 1.4.0:
-		$this->errors[] = new Tx_Extbase_Validation_Error($message, $code, $arguments, $title);
+		$this->errors[] = new \TYPO3\CMS\Extbase\Validation\Error($message, $code, $arguments, $title);
 	}
+
 }
+
 
 ?>

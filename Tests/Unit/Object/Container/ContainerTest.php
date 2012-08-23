@@ -1,29 +1,29 @@
 <?php
 /***************************************************************
-*  Copyright notice
-*  (c) 2010 Daniel Pötzinger
-*  (c) 2010 Bastian Waidelich <bastian@typo3.org>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
-
-require_once(t3lib_extMgm::extPath('extbase') . 'Tests/Unit/Object/Container/Fixtures/Testclasses.php');
-require_once(t3lib_extMgm::extPath('extbase') . 'Tests/Unit/Object/Container/Fixtures/NamespaceTestclasses.php');
+ *  Copyright notice
+ *  (c) 2010 Daniel Pötzinger
+ *  (c) 2010 Bastian Waidelich <bastian@typo3.org>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
+require_once \TYPO3\CMS\Core\Extension\ExtensionManager::extPath('extbase') . 'Tests/Unit/Object/Container/Fixtures/Testclasses.php';
+require_once \TYPO3\CMS\Core\Extension\ExtensionManager::extPath('extbase') . 'Tests/Unit/Object/Container/Fixtures/NamespaceTestclasses.php';
+namespace TYPO3\CMS\Extbase\Tests\Unit\Object\Container;
 
 /**
  * Testcase for class t3lib_object_Container.
@@ -33,25 +33,24 @@ require_once(t3lib_extMgm::extPath('extbase') . 'Tests/Unit/Object/Container/Fix
  * @package TYPO3
  * @subpackage t3lib
  */
-class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class ContainerTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Extbase_Object_Container_Container
+	 * @var \TYPO3\CMS\Extbase\Object\Container\Container
 	 */
 	private $container;
 
 	/**
-	 * @var Tx_Extbase_Object_Container_ClassInfo
+	 * @var \TYPO3\CMS\Extbase\Object\Container\ClassInfo
 	 */
 	private $cachedClassInfo;
 
 	public function setUp() {
-			//our mocked cache will allways indicate that he has nothing in the cache to force that we get the real classinfo
-		$mockedCache = $this->getMock('Tx_Extbase_Object_Container_ClassInfoCache', array('get'));
+		//our mocked cache will allways indicate that he has nothing in the cache to force that we get the real classinfo
+		$mockedCache = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\Container\\ClassInfoCache', array('get'));
 		$mockedCache->expects($this->any())->method('get')->will($this->returnValue(FALSE));
 		$mockedCache->expects($this->never())->method('has');
-
-		$this->container = $this->getMock('Tx_Extbase_Object_Container_Container', array('log', 'getClassInfoCache'));
+		$this->container = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\Container\\Container', array('log', 'getClassInfoCache'));
 		$this->container->expects($this->any())->method('getClassInfoCache')->will($this->returnValue($mockedCache));
 	}
 
@@ -67,8 +66,8 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 * @test
 	 */
 	public function getInstanceReturnsInstanceOfSimpleNamespacedClass() {
-		$object = $this->container->getInstance('Tx\Extbase\Object\Container\Fixtures\NamespacedClass');
-		$this->assertInstanceOf('Tx\Extbase\Object\Container\Fixtures\NamespacedClass', $object);
+		$object = $this->container->getInstance('TYPO3\\CMS\\Extbase\\Tests\\Unit\\Object\\Container\\Fixtures\\NamespacedClass');
+		$this->assertInstanceOf('TYPO3\\CMS\\Extbase\\Tests\\Unit\\Object\\Container\\Fixtures\\NamespacedClass', $object);
 	}
 
 	/**
@@ -109,7 +108,7 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Object_Exception
+	 * @expectedException \TYPO3\CMS\Extbase\Object\Exception
 	 */
 	public function getInstanceThrowsExceptionWhenTryingToInstanciateASingletonWithConstructorParameters() {
 		$this->container->getInstance('t3lib_object_tests_amixed_array_singleton', array('somevalue'));
@@ -130,7 +129,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function getInstancePassesGivenParameterToTheNewObject() {
 		$mockObject = $this->getMock('t3lib_object_tests_c');
-
 		$object = $this->container->getInstance('t3lib_object_tests_a', array($mockObject));
 		$this->assertInstanceOf('t3lib_object_tests_a', $object);
 		$this->assertSame($mockObject, $object->c);
@@ -142,7 +140,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	public function getInstanceReturnsAFreshInstanceIfObjectIsNoSingleton() {
 		$object1 = $this->container->getInstance('t3lib_object_tests_a');
 		$object2 = $this->container->getInstance('t3lib_object_tests_a');
-
 		$this->assertNotSame($object1, $object2);
 	}
 
@@ -152,13 +149,12 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	public function getInstanceReturnsSameInstanceInstanceIfObjectIsSingleton() {
 		$object1 = $this->container->getInstance('t3lib_object_tests_singleton');
 		$object2 = $this->container->getInstance('t3lib_object_tests_singleton');
-
 		$this->assertSame($object1, $object2);
 	}
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Object_Exception_CannotBuildObject
+	 * @expectedException \TYPO3\CMS\Extbase\Object\Exception\CannotBuildObjectException
 	 */
 	public function getInstanceThrowsExceptionIfPrototypeObjectsWiredViaConstructorInjectionContainCyclicDependencies() {
 		$this->container->getInstance('t3lib_object_tests_cyclic1WithSetterDependency');
@@ -166,7 +162,7 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Object_Exception_CannotBuildObject
+	 * @expectedException \TYPO3\CMS\Extbase\Object\Exception\CannotBuildObjectException
 	 */
 	public function getInstanceThrowsExceptionIfPrototypeObjectsWiredViaSetterInjectionContainCyclicDependencies() {
 		$this->container->getInstance('t3lib_object_tests_cyclic1');
@@ -174,7 +170,7 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Object_Exception
+	 * @expectedException \TYPO3\CMS\Extbase\Object\Exception
 	 */
 	public function getInstanceThrowsExceptionIfClassWasNotFound() {
 		$this->container->getInstance('nonextistingclass_bla');
@@ -184,20 +180,16 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 * @test
 	 */
 	public function getInstanceUsesClassNameSha1AsCacheKey() {
-		$className = 'Tx\Extbase\Object\Container\Fixtures\NamespacedClass';
+		$className = 'TYPO3\\CMS\\Extbase\\Tests\\Unit\\Object\\Container\\Fixtures\\NamespacedClass';
 		$classNameHash = sha1($className);
-
-		$mockedCache = $this->getMock('Tx_Extbase_Object_Container_ClassInfoCache', array('has', 'set', 'get'));
-		$container = $this->getMock('Tx_Extbase_Object_Container_Container', array('log', 'getClassInfoCache'));
+		$mockedCache = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\Container\\ClassInfoCache', array('has', 'set', 'get'));
+		$container = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\Container\\Container', array('log', 'getClassInfoCache'));
 		$container->expects($this->any())->method('getClassInfoCache')->will($this->returnValue($mockedCache));
-
 		$mockedCache->expects($this->never())->method('has');
 		$mockedCache->expects($this->once())->method('get')->with($classNameHash)->will($this->returnValue(FALSE));
 		$mockedCache->expects($this->once())->method('set')->with($classNameHash, $this->anything())->will($this->returnCallback(array($this, 'setClassInfoCacheCallback')));
-
 		$container->getInstance($className);
-
-		$this->assertInstanceOf('Tx_Extbase_Object_Container_ClassInfo', $this->cachedClassInfo);
+		$this->assertInstanceOf('TYPO3\\CMS\\Extbase\\Object\\Container\\ClassInfo', $this->cachedClassInfo);
 		$this->assertEquals($className, $this->cachedClassInfo->getClassName());
 	}
 
@@ -205,10 +197,10 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 * Callback for getInstanceUsesClassNameSha1AsCacheKey
 	 *
 	 * @param string $id
-	 * @param Tx_Extbase_Object_Container_ClassInfo $value
+	 * @param \TYPO3\CMS\Extbase\Object\Container\ClassInfo $value
 	 * @return void
 	 */
-	public function setClassInfoCacheCallback($id, Tx_Extbase_Object_Container_ClassInfo $value) {
+	public function setClassInfoCacheCallback($id, \Tx_Extbase_Object_Container_ClassInfo $value) {
 		$this->cachedClassInfo = $value;
 	}
 
@@ -235,7 +227,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 		$this->container->registerImplementation('t3lib_object_tests_someinterface', 't3lib_object_tests_someimplementation');
 		$object = $this->container->getInstance('t3lib_object_tests_needsinterface');
 		$this->assertInstanceOf('t3lib_object_tests_needsinterface', $object);
-
 		$this->assertInstanceOf('t3lib_object_tests_someinterface', $object->dependency);
 		$this->assertInstanceOf('t3lib_object_tests_someimplementation', $object->dependency);
 	}
@@ -254,7 +245,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function singletonWhichRequiresPrototypeViaSetterInjectionWorksAndAddsDebugMessage() {
 		$this->container->expects($this->once())->method('log')->with('The singleton "t3lib_object_singletonNeedsPrototype" needs a prototype in "injectDependency". This is often a bad code smell; often you rather want to inject a singleton.', 1);
-
 		$object = $this->container->getInstance('t3lib_object_singletonNeedsPrototype');
 		$this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
 	}
@@ -264,7 +254,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function singletonWhichRequiresSingletonViaSetterInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_singletonNeedsSingleton');
 		$this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
 	}
@@ -274,7 +263,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function prototypeWhichRequiresPrototypeViaSetterInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_prototypeNeedsPrototype');
 		$this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
 	}
@@ -284,7 +272,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function prototypeWhichRequiresSingletonViaSetterInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_prototypeNeedsSingleton');
 		$this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
 	}
@@ -294,7 +281,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function singletonWhichRequiresPrototypeViaConstructorInjectionWorksAndAddsDebugMessage() {
 		$this->container->expects($this->once())->method('log')->with('The singleton "t3lib_object_singletonNeedsPrototypeInConstructor" needs a prototype in the constructor. This is often a bad code smell; often you rather want to inject a singleton.', 1);
-
 		$object = $this->container->getInstance('t3lib_object_singletonNeedsPrototypeInConstructor');
 		$this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
 	}
@@ -304,7 +290,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function singletonWhichRequiresSingletonViaConstructorInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_singletonNeedsSingletonInConstructor');
 		$this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
 	}
@@ -314,7 +299,6 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function prototypeWhichRequiresPrototypeViaConstructorInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_prototypeNeedsPrototypeInConstructor');
 		$this->assertInstanceOf('t3lib_object_prototype', $object->dependency);
 	}
@@ -324,9 +308,11 @@ class Tx_Extbase_Tests_Unit_Object_Container_ContainerTest extends Tx_Extbase_Te
 	 */
 	public function prototypeWhichRequiresSingletonViaConstructorInjectionWorks() {
 		$this->container->expects($this->never())->method('log');
-
 		$object = $this->container->getInstance('t3lib_object_prototypeNeedsSingletonInConstructor');
 		$this->assertInstanceOf('t3lib_object_singleton', $object->dependency);
 	}
+
 }
+
+
 ?>

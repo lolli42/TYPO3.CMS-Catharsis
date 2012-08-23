@@ -1,30 +1,31 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This class is a backport of the corresponding class of FLOW3.
-*  All credits go to the v5 team.
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Query settings. This class is NOT part of the FLOW3 API.
  * It reflects the settings unique to TYPO3 4.x.
@@ -34,16 +35,18 @@
  * @version $Id$
  * @api
  */
-class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistence_QuerySettingsInterface {
+class Typo3QuerySettings implements \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface {
 
 	/**
 	 * Flag if the storage page should be respected for the query.
+	 *
 	 * @var boolean
 	 */
 	protected $respectStoragePage = TRUE;
 
 	/**
 	 * the pid(s) of the storage page(s) that should be respected for the query.
+	 *
 	 * @var array
 	 */
 	protected $storagePageIds = array();
@@ -52,6 +55,7 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * A flag indicating whether all or some enable fields should be ignored. If TRUE, all enable fields are ignored.
 	 * If--in addition to this--enableFieldsToBeIgnored is set, only fields specified there are ignored. If FALSE, all
 	 * enable fields are taken into account, regardless of the enableFieldsToBeIgnored setting.
+	 *
 	 * @var boolean
 	 */
 	protected $ignoreEnableFields = FALSE;
@@ -59,24 +63,28 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	/**
 	 * An array of column names in the enable columns array (array keys in $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']),
 	 * to be ignored while building the query statement
+	 *
 	 * @var array
 	 */
 	protected $enableFieldsToBeIgnored = array();
 
 	/**
 	 * Flag whether deleted records should be included in the result set.
+	 *
 	 * @var boolean
 	 */
 	protected $includeDeleted = FALSE;
 
 	/**
 	 * Flag if the sys_language_uid should be respected (default is TRUE).
+	 *
 	 * @var boolean
 	 */
 	protected $respectSysLanguage = TRUE;
 
 	/**
 	 * Flag if the the query result should be returned as raw QueryResult.
+	 *
 	 * @var boolean
 	 */
 	protected $returnRawQueryResult = FALSE;
@@ -86,10 +94,10 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * initializeObject is responsible for handling that.
 	 */
 	public function initializeObject() {
-		/** @var $objectManager Tx_Extbase_Object_ObjectManager */
-		$objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
-		/** @var $configurationManager Tx_Extbase_Configuration_ConfigurationManagerInterface */
-		$configurationManager = $objectManager->get('Tx_Extbase_Configuration_ConfigurationManagerInterface');
+		/** @var $objectManager \TYPO3\CMS\Extbase\Object\ObjectManager */
+		$objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		/** @var $configurationManager \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface */
+		$configurationManager = $objectManager->get('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
 		if (TYPO3_MODE === 'BE' && $configurationManager->isFeatureEnabled('ignoreAllEnableFieldsInBe')) {
 			$this->setIgnoreEnableFields(TRUE);
 		}
@@ -99,7 +107,7 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * Sets the flag if the storage page should be respected for the query.
 	 *
 	 * @param boolean $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface (fluent interface)
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface (fluent interface)
 	 * @api
 	 */
 	public function setRespectStoragePage($respectStoragePage) {
@@ -120,7 +128,7 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * Sets the pid(s) of the storage page(s) that should be respected for the query.
 	 *
 	 * @param array $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface instance of $this to allow method chaining
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setStoragePageIds(array $storagePageIds) {
@@ -140,7 +148,7 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * Sets the flag if a  and language overlay should be performed.
 	 *
 	 * @param boolean $respectEnableFields TRUE if a  and language overlay should be performed.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface (fluent interface)
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface (fluent interface)
 	 * @api
 	 */
 	public function setRespectSysLanguage($respectSysLanguage) {
@@ -161,14 +169,14 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * Sets the flag if the visibility in the frontend should be respected.
 	 *
 	 * @param boolean $respectEnableFields TRUE if the visibility in the frontend should be respected. If TRUE, the "enable fields" of TYPO3 will be added to the query statement.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface (fluent interface)
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface (fluent interface)
 	 * @deprecated since Extbase 6.0, will be removed in Extbase 6.2. Use setIgnoreEnableFields() and setEnableFieldsToBeIgnored() instead.
 	 * @see setIgnoreEnableFields()
 	 * @see setEnableFieldsToBeIgnored()
 	 * @api
 	 */
 	public function setRespectEnableFields($respectEnableFields) {
-		t3lib_div::logDeprecatedFunction();
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		$this->setIgnoreEnableFields(!$respectEnableFields);
 		$this->setIncludeDeleted(!$respectEnableFields);
 		return $this;
@@ -183,7 +191,7 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	 * @see getEnableFieldsToBeIgnored()
 	 */
 	public function getRespectEnableFields() {
-		t3lib_div::logDeprecatedFunction();
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		return !($this->getIgnoreEnableFields() && $this->getIncludeDeleted());
 	}
 
@@ -278,4 +286,6 @@ class Tx_Extbase_Persistence_Typo3QuerySettings implements Tx_Extbase_Persistenc
 	}
 
 }
+
+
 ?>

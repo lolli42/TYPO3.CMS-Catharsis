@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence;
+
 /*                                                                        *
  * This script belongs to the Extbase framework.                          *
  *                                                                        *
@@ -11,7 +13,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Contract for a repository
  *
@@ -19,8 +20,8 @@
  * @subpackage Persistence
  * @api
  */
-interface Tx_Extbase_Persistence_RepositoryInterface {
-
+interface RepositoryInterface
+{
 	/**
 	 * Adds an object to this repository.
 	 *
@@ -111,8 +112,8 @@ interface Tx_Extbase_Persistence_RepositoryInterface {
 	 * Sets the property names to order the result by per default.
 	 * Expected like this:
 	 * array(
-	 *  'foo' => Tx_Extbase_Persistence_QueryInterface::ORDER_ASCENDING,
-	 *  'bar' => Tx_Extbase_Persistence_QueryInterface::ORDER_DESCENDING
+	 * 'foo' => Tx_Extbase_Persistence_QueryInterface::ORDER_ASCENDING,
+	 * 'bar' => Tx_Extbase_Persistence_QueryInterface::ORDER_DESCENDING
 	 * )
 	 *
 	 * @param array $defaultOrderings The property names to order by
@@ -124,19 +125,20 @@ interface Tx_Extbase_Persistence_RepositoryInterface {
 	/**
 	 * Sets the default query settings to be used in this repository
 	 *
-	 * @param Tx_Extbase_Persistence_QuerySettingsInterface $defaultQuerySettings The query settings to be used by default
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $defaultQuerySettings The query settings to be used by default
 	 * @return void
 	 * @api
 	 */
-	public function setDefaultQuerySettings(Tx_Extbase_Persistence_QuerySettingsInterface $defaultQuerySettings);
+	public function setDefaultQuerySettings(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $defaultQuerySettings);
 
 	/**
 	 * Returns a query for objects of this repository
 	 *
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function createQuery();
 
 }
+
 ?>

@@ -1,34 +1,35 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2011 Claus Due, Wildside A/S <claus@wildside.dk>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Scheduler;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2011 Claus Due, Wildside A/S <claus@wildside.dk>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Scheduler task to execute CommandController commands
  *
  * @package Extbase
  * @subpackage Scheduler
  */
-class Tx_Extbase_Scheduler_Task extends Tx_Scheduler_Task {
+class Task extends Tx_Scheduler_Task {
 
 	/**
 	 * @var string
@@ -46,17 +47,17 @@ class Tx_Extbase_Scheduler_Task extends Tx_Scheduler_Task {
 	protected $defaults = array();
 
 	/**
-	 * @var Tx_Extbase_Object_ObjectManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @var Tx_Extbase_MVC_CLI_CommandManager
+	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager
 	 */
 	protected $commandManager;
 
 	/**
-	 * @var Tx_Extbase_Scheduler_TaskExecutor
+	 * @var \TYPO3\CMS\Extbase\Scheduler\TaskExecutor
 	 */
 	protected $taskExecutor;
 
@@ -66,14 +67,14 @@ class Tx_Extbase_Scheduler_Task extends Tx_Scheduler_Task {
 	 * @return boolean TRUE on successful execution, FALSE on error
 	 */
 	public function execute() {
-		$this->objectManager = t3lib_div::makeInstance('Tx_Extbase_Object_ObjectManager');
-		$this->commandManager = $this->objectManager->get('Tx_Extbase_MVC_CLI_CommandManager');
-		$this->taskExecutor = $this->objectManager->get('Tx_Extbase_Scheduler_TaskExecutor');
+		$this->objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		$this->commandManager = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Cli\\CommandManager');
+		$this->taskExecutor = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Scheduler\\TaskExecutor');
 		try {
 			$this->taskExecutor->execute($this);
 			return TRUE;
-		} catch (Exception $e) {
-			t3lib_div::sysLog($e->getMessage(), $this->commandIdentifier, 3);
+		} catch (\Exception $e) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($e->getMessage(), $this->commandIdentifier, 3);
 			return FALSE;
 		}
 	}
@@ -140,9 +141,9 @@ class Tx_Extbase_Scheduler_Task extends Tx_Scheduler_Task {
 		$label = $this->commandIdentifier;
 		if (count($this->arguments) > 0) {
 			$arguments = array();
-			foreach ($this->arguments as $argumentName=>$argumentValue) {
+			foreach ($this->arguments as $argumentName => $argumentValue) {
 				if ($argumentValue != $this->defaults[$argumentName]) {
-					array_push($arguments, $argumentName . '=' . $argumentValue);
+					array_push($arguments, ($argumentName . '=') . $argumentValue);
 				}
 			}
 			$label .= ' ' . implode(', ', $arguments);
@@ -151,5 +152,6 @@ class Tx_Extbase_Scheduler_Task extends Tx_Scheduler_Task {
 	}
 
 }
+
 
 ?>

@@ -1,30 +1,31 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
-*  All rights reserved
-*
-*  This class is a backport of the corresponding class of FLOW3.
-*  All credits go to the v5 team.
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Jochen Rau <jochen.rau@typoplanet.de>
+ *  All rights reserved
+ *
+ *  This class is a backport of the corresponding class of FLOW3.
+ *  All credits go to the v5 team.
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * A query settings interface. This interface is NOT part of the FLOW3 API.
  *
@@ -32,13 +33,13 @@
  * @subpackage Persistence
  * @version $Id$
  */
-interface Tx_Extbase_Persistence_QuerySettingsInterface {
-
+interface QuerySettingsInterface
+{
 	/**
 	 * Sets the flag if the storage page should be respected for the query.
 	 *
 	 * @param boolean $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface instance of $this to allow method chaining
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setRespectStoragePage($respectStoragePage);
@@ -54,7 +55,7 @@ interface Tx_Extbase_Persistence_QuerySettingsInterface {
 	 * Sets the pid(s) of the storage page(s) that should be respected for the query.
 	 *
 	 * @param array $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface instance of $this to allow method chaining
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setStoragePageIds(array $storagePageIds);
@@ -70,7 +71,7 @@ interface Tx_Extbase_Persistence_QuerySettingsInterface {
 	 * Sets the flag if a  and language overlay should be performed.
 	 *
 	 * @param boolean $respectEnableFields TRUE if a  and language overlay should be performed.
-	 * @return Tx_Extbase_Persistence_QuerySettingsInterface instance of $this to allow method chaining
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setRespectSysLanguage($respectSysLanguage);
@@ -81,7 +82,6 @@ interface Tx_Extbase_Persistence_QuerySettingsInterface {
 	 * @return boolean TRUE, if a  and language overlay should be performed; otherwise FALSE.
 	 */
 	public function getRespectSysLanguage();
-
 
 	/**
 	 * Sets a flag indicating whether all or some enable fields should be ignored. If TRUE, all enable fields are ignored.
@@ -141,6 +141,7 @@ interface Tx_Extbase_Persistence_QuerySettingsInterface {
 	 * @return boolean
 	 */
 	public function getIncludeDeleted();
+
 	/**
 	 * Sets the state, if the QueryResult should be returned unmapped.
 	 *
@@ -157,4 +158,5 @@ interface Tx_Extbase_Persistence_QuerySettingsInterface {
 	public function getReturnRawQueryResult();
 
 }
+
 ?>

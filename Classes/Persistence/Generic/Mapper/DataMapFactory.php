@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,7 +23,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * A factory for a data map to map a single table configured in $TCA on a domain object.
  *
@@ -29,65 +30,63 @@
  * @subpackage Persistence\Mapper
  * @version $ID:$
  */
-class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
+class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
-	 * @var Tx_Extbase_Reflection_Service
+	 * @var \TYPO3\CMS\Extbase\Reflection\Service
 	 */
 	protected $reflectionService;
 
 	/**
-	 * @var Tx_Extbase_Configuration_ConfigurationManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
 	 */
 	protected $configurationManager;
 
 	/**
-	 * @var Tx_Extbase_Object_ObjectManagerInterface
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
 	 */
 	protected $objectManager;
 
 	/**
-	 * @var t3lib_cache_Manager
+	 * @var \TYPO3\CMS\Core\Cache\CacheManager
 	 */
 	protected $cacheManager;
 
 	/**
-	 * @var t3lib_cache_frontend_VariableFrontend
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
 	 */
 	protected $dataMapCache;
-
-
 
 	/**
 	 * Injects the reflection service
 	 *
-	 * @param Tx_Extbase_Reflection_Service $reflectionService
+	 * @param \TYPO3\CMS\Extbase\Reflection\Service $reflectionService
 	 * @return void
 	 */
-	public function injectReflectionService(Tx_Extbase_Reflection_Service $reflectionService) {
+	public function injectReflectionService(\TYPO3\CMS\Extbase\Reflection\Service $reflectionService) {
 		$this->reflectionService = $reflectionService;
 	}
 
 	/**
-	 * @param Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
 	 * @return void
 	 */
-	public function injectConfigurationManager(Tx_Extbase_Configuration_ConfigurationManagerInterface $configurationManager) {
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
 	}
 
 	/**
-	 * @param Tx_Extbase_Object_ObjectManagerInterface $objectManager
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
 	 * @return void
 	 */
-	public function injectObjectManager(Tx_Extbase_Object_ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
 	/**
-	 * @param t3lib_cache_Manager $cacheManager
+	 * @param \TYPO3\CMS\Core\Cache\CacheManager $cacheManager
 	 */
-	public function injectCacheManager(t3lib_cache_Manager $cacheManager) {
+	public function injectCacheManager(\TYPO3\CMS\Core\Cache\CacheManager $cacheManager) {
 		$this->cacheManager = $cacheManager;
 	}
 
@@ -106,13 +105,13 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * represents.
 	 *
 	 * @param string $className The class name you want to fetch the Data Map for
-	 * @return Tx_Extbase_Persistence_Mapper_DataMap The data map
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap The data map
 	 */
 	public function buildDataMap($className) {
-		$dataMap = $this->dataMapCache->get($className);
+		$dataMap = $this->dataMapCache->get(str_replace('\\', '%', $className));
 		if ($dataMap === FALSE) {
 			$dataMap = $this->buildDataMapInternal($className);
-			$this->dataMapCache->set($className, $dataMap);
+			$this->dataMapCache->set(str_replace('\\', '%', $className), $dataMap);
 		}
 		return $dataMap;
 	}
@@ -123,26 +122,35 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * represents.
 	 *
 	 * @param string $className The class name you want to fetch the Data Map for
-	 * @throws Tx_Extbase_Persistence_Exception_InvalidClass
-	 * @return Tx_Extbase_Persistence_Mapper_DataMap The data map
+	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidClassException
+	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap The data map
 	 */
 	protected function buildDataMapInternal($className) {
 		if (!class_exists($className)) {
-			throw new Tx_Extbase_Persistence_Exception_InvalidClass('Could not find class definition for name "' . $className . '". This could be caused by a mis-spelling of the class name in the class definition.');
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidClassException(('Could not find class definition for name "' . $className) . '". This could be caused by a mis-spelling of the class name in the class definition.');
 		}
-
 		$recordType = NULL;
 		$subclasses = array();
-		$tableName = strtolower($className);
+		if (strpos($className, '\\') !== FALSE) {
+			$classNameParts = explode('\\', $className, 4);
+			if (((isset($classNameParts[0]) && $classNameParts[0] === 'TYPO3') && isset($classNameParts[1])) && $classNameParts[1] === 'CMS') {
+				$extensionKey = $classNameParts[2];
+				$classNameWithoutVendorAndProduct = $classNameParts[3];
+			} else {
+				$extensionKey = $classNameParts[1];
+				$classNameWithoutVendorAndProduct = $classNameParts[2];
+			}
+			$classNameWithoutVendorAndProduct = str_replace('\\', '_', $classNameWithoutVendorAndProduct);
+			$tableName = strtolower('tx_' . $extensionKey . '_' . $classNameWithoutVendorAndProduct);
+		} else {
+			$tableName = strtolower($className);
+		}
 		$columnMapping = array();
-
-		$frameworkConfiguration = $this->configurationManager->getConfiguration(Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
+		$frameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
 		$classSettings = $frameworkConfiguration['persistence']['classes'][$className];
 		if ($classSettings !== NULL) {
 			if (isset($classSettings['subclasses']) && is_array($classSettings['subclasses'])) {
-				$subclasses = $this->resolveSubclassesRecursive(
-					$frameworkConfiguration['persistence']['classes'], $classSettings['subclasses']
-				);
+				$subclasses = $this->resolveSubclassesRecursive($frameworkConfiguration['persistence']['classes'], $classSettings['subclasses']);
 			}
 			if (isset($classSettings['mapping']['recordType']) && strlen($classSettings['mapping']['recordType']) > 0) {
 				$recordType = $classSettings['mapping']['recordType'];
@@ -152,36 +160,34 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 			}
 			$classHierarchy = array_merge(array($className), class_parents($className));
 			foreach ($classHierarchy as $currentClassName) {
-				if (in_array($currentClassName, array('Tx_Extbase_DomainObject_AbstractEntity', 'Tx_Extbase_DomainObject_AbstractValueObject'))) {
+				if (in_array($currentClassName, array('TYPO3\\CMS\\Extbase\\DomainObject\\AbstractEntity', 'TYPO3\\CMS\\Extbase\\DomainObject\\AbstractValueObject'))) {
 					break;
 				}
 				$currentClassSettings = $frameworkConfiguration['persistence']['classes'][$currentClassName];
 				if ($currentClassSettings !== NULL) {
 					if (isset($currentClassSettings['mapping']['columns']) && is_array($currentClassSettings['mapping']['columns'])) {
-						$columnMapping = t3lib_div::array_merge_recursive_overrule($columnMapping, $currentClassSettings['mapping']['columns'], 0, FALSE); // FALSE means: do not include empty values form 2nd array
+						$columnMapping = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($columnMapping, $currentClassSettings['mapping']['columns'], 0, FALSE);
 					}
 				}
 			}
 		}
-
-		$dataMap = $this->objectManager->create('Tx_Extbase_Persistence_Mapper_DataMap', $className, $tableName, $recordType, $subclasses);
+		$dataMap = $this->objectManager->create('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Mapper\\DataMap', $className, $tableName, $recordType, $subclasses);
 		$dataMap = $this->addMetaDataColumnNames($dataMap, $tableName);
-
 		// $classPropertyNames = $this->reflectionService->getClassPropertyNames($className);
 		$tcaColumnsDefinition = $this->getColumnsDefinition($tableName);
-		$tcaColumnsDefinition = t3lib_div::array_merge_recursive_overrule($tcaColumnsDefinition, $columnMapping); // TODO Is this is too powerful?
+		$tcaColumnsDefinition = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($tcaColumnsDefinition, $columnMapping);
+		// TODO Is this is too powerful?
 		foreach ($tcaColumnsDefinition as $columnName => $columnDefinition) {
 			if (isset($columnDefinition['mapOnProperty'])) {
 				$propertyName = $columnDefinition['mapOnProperty'];
 			} else {
-				$propertyName = t3lib_div::underscoredToLowerCamelCase($columnName);
+				$propertyName = \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToLowerCamelCase($columnName);
 			}
 			// if (in_array($propertyName, $classPropertyNames)) { // TODO Enable check for property existance
-				$columnMap = new Tx_Extbase_Persistence_Mapper_ColumnMap($columnName, $propertyName);
-				$propertyMetaData = $this->reflectionService->getClassSchema($className)->getProperty($propertyName);
-				$columnMap = $this->setRelations($columnMap, $columnDefinition['config'], $propertyMetaData);
-				$dataMap->addColumnMap($columnMap);
-			// }
+			$columnMap = new \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap($columnName, $propertyName);
+			$propertyMetaData = $this->reflectionService->getClassSchema($className)->getProperty($propertyName);
+			$columnMap = $this->setRelations($columnMap, $columnDefinition['config'], $propertyMetaData);
+			$dataMap->addColumnMap($columnMap);
 		}
 		// debug($dataMap);
 		return $dataMap;
@@ -197,15 +203,13 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 */
 	protected function resolveSubclassesRecursive(array $classesConfiguration, array $subclasses) {
 		$allSubclasses = array();
-
 		foreach ($subclasses as $subclass) {
 			$allSubclasses[] = $subclass;
 			if (isset($classesConfiguration[$subclass]['subclasses']) && is_array($classesConfiguration[$subclass]['subclasses'])) {
 				$childSubclasses = $this->resolveSubclassesRecursive($classesConfiguration, $classesConfiguration[$subclass]['subclasses']);
-				$allSubclasses = array_merge($allSubclasses,$childSubclasses);
+				$allSubclasses = array_merge($allSubclasses, $childSubclasses);
 			}
 		}
-
 		return $allSubclasses;
 	}
 
@@ -241,23 +245,45 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 		if (TYPO3_MODE === 'FE') {
 			$GLOBALS['TSFE']->includeTCA();
 		}
-		t3lib_div::loadTCA($tableName);
+		\TYPO3\CMS\Core\Utility\GeneralUtility::loadTCA($tableName);
 	}
 
-	protected function addMetaDataColumnNames(Tx_Extbase_Persistence_Mapper_DataMap $dataMap, $tableName) {
+	protected function addMetaDataColumnNames(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap $dataMap, $tableName) {
 		$controlSection = $GLOBALS['TCA'][$tableName]['ctrl'];
 		$dataMap->setPageIdColumnName('pid');
-		if (isset($controlSection['tstamp'])) $dataMap->setModificationDateColumnName($controlSection['tstamp']);
-		if (isset($controlSection['crdate'])) $dataMap->setCreationDateColumnName($controlSection['crdate']);
-		if (isset($controlSection['cruser_id'])) $dataMap->setCreatorColumnName($controlSection['cruser_id']);
-		if (isset($controlSection['delete'])) $dataMap->setDeletedFlagColumnName($controlSection['delete']);
-		if (isset($controlSection['languageField'])) $dataMap->setLanguageIdColumnName($controlSection['languageField']);
-		if (isset($controlSection['transOrigPointerField'])) $dataMap->setTranslationOriginColumnName($controlSection['transOrigPointerField']);
-		if (isset($controlSection['type'])) $dataMap->setRecordTypeColumnName($controlSection['type']);
-		if (isset($controlSection['enablecolumns']['disabled'])) $dataMap->setDisabledFlagColumnName($controlSection['enablecolumns']['disabled']);
-		if (isset($controlSection['enablecolumns']['starttime'])) $dataMap->setStartTimeColumnName($controlSection['enablecolumns']['starttime']);
-		if (isset($controlSection['enablecolumns']['endtime'])) $dataMap->setEndTimeColumnName($controlSection['enablecolumns']['endtime']);
-		if (isset($controlSection['enablecolumns']['fe_group'])) $dataMap->setFrontEndUserGroupColumnName($controlSection['enablecolumns']['fe_group']);
+		if (isset($controlSection['tstamp'])) {
+			$dataMap->setModificationDateColumnName($controlSection['tstamp']);
+		}
+		if (isset($controlSection['crdate'])) {
+			$dataMap->setCreationDateColumnName($controlSection['crdate']);
+		}
+		if (isset($controlSection['cruser_id'])) {
+			$dataMap->setCreatorColumnName($controlSection['cruser_id']);
+		}
+		if (isset($controlSection['delete'])) {
+			$dataMap->setDeletedFlagColumnName($controlSection['delete']);
+		}
+		if (isset($controlSection['languageField'])) {
+			$dataMap->setLanguageIdColumnName($controlSection['languageField']);
+		}
+		if (isset($controlSection['transOrigPointerField'])) {
+			$dataMap->setTranslationOriginColumnName($controlSection['transOrigPointerField']);
+		}
+		if (isset($controlSection['type'])) {
+			$dataMap->setRecordTypeColumnName($controlSection['type']);
+		}
+		if (isset($controlSection['enablecolumns']['disabled'])) {
+			$dataMap->setDisabledFlagColumnName($controlSection['enablecolumns']['disabled']);
+		}
+		if (isset($controlSection['enablecolumns']['starttime'])) {
+			$dataMap->setStartTimeColumnName($controlSection['enablecolumns']['starttime']);
+		}
+		if (isset($controlSection['enablecolumns']['endtime'])) {
+			$dataMap->setEndTimeColumnName($controlSection['enablecolumns']['endtime']);
+		}
+		if (isset($controlSection['enablecolumns']['fe_group'])) {
+			$dataMap->setFrontEndUserGroupColumnName($controlSection['enablecolumns']['fe_group']);
+		}
 		return $dataMap;
 	}
 
@@ -265,12 +291,12 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * This method tries to determine the type of type of relation to other tables and sets it based on
 	 * the $TCA column configuration
 	 *
-	 * @param Tx_Extbase_Persistence_Mapper_ColumnMap $columnMap The column map
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap $columnMap The column map
 	 * @param string $columnConfiguration The column configuration from $TCA
 	 * @param array $propertyMetaData The property metadata as delivered by the reflection service
 	 * @return void
 	 */
-	protected function setRelations(Tx_Extbase_Persistence_Mapper_ColumnMap $columnMap, $columnConfiguration, $propertyMetaData) {
+	protected function setRelations(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap $columnMap, $columnConfiguration, $propertyMetaData) {
 		if (isset($columnConfiguration)) {
 			if (isset($columnConfiguration['MM']) || isset($columnConfiguration['foreign_selector'])) {
 				$columnMap = $this->setManyToManyRelation($columnMap, $columnConfiguration);
@@ -279,10 +305,10 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 			} elseif (isset($propertyMetaData['type']) && strpos($propertyMetaData['type'], '_') !== FALSE) {
 				$columnMap = $this->setOneToOneRelation($columnMap, $columnConfiguration);
 			} else {
-					$columnMap->setTypeOfRelation(Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_NONE);
+				$columnMap->setTypeOfRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_NONE);
 			}
 		} else {
-			$columnMap->setTypeOfRelation(Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_NONE);
+			$columnMap->setTypeOfRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_NONE);
 		}
 		return $columnMap;
 	}
@@ -295,8 +321,8 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * @param string $columnConfiguration The column configuration from $TCA
 	 * @return void
 	 */
-	protected function setOneToOneRelation(Tx_Extbase_Persistence_Mapper_ColumnMap $columnMap, $columnConfiguration) {
-		$columnMap->setTypeOfRelation(Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_HAS_ONE);
+	protected function setOneToOneRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap $columnMap, $columnConfiguration) {
+		$columnMap->setTypeOfRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_ONE);
 		$columnMap->setChildTableName($columnConfiguration['foreign_table']);
 		$columnMap->setChildTableWhereStatement($columnConfiguration['foreign_table_where']);
 		$columnMap->setChildSortByFieldName($columnConfiguration['foreign_sortby']);
@@ -313,8 +339,8 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * @param string $columnConfiguration The column configuration from $TCA
 	 * @return void
 	 */
-	protected function setOneToManyRelation(Tx_Extbase_Persistence_Mapper_ColumnMap $columnMap, $columnConfiguration) {
-		$columnMap->setTypeOfRelation(Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_HAS_MANY);
+	protected function setOneToManyRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap $columnMap, $columnConfiguration) {
+		$columnMap->setTypeOfRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY);
 		$columnMap->setChildTableName($columnConfiguration['foreign_table']);
 		$columnMap->setChildTableWhereStatement($columnConfiguration['foreign_table_where']);
 		$columnMap->setChildSortByFieldName($columnConfiguration['foreign_sortby']);
@@ -331,8 +357,8 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	 * @param string $columnConfiguration The column configuration from $TCA
 	 * @return void
 	 */
-	protected function setManyToManyRelation(Tx_Extbase_Persistence_Mapper_ColumnMap $columnMap, $columnConfiguration) {
-		$columnMap->setTypeOfRelation(Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_HAS_AND_BELONGS_TO_MANY);
+	protected function setManyToManyRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap $columnMap, $columnConfiguration) {
+		$columnMap->setTypeOfRelation(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_AND_BELONGS_TO_MANY);
 		if (isset($columnConfiguration['MM'])) {
 			$columnMap->setChildTableName($columnConfiguration['foreign_table']);
 			$columnMap->setChildTableWhereStatement($columnConfiguration['foreign_table_where']);
@@ -362,7 +388,7 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 			$columnMap->setChildKeyFieldName($childKeyFieldName);
 			$columnMap->setChildSortByFieldName($columnConfiguration['foreign_sortby']);
 		} else {
-			throw new Tx_Extbase_Persistence_Exception_UnsupportedRelation('The given information to build a many-to-many-relation was not sufficient. Check your TCA definitions. mm-relations with IRRE must have at least a defined "MM" or "foreign_selector".', 1268817963);
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedRelationException('The given information to build a many-to-many-relation was not sufficient. Check your TCA definitions. mm-relations with IRRE must have at least a defined "MM" or "foreign_selector".', 1268817963);
 		}
 		if ($this->getControlSection($columnMap->getRelationTableName()) !== NULL) {
 			$columnMap->setRelationTablePageIdColumnName('pid');
@@ -371,3 +397,6 @@ class Tx_Extbase_Persistence_Mapper_DataMapFactory implements t3lib_Singleton {
 	}
 
 }
+
+
+?>

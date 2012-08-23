@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -24,7 +26,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * A proxy that can replace any object and replaces itself in it's parent on
  * first access (call, get, set, isset, unset).
@@ -33,7 +34,7 @@
  * @subpackage Persistence
  * @version $Id$
  */
-class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_ObjectStorage implements Tx_Extbase_Persistence_LoadingStrategyInterface {
+class LazyObjectStorage extends \TYPO3\CMS\Extbase\Persistence\Generic\ObjectStorage implements \TYPO3\CMS\Extbase\Persistence\Generic\LoadingStrategyInterface {
 
 	/**
 	 * This field is only needed to make debugging easier:
@@ -43,10 +44,10 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	 *
 	 * @var string
 	 */
-	private $warning = 'You should never see this warning. If you do, you probably used PHP array functions like current() on the Tx_Extbase_Persistence_LazyObjectStorage. To retrieve the first result, you can use the rewind() and current() methods.';
+	private $warning = 'You should never see this warning. If you do, you probably used PHP array functions like current() on the TYPO3\\CMS\\Extbase\\Persistence\\Generic\\LazyObjectStorage. To retrieve the first result, you can use the rewind() and current() methods.';
 
 	/**
-	 * @var Tx_Extbase_Persistence_Mapper_DataMapper
+	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper
 	 */
 	protected $dataMapper;
 
@@ -72,7 +73,6 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	protected $fieldValue;
 
 	/**
-	 *
 	 * @var bool
 	 */
 	protected $isInitialized = FALSE;
@@ -103,10 +103,10 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	/**
 	 * Injects the DataMapper to map nodes to objects
 	 *
-	 * @param Tx_Extbase_Persistence_Mapper_DataMapper $dataMapper
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper
 	 * @return void
 	 */
-	public function injectDataMapper(Tx_Extbase_Persistence_Mapper_DataMapper $dataMapper) {
+	public function injectDataMapper(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper $dataMapper) {
 		$this->dataMapper = $dataMapper;
 	}
 
@@ -118,7 +118,6 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	protected function initialize() {
 		if (!$this->isInitialized) {
 			$this->isInitialized = TRUE;
-
 			$objects = $this->dataMapper->fetchRelated($this->parentObject, $this->propertyName, $this->fieldValue, FALSE);
 			foreach ($objects as $object) {
 				parent::attach($object);
@@ -129,7 +128,6 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	}
 
 	// Delegation to the ObjectStorage methods below
-
 	/**
 	 * @see Tx_Extbase_Persistence_ObjectStorage::addAll
 	 */
@@ -162,14 +160,14 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	public function count() {
 		$columnMap = $this->dataMapper->getDataMap(get_class($this->parentObject))->getColumnMap($this->propertyName);
 		$numberOfElements = NULL;
-		if ($columnMap->getTypeOfRelation() === Tx_Extbase_Persistence_Mapper_ColumnMap::RELATION_HAS_MANY) {
+		if ($columnMap->getTypeOfRelation() === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY) {
 			$numberOfElements = $this->dataMapper->countRelated($this->parentObject, $this->propertyName, $this->fieldValue);
 		} else {
 			$this->initialize();
 			$numberOfElements = count($this->storage);
 		}
 		if (is_null($numberOfElements)) {
-			throw new Tx_Extbase_Persistence_Exception('The number of elements could not be determined.', 1252514486);
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception('The number of elements could not be determined.', 1252514486);
 		}
 		return $numberOfElements;
 	}
@@ -225,7 +223,7 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	/**
 	 * @see Tx_Extbase_Persistence_ObjectStorage::offsetSet
 	 */
-	public function offsetSet($object , $info) {
+	public function offsetSet($object, $info) {
 		$this->initialize();
 		parent::offsetSet($object, $info);
 	}
@@ -271,4 +269,6 @@ class Tx_Extbase_Persistence_LazyObjectStorage extends Tx_Extbase_Persistence_Ob
 	}
 
 }
+
+
 ?>

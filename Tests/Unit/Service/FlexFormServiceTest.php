@@ -1,44 +1,43 @@
 <?php
+namespace TYPO3\CMS\Extbase\Tests\Unit\Service;
+
 /***************************************************************
-*  Copyright notice
-*
-*  (c) 2011 Felix Oertel <typo3@foertel.com>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
-
-
+ *  Copyright notice
+ *
+ *  (c) 2011 Felix Oertel <typo3@foertel.com>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Testcase for class Tx_Extbase_Service_FlexFormService
  *
  * @package Extbase
  * @subpackage extbase
  */
-
-class Tx_Extbase_Tests_Unit_Service_FlexFormServiceTest extends Tx_Extbase_Tests_Unit_BaseTestCase {
+class FlexFormServiceTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 
 	/**
-	 * @var Tx_Extbase_Service_FlexFormService
+	 * @var \TYPO3\CMS\Extbase\Service\FlexFormService
 	 */
 	protected $flexFormService;
 
 	public function setUp() {
-		$this->flexFormService = new Tx_Extbase_Service_FlexFormService();
+		$this->flexFormService = new \TYPO3\CMS\Extbase\Service\FlexFormService();
 	}
 
 	/**
@@ -46,7 +45,6 @@ class Tx_Extbase_Tests_Unit_Service_FlexFormServiceTest extends Tx_Extbase_Tests
 	 */
 	public function convertFlexFormContentToArrayTestData() {
 		$testdata = array();
-
 		$testdata[0] = array(
 			'flexFormXML' => '<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
 <T3FlexForms>
@@ -96,17 +94,16 @@ class Tx_Extbase_Tests_Unit_Service_FlexFormServiceTest extends Tx_Extbase_Tests
 					'bar' => array(
 						1 => array(
 							'baz' => 'Baz1-Value',
-							'bum' => 'Bum1-Value',
+							'bum' => 'Bum1-Value'
 						),
 						2 => array(
 							'baz' => 'Baz2-Value',
-							'bum' => 'Bum2-Value',
-						),
-					),
-				),
-			),
+							'bum' => 'Bum2-Value'
+						)
+					)
+				)
+			)
 		);
-
 		return $testdata;
 	}
 
@@ -120,5 +117,8 @@ class Tx_Extbase_Tests_Unit_Service_FlexFormServiceTest extends Tx_Extbase_Tests
 		$convertedFlexFormArray = $this->flexFormService->convertFlexFormContentToArray($flexFormXML);
 		$this->assertSame($expectedFlexFormArray, $convertedFlexFormArray);
 	}
+
 }
+
+
 ?>

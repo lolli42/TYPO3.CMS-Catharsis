@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence;
+
 /*                                                                        *
  * This script belongs to the Extbase framework.                          *
  *                                                                        *
@@ -11,19 +13,18 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A lazy result list that is returned by Query::execute()
  *
  * @package Extbase
  * @subpackage Persistence
  */
-interface Tx_Extbase_Persistence_QueryResultInterface extends Countable, Iterator, ArrayAccess {
-
+interface QueryResultInterface extends \Countable, \Iterator, \ArrayAccess
+{
 	/**
 	 * Returns a clone of the query object
 	 *
-	 * @return Tx_Extbase_Persistence_QueryInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
 	public function getQuery();
@@ -43,5 +44,7 @@ interface Tx_Extbase_Persistence_QueryResultInterface extends Countable, Iterato
 	 * @api
 	 */
 	public function toArray();
+
 }
+
 ?>

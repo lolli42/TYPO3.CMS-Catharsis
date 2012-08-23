@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence;
+
 /*                                                                        *
  * This script belongs to the Extbase framework.                          *
  *                                                                        *
@@ -11,7 +13,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * A generic Persistence exception
  *
@@ -19,7 +20,10 @@
  * @subpackage Persistence
  * @version $ID:$
  */
-class Tx_Extbase_Persistence_Exception extends Tx_Extbase_Exception {
+class Exception extends \TYPO3\CMS\Extbase\Exception {
+
+
 }
+
 
 ?>

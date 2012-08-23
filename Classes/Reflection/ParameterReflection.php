@@ -1,27 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*
-*  (c) 2009 Christopher Hlubek <hlubek@networkteam.com>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Reflection;
 
+/***************************************************************
+ *  Copyright notice
+ *
+ *  (c) 2009 Christopher Hlubek <hlubek@networkteam.com>
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * Extended version of the ReflectionParameter
  *
@@ -29,7 +30,7 @@
  * @subpackage Reflection
  * @version $Id$
  */
-class Tx_Extbase_Reflection_ParameterReflection extends ReflectionParameter {
+class ParameterReflection extends \ReflectionParameter {
 
 	/**
 	 * The constructor, initializes the reflection parameter
@@ -44,27 +45,27 @@ class Tx_Extbase_Reflection_ParameterReflection extends ReflectionParameter {
 	/**
 	 * Returns the declaring class
 	 *
-	 * @return Tx_Extbase_Reflection_ClassReflection The declaring class
+	 * @return \TYPO3\CMS\Extbase\Reflection\ClassReflection The declaring class
 	 */
 	public function getDeclaringClass() {
-		return new Tx_Extbase_Reflection_ClassReflection(parent::getDeclaringClass()->getName());
+		return new \TYPO3\CMS\Extbase\Reflection\ClassReflection(parent::getDeclaringClass()->getName());
 	}
 
 	/**
 	 * Returns the parameter class
 	 *
-	 * @return Tx_Extbase_Reflection_ClassReflection The parameter class
+	 * @return \TYPO3\CMS\Extbase\Reflection\ClassReflection The parameter class
 	 */
 	public function getClass() {
 		try {
 			$class = parent::getClass();
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			return NULL;
 		}
-
-		return is_object($class) ? new Tx_Extbase_Reflection_ClassReflection($class->getName()) : NULL;
+		return is_object($class) ? new \TYPO3\CMS\Extbase\Reflection\ClassReflection($class->getName()) : NULL;
 	}
 
 }
+
 
 ?>

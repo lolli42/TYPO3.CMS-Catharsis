@@ -1,5 +1,4 @@
 <?php
-
 /*                                                                        *
  * This script belongs to the Extbase framework.                            *
  *                                                                        *
@@ -19,17 +18,17 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-require_once('AbstractValidatorTestcase.php');
+require_once 'AbstractValidatorTestcase.php';
+namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /**
  * Testcase for the number range validator
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Tx_Extbase_Tests_Unit_Validation_Validator_NumberRangeValidatorTest extends Tx_Extbase_Tests_Unit_Validation_Validator_AbstractValidatorTestcase {
+class NumberRangeValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
-	protected $validatorClassName = 'Tx_Extbase_Validation_Validator_NumberRangeValidator';
+	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\NumberRangeValidator';
 
 	/**
 	 * @test
@@ -37,7 +36,6 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_NumberRangeValidatorTest extend
 	 */
 	public function numberRangeValidatorReturnsNoErrorForASimpleIntegerInRange() {
 		$this->validatorOptions(array('minimum' => 0, 'maximum' => 1000));
-
 		$this->assertFalse($this->validator->validate(10.5)->hasErrors());
 	}
 
@@ -67,6 +65,8 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_NumberRangeValidatorTest extend
 		$this->validatorOptions(array('minimum' => 0, 'maximum' => 1000));
 		$this->assertTrue($this->validator->validate('not a number')->hasErrors());
 	}
+
 }
+
 
 ?>

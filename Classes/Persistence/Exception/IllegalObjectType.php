@@ -1,24 +1,8 @@
 <?php
-/*                                                                        *
- * This script belongs to the Extbase framework.                          *
- *                                                                        *
- * This class is a backport of the corresponding class of FLOW3.          *
- * All credits go to the v5 team.                                         *
- *                                                                        *
- * It is free software; you can redistribute it and/or modify it under    *
- * the terms of the GNU Lesser General Public License, either version 3   *
- * of the License, or (at your option) any later version.                 *
- *                                                                        *
- * The TYPO3 project - inspiring people to share!                         *
- *                                                                        */
-
-/**
- * An "Invalid Object Type" exception
- *
- * @package Extbase
- * @subpackage Persistence\Exception
+/*
+ * @deprecated since 6.0, the classname Tx_Extbase_Persistence_Exception_IllegalObjectType and this file is obsolete
+ * and will be removed by 7.0. The class was renamed and is now located at:
+ * typo3/sysext/extbase/Classes/Persistence/Exception/IllegalObjectTypeException.php
  */
-class Tx_Extbase_Persistence_Exception_IllegalObjectType extends Tx_Extbase_Persistence_Exception {
-}
-
+require_once \TYPO3\CMS\Core\Extension\ExtensionManager::extPath('extbase') . 'Classes/Persistence/Exception/IllegalObjectTypeException.php';
 ?>

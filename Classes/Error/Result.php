@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Error;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,14 +20,13 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * Result object for operations dealing with objects, such as the Property Mapper or the Validators.
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class Tx_Extbase_Error_Result {
+class Result {
 
 	/**
 	 * @var array<Tx_Extbase_Error_Error>
@@ -53,33 +53,33 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Add an error to the current Result object
 	 *
-	 * @param Tx_Extbase_Error_Error $error
+	 * @param \TYPO3\CMS\Extbase\Error\Error $error
 	 * @return void
 	 * @api
 	 */
-	public function addError(Tx_Extbase_Error_Error $error) {
+	public function addError(\TYPO3\CMS\Extbase\Error\Error $error) {
 		$this->errors[] = $error;
 	}
 
 	/**
 	 * Add a warning to the current Result object
 	 *
-	 * @param Tx_Extbase_Error_Warning $warning
+	 * @param \TYPO3\CMS\Extbase\Error\Warning $warning
 	 * @return void
 	 * @api
 	 */
-	public function addWarning(Tx_Extbase_Error_Warning $warning) {
+	public function addWarning(\TYPO3\CMS\Extbase\Error\Warning $warning) {
 		$this->warnings[] = $warning;
 	}
 
 	/**
 	 * Add a notice to the current Result object
 	 *
-	 * @param Tx_Extbase_Error_Notice $notice
+	 * @param \TYPO3\CMS\Extbase\Error\Notice $notice
 	 * @return void
 	 * @api
 	 */
-	public function addNotice(Tx_Extbase_Error_Notice $notice) {
+	public function addNotice(\TYPO3\CMS\Extbase\Error\Notice $notice) {
 		$this->notices[] = $notice;
 	}
 
@@ -116,7 +116,7 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Get the first error object of the current Result object (non-recursive)
 	 *
-	 * @return Tx_Extbase_Error_Error
+	 * @return \TYPO3\CMS\Extbase\Error\Error
 	 * @api
 	 */
 	public function getFirstError() {
@@ -127,7 +127,7 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Get the first warning object of the current Result object (non-recursive)
 	 *
-	 * @return Tx_Extbase_Error_Warning
+	 * @return \TYPO3\CMS\Extbase\Error\Warning
 	 * @api
 	 */
 	public function getFirstWarning() {
@@ -138,7 +138,7 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Get the first notice object of the curren Result object (non-recursive)
 	 *
-	 * @return Tx_Extbase_Error_Notice
+	 * @return \TYPO3\CMS\Extbase\Error\Notice
 	 * @api
 	 */
 	public function getFirstNotice() {
@@ -153,7 +153,7 @@ class Tx_Extbase_Error_Result {
 	 * for property "foo.bar"
 	 *
 	 * @param string $propertyPath
-	 * @return Tx_Extbase_Error_Result
+	 * @return \TYPO3\CMS\Extbase\Error\Result
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
@@ -169,20 +169,17 @@ class Tx_Extbase_Error_Result {
 	 * Internal use only!
 	 *
 	 * @param array $pathSegments
-	 * @return Tx_Extbase_Error_Result
+	 * @return \TYPO3\CMS\Extbase\Error\Result
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	public function recurseThroughResult(array $pathSegments) {
 		if (count($pathSegments) === 0) {
 			return $this;
 		}
-
 		$propertyName = array_shift($pathSegments);
-
 		if (!isset($this->propertyResults[$propertyName])) {
-			$this->propertyResults[$propertyName] = new Tx_Extbase_Error_Result();
+			$this->propertyResults[$propertyName] = new \TYPO3\CMS\Extbase\Error\Result();
 		}
-
 		return $this->propertyResults[$propertyName]->recurseThroughResult($pathSegments);
 	}
 
@@ -195,16 +192,14 @@ class Tx_Extbase_Error_Result {
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
 	protected function hasProperty($propertyName, $checkerMethodName) {
-		if (count($this->$propertyName) > 0) {
+		if (count($this->{$propertyName}) > 0) {
 			return TRUE;
 		}
-
 		foreach ($this->propertyResults as $subResult) {
-			if ($subResult->$checkerMethodName()) {
+			if ($subResult->{$checkerMethodName}()) {
 				return TRUE;
 			}
 		}
-
 		return FALSE;
 	}
 
@@ -217,7 +212,6 @@ class Tx_Extbase_Error_Result {
 	public function hasErrors() {
 		return $this->hasProperty('errors', 'hasErrors');
 	}
-
 
 	/**
 	 * Does the current Result object have Warnings? (Recursively)
@@ -292,8 +286,8 @@ class Tx_Extbase_Error_Result {
 	 * @return void
 	 */
 	public function flattenTree($propertyName, &$result, $level) {
-		if (count($this->$propertyName) > 0) {
-			$result[implode('.', $level)] = $this->$propertyName;
+		if (count($this->{$propertyName}) > 0) {
+			$result[implode('.', $level)] = $this->{$propertyName};
 		}
 		foreach ($this->propertyResults as $subPropertyName => $subResult) {
 			array_push($level, $subPropertyName);
@@ -305,16 +299,15 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Merge the given Result object into this one.
 	 *
-	 * @param Tx_Extbase_Error_Result $otherResult
+	 * @param \TYPO3\CMS\Extbase\Error\Result $otherResult
 	 * @return void
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 * @api
 	 */
-	public function merge(Tx_Extbase_Error_Result $otherResult) {
+	public function merge(\TYPO3\CMS\Extbase\Error\Result $otherResult) {
 		$this->mergeProperty($otherResult, 'getErrors', 'addError');
 		$this->mergeProperty($otherResult, 'getWarnings', 'addWarning');
 		$this->mergeProperty($otherResult, 'getNotices', 'addNotice');
-
 		foreach ($otherResult->getSubResults() as $subPropertyName => $subResult) {
 			$this->forProperty($subPropertyName)->merge($subResult);
 		}
@@ -323,15 +316,15 @@ class Tx_Extbase_Error_Result {
 	/**
 	 * Merge a single property from the other result object.
 	 *
-	 * @param Tx_Extbase_Error_Result $otherResult
+	 * @param \TYPO3\CMS\Extbase\Error\Result $otherResult
 	 * @param string $getterName
 	 * @param string $adderName
 	 * @return void
 	 * @author Sebastian Kurfürst <sebastian@typo3.org>
 	 */
-	protected function mergeProperty(Tx_Extbase_Error_Result $otherResult, $getterName, $adderName) {
-		foreach ($otherResult->$getterName() as $messageInOtherResult) {
-			$this->$adderName($messageInOtherResult);
+	protected function mergeProperty(\TYPO3\CMS\Extbase\Error\Result $otherResult, $getterName, $adderName) {
+		foreach ($otherResult->{$getterName}() as $messageInOtherResult) {
+			$this->{$adderName}($messageInOtherResult);
 		}
 	}
 
@@ -343,6 +336,8 @@ class Tx_Extbase_Error_Result {
 	public function getSubResults() {
 		return $this->propertyResults;
 	}
+
 }
+
 
 ?>

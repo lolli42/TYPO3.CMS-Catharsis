@@ -1,5 +1,4 @@
 <?php
-
 /*                                                                        *
  * This script belongs to the Extbase framework.                            *
  *                                                                        *
@@ -19,17 +18,17 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
-require_once('AbstractValidatorTestcase.php');
+require_once 'AbstractValidatorTestcase.php';
+namespace TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator;
 
 /**
  * Testcase for the string length validator
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Tx_Extbase_Tests_Unit_Validation_Validator_StringLengthValidatorTest extends Tx_Extbase_Tests_Unit_Validation_Validator_AbstractValidatorTestcase {
+class StringLengthValidatorTest extends \TYPO3\CMS\Extbase\Tests\Unit\Validation\Validator\AbstractValidatorTestcase {
 
-	protected $validatorClassName = 'Tx_Extbase_Validation_Validator_StringLengthValidator';
+	protected $validatorClassName = 'TYPO3\\CMS\\Extbase\\Validation\\Validator\\StringLengthValidator';
 
 	/**
 	 * @test
@@ -123,11 +122,11 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_StringLengthValidatorTest exten
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Validation_Exception_InvalidValidationOptions
+	 * @expectedException \TYPO3\CMS\Extbase\Validation\Exception\InvalidValidationOptionsException
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function stringLengthValidatorThrowsAnExceptionIfMinLengthIsGreaterThanMaxLength() {
-		$this->validator = $this->getMock('Tx_Extbase_Validation_Validator_StringLengthValidator', array('addError'), array(), '', FALSE);
+		$this->validator = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\Validator\\StringLengthValidator', array('addError'), array(), '', FALSE);
 		$this->validatorOptions(array('minimum' => 101, 'maximum' => 100));
 		$this->validator->validate('1234567890');
 	}
@@ -138,7 +137,6 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_StringLengthValidatorTest exten
 	 */
 	public function stringLengthValidatorInsertsAnErrorObjectIfValidationFails() {
 		$this->validatorOptions(array('minimum' => 50, 'maximum' => 100));
-
 		$this->assertEquals(1, count($this->validator->validate('this is a very short string')->getErrors()));
 	}
 
@@ -147,43 +145,39 @@ class Tx_Extbase_Tests_Unit_Validation_Validator_StringLengthValidatorTest exten
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function stringLengthValidatorCanHandleAnObjectWithAToStringMethod() {
-		$this->validator = $this->getMock('Tx_Extbase_Validation_Validator_StringLengthValidator', array('addError'), array(), '', FALSE);
+		$this->validator = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\Validator\\StringLengthValidator', array('addError'), array(), '', FALSE);
 		$this->validatorOptions(array('minimum' => 5, 'maximum' => 100));
-
 		$className = 'TestClass' . md5(uniqid(mt_rand(), TRUE));
-
-		eval('
-			class ' . $className . ' {
+		eval(('
+			class ' . $className) . ' {
 				public function __toString() {
 					return \'some string\';
 				}
 			}
 		');
-
 		$object = new $className();
 		$this->assertFalse($this->validator->validate($object)->hasErrors());
 	}
 
 	/**
 	 * @test
-	 * @expectedException Tx_Extbase_Validation_Exception_InvalidSubject
+	 * @expectedException \TYPO3\CMS\Extbase\Validation\Exception\InvalidSubjectException
 	 * @author Andreas Förthner <andreas.foerthner@netlogix.de>
 	 */
 	public function stringLengthValidatorThrowsAnExceptionIfTheGivenObjectCanNotBeConvertedToAString() {
-		$this->validator = $this->getMock('Tx_Extbase_Validation_Validator_StringLengthValidator', array('addError'), array(), '', FALSE);
+		$this->validator = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\Validator\\StringLengthValidator', array('addError'), array(), '', FALSE);
 		$this->validatorOptions(array('minimum' => 5, 'maximum' => 100));
-
 		$className = 'TestClass' . md5(uniqid(mt_rand(), TRUE));
-
-		eval('
-			class ' . $className . ' {
+		eval(('
+			class ' . $className) . ' {
 				protected $someProperty;
 			}
 		');
-
 		$object = new $className();
 		$this->validator->validate($object);
 	}
+
 }
+
 
 ?>

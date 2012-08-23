@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Domain\Model;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,7 +23,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * A file collection object (File Abstraction Layer)
  *
@@ -31,7 +32,10 @@
  * @entity
  * @api experimental! This class is experimental and subject to change!
  */
-class Tx_Extbase_Domain_Model_StaticFileCollection extends Tx_Extbase_Domain_Model_AbstractFileCollection {
+class StaticFileCollection extends \TYPO3\CMS\Extbase\Domain\Model\AbstractFileCollection {
+
 
 }
+
+
 ?>

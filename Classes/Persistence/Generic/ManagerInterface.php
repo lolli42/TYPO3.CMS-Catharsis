@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence;
+
 /*                                                                        *
  * This script belongs to the Extbase framework.                          *
  *                                                                        *
@@ -11,7 +13,6 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * The Extbase Persistence Manager interface
  *
@@ -19,12 +20,12 @@
  * @subpackage Persistence
  * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
  */
-interface Tx_Extbase_Persistence_ManagerInterface extends Tx_Extbase_Persistence_PersistenceManagerInterface {
-
+interface PersistenceManagerInterface extends \TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface
+{
 	/**
 	 * Returns the current persistence session
 	 *
-	 * @return Tx_Extbase_Persistence_Session
+	 * @return \TYPO3\CMS\Extbase\Persistence\Session
 	 * @deprecated since Extbase 1.4.0, will be removed in Extbase 7.0
 	 */
 	public function getSession();
@@ -32,9 +33,11 @@ interface Tx_Extbase_Persistence_ManagerInterface extends Tx_Extbase_Persistence
 	/**
 	 * Returns the persistence backend
 	 *
-	 * @return Tx_Extbase_Persistence_BackendInterface
+	 * @return \TYPO3\CMS\Extbase\Persistence\BackendInterface
 	 * @deprecated since Extbase 1.4.0, will be removed in Extbase 7.0
 	 */
 	public function getBackend();
+
 }
+
 ?>

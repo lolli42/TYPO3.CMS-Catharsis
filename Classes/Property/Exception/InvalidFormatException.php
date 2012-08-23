@@ -1,4 +1,5 @@
 <?php
+namespace TYPO3\CMS\Extbase\Property\Exception;
 
 /*                                                                        *
  * This script belongs to the Extbase framework                           *
@@ -19,14 +20,16 @@
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-
 /**
  * An "Invalid Format" Exception
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  * @api
  */
-class Tx_Extbase_Property_Exception_InvalidFormatException extends Tx_Extbase_Property_Exception {
+class InvalidFormatException extends \TYPO3\CMS\Extbase\Property\Exception {
+
 
 }
+
+
 ?>

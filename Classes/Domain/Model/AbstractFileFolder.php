@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Domain\Model;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,7 +23,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * A file object (File Abstraction Layer)
  *
@@ -31,16 +32,17 @@
  * @entity
  * @api experimental! This class is experimental and subject to change!
  */
-abstract class Tx_Extbase_Domain_Model_AbstractFileFolder extends Tx_Extbase_DomainObject_AbstractEntity {
+abstract class AbstractFileFolder extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+
 	/**
 	 * @var t3lib_file_ResourceInterface|t3lib_file_Folder|t3lib_file_AbstractFile
 	 */
 	protected $object;
 
 	/**
-	 * @param t3lib_file_ResourceInterface $object
+	 * @param \TYPO3\CMS\Core\Resource\ResourceInterface $object
 	 */
-	public function setObject(t3lib_file_ResourceInterface $object) {
+	public function setObject(\TYPO3\CMS\Core\Resource\ResourceInterface $object) {
 		$this->object = $object;
 	}
 
@@ -50,5 +52,8 @@ abstract class Tx_Extbase_Domain_Model_AbstractFileFolder extends Tx_Extbase_Dom
 	public function getObject() {
 		return $this->object;
 	}
+
 }
+
+
 ?>

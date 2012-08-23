@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Extbase\Persistence\Generic;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -24,7 +26,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * An interface for the lazy loading strategies.
  *
@@ -32,7 +33,9 @@
  * @subpackage Persistence
  * @version $Id$
  */
-interface Tx_Extbase_Persistence_LoadingStrategyInterface {
+interface LoadingStrategyInterface
+{
 
 }
+
 ?>

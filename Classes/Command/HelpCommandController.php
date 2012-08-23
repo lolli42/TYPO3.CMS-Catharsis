@@ -1,34 +1,35 @@
 <?php
-/***************************************************************
-*  Copyright notice
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+namespace TYPO3\CMS\Extbase\Command;
 
+/***************************************************************
+ *  Copyright notice
+ *  All rights reserved
+ *
+ *  This script is part of the TYPO3 project. The TYPO3 project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *
+ *  This script is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 /**
  * A Command Controller which provides help for available commands
  *
  * @license http://www.gnu.org/licenses/lgpl.html GNU Lesser General Public License, version 3 or later
  */
-class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller_CommandController {
+class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandController {
 
 	/**
-	 * @var Tx_Extbase_MVC_CLI_CommandManager
+	 * @var \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager
 	 */
 	protected $commandManager;
 
@@ -38,11 +39,11 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 	protected $commandsByExtensionsAndControllers = array();
 
 	/**
-	 * @param Tx_Extbase_MVC_CLI_CommandManager $commandManager
+	 * @param \TYPO3\CMS\Extbase\Mvc\Cli\CommandManager $commandManager
 	 * @return void
 	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
-	public function injectCommandManager(Tx_Extbase_MVC_CLI_CommandManager $commandManager) {
+	public function injectCommandManager(\TYPO3\CMS\Extbase\Mvc\Cli\CommandManager $commandManager) {
 		$this->commandManager = $commandManager;
 	}
 
@@ -56,7 +57,7 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 	 * @internal
 	 */
 	public function helpStubCommand() {
-		$this->outputLine('Extbase %s', array(t3lib_extMgm::getExtensionVersion('extbase')));
+		$this->outputLine('Extbase %s', array(\TYPO3\CMS\Core\Extension\ExtensionManager::getExtensionVersion('extbase')));
 		$this->outputLine('usage: ./cli_dispatch.phpsh extbase <command identifier>');
 		$this->outputLine();
 		$this->outputLine('See \'./cli_dispatch.phpsh extbase help\' for a list of all available commands.');
@@ -78,7 +79,7 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 		} else {
 			try {
 				$command = $this->commandManager->getCommandByIdentifier($commandIdentifier);
-			} catch (Tx_Extbase_MVC_Exception_Command $exception) {
+			} catch (\TYPO3\CMS\Extbase\Mvc\Exception\CommandException $exception) {
 				$this->outputLine($exception->getMessage());
 				return;
 			}
@@ -91,12 +92,10 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 	 */
 	protected function displayHelpIndex() {
 		$this->buildCommandsIndex();
-
-		$this->outputLine('Extbase %s', array(t3lib_extMgm::getExtensionVersion('extbase')));
+		$this->outputLine('Extbase %s', array(\TYPO3\CMS\Core\Extension\ExtensionManager::getExtensionVersion('extbase')));
 		$this->outputLine('usage: ./cli_dispatch.phpsh extbase <command identifier>');
 		$this->outputLine();
 		$this->outputLine('The following commands are currently available:');
-
 		foreach ($this->commandsByExtensionsAndControllers as $extensionKey => $commandControllers) {
 			$this->outputLine('');
 			$this->outputLine('EXTENSION "%s":', array(strtoupper($extensionKey)));
@@ -105,7 +104,7 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				foreach ($commands as $command) {
 					$description = wordwrap($command->getShortDescription(), self::MAXIMUM_LINE_LENGTH - 43, PHP_EOL . str_repeat(' ', 43), TRUE);
 					$shortCommandIdentifier = $this->commandManager->getShortestIdentifierForCommand($command);
-					$this->outputLine('%-2s%-40s %s', array(' ', $shortCommandIdentifier , $description));
+					$this->outputLine('%-2s%-40s %s', array(' ', $shortCommandIdentifier, $description));
 				}
 				$this->outputLine();
 			}
@@ -117,17 +116,15 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 	/**
 	 * Render help text for a single command
 	 *
-	 * @param Tx_Extbase_MVC_CLI_Command $command
+	 * @param \TYPO3\CMS\Extbase\Mvc\Cli\Command $command
 	 * @return void
 	 */
-	protected function displayHelpForCommand(Tx_Extbase_MVC_CLI_Command $command) {
+	protected function displayHelpForCommand(\TYPO3\CMS\Extbase\Mvc\Cli\Command $command) {
 		$this->outputLine();
 		$this->outputLine($command->getShortDescription());
 		$this->outputLine();
-
 		$this->outputLine('COMMAND:');
 		$this->outputLine('%-2s%s', array(' ', $command->getCommandIdentifier()));
-
 		$commandArgumentDefinitions = $command->getArgumentDefinitions();
 		$usage = '';
 		$hasOptions = FALSE;
@@ -138,16 +135,12 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				$usage .= sprintf(' <%s>', strtolower(preg_replace('/([A-Z])/', ' $1', $commandArgumentDefinition->getName())));
 			}
 		}
-
-		$usage = './cli_dispatch.phpsh extbase ' . $this->commandManager->getShortestIdentifierForCommand($command) . ($hasOptions ? ' [<options>]' : '') . $usage;
-
+		$usage = (('./cli_dispatch.phpsh extbase ' . $this->commandManager->getShortestIdentifierForCommand($command)) . ($hasOptions ? ' [<options>]' : '')) . $usage;
 		$this->outputLine();
 		$this->outputLine('USAGE:');
 		$this->outputLine('  ' . $usage);
-
 		$argumentDescriptions = array();
 		$optionDescriptions = array();
-
 		if ($command->hasArguments()) {
 			foreach ($commandArgumentDefinitions as $commandArgumentDefinition) {
 				$argumentDescription = $commandArgumentDefinition->getDescription();
@@ -159,7 +152,6 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				}
 			}
 		}
-
 		if (count($argumentDescriptions) > 0) {
 			$this->outputLine();
 			$this->outputLine('ARGUMENTS:');
@@ -167,7 +159,6 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				$this->outputLine($argumentDescription);
 			}
 		}
-
 		if (count($optionDescriptions) > 0) {
 			$this->outputLine();
 			$this->outputLine('OPTIONS:');
@@ -175,7 +166,6 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				$this->outputLine($optionDescription);
 			}
 		}
-
 		if ($command->getDescription() !== '') {
 			$this->outputLine();
 			$this->outputLine('DESCRIPTION:');
@@ -184,7 +174,6 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				$this->outputLine('%-2s%s', array(' ', $descriptionLine));
 			}
 		}
-
 		$relatedCommandIdentifiers = $command->getRelatedCommandIdentifiers();
 		if ($relatedCommandIdentifiers !== array()) {
 			$this->outputLine();
@@ -194,7 +183,6 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 				$this->outputLine('%-2s%s (%s)', array(' ', $commandIdentifier, $command->getShortDescription()));
 			}
 		}
-
 		$this->outputLine();
 	}
 
@@ -202,13 +190,13 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 	 * Displays an error message
 	 *
 	 * @internal
-	 * @param Tx_Extbase_MVC_Exception_Command $exception
+	 * @param \TYPO3\CMS\Extbase\Mvc\Exception\CommandException $exception
 	 * @return void
 	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
-	public function errorCommand(Tx_Extbase_MVC_Exception_Command $exception) {
+	public function errorCommand(\TYPO3\CMS\Extbase\Mvc\Exception\CommandException $exception) {
 		$this->outputLine($exception->getMessage());
-		if ($exception instanceof Tx_Extbase_MVC_Exception_AmbiguousCommandIdentifier) {
+		if ($exception instanceof \TYPO3\CMS\Extbase\Mvc\Exception\AmbiguousCommandIdentifierException) {
 			$this->outputLine('Please specify the complete command identifier. Matched commands:');
 			foreach ($exception->getMatchingCommands() as $matchingCommand) {
 				$this->outputLine('    %s', array($matchingCommand->getCommandIdentifier()));
@@ -240,5 +228,8 @@ class Tx_Extbase_Command_HelpCommandController extends Tx_Extbase_MVC_Controller
 			$this->commandsByExtensionsAndControllers[$extensionKey][$commandControllerClassName][$commandName] = $command;
 		}
 	}
+
 }
+
+
 ?>
