@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Workspaces\Domain\Model;
+
 /***************************************************************
  * Copyright notice
  *
@@ -24,13 +26,13 @@
  *
  * This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * @author Oliver Hader <oliver.hader@typo3.org>
  * @package Workspaces
  * @subpackage Domain
  */
-class Tx_Workspaces_Domain_Model_DatabaseRecord {
+class DatabaseRecord {
+
 	/**
 	 * @var string
 	 */
@@ -51,13 +53,10 @@ class Tx_Workspaces_Domain_Model_DatabaseRecord {
 	 *
 	 * @param string $table Name of the database table
 	 * @param integer $uid Id of the datbase record row
-	 * @return Tx_Workspaces_Domain_Model_DatabaseRecord
+	 * @return \TYPO3\CMS\Workspaces\Domain\Model\DatabaseRecord
 	 */
-	public static function create($table, $uid) {
-		return t3lib_div::makeInstance(
-			'Tx_Workspaces_Domain_Model_DatabaseRecord',
-			$table, $uid
-		);
+	static public function create($table, $uid) {
+		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Domain\\Model\\DatabaseRecord', $table, $uid);
 	}
 
 	/**
@@ -65,13 +64,10 @@ class Tx_Workspaces_Domain_Model_DatabaseRecord {
 	 *
 	 * @param string $table Name of the database table
 	 * @param array $row The relevant database record row
-	 * @return Tx_Workspaces_Domain_Model_DatabaseRecord
+	 * @return \TYPO3\CMS\Workspaces\Domain\Model\DatabaseRecord
 	 */
-	public static function createFromArray($table, array $row) {
-		return t3lib_div::makeInstance(
-			'Tx_Workspaces_Domain_Model_DatabaseRecord',
-			$table, $row['uid'], $row
-		);
+	static public function createFromArray($table, array $row) {
+		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Workspaces\\Domain\\Model\\DatabaseRecord', $table, $row['uid'], $row);
 	}
 
 	/**
@@ -82,7 +78,6 @@ class Tx_Workspaces_Domain_Model_DatabaseRecord {
 	public function __construct($table, $uid, array $row = NULL) {
 		$this->setTable($table);
 		$this->setUid($uid);
-
 		if ($row !== NULL) {
 			$this->setRow($row);
 		}
@@ -152,10 +147,7 @@ class Tx_Workspaces_Domain_Model_DatabaseRecord {
 	 * @return string
 	 */
 	public function getIdentifier() {
-		return implode(
-			':',
-			array($this->getTable(), $this->getUid())
-		);
+		return implode(':', array($this->getTable(), $this->getUid()));
 	}
 
 	/**
@@ -165,11 +157,11 @@ class Tx_Workspaces_Domain_Model_DatabaseRecord {
 	 */
 	protected function loadRow() {
 		if ($this->row === NULL) {
-			$this->row = t3lib_BEfunc::getRecord(
-				$this->getTable(),
-				$this->getUid()
-			);
+			$this->row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($this->getTable(), $this->getUid());
 		}
 	}
+
 }
+
+
 ?>

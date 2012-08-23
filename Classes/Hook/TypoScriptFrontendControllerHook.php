@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Workspaces\ExtDirect;
+namespace TYPO3\CMS\Workspaces\Hook;
 
 /***************************************************************
  *  Copyright notice
@@ -27,35 +27,31 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * ExtDirect toolbar menu
+ * Frontend hooks
  *
  * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  * @package Workspaces
- * @subpackage ExtDirect
+ * @subpackage Service
  */
-class ToolbarMenu {
+class TypoScriptFrontendControllerHook {
 
 	/**
-	 * @param $parameter
-	 * @return array
+	 * @param array $params
+	 * @param \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController $pObj
+	 * @return mixed
 	 */
-	public function toggleWorkspacePreviewMode($parameter) {
-		$newState = $GLOBALS['BE_USER']->user['workspace_preview'] ? '0' : '1';
-		$GLOBALS['BE_USER']->setWorkspacePreview($newState);
-		return array('newWorkspacePreviewState' => $newState);
-	}
-
-	/**
-	 * @param $parameter
-	 * @return array
-	 */
-	public function setWorkspace($parameter) {
-		$workspaceId = intval($parameter->workSpaceId);
-		$GLOBALS['BE_USER']->setWorkspace($workspaceId);
-		return array(
-			'title' => \TYPO3\CMS\Workspaces\Service\WorkspaceService::getWorkspaceTitle($workspaceId),
-			'id' => $workspaceId
-		);
+	public function hook_eofe($params, $pObj) {
+		if ($pObj->fePreview != 2) {
+			return;
+		}
+		$previewParts = $GLOBALS['TSFE']->cObj->cObjGetSingle('FLUIDTEMPLATE', array(
+			'file' => 'EXT:workspaces/Resources/Private/Templates/Preview/Preview.html',
+			'variables.' => array(
+				'backendDomain' => 'TEXT',
+				'backendDomain.' => array('value' => $GLOBALS['BE_USER']->getSessionData('workspaces.backend_domain'))
+			)
+		));
+		$GLOBALS['TSFE']->content = str_ireplace('</body>', $previewParts . '</body>', $GLOBALS['TSFE']->content);
 	}
 
 }

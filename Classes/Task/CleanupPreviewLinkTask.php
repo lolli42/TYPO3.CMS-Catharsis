@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Workspaces\ExtDirect;
+namespace TYPO3\CMS\Workspaces\Task;
 
 /***************************************************************
  *  Copyright notice
@@ -15,9 +15,6 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,35 +24,23 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * ExtDirect toolbar menu
+ * This class provides a task to cleanup ol preview links.
  *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
+ * @author Timo Webler <timo.webler@dkd.de>
  * @package Workspaces
- * @subpackage ExtDirect
+ * @subpackage Service
  */
-class ToolbarMenu {
+class CleanupPreviewLinkTask extends \TYPO3\CMS\Scheduler\Task {
 
 	/**
-	 * @param $parameter
-	 * @return array
+	 * Cleanup old preview links.
+	 * endtime < $GLOBALS['EXEC_TIME']
+	 *
+	 * @return 	boolean
 	 */
-	public function toggleWorkspacePreviewMode($parameter) {
-		$newState = $GLOBALS['BE_USER']->user['workspace_preview'] ? '0' : '1';
-		$GLOBALS['BE_USER']->setWorkspacePreview($newState);
-		return array('newWorkspacePreviewState' => $newState);
-	}
-
-	/**
-	 * @param $parameter
-	 * @return array
-	 */
-	public function setWorkspace($parameter) {
-		$workspaceId = intval($parameter->workSpaceId);
-		$GLOBALS['BE_USER']->setWorkspace($workspaceId);
-		return array(
-			'title' => \TYPO3\CMS\Workspaces\Service\WorkspaceService::getWorkspaceTitle($workspaceId),
-			'id' => $workspaceId
-		);
+	public function execute() {
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_preview', 'endtime < ' . intval($GLOBALS['EXEC_TIME']));
+		return TRUE;
 	}
 
 }
