@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Linkvalidator\Linktype;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -30,21 +32,20 @@
  * @package TYPO3
  * @subpackage linkvalidator
  */
-class tx_linkvalidator_linktype_File extends tx_linkvalidator_linktype_Abstract {
+class FileLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktype {
 
 	/**
 	 * Checks a given URL + /path/filename.ext for validity
 	 *
 	 * @param string $url Url to check
 	 * @param array $softRefEntry The soft reference entry which builds the context of that url
-	 * @param tx_linkvalidator_Processor $reference Parent instance of tx_linkvalidator_Processor
+	 * @param \TYPO3\CMS\Linkvalidator\LinkAnalyzer $reference Parent instance of tx_linkvalidator_Processor
 	 * @return boolean TRUE on success or FALSE on error
 	 */
 	public function checkLink($url, $softRefEntry, $reference) {
-		if (!@file_exists(PATH_site . rawurldecode($url))) {
+		if (!@file_exists((PATH_site . rawurldecode($url)))) {
 			return FALSE;
 		}
-
 		return TRUE;
 	}
 
@@ -59,7 +60,6 @@ class tx_linkvalidator_linktype_File extends tx_linkvalidator_linktype_Abstract 
 		return $response;
 	}
 
-
 	/**
 	 * Construct a valid Url for browser output
 	 *
@@ -67,9 +67,8 @@ class tx_linkvalidator_linktype_File extends tx_linkvalidator_linktype_Abstract 
 	 * @return string Parsed broken url
 	 */
 	public function getBrokenUrl($row) {
-		$brokenUrl = t3lib_div::getIndpEnv('TYPO3_SITE_URL') . $row['url'];
+		$brokenUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $row['url'];
 		return $brokenUrl;
 	}
 }
-
 ?>

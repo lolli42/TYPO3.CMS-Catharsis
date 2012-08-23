@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Linkvalidator\Task;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,7 +23,6 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
  * This class provides Scheduler plugin implementation
  *
@@ -29,7 +30,7 @@
  * @package TYPO3
  * @subpackage linkvalidator
  */
-class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
+class ValidatorTask extends \TYPO3\CMS\Scheduler\Task {
 
 	/**
 	 * @var integer
@@ -230,7 +231,6 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 		$this->configuration = $configuration;
 	}
 
-
 	/**
 	 * Function execute from the Scheduler
 	 *
@@ -239,20 +239,16 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	public function execute() {
 		$this->setCliArguments();
 		$successfullyExecuted = TRUE;
-		if (!file_exists($file = t3lib_div::getFileAbsFileName($this->emailTemplateFile)) && !empty($this->email)) {
-			throw new Exception(
-				$GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidEmailTemplateFile'),
-				'1295476972'
-			);
+		if (!file_exists(($file = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($this->emailTemplateFile))) && !empty($this->email)) {
+			throw new \Exception($GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidEmailTemplateFile'), '1295476972');
 		}
-		$htmlFile = t3lib_div::getURL($file);
-		$this->templateMail = t3lib_parsehtml::getSubpart($htmlFile, '###REPORT_TEMPLATE###');
-
-			// The array to put the content into
+		$htmlFile = \TYPO3\CMS\Core\Utility\GeneralUtility::getURL($file);
+		$this->templateMail = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($htmlFile, '###REPORT_TEMPLATE###');
+		// The array to put the content into
 		$html = array();
 		$pageSections = '';
 		$this->dif = FALSE;
-		$pageList = t3lib_div::trimExplode(',', $this->page, 1);
+		$pageList = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->page, 1);
 		$modTS = $this->loadModTSconfig($this->page);
 		if (is_array($pageList)) {
 			foreach ($pageList as $page) {
@@ -262,10 +258,7 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 		if ($this->totalBrokenLink != $this->oldTotalBrokenLink) {
 			$this->dif = TRUE;
 		}
-		if ($this->totalBrokenLink > 0
-			&& (!$this->emailOnBrokenLinkOnly || $this->dif)
-			&& !empty($this->email)
-		) {
+		if (($this->totalBrokenLink > 0 && (!$this->emailOnBrokenLinkOnly || $this->dif)) && !empty($this->email)) {
 			$successfullyExecuted = $this->reportEmail($pageSections, $modTS);
 		}
 		return $successfullyExecuted;
@@ -282,46 +275,37 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 		$pageSections = '';
 		$pageIds = '';
 		$oldLinkCounts = array();
-
 		$modTS = $this->loadModTSconfig($page);
 		$searchFields = $this->getSearchField($modTS);
 		$linkTypes = $this->getLinkTypes($modTS);
-
-			/** @var tx_linkvalidator_processor $processor */
-		$processor = t3lib_div::makeInstance('tx_linkvalidator_Processor');
-
+		/** @var tx_linkvalidator_processor $processor */
+		$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Linkvalidator\\LinkAnalyzer');
 		if ($page === 0) {
 			$rootLineHidden = FALSE;
 		} else {
 			$pageRow = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . $page);
 			$rootLineHidden = $processor->getRootLineIsHidden($pageRow);
 		}
-
 		if (!$rootLineHidden || $modTS['checkhidden'] == 1) {
 			$pageIds = $processor->extGetTreeList($page, $this->depth, 0, '1=1', $modTS['checkhidden']);
 			if ($pageRow['hidden'] == 0 || $modTS['checkhidden'] == 1) {
-					// tx_linkvalidator_Processor::extGetTreeList always adds trailing comma:
+				// tx_linkvalidator_Processor::extGetTreeList always adds trailing comma:
 				$pageIds .= $page;
 			}
 		}
-
 		if (!empty($pageIds)) {
 			$processor->init($searchFields, $pageIds);
-
 			if (!empty($this->email)) {
 				$oldLinkCounts = $processor->getLinkCounts($page);
 				$this->oldTotalBrokenLink += $oldLinkCounts['brokenlinkCount'];
 			}
-
 			$processor->getLinkStatistics($linkTypes, $modTS['checkhidden']);
-
 			if (!empty($this->email)) {
 				$linkCounts = $processor->getLinkCounts($page);
 				$this->totalBrokenLink += $linkCounts['brokenlinkCount'];
 				$pageSections = $this->buildMail($page, $pageIds, $linkCounts, $oldLinkCounts);
 			}
 		}
-
 		return $pageSections;
 	}
 
@@ -332,24 +316,21 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	 * @return array $modTS mod.linkvalidator TSconfig array
 	 */
 	protected function loadModTSconfig($page) {
-		$modTS = t3lib_BEfunc::getModTSconfig($page, 'mod.linkvalidator');
-		$parseObj = t3lib_div::makeInstance('t3lib_TSparser');
+		$modTS = \TYPO3\CMS\Backend\Utility\BackendUtility::getModTSconfig($page, 'mod.linkvalidator');
+		$parseObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 		$parseObj->parse($this->configuration);
 		if (count($parseObj->errors) > 0) {
 			$parseErrorMessage = $GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidTSconfig') . '<br />';
 			foreach ($parseObj->errors as $errorInfo) {
 				$parseErrorMessage .= $errorInfo[0] . '<br />';
 			}
-			throw new Exception(
-				$parseErrorMessage,
-				'1295476989'
-			);
+			throw new \Exception($parseErrorMessage, '1295476989');
 		}
 		$TSconfig = $parseObj->setup;
 		$modTS = $modTS['properties'];
 		$overrideTs = $TSconfig['mod.']['tx_linkvalidator.'];
 		if (is_array($overrideTs)) {
-			$modTS = t3lib_div::array_merge_recursive_overrule($modTS, $overrideTs);
+			$modTS = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($modTS, $overrideTs);
 		}
 		return $modTS;
 	}
@@ -363,7 +344,7 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	protected function getSearchField(array $modTS) {
 		// Get the searchFields from TypoScript
 		foreach ($modTS['searchFields.'] as $table => $fieldList) {
-			$fields = t3lib_div::trimExplode(',', $fieldList);
+			$fields = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $fieldList);
 			foreach ($fields as $field) {
 				$searchFields[$table][] = $field;
 			}
@@ -379,10 +360,9 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	 */
 	protected function getLinkTypes(array $modTS) {
 		$linkTypes = array();
-		$typesTmp = t3lib_div::trimExplode(',', $modTS['linktypes'], 1);
+		$typesTmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $modTS['linktypes'], 1);
 		if (is_array($typesTmp)) {
-			if (!empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])
-				&& is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
+			if (!empty($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks']) && is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'])) {
 				foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['checkLinks'] as $type => $value) {
 					if (in_array($type, $typesTmp)) {
 						$linkTypes[$type] = 1;
@@ -401,70 +381,56 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	 * @return boolean TRUE if mail was sent, FALSE if or not
 	 */
 	protected function reportEmail($pageSections, array $modTS) {
-		$content = t3lib_parsehtml::substituteSubpart($this->templateMail, '###PAGE_SECTION###', $pageSections);
+		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($this->templateMail, '###PAGE_SECTION###', $pageSections);
 		/** @var array $markerArray */
 		$markerArray = array();
 		/** @var array $validEmailList */
 		$validEmailList = array();
 		/** @var boolean $sendEmail */
 		$sendEmail = TRUE;
-
 		$markerArray['totalBrokenLink'] = $this->totalBrokenLink;
 		$markerArray['totalBrokenLink_old'] = $this->oldTotalBrokenLink;
-
-			// Hook
+		// Hook
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['reportEmailMarkers'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['reportEmailMarkers'] as $userFunc) {
 				$params = array(
 					'pObj' => &$this,
-					'markerArray' => $markerArray,
+					'markerArray' => $markerArray
 				);
-				$newMarkers = t3lib_div::callUserFunction($userFunc, $params, $this);
+				$newMarkers = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($userFunc, $params, $this);
 				if (is_array($newMarkers)) {
-					$markerArray = t3lib_div::array_merge($markerArray, $newMarkers);
+					$markerArray = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge($markerArray, $newMarkers);
 				}
 				unset($params);
 			}
 		}
-
-		$content = t3lib_parsehtml::substituteMarkerArray($content, $markerArray, '###|###', TRUE, TRUE);
-
-		/** @var t3lib_mail_Message $mail */
-		$mail = t3lib_div::makeInstance('t3lib_mail_Message');
+		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markerArray, '###|###', TRUE, TRUE);
+		/** @var \TYPO3\CMS\Core\Mail\MailMessage $mail */
+		$mail = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
 		if (empty($modTS['mail.']['fromemail'])) {
-			$modTS['mail.']['fromemail'] = t3lib_utility_Mail::getSystemFromAddress();
+			$modTS['mail.']['fromemail'] = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFromAddress();
 		}
 		if (empty($modTS['mail.']['fromname'])) {
-			$modTS['mail.']['fromname'] = t3lib_utility_Mail::getSystemFromName();
+			$modTS['mail.']['fromname'] = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFromName();
 		}
-		if (t3lib_div::validEmail($modTS['mail.']['fromemail'])) {
+		if (\TYPO3\CMS\Core\Utility\GeneralUtility::validEmail($modTS['mail.']['fromemail'])) {
 			$mail->setFrom(array($modTS['mail.']['fromemail'] => $modTS['mail.']['fromname']));
 		} else {
-			throw new Exception(
-				$GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidFromEmail'),
-				'1295476760'
-			);
+			throw new \Exception($GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidFromEmail'), '1295476760');
 		}
-		if (t3lib_div::validEmail($modTS['mail.']['replytoemail'])) {
+		if (\TYPO3\CMS\Core\Utility\GeneralUtility::validEmail($modTS['mail.']['replytoemail'])) {
 			$mail->setReplyTo(array($modTS['mail.']['replytoemail'] => $modTS['mail.']['replytoname']));
 		}
-
 		if (!empty($modTS['mail.']['subject'])) {
 			$mail->setSubject($modTS['mail.']['subject']);
 		} else {
-			throw new Exception(
-				$GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.noSubject'),
-				'1295476808'
-			);
+			throw new \Exception($GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.noSubject'), '1295476808');
 		}
 		if (!empty($this->email)) {
-			$emailList = t3lib_div::trimExplode(',', $this->email);
+			$emailList = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->email);
 			foreach ($emailList as $emailAdd) {
-				if (!t3lib_div::validEmail($emailAdd)) {
-					throw new Exception(
-						$GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidToEmail'),
-						'1295476821'
-					);
+				if (!\TYPO3\CMS\Core\Utility\GeneralUtility::validEmail($emailAdd)) {
+					throw new \Exception($GLOBALS['LANG']->sL('LLL:EXT:linkvalidator/locallang.xml:tasks.error.invalidToEmail'), '1295476821');
 				} else {
 					$validEmailList[] = $emailAdd;
 				}
@@ -475,15 +441,12 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 		} else {
 			$sendEmail = FALSE;
 		}
-
 		if ($sendEmail) {
 			$mail->setBody($content, 'text/html');
 			$mail->send();
 		}
-
 		return $sendEmail;
 	}
-
 
 	/**
 	 * Build the mail content
@@ -495,9 +458,8 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 	 * @return string Content of the mail
 	 */
 	protected function buildMail($curPage, $pageList, array $markerArray, array $oldBrokenLink) {
-		$pageSectionHTML = t3lib_parsehtml::getSubpart($this->templateMail, '###PAGE_SECTION###');
-
-			// Hook
+		$pageSectionHTML = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->templateMail, '###PAGE_SECTION###');
+		// Hook
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['buildMailMarkers'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['linkvalidator']['buildMailMarkers'] as $userFunc) {
 				$params = array(
@@ -505,16 +467,15 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 					'pageList' => $pageList,
 					'markerArray' => $markerArray,
 					'oldBrokenLink' => $oldBrokenLink,
-					'pObj' => &$this,
+					'pObj' => &$this
 				);
-				$newMarkers = t3lib_div::callUserFunction($userFunc, $params, $this);
+				$newMarkers = \TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($userFunc, $params, $this);
 				if (is_array($newMarkers)) {
-					$markerArray = t3lib_div::array_merge($markerArray, $newMarkers);
+					$markerArray = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge($markerArray, $newMarkers);
 				}
 				unset($params);
 			}
 		}
-
 		if (is_array($markerArray)) {
 			foreach ($markerArray as $markerKey => $markerValue) {
 				if (empty($oldBrokenLink[$markerKey])) {
@@ -526,15 +487,13 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 				$markerArray[$markerKey . '_old'] = $oldBrokenLink[$markerKey];
 			}
 		}
-		$markerArray['title'] = t3lib_BEfunc::getRecordTitle('pages', t3lib_BEfunc::getRecord('pages', $curPage));
-
+		$markerArray['title'] = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle('pages', \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $curPage));
 		$content = '';
 		if ($markerArray['brokenlinkCount'] > 0) {
-			$content = t3lib_parsehtml::substituteMarkerArray($pageSectionHTML, $markerArray, '###|###', TRUE, TRUE);
+			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($pageSectionHTML, $markerArray, '###|###', TRUE, TRUE);
 		}
 		return $content;
 	}
-
 
 	/**
 	 * Simulate cli call with setting the required options to the $_SERVER['argv']
@@ -556,5 +515,4 @@ class tx_linkvalidator_tasks_Validator extends tx_scheduler_Task {
 		);
 	}
 }
-
 ?>

@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Linkvalidator\Linktype;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -21,42 +23,55 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
- * This class provides interface implementation.
+ * This class provides Check Base plugin implementation
  *
  * @author Michael Miousse <michael.miousse@infoglobe.ca>
  * @package TYPO3
  * @subpackage linkvalidator
  */
-interface tx_linkvalidator_linktype_Interface {
+abstract class AbstractLinktype implements \TYPO3\CMS\Linkvalidator\Linktype\LinktypeInterface {
 
 	/**
-	 * Checks a given link for validity
+	 * Contains parameters needed for the rendering of the error message
 	 *
-	 * @param string $url Url to check
-	 * @param array $softRefEntry The soft reference entry which builds the context of that url
-	 * @param tx_linkvalidator_Processor $reference Parent instance of tx_linkvalidator_Processor
-	 * @return string Validation error message or success code
+	 * @var array
 	 */
-	public function checkLink($url, $softRefEntry, $reference);
+	protected $errorParams = array();
 
 	/**
-	 * Base type fetching method, based on the type that softRefParserObj returns.
+	 * Base type fetching method, based on the type that softRefParserObj returns
 	 *
 	 * @param array $value Reference properties
 	 * @param string $type Current type
 	 * @param string $key Validator hook name
 	 * @return string Fetched type
 	 */
-	public function fetchType($value, $type, $key);
+	public function fetchType($value, $type, $key) {
+		if ($value['type'] == $key) {
+			$type = $value['type'];
+		}
+		return $type;
+	}
 
 	/**
-	 * Get the value of the private property errorParams.
+	 * Set the value of the protected property errorParams
+	 *
+	 * @param array $value All parameters needed for the rendering of the error message
+	 * @return void
+	 */
+	protected function setErrorParams($value) {
+		$this->errorParams = $value;
+	}
+
+	/**
+	 * Get the value of the private property errorParams
 	 *
 	 * @return array All parameters needed for the rendering of the error message
 	 */
-	public function getErrorParams();
+	public function getErrorParams() {
+		return $this->errorParams;
+	}
 
 	/**
 	 * Construct a valid Url for browser output
@@ -64,16 +79,11 @@ interface tx_linkvalidator_linktype_Interface {
 	 * @param array $row Broken link record
 	 * @return string Parsed broken url
 	 */
-	public function getBrokenUrl($row);
-
-	/**
-	 * Generate the localized error message from the error params saved from the parsing
-	 *
-	 * @param array $errorParams All parameters needed for the rendering of the error message
-	 * @return string Validation error message
-	 */
-	public function getErrorMessage($errorParams);
+	public function getBrokenUrl($row) {
+		return $row['url'];
+	}
 
 }
+
 
 ?>
