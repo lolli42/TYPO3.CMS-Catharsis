@@ -1,64 +1,8 @@
 <?php
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2009-2011 Xavier Perseguers <xavier@typo3.org>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
-
-
-/**
- * Class that renders fields for the Extension Manager configuration.
- *
- * @author Xavier Perseguers <xavier@typo3.org>
- *
- * @package TYPO3
- * @subpackage dbal
+/*
+ * @deprecated since 6.0, the classname tx_dbal_tsparserext and this file is obsolete
+ * and will be removed by 7.0. The class was renamed and is now located at:
+ * typo3/sysext/dbal/Classes/ExtensionManager/MessageDisplay.php
  */
-class tx_dbal_tsparserext {
-
-	/**
-	 * Renders a message for EM.
-	 *
-	 * @param array $params
-	 * @param t3lib_tsStyleConfig $tsObj
-	 * @return string
-	 */
-	function displayMessage(array &$params, t3lib_tsStyleConfig $tsObj) {
-		$out = '
-			<div>
-				<div class="typo3-message message-information">
-					<div class="message-header">PostgreSQL</div>
-					<div class="message-body">
-						If you use a PostgreSQL database, make sure to run SQL scripts located in<br />
-						<tt>' . t3lib_extMgm::extPath('dbal') . 'res/postgresql/</tt><br />
-						to ensure best compatibility with TYPO3.
-					</div>
-				</div>
-			</div>
-		';
-
-		return $out;
-	}
-
-}
+require_once \TYPO3\CMS\Core\Extension\ExtensionManager::extPath('dbal') . 'Classes/ExtensionManager/MessageDisplay.php';
 ?>

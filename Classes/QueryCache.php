@@ -1,8 +1,10 @@
 <?php
+namespace TYPO3\CMS\Dbal;
+
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2009-2011 Xavier Perseguers <xavier@typo3.org>
+ *  (c) 2010-2011 Xavier Perseguers <xavier@typo3.org>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -13,6 +15,9 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
+ *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  from the author is found in LICENSE.txt distributed with these scripts.
+ *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,11 +26,30 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-require_once 'TYPO3\\CMS\\Dbal\\Tests\\TYPO3\\CMS\\Dbal\\Tests\\BaseTestCase.php';
-/*
- * @deprecated since 6.0, the classname dbGeneralTest and this file is obsolete
- * and will be removed by 7.0. The class was renamed and is now located at:
- * typo3/sysext/dbal/Tests/DatabaseGeneralTest.php
+/**
+ * Cache engine helper for generated queries.
+ *
+ * @author Xavier Perseguers <xavier@typo3.org>
+ * @package TYPO3
+ * @subpackage dbal
  */
-require_once \TYPO3\CMS\Core\Extension\ExtensionManager::extPath('dbal') . 'Tests/DatabaseGeneralTest.php';
+class QueryCache {
+
+	/**
+	 * Returns a proper cache key.
+	 *
+	 * @param 	mixed		$config
+	 * @return 	void
+	 */
+	static public function getCacheKey($config) {
+		if (is_array($config)) {
+			return md5(serialize($config));
+		} else {
+			return $config;
+		}
+	}
+
+}
+
+
 ?>
