@@ -26,14 +26,7 @@ namespace TYPO3\CMS\Impexp;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-/**
- * Adding Import/Export clickmenu item
- *
- * Revised for TYPO3 3.6 December/2003 by Kasper Skårhøj
- * XHTML compliant
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
+
 /**
  * Adding Import/Export clickmenu item
  *
@@ -84,10 +77,9 @@ class Clickmenu {
 	 */
 	public function includeLL() {
 		global $LANG;
-		return $LANG->includeLLFile('EXT:impexp/app/locallang.php', FALSE);
+		return $LANG->includeLLFile('EXT:impexp/app/locallang.xlf', FALSE);
 	}
 
 }
-
 
 ?>
