@@ -26,14 +26,7 @@ namespace TYPO3\CMS\FuncWizards\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-/**
- * Contains a class for the Wizard function in the Web>Info module
- *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
- * XHTML compliant
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
+
 /**
  * The Wizard function in the Web>Info module
  * Creates a framework for adding wizard sub-sub-modules under the Wizard function in Web>Info
@@ -59,7 +52,8 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	public function init(&$pObj, $conf) {
 		// OK, handles ordinary init. This includes setting up the menu array with ->modMenu
 		parent::init($pObj, $conf);
-		// Making sure that any further external classes are added to the include_once array. Notice that inclusion happens twice in the main script because of this!!!
+		// Making sure that any further external classes are added to the include_once array.
+		// Notice that inclusion happens twice in the main script because of this!!!
 		$this->handleExternalFunctionValue();
 	}
 
@@ -70,12 +64,16 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * @todo Define visibility
 	 */
 	public function modMenu() {
-		global $LANG;
+		$GLOBALS['LANG']->includeLLFile('EXT:func_wizards/locallang.xlf');
 		$modMenuAdd = array(
 			$this->function_key => array()
 		);
 		$modMenuAdd[$this->function_key] = $this->pObj->mergeExternalItems($this->pObj->MCONF['name'], $this->function_key, $modMenuAdd[$this->function_key]);
-		$modMenuAdd[$this->function_key] = \TYPO3\CMS\Backend\Utility\BackendUtility::unsetMenuItems($this->pObj->modTSconfig['properties'], $modMenuAdd[$this->function_key], 'menu.' . $this->function_key);
+		$modMenuAdd[$this->function_key] = \TYPO3\CMS\Backend\Utility\BackendUtility::unsetMenuItems(
+			$this->pObj->modTSconfig['properties'],
+			$modMenuAdd[$this->function_key],
+			'menu.' . $this->function_key
+		);
 		return $modMenuAdd;
 	}
 
@@ -87,7 +85,12 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 */
 	public function main() {
 		global $SOBE, $LANG;
-		$menu = $LANG->getLL('wiz_lWizards', 1) . ': ' . \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu($this->pObj->id, 'SET[wiz]', $this->pObj->MOD_SETTINGS['wiz'], $this->pObj->MOD_MENU['wiz']);
+		$menu = $LANG->getLL('wiz_lWizards', 1) . ': ' . \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(
+			$this->pObj->id,
+			'SET[wiz]',
+			$this->pObj->MOD_SETTINGS['wiz'],
+			$this->pObj->MOD_MENU['wiz']
+		);
 		$theOutput .= $this->pObj->doc->section('', '<span class="nobr">' . $menu . '</span>');
 		$content = '';
 		$content .= $theOutput;
@@ -97,6 +100,5 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	}
 
 }
-
 
 ?>
