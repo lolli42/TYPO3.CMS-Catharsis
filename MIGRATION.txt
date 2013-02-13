@@ -1,0 +1,5 @@
+This document contains information for upgrading from
+TYPO3 CMS 6.0 to the Catharsis fork.
+
+It documents breaking changes and notices that should
+be taken care of to get it up and running.
