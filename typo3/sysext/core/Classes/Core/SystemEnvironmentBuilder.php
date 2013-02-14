@@ -90,7 +90,7 @@ class SystemEnvironmentBuilder {
 	 *
 	 * @param string $configOption
 	 * @return boolean TRUE if the given option is enabled, FALSE if disabled
-	 * @see t3lib_utility_PhpOptions::getIniValueBoolean
+	 * @see \TYPO3\CMS\Core\Utility\PhpOptionsUtility::getIniValueBoolean
 	 */
 	static protected function getPhpIniValueBoolean($configOption) {
 		return filter_var(ini_get($configOption), FILTER_VALIDATE_BOOLEAN, array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE));

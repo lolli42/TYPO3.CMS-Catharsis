@@ -112,7 +112,7 @@ class user_wapversion {
 				'title' => ($conf['preTitle'] ? $conf['preTitle'] . ': ' : '') . $pageRec['title']
 			));
 			$cParts = $this->contentAll();
-			$pointer = t3lib_utility_Math::forceIntegerInRange($GLOBALS['TSFE']->idParts[1], 1, 10000);
+			$pointer = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($GLOBALS['TSFE']->idParts[1], 1, 10000);
 			$msg = '';
 			if ($pointer - 1) {
 				$msg .= $this->navLink(htmlspecialchars($conf['navLabels.']['prev']), ($pointer - 1)) . ' ';

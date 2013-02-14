@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Core\Mail;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * Hook subscriber for using Swift Mailer with the t3lib_utility_mail function
+ * Hook subscriber for using Swift Mailer with \TYPO3\CMS\Core\Utility\MailUtility
  *
  * @author Jigal van Hemert <jigal@xs4all.nl>
  */

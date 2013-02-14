@@ -454,7 +454,7 @@ class user_feAdmin {
 						if (is_array($this->dataArr[$theField])) {
 							$val = 0;
 							foreach ($this->dataArr[$theField] as $kk => $vv) {
-								$kk = t3lib_utility_Math::forceIntegerInRange($kk, 0);
+								$kk = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($kk, 0);
 								if ($kk <= 30) {
 									if ($vv) {
 										$val |= pow(2, $kk);
@@ -663,7 +663,7 @@ class user_feAdmin {
 				$recExist = 1;
 				break;
 			default:
-				$recordTestPid = $this->thePid ? $this->thePid : t3lib_utility_Math::convertToPositiveInteger($this->dataArr['pid']);
+				$recordTestPid = $this->thePid ? $this->thePid : \TYPO3\CMS\Core\Utility\MathUtility::convertToPositiveInteger($this->dataArr['pid']);
 				break;
 			}
 			foreach ($this->conf[$this->cmdKey . '.']['evalValues.'] as $theField => $theValue) {
@@ -1291,7 +1291,7 @@ class user_feAdmin {
 					$pidLock = ('AND pid IN (' . $this->thePid) . ') ';
 				}
 				// Getting records
-				if (t3lib_utility_Math::canBeInterpretedAsInteger($fetch)) {
+				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($fetch)) {
 					$DBrows = $GLOBALS['TSFE']->sys_page->getRecordsByField($this->theTable, 'uid', $fetch, $pidLock, '', '', '1');
 				} elseif ($fetch) {
 					// $this->conf['email.']['field'] must be a valid field in the table!
@@ -1350,7 +1350,7 @@ class user_feAdmin {
 		if ($adminContent['all']) {
 			$adminContent['final'] .= $this->cObj->substituteSubpart($adminContent['all'], '###SUB_RECORD###', $adminContent['accum']);
 		}
-		if (t3lib_utility_Math::canBeInterpretedAsInteger($recipient)) {
+		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($recipient)) {
 			$fe_userRec = $GLOBALS['TSFE']->sys_page->getRawRecord('fe_users', $recipient);
 			$recipient = $fe_userRec['email'];
 		}

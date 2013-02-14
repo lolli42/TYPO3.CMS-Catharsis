@@ -274,8 +274,8 @@ class user_plaintext {
 	public function renderHeader($str, $type = 0) {
 		if ($str) {
 			$hConf = $this->conf['header.'];
-			$defaultType = t3lib_utility_Math::forceIntegerInRange($hConf['defaultType'], 1, 5);
-			$type = t3lib_utility_Math::forceIntegerInRange($type, 0, 6);
+			$defaultType = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($hConf['defaultType'], 1, 5);
+			$type = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($type, 0, 6);
 			if (!$type) {
 				$type = $defaultType;
 			}
@@ -283,12 +283,12 @@ class user_plaintext {
 				// not hidden
 				$tConf = $hConf[$type . '.'];
 				$lines = array();
-				$blanks = t3lib_utility_Math::forceIntegerInRange($tConf['preBlanks'], 0, 1000);
+				$blanks = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tConf['preBlanks'], 0, 1000);
 				if ($blanks) {
 					$lines[] = str_pad('', $blanks - 1, chr(10));
 				}
 				$lines = $this->pad($lines, $tConf['preLineChar'], $tConf['preLineLen']);
-				$blanks = t3lib_utility_Math::forceIntegerInRange($tConf['preLineBlanks'], 0, 1000);
+				$blanks = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tConf['preLineBlanks'], 0, 1000);
 				if ($blanks) {
 					$lines[] = str_pad('', $blanks - 1, chr(10));
 				}
@@ -310,12 +310,12 @@ class user_plaintext {
 				if ($this->cObj->data['header_link']) {
 					$lines[] = $this->getString($hConf['linkPrefix']) . $this->getLink($this->cObj->data['header_link']);
 				}
-				$blanks = t3lib_utility_Math::forceIntegerInRange($tConf['postLineBlanks'], 0, 1000);
+				$blanks = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tConf['postLineBlanks'], 0, 1000);
 				if ($blanks) {
 					$lines[] = str_pad('', $blanks - 1, chr(10));
 				}
 				$lines = $this->pad($lines, $tConf['postLineChar'], $tConf['postLineLen']);
-				$blanks = t3lib_utility_Math::forceIntegerInRange($tConf['postBlanks'], 0, 1000);
+				$blanks = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tConf['postBlanks'], 0, 1000);
 				if ($blanks) {
 					$lines[] = str_pad('', $blanks - 1, chr(10));
 				}
@@ -335,7 +335,7 @@ class user_plaintext {
 	 * @todo Define visibility
 	 */
 	public function pad($lines, $preLineChar, $len) {
-		$strPad = t3lib_utility_Math::forceIntegerInRange($len, 0, 1000);
+		$strPad = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($len, 0, 1000);
 		$strPadChar = $preLineChar ? $preLineChar : '-';
 		if ($strPad) {
 			$lines[] = str_pad('', $strPad, $strPadChar);
@@ -369,7 +369,7 @@ class user_plaintext {
 	 */
 	public function breakBulletlist($str) {
 		$type = $this->cObj->data['layout'];
-		$type = t3lib_utility_Math::forceIntegerInRange($type, 0, 3);
+		$type = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($type, 0, 3);
 		$tConf = $this->conf['bulletlist.'][$type . '.'];
 		$cParts = explode(chr(10), $str);
 		$lines = array();
@@ -381,7 +381,7 @@ class user_plaintext {
 			$bullet = substr(str_replace('#', $c, $bullet), 0, $bLen);
 			$secondRow = substr($tConf['secondRow'] ? $this->getString($tConf['secondRow']) : str_pad('', strlen($bullet), ' '), 0, $bLen);
 			$lines[] = $bullet . $this->breakLines($substrs, (chr(10) . $secondRow), ($this->charWidth - $bLen));
-			$blanks = t3lib_utility_Math::forceIntegerInRange($tConf['blanks'], 0, 1000);
+			$blanks = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tConf['blanks'], 0, 1000);
 			if ($blanks) {
 				$lines[] = str_pad('', $blanks - 1, chr(10));
 			}

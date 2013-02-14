@@ -80,8 +80,8 @@ function user_keepRolloverAtOnClick($I, $conf) {
 	if ($conf['debug']) {
 		// Outputting for debug example:
 		echo 'ITEM: <h2>' . htmlspecialchars(($itemRow['uid'] . ': ' . $itemRow['title'])) . '</h2>';
-		t3lib_utility_Debug::debug($itemRow);
-		t3lib_utility_Debug::debug($I);
+		\TYPO3\CMS\Core\Utility\DebugUtility::debug($itemRow);
+		\TYPO3\CMS\Core\Utility\DebugUtility::debug($I);
 		echo '<hr />';
 	}
 	// Returns $I:

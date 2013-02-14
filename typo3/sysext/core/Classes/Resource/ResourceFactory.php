@@ -322,7 +322,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 				return $this->getObjectFromCombinedIdentifier($input);
 			} elseif ($prefix == 'EXT') {
 				$input = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($input);
-				$input = \t3lib_Utility_Path::getRelativePath(PATH_site, dirname($input)) . basename($input);
+				$input = \TYPO3\CMS\Core\Utility\MonitorUtility::getRelativePath(PATH_site, dirname($input)) . basename($input);
 				return $this->getFileObjectFromCombinedIdentifier($input);
 			}
 		} else {

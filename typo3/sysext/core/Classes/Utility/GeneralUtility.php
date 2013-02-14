@@ -727,7 +727,7 @@ class GeneralUtility {
 	 *
 	 * @param string $verNumberStr Version number on format x.x.x
 	 * @return integer Integer version of version number (where each part can count to 999)
-	 * @deprecated since TYPO3 4.6, will be removed in TYPO3 6.1 - Use t3lib_utility_VersionNumber::convertVersionNumberToInteger() instead
+	 * @deprecated since TYPO3 4.6, will be removed in TYPO3 6.1 - Use \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger() instead
 	 */
 	static public function int_from_ver($verNumberStr) {
 		// Deprecation log is activated only for TYPO3 4.7 and above
