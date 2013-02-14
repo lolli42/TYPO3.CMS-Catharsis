@@ -73,7 +73,7 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 
 	/**
 	 * Creates title attribute content for pages.
-	 * Uses API function in t3lib_BEfunc which will retrieve lots of useful information for pages.
+	 * Uses API function in \TYPO3\CMS\Backend\Utility\BackendUtility which will retrieve lots of useful information for pages.
 	 *
 	 * @param array $row The table row.
 	 * @return string

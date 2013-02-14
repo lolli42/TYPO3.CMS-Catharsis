@@ -738,7 +738,7 @@ class DataHandlerHook {
 										// In case of swapping and the offline record has a state
 										// (like 2 or 4 for deleting or move-pointer) we set the
 										// current workspace ID so the record is not deselected
-										// in the interface by t3lib_BEfunc::versioningPlaceholderClause()
+										// in the interface by \TYPO3\CMS\Backend\Utility\BackendUtility::versioningPlaceholderClause()
 										$swapVersion['t3ver_wsid'] = 0;
 										if ($swapIntoWS) {
 											if ($t3ver_state['swapVersion'] > 0) {
@@ -1125,7 +1125,7 @@ class DataHandlerHook {
 			while (FALSE !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($res))) {
 				$pageIdList[] = $row[0];
 				// Find ws version
-				// Note: cannot use t3lib_BEfunc::getRecordWSOL()
+				// Note: cannot use \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL()
 				// here because it does not accept workspace id!
 				$rec = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages', $row[0]);
 				\TYPO3\CMS\Backend\Utility\BackendUtility::workspaceOL('pages', $rec, $workspaceId);
