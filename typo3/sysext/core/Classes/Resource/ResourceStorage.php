@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * A "mount point" inside the TYPO3 file handling.
  *
@@ -57,9 +58,6 @@ namespace TYPO3\CMS\Core\Resource;
  * Check 2: "File Mounts" of the User (act as subsets / filters to the identifiers) [is the user allowed to do something in this folder?]
  * Check 3: "Capabilities" of Storage (then: of Driver) [is the storage/driver writable?]
  * Check 4: "File permissions" of the Driver [is the folder writable?]
- */
-/**
- * File storage
  *
  * @author Andreas Wolf <andreas.wolf@typo3.org>
  * @author Ingmar Schlecht <ingmar@typo3.org>
@@ -957,7 +955,7 @@ class ResourceStorage {
 	/**
 	 * Creates a new file
 	 *
-	 * previously in t3lib_extFileFunc::func_newfile()
+	 * previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::func_newfile()
 	 *
 	 * @param string $fileName
 	 * @param Folder $targetFolderObject
@@ -973,7 +971,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Previously in t3lib_extFileFunc::deleteFile()
+	 * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::deleteFile()
 	 *
 	 * @param $fileObject FileInterface
 	 *
@@ -995,7 +993,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Previously in t3lib_extFileFunc::func_copy()
+	 * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::func_copy()
 	 * copies a source file (from any location) in to the target
 	 * folder, the latter has to be part of this storage
 	 *
@@ -1121,7 +1119,7 @@ class ResourceStorage {
 	 * Moves a $file into a $targetFolder
 	 * the target folder has to be part of this storage
 	 *
-	 * previously in t3lib_extFileFunc::func_move()
+	 * previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::func_move()
 	 *
 	 * @param FileInterface $file
 	 * @param Folder $targetFolder
@@ -1232,7 +1230,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Previously in t3lib_extFileFunc::func_rename()
+	 * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::func_rename()
 	 *
 	 * @param FileInterface $file
 	 * @param string $targetFileName
@@ -1293,7 +1291,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Adds an uploaded file into the Storage. Previously in t3lib_extFileFunc::file_upload()
+	 * Adds an uploaded file into the Storage. Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::file_upload()
 	 *
 	 * @param array $uploadedFileData contains information about the uploaded file given by $_FILES['file1']
 	 * @param Folder $targetFolder the target folder
@@ -1448,7 +1446,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Previously in t3lib_extFileFunc::folder_move()
+	 * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::folder_move()
 	 *
 	 * @param Folder $folderObject
 	 * @param string $newName
@@ -1486,7 +1484,7 @@ class ResourceStorage {
 	}
 
 	/**
-	 * Previously in t3lib_extFileFunc::folder_delete()
+	 * Previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::folder_delete()
 	 *
 	 * @param Folder    $folderObject
 	 * @param bool $deleteRecursively
@@ -1568,7 +1566,7 @@ class ResourceStorage {
 	/**
 	 * Creates a new folder.
 	 *
-	 * previously in t3lib_extFileFunc::func_newfolder()
+	 * previously in \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::func_newfolder()
 	 *
 	 * @param string $folderName The new folder name
 	 * @param Folder $parentFolder (optional) the parent folder to create the new folder inside of. If not given, the root folder is used

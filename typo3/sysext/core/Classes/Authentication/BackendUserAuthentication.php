@@ -2341,7 +2341,6 @@ This is a dump of the failures:
 		}
 		// Saving if updated.
 		if ($U) {
-			// Method from the t3lib_userauth class.
 			$this->writeUC();
 		}
 	}

@@ -1412,7 +1412,7 @@ abstract class AbstractUserAuthentication {
 	 *
 	 * @param string $name The username to look up.
 	 * @return void
-	 * @see 	t3lib_userAuth::setBeUserByUid()
+	 * @see \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::setBeUserByUid()
 	 * @internal
 	 * @todo Define visibility
 	 */
@@ -1443,7 +1443,7 @@ abstract class AbstractUserAuthentication {
 	 *
 	 * @param string $name The username to look up.
 	 * @return array user record or FALSE
-	 * @see 	t3lib_userAuth::getUserByUid()
+	 * @see \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::getUserByUid()
 	 * @internal
 	 * @todo Define visibility
 	 */

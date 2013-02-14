@@ -673,7 +673,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 	 * @param string $file The resource value.
 	 * @return string Returns the relative filepath
 	 * @access private
-	 * @see t3lib_TStemplate::getFileName()
+	 * @see \TYPO3\CMS\Core\TypoScript\TemplateService::getFileName()
 	 * @todo Define visibility
 	 */
 	public function checkFile($file) {

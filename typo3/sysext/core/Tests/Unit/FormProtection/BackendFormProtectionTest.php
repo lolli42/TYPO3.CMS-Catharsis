@@ -197,7 +197,7 @@ class BackendFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function restoreSessionTokenFromRegistryThrowsExceptionIfSessionTokenIsEmpty() {
 		$this->fixture->injectRegistry(
-			$this->getMock('t3lib_Registry')
+			$this->getMock('TYPO3\\CMS\\Core\\Registry')
 		);
 		$this->fixture->setSessionTokenFromRegistry();
 	}

@@ -510,7 +510,6 @@ class GridDataService {
 	 * Gets all available system languages.
 	 *
 	 * @return array
-	 * @see t3lib_transl8tools::getSystemLanguages
 	 */
 	public function getSystemLanguages() {
 		if (!isset($this->systemLanguages)) {

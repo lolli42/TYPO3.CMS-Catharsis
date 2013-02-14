@@ -26,18 +26,11 @@ namespace TYPO3\CMS\Core\TypoScript\Parser;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-/**
- * Contains the TypoScript parser class
- *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
+
 /**
  * The TypoScript parser
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @see t3lib_tstemplate, \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig(), t3lib_beUserAuth::fetchGroupData(), t3lib_TStemplate::generateConfig()
  */
 class TypoScriptParser {
 
@@ -214,7 +207,7 @@ class TypoScriptParser {
 	 */
 	public $highLightBlockStyles_basecolor = '#cccccc';
 
-	//Instance of parentObject, used by t3lib_tsparser_ext
+	//Instance of parentObject, used by \TYPO3\CMS\Core\TypoScript\ExtendedTemplateService
 	public $parentObject;
 
 	/**

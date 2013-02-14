@@ -719,7 +719,7 @@ class BackendUtility {
 	 *
 	 * Note: This method is very similar to t3lib_TCEforms::getRTypeNum(), however, it has two differences:
 	 * 1) The method in TCEForms also takes care of localization (which is difficult to do here as the whole infrastructure for language overlays is only in TCEforms).
-	 * 2) The $rec array looks different in TCEForms, as in there it's not the raw record but the t3lib_transferdata version of it, which changes e.g. how "select"
+	 * 2) The $rec array looks different in TCEForms, as in there it's not the raw record but the \TYPO3\CMS\Backend\Form\DataPreprocessor version of it, which changes e.g. how "select"
 	 * and "group" field values are stored, which makes different processing of the "foreign pointer field" type field variant necessary.
 	 *
 	 * @param string $table Table name present in TCA
@@ -1116,7 +1116,7 @@ class BackendUtility {
 		// Parsing the page TS-Config (or getting from cache)
 		$pageTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
 		if ($GLOBALS['TYPO3_CONF_VARS']['BE']['TSconfigConditions']) {
-			/* @var $parseObj t3lib_TSparser_TSconfig */
+			/* @var $parseObj \TYPO3\CMS\Backend\Configuration\TsConfigParser */
 			$parseObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TsConfigParser');
 			$res = $parseObj->parseTSconfig($pageTS, 'PAGES', $id, $rootLine);
 			if ($res) {
@@ -2934,7 +2934,6 @@ class BackendUtility {
 	 * @param integer $pid Record pid
 	 * @return void
 	 * @internal
-	 * @see t3lib_transferData::lockRecord(), alt_doc.php, db_layout.php, db_list.php, wizard_rte.php
 	 */
 	static public function lockRecords($table = '', $uid = 0, $pid = 0) {
 		$user_id = intval($GLOBALS['BE_USER']->user['uid']);
@@ -3005,7 +3004,6 @@ class BackendUtility {
 	 * @param string $prefix Prefix string for the key "*foreign_table_where" from $fieldValue array
 	 * @return string Part of query
 	 * @internal
-	 * @see t3lib_transferData::renderRecord(), t3lib_TCEforms::foreignTable()
 	 */
 	static public function exec_foreign_table_where_query($fieldValue, $field = '', $TSconfig = array(), $prefix = '') {
 		$foreign_table = $fieldValue['config'][$prefix . 'foreign_table'];
@@ -3078,7 +3076,6 @@ class BackendUtility {
 	 * @param string $table Table name present in TCA
 	 * @param array $row Row from table
 	 * @return array
-	 * @see t3lib_transferData::renderRecord(), t3lib_TCEforms::setTSconfig(), SC_wizard_list::main(), SC_wizard_add::main()
 	 */
 	static public function getTCEFORM_TSconfig($table, $row) {
 		self::fixVersioningPid($table, $row);

@@ -798,7 +798,7 @@ class DataPreprocessor {
 	 * @param array $elements The array of original elements - basically the field value exploded by ",
 	 * @param array $fieldConfig Field configuration from TCA
 	 * @param array $row The data array, currently. Used to set the "local_uid" for selecting MM relation records.
-	 * @param string $table Current table name. passed on to t3lib_loadDBGroup
+	 * @param string $table Current table name. passed on to \TYPO3\CMS\Core\Database\RelationHandler
 	 * @return array An array with ids of the records from the input elements array.
 	 * @access private
 	 * @todo Define visibility

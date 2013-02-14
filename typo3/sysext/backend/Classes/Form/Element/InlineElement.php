@@ -355,7 +355,7 @@ class InlineElement {
 	 * Render the form-fields of a related (foreign) record.
 	 *
 	 * @param string $parentUid The uid of the parent (embedding) record (uid or NEW...)
-	 * @param array $rec The table record of the child/embedded table (normaly post-processed by t3lib_transferData)
+	 * @param array $rec The table record of the child/embedded table (normaly post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor)
 	 * @param array $config Content of $PA['fieldConf']['config']
 	 * @return string The HTML code for this "foreign record
 	 * @todo Define visibility
@@ -693,7 +693,7 @@ class InlineElement {
 	 * so two tables are combined (the intermediate table with attributes and the sub-embedded table).
 	 * -> This is a direct embedding over two levels!
 	 *
-	 * @param array $rec The table record of the child/embedded table (normaly post-processed by t3lib_transferData)
+	 * @param array $rec The table record of the child/embedded table (normaly post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor)
 	 * @param string $appendFormFieldNames The [<table>][<uid>] of the parent record (the intermediate table)
 	 * @param array $config content of $PA['fieldConf']['config']
 	 * @return string A HTML string with <table> tag around.
@@ -1081,7 +1081,7 @@ class InlineElement {
 		$expandSingle = isset($config['appearance']['expandSingle']) && $config['appearance']['expandSingle'];
 		// Put the current level also to the dynNestedStack of TCEforms:
 		$this->fObj->pushToDynNestedStack('inline', $this->inlineNames['object']);
-		// Dynamically create a new record using t3lib_transferData
+		// Dynamically create a new record using \TYPO3\CMS\Backend\Form\DataPreprocessor
 		if (!$foreignUid || !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($foreignUid) || $config['foreign_selector']) {
 			$record = $this->getNewRecord($this->inlineFirstPid, $current['table']);
 			// Set language of new child record to the language of the parent record:
@@ -1382,7 +1382,7 @@ class InlineElement {
 		$itemArray = $this->getRelatedRecordsUidArray($itemList);
 		// Perform modification of the selected items array:
 		foreach ($itemArray as $uid) {
-			// Get the records for this uid using t3lib_transferdata:
+			// Get the records for this uid using \TYPO3\CMS\Backend\Form\DataPreprocessor
 			if ($record = $this->getRecord($pid, $table, $uid)) {
 				$records[$uid] = $record;
 			}
@@ -1556,13 +1556,14 @@ class InlineElement {
 
 	/**
 	 * Get a single record row for a TCA table from the database.
-	 * t3lib_transferData is used for "upgrading" the values, especially the relations.
+	 * \TYPO3\CMS\Backend\Form\DataPreprocessor is used for "upgrading" the
+	 * values, especially the relations.
 	 *
 	 * @param integer $pid The pid of the page the record should be stored (only relevant for NEW records)
 	 * @param string $table The table to fetch data from (= foreign_table)
 	 * @param string $uid The uid of the record to fetch, or the pid if a new record should be created
 	 * @param string $cmd The command to perform, empty or 'new'
-	 * @return array A record row from the database post-processed by t3lib_transferData
+	 * @return array A record row from the database post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor
 	 * @todo Define visibility
 	 */
 	public function getRecord($pid, $table, $uid, $cmd = '') {
@@ -1588,7 +1589,7 @@ class InlineElement {
 	 *
 	 * @param integer $pid The pid of the page the record should be stored (only relevant for NEW records)
 	 * @param string $table The table to fetch data from (= foreign_table)
-	 * @return array A record row from the database post-processed by t3lib_transferData
+	 * @return array A record row from the database post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor
 	 * @todo Define visibility
 	 */
 	public function getNewRecord($pid, $table) {

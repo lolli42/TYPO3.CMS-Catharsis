@@ -1291,7 +1291,7 @@ class TemplateService {
 
 	/**
 	 * Takes a TypoScript array as input and returns an array which contains all integer properties found which had a value (not only properties). The output array will be sorted numerically.
-	 * Call it like t3lib_TStemplate::sortedKeyList()
+	 * Call it like \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList()
 	 *
 	 * @param array $setupArr TypoScript array with numerical array in
 	 * @param boolean $acceptOnlyProperties If set, then a value is not required - the properties alone will be enough.

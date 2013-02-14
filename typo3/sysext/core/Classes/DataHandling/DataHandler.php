@@ -25,14 +25,10 @@ namespace TYPO3\CMS\Core\DataHandling;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Contains the TYPO3 Core Engine
  *
- * Revised for TYPO3 3.9 October 2005 by Kasper Skårhøj
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
  * This is the TYPO3 Core Engine class for manipulation of the database
  * This class is used by eg. the tce_db.php script which provides an the interface for POST forms to this class.
  *
@@ -2356,7 +2352,7 @@ class DataHandler {
 	 * @param integer $id Record id, used for look-up of MM relations (local_uid)
 	 * @param string $status Status string ('update' or 'new')
 	 * @param string $type The type, either 'select', 'group' or 'inline'
-	 * @param string $currentTable Table name, needs to be passed to t3lib_loadDBGroup
+	 * @param string $currentTable Table name, needs to be passed to \TYPO3\CMS\Core\Database\RelationHandler
 	 * @param string $currentField field name, needs to be set for writing to sys_history
 	 * @return array Modified value array
 	 * @todo Define visibility
@@ -2419,14 +2415,14 @@ class DataHandler {
 	/**
 	 * Starts the processing the input data for flexforms. This will traverse all sheets / languages and for each it will traverse the sub-structure.
 	 * See checkValue_flex_procInData_travDS() for more details.
-	 * WARNING: Currently, it traverses based on the actual _data_ array and NOT the _structure_. This means that values for non-valid fields, lKey/vKey/sKeys will be accepted! For traversal of data with a call back function you should rather use class.t3lib_flexformtools.php
+	 * WARNING: Currently, it traverses based on the actual _data_ array and NOT the _structure_. This means that values for non-valid fields, lKey/vKey/sKeys will be accepted! For traversal of data with a call back function you should rather use \TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools
 	 *
 	 * @param array $dataPart The 'data' part of the INPUT flexform data
 	 * @param array $dataPart_current The 'data' part of the CURRENT flexform data
 	 * @param array $uploadedFiles The uploaded files for the 'data' part of the INPUT flexform data
 	 * @param array $dataStructArray Data structure for the form (might be sheets or not). Only values in the data array which has a configuration in the data structure will be processed.
 	 * @param array $pParams A set of parameters to pass through for the calling of the evaluation functions
-	 * @param string $callBackFunc Optional call back function, see checkValue_flex_procInData_travDS()  DEPRICATED, use class.t3lib_flexformtools.php instead for traversal!
+	 * @param string $callBackFunc Optional call back function, see checkValue_flex_procInData_travDS()  DEPRICATED, use \TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools instead for traversal!
 	 * @return array The modified 'data' part.
 	 * @see checkValue_flex_procInData_travDS()
 	 * @todo Define visibility
@@ -2574,7 +2570,7 @@ class DataHandler {
 	 * @param array $tcaFieldConf TCA field config
 	 * @param integer $id Record id
 	 * @param string $status Status string ('update' or 'new')
-	 * @param string $table Table name, needs to be passed to t3lib_loadDBGroup
+	 * @param string $table Table name, needs to be passed to \TYPO3\CMS\Core\Database\RelationHandler
 	 * @param string $field The current field the values are modified for
 	 * @param array $additionalData Additional data to be forwarded to sub-processors
 	 * @return string Modified values
@@ -2583,7 +2579,7 @@ class DataHandler {
 		$newValue = '';
 		$foreignTable = $tcaFieldConf['foreign_table'];
 		$valueArray = $this->applyFiltersToValues($tcaFieldConf, $valueArray);
-		// Fetch the related child records by using t3lib_loadDBGroup:
+		// Fetch the related child records using \TYPO3\CMS\Core\Database\RelationHandler
 		/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
 		$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 		$dbAnalysis->start(implode(',', $valueArray), $foreignTable, '', 0, $table, $tcaFieldConf);
@@ -3139,7 +3135,7 @@ class DataHandler {
 			if ($language > 0 && $localizationMode == 'keep') {
 				$value = $inlineSubType == 'field' ? 0 : '';
 			} else {
-				// Fetch the related child records by using t3lib_loadDBGroup:
+				// Fetch the related child records using \TYPO3\CMS\Core\Database\RelationHandler
 				/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
 				$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 				$dbAnalysis->start($value, $conf['foreign_table'], '', $uid, $table, $conf);

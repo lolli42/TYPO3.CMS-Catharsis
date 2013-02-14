@@ -1063,7 +1063,7 @@ class TypoScriptFrontendController {
 			$GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] = microtime(TRUE);
 			$GLOBALS['TT']->push('Back End user initialized', '');
 			// TODO: validate the comment below: is this necessary? if so,
-			// formfield_status should be set to "" in t3lib_tsfeBeUserAuth
+			// formfield_status should be set to "" in \TYPO3\CMS\Backend\FrontendBackendUserAuthentication
 			// which is a subclass of t3lib_beUserAuth
 			// ----
 			// the value this->formfield_status is set to empty in order to
@@ -3221,7 +3221,8 @@ class TypoScriptFrontendController {
 	 * @todo Define visibility
 	 */
 	public function generatePage_preProcessing() {
-		// Same codeline as in getFromCache(). But $this->all has been changed by t3lib_TStemplate::start() in the meantime, so this must be called again!
+		// Same codeline as in getFromCache(). But $this->all has been changed by
+		// \TYPO3\CMS\Core\TypoScript\TemplateService::start() in the meantime, so this must be called again!
 		$this->newHash = $this->getHash();
 		// For cache management informational purposes.
 		$this->config['hash_base'] = $this->hash_base;
@@ -3229,7 +3230,7 @@ class TypoScriptFrontendController {
 			// Here we put some temporary stuff in the cache in order to let the first hit generate the page. The temporary cache will expire after a few seconds (typ. 30) or will be cleared by the rendered page, which will also clear and rewrite the cache.
 			$this->tempPageCacheContent();
 		}
-		// Setting cache_timeout_default. May be overridden by PHP include scritps.
+		// Setting cache_timeout_default. May be overridden by PHP include scripts.
 		$this->cacheTimeOutDefault = intval($this->config['config']['cache_period']);
 		// Page is generated
 		$this->no_cacheBeforePageGen = $this->no_cache;
@@ -4084,7 +4085,6 @@ if (version == "n3") {
 	 * @param string $typoScriptProperty Deprecated object or property
 	 * @param string $explanation Message or additional information
 	 * @return void
-	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(), t3lib_timeTrack::setTSlogMessage()
 	 * @todo Define visibility
 	 */
 	public function logDeprecatedTyposcript($typoScriptProperty, $explanation = '') {

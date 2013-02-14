@@ -847,7 +847,6 @@ class RelationHandler {
 	 * Prepare items from itemArray to be transferred to the TCEforms interface (as a comma list)
 	 *
 	 * @return string
-	 * @see t3lib_transferdata::renderRecord()
 	 * @todo Define visibility
 	 */
 	public function readyForInterface() {

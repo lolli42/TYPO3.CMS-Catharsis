@@ -683,7 +683,9 @@ class FormEngine {
 
 	/**
 	 * Based on the $table and $row of content, this displays the complete TCEform for the record.
-	 * The input-$row is required to be preprocessed if necessary by eg. the t3lib_transferdata class. For instance the RTE content should be transformed through this class first.
+	 * The input-$row is required to be preprocessed if necessary by eg.
+	 * the \TYPO3\CMS\Backend\Form\DataPreprocessor class. For instance the RTE content
+	 * should be transformed through this class first.
 	 *
 	 * @param string $table The table name
 	 * @param array $row The record from the table for which to render a field.
