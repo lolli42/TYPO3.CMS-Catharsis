@@ -17,5 +17,6 @@ Feel free to contact us if you want to do bigger things here, please send pull r
 Based on TYPO3 CMS master "6.1" branch from 13.02.2013 with its latest commit 2903d2cd712e53702bf6477029b18bd09a057099
 
 People with push rights:
-lolli42 (Christian Kuhn)
-helhum (Helmut Hummel)
+* lolli42 - Christian Kuhn
+* helhum - Helmut Hummel
+* tmaroschik - Thomas Maroschik
