@@ -14,3 +14,19 @@ not trigger a fatal in case someone calls require() or
 require_once() on them. Those compat files are removed. This
 is an issue if old extensions still use those calls. Usually
 the calls can be just removed from the extension.
+
+
+* Removed ext:statictemplates from core
+The extension static templates is unmaintained and partly broken.
+Most functionality was so old or half finished, that nobody
+dares to use it anymore. It was removed from core.
+If this extension is *really* still needed for whatever reason,
+integrators should feel free to maintain and provide it himself.
+
+Some TypoScript MENU objects include javascript files from
+statictemplates, which breaks them after removing the extension.
+It is expected that these menu objects aren't used in younger
+projects anyway.
+** GMENU_LAYERS
+** TMENU_LAYERS
+** GMENU_FOLDOUT

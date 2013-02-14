@@ -26,18 +26,17 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Contains the GMENU_FOLDOUT extension class, tslib_gmenu_foldout
  *
- * Revised for TYPO3 3.6 June/2003 by Kasper Skårhøj
- * XHTML compliant
- *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
- * Class extension tslib_gmenu for the creation of DHTML foldout menus
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * @TODO: With removal of statictemplates extension from core, this
+ * Menu object does NOT work anymore. It should be thrown away, or
+ * disencapsulated / substituted with something else. In case this
+ * class is killed, maybe an exception could be triggered?
+ *
  */
 class GraphicalMenuFoldout extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject {
 

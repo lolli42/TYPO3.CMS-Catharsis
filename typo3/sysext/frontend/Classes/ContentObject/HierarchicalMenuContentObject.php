@@ -57,6 +57,7 @@ class HierarchicalMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Ab
 				$GLOBALS['TSFE']->register['count_MENUOBJ'] = 0;
 				$GLOBALS['TSFE']->applicationData['GMENU_LAYERS']['WMid'] = array();
 				$GLOBALS['TSFE']->applicationData['GMENU_LAYERS']['WMparentId'] = array();
+				// @TODO: Call of old class naming
 				$menu = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('tslib_' . $cls);
 				$menu->parent_cObj = $this->cObj;
 				$menu->start($GLOBALS['TSFE']->tmpl, $GLOBALS['TSFE']->sys_page, '', $conf, 1);

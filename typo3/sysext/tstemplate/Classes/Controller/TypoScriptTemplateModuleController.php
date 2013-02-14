@@ -312,21 +312,8 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 		$theOutput .= $flashMessage->render();
 		// New standard?
 		if ($newStandardTemplate) {
-			// check wether statictemplates are supported
-			if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('statictemplates')) {
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title,uid', 'static_template', '', '', 'title');
-				$opt = '';
-				while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-					if (substr(trim($row['title']), 0, 8) == 'template') {
-						$opt .= '<option value="' . $row['uid'] . '">' . htmlspecialchars($row['title']) . '</option>';
-					}
-				}
-				$selector = '<select name="createStandard"><option></option>' . $opt . '</select><br />';
-				$staticsText = ', optionally based on one of the standard templates';
-			} else {
-				$selector = '<input type="hidden" name="createStandard" value="" />';
-				$staticsText = '';
-			}
+			$selector = '<input type="hidden" name="createStandard" value="" />';
+			$staticsText = '';
 			// Extension?
 			$theOutput .= $this->doc->section($GLOBALS['LANG']->getLL('newWebsite') . $staticsText, $GLOBALS['LANG']->getLL('newWebsiteDescription') . '<br /><br />' . $selector . '<input type="Submit" name="newWebsite" value="' . $GLOBALS['LANG']->getLL('newWebsiteAction') . '" />', 0, 1);
 		}
