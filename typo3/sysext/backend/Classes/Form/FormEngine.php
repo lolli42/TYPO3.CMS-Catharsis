@@ -532,8 +532,6 @@ class FormEngine {
 	public $additionalJS_delete = array();
 
 	/**
-	 * Instance of t3lib_tceforms_inline
-	 *
 	 * @var \TYPO3\CMS\Backend\Form\Element\InlineElement
 	 * @todo Define visibility
 	 */
@@ -600,7 +598,7 @@ class FormEngine {
 			'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
 			'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly')
 		);
-		// Create instance of t3lib_TCEforms_inline only if this a non-IRRE-AJAX call:
+		// Create instance of \TYPO3\CMS\Backend\Form\Element\InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement::') !== 0) {
 			$this->inline = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement');
 		}

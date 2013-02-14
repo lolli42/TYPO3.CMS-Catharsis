@@ -890,7 +890,7 @@ class RelationHandler {
 	 *
 	 * @param string $table Table name
 	 * @param integer $id Record UID
-	 * @return array Information concerning modifications delivered by t3lib_refindex::updateRefIndexTable()
+	 * @return array Information concerning modifications delivered by \TYPO3\CMS\Core\Database\ReferenceIndex::updateRefIndexTable()
 	 * @todo Define visibility
 	 */
 	public function updateRefIndex($table, $id) {

@@ -121,7 +121,7 @@ class InlineElement {
 	protected $hookObjects = array();
 
 	/**
-	 * Initialize an instance of t3lib_TCEforms_inline
+	 * Initialize
 	 *
 	 * @param \TYPO3\CMS\Backend\Form\FormEngine $tceForms Reference to an TCEforms instance
 	 * @return void

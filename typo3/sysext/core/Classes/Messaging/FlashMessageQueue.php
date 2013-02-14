@@ -46,7 +46,7 @@ class FlashMessageQueue {
 	 * Adds a message either to the BE_USER session (if the $message has the storeInSession flag set)
 	 * or it adds the message to self::$messages.
 	 *
-	 * @param object $message Instance of t3lib_FlashMessage, representing a message
+	 * @param \TYPO3\CMS\Core\Messaging\FlashMessage $message Represention of a message
 	 * @return void
 	 */
 	static public function addMessage(\TYPO3\CMS\Core\Messaging\FlashMessage $message) {
@@ -62,7 +62,7 @@ class FlashMessageQueue {
 	/**
 	 * Returns all messages from the current PHP session and from the current request.
 	 *
-	 * @return array Array of t3lib_FlashMessage objects
+	 * @return array<\TYPO3\CMS\Core\Messaging\FlashMessage>
 	 */
 	static public function getAllMessages() {
 		// Get messages from user session
@@ -76,7 +76,7 @@ class FlashMessageQueue {
 	 * After fetching the messages the internal queue and the message queue in the session
 	 * will be emptied.
 	 *
-	 * @return array Array of t3lib_FlashMessage objects
+	 * @return array<\TYPO3\CMS\Core\Messaging\FlashMessage>
 	 */
 	static public function getAllMessagesAndFlush() {
 		$queuedFlashMessages = self::getAllMessages();
@@ -90,7 +90,7 @@ class FlashMessageQueue {
 	/**
 	 * Stores given flash messages in the session
 	 *
-	 * @param array $flashMessages Array of t3lib_FlashMessage
+	 * @param array<\TYPO3\CMS\Core\Messaging\FlashMessage> $flashMessages
 	 * @return void
 	 */
 	static protected function storeFlashMessagesInSession(array $flashMessages) {
@@ -110,7 +110,7 @@ class FlashMessageQueue {
 	 * Returns current flash messages from the session, making sure to always
 	 * return an array.
 	 *
-	 * @return array An array of t3lib_FlashMessage flash messages.
+	 * @return array<\TYPO3\CMS\Core\Messaging\FlashMessage> Flash messages.
 	 */
 	static protected function getFlashMessagesFromSession() {
 		$flashMessages = self::getUserByContext()->getSessionData('core.template.flashMessages');

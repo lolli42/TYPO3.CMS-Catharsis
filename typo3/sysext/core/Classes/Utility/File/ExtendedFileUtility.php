@@ -394,7 +394,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					}
 				}
 				$out = '<p>The file cannot be deleted since it is still used at the following places:<br />' . implode('<br />', $shortcutContent) . '</p>';
-				$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('t3lib_flashMessage', $out, 'File not deleted', \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING, TRUE);
+				$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Messaging\FlashMessage', $out, 'File not deleted', \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING, TRUE);
 				\TYPO3\CMS\Core\Messaging\FlashMessageQueue::addMessage($flashMessage);
 				return;
 			} else {

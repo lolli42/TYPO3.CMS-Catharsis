@@ -39,15 +39,15 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Add another flash message.
 	 * Severity can be specified and must be one of
-	 * t3lib_FlashMessage::NOTICE,
-	 * t3lib_FlashMessage::INFO,
-	 * t3lib_FlashMessage::OK,
-	 * t3lib_FlashMessage::WARNING,
-	 * t3lib_FlashMessage::ERROR
+	 * \TYPO3\CMS\Core\Messaging\FlashMessage::NOTICE,
+	 * \TYPO3\CMS\Core\Messaging\FlashMessage::INFO,
+	 * \TYPO3\CMS\Core\Messaging\FlashMessage::OK,
+	 * \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
+	 * \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
 	 *
 	 * @param string $message
 	 * @param string $title optional message title
-	 * @param integer $severity optional severity code. One of the t3lib_FlashMessage constants
+	 * @param integer $severity optional severity code. One of the \TYPO3\CMS\Core\Messaging\FlashMessage constants
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 * @api
@@ -64,9 +64,8 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Get all flash messages currently available.
 	 *
-	 * @return array<t3lib_FlashMessage> An array of flash messages
+	 * @return array<\TYPO3\CMS\Core\Messaging\FlashMessage> An array of flash messages
 	 * @api
-	 * @see t3lib_FlashMessage
 	 */
 	public function getAllMessages() {
 		return \TYPO3\CMS\Core\Messaging\FlashMessageQueue::getAllMessages();
@@ -85,8 +84,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Get all flash messages currently available. And removes them from the session.
 	 *
-	 * @return array<t3lib_FlashMessage> An array of flash messages
-	 * @see t3lib_FlashMessage
+	 * @return array<\TYPO3\CMS\Core\Messaging\FlashMessage> An array of flash messages
 	 * @api
 	 */
 	public function getAllMessagesAndFlush() {

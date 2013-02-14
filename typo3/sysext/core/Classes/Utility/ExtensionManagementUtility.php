@@ -753,7 +753,8 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * This method is called from t3lib_loadModules::checkMod and it replaces old conf.php.
+	 * This method is called from \TYPO3\CMS\Backend\Module\ModuleLoader::checkMod
+	 * and it replaces old conf.php.
 	 *
 	 * The original function for is called
 	 * Tx_Extbase_Utility_Extension::configureModule, the refered function can
