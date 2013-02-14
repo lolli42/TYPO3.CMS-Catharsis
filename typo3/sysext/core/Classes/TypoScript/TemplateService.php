@@ -37,7 +37,8 @@ namespace TYPO3\CMS\Core\TypoScript;
  * Template object that is responsible for generating the TypoScript template based on template records.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @see 	t3lib_tsparser, t3lib_matchcondition_abstract
+ * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
+ * @see \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
  */
 class TemplateService {
 
