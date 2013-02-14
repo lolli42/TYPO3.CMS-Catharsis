@@ -15,3 +15,7 @@ For now, important changes that affect backwards compatibility must be documente
 Feel free to contact us if you want to do bigger things here, please send pull requests from your fork. This fork is leaded as a technical dictatorship, only trusted and coordinated people have push rights.
 
 Based on TYPO3 CMS master "6.1" branch from 13.02.2013 with its latest commit 2903d2cd712e53702bf6477029b18bd09a057099
+
+People with push rights:
+lolli42 (Christian Kuhn)
+helhum (Helmut Hummel)
