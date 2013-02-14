@@ -7,7 +7,6 @@ $t3libClasses = array(
 	't3lib_install' => PATH_t3lib . 'class.t3lib_install.php',
 	't3lib_readmail' => PATH_t3lib . 'class.t3lib_readmail.php',
 	't3lib_syntaxhl' => PATH_t3lib . 'class.t3lib_syntaxhl.php',
-	't3lib_xml' => PATH_t3lib . 'class.t3lib_xml.php'
 );
 $typo3Classes = array(
 	'ext_posmap_pages' => PATH_typo3 . 'move_el.php',
