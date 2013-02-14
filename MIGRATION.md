@@ -30,3 +30,11 @@ projects anyway.
 ** GMENU_LAYERS
 ** TMENU_LAYERS
 ** GMENU_FOLDOUT
+
+
+* Removed t3lib_syntaxhl
+This class was unused in the core for a long time already and
+is removed without deprecation. If you still need it for
+whatever reasons (really?), please deliver a copy with
+your extension.
+
