@@ -333,7 +333,7 @@ class DataHandlerHook {
 	/**
 	 * Send an email notification to users in workspace
 	 *
-	 * @param array $stat Workspace access array (from t3lib_userauthgroup::checkWorkspace())
+	 * @param array $stat Workspace access array from \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::checkWorkspace()
 	 * @param integer $stageId New Stage number: 0 = editing, 1= just ready for review, 10 = ready for publication, -1 = rejected!
 	 * @param string $table Table name of element (or list of element names if $id is zero)
 	 * @param integer $id Record uid of element (if zero, then $table is used as reference to element(s) alone)
