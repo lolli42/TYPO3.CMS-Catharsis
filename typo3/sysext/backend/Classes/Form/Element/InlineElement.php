@@ -138,7 +138,8 @@ class InlineElement {
 
 	/**
 	 * Initialized the hook objects for this class.
-	 * Each hook object has to implement the interface t3lib_tceformsInlineHook.
+	 * Each hook object has to implement the interface
+	 * \TYPO3\CMS\Backend\Form\Element\InlineElementHookInterface
 	 *
 	 * @return void
 	 */

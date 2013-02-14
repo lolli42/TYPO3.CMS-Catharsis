@@ -271,7 +271,8 @@ class SystemEnvironmentBuilder {
 	 * include path, because the shipped PEAR packages use
 	 * relative paths to include their files.
 	 *
-	 * This is required for t3lib_http_Request to work.
+	 * This is required for \TYPO3\CMS\Core\Http\HttpRequest
+	 * to work.
 	 *
 	 * Having the TYPO3 folder first will make sure that the
 	 * shipped version is loaded before any local PEAR package,

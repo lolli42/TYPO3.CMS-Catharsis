@@ -26,13 +26,12 @@ namespace TYPO3\CMS\Backend\View;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
- * Extension class for the t3lib_browsetree class, specially made
- * for browsing pages in the Web module
+ * Browse pages in Web module
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @author Benjamin Mack <bmack@xnos.org>
- * @see class t3lib_browseTree
  */
 class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 

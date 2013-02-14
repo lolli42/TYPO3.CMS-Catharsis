@@ -26,14 +26,12 @@ namespace TYPO3\CMS\Backend\Tree\View;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Base class for creating a browsable array/page/folder tree in HTML
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @author René Fritz <r.fritz@colorcube.de>
- * @see t3lib_browsetree
- * @see t3lib_pagetree
- * @see t3lib_foldertree
  */
 abstract class AbstractTreeView {
 

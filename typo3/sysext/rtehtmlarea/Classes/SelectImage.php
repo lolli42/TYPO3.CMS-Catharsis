@@ -123,7 +123,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	}
 
 	/**
-	 * Initialize hook objects implementing interface t3lib_browseLinksHook
+	 * Initialize hook objects implementing the hook interface
 	 *
 	 * @return 	void
 	 */

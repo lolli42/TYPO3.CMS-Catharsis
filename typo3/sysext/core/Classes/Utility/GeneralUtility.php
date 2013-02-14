@@ -52,7 +52,7 @@ class GeneralUtility {
 	 * Singleton instances returned by makeInstance, using the class names as
 	 * array keys
 	 *
-	 * @var array<t3lib_Singleton>
+	 * @var array<\TYPO3\CMS\Core\SingletonInterface>
 	 */
 	static protected $singletonInstances = array();
 
@@ -4282,7 +4282,7 @@ Connection: close
 	 * Warning: This is a helper method for unit tests. Do not call this directly in production code!
 	 *
 	 * @see makeInstance
-	 * @throws \InvalidArgumentException if class extends t3lib_Singleton
+	 * @throws \InvalidArgumentException if class extends \TYPO3\CMS\Core\SingletonInterface
 	 * @param string $className
 	 * @param object $instance
 	 * @return void

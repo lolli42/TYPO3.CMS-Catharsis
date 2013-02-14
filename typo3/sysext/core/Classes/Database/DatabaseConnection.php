@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Core\Database;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Contains the class "t3lib_db" containing functions for building SQL queries
  * and mysql wrappers, thus providing a foundational API to all database
@@ -107,12 +108,12 @@ class DatabaseConnection {
 	public $default_charset = 'utf8';
 
 	/**
-	 * @var t3lib_DB_preProcessQueryHook[]
+	 * @var array<\TYPO3\CMS\Core\Database\PreProcessQueryHookInterface>
 	 */
 	protected $preProcessHookObjects = array();
 
 	/**
-	 * @var t3lib_DB_postProcessQueryHook[]
+	 * @var array<\TYPO3\CMS\Core\Database\PostProcessQueryHookInterface>
 	 */
 	protected $postProcessHookObjects = array();
 
