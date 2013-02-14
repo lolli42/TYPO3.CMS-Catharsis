@@ -26,18 +26,15 @@ namespace TYPO3\CMS\Core\Utility\File;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Contains class with basic file management functions
  *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
+ * Contains functions for management, validation etc of files in TYPO3,
+ * using the concepts of web- and ftp-space. Please see the comment for the
+ * init() function
  *
  * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
- * Contains functions for management, validation etc of files in TYPO3, using the concepts of web- and ftp-space. Please see the comment for the init() function
- *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
- * @see t3lib_basicFileFunctions::init()
  */
 class BasicFileUtility {
 

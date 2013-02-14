@@ -7928,7 +7928,7 @@ If set, a clear gif is not used by rather a <div> tag with a style-attribute set
 This formatting is useful if the locale is set in advance in the CONFIG-object. See this.
 
 Properties:
-.charset  : Can be set to the charset of the output string if you need to convert it to renderCharset. Default is to take the intelligently guessed charset from t3lib_cs.]]></description>
+.charset  : Can be set to the charset of the output string if you need to convert it to renderCharset. Default is to take the intelligently guessed charset from \TYPO3\CMS\Core\Charset\CharsetConverter.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>

@@ -1573,14 +1573,14 @@ class user_feAdmin {
 	}
 
 	/**
-	 * Creates an instance of class "t3lib_basicFileFunctions" in $this->fileFunc (if not already done)
+	 * Creates an instance of class "\TYPO3\CMS\Core\Utility\File\BasicFileUtility" in $this->fileFunc (if not already done)
 	 *
 	 * @return void
 	 * @todo Define visibility
 	 */
 	public function createFileFuncObj() {
 		if (!$this->fileFunc) {
-			$this->fileFunc = t3lib_div::makeInstance('t3lib_basicFileFunctions');
+			$this->fileFunc = t3lib_div::makeInstance('TYPO3\CMS\Core\Utility\File\BasicFileUtility');
 		}
 	}
 

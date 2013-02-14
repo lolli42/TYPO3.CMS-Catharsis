@@ -26,18 +26,11 @@ namespace TYPO3\CMS\Core\Utility\File;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
- * Extending class to class t3lib_basicFileFunctions
+ * Contains functions for performing file operations like copying, pasting,
+ * uploading, moving, deleting etc. through the TCE
  *
- * Revised for TYPO3 3.6 May/2004 by Kasper Skårhøj
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
- * Contains functions for performing file operations like copying, pasting, uploading, moving, deleting etc. through the TCE
- * Extending class to class t3lib_basicFileFunctions.
- *
- * see basicFileFunctions
  * see document "TYPO3 Core API" for syntax
  *
  * This class contains functions primarily used by tce_file.php (TYPO3 Core Engine for file manipulation)
@@ -45,8 +38,8 @@ namespace TYPO3\CMS\Core\Utility\File;
  *
  * Important internal variables:
  *
- * $filemounts		(see basicFileFunctions)
- * $f_ext	  (see basicFileFunctions)
+ * $filemounts
+ * $f_ext
  * ... All fileoperations must be within the filemount-paths. Further the fileextension MUST validate TRUE with the f_ext array
  *
  * The unzip-function allows unzip only if the destination path has it's f_ext[]['allow'] set to '*'!!

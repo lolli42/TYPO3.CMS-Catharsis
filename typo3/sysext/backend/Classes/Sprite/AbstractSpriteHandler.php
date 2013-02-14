@@ -72,7 +72,7 @@ abstract class AbstractSpriteHandler implements \TYPO3\CMS\Backend\Sprite\Sprite
 	 *
 	 * In fact the stylesheet-files are copied to t3lib_SpriteManager::tempPath
 	 * where they automatically will be included from via template.php and
-	 * t3lib_compressor.
+	 * \TYPO3\CMS\Core\Resource\ResourceCompressor
 	 *
 	 * @return void
 	 */

@@ -1880,7 +1880,7 @@ class ResourceStorage {
 	 *
 	 * @throws \RuntimeException
 	 * @return string A unique fileName inside $folder, based on $theFile.
-	 * @see t3lib_basicFileFunc::getUniqueName()
+	 * @see \TYPO3\CMS\Core\Utility\File\BasicFileUtility::getUniqueName()
 	 */
 	// TODO check if this should be moved back to Folder
 	protected function getUniqueName(Folder $folder, $theFile, $dontCheckForUnique = FALSE) {

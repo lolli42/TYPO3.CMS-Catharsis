@@ -1186,7 +1186,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	}
 
 	/**
-	 * Create visual difference view of two records. Using t3lib_diff library
+	 * Create visual difference view of two records. Using DiffUtility
 	 *
 	 * @param 	string		Table name
 	 * @param 	array		New version record (green)

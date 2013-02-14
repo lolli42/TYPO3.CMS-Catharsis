@@ -4602,7 +4602,7 @@ if (version == "n3") {
 	 * @param string $str String to convert charset for
 	 * @param string $from Optional "from" charset.
 	 * @return string Output string, converted if needed.
-	 * @see t3lib_cs
+	 * @see \TYPO3\CMS\Core\Charset\CharsetConverter
 	 * @todo Define visibility
 	 */
 	public function csConv($str, $from = '') {
