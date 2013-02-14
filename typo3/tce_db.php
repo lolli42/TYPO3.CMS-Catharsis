@@ -47,7 +47,7 @@ $SOBE->init();
 foreach ($SOBE->include_once as $INC_FILE) {
 	include_once $INC_FILE;
 }
-$formprotection = t3lib_formprotection_Factory::get();
+$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
 if ($formprotection->validateToken(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('formToken'), 'tceAction')) {
 	$SOBE->initClipboard();
 	$SOBE->main();

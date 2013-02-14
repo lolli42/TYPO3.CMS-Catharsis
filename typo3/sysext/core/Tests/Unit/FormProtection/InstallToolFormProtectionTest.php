@@ -73,9 +73,12 @@ class InstallToolFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return string the name of the created class, will not be empty
 	 */
 	private function createAccessibleProxyClass() {
-		$className = 't3lib_formprotection_InstallToolFormProtectionAccessibleProxy';
-		if (!class_exists($className)) {
+		$namespace = 'TYPO3\\CMS\\Core\\Tests\\Unit\\FormProtection';
+		$className = 'InstallToolFormProtectionAccessibleProxy';
+		$fullClassPath = $namespace. '\\' . $className;
+		if (!class_exists($fullClassPath)) {
 			eval(
+				'namespace ' . $namespace . ';' .
 				'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection {' .
 				'  public $sessionToken;' .
 				'  public function createValidationErrorMessage() {' .
@@ -88,7 +91,7 @@ class InstallToolFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			);
 		}
 
-		return $className;
+		return $fullClassPath;
 	}
 
 
