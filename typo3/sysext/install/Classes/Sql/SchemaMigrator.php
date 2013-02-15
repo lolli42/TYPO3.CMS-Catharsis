@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Install\Sql;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Verify TYPO3 DB table structure. Mainly used in install tool
  * compare wizard and extension manager.

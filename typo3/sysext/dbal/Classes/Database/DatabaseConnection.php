@@ -179,14 +179,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public $SQLparser;
 
 	/**
-	 * Installer
-	 *
-	 * @var t3lib_install
-	 * @todo Define visibility
-	 */
-	public $Installer;
-
-	/**
 	 * @var \TYPO3\CMS\Install\Sql\SchemaMigrator
 	 */
 	protected $installerSql = NULL;
@@ -205,7 +197,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function __construct() {
 		// Set SQL parser object for internal use:
 		$this->SQLparser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\SqlParser');
-		$this->Installer = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('t3lib_install');
 		$this->installerSql = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
 		$this->queryCache = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('dbal');
 		// Set internal variables with configuration:
@@ -332,9 +323,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Analyzes fields and adds the extracted information to the field type, auto increment and primary key info caches.
 	 *
-	 * @param array $parsedExtSQL The output produced by t3lib_install_Sql->getFieldDefinitions_fileContent()
+	 * @param array $parsedExtSQL The output produced by \TYPO3\CMS\Install\Sql\SchemaMigrator->getFieldDefinitions_fileContent()
 	 * @return void
-	 * @see t3lib_install_Sql->getFieldDefinitions_fileContent()
 	 */
 	protected function analyzeFields($parsedExtSQL) {
 		foreach ($parsedExtSQL as $table => $tdef) {
