@@ -3701,13 +3701,13 @@ Connection: close
 	 * @param string $addQueryParams Query-parameters: "&xxx=yyy&zzz=uuu
 	 * @return array Array with key/value pairs of query-parameters WITHOUT a certain list of variable names (like id, type, no_cache etc.) and WITH a variable, encryptionKey, specific for this server/installation
 	 * @see tslib_fe::makeCacheHash(), tslib_cObj::typoLink(), \TYPO3\CMS\Core\Utility\GeneralUtility::calculateCHash()
-	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use t3lib_cacheHash instead
+	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use \TYPO3\CMS\Frontend\Page\CacheHashCalculator instead
 	 */
 	static public function cHashParams($addQueryParams) {
 		self::logDeprecatedFunction();
 		// Splitting parameters up
 		$params = explode('&', substr($addQueryParams, 1));
-		/* @var $cacheHash t3lib_cacheHash */
+		/* @var $cacheHash \TYPO3\CMS\Frontend\Page\CacheHashCalculator */
 		$cacheHash = self::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		$pA = $cacheHash->getRelevantParameters($addQueryParams);
 		// Hook: Allows to manipulate the parameters which are taken to build the chash:
@@ -3734,11 +3734,11 @@ Connection: close
 	 * @param string $addQueryParams Query-parameters: "&xxx=yyy&zzz=uuu
 	 * @return string Hash of all the values
 	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::cHashParams(), \TYPO3\CMS\Core\Utility\GeneralUtility::calculateCHash()
-	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use t3lib_cacheHash instead
+	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use \TYPO3\CMS\Frontend\Page\CacheHashCalculator instead
 	 */
 	static public function generateCHash($addQueryParams) {
 		self::logDeprecatedFunction();
-		/* @var $cacheHash t3lib_cacheHash */
+		/* @var $cacheHash \TYPO3\CMS\Frontend\Page\CacheHashCalculator */
 		$cacheHash = self::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		return $cacheHash->generateForParameters($addQueryParams);
 	}
@@ -3748,11 +3748,11 @@ Connection: close
 	 *
 	 * @param array $params Array of key-value pairs
 	 * @return string Hash of all the values
-	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use t3lib_cacheHash instead
+	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use \TYPO3\CMS\Frontend\Page\CacheHashCalculator instead
 	 */
 	static public function calculateCHash($params) {
 		self::logDeprecatedFunction();
-		/* @var $cacheHash t3lib_cacheHash */
+		/* @var $cacheHash \TYPO3\CMS\Frontend\Page\CacheHashCalculator */
 		$cacheHash = self::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
 		return $cacheHash->calculateCacheHash($params);
 	}

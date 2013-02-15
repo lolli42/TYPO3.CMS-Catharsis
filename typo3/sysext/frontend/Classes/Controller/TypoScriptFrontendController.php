@@ -737,7 +737,7 @@ class TypoScriptFrontendController {
 	protected $pageCacheTags = array();
 
 	/**
-	 * @var t3lib_cacheHash	The cHash Service class used for cHash related functionality
+	 * @var \TYPO3\CMS\Frontend\Page\CacheHashCalculator The cHash Service class used for cHash related functionality
 	 */
 	protected $cacheHash;
 
@@ -2124,7 +2124,7 @@ class TypoScriptFrontendController {
 	 * @return array Array with key/value pairs of query-parameters WITHOUT a certain list of variable names (like id, type, no_cache etc) and WITH a variable, encryptionKey, specific for this server/installation
 	 * @access private
 	 * @see makeCacheHash(), tslib_cObj::typoLink()
-	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use t3lib_cacheHash instead
+	 * @deprecated since TYPO3 4.7 - will be removed in TYPO3 6.1 - use \TYPO3\CMS\Frontend\Page\CacheHashCalculator instead
 	 * @obsolete
 	 * @todo Define visibility
 	 */
