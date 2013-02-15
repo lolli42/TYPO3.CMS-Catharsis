@@ -201,9 +201,6 @@ class LiveSearch {
 	 * @param string $orderBy
 	 * @param string $limit MySql Limit notation
 	 * @return array
-	 * @see t3lib_db::exec_SELECT_queryArray()
-	 * @see t3lib_db::sql_num_rows()
-	 * @see t3lib_db::sql_fetch_assoc()
 	 * @see t3lib_iconWorks::getSpriteIconForRecord()
 	 * @see getTitleFromCurrentRow()
 	 * @see getEditLink()
@@ -369,7 +366,6 @@ class LiveSearch {
 	 *
 	 * @param string $tableName Record table name
 	 * @return string
-	 * @see t3lib_db::stripOrderBy()
 	 */
 	protected function makeOrderByTable($tableName) {
 		$orderBy = '';
@@ -410,7 +406,6 @@ class LiveSearch {
 	 *
 	 * @param string $tableName
 	 * @return string
-	 * @see t3lib_db::quoteStr()
 	 */
 	public function getQueryString($tableName = '') {
 		return $GLOBALS['TYPO3_DB']->quoteStr($this->queryString, $tableName);
