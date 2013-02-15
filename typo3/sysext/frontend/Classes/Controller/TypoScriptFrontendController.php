@@ -727,10 +727,10 @@ class TypoScriptFrontendController {
 	protected $pageRenderer;
 
 	/**
-	 * the page cache object, use this to save pages to the cache and to
+	 * The page cache object, use this to save pages to the cache and to
 	 * retrieve them again
 	 *
-	 * @var t3lib_cache_AbstractBackend
+	 * @var \TYPO3\CMS\Cache\Backend\AbstractBackend
 	 */
 	protected $pageCache;
 
@@ -4774,7 +4774,7 @@ if (version == "n3") {
 	 */
 	protected function getSysDomainCache() {
 		$entryIdentifier = 'core-database-sys_domain-complete';
-		/** @var $runtimeCache t3lib_cache_frontend_AbstractFrontend */
+		/** @var $runtimeCache \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend */
 		$runtimeCache = $GLOBALS['typo3CacheManager']->getCache('cache_runtime');
 
 		$sysDomainData = array();
