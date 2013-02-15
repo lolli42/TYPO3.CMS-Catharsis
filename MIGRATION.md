@@ -38,3 +38,10 @@ is removed without deprecation. If you still need it for
 whatever reasons (really?), please deliver a copy with
 your extension.
 
+
+* Removed t3lib_formmail
+The class is unlikly to be used in the frontend currently. The
+call in the frontend rendering process is removed. It is unlikly
+your code is affected by this patch, if so, you need to find
+a different solution to send mails at this point.
+

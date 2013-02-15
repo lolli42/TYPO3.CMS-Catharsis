@@ -2640,45 +2640,11 @@ class TypoScriptFrontendController {
 	}
 
 	/**
-	 * Checks if any email-submissions
-	 *
-	 * @return string "email" if a formmail has been sent, "" if none.
-	 * @todo Define visibility
-	 */
-	public function checkDataSubmission() {
-		$ret = '';
-		$formtype_mail = isset($_POST['formtype_mail']) || isset($_POST['formtype_mail_x']);
-		if ($formtype_mail) {
-			$refInfo = parse_url(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('HTTP_REFERER'));
-			if (\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY') == $refInfo['host'] || $this->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
-				if ($this->locDataCheck($_POST['locationData'])) {
-					if ($formtype_mail) {
-						$ret = 'email';
-					}
-					$GLOBALS['TT']->setTSlogMessage('"Check Data Submission": Return value: ' . $ret, 0);
-					return $ret;
-				}
-			} else {
-				$GLOBALS['TT']->setTSlogMessage('"Check Data Submission": HTTP_HOST and REFERER HOST did not match when processing submitted formdata!', 3);
-			}
-		}
-		// Hook for processing data submission to extensions:
-		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['checkDataSubmission'])) {
-			foreach ($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['checkDataSubmission'] as $_classRef) {
-				$_procObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($_classRef);
-				$_procObj->checkDataSubmission($this);
-			}
-		}
-		return $ret;
-	}
-
-	/**
 	 * Processes submitted user data (obsolete "Frontend TCE")
 	 *
 	 * @return void
 	 * @see tslib_feTCE
 	 * @deprecated since 6.0, will be removed two versions later
-	 * @todo Define visibility
 	 */
 	public function fe_tce() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
@@ -2690,7 +2656,6 @@ class TypoScriptFrontendController {
 	 * @param string $locationData The input from $_POST['locationData']
 	 * @return void
 	 * @access private
-	 * @see checkDataSubmission()
 	 * @todo Define visibility
 	 */
 	public function locDataCheck($locationData) {
@@ -2710,52 +2675,10 @@ class TypoScriptFrontendController {
 	/**
 	 * Sends the emails from the formmail content object.
 	 *
-	 * @return void
-	 * @access private
-	 * @see checkDataSubmission()
-	 * @todo Define visibility
+	 * @deprecated Will be removed
 	 */
 	public function sendFormmail() {
-		$formmail = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('t3lib_formmail');
-		$EMAIL_VARS = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST();
-		$locationData = $EMAIL_VARS['locationData'];
-		unset($EMAIL_VARS['locationData']);
-		unset($EMAIL_VARS['formtype_mail'], $EMAIL_VARS['formtype_mail_x'], $EMAIL_VARS['formtype_mail_y']);
-		$integrityCheck = $this->TYPO3_CONF_VARS['FE']['strictFormmail'];
-		if (!$this->TYPO3_CONF_VARS['FE']['secureFormmail']) {
-			// Check recipient field:
-			// These two fields are the ones which contain recipient addresses that can be misused to send mail from foreign servers.
-			$encodedFields = explode(',', 'recipient, recipient_copy');
-			foreach ($encodedFields as $fieldKey) {
-				if (strlen($EMAIL_VARS[$fieldKey])) {
-					// Decode...
-					if ($res = $this->codeString($EMAIL_VARS[$fieldKey], TRUE)) {
-						$EMAIL_VARS[$fieldKey] = $res;
-					} elseif ($integrityCheck) {
-						// Otherwise abort:
-						$GLOBALS['TT']->setTSlogMessage('"Formmail" discovered a field (' . $fieldKey . ') which could not be decoded to a valid string. Sending formmail aborted due to security reasons!', 3);
-						return FALSE;
-					} else {
-						$GLOBALS['TT']->setTSlogMessage('"Formmail" discovered a field (' . $fieldKey . ') which could not be decoded to a valid string. The security level accepts this, but you should consider a correct coding though!', 2);
-					}
-				}
-			}
-		} else {
-			$locData = explode(':', $locationData);
-			$record = $this->sys_page->checkRecord($locData[1], $locData[2], 1);
-			$EMAIL_VARS['recipient'] = $record['subheader'];
-			$EMAIL_VARS['recipient_copy'] = $this->extractRecipientCopy($record['bodytext']);
-		}
-		// Hook for preprocessing of the content for formmails:
-		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'])) {
-			foreach ($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'] as $_classRef) {
-				$_procObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($_classRef);
-				$EMAIL_VARS = $_procObj->sendFormmail_preProcessVariables($EMAIL_VARS, $this);
-			}
-		}
-		$formmail->start($EMAIL_VARS);
-		$formmail->sendtheMail();
-		$GLOBALS['TT']->setTSlogMessage('"Formmail" invoked, sending mail to ' . $EMAIL_VARS['recipient'], 0);
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**
