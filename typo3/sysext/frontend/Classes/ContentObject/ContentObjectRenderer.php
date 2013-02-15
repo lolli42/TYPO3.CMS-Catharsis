@@ -1639,12 +1639,11 @@ class ContentObjectRenderer {
 	 * " World. How are ". The input content string could just as well have
 	 * been "Hello ###sub1### World. How are ###sub1### you?" and the result
 	 * would be the same
-	 * Wrapper for t3lib_parsehtml::getSubpart which behaves identical
+	 * Wrapper for \TYPO3\CMS\Core\Html\HtmlParser::getSubpart which behaves identical
 	 *
 	 * @param string $content The content stream, typically HTML template content.
 	 * @param string $marker The marker string, typically on the form "###[the marker string]###
 	 * @return string The subpart found, if found.
-	 * @see substituteSubpart(), t3lib_parsehtml::getSubpart()
 	 */
 	public function getSubpart($content, $marker) {
 		return \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($content, $marker);
@@ -1654,14 +1653,13 @@ class ContentObjectRenderer {
 	 * Substitute subpart in input template stream.
 	 * This function substitutes a subpart in $content with the content of
 	 * $subpartContent.
-	 * Wrapper for t3lib_parsehtml::substituteSubpart which behaves identical
+	 * Wrapper for \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart which behaves identical
 	 *
 	 * @param string $content The content stream, typically HTML template content.
 	 * @param string $marker The marker string, typically on the form "###[the marker string]###
 	 * @param mixed $subpartContent The content to insert instead of the subpart found. If a string, then just plain substitution happens (includes removing the HTML comments of the subpart if found). If $subpartContent happens to be an array, it's [0] and [1] elements are wrapped around the EXISTING content of the subpart (fetched by getSubpart()) thereby not removing the original content.
 	 * @param boolean $recursive If $recursive is set, the function calls itself with the content set to the remaining part of the content after the second marker. This means that proceding subparts are ALSO substituted!
 	 * @return string The processed HTML content string.
-	 * @see getSubpart(), t3lib_parsehtml::substituteSubpart()
 	 */
 	public function substituteSubpart($content, $marker, $subpartContent, $recursive = 1) {
 		return \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, $marker, $subpartContent, $recursive);
@@ -1864,7 +1862,6 @@ class ContentObjectRenderer {
 	 * @param boolean $uppercase
 	 * @param boolean $deleteUnused
 	 * @return string
-	 * @see t3lib_parsehtml::substituteMarkerAndSubpartArrayRecursive()
 	 */
 	public function substituteMarkerAndSubpartArrayRecursive($content, array $markersAndSubparts, $wrap = '', $uppercase = FALSE, $deleteUnused = FALSE) {
 		return \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerAndSubpartArrayRecursive($content, $markersAndSubparts, $wrap, $uppercase, $deleteUnused);
@@ -3641,12 +3638,14 @@ class ContentObjectRenderer {
 	}
 
 	/**
-	 * Passes the input value, $theValue, to an instance of "t3lib_parsehtml" together with the TypoScript options which are first converted from a TS style array to a set of arrays with options for the t3lib_parsehtml class.
+	 * Passes the input value, $theValue, to an instance of "\TYPO3\CMS\Core\Html\HtmlParser"
+	 * together with the TypoScript options which are first converted from a TS style array
+	 * to a set of arrays with options for the \TYPO3\CMS\Core\Html\HtmlParser class.
 	 *
-	 * @param string $theValue The value to parse by the class "t3lib_parsehtml
+	 * @param string $theValue The value to parse by the class \TYPO3\CMS\Core\Html\HtmlParser
 	 * @param array $conf TypoScript properties for the parser. See link.
 	 * @return string Return value.
-	 * @see stdWrap(), t3lib_parsehtml::HTMLparserConfig(), t3lib_parsehtml::HTMLcleaner()
+	 * @see stdWrap(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLparserConfig(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLcleaner()
 	 * @todo Define visibility
 	 */
 	public function HTMLparser_TSbridge($theValue, $conf) {

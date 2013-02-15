@@ -1150,7 +1150,7 @@ What it does NOT do (yet) according to XHTML specs.:
 - ampersands (and entities in general I think) MUST be converted to an entity reference! (&amps;). This may mean further conversion of non-tag content before output to page. May be related to the charset issue as a whole.
 - Minimized values not allowed: Must do this: selected="selected"
 
-Please see the class t3lib_parsehtml for details.
+Please see the class \TYPO3\CMS\Core\Html\HtmlParser for details.
 You can enable this function by the following values:
 
 all = the content is always processed before it may be stored in cache.

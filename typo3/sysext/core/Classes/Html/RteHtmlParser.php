@@ -151,7 +151,8 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 
 	/**
 	 * Evaluate the environment for editing a staticFileEdit file.
-	 * Called for almost all fields being saved in the database. Is called without an instance of the object: t3lib_parsehtml_proc::evalWriteFile()
+	 * Called for almost all fields being saved in the database. Is called without
+	 * an instance of \TYPO3\CMS\Core\Html\RteHtmlParser::evalWriteFile()
 	 *
 	 * @param array $pArr Parameters for the current field as found in types-config
 	 * @param array $currentRecord Current record we are editing.
