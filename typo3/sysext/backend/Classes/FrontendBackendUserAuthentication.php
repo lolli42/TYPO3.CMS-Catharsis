@@ -108,9 +108,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	public $adminPanel = NULL;
 
 	/**
-	 * Class for frontend editing.
-	 *
-	 * @var 	t3lib_frontendedit
+	 * @var \TYPO3\CMS\Core\FrontendEditing\FrontendEditingController
 	 */
 	public $frontendEdit = NULL;
 

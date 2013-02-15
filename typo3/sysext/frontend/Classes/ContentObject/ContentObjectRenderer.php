@@ -7730,7 +7730,7 @@ class ContentObjectRenderer {
 			if (!count($dataArr)) {
 				$dataArr = $this->data;
 			}
-			// Delegate rendering of the edit panel to the t3lib_frontendedit class.
+			// Delegate rendering of the edit panel to the frontend edit
 			$content = $GLOBALS['BE_USER']->frontendEdit->displayEditPanel($content, $conf, $currentRecord, $dataArr);
 		}
 		return $content;
@@ -7757,7 +7757,7 @@ class ContentObjectRenderer {
 			if (!count($dataArr)) {
 				$dataArr = $this->data;
 			}
-			// Delegate rendering of the edit panel to the t3lib_frontendedit class.
+			// Delegate rendering of the edit panel to frontend edit class.
 			$content = $GLOBALS['BE_USER']->frontendEdit->displayEditIcons($content, $params, $conf, $currentRecord, $dataArr, $addUrlParamStr);
 		}
 		return $content;

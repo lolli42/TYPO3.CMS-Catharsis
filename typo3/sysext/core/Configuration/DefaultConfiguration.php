@@ -719,7 +719,7 @@ return array(
 		),
 		't3lib/class.t3lib_tsfebeuserauth.php' => array(
 			'frontendEditingController' => array(
-				'default' => 't3lib/class.t3lib_frontendedit.php:t3lib_frontendedit'
+				'default' => 'typo3/sysext/core/Classes/FrontendEditing/FrontendEditingController.php:t3lib_frontendedit'
 			)
 		)
 	),
