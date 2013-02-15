@@ -25,9 +25,9 @@ namespace TYPO3\CMS\Core\Tests\Unit\Database;
  ***************************************************************/
 
 /**
- * Testcase
+ * Testcase for the prepared statement database class
  *
- * @author Helmut Hummel <helmut@typo3.org>
+ * @author 	Helmut Hummel <helmut@typo3.org>
  */
 class PreparedStatementTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -39,7 +39,9 @@ class PreparedStatementTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $backupGlobalsArray = array();
 
 	/**
-	 * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Database\DatabaseConnection
+	 * Mock object of t3lib_db
+	 *
+	 * @var \PHPUnit_Framework_MockObject_MockObject
 	 */
 	private $databaseStub;
 
@@ -91,16 +93,20 @@ class PreparedStatementTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	////////////////////////////////////
 	// Tests for the utility functions
 	////////////////////////////////////
-
 	/**
+	 * Checks if setUpAndReturnDatabaseStub() really returns
+	 * a mock of t3lib_DB.
+	 *
 	 * @test
 	 * @return void
 	 */
-	public function setUpAndReturnDatabaseStubReturnsMockObjectOfDatabaseConnection() {
+	public function setUpAndReturnDatabaseStubReturnsMockObjectOf_t3lib_DB() {
 		$this->assertTrue($this->setUpAndReturnDatabaseStub() instanceof \TYPO3\CMS\Core\Database\DatabaseConnection);
 	}
 
 	/**
+	 * Checks if createPreparedStatement() really returns an instance of t3lib_db_PreparedStatement.
+	 *
 	 * @test
 	 * @return void
 	 */
@@ -109,7 +115,7 @@ class PreparedStatementTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	///////////////////////////////////////
-	// Tests for \TYPO3\CMS\Core\Database\PreparedStatement
+	// Tests for t3lib_db_PreparedStatement
 	///////////////////////////////////////
 	/**
 	 * Data Provider for two tests, providing sample queries, parameters and expected result queries.

@@ -39,7 +39,9 @@ class DatabaseTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $backupGlobalsArray = array();
 
 	/**
-	 * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Database\DatabaseConnection
+	 * Mock object of t3lib_db
+	 *
+	 * @var PHPUnit_Framework_MockObject_MockObject
 	 */
 	private $databaseStub;
 

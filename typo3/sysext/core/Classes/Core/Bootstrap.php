@@ -648,7 +648,7 @@ class Bootstrap {
 	}
 
 	/**
-	 * Initialize database connection in $GLOBALS and connect if requested
+	 * Initialize t3lib_db in $GLOBALS and connect if requested
 	 *
 	 * @param boolean $connect Whether db should be connected
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap

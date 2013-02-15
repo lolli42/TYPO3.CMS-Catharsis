@@ -26,9 +26,8 @@ namespace TYPO3\CMS\Core\Database;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 /**
- * TYPO3 prepared statement for DatabaseConnection
+ * TYPO3 prepared statement for t3lib_db class.
  *
  * USE:
  * In all TYPO3 scripts when you need to create a prepared query:
@@ -78,7 +77,7 @@ class PreparedStatement {
 	/**
 	 * Specifies that the fetch method shall return each row as an array indexed by
 	 * column name as returned in the corresponding result set. If the result set
-	 * contains multiple columns with the same name, \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_ASSOC
+	 * contains multiple columns with the same name, t3lib_db_PreparedStatement::FETCH_ASSOC
 	 * returns only a single value per column name.
 	 *
 	 * @var integer
@@ -147,8 +146,7 @@ class PreparedStatement {
 	 * on a ready-to-be-executed query. On the other hand, DBAL will have
 	 * parse the query and will be able to safely know where parameters are used
 	 * and will use $queryComponents instead.
-	 *
-	 * This constructor may only be used by \TYPO3\CMS\Core\Database\DatabaseConnection
+	 * This constructor may only be used by t3lib_DB.
 	 *
 	 * @param string $query SQL query to be executed
 	 * @param string $table FROM table, used to call $GLOBALS['TYPO3_DB']->fullQuoteStr().
@@ -212,7 +210,7 @@ class PreparedStatement {
 	 *
 	 * @param mixed $parameter Parameter identifier. For a prepared statement using named placeholders, this will be a parameter name of the form :name. For a prepared statement using question mark placeholders, this will be the 1-indexed position of the parameter.
 	 * @param mixed $value The value to bind to the parameter.
-	 * @param integer $data_type Explicit data type for the parameter using the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants. If not given, the PHP type of the value will be used instead (int, string, boolean).
+	 * @param integer $data_type Explicit data type for the parameter using the t3lib_db_PreparedStatement::PARAM_* constants. If not given, the PHP type of the value will be used instead (int, string, boolean).
 	 * @return \TYPO3\CMS\Core\Database\PreparedStatement The current prepared statement to allow method chaining
 	 * @api
 	 */
@@ -246,12 +244,12 @@ class PreparedStatement {
 	 * Executes the prepared statement. If the prepared statement included parameter
 	 * markers, you must either:
 	 * <ul>
-	 * <li>call {@link \TYPO3\CMS\Core\Database\PreparedStatement::bindParam()} to bind PHP variables
+	 * <li>call {@link t3lib_db_PreparedStatement::bindParam()} to bind PHP variables
 	 * to the parameter markers: bound variables pass their value as input</li>
 	 * <li>or pass an array of input-only parameter values</li>
 	 * </ul>
 	 *
-	 * $input_parameters behave as in {@link \TYPO3\CMS\Core\Database\PreparedStatement::bindParams()}
+	 * $input_parameters behave as in {@link t3lib_db_PreparedStatement::bindParams()}
 	 * and work for both named parameters and question mark parameters.
 	 *
 	 * Example 1:
@@ -295,9 +293,9 @@ class PreparedStatement {
 	}
 
 	/**
-	 * Fetches a row from a result set associated with a \TYPO3\CMS\Core\Database\PreparedStatement object.
+	 * Fetches a row from a result set associated with a t3lib_db_PreparedStatement object.
 	 *
-	 * @param integer $fetch_style Controls how the next row will be returned to the caller. This value must be one of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants. If omitted, default fetch mode for this prepared query will be used.
+	 * @param integer $fetch_style Controls how the next row will be returned to the caller. This value must be one of the t3lib_db_PreparedStatement::FETCH_* constants. If omitted, default fetch mode for this prepared query will be used.
 	 * @return array Array of rows or FALSE if there are no more rows.
 	 * @api
 	 */
@@ -332,7 +330,7 @@ class PreparedStatement {
 	/**
 	 * Returns an array containing all of the result set rows.
 	 *
-	 * @param integer $fetch_style Controls the contents of the returned array as documented in {@link \TYPO3\CMS\Core\Database\PreparedStatement::fetch()}.
+	 * @param integer $fetch_style Controls the contents of the returned array as documented in {@link t3lib_db_PreparedStatement::fetch()}.
 	 * @return array Array of rows.
 	 * @api
 	 */
@@ -395,7 +393,7 @@ class PreparedStatement {
 	/**
 	 * Sets the default fetch mode for this prepared query.
 	 *
-	 * @param integer $mode One of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants
+	 * @param integer $mode One of the t3lib_db_PreparedStatement::FETCH_* constants
 	 * @return void
 	 * @api
 	 */
@@ -415,7 +413,7 @@ class PreparedStatement {
 	 * Guesses the type of a given value.
 	 *
 	 * @param mixed $value
-	 * @return integer One of the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants
+	 * @return integer One of the t3lib_db_PreparedStatement::PARAM_* constants
 	 */
 	protected function guessValueType($value) {
 		if (is_bool($value)) {
