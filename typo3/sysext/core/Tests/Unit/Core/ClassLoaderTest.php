@@ -47,7 +47,7 @@ class ClassLoaderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $fakedExtensions = array();
 
 	/**
-	 * Fix a race condition that t3lib_div is not available
+	 * Fix a race condition that GeneralUtility is not available
 	 * during tearDown if fiddling with the autoloader where
 	 * backupGlobals is not set up again yet
 	 */

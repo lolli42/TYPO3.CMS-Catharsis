@@ -245,7 +245,6 @@ class SystemEnvironmentBuilder {
 	 *
 	 * @return void
 	 * @deprecated since 6.0, will be removed in 6.2
-	 * @see t3lib/class.t3lib_div.php, t3lib/class.t3lib_extmgm.php
 	 */
 	static public function setupClassAliasForLegacyBaseClasses() {
 		class_alias('TYPO3\\CMS\\Core\\Utility\\GeneralUtility', 't3lib_div');

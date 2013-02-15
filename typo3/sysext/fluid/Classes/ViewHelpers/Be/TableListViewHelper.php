@@ -96,7 +96,7 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 			$frameworkConfiguration = $this->configurationManager->getConfiguration(\Tx_Extbase_Configuration_ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
 			$storagePid = $frameworkConfiguration['persistence']['storagePid'];
 		}
-		$dblist->start($storagePid, $tableName, (integer) \t3lib_div::_GP('pointer'), $filter, $levels, $recordsPerPage);
+		$dblist->start($storagePid, $tableName, (integer) \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pointer'), $filter, $levels, $recordsPerPage);
 		$dblist->allFields = TRUE;
 		$dblist->dontShowClipControlPanels = TRUE;
 		$dblist->displayFields = FALSE;
