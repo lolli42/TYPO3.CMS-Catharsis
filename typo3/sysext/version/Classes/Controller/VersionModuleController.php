@@ -537,7 +537,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$pageModule = \TYPO3\CMS\Backend\Utility\BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
 			// Perform some acccess checks:
 			$a_wl = $GLOBALS['BE_USER']->check('modules', 'web_list');
-			$a_wp = \t3lib_extMgm::isLoaded('cms') && $GLOBALS['BE_USER']->check('modules', $pageModule);
+			$a_wp = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') && $GLOBALS['BE_USER']->check('modules', $pageModule);
 			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . \t3lib_iconWorks::getSpriteIcon('actions-page-open') . '</a>';
 			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . \t3lib_iconWorks::getSpriteIcon('actions-system-list-open') . '</a>';
 			// "View page" icon is added:
@@ -771,7 +771,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 						$versionsInOtherWSWarning = $versionsInOtherWS && $GLOBALS['BE_USER']->workspace !== 0 ? '<br />' . $this->doc->icons(2) . $GLOBALS['LANG']->getLL('otherVersions') . $versionsInOtherWS : '';
 						$multipleWarning = !$mainCell && $GLOBALS['BE_USER']->workspace !== 0 ? '<br />' . $this->doc->icons(3) . '<strong>' . $GLOBALS['LANG']->getLL('multipleVersions') . '</strong>' : '';
 						$verWarning = $warnAboutVersions || $warnAboutVersions_nonPages && $GLOBALS['TCA'][$table]['ctrl']['versioning_followPages'] ? '<br />' . $this->doc->icons(3) . '<strong>' . $GLOBALS['LANG']->getLL('versionInVersion') . '</strong>' : '';
-						$verElement = $icon . (!$this->details ? '<a href="' . htmlspecialchars(($this->doc->backPath . \t3lib_extMgm::extRelPath('version') . 'cm1/index.php?id=' . ($table === 'pages' ? $rec_on['uid'] : $rec_on['pid']) . '&details=' . rawurlencode(($table . ':' . $rec_off['uid'])) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' : '') . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $rec_off, TRUE) . (!$this->details ? '</a>' : '') . $versionsInOtherWSWarning . $multipleWarning . $verWarning;
+						$verElement = $icon . (!$this->details ? '<a href="' . htmlspecialchars(($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('version') . 'cm1/index.php?id=' . ($table === 'pages' ? $rec_on['uid'] : $rec_on['pid']) . '&details=' . rawurlencode(($table . ':' . $rec_off['uid'])) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' : '') . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($table, $rec_off, TRUE) . (!$this->details ? '</a>' : '') . $versionsInOtherWSWarning . $multipleWarning . $verWarning;
 						$ctrlTable = '
 								<td nowrap="nowrap">' . $this->showStageChangeLog($table, $rec_off['uid'], $this->displayWorkspaceOverview_stageCmd($table, $rec_off)) . '</td>
 								<td nowrap="nowrap" class="' . $swapClass . '">' . $this->displayWorkspaceOverview_commandLinks($table, $rec_on, $rec_off, $vType) . htmlspecialchars($swapLabel) . '&nbsp;&nbsp;</td>
@@ -1040,7 +1040,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// In online workspace we have a reduced view because otherwise it will bloat the listing:
 		if (!$this->details && ($GLOBALS['BE_USER']->workspace === 0 || !$this->MOD_SETTINGS['expandSubElements'])) {
 			return '<br />
-					<img' . \t3lib_iconWorks::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' align="top" alt="" title="" />' . ($origId ? '<a href="' . htmlspecialchars(($this->doc->backPath . \t3lib_extMgm::extRelPath('version') . 'cm1/index.php?id=' . $uid . '&details=' . rawurlencode(('pages:' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' . '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElementsClick') . '</em><span></a>' : '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElements') . '</em><span>');
+					<img' . \t3lib_iconWorks::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' align="top" alt="" title="" />' . ($origId ? '<a href="' . htmlspecialchars(($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('version') . 'cm1/index.php?id=' . $uid . '&details=' . rawurlencode(('pages:' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' . '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElementsClick') . '</em><span></a>' : '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElements') . '</em><span>');
 		} else {
 			// For an offline workspace, show sub elements:
 			$tCell = array();

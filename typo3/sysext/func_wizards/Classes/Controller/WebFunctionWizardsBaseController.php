@@ -54,7 +54,6 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * @param object $pObj A reference to the parent (calling) object (which is probably an instance of an extension class to t3lib_SCbase)
 	 * @param array $conf The configuration set for this module - from global array TBE_MODULES_EXT
 	 * @return void
-	 * @see t3lib_extobjbase::handleExternalFunctionValue(), t3lib_extobjbase::init()
 	 * @todo Define visibility
 	 */
 	public function init(&$pObj, $conf) {
@@ -68,7 +67,6 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * Modifies parent objects internal MOD_MENU array, adding items this module needs.
 	 *
 	 * @return array Items merged with the parent objects.
-	 * @see t3lib_extobjbase::init()
 	 * @todo Define visibility
 	 */
 	public function modMenu() {
@@ -85,7 +83,6 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * Creation of the main content. Calling extObjContent() to trigger content generation from the sub-sub modules
 	 *
 	 * @return string The content
-	 * @see t3lib_extobjbase::extObjContent()
 	 * @todo Define visibility
 	 */
 	public function main() {

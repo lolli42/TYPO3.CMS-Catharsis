@@ -50,7 +50,7 @@ if (TYPO3_MODE === 'BE') {
 	// Register specific icon for update script button
 	t3lib_SpriteManager::addSingleIcons(
 		array(
-			'update-script' => t3lib_extMgm::extRelPath($_EXTKEY) . 'Resources/Public/Images/Icons/ExtensionUpdateScript.png'
+			'update-script' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($_EXTKEY) . 'Resources/Public/Images/Icons/ExtensionUpdateScript.png'
 		),
 		$_EXTKEY
 	);

@@ -73,7 +73,7 @@ class WorkspaceSelectorToolbarItem implements \TYPO3\CMS\Backend\Toolbar\Toolbar
 	 * @return boolean  TRUE if user has access, FALSE if not
 	 */
 	public function checkAccess() {
-		if (\t3lib_extMgm::isLoaded('workspaces')) {
+		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
 			if ($this->checkAccess == NULL) {
 				$availableWorkspaces = \Tx_Workspaces_Service_Workspaces::getAvailableWorkspaces();
 				if (count($availableWorkspaces) > 0) {

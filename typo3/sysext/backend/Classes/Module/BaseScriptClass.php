@@ -26,14 +26,10 @@ namespace TYPO3\CMS\Backend\Module;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
- * Contains the parent class for 'ScriptClasses' in backend modules.
+ * Parent class for 'ScriptClasses' in backend modules.
  *
- * Revised for TYPO3 3.6 July/2003 by Kasper Skårhøj
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
  * EXAMPLE PROTOTYPE
  *
  * As for examples there are lots of them if you search for classes which extends 't3lib_SCbase'.
@@ -79,13 +75,8 @@ namespace TYPO3\CMS\Backend\Module;
  * $SOBE->main();
  * FINALLY THE printContent() FUNCTION WILL OUTPUT THE ACCUMULATED CONTENT
  * $SOBE->printContent();
- */
-/**
- * Parent class for 'ScriptClasses' in backend modules.
- * See example comment above.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @see t3lib_extobjbase
  */
 class BaseScriptClass {
 

@@ -883,7 +883,7 @@ Note: TYPO3 comes with a built-in concatenation handler, but you can also regist
 
 Example:
 
-$GLOBALS['TYPO3_CONF_VARS']['FE']['jsConcatenateHandler'] = t3lib_extMgm::extPath($_EXTKEY) . 'Classes/class.tx_myext_jsConcatenateHandler.php:tx_myext_jsConcatenateHandler->concatenateJs';]]></description>
+$GLOBALS['TYPO3_CONF_VARS']['FE']['jsConcatenateHandler'] = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Classes/class.tx_myext_jsConcatenateHandler.php:tx_myext_jsConcatenateHandler->concatenateJs';]]></description>
 			<default><![CDATA[false]]></default>
 		</property>
 		<property name="concatenateCss" type="boolean">
@@ -897,7 +897,7 @@ Note: TYPO3 comes with a built-in concatenation handler, but you can also regist
 
 Example:
 
-$GLOBALS['TYPO3_CONF_VARS']['FE']['cssConcatenateHandler'] = t3lib_extMgm::extPath($_EXTKEY) . 'Classes/class.tx_myext_cssConcatenateHandler.php:tx_myext_cssConcatenateHandler->concatenateCss';]]></description>
+$GLOBALS['TYPO3_CONF_VARS']['FE']['cssConcatenateHandler'] = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Classes/class.tx_myext_cssConcatenateHandler.php:tx_myext_cssConcatenateHandler->concatenateCss';]]></description>
 			<default><![CDATA[false]]></default>
 		</property>
 		<property name="renderCharset" type="string">

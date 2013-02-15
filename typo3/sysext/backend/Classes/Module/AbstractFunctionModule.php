@@ -25,13 +25,14 @@ namespace TYPO3\CMS\Backend\Module;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Parent class for 'Extension Objects' in backend modules.
  *
  * Used for 'submodules' to other modules. Also called 'Function menu modules'
- * in t3lib_extMgm. And now its even called 'Extension Objects'. Or
- * 'Module functions'. Wish we had just one name. Or a name at all...(?)
- * Thank God its not so advanced when it works...
+ * in \TYPO3\CMS\Core\Utility\ExtensionManagementUtility. And now its even called
+ * 'Extension Objects'. Or 'Module functions'. Wish we had just one name. Or a
+ * name at all...(?) Thank God its not so advanced when it works...
  *
  * In other words this class is used for backend modules which is not true
  * backend modules appearing in the menu but rather adds themselves as a new
@@ -99,13 +100,14 @@ namespace TYPO3\CMS\Backend\Module;
  * But then again ->include_once is traversed IF the initialization of
  * the level-1 modules might have added more files!!
  * And after that $SOBE->checkSubExtObj() is called to initialize the second level.
+ *
  * In this way even a third level could be supported - but most likely that is
  * a too layered model to be practical.
  *
  * Anyways, the final interesting thing is to see what the framework
  * "func_wizard" actually does:
  *
- * class tx_funcwizards_webfunc extends t3lib_extobjbase {
+ * class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
  * var $localLangFile = "locallang.php";
  * var $function_key = "wiz";
  * function init(&$pObj, $conf) {
@@ -119,7 +121,7 @@ namespace TYPO3\CMS\Backend\Module;
  * }
  * }
  *
- * Notice that the handleExternalFunctionValue of this class (t3lib_extobjbase)
+ * Notice that the handleExternalFunctionValue of this class
  * is called and that the ->function_key internal var is set!
  *
  * The two level-2 sub-module "wizard_crpages" and "wizard_sortpages"

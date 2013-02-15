@@ -31,7 +31,7 @@ class DocbookGeneratorService extends \TYPO3\CMS\Fluid\Service\DocbookGenerator 
 
 	public function userFunc() {
 		if (!class_exists('TYPO3\\CMS\\Extbase\\Utility\\ClassLoaderUtility')) {
-			require \t3lib_extmgm::extPath('extbase') . 'Classes/Utility/ClassLoader.php';
+			require \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('extbase') . 'Classes/Utility/ClassLoader.php';
 		}
 		$classLoader = new \TYPO3\CMS\Extbase\Utility\ClassLoaderUtility();
 		spl_autoload_register(array($classLoader, 'loadClass'));
