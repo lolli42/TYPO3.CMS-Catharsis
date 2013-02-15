@@ -127,7 +127,7 @@ class BasicFileUtility {
 	 * @param 	array		Contains the paths of the file mounts for the current BE user. Normally $GLOBALS['FILEMOUNTS'] is passed. This variable is set during backend user initialization; $FILEMOUNTS = $GLOBALS['BE_USER']->returnFilemounts(); (see typo3/init.php)
 	 * @param 	array		Array with information about allowed and denied file extensions. Typically passed: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']
 	 * @return 	void
-	 * @see typo3/init.php, t3lib_beUserAuth::returnFilemounts()
+	 * @see typo3/init.php, \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::returnFilemounts()
 	 * @todo Define visibility
 	 */
 	public function init($mounts, $f_ext) {

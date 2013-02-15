@@ -45,7 +45,7 @@ class BackendFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	public function setUp() {
 		$GLOBALS['BE_USER'] = $this->getMock(
-			't3lib_beUserAuth',
+			'TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication',
 			array('getSessionData', 'setAndSaveSessionData')
 		);
 		$GLOBALS['BE_USER']->user['uid'] = 1;
@@ -95,7 +95,7 @@ class BackendFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Mock session methods in t3lib_beUserAuth
+	 * Mock session methods in \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
 	 *
 	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication Instance of BE_USER object with mocked session storage methods
 	 */

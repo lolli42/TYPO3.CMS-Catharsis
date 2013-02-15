@@ -26,8 +26,10 @@ namespace TYPO3\CMS\Frontend\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Class for the built TypoScript based Front End
+ * Main frontend class, instantiated in the index_ts.php script as the global object TSFE
  *
  * This class has a lot of functions and internal variable which are use from index_ts.php.
  * The class is instantiated as $GLOBALS['TSFE'] in index_ts.php.
@@ -35,11 +37,6 @@ namespace TYPO3\CMS\Frontend\Controller;
  *
  * Revised for TYPO3 3.6 June/2003 by Kasper Skårhøj
  * XHTML compliant
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
- * Main frontend class, instantiated in the index_ts.php script as the global object TSFE
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
@@ -1072,7 +1069,7 @@ class TypoScriptFrontendController {
 			$GLOBALS['TT']->push('Back End user initialized', '');
 			// TODO: validate the comment below: is this necessary? if so,
 			// formfield_status should be set to "" in \TYPO3\CMS\Backend\FrontendBackendUserAuthentication
-			// which is a subclass of t3lib_beUserAuth
+			// which is a subclass of \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
 			// ----
 			// the value this->formfield_status is set to empty in order to
 			// disable login-attempts to the backend account through this script
