@@ -31,7 +31,7 @@
  */
 $TYPO3_AJAX = TRUE;
 // Include t3lib_div at this time to get the GET/POST methods it provides
-require_once dirname(__FILE__) . '/../typo3/sysext/core/Classes/Utility/GeneralUtility.php';
+require_once dirname(__FILE__) . '/sysext/core/Classes/Utility/GeneralUtility.php';
 // First get the ajaxID
 $ajaxID = (string) \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('ajaxID');
 // This is a list of requests that don't necessarily need a valid BE user
