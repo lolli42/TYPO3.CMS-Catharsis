@@ -4,4 +4,3 @@
 GMENU_LAYERS and TMENU_LAYERS. See the statictemplate removal patch
 and MIGRATION.txt for details.
 
-* Find out why travis-ci nodes seem to have different memory settings and adapt to it: Raise settings or split suites.
