@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Backend\Sprite;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * An abstract class implementing t3lib_spritemanager_SpriteIconGenerator.
+ * An abstract class implementing SpriteIconGeneratorInterface.
  * Provides base functionality for all handlers.
  *
  * @author Steffen Ritter <info@steffen-ritter.net>
@@ -68,9 +68,9 @@ abstract class AbstractSpriteHandler implements \TYPO3\CMS\Backend\Sprite\Sprite
 
 	/**
 	 * Loads all stylesheet files registered through
-	 * t3lib_SpriteManager::addIconSprite
+	 * \TYPO3\CMS\Backend\Sprite\SpriteManager::addIconSprite
 	 *
-	 * In fact the stylesheet-files are copied to t3lib_SpriteManager::tempPath
+	 * In fact the stylesheet-files are copied to \TYPO3\CMS\Backend\Sprite\SpriteManager::tempPath
 	 * where they automatically will be included from via template.php and
 	 * \TYPO3\CMS\Core\Resource\ResourceCompressor
 	 *

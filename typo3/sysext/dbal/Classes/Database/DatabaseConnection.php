@@ -855,7 +855,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Executes a query.
 	 * EXPERIMENTAL since TYPO3 4.4.
 	 *
-	 * @param array $queryParts SQL parsed by method parseSQL() of t3lib_sqlparser
+	 * @param array $queryParts SQL parsed by method parseSQL() of \TYPO3\CMS\Core\Database\SqlParser
 	 * @return pointer Result pointer / DBAL object
 	 * @see self::sql_query()
 	 */
@@ -3198,7 +3198,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	}
 
 	/**
-	 * Generic mapping of table/field names arrays (as parsed by t3lib_sqlparser)
+	 * Generic mapping of table/field names arrays (as parsed by \TYPO3\CMS\Core\Database\SqlParser)
 	 *
 	 * @param 	array		Array with parsed SQL parts; Takes both fields, tables, where-parts, group and order-by. Passed by reference.
 	 * @param 	string		Default table name to assume if no table is found in $sqlPartArray
@@ -3391,12 +3391,12 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	}
 
 	/**
-	 * Will do table/field mapping on a general t3lib_sqlparser-compliant SQL query
+	 * Will do table/field mapping on a general \TYPO3\CMS\Core\Database\SqlParser-compliant SQL query
 	 * (May still not support all query types...)
 	 *
-	 * @param 	array		Parsed QUERY as from t3lib_sqlparser::parseSQL(). NOTICE: Passed by reference!
+	 * @param array Parsed QUERY as from \TYPO3\CMS\Core\Database\SqlParser::parseSQL(). NOTICE: Passed by reference!
 	 * @return 	void
-	 * @see t3lib_sqlparser::parseSQL()
+	 * @see \TYPO3\CMS\Core\Database\SqlParser::parseSQL()
 	 */
 	protected function map_genericQueryParsed(&$parsedQuery) {
 		// Getting table - same for all:

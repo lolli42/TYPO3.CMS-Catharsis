@@ -28,7 +28,7 @@ namespace TYPO3\CMS\Backend\Sprite;
  ***************************************************************/
 
 /**
- * A class with an concrete implementation of t3lib_spritemanager_SpriteIconGenerator.
+ * A class with an concrete implementation of AbspractSpriteHandler.
  * It is the standard / fallback handler of the sprite manager.
  * This implementation won't generate sprites at all. It will just render css-definitions
  * for all registered icons so that they may be used through
