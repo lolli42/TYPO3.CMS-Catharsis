@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Backend\Utility;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Contains class for icon generation in the backend
  * This library has functions that returns - and if necessary creates - the icon for an element in TYPO3
@@ -480,7 +481,8 @@ class IconUtility {
 	/**
 	 * The necessity of using this function for combining two images if GD is version 2 is that
 	 * GD2 cannot manage to combine two indexed-color images without totally spoiling everything.
-	 * In class.t3lib_stdgraphic this was solved by combining the images onto a first created true color image
+	 * In class \TYPO3\CMS\Core\Imaging\GraphicalFunctions this was solved by combining the images
+	 * onto a first created true color image.
 	 * However it has turned out that this method will not work if the indexed png-files contains transparency.
 	 * So I had to turn my attention to ImageMagick - my 'enemy of death'.
 	 * And so it happend - ImageMagick is now used to combine my two indexed-color images with transparency. And that works.
@@ -499,7 +501,7 @@ class IconUtility {
 	 * @param integer $sourceHeight Source height
 	 * @return void
 	 * @access private
-	 * @see t3lib_stdGraphic::imagecopyresized()
+	 * @see \TYPO3\CMS\Core\Imaging\GraphicalFunctions::imagecopyresized()
 	 */
 	static public function imagecopyresized(&$destinationImage, $sourceImage, $destinationX, $destinationY, $sourceX, $sourceY, $destinationWidth, $destinationHeight, $sourceWidth, $sourceHeight) {
 		imagecopyresized($destinationImage, $sourceImage, $destinationX, $destinationY, $sourceX, $sourceY, $destinationWidth, $destinationHeight, $sourceWidth, $sourceHeight);

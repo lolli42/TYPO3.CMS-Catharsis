@@ -1965,7 +1965,7 @@ class GraphicalFunctions {
 	/**
 	 * Checks if the $fontFile is already at an absolute path and if not, prepends the correct path.
 	 * Use PATH_site unless we are in the backend.
-	 * Call it by t3lib_stdGraphic::prependAbsolutePath()
+	 * Call it by \TYPO3\CMS\Core\Imaging\GraphicalFunctions::prependAbsolutePath()
 	 *
 	 * @param string $fontFile The font file
 	 * @return string The font file with absolute path.
