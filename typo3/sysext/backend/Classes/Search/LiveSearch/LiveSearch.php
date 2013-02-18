@@ -201,7 +201,7 @@ class LiveSearch {
 	 * @param string $orderBy
 	 * @param string $limit MySql Limit notation
 	 * @return array
-	 * @see t3lib_iconWorks::getSpriteIconForRecord()
+	 * @see \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord()
 	 * @see getTitleFromCurrentRow()
 	 * @see getEditLink()
 	 */

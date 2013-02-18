@@ -556,7 +556,7 @@ class DocumentTemplate {
 			$mMN = '';
 		}
 		$onClick = 'top.ShortcutManager.createShortcut(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.makeBookmark')) . ', ' . '\'' . $backPath . '\', ' . '\'' . rawurlencode($modName) . '\', ' . '\'' . rawurlencode(($pathInfo['path'] . '?' . $storeUrl)) . $mMN . '\'' . ');return false;';
-		$sIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.makeBookmark', TRUE) . '">' . \t3lib_iconworks::getSpriteIcon('actions-system-shortcut-new') . '</a>';
+		$sIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.makeBookmark', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
 		return $sIcon;
 	}
 

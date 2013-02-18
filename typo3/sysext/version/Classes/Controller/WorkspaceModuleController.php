@@ -245,7 +245,7 @@ class WorkspaceModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			// Get usernames and groupnames
 			$be_group_Array = \TYPO3\CMS\Backend\Utility\BackendUtility::getListGroupNames('title,uid');
 			$groupArray = array_keys($be_group_Array);
-			// Need 'admin' field for t3lib_iconWorks::getIconImage()
+			// Need 'admin' field for \TYPO3\CMS\Backend\Utility\IconUtility::getIconImage()
 			$this->be_user_Array_full = ($this->be_user_Array = \TYPO3\CMS\Backend\Utility\BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,admin,workspace_perms'));
 			if (!$GLOBALS['BE_USER']->isAdmin()) {
 				$this->be_user_Array = \TYPO3\CMS\Backend\Utility\BackendUtility::blindUserNames($this->be_user_Array, $groupArray, 1);

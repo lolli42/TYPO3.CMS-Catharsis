@@ -309,7 +309,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// CSH
 		if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
 			// View page
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.showPage', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:labels.showPage', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			// Shortcut
 			if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
 				$buttons['shortcut'] = $this->doc->makeShortcutIcon('id, edit_record, pointer, new_unique_uid, search_field, search_levels, showLimit', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name']);
@@ -380,7 +380,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		}
 		// Element:
 		$record = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($this->table, $this->uid);
-		$recordIcon = \t3lib_iconWorks::getSpriteIconForRecord($this->table, $record);
+		$recordIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($this->table, $record);
 		$recTitle = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($this->table, $record, TRUE);
 		// Display versions:
 		$content .= '
@@ -408,7 +408,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$adminLinks = $this->adminLinks($this->table, $row);
 			$content .= '
 				<tr class="' . ($row['uid'] != $this->uid ? 'bgColor4' : 'bgColor2 tableheader') . '">
-					<td>' . ($row['uid'] != $this->uid ? '<a href="' . $this->doc->issueCommand(('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap')) . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-version-swap-version') . '</a>' : \t3lib_iconWorks::getSpriteIcon('status-status-current', array('title' => $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE)))) . '</td>
+					<td>' . ($row['uid'] != $this->uid ? '<a href="' . $this->doc->issueCommand(('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap')) . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-swap-version') . '</a>' : \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-current', array('title' => $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE)))) . '</td>
 					<td nowrap="nowrap">' . $adminLinks . '</td>
 					<td nowrap="nowrap">' . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($this->table, $row, TRUE) . '</td>
 					<td>' . $row['uid'] . '</td>
@@ -419,7 +419,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 					<td>' . $row['t3ver_stage'] . '</td>
 					<td>' . $row['t3ver_count'] . '</td>
 					<td>' . $row['pid'] . '</td>
-					<td nowrap="nowrap"><a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick(('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-open') . '</a>' . htmlspecialchars($row['t3ver_label']) . '</td>
+					<td nowrap="nowrap"><a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick(('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>' . htmlspecialchars($row['t3ver_label']) . '</td>
 					<td class="version-diff-1"><input type="radio" name="diff_1" value="' . $row['uid'] . '"' . ($diff_1 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
 					<td class="version-diff-2"><input type="radio" name="diff_2" value="' . $row['uid'] . '"' . ($diff_2 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
 				</tr>';
@@ -528,9 +528,9 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 */
 	public function adminLinks($table, $row) {
 		// Edit link:
-		$adminLink = '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick(('&edit[' . $table . '][' . $row['uid'] . ']=edit'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-open') . '</a>';
+		$adminLink = '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick(('&edit[' . $table . '][' . $row['uid'] . ']=edit'), $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:cm.edit', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 		// Delete link:
-		$adminLink .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:cm.delete', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-edit-delete') . '</a>';
+		$adminLink .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1'))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.php:cm.delete', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
 		if ($table == 'pages') {
 			// If another page module was specified, replace the default Page module with the new one
 			$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
@@ -538,15 +538,15 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			// Perform some acccess checks:
 			$a_wl = $GLOBALS['BE_USER']->check('modules', 'web_list');
 			$a_wp = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') && $GLOBALS['BE_USER']->check('modules', $pageModule);
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . \t3lib_iconWorks::getSpriteIcon('actions-page-open') . '</a>';
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . \t3lib_iconWorks::getSpriteIcon('actions-system-list-open') . '</a>';
+			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-page-open') . '</a>';
+			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-system-list-open') . '</a>';
 			// "View page" icon is added:
-			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($row['uid'], $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($row['uid']))) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-view') . '</a>';
+			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($row['uid'], $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($row['uid']))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		} else {
 			if ($row['pid'] == -1) {
 				$getVars = '&ADMCMD_vPrev[' . rawurlencode(($table . ':' . $row['t3ver_oid'])) . ']=' . $row['uid'];
 				// "View page" icon is added:
-				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($row['_REAL_PID'], $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-view') . '</a>';
+				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($row['_REAL_PID'], $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			}
 		}
 		return $adminLink;
@@ -678,7 +678,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$table = '';
 		}
 		$returnUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::sanitizeLocalUrl(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('returnUrl'));
-		$linkBack = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('returnUrl') ? '<a href="' . htmlspecialchars($returnUrl) . '" class="typo3-goBack">' . \t3lib_iconWorks::getSpriteIcon('actions-view-go-back') . $GLOBALS['LANG']->getLL('goBack', TRUE) . '</a><br /><br />' : '';
+		$linkBack = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('returnUrl') ? '<a href="' . htmlspecialchars($returnUrl) . '" class="typo3-goBack">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-view-go-back') . $GLOBALS['LANG']->getLL('goBack', TRUE) . '</a><br /><br />' : '';
 		$resetDiffOnly = $this->diffOnly ? '<a href="index.php?id=' . intval($this->id) . '" class="typo3-goBack">' . $GLOBALS['LANG']->getLL('showAllInformation') . '</a><br /><br />' : '';
 		$versionSelector = $GLOBALS['BE_USER']->workspace ? $this->doc->getVersionSelector($this->id) : '';
 		return $versionSelector . $linkBack . $resetDiffOnly . $table . $this->markupNewOriginals();
@@ -701,7 +701,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 				foreach ($oidArray as $oid => $recs) {
 					// Get CURRENT online record and icon based on "t3ver_oid":
 					$rec_on = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $oid);
-					$icon = \t3lib_iconWorks::getSpriteIconForRecord($table, $rec_on, array('title' => \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordIconAltText($rec_on, $table)));
+					$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $rec_on, array('title' => \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordIconAltText($rec_on, $table)));
 					if ($GLOBALS['BE_USER']->workspace === 0) {
 						// Only edit online records if in ONLINE workspace:
 						$icon = $this->doc->wrapClickMenuOnIcon($icon, $table, $rec_on['uid'], 1, '', '+edit,view,info,delete');
@@ -721,7 +721,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 						$rec_off = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $rec['uid']);
 						$vType = 'element';
 						// Get icon
-						$icon = \t3lib_iconWorks::getSpriteIconForRecord($table, $rec_off, array('title' => \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordIconAltText($rec_off, $table)));
+						$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $rec_off, array('title' => \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordIconAltText($rec_off, $table)));
 						$tempUid = $table != 'pages' || $vType === 'branch' || $GLOBALS['BE_USER']->workspace === 0 ? $rec_off['uid'] : $rec_on['uid'];
 						$icon = $this->doc->wrapClickMenuOnIcon($icon, $table, $tempUid, 1, '', '+edit,' . ($table == 'pages' ? 'view,info,' : '') . 'delete');
 						// Prepare diff-code:
@@ -1040,7 +1040,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// In online workspace we have a reduced view because otherwise it will bloat the listing:
 		if (!$this->details && ($GLOBALS['BE_USER']->workspace === 0 || !$this->MOD_SETTINGS['expandSubElements'])) {
 			return '<br />
-					<img' . \t3lib_iconWorks::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' align="top" alt="" title="" />' . ($origId ? '<a href="' . htmlspecialchars(($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('version') . 'cm1/index.php?id=' . $uid . '&details=' . rawurlencode(('pages:' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' . '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElementsClick') . '</em><span></a>' : '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElements') . '</em><span>');
+					<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, 'gfx/ol/joinbottom.gif', 'width="18" height="16"') . ' align="top" alt="" title="" />' . ($origId ? '<a href="' . htmlspecialchars(($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('version') . 'cm1/index.php?id=' . $uid . '&details=' . rawurlencode(('pages:' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '">' . '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElementsClick') . '</em><span></a>' : '<span class="typo3-dimmed"><em>' . $GLOBALS['LANG']->getLL('subElements') . '</em><span>');
 		} else {
 			// For an offline workspace, show sub elements:
 			$tCell = array();
@@ -1161,7 +1161,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// Compile the cell:
 		$tCell[] = '
 						<tr' . $tdParams . '>
-							<td class="iconTitle">' . $HTMLdata . ($iconMode < 2 ? '<img' . \t3lib_iconWorks::skinImg($this->doc->backPath, ('gfx/ol/join' . ($iconMode ? 'bottom' : '') . '.gif'), 'width="18" height="16"') . ' alt="" />' . \t3lib_iconWorks::getSpriteIconForRecord($tN, $rec) : '') . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($tN, $rec, TRUE) . '</td>
+							<td class="iconTitle">' . $HTMLdata . ($iconMode < 2 ? '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->doc->backPath, ('gfx/ol/join' . ($iconMode ? 'bottom' : '') . '.gif'), 'width="18" height="16"') . ' alt="" />' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($tN, $rec) : '') . \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordTitle($tN, $rec, TRUE) . '</td>
 							<td class="cmdCell">' . $this->displayWorkspaceOverview_commandLinksSub($tN, $rec, $origId) . '</td>' . ($origId ? '<td class="diffCell">' . $diffCode . '</td>' : '') . '
 						</tr>';
 	}
@@ -1325,7 +1325,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$onClick = 'var commentTxt=window.prompt("' . $GLOBALS['LANG']->getLL('rejectExplain') . '","");
 							if (commentTxt!=null) {window.location.href="' . $this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_off['uid'] . '][version][action]=setStage' . '&cmd[' . $table . '][' . $rec_off['uid'] . '][version][stageId]=-1')) . '&cmd[' . $table . '][' . $rec_off['uid'] . '][version][comment]="+escape(commentTxt);}' . ' return false;';
 			// Reject:
-			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->getLL('reject', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-move-down') . '</a>';
+			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->getLL('reject', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-move-down') . '</a>';
 		} else {
 			// Reject:
 			$actionLinks .= '<img src="' . $this->doc->backPath . 'gfx/clear.gif" width="14" height="14" alt="" align="top" title="" />';
@@ -1336,7 +1336,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$onClick = 'var commentTxt=window.prompt("' . $label . '","");
 							if (commentTxt!=null) {window.location.href="' . $this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_off['uid'] . '][version][action]=setStage' . '&cmd[' . $table . '][' . $rec_off['uid'] . '][version][stageId]=' . $sId)) . '&cmd[' . $table . '][' . $rec_off['uid'] . '][version][comment]="+escape(commentTxt);}' . ' return false;';
 			if ($rec_off['t3ver_stage'] != 10) {
-				$actionLinks .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . htmlspecialchars($titleAttrib) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-move-up') . '</a>';
+				$actionLinks .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . htmlspecialchars($titleAttrib) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-move-up') . '</a>';
 				$this->stageIndex[$sId][$table][] = $rec_off['uid'];
 				$this->recIndex[$table][$rec_off['uid']] = $sId;
 			}
@@ -1356,29 +1356,29 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 */
 	public function displayWorkspaceOverview_commandLinks($table, &$rec_on, &$rec_off, $vType) {
 		if ($this->publishAccess && (!($GLOBALS['BE_USER']->workspaceRec['publish_access'] & 1) || (int) $rec_off['t3ver_stage'] === -10)) {
-			$actionLinks = '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_on['uid'] . '][version][action]=swap' . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapWith]=' . $rec_off['uid']))) . '" title="' . $GLOBALS['LANG']->getLL('publish', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-version-swap-version') . '</a>';
+			$actionLinks = '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_on['uid'] . '][version][action]=swap' . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapWith]=' . $rec_off['uid']))) . '" title="' . $GLOBALS['LANG']->getLL('publish', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-swap-version') . '</a>';
 			if ($GLOBALS['BE_USER']->workspaceSwapAccess()) {
-				$actionLinks .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_on['uid'] . '][version][action]=swap' . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapWith]=' . $rec_off['uid'] . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapIntoWS]=1'))) . '" title="' . $GLOBALS['LANG']->getLL('swap', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-version-swap-workspace') . '</a>';
+				$actionLinks .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_on['uid'] . '][version][action]=swap' . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapWith]=' . $rec_off['uid'] . '&cmd[' . $table . '][' . $rec_on['uid'] . '][version][swapIntoWS]=1'))) . '" title="' . $GLOBALS['LANG']->getLL('swap', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-swap-workspace') . '</a>';
 			}
 		}
 		if (!$GLOBALS['BE_USER']->workspaceCannotEditOfflineVersion($table, $rec_off)) {
 			// Release
-			$actionLinks .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_off['uid'] . '][version][action]=clearWSID'))) . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('removeFromWorkspace', TRUE) . '?\');" title="' . $GLOBALS['LANG']->getLL('removeFromWorkspace', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-version-document-remove') . '</a>';
+			$actionLinks .= '<a href="' . htmlspecialchars($this->doc->issueCommand(('&cmd[' . $table . '][' . $rec_off['uid'] . '][version][action]=clearWSID'))) . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('removeFromWorkspace', TRUE) . '?\');" title="' . $GLOBALS['LANG']->getLL('removeFromWorkspace', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-document-remove') . '</a>';
 			// Edit
 			if ($table === 'pages' && $vType !== 'element') {
 				$tempUid = $vType === 'branch' || $GLOBALS['BE_USER']->workspace === 0 ? $rec_off['uid'] : $rec_on['uid'];
-				$actionLinks .= '<a href="#" onclick="top.loadEditId(' . $tempUid . ');top.goToModule(\'' . $this->pageModule . '\'); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_page', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-version-page-open') . '</a>';
+				$actionLinks .= '<a href="#" onclick="top.loadEditId(' . $tempUid . ');top.goToModule(\'' . $this->pageModule . '\'); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_page', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-version-page-open') . '</a>';
 			} else {
 				$params = '&edit[' . $table . '][' . $rec_off['uid'] . ']=edit';
-				$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($params, $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_element', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-open') . '</a>';
+				$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($params, $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_element', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 			}
 		}
 		// History/Log
-		$actionLinks .= '<a href="' . htmlspecialchars(($this->doc->backPath . 'show_rechis.php?element=' . rawurlencode(($table . ':' . $rec_off['uid'])) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '" title="' . $GLOBALS['LANG']->getLL('showLog', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-history-open') . '</a>';
+		$actionLinks .= '<a href="' . htmlspecialchars(($this->doc->backPath . 'show_rechis.php?element=' . rawurlencode(($table . ':' . $rec_off['uid'])) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '" title="' . $GLOBALS['LANG']->getLL('showLog', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
 		// View
 		if ($table === 'pages') {
 			$tempUid = $vType === 'branch' || $GLOBALS['BE_USER']->workspace === 0 ? $rec_off['uid'] : $rec_on['uid'];
-			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($tempUid, $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($tempUid))) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-view') . '</a>';
+			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($tempUid, $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($tempUid))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		}
 		return $actionLinks;
 	}
@@ -1398,18 +1398,18 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			if (!$GLOBALS['BE_USER']->workspaceCannotEditRecord($table, $rec)) {
 				// Edit
 				if ($table === 'pages') {
-					$actionLinks .= '<a href="#" onclick="top.loadEditId(' . $uid . ');top.goToModule(\'' . $this->pageModule . '\'); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_page', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('apps-version-page-open') . '</a>';
+					$actionLinks .= '<a href="#" onclick="top.loadEditId(' . $uid . ');top.goToModule(\'' . $this->pageModule . '\'); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_page', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-version-page-open') . '</a>';
 				} else {
 					$params = '&edit[' . $table . '][' . $uid . ']=edit';
-					$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($params, $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_element', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-open') . '</a>';
+					$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::editOnClick($params, $this->doc->backPath)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_user_ws.xml:img_title_edit_element', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 				}
 			}
 			// History/Log
-			$actionLinks .= '<a href="' . htmlspecialchars(($this->doc->backPath . 'show_rechis.php?element=' . rawurlencode(($table . ':' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '" title="' . $GLOBALS['LANG']->getLL('showLog', TRUE) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-history-open') . '</a>';
+			$actionLinks .= '<a href="' . htmlspecialchars(($this->doc->backPath . 'show_rechis.php?element=' . rawurlencode(($table . ':' . $uid)) . '&returnUrl=' . rawurlencode($this->REQUEST_URI))) . '" title="' . $GLOBALS['LANG']->getLL('showLog', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
 		}
 		// View
 		if ($table === 'pages') {
-			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($uid, $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($uid))) . '">' . \t3lib_iconWorks::getSpriteIcon('actions-document-view') . '</a>';
+			$actionLinks .= '<a href="#" onclick="' . htmlspecialchars(\TYPO3\CMS\Backend\Utility\BackendUtility::viewOnClick($uid, $this->doc->backPath, \TYPO3\CMS\Backend\Utility\BackendUtility::BEgetRootLine($uid))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		}
 		return $actionLinks;
 	}

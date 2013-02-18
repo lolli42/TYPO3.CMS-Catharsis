@@ -562,8 +562,8 @@ class BackendUtility {
 	 *
 	 * Since TYPO3 4.5 the flagIcon is not returned as a filename in "gfx/flags/*" anymore,
 	 * but as a string <flags-xx>. The calling party should call
-	 * t3lib_iconWorks::getSpriteIcon(<flags-xx>) to get an HTML which will represent
-	 * the flag of this language.
+	 * \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon(<flags-xx>) to get an HTML
+	 * which will represent the flag of this language.
 	 *
 	 * @return array Array with languages (title, uid, flagIcon)
 	 */
