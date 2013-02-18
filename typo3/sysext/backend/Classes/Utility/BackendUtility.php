@@ -3305,7 +3305,9 @@ class BackendUtility {
 			// Set the object string to blank by default:
 			$GLOBALS['T3_VAR']['softRefParser'][$spKey] = '';
 			// Now, try to create parser object:
-			$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey] ? $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey] : $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey];
+			$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey]
+				? $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey]
+				: $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey];
 			if ($objRef) {
 				$softRefParserObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($objRef, '');
 				if (is_object($softRefParserObj)) {
