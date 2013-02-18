@@ -78,7 +78,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * @param boolean $isExpanded The element was expanded to render subelements if this flag is set.
 	 * @return string Image tag with the plus/minus icon.
 	 * @internal
-	 * @see t3lib_pageTree::PMicon()
+	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::PMicon()
 	 */
 	public function PMicon(\TYPO3\CMS\Core\Resource\Folder $folderObject, $subFolderCounter, $totalSubFolders, $nextCount, $isExpanded) {
 		$PM = $nextCount ? ($isExpanded ? 'minus' : 'plus') : 'join';

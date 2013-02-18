@@ -48,7 +48,7 @@ class RecyclerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass
 	protected $recordsPageLimit = 50;
 
 	/**
-	 * @var t3lib_pageRenderer
+	 * @var \TYPO3\CMS\Core\Page\PageRenderer
 	 */
 	protected $pageRenderer;
 

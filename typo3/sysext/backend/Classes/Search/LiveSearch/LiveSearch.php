@@ -446,8 +446,8 @@ class LiveSearch {
 	}
 
 	/**
-	 * Creates an instance of t3lib_pageTree which will select a page tree to
-	 * $depth and return the object. In that object we will find the ids of the tree.
+	 * Creates an instance of \TYPO3\CMS\Backend\Tree\View\PageTreeView which will select a
+	 * page tree to $depth and return the object. In that object we will find the ids of the tree.
 	 *
 	 * @param integer $id Page id.
 	 * @param integer $depth Depth to go down.
