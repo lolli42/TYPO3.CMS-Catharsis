@@ -4816,7 +4816,7 @@ Connection: close
 		if (stripos($log, 'file') !== FALSE) {
 			// In case lock is acquired before autoloader was defined:
 			if (class_exists('TYPO3\\CMS\\Core\\Locking\\Locker') === FALSE) {
-				require_once PATH_t3lib . 'class.t3lib_lock.php';
+				require_once ExtensionManagementUtility::extPath('core') . 'Classes/Locking/Locker.php';
 			}
 			// Write a longer message to the deprecation log
 			$destination = self::getDeprecationLogFileName();
