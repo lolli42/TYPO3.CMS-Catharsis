@@ -32,7 +32,7 @@ namespace TYPO3\CMS\Backend\Module;
  *
  * EXAMPLE PROTOTYPE
  *
- * As for examples there are lots of them if you search for classes which extends 't3lib_SCbase'.
+ * As for examples there are lots of them if you search for classes which extends \TYPO3\CMS\Backend\Module\BaseScriptClass
  * However you can see a prototype example of how a module might use this class in an index.php file typically hosting a backend module.
  * NOTICE: This example only outlines the basic structure of how this class is used. You should consult the documentation and other real-world examples for some actual things to do when building modules.
  *
@@ -44,8 +44,9 @@ namespace TYPO3\CMS\Backend\Module;
  * $GLOBALS['LANG']->includeLLFile('EXT:prototype/locallang.php');
  * $GLOBALS['BE_USER']->modAccess($MCONF,1);
  *
- * SC_mod_prototype EXTENDS THE CLASS t3lib_SCbase with a main() and printContent() function:
- * class SC_mod_prototype extends t3lib_SCbase {
+ * SC_mod_prototype EXTENDS THE CLASS \TYPO3\CMS\Backend\Module\BaseScriptClass with a main() and printContent() function:
+ *
+ * class SC_mod_prototype extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
  * MAIN FUNCTION - HERE YOU CREATE THE MODULE CONTENT IN $this->content
  * function main() {
  * TYPICALLY THE INTERNAL VAR, $this->doc is instantiated like this:

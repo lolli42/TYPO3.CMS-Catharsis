@@ -51,7 +51,7 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * Initialize.
 	 * Calls parent init function and then the handleExternalFunctionValue() function from the parent class
 	 *
-	 * @param object $pObj A reference to the parent (calling) object (which is probably an instance of an extension class to t3lib_SCbase)
+	 * @param object $pObj A reference to the parent (calling) object (which is probably an instance of an extension class to \TYPO3\CMS\Backend\Module\BaseScriptClass)
 	 * @param array $conf The configuration set for this module - from global array TBE_MODULES_EXT
 	 * @return void
 	 * @todo Define visibility

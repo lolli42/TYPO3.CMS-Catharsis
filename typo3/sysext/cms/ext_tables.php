@@ -11,6 +11,9 @@ if (TYPO3_MODE == 'BE') {
 }
 // Add allowed records to pages:
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('pages_language_overlay,tt_content,sys_template,sys_domain,backend_layout');
+
+
+
 // This is the standard TypoScript content table, tt_content
 $TCA['tt_content'] = array(
 	'ctrl' => array(
