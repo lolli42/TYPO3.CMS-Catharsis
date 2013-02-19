@@ -1281,7 +1281,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	 *
 	 * @return void
 	 * @access private
-	 * @see t3lib_TSparser
+	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
 	 * @todo Define visibility
 	 */
 	public function fetchGroupData() {

@@ -1089,13 +1089,12 @@ class BackendUtility {
 	 *******************************************/
 	/**
 	 * Returns the Page TSconfig for page with id, $id
-	 * Requires class "t3lib_TSparser"
 	 *
 	 * @param $id integer Page uid for which to create Page TSconfig
 	 * @param $rootLine array If $rootLine is an array, that is used as rootline, otherwise rootline is just calculated
 	 * @param boolean $returnPartArray If $returnPartArray is set, then the array with accumulated Page TSconfig is returned non-parsed. Otherwise the output will be parsed by the TypoScript parser.
 	 * @return array Page TSconfig
-	 * @see t3lib_TSparser
+	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
 	 */
 	static public function getPagesTSconfig($id, $rootLine = '', $returnPartArray = 0) {
 		$id = intval($id);

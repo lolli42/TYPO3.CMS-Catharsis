@@ -822,7 +822,7 @@ class TemplateService {
 	 * Depends on $this->config and $this->constants to be set prior to this! (done by processTemplate/runThroughTemplates)
 	 *
 	 * @return void
-	 * @see t3lib_TSparser, start()
+	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser, start()
 	 * @todo Define visibility
 	 */
 	public function generateConfig() {
@@ -950,7 +950,7 @@ class TemplateService {
 	 * if needed.
 	 *
 	 * @return void
-	 * @see t3lib_TSparser, generateConfig()
+	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser, generateConfig()
 	 */
 	public function processIncludes() {
 		$files = array();

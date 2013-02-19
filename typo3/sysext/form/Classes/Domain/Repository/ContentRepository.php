@@ -46,8 +46,8 @@ class ContentRepository {
 		$recordId = (int) $getPostVariables['uid'];
 		$row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord($table, $recordId);
 		if (is_array($row)) {
-			/** @var $typoScriptParser t3lib_tsparser */
-			$typoScriptParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('t3lib_tsparser');
+			/** @var $typoScriptParser \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */
+			$typoScriptParser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 			$typoScriptParser->parse($row['bodytext']);
 			/** @var $record \TYPO3\CMS\Form\Domain\Model\Content */
 			$record = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Form\\Domain\\Model\\Content');

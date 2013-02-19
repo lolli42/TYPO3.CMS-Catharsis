@@ -647,7 +647,7 @@ class TypoScriptParser {
 
 	/**
 	 * Checks the input string (un-parsed TypoScript) for include-commands ("<INCLUDE_TYPOSCRIPT: ....")
-	 * Use: t3lib_TSparser::checkIncludeLines()
+	 * Use: \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines()
 	 *
 	 * @param string $string Unparsed TypoScript
 	 * @param integer $cycle_counter Counter for detecting endless loops
@@ -792,7 +792,8 @@ class TypoScriptParser {
 		$skipNextLineIfEmpty = FALSE;
 		$openingCommentedIncludeStatement = NULL;
 		foreach ($lines as $line) {
-			// t3lib_TSparser::checkIncludeLines inserts an additional empty line, remove this again
+			// \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines inserts
+			// an additional empty line, remove this again
 			if ($skipNextLineIfEmpty) {
 				if (trim($line) == '') {
 					continue;
@@ -850,7 +851,8 @@ class TypoScriptParser {
 					$fileName = NULL;
 					$inIncludePart = FALSE;
 					$openingCommentedIncludeStatement = NULL;
-					// t3lib_TSparser::checkIncludeLines inserts an additional empty line, remove this again
+					// \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines inserts
+					// an additional empty line, remove this again
 					$skipNextLineIfEmpty = TRUE;
 				} else {
 					// If this is not a ending commented include statement this line goes into the file content
