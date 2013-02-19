@@ -158,12 +158,12 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	///////////////////////////////////////////
 	// Tests concerning checkModifyAccessList
 	///////////////////////////////////////////
+	//
 	/**
 	 * Tests whether a wrong interface on the 'checkModifyAccessList' hook throws an exception.
 	 *
 	 * @test
 	 * @expectedException UnexpectedValueException
-	 * @see t3lib_TCEmain::checkModifyAccessList()
 	 */
 	public function doesCheckModifyAccessListThrowExceptionOnWrongHookInterface() {
 		$hookClass = uniqid('tx_coretest');
@@ -176,7 +176,6 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Tests whether the 'checkModifyAccessList' hook is called correctly.
 	 *
 	 * @test
-	 * @see t3lib_TCEmain::checkModifyAccessList()
 	 */
 	public function doesCheckModifyAccessListHookGetsCalled() {
 		$hookClass = uniqid('tx_coretest');
@@ -191,7 +190,6 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Tests whether the 'checkModifyAccessList' hook modifies the $accessAllowed variable.
 	 *
 	 * @test
-	 * @see t3lib_TCEmain::checkModifyAccessList()
 	 */
 	public function doesCheckModifyAccessListHookModifyAccessAllowed() {
 		$hookClass = uniqid('tx_coretest');

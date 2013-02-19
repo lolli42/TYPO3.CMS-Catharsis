@@ -484,8 +484,8 @@ class DataHandler {
 	protected $version_remapMMForVersionSwap_reg;
 
 	/**
-	 * The outer most instance of t3lib_TCEmain
-	 * (t3lib_TCEmain instantiates itself on versioning and localization)
+	 * The outer most instance of \TYPO3\CMS\Core\DataHandling\DataHandler:
+	 * This object instantiates itself on versioning and localization ...
 	 *
 	 * @var \TYPO3\CMS\Core\DataHandling\DataHandler
 	 */
@@ -6953,8 +6953,8 @@ class DataHandler {
 	}
 
 	/**
-	 * Gets the outer most instance of t3lib_TCEmain.
-	 * Since t3lib_TCEmain can create nested objects of itself,
+	 * Gets the outer most instance of \TYPO3\CMS\Core\DataHandling\DataHandler
+	 * Since \TYPO3\CMS\Core\DataHandling\DataHandler can create nested objects of itself,
 	 * this method helps to determine the first (= outer most) one.
 	 *
 	 * @return \TYPO3\CMS\Core\DataHandling\DataHandler
@@ -6973,8 +6973,8 @@ class DataHandler {
 	}
 
 	/**
-	 * Determines whether the this object is the outer most instance of t3lib_TCEmain.
-	 * Since t3lib_TCEmain can create nested objects of itself,
+	 * Determines whether the this object is the outer most instance of itself
+	 * Since DataHandler can create nested objects of itself,
 	 * this method helps to determine the first (= outer most) one.
 	 *
 	 * @return boolean

@@ -3127,7 +3127,7 @@ class BackendUtility {
 	 * @param integer $pid Record pid, could be negative then pointing to a record from same table whose pid to find and return.
 	 * @return integer
 	 * @internal
-	 * @see t3lib_TCEmain::copyRecord(), getTSCpid()
+	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::copyRecord(), getTSCpid()
 	 */
 	static public function getTSconfig_pidValue($table, $uid, $pid) {
 		// If pid is an integer this takes precedence in our lookup.
@@ -3184,7 +3184,7 @@ class BackendUtility {
 	 * @param integer $pid Record pid
 	 * @return array Array of two integers; first is the REAL PID of a record and if its a new record negative values are resolved to the true PID, second value is the PID value for TSconfig (uid if table is pages, otherwise the pid)
 	 * @internal
-	 * @see t3lib_TCEmain::setHistory(), t3lib_TCEmain::process_datamap()
+	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::setHistory(), \TYPO3\CMS\Core\DataHandling\DataHandler::process_datamap()
 	 */
 	static public function getTSCpid($table, $uid, $pid) {
 		// If pid is negative (referring to another record) the pid of the other record is fetched and returned.

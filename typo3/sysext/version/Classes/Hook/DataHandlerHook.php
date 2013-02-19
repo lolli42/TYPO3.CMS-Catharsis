@@ -264,8 +264,8 @@ class DataHandlerHook {
 	}
 
 	/**
-	 * hook for t3lib_TCEmain::moveRecord that cares about moving records that
-	 * are *not* in the live workspace
+	 * Hook for \TYPO3\CMS\Core\DataHandling\DataHandler::moveRecord that cares about
+	 * moving records that are *not* in the live workspace
 	 *
 	 * @param string $table the table of the record
 	 * @param integer $id the ID of the record
@@ -1262,7 +1262,7 @@ class DataHandlerHook {
 	 * Gets an instance of the command map helper.
 	 *
 	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $tceMain TCEmain object
-	 * @param array $commandMap The command map as submitted to t3lib_TCEmain
+	 * @param array $commandMap The command map as submitted to \TYPO3\CMS\Core\DataHandling\DataHandler
 	 * @return \TYPO3\CMS\Version\DataHandler\CommandMap
 	 */
 	public function getCommandMap(\TYPO3\CMS\Core\DataHandling\DataHandler $tceMain, array $commandMap) {

@@ -26,8 +26,10 @@ namespace TYPO3\CMS\Version\DataHandler;
  *
  * This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
- * Handles the t3lib_TCEmain command map and is only used in combination with t3lib_TCEmain.
+ * Handles the \TYPO3\CMS\Core\DataHandling\DataHandler command map and is
+ * only used in combination with \TYPO3\CMS\Core\DataHandling\DataHandler
  */
 class CommandMap {
 

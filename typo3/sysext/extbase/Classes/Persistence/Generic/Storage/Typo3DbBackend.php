@@ -1192,7 +1192,8 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * If the record lies on a page, then we clear the cache of this page.
 	 * If the record has no PID column, we clear the cache of the current page as best-effort.
 	 *
-	 * Much of this functionality is taken from t3lib_tcemain::clear_cache() which unfortunately only works with logged-in BE user.
+	 * Much of this functionality is taken from \TYPO3\CMS\Core\DataHandling\DataHandler::clear_cache()
+	 * which unfortunately only works with logged-in BE user.
 	 *
 	 * @param string $tableName Table name of the record
 	 * @param integer $uid UID of the record

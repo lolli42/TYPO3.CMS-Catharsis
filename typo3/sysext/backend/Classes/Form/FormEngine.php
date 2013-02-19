@@ -1311,7 +1311,7 @@ class FormEngine {
 				}
 				break;
 			default:
-				// Pair hook to the one in t3lib_TCEmain::checkValue_input_Eval()
+				// Pair hook to the one in \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue_input_Eval()
 				$evalObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$func] . ':&' . $func);
 				if (is_object($evalObj) && method_exists($evalObj, 'deevaluateFieldValue')) {
 					$_params = array(
@@ -1539,7 +1539,7 @@ function ' . $evalData . '(value) {
 						$this->registerRequiredProperty('field', $table . '_' . $row['uid'] . '_' . $field, $PA['itemFormElName']);
 						break;
 					default:
-						// Pair hook to the one in t3lib_TCEmain::checkValue_input_Eval() and t3lib_TCEmain::checkValue_text_Eval()
+						// Pair hook to the one in \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue_input_Eval() and \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue_text_Eval()
 						$evalObj = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$func] . ':&' . $func);
 						if (is_object($evalObj) && method_exists($evalObj, 'deevaluateFieldValue')) {
 							$_params = array(
