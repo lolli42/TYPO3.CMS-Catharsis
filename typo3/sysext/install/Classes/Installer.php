@@ -3554,9 +3554,17 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		}
 		// try, print truetype font:
 		$im = @imagecreate(300, 50);
-		$background_color = imagecolorallocate($im, 255, 255, 55);
 		$text_color = imagecolorallocate($im, 233, 14, 91);
-		$test = @imagettftext($im, \TYPO3\CMS\Core\Utility\GeneralUtility::freetypeDpiComp(20), 0, 10, 20, $text_color, (PATH_t3lib . '/fonts/vera.ttf'), 'Testing Truetype support');
+		$test = @imagettftext(
+			$im,
+			\TYPO3\CMS\Core\Utility\GeneralUtility::freetypeDpiComp(20),
+			0,
+			10,
+			20,
+			$text_color,
+			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			'Testing Truetype support'
+		);
 		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('testingTrueTypeSupport')) {
 			if ($this->isGIF()) {
 				header('Content-type: image/gif');
@@ -4320,7 +4328,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 					'text' => 'HELLO WORLD',
 					'fontColor' => '#003366',
 					'fontSize' => 18,
-					'fontFile' => $this->backPath . '../t3lib/fonts/vera.ttf',
+					'fontFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
 					'offset' => '17,40'
 				);
 				$conf['BBOX'] = $imageProc->calcBBox($conf);
