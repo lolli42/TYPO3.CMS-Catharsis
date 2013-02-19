@@ -717,7 +717,8 @@ class BackendUtility {
 	 * If no "type" field is configured in the "ctrl"-section of the $GLOBALS['TCA'] for the table, zero is used.
 	 * If zero is not an index in the "types" section of $GLOBALS['TCA'] for the table, then the $fieldValue returned will default to 1 (no matter if that is an index or not)
 	 *
-	 * Note: This method is very similar to t3lib_TCEforms::getRTypeNum(), however, it has two differences:
+	 * Note: This method is very similar to \TYPO3\CMS\Backend\Form\FormEngine::getRTypeNum(),
+	 * however, it has two differences:
 	 * 1) The method in TCEForms also takes care of localization (which is difficult to do here as the whole infrastructure for language overlays is only in TCEforms).
 	 * 2) The $rec array looks different in TCEForms, as in there it's not the raw record but the \TYPO3\CMS\Backend\Form\DataPreprocessor version of it, which changes e.g. how "select"
 	 * and "group" field values are stored, which makes different processing of the "foreign pointer field" type field variant necessary.
@@ -836,7 +837,7 @@ class BackendUtility {
 	 * @param boolean $WSOL Boolean; If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
 	 * @param integer $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from TCEmain)
 	 * @return mixed If array, the data structure was found and returned as an array. Otherwise (string) it is an error message.
-	 * @see t3lib_TCEforms::getSingleField_typeFlex()
+	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getSingleField_typeFlex()
 	 */
 	static public function getFlexFormDS($conf, $row, $table, $fieldName = '', $WSOL = TRUE, $newRecordPidValue = 0) {
 		// Get pointer field etc from TCA-config:
@@ -3168,7 +3169,7 @@ class BackendUtility {
 	 * @param integer $pid Record pid
 	 * @return integer
 	 * @internal
-	 * @see t3lib_TCEforms::getTSCpid()
+	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getTSCpid()
 	 */
 	static public function getPidForModTSconfig($table, $uid, $pid) {
 		$retVal = $table == 'pages' && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($uid) ? $uid : $pid;

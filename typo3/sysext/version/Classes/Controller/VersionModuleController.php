@@ -448,7 +448,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			<input type="hidden" name="prErr" value="1" />
 			<input type="hidden" name="redirect" value="' . htmlspecialchars($this->REQUEST_URI) . '" />
 			<input type="submit" name="_" value="' . $GLOBALS['LANG']->getLL('createNewVersion') . '" />
-			' . \t3lib_TCEforms::getHiddenTokenField('tceAction') . '
+			' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
 			</form>
 
 		';

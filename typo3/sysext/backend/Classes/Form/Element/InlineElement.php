@@ -471,7 +471,7 @@ class InlineElement {
 	 * @return string The rendered form
 	 */
 	protected function renderMainFields($table, array $row, array $overruleTypesArray = array()) {
-		// The current render depth of t3lib_TCEforms:
+		// The current render depth of \TYPO3\CMS\Backend\Form\FormEngine
 		$depth = $this->fObj->renderDepth;
 		// If there is some information about already rendered palettes of our parent, store this info:
 		if (isset($this->fObj->palettesRendered[$depth][$table])) {
@@ -979,7 +979,7 @@ class InlineElement {
 	/**
 	 * Construct runtime environment for Inline Relational Record Editing.
 	 * - creates an anoymous SC_alt_doc in $GLOBALS['SOBE']
-	 * - creates a t3lib_TCEforms in $GLOBALS['SOBE']->tceforms
+	 * - creates a \TYPO3\CMS\Backend\Form\FormEngine in $GLOBALS['SOBE']->tceforms
 	 * - sets ourself as reference to $GLOBALS['SOBE']->tceforms->inline
 	 * - sets $GLOBALS['SOBE']->tceforms->RTEcounter to the current situation on client-side
 	 *

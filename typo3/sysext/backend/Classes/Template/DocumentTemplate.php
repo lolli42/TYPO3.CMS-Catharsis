@@ -115,7 +115,7 @@ class DocumentTemplate {
 	 */
 	public $form_rowsToStylewidth = 9.58;
 
-	// Compensation for large documents (used in class.t3lib_tceforms.php)
+	// Compensation for large documents (used in \TYPO3\CMS\Backend\Form\FormEngine)
 	/**
 	 * @todo Define visibility
 	 */
