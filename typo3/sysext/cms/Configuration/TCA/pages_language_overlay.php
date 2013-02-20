@@ -32,7 +32,7 @@ return array(
 		'showRecordFieldList' => 'title,hidden,starttime,endtime,keywords,description,abstract'
 	),
 	'columns' => array(
-		'doktype' => $TCA['pages']['columns']['doktype'],
+		'doktype' => $GLOBALS['TCA']['pages']['columns']['doktype'],
 		'hidden' => array(
 			'exclude' => 1,
 			'label' => 'LLL:EXT:cms/locallang_tca.xml:pages.hidden',
@@ -73,7 +73,7 @@ return array(
 		),
 		'title' => array(
 			'l10n_mode' => 'prefixLangTitle',
-			'label' => $TCA['pages']['columns']['title']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['title']['label'],
 			'l10n_cat' => 'text',
 			'config' => array(
 				'type' => 'input',
@@ -85,7 +85,7 @@ return array(
 		'subtitle' => array(
 			'exclude' => 1,
 			'l10n_cat' => 'text',
-			'label' => $TCA['pages']['columns']['subtitle']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['subtitle']['label'],
 			'config' => array(
 				'type' => 'input',
 				'size' => '50',
@@ -96,7 +96,7 @@ return array(
 		'nav_title' => array(
 			'exclude' => 1,
 			'l10n_cat' => 'text',
-			'label' => $TCA['pages']['columns']['nav_title']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['nav_title']['label'],
 			'config' => array(
 				'type' => 'input',
 				'size' => '50',
@@ -106,7 +106,7 @@ return array(
 		),
 		'keywords' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['keywords']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['keywords']['label'],
 			'config' => array(
 				'type' => 'text',
 				'cols' => '40',
@@ -115,7 +115,7 @@ return array(
 		),
 		'description' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['description']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['description']['label'],
 			'config' => array(
 				'type' => 'text',
 				'cols' => '40',
@@ -124,7 +124,7 @@ return array(
 		),
 		'abstract' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['abstract']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['abstract']['label'],
 			'config' => array(
 				'type' => 'text',
 				'cols' => '40',
@@ -133,7 +133,7 @@ return array(
 		),
 		'author' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['author']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['author']['label'],
 			'config' => array(
 				'type' => 'input',
 				'size' => '23',
@@ -143,7 +143,7 @@ return array(
 		),
 		'author_email' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['author_email']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['author_email']['label'],
 			'config' => array(
 				'type' => 'input',
 				'size' => '23',
@@ -154,7 +154,7 @@ return array(
 		),
 		'media' => array(
 			'exclude' => 1,
-			'label' => $TCA['pages']['columns']['media']['label'],
+			'label' => $GLOBALS['TCA']['pages']['columns']['media']['label'],
 			'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig('media')
 		),
 		'url' => array(
@@ -173,7 +173,7 @@ return array(
 			'label' => 'LLL:EXT:lang/locallang_general.xml:LGL.type',
 			'config' => array(
 				'type' => 'select',
-				'items' => $TCA['pages']['columns']['urltype']['config']['items'],
+				'items' => $GLOBALS['TCA']['pages']['columns']['urltype']['config']['items'],
 				'default' => '1'
 			)
 		),
@@ -199,7 +199,7 @@ return array(
 			'label' => 'LLL:EXT:cms/locallang_tca.xml:pages.shortcut_mode',
 			'config' => array(
 				'type' => 'select',
-				'items' => $TCA['pages']['columns']['shortcut_mode']['config']['items'],
+				'items' => $GLOBALS['TCA']['pages']['columns']['shortcut_mode']['config']['items'],
 				'default' => '0'
 			)
 		),

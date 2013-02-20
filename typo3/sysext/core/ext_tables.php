@@ -62,17 +62,6 @@ $GLOBALS['PAGES_TYPES'] = array(
  * rootLevel is TRUE, records can ONLY be created on rootLevel. If it's
  * FALSE records can ONLY be created OUTSIDE rootLevel
  */
-$GLOBALS['TCA'] = array();
-
-$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
-
-/**
- * Table "pages":
- * The mandatory pages table. The backbone of the TYPO3 page tree structure.
- * All other records configured in $TCA must have a field, "pid", which relates
- * the record to a page record's "uid" field.
- */
-$GLOBALS['TCA']['pages'] = require_once($extensionTcaPath . 'Pages.php');
 
 // If the compat version is less than 4.2, pagetype 2 ("Advanced")
 // and pagetype 5 ("Not in menu") are added to TCA.
@@ -143,9 +132,6 @@ if (
 	);
 }
 
-// Backend users for TYPO3
-$GLOBALS['TCA']['be_users'] = require_once($extensionTcaPath . 'BeUsers.php');
-
 // Populate available languages
 /** @var $locales \TYPO3\CMS\Core\Localization\Locales */
 $locales = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Localization\\Locales');
@@ -156,65 +142,15 @@ foreach ($languageItems as $locale => $name) {
 	$GLOBALS['TCA']['be_users']['columns']['lang']['config']['items'][] = array($name, $locale);
 }
 
-
-// Backend usergroups - Many permission criteria are based on membership of backend groups.
-$GLOBALS['TCA']['be_groups'] = require_once($extensionTcaPath . 'BeGroups.php');
-
-
-// Defines filepaths on the server which can be mounted for users so they can
-// upload and manage files online by eg. the Filelist module
-$GLOBALS['TCA']['sys_filemounts'] = require_once($extensionTcaPath . 'SysFilemounts.php');
-
-
-// Represents all categories to be used for record categorization
-$GLOBALS['TCA']['sys_category'] = require_once($extensionTcaPath . 'SysCategory.php');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_category');
 
-
-// TCA record collections
-$GLOBALS['TCA']['sys_collection'] = require_once($extensionTcaPath . 'SysCollection.php');
-
-
-// Defines a root point of a file storage, that is like a mount point.
-// Each storage is attached to a driver (local, webdav, amazons3) and
-// thus is the entry-point for all files
-$GLOBALS['TCA']['sys_file_storage'] = require_once($extensionTcaPath . 'SysFileStorage.php');
 /** @var \TYPO3\CMS\Core\Resource\Driver\DriverRegistry $registry */
 $registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Driver\\DriverRegistry');
 $registry->addDriversToTCA();
 
-// Represents all files that are tracked by TYPO3 which are assets,
-// single entries of files with additional metadata
-$GLOBALS['TCA']['sys_file'] = require_once($extensionTcaPath . 'SysFile.php');
-
-
-// Is a single usage of a sys_file record somewhere in the installation
-// Is kind of like a MM-table between sys_file and e.g. tt_content:image that
-// is shown up in TCA so additional metadata can be added for this specific
-// kind of usage
-$GLOBALS['TCA']['sys_file_reference'] = require_once($extensionTcaPath . 'SysFileReference.php');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_file_reference');
 
-// Represents a list of sys_file records
-$GLOBALS['TCA']['sys_file_collection'] = require_once($extensionTcaPath . 'SysFileCollection.php');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_file_collection');
-
-
-// History records
-$GLOBALS['TCA']['sys_history'] = require_once($extensionTcaPath . 'SysHistory.php');
-
-
-// Defines possible languages used for translation of records in the system
-$GLOBALS['TCA']['sys_language'] = require_once($extensionTcaPath . 'SysLanguage.php');
-
-
-// Log records
-$GLOBALS['TCA']['sys_log'] = require_once($extensionTcaPath . 'SysLog.php');
-
-
-// Holds news records to be displayed in the login screen
-$GLOBALS['TCA']['sys_news'] = require_once($extensionTcaPath . 'SysNews.php');
-
 
 /**
  * $TBE_MODULES contains the structure of the backend modules as they are

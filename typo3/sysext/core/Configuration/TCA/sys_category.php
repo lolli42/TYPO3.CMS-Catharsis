@@ -114,8 +114,7 @@ return array(
 				'checkbox' => '0',
 				'default' => '0',
 				'range' => array(
-					'upper' => mktime(0, 0, 0, 12, 31, date('Y') + 10),
-					'lower' => mktime(0, 0, 0, date('m') - 1, date('d'), date('Y'))
+					'upper' => mktime(0, 0, 0, 1, 1, 2038),
 				)
 			)
 		),

@@ -777,6 +777,7 @@ class Bootstrap {
 		global $TBE_MODULES, $TBE_MODULES_EXT, $TCA;
 		global $PAGES_TYPES, $TBE_STYLES, $FILEICONS;
 		global $_EXTKEY;
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadBaseTca($allowCaching);
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtTables($allowCaching);
 		// Load additional ext tables script if the file exists
 		$extTablesFile = PATH_typo3conf . TYPO3_extTableDef_script;

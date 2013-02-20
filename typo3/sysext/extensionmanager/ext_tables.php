@@ -3,12 +3,6 @@ if (!defined('TYPO3_MODE')) {
 	die('Access denied.');
 }
 
-$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
-
-$GLOBALS['TCA']['tx_extensionmanager_domain_model_extension'] = require_once($extensionTcaPath . 'tx_extensionmanager_domain_model_extension.php');
-
-$GLOBALS['TCA']['tx_extensionmanager_domain_model_repository'] = require_once($extensionTcaPath . 'tx_extensionmanager_domain_model_repository.php');
-
 if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
 		'TYPO3.CMS.' . $_EXTKEY,

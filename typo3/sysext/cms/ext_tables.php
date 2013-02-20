@@ -12,16 +12,11 @@ if (TYPO3_MODE == 'BE') {
 // Add allowed records to pages:
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('pages_language_overlay,tt_content,sys_template,sys_domain,backend_layout');
 
-$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
-
 if (!function_exists('user_sortPluginList')) {
 	function user_sortPluginList(array &$parameters) {
 		usort($parameters['items'], create_function('$item1,$item2', 'return strcasecmp($GLOBALS[\'LANG\']->sL($item1[0]),$GLOBALS[\'LANG\']->sL($item2[0]));'));
 	}
 }
-
-// This is the standard TypoScript content table, tt_content
-$GLOBALS['TCA']['tt_content'] = require_once($extensionTcaPath . 'tt_content.php');
 
 // keep old code (pre-FAL) for installations that haven't upgraded yet. please remove this code in TYPO3 7.0
 // @deprecated since TYPO3 6.0, please remove in TYPO3 7.0
@@ -42,6 +37,7 @@ if ((!isset($GLOBALS['TYPO3_CONF_VARS']['INSTALL']['wizardDone']['Tx_Install_Upd
 		'autoSizeMax' => 40
 	);
 }
+
 if ((!isset($GLOBALS['TYPO3_CONF_VARS']['INSTALL']['wizardDone']['Tx_Install_Updates_File_TceformsUpdateWizard']) || !\TYPO3\CMS\Core\Utility\GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['INSTALL']['wizardDone']['Tx_Install_Updates_File_TceformsUpdateWizard'], 'tt_content:media')) && !\TYPO3\CMS\Core\Utility\GeneralUtility::compat_version('6.0')) {
 	\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('This installation hasn\'t been migrated to FAL for the field $TCA[tt_content][columns][media] yet. Please do so before TYPO3 v7.');
 	// Existing installation and no upgrade wizard was executed - and files haven't been merged: use the old code
@@ -59,17 +55,6 @@ if ((!isset($GLOBALS['TYPO3_CONF_VARS']['INSTALL']['wizardDone']['Tx_Install_Upd
 		'minitems' => '0'
 	);
 }
-// fe_users
-$GLOBALS['TCA']['fe_users'] = require_once($extensionTcaPath . 'fe_users.php');
-
-// fe_groups
-$GLOBALS['TCA']['fe_groups'] = require_once($extensionTcaPath . 'fe_groups.php');
-
-// sys_domain
-$GLOBALS['TCA']['sys_domain'] = require_once($extensionTcaPath . 'sys_domain.php');
-
-// pages_language_overlay
-$GLOBALS['TCA']['pages_language_overlay'] = require_once($extensionTcaPath . 'pages_language_overlay.php');
 
 // Keep old code (pre-FAL) for installations that haven't upgraded yet.
 // @deprecated since TYPO3 6.0, please remove at earliest in TYPO3 6.2
@@ -89,10 +74,4 @@ if ((!isset($GLOBALS['TYPO3_CONF_VARS']['INSTALL']['wizardDone']['Tx_Install_Upd
 		'minitems' => '0'
 	);
 }
-
-// sys_template
-$GLOBALS['TCA']['sys_template'] = require_once($extensionTcaPath . 'sys_template.php');
-
-// layouts
-$GLOBALS['TCA']['backend_layout'] = require_once($extensionTcaPath . 'backend_layout.php');
 ?>

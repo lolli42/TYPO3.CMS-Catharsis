@@ -1604,6 +1604,88 @@ tt_content.' . $key . $prefix . ' {
 	}
 
 	/**
+	 * Wrapper for buildBaseTcaFromSingleFiles handling caching.
+	 *
+	 * This builds 'base' TCA that is later overloaded by ext_tables.php.
+	 *
+	 * Use a cache file if exists and caching is allowed.
+	 *
+	 * This is an internal method. It is only used during bootstrap and
+	 * extensions should not use it!
+	 *
+	 * @param boolean $allowCaching Whether or not to load / create concatenated cache file
+	 * @return void
+	 * @access private
+	 */
+	static public function loadBaseTca($allowCaching = TRUE) {
+		if ($allowCaching) {
+			$cacheIdentifier = static::getBaseTcaCacheIdentifier();
+			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
+			$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+			if ($codeCache->has($cacheIdentifier)) {
+				$codeCache->requireOnce($cacheIdentifier);
+			} else {
+				self::buildBaseTcaFromSingleFiles();
+				self::createBaseTcaCacheFile();
+			}
+		} else {
+			self::buildBaseTcaFromSingleFiles();
+		}
+	}
+
+	/**
+	 * Find all Configuration/TCA/* files of extensions and create base TCA from it.
+	 * The filename must be the table name in $GLOBALS['TCA'], and the content of
+	 * the file should return an array with content of a specific table.
+	 *
+	 * @return void
+	 * @see Extension core, cms, extensionmanager and others for examples.
+	 */
+	static protected function buildBaseTcaFromSingleFiles() {
+		$GLOBALS['TCA'] = array();
+		foreach (self::getLoadedExtensionListArray() as $extensionName) {
+			$tcaConfigurationDirectory = self::extPath($extensionName) . 'Configuration/TCA';
+			if (is_dir($tcaConfigurationDirectory)) {
+				$files = scandir($tcaConfigurationDirectory);
+				foreach ($files as $file) {
+					if (is_file($tcaConfigurationDirectory . '/' . $file) && ($file !== '.') && ($file !== '..')) {
+						$tcaOfTable = require($tcaConfigurationDirectory . '/' . $file);
+						if (is_array($tcaOfTable)) {
+							// TCA table name is filename without .php suffix, eg 'sys_notes', not 'sys_notes.php'
+							$tcaTableName = substr($file, 0, -4);
+							$GLOBALS['TCA'][$tcaTableName] = $tcaOfTable;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Cache base $GLOBALS['TCA'] to cache file to require the whole thing in one
+	 * file for next access instead of cycling through all extensions again.
+	 *
+	 * @return void
+	 */
+	static protected function createBaseTcaCacheFile() {
+		$phpCodeToCache = '$GLOBALS[\'TCA\'] = ';
+		$phpCodeToCache .= ArrayUtility::arrayExport($GLOBALS['TCA']);
+		$phpCodeToCache .= ';';
+		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
+		$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+		$codeCache->set(static::getBaseTcaCacheIdentifier(), $phpCodeToCache);
+	}
+
+	/**
+	 * Cache identifier of base TCA cache entry.
+	 *
+	 * @return string
+	 */
+	static protected function getBaseTcaCacheIdentifier() {
+		return 'tca_base_' . sha1((TYPO3_version . PATH_site . 'tca'));
+	}
+
+	/**
 	 * Execute all ext_tables.php files of loaded extensions.
 	 * The method implements an optionally used caching mechanism that concatenates all
 	 * ext_tables.php files in one file.

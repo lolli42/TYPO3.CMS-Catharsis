@@ -247,7 +247,7 @@ return array(
 				'eval' => 'datetime',
 				'default' => '0',
 				'range' => array(
-					'upper' => mktime(0, 0, 0, 12, 31, 2020)
+					'upper' => mktime(0, 0, 0, 1, 1, 2038)
 				)
 			)
 		),

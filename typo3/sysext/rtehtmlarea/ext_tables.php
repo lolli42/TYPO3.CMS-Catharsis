@@ -7,10 +7,6 @@ if (!defined('TYPO3_MODE')) {
 // Add configuration of soft references on image tags in RTE content
 require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'hooks/softref/ext_tables.php';
 
-$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
-
-$GLOBALS['TCA']['tx_rtehtmlarea_acronym'] = require_once($extensionTcaPath . 'tx_rtehtmlarea_acronym.php');
-
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('tx_rtehtmlarea_acronym');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('tx_rtehtmlarea_acronym', 'EXT:' . $_EXTKEY . '/locallang_csh_abbreviation.xml');
 // Add contextual help files

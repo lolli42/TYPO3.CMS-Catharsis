@@ -18,8 +18,4 @@ if (TYPO3_MODE == 'BE') {
 }
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('index_config');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('index_config', 'EXT:indexed_search/locallang_csh_indexcfg.xml');
-
-$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
-
-$GLOBALS['TCA']['index_config'] = require_once($extensionTcaPath . 'index_config.php');
 ?>
