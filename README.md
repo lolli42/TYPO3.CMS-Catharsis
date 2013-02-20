@@ -29,6 +29,8 @@ Feel free to contact us if you want to do bigger things here, please send pull r
 
 Based on TYPO3 CMS master "6.1" branch from 13.02.2013 with its latest commit 2903d2cd712e53702bf6477029b18bd09a057099
 
+The travis-ci.org test execution of every commit and pull request can be found at https://travis-ci.org/lolli42/TYPO3-CMS-Catharsis
+
 Current contributors with merge rights:
 * lolli42 - Christian Kuhn
 * helhum - Helmut Hummel
