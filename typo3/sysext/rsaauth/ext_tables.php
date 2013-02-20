@@ -2,23 +2,8 @@
 if (!defined('TYPO3_MODE')) {
 	die('Access denied.');
 }
-// Define the table for keys. Make sure that it cannot be edited or seen by
-// any user in any way.
-$TCA['tx_rsaauth_keys'] = array(
-	'ctrl' => array(
-		'adminOnly' => TRUE,
-		'hideTable' => TRUE,
-		'is_static' => TRUE,
-		'label' => 'uid',
-		'readOnly' => TRUE,
-		'rootLevel' => 1,
-		'title' => 'Oops! You should not see this!'
-	),
-	'columns' => array(),
-	'types' => array(
-		'0' => array(
-			'showitem' => ''
-		)
-	)
-);
+
+$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
+
+$GLOBALS['TCA']['tx_rsaauth_keys'] = require_once($extensionTcaPath . 'tx_rsaauth_keys.php');
 ?>

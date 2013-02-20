@@ -3,25 +3,11 @@ if (!defined('TYPO3_MODE')) {
 	die('Access denied.');
 }
 
-$TCA['tx_extensionmanager_domain_model_extension'] = array(
-	'ctrl' => array(
-		'title' => 'LLL:EXT:extensionmanager/Resources/Private/Language/locallang_db.xml:tx_extensionmanager_domain_model_extension',
-		'label' => 'uid',
-		'default_sortby' => '',
-		'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/Extension.php',
-		'hideTable' => TRUE
-	),
-);
+$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
 
-$TCA['tx_extensionmanager_domain_model_repository'] = array(
-	'ctrl' => array(
-		'title' => 'LLL:EXT:extensionmanager/Resources/Private/Language/locallang_db.xml:tx_extensionmanager_domain_model_repository',
-		'label' => 'uid',
-		'default_sortby' => '',
-		'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/Repository.php',
-		'hideTable' => TRUE,
-	),
-);
+$GLOBALS['TCA']['tx_extensionmanager_domain_model_extension'] = require_once($extensionTcaPath . 'tx_extensionmanager_domain_model_extension.php');
+
+$GLOBALS['TCA']['tx_extensionmanager_domain_model_repository'] = require_once($extensionTcaPath . 'tx_extensionmanager_domain_model_repository.php');
 
 if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(

@@ -18,24 +18,8 @@ if (TYPO3_MODE == 'BE') {
 }
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('index_config');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('index_config', 'EXT:indexed_search/locallang_csh_indexcfg.xml');
-$TCA['index_config'] = array(
-	'ctrl' => array(
-		'title' => 'LLL:EXT:indexed_search/locallang_db.php:index_config',
-		'label' => 'title',
-		'tstamp' => 'tstamp',
-		'crdate' => 'crdate',
-		'cruser_id' => 'cruser_id',
-		'type' => 'type',
-		'default_sortby' => 'ORDER BY crdate',
-		'enablecolumns' => array(
-			'disabled' => 'hidden',
-			'starttime' => 'starttime'
-		),
-		'dynamicConfigFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'tca.php',
-		'iconfile' => 'default.gif'
-	),
-	'feInterface' => array(
-		'fe_admin_fieldList' => 'hidden, starttime, title, description, type, depth, table2index, alternative_source_pid, get_params, chashcalc, filepath, extensions'
-	)
-);
+
+$extensionTcaPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Configuration/TCA/';
+
+$GLOBALS['TCA']['index_config'] = require_once($extensionTcaPath . 'index_config.php');
 ?>
