@@ -689,6 +689,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * @param array $sql
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InvalidRelationConfigurationException
+	 * @throws \TYPO3\CMS\Extbase\Persistence\Generic\Exception\MissingColumnMapException
 	 */
 	protected function addUnionStatement(&$className, &$tableName, &$propertyPath, array &$sql) {
 		$explodedPropertyPath = explode('.', $propertyPath, 2);
@@ -696,6 +697,11 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		$columnName = $this->dataMapper->convertPropertyNameToColumnName($propertyName, $className);
 		$tableName = $this->dataMapper->convertClassNameToTableName($className);
 		$columnMap = $this->dataMapper->getDataMap($className)->getColumnMap($propertyName);
+
+		if ($columnMap === NULL) {
+			throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\MissingColumnMapException('The ColumnMap for property "' . $propertyName . '" of class "' . $className . '" is missing.', 1355142232);
+		}
+
 		$parentKeyFieldName = $columnMap->getParentKeyFieldName();
 		$childTableName = $columnMap->getChildTableName();
 
@@ -1174,8 +1180,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 * If the record lies on a page, then we clear the cache of this page.
 	 * If the record has no PID column, we clear the cache of the current page as best-effort.
 	 *
-	 * Much of this functionality is taken from \TYPO3\CMS\Core\DataHandling\DataHandler::clear_cache()
-	 * which unfortunately only works with logged-in BE user.
+	 * Much of this functionality is taken from t3lib_tcemain::clear_cache() which unfortunately only works with logged-in BE user.
 	 *
 	 * @param string $tableName Table name of the record
 	 * @param integer $uid UID of the record
