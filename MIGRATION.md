@@ -45,3 +45,14 @@ call in the frontend rendering process is removed. It is unlikly
 your code is affected by this patch, if so, you need to find
 a different solution to send mails at this point.
 
+
+* Removed deprecation hint in bootstrap
+If using old 'extCache' setting, deprecation for this is not hinted anymore.
+Such code should be done in reports module and maybe handled by a wizard in
+install tool, but it is not the scope of the bootstrap to check for such things.
+
+
+* Move t3lib/fonts to core/Resources/Private/Font
+vera.ttf and nimbus.ttf are now located at ext:core/Resources/Private/Font. It
+is unlikly, but if you use those fonts in your TypoScript setup, you need
+to adapt the file locations.
