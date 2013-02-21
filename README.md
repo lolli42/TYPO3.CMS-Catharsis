@@ -12,13 +12,14 @@ Basic goals and direction:
 * Converge with FLOW and use some parts of it
 * Rewrite configuration handling, probably using the FLOW ConfigurationManager
 * Throw away some core backports of FLOW and substitute with the native FLOW code (fluid?)
-* Refactor TCA and config handling and speed up bootstrap
+* Refactor TCA and config handling and speed up bootstrap - DONE
 * Composer support
 * Fix FAL
 * Kick out some core parts that are proven to be broken like comma separated values in database
 * Find a better solution for soft delete in database
 * Substitute ext:form with a working solution (FLOW?)
 * Introduce doctrine dbal including migration path for t3lib_db, get rid of current dbal
+* Introduce a solid integration / functional test class environment
 
 Development rules from mainline still apply to this project: Coding standards must be followed and broken code is not accepted. Still, some rules are opened a bit, it is for example possible to break certain things regarding backwards compatibily if there are good reasons for it and if the overall project is not harmed.
 It is also ok to drop some things that are hard to fight through in mainline, an example is the newline at end of php file and the closing php operator rule. Those things will be accepted after little coordination with us.
