@@ -105,7 +105,7 @@ class EidUtility {
 		// but in fact it is not loaded. The check below ensure that
 		// TCA is still loaded if such bad extensions are installed
 		if (!is_array($GLOBALS['TCA']) || !isset($GLOBALS['TCA']['pages'])) {
-			\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(TRUE);
+			\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadCachedTca();
 		}
 	}
 
