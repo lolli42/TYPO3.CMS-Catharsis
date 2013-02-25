@@ -204,6 +204,7 @@ class Installer {
 	 */
 	public $menuitems = array(
 		'config' => 'Basic Configuration',
+		'systemEnvironmentCheck' => 'System environment check',
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
@@ -316,6 +317,7 @@ class Installer {
 				'extConfig',
 				'cleanup',
 				'phpinfo',
+				'systemEnvironmentCheck',
 				'typo3conf_edit',
 				'about',
 				'logout'
@@ -681,6 +683,10 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			case 'phpinfo':
 				$this->silent = 0;
 				$this->phpinformation();
+				break;
+			case 'systemEnvironmentCheck':
+				$this->silent = 0;
+				$this->systemEnvironmentCheck();
 				break;
 			case 'typo3conf_edit':
 				$this->silent = 0;
@@ -1333,6 +1339,16 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	}
 
 	/**
+	 * Show system environment check
+	 */
+	protected function systemEnvironmentCheck() {
+		/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\Check */
+		$statusObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
+		debug($statusObject->getStatus());
+		$this->output($this->outputWrapper('foo'));
+	}
+
+	/**
 	 * Outputs system information
 	 *
 	 * @return void
@@ -1880,54 +1896,9 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * @todo Define visibility
 	 */
 	public function checkConfiguration() {
-		$ext = 'php.ini configuration checked';
-		$this->message($ext);
-		// *****************
-		// Incoming values:
-		// *****************
-		// Includepath
-		$incPaths = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(TYPO3_OS == 'WIN' ? ';' : ':', ini_get('include_path'));
-		if (!in_array('.', $incPaths)) {
-			$this->message($ext, 'Current directory (./) is not in include path!', '
-				<p>
-					<em>include_path=' . ini_get('include_path') . '</em>
-					<br />
-					Normally the current path, \'.\', is included in the
-					include_path of PHP. Although TYPO3 does not rely on this,
-					it is an unusual setting that may introduce problems for
-					some extensions.
-				</p>
-			', 1);
-		} else {
-			$this->message($ext, 'Current directory in include path', '', -1);
-		}
 		// *****************
 		// File uploads
 		// *****************
-		if (!ini_get('file_uploads')) {
-			$this->message($ext, 'File uploads not allowed', '
-				<p>
-					<em>file_uploads=' . ini_get('file_uploads') . '</em>
-					<br />
-					TYPO3 uses the ability to upload files from the browser in
-					various cases.
-					<br />
-					As long as this flag is disabled, you\'ll not be able to
-					upload files.
-					<br />
-					But it doesn\'t end here, because not only are files not
-					accepted by the server - ALL content in the forms are
-					discarded and therefore nothing at all will be editable
-					if you don\'t set this flag!
-					<br />
-					However if you cannot enable fileupload for some reason
-					alternatively you change the default form encoding value
-					with \\$TYPO3_CONF_VARS[SYS][form_enctype].
-				</p>
-			', 3);
-		} else {
-			$this->message($ext, 'File uploads allowed', '', -1);
-		}
 		$upload_max_filesize = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
 		$post_max_size = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(ini_get('post_max_size'));
 		if ($upload_max_filesize < 1024 * 1024 * 10) {
