@@ -42,7 +42,7 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  *
  * This means especially:
  * * No hooks or anything like that
- * * No usage of *any* TYPO3 code like aGeneralUtility
+ * * No usage of *any* TYPO3 code like GeneralUtility
  * * No require of anything but the status classes
  * * No localization
  *
@@ -528,7 +528,7 @@ class Check {
 			$status = new InfoStatus();
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
-				'If enbling suhosin, suhosin.request.max_vars' .
+				'If enabling suhosin, suhosin.request.max_vars' .
 				' should be set to at least ' . $recommendedRequestMaxVars
 			);
 		}
@@ -728,7 +728,7 @@ class Check {
 			$status = new WarningStatus();
 			$status->setTitle('Windows apache thread stack size');
 			$status->setMessage(
-				'This current value can not be checked by the system, so please ignore this warning it' .
+				'This current value can not be checked by the system, so please ignore this warning if it' .
 				' is already taken care off: Fluid uses complex regular expressions which require a lot' .
 				' of stack space during the first processing.' .
 				' On Windows the default stack size for Apache is a lot smaller than on unix.' .
@@ -1033,8 +1033,8 @@ class Check {
 			$status->setTitle('PHP register globals on');
 			$status->setMessage(
 				'TYPO3 requires PHP setting "register_globals" set to off.' .
-				' This ancient PHP setting is a big security problem and should be' .
-				' never enabled.'
+				' This ancient PHP setting is a big security problem and should' .
+				' never be enabled.'
 			);
 		} else {
 			$status = new OkStatus();
@@ -1051,7 +1051,7 @@ class Check {
 	 * Validate a given IP address.
 	 *
 	 * @param string $ip IP address to be tested
-	 * @return bool
+	 * @return boolean
 	 */
 	protected function isValidIp($ip) {
 		return filter_var($ip, FILTER_VALIDATE_IP) !== FALSE;
@@ -1073,7 +1073,7 @@ class Check {
 	/**
 	 * Helper method to find out if suhosin extension is loaded
 	 *
-	 * @return bool TRUE if suhosin PHP extension is loaded
+	 * @return boolean TRUE if suhosin PHP extension is loaded
 	 */
 	protected function isSuhosinLoaded() {
 		$suhosinLoaded = FALSE;

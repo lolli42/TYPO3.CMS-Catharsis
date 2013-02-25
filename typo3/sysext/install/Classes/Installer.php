@@ -1355,8 +1355,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				'</div >' .
 				'<div class="message-body" >%3s</div>' .
 			'</div >' .
-			'<p></p>'
-		;
+			'<p></p>';
 
 		$html = '<h3>System environment check</h3>';
 		foreach ($orderedStatus as $severity) {
@@ -3221,7 +3220,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				enabled by default.
 				<br />
 				Because ImageMagick and Graphicsmagick are external programs, a
-				requirements must be met: The programs must be installed on the
+				requirement must be met: The programs must be installed on the
 				server and working.
 				<br />
 				ImageMagick is available for both Windows and Unix. The current

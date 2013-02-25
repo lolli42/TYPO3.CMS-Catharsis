@@ -25,16 +25,14 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Contract for SystemEnvironment status
+ * Interface for SystemEnvironment status
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 interface StatusInterface {
 
 	/**
-	 * Get title
-	 *
-	 * @return string Get title
+	 * @return string The title
 	 */
 	public function getTitle();
 

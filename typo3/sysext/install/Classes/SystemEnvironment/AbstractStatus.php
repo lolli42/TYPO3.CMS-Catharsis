@@ -25,7 +25,7 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Notice level status
+ * Abstract status
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
@@ -42,9 +42,7 @@ class AbstractStatus implements StatusInterface {
 	protected $message;
 
 	/**
-	 * Get title
-	 *
-	 * @return string Get title
+	 * @return string The title
 	 */
 	public function getTitle() {
 		return $this->title;
@@ -73,6 +71,7 @@ class AbstractStatus implements StatusInterface {
 	 * Set status message
 	 *
 	 * @param string $message Status message
+	 * @return void
 	 */
 	public function setMessage($message) {
 		$this->message = $message;

@@ -62,7 +62,7 @@ class EnvironmentStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterf
 		}
 
 		$statusArray = array();
-		foreach($reportStatusTypes as $type => $statusObjects) {
+		foreach ($reportStatusTypes as $type => $statusObjects) {
 			$value = count($statusObjects);
 			if ($value > 0) {
 				$pathToXlif = 'LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf';
