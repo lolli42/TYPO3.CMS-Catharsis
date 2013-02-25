@@ -1345,7 +1345,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
 		$statusCheck = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
-		$output = '';
+		$output = '<h3>Environment Check Status</h3>';
 		if (is_array($statusObjects) && !empty($statusObjects)) {
 			/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
 			foreach ($statusObjects as $statusObject) {
