@@ -53,6 +53,10 @@ class Check {
 		$statusArray = array();
 		$statusArray[] = $this->checkCurrentDirectoryIsInIncludePath();
 		$statusArray[] = $this->checkFileUploadEnabled();
+		$statusArray[] = $this->checkMaximumFileUploadSize();
+		$statusArray[] = $this->checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize();
+		$statusArray[] = $this->checkMemorySettings();
+		$statusArray[] = $this->checkPhpVersion();
 		return $statusArray;
 	}
 
@@ -109,6 +113,129 @@ class Check {
 	}
 
 	/**
+	 * Check maximum file upload size against default value of 10MB
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkMaximumFileUploadSize() {
+		$maximumUploadFilesize = $this->getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
+		if ($maximumUploadFilesize < 1024 * 1024 * 10) {
+			$status = new ErrorStatus();
+			$status->setTitle('Maximum upload filesize too small');
+			$status->setMessage(
+				'upload_max_filesize=' . ini_get('upload_max_filesize') .
+				' By default TYPO3 supports uploading, copying and moving' .
+				' files of sizes up to 10MB (You can alter the TYPO3 defaults' .
+				' by the config option TYPO3_CONF_VARS[BE][maxFileSize]).' .
+				' Your current value is below this, so at this point, PHP sets' .
+				' the limits for uploaded filesizes and not TYPO3.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('Maximum file upload size is higher or equal to 10MB');
+		}
+	}
+
+	/**
+	 * Check maximum post upload size correlates with maximum file upload
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize() {
+		$maximumUploadFilesize = $this->getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
+		$maximumPostSize = $this->getBytesFromSizeMeasurement(ini_get('post_max_size'));
+		if ($maximumPostSize < $maximumUploadFilesize) {
+			$status = new ErrorStatus();
+			$status->setTitle('Maximum size for POST requests is smaller than max. upload filesize');
+			$status->setMessage(
+				'upload_max_filesize=' . ini_get('upload_max_filesize') .
+				', post_max_size=' . ini_get('post_max_size') .
+				' You have defined a maximum size for file uploads which' .
+				' exceeds the allowed size for POST requests. Therefore the' .
+				' file uploads can not be larger than ' . ini_get('post_max_size')
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('Maximum post upload size correlates with maximum upload file size');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check memory settings
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkMemorySettings() {
+		$memoryLimit = $this->getBytesFromSizeMeasurement(ini_get('memory_limit'));
+		if ($memoryLimit <= 0) {
+			$status = new WarningStatus();
+			$status->setTitle('Unlimited memory limit!');
+			$status->setMessage(
+				'Your webserver is configured to not limit PHP memory usage at all. This is a risk' .
+				' and should be avoided in production setup. In general it\'s best practice to limit this' .
+				' in the configuration of your webserver. To be safe, ask the system administrator of the' .
+				' webserver to raise the limit to something over 64MB'
+			);
+		} elseif ($memoryLimit < 1024 * 1024 * 32) {
+			$status = new ErrorStatus();
+			$status->setTitle('Memory limit below 32MB');
+			$status->setMessage(
+				'memory_limit=' . ini_get('memory_limit') .
+				' Your system is configured to enforce a memory limit of PHP scripts lower than 32MB.' .
+				' There is nothing else to do than raise the limit. To be safe, ask the system' .
+				' administrator of the webserver to raise the limit to 64MB.'
+			);
+		} elseif ($memoryLimit < 1024 * 1024 * 32) {
+			$status = new WarningStatus();
+			$status->setTitle('Memory limit below 64MB');
+			$status->setMessage(
+				'memory_limit=' . ini_get('memory_limit') .
+				' Your system is configured to enforce a memory limit of PHP scripts lower than 64MB.' .
+				' A slim TYPO3 instance without many extensions will probably work, but you should ' .
+				' monitor your system for exhausted messages, especially if using the backend. ' .
+				' To be on the safe side, it would be better to raise the PHP memory limit to 64MB or more.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('Memory limit equal 64MB or more');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check minimum PHP version
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkPhpVersion() {
+		$minimumPhpVersion = '5.3.0';
+		$recommendedPhpVersion = '5.3.7';
+		$currentPhpVersion = phpversion();
+		if (version_compare($currentPhpVersion, $minimumPhpVersion) < 0) {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP version too low');
+			$status->setMessage(
+				'Your PHP version ' . $currentPhpVersion . ' is too old. TYPO3 CMS does not run' .
+				' with this version. Update to at least PHP ' . $recommendedPhpVersion
+			);
+		} elseif (version_compare($currentPhpVersion, $recommendedPhpVersion) < 0) {
+			$status = new WarningStatus();
+			$status->setTitle('PHP version below recommended version');
+			$status->setMessage(
+				'Your PHP version ' . $currentPhpVersion . ' is below the recommended version' .
+				' ' . $recommendedPhpVersion . '. TYPO3 CMS will mostly run with your PHP' .
+				' version, but it is not officially supported. Expect some problem with,' .
+				' monitor your system for errors and look out for an upgrade, soon.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP version is fine');
+		}
+		return $status;
+	}
+
+	/**
 	 * Helper method to explode a string by delimeter and throw away empty values.
 	 *
 	 * @param string $delimiter Delimiter string to explode with
@@ -130,6 +257,25 @@ class Check {
 		}
 		return $result;
 	}
+
+	/**
+	 * Helper method to get the bytes value from a measurement string like "100k".
+	 *
+	 * @param string $measurement The measurement (e.g. "100k")
+	 * @return integer The bytes value (e.g. 102400)
+	 */
+	protected function getBytesFromSizeMeasurement($measurement) {
+		$bytes = doubleval($measurement);
+		if (stripos($measurement, 'G')) {
+			$bytes *= 1024 * 1024 * 1024;
+		} elseif (stripos($measurement, 'M')) {
+			$bytes *= 1024 * 1024;
+		} elseif (stripos($measurement, 'K')) {
+			$bytes *= 1024;
+		}
+		return $bytes;
+	}
+
 
 }
 ?>

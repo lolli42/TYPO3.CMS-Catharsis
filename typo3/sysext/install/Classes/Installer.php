@@ -1371,7 +1371,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		$sVar['imagejpeg()'] = function_exists('imagejpeg');
 		$sVar['imagettftext()'] = function_exists('imagettftext');
 		$sVar['OTHER: IMAGE_TYPES'] = function_exists('imagetypes') ? imagetypes() : 0;
-		$sVar['OTHER: memory_limit'] = ini_get('memory_limit');
 		$gE_keys = explode(',', 'SERVER_PORT,SERVER_SOFTWARE,GATEWAY_INTERFACE,SCRIPT_NAME,PATH_TRANSLATED');
 		foreach ($gE_keys as $k) {
 			$sVar['SERVER: ' . $k] = $_SERVER[$k];
@@ -1896,68 +1895,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * @todo Define visibility
 	 */
 	public function checkConfiguration() {
-		// *****************
-		// File uploads
-		// *****************
-		$upload_max_filesize = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(ini_get('upload_max_filesize'));
-		$post_max_size = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(ini_get('post_max_size'));
-		if ($upload_max_filesize < 1024 * 1024 * 10) {
-			$this->message($ext, 'Maximum upload filesize too small?', '
-				<p>
-					<em>upload_max_filesize=' . ini_get('upload_max_filesize') . '</em>
-					<br />
-					By default TYPO3 supports uploading, copying and moving
-					files of sizes up to 10MB (You can alter the TYPO3 defaults
-					by the config option TYPO3_CONF_VARS[BE][maxFileSize]).
-					<br />
-					Your current value is below this, so at this point, PHP sets
-					the limits for uploaded filesizes and not TYPO3.
-					<br />
-					<strong>Notice:</strong> The limits for filesizes attached
-					to database records are set in the configuration
-					files (\\$TCA) for each group/file field. You may override
-					these values in the local configuration or by page TSconfig settings.
-				</p>
-			', 1);
-		}
-		if ($upload_max_filesize > $post_max_size) {
-			$this->message($ext, 'Maximum size for POST requests is smaller than max. upload filesize', '
-				<p>
-					<em>upload_max_filesize=' . ini_get('upload_max_filesize') . '
-					, post_max_size=' . ini_get('post_max_size') . '</em>
-					<br />
-					You have defined a maximum size for file uploads which
-					exceeds the allowed size for POST requests. Therefore the
-					file uploads can not be larger than ' . ini_get('post_max_size') . '
-				</p>
-			', 1);
-		}
-		// *****************
-		// Memory and functions
-		// *****************
-		$memory_limit_value = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(ini_get('memory_limit'));
-		if ($memory_limit_value <= 0) {
-			$this->message($ext, 'Unlimited memory limit!', '<p>Your webserver is configured to not limit PHP memory usage at all. This is a risk
-				and should be avoided in production setup. In general it\'s best practice to limit this
-				in the configuration of your webserver. To be safe, ask the system administrator of the
-				webserver to raise the limit to something over ' . TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT . '.</p>', 2);
-		} elseif ($memory_limit_value < \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT)) {
-			$this->message($ext, 'Memory limit below ' . TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT, '
-				<p>
-					<em>memory_limit=' . ini_get('memory_limit') . '</em>
-					<br />
-					Your system is configured to enforce a memory limit of PHP
-					scripts lower than ' . TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT . '.
-					The Extension Manager needs to include more PHP-classes than
-					will fit into this memory space. There is nothing else to do
-					than raise the limit. To be safe, ask the system
-					administrator of the webserver to raise the limit to over
-					' . TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT . '.
-				</p>
-			', 3);
-		} else {
-			$this->message($ext, 'Memory limit: ' . ini_get('memory_limit'), '', -1);
-		}
+
 		if (ini_get('max_execution_time') < 30) {
 			$this->message($ext, 'Maximum execution time below 30 seconds', '
 				<p>
@@ -1969,6 +1907,8 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		} else {
 			$this->message($ext, 'Maximum execution time: ' . ini_get('max_execution_time') . ' seconds', '', -1);
 		}
+
+
 		if (ini_get('disable_functions')) {
 			$this->message($ext, 'Functions disabled!', '
 				<p>

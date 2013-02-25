@@ -61,58 +61,11 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 	public function getStatus() {
 		$this->executeAdminCommand();
 		$statuses = array(
-			'Php' => $this->getPhpStatus(),
-			'PhpMemoryLimit' => $this->getPhpMemoryLimitStatus(),
 			'PhpPeakMemory' => $this->getPhpPeakMemoryStatus(),
 			'Webserver' => $this->getWebserverStatus(),
 			'PhpModules' => $this->getMissingPhpModules()
 		);
 		return $statuses;
-	}
-
-	/**
-	 * Checks the current PHP version against a minimum required version.
-	 *
-	 * @return \TYPO3\CMS\Reports\Status A status of whether a minimum PHP version requirement is met
-	 */
-	protected function getPhpStatus() {
-		$message = '';
-		$severity = \TYPO3\CMS\Reports\Status::OK;
-		if (version_compare(phpversion(), TYPO3_REQUIREMENTS_MINIMUM_PHP) < 0) {
-			$message = $GLOBALS['LANG']->getLL('status_phpTooOld');
-			$severity = \TYPO3\CMS\Reports\Status::ERROR;
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_phpVersion'), phpversion(), $message, $severity);
-	}
-
-	/**
-	 * Checks the current memory limit against a minimum required version.
-	 *
-	 * @return \TYPO3\CMS\Reports\Status A status of whether a minimum memory limit requirement is met
-	 */
-	protected function getPhpMemoryLimitStatus() {
-		$memoryLimit = ini_get('memory_limit');
-		$memoryLimitBytes = \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement($memoryLimit);
-		$message = '';
-		$severity = \TYPO3\CMS\Reports\Status::OK;
-		if ($memoryLimitBytes > 0) {
-			if ($memoryLimitBytes < \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(TYPO3_REQUIREMENTS_RECOMMENDED_PHP_MEMORY_LIMIT)) {
-				$message = sprintf($GLOBALS['LANG']->getLL('status_phpMemoryRecommendation'), $memoryLimit, TYPO3_REQUIREMENTS_RECOMMENDED_PHP_MEMORY_LIMIT);
-				$severity = \TYPO3\CMS\Reports\Status::WARNING;
-			}
-			if ($memoryLimitBytes < \TYPO3\CMS\Core\Utility\GeneralUtility::getBytesFromSizeMeasurement(TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT)) {
-				$message = sprintf($GLOBALS['LANG']->getLL('status_phpMemoryRequirement'), $memoryLimit, TYPO3_REQUIREMENTS_MINIMUM_PHP_MEMORY_LIMIT);
-				$severity = \TYPO3\CMS\Reports\Status::ERROR;
-			}
-			if ($severity > \TYPO3\CMS\Reports\Status::OK) {
-				if ($php_ini_path = get_cfg_var('cfg_file_path')) {
-					$message .= ' ' . sprintf($GLOBALS['LANG']->getLL('status_phpMemoryEditLimit'), $php_ini_path);
-				} else {
-					$message .= ' ' . $GLOBALS['LANG']->getLL('status_phpMemoryContactAdmin');
-				}
-			}
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_phpMemory'), $memoryLimitBytes > 0 ? $memoryLimit : $GLOBALS['LANG']->getLL('status_phpMemoryUnlimited'), $message, $severity);
 	}
 
 	/**

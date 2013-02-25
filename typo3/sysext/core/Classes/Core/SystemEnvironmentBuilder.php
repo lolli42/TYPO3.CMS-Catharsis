@@ -77,9 +77,6 @@ class SystemEnvironmentBuilder {
 	 * @return void
 	 */
 	static protected function ensureRequiredEnvironment() {
-		if (version_compare(phpversion(), '5.3', '<')) {
-			die('TYPO3 requires PHP 5.3.0 or higher.');
-		}
 		if (self::getPhpIniValueBoolean('register_globals')) {
 			die('TYPO3 requires PHP setting "register_globals" set to Off. (Error: #1345284320)');
 		}
