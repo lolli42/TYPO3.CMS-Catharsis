@@ -73,7 +73,7 @@ class Check {
 			$status = new ErrorStatus();
 			$status->setTitle('Current directory (./) is not in include path');
 			$status->setMessage(
-				' include_path=' . ini_get('include_path') .
+				' include_path=' . implode(' ', $pathArray) .
 				' Normally the current path, \'.\', is included in the' .
 				' include_path of PHP. Although TYPO3 does not rely on this,' .
 				' it is an unusual setting that may introduce problems for' .
