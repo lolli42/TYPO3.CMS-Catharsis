@@ -1342,10 +1342,42 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * Show system environment check
 	 */
 	protected function systemEnvironmentCheck() {
-		/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\Check */
-		$statusObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
-		debug($statusObject->getStatus());
-		$this->output($this->outputWrapper('foo'));
+		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
+		$statusCheck = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
+		$statusObjects = $statusCheck->getStatus();
+		$output = '';
+		if (is_array($statusObjects) && !empty($statusObjects)) {
+			/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
+			foreach ($statusObjects as $statusObject) {
+				switch (get_class($statusObject)) {
+					case 'TYPO3\CMS\Install\SystemEnvironment\ErrorStatus':
+						$cssClass = 'error';
+					break;
+					case 'TYPO3\CMS\Install\SystemEnvironment\WarningStatus':
+						$cssClass = 'warning';
+						break;
+					case 'TYPO3\CMS\Install\SystemEnvironment\OkStatus':
+						$cssClass = 'ok';
+						break;
+					case 'TYPO3\CMS\Install\SystemEnvironment\InfoStatus':
+						$cssClass = 'information';
+						break;
+					case 'TYPO3\CMS\Install\SystemEnvironment\NoticeStatus':
+						default:
+					$cssClass = 'notice';
+						break;
+				}
+				$output .= '
+					<div class="typo3-message message-' . $cssClass . '" >
+						<div class="header-container" >
+							<div class="message-header message-left" >' . $statusObject->getTitle() . '</div>
+							<div class="message-header message-right" ></div>
+						</div >
+						<div class="message-body" >' . $statusObject->getMessage() . '</div>
+					</div > ';
+			}
+		}
+		$this->output($this->outputWrapper($output));
 	}
 
 	/**
