@@ -134,6 +134,7 @@ class Check {
 			$status = new OkStatus();
 			$status->setTitle('Maximum file upload size is higher or equal to 10MB');
 		}
+		return $status;
 	}
 
 	/**
