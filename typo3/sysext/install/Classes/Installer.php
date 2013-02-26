@@ -1992,28 +1992,11 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				', -1);
 			}
 		}
-		// *****************
-		// Safe mode related
-		// *****************
+
 		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSqlSafeModeEnabled()) {
-			$this->message($ext, 'sql.safe_mode is enabled', '
-				<p>
-					<em>sql.safe_mode=' . ini_get('sql.safe_mode') . '</em>
-					<br />
-					This means that you can only connect to the database with a
-					username corresponding to the user of the webserver process
-					or fileowner. Consult your ISP for information about this.
-					Also see <a href="http://www.wrox.com/Consumer/Store/Books/2963/29632002.htm">
-					http://www.wrox.com/Consumer/Store/Books/2963/29632002.htm</a>
-					<br />
-					The owner of the current file is:
-					<strong>' . get_current_user() . '</strong>
-				</p>
-			', 1);
 			$this->config_array['sql.safe_mode_user'] = get_current_user();
-		} else {
-			$this->message($ext, 'sql.safe_mode: off', '', -1);
 		}
+
 		if (ini_get('open_basedir')) {
 			$this->message($ext, 'open_basedir set', '
 				<p>

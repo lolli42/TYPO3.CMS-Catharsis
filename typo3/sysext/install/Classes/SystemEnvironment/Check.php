@@ -61,6 +61,7 @@ class Check {
 		$statusArray[] = $this->checkDisableFunctions();
 		$statusArray[] = $this->checkSafeMode();
 		$statusArray[] = $this->checkDocRoot();
+		$statusArray[] = $this->checkSqlSafeMode();
 		return $statusArray;
 	}
 
@@ -359,7 +360,35 @@ class Check {
 		return $status;
 	}
 
-
+	/**
+	 * Check sql.safe_mode
+	 *
+	 * @return OkStatus|WarningStatus
+	 */
+	protected function checkSqlSafeMode() {
+		$sqlSafeModeEnabled = FALSE;
+		if (version_compare(phpversion(), '5.4', '<')) {
+			$sqlSafeModeEnabled = filter_var(
+				ini_get('sql.safe_mode'),
+				FILTER_VALIDATE_BOOLEAN,
+				array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
+			);
+		}
+		if ($sqlSafeModeEnabled) {
+			$status = new WarningStatus();
+			$status->setTitle('sql.safe_mode is enabled');
+			$status->setMessage(
+				'This means that you can only connect to the database with a' .
+				' username corresponding to the user of the webserver process' .
+				' or fileowner. Consult your ISP for information about this.' .
+				' The owner of the current file is: ' . get_current_user()
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP sql.safe_mode is off');
+		}
+		return $status;
+	}
 
 	/**
 	 * Helper method to explode a string by delimeter and throw away empty values.
