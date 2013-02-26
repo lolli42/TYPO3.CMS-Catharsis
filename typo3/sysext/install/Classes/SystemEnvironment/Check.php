@@ -69,11 +69,11 @@ class Check {
 		$includePath = ini_get('include_path');
 		$delimiter = PHP_OS === 'WIN' ? ';' : ':';
 		$pathArray = $this->trimExplode($delimiter, $includePath);
-		if (!in_array(',', $pathArray)) {
-			$status = new ErrorStatus();
+		if (!in_array('.', $pathArray)) {
+			$status = new WarningStatus();
 			$status->setTitle('Current directory (./) is not in include path');
 			$status->setMessage(
-				' include_path=' . implode(' ', $pathArray) .
+				'include_path = ' . implode(' ', $pathArray) .
 				' Normally the current path, \'.\', is included in the' .
 				' include_path of PHP. Although TYPO3 does not rely on this,' .
 				' it is an unusual setting that may introduce problems for' .
@@ -226,7 +226,7 @@ class Check {
 			$status->setMessage(
 				'Your PHP version ' . $currentPhpVersion . ' is below the recommended version' .
 				' ' . $recommendedPhpVersion . '. TYPO3 CMS will mostly run with your PHP' .
-				' version, but it is not officially supported. Expect some problem with,' .
+				' version, but it is not officially supported. Expect some problem,' .
 				' monitor your system for errors and look out for an upgrade, soon.'
 			);
 		} else {
