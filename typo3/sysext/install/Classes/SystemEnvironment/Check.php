@@ -67,6 +67,8 @@ class Check {
 		$statusArray[] = $this->checkSuhosinRequestMaxVars();
 		$statusArray[] = $this->checkSuhosinPostMaxVars();
 		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
+		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
+		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
 		return $statusArray;
 	}
 
@@ -467,7 +469,7 @@ class Check {
 			$status = new InfoStatus();
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
-				'If suhosin is enabled in your setup, suhosin.request.max_vars' .
+				'If enbling suhosin, suhosin.request.max_vars' .
 				' should be set to at least ' . $recommendedRequestMaxVars
 			);
 		}
@@ -500,7 +502,7 @@ class Check {
 			$status = new InfoStatus();
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
-				'If suhosin is enabled in your setup, suhosin.post.max_vars' .
+				'If enabling suhosin, suhosin.post.max_vars' .
 				' should be set to at least ' . $recommendedPostMaxVars
 			);
 		}
@@ -533,8 +535,69 @@ class Check {
 			$status = new InfoStatus();
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
-				'If suhosin is enabled in your setup, suhosin.get.max_value_length' .
+				'If enabling suhosin, suhosin.get.max_value_length' .
 				' should be set to at least ' . $recommendedGetMaxValueLength
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.executor.include.whitelist
+	 *
+	 * @return NoticeStatus|InfoStatus|OkStatus
+	 */
+	protected function checkSuhosinExecutorIncludeWhiteListContainsPhar() {
+		if ($this->isSuhosinLoaded()) {
+			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
+			if (!in_array('phar', $currentWhiteListArray)) {
+				$status = new NoticeStatus();
+				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain phar');
+				$status->setMessage(
+					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . '. phar' .
+					' is currently not a hard requirement of TYPO3 CMS but is nice to have and a possible requirement' .
+					' in future versions. A useful setting is "suhosin.executor.include.whitelist = phar vfs"'
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP suhosin.executor.include.whitelist contains phar');
+			}
+		} else {
+			$status = new InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, a useful setting is "suhosin.executor.include.whitelist = phar vfs"'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.executor.include.whitelist
+	 *
+	 * @return NoticeStatus|InfoStatus|OkStatus
+	 */
+	protected function checkSuhosinExecutorIncludeWhiteListContainsVfs() {
+		if ($this->isSuhosinLoaded()) {
+			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
+			if (!in_array('vfs', $currentWhiteListArray)) {
+				$status = new WarningStatus();
+				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain vfs');
+				$status->setMessage(
+					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . '. vfs' .
+					' is currently not a hard requirement of TYPO3 CMS but tons of unit tests rely on it.' .
+					' Furthermore, vfs is likely a base for an additional compatibilyt layer in the future.' .
+					' A useful setting is "suhosin.executor.include.whitelist = phar vfs"'
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP suhosin.executor.include.whitelist contains vfs');
+			}
+		} else {
+			$status = new InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, a useful setting is "suhosin.executor.include.whitelist = phar vfs"'
 			);
 		}
 		return $status;
@@ -556,23 +619,20 @@ class Check {
 
 	/**
 	 * Helper method to explode a string by delimeter and throw away empty values.
+	 * Removes empty values from result array.
 	 *
 	 * @param string $delimiter Delimiter string to explode with
 	 * @param string $string The string to explode
-	 * @param boolean $removeEmptyValues If set, all empty values will be removed in output
 	 * @return array Exploded values
 	 */
-	protected function trimExplode($delimiter, $string, $removeEmptyValues = FALSE) {
+	protected function trimExplode($delimiter, $string) {
 		$explodedValues = explode($delimiter, $string);
-		$result = array_map('trim', $explodedValues);
-		if ($removeEmptyValues) {
-			$temp = array();
-			foreach ($result as $value) {
-				if ($value !== '') {
-					$temp[] = $value;
-				}
+		$resultWithPossibleEmptyValues = array_map('trim', $explodedValues);
+		$result = array();
+		foreach ($resultWithPossibleEmptyValues as $value) {
+			if ($value !== '') {
+				$result[] = $value;
 			}
-			$result = $temp;
 		}
 		return $result;
 	}
