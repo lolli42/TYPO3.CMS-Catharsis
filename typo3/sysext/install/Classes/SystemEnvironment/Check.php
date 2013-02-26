@@ -63,6 +63,10 @@ class Check {
 		$statusArray[] = $this->checkDocRoot();
 		$statusArray[] = $this->checkSqlSafeMode();
 		$statusArray[] = $this->checkOpenBaseDir();
+		$statusArray[] = $this->checkSuhosinLoaded();
+		$statusArray[] = $this->checkSuhosinRequestMaxVars();
+		$statusArray[] = $this->checkSuhosinPostMaxVars();
+		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
 		return $statusArray;
 	}
 
@@ -413,6 +417,141 @@ class Check {
 			$status->setTitle('PHP open_basedir is off');
 		}
 		return $status;
+	}
+
+	/**
+	 * Check enabled suhosin
+	 *
+	 * @return NoticeStatus|OkStatus
+	 */
+	protected function checkSuhosinLoaded() {
+		if ($this->isSuhosinLoaded()) {
+			$status = new OkStatus();
+			$status->setTitle('PHP suhosin extension loaded');
+		} else {
+			$status = new NoticeStatus();
+			$status->setTitle('PHP suhosin extension not loaded');
+			$status->setMessage(
+				'suhosin is an extension to harden the PHP environment. In general, it is' .
+				' good to have it from a security point of view. While TYPO3 CMS works' .
+				' fine with suhosin, it has some requirements different from default settings' .
+				' to be set if enabled.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.request.max_vars
+	 *
+	 * @return ErrorStatus|InfoStatus|OkStatus
+	 */
+	protected function checkSuhosinRequestMaxVars() {
+		$recommendedRequestMaxVars = 400;
+		if ($this->isSuhosinLoaded()) {
+			$currentRequestMaxVars = ini_get('suhosin.request.max_vars');
+			if ($currentRequestMaxVars < $recommendedRequestMaxVars) {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP suhosin.request.max_vars not high enough');
+				$status->setMessage(
+					'suhosin.request.max_vars=' . $currentRequestMaxVars . '. This setting' .
+					' can lead to lost information if submitting big forms in TYPO3 CMS like' .
+					' it is done in the install tool. It is heavily recommended to raise this' .
+					' to at least ' . $recommendedRequestMaxVars
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP suhosin.request.max_vars ok');
+			}
+		} else {
+			$status = new InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If suhosin is enabled in your setup, suhosin.request.max_vars' .
+				' should be set to at least ' . $recommendedRequestMaxVars
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.post.max_vars
+	 *
+	 * @return ErrorStatus|InfoStatus|OkStatus
+	 */
+	protected function checkSuhosinPostMaxVars() {
+		$recommendedPostMaxVars = 400;
+		if ($this->isSuhosinLoaded()) {
+			$currentPostMaxVars = ini_get('suhosin.post.max_vars');
+			if ($currentPostMaxVars < $recommendedPostMaxVars) {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP suhosin.post.max_vars not high enough');
+				$status->setMessage(
+					'suhosin.post.max_vars=' . $currentPostMaxVars . '. This setting' .
+					' can lead to lost information if submitting big forms in TYPO3 CMS like' .
+					' it is done in the install tool. It is heavily recommended to raise this' .
+					' to at least ' . $recommendedPostMaxVars
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP suhosin.post.max_vars ok');
+			}
+		} else {
+			$status = new InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If suhosin is enabled in your setup, suhosin.post.max_vars' .
+				' should be set to at least ' . $recommendedPostMaxVars
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.get.max_value_length
+	 *
+	 * @return ErrorStatus|InfoStatus|OkStatus
+	 */
+	protected function checkSuhosinGetMaxValueLength() {
+		$recommendedGetMaxValueLength = 2000;
+		if ($this->isSuhosinLoaded()) {
+			$currentGetMaxValueLength = ini_get('suhosin.get.max_value_length');
+			if ($currentGetMaxValueLength < $recommendedGetMaxValueLength) {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP suhosin.get.max_value_length not high enough');
+				$status->setMessage(
+					'suhosin.get.max_value_length=' . $currentGetMaxValueLength . '. This setting' .
+					' can lead to lost information if submitting big forms in TYPO3 CMS like' .
+					' it is done in the install tool. It is heavily recommended to raise this' .
+					' to at least ' . $recommendedGetMaxValueLength
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP suhosin.get.max_value_length ok');
+			}
+		} else {
+			$status = new InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If suhosin is enabled in your setup, suhosin.get.max_value_length' .
+				' should be set to at least ' . $recommendedGetMaxValueLength
+			);
+		}
+		return $status;
+	}
+
+
+	/**
+	 * Helper method to find out if suhosin extension is loaded
+	 *
+	 * @return bool TRUE if suhosin PHP extension is loaded
+	 */
+	protected function isSuhosinLoaded() {
+		$suhosinLoaded = FALSE;
+		if (extension_loaded('suhosin')) {
+			$suhosinLoaded = TRUE;
+		}
+		return $suhosinLoaded;
 	}
 
 	/**
