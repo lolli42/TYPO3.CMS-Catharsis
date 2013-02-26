@@ -62,6 +62,7 @@ class Check {
 		$statusArray[] = $this->checkSafeMode();
 		$statusArray[] = $this->checkDocRoot();
 		$statusArray[] = $this->checkSqlSafeMode();
+		$statusArray[] = $this->checkOpenBaseDir();
 		return $statusArray;
 	}
 
@@ -380,12 +381,36 @@ class Check {
 			$status->setMessage(
 				'This means that you can only connect to the database with a' .
 				' username corresponding to the user of the webserver process' .
-				' or fileowner. Consult your ISP for information about this.' .
+				' or file owner. Consult your ISP for information about this.' .
 				' The owner of the current file is: ' . get_current_user()
 			);
 		} else {
 			$status = new OkStatus();
 			$status->setTitle('PHP sql.safe_mode is off');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check open_basedir
+	 *
+	 * @return NoticeStatus|OkStatus
+	 */
+	protected function checkOpenBaseDir() {
+		$openBaseDirSetting = trim(ini_get('open_basedir'));
+		if (strlen($openBaseDirSetting) > 0) {
+			$status = new NoticeStatus();
+			$status->setTitle('open_basedir set');
+			$status->setMessage(
+				'open_basedir = ' . ini_get('open_basedir') .
+				' This restricts TYPO3 to open and include files only in this' .
+				' path. Please make sure that this does not prevent TYPO3 from running,' .
+				' if for example your TYPO3 CMS core is linked to a different directory' .
+				' not included in this path.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP open_basedir is off');
 		}
 		return $status;
 	}

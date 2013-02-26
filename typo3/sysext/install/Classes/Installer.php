@@ -1997,22 +1997,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			$this->config_array['sql.safe_mode_user'] = get_current_user();
 		}
 
-		if (ini_get('open_basedir')) {
-			$this->message($ext, 'open_basedir set', '
-				<p>
-					<em>open_basedir=' . ini_get('open_basedir') . '</em>
-					<br />
-					This restricts TYPO3 to open and include files only in this
-					path. Please make sure that this does not prevent TYPO3 from
-					running.
-					<br />
-					<strong>Notice (UNIX):</strong> Before checking a path
-					according to open_basedir, PHP resolves all symbolic links.
-				</p>
-			', 1);
-		} else {
-			$this->message($ext, 'open_basedir: off', '', -1);
-		}
 		// Check availability of PHP session support
 		if (extension_loaded('session')) {
 			$this->message($ext, 'PHP sessions available', '
