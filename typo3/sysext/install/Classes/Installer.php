@@ -170,7 +170,6 @@ class Installer {
 		'gd_png' => 0,
 		'gd_jpg' => 0,
 		'freetype' => 0,
-		'safemode' => 0,
 		'dir_typo3temp' => 0,
 		'dir_temp' => 0,
 		'im_versions' => array(),
@@ -1161,9 +1160,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		}
 		$paths = array_unique($paths);
 		asort($paths);
-		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSafeModeEnabled()) {
-			$paths = array(ini_get('safe_mode_exec_dir'), '/usr/local/php/bin/');
-		}
 		if ($this->INSTALL['checkIM']['lzw']) {
 			$this->checkIMlzw = 1;
 		}
@@ -1928,38 +1924,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 */
 	public function checkConfiguration() {
 
-		if (ini_get('max_execution_time') < 30) {
-			$this->message($ext, 'Maximum execution time below 30 seconds', '
-				<p>
-					<em>max_execution_time=' . ini_get('max_execution_time') . '</em>
-					<br />
-					May impose problems if too low.
-				</p>
-			', 1);
-		} else {
-			$this->message($ext, 'Maximum execution time: ' . ini_get('max_execution_time') . ' seconds', '', -1);
-		}
 
-
-		if (ini_get('disable_functions')) {
-			$this->message($ext, 'Functions disabled!', '
-				<p>
-					<em>disable_functions=' . ini_get('disable_functions') . '</em>
-					<br />
-					The above list of functions are disabled. If TYPO3 use any
-					of these there might be trouble.
-					<br />
-					TYPO3 is designed to use the default set of PHP4.3.0+
-					functions plus the functions of GDLib.
-					<br />
-					Possibly these functions are disabled due to security risks
-					and most likely the list would include a function like
-					<em>exec()</em> which is use by TYPO3 to access ImageMagick.
-				</p>
-			', 2);
-		} else {
-			$this->message($ext, 'Functions disabled: none', '', -1);
-		}
 		// Mail tests
 		if (TYPO3_OS == 'WIN') {
 			$smtp = ini_get('SMTP');
@@ -2030,84 +1995,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		// *****************
 		// Safe mode related
 		// *****************
-		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSafeModeEnabled()) {
-			$this->message($ext, 'Safe mode turned on', '
-				<p>
-					<em>safe_mode=' . ini_get('safe_mode') . '</em>
-					<br />
-					In safe_mode PHP is restricted in several ways. This is a
-					good thing because it adds protection to your (and others)
-					scripts. But it may also introduce problems. In TYPO3 this
-					<em>may be</em> a problem in two areas: File administration
-					and execution of external programs, in particular
-					ImageMagick.
-					<br />
-					If you just ignore this warning, you\'ll most likely find,
-					that TYPO3 seems to work except from the image-generation.
-					The problem in that case is that the external ImageMagick
-					programs are not allowed to be executed from the regular
-					paths like "/usr/bin/" or "/usr/X11R6/bin/".
-					<br />
-					If you use safe_mode with TYPO3, you should disable use of
-					external programs ([BE][disable_exec_function]=1).
-					<br />
-					In safe mode you must ensure that all the php-scripts and
-					upload folders are owned by the same user.
-				</p>
-				<p>
-					<em>safe_mode_exec_dir=' . ini_get('safe_mode_exec_dir') . '</em>
-					<br />
-					If the ImageMagick utilities are located in this directory,
-					everything is fine. Below on this page, you can see if
-					ImageMagick is found here. If not, ask you ISP to put the
-					three ImageMagick programs, \'convert\',
-					\'combine\'/\'composite\' and \'identify\' there (eg. with
-					symlinks if Unix server)
-				</p>
-				<p>
-					<strong>Example of safe_mode settings:</strong>
-					<br />
-					Set this in the php.ini file:
-				</p>
-				<p>
-					; Safe Mode
-					<br />
-					safe_mode = On
-					<br />
-					safe_mode_exec_dir = /usr/bin/
-				</p>
-				<p>
-					...and the ImageMagick \'/usr/bin/convert\' will be
-					executable.
-					<br />
-					The last slash is important (..../) and you can only specify
-					one directory.
-				</p>
-				<p>
-					<strong>Notice: </strong>
-					<br />
-					ImageMagick 6 or GraphicsMagick is recommended and the binaries are
-					normally installed in /usr/bin.
-					<br />
-					Paths to ImageMagick are defined in local configuration and may be
-					something else than /usr/bin/, but this is default for
-					ImageMagick 6+
-				</p>
-			', 2);
-			if (ini_get('doc_root')) {
-				$this->message($ext, 'doc_root set', '
-					<p>
-						<em>doc_root=' . ini_get('doc_root') . '</em>
-						<br />
-						PHP cannot execute scripts outside this directory. If
-						that is a problem is please correct it.
-					</p>
-				', 1);
-			}
-			$this->config_array['safemode'] = 1;
-		} else {
-			$this->message($ext, 'safe_mode: off', '', -1);
-		}
 		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSqlSafeModeEnabled()) {
 			$this->message($ext, 'sql.safe_mode is enabled', '
 				<p>
@@ -3392,16 +3279,11 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	}
 
 	/**
-	 * Calculates the suggested setup that should be written to localconf.php
-	 *
-	 * If safe_mode
-	 * - disable_exec_function = 1
-	 * - im = 0
+	 * Calculates the suggested setup that should be written to typo3conf/LocalConfiguration.php
 	 *
 	 * if PNG/GIF/GD
 	 * - disable gdlib if nothing
 	 * - select png/gif if only one of them is available, else PNG/GIF selector, defaulting to GIF
-	 * - (safe_mode is on)
 	 * - im_path (default to 4.2.9, preferable with LZW)		im_ver5-flag is set based on im_path being 4.2.9 or 5+
 	 * - im_path_lzw (default to LZW version, pref. 4.2.9)
 	 *
@@ -3426,9 +3308,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 		} else {
 			$formArray['gdlib'] = array(0);
-		}
-		if ($this->config_array['safemode']) {
-			$formArray['disable_exec_function'] = array(1);
 		}
 		if ($this->config_array['im']) {
 			$formArray['im'] = array(1);
@@ -3696,11 +3575,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * Imagemagick
 	 * - Read formats
 	 * - Write png, gif, jpg
-	 *
-	 * Problems may arise from the use of safe_mode (eg. png)
-	 * In safemode you will automatically execute the program convert in the safe_mode_exec_path no matter what other path you specify
-	 * check fileexist before anything...
-	 *
 	 * - compare gif size
 	 * - scaling (by stdgraphic)
 	 * - combining (by stdgraphic)
@@ -3751,11 +3625,9 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				by setting [GFX][im_version_5] to \'gm\'. This is recommended and
 				enabled by default.
 				<br />
-				Because ImageMagick and Graphicsmagick are external programs, two
-				requirements must be met: 1) The programs must be installed on the
-				server and working and 2) if safe_mode is enabled, the programs must
-				be located in the folder defined by the php.ini setting,
-				<em>safe_mode_exec_dir</em> (else they are not executed).
+				Because ImageMagick and Graphicsmagick are external programs, a
+				requirements must be met: The programs must be installed on the
+				server and working.
 				<br />
 				ImageMagick is available for both Windows and Unix. The current
 				version is 6+.
@@ -3770,8 +3642,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				TypoScript GIFBUILDER object is based on GDlib, but extensively
 				utilizing ImageMagick to process intermediate results.
 				<br />
-				GDLib is accessed through internal functions in PHP, so in this
-				case, you have no safe_mode problems, but you\'ll need a version
+				GDLib is accessed through internal functions in PHP, you\'ll need a version
 				of PHP with GDLib compiled in. Also in order to use TrueType
 				fonts with GDLib you\'ll need FreeType compiled in as well.
 				<br />

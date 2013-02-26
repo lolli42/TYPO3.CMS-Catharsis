@@ -57,17 +57,21 @@ class Check {
 		$statusArray[] = $this->checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize();
 		$statusArray[] = $this->checkMemorySettings();
 		$statusArray[] = $this->checkPhpVersion();
+		$statusArray[] = $this->checkMaxExecutionTime();
+		$statusArray[] = $this->checkDisableFunctions();
+		$statusArray[] = $this->checkSafeMode();
+		$statusArray[] = $this->checkDocRoot();
 		return $statusArray;
 	}
 
 	/**
 	 * Checks if current directory (.) is in PHP include path
 	 *
-	 * @return ErrorStatus|OkStatus
+	 * @return WarningStatus|OkStatus
 	 */
 	protected function checkCurrentDirectoryIsInIncludePath() {
 		$includePath = ini_get('include_path');
-		$delimiter = PHP_OS === 'WIN' ? ';' : ':';
+		$delimiter = (!stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')) ? ';' : ':';
 		$pathArray = $this->trimExplode($delimiter, $includePath);
 		if (!in_array('.', $pathArray)) {
 			$status = new WarningStatus();
@@ -165,7 +169,7 @@ class Check {
 	/**
 	 * Check memory settings
 	 *
-	 * @return ErrorStatus|OkStatus
+	 * @return ErrorStatus|WarningStatus|OkStatus
 	 */
 	protected function checkMemorySettings() {
 		$memoryLimit = $this->getBytesFromSizeMeasurement(ini_get('memory_limit'));
@@ -226,7 +230,7 @@ class Check {
 			$status->setMessage(
 				'Your PHP version ' . $currentPhpVersion . ' is below the recommended version' .
 				' ' . $recommendedPhpVersion . '. TYPO3 CMS will mostly run with your PHP' .
-				' version, but it is not officially supported. Expect some problem,' .
+				' version, but it is not officially supported. Expect some problems,' .
 				' monitor your system for errors and look out for an upgrade, soon.'
 			);
 		} else {
@@ -235,6 +239,127 @@ class Check {
 		}
 		return $status;
 	}
+
+	/**
+	 * Check maximum execution time
+	 *
+	 * @return ErrorStatus|WarningStatus|OkStatus
+	 */
+	protected function checkMaxExecutionTime() {
+		$minimumMaximumExecutionTime = 30;
+		$recommendedMaximumExecutionTime = 240;
+		$currentMaximumExecutionTime = ini_get('max_execution_time');
+		if ($currentMaximumExecutionTime == 0 && PHP_SAPI !== 'cli') {
+			$status = new WarningStatus();
+			$status->setTitle('Infinite PHP script execution time');
+			$status->setMessage(
+				'Your max_execution_time is set to 0 (infinite). While TYPO3 is fine' .
+				' with this, you risk a denial-of-service of you system if for whatever' .
+				' reason some script hangs in an infinite loop. You are usually on safe side ' .
+				' if max_execution_time is reduced to ' . $recommendedMaximumExecutionTime
+			);
+		} elseif ($currentMaximumExecutionTime < $minimumMaximumExecutionTime) {
+			$status = new ErrorStatus();
+			$status->setTitle('Low PHP script execution time');
+			$status->setMessage(
+				'Your max_execution_time is set to ' . $currentMaximumExecutionTime .
+				'. Some expensive operation in TYPO3 can take longer than that. It is advised' .
+				' to raise max_execution_time to ' . $recommendedMaximumExecutionTime
+			);
+		} elseif ($currentMaximumExecutionTime < $recommendedMaximumExecutionTime) {
+			$status = new WarningStatus();
+			$status->setTitle('Low PHP script execution time');
+			$status->setMessage(
+				'Your max_execution_time is set to ' . $currentMaximumExecutionTime .
+				'. While TYPO3 often runs without problems with ' . $minimumMaximumExecutionTime .
+				' it still may happen that script execution is stopped before finishing' .
+				' calculations. You should monitor the system for messages in this area' .
+				' and maybe raise the limit to ' . $recommendedMaximumExecutionTime . '.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('Maximum PHP script execution equals ' . $recommendedMaximumExecutionTime . ' or more');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check for disabled functions
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkDisableFunctions() {
+		$disabledFunctions = trim(ini_get('disable_functions'));
+		if (strlen($disabledFunctions) > 0) {
+			$status = new ErrorStatus();
+			$status->setTitle('Some PHP functions disabled');
+			$status->setMessage(
+				'disable_functions=' . $disabledFunctions . '. These function(s) are disabled.' .
+				' If TYPO3 uses any of these there might be trouble. TYPO3 is designed to use the default' .
+				' set of PHP functions plus some common extensions. Possibly these functions are disabled' .
+				' due to security considerations and most likely the list would include a function like' .
+				' exec() which is used by TYPO3 at various places. Depending on which exact functions' .
+				' are disabled, some parts of the system may just break without further notice.'
+			);
+		} else {
+			$status  = new OkStatus();
+			$status->setTitle('No disabled PHP functions');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check if safe mode is enabled
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkSafeMode() {
+		$safeModeEnabled = FALSE;
+		if (version_compare(phpversion(), '5.4', '<')) {
+			$safeModeEnabled = filter_var(
+				ini_get('safe_mode'),
+				FILTER_VALIDATE_BOOLEAN,
+				array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
+			);
+		}
+		if ($safeModeEnabled) {
+			$status = new ErrorStatus();
+			$status->setTitle('Safe mode on');
+			$status->setMessage(
+				'safe_mode enabled. This is unsupported by TYPO3 CMS, it must be turned off.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP safe mode off');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check for doc_root ini setting
+	 *
+	 * @return NoticeStatus|OkStatus
+	 */
+	protected function checkDocRoot() {
+		$docRootSetting = trim(ini_get('doc_root'));
+		if (strlen($docRootSetting) > 0) {
+			$status = new NoticeStatus();
+			$status->setTitle('doc_root is set');
+			$status->setMessage(
+				'doc_root=' . $docRootSetting . ' PHP cannot execute scripts' .
+				' outside this directory. This setting is used seldom and must correlate' .
+				' with your actual document root. You might be in trouble if your' .
+				' TYPO3 CMS core code is linked to some different location.' .
+				' If that is a problem, the setting must be adapted.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP doc_root is not set');
+		}
+		return $status;
+	}
+
+
 
 	/**
 	 * Helper method to explode a string by delimeter and throw away empty values.

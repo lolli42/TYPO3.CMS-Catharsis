@@ -37,8 +37,10 @@ class PhpOptionsUtility {
 	 * Check if php safe_mode is enabled
 	 *
 	 * @return boolean TRUE if safe_mode is enabled, FALSE if disabled
+	 * @deprecated since 6.1, will be removed two versions later
 	 */
 	static public function isSafeModeEnabled() {
+		GeneralUtility::logDeprecatedFunction();
 		if (version_compare(phpversion(), '5.4', '<')) {
 			return self::getIniValueBoolean('safe_mode');
 		}

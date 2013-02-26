@@ -65,7 +65,6 @@ class ConfigurationStatus implements \TYPO3\CMS\Reports\StatusProviderInterface 
 		);
 		// Do not show status about non-existent features
 		if (version_compare(phpversion(), '5.4', '<')) {
-			$statuses['safeModeEnabled'] = $this->getPhpSafeModeStatus();
 			$statuses['magicQuotesGpcEnabled'] = $this->getPhpMagicQuotesGpcStatus();
 		}
 		if ($this->isMemcachedUsed()) {
@@ -97,23 +96,6 @@ class ConfigurationStatus implements \TYPO3\CMS\Reports\StatusProviderInterface 
 			$message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xml:warning.backend_reference_index'), '<a href="' . $url . '">', '</a>', \TYPO3\CMS\Backend\Utility\BackendUtility::dateTime($lastRefIndexUpdate));
 		}
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_referenceIndex'), $value, $message, $severity);
-	}
-
-	/**
-	 * Checks if PHP safe_mode is enabled.
-	 *
-	 * @return \TYPO3\CMS\Reports\Status A tx_reports_reports_status_Status object representing whether the safe_mode is enabled or not
-	 */
-	protected function getPhpSafeModeStatus() {
-		$value = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xml:disabled');
-		$message = '';
-		$severity = \TYPO3\CMS\Reports\Status::OK;
-		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSafeModeEnabled()) {
-			$value = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xml:enabled');
-			$severity = \TYPO3\CMS\Reports\Status::WARNING;
-			$message = $GLOBALS['LANG']->getLL('status_configuration_PhpSafeModeEnabled');
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_PhpSafeMode'), $value, $message, $severity);
 	}
 
 	/**
