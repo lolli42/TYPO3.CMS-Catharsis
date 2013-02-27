@@ -1923,7 +1923,8 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * @todo Define visibility
 	 */
 	public function checkConfiguration() {
-
+		$ext = 'php.ini configuration checked';
+		$this->message($ext);
 
 		// Mail tests
 		if (TYPO3_OS == 'WIN') {
