@@ -647,9 +647,9 @@ class Check {
 				'TYPO3 CMS core extensions like extbase and fluid heavily rely on method' .
 				' comment parsing to fetch annotations and add magic according to them.' .
 				' This does not work in the current environment and will lead to a lot of' .
-				' broken extensions. The PHP extension is known to break this setting if' .
-				' eaccelerator is compiled without --with-eaccelerator-doc-comment-inclusion flag.' .
-				' This compile flag must be left out, otherwise TYPO3 CMS won\'t work well.'
+				' broken extensions. The PHP extension eaccelerator is known to break this if' .
+				' it is compiled without --with-eaccelerator-doc-comment-inclusion flag.' .
+				' This compile flag must be given, otherwise TYPO3 CMS is no fun.'
 			);
 		} else {
 			$status = new OkStatus();
