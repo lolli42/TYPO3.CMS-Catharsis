@@ -2018,29 +2018,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			', 3);
 		}
 
-		// Check for stripped PHPdoc comments that are required to evaluate annotations:
-		$method = new \ReflectionMethod('TYPO3\\CMS\\Install\\Installer', 'check_mail');
-		if (strlen($method->getDocComment()) === 0) {
-			$description = '
-				<p>
-					The system extension Extbase evaluates annotations in PHPdoc
-					comments and thus requires eAccelerator not to strip away
-					these parts. However, this is currently the only part in the
-					TYPO3 Core (beside deprecation log and unit tests). If
-					Extbase is not used, recompiling eAccelerator is not
-					required at all.
-					<br/>
-					<br/>
-					If you do not want comments to be stripped by eAccelerator,
-					please recompile with the following configuration setting
-					(<a href="http://eaccelerator.net/ticket/229" target="_blank">
-					more details</a>):
-					<br />
-					<em>--with-eaccelerator-doc-comment-inclusion</em>
-				</p>
-			';
-			$this->message($ext, 'PHPdoc comments are stripped', $description, 2);
-		}
 		// ThreadStackSize on Windows systems with Apache
 		$threadStackSizeDescription = '
 			<p>

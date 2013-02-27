@@ -41,29 +41,9 @@ class ExtbaseRequirementsCheckUtility implements \TYPO3\CMS\Reports\StatusProvid
 	 */
 	public function getStatus() {
 		$reports = array(
-			'docCommentsShouldBePreserved' => $this->checkIfDocCommentsArePreserved(),
 			'dbalExtensionIsInstalled' => $this->checkIfDbalExtensionIsInstalled()
 		);
 		return $reports;
-	}
-
-	/**
-	 * Check whether doc comments are preserved or stipped off PHP by PHP accelerators.
-	 *
-	 * @return \TYPO3\CMS\Reports\Status
-	 */
-	protected function checkIfDocCommentsArePreserved() {
-		$method = new \ReflectionMethod('TYPO3\\CMS\\Extbase\\Core\\Bootstrap', 'run');
-		if (strlen($method->getDocComment()) > 0) {
-			$value = 'Preserved';
-			$message = '';
-			$status = \TYPO3\CMS\Reports\Status::OK;
-		} else {
-			$value = 'Stripped';
-			$message = 'The PHP Doc comments are stripped from the PHP files. All extensions based on Extbase will not work correctly.<br />Are you using a PHP Accelerator like eAccelerator? If you use eAccelerator, please recompile it with the compile flag <b>--with-eaccelerator-doc-comment-inclusion</b>. See <a href="http://eaccelerator.net/ticket/229">the eAccelerator bugtracker</a> for more details.';
-			$status = \TYPO3\CMS\Reports\Status::ERROR;
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', 'PHP Doc Comments', $value, $message, $status);
 	}
 
 	/**

@@ -69,6 +69,8 @@ class Check {
 		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
+		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
+		$statusArray[] = $this->checkReflectionDocComment();
 		return $statusArray;
 	}
 
@@ -543,7 +545,7 @@ class Check {
 	}
 
 	/**
-	 * Check suhosin.executor.include.whitelist
+	 * Check suhosin.executor.include.whitelist contains phar
 	 *
 	 * @return NoticeStatus|InfoStatus|OkStatus
 	 */
@@ -573,7 +575,7 @@ class Check {
 	}
 
 	/**
-	 * Check suhosin.executor.include.whitelist
+	 * Check suhosin.executor.include.whitelist contains vfs
 	 *
 	 * @return NoticeStatus|InfoStatus|OkStatus
 	 */
@@ -603,6 +605,58 @@ class Check {
 		return $status;
 	}
 
+	/**
+	 * Check apt, xcache or eaccelerator is loaded
+	 *
+	 * @return WarningStatus|OkStatus
+	 */
+	protected function checkSomePhpOpcodeCacheIsLoaded() {
+		$eAcceleratorLoaded = extension_loaded('eaccelerator');
+		$xCacheLoaded = extension_loaded('xcache');
+		$apcLoaded = extension_loaded('apc');
+		if ($eAcceleratorLoaded || $xCacheLoaded || $apcLoaded) {
+			$status = new OkStatus();
+			$status->setTitle('A PHP opcode cache is loaded');
+		} else {
+			$status = new WarningStatus();
+			$status->setTitle('No PHP opcode cache loaded');
+			$status->setMessage(
+				'PHP opcode caches hold a compiled version of executed PHP scripts in' .
+				' memory and do not require to recompile any script on each access.' .
+				' This can be a massive performance improvement and can put load off a' .
+				' server in general, a parse time reduction by factor three for full cached' .
+				' pages can be achieved easily if using some opcode cache.' .
+				' If in doubt choosing one, apc is officially supported by PHP and can be' .
+				' used as data cache layer in TYPO3 CMS as additional feature.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check doc comments can be fetched by reflection
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkReflectionDocComment() {
+		$testReflection = new \ReflectionMethod(get_class($this), __FUNCTION__);
+		if (strlen($testReflection->getDocComment()) === 0) {
+			$status = new ErrorStatus();
+			$status->setTitle('Doc comment reflection broken');
+			$status->setMessage(
+				'TYPO3 CMS core extensions like extbase and fluid heavily rely on method' .
+				' comment parsing to fetch annotations and add magic according to them.' .
+				' This does not work in the current environment and will lead to a lot of' .
+				' broken extensions. The PHP extension is known to break this setting if' .
+				' eaccelerator is compiled without --with-eaccelerator-doc-comment-inclusion flag.' .
+				' This compile flag must be left out, otherwise TYPO3 CMS won\'t work well.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('Document comment reflection works');
+		}
+		return $status;
+	}
 
 	/**
 	 * Helper method to find out if suhosin extension is loaded
