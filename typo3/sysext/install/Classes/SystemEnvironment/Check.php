@@ -71,6 +71,7 @@ class Check {
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
 		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
 		$statusArray[] = $this->checkReflectionDocComment();
+		$statusArray[] = $this->checkWindowsApacheThreadStackSize();
 		return $statusArray;
 	}
 
@@ -654,6 +655,33 @@ class Check {
 		} else {
 			$status = new OkStatus();
 			$status->setTitle('Document comment reflection works');
+		}
+		return $status;
+	}
+
+	/**
+	 * Checks thread stack size if on windows with apache
+	 *
+	 * @return WarningStatus|OkStatus
+	 */
+	protected function checkWindowsApacheThreadStackSize() {
+		if (
+			stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')
+			&& substr($_SERVER['SERVER_SOFTWARE'], 0, 6) === 'Apache'
+		) {
+			$status = new WarningStatus();
+			$status->setTitle('Windows apache thread stack size');
+			$status->setMessage(
+				'This current value can not be checked by the system, so please ignore this warning it' .
+				' is already taken care off: Fluid uses complex regular expressions which require a lot' .
+				' of stack space during the first processing.' .
+				' On Windows the default stack size for Apache is a lot smaller than on unix.' .
+				' You can increase the size to 8MB (default on unix) by adding to the httpd.conf:' .
+				' ThreadStackSize 8388608. Restart Apache after this change.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('ThreadStackSize is not an issue on unix systems');
 		}
 		return $status;
 	}

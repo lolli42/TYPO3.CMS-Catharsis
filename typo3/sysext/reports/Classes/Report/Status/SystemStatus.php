@@ -62,7 +62,6 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 		$this->executeAdminCommand();
 		$statuses = array(
 			'PhpPeakMemory' => $this->getPhpPeakMemoryStatus(),
-			'Webserver' => $this->getWebserverStatus(),
 			'PhpModules' => $this->getMissingPhpModules()
 		);
 		return $statuses;
@@ -109,23 +108,6 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 			$value = $percentageUsed;
 		}
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_phpPeakMemory'), $value, $message, $severity);
-	}
-
-	/**
-	 * Reports the webserver TYPO3 is running on.
-	 *
-	 * @return \TYPO3\CMS\Reports\Status The server software as a status
-	 */
-	protected function getWebserverStatus() {
-		$value = $_SERVER['SERVER_SOFTWARE'];
-		$message = '';
-		// The additional information are only important on a Windows system with Apache running.
-		// Even with lowest Apache ServerTokens (Prod[uctOnly]) the name is returned.
-		if (TYPO3_OS === 'WIN' && substr($value, 0, 6) === 'Apache') {
-			$message .= '<p>' . $GLOBALS['LANG']->getLL('status_webServer_infoText') . '</p>';
-			$message .= '<div class="typo3-message message-warning">' . $GLOBALS['LANG']->getLL('status_webServer_threadStackSize') . '</div>';
-		}
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Reports\\Status', $GLOBALS['LANG']->getLL('status_webServer'), $value, $message);
 	}
 
 	/**
