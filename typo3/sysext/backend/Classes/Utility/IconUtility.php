@@ -707,7 +707,7 @@ class IconUtility {
 	 * statuses, used for overlays.
 	 * You should not use this directly besides if you need classes for ExtJS iconCls.
 	 *
-	 * see ext:core/Configuration/TCA/Pages.php for an example with the TCA table "pages"
+	 * see ext:core/Configuration/TCA/pages.php for an example with the TCA table "pages"
 	 *
 	 * @param string $table The TCA table
 	 * @param array	$row The selected record
@@ -729,7 +729,7 @@ class IconUtility {
 	 * statuses, used for overlays.
 	 * You should not use this directly besides if you need it in tceforms/core classes
 	 *
-	 * see ext:core/Configuration/TCA/Pages.php for an example with the TCA table "pages"
+	 * see ext:core/Configuration/TCA/pages.php for an example with the TCA table "pages"
 	 *
 	 * @param string $tableThe TCA table
 	 * @param array $row The selected record
