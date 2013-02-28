@@ -215,22 +215,6 @@ class Installer {
 		'logout' => 'Logout from Install Tool'
 	);
 
-	// PHP modules which are required. Can be changed by hook in getMissingPhpModules()
-	protected $requiredPhpModules = array(
-		'fileinfo',
-		'filter',
-		'gd',
-		'json',
-		'mysql',
-		'pcre',
-		'session',
-		'SPL',
-		'standard',
-		'openssl',
-		'xml',
-		'zlib'
-	);
-
 	/**
 	 * Backpath (used for icons etc.)
 	 *
@@ -1997,27 +1981,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSqlSafeModeEnabled()) {
 			$this->config_array['sql.safe_mode_user'] = get_current_user();
 		}
-
-		// Check availability of PHP session support
-		if (extension_loaded('session')) {
-			$this->message($ext, 'PHP sessions available', '
-				<p>
-					<em>PHP Sessions available</em>
-					<br />
-					PHP is compiled with session support and session support is
-					available.
-				</p>
-			', -1);
-		} else {
-			$this->message($ext, 'PHP Sessions not available', '
-				<p>
-					PHP is not compiled with session support, or session support
-					is disabled in php.ini.
-					<br />
-					TYPO3 needs session support.
-				</p>
-			', 3);
-		}
 	}
 
 	/**
@@ -3299,22 +3262,21 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	}
 
 	/**
-	 * Checks if the essential PHP modules are loaded
+	 * Checks if extensions need further PHP modules
 	 *
 	 * @return array list of modules which are missing
 	 */
 	protected function getMissingPhpModules() {
-		// Hook to adjust the required PHP modules in the 1-2-3 installer
-		$modules = $this->requiredPhpModules;
+		// Hook to add additional required PHP modules in the 1-2-3 installer
+		$modules = array();
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules'] as $classData) {
 				$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classData);
 				$modules = $hookObject->setRequiredPhpModules($modules, $this);
 			}
 		}
-		$this->requiredPhpModules = $modules;
 		$result = array();
-		foreach ($this->requiredPhpModules as $module) {
+		foreach ($modules as $module) {
 			if (is_array($module)) {
 				$detectedSubmodules = FALSE;
 				foreach ($module as $submodule) {

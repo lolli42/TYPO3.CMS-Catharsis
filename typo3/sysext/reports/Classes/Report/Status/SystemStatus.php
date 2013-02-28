@@ -31,28 +31,6 @@ namespace TYPO3\CMS\Reports\Report\Status;
 class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 
 	/**
-	 * PHP modules which are required. Can be changed by hook in getMissingPhpModules()
-	 *
-	 * @var array
-	 */
-	protected $requiredPhpModules = array(
-		'fileinfo',
-		'filter',
-		'gd',
-		'json',
-		'mysql',
-		'pcre',
-		'session',
-		'SPL',
-		'standard',
-		'openssl',
-		'xml',
-		'zlib',
-		'soap',
-		'zip'
-	);
-
-	/**
 	 * Determines the Install Tool's status, mainly concerning its protection.
 	 *
 	 * @return array List of statuses
@@ -62,7 +40,7 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 		$this->executeAdminCommand();
 		$statuses = array(
 			'PhpPeakMemory' => $this->getPhpPeakMemoryStatus(),
-			'PhpModules' => $this->getMissingPhpModules()
+			'PhpModules' => $this->getMissingPhpModulesOfExtensions()
 		);
 		return $statuses;
 	}
@@ -86,7 +64,7 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 	/**
 	 * Checks if there was a request in the past which approached the memory limit
 	 *
-	 * @return tx_reports_reports_status_Status	A status of whether the memory limit was approached by one of the requests
+	 * @return \TYPO3\CMS\Reports\Status A status of whether the memory limit was approached by one of the requests
 	 */
 	protected function getPhpPeakMemoryStatus() {
 		/** @var $registry \TYPO3\CMS\Core\Registry */
@@ -111,13 +89,12 @@ class SystemStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 	}
 
 	/**
-	 * Reports whether any of the required PHP modules are missing
+	 * Reports whether extensions need additional PHP modules different from standard core requirements
 	 *
 	 * @return \TYPO3\CMS\Reports\Status A status of missing PHP modules
 	 */
-	protected function getMissingPhpModules() {
-		// Hook to adjust the required PHP modules
-		$modules = $this->requiredPhpModules;
+	protected function getMissingPhpModulesOfExtensions() {
+		$modules = array();
 		if (is_array(${$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules']})) {
 			foreach (${$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules']} as $classData) {
 				$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classData);

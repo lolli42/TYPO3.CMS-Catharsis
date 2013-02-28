@@ -27,9 +27,44 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
 /**
  * Check system environment status
  *
+ * This class is a hardcoded requirement check of the underlying
+ * server and PHP system.
+ *
+ * This class is instantiated as the *very first* class during
+ * installation. It is meant to be *standalone* und must not have
+ * any requirements, except the status classes. It must be possible
+ * to run this script separated from the rest of the core, without
+ * dependencies.
+ *
+ * This means especially:
+ * * No hooks or anything like that
+ * * No usage of *any* TYPO3 code like aGeneralUtility
+ * * No require of anything but the status classes
+ *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class Check {
+
+	/**
+	 * @var array List of required PHP extensions
+	 */
+	protected $requiredPhpExtensions = array(
+		'fileinfo',
+		'filter',
+		'gd',
+		'hash',
+		'json',
+		'mysql',
+		'openssl',
+		'pcre',
+		'session',
+		'soap',
+		'SPL',
+		'standard',
+		'xml',
+		'zip',
+		'zlib'
+	);
 
 	/**
 	 * Constructor
@@ -72,6 +107,9 @@ class Check {
 		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
 		$statusArray[] = $this->checkReflectionDocComment();
 		$statusArray[] = $this->checkWindowsApacheThreadStackSize();
+		foreach ($this->requiredPhpExtensions as $extension) {
+			$statusArray[] = $this->checkRequiredPhpExtension($extension);
+		}
 		return $statusArray;
 	}
 
@@ -682,6 +720,27 @@ class Check {
 		} else {
 			$status = new OkStatus();
 			$status->setTitle('ThreadStackSize is not an issue on unix systems');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check if a specific required PHP extension is loaded
+	 *
+	 * @param string $extension
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkRequiredPhpExtension($extension) {
+		if (!extension_loaded($extension)) {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP extension ' . $extension . ' not loaded');
+			$status->setMessage(
+				'TYPO3 CMS uses PHP extension ' . $extension . ' but it is not loaded' .
+				' in your environment. Change your environment to provide this extension.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP extension ' . $extension . ' loaded');
 		}
 		return $status;
 	}
