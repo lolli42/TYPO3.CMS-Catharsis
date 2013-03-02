@@ -1907,76 +1907,9 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * @todo Define visibility
 	 */
 	public function checkConfiguration() {
-		$ext = 'php.ini configuration checked';
+		$ext = 'php.ini configuration tests';
 		$this->message($ext);
-
-		// Mail tests
-		if (TYPO3_OS == 'WIN') {
-			$smtp = ini_get('SMTP');
-			$bad_smtp = FALSE;
-			if (!\TYPO3\CMS\Core\Utility\GeneralUtility::validIP($smtp)) {
-				$smtp_addr = @gethostbyname($smtp);
-				$bad_smtp = $smtp_addr == $smtp;
-			} else {
-				$smtp_addr = $smtp;
-			}
-			if (!$smtp || $bad_smtp || !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger(ini_get('smtp_port'))) {
-				$this->message($ext, 'Mail configuration is not set correctly', '
-					<p>
-						Mail configuration is not set
-						<br />
-						PHP mail() function requires SMTP and smtp_port to have
-						correct values on Windows.
-					</p>
-				', 2);
-			} else {
-				if (($smtp_addr == '127.0.0.1' || $smtp_addr == '::1') && ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_ADDR'] == '::1')) {
-					$this->message($ext, 'Mail is configured (potential problem exists!)', '
-						<p>
-							<em>SMTP=' . $smtp . '</em> - <strong>Note:</strong>
-							this server! Are you sure it runs SMTP server?
-							<br />
-							<em>smtp_port=' . ini_get('smtp_port') . '</em>
-						</p>' . $this->check_mail('get_form') . '
-					', 1);
-				} else {
-					$this->message($ext, 'Mail is configured', '
-						<p>
-							<em>SMTP=' . $smtp . '</em>
-							<br />
-							<em>smtp_port=' . ini_get('smtp_port') . '</em>
-						</p>' . $this->check_mail('get_form') . '
-					', -1);
-				}
-			}
-		} elseif (!ini_get('sendmail_path')) {
-			$this->message($ext, 'Sendmail path not defined!', '
-				<p>
-					This may be critical to TYPO3\'s use of the mail() function.
-					Please be sure that the mail() function in your
-					php-installation works!
-				</p>' . $this->check_mail('get_form') . '
-			', 1);
-		} else {
-			list($prg) = explode(' ', ini_get('sendmail_path'));
-			if (!@is_executable($prg)) {
-				$this->message($ext, 'Sendmail program not found or not executable?', '
-					<p>
-						<em>sendmail_path=' . ini_get('sendmail_path') . '</em>
-						<br />
-						This may be critical to TYPO3\'s use of the mail()
-						function. Please be sure that the mail() function in
-						your php-installation works!
-					</p>' . $this->check_mail('get_form') . '
-				', 1);
-			} else {
-				$this->message($ext, 'Sendmail OK', '
-					<p>
-						<em>sendmail_path=' . ini_get('sendmail_path') . '</em>
-					</p>' . $this->check_mail('get_form') . '
-				', -1);
-			}
-		}
+		$this->message($ext, 'Mail test', $this->check_mail('get_form'), -1);
 
 		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSqlSafeModeEnabled()) {
 			$this->config_array['sql.safe_mode_user'] = get_current_user();

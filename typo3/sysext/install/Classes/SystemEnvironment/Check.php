@@ -110,6 +110,7 @@ class Check {
 		foreach ($this->requiredPhpExtensions as $extension) {
 			$statusArray[] = $this->checkRequiredPhpExtension($extension);
 		}
+		$statusArray[] = $this->checkMailCapabilities();
 		return $statusArray;
 	}
 
@@ -120,7 +121,7 @@ class Check {
 	 */
 	protected function checkCurrentDirectoryIsInIncludePath() {
 		$includePath = ini_get('include_path');
-		$delimiter = (!stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')) ? ';' : ':';
+		$delimiter = $this->isWindowsOs() ? ';' : ':';
 		$pathArray = $this->trimExplode($delimiter, $includePath);
 		if (!in_array('.', $pathArray)) {
 			$status = new WarningStatus();
@@ -704,7 +705,7 @@ class Check {
 	 */
 	protected function checkWindowsApacheThreadStackSize() {
 		if (
-			stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')
+			$this->isWindowsOs()
 			&& substr($_SERVER['SERVER_SOFTWARE'], 0, 6) === 'Apache'
 		) {
 			$status = new WarningStatus();
@@ -743,6 +744,112 @@ class Check {
 			$status->setTitle('PHP extension ' . $extension . ' loaded');
 		}
 		return $status;
+	}
+
+	/**
+	 * Check smtp settings
+	 *
+	 * @return ErrorStatus|OkStatus|WarningStatus
+	 */
+	protected function checkMailCapabilities() {
+		if ($this->isWindowsOs()) {
+			$smtpIni = ini_get('SMTP');
+			$brokenSmtp = FALSE;
+			$smtpIpAddress = '';
+			if (!$this->isValidIp($smtpIni)) {
+				if (!$this->isValidIp(@gethostbyname($smtpIni))) {
+					$brokenSmtp = TRUE;
+				} else {
+					$smtpIpAddress = @gethostbyname($smtpIni);
+				}
+			} else {
+				$smtpIpAddress = $smtpIni;
+			}
+
+			$smtpPortIni =  intval(ini_get('smtp_port'));
+			$brokenSmtpPort = FALSE;
+			if (intval($smtpPortIni) < 1 || intval($smtpPortIni) > 65535) {
+				$brokenSmtpPort = TRUE;
+			}
+
+			if ($brokenSmtp || $brokenSmtpPort) {
+				$status = new ErrorStatus();
+				$status->setTitle('Mail configuration is not set correctly');
+				$status->setMessage(
+					'PHP mail() function requires SMTP and smtp_port to have' .
+					' correct values on Windows. If installation is completed,' .
+					' the mail system can be tested in the install tool.'
+				);
+			} elseif ($smtpIpAddress === '127.0.0.1' || $smtpIpAddress === '::1') {
+				$status = new WarningStatus();
+				$status->setTitle('Mail is configured, potential problem exists');
+				$status->setMessage(
+					'smtp=' . $smtpIni . ' - This server! Are you sure it runs SMTP server?' .
+					' If installation is completed, the mail system can be tested in the install tool.'
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('Mail is configured');
+				$status->setMessage(
+					'smtp=' . $smtpIni . ', smtp_port=' . ini_get('smtp_port') . '.' .
+					' Values for mail setup look ok. If installation is completed,' .
+					' the mail system can be tested in the install tool. '
+				);
+			}
+		} elseif (!ini_get('sendmail_path')) {
+			$status = new WarningStatus();
+			$status->setTitle('PHP sendmail_path not defined');
+			$status->setMessage(
+				'This may be critical to TYPO3\'s use of the mail() function.' .
+				' Your setup is rather uncommon. If installation is completed, the' .
+				' mail system can be tested in the install tool.'
+			);
+		} else {
+			list($mailBinary) = explode(' ', ini_get('sendmail_path'));
+			if (!@is_executable($mailBinary)) {
+				$status = new ErrorStatus();
+				$status->setTitle('Mail program not found or not executable');
+				$status->setMessage(
+					'sendmail_path = ' . ini_get('sendmail_path') .
+					' This may be critical to TYPO3\'s use of the mail() function. Please' .
+					' be sure that the mail() function in your php-installation works.  If' .
+					' installation is completed, the mail system can be tested in the install tool.'
+				);
+			} else {
+				$status = new OkStatus();
+				$status->setTitle('PHP sendmail path given');
+				$status->setMessage(
+					'sendmail_path = ' . ini_get('sendmail_path') . '.' .
+					' This setting is crucial for TYPO3\'s use of the mail() function. The' .
+					' current value looks fine. The mail system can be tested in the' .
+					' install tool if the installation is completed'
+				);
+			}
+		}
+		return $status;
+	}
+
+	/**
+	 * Validate a given IP address.
+	 *
+	 * @param string $ip IP address to be tested
+	 * @return bool
+	 */
+	protected function isValidIp($ip) {
+		return filter_var($ip, FILTER_VALIDATE_IP) !== FALSE;
+	}
+
+	/**
+	 * Test if this instance runs on windows OS
+	 *
+	 * @return boolean TRUE if operating system is windows
+	 */
+	protected function isWindowsOs() {
+		$windowsOs = FALSE;
+		if (stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')) {
+			$windowsOs = TRUE;
+		}
+		return $windowsOs;
 	}
 
 	/**
