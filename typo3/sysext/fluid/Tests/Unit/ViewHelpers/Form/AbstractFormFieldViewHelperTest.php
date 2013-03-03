@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
 
 /*                                                                        *
- * This script is backported from the FLOW3 package "TYPO3.Fluid".        *
+ * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
  *                                                                        *
  * It is free software; you can redistribute it and/or modify it under    *
  * the terms of the GNU Lesser General Public License, either version 3   *
@@ -10,7 +10,8 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Form;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
-require_once dirname(__FILE__) . '/FormFieldViewHelperBaseTestcase.php';
+
+require_once(dirname(__FILE__) . '/FormFieldViewHelperBaseTestcase.php');
 
 /**
  * Test for the Abstract Form view helper
@@ -50,10 +51,12 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function getNameBuildsNameFromFieldNamePrefixFormObjectNameAndPropertyIfInObjectAccessorMode() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue('myObjectName'));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(2))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue('formPrefix'));
+
 		$arguments = array('name' => 'fieldName', 'value' => 'fieldValue', 'property' => 'bla');
 		$formViewHelper->_set('arguments', $arguments);
 		$expected = 'formPrefix[myObjectName][bla]';
@@ -67,10 +70,12 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function getNameBuildsNameFromFieldNamePrefixFormObjectNameAndHierarchicalPropertyIfInObjectAccessorMode() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue('myObjectName'));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(2))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue('formPrefix'));
+
 		$arguments = array('name' => 'fieldName', 'value' => 'fieldValue', 'property' => 'bla.blubb');
 		$formViewHelper->_set('arguments', $arguments);
 		$expected = 'formPrefix[myObjectName][bla][blubb]';
@@ -84,10 +89,12 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function getNameBuildsNameFromFieldNamePrefixAndPropertyIfInObjectAccessorModeAndNoFormObjectNameIsSpecified() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue(NULL));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(2))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue('formPrefix'));
+
 		$arguments = array('name' => 'fieldName', 'value' => 'fieldValue', 'property' => 'bla');
 		$formViewHelper->_set('arguments', $arguments);
 		$expected = 'formPrefix[bla]';
@@ -101,9 +108,11 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function getNameBuildsNameFromFieldNamePrefixAndFieldNameIfNotInObjectAccessorMode() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(FALSE));
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue(TRUE));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'fieldNamePrefix')->will($this->returnValue('formPrefix'));
+
 		$arguments = array('name' => 'fieldName', 'value' => 'fieldValue', 'property' => 'bla');
 		$formViewHelper->_set('arguments', $arguments);
 		$expected = 'formPrefix[fieldName]';
@@ -117,6 +126,7 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function getValueBuildsValueFromPropertyAndFormObjectIfInObjectAccessorMode() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode', 'addAdditionalIdentityPropertiesIfNeeded'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$className = 'test_' . uniqid();
 		$mockObject = eval('
 			class ' . $className . ' {
@@ -129,10 +139,12 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 			}
 			return new ' . $className . ';
 		');
+
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(TRUE));
 		$formViewHelper->expects($this->once())->method('addAdditionalIdentityPropertiesIfNeeded');
-		$this->viewHelperVariableContainer->expects($this->once())->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue($mockObject));
-		$this->viewHelperVariableContainer->expects($this->once())->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue(TRUE));
+		$this->viewHelperVariableContainer->expects($this->atLeastOnce())->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue($mockObject));
+		$this->viewHelperVariableContainer->expects($this->atLeastOnce())->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue(TRUE));
+
 		$arguments = array('name' => NULL, 'value' => NULL, 'property' => 'value.something');
 		$formViewHelper->_set('arguments', $arguments);
 		$expected = 'MyString';
@@ -147,8 +159,10 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(FALSE));
+
 		$mockArguments = array();
 		$formViewHelper->_set('arguments', $mockArguments);
+
 		$this->assertNull($formViewHelper->_call('getValue'));
 	}
 
@@ -159,8 +173,10 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
 		$formViewHelper->expects($this->any())->method('isObjectAccessorMode')->will($this->returnValue(FALSE));
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$mockArguments = array('value' => 'someValue');
 		$formViewHelper->_set('arguments', $mockArguments);
+
 		$this->assertEquals('someValue', $formViewHelper->_call('getValue'));
 	}
 
@@ -210,11 +226,157 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 	public function isObjectAccessorModeReturnsTrueIfPropertyIsSetAndFormObjectIsGiven() {
 		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('dummy'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formViewHelper);
+
 		$this->viewHelperVariableContainer->expects($this->once())->method('exists')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue(TRUE));
+
 		$formViewHelper->_set('arguments', array('name' => NULL, 'value' => NULL, 'property' => 'bla'));
 		$this->assertTrue($formViewHelper->_call('isObjectAccessorMode'));
+
 		$formViewHelper->_set('arguments', array('name' => NULL, 'value' => NULL, 'property' => NULL));
 		$this->assertFalse($formViewHelper->_call('isObjectAccessorMode'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function getErrorsForPropertyReturnsErrorsFromRequestIfPropertyIsSet() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('isObjectAccessorMode'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$formViewHelper->expects($this->once())->method('isObjectAccessorMode')->will($this->returnValue(TRUE));
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->once())->method('offsetGet')->with('property')->will($this->returnValue('bar'));
+		$formViewHelper->_set('arguments', $mockArguments);
+		$this->viewHelperVariableContainer->expects($this->any())->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue('foo'));
+
+		$mockArgumentError = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ArgumentError', array(), array('foo'));
+		$mockArgumentError->expects($this->once())->method('getPropertyName')->will($this->returnValue('foo'));
+		$mockPropertyError = $this->getMock('TYPO3\\CMS\\Extbase\\Validation\\PropertyError', array(), array('bar'));
+		$mockPropertyError->expects($this->once())->method('getPropertyName')->will($this->returnValue('bar'));
+		$mockError = $this->getMock('TYPO3\\CMS\\Extbase\\Error\\Error', array(), array(), '', FALSE);
+		$mockPropertyError->expects($this->once())->method('getErrors')->will($this->returnValue(array($mockError)));
+		$mockArgumentError->expects($this->once())->method('getErrors')->will($this->returnValue(array($mockPropertyError)));
+		$this->request->expects($this->once())->method('getErrors')->will($this->returnValue(array($mockArgumentError)));
+
+		$errors = $formViewHelper->_call('getErrorsForProperty');
+		$this->assertEquals(array($mockError), $errors);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getErrorsForPropertyReturnsEmptyArrayIfPropertyIsNotSet() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->once())->method('hasArgument')->with('property')->will($this->returnValue(FALSE));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$errors = $formViewHelper->_call('getErrorsForProperty');
+		$this->assertEquals(array(), $errors);
+	}
+
+
+	/**
+	 * @test
+	 */
+	public function setErrorClassAttributeDoesNotSetClassAttributeIfNoErrorOccured() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument', 'getErrorsForProperty'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->once())->method('hasArgument')->with('class')->will($this->returnValue(FALSE));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$this->tagBuilder->expects($this->never())->method('addAttribute');
+
+		$formViewHelper->_call('setErrorClassAttribute');
+	}
+
+	/**
+	 * @test
+	 */
+	public function setErrorClassAttributeSetsErrorClassIfAnErrorOccured() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument', 'getErrorsForProperty'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->at(0))->method('hasArgument')->with('class')->will($this->returnValue(FALSE));
+		$mockArguments->expects($this->at(1))->method('hasArgument')->with('errorClass')->will($this->returnValue(FALSE));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$mockError = $this->getMock('TYPO3\\CMS\\Extbase\\Error\\Error', array(), array(), '', FALSE);
+		$formViewHelper->expects($this->once())->method('getErrorsForProperty')->will($this->returnValue(array($mockError)));
+
+		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('class', 'error');
+
+		$formViewHelper->_call('setErrorClassAttribute');
+	}
+
+	/**
+	 * @test
+	 */
+	public function setErrorClassAttributeAppendsErrorClassToExistingClassesIfAnErrorOccured() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument', 'getErrorsForProperty'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->at(0))->method('hasArgument')->with('class')->will($this->returnValue(TRUE));
+		$mockArguments->expects($this->at(1))->method('offsetGet')->with('class')->will($this->returnValue('default classes'));
+		$mockArguments->expects($this->at(2))->method('hasArgument')->with('errorClass')->will($this->returnValue(FALSE));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$mockError = $this->getMock('TYPO3\\CMS\\Extbase\\Error\\Error', array(), array(), '', FALSE);
+		$formViewHelper->expects($this->once())->method('getErrorsForProperty')->will($this->returnValue(array($mockError)));
+
+		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('class', 'default classes error');
+
+		$formViewHelper->_call('setErrorClassAttribute');
+	}
+
+	/**
+	 * @test
+	 */
+	public function setErrorClassAttributeSetsCustomErrorClassIfAnErrorOccured() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument', 'getErrorsForProperty'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->at(0))->method('hasArgument')->with('class')->will($this->returnValue(FALSE));
+		$mockArguments->expects($this->at(1))->method('hasArgument')->with('errorClass')->will($this->returnValue(TRUE));
+		$mockArguments->expects($this->at(2))->method('offsetGet')->with('errorClass')->will($this->returnValue('custom-error-class'));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$mockError = $this->getMock('TYPO3\\CMS\\Extbase\\Error\\Error', array(), array(), '', FALSE);
+		$formViewHelper->expects($this->once())->method('getErrorsForProperty')->will($this->returnValue(array($mockError)));
+
+		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('class', 'custom-error-class');
+
+		$formViewHelper->_call('setErrorClassAttribute');
+	}
+
+	/**
+	 * @test
+	 */
+	public function setErrorClassAttributeAppendsCustomErrorClassIfAnErrorOccured() {
+		$this->markTestIncomplete('Sebastian -- TODO after T3BOARD');
+		$formViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('hasArgument', 'getErrorsForProperty'), array(), '', FALSE);
+		$this->injectDependenciesIntoViewHelper($formViewHelper);
+		$mockArguments = $this->getMock('TYPO3\\CMS\\Fluid\\Core\\ViewHelper\\Arguments', array(), array(), '', FALSE);
+		$mockArguments->expects($this->at(0))->method('hasArgument')->with('class')->will($this->returnValue(TRUE));
+		$mockArguments->expects($this->at(1))->method('offsetGet')->with('class')->will($this->returnValue('default classes'));
+		$mockArguments->expects($this->at(2))->method('hasArgument')->with('errorClass')->will($this->returnValue(TRUE));
+		$mockArguments->expects($this->at(3))->method('offsetGet')->with('errorClass')->will($this->returnValue('custom-error-class'));
+		$formViewHelper->_set('arguments', $mockArguments);
+
+		$mockError = $this->getMock('TYPO3\\CMS\\Extbase\\Error\\Error', array(), array(), '', FALSE);
+		$formViewHelper->expects($this->once())->method('getErrorsForProperty')->will($this->returnValue(array($mockError)));
+
+		$this->tagBuilder->expects($this->once())->method('addAttribute')->with('class', 'default classes custom-error-class');
+
+		$formViewHelper->_call('setErrorClassAttribute');
 	}
 
 	/**
@@ -248,13 +410,16 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 		$property = 'value.something';
 		$objectName = 'myObject';
 		$expectedProperty = 'myObject[value]';
+
 		$formFieldViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('renderHiddenIdentityField'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formFieldViewHelper);
 		$arguments = array('property' => $property);
 		$formFieldViewHelper->_set('arguments', $arguments);
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue($mockFormObject));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue($objectName));
+
 		$formFieldViewHelper->expects($this->once())->method('renderHiddenIdentityField')->with($mockFormObject, $expectedProperty);
+
 		$formFieldViewHelper->_call('addAdditionalIdentityPropertiesIfNeeded');
 	}
 
@@ -278,14 +443,17 @@ class AbstractFormFieldViewHelperTest extends \TYPO3\CMS\Fluid\Tests\Unit\ViewHe
 		$objectName = 'myObject';
 		$expectedProperty1 = 'myObject[value]';
 		$expectedProperty2 = 'myObject[value][value]';
+
 		$formFieldViewHelper = $this->getAccessibleMock('TYPO3\\CMS\\Fluid\\ViewHelpers\\Form\\AbstractFormFieldViewHelper', array('renderHiddenIdentityField'), array(), '', FALSE);
 		$this->injectDependenciesIntoViewHelper($formFieldViewHelper);
 		$arguments = array('property' => $property);
 		$formFieldViewHelper->_set('arguments', $arguments);
 		$this->viewHelperVariableContainer->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObject')->will($this->returnValue($mockFormObject));
 		$this->viewHelperVariableContainer->expects($this->at(1))->method('get')->with('TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper', 'formObjectName')->will($this->returnValue($objectName));
+
 		$formFieldViewHelper->expects($this->at(0))->method('renderHiddenIdentityField')->with($mockFormObject, $expectedProperty1);
 		$formFieldViewHelper->expects($this->at(1))->method('renderHiddenIdentityField')->with($mockFormObject, $expectedProperty2);
+
 		$formFieldViewHelper->_call('addAdditionalIdentityPropertiesIfNeeded');
 	}
 
