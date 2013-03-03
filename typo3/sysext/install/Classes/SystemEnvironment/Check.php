@@ -67,7 +67,7 @@ class Check {
 	);
 
 	/**
-	 * Constructor
+	 * Constructor to load further classes
 	 */
 	public function __construct() {
 		require(__DIR__ . '/StatusInterface.php');
@@ -241,7 +241,7 @@ class Check {
 				' There is nothing else to do than raise the limit. To be safe, ask the system' .
 				' administrator of the webserver to raise the limit to 64MB.'
 			);
-		} elseif ($memoryLimit < 1024 * 1024 * 32) {
+		} elseif ($memoryLimit < 1024 * 1024 * 64) {
 			$status = new WarningStatus();
 			$status->setTitle('Memory limit below 64MB');
 			$status->setMessage(
@@ -828,6 +828,10 @@ class Check {
 		}
 		return $status;
 	}
+
+	/**
+	 * Helper methods
+	 */
 
 	/**
 	 * Validate a given IP address.
