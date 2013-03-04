@@ -166,9 +166,6 @@ class Installer {
 	public $config_array = array(
 		// Flags are set in this array if the options are available and checked ok.
 		'gd' => 0,
-		'gd_gif' => 0,
-		'gd_png' => 0,
-		'gd_jpg' => 0,
 		'freetype' => 0,
 		'dir_typo3temp' => 0,
 		'dir_temp' => 0,
@@ -1977,115 +1974,31 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	public function checkExtensions() {
 		$ext = 'GDLib';
 		$this->message($ext);
-		$software_info = 1;
-		if (extension_loaded('gd') && $this->isGD()) {
-			$this->config_array['gd'] = 1;
-			$this->message($ext, 'GDLib found', '', -1);
-			if ($this->isPNG()) {
-				$this->config_array['gd_png'] = 1;
-				$this->message($ext, 'PNG supported', '', -1);
-			}
-			if ($this->isGIF()) {
-				$this->config_array['gd_gif'] = 1;
-				$this->message($ext, 'GIF supported', '', -1);
-			}
-			if ($this->isJPG()) {
-				$this->config_array['gd_jpg'] = 1;
-				$this->message($ext, 'JPG supported (not used by TYPO3)', '');
-			}
-			if (!$this->config_array['gd_gif'] && !$this->config_array['gd_png']) {
-				$this->message($ext, 'PNG or GIF not supported', '
-					<p>
-						Your GDLib supports either GIF nor PNG. It must support
-						either one of them.
-					</p>
-				', 2);
-			} else {
-				$msg = array();
-				if ($this->config_array['gd_gif'] && $this->config_array['gd_png']) {
-					$msg[] = '
-						<p>
-							You can choose between generating GIF or PNG files,
-							as your GDLib supports both.
-						</p>
-					';
-				}
-				if ($this->config_array['gd_gif']) {
-					$msg[] = '
-						<p>
-							You should watch out for the generated size of the
-							GIF-files because some versions of the GD library do
-							not compress them with LZW, but RLE and ImageMagick
-							is subsequently used to compress with LZW. But in
-							the case of ImageMagick failing this task (eg. not
-							being compiled with LZW which is the case with some
-							versions) you\'ll end up with GIF-filesizes all too
-							big!
-							<br />
-							This Install Tool tests what kinds of GIF
-							compression are available in the ImageMagick
-							installations by a physical test. You can also check
-							it manually by opening a TYPO3 generated gif-file
-							with Photoshop and save it in a new file. If the
-							file sizes of the original and the new file are
-							almost the same, you\'re having LZW compression and
-							everything is fine.
-						</p>
-					';
-				}
-				if ($this->config_array['gd_png']) {
-					$msg[] = '
-						<p>
-							TYPO3 prefers the use of GIF-files and most likely
-							your visitors on your website does too as not all
-							browsers support PNG yet.
-						</p>
-					';
-				}
-				$this->message($ext, 'GIF / PNG issues', implode(LF, $msg), 1);
-			}
-			if (!$this->isTTF()) {
-				$this->message($ext, 'FreeType is apparently not installed', '
-					<p>
-						It looks like the FreeType library is not compiled into
-						GDLib. This is required when TYPO3 uses GDLib and
-						you\'ll most likely get errors like \'ImageTTFBBox is
-						not a function\' or \'ImageTTFText is not a function\'.
-					</p>
-				', 2);
-			} else {
-				$this->message($ext, 'FreeType quick-test (' . ($this->isGIF() ? 'as GIF' : 'as PNG') . ')', '
-					<p>
-						<img src="' . htmlspecialchars((\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI') . '&testingTrueTypeSupport=1')) . '" alt="" />
-						<br />
-						(If the text is exceeding the image borders you are
-						using Freetype 2 and need to set
-						TYPO3_CONF_VARS[GFX][TTFdpi]=96.
-						<br />
-						If there is no image at all Freetype is most likely NOT
-						available and you can just as well disable GDlib for
-						TYPO3...)
-					</p>
-				', -1);
-				$this->config_array['freetype'] = 1;
-			}
-		} else {
-			$this->message($ext, 'GDLib2 not found', '
+		$this->config_array['gd'] = 1;
+		if (!$this->isTTF()) {
+			$this->message($ext, 'FreeType is apparently not installed', '
 				<p>
-					GDLib2 is required if you want to use the GIFBUILDER object
-					in TypoScript. GIFBUILDER is in charge of all advanced image
-					generation in TypoScript, including graphical menuitems.
-					<br />
-					GDLib2 is also used in the TYPO3 Backend (TBE) to generate
-					record icons and new module tabs.
-					<br />
-					It\'s highly recommended to install this library. Remember
-					to compile GD with FreeType which is also required.
-					<br />
-					If you choose not to install GDLib, you can disable it in
-					the configuration with [GFX][gdlib]=0;.
+					It looks like the FreeType library is not compiled into
+					GDLib. This is required when TYPO3 uses GDLib and
+					you\'ll most likely get errors like \'ImageTTFBBox is
+					not a function\' or \'ImageTTFText is not a function\'.
 				</p>
 			', 2);
+		} else {
+			$this->message($ext, 'FreeType quick-test (as GIF)', '
+				<p>
+					<img src="' . htmlspecialchars((\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI') . '&testingTrueTypeSupport=1')) . '" alt="" />
+					<br />
+					(If the text is exceeding the image borders you are
+					using Freetype 2 and need to set
+					TYPO3_CONF_VARS[GFX][TTFdpi]=96.
+					<br />
+					If there is no image at all Freetype is most likely NOT
+					available and you can just as well disable GDlib for
+					TYPO3...)
+				</p>
+			', -1);
+			$this->config_array['freetype'] = 1;
 		}
 		$this->message($ext, 'GDLib software information', $this->getGDSoftwareInfo());
 	}
@@ -3092,17 +3005,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		$formArray['im_version_5'] = array('');
 		$formArray['im'] = array(1);
 		$formArray['gdlib'] = array(1);
-		if ($this->config_array['gd'] && ($this->config_array['gd_gif'] || $this->config_array['gd_png'])) {
-			if ($this->config_array['gd_gif'] && !$this->config_array['gd_png']) {
-				$formArray['gdlib_png'] = array(0);
-			} elseif (!$this->config_array['gd_gif'] && $this->config_array['gd_png']) {
-				$formArray['gdlib_png'] = array(1);
-			} else {
-				$formArray['gdlib_png'] = array(0, 1);
-			}
-		} else {
-			$formArray['gdlib'] = array(0);
-		}
+		$formArray['gdlib_png'] = array(0, 1);
 		if ($this->config_array['im']) {
 			$formArray['im'] = array(1);
 			$found = ($LZW_found = 0);
@@ -3182,13 +3085,8 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			'Testing Truetype support'
 		);
 		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('testingTrueTypeSupport')) {
-			if ($this->isGIF()) {
-				header('Content-type: image/gif');
-				imagegif($im);
-			} else {
-				header('Content-type: image/png');
-				imagepng($im);
-			}
+			header('Content-type: image/gif');
+			imagegif($im);
 			die;
 		}
 		return is_array($test) ? 1 : 0;
@@ -3227,78 +3125,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 		}
 		return $result;
-	}
-
-	/*****************************************
-	 *
-	 * ABOUT the isXXX functions.
-	 *
-	 * I had a very real experience that these checks DID NOT fail eg PNG support if it didn't exist!
-	 * So first (1) we check if the functions are there. If they ARE we are going to make further investigations (2) by creating an actual image.
-	 * And if THAT succeeds also, then we can be certain of the support!
-	 */
-	/**
-	 * Check if GD module is available by checking the function imagecreate
-	 *
-	 * @return boolean TRUE if GD is available
-	 * @todo Define visibility
-	 */
-	public function isGD() {
-		if (function_exists('imagecreatetruecolor')) {
-			if (@imagecreatetruecolor(50, 100)) {
-				return 1;
-			}
-		}
-		return 0;
-	}
-
-	/**
-	 * Check if GIF functions are available
-	 *
-	 * @return boolean TRUE if GIF functions are available
-	 * @todo Define visibility
-	 */
-	public function isGIF() {
-		// If GIF-functions exists, also do a real test of them:
-		if (function_exists('imagecreatefromgif') && function_exists('imagegif') && $this->ImageTypes() & IMG_GIF) {
-			$im = @imagecreatefromgif((\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'imgs/jesus.gif'));
-			return $im ? 1 : 0;
-		}
-	}
-
-	/**
-	 * Check if JPG functions are available
-	 *
-	 * @return boolean TRUE if JPEG functions are available
-	 * @todo Define visibility
-	 */
-	public function isJPG() {
-		if (function_exists('imagecreatefromjpeg') && function_exists('imagejpeg') && $this->ImageTypes() & IMG_JPG) {
-			return 1;
-		}
-	}
-
-	/**
-	 * Check if PNG functions are available
-	 *
-	 * @return boolean TRUE if PNG functions are available
-	 * @todo Define visibility
-	 */
-	public function isPNG() {
-		if (function_exists('imagecreatefrompng') && function_exists('imagepng') && $this->ImageTypes() & IMG_PNG) {
-			$im = imagecreatefrompng(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'imgs/jesus.png');
-			return $im ? 1 : 0;
-		}
-	}
-
-	/**
-	 * Return the image types supported by this PHP build
-	 *
-	 * @return integer A bit-field corresponding to the image formats supported by the version of GD linked into PHP. The following bits are returned, IMG_GIF | IMG_JPG | IMG_PNG | IMG_WBMP | IMG_XPM.
-	 * @todo Define visibility
-	 */
-	public function ImageTypes() {
-		return imagetypes();
 	}
 
 	/**

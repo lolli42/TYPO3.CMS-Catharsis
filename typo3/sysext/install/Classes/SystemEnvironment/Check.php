@@ -111,6 +111,10 @@ class Check {
 			$statusArray[] = $this->checkRequiredPhpExtension($extension);
 		}
 		$statusArray[] = $this->checkMailCapabilities();
+		$statusArray[] = $this->checkGdLibTrueColor();
+		$statusArray[] = $this->checkGdLibGifSupport();
+		$statusArray[] = $this->checkGdLibJpgSupport();
+		$statusArray[] = $this->checkGdLibPngSupport();
 		return $statusArray;
 	}
 
@@ -825,6 +829,131 @@ class Check {
 					' install tool if the installation is completed'
 				);
 			}
+		}
+		return $status;
+	}
+
+	/**
+	 * Check imagecreatetruecolor to verify gdlib works as expected
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkGdLibTrueColor() {
+		if (function_exists('imagecreatetruecolor')) {
+			$imageResource = @imagecreatetruecolor(50, 100);
+			if (is_resource($imageResource)) {
+				imagedestroy($imageResource);
+				$status = new OkStatus();
+				$status->setTitle('PHP GD library true color works');
+			} else {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP GD library true color support broken');
+				$status->setMessage(
+					'GD is loaded, but calling a imagecreatetruecolor returned an error.' .
+					' This must be fixed, TYPO3 CMS won\'t work well otherwise'
+				);
+			}
+		} else {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP GD library true color support missing');
+			$status->setMessage(
+				'Gdlib is essential for TYPO3 CMS to work properly.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check gif support of GD library
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkGdLibGifSupport() {
+		if (
+			function_exists('imagecreatefromgif')
+			&& function_exists('imagegif')
+			&& (imagetypes() & IMG_GIF)
+		) {
+			$imageResource = @imagecreatefromgif(__DIR__ . '/TestImages/jesus.gif');
+			if (is_resource($imageResource)) {
+				imagedestroy($imageResource);
+				$status = new OkStatus();
+				$status->setTitle('PHP GD library has gif support');
+			} else {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP GD library gif support broken');
+				$status->setMessage(
+					'GD is loaded, but calling a gif related message gives errors.' .
+					' This must be fixed, TYPO3 CMS won\'t work well otherwise'
+				);
+			}
+		} else {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP GD library gif support missing');
+			$status->setMessage(
+				'GD must be compiled with gif support. This is essential for' .
+				' TYPO3 CMS to work properly.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check jgp support of GD library
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkGdLibJpgSupport() {
+		if (
+			function_exists('imagecreatefromjpeg')
+			&& function_exists('imagejpeg')
+			&& (imagetypes() & IMG_JPG)
+		) {
+			$status = new OkStatus();
+			$status->setTitle('PHP GD library has jpg support');
+		} else {
+			$status= new ErrorStatus();
+			$status->setTitle('PHP GD library jpg support missing');
+			$status->setMessage(
+				'GD must be compiled with jpg support. This is essential for' .
+				' TYPO3 CMS to work properly.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check png support of GD library
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkGdLibPngSupport() {
+		if (
+			function_exists('imagecreatefrompng')
+			&& function_exists('imagepng')
+			&& (imagetypes() & IMG_PNG)
+		) {
+			$imageResource = @imagecreatefrompng(__DIR__ . '/TestImages/jesus.png');
+			if (is_resource($imageResource)) {
+				imagedestroy($imageResource);
+				$status = new OkStatus();
+				$status->setTitle('PHP GD library has png support');
+			} else {
+				$status = new ErrorStatus();
+				$status->setTitle('PHP GD library png support broken');
+				$status->setMessage(
+					'GD is compiled with png support, but a test call fails.' .
+					' Check your environment and fix it, png in GD lib is important' .
+					' for TYPO3 CMS to work properly.'
+				);
+			}
+		} else {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP GD library png support missing');
+			$status->setMessage(
+				'GD must be compiled with png support. This is essential for' .
+				' TYPO3 CMS to work properly'
+			);
 		}
 		return $status;
 	}
