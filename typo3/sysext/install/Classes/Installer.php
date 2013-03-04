@@ -165,7 +165,6 @@ class Installer {
 	 */
 	public $config_array = array(
 		// Flags are set in this array if the options are available and checked ok.
-		'freetype' => 0,
 		'dir_typo3temp' => 0,
 		'dir_temp' => 0,
 		'im_versions' => array(),
@@ -1971,34 +1970,20 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 * @todo Define visibility
 	 */
 	public function checkExtensions() {
+		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('testingTrueTypeSupport')) {
+			$this->checkTrueTypeSupport();
+		}
 		$ext = 'GDLib';
 		$this->message($ext);
-		if (!$this->isTTF()) {
-			$this->message($ext, 'FreeType is apparently not installed', '
-				<p>
-					It looks like the FreeType library is not compiled into
-					GDLib. This is required when TYPO3 uses GDLib and
-					you\'ll most likely get errors like \'ImageTTFBBox is
-					not a function\' or \'ImageTTFText is not a function\'.
-				</p>
-			', 2);
-		} else {
-			$this->message($ext, 'FreeType quick-test (as GIF)', '
-				<p>
-					<img src="' . htmlspecialchars((\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI') . '&testingTrueTypeSupport=1')) . '" alt="" />
-					<br />
-					(If the text is exceeding the image borders you are
-					using Freetype 2 and need to set
-					TYPO3_CONF_VARS[GFX][TTFdpi]=96.
-					<br />
-					If there is no image at all Freetype is most likely NOT
-					available and you can just as well disable GDlib for
-					TYPO3...)
-				</p>
-			', -1);
-			$this->config_array['freetype'] = 1;
-		}
-		$this->message($ext, 'GDLib software information', $this->getGDSoftwareInfo());
+		$this->message($ext, 'FreeType quick-test (as GIF)', '
+			<p>
+				<img src="' . htmlspecialchars((\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI') . '&testingTrueTypeSupport=1')) . '" alt="" />
+				<br />
+				If the text is exceeding the image borders you are
+				using Freetype 2 and need to set
+				TYPO3_CONF_VARS[GFX][TTFdpi]=96.
+			</p>
+		', -1);
 	}
 
 	/**
@@ -3061,19 +3046,13 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	/**
 	 * Returns TRUE if TTF lib is installed.
 	 *
-	 * @return boolean TRUE if TrueType support
-	 * @todo Define visibility
+	 * @return void
 	 */
-	public function isTTF() {
-		// Return right away if imageTTFtext does not exist.
-		if (!function_exists('imagettftext')) {
-			return 0;
-		}
-		// try, print truetype font:
+	public function checkTrueTypeSupport() {
 		$im = @imagecreate(300, 50);
 		imagecolorallocate($im, 255, 255, 55);
 		$text_color = imagecolorallocate($im, 233, 14, 91);
-		$test = @imagettftext(
+		@imagettftext(
 			$im,
 			\TYPO3\CMS\Core\Utility\GeneralUtility::freetypeDpiComp(20),
 			0,
@@ -3083,12 +3062,9 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
 			'Testing Truetype support'
 		);
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('testingTrueTypeSupport')) {
-			header('Content-type: image/gif');
-			imagegif($im);
-			die;
-		}
-		return is_array($test) ? 1 : 0;
+		header('Content-type: image/gif');
+		imagegif($im);
+		die;
 	}
 
 	/**
@@ -3124,27 +3100,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 		}
 		return $result;
-	}
-
-	/**
-	 * Returns general information about GDlib
-	 *
-	 * @return string HTML with GD lib information
-	 * @todo Define visibility
-	 */
-	public function getGDSoftwareInfo() {
-		return '
-			<p>
-				You can get GDLib in the PNG version from
-				<a href="http://www.libgd.org/">http://www.libgd.org/</a>
-				<br />
-				FreeType is for download at
-				<a href="http://www.freetype.org/">http://www.freetype.org/</a>
-				<br />
-				Generally, TYPO3 packages are listed at
-				<a href="' . TYPO3_URL_DOWNLOAD . '">' . TYPO3_URL_DOWNLOAD . '</a>
-			</p>
-		';
 	}
 
 	/**
@@ -3265,7 +3220,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				fonts with GDLib you\'ll need FreeType compiled in as well.
 				<br />
 			</p>
-			' . $this->getGDSoftwareInfo() . '
 			<p>
 				You can disable all image processing options in TYPO3
 				([GFX][image_processing]=0), but that would seriously disable

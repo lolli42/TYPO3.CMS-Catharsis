@@ -111,10 +111,11 @@ class Check {
 			$statusArray[] = $this->checkRequiredPhpExtension($extension);
 		}
 		$statusArray[] = $this->checkMailCapabilities();
-		$statusArray[] = $this->checkGdLibTrueColor();
+		$statusArray[] = $this->checkGdLibTrueColorSupport();
 		$statusArray[] = $this->checkGdLibGifSupport();
 		$statusArray[] = $this->checkGdLibJpgSupport();
 		$statusArray[] = $this->checkGdLibPngSupport();
+		$statusArray[] = $this->checkGdLibFreeTypeSupport();
 		return $statusArray;
 	}
 
@@ -838,7 +839,7 @@ class Check {
 	 *
 	 * @return ErrorStatus|OkStatus
 	 */
-	protected function checkGdLibTrueColor() {
+	protected function checkGdLibTrueColorSupport() {
 		if (function_exists('imagecreatetruecolor')) {
 			$imageResource = @imagecreatetruecolor(50, 100);
 			if (is_resource($imageResource)) {
@@ -953,6 +954,27 @@ class Check {
 			$status->setMessage(
 				'GD must be compiled with png support. This is essential for' .
 				' TYPO3 CMS to work properly'
+			);
+		}
+		return $status;
+	}
+
+	protected function checkGdLibFreeTypeSupport() {
+		if (function_exists('imagettftext')) {
+			$status = new OkStatus();
+			$status->setTitle('PHP GD library has freettype font support');
+			$status->setMessage(
+				'There is a difference between the font size setting the GD' .
+				' library should be feeded with. If installation is completed' .
+				' a test in the install tool helps to find out the value you need'
+			);
+		} else {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP GD library freetype support missing');
+			$status->setMessage(
+				'Some core functionality and extension rely on the GD' .
+				' to render fonts on images. This support is missing' .
+				' in your environment. Install it.'
 			);
 		}
 		return $status;
