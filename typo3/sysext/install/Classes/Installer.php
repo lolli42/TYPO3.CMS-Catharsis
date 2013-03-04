@@ -165,7 +165,6 @@ class Installer {
 	 */
 	public $config_array = array(
 		// Flags are set in this array if the options are available and checked ok.
-		'gd' => 0,
 		'freetype' => 0,
 		'dir_typo3temp' => 0,
 		'dir_temp' => 0,
@@ -1974,7 +1973,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	public function checkExtensions() {
 		$ext = 'GDLib';
 		$this->message($ext);
-		$this->config_array['gd'] = 1;
 		if (!$this->isTTF()) {
 			$this->message($ext, 'FreeType is apparently not installed', '
 				<p>
@@ -3449,13 +3447,9 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		// Very temporary!!!
 		$imageProc->dontUnlinkTempFiles = 0;
 		$imActive = $this->config_array['im'] && $im_path;
-		$gdActive = $this->config_array['gd'] && $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
+		$gdActive = $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
 		switch ($this->INSTALL['images_type']) {
 		case 'read':
-			$refParseTime = '5600';
-			// 4.2.9
-			$refParseTime = '3300';
-			// 5.2.3
 			$headCode = 'Reading and converting images';
 			$this->message($headCode, 'Supported file formats', '
 					<p>
@@ -3518,7 +3512,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 			break;
 		case 'write':
-			$refParseTime = '300';
 			// Writingformats - writing JPG
 			$headCode = 'Writing images';
 			$this->message($headCode, 'Writing GIF and PNG', '
@@ -3571,7 +3564,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 			break;
 		case 'scaling':
-			$refParseTime = '650';
 			// Scaling
 			$headCode = 'Scaling images';
 			$this->message($headCode, 'Scaling transparent images', '
@@ -3632,10 +3624,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 			break;
 		case 'combining':
-			$refParseTime = '150';
-			// 4.2.9
-			$refParseTime = '250';
-			// 5.2.3
 			// Combine
 			$headCode = 'Combining images';
 			$this->message($headCode, 'Combining images', '
@@ -3700,12 +3688,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			}
 			break;
 		case 'gdlib':
-			// GIF / 4.2.9 / LZW (5.2.3)
-			$refParseTime = '1800';
-			// PNG / 4.2.9 / LZW (5.2.3)
-			$refParseTime = '2700';
-			// GIF / 5.2.3 / LZW (5.2.3)
-			$refParseTime = '1600';
 			// GDLibrary
 			$headCode = 'GDLib';
 			$this->message($headCode, 'Testing GDLib', '
