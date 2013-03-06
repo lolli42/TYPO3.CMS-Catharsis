@@ -41,6 +41,10 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  * * No usage of *any* TYPO3 code like aGeneralUtility
  * * No require of anything but the status classes
  *
+ * The status messages and title *must not* include HTML, use plain
+ * text only. The return values of this class are not bound to HTML
+ * and can be used in different scopes (eg. as json array).
+ *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class Check {
@@ -286,7 +290,8 @@ class Check {
 				'Your PHP version ' . $currentPhpVersion . ' is below the recommended version' .
 				' ' . $recommendedPhpVersion . '. TYPO3 CMS will mostly run with your PHP' .
 				' version, but it is not officially supported. Expect some problems,' .
-				' monitor your system for errors and look out for an upgrade, soon.'
+				' and a performance penalty, monitor your system for errors and watch' .
+				' out for an upgrade, soon.'
 			);
 		} else {
 			$status = new OkStatus();

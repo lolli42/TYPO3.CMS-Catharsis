@@ -198,7 +198,7 @@ class Installer {
 	 */
 	public $menuitems = array(
 		'config' => 'Basic Configuration',
-		'systemEnvironmentCheck' => 'System environment check',
+		'systemEnvironment' => 'System environment',
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
@@ -295,7 +295,7 @@ class Installer {
 				'extConfig',
 				'cleanup',
 				'phpinfo',
-				'systemEnvironmentCheck',
+				'systemEnvironment',
 				'typo3conf_edit',
 				'about',
 				'logout'
@@ -662,7 +662,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 				$this->silent = 0;
 				$this->phpinformation();
 				break;
-			case 'systemEnvironmentCheck':
+			case 'systemEnvironment':
 				$this->silent = 0;
 				$this->systemEnvironmentCheck();
 				break;
@@ -1320,39 +1320,61 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
 		$statusCheck = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
-		$output = '<h3>Environment Check Status</h3>';
-		if (is_array($statusObjects) && !empty($statusObjects)) {
-			/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
-			foreach ($statusObjects as $statusObject) {
-				switch (get_class($statusObject)) {
-					case 'TYPO3\CMS\Install\SystemEnvironment\ErrorStatus':
-						$cssClass = 'error';
-					break;
-					case 'TYPO3\CMS\Install\SystemEnvironment\WarningStatus':
-						$cssClass = 'warning';
-						break;
-					case 'TYPO3\CMS\Install\SystemEnvironment\OkStatus':
-						$cssClass = 'ok';
-						break;
-					case 'TYPO3\CMS\Install\SystemEnvironment\InfoStatus':
-						$cssClass = 'information';
-						break;
-					case 'TYPO3\CMS\Install\SystemEnvironment\NoticeStatus':
-						default:
-					$cssClass = 'notice';
-						break;
-				}
-				$output .= '
-					<div class="typo3-message message-' . $cssClass . '" >
-						<div class="header-container" >
-							<div class="message-header message-left" >' . $statusObject->getTitle() . '</div>
-							<div class="message-header message-right" ></div>
-						</div >
-						<div class="message-body" >' . $statusObject->getMessage() . '</div>
-					</div > ';
+
+		$orderedStatus = array(
+			'ErrorStatus' => array(),
+			'WarningStatus' => array(),
+			'OkStatus' => array(),
+			'InfoStatus' => array(),
+			'NoticeStatus' => array(),
+		);
+
+		foreach ($statusObjects as $statusObject) {
+			$className = get_class($statusObject);
+			// Last part of class name
+			$severityIdentifier = array_pop(explode('\\', $className));
+			if (!is_array($orderedStatus[$severityIdentifier])) {
+				throw new \TYPO3\CMS\Install\Exception('Unknown status severity type', 1362602559);
+			}
+			$orderedStatus[$severityIdentifier][] = $statusObject;
+		}
+
+		$severityToCssClass = array(
+			'ErrorStatus' => 'error',
+			'WarningStatus' => 'warning',
+			'OkStatus' => 'ok',
+			'InfoStatus' => 'information',
+			'NoticeStatus' => 'notice',
+		);
+
+		$messageHtmlBoilerPlate =
+			'<div class="typo3-message message-%1s" >' .
+				'<div class="header-container" >' .
+					'<div class="message-header message-left" >%2s</div>' .
+					'<div class="message-header message-right" ></div>' .
+				'</div >' .
+				'<div class="message-body" >%3s</div>' .
+			'</div >' .
+			'<p></p>'
+		;
+
+		$html = '<h3>System environment check</h3>';
+		foreach ($orderedStatus as $severity) {
+			foreach ($severity as $status) {
+				/** @var $status \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
+				$className = get_class($status);
+				// Last part of class name
+				$severityIdentifier = array_pop(explode('\\', $className));
+				$html .= sprintf(
+					$messageHtmlBoilerPlate,
+					$severityToCssClass[$severityIdentifier],
+					$status->getTitle(),
+					$status->getMessage()
+				);
 			}
 		}
-		$this->output($this->outputWrapper($output));
+
+		$this->output($this->outputWrapper($html));
 	}
 
 	/**
