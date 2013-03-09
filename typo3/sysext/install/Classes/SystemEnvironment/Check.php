@@ -354,8 +354,8 @@ class Check {
 			$status = new ErrorStatus();
 			$status->setTitle('Some PHP functions disabled');
 			$status->setMessage(
-				'disable_functions=' . $disabledFunctions . '. These function(s) are disabled.' .
-				' If TYPO3 uses any of these there might be trouble. TYPO3 is designed to use the default' .
+				'disable_functions=' . implode(' ', explode(',', $disabledFunctions)) . '. These function(s)' .
+				'are disabled. If TYPO3 uses any of these there might be trouble. TYPO3 is designed to use the default' .
 				' set of PHP functions plus some common extensions. Possibly these functions are disabled' .
 				' due to security considerations and most likely the list would include a function like' .
 				' exec() which is used by TYPO3 at various places. Depending on which exact functions' .
