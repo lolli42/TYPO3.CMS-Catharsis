@@ -30,6 +30,10 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  * This class is a hardcoded requirement check of the underlying
  * server and PHP system.
  *
+ * The class *must not* check for any TYPO3 specific things like
+ * specific configuration values or directories. It should not fail
+ * if there is no TYPO3 at all.
+ *
  * This class is instantiated as the *very first* class during
  * installation. It is meant to be *standalone* und must not have
  * any requirements, except the status classes. It must be possible
@@ -120,6 +124,7 @@ class Check {
 		$statusArray[] = $this->checkGdLibJpgSupport();
 		$statusArray[] = $this->checkGdLibPngSupport();
 		$statusArray[] = $this->checkGdLibFreeTypeSupport();
+		$statusArray[] = $this->checkPhpMagicQuotes();
 		return $statusArray;
 	}
 
@@ -384,7 +389,7 @@ class Check {
 		}
 		if ($safeModeEnabled) {
 			$status = new ErrorStatus();
-			$status->setTitle('Safe mode on');
+			$status->setTitle('PHP safe mode on');
 			$status->setMessage(
 				'safe_mode enabled. This is unsupported by TYPO3 CMS, it must be turned off.'
 			);
@@ -964,6 +969,11 @@ class Check {
 		return $status;
 	}
 
+	/**
+	 * Check gdlib supports freetype
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
 	protected function checkGdLibFreeTypeSupport() {
 		if (function_exists('imagettftext')) {
 			$status = new OkStatus();
@@ -981,6 +991,34 @@ class Check {
 				' to render fonts on images. This support is missing' .
 				' in your environment. Install it.'
 			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check php magic quotes
+	 *
+	 * @return OkStatus|WarningStatus
+	 */
+	protected function checkPhpMagicQuotes() {
+		$magicQuotesEnabled = FALSE;
+		if (version_compare(phpversion(), '5.4', '<')) {
+			$magicQuotesEnabled = filter_var(
+				ini_get('magic_quotes_gpc'),
+				FILTER_VALIDATE_BOOLEAN,
+				array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
+			);
+		}
+		if ($magicQuotesEnabled) {
+			$status = new WarningStatus();
+			$status->setTitle('PHP magic quotes on');
+			$status->setMessage(
+				'PHP ini setting magic_quotes_gpc in on. The setting is deprecated since PHP 5.3.' .
+				' You are advised to set it to "Off" until it gets completely removed.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP magic quotes off');
 		}
 		return $status;
 	}
