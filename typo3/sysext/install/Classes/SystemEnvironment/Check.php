@@ -44,6 +44,7 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  * * No hooks or anything like that
  * * No usage of *any* TYPO3 code like aGeneralUtility
  * * No require of anything but the status classes
+ * * No localization
  *
  * The status messages and title *must not* include HTML, use plain
  * text only. The return values of this class are not bound to HTML
@@ -125,6 +126,7 @@ class Check {
 		$statusArray[] = $this->checkGdLibPngSupport();
 		$statusArray[] = $this->checkGdLibFreeTypeSupport();
 		$statusArray[] = $this->checkPhpMagicQuotes();
+		$statusArray[] = $this->checkRegisterGlobals();
 		return $statusArray;
 	}
 
@@ -1001,15 +1003,7 @@ class Check {
 	 * @return OkStatus|WarningStatus
 	 */
 	protected function checkPhpMagicQuotes() {
-		$magicQuotesEnabled = FALSE;
-		if (version_compare(phpversion(), '5.4', '<')) {
-			$magicQuotesEnabled = filter_var(
-				ini_get('magic_quotes_gpc'),
-				FILTER_VALIDATE_BOOLEAN,
-				array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
-			);
-		}
-		if ($magicQuotesEnabled) {
+		if (get_magic_quotes_gpc()) {
 			$status = new WarningStatus();
 			$status->setTitle('PHP magic quotes on');
 			$status->setMessage(
@@ -1019,6 +1013,32 @@ class Check {
 		} else {
 			$status = new OkStatus();
 			$status->setTitle('PHP magic quotes off');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check register globals
+	 *
+	 * @return ErrorStatus|OkStatus
+	 */
+	protected function checkRegisterGlobals() {
+		$registerGlobalsEnabled = filter_var(
+			ini_get('register_globals'),
+			FILTER_VALIDATE_BOOLEAN,
+			array(FILTER_REQUIRE_SCALAR, FILTER_NULL_ON_FAILURE)
+		);
+		if ($registerGlobalsEnabled === TRUE) {
+			$status = new ErrorStatus();
+			$status->setTitle('PHP register globals on');
+			$status->setMessage(
+				'TYPO3 requires PHP setting "register_globals" set to off.' .
+				' This ancient PHP setting is a big security problem and should be' .
+				' never enabled.'
+			);
+		} else {
+			$status = new OkStatus();
+			$status->setTitle('PHP register globals off');
 		}
 		return $status;
 	}
