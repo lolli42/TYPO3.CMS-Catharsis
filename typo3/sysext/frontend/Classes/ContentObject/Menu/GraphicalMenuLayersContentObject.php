@@ -28,12 +28,8 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  ***************************************************************/
 
 /**
- * Contains the GMENU_LAYERS extension class, tslib_gmenu_layers
- *
- * Class extending tslib_gmenu for the creation of DHTML menus
- * NOTICE: The contents of this class is made so that it can be copied
- * EXACTLY AS IS to the tmenu_layers class! See notes in class
- * (for BEGIN/END) and also "diff.xmenu_layers.txt"
+ * Contains the GMENU_LAYERS menu object
+ * Class for the creation of DHTML menus
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  *
@@ -43,7 +39,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  * class is killed, maybe an exception could be triggered?
  *
  */
-class GraphicalMenuLayers extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject {
+class GraphicalMenuLayersContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject {
 
 	// FULL DUPLICATE TO tmenu_layers BEGIN:
 	/**

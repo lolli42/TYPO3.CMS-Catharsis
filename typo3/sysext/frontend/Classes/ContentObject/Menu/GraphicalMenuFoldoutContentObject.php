@@ -28,9 +28,8 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  ***************************************************************/
 
 /**
- * Contains the GMENU_FOLDOUT extension class, tslib_gmenu_foldout
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * Contains the GMENU_FOLDOUT menu object
+ * Class for the creation of DHTML foldout menus
  *
  * @TODO: With removal of statictemplates extension from core, this
  * Menu object does NOT work anymore. It should be thrown away, or
@@ -38,7 +37,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  * class is killed, maybe an exception could be triggered?
  *
  */
-class GraphicalMenuFoldout extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject {
+class GraphicalMenuFoldoutContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject {
 
 	/**
 	 * @todo Define visibility

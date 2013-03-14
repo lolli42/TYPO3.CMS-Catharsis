@@ -106,11 +106,6 @@ class TemplateService {
 	 */
 	public $tempPath = 'typo3temp/';
 
-	/**
-	 * @todo Define visibility
-	 */
-	public $menuclasses = 'gmenu,tmenu,imgmenu,jsmenu';
-
 	// Set Internally:
 	// This MUST be initialized by the init() function
 	/**
@@ -320,9 +315,6 @@ class TemplateService {
 			$this->simulationHiddenOrTime = 1;
 		}
 		$this->whereClause .= 'AND (starttime<=' . $GLOBALS['SIM_ACCESS_TIME'] . ') AND (endtime=0 OR endtime>' . $GLOBALS['SIM_ACCESS_TIME'] . ')';
-		if (!$GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
-			$this->menuclasses = 'tmenu,jsmenu,gmenu';
-		}
 		// Sets the paths from where TypoScript resources are allowed to be used:
 		$this->allowedPaths = array(
 			'media/',
