@@ -335,8 +335,27 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 		$theOutput .= $flashMessage->render();
 		// New standard?
 		if ($newStandardTemplate) {
-			$selector = '<input type="hidden" name="createStandard" value="" />';
-			$staticsText = '';
+			// Hook to change output, implemented for statictemplates
+			if (isset(
+				$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Tstemplate\\Controller\\TypoScriptTemplateModuleController']['newStandardTemplateView']
+			)) {
+				$selector = '';
+				$staticsText = '';
+				$reference = array(
+					'selectorHtml' => &$selector,
+					'staticsText' => &$staticsText
+				);
+				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction(
+					$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Tstemplate\\Controller\\TypoScriptTemplateModuleController']['newStandardTemplateView'],
+					$reference,
+					$this
+				);
+				$selector = $reference['selectorHtml'];
+				$staticsText = $reference['staticsText'];
+			} else {
+				$selector = '<input type="hidden" name="createStandard" value="" />';
+				$staticsText = '';
+			}
 			// Extension?
 			$theOutput .= $this->doc->section($GLOBALS['LANG']->getLL('newWebsite') . $staticsText, $GLOBALS['LANG']->getLL('newWebsiteDescription') . '<br /><br />' . $selector . '<input type="Submit" name="newWebsite" value="' . $GLOBALS['LANG']->getLL('newWebsiteAction') . '" />', 0, 1);
 		}
@@ -405,16 +424,20 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 			/** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
 			$tce->stripslashes_values = 0;
 			$recData = array();
-			if (intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('createStandard'))) {
-				$staticT = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('createStandard'));
-				$recData['sys_template']['NEW'] = array(
-					'pid' => $id,
-					'title' => $GLOBALS['LANG']->getLL('titleNewSiteStandard'),
-					'sorting' => 0,
-					'root' => 1,
-					'clear' => 3,
-					'include_static' => $staticT . ',57'
+			// Hook to handle row data, implemented for statictemplates
+			if (isset(
+				$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Tstemplate\\Controller\\TypoScriptTemplateModuleController']['newStandardTemplateHandler']
+			)) {
+				$reference = array(
+					'recData' => &$recData,
+					'id' => $id,
 				);
+				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction(
+					$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['TYPO3\\CMS\\Tstemplate\\Controller\\TypoScriptTemplateModuleController']['newStandardTemplateHandler'],
+					$reference,
+					$this
+				);
+				$recData = $reference['recData'];
 			} else {
 				$recData['sys_template']['NEW'] = array(
 					'pid' => $id,
