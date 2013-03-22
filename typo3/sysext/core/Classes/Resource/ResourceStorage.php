@@ -2023,6 +2023,9 @@ class ResourceStorage {
 				$processingFolderParts = explode('/', $processingFolder);
 				$parentFolder = $this->driver->getRootLevelFolder();
 				foreach ($processingFolderParts as $folderPart) {
+					if ($folderPart === '') {
+						continue;
+					}
 					if (!$this->driver->folderExistsInFolder($folderPart, $parentFolder)) {
 						$parentFolder = $this->driver->createFolder($folderPart, $parentFolder);
 					} else {
