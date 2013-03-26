@@ -65,13 +65,13 @@ class EnvironmentStatusReport implements \TYPO3\CMS\Reports\StatusProviderInterf
 		foreach ($reportStatusTypes as $type => $statusObjects) {
 			$value = count($statusObjects);
 			if ($value > 0) {
-				$pathToXlif = 'LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf';
-				$message = $GLOBALS['LANG']->sL($pathToXlif . ':environment.status.message.warning');
+				$pathToXliff = 'LLL:EXT:install/Resources/Private/Language/Report/locallang.xlf';
+				$message = $GLOBALS['LANG']->sL($pathToXliff . ':environment.status.message.' . strtolower($type));
 				$severity = constant('\TYPO3\CMS\Reports\Status::' . $type);
 				$statusArray[] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
 					'TYPO3\\CMS\\Reports\\Status',
-					$GLOBALS['LANG']->sL($pathToXlif . ':environment.status.title'),
-					sprintf($GLOBALS['LANG']->sL($pathToXlif . ':environment.status.value'), $value),
+					$GLOBALS['LANG']->sL($pathToXliff . ':environment.status.title'),
+					sprintf($GLOBALS['LANG']->sL($pathToXliff . ':environment.status.value'), $value),
 					$message,
 					$severity
 				);
