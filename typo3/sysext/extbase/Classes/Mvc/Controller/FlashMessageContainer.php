@@ -37,6 +37,23 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
 class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
+	 * @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue Default queue
+	 */
+	protected $flashMessageQueue = NULL;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+		$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
+		);
+		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+		$this->flashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+	}
+
+	/**
 	 * Add another flash message.
 	 * Severity can be specified and must be one of
 	 * \TYPO3\CMS\Core\Messaging\FlashMessage::NOTICE,
@@ -54,11 +71,16 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function add($message, $title = '', $severity = \TYPO3\CMS\Core\Messaging\FlashMessage::OK) {
 		if (!is_string($message)) {
-			throw new \InvalidArgumentException('The flash message must be string, ' . gettype($message) . ' given.', 1243258395);
+			throw new \InvalidArgumentException(
+				'The flash message must be string, ' . gettype($message) . ' given.',
+				1243258395
+			);
 		}
 		/** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
-		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, $title, $severity, TRUE);
-		\TYPO3\CMS\Core\Messaging\FlashMessageQueue::addMessage($flashMessage);
+		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, $title, $severity, TRUE
+		);
+		$this->flashMessageQueue->enqueue($flashMessage);
 	}
 
 	/**
@@ -68,7 +90,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @api
 	 */
 	public function getAllMessages() {
-		return \TYPO3\CMS\Core\Messaging\FlashMessageQueue::getAllMessages();
+		return $this->flashMessageQueue->getAllMessages();
 	}
 
 	/**
@@ -78,7 +100,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @api
 	 */
 	public function flush() {
-		\TYPO3\CMS\Core\Messaging\FlashMessageQueue::getAllMessagesAndFlush();
+		$this->flashMessageQueue->getAllMessagesAndFlush();
 	}
 
 	/**
@@ -88,7 +110,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @api
 	 */
 	public function getAllMessagesAndFlush() {
-		return \TYPO3\CMS\Core\Messaging\FlashMessageQueue::getAllMessagesAndFlush();
+		return $this->flashMessageQueue->getAllMessagesAndFlush();
 	}
 }
 
