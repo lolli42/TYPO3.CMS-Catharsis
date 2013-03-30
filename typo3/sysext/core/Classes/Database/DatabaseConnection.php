@@ -1063,9 +1063,10 @@ class DatabaseConnection {
 		);
 		if ($this->debug_check_recordset($res)) {
 			$metaInfo = $res->fetch_field_direct($pointer);
-			if ($metaInfo === FALSE)
+			if ($metaInfo === FALSE) {
 				return FALSE;
-			return $mysql_data_type_hash[$metaInfo['type']];
+			}
+			return $mysql_data_type_hash[$metaInfo->type];
 		} else {
 			return FALSE;
 		}
