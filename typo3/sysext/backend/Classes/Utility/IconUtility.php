@@ -40,7 +40,7 @@ namespace TYPO3\CMS\Backend\Utility;
  * Notes:
  * These functions are strongly related to the interface of TYPO3.
  * The class is included in eg. init.php
- * ALL functions called without making a class instance, eg. getIconImage()
+ * Static class, functions called without making a class instance.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */

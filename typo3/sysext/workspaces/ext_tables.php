@@ -11,7 +11,7 @@ if (TYPO3_MODE == 'BE' && !(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_INSTALL)) {
 		'workspaces',
 		'before:info',
 		array(
-				// An array holding the controller-action-combinations that are accessible
+			// An array holding the controller-action-combinations that are accessible
 			'Review' => 'index,fullIndex,singleIndex',
 			'Preview' => 'index,newPage'
 		),

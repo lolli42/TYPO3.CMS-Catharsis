@@ -27,7 +27,6 @@ namespace TYPO3\CMS\Form\Controller;
 /**
  * The form wizard controller
  *
- * @category Controller
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class WizardController {
@@ -41,14 +40,14 @@ class WizardController {
 	 */
 	public function dispatch() {
 		switch (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('action')) {
-		case 'save':
-			$this->saveAction();
-			break;
-		case 'load':
-			$this->loadAction();
-			break;
-		default:
-			$this->indexAction();
+			case 'save':
+				$this->saveAction();
+				break;
+			case 'load':
+				$this->loadAction();
+				break;
+			default:
+				$this->indexAction();
 		}
 	}
 
@@ -101,6 +100,5 @@ class WizardController {
 	}
 
 }
-
 
 ?>

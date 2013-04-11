@@ -27,9 +27,10 @@ namespace TYPO3\CMS\Extbase\Utility;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
- * A checker which hooks into the backend module "Reports" checking whether there
- * is a PHP accelerator in place which strips off Doc Comments.
+ * A checker which hooks into the backend module "Reports" checking whether
+ * dbal is installed
  */
 class ExtbaseRequirementsCheckUtility implements \TYPO3\CMS\Reports\StatusProviderInterface {
 
