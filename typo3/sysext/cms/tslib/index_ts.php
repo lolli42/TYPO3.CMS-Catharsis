@@ -163,6 +163,8 @@ $TT->pull();
 $TSFE->setExternalJumpUrl();
 $TSFE->checkJumpUrlReferer();
 
+$TSFE->handleDataSubmission();
+
 // Check for shortcut page and redirect
 $TSFE->checkPageForShortcutRedirect();
 // Generate page
