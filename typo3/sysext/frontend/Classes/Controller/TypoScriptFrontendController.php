@@ -2671,6 +2671,7 @@ class TypoScriptFrontendController {
 	 * @return void
 	 * @see tslib_feTCE
 	 * @deprecated since 6.0, will be removed two versions later
+	 * @todo Define visibility
 	 */
 	public function fe_tce() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
@@ -2682,6 +2683,7 @@ class TypoScriptFrontendController {
 	 * @param string $locationData The input from $_POST['locationData']
 	 * @return void
 	 * @access private
+	 * @see checkDataSubmission()
 	 * @todo Define visibility
 	 */
 	public function locDataCheck($locationData) {
