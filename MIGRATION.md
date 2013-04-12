@@ -16,20 +16,6 @@ is an issue if old extensions still use those calls. Usually
 the calls can be just removed from the extension.
 
 
-* Removed t3lib_syntaxhl
-This class was unused in the core for a long time already and
-is removed without deprecation. If you still need it for
-whatever reasons (really?), please deliver a copy with
-your extension.
-
-
-* Removed t3lib_formmail
-The class is unlikly to be used in the frontend currently. The
-call in the frontend rendering process is removed. It is unlikly
-your code is affected by this patch, if so, you need to find
-a different solution to send mails at this point.
-
-
 * Removed deprecation hint in bootstrap
 If using old 'extCache' setting, deprecation for this is not hinted anymore.
 Such code should be done in reports module and maybe handled by a wizard in
