@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\SystemEnvironment;
+namespace TYPO3\CMS\Install\FolderStructure\Exception;
 
 /***************************************************************
  *  Copyright notice
@@ -25,16 +25,9 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Ok level status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
+ * A root node exception
  */
-class OkStatus extends AbstractStatus implements StatusInterface {
-
-	/**
-	 * @var string The severity
-	 */
-	protected $severity = 'ok';
+class RootNodeException extends \TYPO3\CMS\Install\FolderStructure\Exception {
 
 }
 ?>

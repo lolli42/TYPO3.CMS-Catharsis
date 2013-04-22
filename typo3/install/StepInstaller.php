@@ -1,6 +1,4 @@
 <?php
-namespace TYPO3\CMS\Install\SystemEnvironment;
-
 /***************************************************************
  *  Copyright notice
  *
@@ -15,6 +13,9 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
+ *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  from the author is found in LICENSE.txt distributed with these scripts.
+ *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,17 +25,18 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-/**
- * Info level status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
- */
-class InfoStatus extends AbstractStatus implements StatusInterface {
+define('TYPO3_MODE', 'BE');
+define('TYPO3_enterInstallScript', '1');
 
-	/**
-	 * @var string The severity
-	 */
-	protected $severity = 'information';
+require '../sysext/core/Classes/Core/Bootstrap.php';
+\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+	->baseSetup('typo3/install/');
 
-}
+require '../sysext/install/Classes/InstallBootstrap.php';
+\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
+
+// Run install steps if necessary
+require __DIR__ . '/../sysext/install/Classes/StepInstaller/StepController.php';
+$stepController = new \TYPO3\CMS\install\StepInstaller\StepController();
+$stepController->indexAction();
 ?>

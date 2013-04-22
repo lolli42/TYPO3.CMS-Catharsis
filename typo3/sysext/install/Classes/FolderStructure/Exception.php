@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\SystemEnvironment;
+namespace TYPO3\CMS\Install\FolderStructure;
 
 /***************************************************************
  *  Copyright notice
@@ -25,16 +25,9 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Notice level status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
+ * A folder structure exception
  */
-class NoticeStatus extends AbstractStatus implements StatusInterface {
-
-	/**
-	 * @var string The severity
-	 */
-	protected $severity = 'notice';
+class Exception extends \TYPO3\CMS\Install\Exception {
 
 }
 ?>

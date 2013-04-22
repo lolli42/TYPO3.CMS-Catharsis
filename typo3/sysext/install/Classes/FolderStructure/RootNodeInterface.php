@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\SystemEnvironment;
+namespace TYPO3\CMS\Install\FolderStructure;
 
 /***************************************************************
  *  Copyright notice
@@ -25,16 +25,9 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Error level status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
+ * Interface implemented by root node
  */
-class ErrorStatus extends AbstractStatus implements StatusInterface {
-
-	/**
-	 * @var string The severity
-	 */
-	protected $severity = 'error';
+interface RootNodeInterface extends NodeInterface {
 
 }
 ?>

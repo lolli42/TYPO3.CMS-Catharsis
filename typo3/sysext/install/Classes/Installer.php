@@ -225,6 +225,7 @@ class Installer {
 	public $menuitems = array(
 		'config' => 'Basic Configuration',
 		'systemEnvironment' => 'System environment',
+		'folderStructure' => 'Folder structure',
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
@@ -322,6 +323,7 @@ class Installer {
 				'cleanup',
 				'phpinfo',
 				'systemEnvironment',
+				'folderStructure',
 				'typo3conf_edit',
 				'about',
 				'logout'
@@ -520,6 +522,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		if (!$this->passwordOK) {
 			die;
 		}
+
 		// Setting stuff...
 		$this->check_mail();
 		$this->setupGeneral();
@@ -691,6 +694,10 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			case 'systemEnvironment':
 				$this->silent = 0;
 				$this->systemEnvironmentCheck();
+				break;
+			case 'folderStructure':
+				$this->silent = 0;
+				$this->folderStructure();
 				break;
 			case 'typo3conf_edit':
 				$this->silent = 0;
@@ -1128,7 +1135,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 */
 	public function checkTheConfig() {
 		// Order important:
-		$this->checkDirs();
 		$this->checkConfiguration();
 		$this->checkExtensions();
 		if (TYPO3_OS == 'WIN') {
@@ -1335,7 +1341,7 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			'notice' => array(),
 		);
 
-		/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
+		/** @var $statusObject \TYPO3\CMS\Install\Status\AbstractStatus */
 		foreach ($statusObjects as $statusObject) {
 			$severityIdentifier = $statusObject->getSeverity();
 
@@ -1345,31 +1351,84 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 			$orderedStatus[$severityIdentifier][] = $statusObject;
 		}
 
-		$messageHtmlBoilerPlate =
-			'<div class="typo3-message message-%1s" >' .
-				'<div class="header-container" >' .
-					'<div class="message-header message-left" ><strong>%2s</strong></div>' .
-					'<div class="message-header message-right" ></div>' .
-				'</div >' .
-				'<div class="message-body" >%3s</div>' .
-			'</div>' .
-			'<p></p>';
-
 		$html = '<h3>System environment check</h3>';
 		foreach ($orderedStatus as $severity) {
-			foreach ($severity as $status) {
-				/** @var $status \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
-				$severityIdentifier = $status->getSeverity();
-				$html .= sprintf(
-					$messageHtmlBoilerPlate,
-					$severityIdentifier,
-					$status->getTitle(),
-					$status->getMessage()
-				);
-			}
+			$html .= $this->renderStatusObjects($severity);
 		}
 
 		$this->output($this->outputWrapper($html));
+	}
+
+	/**
+	 * Folder structure status
+	 */
+	protected function folderStructure() {
+		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
+		$folderStructureFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\FolderStructure\\DefaultFactory');
+		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
+		$structureFacade = $folderStructureFactory->getStructure();
+
+		$html = array();
+		$html[] = '<h3>File and folder status below ' . PATH_site . '</h3>';
+
+		$unfixableErrors = $structureFacade->getErrorStatus();
+		$fixableErrors = $structureFacade->getWarningStatus();
+		$okStatus = $structureFacade->getOkStatus();
+
+		if (count($fixableErrors) > 0) {
+			$html[] = '<form action="index.php?TYPO3_INSTALL[type]=folderStructure" method="post">';
+			$html[] = '<button type="submit" name="TYPO3_INSTALL[folderStructure][fix]">';
+			$html[] = 'Fix errors <span class="t3-install-form-button-icon-positive">&nbsp;</span>';
+			$html[] = '</button>';
+			$html[] = '</form>';
+			$html[] = '<hr />';
+		}
+
+		if (count($unfixableErrors)) {
+			$html[] = '<h4>These problems are not fixable:</h4>';
+			$html[] = $this->renderStatusObjects($unfixableErrors);
+		}
+		if (count($fixableErrors)) {
+			$html[] = '<h4>These problems are fixable:</h4>';
+			$html[] = $this->renderStatusObjects($fixableErrors);
+		}
+		if (count($okStatus)) {
+			$html[] = '<h4>These structures are ok:</h4>';
+			$html[] = $this->renderStatusObjects($okStatus);
+		}
+
+		$this->output($this->outputWrapper(implode(LF, $html)));
+	}
+
+	/**
+	 * Render status messages
+	 *
+	 * @param array<\TYPO3\CMS\Install\Status\AbstractStatus> $statusObjects
+	 * @return string
+	 */
+	protected function renderStatusObjects(array $statusObjects = array()) {
+		$messageHtmlBoilerPlate =
+			'<div class="typo3-message message-%1s" >' .
+				'<div class="header-container" >' .
+				'<div class="message-header message-left" ><strong>%2s</strong></div>' .
+				'<div class="message-header message-right" ></div>' .
+				'</div >' .
+				'<div class="message-body" >%3s</div>' .
+				'</div>' .
+				'<p></p>';
+
+		$html = '';
+		foreach ($statusObjects as $status) {
+			/** @var $status \TYPO3\CMS\Install\Status\AbstractStatus */
+			$severityIdentifier = $status->getSeverity();
+			$html .= sprintf(
+				$messageHtmlBoilerPlate,
+				$severityIdentifier,
+				$status->getTitle(),
+				$status->getMessage()
+			);
+		}
+		return $html;
 	}
 
 	/**
@@ -2006,113 +2065,6 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	}
 
 	/**
-	 * Checking and testing that the required writable directories are writable.
-	 *
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function checkDirs() {
-		// Check typo3/temp/
-		$ext = 'Directories';
-		$this->message($ext);
-		$uniqueName = md5(uniqid(microtime()));
-		// The requirement level (the integer value, ie. the second value of the value array) has the following meanings:
-		// -1 = not required, but if it exists may be writable or not
-		//  0 = not required, if it exists the dir should be writable
-		//  1 = required, don't has to be writable
-		//  2 = required, has to be writable
-		$checkWrite = array(
-			'typo3temp/' => array('This folder is used by both the frontend (FE) and backend (BE) interface for all kind of temporary and cached files.', 2, 'dir_typo3temp'),
-			'typo3temp/pics/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3temp/temp/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3temp/llxml/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3temp/cs/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3temp/GB/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3temp/locks/' => array('This folder is part of the typo3temp/ section. It needs to be writable, too.', 2, 'dir_typo3temp'),
-			'typo3conf/' => array('This directory contains the local configuration files of your website. TYPO3 must be able to write to these configuration files during setup and when the Extension Manager (EM) installs extensions.', 2),
-			'typo3conf/ext/' => array('Location for local extensions. Must be writable if the Extension Manager is supposed to install extensions for this website.', 0),
-			'typo3conf/l10n/' => array('Location for translations. Must be writable if the Extension Manager is supposed to install translations for extensions.', 0),
-			TYPO3_mainDir . 'ext/' => array('Location for global extensions. Must be writable if the Extension Manager is supposed to install extensions globally in the source.', -1),
-			'uploads/' => array('Location for uploaded files from RTE, in the subdirectories for uploaded files of content elements.', 2),
-			'uploads/pics/' => array('Typical location for uploaded files (images especially).', 0),
-			'uploads/media/' => array('Typical location for uploaded files (non-images especially).', 0),
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] => array('Location for local files such as templates, independent uploads etc.', -1),
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . '_temp_/' => array('Typical temporary location for default upload of administrative files like import/export data, used by administrators.', 0),
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . 'user_upload/' => array('Default upload location for images by editors via Rich Text Editor and upload fields in the backend.', 0)
-		);
-		foreach ($checkWrite as $relpath => $descr) {
-			// Check typo3temp/
-			$general_message = $descr[0];
-			// If the directory is missing, try to create it
-			if (!@is_dir((PATH_site . $relpath))) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir(PATH_site . $relpath);
-			}
-			if (!@is_dir((PATH_site . $relpath))) {
-				if ($descr[1]) {
-					// required...
-					$this->message($ext, $relpath . ' directory does not exist and could not be created', '
-						<p>
-							<em>Full path: ' . PATH_site . $relpath . '</em>
-							<br />
-							' . $general_message . '
-						</p>
-						<p>
-							This error should not occur as ' . $relpath . ' must
-							always be accessible in the root of a TYPO3 website.
-						</p>
-					', 3);
-				} else {
-					if ($descr[1] == 0) {
-						$msg = 'This directory does not necessarily have to exist but if it does it must be writable.';
-					} else {
-						$msg = 'This directory does not necessarily have to exist and if it does it can be writable or not.';
-					}
-					$this->message($ext, $relpath . ' directory does not exist', '
-						<p>
-							<em>Full path: ' . PATH_site . $relpath . '</em>
-							<br />
-							' . $general_message . '
-						</p>
-						<p>
-							' . $msg . '
-						</p>
-					', 2);
-				}
-			} else {
-				$file = PATH_site . $relpath . $uniqueName;
-				@touch($file);
-				if (@is_file($file)) {
-					unlink($file);
-					if ($descr[2]) {
-						$this->config_array[$descr[2]] = 1;
-					}
-					$this->message($ext, $relpath . ' writable', '', -1);
-				} else {
-					$severity = $descr[1] == 2 || $descr[1] == 0 ? 3 : 2;
-					if ($descr[1] == 0 || $descr[1] == 2) {
-						$msg = 'The directory ' . $relpath . ' must be writable!';
-					} elseif ($descr[1] == -1 || $descr[1] == 1) {
-						$msg = 'The directory ' . $relpath . ' does not necessarily have to be writable.';
-					}
-					$this->message($ext, $relpath . ' directory not writable', '
-						<p>
-							<em>Full path: ' . $file . '</em>
-							<br />
-							' . $general_message . '
-						</p>
-						<p>
-							Tried to write this file (with touch()) but didn\'t
-							succeed.
-							<br />
-							' . $msg . '
-						</p>
-					', $severity);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Checking for existing ImageMagick installs.
 	 *
 	 * This tries to find available ImageMagick installations and tries to find the version numbers by executing "convert" without parameters. If the ->checkIMlzw is set, LZW capabilities of the IM installs are check also.
@@ -2409,453 +2361,472 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 	 */
 	public function setupGeneral($cmd = '') {
 		switch ($cmd) {
-		case 'get_form':
-			// Get the template file
-			$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'SetupGeneral.html'));
-			// Get the template part from the file
-			$form = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-			// Get the subpart for all modes
-			$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###ALLMODES###');
-			// Define the markers content
-			$formMarkers['actionUrl'] = $this->action;
-			// Username
-			if (TYPO3_db_username) {
-				$username = TYPO3_db_username;
-			} elseif ($this->config_array['sql.safe_mode_user']) {
-				$username = $this->config_array['sql.safe_mode_user'];
-				// Get the subpart for the sql safe mode user
-				$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###');
-				// Define the markers content
-				$sqlSafeModeUserMarkers = array(
-					'labelSqlSafeModeUser' => 'sql.safe_mode_user:',
-					'sqlSafeModeUser' => $this->config_array['sql.safe_mode_user']
-				);
-				// Fill the markers in the subpart
-				$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($sqlSafeModeUserSubpart, $sqlSafeModeUserMarkers, '###|###', TRUE, FALSE);
+			case 'get_form':
+				$out = $this->renderGeneral();
+				break;
+			default:
+				$this->transferChosenConfigurationValuesToConfigurationFile();
+				$out = '';
+				break;
 			}
-			// Get the subpart for all modes
-			$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###', $sqlSafeModeUserSubpart);
+		return $out;
+	}
+
+	/**
+	 * Render general tab
+	 *
+	 * @return string Rendered view
+	 */
+	protected function renderGeneral() {
+		// Get the template file
+		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'SetupGeneral.html'));
+		// Get the template part from the file
+		$form = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
+		// Get the subpart for all modes
+		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###ALLMODES###');
+		// Define the markers content
+		$formMarkers['actionUrl'] = $this->action;
+		// Username
+		if (TYPO3_db_username) {
+			$username = TYPO3_db_username;
+		} elseif ($this->config_array['sql.safe_mode_user']) {
+			$username = $this->config_array['sql.safe_mode_user'];
+			// Get the subpart for the sql safe mode user
+			$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###');
 			// Define the markers content
-			$allModesMarkers = array(
-				'labelUsername' => 'Username:',
-				'username' => htmlspecialchars($username),
-				'labelPassword' => 'Password:',
-				'password' => htmlspecialchars(TYPO3_db_password),
-				'labelHost' => 'Host:',
-				'host' => htmlspecialchars(TYPO3_db_host),
-				'labelDatabase' => 'Database:',
-				'labelCreateDatabase' => 'Create database?'
+			$sqlSafeModeUserMarkers = array(
+				'labelSqlSafeModeUser' => 'sql.safe_mode_user:',
+				'sqlSafeModeUser' => $this->config_array['sql.safe_mode_user']
 			);
-			// Get the subpart for the database list
-			$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###DATABASELIST###');
-			if ($this->config_array['mysqlConnect']) {
-				// Get the subpart when database is available
-				$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASEAVAILABLE###');
-				// Get the subpart for each database table
-				$databaseItemSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databaseAvailableSubpart, '###DATABASEITEM###');
-				$dbArr = $this->getDatabaseList();
-				$dbIncluded = 0;
-				$databaseItems = array();
-				foreach ($dbArr as $dbname) {
-					// Define the markers content
-					$databaseItemMarkers = array(
-						'databaseSelected' => '',
-						'databaseName' => htmlspecialchars($dbname),
-						'databaseValue' => htmlspecialchars($dbname)
-					);
-					if ($dbname == TYPO3_db) {
-						$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
-					}
-					// Fill the markers in the subpart
-					$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
-					if ($dbname == TYPO3_db) {
-						$dbIncluded = 1;
-					}
-				}
-				if (!$dbIncluded && TYPO3_db) {
-					$databaseItemMarkers['databaseName'] = htmlspecialchars(TYPO3_db);
+			// Fill the markers in the subpart
+			$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($sqlSafeModeUserSubpart, $sqlSafeModeUserMarkers, '###|###', TRUE, FALSE);
+		}
+		// Get the subpart for all modes
+		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###', $sqlSafeModeUserSubpart);
+		// Define the markers content
+		$allModesMarkers = array(
+			'labelUsername' => 'Username:',
+			'username' => htmlspecialchars($username),
+			'labelPassword' => 'Password:',
+			'password' => htmlspecialchars(TYPO3_db_password),
+			'labelHost' => 'Host:',
+			'host' => htmlspecialchars(TYPO3_db_host),
+			'labelDatabase' => 'Database:',
+			'labelCreateDatabase' => 'Create database?'
+		);
+		// Get the subpart for the database list
+		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###DATABASELIST###');
+		if ($this->config_array['mysqlConnect']) {
+			// Get the subpart when database is available
+			$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASEAVAILABLE###');
+			// Get the subpart for each database table
+			$databaseItemSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databaseAvailableSubpart, '###DATABASEITEM###');
+			$dbArr = $this->getDatabaseList();
+			$dbIncluded = 0;
+			$databaseItems = array();
+			foreach ($dbArr as $dbname) {
+				// Define the markers content
+				$databaseItemMarkers = array(
+					'databaseSelected' => '',
+					'databaseName' => htmlspecialchars($dbname),
+					'databaseValue' => htmlspecialchars($dbname)
+				);
+				if ($dbname == TYPO3_db) {
 					$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
-					$databaseItemMarkers['databaseValue'] = htmlspecialchars(TYPO3_db) . ' (NO ACCESS!)';
-					// Fill the markers in the subpart
-					$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
 				}
-				// Substitute the subpart for the database tables
-				$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databaseAvailableSubpart, '###DATABASEITEM###', implode(LF, $databaseItems));
-			} else {
-				// Get the subpart when the database is not available
-				$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###');
-				$databaseNotAvailableMarkers = array(
-					'typo3Db' => htmlspecialchars(TYPO3_db),
-					'labelNoDatabase' => '
-							(Database cannot be selected. Make sure that username, password and host
-							are set correctly. If MySQL does not allow persistent connections,
-							check that $TYPO3_CONF_VARS[\'SYS\'][\'no_pconnect\'] is set to "1".)
-						'
-				);
 				// Fill the markers in the subpart
-				$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseNotAvailableSubpart, $databaseNotAvailableMarkers, '###|###', TRUE, FALSE);
+				$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
+				if ($dbname == TYPO3_db) {
+					$dbIncluded = 1;
+				}
 			}
-			// Substitute the subpart when database is available
-			$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASEAVAILABLE###', $databaseAvailableSubpart);
-			// Substitute the subpart when database is not available
-			$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###', $databaseNotAvailableSubpart);
-			// Substitute the subpart for the databases
-			$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###DATABASELIST###', $databasesSubpart);
-			// Fill the markers in the subpart for all modes
-			$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($allModesSubpart, $allModesMarkers, '###|###', TRUE, FALSE);
-			// Substitute the subpart for all modes
-			$form = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($form, '###ALLMODES###', $allModesSubpart);
-			if ($this->mode != '123') {
-				// Get the subpart for the regular mode
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###REGULARMODE###');
+			if (!$dbIncluded && TYPO3_db) {
+				$databaseItemMarkers['databaseName'] = htmlspecialchars(TYPO3_db);
+				$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
+				$databaseItemMarkers['databaseValue'] = htmlspecialchars(TYPO3_db) . ' (NO ACCESS!)';
+				// Fill the markers in the subpart
+				$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
+			}
+			// Substitute the subpart for the database tables
+			$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databaseAvailableSubpart, '###DATABASEITEM###', implode(LF, $databaseItems));
+		} else {
+			// Get the subpart when the database is not available
+			$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###');
+			$databaseNotAvailableMarkers = array(
+				'typo3Db' => htmlspecialchars(TYPO3_db),
+				'labelNoDatabase' => '
+						(Database cannot be selected. Make sure that username, password and host
+						are set correctly. If MySQL does not allow persistent connections,
+						check that $TYPO3_CONF_VARS[\'SYS\'][\'no_pconnect\'] is set to "1".)
+					'
+			);
+			// Fill the markers in the subpart
+			$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseNotAvailableSubpart, $databaseNotAvailableMarkers, '###|###', TRUE, FALSE);
+		}
+		// Substitute the subpart when database is available
+		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASEAVAILABLE###', $databaseAvailableSubpart);
+		// Substitute the subpart when database is not available
+		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###', $databaseNotAvailableSubpart);
+		// Substitute the subpart for the databases
+		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###DATABASELIST###', $databasesSubpart);
+		// Fill the markers in the subpart for all modes
+		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($allModesSubpart, $allModesMarkers, '###|###', TRUE, FALSE);
+		// Substitute the subpart for all modes
+		$form = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($form, '###ALLMODES###', $allModesSubpart);
+		if ($this->mode != '123') {
+			// Get the subpart for the regular mode
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###REGULARMODE###');
+			// Define the markers content
+			$regularModeMarkers = array(
+				'labelSiteName' => 'Site name:',
+				'siteName' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']),
+				'labelEncryptionKey' => 'Encryption key:',
+				'encryptionKey' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']),
+				'labelGenerateRandomKey' => 'Generate random key'
+			);
+			// Other
+			$fA = $this->setupGeneralCalculate();
+			$regularModeMarkers['labelCurrentValueIs'] = 'current value is';
+			// Disable exec function
+			if (is_array($fA['disable_exec_function'])) {
+				// Get the subpart for the disable exec function
+				$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###');
+				$regularModeMarkers['labelDisableExecFunction'] = '[BE][disable_exec_function]=';
+				$regularModeMarkers['strongDisableExecFunction'] = (int) current($fA['disable_exec_function']);
+				$regularModeMarkers['defaultDisableExecFunction'] = (int) $GLOBALS['TYPO3_CONF_VARS']['BE']['disable_exec_function'];
+				$regularModeMarkers['disableExecFunction'] = (int) current($fA['disable_exec_function']);
+				// Fill the markers in the subpart
+				$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($disableExecFunctionSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			}
+			// Substitute the subpart for the disable exec function
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###', $disableExecFunctionSubpart);
+			// GDlib
+			if (is_array($fA['gdlib'])) {
+				// Get the subpart for the disable gd lib
+				$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEGDLIB###');
+				$regularModeMarkers['labelGdLib'] = '[GFX][gdlib]=';
+				$regularModeMarkers['strongGdLib'] = (int) current($fA['gdlib']);
+				$regularModeMarkers['defaultGdLib'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
+				$regularModeMarkers['gdLib'] = (int) current($fA['gdlib']);
+				// Fill the markers in the subpart
+				$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			}
+			// Substitute the subpart for the disable gdlib
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEGDLIB###', $gdLibSubpart);
+			// GDlib PNG
+			if (is_array($fA['gdlib_png']) && $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
+				// Get the subpart for the gdlib png
+				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###');
+				// Get the subpart for the dropdown options
+				$gdLibPngOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###');
+				$gdLibPngLabels = $this->setLabelValueArray($fA['gdlib_png'], 2);
+				reset($gdLibPngLabels);
+				$regularModeMarkers['labelGdLibPng'] = '[GFX][gdlib_png]=';
+				$regularModeMarkers['strongGdLibPng'] = (string) current($gdLibPngLabels);
+				$regularModeMarkers['defaultGdLibPng'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
+				$gdLibPngOptions = array();
+				foreach ($gdLibPngLabels as $k => $v) {
+					list($cleanV) = explode('|', $fA['gdlib_png'][$k]);
+					$gdLibPngMarker['value'] = htmlspecialchars($fA['gdlib_png'][$k]);
+					$gdLibPngMarker['data'] = htmlspecialchars($v);
+					if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'], $cleanV)) {
+						$gdLibPngMarker['selected'] = 'selected="selected"';
+					}
+					// Fill the markers in the subpart
+					$gdLibPngOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngOptionSubpart, $gdLibPngMarker, '###|###', TRUE, FALSE);
+				}
+				// Substitute the subpart for the dropdown options
+				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###', implode(LF, $gdLibPngOptions));
+				// Fill the markers in the subpart
+				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			}
+			// Substitute the subpart for the gdlib png
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###', $gdLibPngSubpart);
+			// ImageMagick
+			if (is_array($fA['im'])) {
+				// Get the subpart for ImageMagick
+				$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###');
 				// Define the markers content
-				$regularModeMarkers = array(
-					'labelSiteName' => 'Site name:',
-					'siteName' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']),
-					'labelEncryptionKey' => 'Encryption key:',
-					'encryptionKey' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']),
-					'labelGenerateRandomKey' => 'Generate random key'
-				);
-				// Other
-				$fA = $this->setupGeneralCalculate();
-				$regularModeMarkers['labelCurrentValueIs'] = 'current value is';
-				// Disable exec function
-				if (is_array($fA['disable_exec_function'])) {
-					// Get the subpart for the disable exec function
-					$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###');
-					$regularModeMarkers['labelDisableExecFunction'] = '[BE][disable_exec_function]=';
-					$regularModeMarkers['strongDisableExecFunction'] = (int) current($fA['disable_exec_function']);
-					$regularModeMarkers['defaultDisableExecFunction'] = (int) $GLOBALS['TYPO3_CONF_VARS']['BE']['disable_exec_function'];
-					$regularModeMarkers['disableExecFunction'] = (int) current($fA['disable_exec_function']);
-					// Fill the markers in the subpart
-					$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($disableExecFunctionSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				}
-				// Substitute the subpart for the disable exec function
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###', $disableExecFunctionSubpart);
-				// GDlib
-				if (is_array($fA['gdlib'])) {
-					// Get the subpart for the disable gd lib
-					$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEGDLIB###');
-					$regularModeMarkers['labelGdLib'] = '[GFX][gdlib]=';
-					$regularModeMarkers['strongGdLib'] = (int) current($fA['gdlib']);
-					$regularModeMarkers['defaultGdLib'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
-					$regularModeMarkers['gdLib'] = (int) current($fA['gdlib']);
-					// Fill the markers in the subpart
-					$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				}
-				// Substitute the subpart for the disable gdlib
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEGDLIB###', $gdLibSubpart);
-				// GDlib PNG
-				if (is_array($fA['gdlib_png']) && $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
-					// Get the subpart for the gdlib png
-					$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###');
-					// Get the subpart for the dropdown options
-					$gdLibPngOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###');
-					$gdLibPngLabels = $this->setLabelValueArray($fA['gdlib_png'], 2);
-					reset($gdLibPngLabels);
-					$regularModeMarkers['labelGdLibPng'] = '[GFX][gdlib_png]=';
-					$regularModeMarkers['strongGdLibPng'] = (string) current($gdLibPngLabels);
-					$regularModeMarkers['defaultGdLibPng'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
-					$gdLibPngOptions = array();
-					foreach ($gdLibPngLabels as $k => $v) {
-						list($cleanV) = explode('|', $fA['gdlib_png'][$k]);
-						$gdLibPngMarker['value'] = htmlspecialchars($fA['gdlib_png'][$k]);
-						$gdLibPngMarker['data'] = htmlspecialchars($v);
-						if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'], $cleanV)) {
-							$gdLibPngMarker['selected'] = 'selected="selected"';
-						}
+				$regularModeMarkers['labelImageMagick'] = '[GFX][im]=';
+				$regularModeMarkers['strongImageMagick'] = (string) current($fA['im']);
+				$regularModeMarkers['defaultImageMagick'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];
+				$regularModeMarkers['imageMagick'] = (int) current($fA['im']);
+				// Fill the markers in the subpart
+				$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imageMagickSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+				// IM Combine Filename
+				// Get the subpart for ImageMagick Combine filename
+				$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###');
+				// Define the markers content
+				$regularModeMarkers['labelImCombineFilename'] = '[GFX][im_combine_filename]';
+				$regularModeMarkers['strongImCombineFilename'] = htmlspecialchars((string) current($fA['im_combine_filename']));
+				$regularModeMarkers['defaultImCombineFilename'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_combine_filename']);
+				$regularModeMarkers['imCombineFilename'] = htmlspecialchars((string) ($fA['im_combine_filename'] ? current($fA['im_combine_filename']) : 'combine'));
+				// Fill the markers in the subpart
+				$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imCombineFileNameSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+				// IM Version 5
+				// Get the subpart for ImageMagick Version 5
+				$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMVERSION5SUBPART###');
+				// Define the markers content
+				$regularModeMarkers['labelImVersion5'] = '[GFX][im_version_5]=';
+				$regularModeMarkers['strongImVersion5'] = htmlspecialchars((string) current($fA['im_version_5']));
+				$regularModeMarkers['defaultImVersion5'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5']);
+				$regularModeMarkers['imVersion5'] = htmlspecialchars((string) ($fA['im_version_5'] ? current($fA['im_version_5']) : ''));
+				// Fill the markers in the subpart
+				$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imVersion5Subpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+				if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {
+					// IM Path
+					if (is_array($fA['im_path'])) {
+						// Get the subpart for ImageMagick path
+						$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHSUBPART###');
+						$labelImPath = $this->setLabelValueArray($fA['im_path'], 1);
+						reset($labelImPath);
+						$imPath = $this->setLabelValueArray($fA['im_path'], 0);
+						reset($imPath);
+						// Define the markers content
+						$regularModeMarkers['labelImPath'] = '[GFX][im_path]=';
+						$regularModeMarkers['strongImPath'] = htmlspecialchars((string) current($labelImPath));
+						$regularModeMarkers['defaultImPath'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']);
+						$regularModeMarkers['ImPath'] = htmlspecialchars((string) current($imPath));
 						// Fill the markers in the subpart
-						$gdLibPngOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngOptionSubpart, $gdLibPngMarker, '###|###', TRUE, FALSE);
+						$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
 					}
-					// Substitute the subpart for the dropdown options
-					$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###', implode(LF, $gdLibPngOptions));
-					// Fill the markers in the subpart
-					$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				}
-				// Substitute the subpart for the gdlib png
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###', $gdLibPngSubpart);
-				// ImageMagick
-				if (is_array($fA['im'])) {
-					// Get the subpart for ImageMagick
-					$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###');
-					// Define the markers content
-					$regularModeMarkers['labelImageMagick'] = '[GFX][im]=';
-					$regularModeMarkers['strongImageMagick'] = (string) current($fA['im']);
-					$regularModeMarkers['defaultImageMagick'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];
-					$regularModeMarkers['imageMagick'] = (int) current($fA['im']);
-					// Fill the markers in the subpart
-					$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imageMagickSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-					// IM Combine Filename
-					// Get the subpart for ImageMagick Combine filename
-					$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###');
-					// Define the markers content
-					$regularModeMarkers['labelImCombineFilename'] = '[GFX][im_combine_filename]';
-					$regularModeMarkers['strongImCombineFilename'] = htmlspecialchars((string) current($fA['im_combine_filename']));
-					$regularModeMarkers['defaultImCombineFilename'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_combine_filename']);
-					$regularModeMarkers['imCombineFilename'] = htmlspecialchars((string) ($fA['im_combine_filename'] ? current($fA['im_combine_filename']) : 'combine'));
-					// Fill the markers in the subpart
-					$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imCombineFileNameSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-					// IM Version 5
-					// Get the subpart for ImageMagick Version 5
-					$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMVERSION5SUBPART###');
-					// Define the markers content
-					$regularModeMarkers['labelImVersion5'] = '[GFX][im_version_5]=';
-					$regularModeMarkers['strongImVersion5'] = htmlspecialchars((string) current($fA['im_version_5']));
-					$regularModeMarkers['defaultImVersion5'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5']);
-					$regularModeMarkers['imVersion5'] = htmlspecialchars((string) ($fA['im_version_5'] ? current($fA['im_version_5']) : ''));
-					// Fill the markers in the subpart
-					$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imVersion5Subpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-					if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {
-						// IM Path
-						if (is_array($fA['im_path'])) {
-							// Get the subpart for ImageMagick path
-							$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHSUBPART###');
-							$labelImPath = $this->setLabelValueArray($fA['im_path'], 1);
-							reset($labelImPath);
-							$imPath = $this->setLabelValueArray($fA['im_path'], 0);
-							reset($imPath);
+					// IM Path LZW
+					if (is_array($fA['im_path_lzw'])) {
+						// Get the subpart for ImageMagick lzw path
+						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###');
+						// Get the subpart for ImageMagick lzw path dropdown options
+						$imPathOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWOPTION###');
+						$labelImPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 1);
+						reset($labelImPathLzw);
+						$imPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 0);
+						reset($imPathLzw);
+						// Define the markers content
+						$regularModeMarkers['labelImPathLzw'] = '[GFX][im_path_lzw]=';
+						$regularModeMarkers['strongImPathLzw'] = htmlspecialchars((string) current($labelImPathLzw));
+						$regularModeMarkers['defaultImPathLzw'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']);
+						$regularModeMarkers['ImPathLzw'] = htmlspecialchars((string) current($imPathLzw));
+						$imPathLzwOptions = array();
+						foreach ($labelImPathLzw as $k => $v) {
+							list($cleanV) = explode('|', $fA['im_path_lzw'][$k]);
 							// Define the markers content
-							$regularModeMarkers['labelImPath'] = '[GFX][im_path]=';
-							$regularModeMarkers['strongImPath'] = htmlspecialchars((string) current($labelImPath));
-							$regularModeMarkers['defaultImPath'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']);
-							$regularModeMarkers['ImPath'] = htmlspecialchars((string) current($imPath));
-							// Fill the markers in the subpart
-							$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-						}
-						// IM Path LZW
-						if (is_array($fA['im_path_lzw'])) {
-							// Get the subpart for ImageMagick lzw path
-							$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###');
-							// Get the subpart for ImageMagick lzw path dropdown options
-							$imPathOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWOPTION###');
-							$labelImPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 1);
-							reset($labelImPathLzw);
-							$imPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 0);
-							reset($imPathLzw);
-							// Define the markers content
-							$regularModeMarkers['labelImPathLzw'] = '[GFX][im_path_lzw]=';
-							$regularModeMarkers['strongImPathLzw'] = htmlspecialchars((string) current($labelImPathLzw));
-							$regularModeMarkers['defaultImPathLzw'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']);
-							$regularModeMarkers['ImPathLzw'] = htmlspecialchars((string) current($imPathLzw));
-							$imPathLzwOptions = array();
-							foreach ($labelImPathLzw as $k => $v) {
-								list($cleanV) = explode('|', $fA['im_path_lzw'][$k]);
-								// Define the markers content
-								$imPathLzwMarker = array(
-									'value' => htmlspecialchars($fA['im_path_lzw'][$k]),
-									'data' => htmlspecialchars($v)
-								);
-								if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'], $cleanV)) {
-									$imPathLzwMarker['selected'] = 'selected="selected"';
-								}
-								// Fill the markers in the subpart
-								$imPathLzwOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathOptionSubpart, $imPathLzwMarker, '###|###', TRUE, FALSE);
+							$imPathLzwMarker = array(
+								'value' => htmlspecialchars($fA['im_path_lzw'][$k]),
+								'data' => htmlspecialchars($v)
+							);
+							if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'], $cleanV)) {
+								$imPathLzwMarker['selected'] = 'selected="selected"';
 							}
-							// Substitute the subpart for ImageMagick lzw path dropdown options
-							$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imPathLzwSubpart, '###IMPATHLZWOPTION###', implode(LF, $imPathLzwOptions));
 							// Fill the markers in the subpart
-							$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathLzwSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+							$imPathLzwOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathOptionSubpart, $imPathLzwMarker, '###|###', TRUE, FALSE);
 						}
+						// Substitute the subpart for ImageMagick lzw path dropdown options
+						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imPathLzwSubpart, '###IMPATHLZWOPTION###', implode(LF, $imPathLzwOptions));
+						// Fill the markers in the subpart
+						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathLzwSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
 					}
 				}
-				// Substitute the subpart for ImageMagick
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###', $imageMagickSubpart);
-				// Substitute the subpart for ImageMagick Combine filename
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###', $imCombineFileNameSubpart);
-				// Substitute the subpart for ImageMagick Version 5
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMVERSION5SUBPART###', $imVersion5Subpart);
-				// Substitute the subpart for ImageMagick path
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHSUBPART###', $imPathSubpart);
-				// Substitute the subpart for ImageMagick lzw path
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###', $imPathLzwSubpart);
-				// TrueType Font dpi
-				// Get the subpart for TrueType dpi
-				$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###TTFDPISUBPART###');
-				// Define the markers content
-				$regularModeMarkers['labelTtfDpi'] = '[GFX][TTFdpi]=';
-				$regularModeMarkers['ttfDpi'] = htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi']);
-				// Fill the markers in the subpart
-				$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($ttfDpiSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				// Substitute the subpart for TrueType dpi
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###TTFDPISUBPART###', $ttfDpiSubpart);
-				// Fill the markers in the regular mode subpart
-				$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($regularModeSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
 			}
-			$formMarkers['labelUpdateLocalConf'] = 'Update configuration';
-			$formMarkers['labelNotice'] = 'NOTICE:';
-			$formMarkers['labelCommentUpdateLocalConf'] = 'By clicking this button, the configuration is updated with new values for the parameters listed above!';
-			// Substitute the subpart for regular mode
-			$form = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($form, '###REGULARMODE###', $regularModeSubpart);
-			// Fill the markers
-			$out = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($form, $formMarkers, '###|###', TRUE, FALSE);
-			break;
-		default:
-			$localConfigurationPathValuePairs = array();
-			if (is_array($this->INSTALL['Database'])) {
-				// New database?
-				if (trim($this->INSTALL['Database']['NEW_DATABASE_NAME'])) {
-					$newDatabaseName = trim($this->INSTALL['Database']['NEW_DATABASE_NAME']);
-						// Hyphen is not allowed in unquoted database names (at least for MySQL databases)
-					if (!preg_match('/[^[:alnum:]_]/', $newDatabaseName)) {
-						if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-							if ($GLOBALS['TYPO3_DB']->admin_query('CREATE DATABASE ' . $newDatabaseName . ' CHARACTER SET utf8')) {
-								$this->INSTALL['Database']['typo_db'] = $newDatabaseName;
-								$this->messages[] = 'Database \'' . $newDatabaseName . '\' created';
-							} else {
-								$this->errorMessages[] = '
-										Could not create database \'' . $newDatabaseName . '\' (...not created)
-									';
-							}
+			// Substitute the subpart for ImageMagick
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###', $imageMagickSubpart);
+			// Substitute the subpart for ImageMagick Combine filename
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###', $imCombineFileNameSubpart);
+			// Substitute the subpart for ImageMagick Version 5
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMVERSION5SUBPART###', $imVersion5Subpart);
+			// Substitute the subpart for ImageMagick path
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHSUBPART###', $imPathSubpart);
+			// Substitute the subpart for ImageMagick lzw path
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###', $imPathLzwSubpart);
+			// TrueType Font dpi
+			// Get the subpart for TrueType dpi
+			$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###TTFDPISUBPART###');
+			// Define the markers content
+			$regularModeMarkers['labelTtfDpi'] = '[GFX][TTFdpi]=';
+			$regularModeMarkers['ttfDpi'] = htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi']);
+			// Fill the markers in the subpart
+			$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($ttfDpiSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			// Substitute the subpart for TrueType dpi
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###TTFDPISUBPART###', $ttfDpiSubpart);
+			// Fill the markers in the regular mode subpart
+			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($regularModeSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+		}
+		$formMarkers['labelUpdateLocalConf'] = 'Update configuration';
+		$formMarkers['labelNotice'] = 'NOTICE:';
+		$formMarkers['labelCommentUpdateLocalConf'] = 'By clicking this button, the configuration is updated with new values for the parameters listed above!';
+		// Substitute the subpart for regular mode
+		$form = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($form, '###REGULARMODE###', $regularModeSubpart);
+		// Fill the markers
+		return \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($form, $formMarkers, '###|###', TRUE, FALSE);
+	}
+
+	/**
+	 * Transfer data from $this->INSTALL to LocalConfiguration
+	 *
+	 * @return void
+	 */
+	protected function transferChosenConfigurationValuesToConfigurationFile() {
+		$localConfigurationPathValuePairs = array();
+		if (is_array($this->INSTALL['Database'])) {
+			// New database?
+			if (trim($this->INSTALL['Database']['NEW_DATABASE_NAME'])) {
+				$newDatabaseName = trim($this->INSTALL['Database']['NEW_DATABASE_NAME']);
+					// Hyphen is not allowed in unquoted database names (at least for MySQL databases)
+				if (!preg_match('/[^[:alnum:]_]/', $newDatabaseName)) {
+					if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
+						if ($GLOBALS['TYPO3_DB']->admin_query('CREATE DATABASE ' . $newDatabaseName . ' CHARACTER SET utf8')) {
+							$this->INSTALL['Database']['typo_db'] = $newDatabaseName;
+							$this->messages[] = 'Database \'' . $newDatabaseName . '\' created';
 						} else {
 							$this->errorMessages[] = '
-									Could not connect to database when creating
-									database \'' . $newDatabaseName . '\' (...not
-									created)
+									Could not create database \'' . $newDatabaseName . '\' (...not created)
 								';
 						}
 					} else {
 						$this->errorMessages[] = '
-								The NEW database name \'' . $newDatabaseName . '\' was
-								not alphanumeric, a-zA-Z0-9_ (...not created)
+								Could not connect to database when creating
+								database \'' . $newDatabaseName . '\' (...not
+								created)
 							';
 					}
-				}
-				foreach ($this->INSTALL['Database'] as $key => $value) {
-					switch ((string) $key) {
-					case 'typo_db_username':
-						if (strlen($value) <= 50) {
-							if (strcmp(TYPO3_db_username, $value)) {
-								$localConfigurationPathValuePairs['DB/username'] = $value;
-							}
-						} else {
-							$this->errorMessages[] = '
-										Username \'' . $value . '\' was longer
-										than 50 chars (...not saved)
-									';
-						}
-						break;
-					case 'typo_db_password':
-						if (strlen($value) <= 50) {
-							if (strcmp(TYPO3_db_password, $value)) {
-								$localConfigurationPathValuePairs['DB/password'] = $value;
-							}
-						} else {
-							$this->errorMessages[] = '
-										Password was longer than 50 chars (...not saved)
-									';
-						}
-						break;
-					case 'typo_db_host':
-						if (preg_match('/^[a-zA-Z0-9_\\.-]+(:.+)?$/', $value) && strlen($value) <= 50) {
-							if (strcmp(TYPO3_db_host, $value)) {
-								$localConfigurationPathValuePairs['DB/host'] = $value;
-							}
-						} else {
-							$this->errorMessages[] = '
-										Host \'' . $value . '\' was not
-										alphanumeric (a-z, A-Z, 0-9 or _-.), or
-										longer than 50 chars (...not saved)
-									';
-						}
-						break;
-					case 'typo_db':
-						if (strlen($value) <= 50) {
-							if (strcmp(TYPO3_db, $value)) {
-								$localConfigurationPathValuePairs['DB/database'] = $value;
-							}
-						} else {
-							$this->errorMessages[] = '
-										Database name \'' . $value . '\' was
-										longer than 50 chars (...not saved)
-									';
-						}
-						break;
-					}
+				} else {
+					$this->errorMessages[] = '
+							The NEW database name \'' . $newDatabaseName . '\' was
+							not alphanumeric, a-zA-Z0-9_ (...not created)
+						';
 				}
 			}
-			if (is_array($this->INSTALL['LocalConfiguration'])) {
-				foreach ($this->INSTALL['LocalConfiguration'] as $key => $value) {
-					switch ((string) $key) {
-					case 'disable_exec_function':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('BE/disable_exec_function'), $value)) {
-							$localConfigurationPathValuePairs['BE/disable_exec_function'] = $value ? 1 : 0;
+			foreach ($this->INSTALL['Database'] as $key => $value) {
+				switch ((string) $key) {
+				case 'typo_db_username':
+					if (strlen($value) <= 50) {
+						if (strcmp(TYPO3_db_username, $value)) {
+							$localConfigurationPathValuePairs['DB/username'] = $value;
 						}
-						break;
-					case 'sitename':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/sitename'), $value)) {
-							$localConfigurationPathValuePairs['SYS/sitename'] = $value;
-						}
-						break;
-					case 'encryptionKey':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/encryptionKey'), $value)) {
-							$localConfigurationPathValuePairs['SYS/encryptionKey'] = $value;
-							// The session object in this request must use the new encryption key to write to the right session folder
-							$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] = $value;
-						}
-						break;
-					case 'compat_version':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/compat_version'), $value)) {
-							$localConfigurationPathValuePairs['SYS/compat_version'] = $value;
-						}
-						break;
-					case 'im_combine_filename':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/im_combine_filename'), $value)) {
-							$localConfigurationPathValuePairs['GFX/im_combine_filename'] = $value;
-						}
-						break;
-					case 'gdlib':
-
-					case 'gdlib_png':
-
-					case 'im':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
-							$localConfigurationPathValuePairs['GFX/' . $key] = $value ? 1 : 0;
-						}
-						break;
-					case 'im_path':
-						list($value, $version) = explode('|', $value);
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
-							$localConfigurationPathValuePairs['GFX/' . $key] = $value;
-						}
-						if (doubleval($version) > 0 && doubleval($version) < 4) {
-							// Assume GraphicsMagick
-							$value_ext = 'gm';
-						} else {
-							// Assume ImageMagick 6.x
-							$value_ext = 'im6';
-						}
-						if (strcmp(strtolower(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/im_version_5')), $value_ext)) {
-							$localConfigurationPathValuePairs['GFX/im_version_5'] = $value_ext;
-						}
-						break;
-					case 'im_path_lzw':
-						list($value) = explode('|', $value);
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
-							$localConfigurationPathValuePairs['GFX/' . $key] = $value;
-						}
-						break;
-					case 'TTFdpi':
-						if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/TTFdpi'), $value)) {
-							$localConfigurationPathValuePairs['GFX/TTFdpi'] = $value;
-						}
-						break;
+					} else {
+						$this->errorMessages[] = '
+									Username \'' . $value . '\' was longer
+									than 50 chars (...not saved)
+								';
 					}
-				}
-				// Hook to modify localconf.php lines in the 1-2-3 installer
-				if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'])) {
-					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'] as $classData) {
-						$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classData);
-						$dummy = array();
-						$hookObject->executeWriteLocalconf($dummy, $this->step, $this);
+					break;
+				case 'typo_db_password':
+					if (strlen($value) <= 50) {
+						if (strcmp(TYPO3_db_password, $value)) {
+							$localConfigurationPathValuePairs['DB/password'] = $value;
+						}
+					} else {
+						$this->errorMessages[] = '
+									Password was longer than 50 chars (...not saved)
+								';
 					}
+					break;
+				case 'typo_db_host':
+					if (preg_match('/^[a-zA-Z0-9_\\.-]+(:.+)?$/', $value) && strlen($value) <= 50) {
+						if (strcmp(TYPO3_db_host, $value)) {
+							$localConfigurationPathValuePairs['DB/host'] = $value;
+						}
+					} else {
+						$this->errorMessages[] = '
+									Host \'' . $value . '\' was not
+									alphanumeric (a-z, A-Z, 0-9 or _-.), or
+									longer than 50 chars (...not saved)
+								';
+					}
+					break;
+				case 'typo_db':
+					if (strlen($value) <= 50) {
+						if (strcmp(TYPO3_db, $value)) {
+							$localConfigurationPathValuePairs['DB/database'] = $value;
+						}
+					} else {
+						$this->errorMessages[] = '
+									Database name \'' . $value . '\' was
+									longer than 50 chars (...not saved)
+								';
+					}
+					break;
 				}
 			}
-			if (!empty($localConfigurationPathValuePairs)) {
-				$this->setLocalConfigurationValues($localConfigurationPathValuePairs);
-			}
-			break;
 		}
-		return $out;
+		if (is_array($this->INSTALL['LocalConfiguration'])) {
+			foreach ($this->INSTALL['LocalConfiguration'] as $key => $value) {
+				switch ((string) $key) {
+				case 'disable_exec_function':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('BE/disable_exec_function'), $value)) {
+						$localConfigurationPathValuePairs['BE/disable_exec_function'] = $value ? 1 : 0;
+					}
+					break;
+				case 'sitename':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/sitename'), $value)) {
+						$localConfigurationPathValuePairs['SYS/sitename'] = $value;
+					}
+					break;
+				case 'encryptionKey':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/encryptionKey'), $value)) {
+						$localConfigurationPathValuePairs['SYS/encryptionKey'] = $value;
+						// The session object in this request must use the new encryption key to write to the right session folder
+						$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] = $value;
+					}
+					break;
+				case 'compat_version':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('SYS/compat_version'), $value)) {
+						$localConfigurationPathValuePairs['SYS/compat_version'] = $value;
+					}
+					break;
+				case 'im_combine_filename':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/im_combine_filename'), $value)) {
+						$localConfigurationPathValuePairs['GFX/im_combine_filename'] = $value;
+					}
+					break;
+				case 'gdlib':
+
+				case 'gdlib_png':
+
+				case 'im':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
+						$localConfigurationPathValuePairs['GFX/' . $key] = $value ? 1 : 0;
+					}
+					break;
+				case 'im_path':
+					list($value, $version) = explode('|', $value);
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
+						$localConfigurationPathValuePairs['GFX/' . $key] = $value;
+					}
+					if (doubleval($version) > 0 && doubleval($version) < 4) {
+						// Assume GraphicsMagick
+						$value_ext = 'gm';
+					} else {
+						// Assume ImageMagick 6.x
+						$value_ext = 'im6';
+					}
+					if (strcmp(strtolower(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/im_version_5')), $value_ext)) {
+						$localConfigurationPathValuePairs['GFX/im_version_5'] = $value_ext;
+					}
+					break;
+				case 'im_path_lzw':
+					list($value) = explode('|', $value);
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/' . $key), $value)) {
+						$localConfigurationPathValuePairs['GFX/' . $key] = $value;
+					}
+					break;
+				case 'TTFdpi':
+					if (strcmp(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getConfigurationValueByPath('GFX/TTFdpi'), $value)) {
+						$localConfigurationPathValuePairs['GFX/TTFdpi'] = $value;
+					}
+					break;
+				}
+			}
+			// Hook to modify localconf.php lines in the 1-2-3 installer
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'])) {
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'] as $classData) {
+					$hookObject = \TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj($classData);
+					$dummy = array();
+					$hookObject->executeWriteLocalconf($dummy, $this->step, $this);
+				}
+			}
+		}
+		if (!empty($localConfigurationPathValuePairs)) {
+			$this->setLocalConfigurationValues($localConfigurationPathValuePairs);
+		}
 	}
 
 	/**

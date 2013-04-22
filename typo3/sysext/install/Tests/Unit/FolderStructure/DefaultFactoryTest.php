@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\SystemEnvironment;
+namespace TYPO3\CMS\Install\Tests\Unit\FolderStructure;
 
 /***************************************************************
  *  Copyright notice
@@ -25,43 +25,15 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  ***************************************************************/
 
 /**
- * Interface for SystemEnvironment status
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
+ * Test case
  */
-interface StatusInterface {
+class DefaultFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @return string The severity
+	 * @test
 	 */
-	public function getSeverity();
-
-	/**
-	 * @return string The title
-	 */
-	public function getTitle();
-
-	/**
-	 * Set title
-	 *
-	 * @param string $title The title
-	 * @return void
-	 */
-	public function setTitle($title);
-
-	/**
-	 * Get status message
-	 *
-	 * @return string Status message
-	 */
-	public function getMessage();
-
-	/**
-	 * Set status message
-	 *
-	 * @param string $message Status message
-	 * @return void
-	 */
-	public function setMessage($message);
+	public function getStructureReturnsInstanceOfStructureFacadeInterface() {
+		$object = new \TYPO3\CMS\Install\FolderStructure\DefaultFactory();
+		$this->assertInstanceOf('TYPO3\\CMS\\Install\\FolderStructure\\StructureFacadeInterface', $object->getStructure());
+	}
 }
-?>
