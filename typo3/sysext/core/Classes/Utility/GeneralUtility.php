@@ -2687,15 +2687,16 @@ Connection: close
 					closedir($handle);
 				}
 				if ($OK) {
-					$OK = rmdir($path);
+					$OK = @rmdir($path);
 				}
 			} else {
-				// If $dirname is a file, simply remove it
+				// If $path is a file, simply remove it
 				$OK = unlink($path);
 			}
 			clearstatcache();
 		} elseif (is_link($path)) {
 			$OK = unlink($path);
+			clearstatcache();
 		}
 		return $OK;
 	}
