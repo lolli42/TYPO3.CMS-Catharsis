@@ -101,6 +101,242 @@ class DirectoryNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
+	 */
+	public function fixCallsFixSelfAndReturnsItsResult() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('fixSelf'),
+			array(),
+			'',
+			FALSE
+		);
+		$uniqueReturn = array(uniqid('foo_'));
+		$node->expects($this->once())->method('fixSelf')->will($this->returnValue($uniqueReturn));
+		$this->assertSame($uniqueReturn, $node->fix());
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixCallsFixOnChildrenAndReturnsMergedResult() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('fixSelf'), array(), '', FALSE);
+		$uniqueReturnSelf = uniqid('foo_');
+		$node->expects($this->once())->method('fixSelf')->will($this->returnValue(array($uniqueReturnSelf)));
+
+		$childMock1 = $this->getMock('TYPO3\\CMS\\Install\\FolderStructure\\NodeInterface', array(), array(), '', FALSE);
+		$uniqueReturnChild1 = uniqid('foo_');
+		$childMock1->expects($this->once())->method('fix')->will($this->returnValue(array($uniqueReturnChild1)));
+
+		$childMock2 = $this->getMock('TYPO3\\CMS\\Install\\FolderStructure\\NodeInterface', array(), array(), '', FALSE);
+		$uniqueReturnChild2 = uniqid('foo_');
+		$childMock2->expects($this->once())->method('fix')->will($this->returnValue(array($uniqueReturnChild2)));
+
+		$node->_set('children', array($childMock1, $childMock2));
+
+		$this->assertSame(array($uniqueReturnSelf, $uniqueReturnChild1, $uniqueReturnChild2), $node->fix());
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfCallsCreateDirectoryIfDirectoryDoesNotExistAndReturnsResult() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('exists', 'createDirectory', 'getAbsolutePath', 'isDirectory', 'isPermissionCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->once())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isDirectory')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$uniqueReturn = uniqid();
+		$node->expects($this->once())->method('createDirectory')->will($this->returnValue($uniqueReturn));
+		$this->assertSame(array($uniqueReturn), $node->_call('fixSelf'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfReturnsErrorStatusIfNodeExistsButIsNotADirectoryAndReturnsResult() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('exists', 'createDirectory', 'getAbsolutePath', 'isDirectory', 'isPermissionCorrect', 'fixPermission'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isDirectory')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(FALSE));
+		$uniqueReturn = uniqid();
+		$node->expects($this->once())->method('fixPermission')->will($this->returnValue($uniqueReturn));
+		$this->assertSame(array($uniqueReturn), $node->_call('fixSelf'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfCallsFixPermissionIfDirectoryExistsButPermissionAreWrong() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('exists', 'createDirectory', 'getAbsolutePath', 'isDirectory', 'isPermissionCorrect', 'getRelativePathBelowSiteRoot'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(TRUE));
+		$node->expects($this->once())->method('isDirectory')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$resultArray = $node->_call('fixSelf');
+		$this->assertInstanceOf('TYPO3\\CMS\Install\\Status\\StatusInterface', $resultArray[0]);
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfReturnsArrayOfStatusMessages() {
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('exists', 'isDirectory', 'isPermissionCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isDirectory')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$this->assertInternalType('array', $node->_call('fixSelf'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception
+	 */
+	public function createDirectoryThrowsExceptionIfNodeExists() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('exists', 'getAbsolutePath'), array(), '', FALSE);
+		$node->expects($this->once())->method('getAbsolutePath')->will($this->returnValue(''));
+		$node->expects($this->once())->method('exists')->will($this->returnValue(TRUE));
+		$node->_call('createDirectory');
+	}
+
+	/**
+	 * @test
+	 */
+	public function createDirectoryReturnsOkStatusIfDirectoryWasCreated() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('exists', 'getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->once())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$this->assertInstanceOf('TYPO3\\CMS\Install\\Status\\StatusInterface', $node->_call('createDirectory'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function createDirectoryReturnsErrorStatusIfDirectoryWasNotCreated() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('exists', 'getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('root_');
+		mkdir($path);
+		chmod($path, octdec(2550));
+		$subPath = $path . '/' . uniqid('dir_');
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->once())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($subPath));
+		$this->assertInstanceOf('TYPO3\\CMS\Install\\Status\\StatusInterface', $node->_call('createDirectory'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception
+	 */
+	public function fixPermissionThrowsExceptionIfPermissionAreAlreadyCorrect() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('isPermissionCorrect', 'getAbsolutePath'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue(''));
+		$node->expects($this->once())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$node->_call('fixPermission');
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixPermissionReturnsErrorStatusIfPermissionCanNotBeChanged() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('isPermissionCorrect', 'getRelativePathBelowSiteRoot', 'getAbsolutePath'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('getRelativePathBelowSiteRoot')->will($this->returnValue(''));
+		$node->expects($this->once())->method('isPermissionCorrect')->will($this->returnValue(FALSE));
+		$path = PATH_site . 'typo3temp/' . uniqid('root_');
+		mkdir($path);
+		$subPath = $path . '/' . uniqid('dir_');
+		mkdir($subPath);
+		chmod($path, octdec(2000));
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($subPath));
+		$node->_set('targetPermission', '2770');
+		$this->assertInstanceOf('TYPO3\\CMS\\Install\\Status\\ErrorStatus', $node->_call('fixPermission'));
+		chmod($path, octdec(2770));
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixPermissionReturnsOkStatusIfPermissionCanBeFixedAndSetsPermissionToCorrectValue() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode',
+			array('isPermissionCorrect', 'getRelativePathBelowSiteRoot', 'getAbsolutePath'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('getRelativePathBelowSiteRoot')->will($this->returnValue(''));
+		$node->expects($this->once())->method('isPermissionCorrect')->will($this->returnValue(FALSE));
+		$path = PATH_site . 'typo3temp/' . uniqid('root_');
+		mkdir($path);
+		$subPath = $path . '/' . uniqid('dir_');
+		mkdir($subPath);
+		chmod($path, octdec(2770));
+		$this->testNodesToDelete[] = $path;
+		$node->_set('targetPermission', '2775');
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($subPath));
+		$this->assertInstanceOf('TYPO3\\CMS\\Install\\Status\\OkStatus', $node->_call('fixPermission'));
+		$resultDirectoryPermissions = substr(decoct(fileperms($subPath)), 1);
+		$this->assertSame('2775', $resultDirectoryPermissions);
+	}
+
+	/**
+	 * @test
 	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException
 	 */
 	public function createChildrenThrowsExceptionIfAChildTypeIsNotSet() {
@@ -412,6 +648,20 @@ class DirectoryNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('getAbsolutePath'), array(), '', FALSE);
 		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
 		\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir_deep($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$this->assertTrue($node->_call('exists'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function existsReturnsTrueIfIsLinkAndTargetIsDead() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\DirectoryNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\DirectoryNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('link_');
+		$target = PATH_site . 'typo3temp/' . uniqid('notExists_');
+		symlink($target, $path);
 		$this->testNodesToDelete[] = $path;
 		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
 		$this->assertTrue($node->_call('exists'));
