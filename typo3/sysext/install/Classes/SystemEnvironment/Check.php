@@ -81,13 +81,13 @@ class Check {
 	 * Constructor to load further classes
 	 */
 	public function __construct() {
-		require(__DIR__ . '/../Status/StatusInterface.php');
-		require(__DIR__ . '/../Status/AbstractStatus.php');
-		require(__DIR__ . '/../Status/NoticeStatus.php');
-		require(__DIR__ . '/../Status/InfoStatus.php');
-		require(__DIR__ . '/../Status/OkStatus.php');
-		require(__DIR__ . '/../Status/WarningStatus.php');
-		require(__DIR__ . '/../Status/ErrorStatus.php');
+		require_once(__DIR__ . '/../Status/StatusInterface.php');
+		require_once(__DIR__ . '/../Status/AbstractStatus.php');
+		require_once(__DIR__ . '/../Status/NoticeStatus.php');
+		require_once(__DIR__ . '/../Status/InfoStatus.php');
+		require_once(__DIR__ . '/../Status/OkStatus.php');
+		require_once(__DIR__ . '/../Status/WarningStatus.php');
+		require_once(__DIR__ . '/../Status/ErrorStatus.php');
 	}
 
 	/**

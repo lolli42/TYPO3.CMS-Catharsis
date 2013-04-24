@@ -1368,12 +1368,19 @@ REMOTE_ADDR was \'' . \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REMOTE
 		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
 		$structureFacade = $folderStructureFactory->getStructure();
 
+		$fixMessages = array();
 		if (isset($this->INSTALL['folderStructure']['fix'])) {
-			$structureFacade->fix();
+			$fixMessages = $structureFacade->fix();
 		}
 
 		$html = array();
 		$html[] = '<h3>File and folder status below ' . PATH_site . '</h3>';
+
+		if (count($fixMessages) > 0) {
+			$html[] = '<h4>Fix action results:</h4>';
+			$html[] = $this->renderStatusObjects($fixMessages);
+			$html[] = '<hr />';
+		}
 
 		$unfixableErrors = $structureFacade->getErrorStatus();
 		$fixableErrors = $structureFacade->getWarningStatus();

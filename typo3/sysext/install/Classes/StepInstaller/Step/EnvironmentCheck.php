@@ -30,6 +30,17 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
 class EnvironmentCheck implements StepInterface {
 
 	/**
+	 * Default constructor
+	 */
+	public function __construct() {
+		// Require entry scripts for this step, those will require further things if needed
+		require_once __DIR__ . '/../../FolderStructure/DefaultFactory.php';
+		require_once __DIR__ . '/../../FolderStructure/StructureFacadeInterface.php';
+		require_once __DIR__ . '/../../FolderStructure/StructureFacade.php';
+		require_once __DIR__ . '/../../SystemEnvironment/Check.php';
+	}
+
+	/**
 	 * Step needs to be executed if LocalConfiguration file does not exist.
 	 *
 	 * @return boolean
@@ -53,9 +64,24 @@ class EnvironmentCheck implements StepInterface {
 		$html[] = '<p>TYPO3 is an enterprise content management system that is powerful, yet easy to install</p>';
 		$html[] = '<p>In some simple steps you\'ll be ready to add content to your website. This first step checks your system environment and points out issues.</p>';
 
-		$orderedStatus = $this->getOrderedStatusArray();
-		$html[] = $this->renderLinkDependingOnStatusArray($orderedStatus);
-		$html[] = $this->renderMessages($orderedStatus);
+		$errorsAndWarningsFromEnvironment = $this->getErrorAndWarningsFromEnvironmentCheck();
+
+		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
+		$folderStructureFactory = new \TYPO3\CMS\Install\FolderStructure\DefaultFactory;
+		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
+		$structureFacade = $folderStructureFactory->getStructure();
+		$errorsFromStructure = $structureFacade->getErrorStatus();
+
+		$errorsAndWarnings = $errorsAndWarningsFromEnvironment;
+		if (count($errorsFromStructure) > 0) {
+			$errorsAndWarnings['error'] = array_merge(
+				$errorsFromStructure,
+				$errorsAndWarningsFromEnvironment['error']
+			);
+		}
+
+		$html[] = $this->renderLinkDependingOnStatusArray($errorsAndWarnings);
+		$html[] = $this->renderMessages($errorsAndWarnings);
 
 		return implode(CR, $html);
 	}
@@ -99,33 +125,25 @@ class EnvironmentCheck implements StepInterface {
 	}
 
 	/**
-	 * Run status check and return ordered status objects by severity
+	 * Execute environment check, return array with error and warnings only
 	 *
-	 * @throws \TYPO3\CMS\Install\Exception
-	 * @return array
+	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
 	 */
-	protected function getOrderedStatusArray() {
-		require_once __DIR__ . '/../../SystemEnvironment/Check.php';
+	protected function getErrorAndWarningsFromEnvironmentCheck() {
 		$statusCheck = new \TYPO3\CMS\Install\SystemEnvironment\Check;
 		$statusObjects = $statusCheck->getStatus();
 
 		$orderedStatus = array(
 			'error' => array(),
 			'warning' => array(),
-			'ok' => array(),
-			'information' => array(),
-			'notice' => array(),
 		);
 
-		// Extend with one test: is path_site -1 writable?
-
-		/** @var $statusObject \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
+		/** @var $statusObject \TYPO3\CMS\Install\Status\AbstractStatus */
 		foreach ($statusObjects as $statusObject) {
 			$severityIdentifier = $statusObject->getSeverity();
-			if (empty($severityIdentifier) || !is_array($orderedStatus[$severityIdentifier])) {
-				throw new \TYPO3\CMS\Install\Exception('Unknown status severity type', 1365967345);
+			if ($severityIdentifier === 'error' || $severityIdentifier === 'warning') {
+				$orderedStatus[$severityIdentifier][] = $statusObject;
 			}
-			$orderedStatus[$severityIdentifier][] = $statusObject;
 		}
 		return $orderedStatus;
 	}
@@ -147,15 +165,10 @@ class EnvironmentCheck implements StepInterface {
 			'</div>' .
 			'<p></p>';
 
-		// Display only error and warning status
-		unset($orderedStatus['ok']);
-		unset($orderedStatus['information']);
-		unset($orderedStatus['notice']);
-
 		$html = '';
 		foreach ($orderedStatus as $severityIdentifier => $severity) {
 			foreach ($severity as $status) {
-				/** @var $status \TYPO3\CMS\Install\SystemEnvironment\AbstractStatus */
+				/** @var $status \TYPO3\CMS\Install\Status\AbstractStatus */
 				$status->getSeverity();
 				$html .= sprintf(
 					$messageHtmlBoilerPlate,
