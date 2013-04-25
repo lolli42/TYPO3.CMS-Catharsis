@@ -57,68 +57,12 @@ class StructureFacade implements StructureFacadeInterface {
 	}
 
 	/**
-	 * Get status objects of not fixable nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\ErrorStatus>
-	 */
-	public function getErrorStatus() {
-		$orderedStatus = $this->orderStatusBySeverity($this->structure->getStatus());
-		return $orderedStatus['error'];
-	}
-
-	/**
-	 * Get status objects of fixable nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\WarningStatus>
-	 */
-	public function getWarningStatus() {
-		$orderedStatus = $this->orderStatusBySeverity($this->structure->getStatus());
-		return $orderedStatus['warning'];
-	}
-
-	/**
-	 * Get status objects of good nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\OkStatus>
-	 */
-	public function getOkStatus() {
-		$orderedStatus = $this->orderStatusBySeverity($this->structure->getStatus());
-		return $orderedStatus['ok'];
-	}
-
-	/**
 	 * Fix structure
 	 *
 	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
 	 */
 	public function fix() {
 		return $this->structure->fix();
-	}
-
-	/**
-	 * Order status objects by severity
-	 *
-	 * @param array<\TYPO3\CMS\Install\Status\AbstractStatus> $statusObjects
-	 * @return array
-	 * @throws \TYPO3\CMS\Install\Exception
-	 */
-	protected function orderStatusBySeverity(array $statusObjects = array()) {
-		$orderedStatus = array(
-			'error' => array(),
-			'warning' => array(),
-			'ok' => array(),
-			'information' => array(),
-			'notice' => array(),
-		);
-		/** @var $statusObject \TYPO3\CMS\Install\Status\AbstractStatus */
-		foreach ($statusObjects as $statusObject) {
-			$severityIdentifier = $statusObject->getSeverity();
-			if (empty($severityIdentifier) || !is_array($orderedStatus[$severityIdentifier])) {
-				throw new \TYPO3\CMS\Install\Exception('Unknown status severity type', 1366539524);
-			}
-			$orderedStatus[$severityIdentifier][] = $statusObject;
-		}
-		return $orderedStatus;
 	}
 }
 ?>

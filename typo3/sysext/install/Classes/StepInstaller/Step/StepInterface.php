@@ -30,6 +30,13 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
 interface StepInterface {
 
 	/**
+	 * Execute a step
+	 *
+	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
+	 */
+	public function execute();
+
+	/**
 	 * Whether this step must be executed
 	 *
 	 * @return boolean TRUE if this step needs to be executed
@@ -42,7 +49,5 @@ interface StepInterface {
 	 * @return string
 	 */
 	public function render();
-
-
 }
 ?>

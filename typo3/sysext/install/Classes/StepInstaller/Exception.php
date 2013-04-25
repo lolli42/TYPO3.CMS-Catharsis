@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Status;
+namespace TYPO3\CMS\Install\StepInstaller;
 
 /***************************************************************
  *  Copyright notice
@@ -25,47 +25,9 @@ namespace TYPO3\CMS\Install\Status;
  ***************************************************************/
 
 /**
- * Status interface
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
+ * A step installer exception
  */
-interface StatusInterface {
+class Exception extends \TYPO3\CMS\Install\Exception {
 
-	/**
-	 * Get severity
-	 *
-	 * @return string The severity
-	 */
-	public function getSeverity();
-
-	/**
-	 * Get title
-	 *
-	 * @return string The title
-	 */
-	public function getTitle();
-
-	/**
-	 * Set title
-	 *
-	 * @param string $title The title
-	 * @return void
-	 */
-	public function setTitle($title);
-
-	/**
-	 * Get status message
-	 *
-	 * @return string Status message
-	 */
-	public function getMessage();
-
-	/**
-	 * Set status message
-	 *
-	 * @param string $message Status message
-	 * @return void
-	 */
-	public function setMessage($message);
 }
 ?>

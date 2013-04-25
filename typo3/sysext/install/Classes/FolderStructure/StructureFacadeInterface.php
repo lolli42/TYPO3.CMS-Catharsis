@@ -44,27 +44,6 @@ interface StructureFacadeInterface {
 	public function getStatus();
 
 	/**
-	 * Get status objects of not fixable nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\ErrorStatus>
-	 */
-	public function getErrorStatus();
-
-	/**
-	 * Get status objects of fixable nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\WarningStatus>
-	 */
-	public function getWarningStatus();
-
-	/**
-	 * Get status objects of good nodes
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\OkStatus>
-	 */
-	public function getOkStatus();
-
-	/**
 	 * Fix structure
 	 *
 	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>

@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
 /**
  * Check PHP and server environment check
  */
-class EnvironmentCheck implements StepInterface {
+class EnvironmentAndFolders implements StepInterface {
 
 	/**
 	 * Default constructor
@@ -38,6 +38,22 @@ class EnvironmentCheck implements StepInterface {
 		require_once __DIR__ . '/../../FolderStructure/StructureFacadeInterface.php';
 		require_once __DIR__ . '/../../FolderStructure/StructureFacade.php';
 		require_once __DIR__ . '/../../SystemEnvironment/Check.php';
+	}
+
+	/**
+	 * Execute a step
+	 *
+	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
+	 */
+	public function execute() {
+		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
+		$folderStructureFactory = new \TYPO3\CMS\Install\FolderStructure\DefaultFactory;
+		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
+		$structureFacade = $folderStructureFactory->getStructure();
+		$structureFixMessages = $structureFacade->fix();
+		$statusUtility = new  \TYPO3\CMS\Install\Status\StatusUtility;
+		$errorsFromStructure = $statusUtility->filterBySeverity($structureFixMessages, 'error');
+		return $errorsFromStructure;
 	}
 
 	/**
@@ -62,7 +78,8 @@ class EnvironmentCheck implements StepInterface {
 		$html = array();
 		$html[] = '<h3>System environment check</h3>';
 		$html[] = '<p>TYPO3 is an enterprise content management system that is powerful, yet easy to install</p>';
-		$html[] = '<p>In some simple steps you\'ll be ready to add content to your website. This first step checks your system environment and points out issues.</p>';
+		$html[] = '<p>In some simple steps you\'ll be ready to add content to your website.';
+		$html[] = 'This first step checks your system environment and points out issues.</p>';
 
 		$errorsAndWarningsFromEnvironment = $this->getErrorAndWarningsFromEnvironmentCheck();
 
@@ -70,7 +87,10 @@ class EnvironmentCheck implements StepInterface {
 		$folderStructureFactory = new \TYPO3\CMS\Install\FolderStructure\DefaultFactory;
 		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
 		$structureFacade = $folderStructureFactory->getStructure();
-		$errorsFromStructure = $structureFacade->getErrorStatus();
+		$structureMessages = $structureFacade->getStatus();
+		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
+		$statusUtility = new  \TYPO3\CMS\Install\Status\StatusUtility;
+		$errorsFromStructure = $statusUtility->filterBySeverity($structureMessages, 'error');
 
 		$errorsAndWarnings = $errorsAndWarningsFromEnvironment;
 		if (count($errorsFromStructure) > 0) {
@@ -80,7 +100,7 @@ class EnvironmentCheck implements StepInterface {
 			);
 		}
 
-		$html[] = $this->renderLinkDependingOnStatusArray($errorsAndWarnings);
+		$html[] = $this->renderButtonsDependingOnStatusArray($errorsAndWarnings);
 		$html[] = $this->renderMessages($errorsAndWarnings);
 
 		return implode(CR, $html);
@@ -92,7 +112,7 @@ class EnvironmentCheck implements StepInterface {
 	 * @param array $orderedStatus
 	 * @return string
 	 */
-	protected function renderLinkDependingOnStatusArray(array $orderedStatus) {
+	protected function renderButtonsDependingOnStatusArray(array $orderedStatus) {
 		$html = array();
 		$html[] = '<form method="post" action="StepInstaller.php">';
 
@@ -151,32 +171,15 @@ class EnvironmentCheck implements StepInterface {
 	/**
 	 * Render messages by severity
 	 *
-	 * @param array Array with message severities
+	 * @param array Array with message severity's
 	 * @return string
 	 */
 	protected function renderMessages(array $orderedStatus) {
-		$messageHtmlBoilerPlate =
-			'<div class="typo3-message message-%1s" >' .
-				'<div class="header-container" >' .
-				'<div class="message-header message-left" ><strong>%2s</strong></div>' .
-				'<div class="message-header message-right" ></div>' .
-				'</div >' .
-				'<div class="message-body" >%3s</div>' .
-			'</div>' .
-			'<p></p>';
+		$statusUtility = new \TYPO3\CMS\Install\Status\StatusUtility();
 
 		$html = '';
 		foreach ($orderedStatus as $severityIdentifier => $severity) {
-			foreach ($severity as $status) {
-				/** @var $status \TYPO3\CMS\Install\Status\AbstractStatus */
-				$status->getSeverity();
-				$html .= sprintf(
-					$messageHtmlBoilerPlate,
-					$severityIdentifier,
-					$status->getTitle(),
-					$status->getMessage()
-				);
-			}
+			$html .= $statusUtility->renderStatusObjects($severity);
 		}
 
 		if (strlen($html) > 0) {

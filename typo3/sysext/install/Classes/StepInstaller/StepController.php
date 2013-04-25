@@ -38,104 +38,26 @@ class StepController {
 	 * Constructor
 	 */
 	public function __construct() {
+		require_once __DIR__ . '/../Exception.php';
+		require_once __DIR__ . '/Exception.php';
+		require_once __DIR__ . '/Step/StepInterface.php';
+		require_once __DIR__ . '/../Status/StatusUtility.php';
+
 		$this->steps = array(
 			'environmentCheck' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\EnvironmentCheck',
-				'file' => __DIR__ . '/Step/EnvironmentCheck.php',
+				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\EnvironmentAndFolders',
+				'file' => __DIR__ . '/Step/EnvironmentAndFolders.php',
 			),
 		);
-
-
-		$expectedStructure = array(
-			'type' => 'root',
-			'permission' => '2770',
-			'childs' => array(
-				'web' => array(
-					'type' => 'directory',
-					'permission' => '2770',
-					'childs' => array(
-						'typo3conf' => array(
-							'type' => 'directory',
-							'permission' => '2770',
-							'childs' => array(
-								'LocalConfiguration.php' => array(
-									'type' => 'file',
-									'permission' => '660',
-								),
-							),
-							'fooOld' => array(
-								'type' => 'directory',
-							),
-						),
-						'typo3_src' => array(
-							'type' => 'link',
-							'target' => '../typo3_src',
-						),
-						'index.php' => array(
-							'type' => 'link',
-							'target' => 'typo3_src/index.php',
-						),
-					),
-				),
-				'typo3_src-core-version1' => array(
-					'type' => 'directory',
-					'permission' => '2550',
-				),
-				'typo3_src-core-version2' => array(
-					'type' => 'directory',
-					'permission' => '2550',
-				),
-			),
-		);
-		/*
-		$this->createStructureObjectsFromDefinition($expectedStructure);
-
-		checkStatus(); if exists && isPermissionCorrect, else kaputt
-		isFixable(); check if root isWritable!! nicht: if exists && isPermissionCorrect || !exists && isWritable, else kaputt
-		fix(); if !exists -> create, fixPermissions
-
-		objects:
-		 * directory
-		 * root (extends directory, implements checkStatus, isFixable, fix())
-		 * link
-		 * file
-
-		properties:
-		 * name
-		 * childs
-		 * parent
-		 * permissions
-		 * target
-
-		interface methods
-		 * delete (dirs: delete recursive, file: rm, link: rm)
-		 * create (dirs: mkdir, file: touch, link: ln -s to target)
-		 * fixPermissions (dir / file: chmod depending on permission property, link: ignore)
-		 *
-		 * isWritable (dirs / file / link: is parent writable, root: must exist!)
-		 * exists
-		 * isPermissionCorrect
-		 *
-		 * setTarget (dir / file: ignore, link: set)
-		 * setPermission (dir / file: ueberlegen, link: ignore)
-		 * addChild (dir : add, file / link: ignore)
-		 * getChilds (dir: return childs, file / link: return empty array)
-		 * getParent (root: throw exception, dir / file / link: return parent object
-		 *
-		 * __construct($parent = NULL) (file / dir / link throw if NULL, root throws in !NULL)
-		 */
 	}
-
 
 	/**
 	 * Index action acts a a dispatcher to different steps
 	 *
-	 * @return string|boolean If string, rendered output of a step, FALSE if nothing needed
-	 * @TODO: check if false as return is a good idea
+	 * @throws Exception
+	 * @return void
 	 */
 	public function indexAction() {
-		require_once __DIR__ . '/Step/StepInterface.php';
-
 		// Require step classes if given
 		foreach ($this->steps as $step) {
 			if (!empty($step['file'])) {
@@ -143,35 +65,56 @@ class StepController {
 			}
 		}
 
-//		if isset _post (executeStep) -> hole step namen, instantiere, rufe exec()
+		$executionMessages = array();
+		if (isset($GLOBALS['_POST']['executeStep'])) {
+			$stepName = $GLOBALS['_POST']['executeStep'];
+			if (!array_key_exists($stepName, $this->steps)) {
+				throw new Exception(
+					'Step not found',
+					1366914638
+				);
+			}
+			/** @var $stepObject Step\StepInterface */
+			$stepClassName = $this->steps[$stepName]['className'];
+			$stepObject = new $stepClassName();
+			$executionMessages = $stepObject->execute();
+		}
 
 		foreach ($this->steps as $step) {
 			$stepObject = new $step['className'];
 			if (!$stepObject instanceof Step\StepInterface) {
-				throw new \BadMethodCallException('Step ' . $step['className'] . 'must implement StepInterface', 1365967344);
+				throw new Exception(
+					'Step ' . $step['className'] . 'must implement StepInterface',
+					1365967344
+				);
 			}
 
 			$stepContent = '';
 			if ($stepObject->needsExecution()) {
 				$stepContent = $stepObject->render();
 			}
-			$stepContent = $this->embedStepOutputInMainPage($stepContent);
+			$stepContent = $this->render($stepContent, $executionMessages);
 			$this->output($stepContent);
 		}
 	}
 
 	/**
-	 * Fetch step template content and embed step content
+	 * Render a step with the execution messages of the executed step and the current step content
 	 *
-	 * @param string $content Inner step content
+	 * @param string $stepContent Inner step content
+	 * @param array $executionMessages<\TYPO3\CMS\Install\Status\StatusInterface> Status objects of executed step
 	 * @return string
 	 */
-	protected function embedStepOutputInMainPage($content) {
+	protected function render($stepContent, array $executionMessages = array()) {
 		$mainPageContent = file_get_contents(__DIR__ . '/../../Resources/Private/Templates/StepInstaller/Main.html');
+
+		$statusUtility = new \TYPO3\CMS\Install\Status\StatusUtility();
+		$executionMessagesHtml = $statusUtility->renderStatusObjects($executionMessages);
 
 		$markerArray = array();
 		$markerArray['HEAD_TITLE'] = 'TYPO3 ' . TYPO3_branch;
-		$markerArray['CONTENT'] = $content;
+		$markerArray['STEP_EXECUTION_MESSAGES'] = $executionMessagesHtml;
+		$markerArray['CONTENT'] = $stepContent;
 		$markerArray['BODY_TITLE'] = 'Installing TYPO3 ' . TYPO3_version;
 		$markerArray['COPYRIGHT'] = $this->getCopyRightString();
 
@@ -188,23 +131,22 @@ class StepController {
 	 * @return string copyright
 	 */
 	protected function getCopyRightString() {
-		$content = '
-			<p>
-				<strong>TYPO3 CMS.</strong> Copyright &copy; 1998-' . date('Y') . '
-				Kasper Sk&#229;rh&#248;j. Extensions are copyright of their respective
-				owners. Go to <a href="' . TYPO3_URL_GENERAL . '">' . TYPO3_URL_GENERAL . '</a>
-				for details. TYPO3 comes with ABSOLUTELY NO WARRANTY;
-				<a href="' . TYPO3_URL_LICENSE . '">click</a> for details.
-				This is free software, and you are welcome to redistribute it
-				under certain conditions; <a href="' . TYPO3_URL_LICENSE . '">click</a>
-				for details. Obstructing the appearance of this notice is prohibited by law.
-			</p>
-			<p>
-				<a href="' . TYPO3_URL_DONATE . '"><strong>Donate</strong></a> |
-				<a href="' . TYPO3_URL_ORG . '">TYPO3.org</a>
-			</p>
-		';
-		return $content;
+		$content = array();
+		$content[] = '<p>';
+		$content[] = '<strong>TYPO3 CMS.</strong> Copyright &copy; 1998-' . date('Y');
+		$content[] = 'Kasper Sk&#229;rh&#248;j. Extensions are copyright of their respective';
+		$content[] = 'owners. Go to <a href="' . TYPO3_URL_GENERAL . '">' . TYPO3_URL_GENERAL . '</a>';
+		$content[] = 'for details. TYPO3 comes with ABSOLUTELY NO WARRANTY;';
+		$content[] = '<a href="' . TYPO3_URL_LICENSE . '">click</a> for details.';
+		$content[] = 'This is free software, and you are welcome to redistribute it';
+		$content[] = 'under certain conditions; <a href="' . TYPO3_URL_LICENSE . '">click</a>';
+		$content[] = 'for details. Obstructing the appearance of this notice is prohibited by law.';
+		$content[] = '</p>';
+		$content[] = '<p>';
+		$content[] = '<a href="' . TYPO3_URL_DONATE . '"><strong>Donate</strong></a> |';
+		$content[] = '<a href="' . TYPO3_URL_ORG . '">TYPO3.org</a>';
+		$content[] = '</p>';
+		return implode(LF, $content);
 	}
 
 	/**
