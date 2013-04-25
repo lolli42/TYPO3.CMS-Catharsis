@@ -73,17 +73,7 @@ class DefaultFactory {
 					'targetPermission' => '2770',
 					'children' => array(
 						array(
-							'name' => 'pics',
-							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-							'targetPermission' => '2770',
-						),
-						array(
-							'name' => 'temp',
-							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-							'targetPermission' => '2770',
-						),
-						array(
-							'name' => 'llxml',
+							'name' => 'compressor',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
 						),
@@ -93,12 +83,37 @@ class DefaultFactory {
 							'targetPermission' => '2770',
 						),
 						array(
+							'name' => 'Cache',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+						),
+						array(
 							'name' => 'GB',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
 						),
 						array(
+							'name' => 'llxml',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+						),
+						array(
 							'name' => 'locks',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+						),
+						array(
+							'name' => 'pics',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+						),
+						array(
+							'name' => 'sprites',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+						),
+						array(
+							'name' => 'temp',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
 						),
