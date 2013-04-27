@@ -161,14 +161,56 @@ class DefaultFactory {
 					'targetPermission' => '2770',
 					'children' => array(
 						array(
-							'name' => 'pics',
-							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-							'targetPermission' => '2770',
+							'name' => 'index.html',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+							'targetPermission' => '0660',
+							'targetContent' =>
+								'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
+								'<HTML>' . LF .
+								'<HEAD>' . LF .
+								TAB . '<TITLE></TITLE>' . LF .
+								'<META http-equiv=Refresh Content="0; Url=../">' . LF .
+								'</HEAD>' . LF .
+								'</HTML>',
 						),
 						array(
 							'name' => 'media',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
+							'children' => array(
+								array(
+									'name' => 'index.html',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' => '',
+								),
+							),
+						),
+						array(
+							'name' => 'pics',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+							'children' => array(
+								array(
+									'name' => 'index.html',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' => '',
+								),
+							),
+						),
+						array(
+							'name' => 'tf',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => '2770',
+							'children' => array(
+								array(
+									'name' => 'index.html',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' => '',
+								),
+							),
 						),
 					),
 				),
@@ -181,11 +223,58 @@ class DefaultFactory {
 							'name' => '_temp_',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
+							'children' => array(
+								array(
+									'name' => '.htaccess',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' =>
+										'# This file restricts access to the fileadmin/_temp_ directory. It is' . LF .
+										'# meant to protect temporary files which could contain sensible' . LF .
+										'# information. Please do not touch.' . LF .
+										LF .
+										'Order deny,allow' . LF .
+										'Deny from all' . LF,
+								),
+								array(
+									'name' => 'index.html',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' =>
+										'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
+										'<HTML>' . LF .
+										'<HEAD>' . LF .
+										TAB . '<TITLE></TITLE>' . LF .
+										'<META http-equiv=Refresh Content="0; Url=/">' . LF .
+										'</HEAD>',
+								),
+							),
 						),
 						array(
 							'name' => 'user_upload',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => '2770',
+							'children' => array(
+								array(
+									'name' => '_temp_',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+									'targetPermission' => '2770',
+									'children' => array(
+										array(
+											'name' => 'index.html',
+											'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+											'targetPermission' => '0660',
+											'targetContent' => '',
+										),
+									),
+								),
+								array(
+									'name' => 'index.html',
+									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+									'targetPermission' => '0660',
+									'targetContent' => '',
+								),
+							),
 						),
 					),
 				),
@@ -230,44 +319,4 @@ class DefaultFactory {
 		}
 		return $structureFacade;
 	}
-
-		/*
-		$this->createStructureObjectsFromDefinition($expectedStructure);
-
-		checkStatus(); if exists && isPermissionCorrect, else kaputt
-		isFixable(); check if root isWritable!! nicht: if exists && isPermissionCorrect || !exists && isWritable, else kaputt
-		fix(); if !exists -> create, fixPermissions
-
-		objects:
-		 * directory
-		 * root (extends directory, implements checkStatus, isFixable, fix())
-		 * link
-		 * file
-
-		properties:
-		 * name
-		 * children
-		 * parent
-		 * permissions
-		 * target
-
-		interface methods
-		 * delete (dirs: delete recursive, file: rm, link: rm)
-		 * create (dirs: mkdir, file: touch, link: ln -s to target)
-		 * fixPermissions (dir / file: chmod depending on permission property, link: ignore)
-		 *
-		 * isWritable (dirs / file / link: is parent writable, root: must exist!)
-		 * exists
-		 * isPermissionCorrect
-		 *
-		 * setTarget (dir / file: ignore, link: set)
-		 * setPermission (dir / file: ueberlegen, link: ignore)
-		 * addChild (dir : add, file / link: ignore)
-		 * getChilds (dir: return childs, file / link: return empty array)
-		 * getParent (root: throw exception, dir / file / link: return parent object
-		 *
-		 * __construct($parent = NULL) (file / dir / link throw if NULL, root throws in !NULL)
-		 */
-
-
 }
