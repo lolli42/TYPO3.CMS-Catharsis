@@ -24,6 +24,8 @@ namespace TYPO3\CMS\Install\FolderStructure;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Install\Status;
+
 /**
  * Abstract node implements common methods
  */
@@ -101,6 +103,81 @@ abstract class AbstractNode {
 	 */
 	public function isWritable() {
 		return $this->parent->isWritable();
+	}
+
+	/**
+	 * Checks if node exists.
+	 * Returns TRUE if it is there, even if it is only a link.
+	 * Does not check the type!
+	 *
+	 * @return bool
+	 */
+	protected function exists() {
+		if (is_link($this->getAbsolutePath())) {
+			return TRUE;
+		} else {
+			return file_exists($this->getAbsolutePath());
+		}
+	}
+
+	/**
+	 * Fix permission if they are not equal to target permission
+	 *
+	 * @throws Exception
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function fixPermission() {
+		if ($this->isPermissionCorrect()) {
+			throw new Exception(
+				'Permission on ' . $this->getAbsolutePath() . ' are already ok',
+				1366744035
+			);
+		}
+		$result = @chmod($this->getAbsolutePath(), octdec($this->targetPermission));
+		if ($result === TRUE) {
+			$status = new Status\OkStatus();
+			$status->setTitle('Fixed permission on ' . $this->getRelativePathBelowSiteRoot() . '.');
+		} else {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('Permission change on ' . $this->getRelativePathBelowSiteRoot() . ' not successful!');
+			$status->setMessage(
+				'Permissions could not be changed to ' . $this->targetPermission . '. There is probably some' .
+					' group or owner permission problem on the parent directory.'
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Checks if current permission are identical to target permission
+	 *
+	 * @return bool
+	 */
+	protected function isPermissionCorrect() {
+		if ($this->isWindowsOs()) {
+			return TRUE;
+		}
+		if ($this->getCurrentPermission() === $this->targetPermission) {
+			return TRUE;
+		} else {
+			return FALSE;
+		}
+	}
+
+	/**
+	 * Get current permission of node
+	 *
+	 * @return string, eg. 2770 for dirs, 0660 for files
+	 */
+	protected function getCurrentPermission() {
+		$absolutePath = $this->getAbsolutePath();
+		$permissions = decoct(fileperms($this->getAbsolutePath()));
+		if (is_dir($absolutePath)) {
+			$result = substr($permissions, 1);
+		} else {
+			$result = substr($permissions, 2);
+		}
+		return $result;
 	}
 
 	/**

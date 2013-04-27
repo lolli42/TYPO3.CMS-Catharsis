@@ -27,14 +27,14 @@ namespace TYPO3\CMS\Install\FolderStructure;
 use TYPO3\CMS\Install\Status;
 
 /**
- * A directory
+ * A file
  */
-class DirectoryNode extends AbstractNode implements NodeInterface {
+class FileNode extends AbstractNode implements NodeInterface {
 
 	/**
-	 * @var NULL|string Default for directories is 2770
+	 * @var NULL|string Default for files is 0660
 	 */
-	protected $targetPermission = '2770';
+	protected $targetPermission = '0660';
 
 	/**
 	 * Implement constructor
@@ -46,8 +46,8 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	public function __construct(array $structure, NodeInterface $parent = NULL) {
 		if (is_null($parent)) {
 			throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
-				'Node must have parent',
-				1366222203
+				'File node must have parent',
+				1366927513
 			);
 		}
 		$this->parent = $parent;
@@ -55,8 +55,8 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 		// Ensure name is a single segment, but not a path like foo/bar or an absolute path /foo
 		if (strstr($structure['name'], '/') !== FALSE) {
 			throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
-				'Directory name must not contain forward slash',
-				1366226639
+				'File name must not contain forward slash',
+				1366222204
 			);
 		}
 		$this->name = $structure['name'];
@@ -64,14 +64,12 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 		if (isset($structure['targetPermission'])) {
 			$this->targetPermission = $structure['targetPermission'];
 		}
-
-		if (array_key_exists('children', $structure)) {
-			$this->createChildren($structure['children']);
-		}
 	}
 
 	/**
-	 * Get own status and status of child objects
+	 * Get own status
+	 * Returns warning if file not exists
+	 * Returns error if file exists but content is not as expected (can / shouldn't be fixed)
 	 *
 	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
 	 */
@@ -84,22 +82,6 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 		} else {
 			$result[] = $this->getSelfStatus();
 		}
-		$result = array_merge($result, $this->getChildrenStatus());
-		return $result;
-	}
-
-	/**
-	 * Create a test file and delete again if directory exists
-	 *
-	 * @return boolean TRUE if test file creation was successful
-	 */
-	public function isWritable() {
-		$result = TRUE;
-		if (!$this->exists()) {
-			$result = FALSE;
-		} elseif (!$this->canFileBeCreated()) {
-			$result = FALSE;
-		}
 		return $result;
 	}
 
@@ -110,10 +92,6 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	 */
 	public function fix() {
 		$result = $this->fixSelf();
-		foreach ($this->children as $child) {
-			/** @var $child NodeInterface */
-			$result = array_merge($result, $child->fix());
-		}
 		return $result;
 	}
 
@@ -125,13 +103,13 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	protected function fixSelf() {
 		$result = array();
 		if (!$this->exists()) {
-			$result[] = $this->createDirectory();
+			$result[] = $this->createFile();
 		}
-		if (!$this->isDirectory()) {
+		if (!$this->isFile()) {
 			$status = new Status\ErrorStatus();
-			$status->setTitle('Path ' . $this->getRelativePathBelowSiteRoot() . ' is not a directory');
+			$status->setTitle('Path ' . $this->getRelativePathBelowSiteRoot() . ' is not a file');
 			$status->setMessage(
-				'The target ' . $this->getRelativePathBelowSiteRoot() . ' should be a directory,' .
+				'The target ' . $this->getRelativePathBelowSiteRoot() . ' should be a file,' .
 				' but is of type ' . filetype($this->getAbsolutePath()) . '. I can not fix this. Please investigate.'
 			);
 			$result[] = $status;
@@ -142,27 +120,27 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	}
 
 	/**
-	 * Create directory if not exists
+	 * Create file if not exists
 	 *
 	 * @throws Exception
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
-	protected function createDirectory() {
+	protected function createFile() {
 		if ($this->exists()) {
 			throw new Exception(
-				'Directory ' . $this->getAbsolutePath() . ' already exists',
-				1366740091
+				'File ' . $this->getAbsolutePath() . ' already exists',
+				1367048077
 			);
 		}
-		$result = @mkdir($this->getAbsolutePath());
+		$result = @touch($this->getAbsolutePath());
 		if ($result === TRUE) {
 			$status = new Status\OkStatus();
-			$status->setTitle('Directory ' . $this->getRelativePathBelowSiteRoot() . ' successfully created.');
+			$status->setTitle('File ' . $this->getRelativePathBelowSiteRoot() . ' successfully created.');
 		} else {
 			$status = new Status\ErrorStatus();
-			$status->setTitle('Directory ' . $this->getRelativePathBelowSiteRoot() . ' not created!');
+			$status->setTitle('File ' . $this->getRelativePathBelowSiteRoot() . ' not created!');
 			$status->setMessage(
-				'The target directory could not be created. There is probably some' .
+				'The target file could not be created. There is probably some' .
 				' group or owner permission problem on the parent directory.'
 			);
 		}
@@ -170,17 +148,17 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	}
 
 	/**
-	 * Get status of directory - used in root and directory node
+	 * Get status of file
 	 *
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function getSelfStatus() {
 		$result = NULL;
-		if (!$this->isDirectory()) {
+		if (!$this->isFile()) {
 			$status = new Status\ErrorStatus();
-			$status->setTitle($this->getRelativePathBelowSiteRoot() . ' is not a directory');
+			$status->setTitle($this->getRelativePathBelowSiteRoot() . ' is not a file');
 			$status->setMessage(
-				'Path ' . $this->getAbsolutePath() . ' should be a directory,' .
+				'Path ' . $this->getAbsolutePath() . ' should be a file,' .
 				' but is of type ' . filetype($this->getAbsolutePath())
 			);
 			$result = $status;
@@ -209,75 +187,13 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	}
 
 	/**
-	 * Get status of children
-	 *
-	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
-	 */
-	protected function getChildrenStatus() {
-		$result = array();
-		foreach ($this->children as $child) {
-			/** @var $child NodeInterface */
-			$result = array_merge($result, $child->getStatus());
-		}
-		return $result;
-	}
-
-	/**
-	 * Create a test file and delete again - helper for isWritable
-	 *
-	 * @return boolean TRUE if test file creation was successful
-	 */
-	protected function canFileBeCreated() {
-		$testFileName = uniqid('installToolTest_');
-		$result = @touch($this->getAbsolutePath() . '/' . $testFileName);
-		if ($result === TRUE) {
-			unlink($this->getAbsolutePath() . '/' . $testFileName);
-		}
-		return $result;
-	}
-
-	/**
-	 * Checks if not is a directory
+	 * Checks if not is a file
 	 *
 	 * @return bool
 	 */
-	protected function isDirectory() {
+	protected function isFile() {
 		$path = $this->getAbsolutePath();
-		return (!is_link($path) && is_dir($path));
-	}
-
-	/**
-	 * Create children nodes - done in directory and root node
-	 *
-	 * @param array $structure Array of childs
-	 * @throws Exception\InvalidArgumentException
-	 */
-	protected function createChildren(array $structure) {
-		foreach($structure as $child) {
-			if (!array_key_exists('type', $child)) {
-				throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
-					'Child must have type',
-					1366222204
-				);
-			}
-			if (!array_key_exists('name', $child)) {
-				throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
-					'Child must have name',
-					1366222205
-				);
-			}
-			$name = $child['name'];
-			foreach ($this->children as $existingChild) {
-				/** @var $existingChild NodeInterface */
-				if ($existingChild->getName() === $name) {
-					throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
-						'Child name must be unique',
-						1366222206
-					);
-				}
-			}
-			$this->children[] = new $child['type']($child, $this);
-		}
+		return (!is_link($path) && is_file($path));
 	}
 }
 ?>

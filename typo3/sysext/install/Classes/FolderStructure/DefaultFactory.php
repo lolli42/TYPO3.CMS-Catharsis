@@ -48,6 +48,7 @@ class DefaultFactory {
 		require_once(__DIR__ . '/NodeInterface.php');
 		require_once(__DIR__ . '/AbstractNode.php');
 		require_once(__DIR__ . '/DirectoryNode.php');
+		require_once(__DIR__ . '/FileNode.php');
 		require_once(__DIR__ . '/RootNodeInterface.php');
 		require_once(__DIR__ . '/RootNode.php');
 		require_once(__DIR__ . '/StructureFacadeInterface.php');
@@ -72,6 +73,12 @@ class DefaultFactory {
 					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 					'targetPermission' => '2770',
 					'children' => array(
+						array(
+							'name' => 'index.html',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
+							'targetPermission' => '0660',
+							'content' => '',
+						),
 						array(
 							'name' => 'compressor',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
