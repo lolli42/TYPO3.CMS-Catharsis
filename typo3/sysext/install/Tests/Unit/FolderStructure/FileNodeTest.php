@@ -114,11 +114,41 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
+	public function constructorSetsTargetContent() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('dummy'), array(), '', FALSE);
+		$parent = $this->getMock('TYPO3\CMS\Install\FolderStructure\RootNodeInterface', array(), array(), '', FALSE);
+		$targetContent = uniqid('content_');
+		$structure = array(
+			'name' => 'foo',
+			'targetContent' => $targetContent,
+		);
+		$node->__construct($structure, $parent);
+		$this->assertSame($targetContent, $node->_get('targetContent'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function targetContentIsNullIfNotGiven() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('dummy'), array(), '', FALSE);
+		$parent = $this->getMock('TYPO3\CMS\Install\FolderStructure\RootNodeInterface', array(), array(), '', FALSE);
+		$structure = array(
+			'name' => 'foo',
+		);
+		$node->__construct($structure, $parent);
+		$this->assertNull($node->_get('targetContent'));
+	}
+
+	/**
+	 * @test
+	 */
 	public function getStatusReturnsArray() {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -129,6 +159,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$this->assertInternalType('array', $node->getStatus());
 	}
 
@@ -139,7 +170,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -150,6 +181,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
@@ -163,7 +195,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -176,6 +208,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(FALSE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
@@ -189,7 +222,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -202,6 +235,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
@@ -215,7 +249,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -228,6 +262,7 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(FALSE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
@@ -237,11 +272,11 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function getStatusReturnsArrayWithOkStatusIfFileExistsAndPermissionAreCorrect() {
+	public function getStatusReturnsArrayWithErrorStatusIfFileExistsButContentIsNotCorrect() {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect'),
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
 			array(),
 			'',
 			FALSE
@@ -254,6 +289,34 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(FALSE));
+		$statusArray = $node->getStatus();
+		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
+		$status = $statusArray[0];
+		$this->assertInstanceOf('\TYPO3\CMS\Install\Status\ErrorStatus', $status);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getStatusReturnsArrayWithOkStatusIfFileExistsAndPermissionAreCorrect() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
+			array('getAbsolutePath', 'exists', 'isFile', 'isWritable', 'isPermissionCorrect', 'isContentCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		touch ($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->expects($this->any())->method('exists')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isWritable')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isContentCorrect')->will($this->returnValue(TRUE));
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
@@ -284,17 +347,88 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
-			array('exists', 'createFile', 'getAbsolutePath', 'isFile', 'isPermissionCorrect'),
+			array('exists', 'createFile', 'setContent', 'getAbsolutePath', 'isFile', 'isPermissionCorrect'),
 			array(),
 			'',
 			FALSE
 		);
-		$node->expects($this->once())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('exists')->will($this->returnValue(FALSE));
 		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
 		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
 		$uniqueReturn = uniqid();
 		$node->expects($this->once())->method('createFile')->will($this->returnValue($uniqueReturn));
-		$this->assertSame(array($uniqueReturn), $node->_call('fixSelf'));
+		$actualReturn = $node->_call('fixSelf');
+		$actualReturn = $actualReturn[0];
+		$this->assertSame($uniqueReturn, $actualReturn);
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfCallsSetsContentIfFileCreationWasSuccessfulAndTargetContentIsNotNullAndReturnsResult() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
+			array('exists', 'createFile', 'setContent', 'getAbsolutePath', 'isFile', 'isPermissionCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$uniqueReturn = uniqid();
+		$createFileStatus = $this->getMock('TYPO3\\CMS\\Install\\Status\\OkStatus', array(), array(), '', FALSE);
+		$node->expects($this->any())->method('createFile')->will($this->returnValue($createFileStatus));
+		$node->_set('targetContent', 'foo');
+		$node->expects($this->once())->method('setContent')->will($this->returnValue($uniqueReturn));
+		$actualReturn = $node->_call('fixSelf');
+		$actualReturn = $actualReturn[1];
+		$this->assertSame($uniqueReturn, $actualReturn);
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfDoesNotCallSetContentIfFileCreationFailed() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
+			array('exists', 'createFile', 'setContent', 'getAbsolutePath', 'isFile', 'isPermissionCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$createFileStatus = $this->getMock('TYPO3\\CMS\\Install\\Status\\ErrorStatus', array(), array(), '', FALSE);
+		$node->expects($this->any())->method('createFile')->will($this->returnValue($createFileStatus));
+		$node->_set('targetContent', 'foo');
+		$node->expects($this->never())->method('setContent');
+		$node->_call('fixSelf');
+	}
+
+	/**
+	 * @test
+	 */
+	public function fixSelfDoesNotCallSetContentIfFileTargetContentIsNull() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock(
+			'TYPO3\\CMS\\Install\\FolderStructure\\FileNode',
+			array('exists', 'createFile', 'setContent', 'getAbsolutePath', 'isFile', 'isPermissionCorrect'),
+			array(),
+			'',
+			FALSE
+		);
+		$node->expects($this->any())->method('exists')->will($this->returnValue(FALSE));
+		$node->expects($this->any())->method('isFile')->will($this->returnValue(TRUE));
+		$node->expects($this->any())->method('isPermissionCorrect')->will($this->returnValue(TRUE));
+		$createFileStatus = $this->getMock('TYPO3\\CMS\\Install\\Status\\OkStatus', array(), array(), '', FALSE);
+		$node->expects($this->any())->method('createFile')->will($this->returnValue($createFileStatus));
+		$node->_set('targetContent', NULL);
+		$node->expects($this->never())->method('setContent');
+		$node->_call('fixSelf');
 	}
 
 	/**
@@ -409,6 +543,148 @@ class FileNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->expects($this->once())->method('exists')->will($this->returnValue(FALSE));
 		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($subPath));
 		$this->assertInstanceOf('TYPO3\\CMS\Install\\Status\\StatusInterface', $node->_call('createFile'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception
+	 */
+	public function isContentCorrectThrowsExceptionIfTargetIsNotAFile() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		mkdir($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_call('isContentCorrect');
+	}
+
+	/**
+	 * @test
+	 */
+	public function isContentCorrectReturnsTrueIfTargetContentPropertyIsNull() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_set('targetContent', NULL);
+		$this->assertTrue($node->_call('isContentCorrect'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function isContentCorrectReturnsTrueIfTargetContentEqualsCurrentContent() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		$content = uniqid('content_');
+		file_put_contents($path, $content);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_set('targetContent', $content);
+		$this->assertTrue($node->_call('isContentCorrect'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function isContentCorrectReturnsFalseIfTargetContentNotEqualsCurrentContent() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		$content = uniqid('content1_');
+		$targetContent = uniqid('content2_');
+		file_put_contents($path, $content);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_set('targetContent', $targetContent);
+		$this->assertFalse($node->_call('isContentCorrect'));
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception
+	 */
+	public function setContentThrowsExceptionIfTargetIsNotAFile() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		mkdir($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_set('targetContent', 'foo');
+		$node->_call('setContent');
+	}
+
+	/**
+	 * @test
+	 * @expectedException \TYPO3\CMS\Install\FolderStructure\Exception
+	 */
+	public function setContentThrowsExceptionIfTargetContentIsNull() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$node->_set('targetContent', NULL);
+		$node->_call('setContent');
+	}
+
+	/**
+	 * @test
+	 */
+	public function setContentSetsContentToFile() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath', 'getRelativePathBelowSiteRoot'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$targetContent = uniqid('content_');
+		$node->_set('targetContent', $targetContent);
+		$node->_call('setContent');
+		$resultContent = file_get_contents($path);
+		$this->assertSame($targetContent, $resultContent);
+	}
+
+	/**
+	 * @test
+	 */
+	public function setContentReturnsOkStatusIfContentWasSuccessfullySet() {
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath', 'getRelativePathBelowSiteRoot'), array(), '', FALSE);
+		$path = PATH_site . 'typo3temp/' . uniqid('file_');
+		touch($path);
+		$this->testNodesToDelete[] = $path;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
+		$targetContent = uniqid('content_');
+		$node->_set('targetContent', $targetContent);
+		$this->assertInstanceOf('TYPO3\\CMS\\Install\\Status\\OkStatus', $node->_call('setContent'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function setContentReturnsErrorStatusIfContentCanNotBeSetSet() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
+		/** @var $node \TYPO3\CMS\Install\FolderStructure\FileNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
+		$node = $this->getAccessibleMock('TYPO3\\CMS\\Install\\FolderStructure\\FileNode', array('getAbsolutePath', 'getRelativePathBelowSiteRoot'), array(), '', FALSE);
+		$dir = PATH_site . 'typo3temp/' . uniqid('dir_');
+		mkdir($dir);
+		$file = $dir . '/' . uniqid('file_');
+		touch($file);
+		chmod($file, octdec(0440));
+		$this->testNodesToDelete[] = $dir;
+		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($file));
+		$targetContent = uniqid('content_');
+		$node->_set('targetContent', $targetContent);
+		$this->assertInstanceOf('TYPO3\\CMS\\Install\\Status\\ErrorStatus', $node->_call('setContent'));
 	}
 
 	/**

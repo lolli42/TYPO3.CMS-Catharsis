@@ -77,7 +77,7 @@ class DefaultFactory {
 							'name' => 'index.html',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
 							'targetPermission' => '0660',
-							'content' => '',
+							'targetContent' => '',
 						),
 						array(
 							'name' => 'compressor',

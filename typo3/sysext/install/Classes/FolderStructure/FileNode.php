@@ -37,6 +37,11 @@ class FileNode extends AbstractNode implements NodeInterface {
 	protected $targetPermission = '0660';
 
 	/**
+	 * @var string|NULL Target content of file. If NULL, target content is ignored
+	 */
+	protected $targetContent = NULL;
+
+	/**
 	 * Implement constructor
 	 *
 	 * @param array $structure Structure array
@@ -63,6 +68,10 @@ class FileNode extends AbstractNode implements NodeInterface {
 
 		if (isset($structure['targetPermission'])) {
 			$this->targetPermission = $structure['targetPermission'];
+		}
+
+		if (isset($structure['targetContent'])) {
+			$this->targetContent = $structure['targetContent'];
 		}
 	}
 
@@ -103,7 +112,13 @@ class FileNode extends AbstractNode implements NodeInterface {
 	protected function fixSelf() {
 		$result = array();
 		if (!$this->exists()) {
-			$result[] = $this->createFile();
+			$resultCreateFile = $this->createFile();
+			$result[] = $resultCreateFile;
+			if ($resultCreateFile instanceof \TYPO3\CMS\Install\Status\OkStatus
+				&& !is_null($this->targetContent)
+			) {
+				$result[] = $this->setContent();
+			}
 		}
 		if (!$this->isFile()) {
 			$status = new Status\ErrorStatus();
@@ -178,12 +193,78 @@ class FileNode extends AbstractNode implements NodeInterface {
 				' but current permission are ' . $this->getCurrentPermission()
 			);
 			$result = $status;
+		} elseif (!$this->isContentCorrect()) {
+			$status = new Status\ErrorStatus();
+			$status->setTitle($this->getRelativePathBelowSiteRoot() . ' content differs');
+			$status->setMessage(
+				'File content is not identical to target content. Probably, this file was' .
+				' changed manually. The content will not be fixed to not override your changes.'
+			);
+			$result = $status;
 		} else {
 			$status = new Status\OkStatus();
 			$status->setTitle($this->getRelativePathBelowSiteRoot());
 			$result = $status;
 		}
 		return $result;
+	}
+
+	/**
+	 * Compare current file content with target file content
+	 *
+	 * @throws Exception If file does not exist
+	 * @return boolean TRUE if current and target file content are identical
+	 */
+	protected function isContentCorrect() {
+		$absolutePath = $this->getAbsolutePath();
+		if (is_link($absolutePath) || !is_file($absolutePath)) {
+			throw new Exception(
+				'File ' . $absolutePath . ' must exist',
+				1367056363
+			);
+		}
+		$result = FALSE;
+		if (is_null($this->targetContent)) {
+			$result = TRUE;
+		} else {
+			$targetContentHash = md5($this->targetContent);
+			$currentContentHash = md5(file_get_contents($absolutePath));
+			if ($targetContentHash === $currentContentHash) {
+				$result = TRUE;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Sets content of file to target content
+	 *
+	 * @throws Exception If file does not exist
+	 */
+	protected function setContent() {
+		$absolutePath = $this->getAbsolutePath();
+		if (is_link($absolutePath) || !is_file($absolutePath)) {
+			throw new Exception(
+				'File ' . $absolutePath . ' must exist',
+				1367060201
+			);
+		}
+		if (is_null($this->targetContent)) {
+			throw new Exception(
+				'Target content not defined for ' . $absolutePath,
+				1367060202
+			);
+		}
+		$result = @file_put_contents($absolutePath, $this->targetContent);
+		if ($result !== FALSE) {
+			$status = new Status\OkStatus();
+			$status->setTitle('Set content to ' . $this->getRelativePathBelowSiteRoot());
+		} else {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('Setting content to ' . $this->getRelativePathBelowSiteRoot() . ' failed');
+			$status->setMessage('Setting content of the file failed for unknown reasons.');
+		}
+		return $status;
 	}
 
 	/**
