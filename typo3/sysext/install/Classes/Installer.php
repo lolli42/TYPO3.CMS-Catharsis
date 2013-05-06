@@ -1343,7 +1343,10 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 
 		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
 		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
-		$html .= $statusUtility->renderStatusObjectsSortedBySeverity($statusObjects);
+		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
+		foreach ($sortedStatusObjects as $statusObjectsOfOneSeverity) {
+			$html .= $statusUtility->renderStatusObjectsAsHtml($statusObjectsOfOneSeverity);
+		}
 
 		$this->output($this->outputWrapper($html));
 	}

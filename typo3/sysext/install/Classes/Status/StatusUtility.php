@@ -25,7 +25,8 @@ namespace TYPO3\CMS\Install\Status;
  ***************************************************************/
 
 /**
- * Utility methods to handle status objects
+ * Utility methods to handle status objects. Provides some helper
+ * methods to filter, sort and render status objects.
  */
 class StatusUtility {
 
@@ -37,34 +38,18 @@ class StatusUtility {
 	}
 
 	/**
-	 * Get a flat list of randomly ordered status objects, sorts
-	 * them by severity and renders them.
-	 *
-	 * @param array<\TYPO3\CMS\Install\Status\StatusInterface> $statusObjects
-	 * @return string Rendered objects
-	 */
-	public function renderStatusObjectsSortedBySeverity(array $statusObjects = array()) {
-		$orderedStatus = $this->sortBySeverity($statusObjects);
-		$html = '';
-		foreach ($orderedStatus as $severityObjects) {
-			$html .= $this->renderStatusObjects($severityObjects);
-		}
-		return $html;
-	}
-
-	/**
 	 * Render a flat list of status objects
 	 *
 	 * @param array $statusObjects <\TYPO3\CMS\Install\Status\StatusInterface> $statusObjects
 	 * @throws Exception
-	 * @return string
+	 * @return string Rendered objects
 	 */
-	public function renderStatusObjects(array $statusObjects = array()) {
+	public function renderStatusObjectsAsHtml(array $statusObjects = array()) {
 		$messageHtmlBoilerPlate =
 			'<div class="typo3-message message-%1s" >' .
 				'<div class="header-container">' .
-				'<div class="message-header message-left"><strong>%2s</strong></div>' .
-				'<div class="message-header message-right"></div>' .
+					'<div class="message-header message-left"><strong>%2s</strong></div>' .
+					'<div class="message-header message-right"></div>' .
 				'</div>' .
 				'<div class="message-body">%3s</div>' .
 			'</div>' .
