@@ -132,7 +132,7 @@ class EnvironmentAndFolders implements StepInterface {
 
 		if (count($orderedStatus['error']) === 0 && count($orderedStatus['warning']) === 0) {
 			$html[] = '<form method="post" action="StepInstaller.php">';
-			$html[] = '<input type="hidden" value="environmentCheck" name="executeStep" />';
+			$html[] = '<input type="hidden" value="environmentAndFolders" name="executeStep" />';
 			$html[] = '<button type="submit">';
 			$html[] = 'System looks good. Continue!';
 			$html[] = '<span class="t3-install-form-button-icon-positive">&nbsp;</span>';
@@ -147,7 +147,7 @@ class EnvironmentAndFolders implements StepInterface {
 			$html[] = '</form>';
 
 			$html[] = '<form method="post" action="StepInstaller.php">';
-			$html[] = '<input type="hidden" value="environmentCheck" name="executeStep" />';
+			$html[] = '<input type="hidden" value="environmentAndFolders" name="executeStep" />';
 			$html[] = '<button type="submit">';
 			$html[] = 'I know what I\'m doing, continue!';
 			$html[] = '<span class="t3-install-form-button-icon-negative">&nbsp;</span>';

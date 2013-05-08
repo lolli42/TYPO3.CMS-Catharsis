@@ -44,9 +44,13 @@ class StepController {
 		require_once __DIR__ . '/../Status/StatusUtility.php';
 
 		$this->steps = array(
-			'environmentCheck' => array(
+			'environmentAndFolders' => array(
 				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\EnvironmentAndFolders',
 				'file' => __DIR__ . '/Step/EnvironmentAndFolders.php',
+			),
+			'databaseConnect' => array(
+				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\DatabaseConnect',
+				'file' => __DIR__ . '/Step/DatabaseConnect.php',
 			),
 		);
 	}
@@ -65,7 +69,12 @@ class StepController {
 			}
 		}
 
+		// Execute a step if needed. This usually sets any data of the 'previous' step,
+		// and if everything worked out well, the below code will call the 'next' step,
+		// if 'previous' step does not return TRUE for needsExecution again. This can
+		// happen if for example wrong database credentials were given.
 		$executionMessages = array();
+		$stepObjects = array();
 		if (isset($GLOBALS['_POST']['executeStep'])) {
 			$stepName = $GLOBALS['_POST']['executeStep'];
 			if (!array_key_exists($stepName, $this->steps)) {
@@ -74,27 +83,58 @@ class StepController {
 					1366914638
 				);
 			}
+
+			// Bootstrap restriction: The steps are constructed to add bootstrap calls
+			// in __construct() that need to be done *additionally* to the bootstrap calls
+			// of the previous step. So, the steps have a cross-dependency to each other
+			// at this point: Step a does bootstrap work and step b needs additional
+			// bootstrap work and relies on a.
+			// The *additional* bootstrap is done in the step's __construct(). So, if we
+			// need to execute step b, step a needs to be constructed again. To ensure,
+			// __construct()-bootstrap is not called multiple times, the constructed
+			// objects are stored in a local variable and re-used in the needsExecution()
+			// part below.
+			// This whole construct could be simplified if we have a dependency based bootstrap.
+
+			// Create step objects in front of requested step
+			foreach($this->steps as $previousStepName => $previousStepDetails) {
+				if ($previousStepName === $stepName) {
+					break;
+				}
+				$stepObjects[$previousStepName] = new $previousStepName['className'];
+				if (!$stepObjects[$previousStepName] instanceof Step\StepInterface) {
+					throw new Exception(
+						'Step ' . $previousStepDetails['className'] . 'must implement StepInterface',
+						1368038168
+					);
+				}
+			}
+
 			/** @var $stepObject Step\StepInterface */
 			$stepClassName = $this->steps[$stepName]['className'];
-			$stepObject = new $stepClassName();
-			$executionMessages = $stepObject->execute();
+			$stepObjects[$stepName] = new $stepClassName();
+			$executionMessages = $stepObjects[$stepName]->execute();
 		}
 
-		foreach ($this->steps as $step) {
-			$stepObject = new $step['className'];
-			if (!$stepObject instanceof Step\StepInterface) {
-				throw new Exception(
-					'Step ' . $step['className'] . 'must implement StepInterface',
-					1365967344
-				);
+		// Check if some step needs execution and render if so
+		foreach ($this->steps as $stepName => $stepDetails) {
+			// Create step instance if not done yet
+			if (!array_key_exists($stepName, $stepObjects)) {
+				$stepObjects[$stepName] = new $stepDetails['className'];
+				if (!$stepObjects[$stepName] instanceof Step\StepInterface) {
+					throw new Exception(
+						'Step ' . $stepDetails['className'] . 'must implement StepInterface',
+						1365967344
+					);
+				}
 			}
+			$stepObject = $stepObjects[$stepName];
 
-			$stepContent = '';
 			if ($stepObject->needsExecution()) {
 				$stepContent = $stepObject->render();
+				$stepContent = $this->render($stepContent, $executionMessages);
+				$this->output($stepContent);
 			}
-			$stepContent = $this->render($stepContent, $executionMessages);
-			$this->output($stepContent);
 		}
 	}
 
