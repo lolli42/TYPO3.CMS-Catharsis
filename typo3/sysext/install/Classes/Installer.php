@@ -1393,15 +1393,15 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 
 		if (count($unfixableStatus)) {
 			$html[] = '<h4>These problems are not fixable:</h4>';
-			$html[] = $statusUtility->renderStatusObjects($unfixableStatus);
+			$html[] = $statusUtility->renderStatusObjectsAsHtml($unfixableStatus);
 		}
 		if (count($fixableStatus)) {
 			$html[] = '<h4>These problems are fixable:</h4>';
-			$html[] = $statusUtility->renderStatusObjects($fixableStatus);
+			$html[] = $statusUtility->renderStatusObjectsAsHtml($fixableStatus);
 		}
 		if (count($okStatus)) {
 			$html[] = '<h4>These structures are ok:</h4>';
-			$html[] = $statusUtility->renderStatusObjects($okStatus);
+			$html[] = $statusUtility->renderStatusObjectsAsHtml($okStatus);
 		}
 
 		$this->output($this->outputWrapper(implode(LF, $html)));
