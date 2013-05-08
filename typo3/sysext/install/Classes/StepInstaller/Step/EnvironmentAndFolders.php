@@ -25,7 +25,11 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
  ***************************************************************/
 
 /**
- * Check PHP and server environment check
+ * Very first install step:
+ * - Needs execution if typo3conf/LocalConfiguration.php does not exist
+ * - Renders system environment output
+ * - Creates folders like typo3temp, see FolderStructure/DefaultFactory for details
+ * - Creates typo3conf/LocalConfiguration.php from factory
  */
 class EnvironmentAndFolders implements StepInterface {
 
@@ -41,7 +45,9 @@ class EnvironmentAndFolders implements StepInterface {
 	}
 
 	/**
-	 * Execute a step
+	 * Execute environment and folder step:
+	 * - Create main folder structure
+	 * - Create typo3conf/LocalConfiguration
 	 *
 	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
 	 */
@@ -53,6 +59,14 @@ class EnvironmentAndFolders implements StepInterface {
 		$structureFixMessages = $structureFacade->fix();
 		$statusUtility = new  \TYPO3\CMS\Install\Status\StatusUtility;
 		$errorsFromStructure = $statusUtility->filterBySeverity($structureFixMessages, 'error');
+
+		// Proceed with creating LocalConfiguration only if folder creation did not throw errors
+		if (count($errorsFromStructure) < 1) {
+			// ConfigurationManager class is require_once'd by base bootstrap, no fatal possible here
+			$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager;
+			$configurationManager->createLocalConfigurationFromFactoryConfiguration();
+		}
+
 		return $errorsFromStructure;
 	}
 
@@ -179,7 +193,7 @@ class EnvironmentAndFolders implements StepInterface {
 
 		$html = '';
 		foreach ($orderedStatus as $severityIdentifier => $severity) {
-			$html .= $statusUtility->renderStatusObjects($severity);
+			$html .= $statusUtility->renderStatusObjectsAsHtml($severity);
 		}
 
 		if (strlen($html) > 0) {

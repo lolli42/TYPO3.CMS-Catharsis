@@ -143,6 +143,7 @@ class DefaultFactory {
 						),
 					),
 				),
+				/*
 				array(
 					'name' => 'typo3',
 					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
@@ -155,6 +156,7 @@ class DefaultFactory {
 						),
 					),
 				),
+				*/
 				array(
 					'name' => 'uploads',
 					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',

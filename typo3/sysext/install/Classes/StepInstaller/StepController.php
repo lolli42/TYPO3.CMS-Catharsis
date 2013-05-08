@@ -109,7 +109,7 @@ class StepController {
 		$mainPageContent = file_get_contents(__DIR__ . '/../../Resources/Private/Templates/StepInstaller/Main.html');
 
 		$statusUtility = new \TYPO3\CMS\Install\Status\StatusUtility();
-		$executionMessagesHtml = $statusUtility->renderStatusObjects($executionMessages);
+		$executionMessagesHtml = $statusUtility->renderStatusObjectsAsHtml($executionMessages);
 
 		$markerArray = array();
 		$markerArray['HEAD_TITLE'] = 'TYPO3 ' . TYPO3_branch;
