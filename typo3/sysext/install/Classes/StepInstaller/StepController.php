@@ -101,7 +101,7 @@ class StepController {
 				if ($previousStepName === $stepName) {
 					break;
 				}
-				$stepObjects[$previousStepName] = new $previousStepName['className'];
+				$stepObjects[$previousStepName] = new $previousStepDetails['className'];
 				if (!$stepObjects[$previousStepName] instanceof Step\StepInterface) {
 					throw new Exception(
 						'Step ' . $previousStepDetails['className'] . 'must implement StepInterface',

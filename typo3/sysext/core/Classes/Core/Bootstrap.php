@@ -241,8 +241,9 @@ class Bootstrap {
 	 */
 	protected function populateLocalConfiguration() {
 		try {
-			Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')
-				->exportConfiguration();
+			/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
+			$configurationManager = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+			$configurationManager->exportConfiguration();
 		} catch (\Exception $e) {
 			die($e->getMessage());
 		}
