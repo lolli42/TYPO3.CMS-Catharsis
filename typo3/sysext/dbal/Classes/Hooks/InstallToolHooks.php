@@ -156,7 +156,8 @@ class InstallToolHooks {
 					)
 				)
 			);
-			\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->setLocalConfigurationValuesByPathValuePairs(array('EXTCONF/dbal/handlerCfg' => $config));
+			\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')
+				->setLocalConfigurationValuesByPathValuePairs(array('EXTCONF/dbal/handlerCfg' => $config));
 			break;
 		}
 	}
