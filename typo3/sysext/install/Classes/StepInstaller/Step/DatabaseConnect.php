@@ -660,10 +660,10 @@ class DatabaseConnect implements StepInterface {
 		if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')) {
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtension('dbal');
 		}
-		/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-		$okStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\WarningStatus');
-		$okStatus->setTitle('Loaded database abstraction layer');
-		return $okStatus;
+		/** @var $errorStatus \TYPO3\CMS\Install\Status\WarningStatus */
+		$warningStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\WarningStatus');
+		$warningStatus->setTitle('Loaded database abstraction layer');
+		return $warningStatus;
 	}
 
 	/**
@@ -678,10 +678,10 @@ class DatabaseConnect implements StepInterface {
 		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')) {
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::unloadExtension('dbal');
 		}
-		/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-		$okStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\WarningStatus');
-		$okStatus->setTitle('Removed database abstraction layer');
-		return $okStatus;
+		/** @var $errorStatus \TYPO3\CMS\Install\Status\WarningStatus */
+		$warningStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\WarningStatus');
+		$warningStatus->setTitle('Removed database abstraction layer');
+		return $warningStatus;
 	}
 
 	/**

@@ -52,6 +52,10 @@ class StepController {
 				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\DatabaseConnect',
 				'file' => __DIR__ . '/Step/DatabaseConnect.php',
 			),
+			'databaseSelect' => array(
+				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\DatabaseSelect',
+				'file' => __DIR__ . '/Step/DatabaseSelect.php',
+			),
 		);
 	}
 

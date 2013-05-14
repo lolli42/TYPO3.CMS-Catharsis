@@ -651,16 +651,6 @@ h3 {
     text-decoration: underline;
 }
 
-/* 1-2-3: Step 3 */
-#t3-install-123-step3 label {
-    float: none;
-    font-weight: bold;
-}
-
-#t3-install-123-step3 p {
-    margin: 0 0 0.5em;
-}
-
 /* 1-2-3: Step 4 */
 #t3-install-123-stepoutputsummary dt {
     float: left;
@@ -673,16 +663,26 @@ h3 {
     float: left;
 }
 
-#t3-install-123-step3 ul {
-    list-style: none;
+
+#stepInstaller-databaseSelect label {
+	float: none;
+	font-weight: bold;
 }
 
-#t3-install-123-step3 ul li div {
-    display: inline-block;
-    margin-bottom: 10px;
-    width: 90%;
+#stepInstaller-databaseSelect p {
+	margin: 0 0 0.5em;
 }
 
-#t3-install-123-step3 ul li input.radio {
-    vertical-align: top;
+#stepInstaller-databaseSelect ul {
+	list-style: none;
+}
+
+#stepInstaller-databaseSelect ul li div {
+	display: inline-block;
+	margin-bottom: 10px;
+	width: 90%;
+}
+
+#stepInstaller-databaseSelect ul li input.radio {
+	vertical-align: top;
 }
