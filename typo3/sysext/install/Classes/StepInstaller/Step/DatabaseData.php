@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
 /**
  * Populate base tables, insert admin user, set install tool password
  */
-class DatabaseData implements StepInterface {
+class DatabaseData extends AbstractStep implements StepInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
@@ -38,15 +38,12 @@ class DatabaseData implements StepInterface {
 	 * Default constructor
 	 */
 	public function __construct() {
+		$this->reloadConfiguration();
+
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
 			->startOutputBuffering()
 			->loadConfigurationAndInitialize();
 		$GLOBALS['TYPO3_LOADED_EXT'] = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadTypo3LoadedExtensionInformation(FALSE);
-
-		if ($this->isDbalEnabled()) {
-			require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
-			$GLOBALS['typo3CacheManager']->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
-		}
 
 		$this->databaseConnection = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
 		$this->databaseConnection->setDatabaseUsername($GLOBALS['TYPO3_CONF_VARS']['DB']['username']);
@@ -58,13 +55,25 @@ class DatabaseData implements StepInterface {
 	}
 
 	/**
-	 * Create database if needed, save name.
+	 * Import tables and data, create admin user, create install tool password
 	 *
 	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
 	 */
 	public function execute() {
-		var_dump($_POST);
 		$result = array();
+
+		// Check password and return early if not good enough
+		$password = $GLOBALS['_POST']['databaseData']['password'];
+		if (strlen($password) < 8) {
+			$errorStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$errorStatus->setTitle('Administrator password not good enough!');
+			$errorStatus->setMessage(
+				'You are setting an important password here! It gives an attacker full control over your instance if cracked.' .
+				' It should be strong (include lower and upper case characters, special characters and numbers) and must be at least eight characters long.'
+			);
+			$result[] = $errorStatus;
+			return $result;
+		}
 
 		// Get sql string of all core extensions for base table layout and records
 		$sql = '';
@@ -91,7 +100,16 @@ class DatabaseData implements StepInterface {
 		$sqlHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
 		$statements = $sqlHandler->getStatementArray($sql, TRUE);
 		list($createStatementsArray, $insertCount) = $sqlHandler->getCreateTables($statements, TRUE);
-		foreach ($createStatementsArray as $statement) {
+		foreach ($createStatementsArray as $table => $statement) {
+			// Drop the table if it exists already
+			$queryResult = $this->databaseConnection->admin_query('DROP TABLE IF EXISTS ' . $table);
+			if ($queryResult === FALSE) {
+				/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
+				$errorStatus = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+				$errorStatus->setTitle('Error dropping table');
+				$errorStatus->setMessage('Sql statement failed with error message ' . $this->databaseConnection->sql_error());
+				$result[] = $errorStatus;
+			}
 			$queryResult = $this->databaseConnection->admin_query($statement);
 			if ($queryResult === FALSE) {
 				/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
@@ -116,18 +134,37 @@ class DatabaseData implements StepInterface {
 			}
 		}
 
+		// Insert admin user
+		// Password is simple md5 here for now, will be updated by saltedpasswords on first login
+		// @TODO: Handle saltedpasswords in installer and store password salted in the first place
+		$adminUserFields = array(
+			'username' => 'admin',
+			'password' => md5($password),
+			'admin' => 1,
+			'tstamp' => $GLOBALS['EXEC_TIME'],
+			'crdate' => $GLOBALS['EXEC_TIME']
+		);
+		$this->databaseConnection->exec_INSERTquery('be_users', $adminUserFields);
+
+		// Set password as install tool password
+		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
+		$configurationManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+		$configurationManager->setLocalConfigurationValueByPath('BE/installToolPassword', md5($password));
+
 		return $result;
 	}
 
 	/**
-	 * Step needs to be executed if database connection is no successful.
+	 * Step needs to be executed if there are no tables in database
 	 *
 	 * @return boolean
 	 */
 	public function needsExecution() {
-		// do, if there are no tables yet
-		// do, if there is no admin user yet
-		return TRUE;
+		$result = FALSE;
+		$existingTables = $this->databaseConnection->admin_get_tables();
+		if (count($existingTables) === 0) {
+			$result = TRUE;
+		}
 		return $result;
 	}
 
@@ -140,12 +177,30 @@ class DatabaseData implements StepInterface {
 		$this->reloadConfiguration();
 
 		$html = array();
+		$html[] = '<script type="text/javascript" src="../sysext/install/Resources/Public/Javascript/passwordStrength.js"></script>';
 
 		$html[] = '<h3>Create user and import base data</h3>';
-		$html[] = '<p>Import basic database structure and create a backend user with administrator privileges.';
-		$html[] = ' The password can be used to additionally log in to the install tool.</p>';
+		$html[] = '<p>Import basic database structure and create a backend administrator user.';
+		$html[] = ' The password can be used to log in to the install tool and to the TYPO3 CMS backend with username "admin".</p>';
+		$html[] = '<p>The table import will drop possibly existing tables!</p>';
 		$html[] = '<form method="post" action="StepInstaller.php">';
 		$html[] = '<input type="hidden" value="databaseData" name="executeStep" />';
+
+		$html[] = '<fieldset class="t3-install-form-label-width-7">';
+		$html[] = '<ol>';
+
+		$html[] = '<li>';
+		$html[] = '<label for="password">Password</label>';
+		$html[] = '<input class="t3-install-form-input-text" name="databaseData[password]" id="password" onkeyup="return passwordChanged();" type="password" />';
+		$html[] = '</li>';
+
+		$html[] = '<li>';
+		$html[] = '<label for="show-password">Show password</label>';
+		$html[] = '<input type="checkbox" id="show-password" onchange="if (this.checked==true) { document.getElementById(\'password\').type=\'text\'; } else { document.getElementById(\'password\').type=\'password\'; }">';
+		$html[] = '</li>';
+
+		$html[] = '</ol>';
+		$html[] = '</fieldset>';
 		$html[] = '<button type="submit">';
 		$html[] = 'Continue';
 		$html[] = '<span class="t3-install-form-button-icon-positive">&nbsp;</span>';
@@ -153,33 +208,6 @@ class DatabaseData implements StepInterface {
 		$html[] = '</form>';
 
 		return implode(CR, $html);
-	}
-
-	/**
-	 * Return TRUE if dbal and adodb extension is loaded
-	 *
-	 * @return boolean TRUE if dbal and adodb is loaded
-	 */
-	protected function isDbalEnabled() {
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')
-			&& \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')
-		) {
-			return TRUE;
-		}
-		return FALSE;
-	}
-
-	/**
-	 * Re-populate TYPO3_CONF_VARS in case they were changed during execution
-	 *
-	 * @return void
-	 */
-	protected function reloadConfiguration() {
-		// Load LocalConfiguration / AdditionalConfiguration again to force fresh values
-		// in TYPO3_CONF_VARS in case they were written in execute()
-		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
-		$configurationManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
-		$configurationManager->exportConfiguration();
 	}
 }
 ?>

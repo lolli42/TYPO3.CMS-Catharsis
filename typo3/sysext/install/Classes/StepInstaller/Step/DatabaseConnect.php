@@ -31,7 +31,7 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
  * - Sets database credentials in LocalConfiguration
  * - Loads / unloads ext:dbal and ext:adodb if requested
  */
-class DatabaseConnect implements StepInterface {
+class DatabaseConnect extends AbstractStep implements StepInterface {
 
 	/**
 	 * Default constructor
@@ -490,20 +490,6 @@ class DatabaseConnect implements StepInterface {
 	}
 
 	/**
-	 * Return TRUE if dbal and adodb extension is loaded
-	 *
-	 * @return boolean TRUE if dbal and adodb is loaded
-	 */
-	protected function isDbalEnabled() {
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')
-			&& \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')
-		) {
-			return TRUE;
-		}
-		return FALSE;
-	}
-
-	/**
 	 * Render dbal driver select drop down, called if dbal is installed.
 	 *
 	 * @return string
@@ -628,24 +614,6 @@ class DatabaseConnect implements StepInterface {
 			return $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['dbal']['handlerCfg']['_DEFAULT']['config']['driver'];
 		}
 		return '';
-	}
-
-	/**
-	 * Re-populate TYPO3_CONF_VARS in case they were changed during execution
-	 *
-	 * @return void
-	 */
-	protected function reloadConfiguration() {
-		// Load LocalConfiguration / AdditionalConfiguration again to force fresh values
-		// in TYPO3_CONF_VARS in case they were written in execute()
-		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
-		$configurationManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
-		$configurationManager->exportConfiguration();
-
-		if ($this->isDbalEnabled()) {
-			require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
-			$GLOBALS['typo3CacheManager']->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
-		}
 	}
 
 	/**

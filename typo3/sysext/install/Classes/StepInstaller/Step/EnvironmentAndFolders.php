@@ -31,7 +31,7 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
  * - Creates folders like typo3temp, see FolderStructure/DefaultFactory for details
  * - Creates typo3conf/LocalConfiguration.php from factory
  */
-class EnvironmentAndFolders implements StepInterface {
+class EnvironmentAndFolders extends AbstractStep implements StepInterface {
 
 	/**
 	 * Default constructor

@@ -51,6 +51,7 @@ return array(
 		),
 	),
 	'SYS' => array(
+		'isInitialInstallationInProgress' => TRUE,
 		'sitename' => 'New TYPO3 site',
 	),
 );

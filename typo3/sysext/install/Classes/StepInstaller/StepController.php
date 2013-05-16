@@ -41,6 +41,7 @@ class StepController {
 		require_once __DIR__ . '/../Exception.php';
 		require_once __DIR__ . '/Exception.php';
 		require_once __DIR__ . '/Step/StepInterface.php';
+		require_once __DIR__ . '/Step/AbstractStep.php';
 		require_once __DIR__ . '/../Status/StatusUtility.php';
 
 		$this->steps = array(
@@ -59,6 +60,10 @@ class StepController {
 			'databaseData' => array(
 				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\DatabaseData',
 				'file' => __DIR__ . '/Step/DatabaseData.php',
+			),
+			'defaultConfiguration' => array(
+				'className' => '\\TYPO3\\CMS\\Install\\StepInstaller\\Step\\DefaultConfiguration',
+				'file' => __DIR__ . '/Step/DefaultConfiguration.php',
 			),
 		);
 	}
@@ -144,6 +149,10 @@ class StepController {
 				$this->output($stepContent);
 			}
 		}
+
+		// If there was no output yet, we have reached the last step.
+		// In this case, redirect to plain install tool
+		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
 	}
 
 	/**

@@ -193,7 +193,6 @@ fieldset.t3-install-form-submit {
 fieldset select,
 input.t3-install-form-input-text,
 textarea {
-    background: url('../../Images/input-background.gif') repeat-x scroll 0 0 #FFFFFF;
     border: 1px solid #7c7c7c;
     color: #000000;
     font-size: 1.1em;
