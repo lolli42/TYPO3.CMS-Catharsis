@@ -81,16 +81,16 @@ class Installer {
 
 	/**
 	 * @todo Define visibility
+	 * The url that calls this script
 	 */
 	public $action = '';
 
-	// The url that calls this script
 	/**
 	 * @todo Define visibility
+	 * The url that calls this script
 	 */
 	public $scriptSelf = 'index.php';
 
-	// The url that calls this script
 	/**
 	 * @todo Define visibility
 	 */
@@ -113,76 +113,52 @@ class Installer {
 
 	/**
 	 * @todo Define visibility
+	 * In constructor: is set to global GET/POST var TYPO3_INSTALL
 	 */
 	public $INSTALL = array();
 
-	// In constructor: is set to global GET/POST var TYPO3_INSTALL
 	/**
 	 * @todo Define visibility
+	 * If set, lzw capabilities of the available ImageMagick installs are check by actually writing a gif-file and comparing size
 	 */
 	public $checkIMlzw = 0;
 
-	// If set, lzw capabilities of the available ImageMagick installs are check by actually writing a gif-file and comparing size
 	/**
+	 * If set, ImageMagick is checked.
 	 * @todo Define visibility
 	 */
 	public $checkIM = 0;
 
-	// If set, ImageMagick is checked.
 	/**
+	 * If set, the image Magick commands are always outputted in the image processing checker
 	 * @todo Define visibility
 	 */
 	public $dumpImCommands = 1;
 
-	// If set, the image Magick commands are always outputted in the image processing checker
 	/**
 	 * @todo Define visibility
-	 */
-	public $mode = '';
-
-	// If set to "123" then only most vital information is displayed.
-	/**
-	 * @todo Define visibility
-	 */
-	public $step = 0;
-
-	// If set to 1,2,3 or GO it signifies various functions.
-	/**
-	 * @todo Define visibility
-	 */
-	public $totalSteps = 4;
-
-	/**
-	 * @var boolean
-	 */
-	protected $hasAdditionalSteps = FALSE;
-
-	// Can be changed by hook to define the total steps in 123 mode
-	// internal
-	/**
-	 * @todo Define visibility
+	 * This is set, if the password check was ok. The function init() will exit if this is not set
 	 */
 	public $passwordOK = 0;
 
-	// This is set, if the password check was ok. The function init() will exit if this is not set
 	/**
 	 * @todo Define visibility
+	 * If set, the check routines don't add to the message-array
 	 */
 	public $silent = 1;
 
-	// If set, the check routines don't add to the message-array
 	/**
 	 * @todo Define visibility
+	 * Used to gather the message information.
 	 */
 	public $sections = array();
 
-	// Used to gather the message information.
 	/**
 	 * @todo Define visibility
+	 * This is set if some error occured that will definitely prevent TYpo3 from running.
 	 */
 	public $fatalError = 0;
 
-	// This is set if some error occured that will definitely prevent TYpo3 from running.
 	/**
 	 * @todo Define visibility
 	 */
@@ -208,14 +184,14 @@ class Installer {
 	public $typo3temp_path = '';
 
 	/**
-	 * the session handling object
+	 * Session handling object
 	 *
 	 * @var \TYPO3\CMS\Install\Session
 	 */
 	protected $session = NULL;
 
 	/**
-	 * the form protection instance used for creating and verifying form tokens
+	 * Form protection instance used for creating and verifying form tokens
 	 *
 	 * @var \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection
 	 */
@@ -258,11 +234,10 @@ class Installer {
 	 */
 	protected $dbUpdateCheckboxPrefix = 'TYPO3_INSTALL[database_update]';
 
+	protected $databaseUpdateErrorMessages = array();
+
 	/**
 	 * Constructor
-	 *
-	 * @return void
-	 * @todo Define visibility
 	 */
 	public function __construct() {
 		$this->sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
@@ -283,40 +258,7 @@ class Installer {
 		// Initializing incoming vars.
 		// ****************************
 		$this->INSTALL = GeneralUtility::_GP('TYPO3_INSTALL');
-		$this->mode = GeneralUtility::_GP('mode');
-		if ($this->mode !== '123') {
-			$this->mode = '';
-		}
-		if (GeneralUtility::_GP('step') === 'go') {
-			$this->step = 'go';
-		} else {
-			$this->step = intval(GeneralUtility::_GP('step'));
-		}
 
-		// Let DBAL decide whether to load itself - manual require since ext:dbal is not always loaded
-		$dbalLoaderFile = $this->backPath . 'sysext/dbal/Classes/Autoloader.php';
-		if (@is_file($dbalLoaderFile)) {
-			require_once $dbalLoaderFile;
-			$dbalAutoloader = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Dbal\\Autoloader');
-			$dbalAutoloader->execute($this);
-		}
-
-		if ($this->mode === '123') {
-			// Check for mandatory PHP modules
-			$missingPhpModules = $this->getMissingPhpModules();
-			if (count($missingPhpModules) > 0) {
-				throw new \RuntimeException(
-					'TYPO3 Installation Error: The following PHP module(s) is/are missing: "' .
-						implode('", "', $missingPhpModules) .
-						'". You need to install and enable these modules first to be able to install TYPO3.',
-					1294587482);
-			}
-			// Load saltedpasswords if possible
-			$saltedpasswordsLoaderFile = $this->backPath . 'sysext/saltedpasswords/Classes/class.tx_saltedpasswords_autoloader.php';
-			if (@is_file($saltedpasswordsLoaderFile)) {
-				include $saltedpasswordsLoaderFile;
-			}
-		}
 		$this->redirect_url = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect_url'));
 		$this->INSTALL['type'] = '';
 		if ($_GET['TYPO3_INSTALL']['type']) {
@@ -338,37 +280,10 @@ class Installer {
 				$this->INSTALL['type'] = $_GET['TYPO3_INSTALL']['type'];
 			}
 		}
-		if ($this->step == 4) {
-			$this->INSTALL['type'] = 'database';
+		if (!$this->INSTALL['type'] || !isset($this->menuitems[$this->INSTALL['type']])) {
+			$this->INSTALL['type'] = 'about';
 		}
-		// Hook to raise the counter for the total steps in the 1-2-3 installer
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['additionalSteps'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['additionalSteps'] as $classData) {
-				$hookObject = GeneralUtility::getUserObj($classData);
-				$additionalSteps = (int) $hookObject->executeAdditionalSteps($this);
-
-				if ($additionalSteps > 0) {
-					$this->hasAdditionalSteps = TRUE;
-				}
-
-				$this->totalSteps += $additionalSteps;
-			}
-		}
-		if ($this->mode == '123') {
-			$tempItems = $this->menuitems;
-			$this->menuitems = array(
-				'config' => $tempItems['config'],
-				'database' => $tempItems['database']
-			);
-			if (!$this->INSTALL['type'] || !isset($this->menuitems[$this->INSTALL['type']])) {
-				$this->INSTALL['type'] = 'config';
-			}
-		} else {
-			if (!$this->INSTALL['type'] || !isset($this->menuitems[$this->INSTALL['type']])) {
-				$this->INSTALL['type'] = 'about';
-			}
-		}
-		$this->action = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $this->INSTALL['type'] . ($this->mode ? '&mode=' . $this->mode : '') . ($this->step ? '&step=' . $this->step : '');
+		$this->action = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $this->INSTALL['type'];
 		$this->typo3temp_path = PATH_site . 'typo3temp/';
 		if (!is_dir($this->typo3temp_path) || !is_writeable($this->typo3temp_path)) {
 			$this->outputErrorAndExit('Install Tool needs to write to typo3temp/. Make sure this directory is writeable by your webserver: ' . htmlspecialchars($this->typo3temp_path), 'Fatal error');
@@ -395,6 +310,7 @@ class Installer {
 			if ($this->redirect_url) {
 				\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirect_url);
 			}
+
 			$this->formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection');
 			$this->formProtection->injectInstallTool($this);
 		} else {
@@ -536,601 +452,289 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		if (count($this->messages)) {
 			\TYPO3\CMS\Core\Utility\DebugUtility::debug($this->messages);
 		}
-		if ($this->step) {
-			$this->output($this->outputWrapper($this->stepOutput()));
-		} else {
-			// Menu...
-			switch ($this->INSTALL['type']) {
-			case 'images':
-				$this->checkIM = 1;
-				$this->checkTheConfig();
-				$this->silent = 0;
-				$this->checkTheImageProcessing();
-				break;
-			case 'database':
-				$this->checkTheConfig();
-				$this->silent = 0;
-				$this->checkTheDatabase();
-				break;
-			case 'update':
-				$this->checkDatabase();
-				$this->silent = 0;
-				$this->updateWizard();
-				break;
-			case 'config':
-				$this->silent = 0;
-				$this->checkIM = 1;
-				$this->message('About configuration', 'How to configure TYPO3', $this->generallyAboutConfiguration());
-				$isPhpCgi = PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi';
-				$this->message('System Information', 'Your system has the following configuration', '
-							<dl id="systemInformation">
-								<dt>OS detected:</dt>
-								<dd>' . (TYPO3_OS == 'WIN' ? 'WIN' : 'UNIX') . '</dd>
-								<dt>CGI detected:</dt>
-								<dd>' . ($isPhpCgi ? 'YES' : 'NO') . '</dd>
-								<dt>PATH_thisScript:</dt>
-								<dd>' . PATH_thisScript . '</dd>
-							</dl>
-						');
-				$this->checkTheConfig();
-				$ext = 'Write configuration';
-				if ($this->fatalError) {
-					if ($this->config_array['no_database'] || !$this->config_array['mysqlConnect']) {
-						$this->message($ext, 'Database not configured yet!', '
-								<p>
-									You need to specify database username,
-									password and host as one of the first things.
-									<br />
-									Next you\'ll have to select a database to
-									use with TYPO3.
-								</p>
-								<p>
-									Use the form below.
-								</p>
-							', 2);
-					} else {
-						$this->message($ext, 'Fatal error encountered!', '
-								<p>
-									Somewhere above a fatal configuration
-									problem is encountered.
-									Please make sure that you\'ve fixed this
-									error before you submit the configuration.
-									TYPO3 will not run if this problem is not
-									fixed!
-									<br />
-									You should also check all warnings that may
-									appear.
-								</p>
-							', 2);
-					}
-				} elseif ($this->mode == '123') {
-					if (!$this->fatalError) {
-						$this->message($ext, 'Basic configuration completed', '
-								<p>
-									You have no fatal errors in your basic
-									configuration.
-									You may have warnings though. Please pay
-									attention to them!
-									However you may continue and install the
-									database.
-								</p>
-								<p>
-									<strong>
-										<span style="color:#f00;">Step 2: </span>
-									</strong>
-									<a href="' . $this->scriptSelf . '?TYPO3_INSTALL[type]=database' . ($this->mode ? '&mode=' . rawurlencode($this->mode) : '') . '">Click here to install the database.</a>
-								</p>
-							', -1, 1);
-					}
-				}
-				$this->message($ext, 'Very Important: Changing Image Processing settings', '
-						<p>
-							When you change the settings for Image Processing
-							you <em>must</em> take into account
-							that <em>old images</em> may still be in typo3temp/
-							folder and prevent new files from being generated!
-							<br />
-							This is especially important to know, if you\'re
-							trying to set up image processing for the very first
-							time.
-							<br />
-							The problem is solved by <a href="' . htmlspecialchars($this->setScriptName('cleanup')) . '">clearing the typo3temp/ folder</a>.
-							Also make sure to clear the cache_pages table.
-						</p>
-					', 1, 1);
-				$this->message($ext, 'Very Important: Changing Encryption Key setting', '
-						<p>
-							When you change the setting for the Encryption Key
-							you <em>must</em> take into account that a change to
-							this value might invalidate temporary information,
-							URLs etc.
-							<br />
-							The problem is solved by <a href="' . htmlspecialchars($this->setScriptName('cleanup')) . '">clearing the typo3temp/ folder</a>.
-							Also make sure to clear the cache_pages table.
-						</p>
-					', 1, 1);
-				$this->message($ext, 'Update configuration', '
-						<p>
-							This form updates the configuration with the
-							suggested values you see below. The values are based
-							on the analysis above.
-							<br />
-							You can change the values in case you have
-							alternatives to the suggested defaults.
-							<br />
-							By this final step you will configure TYPO3 for
-							immediate use provided that you have no fatal errors
-							left above.
-						</p>' . $this->setupGeneral('get_form') . '
-					', 0, 1);
-				$this->output($this->outputWrapper($this->printAll()));
-				break;
-			case 'extConfig':
-				$this->silent = 0;
-				$this->generateConfigForm('get_form');
-				// Get the template file
-				$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'InitExtConfig.html'));
-				// Get the template part from the file
-				$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-				// Define the markers content
-				$markers = array(
-					'action' => $this->action,
-					'content' => $this->printAll(),
-					'write' => 'Write configuration',
-					'notice' => 'NOTICE:',
-					'explanation' => '
-							By clicking this button, the configuration is updated
-							with new values for the parameters listed above!
-						'
-				);
-				// Fill the markers in the template
-				$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-				// Send content to the page wrapper function
-				$this->output($this->outputWrapper($content));
-				break;
-			case 'cleanup':
-				$this->checkTheConfig();
-				$this->silent = 0;
-				$this->cleanupManager();
-				break;
-			case 'phpinfo':
-				$this->silent = 0;
-				$this->phpinformation();
-				break;
-			case 'systemEnvironment':
-				$this->silent = 0;
-				$this->systemEnvironmentCheck();
-				break;
-			case 'folderStructure':
-				$this->silent = 0;
-				$this->folderStructure();
-				break;
-			case 'typo3conf_edit':
-				$this->silent = 0;
-				$this->typo3conf_edit();
-				break;
-			case 'logout':
-				$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
-				if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
-					unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
-				}
-				$this->formProtection->clean();
-				$this->session->destroySession();
-				\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->scriptSelf);
-				break;
-			case 'about':
 
-			default:
-				$this->silent = 0;
-				$this->message('About', 'Warning - very important!', $this->securityRisk() . $this->alterPasswordForm(), 2);
-				$this->message('About', 'Using this script', '
-						<p>
-							There are three primary steps for you to take:
-						</p>
-						<p>
-							<strong>1: Basic Configuration</strong>
-							<br />
-							In this step your PHP-configuration is checked. If
-							there are any settings that will prevent TYPO3 from
-							running correctly you\'ll get warnings and errors
-							with a description of the problem.
-							<br />
-							You\'ll have to enter a database username, password
-							and hostname. Then you can choose to create a new
-							database or select an existing one.
-							<br />
-							Finally the image processing settings are entered
-							and verified and you can choose to let the script
-							update the configuration with the suggested settings.
-						</p>
-						<p>
-							<strong>2: Database Analyser</strong>
-							<br />
-							In this step you can either install a new database
-							or update the database from any previous TYPO3
-							version.
-							<br />
-							You can also get an overview of extra/missing
-							fields/tables in the database compared to a raw
-							sql-file.
-							<br />
-							The database is also verified against your
-							configuration ($TCA) and you can
-							even see suggestions to entries in $TCA or new
-							fields in the database.
-						</p>
-						<p>
-							<strong>3: Upgrade Wizard</strong>
-							<br />
-							Here you will find update methods taking care of
-							changes to the TYPO3 core which are not backwards
-							compatible.
-							<br />
-							It is recommended to run this wizard after every
-							update to make sure everything will still work
-							flawlessly.
-						</p>
-						<p>
-							<strong>4: Image Processing</strong>
-							<br />
-							This step is a visual guide to verify your
-							configuration of the image processing software.
-							<br />
-							You\'ll be presented to a list of images that should
-							all match in pairs. If some irregularity appears,
-							you\'ll get a warning. Thus you\'re able to track an
-							error before you\'ll discover it on your website.
-						</p>
-						<p>
-							<strong>5: All Configuration</strong>
-							<br />
-							This gives you access to any of the configuration
-							options in the TYPO3_CONF_VARS array. Every option
-							is also presented with a comment explaining what it
-							does.
-						</p>
-						<p>
-							<strong>6: Cleanup</strong>
-							<br />
-							Here you can clean up the temporary files in typo3temp/
-							folder and the tables used for caching of data in
-							your database.
-						</p>
+		// Menu...
+		switch ($this->INSTALL['type']) {
+		case 'images':
+			$this->checkIM = 1;
+			$this->checkTheConfig();
+			$this->silent = 0;
+			$this->checkTheImageProcessing();
+			break;
+		case 'database':
+			$this->checkTheConfig();
+			$this->silent = 0;
+			$this->checkTheDatabase();
+			break;
+		case 'update':
+			$this->checkDatabase();
+			$this->silent = 0;
+			$this->updateWizard();
+			break;
+		case 'config':
+			$this->silent = 0;
+			$this->checkIM = 1;
+			$this->message('About configuration', 'How to configure TYPO3', $this->generallyAboutConfiguration());
+			$isPhpCgi = PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi';
+			$this->message('System Information', 'Your system has the following configuration', '
+						<dl id="systemInformation">
+							<dt>OS detected:</dt>
+							<dd>' . (TYPO3_OS == 'WIN' ? 'WIN' : 'UNIX') . '</dd>
+							<dt>CGI detected:</dt>
+							<dd>' . ($isPhpCgi ? 'YES' : 'NO') . '</dd>
+							<dt>PATH_thisScript:</dt>
+							<dd>' . PATH_thisScript . '</dd>
+						</dl>
 					');
-
-				$headCode = 'Header legend';
-				$this->message($headCode, 'Notice!', '
-						<p>
-							Indicates that something is important to be aware
-							of.
-							<br />
-							This does <em>not</em> indicate an error.
-						</p>
-					', 1);
-				$this->message($headCode, 'Just information', '
-						<p>
-							This is a simple message with some information about
-							something.
-						</p>
-					');
-				$this->message($headCode, 'Check was successful', '
-						<p>
-							Indicates that something was checked and returned an
-							expected result.
-						</p>
-					', -1);
-				$this->message($headCode, 'Warning!', '
-						<p>
-							Indicates that something may very well cause trouble
-							and you should definitely look into it before
-							proceeding.
-							<br />
-							This indicates a <em>potential</em> error.
-						</p>
-					', 2);
-				$this->message($headCode, 'Error!', '
-						<p>
-							Indicates that something is definitely wrong and
-							that TYPO3 will most likely not perform as expected
-							if this problem is not solved.
-							<br />
-							This indicates an actual error.
-						</p>
-					', 3);
-				$this->output($this->outputWrapper($this->printAll()));
-				break;
-			}
-		}
-	}
-
-	/**
-	 * Controls the step 1-2-3-go process
-	 *
-	 * @return string The content to output to the screen
-	 * @todo Define visibility
-	 */
-	public function stepOutput() {
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'StepOutput.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Define the markers content
-		$markers = array(
-			'stepHeader' => $this->stepHeader(),
-			'notice' => 'Skip this wizard (for power users only)',
-			'skip123' => $this->scriptSelf
-		);
-		$this->checkTheConfig();
-		$error_missingConnect = '
-			<p class="typo3-message message-error">
-				<strong>
-					There is no connection to the database!
-				</strong>
-				<br />
-				(Username: <em>' . htmlspecialchars(TYPO3_db_username) . '</em>,
-				Host: <em>' . htmlspecialchars(TYPO3_db_host) . '</em>,
-				Using Password: YES)
-				<br />
-				Go to Step 1 and enter a valid username and password!
-			</p>
-		';
-		$error_missingDB = '
-			<p class="typo3-message message-error">
-				<strong>
-					There is no access to the database (<em>' . htmlspecialchars(TYPO3_db) . '</em>)!
-				</strong>
-				<br />
-				Go to Step 2 and select a valid database!
-			</p>
-		';
-		// only get the number of tables if it is not the first two steps in the 123-installer
-		// (= no DB connection yet) or connect failed
-		$whichTables = $this->step != 1 && $this->step != 2 && $this->fatalError !== 1
-			? $this->sqlHandler->getListOfTables() : array();
-
-		$error_emptyDB = '
-			<p class="typo3-message message-error">
-				<strong>
-					The database is still empty. There are no tables!
-				</strong>
-				<br />
-				Go to Step 3 and import a database!
-			</p>
-		';
-		// Hook to override and add steps to the 1-2-3 installer
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['stepOutput'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['stepOutput'] as $classData) {
-				$hookObject = GeneralUtility::getUserObj($classData);
-				$hookObject->executeStepOutput($markers, $this->step, $this);
-			}
-		}
-		// Use the default steps when there is no override
-		if (!$markers['header'] && !$markers['step']) {
-			switch (strtolower($this->step)) {
-			case 1:
-				// Get the subpart for the first step
-				$step1SubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###STEP1###');
-				// Add header marker for main template
-				$markers['header'] = 'Welcome to the TYPO3 Install Tool';
-				// Define the markers content for the subpart
-				$step1SubPartMarkers = array(
-					'llIntroduction' => '
+			$this->checkTheConfig();
+			$ext = 'Write configuration';
+			if ($this->fatalError) {
+				if ($this->config_array['no_database'] || !$this->config_array['mysqlConnect']) {
+					$this->message($ext, 'Database not configured yet!', '
 							<p>
-								TYPO3 is an enterprise content management system
-								that is powerful, yet easy to install.
+								You need to specify database username,
+								password and host as one of the first things.
+								<br />
+								Next you\'ll have to select a database to
+								use with TYPO3.
 							</p>
 							<p>
-								In three simple steps you\'ll be ready to add content to your website.
+								Use the form below.
 							</p>
-						',
-					'step' => $this->step + 1,
-					'action' => htmlspecialchars($this->action),
-					'continue' => 'Continue'
-				);
-				// Add step marker for main template
-				$markers['step'] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($step1SubPart, $step1SubPartMarkers, '###|###', TRUE, FALSE);
-				break;
-			case 2:
-				// Get the subpart for the second step
-				$step2SubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###STEP2###');
-				// Add header marker for main template
-				$markers['header'] = 'Connect to your database host';
-				// Define the markers content for the subpart
-				$step2SubPartMarkers = array(
-					'step' => $this->step + 1,
-					'action' => htmlspecialchars($this->action),
-					'encryptionKey' => $this->createEncryptionKey(),
-					'branch' => TYPO3_branch,
-					'labelUsername' => 'Username',
-					'username' => htmlspecialchars(TYPO3_db_username),
-					'labelPassword' => 'Password',
-					'password' => htmlspecialchars(TYPO3_db_password),
-					'labelHost' => 'Host',
-					'host' => TYPO3_db_host ? htmlspecialchars(TYPO3_db_host) : 'localhost',
-					'continue' => 'Continue',
-					'llDescription' => 'If you have not already created a username and password to access the database, please do so now. This can be done using tools provided by your host.'
-				);
-				// Add step marker for main template
-				$markers['step'] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($step2SubPart, $step2SubPartMarkers, '###|###', TRUE, FALSE);
-				break;
-			case 3:
-				// Add header marker for main template
-				$markers['header'] = 'Select database';
-				// There should be a database host connection at this point
-				if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-					// Get the subpart for the third step
-					$step3SubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###STEP3###');
-					// Get the subpart for the database options
-					$step3DatabaseOptionsSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($step3SubPart, '###DATABASEOPTIONS###');
-					$dbArr = $this->getDatabaseList();
-					$dbIncluded = 0;
-					$step3DatabaseOptions = array();
-					foreach ($dbArr as $dbname) {
-						// Define the markers content for database options
-						$step3DatabaseOptionMarkers = array(
-							'databaseValue' => htmlspecialchars($dbname),
-							'databaseSelected' => $dbname == TYPO3_db ? 'selected="selected"' : '',
-							'databaseName' => htmlspecialchars($dbname)
-						);
-						// Add the option HTML to an array
-						$step3DatabaseOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($step3DatabaseOptionsSubPart, $step3DatabaseOptionMarkers, '###|###', TRUE, TRUE);
-						if ($dbname == TYPO3_db) {
-							$dbIncluded = 1;
-						}
-					}
-					if (!$dbIncluded && TYPO3_db) {
-						// // Define the markers content when no access
-						$step3DatabaseOptionMarkers = array(
-							'databaseValue' => htmlspecialchars(TYPO3_db),
-							'databaseSelected' => 'selected="selected"',
-							'databaseName' => htmlspecialchars(TYPO3_db) . ' (NO ACCESS!)'
-						);
-						// Add the option HTML to an array
-						$step3DatabaseOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($step3DatabaseOptionsSubPart, $step3DatabaseOptionMarkers, '###|###', TRUE, TRUE);
-					}
-					$usePatternList = FALSE;
-					$createDatabaseAllowed = $this->checkCreateDatabasePrivileges();
-					if ($createDatabaseAllowed === TRUE) {
-						$formFieldAttributesNew = 'checked="checked"';
-						$llRemark1 = 'Enter a name for your TYPO3 database.';
-					} elseif (is_array($createDatabaseAllowed)) {
-						$llRemark1 = 'Enter a name for your TYPO3 database.';
-						$llDbPatternRemark = 'The name has to match one of these names/patterns (% is a wild card):';
-						$llDbPatternList = '<li>' . implode('</li><li>', $createDatabaseAllowed) . '</li>';
-						$usePatternList = TRUE;
-					} else {
-						$formFieldAttributesNew = 'disabled="disabled"';
-						$formFieldAttributesSelect = 'checked="checked"';
-						$llRemark1 = 'You have no permissions to create new databases.';
-					}
-					// Substitute the subpart for the database options
-					$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($step3SubPart, '###DATABASEOPTIONS###', implode(LF, $step3DatabaseOptions));
-					if ($usePatternList === FALSE) {
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###DATABASE_NAME_PATTERNS###', '');
-					}
-					// Define the markers content
-					$step3SubPartMarkers = array(
-						'step' => $this->step + 1,
-						'llOptions' => 'You have two options:',
-						'action' => htmlspecialchars($this->action),
-						'llOption1' => 'Create a new database (recommended):',
-						'llRemark1' => $llRemark1,
-						'll_Db_Pattern_Remark' => $llDbPatternRemark,
-						'll_Db_Pattern_List' => $llDbPatternList,
-						'formFieldAttributesNew' => $formFieldAttributesNew,
-						'formFieldAttributesSelect' => $formFieldAttributesSelect,
-						'llOption2' => 'Select an EMPTY existing database:',
-						'llRemark2' => 'Any tables used by TYPO3 will be overwritten.',
-						'continue' => 'Continue'
-					);
-					// Add step marker for main template
-					$markers['step'] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $step3SubPartMarkers, '###|###', TRUE, TRUE);
+						', 2);
 				} else {
-					// Add step marker for main template when no connection
-					$markers['step'] = $error_missingConnect;
+					$this->message($ext, 'Fatal error encountered!', '
+							<p>
+								Somewhere above a fatal configuration
+								problem is encountered.
+								Please make sure that you\'ve fixed this
+								error before you submit the configuration.
+								TYPO3 will not run if this problem is not
+								fixed!
+								<br />
+								You should also check all warnings that may
+								appear.
+							</p>
+						', 2);
 				}
-				break;
-			case 4:
-				// Add header marker for main template
-				$markers['header'] = 'Import the Database Tables';
-				// There should be a database host connection at this point
-				if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-					// The selected database should be accessible
-					if ($GLOBALS['TYPO3_DB']->sql_select_db()) {
-						// Get the subpart for the fourth step
-						$step4SubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###STEP4###');
-						// Get the subpart for the database type options
-						$step4DatabaseTypeOptionsSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($step4SubPart, '###DATABASETYPEOPTIONS###');
-						$sFiles = GeneralUtility::getFilesInDir(PATH_typo3conf, 'sql', 1, 1);
-						// Check if default database scheme "database.sql" already exists, otherwise create it
-						if (!strstr((implode(',', $sFiles) . ','), '/database.sql,')) {
-							array_unshift($sFiles, 'Default TYPO3 Tables');
-						}
-						$step4DatabaseTypeOptions = array();
-						foreach ($sFiles as $f) {
-							if ($f == 'Default TYPO3 Tables') {
-								$key = 'CURRENT_TABLES+STATIC';
-							} else {
-								$key = htmlspecialchars($f);
-							}
-							// Define the markers content for database type subpart
-							$step4DatabaseTypeOptionMarkers = array(
-								'databaseTypeValue' => 'import|' . $key,
-								'databaseName' => htmlspecialchars(basename($f))
-							);
-							// Add the option HTML to an array
-							$step4DatabaseTypeOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($step4DatabaseTypeOptionsSubPart, $step4DatabaseTypeOptionMarkers, '###|###', TRUE, FALSE);
-						}
-						// Substitute the subpart for the database type options
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($step4SubPart, '###DATABASETYPEOPTIONS###', implode(LF, $step4DatabaseTypeOptions));
-						// Define the markers content
-						$step4SubPartMarkers = array(
-							'llSummary' => 'Database summary:',
-							'llUsername' => 'Username:',
-							'username' => htmlspecialchars(TYPO3_db_username),
-							'llHost' => 'Host:',
-							'host' => htmlspecialchars(TYPO3_db_host),
-							'llDatabase' => 'Database:',
-							'database' => htmlspecialchars(TYPO3_db),
-							'llNumberTables' => 'Number of tables:',
-							'numberTables' => count($whichTables),
-							'action' => htmlspecialchars($this->action),
-							'llDatabaseType' => 'Select database contents:',
-							'label' => 'Import database'
-						);
-						// Add step marker for main template
-						$markers['step'] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $step4SubPartMarkers, '###|###', TRUE, TRUE);
-					} else {
-						// Add step marker for main template when no database
-						$markers['step'] = $error_missingDB;
-					}
-				} else {
-					// Add step marker for main template when no connection
-					$markers['step'] = $error_missingConnect;
-				}
-				break;
-			case 'go':
-				// Add header marker for main template
-				$markers['header'] = 'Congratulations!';
-				// There should be a database host connection at this point
-				if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-					// The selected database should be accessible
-					if ($GLOBALS['TYPO3_DB']->sql_select_db()) {
-						// The database should contain tables
-						if (count($whichTables)) {
-							// Get the subpart for the go step
-							$stepGoSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###STEPGO###');
-							// Define the markers content
-							$stepGoSubPartMarkers = array(
-								'messageBasicFinished' => $this->messageBasicFinished(),
-								'llImportant' => 'Important Security Warning',
-								'securityRisk' => $this->securityRisk(),
-								'llSwitchMode' => '
-										<a href="' . $this->scriptSelf . '">
-											Change the Install Tool password here
-										</a>
-									'
-							);
-							// Add step marker for main template
-							$markers['step'] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($stepGoSubPart, $stepGoSubPartMarkers, '###|###', TRUE, TRUE);
-						} else {
-							// Add step marker for main template when empty database
-							$markers['step'] = $error_emptyDB;
-						}
-					} else {
-						// Add step marker for main template when no database
-						$markers['step'] = $error_missingDB;
-					}
-				} else {
-					// Add step marker for main template when no connection
-					$markers['step'] = $error_missingConnect;
-				}
-				break;
 			}
+			$this->message($ext, 'Very Important: Changing Image Processing settings', '
+					<p>
+						When you change the settings for Image Processing
+						you <em>must</em> take into account
+						that <em>old images</em> may still be in typo3temp/
+						folder and prevent new files from being generated!
+						<br />
+						This is especially important to know, if you\'re
+						trying to set up image processing for the very first
+						time.
+						<br />
+						The problem is solved by <a href="' . htmlspecialchars($this->setScriptName('cleanup')) . '">clearing the typo3temp/ folder</a>.
+						Also make sure to clear the cache_pages table.
+					</p>
+				', 1, 1);
+			$this->message($ext, 'Very Important: Changing Encryption Key setting', '
+					<p>
+						When you change the setting for the Encryption Key
+						you <em>must</em> take into account that a change to
+						this value might invalidate temporary information,
+						URLs etc.
+						<br />
+						The problem is solved by <a href="' . htmlspecialchars($this->setScriptName('cleanup')) . '">clearing the typo3temp/ folder</a>.
+						Also make sure to clear the cache_pages table.
+					</p>
+				', 1, 1);
+			$this->message($ext, 'Update configuration', '
+					<p>
+						This form updates the configuration with the
+						suggested values you see below. The values are based
+						on the analysis above.
+						<br />
+						You can change the values in case you have
+						alternatives to the suggested defaults.
+						<br />
+						By this final step you will configure TYPO3 for
+						immediate use provided that you have no fatal errors
+						left above.
+					</p>' . $this->setupGeneral('get_form') . '
+				', 0, 1);
+			$this->output($this->outputWrapper($this->printAll()));
+			break;
+		case 'extConfig':
+			$this->silent = 0;
+			$this->generateConfigForm('get_form');
+			// Get the template file
+			$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'InitExtConfig.html'));
+			// Get the template part from the file
+			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
+			// Define the markers content
+			$markers = array(
+				'action' => $this->action,
+				'content' => $this->printAll(),
+				'write' => 'Write configuration',
+				'notice' => 'NOTICE:',
+				'explanation' => '
+						By clicking this button, the configuration is updated
+						with new values for the parameters listed above!
+					'
+			);
+			// Fill the markers in the template
+			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
+			// Send content to the page wrapper function
+			$this->output($this->outputWrapper($content));
+			break;
+		case 'cleanup':
+			$this->checkTheConfig();
+			$this->silent = 0;
+			$this->cleanupManager();
+			break;
+		case 'phpinfo':
+			$this->silent = 0;
+			$this->phpinformation();
+			break;
+		case 'systemEnvironment':
+			$this->silent = 0;
+			$this->systemEnvironmentCheck();
+			break;
+		case 'folderStructure':
+			$this->silent = 0;
+			$this->folderStructure();
+			break;
+		case 'typo3conf_edit':
+			$this->silent = 0;
+			$this->typo3conf_edit();
+			break;
+		case 'logout':
+			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
+			if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
+				unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
+			}
+			$this->formProtection->clean();
+			$this->session->destroySession();
+			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->scriptSelf);
+			break;
+		case 'about':
+
+		default:
+			$this->silent = 0;
+			$this->message('About', 'Warning - very important!', $this->securityRisk() . $this->alterPasswordForm(), 2);
+			$this->message('About', 'Using this script', '
+					<p>
+						There are three primary steps for you to take:
+					</p>
+					<p>
+						<strong>1: Basic Configuration</strong>
+						<br />
+						In this step your PHP-configuration is checked. If
+						there are any settings that will prevent TYPO3 from
+						running correctly you\'ll get warnings and errors
+						with a description of the problem.
+						<br />
+						You\'ll have to enter a database username, password
+						and hostname. Then you can choose to create a new
+						database or select an existing one.
+						<br />
+						Finally the image processing settings are entered
+						and verified and you can choose to let the script
+						update the configuration with the suggested settings.
+					</p>
+					<p>
+						<strong>2: Database Analyser</strong>
+						<br />
+						In this step you can either install a new database
+						or update the database from any previous TYPO3
+						version.
+						<br />
+						You can also get an overview of extra/missing
+						fields/tables in the database compared to a raw
+						sql-file.
+						<br />
+						The database is also verified against your
+						configuration ($TCA) and you can
+						even see suggestions to entries in $TCA or new
+						fields in the database.
+					</p>
+					<p>
+						<strong>3: Upgrade Wizard</strong>
+						<br />
+						Here you will find update methods taking care of
+						changes to the TYPO3 core which are not backwards
+						compatible.
+						<br />
+						It is recommended to run this wizard after every
+						update to make sure everything will still work
+						flawlessly.
+					</p>
+					<p>
+						<strong>4: Image Processing</strong>
+						<br />
+						This step is a visual guide to verify your
+						configuration of the image processing software.
+						<br />
+						You\'ll be presented to a list of images that should
+						all match in pairs. If some irregularity appears,
+						you\'ll get a warning. Thus you\'re able to track an
+						error before you\'ll discover it on your website.
+					</p>
+					<p>
+						<strong>5: All Configuration</strong>
+						<br />
+						This gives you access to any of the configuration
+						options in the TYPO3_CONF_VARS array. Every option
+						is also presented with a comment explaining what it
+						does.
+					</p>
+					<p>
+						<strong>6: Cleanup</strong>
+						<br />
+						Here you can clean up the temporary files in typo3temp/
+						folder and the tables used for caching of data in
+						your database.
+					</p>
+				');
+
+			$headCode = 'Header legend';
+			$this->message($headCode, 'Notice!', '
+					<p>
+						Indicates that something is important to be aware
+						of.
+						<br />
+						This does <em>not</em> indicate an error.
+					</p>
+				', 1);
+			$this->message($headCode, 'Just information', '
+					<p>
+						This is a simple message with some information about
+						something.
+					</p>
+				');
+			$this->message($headCode, 'Check was successful', '
+					<p>
+						Indicates that something was checked and returned an
+						expected result.
+					</p>
+				', -1);
+			$this->message($headCode, 'Warning!', '
+					<p>
+						Indicates that something may very well cause trouble
+						and you should definitely look into it before
+						proceeding.
+						<br />
+						This indicates a <em>potential</em> error.
+					</p>
+				', 2);
+			$this->message($headCode, 'Error!', '
+					<p>
+						Indicates that something is definitely wrong and
+						that TYPO3 will most likely not perform as expected
+						if this problem is not solved.
+						<br />
+						This indicates an actual error.
+					</p>
+				', 3);
+			$this->output($this->outputWrapper($this->printAll()));
+			break;
 		}
-		// Fill the markers in the template
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-		return $content;
 	}
 
 	/**
@@ -1368,10 +972,11 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$html = array();
 		$html[] = '<h3>File and folder status below ' . PATH_site . '</h3>';
 
+		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
 		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 		if (count($fixStatusObjects) > 0) {
 			$html[] = '<h4>Fix action results:</h4>';
-			$html[] = $statusUtility->renderStatusObjects($fixStatusObjects);
+			$html[] = $statusUtility->renderStatusObjectsAsHtml($fixStatusObjects);
 			$html[] = '<hr />';
 		}
 
@@ -1523,7 +1128,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$tables = $this->sqlHandler->getListOfTables();
 		$action = $this->INSTALL['cleanup_type'];
 		if (($action == 'cache_imagesizes' || $action == 'all') && isset($tables['cache_imagesizes'])) {
-			$GLOBALS['TYPO3_DB']->exec_TRUNCATEquery('cache_imagesizes');
+			$this->getDatabase()->exec_TRUNCATEquery('cache_imagesizes');
 		}
 		$cleanupType = array(
 			'all' => 'Clean up everything'
@@ -1531,7 +1136,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		// Get cache_imagesizes info
 		if (isset($tables['cache_imagesizes'])) {
 			$cleanupType['cache_imagesizes'] = 'Clear cached image sizes only';
-			$cachedImageSizesCounter = intval($GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', 'cache_imagesizes'));
+			$cachedImageSizesCounter = intval($this->getDatabase()->exec_SELECTcountRows('*', 'cache_imagesizes'));
 		} else {
 			$this->message($headCode, 'Table cache_imagesizes does not exist!', '
 				<p>
@@ -1590,16 +1195,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				afterwards.
 			</p>
 		');
-		if (!$this->config_array['dir_typo3temp']) {
-			$this->message('typo3temp/ directory', 'typo3temp/ not writable!', '
-				<p>
-					You must make typo3temp/ write enabled before you can
-					proceed with this test.
-				</p>
-			', 2);
-			$this->output($this->outputWrapper($this->printAll()));
-			return;
-		}
 		// Run through files
 		$fileCounter = 0;
 		$deleteCounter = 0;
@@ -2257,7 +1852,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 					</p>
 				', 2);
 			}
-			if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
+			if ($result = $this->getDatabase()->sql_pconnect()) {
 				$this->message($ext, 'Connected to SQL database successfully', '
 					<dl id="t3-install-databaseconnected">
 						<dt>
@@ -2284,7 +1879,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 						</p>
 					', 3);
 					$this->config_array['no_database'] = 1;
-				} elseif (!$GLOBALS['TYPO3_DB']->sql_select_db()) {
+				} elseif (!$this->getDatabase()->sql_select_db()) {
 					$this->message($ext, 'Database', '
 						<p>
 							\'' . htmlspecialchars(TYPO3_db) . '\' could not be selected as database!
@@ -2449,182 +2044,182 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($allModesSubpart, $allModesMarkers, '###|###', TRUE, FALSE);
 		// Substitute the subpart for all modes
 		$form = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($form, '###ALLMODES###', $allModesSubpart);
-		if ($this->mode != '123') {
-			// Get the subpart for the regular mode
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###REGULARMODE###');
-			// Define the markers content
-			$regularModeMarkers = array(
-				'labelSiteName' => 'Site name:',
-				'siteName' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']),
-				'labelEncryptionKey' => 'Encryption key:',
-				'encryptionKey' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']),
-				'labelGenerateRandomKey' => 'Generate random key'
-			);
-			// Other
-			$fA = $this->setupGeneralCalculate();
-			$regularModeMarkers['labelCurrentValueIs'] = 'current value is';
-			// Disable exec function
-			if (is_array($fA['disable_exec_function'])) {
-				// Get the subpart for the disable exec function
-				$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###');
-				$regularModeMarkers['labelDisableExecFunction'] = '[BE][disable_exec_function]=';
-				$regularModeMarkers['strongDisableExecFunction'] = (int) current($fA['disable_exec_function']);
-				$regularModeMarkers['defaultDisableExecFunction'] = (int) $GLOBALS['TYPO3_CONF_VARS']['BE']['disable_exec_function'];
-				$regularModeMarkers['disableExecFunction'] = (int) current($fA['disable_exec_function']);
-				// Fill the markers in the subpart
-				$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($disableExecFunctionSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for the disable exec function
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###', $disableExecFunctionSubpart);
-			// GDlib
-			if (is_array($fA['gdlib'])) {
-				// Get the subpart for the disable gd lib
-				$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEGDLIB###');
-				$regularModeMarkers['labelGdLib'] = '[GFX][gdlib]=';
-				$regularModeMarkers['strongGdLib'] = (int) current($fA['gdlib']);
-				$regularModeMarkers['defaultGdLib'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
-				$regularModeMarkers['gdLib'] = (int) current($fA['gdlib']);
-				// Fill the markers in the subpart
-				$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for the disable gdlib
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEGDLIB###', $gdLibSubpart);
-			// GDlib PNG
-			if (is_array($fA['gdlib_png']) && $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
-				// Get the subpart for the gdlib png
-				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###');
-				// Get the subpart for the dropdown options
-				$gdLibPngOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###');
-				$gdLibPngLabels = $this->setLabelValueArray($fA['gdlib_png'], 2);
-				reset($gdLibPngLabels);
-				$regularModeMarkers['labelGdLibPng'] = '[GFX][gdlib_png]=';
-				$regularModeMarkers['strongGdLibPng'] = (string) current($gdLibPngLabels);
-				$regularModeMarkers['defaultGdLibPng'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
-				$gdLibPngOptions = array();
-				foreach ($gdLibPngLabels as $k => $v) {
-					list($cleanV) = explode('|', $fA['gdlib_png'][$k]);
-					$gdLibPngMarker['value'] = htmlspecialchars($fA['gdlib_png'][$k]);
-					$gdLibPngMarker['data'] = htmlspecialchars($v);
-					if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'], $cleanV)) {
-						$gdLibPngMarker['selected'] = 'selected="selected"';
-					}
-					// Fill the markers in the subpart
-					$gdLibPngOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngOptionSubpart, $gdLibPngMarker, '###|###', TRUE, FALSE);
-				}
-				// Substitute the subpart for the dropdown options
-				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###', implode(LF, $gdLibPngOptions));
-				// Fill the markers in the subpart
-				$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for the gdlib png
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###', $gdLibPngSubpart);
-			// ImageMagick
-			if (is_array($fA['im'])) {
-				// Get the subpart for ImageMagick
-				$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###');
-				// Define the markers content
-				$regularModeMarkers['labelImageMagick'] = '[GFX][im]=';
-				$regularModeMarkers['strongImageMagick'] = (string) current($fA['im']);
-				$regularModeMarkers['defaultImageMagick'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];
-				$regularModeMarkers['imageMagick'] = (int) current($fA['im']);
-				// Fill the markers in the subpart
-				$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imageMagickSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				// IM Combine Filename
-				// Get the subpart for ImageMagick Combine filename
-				$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###');
-				// Define the markers content
-				$regularModeMarkers['labelImCombineFilename'] = '[GFX][im_combine_filename]';
-				$regularModeMarkers['strongImCombineFilename'] = htmlspecialchars((string) current($fA['im_combine_filename']));
-				$regularModeMarkers['defaultImCombineFilename'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_combine_filename']);
-				$regularModeMarkers['imCombineFilename'] = htmlspecialchars((string) ($fA['im_combine_filename'] ? current($fA['im_combine_filename']) : 'combine'));
-				// Fill the markers in the subpart
-				$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imCombineFileNameSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				// IM Version 5
-				// Get the subpart for ImageMagick Version 5
-				$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMVERSION5SUBPART###');
-				// Define the markers content
-				$regularModeMarkers['labelImVersion5'] = '[GFX][im_version_5]=';
-				$regularModeMarkers['strongImVersion5'] = htmlspecialchars((string) current($fA['im_version_5']));
-				$regularModeMarkers['defaultImVersion5'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5']);
-				$regularModeMarkers['imVersion5'] = htmlspecialchars((string) ($fA['im_version_5'] ? current($fA['im_version_5']) : ''));
-				// Fill the markers in the subpart
-				$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imVersion5Subpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-				if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {
-					// IM Path
-					if (is_array($fA['im_path'])) {
-						// Get the subpart for ImageMagick path
-						$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHSUBPART###');
-						$labelImPath = $this->setLabelValueArray($fA['im_path'], 1);
-						reset($labelImPath);
-						$imPath = $this->setLabelValueArray($fA['im_path'], 0);
-						reset($imPath);
-						// Define the markers content
-						$regularModeMarkers['labelImPath'] = '[GFX][im_path]=';
-						$regularModeMarkers['strongImPath'] = htmlspecialchars((string) current($labelImPath));
-						$regularModeMarkers['defaultImPath'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']);
-						$regularModeMarkers['ImPath'] = htmlspecialchars((string) current($imPath));
-						// Fill the markers in the subpart
-						$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-					}
-					// IM Path LZW
-					if (is_array($fA['im_path_lzw'])) {
-						// Get the subpart for ImageMagick lzw path
-						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###');
-						// Get the subpart for ImageMagick lzw path dropdown options
-						$imPathOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWOPTION###');
-						$labelImPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 1);
-						reset($labelImPathLzw);
-						$imPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 0);
-						reset($imPathLzw);
-						// Define the markers content
-						$regularModeMarkers['labelImPathLzw'] = '[GFX][im_path_lzw]=';
-						$regularModeMarkers['strongImPathLzw'] = htmlspecialchars((string) current($labelImPathLzw));
-						$regularModeMarkers['defaultImPathLzw'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']);
-						$regularModeMarkers['ImPathLzw'] = htmlspecialchars((string) current($imPathLzw));
-						$imPathLzwOptions = array();
-						foreach ($labelImPathLzw as $k => $v) {
-							list($cleanV) = explode('|', $fA['im_path_lzw'][$k]);
-							// Define the markers content
-							$imPathLzwMarker = array(
-								'value' => htmlspecialchars($fA['im_path_lzw'][$k]),
-								'data' => htmlspecialchars($v)
-							);
-							if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'], $cleanV)) {
-								$imPathLzwMarker['selected'] = 'selected="selected"';
-							}
-							// Fill the markers in the subpart
-							$imPathLzwOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathOptionSubpart, $imPathLzwMarker, '###|###', TRUE, FALSE);
-						}
-						// Substitute the subpart for ImageMagick lzw path dropdown options
-						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imPathLzwSubpart, '###IMPATHLZWOPTION###', implode(LF, $imPathLzwOptions));
-						// Fill the markers in the subpart
-						$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathLzwSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-					}
-				}
-			}
-			// Substitute the subpart for ImageMagick
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###', $imageMagickSubpart);
-			// Substitute the subpart for ImageMagick Combine filename
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###', $imCombineFileNameSubpart);
-			// Substitute the subpart for ImageMagick Version 5
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMVERSION5SUBPART###', $imVersion5Subpart);
-			// Substitute the subpart for ImageMagick path
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHSUBPART###', $imPathSubpart);
-			// Substitute the subpart for ImageMagick lzw path
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###', $imPathLzwSubpart);
-			// TrueType Font dpi
-			// Get the subpart for TrueType dpi
-			$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###TTFDPISUBPART###');
-			// Define the markers content
-			$regularModeMarkers['labelTtfDpi'] = '[GFX][TTFdpi]=';
-			$regularModeMarkers['ttfDpi'] = htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi']);
+
+		// Get the subpart for the regular mode
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###REGULARMODE###');
+		// Define the markers content
+		$regularModeMarkers = array(
+			'labelSiteName' => 'Site name:',
+			'siteName' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']),
+			'labelEncryptionKey' => 'Encryption key:',
+			'encryptionKey' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']),
+			'labelGenerateRandomKey' => 'Generate random key'
+		);
+		// Other
+		$fA = $this->setupGeneralCalculate();
+		$regularModeMarkers['labelCurrentValueIs'] = 'current value is';
+		// Disable exec function
+		if (is_array($fA['disable_exec_function'])) {
+			// Get the subpart for the disable exec function
+			$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###');
+			$regularModeMarkers['labelDisableExecFunction'] = '[BE][disable_exec_function]=';
+			$regularModeMarkers['strongDisableExecFunction'] = (int) current($fA['disable_exec_function']);
+			$regularModeMarkers['defaultDisableExecFunction'] = (int) $GLOBALS['TYPO3_CONF_VARS']['BE']['disable_exec_function'];
+			$regularModeMarkers['disableExecFunction'] = (int) current($fA['disable_exec_function']);
 			// Fill the markers in the subpart
-			$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($ttfDpiSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
-			// Substitute the subpart for TrueType dpi
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###TTFDPISUBPART###', $ttfDpiSubpart);
-			// Fill the markers in the regular mode subpart
-			$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($regularModeSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			$disableExecFunctionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($disableExecFunctionSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
 		}
+		// Substitute the subpart for the disable exec function
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEEXECFUNCTIONSUBPART###', $disableExecFunctionSubpart);
+		// GDlib
+		if (is_array($fA['gdlib'])) {
+			// Get the subpart for the disable gd lib
+			$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###DISABLEGDLIB###');
+			$regularModeMarkers['labelGdLib'] = '[GFX][gdlib]=';
+			$regularModeMarkers['strongGdLib'] = (int) current($fA['gdlib']);
+			$regularModeMarkers['defaultGdLib'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
+			$regularModeMarkers['gdLib'] = (int) current($fA['gdlib']);
+			// Fill the markers in the subpart
+			$gdLibSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+		}
+		// Substitute the subpart for the disable gdlib
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###DISABLEGDLIB###', $gdLibSubpart);
+		// GDlib PNG
+		if (is_array($fA['gdlib_png']) && $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
+			// Get the subpart for the gdlib png
+			$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###');
+			// Get the subpart for the dropdown options
+			$gdLibPngOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###');
+			$gdLibPngLabels = $this->setLabelValueArray($fA['gdlib_png'], 2);
+			reset($gdLibPngLabels);
+			$regularModeMarkers['labelGdLibPng'] = '[GFX][gdlib_png]=';
+			$regularModeMarkers['strongGdLibPng'] = (string) current($gdLibPngLabels);
+			$regularModeMarkers['defaultGdLibPng'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
+			$gdLibPngOptions = array();
+			foreach ($gdLibPngLabels as $k => $v) {
+				list($cleanV) = explode('|', $fA['gdlib_png'][$k]);
+				$gdLibPngMarker['value'] = htmlspecialchars($fA['gdlib_png'][$k]);
+				$gdLibPngMarker['data'] = htmlspecialchars($v);
+				if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'], $cleanV)) {
+					$gdLibPngMarker['selected'] = 'selected="selected"';
+				}
+				// Fill the markers in the subpart
+				$gdLibPngOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngOptionSubpart, $gdLibPngMarker, '###|###', TRUE, FALSE);
+			}
+			// Substitute the subpart for the dropdown options
+			$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($gdLibPngSubpart, '###GDLIBPNGOPTION###', implode(LF, $gdLibPngOptions));
+			// Fill the markers in the subpart
+			$gdLibPngSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($gdLibPngSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+		}
+		// Substitute the subpart for the gdlib png
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###GDLIBPNGSUBPART###', $gdLibPngSubpart);
+		// ImageMagick
+		if (is_array($fA['im'])) {
+			// Get the subpart for ImageMagick
+			$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###');
+			// Define the markers content
+			$regularModeMarkers['labelImageMagick'] = '[GFX][im]=';
+			$regularModeMarkers['strongImageMagick'] = (string) current($fA['im']);
+			$regularModeMarkers['defaultImageMagick'] = (int) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];
+			$regularModeMarkers['imageMagick'] = (int) current($fA['im']);
+			// Fill the markers in the subpart
+			$imageMagickSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imageMagickSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			// IM Combine Filename
+			// Get the subpart for ImageMagick Combine filename
+			$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###');
+			// Define the markers content
+			$regularModeMarkers['labelImCombineFilename'] = '[GFX][im_combine_filename]';
+			$regularModeMarkers['strongImCombineFilename'] = htmlspecialchars((string) current($fA['im_combine_filename']));
+			$regularModeMarkers['defaultImCombineFilename'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_combine_filename']);
+			$regularModeMarkers['imCombineFilename'] = htmlspecialchars((string) ($fA['im_combine_filename'] ? current($fA['im_combine_filename']) : 'combine'));
+			// Fill the markers in the subpart
+			$imCombineFileNameSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imCombineFileNameSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			// IM Version 5
+			// Get the subpart for ImageMagick Version 5
+			$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMVERSION5SUBPART###');
+			// Define the markers content
+			$regularModeMarkers['labelImVersion5'] = '[GFX][im_version_5]=';
+			$regularModeMarkers['strongImVersion5'] = htmlspecialchars((string) current($fA['im_version_5']));
+			$regularModeMarkers['defaultImVersion5'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5']);
+			$regularModeMarkers['imVersion5'] = htmlspecialchars((string) ($fA['im_version_5'] ? current($fA['im_version_5']) : ''));
+			// Fill the markers in the subpart
+			$imVersion5Subpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imVersion5Subpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+			if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {
+				// IM Path
+				if (is_array($fA['im_path'])) {
+					// Get the subpart for ImageMagick path
+					$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHSUBPART###');
+					$labelImPath = $this->setLabelValueArray($fA['im_path'], 1);
+					reset($labelImPath);
+					$imPath = $this->setLabelValueArray($fA['im_path'], 0);
+					reset($imPath);
+					// Define the markers content
+					$regularModeMarkers['labelImPath'] = '[GFX][im_path]=';
+					$regularModeMarkers['strongImPath'] = htmlspecialchars((string) current($labelImPath));
+					$regularModeMarkers['defaultImPath'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']);
+					$regularModeMarkers['ImPath'] = htmlspecialchars((string) current($imPath));
+					// Fill the markers in the subpart
+					$imPathSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+				}
+				// IM Path LZW
+				if (is_array($fA['im_path_lzw'])) {
+					// Get the subpart for ImageMagick lzw path
+					$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###');
+					// Get the subpart for ImageMagick lzw path dropdown options
+					$imPathOptionSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###IMPATHLZWOPTION###');
+					$labelImPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 1);
+					reset($labelImPathLzw);
+					$imPathLzw = $this->setLabelValueArray($fA['im_path_lzw'], 0);
+					reset($imPathLzw);
+					// Define the markers content
+					$regularModeMarkers['labelImPathLzw'] = '[GFX][im_path_lzw]=';
+					$regularModeMarkers['strongImPathLzw'] = htmlspecialchars((string) current($labelImPathLzw));
+					$regularModeMarkers['defaultImPathLzw'] = htmlspecialchars((string) $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']);
+					$regularModeMarkers['ImPathLzw'] = htmlspecialchars((string) current($imPathLzw));
+					$imPathLzwOptions = array();
+					foreach ($labelImPathLzw as $k => $v) {
+						list($cleanV) = explode('|', $fA['im_path_lzw'][$k]);
+						// Define the markers content
+						$imPathLzwMarker = array(
+							'value' => htmlspecialchars($fA['im_path_lzw'][$k]),
+							'data' => htmlspecialchars($v)
+						);
+						if (!strcmp($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'], $cleanV)) {
+							$imPathLzwMarker['selected'] = 'selected="selected"';
+						}
+						// Fill the markers in the subpart
+						$imPathLzwOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathOptionSubpart, $imPathLzwMarker, '###|###', TRUE, FALSE);
+					}
+					// Substitute the subpart for ImageMagick lzw path dropdown options
+					$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imPathLzwSubpart, '###IMPATHLZWOPTION###', implode(LF, $imPathLzwOptions));
+					// Fill the markers in the subpart
+					$imPathLzwSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($imPathLzwSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+				}
+			}
+		}
+		// Substitute the subpart for ImageMagick
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMAGEMAGICKSUBPART###', $imageMagickSubpart);
+		// Substitute the subpart for ImageMagick Combine filename
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMCOMBINEFILENAMESUBPART###', $imCombineFileNameSubpart);
+		// Substitute the subpart for ImageMagick Version 5
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMVERSION5SUBPART###', $imVersion5Subpart);
+		// Substitute the subpart for ImageMagick path
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHSUBPART###', $imPathSubpart);
+		// Substitute the subpart for ImageMagick lzw path
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###IMPATHLZWSUBPART###', $imPathLzwSubpart);
+		// TrueType Font dpi
+		// Get the subpart for TrueType dpi
+		$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($regularModeSubpart, '###TTFDPISUBPART###');
+		// Define the markers content
+		$regularModeMarkers['labelTtfDpi'] = '[GFX][TTFdpi]=';
+		$regularModeMarkers['ttfDpi'] = htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi']);
+		// Fill the markers in the subpart
+		$ttfDpiSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($ttfDpiSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+		// Substitute the subpart for TrueType dpi
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###TTFDPISUBPART###', $ttfDpiSubpart);
+		// Fill the markers in the regular mode subpart
+		$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($regularModeSubpart, $regularModeMarkers, '###|###', TRUE, FALSE);
+
 		$formMarkers['labelUpdateLocalConf'] = 'Update configuration';
 		$formMarkers['labelNotice'] = 'NOTICE:';
 		$formMarkers['labelCommentUpdateLocalConf'] = 'By clicking this button, the configuration is updated with new values for the parameters listed above!';
@@ -2647,8 +2242,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				$newDatabaseName = trim($this->INSTALL['Database']['NEW_DATABASE_NAME']);
 					// Hyphen is not allowed in unquoted database names (at least for MySQL databases)
 				if (!preg_match('/[^[:alnum:]_]/', $newDatabaseName)) {
-					if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-						if ($GLOBALS['TYPO3_DB']->admin_query('CREATE DATABASE ' . $newDatabaseName . ' CHARACTER SET utf8')) {
+					if ($result = $this->getDatabase()->sql_pconnect()) {
+						if ($this->getDatabase()->admin_query('CREATE DATABASE ' . $newDatabaseName . ' CHARACTER SET utf8')) {
 							$this->INSTALL['Database']['typo_db'] = $newDatabaseName;
 							$this->messages[] = 'Database \'' . $newDatabaseName . '\' created';
 						} else {
@@ -2791,14 +2386,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 					break;
 				}
 			}
-			// Hook to modify localconf.php lines in the 1-2-3 installer
-			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'])) {
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['writeLocalconf'] as $classData) {
-					$hookObject = GeneralUtility::getUserObj($classData);
-					$dummy = array();
-					$hookObject->executeWriteLocalconf($dummy, $this->step, $this);
-				}
-			}
 		}
 		if (!empty($localConfigurationPathValuePairs)) {
 			$this->setLocalConfigurationValues($localConfigurationPathValuePairs);
@@ -2836,7 +2423,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			);
 			// Fill the markers
 			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
-			$this->outputExitBasedOnStep($content);
+			$this->output($this->outputWrapper($content));
 		} else {
 			// Get the template part from the file
 			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###NOCHANGE###');
@@ -2849,7 +2436,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			);
 			// Fill the markers
 			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-			$this->outputExitBasedOnStep($content);
+			$this->output($this->outputWrapper($content));
 		}
 	}
 
@@ -2864,23 +2451,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 */
 	public function writeToLocalconf_control($lines = '', $showOutput = TRUE) {
 		GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
-	 * If in 1-2-3 mode, send a redirect header response with the action and exit
-	 * otherwise send output to output() function
-	 *
-	 * @param string $content The HTML to output
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function outputExitBasedOnStep($content) {
-		if ($this->step) {
-			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->action);
-		} else {
-			$this->output($this->outputWrapper($content));
-		}
-		die;
 	}
 
 	/**
@@ -2926,8 +2496,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 */
 	public function getDatabaseList() {
 		$dbArr = array();
-		if ($result = $GLOBALS['TYPO3_DB']->sql_pconnect()) {
-			$dbArr = $GLOBALS['TYPO3_DB']->admin_get_dbs();
+		if ($result = $this->getDatabase()->sql_pconnect()) {
+			$dbArr = $this->getDatabase()->admin_get_dbs();
 		}
 		// remove some database names that MySQL uses internally from the list of choosable DB names
 		$reservedDatabaseNames = array('mysql', 'information_schema');
@@ -3032,41 +2602,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		header('Content-type: image/gif');
 		imagegif($im);
 		die;
-	}
-
-	/**
-	 * Checks if extensions need further PHP modules
-	 *
-	 * @return array list of modules which are missing
-	 */
-	protected function getMissingPhpModules() {
-		// Hook to add additional required PHP modules in the 1-2-3 installer
-		$modules = array();
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install/mod/class.tx_install.php']['requiredPhpModules'] as $classData) {
-				$hookObject = GeneralUtility::getUserObj($classData);
-				$modules = $hookObject->setRequiredPhpModules($modules, $this);
-			}
-		}
-		$result = array();
-		foreach ($modules as $module) {
-			if (is_array($module)) {
-				$detectedSubmodules = FALSE;
-				foreach ($module as $submodule) {
-					if (extension_loaded($submodule)) {
-						$detectedSubmodules = TRUE;
-					}
-				}
-				if ($detectedSubmodules === FALSE) {
-					$result[] = 'one of: (' . implode(', ', $module) . ')';
-				}
-			} else {
-				if (!extension_loaded($module)) {
-					$result[] = $module;
-				}
-			}
-		}
-		return $result;
 	}
 
 	/**
@@ -3332,16 +2867,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				<p>
 					Image Processing is disabled by the config flag
 					[GFX][image_processing] set to FALSE (zero)
-				</p>
-			', 2);
-			$this->output($this->outputWrapper($this->printAll()));
-			return;
-		}
-		if (!$this->config_array['dir_typo3temp']) {
-			$this->message('Image Processing', 'typo3temp/ not writable!', '
-				<p>
-					You must make typo3temp/ write enabled before you can
-					proceed with this test.
 				</p>
 			', 2);
 			$this->output($this->outputWrapper($this->printAll()));
@@ -4082,7 +3607,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$whichTables = $this->sqlHandler->getListOfTables();
 		// Getting number of static_template records
 		if ($whichTables['static_template']) {
-			$static_template_count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'static_template');
+			$static_template_count = $this->getDatabase()->exec_SELECTcountRows('uid', 'static_template');
 		}
 		$static_template_count = intval($static_template_count);
 		$headCode = 'Database Analyser';
@@ -4150,10 +3675,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$directJump = '';
 		$extraSqlFiles = array();
 		foreach ($sql_files as $k => $file) {
-			if ($this->mode == '123' && !count($whichTables) && strstr($file, '_testsite')) {
-				$directJump = $this->action . '&TYPO3_INSTALL[database_type]=import|' . rawurlencode($file);
-			}
-			$lf = \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($k);
 			$fShortName = substr($file, strlen(PATH_site));
 			$spec1 = ($spec2 = '');
 			// Define the markers content
@@ -4320,7 +3841,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 								</p>
 							' . $formContent, 2);
 					} else {
-						$formContent = $this->generateUpdateDatabaseForm('get_form', $update_statements, $remove_statements, $action_type);
+						$this->generateUpdateDatabaseForm('get_form', $update_statements, $remove_statements, $action_type);
 						$this->message($tLabel, 'Table and field definitions are OK.', '
 								<p>
 									The tables and fields in the current
@@ -4460,7 +3981,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				}
 				break;
 			case 'import':
-				$mode123Imported = 0;
 				$tblFileContent = '';
 				if (preg_match('/^CURRENT_/', $actionParts[1])) {
 					if (!strcmp($actionParts[1], 'CURRENT_TABLES') || !strcmp($actionParts[1], 'CURRENT_TABLES+STATIC')) {
@@ -4491,7 +4011,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 					if ($this->INSTALL['database_import_all']) {
 						$r = 0;
 						foreach ($statements as $k => $v) {
-							$res = $GLOBALS['TYPO3_DB']->admin_query($v);
+							$res = $this->getDatabase()->admin_query($v);
 							$r++;
 						}
 						// Make a database comparison because some tables that are defined twice have
@@ -4504,29 +4024,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 						$update_statements = $this->sqlHandler->getUpdateSuggestions($diff);
 						if (is_array($update_statements['add'])) {
 							foreach ($update_statements['add'] as $statement) {
-								$res = $GLOBALS['TYPO3_DB']->admin_query($statement);
-							}
-						}
-						if ($this->mode == '123') {
-							// Create default be_user admin/password
-							$username = 'admin';
-							$pass = 'password';
-							$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'be_users', 'username=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($username, 'be_users'));
-							if (!$count) {
-								$insertFields = array(
-									'username' => $username,
-									'password' => md5($pass),
-									'admin' => 1,
-									'uc' => '',
-									'fileoper_perms' => 0,
-									'tstamp' => $GLOBALS['EXEC_TIME'],
-									'crdate' => $GLOBALS['EXEC_TIME']
-								);
-								$GLOBALS['TYPO3_DB']->exec_INSERTquery('be_users', $insertFields);
-							}
-
-							if (!$this->hasAdditionalSteps) {
-								$this->dispatchInitializeUpdates();
+								$res = $this->getDatabase()->admin_query($statement);
 							}
 						}
 
@@ -4535,20 +4033,16 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 									Queries: ' . $r . '
 								</p>
 							', 1, 1);
-						if (GeneralUtility::_GP('goto_step')) {
-							$this->action .= '&step=' . GeneralUtility::_GP('goto_step');
-							\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->action);
-						}
 					} elseif (is_array($this->INSTALL['database_import'])) {
 						// Traverse the tables
 						foreach ($this->INSTALL['database_import'] as $table => $md5str) {
 							if ($md5str == md5($statements_table[$table])) {
-								$res = $GLOBALS['TYPO3_DB']->admin_query('DROP TABLE IF EXISTS ' . $table);
-								$res = $GLOBALS['TYPO3_DB']->admin_query($statements_table[$table]);
+								$res = $this->getDatabase()->admin_query('DROP TABLE IF EXISTS ' . $table);
+								$res = $this->getDatabase()->admin_query($statements_table[$table]);
 								if ($insertCount[$table]) {
 									$statements_insert = $this->sqlHandler->getTableInsertStatements($statements, $table);
 									foreach ($statements_insert as $k => $v) {
-										$res = $GLOBALS['TYPO3_DB']->admin_query($v);
+										$res = $this->getDatabase()->admin_query($v);
 									}
 								}
 								$this->message($tLabel, 'Imported \'' . $table . '\'', '
@@ -4557,93 +4051,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 										</p>
 									', 1, 1);
 							}
-						}
-					}
-					$mode123Imported = $this->isBasicComplete($tLabel);
-					if (!$mode123Imported) {
-						// Re-Getting current tables - may have been changed during import
-						$whichTables = $this->sqlHandler->getListOfTables();
-						if (count($statements_table)) {
-							reset($statements_table);
-							$out = '';
-							// Get the template file
-							$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'CheckTheDatabaseImport.html'));
-							// Get the template part from the file
-							$content = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###IMPORT###');
-							if ($this->mode != '123') {
-								$tables = array();
-								// Get the subpart for regular mode
-								$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($content, '###REGULARMODE###');
-								foreach ($statements_table as $table => $definition) {
-									// Get the subpart for rows
-									$tableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($content, '###ROWS###');
-									// Fill the 'table exists' part when it exists
-									$exist = isset($whichTables[$table]);
-									if ($exist) {
-										// Get the subpart for table exists
-										$existSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($tableSubpart, '###EXIST###');
-										// Define the markers content
-										$existMarkers = array(
-											'tableExists' => 'Table exists!',
-											'backPath' => $this->backPath
-										);
-										// Fill the markers in the subpart
-										$existSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($existSubpart, $existMarkers, '###|###', TRUE, FALSE);
-									}
-									// Substitute the subpart for table exists
-									$tableHtml = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($tableSubpart, '###EXIST###', $existSubpart);
-									// Define the markers content
-									$tableMarkers = array(
-										'table' => $table,
-										'definition' => md5($definition),
-										'count' => $insertCount[$table] ? $insertCount[$table] : '',
-										'rowLabel' => $insertCount[$table] ? 'Rows: ' : '',
-										'tableExists' => 'Table exists!',
-										'backPath' => $this->backPath
-									);
-									// Fill the markers
-									$tables[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($tableHtml, $tableMarkers, '###|###', TRUE, FALSE);
-								}
-								// Substitute the subpart for the rows
-								$regularModeSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($regularModeSubpart, '###ROWS###', implode(LF, $tables));
-							}
-							// Substitute the subpart for the regular mode
-							$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###REGULARMODE###', $regularModeSubpart);
-							// Define the markers content
-							$contentMarkers = array(
-								'checked' => $this->mode == '123' || GeneralUtility::_GP('presetWholeTable') ? 'checked="checked"' : '',
-								'label' => 'Import the whole file \'' . basename($actionParts[1]) . '\' directly (ignores selections above)'
-							);
-							// Fill the markers
-							$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $contentMarkers, '###|###', TRUE, FALSE);
-							$form = $this->getUpdateDbFormWrap($action_type, $content);
-							$this->message($tLabel, 'Select tables to import', '
-									<p>
-										This is an overview of the CREATE TABLE
-										definitions in the SQL file.
-										<br />
-										Select which tables you want to dump to
-										the database.
-										<br />
-										Any table you choose dump to the
-										database is dropped from the database
-										first, so you\'ll lose all data in
-										existing tables.
-									</p>
-								' . $form, 1, 1);
-						} else {
-							$this->message($tLabel, 'No tables', '
-									<p>
-										There seems to be no CREATE TABLE
-										definitions in the SQL file.
-										<br />
-										This tool is intelligently creating one
-										table at a time and not just dumping the
-										whole content of the file uncritically.
-										That\'s why there must be defined tables
-										in the SQL file.
-									</p>
-								', 3, 1);
 						}
 					}
 				}
@@ -4681,8 +4088,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 										</p>
 									', 2, 1);
 							} else {
-								$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', 'be_users', 'username=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($username, 'be_users'));
-								if (!$GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
+								$res = $this->getDatabase()->exec_SELECTquery('uid', 'be_users', 'username=' . $this->getDatabase()->fullQuoteStr($username, 'be_users'));
+								if (!$this->getDatabase()->sql_num_rows($res)) {
 									$insertFields = array(
 										'username' => $username,
 										'password' => md5($pass),
@@ -4692,8 +4099,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 										'tstamp' => $GLOBALS['EXEC_TIME'],
 										'crdate' => $GLOBALS['EXEC_TIME']
 									);
-									$result = $GLOBALS['TYPO3_DB']->exec_INSERTquery('be_users', $insertFields);
-									$this->isBasicComplete($headCode);
+									$result = $this->getDatabase()->exec_INSERTquery('be_users', $insertFields);
 									if ($result) {
 										$this->message($headCode, 'User created', '
 												<p>
@@ -4706,7 +4112,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 										$this->message($headCode, 'User not created', '
 												<p>
 													Error:
-													<strong>' . htmlspecialchars($GLOBALS['TYPO3_DB']->sql_error()) . '
+													<strong>' . htmlspecialchars($this->getDatabase()->sql_error()) . '
 													</strong>
 												</p>
 											', 3, 1);
@@ -4769,7 +4175,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			case 'UC':
 				if ($whichTables['be_users']) {
 					if (!strcmp($this->INSTALL['database_UC'], 1)) {
-						$GLOBALS['TYPO3_DB']->exec_UPDATEquery('be_users', '', array('uc' => ''));
+						$this->getDatabase()->exec_UPDATEquery('be_users', '', array('uc' => ''));
 						$this->message($headCode, 'Clearing be_users.uc', '
 								<p>
 									Done.
@@ -4823,7 +4229,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 						if ($table != '--div--') {
 							$table_c = TYPO3_OS == 'WIN' ? strtolower($table) : $table;
 							if ($this->INSTALL['database_clearcache'][$table] && $whichTables[$table_c]) {
-								$GLOBALS['TYPO3_DB']->exec_TRUNCATEquery($table);
+								$this->getDatabase()->exec_TRUNCATEquery($table);
 								// Define the markers content
 								$emptiedTablesMarkers = array(
 									'tableName' => $table
@@ -4873,7 +4279,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 					if ($table != '--div--') {
 						$table_c = TYPO3_OS == 'WIN' ? strtolower($table) : $table;
 						if ($whichTables[$table_c]) {
-							$countEntries[$table] = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', $table);
+							$countEntries[$table] = $this->getDatabase()->exec_SELECTcountRows('*', $table);
 							// Checkboxes:
 							if ($this->INSTALL['database_clearcache'][$table] || $_GET['PRESET']['database_clearcache'][$table]) {
 								$checked = 'checked="checked"';
@@ -5091,7 +4497,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			if (!$this->INSTALL['update']['extList']) {
 				break;
 			}
-			$GLOBALS['TYPO3_DB']->store_lastBuiltQuery = TRUE;
+			$this->getDatabase()->store_lastBuiltQuery = TRUE;
 			foreach ($this->INSTALL['update']['extList'] as $identifier) {
 				$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$identifier];
 				$tmpObj = $this->getUpgradeObjInstance($className, $identifier);
@@ -5142,7 +4548,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				$updateItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($updateItem, $updateItemsMarkers, '###|###', TRUE, FALSE);
 			}
 			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($performUpdateSubpart, '###UPDATEITEMS###', implode(LF, $updateItems));
-			$GLOBALS['TYPO3_DB']->store_lastBuiltQuery = FALSE;
+			$this->getDatabase()->store_lastBuiltQuery = FALSE;
 			// also render the link to the next update wizard, if available
 			$nextUpdateWizard = $this->getNextUpdadeWizardInstance($tmpObj);
 			if ($nextUpdateWizard) {
@@ -5206,40 +4612,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @todo Define visibility
 	 */
 	public function isBackendAdminUser() {
-		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'be_users', 'admin=1');
-	}
-
-	/**
-	 * Check if the basic settings are complete
-	 * Only used by 1-2-3 mode
-	 *
-	 * @param string $tLabel The header for the message
-	 * @return boolean TRUE if complete
-	 * @todo Define visibility
-	 */
-	public function isBasicComplete($tLabel) {
-		if ($this->mode == '123') {
-			$tables = $this->sqlHandler->getListOfTables();
-			if (count($tables)) {
-				$beuser = $this->isBackendAdminUser();
-			}
-			if (count($tables) && $beuser) {
-				$mode123Imported = 1;
-				$this->message($tLabel, 'Basic Installation Completed', $this->messageBasicFinished(), -1, 1);
-				$this->message($tLabel, 'Security Risk!', $this->securityRisk() . $this->alterPasswordForm(), 2, 1);
-			} else {
-				$this->message($tLabel, 'Still missing something?', nl2br('
-				You may be missing one of these points before your TYPO3 installation is complete:
-
-				' . (count($tables) ? '' : '- You haven\'t imported any tables yet.
-				') . ($beuser ? '' : '- You haven\'t created an admin user yet.
-				') . '
-
-				You\'re about to import a database with a complete site in it, these three points should be met.
-				'), -1, 1);
-			}
-		}
-		return $mode123Imported;
+		return $this->getDatabase()->exec_SELECTcountRows('uid', 'be_users', 'admin=1');
 	}
 
 	/**
@@ -5837,15 +5210,10 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $short_string A short description
 	 * @param string $long_string A long (more detailed) description
 	 * @param integer $type -1=OK sign, 0=message, 1=notification, 2=warning, 3=error
-	 * @param boolean $force Print message also in "Advanced" mode (not only in 1-2-3 mode)
 	 * @return void
 	 * @todo Define visibility
 	 */
-	public function message($head, $short_string = '', $long_string = '', $type = 0, $force = 0) {
-		// Return directly if mode-123 is enabled.
-		if (!$force && $this->mode == '123' && $type < 2) {
-			return;
-		}
+	public function message($head, $short_string = '', $long_string = '', $type = 0) {
 		if ($type == 3) {
 			$this->fatalError = 1;
 		}
@@ -5947,8 +5315,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		// Get the template file
 		if (!$this->passwordOK) {
 			$this->template = @file_get_contents((PATH_site . $this->templateFilePath . 'Install_login.html'));
-		} elseif ($this->mode == '123') {
-			$this->template = @file_get_contents((PATH_site . $this->templateFilePath . 'Install_123.html'));
 		} else {
 			$this->template = @file_get_contents((PATH_site . $this->templateFilePath . 'Install.html'));
 		}
@@ -5969,23 +5335,17 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			}
 		}
 		// Include the stylesheets based on screen
-		if ($this->mode == '123') {
-			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install_123.css')) . '" />';
-		} elseif ($this->passwordOK) {
+		if ($this->passwordOK) {
 			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
 		} else {
 			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
 			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install_login.css')) . '" />';
 		}
 		// Define the markers content
-		if ($this->mode == '123') {
-			$this->markers['headTitle'] = 'Installing TYPO3 ' . TYPO3_branch;
-		} else {
-			$this->markers['headTitle'] = '
-				TYPO3 ' . TYPO3_version . '
-				Install Tool on site: ' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '
-			';
-		}
+		$this->markers['headTitle'] = '
+			TYPO3 ' . TYPO3_version . '
+			Install Tool on site: ' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '
+		';
 		$this->markers['title'] = 'TYPO3 ' . TYPO3_version;
 		$this->markers['javascript'] = implode(LF, $this->javascript);
 		$this->markers['stylesheets'] = implode(LF, $this->stylesheets);
@@ -6089,66 +5449,29 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @todo Define visibility
 	 */
 	public function menu() {
-		if ($this->mode != '123') {
-			if (!$this->passwordOK) {
-				return;
-			}
-			$c = 0;
-			$items = array();
-			// Get the subpart for the main menu
-			$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###MENU###');
-			// Get the subpart for each single menu item
-			$menuItemSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###MENUITEM###');
-			foreach ($this->menuitems as $k => $v) {
-				// Define the markers content
-				$markers = array(
-					'class' => $this->INSTALL['type'] == $k ? 'class="act"' : '',
-					'id' => 't3-install-menu-' . $k,
-					'url' => htmlspecialchars($this->scriptSelf . '?TYPO3_INSTALL[type]=' . $k . ($this->mode ? '&mode=' . rawurlencode($this->mode) : '')),
-					'item' => $v
-				);
-				// Fill the markers in the subpart
-				$items[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($menuItemSubPart, $markers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for the single menu items
-			$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($menuSubPart, '###MENUITEM###', implode(LF, $items));
-			return $menuSubPart;
+		if (!$this->passwordOK) {
+			return;
 		}
-	}
-
-	/**
-	 * Generates the step header for 1-2-3 mode, the numbers at the top
-	 *
-	 * @return string HTML for the step header
-	 * @todo Define visibility
-	 */
-	public function stepHeader() {
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'StepHeader.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Get the subpart for each item
-		$stepItemSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###STEPITEM###');
-		$steps = array();
-		for ($counter = 2; $counter <= $this->totalSteps; $counter++) {
-			$state = '';
-			if ($this->step === $counter) {
-				$state = 'act';
-			} elseif ($this->step === 'go' || $counter < $this->step) {
-				$state = 'done';
-			}
+		$c = 0;
+		$items = array();
+		// Get the subpart for the main menu
+		$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###MENU###');
+		// Get the subpart for each single menu item
+		$menuItemSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###MENUITEM###');
+		foreach ($this->menuitems as $k => $v) {
 			// Define the markers content
-			$stepItemMarkers = array(
-				'class' => 'class="step' . ($counter - 1) . ($state ? ' ' . $state : '') . '"',
-				'url' => $this->scriptSelf . '?mode=' . $this->mode . '&amp;step=' . $counter,
-				'step' => $counter
+			$markers = array(
+				'class' => $this->INSTALL['type'] == $k ? 'class="act"' : '',
+				'id' => 't3-install-menu-' . $k,
+				'url' => htmlspecialchars($this->scriptSelf . '?TYPO3_INSTALL[type]=' . $k),
+				'item' => $v
 			);
 			// Fill the markers in the subpart
-			$steps[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($stepItemSubPart, $stepItemMarkers, '###|###', TRUE, FALSE);
+			$items[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($menuItemSubPart, $markers, '###|###', TRUE, FALSE);
 		}
-		// Substitute the subpart for the items
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###STEPITEM###', implode(LF, $steps));
-		return $content;
+		// Substitute the subpart for the single menu items
+		$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($menuSubPart, '###MENUITEM###', implode(LF, $items));
+		return $menuSubPart;
 	}
 
 	/**
@@ -6230,50 +5553,14 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Generate HTML for the message that the basic setup has been finished
-	 *
-	 * @return string HTML of the message
-	 * @todo Define visibility
-	 */
-	public function messageBasicFinished() {
-		return '
-			<p>
-				You have completed the basic setup of the TYPO3 Content Management System.
-				Choose between these options to continue:
-			</p>
-			<ul>
-				<li>
-					<a href="' . $this->scriptSelf . '">Configure TYPO3</a> (Recommended)
-					<br />
-					This will let you analyze and verify that everything in your
-					installation is in order. In addition, you can configure advanced
-					TYPO3 options in this step.
-				</li>
-				<li>
-					<a href="../../index.php">
-						Visit the frontend
-					</a>
-				</li>
-				<li>
-					<a href="../index.php">
-						Login to the backend
-					</a>
-					<br />
-					(Default username: <em>admin</em>, default password: <em>password</em>.)
-				</li>
-			</ul>
-		';
-	}
-
-	/**
-	 * Make the url of the script according to type, mode and step
+	 * Make the url of the script according to type, step
 	 *
 	 * @param string $type The type
 	 * @return string The url
 	 * @todo Define visibility
 	 */
 	public function setScriptName($type) {
-		$value = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $type . ($this->mode ? '&mode=' . rawurlencode($this->mode) : '') . ($this->step ? '&step=' . rawurlencode($this->step) : '');
+		$value = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $type;
 		return $value;
 	}
 
@@ -6436,6 +5723,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @todo Define visibility
 	 */
 	public function viewArray($incomingValue) {
+		$content = '';
 		// Get the template file
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'ViewArray.html'));
 		if (is_array($incomingValue) && !empty($incomingValue)) {
@@ -6476,6 +5764,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * Returns a newly created TYPO3 encryption key with a given length.
 	 *
 	 * @param integer $keyLength Desired key length
+	 * @TODO: Implement in new step installer
 	 * @return string The encryption key
 	 */
 	public function createEncryptionKey($keyLength = 96) {
@@ -6496,57 +5785,12 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Checks whether the mysql user is allowed to create new databases.
+	 * Get database connection
 	 *
-	 * This code is adopted from the phpMyAdmin project
-	 * http://www.phpmyadmin.net
-	 *
-	 * @return boolean
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
-	protected function checkCreateDatabasePrivileges() {
-		$createAllowed = FALSE;
-		$allowedPatterns = array();
-		$grants = $GLOBALS['TYPO3_DB']->sql_query('SHOW GRANTS');
-		// we get one or more lines like this
-		// insufficient rights:
-		// GRANT USAGE ON *.* TO 'test'@'localhost' IDENTIFIED BY ...
-		// GRANT ALL PRIVILEGES ON `test`.* TO 'test'@'localhost'
-		// sufficient rights:
-		// GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY ...
-		// loop over all result rows
-		while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_row($grants)) !== FALSE) {
-			$grant = $row[0];
-			$dbNameOffset = strpos($grant, ' ON ') + 4;
-			$dbName = substr($grant, $dbNameOffset, strpos($grant, '.', $dbNameOffset) - $dbNameOffset);
-			$privileges = substr($grant, 6, strpos($grant, ' ON ') - 6);
-			// we need at least one of the following privileges
-			if ($privileges === 'ALL' || $privileges === 'ALL PRIVILEGES' || $privileges === 'CREATE' || strpos($privileges, 'CREATE,') !== FALSE) {
-				// And we need this privilege not on a specific DB, but on *
-				if ($dbName === '*') {
-					// user has permissions to create new databases
-					$createAllowed = TRUE;
-					break;
-				} else {
-					$allowedPatterns[] = str_replace('`', '', $dbName);
-				}
-			}
-		}
-		// remove all existing databases from the list of allowed patterns
-		$existingDatabases = $this->getDatabaseList();
-		foreach ($allowedPatterns as $index => $pattern) {
-			if (strpos($pattern, '%') !== FALSE) {
-				continue;
-			}
-			if (in_array($pattern, $existingDatabases)) {
-				unset($allowedPatterns[$index]);
-			}
-		}
-		if (count($allowedPatterns) > 0) {
-			return $allowedPatterns;
-		} else {
-			return $createAllowed;
-		}
+	public function getDatabase() {
+		return $GLOBALS['TYPO3_DB'];
 	}
-
 }
 ?>
