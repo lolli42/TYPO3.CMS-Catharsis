@@ -188,7 +188,6 @@ class Installer {
 		'images' => 'Image Processing',
 		'extConfig' => 'All Configuration',
 		'cleanup' => 'Clean up',
-		'phpinfo' => 'phpinfo()',
 		'typo3conf_edit' => 'Edit files in typo3conf/',
 		'about' => 'About',
 		'logout' => 'Logout from Install Tool'
@@ -248,7 +247,6 @@ class Installer {
 				'images',
 				'extConfig',
 				'cleanup',
-				'phpinfo',
 				'systemEnvironment',
 				'folderStructure',
 				'typo3conf_edit',
@@ -548,13 +546,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		case 'cleanup':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\CleanupManager');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->output($this->outputWrapper($this->printAll()));
-			break;
-		case 'phpinfo':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\PhpInformation');
 			$actionObject->handle();
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->output($this->outputWrapper($this->printAll()));
