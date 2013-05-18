@@ -162,7 +162,6 @@ class Installer {
 		'dir_temp' => 0,
 		'im_versions' => array(),
 		'im' => 0,
-		'sql.safe_mode_user' => '',
 		'mysqlConnect' => 0,
 		'no_database' => 0
 	);
@@ -848,10 +847,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$ext = 'php.ini configuration tests';
 		$this->message($ext);
 		$this->message($ext, 'Mail test', $this->check_mail('get_form'), -1);
-
-		if (\TYPO3\CMS\Core\Utility\PhpOptionsUtility::isSqlSafeModeEnabled()) {
-			$this->config_array['sql.safe_mode_user'] = get_current_user();
-		}
 	}
 
 	/**
@@ -1190,29 +1185,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 						</p>
 					', 1, 1);
 				}
-			} else {
-				$sqlSafeModeUser = '';
-				if ($this->config_array['sql.safe_mode_user']) {
-					$sqlSafeModeUser = '
-						<strong>Notice:</strong>
-						<em>sql.safe_mode</em> is turned on, so apparently your
-						username to the database is the same as the scriptowner,
-						which is ' . $this->config_array['sql.safe_mode_user'];
-				}
-				$this->message($ext, 'Could not connect to SQL database!', '
-					<p>
-						Connecting to SQL database failed with these settings:
-						<br />
-						Username: <strong>' . htmlspecialchars(TYPO3_db_username) . '</strong>
-						<br />
-						Host: <strong>' . htmlspecialchars(TYPO3_db_host) . '</strong>
-					</p>
-					<p>
-						Make sure you\'re using the correct set of data.
-						<br />
-						' . $sqlSafeModeUser . '
-					</p>
-				', 3);
 			}
 		}
 	}
@@ -1251,23 +1223,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($form, '###ALLMODES###');
 		// Define the markers content
 		$formMarkers['actionUrl'] = $this->action;
-		// Username
-		if (TYPO3_db_username) {
-			$username = TYPO3_db_username;
-		} elseif ($this->config_array['sql.safe_mode_user']) {
-			$username = $this->config_array['sql.safe_mode_user'];
-			// Get the subpart for the sql safe mode user
-			$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###');
-			// Define the markers content
-			$sqlSafeModeUserMarkers = array(
-				'labelSqlSafeModeUser' => 'sql.safe_mode_user:',
-				'sqlSafeModeUser' => $this->config_array['sql.safe_mode_user']
-			);
-			// Fill the markers in the subpart
-			$sqlSafeModeUserSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($sqlSafeModeUserSubpart, $sqlSafeModeUserMarkers, '###|###', TRUE, FALSE);
-		}
-		// Get the subpart for all modes
-		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###SQLSAFEMODEUSERSUBPART###', $sqlSafeModeUserSubpart);
+		$username = TYPO3_db_username;
 		// Define the markers content
 		$allModesMarkers = array(
 			'labelUsername' => 'Username:',
