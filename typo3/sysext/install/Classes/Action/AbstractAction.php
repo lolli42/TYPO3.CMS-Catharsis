@@ -37,14 +37,38 @@ abstract class AbstractAction {
 	protected $templateFilePath = 'typo3/sysext/install/Resources/Private/Templates/';
 
 	/**
+	 * @var array List of error messages created by this action
+	 */
+	protected $errorMessages = array();
+
+	/**
 	 * @var array Content sections
 	 */
 	protected $sections = array();
 
+	/**
+	 * Get rendered content sections
+	 *
+	 * @return array Content sections
+	 */
 	public function getSections() {
 		return $this->sections;
 	}
 
+	/**
+	 * Get error messages
+	 *
+	 * @return array Error messages
+	 */
+	public function getErrorMessages() {
+		return $this->errorMessages;
+	}
+
+	/**
+	 * Handle this step
+	 *
+	 * @return mixed
+	 */
 	abstract public function handle();
 
 	/**

@@ -180,13 +180,6 @@ class Installer {
 	protected $session = NULL;
 
 	/**
-	 * Form protection instance used for creating and verifying form tokens
-	 *
-	 * @var \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection
-	 */
-	protected $formProtection = NULL;
-
-	/**
 	 * @todo Define visibility
 	 */
 	public $menuitems = array(
@@ -300,8 +293,12 @@ class Installer {
 				\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirect_url);
 			}
 
-			$this->formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get('TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection');
-			$this->formProtection->injectInstallTool($this);
+			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
+			$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
+				'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
+			);
+			$formProtection->injectInstallTool($this);
+
 		} else {
 			$this->loginForm();
 		}
@@ -602,128 +599,22 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
 				unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
 			}
-			$this->formProtection->clean();
+
+			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
+			$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
+				'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
+			);
+			$formProtection->clean();
+
 			$this->session->destroySession();
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->scriptSelf);
 			break;
-		case 'about':
-
 		default:
-			$this->message('About', 'Warning - very important!', $this->securityRisk() . $this->alterPasswordForm(), 2);
-			$this->message('About', 'Using this script', '
-					<p>
-						There are three primary steps for you to take:
-					</p>
-					<p>
-						<strong>1: Basic Configuration</strong>
-						<br />
-						In this step your PHP-configuration is checked. If
-						there are any settings that will prevent TYPO3 from
-						running correctly you\'ll get warnings and errors
-						with a description of the problem.
-						<br />
-						You\'ll have to enter a database username, password
-						and hostname. Then you can choose to create a new
-						database or select an existing one.
-						<br />
-						Finally the image processing settings are entered
-						and verified and you can choose to let the script
-						update the configuration with the suggested settings.
-					</p>
-					<p>
-						<strong>2: Database Analyser</strong>
-						<br />
-						In this step you can either install a new database
-						or update the database from any previous TYPO3
-						version.
-						<br />
-						You can also get an overview of extra/missing
-						fields/tables in the database compared to a raw
-						sql-file.
-						<br />
-						The database is also verified against your
-						configuration ($TCA) and you can
-						even see suggestions to entries in $TCA or new
-						fields in the database.
-					</p>
-					<p>
-						<strong>3: Upgrade Wizard</strong>
-						<br />
-						Here you will find update methods taking care of
-						changes to the TYPO3 core which are not backwards
-						compatible.
-						<br />
-						It is recommended to run this wizard after every
-						update to make sure everything will still work
-						flawlessly.
-					</p>
-					<p>
-						<strong>4: Image Processing</strong>
-						<br />
-						This step is a visual guide to verify your
-						configuration of the image processing software.
-						<br />
-						You\'ll be presented to a list of images that should
-						all match in pairs. If some irregularity appears,
-						you\'ll get a warning. Thus you\'re able to track an
-						error before you\'ll discover it on your website.
-					</p>
-					<p>
-						<strong>5: All Configuration</strong>
-						<br />
-						This gives you access to any of the configuration
-						options in the TYPO3_CONF_VARS array. Every option
-						is also presented with a comment explaining what it
-						does.
-					</p>
-					<p>
-						<strong>6: Cleanup</strong>
-						<br />
-						Here you can clean up the temporary files in typo3temp/
-						folder and the tables used for caching of data in
-						your database.
-					</p>
-				');
-
-			$headCode = 'Header legend';
-			$this->message($headCode, 'Notice!', '
-					<p>
-						Indicates that something is important to be aware
-						of.
-						<br />
-						This does <em>not</em> indicate an error.
-					</p>
-				', 1);
-			$this->message($headCode, 'Just information', '
-					<p>
-						This is a simple message with some information about
-						something.
-					</p>
-				');
-			$this->message($headCode, 'Check was successful', '
-					<p>
-						Indicates that something was checked and returned an
-						expected result.
-					</p>
-				', -1);
-			$this->message($headCode, 'Warning!', '
-					<p>
-						Indicates that something may very well cause trouble
-						and you should definitely look into it before
-						proceeding.
-						<br />
-						This indicates a <em>potential</em> error.
-					</p>
-				', 2);
-			$this->message($headCode, 'Error!', '
-					<p>
-						Indicates that something is definitely wrong and
-						that TYPO3 will most likely not perform as expected
-						if this problem is not solved.
-						<br />
-						This indicates an actual error.
-					</p>
-				', 3);
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\About');
+			$actionObject->handle();
+			$this->sections = array_merge($this->sections, $actionObject->getSections());
+			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		}
@@ -1120,26 +1011,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 					if (is_array($GLOBALS['TYPO3_CONF_VARS'][$k])) {
 						foreach ($va as $vk => $value) {
 							if (isset($GLOBALS['TYPO3_CONF_VARS'][$k][$vk])) {
-								$doit = 1;
-								if ($k == 'BE' && $vk == 'installToolPassword') {
-									if ($value) {
-										if (isset($_POST['installToolPassword_check'])) {
-											if (!$this->formProtection->validateToken((string) $_POST['formToken'], 'installToolPassword', 'change')) {
-												$doit = FALSE;
-												break;
-											}
-											if (!GeneralUtility::_GP('installToolPassword_check') || strcmp(GeneralUtility::_GP('installToolPassword_check'), $value)) {
-												$doit = FALSE;
-												$this->errorMessages[] = 'The two passwords did not ' . 'match! The password was not changed.';
-											}
-										}
-										if (GeneralUtility::_GP('installToolPassword_md5')) {
-											$value = md5($value);
-										}
-									} else {
-										$doit = 0;
-									}
-								}
 								$description = trim($commentArr[1][$k][$vk]);
 								if (preg_match('/^string \\(textarea\\)/i', $description)) {
 									// Force Unix linebreaks in textareas
@@ -1157,7 +1028,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 										$value = TRUE;
 									}
 								}
-								if ($doit && strcmp($GLOBALS['TYPO3_CONF_VARS'][$k][$vk], $value)) {
+								if (strcmp($GLOBALS['TYPO3_CONF_VARS'][$k][$vk], $value)) {
 									$configurationPathValuePairs['"' . $k . '"' . '/' . '"' . $vk . '"'] = $value;
 								}
 							}
@@ -5143,57 +5014,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		return $menuSubPart;
 	}
 
-	/**
-	 * Generate HTML for the security risk message
-	 *
-	 * @return string HTML for the security risk message
-	 * @todo Define visibility
-	 */
-	public function securityRisk() {
-		return '
-			<p>
-				<strong>An unsecured Install Tool presents a security risk.</strong>
-				Minimize the risk with the following actions:
-			</p>
-			<ul>
-				<li>
-					Change the Install Tool password.
-				</li>
-				<li>
-					Delete the ENABLE_INSTALL_TOOL file in the /typo3conf folder. This can be done
-					manually or through User tools &gt; User settings in the backend.
-				</li>
-				<li>
-					For additional security, the /typo3/install/ folder can be
-					renamed, deleted, or password protected with a .htaccess file.
-				</li>
-			</ul>
-		';
-	}
 
-	/**
-	 * Generates the form to alter the password of the Install Tool
-	 *
-	 * @return string HTML of the form
-	 * @todo Define visibility
-	 */
-	public function alterPasswordForm() {
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'AlterPasswordForm.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Define the markers content
-		$markers = array(
-			'action' => $this->scriptSelf . '?TYPO3_INSTALL[type]=extConfig',
-			'enterPassword' => 'Enter new password:',
-			'enterAgain' => 'Enter again:',
-			'submit' => 'Set new password',
-			'formToken' => $this->formProtection->generateToken('installToolPassword', 'change')
-		);
-		// Fill the markers
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-		return $content;
-	}
 
 	/**
 	 * Generate HTML for the copyright

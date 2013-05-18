@@ -33,6 +33,7 @@ class Typo3ConfEdit extends AbstractAction {
 
 	public function handle() {
 		$formValues = GeneralUtility::_GP('typo3ConfEdit');
+
 		$EDIT_path = PATH_typo3conf;
 		$headCode = 'Edit files in ' . basename($EDIT_path) . '/';
 		$messages = '';
