@@ -188,7 +188,6 @@ class Installer {
 		'images' => 'Image Processing',
 		'extConfig' => 'All Configuration',
 		'cleanup' => 'Clean up',
-		'typo3conf_edit' => 'Edit files in typo3conf/',
 		'about' => 'About',
 		'logout' => 'Logout from Install Tool'
 	);
@@ -561,13 +560,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\FolderStructure');
 			$output = $actionObject->handle();
 			$this->output($this->outputWrapper($output));
-			break;
-		case 'typo3conf_edit':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\Typo3ConfEdit');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'logout':
 			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
