@@ -108,11 +108,6 @@ class Installer {
 
 	/**
 	 * @todo Define visibility
-	 */
-	public $allowFileEditOutsite_typo3conf_dir = 0;
-
-	/**
-	 * @todo Define visibility
 	 * In constructor: is set to global GET/POST var TYPO3_INSTALL
 	 */
 	public $INSTALL = array();
@@ -140,12 +135,6 @@ class Installer {
 	 * This is set, if the password check was ok. The function init() will exit if this is not set
 	 */
 	public $passwordOK = 0;
-
-	/**
-	 * @todo Define visibility
-	 * If set, the check routines don't add to the message-array
-	 */
-	public $silent = 1;
 
 	/**
 	 * @todo Define visibility
@@ -458,21 +447,17 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		case 'images':
 			$this->checkIM = 1;
 			$this->checkTheConfig();
-			$this->silent = 0;
 			$this->checkTheImageProcessing();
 			break;
 		case 'database':
 			$this->checkTheConfig();
-			$this->silent = 0;
 			$this->checkTheDatabase();
 			break;
 		case 'update':
 			$this->checkDatabase();
-			$this->silent = 0;
 			$this->updateWizard();
 			break;
 		case 'config':
-			$this->silent = 0;
 			$this->checkIM = 1;
 			$this->message('About configuration', 'How to configure TYPO3', $this->generallyAboutConfiguration());
 			$isPhpCgi = PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi';
@@ -561,7 +546,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'extConfig':
-			$this->silent = 0;
 			$this->generateConfigForm('get_form');
 			// Get the template file
 			$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'InitExtConfig.html'));
@@ -585,24 +569,33 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			break;
 		case 'cleanup':
 			$this->checkTheConfig();
-			$this->silent = 0;
 			$this->cleanupManager();
 			break;
 		case 'phpinfo':
-			$this->silent = 0;
-			$this->phpinformation();
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\PhpInformation');
+			$actionObject->handle();
+			$this->sections = array_merge($this->sections, $actionObject->getSections());
+			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'systemEnvironment':
-			$this->silent = 0;
-			$this->systemEnvironmentCheck();
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\SystemEnvironment');
+			$output = $actionObject->handle();
+			$this->output($this->outputWrapper($output));
 			break;
 		case 'folderStructure':
-			$this->silent = 0;
-			$this->folderStructure();
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\FolderStructure');
+			$output = $actionObject->handle();
+			$this->output($this->outputWrapper($output));
 			break;
 		case 'typo3conf_edit':
-			$this->silent = 0;
-			$this->typo3conf_edit();
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\Typo3ConfEdit');
+			$actionObject->handle();
+			$this->sections = array_merge($this->sections, $actionObject->getSections());
+			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'logout':
 			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
@@ -616,7 +609,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		case 'about':
 
 		default:
-			$this->silent = 0;
 			$this->message('About', 'Warning - very important!', $this->securityRisk() . $this->alterPasswordForm(), 2);
 			$this->message('About', 'Using this script', '
 					<p>
@@ -771,329 +763,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->checkImageMagick($paths);
 		}
 		$this->checkDatabase();
-	}
-
-	/**
-	 * Editing files in typo3conf directory (or elsewhere if enabled)
-	 *
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function typo3conf_edit() {
-		// default:
-		$EDIT_path = PATH_typo3conf;
-		if ($this->allowFileEditOutsite_typo3conf_dir && $this->INSTALL['FILE']['EDIT_path']) {
-			if (GeneralUtility::validPathStr($this->INSTALL['FILE']['EDIT_path']) && substr($this->INSTALL['FILE']['EDIT_path'], -1) == '/') {
-				$tmp_path = PATH_site . $this->INSTALL['FILE']['EDIT_path'];
-				if (is_dir($tmp_path)) {
-					$EDIT_path = $tmp_path;
-				} else {
-					$this->errorMessages[] = '
-						\'' . $tmp_path . '\' was not directory
-					';
-				}
-			} else {
-				$this->errorMessages[] = '
-					Bad directory name (must be like typo3/)
-				';
-			}
-		}
-		$headCode = 'Edit files in ' . basename($EDIT_path) . '/';
-		$messages = '';
-		if ($this->INSTALL['SAVE_FILE']) {
-			$save_to_file = $this->INSTALL['FILE']['name'];
-			if (@is_file($save_to_file)) {
-				$save_to_file_md5 = md5($save_to_file);
-				if (isset($this->INSTALL['FILE'][$save_to_file_md5]) && GeneralUtility::isFirstPartOfStr($save_to_file, $EDIT_path . '') && substr($save_to_file, -1) != '~' && !strstr($save_to_file, '_bak')) {
-					$this->INSTALL['typo3conf_files'] = $save_to_file;
-					$save_fileContent = $this->INSTALL['FILE'][$save_to_file_md5];
-					if ($this->INSTALL['FILE']['win_to_unix_br']) {
-						$save_fileContent = str_replace(CRLF, LF, $save_fileContent);
-					}
-					$backupFile = $this->getBackupFilename($save_to_file);
-					if ($this->INSTALL['FILE']['backup']) {
-						if (@is_file($backupFile)) {
-							unlink($backupFile);
-						}
-						rename($save_to_file, $backupFile);
-						$messages .= '
-							Backup written to <strong>' . $backupFile . '</strong>
-							<br />
-						';
-					}
-					GeneralUtility::writeFile($save_to_file, $save_fileContent);
-					$messages .= '
-						File saved: <strong>' . $save_to_file . '</strong>
-						<br />
-						MD5-sum: ' . $this->INSTALL['FILE']['prevMD5'] . ' (prev)
-						<br />
-						MD5-sum: ' . md5($save_fileContent) . ' (new)
-						<br />
-					';
-				}
-			}
-		}
-		// Filelist:
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'Typo3ConfEdit.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Get the subpart for the files
-		$filesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###FILES###');
-		$files = array();
-		$typo3conf_files = GeneralUtility::getFilesInDir($EDIT_path, '', 1, 1);
-		$fileFound = 0;
-		foreach ($typo3conf_files as $k => $file) {
-			// Delete temp_CACHED files if option is set
-			if ($this->INSTALL['delTempCached'] && preg_match('|/temp_CACHED_[a-z0-9_]+\\.php|', $file)) {
-				unlink($file);
-				continue;
-			}
-			if ($this->INSTALL['typo3conf_files'] && !strcmp($this->INSTALL['typo3conf_files'], $file)) {
-				$fileFound = 1;
-			}
-			// Define the markers content for the files subpart
-			$filesMarkers = array(
-				'editUrl' => $this->action . '&amp;TYPO3_INSTALL[typo3conf_files]=' . rawurlencode($file) . ($this->allowFileEditOutsite_typo3conf_dir ? '&amp;TYPO3_INSTALL[FILE][EDIT_path]=' . rawurlencode($this->INSTALL['FILE']['EDIT_path']) : '') . '#confEditFileList',
-				'fileName' => basename($file),
-				'fileSize' => GeneralUtility::formatSize(filesize($file)),
-				'class' => $this->INSTALL['typo3conf_files'] && !strcmp($this->INSTALL['typo3conf_files'], $file) ? 'class="act"' : ''
-			);
-			// Fill the markers in the subpart
-			$files[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($filesSubpart, $filesMarkers, '###|###', TRUE, FALSE);
-		}
-		if ($fileFound && @is_file($this->INSTALL['typo3conf_files'])) {
-			$backupFile = $this->getBackupFilename($this->INSTALL['typo3conf_files']);
-			$fileContent = GeneralUtility::getUrl($this->INSTALL['typo3conf_files']);
-			// Get the subpart to edit the files
-			$fileEditTemplate = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###FILEEDIT###');
-			$allowFileEditOutsideTypo3ConfDirSubPart = '';
-			if (substr($this->INSTALL['typo3conf_files'], -1) != '~' && !strstr($this->INSTALL['typo3conf_files'], '_bak')) {
-				// Get the subpart to show the save button
-				$showSaveButtonSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($fileEditTemplate, '###SHOWSAVEBUTTON###');
-			}
-			if ($this->allowFileEditOutsite_typo3conf_dir) {
-				// Get the subpart to show if files are allowed outside the directory typo3conf
-				$allowFileEditOutsideTypo3ConfDirSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($fileEditTemplate, '###ALLOWFILEEDITOUTSIDETYPO3CONFDIR###');
-			}
-			// Substitute the subpart for the save button
-			$fileEditContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($fileEditTemplate, '###SHOWSAVEBUTTON###', $showSaveButtonSubPart);
-			// Substitute the subpart to show if files are allowed outside the directory typo3conf
-			$fileEditContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($fileEditContent, '###ALLOWFILEEDITOUTSIDETYPO3CONFDIR###', $allowFileEditOutsideTypo3ConfDirSubPart);
-			// Define the markers content for subpart to edit the files
-			$fileEditMarkers = array(
-				'messages' => !empty($messages) ? '<p class="typo3-message message-warning">' . $messages . '</p>' : '',
-				'action' => $this->action . '#fileEditHeader',
-				'saveFile' => 'Save file',
-				'close' => 'Close',
-				'llEditing' => 'Editing file:',
-				'file' => $this->INSTALL['typo3conf_files'],
-				'md5Sum' => 'MD5-sum: ' . md5($fileContent),
-				'fileName' => $this->INSTALL['typo3conf_files'],
-				'fileEditPath' => $this->INSTALL['FILE']['EDIT_path'],
-				'filePreviousMd5' => md5($fileContent),
-				'fileMd5' => md5($this->INSTALL['typo3conf_files']),
-				'fileContent' => GeneralUtility::formatForTextarea($fileContent),
-				'winToUnixBrChecked' => TYPO3_OS == 'WIN' ? '' : 'checked="checked"',
-				'winToUnixBr' => 'Convert Windows linebreaks (13-10) to Unix (10)',
-				'backupChecked' => @is_file($backupFile) ? 'checked="checked"' : '',
-				'backup' => 'Make backup copy (rename to ' . basename($backupFile) . ')'
-			);
-			// Fill the markers in the subpart to edit the files
-			$fileEditContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($fileEditContent, $fileEditMarkers, '###|###', TRUE, FALSE);
-		}
-		if ($this->allowFileEditOutsite_typo3conf_dir) {
-			// Get the subpart to show if files are allowed outside the directory typo3conf
-			$allowFileEditOutsideTypo3ConfDirSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###ALLOWFILEEDITOUTSIDETYPO3CONFDIR###');
-			// Define the markers content
-			$allowFileEditOutsideTypo3ConfDirMarkers = array(
-				'action' => $this->action,
-				'pathSite' => PATH_site,
-				'editPath' => $this->INSTALL['FILE']['EDIT_path'],
-				'set' => 'Set'
-			);
-			// Fill the markers in the subpart
-			$allowFileEditOutsideTypo3ConfDirSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($allowFileEditOutsideTypo3ConfDirSubPart, $allowFileEditOutsideTypo3ConfDirMarkers, '###|###', TRUE, FALSE);
-		}
-		// Substitute the subpart to edit the file
-		$fileListContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###FILEEDIT###', $fileEditContent);
-		// Substitute the subpart when files can be edited outside typo3conf directory
-		$fileListContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($fileListContent, '###ALLOWFILEEDITOUTSIDETYPO3CONFDIR###', $allowFileEditOutsideTypo3ConfDirSubPart);
-		// Substitute the subpart for the files
-		$fileListContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($fileListContent, '###FILES###', implode(LF, $files));
-		// Define the markers content
-		$fileListMarkers = array(
-			'editPath' => '(' . $EDIT_path . ')',
-			'deleteTempCachedUrl' => $this->action . '&amp;TYPO3_INSTALL[delTempCached]=1',
-			'deleteTempCached' => 'Delete temp_CACHED* files'
-		);
-		// Fill the markers
-		$fileListContent = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($fileListContent, $fileListMarkers, '###|###', TRUE, FALSE);
-		// Add the content to the message array
-		$this->message($headCode, 'Files in folder', $fileListContent);
-		// Output the page
-		$this->output($this->outputWrapper($this->printAll()));
-	}
-
-	/**
-	 * Show system environment check
-	 */
-	protected function systemEnvironmentCheck() {
-		$html = '<h3>System environment check</h3>';
-
-		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
-		$statusCheck = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
-		$statusObjects = $statusCheck->getStatus();
-
-		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
-		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
-		foreach ($sortedStatusObjects as $statusObjectsOfOneSeverity) {
-			$html .= $statusUtility->renderStatusObjectsAsHtml($statusObjectsOfOneSeverity);
-		}
-
-		$this->output($this->outputWrapper($html));
-	}
-
-	/**
-	 * Folder structure status
-	 */
-	protected function folderStructure() {
-		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
-		$folderStructureFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\FolderStructure\\DefaultFactory');
-		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
-		$structureFacade = $folderStructureFactory->getStructure();
-
-		$fixStatusObjects = array();
-		if (isset($this->INSTALL['folderStructure']['fix'])) {
-			$fixStatusObjects = $structureFacade->fix();
-		}
-
-		$html = array();
-		$html[] = '<h3>File and folder status below ' . PATH_site . '</h3>';
-
-		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
-		if (count($fixStatusObjects) > 0) {
-			$html[] = '<h4>Fix action results:</h4>';
-			$html[] = $statusUtility->renderStatusObjectsAsHtml($fixStatusObjects);
-			$html[] = '<hr />';
-		}
-
-		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
-		$currentStatusObjects = $structureFacade->getStatus();
-		$unfixableStatus = $statusUtility->filterBySeverity($currentStatusObjects, 'error');
-		$fixableStatus = $statusUtility->filterBySeverity($currentStatusObjects, 'warning');
-		$okStatus = $statusUtility->filterBySeverity($currentStatusObjects, 'ok');
-
-		if (count($fixableStatus) > 0) {
-			$html[] = '<form action="index.php?TYPO3_INSTALL[type]=folderStructure" method="post">';
-			$html[] = '<button type="submit" name="TYPO3_INSTALL[folderStructure][fix]">';
-			$html[] = 'Fix errors <span class="t3-install-form-button-icon-positive">&nbsp;</span>';
-			$html[] = '</button>';
-			$html[] = '</form>';
-			$html[] = '<hr />';
-		}
-
-		if (count($unfixableStatus)) {
-			$html[] = '<h4>These problems are not fixable:</h4>';
-			$html[] = $statusUtility->renderStatusObjectsAsHtml($unfixableStatus);
-		}
-		if (count($fixableStatus)) {
-			$html[] = '<h4>These problems are fixable:</h4>';
-			$html[] = $statusUtility->renderStatusObjectsAsHtml($fixableStatus);
-		}
-		if (count($okStatus)) {
-			$html[] = '<h4>These structures are ok:</h4>';
-			$html[] = $statusUtility->renderStatusObjectsAsHtml($okStatus);
-		}
-
-		$this->output($this->outputWrapper(implode(LF, $html)));
-	}
-
-	/**
-	 * Outputs system information
-	 *
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function phpinformation() {
-		$headCode = 'PHP information';
-		$sVar = GeneralUtility::getIndpEnv('_ARRAY');
-		$sVar['CONST: PHP_OS'] = PHP_OS;
-		$sVar['CONST: TYPO3_OS'] = TYPO3_OS;
-		$sVar['CONST: PATH_thisScript'] = PATH_thisScript;
-		$sVar['CONST: php_sapi_name()'] = PHP_SAPI;
-		$sVar['OTHER: TYPO3_VERSION'] = TYPO3_version;
-		$sVar['OTHER: PHP_VERSION'] = phpversion();
-		$sVar['imagecreatefromgif()'] = function_exists('imagecreatefromgif');
-		$sVar['imagecreatefrompng()'] = function_exists('imagecreatefrompng');
-		$sVar['imagecreatefromjpeg()'] = function_exists('imagecreatefromjpeg');
-		$sVar['imagegif()'] = function_exists('imagegif');
-		$sVar['imagepng()'] = function_exists('imagepng');
-		$sVar['imagejpeg()'] = function_exists('imagejpeg');
-		$sVar['imagettftext()'] = function_exists('imagettftext');
-		$sVar['OTHER: IMAGE_TYPES'] = function_exists('imagetypes') ? imagetypes() : 0;
-		$gE_keys = explode(',', 'SERVER_PORT,SERVER_SOFTWARE,GATEWAY_INTERFACE,SCRIPT_NAME,PATH_TRANSLATED');
-		foreach ($gE_keys as $k) {
-			$sVar['SERVER: ' . $k] = $_SERVER[$k];
-		}
-		$gE_keys = explode(',', 'image_processing,gdlib,gdlib_png,im,im_path,im_path_lzw,im_version_5,im_negate_mask,im_imvMaskState,im_combine_filename');
-		foreach ($gE_keys as $k) {
-			$sVar['T3CV_GFX: ' . $k] = $GLOBALS['TYPO3_CONF_VARS']['GFX'][$k];
-		}
-		$debugInfo = array(
-			'### DEBUG SYSTEM INFORMATION - START ###'
-		);
-		foreach ($sVar as $kkk => $vvv) {
-			$debugInfo[] = str_pad(substr($kkk, 0, 20), 20) . ': ' . $vvv;
-		}
-		$debugInfo[] = '### DEBUG SYSTEM INFORMATION - END ###';
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'PhpInformation.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Define the markers content
-		$markers = array(
-			'explanation' => 'Please copy/paste the information from this text field into an email or bug-report as "Debug System Information" whenever you wish to get support or report problems. This information helps others to check if your system has some obvious misconfiguration and you\'ll get your help faster!',
-			'debugInfo' => GeneralUtility::formatForTextarea(implode(LF, $debugInfo))
-		);
-		// Fill the markers
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-		// Add the content to the message array
-		$this->message($headCode, 'DEBUG information', $content);
-		// Start with various server information
-		$getEnvArray = array();
-		$gE_keys = explode(',', 'QUERY_STRING,HTTP_ACCEPT,HTTP_ACCEPT_ENCODING,HTTP_ACCEPT_LANGUAGE,HTTP_CONNECTION,HTTP_COOKIE,HTTP_HOST,HTTP_USER_AGENT,REMOTE_ADDR,REMOTE_HOST,REMOTE_PORT,SERVER_ADDR,SERVER_ADMIN,SERVER_NAME,SERVER_PORT,SERVER_SIGNATURE,SERVER_SOFTWARE,GATEWAY_INTERFACE,SERVER_PROTOCOL,REQUEST_METHOD,SCRIPT_NAME,PATH_TRANSLATED,HTTP_REFERER,PATH_INFO');
-		foreach ($gE_keys as $k) {
-			$getEnvArray[$k] = getenv($k);
-		}
-		$this->message($headCode, 'TYPO3\\CMS\\Core\\Utility\\GeneralUtility::getIndpEnv()', $this->viewArray(GeneralUtility::getIndpEnv('_ARRAY')));
-		$this->message($headCode, 'getenv()', $this->viewArray($getEnvArray));
-		$this->message($headCode, '_ENV', $this->viewArray($_ENV));
-		$this->message($headCode, '_SERVER', $this->viewArray($_SERVER));
-		$this->message($headCode, '_COOKIE', $this->viewArray($_COOKIE));
-		$this->message($headCode, '_GET', $this->viewArray($_GET));
-		// Start with the phpinfo() part
-		ob_start();
-		phpinfo();
-		$contents = explode('<body>', ob_get_contents());
-		ob_end_clean();
-		$contents = explode('</body>', $contents[1]);
-		// Do code cleaning: phpinfo() is not XHTML1.1 compliant
-		$phpinfo = str_replace('<font', '<span', $contents[0]);
-		$phpinfo = str_replace('</font', '</span', $phpinfo);
-		$phpinfo = str_replace('<img border="0"', '<img', $phpinfo);
-		$phpinfo = str_replace('<a name=', '<a id=', $phpinfo);
-		// Add phpinfo() to the message array
-		$this->message($headCode, 'phpinfo()', '
-			<div class="phpinfo">
-				' . $phpinfo . '
-			</div>
-		');
-		// Output the page
-		$this->output($this->outputWrapper($this->printAll()));
 	}
 
 	/*******************************
@@ -5218,9 +4887,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->fatalError = 1;
 		}
 		$long_string = trim($long_string);
-		if (!$this->silent) {
-			$this->printSection($head, $short_string, $long_string, $type);
-		}
+		$this->printSection($head, $short_string, $long_string, $type);
 	}
 
 	/**
@@ -5238,6 +4905,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'PrintSection.html'));
 		// Get the template part from the file
 		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
+		$messageType = '';
 		switch ($type) {
 		case 3:
 			$messageType = 'message-error';
@@ -5258,6 +4926,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		if (!trim($short_string)) {
 			$content = '';
 		} else {
+			$longStringSubpart = '';
 			if (trim($long_string)) {
 				// Get the subpart for the long string
 				$longStringSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###LONGSTRINGAVAILABLE###');
@@ -5565,23 +5234,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Return the filename that will be used for the backup.
-	 * It is important that backups of PHP files still stay as a PHP file, otherwise they could be viewed un-parsed in clear-text.
-	 *
-	 * @param string $filename Full path to a file
-	 * @return string The name of the backup file (again, including the full path)
-	 * @todo Define visibility
-	 */
-	public function getBackupFilename($filename) {
-		if (preg_match('/\\.php$/', $filename)) {
-			$backupFile = str_replace('.php', '_bak.php', $filename);
-		} else {
-			$backupFile = $filename . '~';
-		}
-		return $backupFile;
-	}
-
-	/**
 	 * Creates a table which checkboxes for updating database.
 	 *
 	 * @param array $arr Array of statements (key / value pairs where key is used for the checkboxes)
@@ -5711,52 +5363,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		}
 		// Fill the markers
 		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $templateMarkers, '###|###', TRUE, FALSE);
-		return $content;
-	}
-
-	/**
-	 * Returns HTML-code, which is a visual representation of a multidimensional array
-	 * Returns FALSE if $array_in is not an array
-	 *
-	 * @param mixed $incomingValue Array to view
-	 * @return string HTML output
-	 * @todo Define visibility
-	 */
-	public function viewArray($incomingValue) {
-		$content = '';
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'ViewArray.html'));
-		if (is_array($incomingValue) && !empty($incomingValue)) {
-			// Get the template part from the file
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-			// Get the subpart for a single item
-			$itemSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($content, '###ITEM###');
-			foreach ($incomingValue as $key => $value) {
-				if (is_array($value)) {
-					$description = $this->viewArray($value);
-				} elseif (is_object($value)) {
-					$description = get_class($value);
-					if (method_exists($value, '__toString')) {
-						$description .= ': ' . (string) $value;
-					}
-				} else {
-					if (gettype($value) == 'object') {
-						$description = 'Unknown object';
-					} else {
-						$description = htmlspecialchars((string) $value);
-					}
-				}
-				// Define the markers content
-				$itemMarkers = array(
-					'key' => htmlspecialchars((string) $key),
-					'description' => !empty($description) ? $description : '&nbsp;'
-				);
-				// Fill the markers in the subpart
-				$items[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($itemSubpart, $itemMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for single item
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###ITEM###', implode(LF, $items));
-		}
 		return $content;
 	}
 
