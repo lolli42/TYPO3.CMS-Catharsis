@@ -85,61 +85,6 @@ h1,
 	width: 15%;
 }
 
-.t3-install-displayfields,
-.t3-install-displaysuggestions,
-.t3-install-displayfieldscompare {
-	width: 100%;
-	margin-bottom: 1em;
-}
-
-.t3-install-displayfields th,
-.t3-install-displaysuggestions th,
-.t3-install-displayfieldscompare th {
-	text-align: left;
-	background-color: #B3B7BD;
-}
-
-.t3-install-displaysuggestions .tfootHeader {
-	font-weight: bold;
-	background-color: #d0d0d0;
-}
-
-.t3-install-displayfields th,
-.t3-install-displayfields td,
-.t3-install-displaysuggestions th,
-.t3-install-displaysuggestions td,
-.t3-install-displayfieldscompare th,
-.t3-install-displayfieldscompare td {
-	padding: 0.2em;
-}
-
-.t3-install-displayfields thead,
-.t3-install-displayfields tbody,
-.t3-install-displaysuggestions thead,
-.t3-install-displaysuggestions tfoot,
-.t3-install-displaysuggestions tbody,
-.t3-install-displayfieldscompare thead,
-.t3-install-displayfieldscompare tbody {
-	border: 1px #B3B7BD solid;
-}
-
-.t3-install-displayfields .t3-install-column1,
-.t3-install-displaysuggestions .t3-install-column1 {
-	width: 35%;
-}
-
-.t3-install-displaysuggestions tr {
-	border-top: 1px #B3B7BD solid;
-}
-
-.t3-install-displaysuggestions pre {
-	font-size: 110%;
-}
-
-.t3-install-displayfieldscompare .warning {
-	color: red;
-}
-
 /* 4: Image processing */
 #t3-install-imageprocessingim dt,
 #t3-install-imageprocessingother dt,
