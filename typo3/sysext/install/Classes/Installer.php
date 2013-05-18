@@ -162,8 +162,6 @@ class Installer {
 		'dir_temp' => 0,
 		'im_versions' => array(),
 		'im' => 0,
-		'mysqlConnect' => 0,
-		'no_database' => 0
 	);
 
 	/**
@@ -450,7 +448,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->checkTheDatabase();
 			break;
 		case 'update':
-			$this->checkDatabase();
 			$this->updateWizard();
 			break;
 		case 'config':
@@ -470,34 +467,19 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->checkTheConfig();
 			$ext = 'Write configuration';
 			if ($this->fatalError) {
-				if ($this->config_array['no_database'] || !$this->config_array['mysqlConnect']) {
-					$this->message($ext, 'Database not configured yet!', '
-							<p>
-								You need to specify database username,
-								password and host as one of the first things.
-								<br />
-								Next you\'ll have to select a database to
-								use with TYPO3.
-							</p>
-							<p>
-								Use the form below.
-							</p>
-						', 2);
-				} else {
-					$this->message($ext, 'Fatal error encountered!', '
-							<p>
-								Somewhere above a fatal configuration
-								problem is encountered.
-								Please make sure that you\'ve fixed this
-								error before you submit the configuration.
-								TYPO3 will not run if this problem is not
-								fixed!
-								<br />
-								You should also check all warnings that may
-								appear.
-							</p>
-						', 2);
-				}
+				$this->message($ext, 'Fatal error encountered!', '
+						<p>
+							Somewhere above a fatal configuration
+							problem is encountered.
+							Please make sure that you\'ve fixed this
+							error before you submit the configuration.
+							TYPO3 will not run if this problem is not
+							fixed!
+							<br />
+							You should also check all warnings that may
+							appear.
+						</p>
+					', 2);
 			}
 			$this->message($ext, 'Very Important: Changing Image Processing settings', '
 					<p>
@@ -655,7 +637,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		if ($this->checkIM) {
 			$this->checkImageMagick($paths);
 		}
-		$this->checkDatabase();
 	}
 
 	/*******************************
@@ -1112,84 +1093,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Checks database username/password/host/database
-	 *
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function checkDatabase() {
-		$ext = 'Check database';
-		$this->message($ext);
-		if (!extension_loaded('mysqli') && !\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')) {
-			$this->message($ext, 'MySQLi not available', '
-				<p>
-					PHP does not feature MySQLi support (which is pretty unusual).
-				</p>
-			', 2);
-		} else {
-			if (!TYPO3_db_host || !TYPO3_db_username) {
-				$this->message($ext, 'Username, password or host not set', '
-					<p>
-						You may need to enter data for these values:
-						<br />
-						Username: <strong>' . htmlspecialchars(TYPO3_db_username) . '</strong>
-						<br />
-						Host: <strong>' . htmlspecialchars(TYPO3_db_host) . '</strong>
-						<br />
-						<br />
-						Use the form below.
-					</p>
-				', 2);
-			}
-			if ($result = $this->getDatabase()->sql_pconnect()) {
-				$this->message($ext, 'Connected to SQL database successfully', '
-					<dl id="t3-install-databaseconnected">
-						<dt>
-							Username:
-						</dt>
-						<dd>
-							' . htmlspecialchars(TYPO3_db_username) . '
-						</dd>
-						<dt>
-							Host:
-						</dt>
-						<dd>
-							' . htmlspecialchars(TYPO3_db_host) . '
-						</dd>
-					</dl>
-				', -1, 1);
-				$this->config_array['mysqlConnect'] = 1;
-				if (!TYPO3_db) {
-					$this->message($ext, 'No database selected', '
-						<p>
-							Currently you have no database selected.
-							<br />
-							Please select one or create a new database.
-						</p>
-					', 3);
-					$this->config_array['no_database'] = 1;
-				} elseif (!$this->getDatabase()->sql_select_db()) {
-					$this->message($ext, 'Database', '
-						<p>
-							\'' . htmlspecialchars(TYPO3_db) . '\' could not be selected as database!
-							<br />
-							Please select another one or create a new database.
-						</p>
-					', 3, 1);
-					$this->config_array['no_database'] = 1;
-				} else {
-					$this->message($ext, 'Database', '
-						<p>
-							<strong>' . htmlspecialchars(TYPO3_db) . '</strong> is selected as
-							database.
-						</p>
-					', 1, 1);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Prints form for updating localconf.php or updates localconf.php depending on $cmd
 	 *
 	 * @param string $cmd If "get_form" it outputs the form. Default is to write "localconf.php" based on input in ->INSTALL[localconf.php] array and flag ->setLocalconf
@@ -1237,57 +1140,42 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		);
 		// Get the subpart for the database list
 		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($allModesSubpart, '###DATABASELIST###');
-		if ($this->config_array['mysqlConnect']) {
-			// Get the subpart when database is available
-			$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASEAVAILABLE###');
-			// Get the subpart for each database table
-			$databaseItemSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databaseAvailableSubpart, '###DATABASEITEM###');
-			$dbArr = $this->getDatabaseList();
-			$dbIncluded = 0;
-			$databaseItems = array();
-			foreach ($dbArr as $dbname) {
-				// Define the markers content
-				$databaseItemMarkers = array(
-					'databaseSelected' => '',
-					'databaseName' => htmlspecialchars($dbname),
-					'databaseValue' => htmlspecialchars($dbname)
-				);
-				if ($dbname == TYPO3_db) {
-					$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
-				}
-				// Fill the markers in the subpart
-				$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
-				if ($dbname == TYPO3_db) {
-					$dbIncluded = 1;
-				}
-			}
-			if (!$dbIncluded && TYPO3_db) {
-				$databaseItemMarkers['databaseName'] = htmlspecialchars(TYPO3_db);
-				$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
-				$databaseItemMarkers['databaseValue'] = htmlspecialchars(TYPO3_db) . ' (NO ACCESS!)';
-				// Fill the markers in the subpart
-				$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for the database tables
-			$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databaseAvailableSubpart, '###DATABASEITEM###', implode(LF, $databaseItems));
-		} else {
-			// Get the subpart when the database is not available
-			$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###');
-			$databaseNotAvailableMarkers = array(
-				'typo3Db' => htmlspecialchars(TYPO3_db),
-				'labelNoDatabase' => '
-						(Database cannot be selected. Make sure that username, password and host
-						are set correctly. If MySQL does not allow persistent connections,
-						check that $TYPO3_CONF_VARS[\'SYS\'][\'no_pconnect\'] is set to "1".)
-					'
+
+		// Get the subpart when database is available
+		$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databasesSubpart, '###DATABASEAVAILABLE###');
+		// Get the subpart for each database table
+		$databaseItemSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($databaseAvailableSubpart, '###DATABASEITEM###');
+		$dbArr = $this->getDatabaseList();
+		$dbIncluded = 0;
+		$databaseItems = array();
+		foreach ($dbArr as $dbname) {
+			// Define the markers content
+			$databaseItemMarkers = array(
+				'databaseSelected' => '',
+				'databaseName' => htmlspecialchars($dbname),
+				'databaseValue' => htmlspecialchars($dbname)
 			);
+			if ($dbname == TYPO3_db) {
+				$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
+			}
 			// Fill the markers in the subpart
-			$databaseNotAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseNotAvailableSubpart, $databaseNotAvailableMarkers, '###|###', TRUE, FALSE);
+			$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
+			if ($dbname == TYPO3_db) {
+				$dbIncluded = 1;
+			}
 		}
+		if (!$dbIncluded && TYPO3_db) {
+			$databaseItemMarkers['databaseName'] = htmlspecialchars(TYPO3_db);
+			$databaseItemMarkers['databaseSelected'] = 'selected="selected"';
+			$databaseItemMarkers['databaseValue'] = htmlspecialchars(TYPO3_db) . ' (NO ACCESS!)';
+			// Fill the markers in the subpart
+			$databaseItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseItemSubpart, $databaseItemMarkers, '###|###', TRUE, FALSE);
+		}
+		// Substitute the subpart for the database tables
+		$databaseAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databaseAvailableSubpart, '###DATABASEITEM###', implode(LF, $databaseItems));
+
 		// Substitute the subpart when database is available
 		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASEAVAILABLE###', $databaseAvailableSubpart);
-		// Substitute the subpart when database is not available
-		$databasesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($databasesSubpart, '###DATABASENOTAVAILABLE###', $databaseNotAvailableSubpart);
 		// Substitute the subpart for the databases
 		$allModesSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($allModesSubpart, '###DATABASELIST###', $databasesSubpart);
 		// Fill the markers in the subpart for all modes
@@ -2833,33 +2721,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @todo Define visibility
 	 */
 	public function checkTheDatabase() {
-		if (!$this->config_array['mysqlConnect']) {
-			$this->message('Database Analyser', 'Your database connection failed', '
-				<p>
-					Please go to the \'Basic Configuration\' section and correct
-					this problem first.
-				</p>
-			', 2);
-			$this->output($this->outputWrapper($this->printAll()));
-			return;
-		}
-		if ($this->config_array['no_database']) {
-			$this->message('Database Analyser', 'No database selected', '
-				<p>
-					Please go to the \'Basic Configuration\' section and correct
-					this problem first.
-				</p>
-			', 2);
-			$this->output($this->outputWrapper($this->printAll()));
-			return;
-		}
 		// Getting current tables
 		$whichTables = $this->sqlHandler->getListOfTables();
-		// Getting number of static_template records
-		if ($whichTables['static_template']) {
-			$static_template_count = $this->getDatabase()->exec_SELECTcountRows('uid', 'static_template');
-		}
-		$static_template_count = intval($static_template_count);
 		$headCode = 'Database Analyser';
 		$this->message($headCode, 'What is it?', '
 			<p>
