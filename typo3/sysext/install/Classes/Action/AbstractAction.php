@@ -140,5 +140,14 @@ abstract class AbstractAction {
 		}
 		$this->sections[$head][] = $content;
 	}
+
+	/**
+	 * Get database connection
+	 *
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	public function getDatabase() {
+		return $GLOBALS['TYPO3_DB'];
+	}
 }
 ?>
