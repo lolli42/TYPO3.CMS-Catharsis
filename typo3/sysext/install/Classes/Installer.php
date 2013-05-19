@@ -38,115 +38,69 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class Installer {
 
 	/**
-	 * @todo Define visibility
+	 * @var string Path to templates
 	 */
-	public $templateFilePath = 'typo3/sysext/install/Resources/Private/Templates/';
+	protected $templateFilePath = 'typo3/sysext/install/Resources/Private/Templates/';
 
 	/**
-	 * @todo Define visibility
+	 * @var string Main template
 	 */
-	public $template;
+	protected $template;
 
 	/**
-	 * @todo Define visibility
-	 */
-	public $javascript;
-
-	/**
-	 * @todo Define visibility
-	 */
-	public $stylesheets;
-
-	/**
-	 * @todo Define visibility
-	 */
-	public $markers = array();
-
-	/**
-	 * Used to set (error)messages from the executing functions like mail-sending, writing Localconf and such
-	 *
-	 * @var array
+	 * @var array Used to set (error)messages from the executing functions like mail-sending, writing Localconf and such
 	 */
 	protected $messages = array();
 
 	/**
-	 * @todo Define visibility
+	 * @var array List of error messages
 	 */
-	public $errorMessages = array();
+	protected $errorMessages = array();
 
 	/**
-	 * @todo Define visibility
-	 * The url that calls this script
+	 * @var string The url that calls this script
 	 */
-	public $action = '';
+	protected $action = '';
 
 	/**
-	 * @todo Define visibility
-	 * The url that calls this script
+	 * @var string The url that calls this script
 	 */
-	public $scriptSelf = 'index.php';
+	protected $scriptSelf = 'index.php';
 
 	/**
-	 * @todo Define visibility
+	 * @var array In constructor: is set to global GET/POST var TYPO3_INSTALL
 	 */
-	public $updateIdentity = 'TYPO3 Install Tool';
+	protected $INSTALL = array();
 
 	/**
-	 * @todo Define visibility
+	 * @var boolean If set, lzw capabilities of the available ImageMagick installs are check by actually writing a gif-file and comparing size
 	 */
-	public $headerStyle = '';
+	protected $checkIMlzw = 0;
 
 	/**
-	 * @todo Define visibility
-	 * In constructor: is set to global GET/POST var TYPO3_INSTALL
+	 * @var boolean If set, ImageMagick is checked.
 	 */
-	public $INSTALL = array();
+	protected $checkIM = 0;
 
 	/**
-	 * @todo Define visibility
-	 * If set, lzw capabilities of the available ImageMagick installs are check by actually writing a gif-file and comparing size
+	 * @var boolean This is set, if the password check was ok. The function init() will exit if this is not set
 	 */
-	public $checkIMlzw = 0;
+	protected $passwordOK = 0;
 
 	/**
-	 * If set, ImageMagick is checked.
-	 * @todo Define visibility
+	 * @var array Used to gather the message information.
 	 */
-	public $checkIM = 0;
+	protected $sections = array();
 
 	/**
-	 * If set, the image Magick commands are always outputted in the image processing checker
-	 * @todo Define visibility
+	 * @var boolean This is set if some error occured that will definitely prevent TYpo3 from running.
 	 */
-	public $dumpImCommands = 1;
+	protected $fatalError = 0;
 
 	/**
-	 * @todo Define visibility
-	 * This is set, if the password check was ok. The function init() will exit if this is not set
+	 * @var array Configuration values
 	 */
-	public $passwordOK = 0;
-
-	/**
-	 * @todo Define visibility
-	 * Used to gather the message information.
-	 */
-	public $sections = array();
-
-	/**
-	 * @todo Define visibility
-	 * This is set if some error occured that will definitely prevent TYpo3 from running.
-	 */
-	public $fatalError = 0;
-
-	/**
-	 * @todo Define visibility
-	 */
-	public $sendNoCacheHeaders = 1;
-
-	/**
-	 * @todo Define visibility
-	 */
-	public $config_array = array(
+	protected $config_array = array(
 		// Flags are set in this array if the options are available and checked ok.
 		'dir_typo3temp' => 0,
 		'dir_temp' => 0,
@@ -155,21 +109,14 @@ class Installer {
 	);
 
 	/**
-	 * @todo Define visibility
-	 */
-	public $typo3temp_path = '';
-
-	/**
-	 * Session handling object
-	 *
-	 * @var \TYPO3\CMS\Install\Session
+	 * @var \TYPO3\CMS\Install\Session Session handling object
 	 */
 	protected $session = NULL;
 
 	/**
-	 * @todo Define visibility
+	 * @var array List of menu items
 	 */
-	public $menuitems = array(
+	protected $menuitems = array(
 		'config' => 'Basic Configuration',
 		'systemEnvironment' => 'System environment',
 		'folderStructure' => 'Folder structure',
@@ -189,8 +136,6 @@ class Installer {
 	 */
 	protected $backPath = '../';
 
-
-
 	/**
 	 * Constructor
 	 */
@@ -200,13 +145,13 @@ class Installer {
 				You must enable it by setting a password in typo3conf/LocalConfiguration.php. If you insert the value below at array position \'BE\' \'installToolPassword\', the password will be \'joh316\':<br /><br />
 				\'bacb98acf97e0b6112b1d1b650b84971\'', 'Fatal error');
 		}
-		if ($this->sendNoCacheHeaders) {
-			header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-			header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-			header('Expires: 0');
-			header('Cache-Control: no-cache, must-revalidate');
-			header('Pragma: no-cache');
-		}
+
+		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+		header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+		header('Expires: 0');
+		header('Cache-Control: no-cache, must-revalidate');
+		header('Pragma: no-cache');
+
 		// ****************************
 		// Initializing incoming vars.
 		// ****************************
@@ -236,10 +181,6 @@ class Installer {
 			$this->INSTALL['type'] = 'about';
 		}
 		$this->action = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $this->INSTALL['type'];
-		$this->typo3temp_path = PATH_site . 'typo3temp/';
-		if (!is_dir($this->typo3temp_path) || !is_writeable($this->typo3temp_path)) {
-			$this->outputErrorAndExit('Install Tool needs to write to typo3temp/. Make sure this directory is writeable by your webserver: ' . htmlspecialchars($this->typo3temp_path), 'Fatal error');
-		}
 		try {
 			$this->session = GeneralUtility::makeInstance('tx_install_session');
 		} catch (\Exception $exception) {
@@ -280,9 +221,8 @@ class Installer {
 	 * If password is ok, set session as "authorized".
 	 *
 	 * @return boolean TRUE if the submitted password was ok and session was
-	 * @todo Define visibility
 	 */
-	public function checkPassword() {
+	protected function checkPassword() {
 		$p = GeneralUtility::_GP('password');
 		if ($p && md5($p) === $GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']) {
 			$this->session->setAuthorized();
@@ -318,9 +258,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * or the session has expired
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function loginForm() {
+	protected function loginForm() {
 		$password = GeneralUtility::_GP('password');
 		$redirect_url = $this->redirect_url ? $this->redirect_url : $this->action;
 		// Get the template file
@@ -329,6 +268,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
 		// Password has been given, but this form is rendered again.
 		// This means the given password was wrong
+		$wrongPasswordSubPart = '';
 		if (!empty($password)) {
 			// Get the subpart for the wrong password
 			$wrongPasswordSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###WRONGPASSWORD###');
@@ -341,6 +281,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$wrongPasswordSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($wrongPasswordSubPart, $wrongPasswordMarkers, '###|###', TRUE, TRUE);
 		}
 		// Session has expired
+		$sessionExpiredSubPart = '';
 		if (!$this->session->isAuthorized() && $this->session->isExpired()) {
 			// Get the subpart for the expired session message
 			$sessionExpiredSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###SESSIONEXPIRED###');
@@ -390,7 +331,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * This method is called from init.php to start the Install Tool.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		// Must be called after inclusion of init.php (or from init.php)
@@ -505,9 +445,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * Calling the functions that checks the system
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function checkTheConfig() {
+	protected function checkTheConfig() {
 		if (TYPO3_OS == 'WIN') {
 			$paths = array($GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'], $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path'], 'c:\\php\\imagemagick\\', 'c:\\php\\GraphicsMagick\\', 'c:\\apache\\ImageMagick\\', 'c:\\apache\\GraphicsMagick\\');
 			if (!isset($_SERVER['PATH'])) {
@@ -543,9 +482,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param string $type If get_form, display form, otherwise checks and store in localconf.php
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function generateConfigForm($type = '') {
+	protected function generateConfigForm($type = '') {
 		$default_config_content = GeneralUtility::getUrl(
 			GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getDefaultConfigurationFileLocation()
 		);
@@ -676,9 +614,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param array $mainArray
 	 * @param array $commentArray
 	 * @return array
-	 * @todo Define visibility
 	 */
-	public function getDefaultConfigArrayComments($string, $mainArray = array(), $commentArray = array()) {
+	protected function getDefaultConfigArrayComments($string, $mainArray = array(), $commentArray = array()) {
 		$lines = explode(LF, $string);
 		$in = 0;
 		$mainKey = '';
@@ -722,9 +659,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param array $paths Possible ImageMagick paths
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function checkImageMagick($paths) {
+	protected function checkImageMagick($paths) {
 		$ext = 'Check Image Magick';
 		$this->message($ext);
 		// Get the template file
@@ -733,6 +669,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$programs = explode(',', 'gm,convert,combine,composite,identify');
 		$isExt = TYPO3_OS == 'WIN' ? '.exe' : '';
 		$this->config_array['im_combine_filename'] = 'combine';
+		$index = array();
 		foreach ($paths as $v) {
 			if (!preg_match('/[\\/]$/', $v)) {
 				$v .= '/';
@@ -825,11 +762,10 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param string $path Path of ImageMagick installation
 	 * @return string Type of compression
-	 * @todo Define visibility
 	 */
-	public function _checkImageMagickGifCapability($path) {
+	protected function _checkImageMagickGifCapability($path) {
 		if ($this->config_array['dir_typo3temp']) {
-			$tempPath = $this->typo3temp_path;
+			$tempPath = PATH_site . 'typo3temp/';
 			$uniqueName = md5(uniqid(microtime()));
 			$dest = $tempPath . $uniqueName . '.gif';
 			$src = $this->backPath . 'gfx/typo3logo.gif';
@@ -863,6 +799,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			}
 			return $out;
 		}
+		return '';
 	}
 
 	/**
@@ -871,12 +808,12 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $file The program name to execute in order to find out the version number
 	 * @param string $path Path for the above program
 	 * @return string Version number of the found ImageMagick instance
-	 * @todo Define visibility
 	 */
-	public function _checkImageMagick_getVersion($file, $path) {
+	protected function _checkImageMagick_getVersion($file, $path) {
 		// Temporarily override some settings
 		$im_version = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5'];
 		$combine_filename = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_combine_filename'];
+		$parameters = '';
 		if ($file == 'gm') {
 			$GLOBALS['TYPO3_CONF_VARS']['GFX']['im_version_5'] = 'gm';
 			// Work-around, preventing execution of "gm gm"
@@ -984,9 +921,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * From TypoScript: (GD only, GD+IM, IM)
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function checkTheImageProcessing() {
+	protected function checkTheImageProcessing() {
 		$this->message('Image Processing', 'What is it?', '
 			<p>
 				TYPO3 is known for its ability to process images on the server.
@@ -1208,7 +1144,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$parseStart = GeneralUtility::milliseconds();
 		$imageProc = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Imaging\\GraphicalFunctions');
 		$imageProc->init();
-		$imageProc->tempPath = $this->typo3temp_path;
+		$imageProc->tempPath = PATH_site . 'typo3temp/';
 		$imageProc->dontCheckForExistingTempFile = 1;
 		$imageProc->filenamePrefix = 'install_';
 		$imageProc->dontCompress = 1;
@@ -1703,9 +1639,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $headCode The header for the message
 	 * @param string $short The short description for the message
 	 * @return boolean TRUE if extension is enabled
-	 * @todo Define visibility
 	 */
-	public function isExtensionEnabled($ext, $headCode, $short) {
+	protected function isExtensionEnabled($ext, $headCode, $short) {
 		if (!GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $ext)) {
 			$this->message($headCode, $short, '
 				<p>
@@ -1714,8 +1649,9 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				</p>
 			', 1);
 		} else {
-			return 1;
+			return TRUE;
 		}
+		return FALSE;
 	}
 
 	/**
@@ -1727,23 +1663,21 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param array $IMcommands The ImageMagick commands used
 	 * @param string $note Additional note for image operation
 	 * @return array Contains content and highest error level
-	 * @todo Define visibility
 	 */
-	public function displayTwinImage($imageFile, $IMcommands = array(), $note = '') {
+	protected function displayTwinImage($imageFile, $IMcommands = array(), $note = '') {
 		// Get the template file
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'DisplayTwinImage.html'));
 		// Get the template part from the file
 		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		$content = '';
 		$errorLevels = array(-1);
+		$imageSubpart = '';
+		$noImageSubpart = '';
 		if ($imageFile) {
 			// Get the subpart for the images
 			$imageSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###IMAGE###');
 			$verifyFile = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'verify_imgs/' . basename($imageFile);
 			$destImg = @getImageSize($imageFile);
-			$destImgCode = '<img src="' . $this->backPath . '../' . substr($imageFile, strlen(PATH_site)) . '" ' . $destImg[3] . '>';
 			$verifyImg = @getImageSize($verifyFile);
-			$verifyImgCode = '<img src="' . $this->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('install') . 'verify_imgs/' . basename($verifyFile) . '" ' . $verifyImg[3] . '>';
 			clearstatcache();
 			$destImg['filesize'] = @filesize($imageFile);
 			clearstatcache();
@@ -1761,6 +1695,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				'reference' => 'Reference:',
 				'referenceInformation' => GeneralUtility::formatSize($verifyImg['filesize']) . ', ' . $verifyImg[0] . 'x' . $verifyImg[1] . ' pixels'
 			);
+			$differentPixelDimensionsSubpart = '';
 			if ($destImg[0] != $verifyImg[0] || $destImg[1] != $verifyImg[1]) {
 				// Get the subpart for the different pixel dimensions message
 				$differentPixelDimensionsSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($imageSubpart, '###DIFFERENTPIXELDIMENSIONS###');
@@ -1774,6 +1709,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			}
 			// Substitute the subpart for different pixel dimensions message
 			$imageSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imageSubpart, '###DIFFERENTPIXELDIMENSIONS###', $differentPixelDimensionsSubpart);
+			$noteSubpart = '';
 			if ($note) {
 				// Get the subpart for the note
 				$noteSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($imageSubpart, '###NOTE###');
@@ -1787,7 +1723,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			}
 			// Substitute the subpart for the note
 			$imageSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($imageSubpart, '###NOTE###', $noteSubpart);
-			if ($this->dumpImCommands && count($IMcommands)) {
+			$imCommandsSubpart = '';
+			if (count($IMcommands)) {
 				$commands = $this->formatImCmds($IMcommands);
 				// Get the subpart for the ImageMagick commands
 				$imCommandsSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($imageSubpart, '###IMCOMMANDS###');
@@ -1808,6 +1745,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			// Get the subpart when no image has been generated
 			$noImageSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###NOIMAGE###');
 			$commands = $this->formatImCmds($IMcommands);
+			$commandsSubpart = '';
 			if (count($commands)) {
 				// Get the subpart for the ImageMagick commands
 				$commandsSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($noImageSubpart, '###COMMANDSAVAILABLE###');
@@ -1842,12 +1780,11 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param array $arr The ImageMagick commands
 	 * @return string The formatted commands
-	 * @todo Define visibility
 	 */
-	public function formatImCmds($arr) {
+	protected function formatImCmds($arr) {
 		$out = array();
 		if (is_array($arr)) {
-			foreach ($arr as $k => $v) {
+			foreach ($arr as $v) {
 				$out[] = $v[1];
 				if ($v[2]) {
 					$out[] = '   RETURNED: ' . $v[2];
@@ -1861,9 +1798,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * Generate the menu for the test menu in 'image processing'
 	 *
 	 * @return string The HTML for the test menu
-	 * @todo Define visibility
 	 */
-	public function imagemenu() {
+	protected function imagemenu() {
 		// Get the template file
 		$template = @file_get_contents((PATH_site . $this->templateFilePath . 'ImageMenu.html'));
 		// Get the subpart for the menu
@@ -1877,7 +1813,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			'combining' => 'Combining images',
 			'gdlib' => 'GD library functions'
 		);
-		$c = 0;
 		$items = array();
 		foreach ($menuitems as $k => $v) {
 			// Define the markers content
@@ -1895,24 +1830,11 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Dispatches updates that shall be executed
-	 * during initialization of a fresh TYPO3 instance.
-	 *
-	 * @return void
-	 */
-	public function dispatchInitializeUpdates() {
-		/** @var $dispatcher \TYPO3\CMS\Install\Service\UpdateDispatcherService */
-		$dispatcher = GeneralUtility::makeInstance('TYPO3\CMS\Install\Service\UpdateDispatcherService', $this);
-		$dispatcher->dispatchInitializeUpdates();
-	}
-
-	/**
 	 * Generates update wizard
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function updateWizard() {
+	protected function updateWizard() {
 		/** @var $sqlHandler \TYPO3\CMS\Install\Sql\SchemaMigrator */
 		$sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
 
@@ -1943,19 +1865,18 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param string $action Which should be done.
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function updateWizard_parts($action) {
+	protected function updateWizard_parts($action) {
 		$content = '';
 		$updateItems = array();
 		// Get the template file
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'UpdateWizardParts.html'));
+		$title = '';
 		switch ($action) {
 		case 'checkForUpdate':
 			// Get the subpart for check for update
 			$checkForUpdateSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###CHECKFORUPDATE###');
 			$title = 'Step 1 - Introduction';
-			$updateWizardBoxes = '';
 			if (!$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update']) {
 				$updatesAvailableSubpart = '
 						<p>
@@ -2038,29 +1959,21 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				'performUpdates' => 'Perform updates!',
 				'action' => $this->action
 			);
-			if (!$this->INSTALL['update']) {
-				$noUpdatesAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($getUserInputSubpart, '###NOUPDATESAVAILABLE###');
-				$noUpdateMarkers['noUpdates'] = 'No updates selected!';
-				$noUpdatesAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($noUpdatesAvailableSubpart, $noUpdateMarkers, '###|###', TRUE, FALSE);
-				break;
-			} else {
-				// update methods might need to get custom data
-				$updatesAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($getUserInputSubpart, '###UPDATESAVAILABLE###');
-				$updateItems = array();
-				foreach ($this->INSTALL['update'] as $identifier => $tmp) {
-					$updateMarkers = array();
-					$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$identifier];
-					$tmpObj = $this->getUpgradeObjInstance($className, $identifier);
-					$updateMarkers['identifier'] = $identifier;
-					$updateMarkers['title'] = $tmpObj->getTitle();
-					if (method_exists($tmpObj, 'getUserInput')) {
-						$updateMarkers['identifierMethod'] = $tmpObj->getUserInput('TYPO3_INSTALL[update][' . $identifier . ']');
-					}
-					$updateItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($updatesAvailableSubpart, $updateMarkers, '###|###', TRUE, TRUE);
+			// update methods might need to get custom data
+			$updatesAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($getUserInputSubpart, '###UPDATESAVAILABLE###');
+			$updateItems = array();
+			foreach ($this->INSTALL['update'] as $identifier => $tmp) {
+				$updateMarkers = array();
+				$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$identifier];
+				$tmpObj = $this->getUpgradeObjInstance($className, $identifier);
+				$updateMarkers['identifier'] = $identifier;
+				$updateMarkers['title'] = $tmpObj->getTitle();
+				if (method_exists($tmpObj, 'getUserInput')) {
+					$updateMarkers['identifierMethod'] = $tmpObj->getUserInput('TYPO3_INSTALL[update][' . $identifier . ']');
 				}
-				$updatesAvailableSubpart = implode(LF, $updateItems);
+				$updateItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($updatesAvailableSubpart, $updateMarkers, '###|###', TRUE, TRUE);
 			}
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($getUserInputSubpart, '###NOUPDATESAVAILABLE###', $noUpdatesAvailableSubpart);
+			$updatesAvailableSubpart = implode(LF, $updateItems);
 			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###UPDATESAVAILABLE###', $updatesAvailableSubpart);
 			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
 			break;
@@ -2077,6 +1990,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			if (!$this->INSTALL['update']['extList']) {
 				break;
 			}
+			$tmpObj = NULL;
 			$this->getDatabase()->store_lastBuiltQuery = TRUE;
 			foreach ($this->INSTALL['update']['extList'] as $identifier) {
 				$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$identifier];
@@ -2084,8 +1998,11 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 				$updateItemsMarkers['identifier'] = $identifier;
 				$updateItemsMarkers['title'] = $tmpObj->getTitle();
 				// check user input if testing method is available
+				$customOutput = '';
+				$checkUserInput = '';
+				$updatePerformed = '';
+				$noPerformUpdate = '';
 				if (method_exists($tmpObj, 'checkUserInput') && !$tmpObj->checkUserInput($customOutput)) {
-					$customOutput = '';
 					$userInputMarkers = array(
 						'customOutput' => $customOutput ? $customOutput : 'Something went wrong',
 						'goBack' => 'Go back to update configuration'
@@ -2108,6 +2025,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 								$databaseQueries[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($databaseQueriesSubpart, $databaseQueryMarkers, '###|###', TRUE, FALSE);
 							}
 						}
+						$customOutputItem = '';
 						if (strlen($customOutput)) {
 							$content .= '<br />' . $customOutput;
 							$customOutputMarkers['custom'] = $customOutput;
@@ -2148,9 +2066,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $className The class name
 	 * @param string $identifier The identifier of upgrade object - needed to fetch user input
 	 * @return object Newly instantiated upgrade object
-	 * @todo Define visibility
 	 */
-	public function getUpgradeObjInstance($className, $identifier) {
+	protected function getUpgradeObjInstance($className, $identifier) {
 		$tmpObj = GeneralUtility::getUserObj($className);
 		$tmpObj->setIdentifier($identifier);
 		$tmpObj->versionNumber = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
@@ -2164,8 +2081,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * Used to show the link/button to the next upgrade wizard
 	 *
-	 * @param 	object	$currentObj		current Upgrade Wizard Object
-	 * @return 	mixed	Upgrade Wizard instance or FALSE
+	 * @param object $currentObj current Upgrade Wizard Object
+	 * @return mixed Upgrade Wizard instance or FALSE
 	 */
 	protected function getNextUpdadeWizardInstance($currentObj) {
 		$isPreviousRecord = TRUE;
@@ -2185,27 +2102,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		return FALSE;
 	}
 
-	/**
-	 * Check if at lease one backend admin user has been created
-	 *
-	 * @return integer Amount of backend users in the database
-	 * @todo Define visibility
-	 */
-	public function isBackendAdminUser() {
-		return $this->getDatabase()->exec_SELECTcountRows('uid', 'be_users', 'admin=1');
-	}
-
-
-	/**
-	 * Includes TCA
-	 *
-	 * @return void
-	 * @todo Define visibility
-	 */
-	public function includeTCA() {
-		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(FALSE);
-	}
-
 	/**********************
 	 *
 	 * GENERAL FUNCTIONS
@@ -2219,9 +2115,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $long_string A long (more detailed) description
 	 * @param integer $type -1=OK sign, 0=message, 1=notification, 2=warning, 3=error
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function message($head, $short_string = '', $long_string = '', $type = 0) {
+	protected function message($head, $short_string = '', $long_string = '', $type = 0) {
 		if ($type == 3) {
 			$this->fatalError = 1;
 		}
@@ -2237,9 +2132,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * @param string $long_string A long (more detailed) description
 	 * @param integer $type -1=OK sign, 0=message, 1=notification, 2=warning , 3=error
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function printSection($head, $short_string, $long_string, $type) {
+	protected function printSection($head, $short_string, $long_string, $type) {
 		// Get the template file
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'PrintSection.html'));
 		// Get the template part from the file
@@ -2288,9 +2182,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * This prints all the messages in the ->section array
 	 *
 	 * @return string HTML of all the messages
-	 * @todo Define visibility
 	 */
-	public function printAll() {
+	protected function printAll() {
 		// Get the template file
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'PrintAll.html'));
 		// Get the template part from the file
@@ -2317,56 +2210,59 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param string $content The page content
 	 * @return string The full HTML page
-	 * @todo Define visibility
 	 */
-	public function outputWrapper($content) {
+	protected function outputWrapper($content) {
 		// Get the template file
 		if (!$this->passwordOK) {
 			$this->template = @file_get_contents((PATH_site . $this->templateFilePath . 'Install_login.html'));
 		} else {
 			$this->template = @file_get_contents((PATH_site . $this->templateFilePath . 'Install.html'));
 		}
-		// Add jQuery to javascript array for output
-		$this->javascript[] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename('../contrib/jquery/jquery-1.9.1.min.js') . '"></script>';
-		// Add JS functions for output
-		$this->javascript[] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename('../sysext/install/Resources/Public/Javascript/install.js') . '"></script>';
-		// Include the default stylesheets
-		$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/reset.css')) . '" />';
-		$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/general.css')) . '" />';
+		$javascript = array();
+		$javascript[] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename('../contrib/jquery/jquery-1.9.1.min.js') . '"></script>';
+		$javascript[] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename('../sysext/install/Resources/Public/Javascript/install.js') . '"></script>';
+
+		$stylesheets = array();
+		$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/reset.css')) . '" />';
+		$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/general.css')) . '" />';
+
 		// Get the browser info
 		$browserInfo = \TYPO3\CMS\Core\Utility\ClientUtility::getBrowserInfo(GeneralUtility::getIndpEnv('HTTP_USER_AGENT'));
 		// Add the stylesheet for Internet Explorer
 		if ($browserInfo['browser'] === 'msie') {
 			// IE7
 			if (intval($browserInfo['version']) === 7) {
-				$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/ie7.css')) . '" />';
+				$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/ie7.css')) . '" />';
 			}
 		}
 		// Include the stylesheets based on screen
 		if ($this->passwordOK) {
-			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
+			$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
 		} else {
-			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
-			$this->stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install_login.css')) . '" />';
+			$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install.css')) . '" />';
+			$stylesheets[] = '<link rel="stylesheet" type="text/css" href="' . GeneralUtility::createVersionNumberedFilename(($this->backPath . 'sysext/install/Resources/Public/Stylesheets/install_login.css')) . '" />';
 		}
+		$markers = array();
 		// Define the markers content
-		$this->markers['headTitle'] = '
+		$markers['headTitle'] = '
 			TYPO3 ' . TYPO3_version . '
 			Install Tool on site: ' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '
 		';
-		$this->markers['title'] = 'TYPO3 ' . TYPO3_version;
-		$this->markers['javascript'] = implode(LF, $this->javascript);
-		$this->markers['stylesheets'] = implode(LF, $this->stylesheets);
-		$this->markers['llErrors'] = 'The following errors occured';
-		$this->markers['copyright'] = $this->copyright();
-		$this->markers['charset'] = 'utf-8';
-		$this->markers['backendUrl'] = '../index.php';
-		$this->markers['backend'] = 'Backend admin';
-		$this->markers['frontendUrl'] = '../../index.php';
-		$this->markers['frontend'] = 'Frontend website';
-		$this->markers['metaCharset'] = 'Content-Type" content="text/html; charset=';
-		$this->markers['metaCharset'] .= 'utf-8';
+		$markers['title'] = 'TYPO3 ' . TYPO3_version;
+		$markers['javascript'] = implode(LF, $javascript);
+		$markers['stylesheets'] = implode(LF, $stylesheets);
+		$markers['llErrors'] = 'The following errors occured';
+		$markers['copyright'] = $this->copyright();
+		$markers['charset'] = 'utf-8';
+		$markers['backendUrl'] = '../index.php';
+		$markers['backend'] = 'Backend admin';
+		$markers['frontendUrl'] = '../../index.php';
+		$markers['frontend'] = 'Frontend website';
+		$markers['metaCharset'] = 'Content-Type" content="text/html; charset=';
+		$markers['metaCharset'] .= 'utf-8';
+
 		// Add the error messages
+		$errorMessagesSubPart = '';
 		if (!empty($this->errorMessages)) {
 			// Get the subpart for all error messages
 			$errorMessagesSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###ERRORMESSAGES###');
@@ -2384,7 +2280,9 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			// Substitute the subpart for a single message
 			$errorMessagesSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($errorMessagesSubPart, '###MESSAGES###', implode(LF, $errors));
 		}
+
 		// Version subpart is only allowed when password is ok
+		$versionSubPart = '';
 		if ($this->passwordOK) {
 			// Get the subpart for the version
 			$versionSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###VERSIONSUBPART###');
@@ -2393,6 +2291,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			// Fill the markers in the subpart
 			$versionSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($versionSubPart, $versionSubPartMarkers, '###|###', TRUE, FALSE);
 		}
+
 		// Substitute the version subpart
 		$this->template = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($this->template, '###VERSIONSUBPART###', $versionSubPart);
 		// Substitute the menu subpart
@@ -2402,7 +2301,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		// Substitute the content subpart
 		$this->template = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($this->template, '###CONTENT###', $content);
 		// Fill the markers
-		$this->template = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($this->template, $this->markers, '###|###', TRUE, FALSE);
+		$this->template = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($this->template, $markers, '###|###', TRUE, FALSE);
 		return $this->template;
 	}
 
@@ -2443,9 +2342,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @param string $content The HTML page
 	 * @return void
-	 * @todo Define visibility
 	 */
-	public function output($content) {
+	protected function output($content) {
 		header('Content-Type: text/html; charset=utf-8');
 		echo $content;
 	}
@@ -2453,14 +2351,12 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	/**
 	 * Generates the main menu
 	 *
-	 * @return string HTML of the main menu
-	 * @todo Define visibility
+	 * @return string HTML
 	 */
-	public function menu() {
+	protected function menu() {
 		if (!$this->passwordOK) {
-			return;
+			return '';
 		}
-		$c = 0;
 		$items = array();
 		// Get the subpart for the main menu
 		$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($this->template, '###MENU###');
@@ -2488,9 +2384,8 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * Generate HTML for the copyright
 	 *
 	 * @return string HTML of the copyright
-	 * @todo Define visibility
 	 */
-	public function copyright() {
+	protected function copyright() {
 		$content = '
 			<p>
 				<strong>TYPO3 CMS.</strong> Copyright &copy; 1998-' . date('Y') . '
@@ -2511,25 +2406,12 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	}
 
 	/**
-	 * Make the url of the script according to type, step
-	 *
-	 * @param string $type The type
-	 * @return string The url
-	 * @todo Define visibility
-	 */
-	public function setScriptName($type) {
-		$value = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $type;
-		return $value;
-	}
-
-	/**
 	 * Returns a newly created TYPO3 encryption key with a given length.
 	 *
 	 * @param integer $keyLength Desired key length
-	 * @TODO: Implement in new step installer
 	 * @return string The encryption key
 	 */
-	public function createEncryptionKey($keyLength = 96) {
+	protected function createEncryptionKey($keyLength = 96) {
 		$bytes = GeneralUtility::generateRandomBytes($keyLength);
 		return substr(bin2hex($bytes), -96);
 	}
@@ -2538,8 +2420,10 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 * Adds an error message that should be displayed.
 	 *
 	 * @param string $messageText
+	 * @throws \InvalidArgumentException
+	 * @return void
 	 */
-	public function addErrorMessage($messageText) {
+	protected function addErrorMessage($messageText) {
 		if ($messageText == '') {
 			throw new \InvalidArgumentException('$messageText must not be empty.', 1294587483);
 		}
@@ -2551,7 +2435,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 	 *
 	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
-	public function getDatabase() {
+	protected function getDatabase() {
 		return $GLOBALS['TYPO3_DB'];
 	}
 }
