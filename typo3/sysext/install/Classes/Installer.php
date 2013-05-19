@@ -2739,7 +2739,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			</p>
 		', -1, 1);
 		// Menu
-		$sql_files = array_merge(GeneralUtility::getFilesInDir(PATH_typo3conf, 'sql', 1, 1), array());
 		$action_type = $this->INSTALL['database_type'];
 		$actionParts = explode('|', $action_type);
 		if (count($actionParts) < 2) {
@@ -2765,29 +2764,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			'noticeCache' => $action_type == 'cache|' ? ' class="notice"' : '',
 			'clearTables' => 'Clear tables'
 		);
-		// Get the subpart for extra SQL
-		$extraSql = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($menu, '###EXTRASQL###');
 		$directJump = '';
-		$extraSqlFiles = array();
-		foreach ($sql_files as $k => $file) {
-			$fShortName = substr($file, strlen(PATH_site));
-			$spec1 = ($spec2 = '');
-			// Define the markers content
-			$extraSqlMarkers = array(
-				'fileShortName' => $fShortName,
-				'fileSize' => GeneralUtility::formatSize(filesize($file)),
-				'noticeCmpFile' => $action_type == 'cmpFile|' . $file ? ' class="notice"' : '',
-				'file' => rawurlencode($file),
-				'noticeImport' => $action_type == 'import|' . $file ? ' class="notice"' : '',
-				'specs' => $spec1 . $spec2,
-				'noticeView' => $action_type == 'view|' . $file ? ' class="notice"' : '',
-				'view' => 'VIEW'
-			);
-			// Fill the markers in the subpart
-			$extraSqlFiles[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($extraSql, $extraSqlMarkers, '###|###', TRUE, FALSE);
-		}
-		// Substitute the subpart for extra SQL
-		$menu = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($menu, '###EXTRASQL###', implode(LF, $extraSqlFiles));
 		// Fill the markers
 		$menu = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($menu, $menuMarkers, '###|###', TRUE, FALSE);
 		if ($directJump) {
@@ -2822,19 +2799,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 						import. In any case, you\'ll see a new screen where you
 						must confirm the operation.
 					</dd>
-					<dt>
-						VIEW:
-					</dt>
-					<dd>
-						Shows the content of the SQL-file, limiting characters
-						on a single line to a reader-friendly amount.
-					</dd>
 				</dl>
-				<p>
-					The SQL-files are selected from typo3conf/ (here you can put
-					your own) The SQL-files should be made by the <em>mysqldump</em>
-					tool or at least be formatted like that tool would do.
-				</p>
 			' . $menu, 0, 1);
 		}
 		if ($action_type) {
@@ -3020,24 +2985,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 							}
 						}
 					}
-				}
-				break;
-			case 'view':
-				if (@is_file($actionParts[1])) {
-					$tLabel = 'Import SQL dump';
-					// Getting statement array from
-					$fileContent = GeneralUtility::getUrl($actionParts[1]);
-					$statements = $this->sqlHandler->getStatementArray($fileContent, 1);
-					$maxL = 1000;
-					$strLen = strlen($fileContent);
-					$maxlen = 200 + ($maxL - \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(($strLen - 20000) / 100, 0, $maxL));
-					if (count($statements)) {
-						$out = '';
-						foreach ($statements as $statement) {
-							$out .= '<p>' . nl2br(htmlspecialchars(GeneralUtility::fixed_lgd_cs($statement, $maxlen))) . '</p>';
-						}
-					}
-					$this->message($tLabel, 'Content of ' . basename($actionParts[1]), $out, 1);
 				}
 				break;
 			case 'adminUser':
