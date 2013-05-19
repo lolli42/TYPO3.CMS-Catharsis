@@ -79,7 +79,6 @@ abstract class AbstractAction {
 	 * @param string $long_string A long (more detailed) description
 	 * @param integer $type -1=OK sign, 0=message, 1=notification, 2=warning, 3=error
 	 * @return void
-	 * @todo Define visibility
 	 */
 	protected function message($head, $short_string = '', $long_string = '', $type = 0) {
 		$long_string = trim($long_string);
@@ -94,7 +93,6 @@ abstract class AbstractAction {
 	 * @param string $long_string A long (more detailed) description
 	 * @param integer $type -1=OK sign, 0=message, 1=notification, 2=warning , 3=error
 	 * @return void
-	 * @todo Define visibility
 	 */
 	protected function printSection($head, $short_string, $long_string, $type) {
 		// Get the template file

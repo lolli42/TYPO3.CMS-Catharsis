@@ -343,7 +343,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 
 		// Setting stuff...
 //		$this->setupGeneral();
-		$this->generateConfigForm();
+//		$this->generateConfigForm();
 		if (count($this->messages)) {
 			\TYPO3\CMS\Core\Utility\DebugUtility::debug($this->messages);
 		}
@@ -375,25 +375,9 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'extConfig':
-			$this->generateConfigForm('get_form');
-			// Get the template file
-			$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'InitExtConfig.html'));
-			// Get the template part from the file
-			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-			// Define the markers content
-			$markers = array(
-				'action' => $this->action,
-				'content' => $this->printAll(),
-				'write' => 'Write configuration',
-				'notice' => 'NOTICE:',
-				'explanation' => '
-						By clicking this button, the configuration is updated
-						with new values for the parameters listed above!
-					'
-			);
-			// Fill the markers in the template
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-			// Send content to the page wrapper function
+			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
+			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\AllConfiguration');
+			$content = $actionObject->handle();
 			$this->output($this->outputWrapper($content));
 			break;
 		case 'cleanup':
@@ -472,177 +456,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		}
 	}
 
-	/*******************************
-	 *
-	 * CONFIGURATION FORM
-	 *
-	 ********************************/
-	/**
-	 * Creating the form for editing the TYPO3_CONF_VARS options.
-	 *
-	 * @param string $type If get_form, display form, otherwise checks and store in localconf.php
-	 * @return void
-	 */
-	protected function generateConfigForm($type = '') {
-		$default_config_content = GeneralUtility::getUrl(
-			GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->getDefaultConfigurationFileLocation()
-		);
-		$commentArr = $this->getDefaultConfigArrayComments($default_config_content);
-		switch ($type) {
-		case 'get_form':
-			// Get the template file
-			$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'GenerateConfigForm.html'));
-			// Get the template part from the file
-			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-			foreach ($GLOBALS['TYPO3_CONF_VARS'] as $k => $va) {
-				$ext = '[' . $k . ']';
-				$this->message($ext, '$TYPO3_CONF_VARS[\'' . $k . '\']', $commentArr[0][$k], 1);
-				foreach ($va as $vk => $value) {
-					if (isset($GLOBALS['TYPO3_CONF_VARS_extensionAdded'][$k][$vk])) {
-						// Don't allow editing stuff which is added by extensions
-						// Make sure we fix potentially duplicated entries from older setups
-						$potentialValue = str_replace(array('\'.chr(10).\'', '\' . LF . \''), array(LF, LF), $value);
-						while (preg_match('/' . preg_quote($GLOBALS['TYPO3_CONF_VARS_extensionAdded'][$k][$vk], '/') . '$/', '', $potentialValue)) {
-							$potentialValue = preg_replace('/' . preg_quote($GLOBALS['TYPO3_CONF_VARS_extensionAdded'][$k][$vk], '/') . '$/', '', $potentialValue);
-						}
-						$value = $potentialValue;
-					}
-					$textAreaSubpart = '';
-					$booleanSubpart = '';
-					$textLineSubpart = '';
-					$description = trim($commentArr[1][$k][$vk]);
-					$isTextarea = preg_match('/^(<.*?>)?string \\(textarea\\)/i', $description) ? TRUE : FALSE;
-					$doNotRender = preg_match('/^(<.*?>)?string \\(exclude\\)/i', $description) ? TRUE : FALSE;
-					if (!is_array($value) && !$doNotRender && (!preg_match('/[' . LF . CR . ']/', $value) || $isTextarea)) {
-						$k2 = '[' . $vk . ']';
-						if ($isTextarea) {
-							// Get the subpart for a textarea
-							$textAreaSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###TEXTAREA###');
-							// Define the markers content
-							$textAreaMarkers = array(
-								'id' => $k . '-' . $vk,
-								'name' => 'TYPO3_INSTALL[extConfig][' . $k . '][' . $vk . ']',
-								'value' => htmlspecialchars(str_replace(array('\'.chr(10).\'', '\' . LF . \''), array(LF, LF), $value))
-							);
-							// Fill the markers in the subpart
-							$textAreaSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($textAreaSubpart, $textAreaMarkers, '###|###', TRUE, FALSE);
-						} elseif (preg_match('/^(<.*?>)?boolean/i', $description)) {
-							// Get the subpart for a checkbox
-							$booleanSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###BOOLEAN###');
-							// Define the markers content
-							$booleanMarkers = array(
-								'id' => $k . '-' . $vk,
-								'name' => 'TYPO3_INSTALL[extConfig][' . $k . '][' . $vk . ']',
-								'value' => $value && strcmp($value, '0') ? $value : 1,
-								'checked' => $value ? 'checked="checked"' : ''
-							);
-							// Fill the markers in the subpart
-							$booleanSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($booleanSubpart, $booleanMarkers, '###|###', TRUE, FALSE);
-						} else {
-							// Get the subpart for an input text field
-							$textLineSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###TEXTLINE###');
-							// Define the markers content
-							$textLineMarkers = array(
-								'id' => $k . '-' . $vk,
-								'name' => 'TYPO3_INSTALL[extConfig][' . $k . '][' . $vk . ']',
-								'value' => htmlspecialchars($value)
-							);
-							// Fill the markers in the subpart
-							$textLineSubpart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($textLineSubpart, $textLineMarkers, '###|###', TRUE, FALSE);
-						}
-						// Substitute the subpart for a textarea
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###TEXTAREA###', $textAreaSubpart);
-						// Substitute the subpart for a checkbox
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###BOOLEAN###', $booleanSubpart);
-						// Substitute the subpart for an input text field
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($content, '###TEXTLINE###', $textLineSubpart);
-						// Define the markers content
-						$markers = array(
-							'description' => $description,
-							'key' => '[' . $k . '][' . $vk . ']',
-							'label' => htmlspecialchars(GeneralUtility::fixed_lgd_cs($value, 40))
-						);
-						// Fill the markers
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
-						// Add the content to the message array
-						$this->message($ext, $k2, $content);
-					}
-				}
-			}
-			break;
-		default:
-			if (is_array($this->INSTALL['extConfig'])) {
-				$configurationPathValuePairs = array();
-				foreach ($this->INSTALL['extConfig'] as $k => $va) {
-					if (is_array($GLOBALS['TYPO3_CONF_VARS'][$k])) {
-						foreach ($va as $vk => $value) {
-							if (isset($GLOBALS['TYPO3_CONF_VARS'][$k][$vk])) {
-								$description = trim($commentArr[1][$k][$vk]);
-								if (preg_match('/^string \\(textarea\\)/i', $description)) {
-									// Force Unix linebreaks in textareas
-									$value = str_replace(CR, '', $value);
-									// Preserve linebreaks
-									$value = str_replace(LF, '\' . LF . \'', $value);
-								}
-								if (preg_match('/^boolean/i', $description)) {
-									// When submitting settings in the Install Tool, values that default to "FALSE" or "TRUE"
-									// in EXT:core/Configuration/DefaultConfiguration.php will be sent as "0" resp. "1".
-									// Therefore, reset the values to their boolean equivalent.
-									if ($GLOBALS['TYPO3_CONF_VARS'][$k][$vk] === FALSE && $value === '0') {
-										$value = FALSE;
-									} elseif ($GLOBALS['TYPO3_CONF_VARS'][$k][$vk] === TRUE && $value === '1') {
-										$value = TRUE;
-									}
-								}
-								if (strcmp($GLOBALS['TYPO3_CONF_VARS'][$k][$vk], $value)) {
-									$configurationPathValuePairs['"' . $k . '"' . '/' . '"' . $vk . '"'] = $value;
-								}
-							}
-						}
-					}
-				}
-				$this->setLocalConfigurationValues($configurationPathValuePairs);
-			}
-			break;
-		}
-	}
-
-	/**
-	 * Make an array of the comments in the EXT:core/Configuration/DefaultConfiguration.php file
-	 *
-	 * @param string $string The contents of the EXT:core/Configuration/DefaultConfiguration.php file
-	 * @param array $mainArray
-	 * @param array $commentArray
-	 * @return array
-	 */
-	protected function getDefaultConfigArrayComments($string, $mainArray = array(), $commentArray = array()) {
-		$lines = explode(LF, $string);
-		$in = 0;
-		$mainKey = '';
-		foreach ($lines as $lc) {
-			$lc = trim($lc);
-			if ($in) {
-				if (!strcmp($lc, ');')) {
-					$in = 0;
-				} else {
-					if (preg_match('/["\']([[:alnum:]_-]*)["\'][[:space:]]*=>(.*)/i', $lc, $reg)) {
-						preg_match('/,[\\t\\s]*\\/\\/(.*)/i', $reg[2], $creg);
-						$theComment = trim($creg[1]);
-						if (substr(strtolower(trim($reg[2])), 0, 5) == 'array' && !strcmp($reg[1], strtoupper($reg[1]))) {
-							$mainKey = trim($reg[1]);
-							$mainArray[$mainKey] = $theComment;
-						} elseif ($mainKey) {
-							$commentArray[$mainKey][$reg[1]] = $theComment;
-						}
-					}
-				}
-			}
-			if (!strcmp($lc, 'return array(')) {
-				$in = 1;
-			}
-		}
-		return array($mainArray, $commentArray);
-	}
 
 	/*******************************
 	 *
@@ -839,54 +652,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		return trim($ver);
 	}
 
-
-	/**
-	 * Set new configuration values in LocalConfiguration.php
-	 *
-	 * @param array $pathValuePairs
-	 * @return void
-	 */
-	protected function setLocalConfigurationValues(array $pathValuePairs) {
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'WriteToLocalConfControl.html'));
-		if (GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->setLocalConfigurationValuesByPathValuePairs($pathValuePairs)) {
-			// Get the template part from the file
-			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###CONTINUE###');
-			// Get the subpart for messages
-			$messagesSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###MESSAGES###');
-			$messages = array();
-			foreach ($this->messages as $message) {
-				// Define the markers content
-				$messagesMarkers['message'] = $message;
-				// Fill the markers in the subpart
-				$messages[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($messagesSubPart, $messagesMarkers, '###|###', TRUE, FALSE);
-			}
-			// Substitute the subpart for messages
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###MESSAGES###', implode(LF, $messages));
-			// Define the markers content
-			$markers = array(
-				'header' => 'Writing configuration',
-				'action' => $this->action,
-				'label' => 'Click to continue...'
-			);
-			// Fill the markers
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
-			$this->output($this->outputWrapper($content));
-		} else {
-			// Get the template part from the file
-			$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###NOCHANGE###');
-			// Define the markers content
-			$markers = array(
-				'header' => 'Writing configuration',
-				'message' => 'No values were changed, so nothing is updated!',
-				'action' => $this->action,
-				'label' => 'Click to continue...'
-			);
-			// Fill the markers
-			$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, FALSE);
-			$this->output($this->outputWrapper($content));
-		}
-	}
 
 
 	/**********************
