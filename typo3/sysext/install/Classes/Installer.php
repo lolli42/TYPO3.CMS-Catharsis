@@ -979,12 +979,13 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 
 	/**
 	 * Adds an error message that should be displayed.
+	 * This is used by form protection and must be public!
 	 *
 	 * @param string $messageText
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 */
-	protected function addErrorMessage($messageText) {
+	public function addErrorMessage($messageText) {
 		if ($messageText == '') {
 			throw new \InvalidArgumentException('$messageText must not be empty.', 1294587483);
 		}
