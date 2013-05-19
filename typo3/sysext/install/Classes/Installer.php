@@ -2754,9 +2754,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			'compare' => 'COMPARE',
 			'noticeCmpFileCurrent' => $action_type == 'cmpFile|CURRENT_TABLES' ? ' class="notice"' : '',
 			'dumpStaticData' => 'Dump static data',
-			'import' => 'IMPORT',
-			'noticeImportCurrent' => $action_type == 'import|CURRENT_STATIC' ? ' class="notice"' : '',
-			'noticeCmpTca' => $action_type == 'cmpTCA|' ? ' class="notice"' : '',
 			'noticeAdminUser' => $action_type == 'adminUser|' ? ' class="notice"' : '',
 			'createAdminUser' => 'Create "admin" user',
 			'noticeUc' => $action_type == 'UC|' ? ' class="notice"' : '',
@@ -2909,81 +2906,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 									database in the selected SQL-file.
 								</p>
 							', -1);
-					}
-				}
-				break;
-			case 'import':
-				$tblFileContent = '';
-				if (preg_match('/^CURRENT_/', $actionParts[1])) {
-					if (!strcmp($actionParts[1], 'CURRENT_TABLES') || !strcmp($actionParts[1], 'CURRENT_TABLES+STATIC')) {
-						$tblFileContent = '';
-						foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
-							if (is_array($loadedExtConf) && $loadedExtConf['ext_tables.sql']) {
-								$tblFileContent .= LF . LF . LF . LF . GeneralUtility::getUrl($loadedExtConf['ext_tables.sql']);
-							}
-						}
-					}
-					if (!strcmp($actionParts[1], 'CURRENT_STATIC') || !strcmp($actionParts[1], 'CURRENT_TABLES+STATIC')) {
-						foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $loadedExtConf) {
-							if (is_array($loadedExtConf) && $loadedExtConf['ext_tables_static+adt.sql']) {
-								$tblFileContent .= LF . LF . LF . LF . GeneralUtility::getUrl($loadedExtConf['ext_tables_static+adt.sql']);
-							}
-						}
-					}
-					$tblFileContent .= LF . LF . LF . LF . \TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions();
-				} elseif (@is_file($actionParts[1])) {
-					$tblFileContent = GeneralUtility::getUrl($actionParts[1]);
-				}
-				if ($tblFileContent) {
-					$tLabel = 'Import SQL dump';
-					// Getting statement array from
-					$statements = $this->sqlHandler->getStatementArray($tblFileContent, 1);
-					list($statements_table, $insertCount) = $this->sqlHandler->getCreateTables($statements, 1);
-					// Updating database...
-					if ($this->INSTALL['database_import_all']) {
-						$r = 0;
-						foreach ($statements as $k => $v) {
-							$res = $this->getDatabase()->admin_query($v);
-							$r++;
-						}
-						// Make a database comparison because some tables that are defined twice have
-						// not been created at this point. This applies to the "pages.*"
-						// fields defined in sysext/cms/ext_tables.sql for example.
-						$fileContent = implode(LF, $this->sqlHandler->getStatementArray($tblFileContent, 1, '^CREATE TABLE '));
-						$FDfile = $this->sqlHandler->getFieldDefinitions_fileContent($fileContent);
-						$FDdb = $this->sqlHandler->getFieldDefinitions_database();
-						$diff = $this->sqlHandler->getDatabaseExtra($FDfile, $FDdb);
-						$update_statements = $this->sqlHandler->getUpdateSuggestions($diff);
-						if (is_array($update_statements['add'])) {
-							foreach ($update_statements['add'] as $statement) {
-								$res = $this->getDatabase()->admin_query($statement);
-							}
-						}
-
-						$this->message($tLabel, 'Imported ALL', '
-								<p>
-									Queries: ' . $r . '
-								</p>
-							', 1, 1);
-					} elseif (is_array($this->INSTALL['database_import'])) {
-						// Traverse the tables
-						foreach ($this->INSTALL['database_import'] as $table => $md5str) {
-							if ($md5str == md5($statements_table[$table])) {
-								$res = $this->getDatabase()->admin_query('DROP TABLE IF EXISTS ' . $table);
-								$res = $this->getDatabase()->admin_query($statements_table[$table]);
-								if ($insertCount[$table]) {
-									$statements_insert = $this->sqlHandler->getTableInsertStatements($statements, $table);
-									foreach ($statements_insert as $k => $v) {
-										$res = $this->getDatabase()->admin_query($v);
-									}
-								}
-								$this->message($tLabel, 'Imported \'' . $table . '\'', '
-										<p>
-											Rows: ' . $insertCount[$table] . '
-										</p>
-									', 1, 1);
-							}
-						}
 					}
 				}
 				break;
