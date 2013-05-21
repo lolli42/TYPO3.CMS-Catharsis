@@ -1,0 +1,27 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+<i:be.container
+	pageTitle="Install tool"
+	enableJumpToUrl="true"
+	enableClickMenu="false"
+	loadPrototype="false"
+	loadScriptaculous="false"
+	loadExtJs="false"
+	loadExtJsTheme="false"
+	addCssFiles="{
+		0:'{f:uri.resource(path:\'Stylesheets/BackendModule/Main.css\')}'
+	}"
+	addJsFiles="{}"
+>
+
+	<div id="typo3-docheader">
+		<div class="typo3-docheader-functions">
+		</div>
+		<div class="typo3-docheader-buttons">
+		</div>
+	</div>
+	<div id="typo3-docbody">
+		<div id="typo3-inner-docbody">
+			<f:render section="Content" />
+		</div>
+	</div>
+</i:be.container>

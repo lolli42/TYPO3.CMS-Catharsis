@@ -56,7 +56,7 @@ require '../sysext/install/Classes/InstallBootstrap.php';
 if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('install')) {
 	die('Install Tool is not loaded as an extension.<br />You must add the key "install" to the list of installed extensions in typo3conf/LocalConfiguration.php, $TYPO3_CONF_VARS[\'EXT\'][\'extListArray\'].');
 }
-require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'mod/class.tx_install.php';
+require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'Classes/Installer.php';
 $install_check = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Installer', TRUE);
 $install_check->init();
 ?>

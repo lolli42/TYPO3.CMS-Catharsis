@@ -154,7 +154,7 @@ class Installer {
 		}
 		$this->action = $this->scriptSelf . '?TYPO3_INSTALL[type]=' . $this->INSTALL['type'];
 		try {
-			$this->session = GeneralUtility::makeInstance('tx_install_session');
+			$this->session = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Session');
 		} catch (\Exception $exception) {
 			$this->outputErrorAndExit($exception->getMessage());
 		}
