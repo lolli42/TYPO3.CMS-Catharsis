@@ -31,5 +31,59 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 abstract class AbstractAction {
 
+	/**
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 * @inject
+	 */
+	protected $objectManager = NULL;
+
+	/**
+	 * @var \TYPO3\CMS\Install\View\StandaloneView
+	 * @inject
+	 */
+	protected $view = NULL;
+
+	/**
+	 * @var string Name of target action, set by controller
+	 */
+	protected $action = '';
+
+	/**
+	 * @var string Form token for CSRF protection
+	 */
+	protected $token = '';
+
+	/**
+	 * Set form protection token
+	 *
+	 * @param string $token Form protection token
+	 */
+	public function setToken($token) {
+		$this->token = $token;
+	}
+
+	/**
+	 * Set action name. This is usually similar to the class name,
+	 * only for loginForm, the action is login
+	 *
+	 * @param string $action Name of target action for forms
+	 */
+	public function setAction($action) {
+		$this->action = $action;
+	}
+
+	/**
+	 * Context determines if the install tool is called within backend or standalone
+	 *
+	 * @return string Either 'standalone' or 'backend'
+	 */
+	protected function getContext() {
+		$context = 'standalone';
+		$formValues = GeneralUtility::_GP('install');
+		if (isset($formValues['context'])) {
+			$context = $formValues['context'] === 'backend' ? 'backend' : 'standalone';
+		}
+		return $context;
+	}
 }
 ?>

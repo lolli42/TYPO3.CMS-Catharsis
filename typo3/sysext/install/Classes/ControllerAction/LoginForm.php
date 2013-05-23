@@ -32,23 +32,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class LoginForm extends AbstractAction {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
-	 * @inject
-	 */
-	protected $objectManager = NULL;
-
-	/**
-	 * @var \TYPO3\CMS\Install\View\StandaloneView
-	 * @inject
-	 */
-	protected $view = NULL;
-
-	/**
 	 * @var \TYPO3\CMS\Install\Status\StatusInterface Optional status message from install tool controller
 	 */
 	protected $message = NULL;
-
-	protected $formToken = '';
 
 	/**
 	 * Render this action
@@ -61,10 +47,14 @@ class LoginForm extends AbstractAction {
 		$this->view->setLayoutRootPath($viewRootPath . 'Layouts/');
 		$this->view->setPartialRootPath($viewRootPath . 'Partials/');
 		$this->view
+			// time is used in js and css as parameter to force loading of those resources
+			->assign('time', time())
+			->assign('action', $this->action)
+			->assign('token', $this->token)
+			->assign('context', $this->getContext())
 			->assign('typo3Version', TYPO3_version)
 			->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'])
 			->assign('message', $this->message)
-			->assign('formToken', $this->formToken)
 		;
 		return $this->view->render();
 	}
@@ -76,15 +66,6 @@ class LoginForm extends AbstractAction {
 	 */
 	public function setMessage(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
 		$this->message = $message;
-	}
-
-	/**
-	 * Set form protection token
-	 *
-	 * @param string $token Form protection token
-	 */
-	public function setFormToken($token) {
-		$this->formToken = $token;
 	}
 }
 ?>

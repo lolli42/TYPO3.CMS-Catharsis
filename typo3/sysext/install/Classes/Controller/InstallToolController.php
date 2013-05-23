@@ -78,7 +78,11 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 			$message->setTitle('Invalid form token');
-			$message->setMessage('The form protection token was invalid. You have been logged out, please login and try again.');
+			$message->setMessage(
+				'The form protection token was invalid. You have been logged out, please login and try again.'
+				. ' There is also a bug in the session handling that prevents re-login if this message appears.'
+				. ' Please call this page again (not using F5) until this is fixed.'
+			);
 			$content = $this->loginForm($message);
 		} elseif ($session->isExpired()) {
 			// Session expired, log out user, start new session, show login form
@@ -87,7 +91,11 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 			$message->setTitle('Session expired');
-			$message->setMessage('Your Install Tool session has expired.');
+			$message->setMessage(
+				'Your Install Tool session has expired. You have been logged out, please login and try again.'
+				. ' There is also a bug in the session handling that prevents re-login if this message appears.'
+				. ' Please call this page again (not using F5) until this is fixed.'
+			);
 			$content = $this->loginForm($message);
 		} elseif ($action === 'login') {
 			if (isset($postValues['password'])
@@ -105,6 +113,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 				$content = $this->loginForm($message);
 			}
 		} elseif ($session->isAuthorized()) {
+			$session->refreshSession();
 			$content = $this->dispatchAuthenticationActions();
 		} else {
 			$content = $this->loginForm();
@@ -122,7 +131,8 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	protected function loginForm(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
 		/** @var \TYPO3\CMS\Install\ControllerAction\LoginForm $controllerAction */
 		$controllerAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ControllerAction\\LoginForm');
-		$controllerAction->setFormToken($this->generateTokenForAction('loginForm'));
+		$controllerAction->setAction('login');
+		$controllerAction->setToken($this->generateTokenForAction('login'));
 		if ($message) {
 			$controllerAction->setMessage($message);
 		}
@@ -342,20 +352,6 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			);
 		}
 		return $action;
-	}
-
-	/**
-	 * Scope determines if the install tool is called within backend scope or standalone
-	 *
-	 * @return string Either empty string or 'backend'
-	 */
-	protected function getScope() {
-		$scope = '';
-		$formValues = GeneralUtility::_GP('install');
-		if (isset($formValues['scope'])) {
-			$scope = $formValues['scope'] === 'backend' ? 'backend' : '';
-		}
-		return $scope;
 	}
 }
 

@@ -92,8 +92,10 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 *
 	 * @param \TYPO3\CMS\Install\Installer $installTool the current instance of the install tool
 	 * @return void
+	 * @deprecated since 6.2, will be removed two versions later. Message handling is done by install tool
 	 */
 	public function injectInstallTool(\TYPO3\CMS\Install\Installer $installTool) {
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		$this->installTool = $installTool;
 	}
 
@@ -104,7 +106,13 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 * @return void
 	 */
 	protected function createValidationErrorMessage() {
-		$this->installTool->addErrorMessage('Validating the security token of this form has failed. ' . 'Please reload the form and submit it again.');
+		// @deprecated since 6.2, neither the install tool class nor the addErrorMessage() exist anymore
+		if (is_object($this->installToll)) {
+			$this->installTool->addErrorMessage(
+				'Validating the security token of this form has failed. '
+				. 'Please reload the form and submit it again.'
+			);
+		}
 	}
 
 	/**

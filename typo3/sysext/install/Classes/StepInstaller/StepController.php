@@ -23,6 +23,7 @@ namespace TYPO3\CMS\Install\StepInstaller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Controller to handle install steps
@@ -152,7 +153,13 @@ class StepController {
 
 		// If there was no output yet, we have reached the last step.
 		// In this case, redirect to plain install tool
-		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('InstallTool.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
+		$getPostValues = GeneralUtility::_GP('install');
+		$context = '';
+		// Add context parameter in case this script was called within backend scope
+		if (isset($getPostValues['context']) && $getPostValues['context'] === 'backend') {
+			$context = '?install[context]=backend';
+		}
+		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('InstallTool.php' . $context, \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
 	}
 
 	/**
