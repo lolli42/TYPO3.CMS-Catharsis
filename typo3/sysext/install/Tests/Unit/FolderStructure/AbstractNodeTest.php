@@ -194,6 +194,9 @@ class AbstractNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		if (TYPO3_OS === 'WIN') {
 			$this->markTestSkipped('Test not available on Windows OS.');
 		}
+		if (function_exists('posix_getegid') && posix_getegid() === 0) {
+			$this->markTestSkipped('Test skipped if run on linux as root');
+		}
 		/** @var $node \TYPO3\CMS\Install\FolderStructure\AbstractNode|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$node = $this->getAccessibleMock(
 			'TYPO3\\CMS\\Install\\FolderStructure\\AbstractNode',
