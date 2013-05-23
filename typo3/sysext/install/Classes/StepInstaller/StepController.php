@@ -152,7 +152,7 @@ class StepController {
 
 		// If there was no output yet, we have reached the last step.
 		// In this case, redirect to plain install tool
-		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
+		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('InstallTool.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
 	}
 
 	/**

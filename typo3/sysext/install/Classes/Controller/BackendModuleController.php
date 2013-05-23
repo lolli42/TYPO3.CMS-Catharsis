@@ -46,7 +46,7 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 		if ($installToolService->checkInstallToolEnableFile()) {
 			// Install Tool is already enabled
 			$installToolService->extendInstallToolEnableFileLifetime();
-			\TYPO3\CMS\Core\Utility\HttpUtility::redirect('install/');
+			\TYPO3\CMS\Core\Utility\HttpUtility::redirect('sysext/install/Start/StepInstaller.php');
 		} else {
 			$this->redirect('showEnableInstallToolButton');
 		}
