@@ -107,7 +107,7 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 */
 	protected function createValidationErrorMessage() {
 		// @deprecated since 6.2, neither the install tool class nor the addErrorMessage() exist anymore
-		if (is_object($this->installToll)) {
+		if (is_object($this->installTool)) {
 			$this->installTool->addErrorMessage(
 				'Validating the security token of this form has failed. '
 				. 'Please reload the form and submit it again.'
