@@ -47,6 +47,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 */
 	protected $authenticationActions = array(
 		'welcome',
+		'systemEnvironment',
 	);
 
 	/**
@@ -103,7 +104,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			) {
 				$session->setAuthorized();
 				$this->sendLoginSuccessfulMail();
-				$content = $this->dispatchAuthenticationActions();
+				$content = $this->dispatchAuthenticationActions('welcome');
 			} else {
 				/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
@@ -136,6 +137,35 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		if ($message) {
 			$controllerAction->setMessage($message);
 		}
+		$content = $controllerAction->render();
+		return $content;
+	}
+
+	/**
+	 * Call an action that needs authentication
+	 *
+	 * @param string $action Action to call, only set to welcome specifically after successful login
+	 * @throws \TYPO3\CMS\Install\Exception
+	 * @return string Rendered content
+	 */
+	protected function dispatchAuthenticationActions($action = NULL) {
+		if (!$action) {
+			$action = $this->getAction();
+			if ($action === '') {
+				$action = 'welcome';
+			}
+		}
+		if (!in_array($action, $this->authenticationActions)) {
+			throw new \TYPO3\CMS\Install\Exception(
+				$action . ' is not a valid authenticated action',
+				1369345838
+			);
+		}
+		$actionClass = ucfirst($action);
+		/** @var \TYPO3\CMS\Install\ControllerAction\LoginForm $controllerAction */
+		$controllerAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ControllerAction\\' . $actionClass);
+		$controllerAction->setAction($action);
+		$controllerAction->setToken($this->generateTokenForAction($action));
 		$content = $controllerAction->render();
 		return $content;
 	}

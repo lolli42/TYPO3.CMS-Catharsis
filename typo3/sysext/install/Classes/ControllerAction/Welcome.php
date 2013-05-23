@@ -29,12 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Login action
  */
-class LoginForm extends AbstractAction {
-
-	/**
-	 * @var \TYPO3\CMS\Install\Status\StatusInterface Optional status message from install tool controller
-	 */
-	protected $message = NULL;
+class Welcome extends AbstractAction {
 
 	/**
 	 * Render this action
@@ -43,17 +38,7 @@ class LoginForm extends AbstractAction {
 	 */
 	public function render() {
 		parent::render();
-		$this->view->assign('message', $this->message);
 		return $this->view->render();
-	}
-
-	/**
-	 * Login form only: Display a status message set by install tool controller
-	 *
-	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message
-	 */
-	public function setMessage(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
-		$this->message = $message;
 	}
 }
 ?>

@@ -5,7 +5,7 @@
 <h2>Login to TYPO3 {typo3Version} Install Tool</h2>
 
 <div id="t3-install-box-body">
-	<h3>Site: {siteName}</h3>
+	<f:render partial="ControllerAction/Head" arguments="{_all}" />
 
 	<form method="post" id="t3-install-form-login">
 		<input type="hidden" name="install[action]" value="{action}" />

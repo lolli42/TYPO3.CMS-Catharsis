@@ -54,6 +54,27 @@ abstract class AbstractAction {
 	protected $token = '';
 
 	/**
+	 * Render this action
+	 *
+	 * @return string content
+	 */
+	protected function render() {
+		$viewRootPath = GeneralUtility::getFileAbsFileName('EXT:install/Resources/Private/');
+		$mainTemplate = ucfirst($this->action);
+		$this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/ControllerAction/' . $mainTemplate . '.html');
+		$this->view->setLayoutRootPath($viewRootPath . 'Layouts/');
+		$this->view->setPartialRootPath($viewRootPath . 'Partials/');
+		$this->view
+			// time is used in js and css as parameter to force loading of resources
+			->assign('time', time())
+			->assign('action', $this->action)
+			->assign('token', $this->token)
+			->assign('context', $this->getContext())
+			->assign('typo3Version', TYPO3_version)
+			->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
+	}
+
+	/**
 	 * Set form protection token
 	 *
 	 * @param string $token Form protection token

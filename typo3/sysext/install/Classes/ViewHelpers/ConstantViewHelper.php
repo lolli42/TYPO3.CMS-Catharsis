@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\ControllerAction;
+namespace TYPO3\CMS\Install\ViewHelpers;
 
 /***************************************************************
  *  Copyright notice
@@ -24,36 +24,20 @@ namespace TYPO3\CMS\Install\ControllerAction;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
- * Login action
+ * Render value of a contstant
  */
-class LoginForm extends AbstractAction {
+class ConstantViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
 
 	/**
-	 * @var \TYPO3\CMS\Install\Status\StatusInterface Optional status message from install tool controller
-	 */
-	protected $message = NULL;
-
-	/**
-	 * Render this action
+	 * Render a constant
 	 *
-	 * @return string content
+	 * @param string $name Name of the constant
+	 * @return string Rendered message html
 	 */
-	public function render() {
-		parent::render();
-		$this->view->assign('message', $this->message);
-		return $this->view->render();
-	}
-
-	/**
-	 * Login form only: Display a status message set by install tool controller
-	 *
-	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message
-	 */
-	public function setMessage(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
-		$this->message = $message;
+	public function render($name) {
+		return constant($name);
 	}
 }
+
 ?>
