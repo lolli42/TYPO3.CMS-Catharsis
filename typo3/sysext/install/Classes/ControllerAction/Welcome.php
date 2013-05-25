@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\ControllerAction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Login action
+ * Welcome page
  */
 class Welcome extends AbstractAction {
 
@@ -37,7 +37,7 @@ class Welcome extends AbstractAction {
 	 * @return string content
 	 */
 	public function render() {
-		parent::render();
+		$this->initialize();
 		return $this->view->render();
 	}
 }

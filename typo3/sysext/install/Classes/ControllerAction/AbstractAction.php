@@ -54,11 +54,11 @@ abstract class AbstractAction {
 	protected $token = '';
 
 	/**
-	 * Render this action
+	 * Initialize this action
 	 *
 	 * @return string content
 	 */
-	protected function render() {
+	protected function initialize() {
 		$viewRootPath = GeneralUtility::getFileAbsFileName('EXT:install/Resources/Private/');
 		$mainTemplate = ucfirst($this->action);
 		$this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/ControllerAction/' . $mainTemplate . '.html');

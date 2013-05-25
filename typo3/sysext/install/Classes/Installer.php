@@ -359,12 +359,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
-		case 'systemEnvironment':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\SystemEnvironment');
-			$output = $actionObject->handle();
-			$this->output($this->outputWrapper($output));
-			break;
 		case 'folderStructure':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\FolderStructure');

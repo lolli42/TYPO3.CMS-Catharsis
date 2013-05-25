@@ -43,7 +43,7 @@ class BasicConfiguration extends AbstractAction {
 		$this->message(
 			'About configuration',
 			'How to configure TYPO3',
-			$this->generallyAboutConfiguration()
+			''
 		);
 
 		$isPhpCgi = PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi';
@@ -166,30 +166,6 @@ class BasicConfiguration extends AbstractAction {
 		if (!empty($localConfigurationPathValuePairs)) {
 			$configurationManager->setLocalConfigurationValuesByPathValuePairs($localConfigurationPathValuePairs);
 		}
-	}
-
-	/**
-	 * Returns general information about configuration of TYPO3.
-	 *
-	 * @return string HTML with the general information
-	 */
-	protected function generallyAboutConfiguration() {
-		return '
-		<p>
-			Local configuration is done by overriding default values in the
-			included file, typo3conf/LocalConfiguration.php. In this file you enter the
-			database information along with values in the global array
-			TYPO3_CONF_VARS.
-			<br />
-			The options in the TYPO3_CONF_VARS array and how to use it for your
-			own purposes is discussed in the base configuration file,
-			EXT:core/Configuration/DefaultConfiguration.php. This file sets up the default values and
-			subsequently includes the LocalConfiguration.php file in which you can then
-			override values.
-			<br />
-			See this page for <a href="' . TYPO3_URL_SYSTEMREQUIREMENTS . '">more
-			information about system requirements.</a>
-		</p>';
 	}
 
 	/**

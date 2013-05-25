@@ -260,7 +260,7 @@ button span.t3-install-form-button-icon-positive {
 }
 
 #t3-install-menu #t3-install-menu-systemEnvironment {
-	background-image: url('../Images/menuSystemEnvironment.png');
+	background-image: url('../Images/MenuSystemEnvironment.png');
 }
 
 #t3-install-menu #t3-install-menu-folderStructure {
@@ -291,20 +291,16 @@ button span.t3-install-form-button-icon-positive {
 	background-image: url('../Images/menuCleanup.png');
 }
 
-#t3-install-menu #t3-install-menu-phpinfo {
-	background-image: url('../Images/menuPhpinfo.png');
-}
-
 #t3-install-menu #t3-install-menu-typo3conf_edit {
 	background-image: url('../Images/menuTypo3confEdit.png');
 }
 
-#t3-install-menu #t3-install-menu-about {
-	background-image: url('../Images/menuAbout.png');
+#t3-install-menu #t3-install-menu-welcome {
+	background-image: url('../Images/MenuWelcome.png');
 }
 
 #t3-install-menu #t3-install-menu-logout {
-	background-image: url('../Images/login-icon-key.gif');
+	background-image: url('../Images/MenuLogout.gif');
 }
 
 #t3-install-links {

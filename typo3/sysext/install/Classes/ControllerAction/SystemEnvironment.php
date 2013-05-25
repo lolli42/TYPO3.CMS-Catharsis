@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Action;
+namespace TYPO3\CMS\Install\ControllerAction;
 
 /***************************************************************
  *  Copyright notice
@@ -27,30 +27,28 @@ namespace TYPO3\CMS\Install\Action;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Render system environment check
+ * Show system environment check results
  */
 class SystemEnvironment extends AbstractAction {
 
 	/**
-	 * Handle this menu action
+	 * Render this action
 	 *
-	 * @return string Rendered html
+	 * @return string content
 	 */
-	public function handle() {
-		$html = '<h3>System environment check</h3>';
+	public function render() {
+		$this->initialize();
 
-			/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
+		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
 		$statusCheck = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
 
 			/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
 		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
-		foreach ($sortedStatusObjects as $statusObjectsOfOneSeverity) {
-			$html .= $statusUtility->renderStatusObjectsAsHtml($statusObjectsOfOneSeverity);
-		}
+		$this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);
 
-		return $html;
+		return $this->view->render();
 	}
 }
 ?>
