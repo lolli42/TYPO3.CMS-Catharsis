@@ -50,6 +50,9 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 		if (isset($this->postValues['set']['changeSiteName'])) {
 			$actionMessages[] = $this->changeSiteName();
 		}
+		if (isset($this->postValues['set']['createAdministrator'])) {
+			$actionMessages[] = $this->createAdministrator();
+		}
 
 		$this->view->assign('actionMessages', $actionMessages);
 
@@ -128,6 +131,63 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Session');
 		$session->destroySession();
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('StepInstaller.php?install[context]=' . $this->getContext());
+	}
+
+	/**
+	 * Create administrator user
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function createAdministrator() {
+		$values = $this->postValues['values'];
+		$username = preg_replace('/[^\\da-z._]/i', '', trim($values['newUserUsername']));
+		$password = $values['newUserPassword'];
+		$passwordCheck = $values['newUserPasswordCheck'];
+
+		if (strlen($username) < 1) {
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$message->setTitle('Administrator user not created');
+			$message->setMessage('No valid username given.');
+		} elseif ($password !== $passwordCheck) {
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$message->setTitle('Administrator user not created');
+			$message->setMessage('Passwords do not match.');
+		} elseif (strlen($password) < 8) {
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$message->setTitle('Administrator user not created');
+			$message->setMessage('Password must be at least eight characters long.');
+		} else {
+			$database = $this->getDatabase();
+			$userExists = $database->exec_SELECTcountRows(
+				'uid',
+				'be_users',
+				'username=' . $database->fullQuoteStr($username, 'be_users')
+			);
+			if ($userExists) {
+				/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+				$message->setTitle('Administrator user not created');
+				$message->setMessage('A user with username ' . $username . ' exists already.');
+			} else {
+				// @TODO: Handle saltedpasswords in installer and store password salted in the first place
+				$adminUserFields = array(
+					'username' => $username,
+					'password' => md5($password),
+					'admin' => 1,
+					'tstamp' => $GLOBALS['EXEC_TIME'],
+					'crdate' => $GLOBALS['EXEC_TIME']
+				);
+				$database->exec_INSERTquery('be_users', $adminUserFields);
+				/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+				$message->setTitle('Administrator created');
+			}
+		}
+
+		return $message;
 	}
 }
 ?>

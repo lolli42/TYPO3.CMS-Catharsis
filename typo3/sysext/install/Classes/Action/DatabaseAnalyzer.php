@@ -129,15 +129,6 @@ class DatabaseAnalyzer extends AbstractAction {
 						and the selected file. It also offers to \'update\' the
 						difference found.
 					</dd>
-					<dt>
-						IMPORT:
-					</dt>
-					<dd>
-						Imports the SQL-dump file into the current database. You
-						can either dump the raw file or choose which tables to
-						import. In any case, you\'ll see a new screen where you
-						must confirm the operation.
-					</dd>
 				</dl>
 			' . $menu, 0, 1);
 		}
@@ -251,105 +242,6 @@ class DatabaseAnalyzer extends AbstractAction {
 								</p>
 							', -1);
 						}
-					}
-					break;
-				case 'adminUser':
-					if ($whichTables['be_users']) {
-						if (is_array($formValues['database_adminUser'])) {
-							$username = preg_replace('/[^\\da-z._-]/i', '', trim($formValues['database_adminUser']['username']));
-							$pass = trim($formValues['database_adminUser']['password']);
-							$pass2 = trim($formValues['database_adminUser']['password2']);
-							if ($username && $pass && $pass2) {
-								if ($pass != $pass2) {
-									$this->message($headCode, 'Passwords are not equal!', '
-										<p>
-											The passwords entered twice are not
-											equal.
-										</p>
-									', 2, 1);
-								} else {
-									$res = $this->getDatabase()->exec_SELECTquery('uid', 'be_users', 'username=' . $this->getDatabase()->fullQuoteStr($username, 'be_users'));
-									if (!$this->getDatabase()->sql_num_rows($res)) {
-										$insertFields = array(
-											'username' => $username,
-											'password' => md5($pass),
-											'admin' => 1,
-											'uc' => '',
-											'fileoper_perms' => 0,
-											'tstamp' => $GLOBALS['EXEC_TIME'],
-											'crdate' => $GLOBALS['EXEC_TIME']
-										);
-										$result = $this->getDatabase()->exec_INSERTquery('be_users', $insertFields);
-										if ($result) {
-											$this->message($headCode, 'User created', '
-												<p>
-													Username:
-													<strong>' . htmlspecialchars($username) . '
-													</strong>
-												</p>
-											', 1, 1);
-										} else {
-											$this->message($headCode, 'User not created', '
-												<p>
-													Error:
-													<strong>' . htmlspecialchars($this->getDatabase()->sql_error()) . '
-													</strong>
-												</p>
-											', 3, 1);
-										}
-									} else {
-										$this->message($headCode, 'Username not unique!', '
-											<p>
-												The username,
-												<strong>' . htmlspecialchars($username) . '
-												</strong>
-												, was not unique.
-											</p>
-										', 2, 1);
-									}
-								}
-							} else {
-								$this->message($headCode, 'Missing data!', '
-									<p>
-										Not all required form fields have been
-										filled.
-									</p>
-								', 2, 1);
-							}
-						}
-						// Get the template file
-						$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'CheckTheDatabaseAdminUser.html'));
-						// Get the template part from the file
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-						// Define the markers content
-						$contentMarkers = array(
-							'userName' => 'username - unique, no space, lowercase',
-							'password' => 'password',
-							'repeatPassword' => 'password (repeated)'
-						);
-						// Fill the markers
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $contentMarkers, '###|###', TRUE, FALSE);
-						$form = $this->getUpdateDbFormWrap($action_type, $content);
-						$this->message($headCode, 'Create admin user', '
-							<p>
-								Enter username and password for a new admin
-								user.
-								<br />
-								You should use this function only if there are
-								no admin users in the database, for instance if
-								this is a blank database.
-								<br />
-								After you\'ve created the user, log in and add
-								the rest of the user information, like email and
-								real name.
-							</p>
-						' . $form, 0, 1);
-					} else {
-						$this->message($headCode, 'Required table not in database', '
-							<p>
-								\'be_users\' must be a table in the database!
-							</p>
-						', 3, 1);
 					}
 					break;
 				case 'UC':
