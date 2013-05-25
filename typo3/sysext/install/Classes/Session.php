@@ -147,7 +147,7 @@ class Session {
 	 * @return string The session ID
 	 */
 	public function startSession() {
-		$_SESSION['created'] = time();
+		$_SESSION['active'] = TRUE;
 		// Be sure to use our own session id, so create a new one
 		return $this->renewSession();
 	}
@@ -157,6 +157,14 @@ class Session {
 	 */
 	public function destroySession() {
 		session_destroy();
+	}
+
+	/**
+	 * Reset session. Sets _SESSION to empty array.
+	 */
+	public function resetSession() {
+		$_SESSION = array();
+		$_SESSION['active'] = FALSE;
 	}
 
 	/**
@@ -175,7 +183,7 @@ class Session {
 	 * @return boolean TRUE if there is an active session, FALSE otherwise
 	 */
 	public function hasSession() {
-		return isset($_SESSION['created']);
+		return ($_SESSION['active'] === TRUE);
 	}
 
 	/**

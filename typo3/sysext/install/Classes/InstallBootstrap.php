@@ -96,45 +96,48 @@ class InstallBootstrap {
 	 * @return void
 	 */
 	static protected function dieWithLockedInstallToolMessage() {
-		require_once PATH_site . 'typo3/sysext/core/Classes/Html/HtmlParser.php';
-		// Define the stylesheet
-		$stylesheet = '<link rel="stylesheet" type="text/css" href="' . '../stylesheets/install/install.css" />';
-		$javascript = '<script type="text/javascript" src="' . '../contrib/jquery/jquery-1.9.1.min.js"></script>';
-		$javascript .= '<script type="text/javascript" src="' . '../sysext/install/Resources/Public/Javascript/install.js"></script>';
-		// Get the template file
-		$template = @file_get_contents(PATH_site . 'typo3/sysext/install/Resources/Private/Templates/Notice.html');
-		// Define the markers content
-		$markers = array(
-			'styleSheet' => $stylesheet,
-			'javascript' => $javascript,
-			'title' => 'The Install Tool is locked',
-			'content' => '
-				<p>
-					To enable the Install Tool, the file ENABLE_INSTALL_TOOL must be created.
-				</p>
-				<ul>
-					<li>
-						In the typo3conf/ folder, create a file named ENABLE_INSTALL_TOOL. The file name is
-						case sensitive, but the file itself can simply be an empty file.
-					</li>
-					<li class="t3-install-locked-user-settings">
-						Alternatively, in the Backend, go to <a href="javascript:top.goToModule(\'tools_install\',1);">Admin tools &gt; Install</a>
-						and let TYPO3 create this file for you.<br />
-						You are recommended to log out from the Install Tool after finishing your work.
-						The file will then automatically be deleted.
-					</li>
-				</ul>
-				<p>
-					For security reasons, it is highly recommended that you either rename or delete the file after the operation is finished.
-				</p>
-				<p>
-					As an additional security measure, if the file is older than one hour, TYPO3 will automatically delete it. The file must be writable by the web server user.
-				</p>
-			'
-		);
-		// Fill the markers
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', 1, 1);
-		// Output the warning message and exit
+		$content =
+		'<!DOCTYPE html
+		<html>
+		<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+			<title>The Install Tool is locked</title>
+			<link rel="shortcut icon" href="../../../gfx/favicon.ico" />
+			<link rel="stylesheet" type="text/css" href="../../../stylesheets/install/install.css" />
+			<script type="text/javascript" src="../../../contrib/jquery/jquery-1.9.1.min.js"></script>
+			<script type="text/javascript" src="../Resources/Public/Javascript/install.js"></script>
+		</head>
+		<body>
+			<div id="container">
+				<h1>TYPO3</h1>
+				<div class="typo3-message message-warning">
+					<h2>The Install Tool is locked</h2>
+					<p>
+						To enable the Install Tool, the file ENABLE_INSTALL_TOOL must be created.
+					</p>
+					<ul>
+						<li>
+							In the typo3conf/ folder, create a file named ENABLE_INSTALL_TOOL. The file name is
+							case sensitive, but the file itself can simply be an empty file.
+						</li>
+						<li class="t3-install-locked-user-settings">
+							Alternatively, in the Backend, go to <a href="javascript:top.goToModule(\'tools_install\',1);">Admin tools &gt; Install</a>
+							and let TYPO3 create this file for you.<br />
+							You are recommended to log out from the Install Tool after finishing your work.
+							The file will then automatically be deleted.
+						</li>
+					</ul>
+					<p>
+						For security reasons, it is highly recommended that you either rename or delete the file after the operation is finished.
+					</p>
+					<p>
+						As an additional security measure, if the file is older than one hour, TYPO3 will automatically delete it. The file must be writable by the web server user.
+					</p>
+				</div>
+			</div>
+		</body>
+		</html>';
+
 		header('Content-Type: text/html; charset=utf-8');
 		header('Cache-Control: no-cache, must-revalidate');
 		header('Pragma: no-cache');

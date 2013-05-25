@@ -70,32 +70,41 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			$session->startSession();
 		}
 
+		$content = '';
 		$action = $this->getAction();
 		$postValues = $this->getPostValues();
-		if (!$this->isTokenValid()) {
-			// If form protection token is invalid, destroy session start new and redirect to loginForm
+		if ($action === 'logout') {
+			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
+			if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
+				unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
+			}
+			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
+			$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
+				'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
+			);
+			$formProtection->clean();
 			$session->destroySession();
+			\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
+		} elseif (!$this->isTokenValid()) {
+			// If form protection token is invalid, destroy session start new and redirect to loginForm
+			$session->resetSession();
 			$session->startSession();
 			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 			$message->setTitle('Invalid form token');
 			$message->setMessage(
 				'The form protection token was invalid. You have been logged out, please login and try again.'
-				. ' There is also a bug in the session handling that prevents re-login if this message appears.'
-				. ' Please call this page again (not using F5) until this is fixed.'
 			);
 			$content = $this->loginForm($message);
 		} elseif ($session->isExpired()) {
 			// Session expired, log out user, start new session, show login form
-			$session->destroySession();
+			$session->resetSession();
 			$session->startSession();
 			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 			$message->setTitle('Session expired');
 			$message->setMessage(
 				'Your Install Tool session has expired. You have been logged out, please login and try again.'
-				. ' There is also a bug in the session handling that prevents re-login if this message appears.'
-				. ' Please call this page again (not using F5) until this is fixed.'
 			);
 			$content = $this->loginForm($message);
 		} elseif ($action === 'login') {
@@ -374,6 +383,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		if ($action !== ''
 			&& $action !== 'login'
 			&& $action !== 'loginForm'
+			&& $action !== 'logout'
 			&& !in_array($action, $this->authenticationActions)
 		) {
 			throw new \TYPO3\CMS\Install\Exception(

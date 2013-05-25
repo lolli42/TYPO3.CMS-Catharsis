@@ -1,7 +1,14 @@
 <div id="t3-install-left">
 	<ol id="t3-install-menu">
-		<li id="t3-install-menu-welcome">
-			<a href="InstallTool.php?install[action]=welcome">Welcome</a>
+		<li id="t3-install-menu-welcome" class="{f:if(condition:'{action} == \'welcome\'', then:'act')}">
+			<a href="InstallTool.php?install[action]=welcome">
+				Welcome
+			</a>
+		</li>
+		<li id="t3-install-menu-logout">
+			<a href="InstallTool.php?install[action]=logout">
+				Logout from Install Tool
+			</a>
 		</li>
 	</ol>
 	<ol id="t3-install-links">
