@@ -96,7 +96,6 @@ class Installer {
 	 * @var array List of menu items
 	 */
 	protected $menuitems = array(
-		'config' => 'Basic Configuration',
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
@@ -129,7 +128,6 @@ class Installer {
 		$this->INSTALL['type'] = '';
 		if ($_GET['TYPO3_INSTALL']['type']) {
 			$allowedTypes = array(
-				'config',
 				'database',
 				'update',
 				'images',
@@ -325,14 +323,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		case 'update':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\UpdateWizard');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
-			$this->output($this->outputWrapper($this->printAll()));
-			break;
-		case 'config':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\BasicConfiguration');
 			$actionObject->handle();
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());

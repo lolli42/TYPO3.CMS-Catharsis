@@ -39,11 +39,13 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	public function handle() {
 		$this->initialize();
 
-//debug($this->postValues);
-
 		$actionMessages = array();
-		if (isset($this->postValues['set']['checkMail'])) {
+		if (isset($this->postValues['set']['testMail'])) {
 			$actionMessages[] = $this->sendTestMail();
+		}
+		if (isset($this->postValues['set']['testTrueTypeFontDpi'])) {
+			$this->view->assign('trueTypeFontDpiTested', TRUE);
+			$actionMessages[] = $this->createTrueTypeFontDpiTestImage();
 		}
 
 		$this->view->assign('actionMessages', $actionMessages);
@@ -79,6 +81,31 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			$message->setTitle('Test mail sent');
 			$message->setMessage('Recipient: ' . $recipient);
 		}
+		return $message;
+	}
+
+	/**
+	 * Create true type font test image
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function createTrueTypeFontDpiTestImage() {
+		$image = @imagecreate(300, 50);
+		imagecolorallocate($image, 255, 255, 55);
+		$textColor = imagecolorallocate($image, 233, 14, 91);
+		@imagettftext(
+			$image,
+			GeneralUtility::freetypeDpiComp(20),
+			0,
+			10,
+			20,
+			$textColor,
+			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			'Testing true type support'
+		);
+		imagegif($image, PATH_site . 'typo3temp/installTool-createTrueTypeFontDpiTestImage.gif');
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('Created true type font dpi test image');
 		return $message;
 	}
 }
