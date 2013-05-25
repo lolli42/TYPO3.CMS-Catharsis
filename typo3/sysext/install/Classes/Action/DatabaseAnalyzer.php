@@ -48,39 +48,7 @@ class DatabaseAnalyzer extends AbstractAction {
 		/** @var $sqlHandler \TYPO3\CMS\Install\Sql\SchemaMigrator */
 		$sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
 
-		// Getting current tables
-		$whichTables = $sqlHandler->getListOfTables();
 		$headCode = 'Database Analyser';
-		$this->message($headCode, 'What is it?', '
-			<p>
-				In this section you can get an overview of your currently
-				selected database compared to sql-files.
-			</p>
-		', 0);
-		$this->message($headCode, 'Connected to SQL database successfully', '
-			<dl id="t3-install-databaseconnected">
-				<dt>
-					Username:
-				</dt>
-				<dd>
-					' . htmlspecialchars(TYPO3_db_username) . '
-				</dd>
-				<dt>
-					Host:
-				</dt>
-				<dd>
-					' . htmlspecialchars(TYPO3_db_host) . '
-				</dd>
-			</dl>
-		', -1, 1);
-		$this->message($headCode, 'Database', '
-			<p>
-				<strong>' . htmlspecialchars(TYPO3_db) . '</strong> is selected as database.
-				<br />
-				Has <strong>' . count($whichTables) . '</strong> tables.
-			</p>
-		', -1, 1);
-		// Menu
 		$action_type = $formValues['database_type'];
 		$actionParts = explode('|', $action_type);
 		if (count($actionParts) < 2) {

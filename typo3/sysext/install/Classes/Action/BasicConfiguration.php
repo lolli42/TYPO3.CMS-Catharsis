@@ -39,28 +39,6 @@ class BasicConfiguration extends AbstractAction {
 
 	public function handle() {
 		$this->check_mail();
-		$this->message(
-			'About configuration',
-			'How to configure TYPO3',
-			''
-		);
-
-		$isPhpCgi = PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi';
-		$this->message(
-			'System Information',
-			'Your system has the following configuration',
-			'
-				<dl id="systemInformation">
-					<dt>OS detected:</dt>
-					<dd>' . (TYPO3_OS == 'WIN' ? 'WIN' : 'UNIX') . '</dd>
-					<dt>CGI detected:</dt>
-					<dd>' . ($isPhpCgi ? 'YES' : 'NO') . '</dd>
-					<dt>PATH_thisScript:</dt>
-					<dd>' . PATH_thisScript . '</dd>
-				</dl>
-			'
-		);
-
 		$this->checkConfiguration();
 		$this->checkExtensions();
 	}

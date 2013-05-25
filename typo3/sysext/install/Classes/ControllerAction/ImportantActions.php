@@ -56,6 +56,20 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 
 		$this->view->assign('actionMessages', $actionMessages);
 
+		$operatingSystem = TYPO3_OS == 'WIN' ? 'Windows' : 'Unix';
+		$cgiDetected = (PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi')
+			? TRUE
+			: FALSE;
+
+		$this->view
+			->assign('operatingSystem', $operatingSystem)
+			->assign('cgiDetected', $cgiDetected)
+			->assign('databaseName', $GLOBALS['TYPO3_CONF_VARS']['DB']['database'])
+			->assign('databaseUsername', $GLOBALS['TYPO3_CONF_VARS']['DB']['username'])
+			->assign('databaseHost', $GLOBALS['TYPO3_CONF_VARS']['DB']['host'])
+			->assign('databasePort', $GLOBALS['TYPO3_CONF_VARS']['DB']['port'])
+			->assign('databaseNumberOfTables', count($this->getDatabase()->admin_get_tables()));
+
 		return $this->view->render();
 	}
 
