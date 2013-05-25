@@ -38,8 +38,6 @@ class BasicConfiguration extends AbstractAction {
 
 
 	public function handle() {
-		$this->check_mail();
-		$this->checkConfiguration();
 		$this->checkExtensions();
 	}
 
@@ -88,72 +86,5 @@ class BasicConfiguration extends AbstractAction {
 		imagegif($im);
 		die;
 	}
-
-	/**
-	 * Checking php.ini configuration and set appropriate messages and flags.
-	 *
-	 * @return void
-	 */
-	protected function checkConfiguration() {
-		$ext = 'php.ini configuration tests';
-		$this->message($ext);
-		$this->message($ext, 'Mail test', $this->check_mail('get_form'), -1);
-	}
-
-	/**
-	 * Check if PHP function mail() works
-	 *
-	 * @param string $cmd If "get_form" then a formfield for the mail-address is shown. If not, it's checked if "check_mail" was in the INSTALL array and if so a test mail is sent to the recipient given.
-	 * @return string The mail form if it is requested with get_form
-	 */
-	protected function check_mail($cmd = '') {
-		$out = '';
-		switch ($cmd) {
-			case 'get_form':
-				$out = '
-					<p id="checkMailForm">
-						You can check the functionality by entering your email
-						address here and press the button. You should then
-						receive a testmail from "typo3installtool@example.org".
-					</p>
-				';
-				// Get the template file
-				$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'CheckMail.html'));
-				// Get the template part from the file
-				$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-				$mailSentSubpart = '';
-				if (!empty($this->mailMessage)) {
-					// Get the subpart for the mail is sent message
-					$mailSentSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###MAILSENT###');
-				}
-				$template = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###MAILSENT###', $mailSentSubpart);
-				// Define the markers content
-				$markers = array(
-					'message' => $this->mailMessage,
-					'enterEmail' => 'Enter the email address',
-					'actionUrl' => 'index.php?TYPO3_INSTALL[type]=config#checkMailForm',
-					'submit' => 'Send test mail'
-				);
-				// Fill the markers
-				$out .= \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, TRUE);
-				break;
-			default:
-				$formValues = GeneralUtility::_GP('config');
-				if (trim($formValues['check_mail'])) {
-					$subject = 'TEST SUBJECT';
-					$email = trim($formValues['check_mail']);
-					/** @var $mailMessage \TYPO3\CMS\Core\Mail\MailMessage */
-					$mailMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
-					$mailMessage->addTo($email)->addFrom('typo3installtool@example.org', 'TYPO3 Install Tool')->setSubject($subject)->setBody('<html><body>HTML TEST CONTENT</body></html>');
-					$mailMessage->addPart('TEST CONTENT');
-					$mailMessage->send();
-					$this->mailMessage = 'Mail was sent to: ' . $email;
-				}
-				break;
-		}
-		return $out;
-	}
-
-
 }
 ?>

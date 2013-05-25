@@ -1,0 +1,40 @@
+<h4>Test mail setup</h4>
+
+<p>
+	You can check the basic mail functionality by entering your email address here and press the button.
+	You should then receive a testmail from "typo3installtool@example.org".
+</p>
+
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<fieldset>
+		<ol>
+			<li>
+				<label
+					for="t3-install-checkmail"
+				>
+					Email address:
+				</label>
+				<input
+					id="t3-install-checkmail"
+					type="text"
+					name="install[values][testEmailRecipient]"
+					class="t3-install-form-input-text"
+				/>
+			</li>
+		</ol>
+	</fieldset>
+	<fieldset class="t3-install-form-submit">
+		<ol>
+			<li>
+				<button
+					type="submit"
+					name="install[set][checkMail]"
+				>
+					Send test mail
+					<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+				</button>
+			</li>
+		</ol>
+	</fieldset>
+</form>

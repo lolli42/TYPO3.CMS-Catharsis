@@ -1,0 +1,15 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<f:layout name="InstallToolAuthenticated" />
+
+<f:section name="Content">
+	<h3>Test system settings</h3>
+
+	<f:for each="{actionMessages}" as="statusMessage">
+		<i:statusMessage message="{statusMessage}" />
+	</f:for>
+
+	<f:render partial="ControllerAction/TestSetup/Mail" arguments="{_all}" />
+	<hr />
+
+</f:section>

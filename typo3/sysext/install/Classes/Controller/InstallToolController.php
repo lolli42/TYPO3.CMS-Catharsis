@@ -50,6 +50,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		'importantActions',
 		'systemEnvironment',
 		'folderStructure',
+		'testSetup',
 		'allConfiguration',
 	);
 
@@ -400,7 +401,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			&& !in_array($action, $this->authenticationActions)
 		) {
 			throw new \TYPO3\CMS\Install\Exception(
-				'Invalid action',
+				'Invalid action ' . $action,
 				1369325619
 			);
 		}
