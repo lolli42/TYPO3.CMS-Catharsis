@@ -29,14 +29,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Show system environment check results
  */
-class SystemEnvironment extends AbstractAction {
+class SystemEnvironment extends AbstractAction implements ActionInterface {
 
 	/**
-	 * Render this action
+	 * Handle this action
 	 *
 	 * @return string content
 	 */
-	public function render() {
+	public function handle() {
 		$this->initialize();
 
 		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */

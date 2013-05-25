@@ -97,8 +97,6 @@ class Installer {
 	 */
 	protected $menuitems = array(
 		'config' => 'Basic Configuration',
-		'systemEnvironment' => 'System environment',
-		'folderStructure' => 'Folder structure',
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
@@ -139,8 +137,6 @@ class Installer {
 				'images',
 				'extConfig',
 				'cleanup',
-				'systemEnvironment',
-				'folderStructure',
 				'typo3conf_edit',
 				'about',
 				'logout'
@@ -358,12 +354,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$actionObject->handle();
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->output($this->outputWrapper($this->printAll()));
-			break;
-		case 'folderStructure':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\FolderStructure');
-			$output = $actionObject->handle();
-			$this->output($this->outputWrapper($output));
 			break;
 		case 'logout':
 			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';

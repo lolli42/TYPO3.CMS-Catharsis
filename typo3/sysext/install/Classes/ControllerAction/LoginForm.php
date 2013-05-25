@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Login action
  */
-class LoginForm extends AbstractAction {
+class LoginForm extends AbstractAction implements ActionInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Install\Status\StatusInterface Optional status message from install tool controller
@@ -37,12 +37,12 @@ class LoginForm extends AbstractAction {
 	protected $message = NULL;
 
 	/**
-	 * Render this action
+	 * Handle this action
 	 *
 	 * @return string content
 	 */
-	public function render() {
-		parent::render();
+	public function handle() {
+		$this->initialize();
 		$this->view->assign('message', $this->message);
 		return $this->view->render();
 	}

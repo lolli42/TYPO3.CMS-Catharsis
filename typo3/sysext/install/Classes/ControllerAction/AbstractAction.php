@@ -54,6 +54,11 @@ abstract class AbstractAction {
 	protected $token = '';
 
 	/**
+	 * @var array Values in $_POST['install']
+	 */
+	protected $postValues = array();
+
+	/**
 	 * Initialize this action
 	 *
 	 * @return string content
@@ -91,6 +96,15 @@ abstract class AbstractAction {
 	 */
 	public function setAction($action) {
 		$this->action = $action;
+	}
+
+	/**
+	 * Set POST form values of install tool
+	 *
+	 * @param array $postValues
+	 */
+	public function setPostValues(array $postValues) {
+		$this->postValues = $postValues;
 	}
 
 	/**

@@ -48,6 +48,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	protected $authenticationActions = array(
 		'welcome',
 		'systemEnvironment',
+		'folderStructure',
 	);
 
 	/**
@@ -143,10 +144,11 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		$controllerAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ControllerAction\\LoginForm');
 		$controllerAction->setAction('login');
 		$controllerAction->setToken($this->generateTokenForAction('login'));
+		$controllerAction->setPostValues($this->getPostValues());
 		if ($message) {
 			$controllerAction->setMessage($message);
 		}
-		$content = $controllerAction->render();
+		$content = $controllerAction->handle();
 		return $content;
 	}
 
@@ -171,11 +173,18 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			);
 		}
 		$actionClass = ucfirst($action);
-		/** @var \TYPO3\CMS\Install\ControllerAction\LoginForm $controllerAction */
+		/** @var \TYPO3\CMS\Install\ControllerAction\ActionInterface $controllerAction */
 		$controllerAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ControllerAction\\' . $actionClass);
+		if (!($controllerAction instanceof \TYPO3\CMS\Install\ControllerAction\ActionInterface)) {
+			throw new \TYPO3\CMS\Install\Exception(
+				$action . ' does non implement ActionInterface',
+				1369474308
+			);
+		}
 		$controllerAction->setAction($action);
 		$controllerAction->setToken($this->generateTokenForAction($action));
-		$content = $controllerAction->render();
+		$controllerAction->setPostValues($this->getPostValues());
+		$content = $controllerAction->handle();
 		return $content;
 	}
 
@@ -328,10 +337,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 * @return boolean TRUE if token is valid or not needed, FALSE if token validation failed
 	 */
 	protected function isTokenValid() {
-		$postValues = array();
-		if (isset($GLOBALS['_POST']['install'])) {
-			$postValues = $GLOBALS['_POST']['install'];
-		}
+		$postValues = $this->getPostValues();
 		$result = FALSE;
 		if (count($postValues) > 0) {
 			// A token must be given as soon as there is POST data

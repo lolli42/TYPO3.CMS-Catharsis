@@ -28,11 +28,6 @@
  * @author Wouter Wolters <typo3@wouterwolters.nl>
  */
 $(document).ready(function() {
-	if (top.location === document.location) {
-		// standalone-mode, add class to the body tag
-		$('body').addClass('standalone');
-	}
-
 	$('#encryptionKey').click(function() {
 		$.ajax({
 			url: '../../index.php?eID=tx_install_ajax&cmd=encryptionKey'

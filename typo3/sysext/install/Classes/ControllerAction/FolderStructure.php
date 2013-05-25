@@ -27,9 +27,9 @@ namespace TYPO3\CMS\Install\ControllerAction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Welcome page
+ * Handle folder structure
  */
-class Welcome extends AbstractAction implements ActionInterface {
+class FolderStructure extends AbstractAction implements ActionInterface {
 
 	/**
 	 * Handle this action
@@ -38,6 +38,27 @@ class Welcome extends AbstractAction implements ActionInterface {
 	 */
 	public function handle() {
 		$this->initialize();
+
+		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
+		$folderStructureFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\FolderStructure\\DefaultFactory');
+		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
+		$structureFacade = $folderStructureFactory->getStructure();
+
+		$fixedStatusObjects = array();
+		if (isset($this->postValues['fix'])) {
+			$fixedStatusObjects = $structureFacade->fix();
+		}
+
+		$statusObjects = $structureFacade->getStatus();
+		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
+		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
+
+		$this->view
+			->assign('fixedStatus', $fixedStatusObjects)
+			->assign('notFixableStatus', $statusUtility->filterBySeverity($statusObjects, 'error'))
+			->assign('fixableStatus', $statusUtility->filterBySeverity($statusObjects, 'warning'))
+			->assign('okStatus', $statusUtility->filterBySeverity($statusObjects, 'ok'));
+
 		return $this->view->render();
 	}
 }

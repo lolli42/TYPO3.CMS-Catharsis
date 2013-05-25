@@ -24,21 +24,41 @@ namespace TYPO3\CMS\Install\ControllerAction;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
- * Welcome page
+ * Controller action interface
  */
-class Welcome extends AbstractAction implements ActionInterface {
+interface ActionInterface {
 
 	/**
 	 * Handle this action
 	 *
-	 * @return string content
+	 * @return string rendered content
 	 */
-	public function handle() {
-		$this->initialize();
-		return $this->view->render();
-	}
+	public function handle();
+
+	/**
+	 * Set form protection token
+	 *
+	 * @param string $token Form protection token
+	 * @return void
+	 */
+	public function setToken($token);
+
+	/**
+	 * Set action name. This is usually similar to the class name,
+	 * only for loginForm, the action is login
+	 *
+	 * @param string $action Name of target action for forms
+	 * @return void
+	 */
+	public function setAction($action);
+
+	/**
+	 * Set POST values
+	 *
+	 * @param $postValues
+	 * @return void
+	 */
+	public function setPostValues(array $postValues);
 }
 ?>
