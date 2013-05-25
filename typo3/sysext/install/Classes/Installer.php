@@ -101,7 +101,6 @@ class Installer {
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
 		'cleanup' => 'Clean up',
-		'about' => 'About',
 		'logout' => 'Logout from Install Tool'
 	);
 
@@ -136,7 +135,6 @@ class Installer {
 				'images',
 				'cleanup',
 				'typo3conf_edit',
-				'about',
 				'logout'
 			);
 			if (in_array($_GET['TYPO3_INSTALL']['type'], $allowedTypes)) {
@@ -363,11 +361,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->scriptSelf);
 			break;
 		default:
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\About');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		}
@@ -447,7 +440,7 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		$markers['javascript'] = implode(LF, $javascript);
 		$markers['stylesheets'] = implode(LF, $stylesheets);
 		$markers['llErrors'] = 'The following errors occured';
-		$markers['copyright'] = $this->copyright();
+		$markers['copyright'] = '';
 		$markers['charset'] = 'utf-8';
 		$markers['backendUrl'] = '../index.php';
 		$markers['backend'] = 'Backend admin';
@@ -571,31 +564,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		// Substitute the subpart for the single menu items
 		$menuSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($menuSubPart, '###MENUITEM###', implode(LF, $items));
 		return $menuSubPart;
-	}
-
-	/**
-	 * Generate HTML for the copyright
-	 *
-	 * @return string HTML of the copyright
-	 */
-	protected function copyright() {
-		$content = '
-			<p>
-				<strong>TYPO3 CMS.</strong> Copyright &copy; 1998-' . date('Y') . '
-				Kasper Sk&#229;rh&#248;j. Extensions are copyright of their respective
-				owners. Go to <a href="' . TYPO3_URL_GENERAL . '">' . TYPO3_URL_GENERAL . '</a>
-				for details. TYPO3 comes with ABSOLUTELY NO WARRANTY;
-				<a href="' . TYPO3_URL_LICENSE . '">click</a> for details.
-				This is free software, and you are welcome to redistribute it
-				under certain conditions; <a href="' . TYPO3_URL_LICENSE . '">click</a>
-				for details. Obstructing the appearance of this notice is prohibited by law.
-			</p>
-			<p>
-				<a href="' . TYPO3_URL_DONATE . '"><strong>Donate</strong></a> |
-				<a href="' . TYPO3_URL_ORG . '">TYPO3.org</a>
-			</p>
-		';
-		return $content;
 	}
 
 	/**

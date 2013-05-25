@@ -1,0 +1,13 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<f:layout name="InstallToolAuthenticated" />
+
+<f:section name="Content">
+	<h3>Important actions</h3>
+
+	<f:for each="{actionMessages}" as="statusMessage">
+		<i:statusMessage message="{statusMessage}" />
+	</f:for>
+
+	<f:render partial="ControllerAction/ImportantActions/NewInstallToolPassword" arguments="{_all}"/>
+</f:section>

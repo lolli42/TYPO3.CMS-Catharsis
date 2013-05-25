@@ -47,6 +47,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 */
 	protected $authenticationActions = array(
 		'welcome',
+		'importantActions',
 		'systemEnvironment',
 		'folderStructure',
 		'allConfiguration',

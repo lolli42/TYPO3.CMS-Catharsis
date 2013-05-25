@@ -133,7 +133,7 @@ class AllConfiguration extends AbstractAction implements ActionInterface {
 							if (strcmp($GLOBALS['TYPO3_CONF_VARS'][$section][$valueKey], $value)) {
 								$configurationPathValuePairs[$section . '/' . $valueKey] = $value;
 								/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-								$status = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\OkStatus');
+								$status = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 								$status->setTitle('$TYPO3_CONF_VARS[\'' . $section . '\'][\'' . $valueKey . '\']');
 								$status->setMessage('New value = ' . $value);
 								$statusObjects[] = $status;
