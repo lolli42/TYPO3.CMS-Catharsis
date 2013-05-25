@@ -39,9 +39,16 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 	public function handle() {
 		$this->initialize();
 
+		if (isset($this->postValues['set']['changeEncryptionKey'])) {
+			$this->setNewEncryptionKeyAndLogOut();
+		}
+
 		$actionMessages = array();
-		if (isset($this->postValues['set']['newInstallToolPassword'])) {
+		if (isset($this->postValues['set']['changeInstallToolPassword'])) {
 			$actionMessages[] = $this->changeInstallToolPassword();
+		}
+		if (isset($this->postValues['set']['changeSiteName'])) {
+			$actionMessages[] = $this->changeSiteName();
 		}
 
 		$this->view->assign('actionMessages', $actionMessages);
@@ -76,6 +83,51 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			$message->setTitle('Install tool password changed');
 		}
 		return $message;
+	}
+
+	/**
+	 * Set new site name
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function changeSiteName() {
+		$values = $this->postValues['values'];
+		if (isset($values['newSiteName']) && strlen($values['newSiteName']) > 0) {
+			/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
+			$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+			$configurationManager->setLocalConfigurationValueByPath('SYS/sitename', $values['newSiteName']);
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+			$message->setTitle('Site name changed');
+			$this->view->assign('siteName', $values['newSiteName']);
+		} else {
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$message->setTitle('Site name not changed');
+			$message->setMessage('Site name must be at least one character long.');
+		}
+		return $message;
+	}
+
+	/**
+	 * Set new encryption key
+	 *
+	 * @return void
+	 */
+	protected function setNewEncryptionKeyAndLogOut() {
+		$newKey = \TYPO3\CMS\Core\Utility\GeneralUtility::getRandomHexString(96);
+		/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
+		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+		$configurationManager->setLocalConfigurationValueByPath('SYS/encryptionKey', $newKey);
+		/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
+		$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
+			'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
+		);
+		$formProtection->clean();
+		/** @var \TYPO3\CMS\Install\Session $session */
+		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Session');
+		$session->destroySession();
+		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('StepInstaller.php?install[context]=' . $this->getContext());
 	}
 }
 ?>

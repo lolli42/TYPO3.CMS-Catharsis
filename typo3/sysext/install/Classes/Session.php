@@ -26,12 +26,13 @@ namespace TYPO3\CMS\Install;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Secure session handling for the install tool.
  *
  * @author Ernesto Baschny <ernst@cron-it.de>
  */
-class Session {
+class Session implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * The path to our typo3temp (where we can write our sessions). Set in the

@@ -1,0 +1,23 @@
+<h4>Change encryption key</h4>
+<p>
+	The encryption key is a random string that should be unique for this TYPO3 CMS instance.
+	It is a security relevant values and is never outputted directly.
+	Setting a new encryption key will invalidate temporary information and might invalidate URLs, so all
+	caches should be cleared afterwards. Additionally, you will be logged out from the install tool.
+</p>
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<fieldset class="t3-install-form-submit">
+		<ol>
+			<li>
+				<button
+					type="submit"
+					name="install[set][changeEncryptionKey]"
+				>
+					Set a new encryption key
+					<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+				</button>
+			</li>
+		</ol>
+	</fieldset>
+</form>

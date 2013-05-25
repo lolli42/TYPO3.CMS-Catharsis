@@ -23,8 +23,6 @@ $TYPO3_CONF_VARS['SC_OPTIONS']['ext/install']['update']['extensionManagerTables'
 $TYPO3_CONF_VARS['SC_OPTIONS']['ext/install']['update']['installSystemExtensions'] = 'TYPO3\\CMS\\Install\\CoreUpdates\\InstallSysExtsUpdate';
 // change tt_content.imagecols=0 to 1 for proper display in TCEforms since TYPO3 4.3
 $TYPO3_CONF_VARS['SC_OPTIONS']['ext/install']['update']['changeImagecolsValue'] = 'TYPO3\\CMS\\Install\\CoreUpdates\\ImagecolsUpdate';
-// register eID script for install tool AJAX calls
-$TYPO3_CONF_VARS['FE']['eID_include']['tx_install_ajax'] = 'EXT:install/mod/class.tx_install_ajax.php';
 // warn for t3skin installed in Version 4.4
 $TYPO3_CONF_VARS['SC_OPTIONS']['ext/install']['update']['checkForT3SkinInstalled'] = 'TYPO3\\CMS\\Install\\CoreUpdates\\T3skinUpdate';
 // Version 4.4: warn for set CompressionLevel and warn user to update his .htaccess
