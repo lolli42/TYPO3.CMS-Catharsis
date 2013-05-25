@@ -49,6 +49,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		'welcome',
 		'systemEnvironment',
 		'folderStructure',
+		'allConfiguration',
 	);
 
 	/**
@@ -125,6 +126,11 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 			}
 		} elseif ($session->isAuthorized()) {
 			$session->refreshSession();
+			// Extend the age of the ENABLE_INSTALL_TOOL file by one hour
+			$enableInstallToolFile = PATH_typo3conf . 'ENABLE_INSTALL_TOOL';
+			if (is_file($enableInstallToolFile)) {
+				@touch($enableInstallToolFile);
+			}
 			$content = $this->dispatchAuthenticationActions();
 		} else {
 			$content = $this->loginForm();
@@ -367,9 +373,9 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 	 * @return array
 	 */
 	protected function getPostValues() {
-		$postValues = array();
-		if (isset($GLOBALS['_POST']['install'])) {
-			$postValues = $GLOBALS['_POST']['install'];
+		$postValues = GeneralUtility::_POST('install');
+		if (!is_array($postValues)) {
+			$postValues = array();
 		}
 		return $postValues;
 	}

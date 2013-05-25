@@ -279,8 +279,8 @@ button span.t3-install-form-button-icon-positive {
 	background-image: url('../Images/menuImages.png');
 }
 
-#t3-install-menu #t3-install-menu-extConfig {
-	background-image: url('../Images/menuExtConfig.png');
+#t3-install-menu #t3-install-menu-allConfiguration {
+	background-image: url('../Images/MenuAllConfiguration.png');
 }
 
 #t3-install-menu #t3-install-menu-typo3temp {

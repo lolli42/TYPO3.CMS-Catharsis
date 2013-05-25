@@ -41,4 +41,8 @@ $(document).ready(function() {
 		$(this).closest('fieldset').find(':checkbox').prop('checked', this.checked);
 	});
 
+	$('.toggleButton').on('click', function() {
+		$(this).closest('.toggleGroup').find('.toggleData').toggle();
+	});
+
 });

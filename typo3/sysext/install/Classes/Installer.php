@@ -100,7 +100,6 @@ class Installer {
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'images' => 'Image Processing',
-		'extConfig' => 'All Configuration',
 		'cleanup' => 'Clean up',
 		'about' => 'About',
 		'logout' => 'Logout from Install Tool'
@@ -135,7 +134,6 @@ class Installer {
 				'database',
 				'update',
 				'images',
-				'extConfig',
 				'cleanup',
 				'typo3conf_edit',
 				'about',
@@ -341,12 +339,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
 			$this->output($this->outputWrapper($this->printAll()));
-			break;
-		case 'extConfig':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\AllConfiguration');
-			$content = $actionObject->handle();
-			$this->output($this->outputWrapper($content));
 			break;
 		case 'cleanup':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
