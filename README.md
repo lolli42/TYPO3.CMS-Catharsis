@@ -5,7 +5,10 @@ Vision / Catharsis fork of TYPO3 CMS
 
 This is an integration, sandbox, vision and incubator fork of TYPO3 CMS aiming to get bigger things done more quickly. Patches merged to mainline are regularily merged to this this fork, so the systems do not diverge too much.
 
-Ready parts are merged upstream. The following mainline changes evolved here and were committed upstream already:
+Current work-in-progress:
+* Major rewrite of install tool
+
+The following mainline changes evolved here and were committed upstream:
 * Removal of statictemplates extension
 * TCA bootstrap refactoring
 * System environment check in instal tool.
