@@ -4,7 +4,6 @@
 	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
 	<f:if condition="{scalingImagesTested}">
 		<f:then>
-
 			<f:render partial="ControllerAction/TestSetup/AboutImageHandling" arguments="{_all}" />
 			<f:render partial="ControllerAction/TestSetup/VerifyTestResults" arguments="{_all}" />
 			<f:render partial="ControllerAction/TestSetup/CurrentConfiguration" arguments="{_all}" />
@@ -19,41 +18,13 @@
 
 			<f:for each="{testResults}" as="test">
 				<h4>{test.title}</h4>
-
 				<f:render partial="ControllerAction/TestSetup/DisplayTwinImage" arguments="{_all}"/>
-
 				<p></p>
 			</f:for>
-
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testScalingImages]"
-						>
-							Test scaling images
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
 		</f:then>
 		<f:else>
 			<h4>Scaling images</h4>
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testScalingImages]"
-						>
-							Test scaling images again
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
 		</f:else>
 	</f:if>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testScalingImages', text:'Test scaling images'}"/>
 </form>

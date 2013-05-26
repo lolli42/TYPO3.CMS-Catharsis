@@ -9,34 +9,7 @@
 				Freetype 2 and need to set TYPO3_CONF_VARS[GFX][TTFdpi]=96.
 			</p>
 			<img src="../../../../typo3temp/installTool-createTrueTypeFontDpiTestImage.gif?{time}" />
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testTrueTypeFontDpi]"
-						>
-							Test true type font dpi again
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
 		</f:then>
-		<f:else>
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testTrueTypeFontDpi]"
-						>
-							Test true type font dpi
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
-		</f:else>
 	</f:if>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testTrueTypeFontDpi', text:'Test true type font dpi'}"/>
 </form>

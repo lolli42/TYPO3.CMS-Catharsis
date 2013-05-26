@@ -7,17 +7,5 @@
 </p>
 <form method="post">
 	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
-	<fieldset class="t3-install-form-submit">
-		<ol>
-			<li>
-				<button
-					type="submit"
-					name="install[set][changeEncryptionKey]"
-				>
-					Set a new encryption key
-					<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-				</button>
-			</li>
-		</ol>
-	</fieldset>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'changeEncryptionKey', text:'Set a new encryption key'}"/>
 </form>

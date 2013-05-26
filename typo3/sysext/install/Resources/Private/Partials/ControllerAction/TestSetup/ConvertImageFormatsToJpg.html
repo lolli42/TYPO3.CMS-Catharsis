@@ -35,41 +35,13 @@
 
 			<f:for each="{testResults}" as="test">
 				<h4>Convert {test.format}</h4>
-
 				<f:render partial="ControllerAction/TestSetup/DisplayTwinImage" arguments="{_all}"/>
-
 				<p></p>
 			</f:for>
-
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testConvertImageFormatsToJpg]"
-						>
-							Test image formats again
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
 		</f:then>
 		<f:else>
 			<h4>Convert image formats to jpg</h4>
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button
-							type="submit"
-							name="install[set][testConvertImageFormatsToJpg]"
-						>
-							Test image formats
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
 		</f:else>
 	</f:if>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testConvertImageFormatsToJpg', text:'Test image formats'}"/>
 </form>
