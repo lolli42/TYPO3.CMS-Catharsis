@@ -32,6 +32,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class CleanUp extends AbstractAction implements ActionInterface {
 
 	/**
+	 * Status messages of submitted actions
+	 *
+	 * @var array
+	 */
+	protected $actionMessages = array();
+
+	/**
 	 * Handle this action
 	 *
 	 * @return string content
@@ -39,17 +46,18 @@ class CleanUp extends AbstractAction implements ActionInterface {
 	public function handle() {
 		$this->initialize();
 
-		$actionMessages = array();
 		if (isset($this->postValues['set']['deleteCachedImageSizes'])) {
-			$actionMessages[] = $this->deleteCachedImageSizes();
+			$this->actionMessages[] = $this->deleteCachedImageSizes();
 		}
-		$this->view->assign('actionMessages', $actionMessages);
-
 
 		$database = $this->getDatabase();
 		$numberOfCachedImageSizes = intval($database->exec_SELECTcountRows('*', 'cache_imagesizes'));
 		$this->view->assign('numberOfCachedImageSizes', $numberOfCachedImageSizes);
 
+		$typo3TempData = $this->getTypo3TempStatistics();
+		$this->view->assign('typo3TempData', $typo3TempData);
+
+		$this->view->assign('actionMessages', $this->actionMessages);
 		return $this->view->render();
 	}
 
@@ -64,6 +72,116 @@ class CleanUp extends AbstractAction implements ActionInterface {
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Cleared cached image sizes');
 		return $message;
+	}
+
+	/**
+	 * Data for the typo3temp/ deletion view
+	 *
+	 * @return array Data array
+	 */
+	protected function getTypo3TempStatistics() {
+		$data = array();
+		$pathTypo3Temp= PATH_site . 'typo3temp/';
+		$postValues = $this->postValues['values'];
+
+		$condition = '0';
+		if (isset($postValues['condition'])) {
+			$condition = $postValues['condition'];
+		}
+		$numberOfFilesToDelete = 0;
+		if (isset($postValues['numberOfFiles'])) {
+			$numberOfFilesToDelete = $postValues['numberOfFiles'];
+		}
+		$subDirectory = '';
+		if (isset($postValues['subDirectory'])) {
+			$subDirectory = $postValues['subDirectory'];
+		}
+
+		// Run through files
+		$fileCounter = 0;
+		$deleteCounter = 0;
+		$criteriaMatch = 0;
+		$timeMap = array('day' => 1, 'week' => 7, 'month' => 30);
+		$directory = @dir($pathTypo3Temp . $subDirectory);
+		if (is_object($directory)) {
+			while ($entry = $directory->read()) {
+				$absoluteFile = $pathTypo3Temp . $subDirectory . '/' . $entry;
+				if (@is_file($absoluteFile)) {
+					$ok = 0;
+					$fileCounter++;
+					if ($condition) {
+						if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($condition)) {
+							if (filesize($absoluteFile) > $condition * 1024) {
+								$ok = 1;
+							}
+						} else {
+							if (fileatime($absoluteFile) < $GLOBALS['EXEC_TIME'] - intval($timeMap[$condition]) * 60 * 60 * 24) {
+								$ok = 1;
+							}
+						}
+					} else {
+						$ok = 1;
+					}
+					if ($ok) {
+						$hashPart = substr(basename($absoluteFile), -14, 10);
+						// This is a kind of check that the file being deleted has a 10 char hash in it
+						if (
+							!preg_match('/[^a-f0-9]/', $hashPart)
+							|| substr($absoluteFile, -6) === '.cache'
+							|| substr($absoluteFile, -4) === '.tbl'
+							|| substr($absoluteFile, -4) === '.css'
+							|| substr($absoluteFile, -3) === '.js'
+							|| substr($absoluteFile, -5) === '.gzip'
+							|| substr(basename($absoluteFile), 0, 8) === 'installTool'
+						) {
+							if ($numberOfFilesToDelete && $deleteCounter < $numberOfFilesToDelete) {
+								$deleteCounter++;
+								unlink($absoluteFile);
+							} else {
+								$criteriaMatch++;
+							}
+						}
+					}
+				}
+			}
+			$directory->close();
+		}
+		$data['numberOfFilesMatchingCriteria'] = $criteriaMatch;
+		$data['numberOfDeletedFiles'] = $deleteCounter;
+
+		if ($deleteCounter > 0) {
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+			$message->setTitle('Deleted ' . $deleteCounter . ' files from typo3temp/' . $subDirectory . '/');
+			$this->actionMessages[] = $message;
+		}
+
+		$data['selectedCondition'] = $condition;
+		$data['numberOfFiles'] = $numberOfFilesToDelete;
+		$data['selectedSubDirectory'] = $subDirectory;
+
+		// Set up sub directory data
+		$data['subDirectories'] = array(
+			'' => array(
+				'name' => '',
+				'filesNumber' => count(GeneralUtility::getFilesInDir($pathTypo3Temp)),
+			),
+		);
+		$directories = dir($pathTypo3Temp);
+		if (is_object($directories)) {
+			while ($entry = $directories->read()) {
+				if (is_dir($pathTypo3Temp . $entry) && $entry != '..' && $entry != '.') {
+					$data['subDirectories'][$entry]['name'] = $entry;
+					$data['subDirectories'][$entry]['filesNumber'] = count(GeneralUtility::getFilesInDir($pathTypo3Temp . $entry));
+					$data['subDirectories'][$entry]['selected'] = FALSE;
+					if ($entry === $data['selectedSubDirectory']) {
+						$data['subDirectories'][$entry]['selected'] = TRUE;
+					}
+				}
+			}
+		}
+		$data['numberOfFilesInSelectedDirectory'] = $data['subDirectories'][$data['selectedSubDirectory']]['filesNumber'];
+
+		return $data;
 	}
 }
 ?>

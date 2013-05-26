@@ -98,7 +98,6 @@ class Installer {
 	protected $menuitems = array(
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
-		'cleanup' => 'Clean up',
 		'logout' => 'Logout from Install Tool'
 	);
 
@@ -106,21 +105,6 @@ class Installer {
 	 * Constructor
 	 */
 	public function __construct() {
-		if (!$GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']) {
-			$this->outputErrorAndExit('Install Tool deactivated.<br />
-				You must enable it by setting a password in typo3conf/LocalConfiguration.php. If you insert the value below at array position \'BE\' \'installToolPassword\', the password will be \'joh316\':<br /><br />
-				\'bacb98acf97e0b6112b1d1b650b84971\'', 'Fatal error');
-		}
-
-		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-		header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-		header('Expires: 0');
-		header('Cache-Control: no-cache, must-revalidate');
-		header('Pragma: no-cache');
-
-		// ****************************
-		// Initializing incoming vars.
-		// ****************************
 		$this->INSTALL = GeneralUtility::_GP('TYPO3_INSTALL');
 
 		$this->redirect_url = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect_url'));
@@ -129,8 +113,6 @@ class Installer {
 			$allowedTypes = array(
 				'database',
 				'update',
-				'cleanup',
-				'typo3conf_edit',
 				'logout'
 			);
 			if (in_array($_GET['TYPO3_INSTALL']['type'], $allowedTypes)) {
@@ -152,136 +134,6 @@ class Installer {
 		if (!$this->session->hasSession()) {
 			$this->session->startSession();
 		}
-		if ($this->session->isAuthorized() || $this->checkPassword()) {
-			$this->passwordOK = 1;
-			$this->session->refreshSession();
-			$enableInstallToolFile = PATH_typo3conf . 'ENABLE_INSTALL_TOOL';
-			if (is_file($enableInstallToolFile)) {
-				// Extend the age of the ENABLE_INSTALL_TOOL file by one hour
-				@touch($enableInstallToolFile);
-			}
-			if ($this->redirect_url) {
-				\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirect_url);
-			}
-
-			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
-			$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
-				'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
-			);
-			$formProtection->injectInstallTool($this);
-
-		} else {
-			$this->loginForm();
-		}
-	}
-
-	/**
-	 * Returns TRUE if submitted password is ok.
-	 *
-	 * If password is ok, set session as "authorized".
-	 *
-	 * @return boolean TRUE if the submitted password was ok and session was
-	 */
-	protected function checkPassword() {
-		$p = GeneralUtility::_GP('password');
-		if ($p && md5($p) === $GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']) {
-			$this->session->setAuthorized();
-			// Sending warning email
-			$wEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
-			if ($wEmail) {
-				$subject = 'Install Tool Login at "' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '"';
-				$email_body = 'There has been an Install Tool login at TYPO3 site "' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '" (' . GeneralUtility::getIndpEnv('HTTP_HOST') . ') from remote address "' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '" (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')';
-				mail($wEmail, $subject, $email_body, 'From: TYPO3 Install Tool WARNING <>');
-			}
-			return TRUE;
-		} else {
-			// Bad password, send warning:
-			if ($p) {
-				$wEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
-				if ($wEmail) {
-					$subject = 'Install Tool Login ATTEMPT at \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\'';
-					$email_body = 'There has been an Install Tool login attempt at TYPO3 site \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\' (' . GeneralUtility::getIndpEnv('HTTP_HOST') . ').
-The MD5 hash of the last 5 characters of the password tried was \'' . substr(md5($p), -5) . '\'
-REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')';
-					mail($wEmail, $subject, $email_body, 'From: TYPO3 Install Tool WARNING <>');
-				}
-			}
-			return FALSE;
-		}
-	}
-
-	/**
-	 * Create the HTML for the login form
-	 *
-	 * Reads and fills the template.
-	 * Substitutes subparts when wrong password has been given
-	 * or the session has expired
-	 *
-	 * @return void
-	 */
-	protected function loginForm() {
-		$password = GeneralUtility::_GP('password');
-		$redirect_url = $this->redirect_url ? $this->redirect_url : $this->action;
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'LoginForm.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Password has been given, but this form is rendered again.
-		// This means the given password was wrong
-		$wrongPasswordSubPart = '';
-		if (!empty($password)) {
-			// Get the subpart for the wrong password
-			$wrongPasswordSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###WRONGPASSWORD###');
-			// Define the markers content
-			$wrongPasswordMarkers = array(
-				'passwordMessage' => 'The password you just tried has this md5-value:',
-				'password' => md5($password)
-			);
-			// Fill the markers in the subpart
-			$wrongPasswordSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($wrongPasswordSubPart, $wrongPasswordMarkers, '###|###', TRUE, TRUE);
-		}
-		// Session has expired
-		$sessionExpiredSubPart = '';
-		if (!$this->session->isAuthorized() && $this->session->isExpired()) {
-			// Get the subpart for the expired session message
-			$sessionExpiredSubPart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###SESSIONEXPIRED###');
-			// Define the markers content
-			$sessionExpiredMarkers = array(
-				'message' => 'Your Install Tool session has expired'
-			);
-			// Fill the markers in the subpart
-			$sessionExpiredSubPart = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($sessionExpiredSubPart, $sessionExpiredMarkers, '###|###', TRUE, TRUE);
-		}
-		// Substitute the subpart for the expired session in the template
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###SESSIONEXPIRED###', $sessionExpiredSubPart);
-		// Substitute the subpart for the wrong password in the template
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###WRONGPASSWORD###', $wrongPasswordSubPart);
-		// Define the markers content
-		$markers = array(
-			'siteName' => 'Site: ' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']),
-			'headTitle' => 'Login to TYPO3 ' . TYPO3_version . ' Install Tool',
-			'redirectUrl' => htmlspecialchars($redirect_url),
-			'enterPassword' => 'Password',
-			'login' => 'Login',
-			'message' => '
-				<p class="typo3-message message-information">
-					The Install Tool Password is <em>not</em> the admin password
-					of TYPO3.
-					<br />
-					The default password is <em>joh316</em>. Be sure to change it!
-					<br /><br />
-					If you don\'t know the current password, you can set a new
-					one by setting the value of
-					$TYPO3_CONF_VARS[\'BE\'][\'installToolPassword\'] in
-					typo3conf/LocalConfiguration.php to the md5() hash value of the
-					password you desire.
-				</p>
-			'
-		);
-		// Fill the markers in the template
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markers, '###|###', TRUE, TRUE);
-		// Send content to the page wrapper function
-		$this->output($this->outputWrapper($content));
 	}
 
 	/**
@@ -316,13 +168,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 			$actionObject->handle();
 			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
-			$this->output($this->outputWrapper($this->printAll()));
-			break;
-		case 'cleanup':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\CleanupManager');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
 			$this->output($this->outputWrapper($this->printAll()));
 			break;
 		case 'logout':
