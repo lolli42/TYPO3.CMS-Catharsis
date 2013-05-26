@@ -49,6 +49,9 @@ class CleanUp extends AbstractAction implements ActionInterface {
 		if (isset($this->postValues['set']['deleteCachedImageSizes'])) {
 			$this->actionMessages[] = $this->deleteCachedImageSizes();
 		}
+		if (isset($this->postValues['set']['resetBackendUserUc'])) {
+			$this->actionMessages[] = $this->resetBackendUserUc();
+		}
 
 		$database = $this->getDatabase();
 		$numberOfCachedImageSizes = intval($database->exec_SELECTcountRows('*', 'cache_imagesizes'));
@@ -71,6 +74,19 @@ class CleanUp extends AbstractAction implements ActionInterface {
 		$database->exec_TRUNCATEquery('cache_imagesizes');
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Cleared cached image sizes');
+		return $message;
+	}
+
+	/**
+	 * Reset uc field of all be_users to empty string
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function resetBackendUserUc() {
+		$database = $this->getDatabase();
+		$database->exec_UPDATEquery('be_users', '', array('uc' => ''));
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('Reset all backend users preferences');
 		return $message;
 	}
 

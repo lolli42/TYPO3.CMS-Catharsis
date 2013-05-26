@@ -212,49 +212,6 @@ class DatabaseAnalyzer extends AbstractAction {
 						}
 					}
 					break;
-				case 'UC':
-					if ($whichTables['be_users']) {
-						if (!strcmp($formValues['database_UC'], 1)) {
-							$this->getDatabase()->exec_UPDATEquery('be_users', '', array('uc' => ''));
-							$this->message($headCode, 'Clearing be_users.uc', '
-								<p>
-									Done.
-								</p>
-							', 1);
-						}
-						// Get the template file
-						$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'CheckTheDatabaseUc.html'));
-						// Get the template part from the file
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-						// Define the markers content
-						$contentMarkers = array(
-							'clearBeUsers' => 'Clear be_users preferences ("uc" field)'
-						);
-						// Fill the markers
-						$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $contentMarkers, '###|###', TRUE, FALSE);
-						$form = $this->getUpdateDbFormWrap($action_type, $content);
-						$this->message($headCode, 'Clear user preferences', '
-							<p>
-								If you press this button all backend users from
-								the tables be_users will have their user
-								preferences cleared (field \'uc\' set to an
-								empty string).
-								<br />
-								This may come in handy in rare cases where that
-								configuration may be corrupt.
-								<br />
-								Clearing this will clear all user settings from
-								the \'Setup\' module.
-							</p>
-						' . $form);
-					} else {
-						$this->message($headCode, 'Required table not in database', '
-							<p>
-								\'be_users\' must be a table in the database!
-							</p>
-						', 3);
-					}
-					break;
 				case 'cache':
 					$tableListArr = explode(',', 'cache_pages,cache_pagesection,cache_hash,cache_imagesizes,--div--,sys_log,sys_history,--div--,be_sessions,fe_sessions,fe_session_data' . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('indexed_search') ? ',--div--,index_words,index_rel,index_phash,index_grlist,index_section,index_fulltext' : '') . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('tt_products') ? ',--div--,sys_products_orders,sys_products_orders_mm_tt_products' : '') . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('direct_mail') ? ',--div--,sys_dmail_maillog' : ''));
 					if (is_array($formValues['database_clearcache'])) {
