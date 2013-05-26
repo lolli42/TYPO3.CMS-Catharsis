@@ -1,0 +1,59 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<f:if condition="{scalingImagesTested}">
+		<f:then>
+
+			<f:render partial="ControllerAction/TestSetup/AboutImageHandling" arguments="{_all}" />
+			<f:render partial="ControllerAction/TestSetup/VerifyTestResults" arguments="{_all}" />
+			<f:render partial="ControllerAction/TestSetup/CurrentConfiguration" arguments="{_all}" />
+
+			<p></p>
+
+			<h4>Scaling images</h4>
+
+			<p>
+				This shows how ImageMagick reacts when scaling transparent GIF and PNG files.
+			</p>
+
+			<f:for each="{testResults}" as="test">
+				<h4>{test.title}</h4>
+
+				<f:render partial="ControllerAction/TestSetup/DisplayTwinImage" arguments="{_all}"/>
+
+				<p></p>
+			</f:for>
+
+			<fieldset class="t3-install-form-submit">
+				<ol>
+					<li>
+						<button
+							type="submit"
+							name="install[set][testScalingImages]"
+						>
+							Test scaling images
+							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+						</button>
+					</li>
+				</ol>
+			</fieldset>
+		</f:then>
+		<f:else>
+			<h4>Scaling images</h4>
+			<fieldset class="t3-install-form-submit">
+				<ol>
+					<li>
+						<button
+							type="submit"
+							name="install[set][testScalingImages]"
+						>
+							Test scaling images again
+							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+						</button>
+					</li>
+				</ol>
+			</fieldset>
+		</f:else>
+	</f:if>
+</form>

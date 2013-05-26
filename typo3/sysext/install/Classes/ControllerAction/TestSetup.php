@@ -81,6 +81,19 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			}
 		}
 
+		if (isset($this->postValues['set']['testScalingImages'])) {
+			$this->view->assign('scalingImagesTested', TRUE);
+			if ($this->isImageMagickEnabledAndConfigured()) {
+				$actionMessages[] = $this->scaleImages();
+			} else {
+				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+				$message->setTitle('Writing gif and png image not executed');
+				$message->setMessage('Image handling is disabled or not configured.');
+				$actionMessages[] = $message;
+			}
+		}
+
 		$this->view->assign('actionMessages', $actionMessages);
 
 		$this->view->assign('imageConfiguration', $this->getImageConfiguration());
@@ -152,11 +165,11 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	protected function convertImageFormatsToJpg() {
 		$this->setUpDatabaseConnectionMock();
 		$imageProcessor = $this->initializeImageProcessor();
+		$parseTimeStart = GeneralUtility::milliseconds();
 
 		$inputFormatsToTest = array('jpg', 'gif', 'png', 'tif', 'bmp', 'pcx', 'tga', 'pdf', 'ai');
 
 		$testResults = array();
-		$parseTimeStart = GeneralUtility::milliseconds();
 		foreach ($inputFormatsToTest as $formatToTest) {
 			$result = array();
 			if (!GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $formatToTest)) {
@@ -177,11 +190,9 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			}
 			$testResults[] = $result;
 		}
-		$parseTimeEnd = GeneralUtility::milliseconds();
 
 		$this->view->assign('testResults', $testResults);
-
-		return $this->imageTestDoneMessage($parseTimeEnd - $parseTimeStart);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
 	}
 
 	/**
@@ -192,13 +203,12 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	public function writeGifAndPng() {
 		$this->setUpDatabaseConnectionMock();
 		$imageProcessor = $this->initializeImageProcessor();
+		$parseTimeStart = GeneralUtility::milliseconds();
 
 		$testResults = array(
 			'gif' => array(),
 			'png' => array(),
 		);
-
-		$parseTimeStart = GeneralUtility::milliseconds();
 
 		// Gif
 		$inputFile = $this->imageBasePath . 'TestInput/Test.gif';
@@ -238,11 +248,55 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		$testResults['png']['referenceFile'] = $this->imageBasePath . 'TestReference/Write-png.png';
 		$testResults['png']['command'] = $imageProcessor->IM_commands;
 
-		$parseTimeEnd = GeneralUtility::milliseconds();
+		$this->view->assign('testResults', $testResults);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
+	}
+
+	/**
+	 * Write gif and png test
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function scaleImages() {
+		$this->setUpDatabaseConnectionMock();
+		$imageProcessor = $this->initializeImageProcessor();
+		$parseTimeStart = GeneralUtility::milliseconds();
+
+		$testResults = array(
+			'gif-to-gif' => array(),
+			'png-to-png' => array(),
+			'gif-to-jpg' => array(),
+		);
+
+		$imageProcessor->IM_commands = array();
+		$inputFile = $this->imageBasePath . 'TestInput/Transparent.gif';
+		$imageProcessor->imageMagickConvert_forceFileNameBody = 'scale-gif';
+		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'gif', '150', '', '', '', array(), TRUE);
+		$testResults['gif-to-gif']['title'] = 'gif to gif';
+		$testResults['gif-to-gif']['outputFile'] = $imResult[3];
+		$testResults['gif-to-gif']['referenceFile'] = $this->imageBasePath . 'TestReference/Scale-gif.gif';
+		$testResults['gif-to-gif']['command'] = $imageProcessor->IM_commands;
+
+		$imageProcessor->IM_commands = array();
+		$inputFile = $this->imageBasePath . 'TestInput/Transparent.png';
+		$imageProcessor->imageMagickConvert_forceFileNameBody = 'scale-png';
+		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'png', '150', '', '', '', array(), TRUE);
+		$testResults['png-to-png']['title'] = 'png to png';
+		$testResults['png-to-png']['outputFile'] = $imResult[3];
+		$testResults['png-to-png']['referenceFile'] = $this->imageBasePath . 'TestReference/Scale-png.png';
+		$testResults['png-to-png']['command'] = $imageProcessor->IM_commands;
+
+		$imageProcessor->IM_commands = array();
+		$inputFile = $this->imageBasePath . 'TestInput/Transparent.gif';
+		$imageProcessor->imageMagickConvert_forceFileNameBody = 'scale-jpg';
+		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'jpg', '150', '', '', '', array(), TRUE);
+		$testResults['gif-to-jpg']['title'] = 'gif to jpg';
+		$testResults['gif-to-jpg']['outputFile'] = $imResult[3];
+		$testResults['gif-to-jpg']['referenceFile'] = $this->imageBasePath . 'TestReference/Scale-jpg.jpg';
+		$testResults['gif-to-jpg']['command'] = $imageProcessor->IM_commands;
 
 		$this->view->assign('testResults', $testResults);
-
-		return $this->imageTestDoneMessage($parseTimeEnd - $parseTimeStart);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
 	}
 
 	/**

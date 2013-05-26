@@ -29,14 +29,14 @@
 				</tr>
 				<tr>
 					<td>
-						{test.outputFile -> i:file.size()},
-						{test.outputFile -> i:file.imageDimension()}
-						x {test.outputFile -> i:file.imageDimension(dimension:'height')} pixel
-					</td>
-					<td>
 						{test.referenceFile -> i:file.size()},
 						{test.referenceFile -> i:file.imageDimension()}
 						x {test.referenceFile -> i:file.imageDimension(dimension:'height')} pixel
+					</td>
+					<td>
+						{test.outputFile -> i:file.size()},
+						{test.outputFile -> i:file.imageDimension()}
+						x {test.outputFile -> i:file.imageDimension(dimension:'height')} pixel
 					</td>
 				</tr>
 			</tbody>
