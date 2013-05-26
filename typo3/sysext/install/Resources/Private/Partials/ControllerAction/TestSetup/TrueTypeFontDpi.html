@@ -1,15 +1,10 @@
-<h4>True type font dpi settings</h4>
-
 <form method="post">
 	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<h4>True type font dpi settings</h4>
 	<f:if condition="{trueTypeFontDpiTested}">
-		<f:then>
-			<p>
-				If the text is exceeding the image borders you are using
-				Freetype 2 and need to set TYPO3_CONF_VARS[GFX][TTFdpi]=96.
-			</p>
-			<img src="../../../../typo3temp/installTool-createTrueTypeFontDpiTestImage.gif?{time}" />
-		</f:then>
+		<f:for each="{testResults}" as="test">
+			<f:render partial="ControllerAction/TestSetup/DisplayTwinImage" arguments="{_all}"/>
+		</f:for>
 	</f:if>
 	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testTrueTypeFontDpi', text:'Test true type font dpi'}"/>
 </form>

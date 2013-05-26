@@ -141,7 +141,9 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function createTrueTypeFontDpiTestImage() {
-		$image = @imagecreate(300, 50);
+		$parseTimeStart = GeneralUtility::milliseconds();
+
+		$image = @imagecreate(200, 50);
 		imagecolorallocate($image, 255, 255, 55);
 		$textColor = imagecolorallocate($image, 233, 14, 91);
 		@imagettftext(
@@ -152,12 +154,27 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			20,
 			$textColor,
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
-			'Testing true type support'
+			'Testing true type'
 		);
-		imagegif($image, PATH_site . 'typo3temp/installTool-createTrueTypeFontDpiTestImage.gif');
-		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
-		$message->setTitle('Created true type font dpi test image');
-		return $message;
+		$outputFile = PATH_site . 'typo3temp/installTool-createTrueTypeFontDpiTestImage.gif';
+		imagegif($image, $outputFile);
+
+		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+		$message->setTitle('True type font DPI settings');
+		$message->setMessage(
+			'If the text "Tesing true type" does not fit into the image, set TYPO3_CONF_VARS[GFX][TTFdpi] to 96'
+		);
+
+		$testResults = array();
+		$testResults['ttf'] = array();
+		$testResults['ttf']['message'] = $message;
+		$testResults['ttf']['title'] = '';
+		$testResults['ttf']['outputFile'] = $outputFile;
+		$testResults['ttf']['referenceFile'] = $this->imageBasePath . 'TestReference/Font.gif';
+
+		$this->view->assign('testResults', $testResults);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
 	}
 
 	/**
@@ -503,7 +520,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	protected function imageTestDoneMessage($parseTime = 0) {
 		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
-		$message->setTitle('Executed test image formats tests');
+		$message->setTitle('Executed image tests');
 		$message->setMessage('Parse time: ' . $parseTime . ' ms');
 		return $message;
 	}
