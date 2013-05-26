@@ -86,23 +86,15 @@ h1,
 }
 
 /* 4: Image processing */
-#t3-install-imageprocessingim dt,
-#t3-install-imageprocessingother dt,
-#t3-install-imageprocessingfileformats dt {
+.t3-install-imageprocessing dt {
 	float: left;
 	width: 19em;
 }
-
-#t3-install-imageprocessingim dd,
-#t3-install-imageprocessingother dd,
-#t3-install-imageprocessingfileformats dd {
+.t3-install-imageprocessing dd {
 	font-weight: bold;
 	padding-left: 19em;
 }
-
-#t3-install-imageprocessingim dd span,
-#t3-install-imageprocessingother dd span,
-#t3-install-imageprocessingfileformats dd span {
+.t3-install-imageprocessing dd span {
 	font-weight: normal;
 }
 

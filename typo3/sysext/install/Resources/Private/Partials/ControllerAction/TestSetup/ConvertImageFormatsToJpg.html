@@ -1,0 +1,116 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<f:if condition="{convertImageFormatsToJpgTested}">
+		<f:then>
+
+			<f:render partial="ControllerAction/TestSetup/AboutImageHandling" arguments="{_all}" />
+			<f:render partial="ControllerAction/TestSetup/VerifyTestResults" arguments="{_all}" />
+			<f:render partial="ControllerAction/TestSetup/CurrentConfiguration" arguments="{_all}" />
+
+			<p></p>
+
+			<h4>Convert image formats to jpg</h4>
+
+			<p>
+				This verifies that your ImageMagick installation is able to read the default
+				formats jpg, gif, png, tif, bmp, pcx, tga, pdf and ai. The tool 'identify' is
+				used to read the pixeldimensions of non-web formats and 'convert' is used to
+				read the image and convert it to jpg.
+			</p>
+
+			<div class="typo3-message message-notice">
+				<div class="header-container">
+					<div class="message-header">
+						<strong>Dark images</strong>
+					</div>
+				</div>
+				<div class="message-body">
+					In case the images appear remarkably darker than the reference images,
+					try to set [TYPO3_CONF_VARS][GFX][colorspace] = sRGB.
+				</div>
+			</div>
+			<p></p>
+
+			<f:for each="{testResults}" as="test">
+				<h4>Convert {test.format}</h4>
+
+				<f:if condition="{test.error}">
+					<f:then>
+						<i:statusMessage message="{test.error}"/>
+					</f:then>
+					<f:else>
+						<table class="t3-install-displaytwinimageimages">
+							<tbody>
+							<tr>
+								<td>
+									<img src="../../../../{test.referenceFile -> i:file.relativePath()}?{time}" />
+								</td>
+								<td>
+									<img src="../../../../{test.outputFile -> i:file.relativePath()}?{time}" />
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<strong>Reference</strong>
+								</td>
+								<td>
+									<strong>Your system</strong>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									{test.outputFile -> i:file.size()},
+									{test.outputFile -> i:file.imageDimension()}
+									x {test.outputFile -> i:file.imageDimension(dimension:'height')} pixel
+								</td>
+								<td>
+									{test.referenceFile -> i:file.size()},
+									{test.referenceFile -> i:file.imageDimension()}
+									x {test.referenceFile -> i:file.imageDimension(dimension:'height')} pixel
+								</td>
+							</tr>
+							</tbody>
+						</table>
+						<div class="t3-install-displaytwinimagetextarea">
+							{i:format.imageMagickCommands(commands:test.command)}
+						</div>
+					</f:else>
+				</f:if>
+
+				<p></p>
+			</f:for>
+
+			<fieldset class="t3-install-form-submit">
+				<ol>
+					<li>
+						<button
+							type="submit"
+							name="install[set][testConvertImageFormatsToJpg]"
+						>
+							Test image formats again
+							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+						</button>
+					</li>
+				</ol>
+			</fieldset>
+		</f:then>
+		<f:else>
+			<h4>Convert image formats to jpg</h4>
+			<fieldset class="t3-install-form-submit">
+				<ol>
+					<li>
+						<button
+							type="submit"
+							name="install[set][testConvertImageFormatsToJpg]"
+						>
+							Test image formats
+							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+						</button>
+					</li>
+				</ol>
+			</fieldset>
+		</f:else>
+	</f:if>
+</form>
