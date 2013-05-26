@@ -40,73 +40,7 @@ class CleanupManager extends AbstractAction {
 		$formValues = GeneralUtility::_GP('cleanupManager');
 
 		$headCode = 'Clean up your TYPO3 installation';
-		$this->message($headCode, 'Database cache tables', '
-			<p>
-				<strong>Clear cached image sizes</strong>
-				<br />
-				Clears the cache used for memorizing sizes of all images used in
-				your website. This information is cached in order to gain
-				performance and will be stored each time a new image is being
-				displayed in the frontend.
-			</p>
-			<p>
-				You should <em>Clear All Cache</em> in the backend after
-				clearing this cache.
-			</p>
-		');
-		$sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
-		$tables = $sqlHandler->getListOfTables();
-		$action = $formValues['cleanup_type'];
-		if (($action == 'cache_imagesizes' || $action == 'all') && isset($tables['cache_imagesizes'])) {
-			$this->getDatabase()->exec_TRUNCATEquery('cache_imagesizes');
-		}
-		$cleanupType = array(
-			'all' => 'Clean up everything'
-		);
-		// Get cache_imagesizes info
-		if (isset($tables['cache_imagesizes'])) {
-			$cleanupType['cache_imagesizes'] = 'Clear cached image sizes only';
-			$cachedImageSizesCounter = intval($this->getDatabase()->exec_SELECTcountRows('*', 'cache_imagesizes'));
-		} else {
-			$this->message($headCode, 'Table cache_imagesizes does not exist!', '
-				<p>
-					The table cache_imagesizes was not found. Please check your
-					database settings in Basic Configuration and compare your
-					table definition with the Database Analyzer.
-				</p>
-			', 2);
-			$cachedImageSizesCounter = 'unknown';
-		}
-		// Get the template file
-		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'CleanUpManager.html'));
-		// Get the template part from the file
-		$template = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###TEMPLATE###');
-		// Get the subpart for the 'Clean up' dropdown
-		$cleanUpOptionsSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($template, '###CLEANUPOPTIONS###');
-		$cleanUpOptions = array();
-		foreach ($cleanupType as $cleanUpKey => $cleanUpValue) {
-			// Define the markers content
-			$cleanUpMarkers = array(
-				'value' => htmlspecialchars($cleanUpKey),
-				'data' => htmlspecialchars($cleanUpValue)
-			);
-			// Fill the markers in the subpart
-			$cleanUpOptions[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($cleanUpOptionsSubpart, $cleanUpMarkers, '###|###', TRUE, FALSE);
-		}
-		// Substitute the subpart for the 'Clean up' dropdown
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($template, '###CLEANUPOPTIONS###', implode(LF, $cleanUpOptions));
-		// Define the markers content
-		$markers = array(
-			'numberCached' => 'Number cached image sizes:',
-			'number' => $cachedImageSizesCounter,
-			'action' => 'index.php?TYPO3_INSTALL[type]=cleanup',
-			'cleanUp' => 'Clean up',
-			'execute' => 'Execute'
-		);
-		// Fill the markers
-		$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
-		// Add the content to the message array
-		$this->message($headCode, 'Statistics', $content, 1);
+
 		$this->message($headCode, 'typo3temp/ folder', '
 			<p>
 				TYPO3 uses this directory for temporary files, mainly processed

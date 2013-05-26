@@ -1,0 +1,27 @@
+<h4>Clear cached image sizes</h4>
+
+<p>
+	Clear the cache used for memorizing sizes of all images used in your website.
+	This information is cached in order to gain performance and will be stored
+	each time a new image is being displayed in the frontend.
+</p>
+<p>
+	You should Clear All Cache in the backend after clearing this cache.
+</p>
+
+<dl class="t3-install-definitionlist">
+	<dt>
+		Number of cached image sizes:
+	</dt>
+	<dd>
+		{numberOfCachedImageSizes}
+	</dd>
+</dl>
+
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<f:render
+		partial="ControllerAction/Common/SubmitButton"
+		arguments="{name:'deleteCachedImageSizes', text:'Delete cached image sizes'}"
+	/>
+</form>
