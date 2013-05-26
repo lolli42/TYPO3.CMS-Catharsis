@@ -92,6 +92,11 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			}
 		}
 
+		if (isset($this->postValues['set']['testGdlib'])) {
+			$this->view->assign('gdlibTested', TRUE);
+			$actionMessages[] = $this->gdlib();
+		}
+
 		$this->view->assign('actionMessages', $actionMessages);
 
 		$this->view->assign('imageConfiguration', $this->getImageConfiguration());
@@ -307,6 +312,11 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		$imageProcessor = $this->initializeImageProcessor();
 		$parseTimeStart = GeneralUtility::milliseconds();
 
+		$testResults = array(
+			'combine1' => array(),
+			'combine2' => array(),
+		);
+
 		$inputFile = $this->imageBasePath . 'TestInput/BackgroundGreen.gif';
 		$overlayFile = $this->imageBasePath . 'TestInput/Test.jpg';
 		$maskFile = $this->imageBasePath . 'TestInput/MaskBlackWhite.gif';
@@ -337,6 +347,154 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	}
 
 	/**
+	 * Test gdlib functions
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function gdlib() {
+		$this->setUpDatabaseConnectionMock();
+		$imageProcessor = $this->initializeImageProcessor();
+		$parseTimeStart = GeneralUtility::milliseconds();
+		$gifOrPng = $imageProcessor->gifExtension;
+		$testResults = array();
+
+		// GD with simple box
+		$imageProcessor->IM_commands = array();
+		$image = imagecreatetruecolor(170, 136);
+		$backgroundColor = ImageColorAllocate($image, 0, 0, 0);
+		ImageFilledRectangle($image, 0, 0, 170, 136, $backgroundColor);
+		$workArea = array(0, 0, 170, 136);
+		$conf = array(
+			'dimensions' => '10,50,150,36',
+			'color' => 'olive',
+		);
+		$imageProcessor->makeBox($image, $conf, $workArea);
+		$outputFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix
+			. GeneralUtility::shortMD5('gdSimple') . '.' . $gifOrPng;
+		$imageProcessor->ImageWrite($image, $outputFile);
+		$result = $imageProcessor->getImageDimensions($outputFile);
+		$testResults['simple'] = array();
+		$testResults['simple']['title'] = 'Create simple image';
+		$testResults['simple']['outputFile'] = $result[3];
+		$testResults['simple']['referenceFile'] = $this->imageBasePath . 'TestReference/Gdlib-simple.' . $gifOrPng;
+
+		// GD from image with box
+		$imageProcessor->IM_commands = array();
+		$inputFile = $this->imageBasePath . 'TestInput/Test.' . $gifOrPng;
+		$image = $imageProcessor->imageCreateFromFile($inputFile);
+		$workArea = array(0, 0, 170, 136);
+		$conf = array(
+			'dimensions' => '10,50,150,36',
+			'color' => 'olive',
+		);
+		$imageProcessor->makeBox($image, $conf, $workArea);
+		$outputFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix
+			. GeneralUtility::shortMD5('gdBox') . '.' . $gifOrPng;
+		$imageProcessor->ImageWrite($image, $outputFile);
+		$result = $imageProcessor->getImageDimensions($outputFile);
+		$testResults['box'] = array();
+		$testResults['box']['title'] = 'Create image from file';
+		$testResults['box']['outputFile'] = $result[3];
+		$testResults['box']['referenceFile'] = $this->imageBasePath . 'TestReference/Gdlib-box.' . $gifOrPng;
+
+		// GD with text
+		$imageProcessor->IM_commands = array();
+		$image = imagecreatetruecolor(170, 136);
+		$backgroundColor = ImageColorAllocate($image, 128, 128, 150);
+		ImageFilledRectangle($image, 0, 0, 170, 136, $backgroundColor);
+		$workArea = array(0, 0, 170, 136);
+		$conf = array(
+			'iterations' => 1,
+			'angle' => 0,
+			'antiAlias' => 1,
+			'text' => 'HELLO WORLD',
+			'fontColor' => '#003366',
+			'fontSize' => 18,
+			'fontFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			'offset' => '17,40',
+		);
+		$conf['BBOX'] = $imageProcessor->calcBBox($conf);
+		$imageProcessor->makeText($image, $conf, $workArea);
+		$outputFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix .
+			GeneralUtility::shortMD5('gdText') . '.' . $gifOrPng;
+		$imageProcessor->ImageWrite($image, $outputFile);
+		$result = $imageProcessor->getImageDimensions($outputFile);
+		$testResults['text'] = array();
+		$testResults['text']['title'] = 'Render text with TrueType font';
+		$testResults['text']['outputFile'] = $result[3];
+		$testResults['text']['referenceFile'] = $this->imageBasePath . 'TestReference/Gdlib-text.' . $gifOrPng;
+
+		// GD with text, niceText
+		$testResults['niceText'] = array();
+		if ($this->isImageMagickEnabledAndConfigured()) {
+			// Warning: Re-uses $conf from above!
+			$conf['offset'] = '17,65';
+			$conf['niceText'] = 1;
+			$imageProcessor->makeText($image, $conf, $workArea);
+			$outputFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix .
+				GeneralUtility::shortMD5('gdNiceText') . '.' . $gifOrPng;
+			$imageProcessor->ImageWrite($image, $outputFile);
+			$result = $imageProcessor->getImageDimensions($outputFile);
+			$testResults['niceText']['title'] = 'Render text with TrueType font using \'niceText\' option';
+			$testResults['niceText']['outputFile'] = $result[3];
+			$testResults['niceText']['referenceFile'] = $this->imageBasePath . 'TestReference/Gdlib-niceText.' . $gifOrPng;
+			$testResults['niceText']['commands'] = $imageProcessor->IM_commands;
+			/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+			$message->setTitle('Note on \'niceText\'');
+			$message->setMessage(
+				'\'niceText\' is a concept that tries to improve the antialiasing of the rendered type by'
+				. ' actually rendering the textstring in double size on a black/white mask, downscaling the mask'
+				. ' and masking the text onto the image through this mask. This involves'
+				. ' ImageMagick \'combine\'/\'composite\' and \'convert\'.'
+				. ' <br />If the image has another background color than the image above (eg. dark background'
+				. ' color with light text) then you will have to set TYPO3_CONF_VARS[GFX][im_imvMaskState]=1'
+			);
+			$testResults['niceText']['message'] = $message;
+		} else {
+			$result['niceText']['error'] = $this->imageMagickDisabledMessage();
+		}
+
+		// GD with text, niceText, shadow
+		$testResults['shadow'] = array();
+		if ($this->isImageMagickEnabledAndConfigured()) {
+			// Warning: Re-uses $conf from above!
+			$conf['offset'] = '17,90';
+			$conf['niceText'] = 1;
+			$conf['shadow.'] = array(
+				'offset' => '2,2',
+				'blur' => $imageProcessor->V5_EFFECTS ? '20' : '90',
+				'opacity' => '50',
+				'color' => 'black'
+			);
+			// Warning: Re-uses $image from above!
+			$imageProcessor->makeShadow($image, $conf['shadow.'], $workArea, $conf);
+			$imageProcessor->makeText($image, $conf, $workArea);
+			$outputFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix . GeneralUtility::shortMD5('GDwithText-niceText-shadow') . '.' . $gifOrPng;
+			$imageProcessor->ImageWrite($image, $outputFile);
+			$result = $imageProcessor->getImageDimensions($outputFile);
+			$testResults['shadow']['title'] = 'Render \'niceText\' with a shadow under';
+			$testResults['shadow']['outputFile'] = $result[3];
+			$testResults['shadow']['referenceFile'] = $this->imageBasePath . 'TestReference/Gdlib-shadow.' . $gifOrPng;
+			$testResults['shadow']['commands'] = $imageProcessor->IM_commands;
+			/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+			$message->setTitle('Note on \'shadow\'');
+			$message->setMessage(
+				'This test makes sense only if the above test had a correct output. But if so, you may not see'
+				. ' a soft dropshadow from the third text string as you should. In that case you are most likely'
+				. ' using ImageMagick 5 and should set the flag TYPO3_CONF_VARS[GFX][im_v5effects].'
+			);
+			$testResults['shadow']['message'] = $message;
+		} else {
+			$result['shadow']['error'] = $this->imageMagickDisabledMessage();
+		}
+
+		$this->view->assign('testResults', $testResults);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
+	}
+
+	/**
 	 * Create a 'image test was done' message
 	 *
 	 * @param int $parseTime Parse time
@@ -359,7 +517,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 		$message->setTitle('Tests not executed');
-		$message->setMessage('Image handling is disabled or not configured.');
+		$message->setMessage('ImageMagick / GraphicsMagick handling is disabled or not configured.');
 		return $message;
 	}
 

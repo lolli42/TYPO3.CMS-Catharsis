@@ -98,7 +98,6 @@ class Installer {
 	protected $menuitems = array(
 		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
-		'images' => 'Image Processing',
 		'cleanup' => 'Clean up',
 		'logout' => 'Logout from Install Tool'
 	);
@@ -130,7 +129,6 @@ class Installer {
 			$allowedTypes = array(
 				'database',
 				'update',
-				'images',
 				'cleanup',
 				'typo3conf_edit',
 				'logout'
@@ -304,14 +302,6 @@ REMOTE_ADDR was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\' (' . Gener
 		}
 
 		switch ($this->INSTALL['type']) {
-		case 'images':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\ImageProcessing');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
-			$this->output($this->outputWrapper($this->printAll()));
-			break;
 		case 'database':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\DatabaseAnalyzer');
