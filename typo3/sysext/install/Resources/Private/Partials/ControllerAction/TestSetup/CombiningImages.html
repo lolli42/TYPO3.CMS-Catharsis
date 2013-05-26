@@ -2,18 +2,24 @@
 
 <form method="post">
 	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
-	<f:if condition="{scalingImagesTested}">
+	<f:if condition="{combiningImagesTested}">
 		<f:then>
+
 			<f:render partial="ControllerAction/TestSetup/AboutImageHandling" arguments="{_all}" />
 			<f:render partial="ControllerAction/TestSetup/VerifyTestResults" arguments="{_all}" />
 			<f:render partial="ControllerAction/TestSetup/CurrentConfiguration" arguments="{_all}" />
 
 			<p></p>
 
-			<h4>Scaling images</h4>
+			<h4>Combining images</h4>
 
 			<p>
-				This shows how ImageMagick reacts when scaling transparent GIF and PNG files.
+				This verifies that the ImageMagick tool, 'combine'/'composite', is able to
+				combine two images through a grayscale mask.
+			</p>
+			<p>
+				If the masking seems to work but inverted, that just means you'll have to make
+				sure the invert flag is set (some combination of im_negate_mask/im_imvMaskState)
 			</p>
 
 			<f:for each="{testResults}" as="test">
@@ -21,8 +27,8 @@
 			</f:for>
 		</f:then>
 		<f:else>
-			<h4>Scaling images</h4>
+			<h4>Combining images</h4>
 		</f:else>
 	</f:if>
-	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testScalingImages', text:'Test scaling images'}"/>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'testCombiningImages', text:'Test combining images'}"/>
 </form>

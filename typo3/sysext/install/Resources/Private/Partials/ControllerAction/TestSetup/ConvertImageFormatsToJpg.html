@@ -34,9 +34,7 @@
 			<p></p>
 
 			<f:for each="{testResults}" as="test">
-				<h4>Convert {test.format}</h4>
 				<f:render partial="ControllerAction/TestSetup/DisplayTwinImage" arguments="{_all}"/>
-				<p></p>
 			</f:for>
 		</f:then>
 		<f:else>

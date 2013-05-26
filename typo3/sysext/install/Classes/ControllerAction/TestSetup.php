@@ -50,6 +50,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		if (isset($this->postValues['set']['testMail'])) {
 			$actionMessages[] = $this->sendTestMail();
 		}
+
 		if (isset($this->postValues['set']['testTrueTypeFontDpi'])) {
 			$this->view->assign('trueTypeFontDpiTested', TRUE);
 			$actionMessages[] = $this->createTrueTypeFontDpiTestImage();
@@ -60,11 +61,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			if ($this->isImageMagickEnabledAndConfigured()) {
 				$actionMessages[] = $this->convertImageFormatsToJpg();
 			} else {
-				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
-				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$message->setTitle('Convert image formats tests not executed');
-				$message->setMessage('Image handling is disabled or not configured.');
-				$actionMessages[] = $message;
+				$actionMessages[] = $this->imageMagickDisabledMessage();
 			}
 		}
 
@@ -73,11 +70,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			if ($this->isImageMagickEnabledAndConfigured()) {
 				$actionMessages[] = $this->writeGifAndPng();
 			} else {
-				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
-				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$message->setTitle('Writing gif and png image not executed');
-				$message->setMessage('Image handling is disabled or not configured.');
-				$actionMessages[] = $message;
+				$actionMessages[] = $this->imageMagickDisabledMessage();
 			}
 		}
 
@@ -86,11 +79,16 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			if ($this->isImageMagickEnabledAndConfigured()) {
 				$actionMessages[] = $this->scaleImages();
 			} else {
-				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
-				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$message->setTitle('Writing gif and png image not executed');
-				$message->setMessage('Image handling is disabled or not configured.');
-				$actionMessages[] = $message;
+				$actionMessages[] = $this->imageMagickDisabledMessage();
+			}
+		}
+
+		if (isset($this->postValues['set']['testCombiningImages'])) {
+			$this->view->assign('combiningImagesTested', TRUE);
+			if ($this->isImageMagickEnabledAndConfigured()) {
+				$actionMessages[] = $this->combineImages();
+			} else {
+				$actionMessages[] = $this->imageMagickDisabledMessage();
 			}
 		}
 
@@ -183,7 +181,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 				$inputFile = $this->imageBasePath . 'TestInput/Test.' . $formatToTest;
 				$imageProcessor->imageMagickConvert_forceFileNameBody = 'read-' . $formatToTest;
 				$imResult = $imageProcessor->imageMagickConvert($inputFile, 'jpg', '170', '', '', '', array(), TRUE);
-				$result['format'] = $formatToTest;
+				$result['title'] = 'Read ' . $formatToTest;
 				$result['outputFile'] = $imResult[3];
 				$result['referenceFile'] = $this->imageBasePath . 'TestReference/Read-' . $formatToTest . '.jpg';
 				$result['command'] = $imageProcessor->IM_commands;
@@ -200,7 +198,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	 *
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
-	public function writeGifAndPng() {
+	protected function writeGifAndPng() {
 		$this->setUpDatabaseConnectionMock();
 		$imageProcessor = $this->initializeImageProcessor();
 		$parseTimeStart = GeneralUtility::milliseconds();
@@ -233,7 +231,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			$message->setTitle('Gif compression not enabled by [GFX][gif_compress]');
 		}
 		$testResults['gif']['message'] = $message;
-		$testResults['gif']['format'] = 'gif';
+		$testResults['gif']['title'] = 'Write gif';
 		$testResults['gif']['outputFile'] = $imResult[3];
 		$testResults['gif']['referenceFile'] = $this->imageBasePath . 'TestReference/Write-gif.gif';
 		$testResults['gif']['command'] = $imageProcessor->IM_commands;
@@ -243,7 +241,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		$imageProcessor->IM_commands = array();
 		$imageProcessor->imageMagickConvert_forceFileNameBody = 'write-png';
 		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'png', '', '', '', '', array(), TRUE);
-		$testResults['png']['format'] = 'png';
+		$testResults['png']['title'] = 'Write png';
 		$testResults['png']['outputFile'] = $imResult[3];
 		$testResults['png']['referenceFile'] = $this->imageBasePath . 'TestReference/Write-png.png';
 		$testResults['png']['command'] = $imageProcessor->IM_commands;
@@ -300,6 +298,47 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	}
 
 	/**
+	 * Combine multiple images into one test
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function combineImages() {
+		$this->setUpDatabaseConnectionMock();
+		$imageProcessor = $this->initializeImageProcessor();
+		$parseTimeStart = GeneralUtility::milliseconds();
+
+		$inputFile = $this->imageBasePath . 'TestInput/BackgroundGreen.gif';
+		$overlayFile = $this->imageBasePath . 'TestInput/Test.jpg';
+		$maskFile = $this->imageBasePath . 'TestInput/MaskBlackWhite.gif';
+		$resultFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix
+			. GeneralUtility::shortMD5(($imageProcessor->alternativeOutputKey . 'combine1')) . '.jpg';
+		$imageProcessor->combineExec($inputFile, $overlayFile, $maskFile, $resultFile, TRUE);
+		$result = $imageProcessor->getImageDimensions($resultFile);
+		$testResults['combine1']['title'] = 'Combine using a GIF mask with only black and white';
+		$testResults['combine1']['outputFile'] = $result[3];
+		$testResults['combine1']['referenceFile'] = $this->imageBasePath . 'TestReference/Combine-1.jpg';
+		$testResults['combine1']['command'] = $imageProcessor->IM_commands;
+
+		$imageProcessor->IM_commands = array();
+		$inputFile = $this->imageBasePath . 'TestInput/BackgroundCombine.jpg';
+		$overlayFile = $this->imageBasePath . 'TestInput/Test.jpg';
+		$maskFile = $this->imageBasePath . 'TestInput/MaskCombine.jpg';
+		$resultFile = $imageProcessor->tempPath . $imageProcessor->filenamePrefix
+			. GeneralUtility::shortMD5(($imageProcessor->alternativeOutputKey . 'combine2')) . '.jpg';
+		$imageProcessor->combineExec($inputFile, $overlayFile, $maskFile, $resultFile, TRUE);
+		$result = $imageProcessor->getImageDimensions($resultFile);
+		$testResults['combine2']['title'] = 'Combine using a JPG mask with graylevels';
+		$testResults['combine2']['outputFile'] = $result[3];
+		$testResults['combine2']['referenceFile'] = $this->imageBasePath . 'TestReference/Combine-2.jpg';
+		$testResults['combine2']['command'] = $imageProcessor->IM_commands;
+
+		$this->view->assign('testResults', $testResults);
+		return $this->imageTestDoneMessage(GeneralUtility::milliseconds() - $parseTimeStart);
+	}
+
+	/**
+	 * Create a 'image test was done' message
+	 *
 	 * @param int $parseTime Parse time
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
@@ -308,6 +347,19 @@ class TestSetup extends AbstractAction implements ActionInterface {
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Executed test image formats tests');
 		$message->setMessage('Parse time: ' . $parseTime . ' ms');
+		return $message;
+	}
+
+	/**
+	 * Create a 'imageMagick disabled' message
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function imageMagickDisabledMessage() {
+		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+		$message->setTitle('Tests not executed');
+		$message->setMessage('Image handling is disabled or not configured.');
 		return $message;
 	}
 
