@@ -62,7 +62,20 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			} else {
 				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$message->setTitle('Test image formats tests not executed');
+				$message->setTitle('Convert image formats tests not executed');
+				$message->setMessage('Image handling is disabled or not configured.');
+				$actionMessages[] = $message;
+			}
+		}
+
+		if (isset($this->postValues['set']['testWriteGifAndPng'])) {
+			$this->view->assign('writeGifAndPngTested', TRUE);
+			if ($this->isImageMagickEnabledAndConfigured()) {
+				$actionMessages[] = $this->writeGifAndPng();
+			} else {
+				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+				$message->setTitle('Writing gif and png image not executed');
 				$message->setMessage('Image handling is disabled or not configured.');
 				$actionMessages[] = $message;
 			}
@@ -134,23 +147,13 @@ class TestSetup extends AbstractAction implements ActionInterface {
 	/**
 	 * Create jpg from various image formats using IM / GM
 	 *
-	 * @return array Test results
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function convertImageFormatsToJpg() {
 		$this->setUpDatabaseConnectionMock();
 		$imageProcessor = $this->initializeImageProcessor();
 
-		$inputFormatsToTest = array(
-			'jpg',
-			'gif',
-			'png',
-			'tif',
-			'bmp',
-			'pcx',
-			'tga',
-			'pdf',
-			'ai',
-		);
+		$inputFormatsToTest = array('jpg', 'gif', 'png', 'tif', 'bmp', 'pcx', 'tga', 'pdf', 'ai');
 
 		$testResults = array();
 		$parseTimeStart = GeneralUtility::milliseconds();
@@ -160,19 +163,13 @@ class TestSetup extends AbstractAction implements ActionInterface {
 				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\WarningStatus');
 				$message->setTitle('Skipped test');
-				$message->setMessage(
-					'Handling format ' . $formatToTest . ' must be'
-					. ' enabled in TYPO3_CONF_VARS[\'GFX\'][\'imagefile_ext\']'
-				);
+				$message->setMessage('Handling format ' . $formatToTest . ' must be enabled in TYPO3_CONF_VARS[\'GFX\'][\'imagefile_ext\']');
 				$result['error'] = $message;
 			} else {
 				$imageProcessor->IM_commands = array();
-
 				$inputFile = $this->imageBasePath . 'TestInput/Test.' . $formatToTest;
 				$imageProcessor->imageMagickConvert_forceFileNameBody = 'read-' . $formatToTest;
 				$imResult = $imageProcessor->imageMagickConvert($inputFile, 'jpg', '170', '', '', '', array(), TRUE);
-
-
 				$result['format'] = $formatToTest;
 				$result['outputFile'] = $imResult[3];
 				$result['referenceFile'] = $this->imageBasePath . 'TestReference/Read-' . $formatToTest . '.jpg';
@@ -181,15 +178,82 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			$testResults[] = $result;
 		}
 		$parseTimeEnd = GeneralUtility::milliseconds();
-		$parseTime = $parseTimeEnd - $parseTimeStart;
 
 		$this->view->assign('testResults', $testResults);
 
+		return $this->imageTestDoneMessage($parseTimeEnd - $parseTimeStart);
+	}
+
+	/**
+	 * Write gif and png test
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	public function writeGifAndPng() {
+		$this->setUpDatabaseConnectionMock();
+		$imageProcessor = $this->initializeImageProcessor();
+
+		$testResults = array(
+			'gif' => array(),
+			'png' => array(),
+		);
+
+		$parseTimeStart = GeneralUtility::milliseconds();
+
+		// Gif
+		$inputFile = $this->imageBasePath . 'TestInput/Test.gif';
+		$imageProcessor->imageMagickConvert_forceFileNameBody = 'write-gif';
+		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'gif', '', '', '', '', array(), TRUE);
+		if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gif_compress']) {
+			clearstatcache();
+			$previousSize = GeneralUtility::formatSize(filesize($imResult[3]));
+			$methodUsed = GeneralUtility::gif_compress($imResult[3], '');
+			clearstatcache();
+			$compressedSize = GeneralUtility::formatSize(filesize($imResult[3]));
+			/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+			$message->setTitle('Compressed gif');
+			$message->setMessage(
+				'Method used by compress: ' . $methodUsed . '<br />'
+				. ' Previous filesize: ' . $previousSize . '. Current filesize:' . $compressedSize
+			);
+		} else {
+			/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+			$message->setTitle('Gif compression not enabled by [GFX][gif_compress]');
+		}
+		$testResults['gif']['message'] = $message;
+		$testResults['gif']['format'] = 'gif';
+		$testResults['gif']['outputFile'] = $imResult[3];
+		$testResults['gif']['referenceFile'] = $this->imageBasePath . 'TestReference/Write-gif.gif';
+		$testResults['gif']['command'] = $imageProcessor->IM_commands;
+
+		// Png
+		$inputFile = $this->imageBasePath . 'TestInput/Test.png';
+		$imageProcessor->IM_commands = array();
+		$imageProcessor->imageMagickConvert_forceFileNameBody = 'write-png';
+		$imResult = $imageProcessor->imageMagickConvert($inputFile, 'png', '', '', '', '', array(), TRUE);
+		$testResults['png']['format'] = 'png';
+		$testResults['png']['outputFile'] = $imResult[3];
+		$testResults['png']['referenceFile'] = $this->imageBasePath . 'TestReference/Write-png.png';
+		$testResults['png']['command'] = $imageProcessor->IM_commands;
+
+		$parseTimeEnd = GeneralUtility::milliseconds();
+
+		$this->view->assign('testResults', $testResults);
+
+		return $this->imageTestDoneMessage($parseTimeEnd - $parseTimeStart);
+	}
+
+	/**
+	 * @param int $parseTime Parse time
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function imageTestDoneMessage($parseTime = 0) {
 		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Executed test image formats tests');
 		$message->setMessage('Parse time: ' . $parseTime . ' ms');
-
 		return $message;
 	}
 
