@@ -34,7 +34,7 @@ For now, important changes that affect backwards compatibility must be documente
 
 Feel free to contact us if you want to do bigger things here, please send pull requests from your fork. This fork is leaded as a benevolent dictatorship, trusted and coordinated people have merge rights.
 
-The travis-ci.org test execution of every commit and pull request can be found at https://travis-ci.org/lolli42/TYPO3-CMS-Catharsis
+The travis-ci.org test execution of every commit and pull request can be found at https://travis-ci.org/lolli42/TYPO3.CMS-Catharsis
 
 Current contributors with merge rights:
 * lolli42 - Christian Kuhn
