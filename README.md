@@ -1,4 +1,4 @@
-TYPO3-CMS-Catharsis
+TYPO3.CMS-Catharsis
 ===================
 
 Vision / Catharsis fork of TYPO3 CMS
