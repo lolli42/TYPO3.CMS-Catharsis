@@ -129,6 +129,7 @@ class Check {
 		$statusArray[] = $this->checkGdLibFreeTypeSupport();
 		$statusArray[] = $this->checkPhpMagicQuotes();
 		$statusArray[] = $this->checkRegisterGlobals();
+		$statusArray[] = $this->isTrueTypeFontDpiStandard();
 		return $statusArray;
 	}
 
@@ -1034,6 +1035,44 @@ class Check {
 				' in your environment. Install it.'
 			);
 		}
+		return $status;
+	}
+
+	/**
+	 * Create true type font test image
+	 *
+	 * @return Status\OkStatus|NoticeStatus
+	 */
+	protected function isTrueTypeFontDpiStandard() {
+		// 20 Pixels at 96 DPI - the DefaultConfiguration
+		$fontSize = (20 / 96 * 72);
+
+		$textDimensions = @imageftbbox(
+			$fontSize,
+			0,
+			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			'Testing true type support'
+		);
+		$fontBoxWidth = $textDimensions[2] - $textDimensions[0];
+
+		if ($fontBoxWidth < 300 && $fontBoxWidth > 200) {
+			$status = new Status\OkStatus();
+			$status->setTitle('FreeType True Type Font DPI');
+			$status->setMessage('Fonts are rendered by FreeType library. ' .
+					'We need to ensure that the final dimensions are as expected. ' .
+					'This server renderes fonts based on 96 DPI correctly'
+			);
+
+		} else {
+			$status = new Status\NoticeStatus();
+			$status->setTitle('FreeType True Type Font DPI');
+			$status->setMessage('Fonts are rendered by FreeType library. ' .
+					'This server renders fonts not as expected. ' .
+					'Please configure FreeType or TYPO3_CONF_VARS[GFX][TTFdpi]'
+			);
+
+		}
+
 		return $status;
 	}
 
