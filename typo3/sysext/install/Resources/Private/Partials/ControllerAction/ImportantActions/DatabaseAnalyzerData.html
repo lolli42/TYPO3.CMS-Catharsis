@@ -1,0 +1,11 @@
+<h4>Database analyzer</h4>
+
+<p>
+	Definition suggestions
+</p>
+<form method="post">
+	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
+	<input type="hidden" name="install[set][databaseAnalyzerAnalyze]" />
+	<f:debug>{databaseAnalyzerData}</f:debug>
+	<f:render partial="ControllerAction/Common/SubmitButton" arguments="{name:'databaseAnalyzerExecute', text:'Execute'}"/>
+</form>

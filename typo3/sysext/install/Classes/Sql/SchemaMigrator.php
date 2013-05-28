@@ -36,6 +36,11 @@ namespace TYPO3\CMS\Install\Sql;
 class SchemaMigrator {
 
 	/**
+	 * @const Maximum field width of MYSQL
+	 */
+	const MYSQL_MAXIMUM_FIELD_WIDTH = 64;
+
+	/**
 	 * @var string Prefix of deleted tables
 	 */
 	protected $deletedPrefixKey = 'zzz_deleted_';
@@ -51,8 +56,6 @@ class SchemaMigrator {
 	 */
 	protected $character_sets = array();
 
-	// Maximum field width of MYSQL
-	const MYSQL_MAXIMUM_FIELD_WIDTH = 64;
 	/**
 	 * Constructor function
 	 */

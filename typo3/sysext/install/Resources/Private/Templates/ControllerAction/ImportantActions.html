@@ -12,6 +12,16 @@
 	<f:render partial="ControllerAction/ImportantActions/SystemInformation" arguments="{_all}" />
 	<hr />
 
+	<f:if condition="{databaseAnalyzerData}">
+		<f:then>
+			<f:render partial="ControllerAction/ImportantActions/DatabaseAnalyzerData" arguments="{_all}"/>
+		</f:then>
+		<f:else>
+			<f:render partial="ControllerAction/ImportantActions/DatabaseAnalyzerButton" arguments="{_all}"/>
+		</f:else>
+	</f:if>
+	<hr />
+
 	<f:render partial="ControllerAction/ImportantActions/NewInstallToolPassword" arguments="{_all}"/>
 	<hr />
 
@@ -22,5 +32,4 @@
 	<hr />
 
 	<f:render partial="ControllerAction/ImportantActions/CreateAdministrator" arguments="{_all}"/>
-	<hr />
 </f:section>

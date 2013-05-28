@@ -53,6 +53,12 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 		if (isset($this->postValues['set']['createAdministrator'])) {
 			$actionMessages[] = $this->createAdministrator();
 		}
+		if (isset($this->postValues['set']['databaseAnalyzerExecute'])) {
+			$actionMessages[] = $this->databaseAnalyzerExecute();
+		}
+		if (isset($this->postValues['set']['databaseAnalyzerAnalyze'])) {
+			$actionMessages[] = $this->databaseAnalyzerAnalyze();
+		}
 
 		$this->view->assign('actionMessages', $actionMessages);
 
@@ -201,6 +207,31 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			}
 		}
 
+		return $message;
+	}
+
+	/**
+	 * Execute database migration
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function databaseAnalyzerExecute() {
+		/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('executed');
+		return $message;
+	}
+
+	/**
+	 * "Compare" action of analyzer
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function databaseAnalyzerAnalyze() {
+		$this->view->assign('databaseAnalyzerData', 'foo');
+		/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('analyzed');
 		return $message;
 	}
 }
