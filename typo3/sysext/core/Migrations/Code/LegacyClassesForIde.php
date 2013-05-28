@@ -1464,22 +1464,7 @@ class ux_t3lib_sqlparser extends \TYPO3\CMS\Dbal\Database\SqlParser {}
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_dbal_autoloader extends \TYPO3\CMS\Dbal\Autoloader {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
 class tx_dbal_module1 extends \TYPO3\CMS\Dbal\Controller\ModuleController {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_dbal_tsparserext extends \TYPO3\CMS\Dbal\ExtensionManager\MessageDisplay {}
-
-/**
- * @deprecated since 6.0 will be removed in 7.0
- */
-class tx_dbal_installtool extends \TYPO3\CMS\Dbal\Hooks\InstallToolHooks {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
