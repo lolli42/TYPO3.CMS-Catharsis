@@ -46,22 +46,115 @@ class CleanUp extends AbstractAction implements ActionInterface {
 	public function handle() {
 		$this->initialize();
 
-		if (isset($this->postValues['set']['deleteCachedImageSizes'])) {
-			$this->actionMessages[] = $this->deleteCachedImageSizes();
+		if (isset($this->postValues['set']['clearTables'])) {
+			$this->actionMessages[] = $this->clearSelectedTables();
 		}
 		if (isset($this->postValues['set']['resetBackendUserUc'])) {
 			$this->actionMessages[] = $this->resetBackendUserUc();
 		}
 
-		$database = $this->getDatabase();
-		$numberOfCachedImageSizes = intval($database->exec_SELECTcountRows('*', 'cache_imagesizes'));
-		$this->view->assign('numberOfCachedImageSizes', $numberOfCachedImageSizes);
+		$this->view->assign('cleanableTables', $this->getCleanableTableList());
 
 		$typo3TempData = $this->getTypo3TempStatistics();
 		$this->view->assign('typo3TempData', $typo3TempData);
 
 		$this->view->assign('actionMessages', $this->actionMessages);
 		return $this->view->render();
+	}
+
+	/**
+	 * Get list of existing tables that could be truncated.
+	 *
+	 * @return array List of cleanable tables with name, description and number of rows
+	 */
+	protected function getCleanableTableList() {
+		$tableCandidates = array(
+			array(
+				'name' => 'be_sessions',
+				'description' => 'Backend user sessions'
+			),
+			array(
+				'name' => 'cache_imagesizes',
+				'description' => 'Cached image sizes',
+			),
+			array(
+				'name' => 'cache_md5params',
+				'description' => 'Frontend redirects',
+			),
+			array(
+				'name' => 'cache_typo3temp_log',
+				'description' => 'Image rendering lock information',
+			),
+			array(
+				'name' => 'fe_sessions',
+				'description' => 'Frontend user sessions',
+			),
+			array(
+				'name' => 'fe_session_data',
+				'description' => 'Frontend user session data',
+			),
+			array(
+				'name' => 'sys_history',
+				'description' => 'Tracking of database record changes through TYPO3 backend forms',
+			),
+			array(
+				'name' => 'sys_lockedrecords',
+				'description' => 'Record locking of backend user editing',
+			),
+			array(
+				'name' => 'sys_log',
+				'description' => 'General log table',
+			),
+			array(
+				'name' => 'sys_preview',
+				'description' => 'Workspace preview links',
+			),
+			array(
+				'name' => 'tx_extensionmanager_domain_model_extension',
+				'description' => 'List of TER extensions',
+			),
+			array(
+				'name' => 'tx_rsaauth_keys',
+				'description' => 'Login process key storage'
+			),
+		);
+		$database = $this->getDatabase();
+		$allTables = array_keys($database->admin_get_tables());
+		$tables = array();
+		foreach ($tableCandidates as $candidate) {
+			if (in_array($candidate['name'], $allTables)) {
+				$candidate['rows'] = $database->exec_SELECTcountRows('*', $candidate['name']);
+				$tables[] = $candidate;
+			}
+		}
+		return $tables;
+	}
+
+	/**
+	 * Truncate selected tables
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function clearSelectedTables() {
+		$clearedTables = array();
+		$database = $this->getDatabase();
+		foreach ($this->postValues['values'] as $tableName => $selected) {
+			if ($selected == 1) {
+				$database->exec_TRUNCATEquery($tableName);
+				$clearedTables[] = $tableName;
+			}
+		}
+		if (count($clearedTables)) {
+			/** @var \TYPO3\CMS\Install\Status\OkStatus $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+			$message->setTitle('Cleared tables');
+			$message->setMessage('List of cleared tables: ' . implode(', ', $clearedTables));
+		} else {
+			/** @var \TYPO3\CMS\Install\Status\OkStatus $message */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\InfoStatus');
+			$message->setTitle('No tables selected to clear');
+		}
+		return $message;
 	}
 
 	/**
@@ -72,6 +165,7 @@ class CleanUp extends AbstractAction implements ActionInterface {
 	protected function deleteCachedImageSizes() {
 		$database = $this->getDatabase();
 		$database->exec_TRUNCATEquery('cache_imagesizes');
+		/** @var \TYPO3\CMS\Install\Status\OkStatus $message */
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Cleared cached image sizes');
 		return $message;
@@ -85,6 +179,7 @@ class CleanUp extends AbstractAction implements ActionInterface {
 	protected function resetBackendUserUc() {
 		$database = $this->getDatabase();
 		$database->exec_UPDATEquery('be_users', '', array('uc' => ''));
+		/** @var \TYPO3\CMS\Install\Status\OkStatus $message */
 		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
 		$message->setTitle('Reset all backend users preferences');
 		return $message;

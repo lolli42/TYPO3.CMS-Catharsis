@@ -9,10 +9,10 @@
 		<i:statusMessage message="{statusMessage}" />
 	</f:for>
 
-	<f:render partial="ControllerAction/CleanUp/CachedImageSizes" arguments="{_all}" />
+	<f:render partial="ControllerAction/CleanUp/Typo3TempFiles" arguments="{_all}" />
 	<hr />
 
-	<f:render partial="ControllerAction/CleanUp/Typo3TempFiles" arguments="{_all}" />
+	<f:render partial="ControllerAction/CleanUp/ClearTables" arguments="{_all}" />
 	<hr />
 
 	<f:render partial="ControllerAction/CleanUp/ResetBackendUserUc" arguments="{_all}" />
