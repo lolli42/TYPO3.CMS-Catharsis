@@ -96,7 +96,6 @@ class Installer {
 	 * @var array List of menu items
 	 */
 	protected $menuitems = array(
-		'database' => 'Database Analyser',
 		'update' => 'Upgrade Wizard',
 		'logout' => 'Logout from Install Tool'
 	);
@@ -154,14 +153,6 @@ class Installer {
 		}
 
 		switch ($this->INSTALL['type']) {
-		case 'database':
-			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
-			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\DatabaseAnalyzer');
-			$actionObject->handle();
-			$this->sections = array_merge($this->sections, $actionObject->getSections());
-			$this->errorMessages = array_merge($this->errorMessages, $actionObject->getErrorMessages());
-			$this->output($this->outputWrapper($this->printAll()));
-			break;
 		case 'update':
 			/** @var $actionObject \TYPO3\CMS\Install\Action\AbstractAction */
 			$actionObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Action\\UpdateWizard');
