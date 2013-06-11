@@ -9,39 +9,8 @@
 		<title>Template: Update wizard parts</title>
 	</head>
 	<body>
-		<!-- ###CHECKFORUPDATE### begin -->
-		<p>If you upgrade your TYPO3 installation from one major version to another (e.g. 4.5 to 4.6), then the Upgrade Wizards guide you through the necessary steps to upgrade your database records or explicitly install extensions that ship with the latest TYPO3 version.</p>
-		<hr />
-		<!-- ###UPDATESAVAILABLE### begin -->
-		<!-- ###UPDATEWIZARDBOXES### begin -->
-		<form action="###ACTION####t3-install-bottom" method="post">
-			<fieldset class="t3-install-hidden">
-				<ol>
-					<li>
-						<input type="hidden" name="TYPO3_INSTALL[database_type]" value="getUserInput" />
-					</li>
-				</ol>
-			</fieldset>
-			<!-- ###SINGLEUPDATEWIZARDBOX### begin -->
-			<h4>###TITLE###</h4>
-			###EXPLANATION###
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						###NEXT###
-					</li>
-				</ol>
-			</fieldset>
-			<hr />
-			<!-- ###SINGLEUPDATEWIZARDBOX### end -->
-		</form>
-		<!-- ###UPDATEWIZARDBOXES### end -->
-		<h4>###FINALSTEP###</h4>
-		###FINALSTEPEXPLANATION###
-		<a href="index.php?TYPO3_INSTALL[type]=database&amp;databaseAnalyzer[database_type]=cmpFile|CURRENT_TABLES#t3-install-bottom">###COMPAREDATABASE###<span class="t3-install-form-button-icon-positive">&nbsp;</span></a>
-		<!-- ###UPDATESAVAILABLE### end -->
-		<!-- ###CHECKFORUPDATE### end -->
-		
+
+
 		<!-- ###GETUSERINPUT### begin -->
 		<form action="###ACTION####t3-install-bottom" method="post">
 			<fieldset class="t3-install-hidden">
@@ -56,6 +25,7 @@
 					###INTRODUCTION###
 				</strong>
 			</p>
+
 			<!-- ###UPDATESAVAILABLE### begin -->
 			<fieldset>
 				<ol>
@@ -67,6 +37,7 @@
 			<h4>###TITLE###</h4>
 			###IDENTIFIERMETHOD###
 			<!-- ###UPDATESAVAILABLE### end -->
+
 			<fieldset>
 				<ol>
 					<li class="t3-install-form-label-after">
@@ -87,8 +58,10 @@
 			</fieldset>
 		</form>
 		<!-- ###GETUSERINPUT### end -->
-		
+
+
 		<!-- ###PERFORMUPDATE### begin -->
+
 			<!-- ###UPDATEITEMS### begin -->
 			<p class="innerWidth">
 				<strong>
@@ -124,6 +97,8 @@
 				</strong>
 				<!-- ###NOPERFORMUPDATE### end -->
 			<!-- ###UPDATEITEMS### end -->
+
+
 			<!-- ###NEXTUPDATEWIZARD### begin -->
 			<br /><br /><br /><hr />
 			<form action="index.php?TYPO3_INSTALL[type]=update" method="post">
@@ -145,6 +120,8 @@
 				</fieldset>
 			</form>
 			<!-- ###NEXTUPDATEWIZARD### end -->
+
+
 		<!-- ###PERFORMUPDATE### end -->
 	</body>
 </html>
