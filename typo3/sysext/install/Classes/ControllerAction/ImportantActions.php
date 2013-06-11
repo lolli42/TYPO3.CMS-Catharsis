@@ -54,10 +54,11 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			$actionMessages[] = $this->createAdministrator();
 		}
 
+		// Database analyzer handling
 		if (isset($this->postValues['set']['databaseAnalyzerExecute'])
 			|| isset($this->postValues['set']['databaseAnalyzerAnalyze'])
 		) {
-			$this->bootstrapForDatabaseAnalyzer();
+			$this->loadExtLocalconfDatabaseAndExtTables();
 		}
 		if (isset($this->postValues['set']['databaseAnalyzerExecute'])) {
 			$actionMessages = array_merge($actionMessages, $this->databaseAnalyzerExecute());
@@ -213,24 +214,6 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 		}
 
 		return $message;
-	}
-
-	/**
-	 * The database analyzer needs ext_tables and ext_localconf and db settings fully loaded.
-	 * This is needed for caching framework setup (that can have an effect on db compare), and
-	 * for the category registry.
-	 *
-	 * Therefore, the database analyzer actions can potentially fatal if some old extension
-	 * is loaded that triggers a fatal in ext_localconf or ext_tables code!
-	 *
-	 * @return void
-	 */
-	protected function bootstrapForDatabaseAnalyzer() {
-		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
-			->loadTypo3LoadedExtAndExtLocalconf(FALSE)
-			->applyAdditionalConfigurationSettings()
-			->initializeTypo3DbGlobal()
-			->loadExtensionTables(FALSE);
 	}
 
 	/**
@@ -424,7 +407,7 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 	protected function getTablesDefinitionString() {
 		$sqlString = array();
 
-		// ext_tables.sql handling
+		// Find all ext_tables.sql of loaded extensions
 		$loadedExtensionInformation = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadTypo3LoadedExtensionInformation(FALSE);
 		foreach ($loadedExtensionInformation as $extensionKey => $extensionConfiguration) {
 			if (is_array($extensionConfiguration) && $extensionConfiguration['ext_tables.sql']) {
@@ -432,30 +415,10 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			}
 		}
 
-		// This is hacky, but there was no smarter solution with current cache configuration setup:
-		// InstallToolController sets the extbase caches to NullBackend to ensure the install tool does not
-		// cache anything. The CacheManager gets the required SQL from DababaseBackends only, so we need to
-		// temporarily 'fake' the standard db backends for extbase caches so they are respected.
-		// @TODO: This construct needs to be improved. It does not recognise if some custom ext overwrote the extbase cache config
-		// Additionally, the extbase_object cache is already in use and instatiated, and the CacheManager singleton
-		// does not allow overriding this definition. The only option at the moment is to 'fake' another cache with
-		// a different name, and then substitute this name in the sql content with the real one.
-		// @TODO: Solve this as soon as cache configuration is separated from ext_localconf / ext_tables
-		$cacheConfigurationBackup = $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'];
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_datamapfactory_datamap'] = array();
-		$extbaseObjectFakeName = uniqid('extbase_object');
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][$extbaseObjectFakeName] = array();
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_reflection'] = array();
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_typo3dbbackend_tablecolumns'] = array();
-		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
-		$cacheManager = $GLOBALS['typo3CacheManager'];
-		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
-		$cacheSqlString = \TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions();
-		$sqlString[] = str_replace($extbaseObjectFakeName, 'extbase_object', $cacheSqlString);
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'] = $cacheConfigurationBackup;
-		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+		// Add caching framework sql definition
+		$sqlString[] = $this->getCachingFrameworkRequiredDatabaseSchema();
 
-		// Add SQL content coming from the category registry
+		// Add category registry sql definition
 		$sqlString[] = \TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()->getDatabaseTableDefinitions();
 
 		return implode(LF . LF . LF . LF, $sqlString);

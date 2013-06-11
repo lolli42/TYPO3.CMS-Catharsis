@@ -141,5 +141,60 @@ abstract class AbstractAction {
 		}
 		return $database;
 	}
+
+	/**
+	 * Some actions like the database analyzer and the upgrade wizards need additional
+	 * bootstrap actions performed.
+	 *
+	 * Those actions can potentially fatal if some old extension is loaded that triggers
+	 * a fatal in ext_localconf or ext_tables code! Use only if really needed.
+	 *
+	 * @return void
+	 */
+	protected function loadExtLocalconfDatabaseAndExtTables() {
+		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+			->loadTypo3LoadedExtAndExtLocalconf(FALSE)
+			->applyAdditionalConfigurationSettings()
+			->initializeTypo3DbGlobal()
+			->loadExtensionTables(FALSE);
+	}
+
+	/**
+	 * Get schema SQL of required cache framework tables.
+	 *
+	 * This method needs ext_localconf and ext_tables loaded!
+	 *
+	 * This is a hack, but there was no smarter solution with current cache configuration setup:
+	 * InstallToolController sets the extbase caches to NullBackend to ensure the install tool does not
+	 * cache anything. The CacheManager gets the required SQL from database backends only, so we need to
+	 * temporarily 'fake' the standard db backends for extbase caches so they are respected.
+	 *
+	 * Additionally, the extbase_object cache is already in use and instantiated, and the CacheManager singleton
+	 * does not allow overriding this definition. The only option at the moment is to 'fake' another cache with
+	 * a different name, and then substitute this name in the sql content with the real one.
+	 *
+	 * @TODO: This construct needs to be improved. It does not recognise if some custom ext overwrote the extbase cache config
+	 * @TODO: Solve this as soon as cache configuration is separated from ext_localconf / ext_tables
+	 * @TODO: It might be possible to reduce this ugly construct by circumventing the 'singleton' of CacheManager by using 'new'
+	 *
+	 * @return string Cache framework SQL
+	 */
+	protected function getCachingFrameworkRequiredDatabaseSchema() {
+		$cacheConfigurationBackup = $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'];
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_datamapfactory_datamap'] = array();
+		$extbaseObjectFakeName = uniqid('extbase_object');
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'][$extbaseObjectFakeName] = array();
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_reflection'] = array();
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_typo3dbbackend_tablecolumns'] = array();
+		/** @var \TYPO3\CMS\Core\Cache\CacheManager $cacheManager */
+		$cacheManager = $GLOBALS['typo3CacheManager'];
+		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+		$cacheSqlString = \TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions();
+		$sqlString = str_replace($extbaseObjectFakeName, 'extbase_object', $cacheSqlString);
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations'] = $cacheConfigurationBackup;
+		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+
+		return $sqlString;
+	}
 }
 ?>

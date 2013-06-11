@@ -51,6 +51,7 @@ class InstallToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCont
 		'systemEnvironment',
 		'folderStructure',
 		'testSetup',
+		'upgradeWizard',
 		'allConfiguration',
 		'cleanUp',
 	);
