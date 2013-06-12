@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install;
+namespace TYPO3\CMS\Install\Service;
 
 /***************************************************************
  *  Copyright notice
@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Install;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Basic Service to check and create install tool files
  */

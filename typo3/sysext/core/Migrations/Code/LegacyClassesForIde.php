@@ -5464,7 +5464,7 @@ class tx_coreupdates_t3skin extends \TYPO3\CMS\Install\CoreUpdates\T3skinUpdate 
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class Tx_Install_Service_BasicService extends \TYPO3\CMS\Install\EnableFileService {}
+class Tx_Install_Service_BasicService extends \TYPO3\CMS\Install\Service\EnableFileService {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0
