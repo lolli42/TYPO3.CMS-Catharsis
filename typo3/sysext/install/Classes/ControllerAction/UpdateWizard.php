@@ -32,11 +32,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class UpdateWizard extends AbstractAction implements ActionInterface {
 
 	/**
-	 * @var array<\TYPO3\CMS\Install\Status\StatusInterface>
-	 */
-	protected $actionMessages = array();
-
-	/**
 	 * Handle this action
 	 *
 	 * @return string content
@@ -53,11 +48,13 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 		$actionMessages = array();
 
 		if (isset($this->postValues['set']['getUserInput'])) {
-			$this->getUserInputForUpdateWizard();
+			$actionMessages[] = $this->getUserInputForUpdateWizard();
 			$this->view->assign('updateAction', 'getUserInput');
+		} elseif (isset($this->postValues['set']['performUpdate'])) {
+			$actionMessages[] = $this->performUpdate();
+			$this->view->assign('updateAction', 'performUpdate');
 		} else {
-			// Show possible updates
-			$this->listUpdates();
+			$actionMessages[] = $this->listUpdates();
 			$this->view->assign('updateAction', 'listUpdates');
 		}
 
@@ -69,15 +66,14 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 	/**
 	 * List of available updates
 	 *
-	 * @return void
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function listUpdates() {
 		if (empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'])) {
 			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
-			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\WarningStatus');
 			$message->setTitle('No update wizards registered');
-			$this->actionMessages[] = $message;
-			return;
+			return $message;
 		}
 
 		$availableUpdates = array();
@@ -101,12 +97,17 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 		}
 
 		$this->view->assign('availableUpdates', $availableUpdates);
+
+		/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('Show available update wizards');
+		return $message;
 	}
 
 	/**
 	 * Get user input of update wizard
 	 *
-	 * @return void
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function getUserInputForUpdateWizard() {
 		$wizardIdentifier = $this->postValues['values']['identifier'];
@@ -125,6 +126,83 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 		);
 
 		$this->view->assign('updateWizardData', $updateWizardData);
+
+		/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+		$message->setTitle('Show wizard options');
+		return $message;
+	}
+
+	/**
+	 * Perform update of a specific wizard
+	 *
+	 * @throws \TYPO3\CMS\Install\Exception
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
+	 */
+	protected function performUpdate() {
+		$this->getDatabase()->store_lastBuiltQuery = TRUE;
+
+		$wizardIdentifier = $this->postValues['values']['identifier'];
+		$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$wizardIdentifier];
+		$updateObject = $this->getUpgradeObjectInstance($className, $wizardIdentifier);
+
+		$wizardData = array(
+			'identifier' => $wizardIdentifier,
+			'title' => $updateObject->getTitle(),
+		);
+
+		// $wizardInputErrorMessage is given as reference to wizard object!
+		$wizardInputErrorMessage = '';
+		if (method_exists($updateObject, 'checkUserInput') && !$updateObject->checkUserInput($wizardInputErrorMessage)) {
+			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+			$message->setTitle('Input parameter broken');
+			$message->setMessage($wizardInputErrorMessage ?: 'Something went wrong!');
+			$wizardData['wizardInputBroken'] = TRUE;
+		} else {
+			if (!method_exists($updateObject, 'performUpdate')) {
+				throw new \TYPO3\CMS\Install\Exception(
+					'No performUpdate method in update wizard with identifier ' . $wizardIdentifier,
+					1371035200
+				);
+			} else {
+				// Both variables are used by reference in performUpdate()
+				$customOutput = '';
+				$databaseQueries = array();
+				$performResult = $updateObject->performUpdate($databaseQueries, $customOutput);
+
+				if ($performResult) {
+					/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+					$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
+					$message->setTitle('Update successful');
+				} else {
+					/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+					$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+					$message->setTitle('Update failed!');
+					if ($customOutput) {
+						$message->setMessage($customOutput);
+					}
+				}
+
+				if ($this->postValues['values']['showDatabaseQueries'] == 1) {
+					$wizardData['queries'] = $databaseQueries;
+				}
+			}
+		}
+
+		$this->view->assign('wizardData', $wizardData);
+
+		$this->getDatabase()->store_lastBuiltQuery = FALSE;
+
+		// Next update wizard, if available
+		$nextUpdateWizard = $this->getNextUpdateWizardInstance($updateObject);
+		$nextUpdateWizardIdentifier = '';
+		if ($nextUpdateWizard) {
+			$nextUpdateWizardIdentifier = $nextUpdateWizard->getIdentifier();
+		}
+		$this->view->assign('nextUpdateWizardIdentifier', $nextUpdateWizardIdentifier);
+
+		return $message;
 	}
 
 	/**
@@ -145,9 +223,33 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 	}
 
 	/**
+	 * Returns the next upgrade wizard object
+	 * Used to show the link/button to the next upgrade wizard
+	 *
+	 * @param object $currentObj Current update wizard object
+	 * @return mixed Upgrade wizard instance or FALSE
+	 */
+	protected function getNextUpdateWizardInstance($currentObj) {
+		$isPreviousRecord = TRUE;
+		foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'] as $identifier => $className) {
+			// Find the current update wizard, and then start validating the next ones
+			if ($currentObj->getIdentifier() == $identifier) {
+				$isPreviousRecord = FALSE;
+				continue;
+			}
+			if (!$isPreviousRecord) {
+				$nextUpdateWizard = $this->getUpgradeObjectInstance($className, $identifier);
+				if ($nextUpdateWizard->shouldRenderWizard()) {
+					return $nextUpdateWizard;
+				}
+			}
+		}
+		return FALSE;
+	}
+
+	/**
 	 * Force creation / update of caching framework tables that are needed by some update wizards
 	 *
-	 * @TODO: This might (?) be a 'silent upgrade' task in the step installer, problem is that it needs ext_* loaded
 	 * @TODO: See also the other remarks on this topic in the abstract class, this whole area needs improvements
 	 * @return void
 	 */
@@ -173,6 +275,17 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 		if (isset($updateStatements['change']) && count($updateStatements['change']) > 0) {
 			$sqlHandler->performUpdateQueries($updateStatements['change'], $updateStatements['change']);
 		}
+	}
+
+	/**
+	 * Overwrite getDatabase method of abstract!
+	 *
+	 * Returns $GLOBALS['TYPO3_DB'] directly, since this global is instantiated properly in update wizards
+	 *
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected function getDatabase() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 }
 

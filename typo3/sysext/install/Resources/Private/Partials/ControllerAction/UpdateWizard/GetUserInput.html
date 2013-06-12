@@ -2,10 +2,6 @@
 	<f:render partial="ControllerAction/Common/HiddenFormFields" arguments="{_all}" />
 	<input type="hidden" name="install[values][identifier]" value="{updateWizardData.identifier}"/>
 
-	<p>
-		<strong>The following updates will be performed:</strong>
-	</p>
-
 	<h4>{updateWizardData.title}</h4>
 
 	<f:format.raw>{updateWizardData.wizardHtml}</f:format.raw>
@@ -19,11 +15,8 @@
 		</ol>
 	</fieldset>
 
-	<f:if condition="{availableUpdate.renderNext}">
-		<f:render
-			partial="ControllerAction/Common/SubmitButton"
-			arguments="{name:'performUpdate', text:'Perform updates!'}"
-		/>
-	</f:if>
-	<hr />
+	<f:render
+		partial="ControllerAction/Common/SubmitButton"
+		arguments="{name:'performUpdate', text:'Perform updates!'}"
+	/>
 </form>
