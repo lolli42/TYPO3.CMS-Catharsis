@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Handle important actions
  */
-class ImportantActions extends AbstractAction implements ActionInterface {
+class ImportantActions extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Handle this action

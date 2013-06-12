@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Clean up page
  */
-class CleanUp extends AbstractAction implements ActionInterface {
+class CleanUp extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Status messages of submitted actions

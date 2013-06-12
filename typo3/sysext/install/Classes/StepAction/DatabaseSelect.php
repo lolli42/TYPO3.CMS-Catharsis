@@ -29,7 +29,7 @@ namespace TYPO3\CMS\Install\StepAction;
  * This step is only rendered if database is mysql. With dbal,
  * database name is submitted by previous step already.
  */
-class DatabaseSelect extends AbstractStep implements StepInterface {
+class DatabaseSelect extends AbstractStepAction implements StepActionInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection

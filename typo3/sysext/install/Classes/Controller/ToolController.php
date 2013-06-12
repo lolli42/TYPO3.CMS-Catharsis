@@ -183,11 +183,11 @@ class ToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController 
 			);
 		}
 		$actionClass = ucfirst($action);
-		/** @var \TYPO3\CMS\Install\ToolAction\ActionInterface $ToolAction */
+		/** @var \TYPO3\CMS\Install\ToolAction\ToolActionInterface $ToolAction */
 		$toolAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ToolAction\\' . $actionClass);
-		if (!($toolAction instanceof \TYPO3\CMS\Install\ToolAction\ActionInterface)) {
+		if (!($toolAction instanceof \TYPO3\CMS\Install\ToolAction\ToolActionInterface)) {
 			throw new Exception(
-				$action . ' does non implement ActionInterface',
+				$action . ' does non implement ToolActionInterface',
 				1369474308
 			);
 		}

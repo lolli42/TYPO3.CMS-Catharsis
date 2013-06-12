@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Welcome page
  */
-class Welcome extends AbstractAction implements ActionInterface {
+class Welcome extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Handle this action

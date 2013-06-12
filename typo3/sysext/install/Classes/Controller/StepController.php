@@ -99,15 +99,15 @@ class StepController {
 					break;
 				}
 				$stepObjects[$previousStepName] = new $previousStepDetails['className'];
-				if (!$stepObjects[$previousStepName] instanceof \TYPO3\CMS\Install\StepAction\StepInterface) {
+				if (!$stepObjects[$previousStepName] instanceof \TYPO3\CMS\Install\StepAction\StepActionInterface) {
 					throw new Exception(
-						'Step ' . $previousStepDetails['className'] . 'must implement StepInterface',
+						'Step ' . $previousStepDetails['className'] . 'must implement StepActionInterface',
 						1368038168
 					);
 				}
 			}
 
-			/** @var $stepObject \TYPO3\CMS\Install\StepAction\StepInterface */
+			/** @var $stepObject \TYPO3\CMS\Install\StepAction\StepActionInterface */
 			$stepClassName = $this->steps[$stepName]['className'];
 			$stepObjects[$stepName] = new $stepClassName();
 			$executionMessages = $stepObjects[$stepName]->execute();
@@ -118,9 +118,9 @@ class StepController {
 			// Create step instance if not done yet
 			if (!array_key_exists($stepName, $stepObjects)) {
 				$stepObjects[$stepName] = new $stepDetails['className'];
-				if (!$stepObjects[$stepName] instanceof \TYPO3\CMS\Install\StepAction\StepInterface) {
+				if (!$stepObjects[$stepName] instanceof \TYPO3\CMS\Install\StepAction\StepActionInterface) {
 					throw new Exception(
-						'Step ' . $stepDetails['className'] . 'must implement StepInterface',
+						'Step ' . $stepDetails['className'] . 'must implement StepActionInterface',
 						1365967344
 					);
 				}

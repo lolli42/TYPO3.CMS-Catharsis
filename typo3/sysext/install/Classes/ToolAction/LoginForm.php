@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Login action
  */
-class LoginForm extends AbstractAction implements ActionInterface {
+class LoginForm extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Install\Status\StatusInterface Optional status message from install tool controller

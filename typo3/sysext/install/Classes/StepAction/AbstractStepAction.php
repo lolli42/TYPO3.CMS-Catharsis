@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\StepAction;
 /**
  * Methods used in multiple steps
  */
-class AbstractStep {
+class AbstractStepAction {
 
 	/**
 	 * Return TRUE if dbal and adodb extension is loaded

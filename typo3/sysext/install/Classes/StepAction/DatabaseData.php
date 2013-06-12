@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\StepAction;
 /**
  * Populate base tables, insert admin user, set install tool password
  */
-class DatabaseData extends AbstractStep implements StepInterface {
+class DatabaseData extends AbstractStepAction implements StepActionInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection

@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Handle update wizards
  */
-class UpdateWizard extends AbstractAction implements ActionInterface {
+class UpdateWizard extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Handle this action

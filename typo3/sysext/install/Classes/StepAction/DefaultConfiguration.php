@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\StepAction;
 /**
  * Set production defaults
  */
-class DefaultConfiguration extends AbstractStep implements StepInterface {
+class DefaultConfiguration extends AbstractStepAction implements StepActionInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection

@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Handle folder structure
  */
-class FolderStructure extends AbstractAction implements ActionInterface {
+class FolderStructure extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Handle this action

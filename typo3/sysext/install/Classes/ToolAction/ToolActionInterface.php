@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\StepAction;
+namespace TYPO3\CMS\Install\ToolAction;
 
 /***************************************************************
  *  Copyright notice
@@ -25,29 +25,40 @@ namespace TYPO3\CMS\Install\StepAction;
  ***************************************************************/
 
 /**
- * Interface implemented by single steps
+ * Controller action interface
  */
-interface StepInterface {
+interface ToolActionInterface {
 
 	/**
-	 * Execute a step
+	 * Handle this action
 	 *
-	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface>
+	 * @return string rendered content
 	 */
-	public function execute();
+	public function handle();
 
 	/**
-	 * Whether this step must be executed
+	 * Set form protection token
 	 *
-	 * @return boolean TRUE if this step needs to be executed
+	 * @param string $token Form protection token
+	 * @return void
 	 */
-	public function needsExecution();
+	public function setToken($token);
 
 	/**
-	 * Render step
+	 * Set action name. This is usually similar to the class name,
+	 * only for loginForm, the action is login
 	 *
-	 * @return string
+	 * @param string $action Name of target action for forms
+	 * @return void
 	 */
-	public function render();
+	public function setAction($action);
+
+	/**
+	 * Set POST values
+	 *
+	 * @param $postValues
+	 * @return void
+	 */
+	public function setPostValues(array $postValues);
 }
 ?>

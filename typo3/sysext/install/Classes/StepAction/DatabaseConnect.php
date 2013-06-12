@@ -31,7 +31,7 @@ namespace TYPO3\CMS\Install\StepAction;
  * - Sets database credentials in LocalConfiguration
  * - Loads / unloads ext:dbal and ext:adodb if requested
  */
-class DatabaseConnect extends AbstractStep implements StepInterface {
+class DatabaseConnect extends AbstractStepAction implements StepActionInterface {
 
 	/**
 	 * Execute database step:

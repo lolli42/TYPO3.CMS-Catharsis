@@ -27,6 +27,8 @@ namespace TYPO3\CMS\Install\View;
 /**
  * A standalone fluid view with reduced functionality for ext:install
  *
+ * In contrast to the parent class, this StandaloneView does not
+ * bootstrap a frontend, so some view helper like f:link will not work.
  */
 class StandaloneView extends \TYPO3\CMS\Fluid\View\StandaloneView {
 

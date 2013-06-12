@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * General purpose controller action helper methods and bootstrap
  */
-abstract class AbstractAction {
+abstract class AbstractToolAction {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager

@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Test various system setup settings
  */
-class TestSetup extends AbstractAction implements ActionInterface {
+class TestSetup extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * @var string Absolute path to image folder

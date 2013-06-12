@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Show system environment check results
  */
-class AllConfiguration extends AbstractAction implements ActionInterface {
+class AllConfiguration extends AbstractToolAction implements ToolActionInterface {
 
 	/**
 	 * Handle this action
