@@ -35,6 +35,11 @@ require '../../core/Classes/Core/Bootstrap.php';
 require '../../install/Classes/InstallBootstrap.php';
 \TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
 
+// Base loading: class loader, LocalConfiguration, but no extensions and such
+\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+	->startOutputBuffering()
+	->loadConfigurationAndInitialize(FALSE);
+
 require __DIR__ . '/../../install/Classes/StepInstaller/StepController.php';
 $stepController = new \TYPO3\CMS\install\StepInstaller\StepController();
 $stepController->indexAction();

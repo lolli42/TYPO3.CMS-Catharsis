@@ -49,11 +49,9 @@ class AbstractStep {
 	 * @return void
 	 */
 	protected function reloadConfiguration() {
-		// Load LocalConfiguration / AdditionalConfiguration again to force fresh values
-		// in TYPO3_CONF_VARS in case they were written in execute()
-		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
-		$configurationManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
-		$configurationManager->exportConfiguration();
+		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+			->populateLocalConfiguration()
+			->setCoreCacheToNullBackend();
 
 		if ($this->isDbalEnabled()) {
 			require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');

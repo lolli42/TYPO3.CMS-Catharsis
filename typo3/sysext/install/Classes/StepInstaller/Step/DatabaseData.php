@@ -199,6 +199,8 @@ class DatabaseData extends AbstractStep implements StepInterface {
 		$html[] = '<input type="checkbox" id="show-password" onchange="if (this.checked==true) { document.getElementById(\'password\').type=\'text\'; } else { document.getElementById(\'password\').type=\'password\'; }">';
 		$html[] = '</li>';
 
+		// @TODO: Add sitename setting
+
 		$html[] = '</ol>';
 		$html[] = '</fieldset>';
 		$html[] = '<button type="submit">';

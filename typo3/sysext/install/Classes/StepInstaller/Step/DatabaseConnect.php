@@ -34,15 +34,6 @@ namespace TYPO3\CMS\Install\StepInstaller\Step;
 class DatabaseConnect extends AbstractStep implements StepInterface {
 
 	/**
-	 * Default constructor
-	 */
-	public function __construct() {
-		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
-			->startOutputBuffering()
-			->loadConfigurationAndInitialize();
-	}
-
-	/**
 	 * Execute database step:
 	 * - Load / unload dbal & adodb
 	 * - Set database connect credentials in LocalConfiguration

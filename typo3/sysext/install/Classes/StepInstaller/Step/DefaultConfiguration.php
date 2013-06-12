@@ -62,6 +62,8 @@ class DefaultConfiguration extends AbstractStep implements StepInterface {
 		$configurationManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
 		$configurationManager->setLocalConfigurationValueByPath('SYS/isInitialInstallationInProgress', FALSE);
 
+		// @TODO: remove enable_install_tool file, destroy install tool session
+
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('../index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
 	}
 

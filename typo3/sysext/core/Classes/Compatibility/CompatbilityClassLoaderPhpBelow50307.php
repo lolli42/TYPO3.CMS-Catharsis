@@ -1,6 +1,5 @@
 <?php
 namespace TYPO3\CMS\Core\Compatibility;
-use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /***************************************************************
  *  Copyright notice
@@ -27,6 +26,8 @@ use \TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
+use \TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * This is a compatibility layer for systems running PHP < 5.3.7

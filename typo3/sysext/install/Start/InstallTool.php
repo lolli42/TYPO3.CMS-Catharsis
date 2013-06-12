@@ -38,7 +38,7 @@ require '../../install/Classes/InstallBootstrap.php';
 // Base loading: class loader, LocalConfiguration, but no extensions and such
 \TYPO3\CMS\Core\Core\Bootstrap::getInstance()
 	->startOutputBuffering()
-	->loadConfigurationAndInitialize();
+	->loadConfigurationAndInitialize(FALSE);
 
 $installToolController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
 'TYPO3\\CMS\\Install\\Controller\\InstallToolController'

@@ -146,12 +146,21 @@ class Bootstrap {
 	 * Includes LocalConfiguration.php and sets several
 	 * global settings depending on configuration.
 	 *
+	 * @param boolean $allowCaching Wether to allow caching - affects cache_core (autoloader)
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function loadConfigurationAndInitialize() {
-		$this->getInstance()
-			->populateLocalConfiguration()
+	public function loadConfigurationAndInitialize($allowCaching = TRUE) {
+		$bootstrap = $this->getInstance();
+
+		$bootstrap->populateLocalConfiguration();
+
+		if (!$allowCaching) {
+			$bootstrap->setCoreCacheToNullBackend();
+		}
+
+		$bootstrap->defineDatabaseConstants()
+			->defineUserAgentConstant()
 			->registerExtDirectComponents()
 			->initializeCachingFramework()
 			->registerAutoloader()
@@ -190,7 +199,6 @@ class Bootstrap {
 	/**
 	 * Load TYPO3_LOADED_EXT, recreate class loader registry and load ext_localconf
 	 *
-	 * @param boolean $allowCaching
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -237,9 +245,11 @@ class Bootstrap {
 	 * Merge default TYPO3_CONF_VARS with content of typo3conf/LocalConfiguration.php,
 	 * execute typo3conf/AdditionalConfiguration.php, define database related constants.
 	 *
+	 * @param boolean $allowCaching Wether to allow caching - affects cache_core (autoloader)
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function populateLocalConfiguration() {
+	public function populateLocalConfiguration() {
 		try {
 			/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
 			$configurationManager = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
@@ -247,6 +257,27 @@ class Bootstrap {
 		} catch (\Exception $e) {
 			die($e->getMessage());
 		}
+		return $this;
+	}
+
+	/**
+	 * Set cache_core to null backend, effectivly disabling eg. the autoloader cache
+	 *
+	 * @return \TYPO3\CMS\Core\Core\Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function setCoreCacheToNullBackend() {
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['backend']
+			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
+		return $this;
+	}
+
+	/**
+	 * Define database constants
+	 *
+	 * @return \TYPO3\CMS\Core\Core\Bootstrap
+	 */
+	protected function defineDatabaseConstants() {
 		define('TYPO3_db', $GLOBALS['TYPO3_CONF_VARS']['DB']['database']);
 		define('TYPO3_db_username', $GLOBALS['TYPO3_CONF_VARS']['DB']['username']);
 		define('TYPO3_db_password', $GLOBALS['TYPO3_CONF_VARS']['DB']['password']);
@@ -255,6 +286,15 @@ class Bootstrap {
 			isset($GLOBALS['TYPO3_CONF_VARS']['DB']['extTablesDefinitionScript'])
 			? $GLOBALS['TYPO3_CONF_VARS']['DB']['extTablesDefinitionScript']
 			: 'extTables.php');
+		return $this;
+	}
+
+	/**
+	 * Define user agent constant
+	 *
+	 * @return \TYPO3\CMS\Core\Core\Bootstrap
+	 */
+	protected function defineUserAgentConstant() {
 		define('TYPO3_user_agent', 'User-Agent: ' . $GLOBALS['TYPO3_CONF_VARS']['HTTP']['userAgent']);
 		return $this;
 	}
