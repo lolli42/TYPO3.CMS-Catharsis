@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\ControllerAction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Handle upgrade wizards
+ * Handle update wizards
  */
 class UpdateWizard extends AbstractAction implements ActionInterface {
 
@@ -52,8 +52,14 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 
 		$actionMessages = array();
 
-		// Show possible updates
-		$this->updateList();
+		if (isset($this->postValues['set']['getUserInput'])) {
+			$this->getUserInputForUpdateWizard();
+			$this->view->assign('updateAction', 'getUserInput');
+		} else {
+			// Show possible updates
+			$this->listUpdates();
+			$this->view->assign('updateAction', 'listUpdates');
+		}
 
 		$this->view->assign('actionMessages', $actionMessages);
 
@@ -65,7 +71,7 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 	 *
 	 * @return void
 	 */
-	protected function updateList() {
+	protected function listUpdates() {
 		if (empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'])) {
 			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
@@ -95,6 +101,30 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 		}
 
 		$this->view->assign('availableUpdates', $availableUpdates);
+	}
+
+	/**
+	 * Get user input of update wizard
+	 *
+	 * @return void
+	 */
+	protected function getUserInputForUpdateWizard() {
+		$wizardIdentifier = $this->postValues['values']['identifier'];
+
+		$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$wizardIdentifier];
+		$updateObject = $this->getUpgradeObjectInstance($className, $wizardIdentifier);
+		$wizardHtml = '';
+		if (method_exists($updateObject, 'getUserInput')) {
+			$wizardHtml = $updateObject->getUserInput('install[values][wizardData]');
+		}
+
+		$updateWizardData = array(
+			'identifier' => $wizardIdentifier,
+			'title' => $updateObject->getTitle(),
+			'wizardHtml' => $wizardHtml,
+		);
+
+		$this->view->assign('updateWizardData', $updateWizardData);
 	}
 
 	/**

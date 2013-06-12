@@ -11,55 +11,6 @@
 	<body>
 
 
-		<!-- ###GETUSERINPUT### begin -->
-		<form action="###ACTION####t3-install-bottom" method="post">
-			<fieldset class="t3-install-hidden">
-				<ol>
-					<li>
-						<input type="hidden" value="performUpdate" name="TYPO3_INSTALL[database_type]" />
-					</li>
-				</ol>
-			</fieldset>
-			<p>
-				<strong>
-					###INTRODUCTION###
-				</strong>
-			</p>
-
-			<!-- ###UPDATESAVAILABLE### begin -->
-			<fieldset>
-				<ol>
-					<li class="t3-install-hidden">
-						<input type="hidden" name="TYPO3_INSTALL[update][extList][]" value="###IDENTIFIER###" />
-					</li>
-				</ol>
-			</fieldset>
-			<h4>###TITLE###</h4>
-			###IDENTIFIERMETHOD###
-			<!-- ###UPDATESAVAILABLE### end -->
-
-			<fieldset>
-				<ol>
-					<li class="t3-install-form-label-after">
-						<input id="t3-install-showdatabasequeries" type="checkbox" name="TYPO3_INSTALL[update][showDatabaseQueries]" value="1" />
-						<label for="t3-install-showdatabasequeries">###SHOWDATABASEQUERIES###</label>
-					</li>
-				</ol>
-			</fieldset>
-			<fieldset class="t3-install-form-submit">
-				<ol>
-					<li>
-						<button type="submit">
-							###PERFORMUPDATES###
-							<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-						</button>
-					</li>
-				</ol>
-			</fieldset>
-		</form>
-		<!-- ###GETUSERINPUT### end -->
-
-
 		<!-- ###PERFORMUPDATE### begin -->
 
 			<!-- ###UPDATEITEMS### begin -->

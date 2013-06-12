@@ -53,33 +53,6 @@ class UpdateWizard extends AbstractAction {
 		$templateFile = @file_get_contents((PATH_site . $this->templateFilePath . 'UpdateWizardParts.html'));
 		$title = '';
 		switch ($action) {
-			case 'getUserInput':
-				$title = 'Step 2 - Configuration of updates';
-				$getUserInputSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($templateFile, '###GETUSERINPUT###');
-				$markers = array(
-					'introduction' => 'The following updates will be performed:',
-					'showDatabaseQueries' => 'Show database queries performed',
-					'performUpdates' => 'Perform updates!',
-					'action' => 'index.php?TYPO3_INSTALL[type]=update',
-				);
-				// update methods might need to get custom data
-				$updatesAvailableSubpart = \TYPO3\CMS\Core\Html\HtmlParser::getSubpart($getUserInputSubpart, '###UPDATESAVAILABLE###');
-				$updateItems = array();
-				foreach ($formValues['update'] as $identifier => $tmp) {
-					$updateMarkers = array();
-					$className = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/install']['update'][$identifier];
-					$tmpObj = $this->getUpgradeObjInstance($className, $identifier);
-					$updateMarkers['identifier'] = $identifier;
-					$updateMarkers['title'] = $tmpObj->getTitle();
-					if (method_exists($tmpObj, 'getUserInput')) {
-						$updateMarkers['identifierMethod'] = $tmpObj->getUserInput('TYPO3_INSTALL[update][' . $identifier . ']');
-					}
-					$updateItems[] = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($updatesAvailableSubpart, $updateMarkers, '###|###', TRUE, TRUE);
-				}
-				$updatesAvailableSubpart = implode(LF, $updateItems);
-				$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteSubpart($getUserInputSubpart, '###UPDATESAVAILABLE###', $updatesAvailableSubpart);
-				$content = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($content, $markers, '###|###', TRUE, FALSE);
-				break;
 			case 'performUpdate':
 				// third step - perform update
 				$title = 'Step 3 - Perform updates';
