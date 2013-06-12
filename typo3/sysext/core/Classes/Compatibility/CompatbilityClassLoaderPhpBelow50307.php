@@ -84,6 +84,10 @@ class CompatbilityClassLoaderPhpBelow50307 extends \TYPO3\CMS\Core\Core\ClassLoa
 		) {
 			// If class in question starts with one of the allowed old prefixes
 			static::checkClassCacheEntryAndRequire($classPath);
+			// Load original file if the class is still not there (because cache is disabled)
+			if (!class_exists($className)) {
+				static::requireClassFile($classPath);
+			}
 		} else {
 			// Do nothing for system extensions or external libraries.
 			// They are already using the proper type hints or do not use them at all.
