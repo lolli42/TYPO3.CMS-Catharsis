@@ -69,8 +69,8 @@ class ToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController 
 		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		$this->objectManager = $objectManager;
 
-		/** @var \TYPO3\CMS\Install\Session $session */
-		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Session');
+		/** @var \TYPO3\CMS\Install\Service\SessionService $session */
+		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SessionService');
 
 		if (!$session->hasSession()) {
 			$session->startSession();

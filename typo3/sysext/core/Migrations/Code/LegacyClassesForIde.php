@@ -5474,7 +5474,7 @@ class tx_install_report_InstallStatus extends \TYPO3\CMS\Install\Report\InstallS
 /**
  * @deprecated since 6.0 will be removed in 7.0
  */
-class tx_install_session extends \TYPO3\CMS\Install\Session {}
+class tx_install_session extends \TYPO3\CMS\Install\Service\SessionService {}
 
 /**
  * @deprecated since 6.0 will be removed in 7.0

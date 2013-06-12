@@ -153,8 +153,8 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
 		);
 		$formProtection->clean();
-		/** @var \TYPO3\CMS\Install\Session $session */
-		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Session');
+		/** @var \TYPO3\CMS\Install\Service\SessionService $session */
+		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SessionService');
 		$session->destroySession();
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('StepInstaller.php?install[context]=' . $this->getContext());
 	}

@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install;
+namespace TYPO3\CMS\Install\Service;
 
 /***************************************************************
  *  Copyright notice
@@ -32,7 +32,7 @@ namespace TYPO3\CMS\Install;
  *
  * @author Ernesto Baschny <ernst@cron-it.de>
  */
-class Session implements \TYPO3\CMS\Core\SingletonInterface {
+class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * The path to our typo3temp (where we can write our sessions). Set in the
