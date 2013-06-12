@@ -233,30 +233,30 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 			return $message;
 		}
 
-		/** @var \TYPO3\CMS\Install\Sql\SchemaMigrator $schemaMigrator */
-		$schemaMigrator = $this->objectManager->get('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
+		$schemaMigrationService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 
 		$expectedSchema = $this->getExpectedDatabaseSchema();
-		$currentSchema = $schemaMigrator->getFieldDefinitions_database();
+		$currentSchema = $schemaMigrationService->getFieldDefinitions_database();
 
 		$statementHashesToPerform = $this->postValues['values'];
 
 		$results = array();
 
 		// Difference from expected to current
-		$addCreateChange = $schemaMigrator->getDatabaseExtra($expectedSchema, $currentSchema);
-		$addCreateChange = $schemaMigrator->getUpdateSuggestions($addCreateChange);
-		$results[] = $schemaMigrator->performUpdateQueries($addCreateChange['add'], $statementHashesToPerform);
-		$results[] = $schemaMigrator->performUpdateQueries($addCreateChange['change'], $statementHashesToPerform);
-		$results[] = $schemaMigrator->performUpdateQueries($addCreateChange['create_table'], $statementHashesToPerform);
+		$addCreateChange = $schemaMigrationService->getDatabaseExtra($expectedSchema, $currentSchema);
+		$addCreateChange = $schemaMigrationService->getUpdateSuggestions($addCreateChange);
+		$results[] = $schemaMigrationService->performUpdateQueries($addCreateChange['add'], $statementHashesToPerform);
+		$results[] = $schemaMigrationService->performUpdateQueries($addCreateChange['change'], $statementHashesToPerform);
+		$results[] = $schemaMigrationService->performUpdateQueries($addCreateChange['create_table'], $statementHashesToPerform);
 
 		// Difference from current to expected
-		$dropRename = $schemaMigrator->getDatabaseExtra($currentSchema, $expectedSchema);
-		$dropRename = $schemaMigrator->getUpdateSuggestions($dropRename, 'remove');
-		$results[] = $schemaMigrator->performUpdateQueries($dropRename['change'], $statementHashesToPerform);
-		$results[] = $schemaMigrator->performUpdateQueries($dropRename['drop'], $statementHashesToPerform);
-		$results[] = $schemaMigrator->performUpdateQueries($dropRename['change_table'], $statementHashesToPerform);
-		$results[] = $schemaMigrator->performUpdateQueries($dropRename['drop_table'], $statementHashesToPerform);
+		$dropRename = $schemaMigrationService->getDatabaseExtra($currentSchema, $expectedSchema);
+		$dropRename = $schemaMigrationService->getUpdateSuggestions($dropRename, 'remove');
+		$results[] = $schemaMigrationService->performUpdateQueries($dropRename['change'], $statementHashesToPerform);
+		$results[] = $schemaMigrationService->performUpdateQueries($dropRename['drop'], $statementHashesToPerform);
+		$results[] = $schemaMigrationService->performUpdateQueries($dropRename['change_table'], $statementHashesToPerform);
+		$results[] = $schemaMigrationService->performUpdateQueries($dropRename['drop_table'], $statementHashesToPerform);
 
 		// Create error flash messages if any
 		foreach ($results as $resultSet) {
@@ -282,22 +282,22 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 	/**
 	 * "Compare" action of analyzer
 	 *
-	 * @TODO: The SchemaMigrator API is a mess and should be refactored
-	 * @TODO: Refactoring this should aim to make EM independent from ext:install by moving SchemaMigrator to ext:core
+	 * @TODO: The SchemaMigration API is a mess and should be refactored
+	 * @TODO: Refactoring this should aim to make EM and dbal independent from ext:install by moving SchemaMigration to ext:core
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function databaseAnalyzerAnalyze() {
-		/** @var \TYPO3\CMS\Install\Sql\SchemaMigrator $schemaMigrator */
-		$schemaMigrator = $this->objectManager->get('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
+		$schemaMigrationService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 
 		$expectedSchema = $this->getExpectedDatabaseSchema();
-		$currentSchema = $schemaMigrator->getFieldDefinitions_database();
+		$currentSchema = $schemaMigrationService->getFieldDefinitions_database();
 
 		$databaseAnalyzerSuggestion = array();
 
 		// Difference from expected to current
-		$addCreateChange = $schemaMigrator->getDatabaseExtra($expectedSchema, $currentSchema);
-		$addCreateChange = $schemaMigrator->getUpdateSuggestions($addCreateChange);
+		$addCreateChange = $schemaMigrationService->getDatabaseExtra($expectedSchema, $currentSchema);
+		$addCreateChange = $schemaMigrationService->getUpdateSuggestions($addCreateChange);
 		if (isset($addCreateChange['create_table'])) {
 			$databaseAnalyzerSuggestion['addTable'] = array();
 			foreach ($addCreateChange['create_table'] as $hash => $statement) {
@@ -330,8 +330,8 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 		}
 
 		// Difference from current to expected
-		$dropRename = $schemaMigrator->getDatabaseExtra($currentSchema, $expectedSchema);
-		$dropRename = $schemaMigrator->getUpdateSuggestions($dropRename, 'remove');
+		$dropRename = $schemaMigrationService->getDatabaseExtra($currentSchema, $expectedSchema);
+		$dropRename = $schemaMigrationService->getUpdateSuggestions($dropRename, 'remove');
 		if (isset($dropRename['change_table'])) {
 			$databaseAnalyzerSuggestion['renameTableToUnused'] = array();
 			foreach ($dropRename['change_table'] as $hash => $statement) {
@@ -389,13 +389,13 @@ class ImportantActions extends AbstractAction implements ActionInterface {
 	 * @return array Expected schema
 	 */
 	protected function getExpectedDatabaseSchema() {
-		/** @var \TYPO3\CMS\Install\Sql\SchemaMigrator $schemaMigrator */
-		$schemaMigrator = $this->objectManager->get('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
+		$schemaMigrationService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 		// Raw concatenated ext_tables.sql and friends string
 		$expectedSchemaString = $this->getTablesDefinitionString();
 		// Remove comments
-		$cleanedExpectedSchemaString = implode(LF, $schemaMigrator->getStatementArray($expectedSchemaString, TRUE, '^CREATE TABLE '));
-		$expectedSchema = $schemaMigrator->getFieldDefinitions_fileContent($cleanedExpectedSchemaString);
+		$cleanedExpectedSchemaString = implode(LF, $schemaMigrationService->getStatementArray($expectedSchemaString, TRUE, '^CREATE TABLE '));
+		$expectedSchema = $schemaMigrationService->getFieldDefinitions_fileContent($cleanedExpectedSchemaString);
 		return $expectedSchema;
 	}
 

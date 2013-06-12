@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Tests\Unit;
+namespace TYPO3\CMS\Install\Tests\Unit\Service;
 
 /***************************************************************
  *  Copyright notice
@@ -27,17 +27,17 @@ namespace TYPO3\CMS\Install\Tests\Unit;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Install\Sql\SchemaMigrator;
+use TYPO3\CMS\Install\Service\SqlSchemaMigrationService;
 
 /**
- * Testcase for class "\TYPO3\CMS\Install\Sql\SchemaMigrator"
+ * Test case
  *
  * @author Mario Rimann <mario.rimann@typo3.org>
  */
-class SchemaMigratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class SqlSchemaMigrationServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Install\Sql\SchemaMigrator
+	 * @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService
 	 */
 	protected $fixture;
 
@@ -45,7 +45,7 @@ class SchemaMigratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Sets up the fixture for testing
 	 */
 	public function setUp() {
-		$this->fixture = new SchemaMigrator();
+		$this->fixture = new SqlSchemaMigrationService();
 	}
 
 	/**

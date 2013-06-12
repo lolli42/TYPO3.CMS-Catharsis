@@ -96,8 +96,8 @@ class DatabaseData extends AbstractStep implements StepInterface {
 		$sql .= \TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions();
 
 		// Sql handler helps to merge the sql string to full create table statements and insert records
-		/** @var $sqlHandler \TYPO3\CMS\Install\Sql\SchemaMigrator */
-		$sqlHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		/** @var $sqlHandler \TYPO3\CMS\Install\Service\SqlSchemaMigrationService */
+		$sqlHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 		$statements = $sqlHandler->getStatementArray($sql, TRUE);
 		list($createStatementsArray, $insertCount) = $sqlHandler->getCreateTables($statements, TRUE);
 		foreach ($createStatementsArray as $table => $statement) {

@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Sql;
+namespace TYPO3\CMS\Install\Service;
 
 /***************************************************************
  *  Copyright notice
@@ -33,7 +33,7 @@ namespace TYPO3\CMS\Install\Sql;
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
-class SchemaMigrator {
+class SqlSchemaMigrationService {
 
 	/**
 	 * @const Maximum field width of MYSQL

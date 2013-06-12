@@ -254,8 +254,8 @@ class UpdateWizard extends AbstractAction implements ActionInterface {
 	 * @return void
 	 */
 	protected function silentCacheFrameworkTableSchemaMigration() {
-		/** @var $sqlHandler \TYPO3\CMS\Install\Sql\SchemaMigrator */
-		$sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Sql\\SchemaMigrator');
+		/** @var $sqlHandler \TYPO3\CMS\Install\Service\SqlSchemaMigrationService */
+		$sqlHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 
 		// Forces creation / update of caching framework tables that are needed by some update wizards
 		$cacheTablesConfiguration = implode(
