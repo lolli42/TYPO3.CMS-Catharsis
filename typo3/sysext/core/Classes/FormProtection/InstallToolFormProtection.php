@@ -104,6 +104,7 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 * form token is invalid.
 	 *
 	 * @return void
+	 * @deprecated since 6.2, will be removed two versions later. Message handling is done by install tool
 	 */
 	protected function createValidationErrorMessage() {
 		// @deprecated since 6.2, neither the install tool class nor the addErrorMessage() exist anymore
