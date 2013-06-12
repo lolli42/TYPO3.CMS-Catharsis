@@ -1140,7 +1140,7 @@ class CharsetConverter {
 	 *
 	 ********************************************/
 	/**
-	 * This will initialize a charset for use if it's defined in the 'typo3/sysext/core/Resources/Private/csconvtbl/' folder
+	 * This will initialize a charset for use if it's defined in the 'typo3/sysext/core/Resources/Private/Charsets/csconvtbl/' folder
 	 * This function is automatically called by the conversion functions
 	 *
 	 * PLEASE SEE: http://www.unicode.org/Public/MAPPINGS/
