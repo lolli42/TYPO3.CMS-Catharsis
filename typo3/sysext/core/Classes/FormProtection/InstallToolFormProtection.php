@@ -90,11 +90,11 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 *
 	 * This instance will be used for displaying messages.
 	 *
-	 * @param \TYPO3\CMS\Install\Installer $installTool the current instance of the install tool
+	 * @param $installTool the current instance of the install tool
 	 * @return void
 	 * @deprecated since 6.2, will be removed two versions later. Message handling is done by install tool
 	 */
-	public function injectInstallTool(\TYPO3\CMS\Install\Installer $installTool) {
+	public function injectInstallTool($installTool) {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		$this->installTool = $installTool;
 	}
