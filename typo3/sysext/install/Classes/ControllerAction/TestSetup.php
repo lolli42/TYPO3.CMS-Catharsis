@@ -153,7 +153,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			10,
 			20,
 			$textColor,
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'Resources/Private/Font/vera.ttf',
 			'Testing true type'
 		);
 		$outputFile = PATH_site . 'typo3temp/installTool-createTrueTypeFontDpiTestImage.gif';
@@ -427,7 +427,7 @@ class TestSetup extends AbstractAction implements ActionInterface {
 			'text' => 'HELLO WORLD',
 			'fontColor' => '#003366',
 			'fontSize' => 18,
-			'fontFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			'fontFile' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'Resources/Private/Font/vera.ttf',
 			'offset' => '17,40',
 		);
 		$conf['BBOX'] = $imageProcessor->calcBBox($conf);

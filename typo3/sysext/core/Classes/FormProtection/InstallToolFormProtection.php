@@ -90,7 +90,7 @@ class InstallToolFormProtection extends AbstractFormProtection {
 	 *
 	 * This instance will be used for displaying messages.
 	 *
-	 * @param $installTool the current instance of the install tool
+	 * @param object $installTool The current instance of the install tool
 	 * @return void
 	 * @deprecated since 6.2, will be removed two versions later. Message handling is done by install tool
 	 */

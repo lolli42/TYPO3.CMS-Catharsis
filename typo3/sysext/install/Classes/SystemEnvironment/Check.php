@@ -928,7 +928,7 @@ class Check {
 			&& function_exists('imagegif')
 			&& (imagetypes() & IMG_GIF)
 		) {
-			$imageResource = @imagecreatefromgif(__DIR__ . '/TestImages/jesus.gif');
+			$imageResource = @imagecreatefromgif(__DIR__ . '/../../Resources/Public/Images/TestInput/Test.gif');
 			if (is_resource($imageResource)) {
 				imagedestroy($imageResource);
 				$status = new Status\OkStatus();
@@ -987,7 +987,7 @@ class Check {
 			&& function_exists('imagepng')
 			&& (imagetypes() & IMG_PNG)
 		) {
-			$imageResource = @imagecreatefrompng(__DIR__ . '/TestImages/jesus.png');
+			$imageResource = @imagecreatefrompng(__DIR__ . '/../../Resources/Public/Images/TestInput/Test.png');
 			if (is_resource($imageResource)) {
 				imagedestroy($imageResource);
 				$status = new Status\OkStatus();
@@ -1041,7 +1041,7 @@ class Check {
 	/**
 	 * Create true type font test image
 	 *
-	 * @return Status\OkStatus|NoticeStatus
+	 * @return Status\OkStatus|Status\NoticeStatus
 	 */
 	protected function isTrueTypeFontDpiStandard() {
 		// 20 Pixels at 96 DPI - the DefaultConfiguration
@@ -1050,7 +1050,7 @@ class Check {
 		$textDimensions = @imageftbbox(
 			$fontSize,
 			0,
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Private/Font/vera.ttf',
+			__DIR__ . '/../../Resources/Private/Font/vera.ttf',
 			'Testing true type support'
 		);
 		$fontBoxWidth = $textDimensions[2] - $textDimensions[0];
