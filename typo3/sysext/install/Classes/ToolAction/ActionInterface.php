@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Install\ToolAction;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -13,9 +15,6 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,23 +24,41 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-define('TYPO3_MODE', 'BE');
-define('TYPO3_enterInstallScript', '1');
+/**
+ * Controller action interface
+ */
+interface ActionInterface {
 
-// Bootstrap bare minimum
-require '../../core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->baseSetup('typo3/sysext/install/Start/');
+	/**
+	 * Handle this action
+	 *
+	 * @return string rendered content
+	 */
+	public function handle();
 
-require '../../install/Classes/InstallBootstrap.php';
-\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
+	/**
+	 * Set form protection token
+	 *
+	 * @param string $token Form protection token
+	 * @return void
+	 */
+	public function setToken($token);
 
-// Base loading: class loader, LocalConfiguration, but no extensions and such
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
-	->startOutputBuffering()
-	->loadConfigurationAndInitialize(FALSE);
+	/**
+	 * Set action name. This is usually similar to the class name,
+	 * only for loginForm, the action is login
+	 *
+	 * @param string $action Name of target action for forms
+	 * @return void
+	 */
+	public function setAction($action);
 
-$toolController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-	'TYPO3\\CMS\\Install\\Controller\\ToolController'
-);
-$toolController->dispatch();
+	/**
+	 * Set POST values
+	 *
+	 * @param $postValues
+	 * @return void
+	 */
+	public function setPostValues(array $postValues);
+}
 ?>

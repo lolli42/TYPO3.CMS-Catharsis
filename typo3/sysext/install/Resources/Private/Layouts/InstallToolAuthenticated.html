@@ -4,7 +4,7 @@
 		<html>
 			<head>
 				<title>Install tool on site {siteName}</title>
-				<f:render partial="ControllerAction/Common/Headers" arguments="{_all}" />
+				<f:render partial="ToolAction/Common/Headers" arguments="{_all}" />
 				<link rel="stylesheet" type="text/css" href="../../../sysext/t3skin/stylesheets/visual/element_docheader.css?{time}" />
 				<link rel="stylesheet" type="text/css" href="../../../sysext/t3skin/stylesheets/structure/element_docheader.css?{time}" />
 			</head>
@@ -16,14 +16,14 @@
 				<div id="typo3-docbody">
 					<div id="typo3-inner-docbody">
 						<div id="t3-install-outer">
-							<f:render partial="ControllerAction/Common/Head" arguments="{_all}" />
-							<f:render partial="ControllerAction/Common/Left" arguments="{_all}" />
+							<f:render partial="ToolAction/Common/Head" arguments="{_all}" />
+							<f:render partial="ToolAction/Common/Left" arguments="{_all}" />
 							<div id="t3-install-right">
 								<div id="t3-install-box-body">
 									<f:render section="Content" />
 								</div>
 							</div>
-							<f:render partial="ControllerAction/Common/Foot" arguments="{_all}" />
+							<f:render partial="ToolAction/Common/Foot" arguments="{_all}" />
 						</div>
 					</div>
 				</div>
@@ -35,18 +35,18 @@
 		<html>
 			<head>
 				<title>Install tool on site {siteName}</title>
-				<f:render partial="ControllerAction/Common/Headers" arguments="{_all}" />
+				<f:render partial="ToolAction/Common/Headers" arguments="{_all}" />
 			</head>
 			<body class="standalone">
 				<div id="t3-install-outer">
-					<f:render partial="ControllerAction/Common/Head" arguments="{_all}" />
-					<f:render partial="ControllerAction/Common/Left" arguments="{_all}" />
+					<f:render partial="ToolAction/Common/Head" arguments="{_all}" />
+					<f:render partial="ToolAction/Common/Left" arguments="{_all}" />
 					<div id="t3-install-right">
 						<div id="t3-install-box-body">
 							<f:render section="Content" />
 						</div>
 					</div>
-					<f:render partial="ControllerAction/Common/Foot" arguments="{_all}" />
+					<f:render partial="ToolAction/Common/Foot" arguments="{_all}" />
 				</div>
 			</body>
 		</html>

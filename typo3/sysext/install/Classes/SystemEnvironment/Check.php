@@ -36,6 +36,8 @@ use TYPO3\CMS\Install\Status;
  * specific configuration values or directories. It should not fail
  * if there is no TYPO3 at all.
  *
+ * The only core code used is the class loader
+ *
  * This class is instantiated as the *very first* class during
  * installation. It is meant to be *standalone* und must not have
  * any requirements, except the status classes. It must be possible
@@ -74,21 +76,8 @@ class Check {
 		'standard',
 		'xml',
 		'zip',
-		'zlib'
+		'zlib',
 	);
-
-	/**
-	 * Constructor to load further classes
-	 */
-	public function __construct() {
-		require_once(__DIR__ . '/../Status/StatusInterface.php');
-		require_once(__DIR__ . '/../Status/AbstractStatus.php');
-		require_once(__DIR__ . '/../Status/NoticeStatus.php');
-		require_once(__DIR__ . '/../Status/InfoStatus.php');
-		require_once(__DIR__ . '/../Status/OkStatus.php');
-		require_once(__DIR__ . '/../Status/WarningStatus.php');
-		require_once(__DIR__ . '/../Status/ErrorStatus.php');
-	}
 
 	/**
 	 * Get all status information as array with status objects

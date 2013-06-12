@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Install\Controller;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -13,9 +15,6 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,23 +24,10 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-define('TYPO3_MODE', 'BE');
-define('TYPO3_enterInstallScript', '1');
+/**
+ * A controller exception
+ */
+class Exception extends \TYPO3\CMS\Install\Exception {
 
-// Bootstrap bare minimum
-require '../../core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->baseSetup('typo3/sysext/install/Start/');
-
-require '../../install/Classes/InstallBootstrap.php';
-\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
-
-// Base loading: class loader, LocalConfiguration, but no extensions and such
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
-	->startOutputBuffering()
-	->loadConfigurationAndInitialize(FALSE);
-
-$toolController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-	'TYPO3\\CMS\\Install\\Controller\\ToolController'
-);
-$toolController->dispatch();
+}
 ?>

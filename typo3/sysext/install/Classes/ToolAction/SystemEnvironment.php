@@ -1,4 +1,6 @@
 <?php
+namespace TYPO3\CMS\Install\ToolAction;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -13,9 +15,6 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,23 +24,31 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-define('TYPO3_MODE', 'BE');
-define('TYPO3_enterInstallScript', '1');
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-// Bootstrap bare minimum
-require '../../core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->baseSetup('typo3/sysext/install/Start/');
+/**
+ * Show system environment check results
+ */
+class SystemEnvironment extends AbstractAction implements ActionInterface {
 
-require '../../install/Classes/InstallBootstrap.php';
-\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
+	/**
+	 * Handle this action
+	 *
+	 * @return string content
+	 */
+	public function handle() {
+		$this->initialize();
 
-// Base loading: class loader, LocalConfiguration, but no extensions and such
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
-	->startOutputBuffering()
-	->loadConfigurationAndInitialize(FALSE);
+		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
+		$statusCheck = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
+		$statusObjects = $statusCheck->getStatus();
 
-$toolController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-	'TYPO3\\CMS\\Install\\Controller\\ToolController'
-);
-$toolController->dispatch();
+			/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
+		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
+		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
+		$this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);
+
+		return $this->view->render();
+	}
+}
 ?>

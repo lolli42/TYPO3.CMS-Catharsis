@@ -1,0 +1,72 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<f:layout name="InstallToolAuthenticated" />
+
+<f:section name="Content">
+
+	<f:if condition="{configurationValuesSaved}">
+		<f:then>
+			<h3>Saved configuration values</h3>
+
+			<f:if condition="{savedConfigurationValueMessages}">
+				<f:then>
+					<f:for each="{savedConfigurationValueMessages}" as="statusMessage">
+						<i:statusMessage message="{statusMessage}" />
+					</f:for>
+				</f:then>
+
+					<f:else>
+					<div class="typo3-message message-warning">
+						<div class="header-container">
+							<div class="message-header">
+								No values changed
+							</div>
+						</div>
+					</div>
+				</f:else>
+			</f:if>
+
+			<hr />
+
+			<form method="post">
+				<f:render partial="ToolAction/Common/HiddenFormFields" arguments="{_all}" />
+
+				<fieldset class="t3-install-form-submit">
+					<ol>
+						<li>
+							<button type="submit">
+								Continue<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+							</button>
+						</li>
+					</ol>
+				</fieldset>
+			</form>
+		</f:then>
+
+		<f:else>
+			<h3>Change configuration values</h3>
+
+			<form method="post">
+				<f:render partial="ToolAction/Common/HiddenFormFields" arguments="{_all}" />
+
+				<f:for each="{data}" as="sectionData" key="sectionName">
+					<f:if condition="{sectionData}">
+						<f:render partial="ToolAction/AllConfiguration/SubSection" arguments="{_all}" />
+					</f:if>
+				</f:for>
+
+				<fieldset>
+					<ol>
+						<li>
+							<button type="submit" name="install[set]">
+								Write configuration
+								<span class="t3-install-form-button-icon-positive">&nbsp;</span>
+							</button>
+						</li>
+					</ol>
+				</fieldset>
+			</form>
+		</f:else>
+	</f:if>
+
+</f:section>

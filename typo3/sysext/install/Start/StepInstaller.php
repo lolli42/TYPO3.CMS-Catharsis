@@ -40,7 +40,8 @@ require '../../install/Classes/InstallBootstrap.php';
 	->startOutputBuffering()
 	->loadConfigurationAndInitialize(FALSE);
 
-require __DIR__ . '/../../install/Classes/StepInstaller/StepController.php';
-$stepController = new \TYPO3\CMS\install\StepInstaller\StepController();
+$stepController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+	'TYPO3\CMS\install\Controller\StepController'
+);
 $stepController->indexAction();
 ?>

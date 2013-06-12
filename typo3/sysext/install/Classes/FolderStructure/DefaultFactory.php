@@ -38,31 +38,6 @@ class DefaultFactory {
 	 * Constructor
 	 */
 	public function __construct() {
-		// No class loader in early install tool steps
-
-		// Folder Structure classes
-		require_once(__DIR__ . '/../Exception.php');
-		require_once(__DIR__ . '/Exception.php');
-		require_once(__DIR__ . '/Exception/InvalidArgumentException.php');
-		require_once(__DIR__ . '/Exception/RootNodeException.php');
-		require_once(__DIR__ . '/NodeInterface.php');
-		require_once(__DIR__ . '/AbstractNode.php');
-		require_once(__DIR__ . '/DirectoryNode.php');
-		require_once(__DIR__ . '/FileNode.php');
-		require_once(__DIR__ . '/RootNodeInterface.php');
-		require_once(__DIR__ . '/RootNode.php');
-		require_once(__DIR__ . '/StructureFacadeInterface.php');
-		require_once(__DIR__ . '/StructureFacade.php');
-
-		// Status classes
-		require_once(__DIR__ . '/../Status/StatusInterface.php');
-		require_once(__DIR__ . '/../Status/AbstractStatus.php');
-		require_once(__DIR__ . '/../Status/NoticeStatus.php');
-		require_once(__DIR__ . '/../Status/InfoStatus.php');
-		require_once(__DIR__ . '/../Status/OkStatus.php');
-		require_once(__DIR__ . '/../Status/WarningStatus.php');
-		require_once(__DIR__ . '/../Status/ErrorStatus.php');
-
 		$this->expectedDefaultStructure = array(
 			// Cut off trailing forward / from PATH_site, so root node has no trailing slash like all others
 			'name' => substr(PATH_site, 0, -1),
