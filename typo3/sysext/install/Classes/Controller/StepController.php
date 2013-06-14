@@ -29,35 +29,18 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Controller to handle install steps
  */
-class StepController {
+class StepController extends AbstractController {
 
 	/**
-	 * @var array Register and order of install steps
+	 * @var array List of valid action names that need authentication. Order is important!
 	 */
-	protected $steps = array();
-
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$this->steps = array(
-			'environmentAndFolders' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepAction\\EnvironmentAndFolders',
-			),
-			'databaseConnect' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepAction\\DatabaseConnect',
-			),
-			'databaseSelect' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepAction\\DatabaseSelect',
-			),
-			'databaseData' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepAction\\DatabaseData',
-			),
-			'defaultConfiguration' => array(
-				'className' => '\\TYPO3\\CMS\\Install\\StepAction\\DefaultConfiguration',
-			),
-		);
-	}
+	protected $authenticationActions = array(
+		'environmentAndFolders',
+		'databaseConnect',
+		'databaseSelect',
+		'databaseData',
+		'defaultConfiguration',
+	);
 
 	/**
 	 * Index action acts a a dispatcher to different steps
@@ -65,146 +48,273 @@ class StepController {
 	 * @throws Exception
 	 * @return void
 	 */
-	public function indexAction() {
-		// Execute a step if needed. This usually sets any data of the 'previous' step,
-		// and if everything worked out well, the below code will call the 'next' step,
-		// if 'previous' step does not return TRUE for needsExecution again. This can
-		// happen if for example wrong database credentials were given.
-		$executionMessages = array();
-		$stepObjects = array();
-		if (isset($GLOBALS['_POST']['executeStep'])) {
-			$stepName = $GLOBALS['_POST']['executeStep'];
-			if (!array_key_exists($stepName, $this->steps)) {
-				throw new Exception(
-					'Step not found',
-					1366914638
-				);
-			}
+	public function execute() {
+		$this->loadBaseExtensions();
+		$this->initializeObjectManager();
 
-			// Bootstrap restriction: The steps are constructed to add bootstrap calls
-			// in __construct() that need to be done *additionally* to the bootstrap calls
-			// of the previous step. So, the steps have a cross-dependency to each other
-			// at this point: Step a does bootstrap work and step b needs additional
-			// bootstrap work and relies on a.
-			// The *additional* bootstrap is done in the step's __construct(). So, if we
-			// need to execute step b, step a needs to be constructed again. To ensure,
-			// __construct()-bootstrap is not called multiple times, the constructed
-			// objects are stored in a local variable and re-used in the needsExecution()
-			// part below.
-			// This whole construct could be simplified if we have a dependency based bootstrap.
-
-			// Create step objects in front of requested step
-			foreach($this->steps as $previousStepName => $previousStepDetails) {
-				if ($previousStepName === $stepName) {
-					break;
-				}
-				$stepObjects[$previousStepName] = new $previousStepDetails['className'];
-				if (!$stepObjects[$previousStepName] instanceof \TYPO3\CMS\Install\StepAction\StepActionInterface) {
-					throw new Exception(
-						'Step ' . $previousStepDetails['className'] . 'must implement StepActionInterface',
-						1368038168
-					);
-				}
-			}
-
-			/** @var $stepObject \TYPO3\CMS\Install\StepAction\StepActionInterface */
-			$stepClassName = $this->steps[$stepName]['className'];
-			$stepObjects[$stepName] = new $stepClassName();
-			$executionMessages = $stepObjects[$stepName]->execute();
-		}
-
-		// Check if some step needs execution and render if so
-		foreach ($this->steps as $stepName => $stepDetails) {
-			// Create step instance if not done yet
-			if (!array_key_exists($stepName, $stepObjects)) {
-				$stepObjects[$stepName] = new $stepDetails['className'];
-				if (!$stepObjects[$stepName] instanceof \TYPO3\CMS\Install\StepAction\StepActionInterface) {
-					throw new Exception(
-						'Step ' . $stepDetails['className'] . 'must implement StepActionInterface',
-						1365967344
-					);
-				}
-			}
-			$stepObject = $stepObjects[$stepName];
-
-			if ($stepObject->needsExecution()) {
-				$stepContent = $stepObject->render();
-				$stepContent = $this->render($stepContent, $executionMessages);
-				$this->output($stepContent);
-			}
-		}
-
-		// If there was no output yet, we have reached the last step.
-		// In this case, redirect to plain install tool
-		$getPostValues = GeneralUtility::_GP('install');
-		$context = '';
-		// Add context parameter in case this script was called within backend scope
-		if (isset($getPostValues['context']) && $getPostValues['context'] === 'backend') {
-			$context = '?install[context]=backend';
-		}
-		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('InstallTool.php' . $context, \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_307);
+		// Warning: Order of this methods is security relevant and interferes with different access
+		// conditions (new/existing installation). See the single method comments for details.
+		$this->outputInstallToolNotEnabledMessageIfNeeded();
+		$this->migrateLocalconfToLocalConfigurationIfNeeded();
+		$this->outputInstallToolPasswordNotSetMessageIfNeeded();
+		$this->executeOrOutputFirstInstallStepIfNeeded();
+		$this->generateEncryptionKeyIfNeeded();
+		$this->initializeSession();
+		$this->checkSessionToken();
+		$this->checkSessionLifetime();
+		$this->loginIfRequested();
+		$this->outputLoginFormIfNotAuthorized();
+		$this->executeSpecificStep();
+		$this->outputSpecificStep();
+		$this->redirectToTool();
 	}
 
 	/**
-	 * Render a step with the execution messages of the executed step and the current step content
+	 * Execute a step action if requested. If executed, a redirect is done, so
+	 * the next request will render step one again if needed or initiate a
+	 * request to test the next step.
 	 *
-	 * @param string $stepContent Inner step content
-	 * @param array $executionMessages<\TYPO3\CMS\Install\Status\StatusInterface> Status objects of executed step
-	 * @return string
+	 * @throws Exception
+	 * @return void
 	 */
-	protected function render($stepContent, array $executionMessages = array()) {
-		$mainPageContent = file_get_contents(__DIR__ . '/../../Resources/Private/Templates/StepInstaller/Main.html');
+	protected function executeSpecificStep() {
+		$action = $this->getAction();
+		$postValues = $this->getPostValues();
+		if ($action && isset($postValues['set']) && $postValues['set'] === 'execute') {
+			$stepAction = $this->getActionInstance($action);
+			$stepAction->setAction($action);
+			$stepAction->setToken($this->generateTokenForAction($action));
+			$stepAction->setPostValues($this->getPostValues());
+			// @TODO: Put messages into session before redirect
+			$messages = $stepAction->execute();
+			$this->redirect();
+		}
+	}
 
-		$statusUtility = new \TYPO3\CMS\Install\Status\StatusUtility();
-		$executionMessagesHtml = $statusUtility->renderStatusObjectsAsHtml($executionMessages);
+	/**
+	 * Render a specific step. Fallback to first step if none is given.
+	 * The according step is instantiated and 'needsExecution' is called. If
+	 * it needs execution, the step will be rendered, otherwise a redirect
+	 * to test the next step is initiated.
+	 *
+	 * @return void
+	 */
+	protected function outputSpecificStep() {
+		$action = $this->getAction();
+		if ($action === '') {
+			// First step action
+			list($action) = $this->authenticationActions;
+		}
+		$stepAction = $this->getActionInstance($action);
+		$stepAction->setAction($action);
+		$stepAction->setActionGroup('step');
+		$stepAction->setToken($this->generateTokenForAction($action));
+		$stepAction->setPostValues($this->getPostValues());
 
-		$markerArray = array();
-		$markerArray['HEAD_TITLE'] = 'TYPO3 ' . TYPO3_branch;
-		$markerArray['STEP_EXECUTION_MESSAGES'] = $executionMessagesHtml;
-		$markerArray['CONTENT'] = $stepContent;
-		$markerArray['BODY_TITLE'] = 'Installing TYPO3 ' . TYPO3_version;
-		$markerArray['COPYRIGHT'] = $this->getCopyRightString();
+		if ($stepAction->needsExecution()) {
+			// @TODO: Put messages into session before redirect
+			$this->output($stepAction->handle());
+		} else {
+			// Redirect to next step if there are any
+			// @TODO: Put messages into session before redirect
+			$currentPosition = array_keys($this->authenticationActions, $action, TRUE);
+			$nextAction = array_slice($this->authenticationActions, $currentPosition[0] + 1, 1);
+			if (!empty($nextAction)) {
+				$this->redirect('', $nextAction[0]);
+			}
+		}
+	}
 
-		foreach ($markerArray as $key => $value) {
-			$mainPageContent = str_replace('###' . $key . '###', $value, $mainPageContent);
+	/**
+	 * Instantiate a specific action class
+	 *
+	 * @param string $action Action to instantiate
+	 * @throws Exception
+	 * @return \TYPO3\CMS\Install\Controller\Action\Step\StepInterface
+	 */
+	protected function getActionInstance($action) {
+		$this->validateAuthenticationAction($action);
+		$actionClass = ucfirst($action);
+		/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $stepAction */
+		$stepAction = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\' . $actionClass);
+		if (!($stepAction instanceof Action\Step\StepInterface)) {
+			throw new Exception(
+				$action . ' does non implement StepInterface',
+				1371303903
+			);
+		}
+		return $stepAction;
+	}
+
+	/**
+	 * If the last step was reached and none needs execution, a redirect
+	 * to call the tool controller is initiated.
+	 *
+	 * @return void
+	 */
+	protected function redirectToTool() {
+		$this->redirect('tool');
+	}
+
+	/**
+	 * "Silent" upgrade very early in step installer, before rendering step 1:
+	 * If typo3conf and typo3conf/localconf.php exist, but no typo3conf/LocalConfiguration,
+	 * create LocalConfiguration.php / AdditionalConfiguration.php from localconf.php
+	 * Might throw exception if typo3conf directory is not writable.
+	 *
+	 * @return void
+	 */
+	protected function migrateLocalconfToLocalConfigurationIfNeeded() {
+		/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
+		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+
+		$localConfigurationFileLocation = $configurationManager->getLocalConfigurationFileLocation();
+		$localConfigurationFileExists = is_file($localConfigurationFileLocation) ? TRUE : FALSE;
+		$localConfFileLocation = PATH_typo3conf . 'localconf.php';
+		$localConfFileExists = is_file($localConfFileLocation) ? TRUE : FALSE;
+
+		if (is_dir(PATH_typo3conf) && $localConfFileExists && !$localConfigurationFileExists) {
+			$localConfContent = file($localConfFileLocation);
+
+			// Line array for the three categories: localConfiguration, db settings, additionalConfiguration
+			$typo3ConfigurationVariables = array();
+			$typo3DatabaseVariables = array();
+			$additionalConfiguration = array();
+			foreach ($localConfContent as $line) {
+				$line = trim($line);
+				$matches = array();
+				// Convert extList to array
+				if (
+					preg_match('/^\\$TYPO3_CONF_VARS\\[\'EXT\'\\]\\[\'extList\'\\] *={1} *\'(.+)\';{1}/', $line, $matches) === 1
+					|| preg_match('/^\\$GLOBALS\\[\'TYPO3_CONF_VARS\'\\]\\[\'EXT\'\\]\\[\'extList\'\\] *={1} *\'(.+)\';{1}/', $line, $matches) === 1
+				) {
+					$extListAsArray = GeneralUtility::trimExplode(',', $matches[1], TRUE);
+					$typo3ConfigurationVariables[] = '$TYPO3_CONF_VARS[\'EXT\'][\'extListArray\'] = ' . var_export($extListAsArray, TRUE) . ';';
+				} elseif (
+					preg_match('/^\\$TYPO3_CONF_VARS.+;{1}/', $line, $matches) === 1
+				) {
+					$typo3ConfigurationVariables[] = $matches[0];
+				} elseif (
+					preg_match('/^\\$GLOBALS\\[\'TYPO3_CONF_VARS\'\\].+;{1}/', $line, $matches) === 1
+				) {
+					$lineWithoutGlobals = str_replace('$GLOBALS[\'TYPO3_CONF_VARS\']', '$TYPO3_CONF_VARS', $matches[0]);
+					$typo3ConfigurationVariables[] = $lineWithoutGlobals;
+				} elseif (
+					preg_match('/^\\$typo_db.+;{1}/', $line, $matches) === 1
+				) {
+					eval($matches[0]);
+					if (isset($typo_db_host)) {
+						$typo3DatabaseVariables['host'] = $typo_db_host;
+					} elseif (isset($typo_db)) {
+						$typo3DatabaseVariables['database'] = $typo_db;
+					} elseif (isset($typo_db_username)) {
+						$typo3DatabaseVariables['username'] = $typo_db_username;
+					} elseif (isset($typo_db_password)) {
+						$typo3DatabaseVariables['password'] = $typo_db_password;
+					} elseif (isset($typo_db_extTableDef_script)) {
+						$typo3DatabaseVariables['extTablesDefinitionScript'] = $typo_db_extTableDef_script;
+					}
+					unset($typo_db_host, $typo_db, $typo_db_username, $typo_db_password, $typo_db_extTableDef_script);
+				} elseif (
+					strlen($line) > 0 && preg_match('/^\\/\\/.+|^#.+|^<\\?php$|^<\\?$|^\\?>$/', $line, $matches) === 0
+				) {
+					$additionalConfiguration[] = $line;
+				}
+			}
+
+			// Build new TYPO3_CONF_VARS array
+			$TYPO3_CONF_VARS = NULL;
+			eval(implode(LF, $typo3ConfigurationVariables));
+
+			// Add db settings to array
+			$TYPO3_CONF_VARS['DB'] = $typo3DatabaseVariables;
+			$TYPO3_CONF_VARS = \TYPO3\CMS\Core\Utility\ArrayUtility::sortByKeyRecursive($TYPO3_CONF_VARS);
+
+			// Write out new LocalConfiguration file
+			$configurationManager->writeLocalConfiguration($TYPO3_CONF_VARS);
+
+			// Write out new AdditionalConfiguration file
+			if (sizeof($additionalConfiguration) > 0) {
+				$configurationManager->writeAdditionalConfiguration($additionalConfiguration);
+			} else {
+				@unlink($configurationManager->getAdditionalConfigurationFileLocation());
+			}
+
+			// Move localconf.php to localconf.obsolete.php
+			rename($localConfFileLocation, PATH_site . 'typo3conf/localconf.obsolete.php');
+
+			// Perform a reload to self, so bootstrap now uses new LocalConfiguration.php
+			$this->redirect();
+		}
+	}
+
+	/**
+	 * The first install step has a special standing and needs separate handling:
+	 * At this point no directory exists (no typo3conf, no typo3temp), so we can
+	 * not start the session handling (that stores the install tool session within typo3temp).
+	 * This also means, we can not start the token handling for CSRF protection. This
+	 * is no real problem, since no local configuration or other security relevant
+	 * information was created yet.
+	 *
+	 * So, if no typo3conf directory exists yet, the first step is just rendered, or
+	 * executed if called so. After that, a redirect is initiated to proceed with
+	 * other tasks.
+	 *
+	 * @return void
+	 */
+	protected function executeOrOutputFirstInstallStepIfNeeded() {
+		$postValues = $this->getPostValues();
+
+		$wasExecuted= FALSE;
+		$errorMessagesFromExecute = array();
+		if (isset($postValues['action'])
+			&& $postValues['action']=== 'environmentAndFolders'
+		) {
+			/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $action */
+			$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\EnvironmentAndFolders');
+			$errorMessagesFromExecute = $action->execute();
+			$wasExecuted = TRUE;
 		}
 
-		return $mainPageContent;
+		/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $action */
+		$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\EnvironmentAndFolders');
+		$needsExecution = $action->needsExecution();
+
+		if (!is_dir(PATH_typo3conf)
+			|| count($errorMessagesFromExecute) > 0
+			|| $needsExecution
+		) {
+			/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $action */
+			$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\EnvironmentAndFolders');
+			$action->setActionGroup('step');
+			$action->setAction('environmentAndFolders');
+			if (count($errorMessagesFromExecute) > 0) {
+				$action->setMessages($errorMessagesFromExecute);
+			}
+			$this->output($action->handle());
+		}
+
+		if ($wasExecuted) {
+			$this->redirect();
+		}
 	}
 
 	/**
-	 * Get copyright string
+	 * "Silent" upgrade: The encryption key is crucial for securing form tokens
+	 * an the whole TYPO3 link rendering later on. A random key is set here in
+	 * LocalConfiguration if it does not exist yet. This might possible happen
+	 * during upgrading and will happen during first install.
 	 *
-	 * @return string copyright
+	 * @return void
 	 */
-	protected function getCopyRightString() {
-		$content = array();
-		$content[] = '<p>';
-		$content[] = '<strong>TYPO3 CMS.</strong> Copyright &copy; 1998-' . date('Y');
-		$content[] = 'Kasper Sk&#229;rh&#248;j. Extensions are copyright of their respective';
-		$content[] = 'owners. Go to <a href="' . TYPO3_URL_GENERAL . '">' . TYPO3_URL_GENERAL . '</a>';
-		$content[] = 'for details. TYPO3 comes with ABSOLUTELY NO WARRANTY;';
-		$content[] = '<a href="' . TYPO3_URL_LICENSE . '">click</a> for details.';
-		$content[] = 'This is free software, and you are welcome to redistribute it';
-		$content[] = 'under certain conditions; <a href="' . TYPO3_URL_LICENSE . '">click</a>';
-		$content[] = 'for details. Obstructing the appearance of this notice is prohibited by law.';
-		$content[] = '</p>';
-		$content[] = '<p>';
-		$content[] = '<a href="' . TYPO3_URL_DONATE . '"><strong>Donate</strong></a> |';
-		$content[] = '<a href="' . TYPO3_URL_ORG . '">TYPO3.org</a>';
-		$content[] = '</p>';
-		return implode(LF, $content);
+	protected function generateEncryptionKeyIfNeeded() {
+		if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) {
+			$randomKey = GeneralUtility::getRandomHexString(96);
+			/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
+			$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+			$configurationManager->setLocalConfigurationValueByPath('SYS/encryptionKey', $randomKey);
+			$this->redirect();
+		}
 	}
-
-	/**
-	 * Print output
-	 *
-	 * @param string $content Content to output
-	 */
-	protected function output($content) {
-		header('Content-Type: text/html; charset=utf-8');
-		echo $content;
-		die();
-	}
-
 }
+?>

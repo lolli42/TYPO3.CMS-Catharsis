@@ -27,6 +27,8 @@ namespace TYPO3\CMS\Install\Service;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Secure session handling for the install tool.
  *
@@ -91,7 +93,7 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 		session_set_save_handler(array($this, 'open'), array($this, 'close'), array($this, 'read'), array($this, 'write'), array($this, 'destroy'), array($this, 'gc'));
 		session_save_path($sessionSavePath);
 		session_name($this->cookieName);
-		ini_set('session.cookie_path', \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'));
+		ini_set('session.cookie_path', GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'));
 		// Always call the garbage collector to clean up stale session files
 		ini_set('session.gc_probability', 100);
 		ini_set('session.gc_divisor', 100);
@@ -100,20 +102,32 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 			$sessionCreationError = 'Error: session.auto-start is enabled.<br />';
 			$sessionCreationError .= 'The PHP option session.auto-start is enabled. Disable this option in php.ini or .htaccess:<br />';
 			$sessionCreationError .= '<pre>php_value session.auto_start Off</pre>';
-			throw new \RuntimeException($sessionCreationError, 1294587485);
+			throw new \TYPO3\CMS\Install\Exception($sessionCreationError, 1294587485);
 		} elseif (defined('SID')) {
 			$sessionCreationError = 'Session already started by session_start().<br />';
 			$sessionCreationError .= 'Make sure no installed extension is starting a session in its ext_localconf.php or ext_tables.php.';
-			throw new \RuntimeException($sessionCreationError, 1294587486);
+			throw new \TYPO3\CMS\Install\Exception($sessionCreationError, 1294587486);
 		}
 		session_start();
 	}
 
 	/**
 	 * Returns the path where to store our session files
+	 *
+	 * @throws \TYPO3\CMS\Install\Exception
+	 * @return string Session save path
 	 */
 	private function getSessionSavePath() {
-		$sessionSavePath = sprintf($this->typo3tempPath . $this->sessionPath, \TYPO3\CMS\Core\Utility\GeneralUtility::hmac('session:' . $GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']));
+		if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) {
+			throw new \TYPO3\CMS\Install\Exception(
+				'No encryption key set to secure session',
+				1371243449
+			);
+		}
+		$sessionSavePath = sprintf(
+			$this->typo3tempPath . $this->sessionPath,
+			GeneralUtility::hmac('session:' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])
+		);
 		$this->ensureSessionSavePathExists($sessionSavePath);
 		return $sessionSavePath;
 	}
@@ -123,22 +137,23 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * and throw an exception if that fails.
 	 *
 	 * @param string $sessionSavePath The absolute path to the session files
-	 * @throws \RuntimeException
+	 * @throws \TYPO3\CMS\Install\Exception
 	 */
 	private function ensureSessionSavePathExists($sessionSavePath) {
 		if (!is_dir($sessionSavePath)) {
 			try {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir_deep($sessionSavePath);
+				GeneralUtility::mkdir_deep($sessionSavePath);
 			} catch (\RuntimeException $exception) {
-				throw new \RuntimeException('Could not create session folder in typo3temp/. Make sure it is writeable!', 1294587484);
+				throw new \TYPO3\CMS\Install\Exception(
+					'Could not create session folder in typo3temp/. Make sure it is writeable!',
+					1294587484
+				);
 			}
-			\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($sessionSavePath . '/.htaccess', 'Order deny, allow' . '
-' . 'Deny from all' . '
-');
+			GeneralUtility::writeFile($sessionSavePath . '/.htaccess', 'Order deny, allow' . LF . 'Deny from all');
 			$indexContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">';
 			$indexContent .= '<HTML><HEAD<TITLE></TITLE><META http-equiv=Refresh Content="0; Url=../../">';
 			$indexContent .= '</HEAD></HTML>';
-			\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($sessionSavePath . '/index.html', $indexContent);
+			GeneralUtility::writeFile($sessionSavePath . '/index.html', $indexContent);
 		}
 	}
 
@@ -201,13 +216,20 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Used to store our session files without exposing the session ID.
 	 *
 	 * @param string $sessionId An alternative session ID. Defaults to our current session ID
+	 * @throws \TYPO3\CMS\Install\Exception
 	 * @return string the session hash
 	 */
 	private function getSessionHash($sessionId = '') {
+		if (empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) {
+			throw new \TYPO3\CMS\Install\Exception(
+				'No encryption key set to secure session',
+				1371243450
+			);
+		}
 		if (!$sessionId) {
 			$sessionId = $this->getSessionId();
 		}
-		return md5($GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword'] . '|' . $sessionId);
+		return md5($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . '|' . $sessionId);
 	}
 
 	/**
@@ -336,7 +358,7 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function write($id, $sessionData) {
 		$sessionFile = $this->getSessionFile($id);
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($sessionFile, $sessionData);
+		return GeneralUtility::writeFile($sessionFile, $sessionData);
 	}
 
 	/**

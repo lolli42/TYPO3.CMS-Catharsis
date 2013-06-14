@@ -123,21 +123,18 @@ class Bootstrap {
 	}
 
 	/**
-	 * Redirect to install tool if LocalConfiguration.php is missing
+	 * Redirect to install tool if LocalConfiguration.php is missing.
 	 *
 	 * @param string $pathUpToDocumentRoot Can contain eg. '../' if called from a sub directory
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function redirectToInstallToolIfLocalConfigurationFileDoesNotExist($pathUpToDocumentRoot = '') {
+	public function redirectToInstallerIfLocalConfigurationFileDoesNotExist($pathUpToDocumentRoot = '') {
 		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
 		$configurationManager = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
-		if (
-			!file_exists($configurationManager->getLocalConfigurationFileLocation())
-			&& !file_exists($configurationManager->getLocalconfFileLocation())
-		) {
+		if (!file_exists($configurationManager->getLocalConfigurationFileLocation())) {
 			require_once __DIR__ . '/../Utility/HttpUtility.php';
-			Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/install/index.php?mode=123&step=1&password=joh316');
+			Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/sysext/install/Start/Install.php');
 		}
 		return $this;
 	}
@@ -250,13 +247,9 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function populateLocalConfiguration() {
-		try {
-			/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
-			$configurationManager = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
-			$configurationManager->exportConfiguration();
-		} catch (\Exception $e) {
-			die($e->getMessage());
-		}
+		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
+		$configurationManager = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+		$configurationManager->exportConfiguration();
 		return $this;
 	}
 

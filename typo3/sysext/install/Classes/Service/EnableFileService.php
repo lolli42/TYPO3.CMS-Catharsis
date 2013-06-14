@@ -32,21 +32,10 @@ namespace TYPO3\CMS\Install\Service;
  */
 class EnableFileService {
 
-	const INSTALL_TOOL_ENABLE_FILE_PATH = 'typo3conf/ENABLE_INSTALL_TOOL';
-	const QUICKSTART_FILE_PATH = 'typo3conf/FIRST_INSTALL';
 	/**
-	 * Checks, if the "FIRST_INSTALL" file exists,
-	 * if so, deletes it, and adds the ENABLE_INSTALL_TOOL file
-	 *
-	 * @return void
+	 * @constant Relative path to ENABLE_INSTALL_TOOL file
 	 */
-	static protected function checkFirstInstallFile() {
-		$quickstartFile = PATH_site . self::QUICKSTART_FILE_PATH;
-		// If typo3conf/FIRST_INSTALL is present and can be deleted, automatically create typo3conf/ENABLE_INSTALL_TOOL
-		if (is_file($quickstartFile) && is_writeable($quickstartFile) && unlink($quickstartFile)) {
-			self::createInstallToolEnableFile();
-		}
-	}
+	const INSTALL_TOOL_ENABLE_FILE_PATH = 'typo3conf/ENABLE_INSTALL_TOOL';
 
 	/**
 	 * Creates the INSTALL_TOOL_ENABLE file
@@ -75,7 +64,6 @@ class EnableFileService {
 	 * @return boolean
 	 */
 	static public function checkInstallToolEnableFile() {
-		self::checkFirstInstallFile();
 		$enableFile = self::getInstallToolEnableFilePath();
 		if (@file_exists($enableFile)) {
 			$content = @file_get_contents($enableFile);
@@ -115,17 +103,6 @@ class EnableFileService {
 	static protected function getInstallToolEnableFilePath() {
 		return PATH_site . self::INSTALL_TOOL_ENABLE_FILE_PATH;
 	}
-
-	/**
-	 * Checks if the install tool password is empty
-	 *
-	 * @return boolean
-	 */
-	static public function isInstallToolPasswordEmpty() {
-		return empty($GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']);
-	}
-
 }
-
 
 ?>

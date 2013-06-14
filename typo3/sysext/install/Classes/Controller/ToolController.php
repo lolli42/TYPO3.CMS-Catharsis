@@ -35,12 +35,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Handles install tool session, login and login form rendering,
  * calls actions that need authentication and handles form tokens.
  */
-class ToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
-	 */
-	protected $objectManager = NULL;
+class ToolController extends AbstractController {
 
 	/**
 	 * @var array List of valid action names that need authentication
@@ -61,353 +56,73 @@ class ToolController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController 
 	 *
 	 * @return void
 	 */
-	public function dispatch() {
-		$this->earlyExitIfInstallToolPasswordIsNotSetOrEmpty();
+	public function execute() {
 		$this->loadBaseExtensions();
+		$this->initializeObjectManager();
 
-		/** @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager */
-		$objectManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
-		$this->objectManager = $objectManager;
+		// Warning: Order of this methods is security relevant and interferes with different access
+		// conditions (new/existing installation). See the single method comments for details.
+		$this->outputInstallToolNotEnabledMessageIfNeeded();
+		$this->outputInstallToolPasswordNotSetMessageIfNeeded();
+		$this->initializeSession();
+		$this->checkSessionToken();
+		$this->checkSessionLifetime();
+		$this->logoutIfRequested();
+		$this->loginIfRequested();
+		$this->outputLoginFormIfNotAuthorized();
+		$this->dispatchAuthenticationActions();
+	}
 
-		/** @var \TYPO3\CMS\Install\Service\SessionService $session */
-		$session = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SessionService');
-
-		if (!$session->hasSession()) {
-			$session->startSession();
-		}
-
-		$content = '';
+	/**
+	 * Logout user if requested
+	 *
+	 * @return void
+	 */
+	protected function logoutIfRequested() {
 		$action = $this->getAction();
-		$postValues = $this->getPostValues();
 		if ($action === 'logout') {
+			// @TODO: This and similar code in step action DefaultConfiguration should be moved to enable install file service
 			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
 			if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
 				unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
 			}
+
 			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
 			$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
 				'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
 			);
 			$formProtection->clean();
-			$session->destroySession();
-			\TYPO3\CMS\Install\InstallBootstrap::checkEnabledInstallToolOrDie();
-		} elseif (!$this->isTokenValid()) {
-			// If form protection token is invalid, destroy session start new and redirect to loginForm
-			$session->resetSession();
-			$session->startSession();
-			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
-			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-			$message->setTitle('Invalid form token');
-			$message->setMessage(
-				'The form protection token was invalid. You have been logged out, please login and try again.'
-			);
-			$content = $this->loginForm($message);
-		} elseif ($session->isExpired()) {
-			// Session expired, log out user, start new session, show login form
-			$session->resetSession();
-			$session->startSession();
-			/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
-			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-			$message->setTitle('Session expired');
-			$message->setMessage(
-				'Your Install Tool session has expired. You have been logged out, please login and try again.'
-			);
-			$content = $this->loginForm($message);
-		} elseif ($action === 'login') {
-			if (isset($postValues['password'])
-				&& md5($postValues['password']) === $GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']
-			) {
-				$session->setAuthorized();
-				$this->sendLoginSuccessfulMail();
-				$content = $this->dispatchAuthenticationActions('welcome');
-			} else {
-				/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
-				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$message->setTitle('Login failed');
-				$message->setMessage('Given password does not match the install tool login password.');
-				$this->sendLoginFailedMail();
-				$content = $this->loginForm($message);
-			}
-		} elseif ($session->isAuthorized()) {
-			$session->refreshSession();
-			// Extend the age of the ENABLE_INSTALL_TOOL file by one hour
-			$enableInstallToolFile = PATH_typo3conf . 'ENABLE_INSTALL_TOOL';
-			if (is_file($enableInstallToolFile)) {
-				@touch($enableInstallToolFile);
-			}
-			$content = $this->dispatchAuthenticationActions();
-		} else {
-			$content = $this->loginForm();
+			$this->session->destroySession();
+			$this->redirect();
 		}
-
-		$this->output($content);
-	}
-
-	/**
-	 * Show login form
-	 *
-	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message Optional status message from controller
-	 * @return string Rendered HTML
-	 */
-	protected function loginForm(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
-		/** @var \TYPO3\CMS\Install\ToolAction\LoginForm $toolAction */
-		$toolAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ToolAction\\LoginForm');
-		$toolAction->setAction('login');
-		$toolAction->setToken($this->generateTokenForAction('login'));
-		$toolAction->setPostValues($this->getPostValues());
-		if ($message) {
-			$toolAction->setMessage($message);
-		}
-		$content = $toolAction->handle();
-		return $content;
 	}
 
 	/**
 	 * Call an action that needs authentication
 	 *
-	 * @param string $action Action to call, only set to welcome specifically after successful login
 	 * @throws Exception
 	 * @return string Rendered content
 	 */
-	protected function dispatchAuthenticationActions($action = NULL) {
-		if (!$action) {
-			$action = $this->getAction();
-			if ($action === '') {
-				$action = 'welcome';
-			}
+	protected function dispatchAuthenticationActions() {
+		$action = $this->getAction();
+		if ($action === '') {
+			$action = 'welcome';
 		}
-		if (!in_array($action, $this->authenticationActions)) {
-			throw new Exception(
-				$action . ' is not a valid authenticated action',
-				1369345838
-			);
-		}
+		$this->validateAuthenticationAction($action);
 		$actionClass = ucfirst($action);
-		/** @var \TYPO3\CMS\Install\ToolAction\ToolActionInterface $ToolAction */
-		$toolAction = $this->objectManager->get('TYPO3\\CMS\\Install\\ToolAction\\' . $actionClass);
-		if (!($toolAction instanceof \TYPO3\CMS\Install\ToolAction\ToolActionInterface)) {
+		/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $ToolAction */
+		$toolAction = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Tool\\' . $actionClass);
+		if (!($toolAction instanceof \TYPO3\CMS\Install\Controller\Action\ActionInterface)) {
 			throw new Exception(
-				$action . ' does non implement ToolActionInterface',
+				$action . ' does non implement ActionInterface',
 				1369474308
 			);
 		}
+		$toolAction->setActionGroup('tool');
 		$toolAction->setAction($action);
 		$toolAction->setToken($this->generateTokenForAction($action));
 		$toolAction->setPostValues($this->getPostValues());
-		$content = $toolAction->handle();
-		return $content;
-	}
-
-	/**
-	 * If install tool login mail is set, send a mail for a successful login.
-	 * This is currently straight ahead code and could be improved.
-	 *
-	 * @return void
-	 */
-	protected function sendLoginSuccessfulMail() {
-		$warningEmailAddress = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
-		if ($warningEmailAddress) {
-			$subject = 'Install Tool Login at \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\'';
-			$body =
-				'There has been an Install Tool login at TYPO3 site'
-				 . ' \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\''
-				. ' (' . GeneralUtility::getIndpEnv('HTTP_HOST') . ')'
-				. ' from remote address \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\''
-				. ' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')';
-			mail($warningEmailAddress, $subject, $body, 'From: TYPO3 Install Tool WARNING <>');
-		}
-	}
-
-	/**
-	 * If install tool login mail is set, send a mail for a failed login.
-	 * This is currently straight ahead code and could be improved.
-	 *
-	 * @return void
-	 */
-	protected function sendLoginFailedMail() {
-		$formValues = GeneralUtility::_GP('install');
-		$warningEmailAddress = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
-		if ($warningEmailAddress) {
-			$subject = 'Install Tool Login ATTEMPT at \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\'';
-			$body =
-				'There has been an Install Tool login attempt at TYPO3 site'
-				. ' \'' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '\''
-				. ' (' . GeneralUtility::getIndpEnv('HTTP_HOST') . ')'
-				. ' The MD5 hash of the last 5 characters of the password tried was \'' . substr(md5($formValues['password']), -5) . '\''
-				. ' remote addres was \'' . GeneralUtility::getIndpEnv('REMOTE_ADDR') . '\''
-				. ' (' . GeneralUtility::getIndpEnv('REMOTE_HOST') . ')';
-			mail($warningEmailAddress, $subject, $body, 'From: TYPO3 Install Tool WARNING <>');
-		}
-	}
-
-	/**
-	 * Require dbal ext_localconf if extension is loaded
-	 * Required extbase + fluid ext_localconf
-	 * Set caching to null, we do not want dbal, fluid or extbase to cache anything
-	 *
-	 * @return void
-	 */
-	protected function loadBaseExtensions() {
-		if ($this->isDbalEnabled()) {
-			require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
-			$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['dbal']['backend']
-				= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-		}
-		require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('extbase') . 'ext_localconf.php');
-		require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('fluid') . 'ext_localconf.php');
-
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_datamapfactory_datamap']['backend']
-			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_object']['backend']
-			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_reflection']['backend']
-			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['extbase_typo3dbbackend_tablecolumns']['backend']
-			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['fluid_template']['backend']
-			= 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
-
-		/** @var $cacheManager \TYPO3\CMS\Core\Cache\CacheManager */
-		$cacheManager = $GLOBALS['typo3CacheManager'];
-		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
-	}
-
-	/**
-	 * Return TRUE if dbal and adodb extension is loaded
-	 *
-	 * @return boolean TRUE if dbal and adodb is loaded
-	 */
-	protected function isDbalEnabled() {
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')
-			&& \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')
-		) {
-			return TRUE;
-		}
-		return FALSE;
-	}
-
-	/**
-	 * Exit out if there is no install tool password set in LocalConfiguration
-	 *
-	 * @throws Exception
-	 * @return void
-	 */
-	protected function earlyExitIfInstallToolPasswordIsNotSetOrEmpty() {
-		if (!isset($GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword'])
-			|| strlen($GLOBALS['TYPO3_CONF_VARS']['BE']['installToolPassword']) === 0
-		) {
-			throw new Exception(
-				'installToolPassword is empty or not set',
-				1369165360
-			);
-		}
-	}
-
-	/**
-	 * Output content
-	 *
-	 * @param string $content Content to output
-	 */
-	protected function output($content = '') {
-		header('Content-Type: text/html; charset=utf-8');
-		header('Cache-Control: no-cache, must-revalidate');
-		header('Pragma: no-cache');
-		echo $content;
-		die;
-	}
-
-	/**
-	 * Generate token for specific action
-	 *
-	 * @param string $action Action name
-	 * @return string Form protection token
-	 * @throws Exception
-	 */
-	protected function generateTokenForAction($action = NULL) {
-		if (!$action) {
-			$action = $this->getAction();
-		}
-		if ($action === '') {
-			throw new Exception(
-				'Token must have a valid action name',
-				1369326592
-			);
-		}
-		/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
-		$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
-			'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
-		);
-		return $formProtection->generateToken('installTool', $action);
-	}
-
-	/**
-	 * Use form protection API to find out if protected POST forms are ok.
-	 *
-	 * @throws Exception
-	 * @return boolean TRUE if token is valid or not needed, FALSE if token validation failed
-	 */
-	protected function isTokenValid() {
-		$postValues = $this->getPostValues();
-		$result = FALSE;
-		if (count($postValues) > 0) {
-			// A token must be given as soon as there is POST data
-			if (isset($postValues['token'])) {
-				/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
-				$formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get(
-					'TYPO3\\CMS\\Core\\FormProtection\\InstallToolFormProtection'
-				);
-				$action = $this->getAction();
-				if ($action === '') {
-					throw new Exception(
-						'Token can be checked for valid actions only',
-						1369326593
-					);
-				}
-				$result = $formProtection->validateToken($postValues['token'], 'installTool', $action);
-			}
-		} else {
-			$result = TRUE;
-		}
-		return $result;
-	}
-
-	/**
-	 * Get POST form values of install tool
-	 *
-	 * @return array
-	 */
-	protected function getPostValues() {
-		$postValues = GeneralUtility::_POST('install');
-		if (!is_array($postValues)) {
-			$postValues = array();
-		}
-		return $postValues;
-	}
-
-	/**
-	 * Retrieve parameter from GET or POST and sanitize
-	 *
-	 * @throws Exception
-	 * @return string Empty string if no action is given or sanitized action string
-	 */
-	protected function getAction() {
-		$formValues = GeneralUtility::_GP('install');
-		$action = '';
-		if (isset($formValues['action'])) {
-			$action = $formValues['action'];
-		}
-		if ($action !== ''
-			&& $action !== 'login'
-			&& $action !== 'loginForm'
-			&& $action !== 'logout'
-			&& !in_array($action, $this->authenticationActions)
-		) {
-			throw new Exception(
-				'Invalid action ' . $action,
-				1369325619
-			);
-		}
-		return $action;
+		$this->output($toolAction->handle());
 	}
 }
 

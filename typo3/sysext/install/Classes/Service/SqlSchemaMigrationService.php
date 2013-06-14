@@ -30,8 +30,6 @@ namespace TYPO3\CMS\Install\Service;
 /**
  * Verify TYPO3 DB table structure. Mainly used in install tool
  * compare wizard and extension manager.
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class SqlSchemaMigrationService {
 
@@ -722,10 +720,5 @@ class SqlSchemaMigrationService {
 		unset($value);
 		return $whichTables;
 	}
-
-
-
 }
-
-
 ?>

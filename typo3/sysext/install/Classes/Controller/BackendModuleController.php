@@ -42,11 +42,11 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 	 */
 	public function indexAction() {
 		/** @var $installToolService \TYPO3\CMS\Install\Service\EnableFileService */
-		$installToolService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\EnableFileService');
+		$installToolService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\EnableFileService');
 		if ($installToolService->checkInstallToolEnableFile()) {
 			// Install Tool is already enabled
 			$installToolService->extendInstallToolEnableFileLifetime();
-			\TYPO3\CMS\Core\Utility\HttpUtility::redirect('sysext/install/Start/StepInstaller.php?install[context]=backend');
+			\TYPO3\CMS\Core\Utility\HttpUtility::redirect('sysext/install/Start/Install.php?install[context]=backend');
 		} else {
 			$this->redirect('showEnableInstallToolButton');
 		}
@@ -69,7 +69,7 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 	public function enableInstallToolAction() {
 		$token = $GLOBALS['_POST']['tx_install_tools_installinstall']['installToolEnableToken'];
 		if (\TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()->validateToken($token, 'installTool')) {
-			$installToolService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\EnableFileService');
+			$installToolService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\EnableFileService');
 			$installToolService->createInstallToolEnableFile();
 			$this->redirect('index');
 		} else {

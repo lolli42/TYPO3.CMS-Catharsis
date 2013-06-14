@@ -1,0 +1,35 @@
+{namespace i=TYPO3\CMS\Install\ViewHelpers}
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>Installing TYPO3</title>
+		<link rel="stylesheet" type="text/css" href="../Resources/Public/Stylesheets/Action/Step/General.css?{time}" />
+	</head>
+	<body>
+		<div id="t3-install-outer">
+			<h1></h1>
+
+			<div id="t3-install-step-execution-messages">
+				<f:if condition="{messages}">
+					<f:for each="{messages}" as="message">
+						<i:statusMessage message="{message}" />
+					</f:for>
+				</f:if>
+			</div>
+
+			<div id="t3-install-box-border-top">&nbsp;</div>
+
+			<h2>Installing TYPO3 <i:constant name="TYPO3_version" /></h2>
+
+			<div id="t3-install-box-body">
+				<f:render section="Content" />
+			</div>
+
+			<div id="t3-install-box-border-bottom">&nbsp;</div>
+
+			<f:render partial="Action/Common/Copyright" arguments="{_all}" />
+		</div>
+	</body>
+</html>
