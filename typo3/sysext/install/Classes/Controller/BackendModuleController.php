@@ -32,6 +32,9 @@ namespace TYPO3\CMS\Install\Controller;
  *
  * Embeds in backend an only shows the 'enable install tool button' or redirects
  * to step installer if install tool is enabled.
+ *
+ * This is a classic extbase module that does not interfere with the other code
+ * within the install tool.
  */
 class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
 

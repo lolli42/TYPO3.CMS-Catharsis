@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Install\Controller;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Controller to handle install steps
+ * Install step controller, dispatcher class of step actions.
  */
 class StepController extends AbstractController {
 
