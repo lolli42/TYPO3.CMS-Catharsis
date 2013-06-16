@@ -51,6 +51,7 @@ return array(
 		),
 	),
 	'SYS' => array(
+		'compat_version' => '6.2',
 		'isInitialInstallationInProgress' => TRUE,
 		'sitename' => 'New TYPO3 site',
 	),
