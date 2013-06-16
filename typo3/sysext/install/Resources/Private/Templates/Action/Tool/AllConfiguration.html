@@ -30,16 +30,7 @@
 
 			<form method="post">
 				<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
-
-				<fieldset class="t3-install-form-submit">
-					<ol>
-						<li>
-							<button type="submit">
-								Continue<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-							</button>
-						</li>
-					</ol>
-				</fieldset>
+				<f:render partial="Action/Common/SubmitButton" arguments="{name:'continue', text:'Continue'}"/>
 			</form>
 		</f:then>
 
@@ -55,16 +46,7 @@
 					</f:if>
 				</f:for>
 
-				<fieldset>
-					<ol>
-						<li>
-							<button type="submit" name="install[set]">
-								Write configuration
-								<span class="t3-install-form-button-icon-positive">&nbsp;</span>
-							</button>
-						</li>
-					</ol>
-				</fieldset>
+				<f:render partial="Action/Common/SubmitButton" arguments="{name:'write', text:'Write configuration'}"/>
 			</form>
 		</f:else>
 	</f:if>

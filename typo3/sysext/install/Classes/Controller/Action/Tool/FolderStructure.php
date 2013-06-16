@@ -45,7 +45,7 @@ class FolderStructure extends Action\AbstractAction implements Action\ActionInte
 		$structureFacade = $folderStructureFactory->getStructure();
 
 		$fixedStatusObjects = array();
-		if (isset($this->postValues['fix'])) {
+		if (isset($this->postValues['set']['fix'])) {
 			$fixedStatusObjects = $structureFacade->fix();
 		}
 

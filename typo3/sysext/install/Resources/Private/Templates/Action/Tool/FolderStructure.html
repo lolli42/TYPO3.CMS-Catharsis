@@ -16,9 +16,7 @@
 	<f:if condition="{fixableStatus}">
 		<form method="post">
 			<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
-			<button type="submit" name="install[fix]">
-				Fix errors <span class="t3-install-form-button-icon-positive">&nbsp;</span>
-			</button>
+			<f:render partial="Action/Common/SubmitButton" arguments="{name:'fix', text:'Fix errors'}"/>
 		</form>
 		<hr />
 	</f:if>

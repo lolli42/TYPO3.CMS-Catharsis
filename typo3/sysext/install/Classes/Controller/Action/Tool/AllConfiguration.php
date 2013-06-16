@@ -40,7 +40,7 @@ class AllConfiguration extends Action\AbstractAction implements Action\ActionInt
 	public function handle() {
 		$this->initialize();
 
-		if (isset($this->postValues['set'])) {
+		if (isset($this->postValues['set']['write'])) {
 			$this->view->assign('configurationValuesSaved', TRUE);
 			$this->view->assign('savedConfigurationValueMessages', $this->updateLocalConfigurationValues());
 		} else {
