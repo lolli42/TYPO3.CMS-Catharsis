@@ -242,7 +242,6 @@ class Bootstrap {
 	 * Merge default TYPO3_CONF_VARS with content of typo3conf/LocalConfiguration.php,
 	 * execute typo3conf/AdditionalConfiguration.php, define database related constants.
 	 *
-	 * @param boolean $allowCaching Wether to allow caching - affects cache_core (autoloader)
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */

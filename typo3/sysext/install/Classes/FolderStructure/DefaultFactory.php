@@ -118,20 +118,6 @@ class DefaultFactory {
 						),
 					),
 				),
-				/*
-				array(
-					'name' => 'typo3',
-					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-					'targetPermission' => '2770',
-					'children' => array(
-						array(
-							'name' => 'ext',
-							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-							'targetPermission' => '2770',
-						),
-					),
-				),
-				*/
 				array(
 					'name' => 'uploads',
 					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
@@ -141,14 +127,7 @@ class DefaultFactory {
 							'name' => 'index.html',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
 							'targetPermission' => '0660',
-							'targetContent' =>
-								'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
-								'<HTML>' . LF .
-								'<HEAD>' . LF .
-								TAB . '<TITLE></TITLE>' . LF .
-								'<META http-equiv=Refresh Content="0; Url=../">' . LF .
-								'</HEAD>' . LF .
-								'</HTML>',
+							'targetContent' => '',
 						),
 						array(
 							'name' => 'media',
@@ -217,13 +196,7 @@ class DefaultFactory {
 									'name' => 'index.html',
 									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
 									'targetPermission' => '0660',
-									'targetContent' =>
-										'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
-										'<HTML>' . LF .
-										'<HEAD>' . LF .
-										TAB . '<TITLE></TITLE>' . LF .
-										'<META http-equiv=Refresh Content="0; Url=/">' . LF .
-										'</HEAD>',
+									'targetContent' => '',
 								),
 							),
 						),
@@ -255,20 +228,6 @@ class DefaultFactory {
 						),
 					),
 				),
-
-				/*
-				array(
-					'name' => 'typo3_src',
-					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-					'linkTargetType' => 'directory',
-				),
-				array(
-					'name' => 'index.php',
-					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-					'linkTarget' => 'typo3_src/index.php',
-					'linkTargetType' => 'file',
-				),
-				*/
 			),
 		);
 	}
@@ -278,6 +237,8 @@ class DefaultFactory {
 	 *
 	 * @throws Exception
 	 * @return RootNode
+	 * @TODO: Use objectManager instead of new (will be injected)
+	 * @TODO: Handle targetPermission for files / directory if set in TYPO3_CONF_VARS
 	 */
 	public function getStructure() {
 		$rootNode = new RootNode($this->expectedDefaultStructure, NULL);
