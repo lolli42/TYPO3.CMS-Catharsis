@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Show system environment check results
@@ -41,11 +40,11 @@ class SystemEnvironment extends Action\AbstractAction implements Action\ActionIn
 		$this->initialize();
 
 		/** @var $statusCheck \TYPO3\CMS\Install\SystemEnvironment\Check */
-		$statusCheck = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
+		$statusCheck = $this->objectManager->get('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
 
 			/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
+		$statusUtility = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
 		$this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);
 

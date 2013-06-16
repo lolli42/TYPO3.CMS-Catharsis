@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Handle folder structure
@@ -41,7 +40,7 @@ class FolderStructure extends Action\AbstractAction implements Action\ActionInte
 		$this->initialize();
 
 		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
-		$folderStructureFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\FolderStructure\\DefaultFactory');
+		$folderStructureFactory = $this->objectManager->get('TYPO3\\CMS\\Install\\FolderStructure\\DefaultFactory');
 		/** @var $structureFacade \TYPO3\CMS\Install\FolderStructure\StructureFacade */
 		$structureFacade = $folderStructureFactory->getStructure();
 
@@ -52,7 +51,7 @@ class FolderStructure extends Action\AbstractAction implements Action\ActionInte
 
 		$statusObjects = $structureFacade->getStatus();
 		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
-		$statusUtility = GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Status\\StatusUtility');
+		$statusUtility = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 
 		$this->view
 			->assign('fixedStatus', $fixedStatusObjects)
