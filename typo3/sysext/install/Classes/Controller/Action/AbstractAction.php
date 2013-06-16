@@ -44,9 +44,9 @@ abstract class AbstractAction {
 	protected $view = NULL;
 
 	/**
-	 * @var string Name of "action group". One of the strings 'step', 'tool' or 'common'
+	 * @var string Name of controller. One of the strings 'step', 'tool' or 'common'
 	 */
-	protected $actionGroup = '';
+	protected $controller = '';
 
 	/**
 	 * @var string Name of target action, set by controller
@@ -75,16 +75,16 @@ abstract class AbstractAction {
 	 */
 	protected function initialize() {
 		$viewRootPath = GeneralUtility::getFileAbsFileName('EXT:install/Resources/Private/');
-		$actionGroupDirectoryName = ucfirst($this->actionGroup);
+		$controllerActionDirectoryName = ucfirst($this->controller);
 		$mainTemplate = ucfirst($this->action);
-		$this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/Action/' . $actionGroupDirectoryName . '/' . $mainTemplate . '.html');
+		$this->view->setTemplatePathAndFilename($viewRootPath . 'Templates/Action/' . $controllerActionDirectoryName . '/' . $mainTemplate . '.html');
 		$this->view->setLayoutRootPath($viewRootPath . 'Layouts/');
 		$this->view->setPartialRootPath($viewRootPath . 'Partials/');
 		$this->view
 			// time is used in js and css as parameter to force loading of resources
 			->assign('time', time())
 			->assign('action', $this->action)
-			->assign('controller', $this->actionGroup)
+			->assign('controller', $this->controller)
 			->assign('token', $this->token)
 			->assign('context', $this->getContext())
 			->assign('messages', $this->messages)
@@ -105,11 +105,11 @@ abstract class AbstractAction {
 	/**
 	 * Set action group. Either string 'step', 'tool' or 'common'
 	 *
-	 * @param $actionGroup
+	 * @param string $controller Controller name
 	 * @return void
 	 */
-	public function setActionGroup($actionGroup) {
-		$this->actionGroup = $actionGroup;
+	public function setController($controller) {
+		$this->controller = $controller;
 	}
 
 	/**

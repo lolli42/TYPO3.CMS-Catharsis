@@ -45,12 +45,12 @@ interface ActionInterface {
 	public function setToken($token);
 
 	/**
-	 * Set action group. Either string 'step', 'tool' or 'common'
+	 * Set controller, Either string 'step', 'tool' or 'common'
 	 *
-	 * @param $actionGroup
+	 * @param string $controller Controller name
 	 * @return void
 	 */
-	public function setActionGroup($actionGroup);
+	public function setController($controller);
 
 	/**
 	 * Set action name. This is usually similar to the class name,

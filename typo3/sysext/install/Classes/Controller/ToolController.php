@@ -118,7 +118,7 @@ class ToolController extends AbstractController {
 				1369474308
 			);
 		}
-		$toolAction->setActionGroup('tool');
+		$toolAction->setController('tool');
 		$toolAction->setAction($action);
 		$toolAction->setToken($this->generateTokenForAction($action));
 		$toolAction->setPostValues($this->getPostValues());

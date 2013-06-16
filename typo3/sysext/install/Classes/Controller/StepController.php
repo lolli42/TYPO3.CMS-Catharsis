@@ -107,7 +107,7 @@ class StepController extends AbstractController {
 		}
 		$stepAction = $this->getActionInstance($action);
 		$stepAction->setAction($action);
-		$stepAction->setActionGroup('step');
+		$stepAction->setController('step');
 		$stepAction->setToken($this->generateTokenForAction($action));
 		$stepAction->setPostValues($this->getPostValues());
 
@@ -286,7 +286,7 @@ class StepController extends AbstractController {
 		) {
 			/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $action */
 			$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\EnvironmentAndFolders');
-			$action->setActionGroup('step');
+			$action->setController('step');
 			$action->setAction('environmentAndFolders');
 			if (count($errorMessagesFromExecute) > 0) {
 				$action->setMessages($errorMessagesFromExecute);

@@ -63,7 +63,7 @@ class AbstractController {
 			if (!$installToolEnableService->checkInstallToolEnableFile()) {
 				/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $action */
 				$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Common\\InstallToolDisabledAction');
-				$action->setActionGroup('common');
+				$action->setController('common');
 				$action->setAction('installToolDisabled');
 				$this->output($action->handle());
 			}
@@ -82,7 +82,7 @@ class AbstractController {
 		) {
 			/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $action */
 			$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Common\\InstallToolPasswordNotSetAction');
-			$action->setActionGroup('common');
+			$action->setController('common');
 			$action->setAction('installToolPasswordNotSet');
 			$this->output($action->handle());
 		}
@@ -172,7 +172,7 @@ class AbstractController {
 	protected function loginForm(\TYPO3\CMS\Install\Status\StatusInterface $message = NULL) {
 		/** @var \TYPO3\CMS\Install\Controller\Action\Common\LoginForm $action */
 		$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Common\\LoginForm');
-		$action->setActionGroup('common');
+		$action->setController('common');
 		$action->setAction('login');
 		$action->setToken($this->generateTokenForAction('login'));
 		$action->setPostValues($this->getPostValues());
