@@ -63,56 +63,7 @@ class DatabaseData extends Action\AbstractAction implements StepInterface {
 			$configurationManager->setLocalConfigurationValueByPath('SYS/sitename', $postValues['sitename']);
 		}
 
-		// Will load ext_localconf and ext_tables. This is pretty safe here since we are
-		// in first install (database empty), so it is very likely that no extension is loaded
-		// that could trigger a fatal at this point.
-		$this->loadExtLocalconfDatabaseAndExtTables();
-
-		// Import database data
-		$database = $this->getDatabase();
-		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
-		$schemaMigrationService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
-		/** @var \TYPO3\CMS\Install\Service\SqlExpectedSchemaService $expectedSchemaService */
-		$expectedSchemaService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlExpectedSchemaService');
-		// Raw concatenated ext_tables.sql and friends string
-		$expectedSchemaString = $expectedSchemaService->getTablesDefinitionString(TRUE);
-		$statements = $schemaMigrationService->getStatementArray($expectedSchemaString, TRUE);
-
-		list($createStatementsArray, $insertCount) = $schemaMigrationService->getCreateTables($statements, TRUE);
-		// @TODO: If still tables are incomplete, check if getFieldDefinitions_fileContent() needs to be called
-		foreach ($createStatementsArray as $table => $statement) {
-			// Drop the table if it exists already
-			$queryResult = $database->admin_query('DROP TABLE IF EXISTS ' . $table);
-			if ($queryResult === FALSE) {
-				/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-				$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$errorStatus->setTitle('Error dropping table');
-				$errorStatus->setMessage('Sql statement failed with error message ' . $database->sql_error());
-				$result[] = $errorStatus;
-			}
-			$queryResult = $database->admin_query($statement);
-			if ($queryResult === FALSE) {
-				/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-				$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$errorStatus->setTitle('Error creating table');
-				$errorStatus->setMessage('Sql statement failed with error message ' . $database->sql_error());
-				$result[] = $errorStatus;
-			}
-		}
-		$insertRecordTables = array_keys($insertCount);
-		foreach ($insertRecordTables as $tableName) {
-			$insert = $schemaMigrationService->getTableInsertStatements($statements, $tableName);
-			foreach ($insert as $sql) {
-				$queryResult = $database->admin_query($sql);
-				if ($queryResult === FALSE) {
-					/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-					$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-					$errorStatus->setTitle('Error inserting record to table');
-					$errorStatus->setMessage('Sql statement failed with error message ' . $database->sql_error());
-					$result[] = $errorStatus;
-				}
-			}
-		}
+		$this->importDatabaseData();
 
 		// Insert admin user
 		// Password is simple md5 here for now, will be updated by saltedpasswords on first login
@@ -124,7 +75,7 @@ class DatabaseData extends Action\AbstractAction implements StepInterface {
 			'tstamp' => $GLOBALS['EXEC_TIME'],
 			'crdate' => $GLOBALS['EXEC_TIME']
 		);
-		$database->exec_INSERTquery('be_users', $adminUserFields);
+		$this->getDatabase()->exec_INSERTquery('be_users', $adminUserFields);
 
 		// Set password as install tool password
 		$configurationManager->setLocalConfigurationValueByPath('BE/installToolPassword', md5($password));
@@ -154,6 +105,47 @@ class DatabaseData extends Action\AbstractAction implements StepInterface {
 	public function handle() {
 		$this->initialize();
 		return $this->view->render();
+	}
+
+	/**
+	 * Create tables and import static rows
+	 *
+	 * @return void
+	 */
+	protected function importDatabaseData() {
+		// Will load ext_localconf and ext_tables. This is pretty safe here since we are
+		// in first install (database empty), so it is very likely that no extension is loaded
+		// that could trigger a fatal at this point.
+		$this->loadExtLocalconfDatabaseAndExtTables();
+
+		// Import database data
+		$database = $this->getDatabase();
+		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
+		$schemaMigrationService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
+		/** @var \TYPO3\CMS\Install\Service\SqlExpectedSchemaService $expectedSchemaService */
+		$expectedSchemaService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlExpectedSchemaService');
+
+		// Raw concatenated ext_tables.sql and friends string
+		$expectedSchemaString = $expectedSchemaService->getTablesDefinitionString(TRUE);
+		$statements = $schemaMigrationService->getStatementArray($expectedSchemaString, TRUE);
+		list($_, $insertCount) = $schemaMigrationService->getCreateTables($statements, TRUE);
+
+		$fieldDefinitionsFile = $schemaMigrationService->getFieldDefinitions_fileContent($expectedSchemaString);
+		$fieldDefinitionsDatabase = $schemaMigrationService->getFieldDefinitions_database();
+		$difference = $schemaMigrationService->getDatabaseExtra($fieldDefinitionsFile, $fieldDefinitionsDatabase);
+		$updateStatements = $schemaMigrationService->getUpdateSuggestions($difference);
+
+		$schemaMigrationService->performUpdateQueries($updateStatements['add'] , $updateStatements['add']);
+		$schemaMigrationService->performUpdateQueries($updateStatements['change'] , $updateStatements['change']);
+		$schemaMigrationService->performUpdateQueries($updateStatements['create_table'] , $updateStatements['create_table']);
+
+		foreach($insertCount as $table => $count) {
+			$insertStatements = $schemaMigrationService->getTableInsertStatements($statements, $table);
+			foreach($insertStatements as $insertQuery) {
+				$insertQuery = rtrim($insertQuery, ';');
+				$database->admin_query($insertQuery);
+			}
+		}
 	}
 }
 ?>
