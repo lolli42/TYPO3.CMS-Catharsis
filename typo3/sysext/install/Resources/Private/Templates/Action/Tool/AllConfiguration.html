@@ -11,7 +11,7 @@
 			<f:if condition="{savedConfigurationValueMessages}">
 				<f:then>
 					<f:for each="{savedConfigurationValueMessages}" as="statusMessage">
-						<i:statusMessage message="{statusMessage}" />
+						<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 					</f:for>
 				</f:then>
 

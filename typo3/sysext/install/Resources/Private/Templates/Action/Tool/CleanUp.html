@@ -6,7 +6,7 @@
 	<h3>Clean up your installation</h3>
 
 	<f:for each="{actionMessages}" as="statusMessage">
-		<i:statusMessage message="{statusMessage}" />
+		<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 	</f:for>
 
 	<f:render partial="Action/Tool/CleanUp/Typo3TempFiles" arguments="{_all}" />

@@ -3,12 +3,12 @@
 <h4>{test.title}</h4>
 
 <f:if condition="{test.message}">
-	<i:statusMessage message="{test.message}" />
+	<f:render partial="Action/Common/StatusMessage" arguments="{message: test.message}" />
 </f:if>
 
 <f:if condition="{test.error}">
 	<f:then>
-		<i:statusMessage message="{test.error}"/>
+		<f:render partial="Action/Common/StatusMessage" arguments="{message: test.error}"/>
 	</f:then>
 	<f:else>
 		<table class="t3-install-displaytwinimageimages">

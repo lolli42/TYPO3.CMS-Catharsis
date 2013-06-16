@@ -25,7 +25,7 @@
 
 <f:if condition="{messages}">
 	<f:for each="{messages}" as="message">
-		<i:statusMessage message="{message}" />
+		<f:render partial="Action/Common/StatusMessage" arguments="{message: message}" />
 	</f:for>
 </f:if>
 

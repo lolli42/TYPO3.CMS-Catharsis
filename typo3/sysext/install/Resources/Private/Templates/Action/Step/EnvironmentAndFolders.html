@@ -48,19 +48,19 @@
 
 		<f:if condition="{structureErrors}">
 			<f:for each="{structureErrors}" as="message">
-				<i:statusMessage message="{message}" />
+				<f:render partial="Action/Common/StatusMessage" arguments="{message: message}" />
 			</f:for>
 		</f:if>
 
 		<f:if condition="{environmentStatus.error}">
 			<f:for each="{environmentStatus.error}" as="message">
-				<i:statusMessage message="{message}" />
+				<f:render partial="Action/Common/StatusMessage" arguments="{message: message}" />
 			</f:for>
 		</f:if>
 
 		<f:if condition="{environmentStatus.warning}">
 			<f:for each="{environmentStatus.warning}" as="message">
-				<i:statusMessage message="{message}" />
+				<f:render partial="Action/Common/StatusMessage" arguments="{message: message}" />
 			</f:for>
 		</f:if>
 	</f:if>

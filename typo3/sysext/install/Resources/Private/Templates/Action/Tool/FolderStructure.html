@@ -8,7 +8,7 @@
 	<f:if condition="{fixedStatus}">
 		<h4>Fix action results:</h4>
 		<f:for each="{fixedStatus}" as="statusMessage">
-			<i:statusMessage message="{statusMessage}" />
+			<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 		</f:for>
 		<hr />
 	</f:if>
@@ -24,21 +24,21 @@
 	<f:if condition="{notFixableStatus}">
 		<h4>These structure elements are not fixable:</h4>
 		<f:for each="{notFixableStatus}" as="statusMessage">
-			<i:statusMessage message="{statusMessage}" />
+			<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 		</f:for>
 	</f:if>
 
 	<f:if condition="{fixableStatus}">
 		<h4>These structure elements are fixable:</h4>
 		<f:for each="{fixableStatus}" as="statusMessage">
-			<i:statusMessage message="{statusMessage}" />
+			<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 		</f:for>
 	</f:if>
 
 	<f:if condition="{okStatus}">
 		<h4>These structures are ok:</h4>
 		<f:for each="{okStatus}" as="statusMessage">
-			<i:statusMessage message="{statusMessage}" />
+			<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 		</f:for>
 	</f:if>
 </f:section>

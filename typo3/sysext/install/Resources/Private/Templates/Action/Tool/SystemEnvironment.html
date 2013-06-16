@@ -7,7 +7,7 @@
 
 	<f:for each="{statusObjectsBySeverity}" as="statusMessages">
 		<f:for each="{statusMessages}" as="statusMessage">
-			<i:statusMessage message="{statusMessage}" />
+			<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 		</f:for>
 	</f:for>
 </f:section>

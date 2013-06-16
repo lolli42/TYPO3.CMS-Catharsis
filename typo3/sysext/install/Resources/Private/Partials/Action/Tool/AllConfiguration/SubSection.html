@@ -23,33 +23,33 @@
 
 					<f:if condition="{item.type} == 'textarea'">
 						<textarea
-								rows="5"
-								cols="60"
-								name="install[values][{sectionName}][{item.key}]"
-								>{item.value}</textarea>
+							rows="5"
+							cols="60"
+							name="install[values][{sectionName}][{item.key}]"
+						>{item.value}</textarea>
 					</f:if>
 
 					<f:if condition="{item.type} == 'checkbox'">
 						<input
-								type="hidden"
-								value="0"
-								name="install[values][{sectionName}][{item.key}]"
-								/>
+							type="hidden"
+							value="0"
+							name="install[values][{sectionName}][{item.key}]"
+						/>
 						<input
-								type="checkbox"
-								value="{item.value}"
-								name="install[values][{sectionName}][{item.key}]"
-						{f:if(condition: item.checked, then:'checked="checked"')}
+							type="checkbox"
+							value="{item.value}"
+							name="install[values][{sectionName}][{item.key}]"
+							{f:if(condition: item.checked, then:'checked="checked"')}
 						/>
 					</f:if>
 
 					<f:if condition="{item.type} == 'input'">
 						<input
-								type="text"
-								value="{item.value}"
-								name="install[values][{sectionName}][{item.key}]"
-								class="t3-install-form-input-text"
-								/>
+							type="text"
+							value="{item.value}"
+							name="install[values][{sectionName}][{item.key}]"
+							class="t3-install-form-input-text"
+						/>
 					</f:if>
 				</div>
 			</div>
