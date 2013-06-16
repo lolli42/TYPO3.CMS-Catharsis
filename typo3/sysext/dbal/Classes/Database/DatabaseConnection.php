@@ -271,12 +271,14 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @return void
 	 */
 	protected function analyzeExtensionTables() {
-		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extensionConfiguration) {
-			if (!is_array($extensionConfiguration) || !isset($extensionConfiguration['ext_tables.sql'])) {
-				continue;
+		if (is_array($GLOBALS['TYPO3_LOADED_EXT'])) {
+			foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extensionConfiguration) {
+				if (!is_array($extensionConfiguration) || !isset($extensionConfiguration['ext_tables.sql'])) {
+					continue;
+				}
+				$extensionsSql = file_get_contents($extensionConfiguration['ext_tables.sql']);
+				$this->parseAndAnalyzeSql($extensionsSql);
 			}
-			$extensionsSql = file_get_contents($extensionConfiguration['ext_tables.sql']);
-			$this->parseAndAnalyzeSql($extensionsSql);
 		}
 	}
 

@@ -125,7 +125,6 @@ class AbstractController {
 			if ($this->isInitialInstallationInProgress()) {
 				$this->redirect();
 			} else {
-				// @TODO: Put the message into session as flashMessage?
 				/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 				$message->setTitle('Invalid form token');
@@ -151,7 +150,6 @@ class AbstractController {
 			if ($this->isInitialInstallationInProgress()) {
 				$this->redirect();
 			} else {
-				// @TODO: Put the message into session as flashMessage?
 				/** @var $message \TYPO3\CMS\Install\Status\ErrorStatus */
 				$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 				$message->setTitle('Session expired');
@@ -328,13 +326,15 @@ class AbstractController {
 	}
 
 	/**
-	 * Add a status message to session - Used to output messages between requests
+	 * Add a status messages to session.
+	 * Used to output messages between requests, especially in step controller
 	 *
-	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message
-	 * @TODO: This method is an unused stub at the moment
+	 * @param array<\TYPO3\CMS\Install\Status\StatusInterface> $messages
 	 */
-	protected function addSessionMessage(\TYPO3\CMS\Install\Status\StatusInterface $message) {
-		$this->session->addMessage($message);
+	protected function addSessionMessages(array $messages) {
+		foreach ($messages as $message) {
+			$this->session->addMessage($message);
+		}
 	}
 
 	/**

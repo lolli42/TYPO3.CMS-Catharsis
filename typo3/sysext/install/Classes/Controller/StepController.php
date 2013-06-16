@@ -85,8 +85,8 @@ class StepController extends AbstractController {
 			$stepAction->setAction($action);
 			$stepAction->setToken($this->generateTokenForAction($action));
 			$stepAction->setPostValues($this->getPostValues());
-			// @TODO: Put messages into session before redirect
 			$messages = $stepAction->execute();
+			$this->addSessionMessages($messages);
 			$this->redirect();
 		}
 	}
@@ -112,11 +112,10 @@ class StepController extends AbstractController {
 		$stepAction->setPostValues($this->getPostValues());
 
 		if ($stepAction->needsExecution()) {
-			// @TODO: Put messages into session before redirect
+			$stepAction->setMessages($this->session->getMessagesAndFlush());
 			$this->output($stepAction->handle());
 		} else {
 			// Redirect to next step if there are any
-			// @TODO: Put messages into session before redirect
 			$currentPosition = array_keys($this->authenticationActions, $action, TRUE);
 			$nextAction = array_slice($this->authenticationActions, $currentPosition[0] + 1, 1);
 			if (!empty($nextAction)) {

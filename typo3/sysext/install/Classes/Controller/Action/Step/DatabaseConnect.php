@@ -164,15 +164,6 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 			if (!empty($localConfigurationPathValuePairs)) {
 				$configurationManager->setLocalConfigurationValuesByPathValuePairs($localConfigurationPathValuePairs);
 			}
-
-			// After setting new credentials, test again and create an error message if connect is not successful
-			if (!$this->isConnectSuccessful()) {
-				/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
-				$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-				$errorStatus->setTitle('Database connect not successful');
-				$errorStatus->setMessage('Connecting the database with given settings failed. Please check.');
-				$result[] = $errorStatus;
-			}
 		}
 
 		return $result;

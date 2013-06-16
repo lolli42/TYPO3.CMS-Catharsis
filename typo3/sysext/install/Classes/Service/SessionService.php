@@ -74,13 +74,6 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	private $regenerateSessionIdTime = 5;
 
 	/**
-	 * part of the referer when the install tool has been called from the backend
-	 *
-	 * @var string
-	 */
-	private $backendFile = 'backend.php';
-
-	/**
 	 * Constructor. Starts PHP session handling in our own private store
 	 *
 	 * Side-effect: might set a cookie, so must be called before any other output.
@@ -299,6 +292,32 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 			$_SESSION['lastSessionId'] = time();
 			$this->renewSession();
 		}
+	}
+
+	/**
+	 * Add a message to "Flash" message storage.
+	 *
+	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message A message to add
+	 */
+	public function addMessage(\TYPO3\CMS\Install\Status\StatusInterface $message) {
+		if (!is_array($_SESSION['messages'])) {
+			$_SESSION['messages'] = array();
+		}
+		$_SESSION['messages'][] = $message;
+	}
+
+	/**
+	 * Return stored session messages and flush.
+	 *
+	 * @return array<\TYPO3\CMS\Install\Status\StatusInterface> Messages
+	 */
+	public function getMessagesAndFlush() {
+		$messages = array();
+		if (is_array($_SESSION['messages'])) {
+			$messages = $_SESSION['messages'];
+			$_SESSION['messages'] = array();
+		}
+		return $messages;
 	}
 
 	/*************************
