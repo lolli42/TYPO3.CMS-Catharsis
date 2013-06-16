@@ -4,8 +4,6 @@
 
 <f:section name="Content">
 
-	<script type="text/javascript" src="../Resources/Public/Javascript/PasswordStrength.js?{time}"></script>
-
 	<h3>Create user and import base data</h3>
 
 	<p>
@@ -26,10 +24,9 @@
 				<li>
 					<label for="password">Password</label>
 					<input
-						class="t3-install-form-input-text"
+						class="t3-install-form-input-text t3-install-form-password-strength"
 						name="install[values][password]"
 						id="password"
-						onkeyup="return passwordChanged();"
 						type="password"
 					/>
 				</li>
