@@ -43,7 +43,7 @@ class SystemEnvironment extends Action\AbstractAction implements Action\ActionIn
 		$statusCheck = $this->objectManager->get('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
 
-			/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
+		/** @var $statusUtility \TYPO3\CMS\Install\Status\StatusUtility */
 		$statusUtility = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 		$sortedStatusObjects = $statusUtility->sortBySeverity($statusObjects);
 		$this->view->assign('statusObjectsBySeverity', $sortedStatusObjects);

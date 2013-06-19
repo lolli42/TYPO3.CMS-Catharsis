@@ -509,6 +509,11 @@ h1,
 	margin: 0.3em 0;
 }
 
+.t3-install-displaytwinimageimages td {
+	width: 50%;
+	vertical-align: top;
+}
+
 .t3-install-displaytwinimageimages td,
 .t3-install-displaytwinimagereference th,
 .t3-install-displaytwinimagereference td,

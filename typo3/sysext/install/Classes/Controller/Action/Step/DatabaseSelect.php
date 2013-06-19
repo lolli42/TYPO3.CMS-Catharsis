@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Database select step.
@@ -61,8 +60,9 @@ class DatabaseSelect extends Action\AbstractAction implements StepInterface {
 					$errorStatus->setTitle('Unable to create database');
 					$errorStatus->setMessage(
 						'Database with name ' . $newDatabaseName . ' could not be created.' .
-						' Your database user probably has no sufficient permissions to do so. Please choose an existing (empty)' .
-						' database or contact administration.'
+						' Either your database name contains special chars (only alphanumeric characters are allowed)' .
+						' or your database user probably has no sufficient permissions to create it.' .
+						' Please choose an existing (empty) database or contact administration.'
 					);
 					$result[] = $errorStatus;
 				}
@@ -87,7 +87,8 @@ class DatabaseSelect extends Action\AbstractAction implements StepInterface {
 	}
 
 	/**
-	 * Step needs to be executed if database connection is no successful.
+	 * Step needs to be executed if database is not set or can
+	 * not be selected.
 	 *
 	 * @return boolean
 	 */

@@ -31,7 +31,7 @@
 				<source>Writable</source>
 			</trans-unit>
 			<trans-unit id="status_missingDirectory" xml:space="preserve">
-				<source>Required Directory Missing</source>
+				<source>Required directory missing</source>
 			</trans-unit>
 			<trans-unit id="status_nonExistingDirectory" xml:space="preserve">
 				<source>Directory not existing</source>
@@ -58,7 +58,7 @@
 				<source>%s must be writable.</source>
 			</trans-unit>
 			<trans-unit id="status_remainingUpdates" xml:space="preserve">
-				<source>Remaining Updates</source>
+				<source>Remaining updates</source>
 			</trans-unit>
 		</body>
 	</file>

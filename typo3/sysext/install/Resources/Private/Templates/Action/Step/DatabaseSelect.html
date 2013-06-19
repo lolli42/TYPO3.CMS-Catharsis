@@ -21,17 +21,18 @@
 						value="new"
 						checked="checked"
 						class="radio"
-					>
+					/>
 					<div>
-						<label>Create a new database (recommended):</label>
+						<label for="t3-install-step-database-new">Create a new database (recommended):</label>
 						<p>Enter a name for your TYPO3 database.</p>
 						<input
+							id="t3-install-step-database-new"
 							class="t3-install-form-input-text"
 							type="text"
 							name="install[values][new]"
 							checked="checked"
 							onfocus="document.getElementById('t3-install-form-db-select-type-new').checked=true;"
-						>
+						/>
 					</div>
 				</li>
 
@@ -42,11 +43,12 @@
 						name="install[values][type]"
 						value="existing"
 						class="radio"
-					>
+					/>
 					<div>
-						<label>Select an EMPTY existing database:</label>
+						<label for="t3-install-step-database-existing">Select an EMPTY existing database:</label>
 						<p>Any tables used by TYPO3 will be overwritten.</p>
 						<select
+							id="t3-install-step-database-existing"
 							name="install[values][existing]"
 							onfocus="document.getElementById('t3-install-form-db-select-type-existing').checked=true;"
 						>

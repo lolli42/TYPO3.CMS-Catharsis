@@ -321,7 +321,7 @@ class Check {
 				$status->setTitle('Infinite PHP script execution time');
 				$status->setMessage(
 					'Your max_execution_time is set to 0 (infinite). While TYPO3 is fine' .
-					' with this, you risk a denial-of-service of you system if for whatever' .
+					' with this, you risk a denial-of-service of your system if for whatever' .
 					' reason some script hangs in an infinite loop. You are usually on safe side ' .
 					' if max_execution_time is reduced to ' . $recommendedMaximumExecutionTime
 				);
@@ -759,15 +759,15 @@ class Check {
 			$status->setTitle('Windows apache thread stack size');
 			$status->setMessage(
 				'This current value can not be checked by the system, so please ignore this warning if it' .
-				' is already taken care off: Fluid uses complex regular expressions which require a lot' .
+				' is already taken care of: Fluid uses complex regular expressions which require a lot' .
 				' of stack space during the first processing.' .
-				' On Windows the default stack size for Apache is a lot smaller than on unix.' .
-				' You can increase the size to 8MB (default on unix) by adding to the httpd.conf:' .
-				' ThreadStackSize 8388608. Restart Apache after this change.'
+				' On Windows the default stack size for Apache is a lot smaller than on UNIX.' .
+				' You can increase the size to 8MB (default on UNIX) by adding to the httpd.conf:' .
+				' <IfModule mpm_winnt_module>ThreadStackSize 8388608</IfModule>. Restart Apache after this change.'
 			);
 		} else {
 			$status = new Status\OkStatus();
-			$status->setTitle('ThreadStackSize is not an issue on unix systems');
+			$status->setTitle('ThreadStackSize is not an issue on UNIX systems');
 		}
 		return $status;
 	}

@@ -15,18 +15,32 @@
 			<tbody>
 				<tr>
 					<td>
-						<img src="../../../../{test.referenceFile -> i:file.relativePath()}?{time}" />
-					</td>
-					<td>
-						<img src="../../../../{test.outputFile -> i:file.relativePath()}?{time}" />
-					</td>
-				</tr>
-				<tr>
-					<td>
 						<strong>Reference</strong>
 					</td>
 					<td>
 						<strong>Your system</strong>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<img src="../../../../{test.referenceFile -> i:file.relativePath()}?{time}" />
+					</td>
+					<td>
+						<f:if condition="{test.outputFile}">
+							<f:then>
+								<img src="../../../../{test.outputFile -> i:file.relativePath()}?{time}" />
+							</f:then>
+							<f:else>
+								<div class="typo3-message message-error" >
+									<div class="header-container">
+										<div class="message-header"><strong>No image</strong></div>
+									</div>
+									<div class="message-body">
+										Your system generated no image at all. This is probaly a misconfiguration.
+									</div>
+								</div>
+							</f:else>
+						</f:if>
 					</td>
 				</tr>
 				<tr>
@@ -36,9 +50,13 @@
 						x {test.referenceFile -> i:file.imageDimension(dimension:'height')} pixel
 					</td>
 					<td>
-						{test.outputFile -> i:file.size()},
-						{test.outputFile -> i:file.imageDimension()}
-						x {test.outputFile -> i:file.imageDimension(dimension:'height')} pixel
+						<f:if condition="{test.outputFile}">
+							<f:then>
+								{test.outputFile -> i:file.size()},
+								{test.outputFile -> i:file.imageDimension()}
+								x {test.outputFile -> i:file.imageDimension(dimension:'height')} pixel
+							</f:then>
+						</f:if>
 					</td>
 				</tr>
 			</tbody>

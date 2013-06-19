@@ -47,7 +47,7 @@
  *
  * This ensures as soon as the tool controller is called, the basic configuration is ok.
  *
- * Whenever the bootstrap or other core elements figures the installation
+ * Whenever the bootstrap or other core elements figure the installation
  * needs an update that is handled within the step controller, it should just
  * redirect to the entry script and let the step controller do necessary work.
  *
@@ -56,7 +56,7 @@
  * from each other.
  *
  * There is also a backend module controller, that basically only shows a screen
- * with the "enable install tool" button and then redirect to the entry script. Other
+ * with the "enable install tool" button and then redirects to the entry script. Other
  * than that, it does not interfere with step or tool controller and just sets a
  * context GET parameter to indicate that the install tool is called within backend context.
  *
@@ -94,7 +94,7 @@
  *
  * - POST "install[token]"
  *   A session and instance specific token created from the instance specific
- *   encryptionKey (taken care off in an early point in the step controller). This hash
+ *   encryptionKey (taken care of in an early point in the step controller). This hash
  *   is used as form protection against CSRF for all POST data. Both the step and tool
  *   controller will logout a user if the token check fails. The only exception to this
  *   handling is the very first installation step where no session and no encryption key

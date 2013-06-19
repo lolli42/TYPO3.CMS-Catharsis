@@ -379,8 +379,8 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 		// GD with simple box
 		$imageProcessor->IM_commands = array();
 		$image = imagecreatetruecolor(170, 136);
-		$backgroundColor = ImageColorAllocate($image, 0, 0, 0);
-		ImageFilledRectangle($image, 0, 0, 170, 136, $backgroundColor);
+		$backgroundColor = imagecolorallocate($image, 0, 0, 0);
+		imagefilledrectangle($image, 0, 0, 170, 136, $backgroundColor);
 		$workArea = array(0, 0, 170, 136);
 		$conf = array(
 			'dimensions' => '10,50,150,36',
@@ -418,8 +418,8 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 		// GD with text
 		$imageProcessor->IM_commands = array();
 		$image = imagecreatetruecolor(170, 136);
-		$backgroundColor = ImageColorAllocate($image, 128, 128, 150);
-		ImageFilledRectangle($image, 0, 0, 170, 136, $backgroundColor);
+		$backgroundColor = imagecolorallocate($image, 128, 128, 150);
+		imagefilledrectangle($image, 0, 0, 170, 136, $backgroundColor);
 		$workArea = array(0, 0, 170, 136);
 		$conf = array(
 			'iterations' => 1,
@@ -515,7 +515,7 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 	/**
 	 * Create a 'image test was done' message
 	 *
-	 * @param int $parseTime Parse time
+	 * @param integer $parseTime Parse time
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function imageTestDoneMessage($parseTime = 0) {
@@ -581,7 +581,7 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 	/**
 	 * Find out if ImageMagick or GraphicsMagick is enabled and set up
 	 *
-	 * @return bool TRUE if enabled and path is set
+	 * @return boolean TRUE if enabled and path is set
 	 */
 	protected function isImageMagickEnabledAndConfigured() {
 		$enabled = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];

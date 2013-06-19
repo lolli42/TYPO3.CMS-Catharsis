@@ -55,6 +55,8 @@ class AbstractController {
 	 * Checking ENABLE_INSTALL_TOOL validity is simple:
 	 * As soon as there is a typo3conf directory at all (not step 1 of "first install"),
 	 * the file must be there and valid in order to proceed.
+	 *
+	 * @return void
 	 */
 	protected function outputInstallToolNotEnabledMessageIfNeeded() {
 		if (is_dir(PATH_typo3conf)) {
@@ -118,7 +120,6 @@ class AbstractController {
 		}
 
 		if (!$tokenOk) {
-			// If form protection token is invalid, reset session start new and redirect
 			$this->session->resetSession();
 			$this->session->startSession();
 
@@ -300,7 +301,7 @@ class AbstractController {
 		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
 
 		$localConfigurationFileLocation = $configurationManager->getLocalConfigurationFileLocation();
-		$localConfigurationFileExists = is_file($localConfigurationFileLocation) ? TRUE : FALSE;
+		$localConfigurationFileExists = @is_file($localConfigurationFileLocation);
 		$result = FALSE;
 		if (!$localConfigurationFileExists
 			|| !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['isInitialInstallationInProgress'])
@@ -312,8 +313,8 @@ class AbstractController {
 
 	/**
 	 * Initialize session object.
-	 * Sub class will throw exception if session can not be created or if
-	 * pre conditions like a valid encryption key are not set.
+	 * Subclass will throw exception if session can not be created or if
+	 * preconditions like a valid encryption key are not set.
 	 *
 	 * @return void
 	 */
@@ -326,7 +327,7 @@ class AbstractController {
 	}
 
 	/**
-	 * Add a status messages to session.
+	 * Add status messages to session.
 	 * Used to output messages between requests, especially in step controller
 	 *
 	 * @param array<\TYPO3\CMS\Install\Status\StatusInterface> $messages
@@ -404,7 +405,7 @@ class AbstractController {
 	protected function validateAuthenticationAction($action) {
 		if (!in_array($action, $this->authenticationActions)) {
 			throw new Exception(
-				$action . ' is not a valid authenticated action',
+				$action . ' is not a valid authentication action',
 				1369345838
 			);
 		}
@@ -454,9 +455,9 @@ class AbstractController {
 	 * HTTP redirect to self, preserving allowed GET variables.
 	 * WARNING: This exits the script execution!
 	 *
-	 * @return void
 	 * @param string $controller Can be set to 'tool' to redirect from step to tool controller
 	 * @param string $action Set specific action for next request, used in step controller to specify next step
+	 * @return void
 	 */
 	protected function redirect($controller = '', $action = '') {
 		$getPostValues = GeneralUtility::_GP('install');
@@ -506,3 +507,4 @@ class AbstractController {
 		die;
 	}
 }
+?>

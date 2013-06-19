@@ -168,9 +168,9 @@ class StepController extends AbstractController {
 		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
 
 		$localConfigurationFileLocation = $configurationManager->getLocalConfigurationFileLocation();
-		$localConfigurationFileExists = is_file($localConfigurationFileLocation) ? TRUE : FALSE;
+		$localConfigurationFileExists = is_file($localConfigurationFileLocation);
 		$localConfFileLocation = PATH_typo3conf . 'localconf.php';
-		$localConfFileExists = is_file($localConfFileLocation) ? TRUE : FALSE;
+		$localConfFileExists = is_file($localConfFileLocation);
 
 		if (is_dir(PATH_typo3conf) && $localConfFileExists && !$localConfigurationFileExists) {
 			$localConfContent = file($localConfFileLocation);
@@ -267,7 +267,7 @@ class StepController extends AbstractController {
 		$wasExecuted= FALSE;
 		$errorMessagesFromExecute = array();
 		if (isset($postValues['action'])
-			&& $postValues['action']=== 'environmentAndFolders'
+			&& $postValues['action'] === 'environmentAndFolders'
 		) {
 			/** @var \TYPO3\CMS\Install\Controller\Action\Step\StepInterface $action */
 			$action = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Step\\EnvironmentAndFolders');
@@ -300,7 +300,7 @@ class StepController extends AbstractController {
 
 	/**
 	 * "Silent" upgrade: The encryption key is crucial for securing form tokens
-	 * an the whole TYPO3 link rendering later on. A random key is set here in
+	 * and the whole TYPO3 link rendering later on. A random key is set here in
 	 * LocalConfiguration if it does not exist yet. This might possible happen
 	 * during upgrading and will happen during first install.
 	 *

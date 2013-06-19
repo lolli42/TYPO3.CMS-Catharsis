@@ -25,7 +25,7 @@ namespace TYPO3\CMS\Install\FolderStructure\Exception;
  ***************************************************************/
 
 /**
- * A root node exception
+ * An invalid argument exception
  */
 class InvalidArgumentException extends \TYPO3\CMS\Install\FolderStructure\Exception {
 

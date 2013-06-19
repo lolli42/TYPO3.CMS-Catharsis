@@ -27,8 +27,6 @@ namespace TYPO3\CMS\Install\Controller;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
  * Install tool controller, dispatcher class of the install tool.
  *
@@ -82,9 +80,9 @@ class ToolController extends AbstractController {
 		$action = $this->getAction();
 		if ($action === 'logout') {
 			// @TODO: This and similar code in step action DefaultConfiguration should be moved to enable install file service
-			$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
+			$enableInstallToolFile = PATH_typo3conf . 'ENABLE_INSTALL_TOOL';
 			if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
-				unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
+				unlink($enableInstallToolFile);
 			}
 
 			/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */
@@ -110,7 +108,7 @@ class ToolController extends AbstractController {
 		}
 		$this->validateAuthenticationAction($action);
 		$actionClass = ucfirst($action);
-		/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $ToolAction */
+		/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $toolAction */
 		$toolAction = $this->objectManager->get('TYPO3\\CMS\\Install\\Controller\\Action\\Tool\\' . $actionClass);
 		if (!($toolAction instanceof \TYPO3\CMS\Install\Controller\Action\ActionInterface)) {
 			throw new Exception(

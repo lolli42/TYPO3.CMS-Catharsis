@@ -33,7 +33,7 @@ class ConstantViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHe
 	 * Render a constant
 	 *
 	 * @param string $name Name of the constant
-	 * @return string Rendered message html
+	 * @return string Value of constant
 	 */
 	public function render($name) {
 		return constant($name);

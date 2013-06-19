@@ -23,7 +23,6 @@ namespace TYPO3\CMS\Install\ViewHelpers\File;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Get width or height from image file
@@ -60,7 +59,7 @@ class ImageDimensionViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\Abstract
 				1369563248
 			);
 		}
-		$actualDimension = getImageSize($absolutePathToFile);
+		$actualDimension = getimagesize($absolutePathToFile);
 		if ($dimension === 'width') {
 			$size = $actualDimension[0];
 		} else {

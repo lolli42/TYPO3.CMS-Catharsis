@@ -239,7 +239,7 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	/**
 	 * Checks if not is a directory
 	 *
-	 * @return bool
+	 * @return boolean True if node is a directory
 	 */
 	protected function isDirectory() {
 		$path = $this->getAbsolutePath();
@@ -253,7 +253,7 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 	 * @throws Exception\InvalidArgumentException
 	 */
 	protected function createChildren(array $structure) {
-		foreach($structure as $child) {
+		foreach ($structure as $child) {
 			if (!array_key_exists('type', $child)) {
 				throw new \TYPO3\CMS\Install\FolderStructure\Exception\InvalidArgumentException(
 					'Child must have type',

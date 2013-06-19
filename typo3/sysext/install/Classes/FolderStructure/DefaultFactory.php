@@ -127,7 +127,14 @@ class DefaultFactory {
 							'name' => 'index.html',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
 							'targetPermission' => '0660',
-							'targetContent' => '',
+							'targetContent' =>
+								'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
+								'<HTML>' . LF .
+								'<HEAD>' . LF .
+								TAB . '<TITLE></TITLE>' . LF .
+								'<META http-equiv=Refresh Content="0; Url=../">' . LF .
+								'</HEAD>' . LF .
+								'</HTML>',
 						),
 						array(
 							'name' => 'media',
@@ -196,7 +203,14 @@ class DefaultFactory {
 									'name' => 'index.html',
 									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
 									'targetPermission' => '0660',
-									'targetContent' => '',
+									'targetContent' =>
+										'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">' . LF .
+										'<HTML>' . LF .
+										'<HEAD>' . LF .
+										TAB . '<TITLE></TITLE>' . LF .
+										'<META http-equiv=Refresh Content="0; Url=/">' . LF .
+										'</HEAD>' . LF .
+										'</HTML>',
 								),
 							),
 						),
@@ -258,3 +272,4 @@ class DefaultFactory {
 		return $structureFacade;
 	}
 }
+?>

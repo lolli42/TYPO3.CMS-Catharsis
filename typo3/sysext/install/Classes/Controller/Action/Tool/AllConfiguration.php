@@ -86,7 +86,7 @@ class AllConfiguration extends Action\AbstractAction implements Action\ActionInt
 					} elseif (preg_match('/^(<.*?>)?boolean/i', $description)) {
 						$itemData['type'] = 'checkbox';
 						$itemData['value'] = $value && strcmp($value, '0') ? $value : 1;
-						$itemData['checked'] = $value ? 1 : 0;
+						$itemData['checked'] = $value ? TRUE : FALSE;
 					} else {
 						$itemData['type'] = 'input';
 						$itemData['value'] = $value;

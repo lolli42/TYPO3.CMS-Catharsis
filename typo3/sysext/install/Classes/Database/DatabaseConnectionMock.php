@@ -33,7 +33,7 @@ class DatabaseConnectionMock {
 	/**
 	 * Get single row mock
 	 *
-	 * @return null
+	 * @return NULL
 	 */
 	public function exec_SELECTgetSingleRow() {
 		return NULL;
@@ -42,7 +42,7 @@ class DatabaseConnectionMock {
 	/**
 	 * Insert row mock
 	 *
-	 * @return bool TRUE
+	 * @return boolean TRUE
 	 */
 	public function exec_INSERTquery() {
 		return TRUE;

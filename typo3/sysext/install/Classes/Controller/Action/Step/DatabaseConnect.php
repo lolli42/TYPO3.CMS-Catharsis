@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Database connect step:
@@ -163,6 +162,24 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 
 			if (!empty($localConfigurationPathValuePairs)) {
 				$configurationManager->setLocalConfigurationValuesByPathValuePairs($localConfigurationPathValuePairs);
+
+				// After setting new credentials, test again and create an error message if connect is not successful
+				// @TODO: This could be simplified, if isConnectSuccessful could be released from TYPO3_CONF_VARS
+				// and feeded with connect values directly in order to obsolete the bootstrap reload.
+				\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+					->populateLocalConfiguration()
+					->setCoreCacheToNullBackend();
+				if ($this->isDbalEnabled()) {
+					require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
+					$GLOBALS['typo3CacheManager']->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+				}
+				if (!$this->isConnectSuccessful()) {
+					/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
+					$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
+					$errorStatus->setTitle('Database connect not successful');
+					$errorStatus->setMessage('Connecting the database with given settings failed. Please check.');
+					$result[] = $errorStatus;
+				}
 			}
 		}
 
@@ -170,16 +187,20 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 	}
 
 	/**
-	 * Step needs to be executed if database connection is no successful.
+	 * Step needs to be executed if database connection is not successful.
 	 *
 	 * @return boolean
 	 */
 	public function needsExecution() {
-		if ($this->isConnectSuccessful()) {
-			return FALSE;
-		} else {
+		if (!$this->isConnectSuccessful()) {
 			return TRUE;
 		}
+		if (!isset($GLOBALS['TYPO3_CONF_VARS']['DB']['host'])
+			|| !isset($GLOBALS['TYPO3_CONF_VARS']['DB']['port'])
+		) {
+			return TRUE;
+		}
+		return FALSE;
 	}
 
 	/**
@@ -295,6 +316,8 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 		$databaseConnection = $this->objectManager->get('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
 
 		if ($this->isDbalEnabled()) {
+			// Set additional connect information based on dbal driver. postgres for example needs
+			// database name already for connect.
 			if (isset($GLOBALS['TYPO3_CONF_VARS']['DB']['database'])) {
 				$databaseConnection->setDatabaseName($GLOBALS['TYPO3_CONF_VARS']['DB']['database']);
 			}
@@ -306,12 +329,6 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 		$databaseConnection->setDatabasePassword($password);
 		$databaseConnection->setDatabaseHost($this->getConfiguredHost());
 		$databaseConnection->setDatabasePort($this->getConfiguredPort());
-
-		if ($this->isDbalEnabled()) {
-			// Set additional connect information based on dbal driver
-			$databaseName = isset($GLOBALS['TYPO3_CONF_VARS']['DB']['database']) ? $GLOBALS['TYPO3_CONF_VARS']['DB']['database'] : '';
-			$databaseConnection->setDatabaseName($databaseName);
-		}
 
 		$result = FALSE;
 		if (@$databaseConnection->sql_pconnect()) {

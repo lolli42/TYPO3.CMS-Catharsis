@@ -34,7 +34,7 @@ namespace TYPO3\CMS\Install\Service;
 class SqlSchemaMigrationService {
 
 	/**
-	 * @const Maximum field width of MYSQL
+	 * @constant Maximum field width of MySQL
 	 */
 	const MYSQL_MAXIMUM_FIELD_WIDTH = 64;
 

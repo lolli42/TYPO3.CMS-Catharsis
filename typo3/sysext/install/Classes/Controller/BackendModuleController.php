@@ -44,11 +44,11 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 	 * @return void
 	 */
 	public function indexAction() {
-		/** @var $installToolService \TYPO3\CMS\Install\Service\EnableFileService */
-		$installToolService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\EnableFileService');
-		if ($installToolService->checkInstallToolEnableFile()) {
+		/** @var $enableFileService \TYPO3\CMS\Install\Service\EnableFileService */
+		$enableFileService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\EnableFileService');
+		if ($enableFileService->checkInstallToolEnableFile()) {
 			// Install Tool is already enabled
-			$installToolService->extendInstallToolEnableFileLifetime();
+			$enableFileService->extendInstallToolEnableFileLifetime();
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect('sysext/install/Start/Install.php?install[context]=backend');
 		} else {
 			$this->redirect('showEnableInstallToolButton');
@@ -68,6 +68,8 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 
 	/**
 	 * Enable the install tool
+	 *
+	 * @throws \RuntimeException
 	 */
 	public function enableInstallToolAction() {
 		$token = $GLOBALS['_POST']['tx_install_tools_installinstall']['installToolEnableToken'];

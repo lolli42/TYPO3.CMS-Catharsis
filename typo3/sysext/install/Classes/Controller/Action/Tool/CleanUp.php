@@ -159,20 +159,6 @@ class CleanUp extends Action\AbstractAction implements Action\ActionInterface {
 	}
 
 	/**
-	 * Truncate cache_imagesizes table
-	 *
-	 * @return \TYPO3\CMS\Install\Status\StatusInterface
-	 */
-	protected function deleteCachedImageSizes() {
-		$database = $this->getDatabase();
-		$database->exec_TRUNCATEquery('cache_imagesizes');
-		/** @var \TYPO3\CMS\Install\Status\OkStatus $message */
-		$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\OkStatus');
-		$message->setTitle('Cleared cached image sizes');
-		return $message;
-	}
-
-	/**
 	 * Reset uc field of all be_users to empty string
 	 *
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
@@ -219,20 +205,20 @@ class CleanUp extends Action\AbstractAction implements Action\ActionInterface {
 			while ($entry = $directory->read()) {
 				$absoluteFile = $pathTypo3Temp . $subDirectory . '/' . $entry;
 				if (@is_file($absoluteFile)) {
-					$ok = 0;
+					$ok = FALSE;
 					$fileCounter++;
 					if ($condition) {
 						if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($condition)) {
 							if (filesize($absoluteFile) > $condition * 1024) {
-								$ok = 1;
+								$ok = TRUE;
 							}
 						} else {
 							if (fileatime($absoluteFile) < $GLOBALS['EXEC_TIME'] - intval($timeMap[$condition]) * 60 * 60 * 24) {
-								$ok = 1;
+								$ok = TRUE;
 							}
 						}
 					} else {
-						$ok = 1;
+						$ok = TRUE;
 					}
 					if ($ok) {
 						$hashPart = substr(basename($absoluteFile), -14, 10);

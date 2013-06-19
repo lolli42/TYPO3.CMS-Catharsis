@@ -298,6 +298,7 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Add a message to "Flash" message storage.
 	 *
 	 * @param \TYPO3\CMS\Install\Status\StatusInterface $message A message to add
+	 * @return void
 	 */
 	public function addMessage(\TYPO3\CMS\Install\Status\StatusInterface $message) {
 		if (!is_array($_SESSION['messages'])) {
@@ -315,8 +316,8 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 		$messages = array();
 		if (is_array($_SESSION['messages'])) {
 			$messages = $_SESSION['messages'];
-			$_SESSION['messages'] = array();
 		}
+		$_SESSION['messages'] = array();
 		return $messages;
 	}
 
@@ -427,8 +428,5 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	public function __destruct() {
 		session_write_close();
 	}
-
 }
-
-
 ?>

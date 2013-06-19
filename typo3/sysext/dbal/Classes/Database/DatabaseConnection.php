@@ -192,7 +192,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function __construct() {
 		// Set SQL parser object for internal use:
 		$this->SQLparser = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\SqlParser');
-		$this->installerSql = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\SqlSchemaMigrationService');
+		$this->installerSql = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
 		$this->queryCache = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('dbal');
 		// Set internal variables with configuration:
 		$this->conf = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['dbal'];
@@ -271,7 +271,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @return void
 	 */
 	protected function analyzeExtensionTables() {
-		if (is_array($GLOBALS['TYPO3_LOADED_EXT'])) {
+		if (isset($GLOBALS['TYPO3_LOADED_EXT']) && is_array($GLOBALS['TYPO3_LOADED_EXT'])) {
 			foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extensionConfiguration) {
 				if (!is_array($extensionConfiguration) || !isset($extensionConfiguration['ext_tables.sql'])) {
 					continue;

@@ -38,7 +38,7 @@ class DirectoryNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Tear down
 	 */
 	public function tearDown() {
-		foreach($this->testNodesToDelete as $node) {
+		foreach ($this->testNodesToDelete as $node) {
 			if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($node, PATH_site . 'typo3temp/')) {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::rmdir($node, TRUE);
 			}

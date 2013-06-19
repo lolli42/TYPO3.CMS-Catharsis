@@ -40,7 +40,7 @@ class EnableFileService {
 	/**
 	 * Creates the INSTALL_TOOL_ENABLE file
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	static public function createInstallToolEnableFile() {
 		$installEnableFilePath = self::getInstallToolEnableFilePath();
@@ -52,7 +52,7 @@ class EnableFileService {
 	/**
 	 * Removes the INSTALL_TOOL_ENABLE file
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	static public function removeInstallToolEnableFile() {
 		return unlink(self::getInstallToolEnableFilePath());

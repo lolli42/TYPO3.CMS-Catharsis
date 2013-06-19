@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Populate base tables, insert admin user, set install tool password
@@ -135,13 +134,13 @@ class DatabaseData extends Action\AbstractAction implements StepInterface {
 		$difference = $schemaMigrationService->getDatabaseExtra($fieldDefinitionsFile, $fieldDefinitionsDatabase);
 		$updateStatements = $schemaMigrationService->getUpdateSuggestions($difference);
 
-		$schemaMigrationService->performUpdateQueries($updateStatements['add'] , $updateStatements['add']);
-		$schemaMigrationService->performUpdateQueries($updateStatements['change'] , $updateStatements['change']);
-		$schemaMigrationService->performUpdateQueries($updateStatements['create_table'] , $updateStatements['create_table']);
+		$schemaMigrationService->performUpdateQueries($updateStatements['add'], $updateStatements['add']);
+		$schemaMigrationService->performUpdateQueries($updateStatements['change'], $updateStatements['change']);
+		$schemaMigrationService->performUpdateQueries($updateStatements['create_table'], $updateStatements['create_table']);
 
-		foreach($insertCount as $table => $count) {
+		foreach ($insertCount as $table => $count) {
 			$insertStatements = $schemaMigrationService->getTableInsertStatements($statements, $table);
-			foreach($insertStatements as $insertQuery) {
+			foreach ($insertStatements as $insertQuery) {
 				$insertQuery = rtrim($insertQuery, ';');
 				$database->admin_query($insertQuery);
 			}

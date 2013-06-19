@@ -81,7 +81,7 @@ abstract class AbstractNode {
 	/**
 	 * Get parent
 	 *
-	 * @return null|NodeInterface
+	 * @return NULL|NodeInterface
 	 */
 	public function getParent() {
 		return $this->parent;
@@ -110,7 +110,7 @@ abstract class AbstractNode {
 	 * Returns TRUE if it is there, even if it is only a link.
 	 * Does not check the type!
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	protected function exists() {
 		if (is_link($this->getAbsolutePath())) {
@@ -151,7 +151,7 @@ abstract class AbstractNode {
 	/**
 	 * Checks if current permission are identical to target permission
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	protected function isPermissionCorrect() {
 		if ($this->isWindowsOs()) {

@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Set production defaults
@@ -57,7 +56,7 @@ class DefaultConfiguration extends Action\AbstractAction implements StepInterfac
 		// @TODO: This and similar code in ToolController should be moved to enable install file service
 		$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
 		if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
-			unlink(PATH_typo3conf . 'ENABLE_INSTALL_TOOL');
+			unlink($enableInstallToolFile);
 		}
 
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('../../../index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_303);

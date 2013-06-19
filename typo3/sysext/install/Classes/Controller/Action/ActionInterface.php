@@ -64,7 +64,7 @@ interface ActionInterface {
 	/**
 	 * Set POST values
 	 *
-	 * @param $postValues
+	 * @param array $postValues List of values submitted via POST
 	 * @return void
 	 */
 	public function setPostValues(array $postValues);

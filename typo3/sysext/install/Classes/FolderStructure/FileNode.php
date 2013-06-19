@@ -240,6 +240,7 @@ class FileNode extends AbstractNode implements NodeInterface {
 	 * Sets content of file to target content
 	 *
 	 * @throws Exception If file does not exist
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function setContent() {
 		$absolutePath = $this->getAbsolutePath();
@@ -270,7 +271,7 @@ class FileNode extends AbstractNode implements NodeInterface {
 	/**
 	 * Checks if not is a file
 	 *
-	 * @return bool
+	 * @return boolean
 	 */
 	protected function isFile() {
 		$path = $this->getAbsolutePath();

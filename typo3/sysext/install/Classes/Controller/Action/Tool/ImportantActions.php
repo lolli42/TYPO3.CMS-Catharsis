@@ -70,7 +70,7 @@ class ImportantActions extends Action\AbstractAction implements Action\ActionInt
 
 		$this->view->assign('actionMessages', $actionMessages);
 
-		$operatingSystem = TYPO3_OS == 'WIN' ? 'Windows' : 'Unix';
+		$operatingSystem = TYPO3_OS === 'WIN' ? 'Windows' : 'Unix';
 		$cgiDetected = (PHP_SAPI == 'fpm-fcgi' || PHP_SAPI == 'cgi' || PHP_SAPI == 'isapi' || PHP_SAPI == 'cgi-fcgi')
 			? TRUE
 			: FALSE;

@@ -22,20 +22,11 @@
  ***************************************************************/
 
 /**
- * Method to detect if Install Tool is loaded as standalone
- * If this is the case then an extra class will be added to the body tag
+ * Small javascript helpers of the install tool based on jquery
  *
  * @author Wouter Wolters <typo3@wouterwolters.nl>
  */
 $(document).ready(function() {
-	$('#encryptionKey').click(function() {
-		$.ajax({
-			url: '../../index.php?eID=tx_install_ajax&cmd=encryptionKey'
-		}).done(function(data) {
-			$('#t3-install-form-encryptionkey').val(data);
-		});
-	});
-
 	// Used in database compare section to select/deselect checkboxes
 	$('.checkall').on('click', function() {
 		$(this).closest('fieldset').find(':checkbox').prop('checked', this.checked);

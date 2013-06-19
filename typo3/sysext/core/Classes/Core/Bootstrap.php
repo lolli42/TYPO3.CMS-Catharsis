@@ -143,7 +143,7 @@ class Bootstrap {
 	 * Includes LocalConfiguration.php and sets several
 	 * global settings depending on configuration.
 	 *
-	 * @param boolean $allowCaching Wether to allow caching - affects cache_core (autoloader)
+	 * @param boolean $allowCaching Whether to allow caching - affects cache_core (autoloader)
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -253,7 +253,7 @@ class Bootstrap {
 	}
 
 	/**
-	 * Set cache_core to null backend, effectivly disabling eg. the autoloader cache
+	 * Set cache_core to null backend, effectively disabling eg. the autoloader cache
 	 *
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions

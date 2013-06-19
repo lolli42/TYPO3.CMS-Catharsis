@@ -25,7 +25,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Common;
  ***************************************************************/
 
 use TYPO3\CMS\Install\Controller\Action;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Show login form
