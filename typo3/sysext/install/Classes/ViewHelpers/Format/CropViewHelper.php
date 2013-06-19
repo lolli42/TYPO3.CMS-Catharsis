@@ -50,9 +50,16 @@ class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	 * Render the cropped text
 	 *
 	 * @param integer $maxCharacters Place where to truncate the string
+	 * @throws \TYPO3\CMS\Install\ViewHelpers\Exception
 	 * @return string cropped text
 	 */
 	public function render($maxCharacters) {
+		if (empty($maxCharacters) || $maxCharacters < 1) {
+			throw new \TYPO3\CMS\Install\ViewHelpers\Exception(
+				'maxCharacters must be a positive integer',
+				1371410113
+			);
+		}
 		$stringToTruncate = $this->renderChildren();
 		return substr($stringToTruncate, 0, $maxCharacters);
 	}
