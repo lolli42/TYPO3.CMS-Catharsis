@@ -6,6 +6,16 @@ php:
 
 env:
   - DB=mysql
+  - PHPUNIT=1
+
+matrix:
+  include:
+    - php: 5.5
+      env: DB=none PHPLINT=1
+    - php: 5.4
+      env: DB=none PHPLINT=1
+    - php: 5.3
+      env: DB=none PHPLINT=1
 
 services:
   - memcached
@@ -40,5 +50,5 @@ before_script:
   - if [[ "$DB" == "mysql" ]]; then mysql -uroot typo3_test < build-environment/dbimport/phpunit.sql; fi
 
 script:
-#  - phpLint all
-  - php $PWD/typo3/cli_dispatch.phpsh phpunit -c typo3/sysext/core/Build/UnitTests.xml
+  - if [[ "PHPLINT" == "1" ]]; then phpLint all; fi
+  - if [[ "PHPUNIT" == "1" ]]; then php $PWD/typo3/cli_dispatch.phpsh phpunit -c typo3/sysext/core/Build/UnitTests.xml; fi
