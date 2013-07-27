@@ -6,15 +6,7 @@ php:
 
 env:
   - DB=mysql PHPUNIT=1
-
-matrix:
-  include:
-    - php: 5.3
-      env: DB=none PHPLINT=1
-    - php: 5.4
-      env: DB=none PHPLINT=1
-    - php: 5.5
-      env: DB=none PHPLINT=1
+  - DB=none PHPLINT=1
 
 services:
   - memcached
