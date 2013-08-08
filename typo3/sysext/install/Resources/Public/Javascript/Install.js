@@ -131,6 +131,7 @@ function checkExtensionsCompatibility(force) {
 function handleCheckExtensionsSuccess() {
 	$.ajax({
 		url: $('#checkExtensions').data('protocolurl'),
+		cache: false,
 		success: function(data) {
 			if (data) {
 				$('.message-error .message-body', '#checkExtensions').html(

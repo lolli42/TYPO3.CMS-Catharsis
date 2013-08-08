@@ -63,7 +63,9 @@ class UninstallExtension extends Action\AbstractAction implements Action\ActionI
 		if (isset($getVars['uninstallExtension']) && isset($getVars['uninstallExtension']['extensions'])) {
 			$extensionsToUninstall = Utility\GeneralUtility::trimExplode(',', $getVars['uninstallExtension']['extensions']);
 			foreach ($extensionsToUninstall as $extension) {
-				Utility\ExtensionManagementUtility::unloadExtension($extension);
+				if (Utility\ExtensionManagementUtility::isLoaded($extension)) {
+					Utility\ExtensionManagementUtility::unloadExtension($extension);
+				}
 			}
 		}
 		return 'OK';
