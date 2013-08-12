@@ -1,0 +1,9 @@
+
+<f:if condition="{feature.isAvailable}">
+	<form method="post">
+		<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
+		<input type="hidden" value="{slotName}" name="install[values][slot]" />
+		<input type="hidden" value="{featureName}" name="install[values][feature]" />
+		<f:render partial="Action/Common/SubmitButton" arguments="{name:'activateFeature', text:'Activate'}"/>
+	</form>
+</f:if>
