@@ -33,10 +33,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class Configuration extends Action\AbstractAction implements Action\ActionInterface {
 
 	/**
-	 * @var \TYPO3\CMS\Install\Configuration\SlotFeatureManager
+	 * @var \TYPO3\CMS\Install\Configuration\FeatureManager
 	 * @inject
 	 */
-	protected $slotFeatureManager;
+	protected $featureManager;
 
 	/**
 	 * Handle this action
@@ -46,19 +46,23 @@ class Configuration extends Action\AbstractAction implements Action\ActionInterf
 	public function handle() {
 		$this->initialize();
 
+		/*
 		$actionMessages = array();
 		if (isset($this->postValues['set']['activateFeature'])) {
 			$actionMessages[] = $this->activateFeature();
 		}
 		$this->view->assign('actionMessages', $actionMessages);
+		*/
 
-		$this->view->assign('slotFeatures', $this->slotFeatureManager->getAll());
+		$this->view->assign('features', $this->featureManager->getFeatures());
 
 		return $this->view->render();
 	}
 
+	/**
 	protected function activateFeature() {
 		$this->slotFeatureManager->activateSlotFeature($this->postValues['values']['slot'], $this->postValues['values']['feature']);
 	}
+	 */
 }
 ?>

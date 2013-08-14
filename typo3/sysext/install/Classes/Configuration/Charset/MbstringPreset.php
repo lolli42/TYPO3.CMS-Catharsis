@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Configuration;
+namespace TYPO3\CMS\Install\Configuration\Charset;
 
 /***************************************************************
  *  Copyright notice
@@ -29,33 +29,47 @@ namespace TYPO3\CMS\Install\Configuration;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class SlotFeatureManager {
+class MbstringPreset {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
 	 * @inject
 	 */
-	protected $objectManager = NULL;
+	protected $configurationManager = NULL;
 
-	protected $slotRegistry = array(
-		'Charset' => 'TYPO3\CMS\Install\Configuration\Charset\Slot',
-	);
+	protected $name = 'Mbstring';
 
-	public function getAll() {
-		$slotFeatures = array();
-		foreach ($this->slotRegistry as $slotName => $slotClass) {
-			$slotInstance = $this->objectManager->get($slotClass);
-			$slotInstance->initializeFeatures();
-			$slotFeatures[$slotName] = $slotInstance;
+	protected $priority = 90;
+
+	public function isAvailable() {
+		$result = FALSE;
+		if (extension_loaded('mbstring')) {
+			$result = TRUE;
 		}
-		return $slotFeatures;
+		return $result;
 	}
 
-	public function activateSlotFeature($slotName, $featureName) {
-		$slots = $this->getAll();
-		$slot = $slots[$slotName];
-		$features = $slot->getFeatures();
-		$feature = $features[$featureName];
-		$feature->activate();
+	public function getIsAvailable() {
+		return $this->isAvailable();
+	}
+
+	public function activate() {
+		$configuration = array(
+			'SYS/t3lib_cs_convMethod' => 'mbstring',
+			'SYS/t3lib_cs_utils' => 'mbstring',
+		);
+		$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($configuration);
+	}
+
+	public function isActivated() {
+		return FALSE;
+	}
+
+	public function getName() {
+		return $this->name;
+	}
+
+	public function getPriority() {
+		return $this->priority;
 	}
 }

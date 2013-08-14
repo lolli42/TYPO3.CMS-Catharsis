@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\Configuration\Charset;
+namespace TYPO3\CMS\Install\Configuration;
 
 /***************************************************************
  *  Copyright notice
@@ -29,35 +29,35 @@ namespace TYPO3\CMS\Install\Configuration\Charset;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class MbstringFeature {
+class FeatureManager {
 
 	/**
-	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
+	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
 	 * @inject
 	 */
-	protected $configurationManager = NULL;
+	protected $objectManager = NULL;
 
-	public function isAvailable() {
-		$result = FALSE;
-		if (extension_loaded('mbstring')) {
-			$result = TRUE;
+	protected $featureRegistry = array(
+		'TYPO3\\CMS\\Install\\Configuration\\Charset\\CharsetFeature',
+	);
+
+	public function getFeatures() {
+		$features = array();
+		foreach ($this->featureRegistry as $featureClass) {
+			$featureInstance = $this->objectManager->get($featureClass);
+			$featureInstance->initializePresets();
+			$features[] = $featureInstance;
 		}
-		return $result;
+		return $features;
 	}
 
-	public function getIsAvailable() {
-		return $this->isAvailable();
-	}
-
-	public function activate() {
-		$configuration = array(
-			'SYS/t3lib_cs_convMethod' => 'mbstring',
-			'SYS/t3lib_cs_utils' => 'mbstring',
-		);
-		$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($configuration);
-	}
-
-	public function isActivated() {
-		return FALSE;
+	public function activateSlotFeature($slotName, $featureName) {
+		/*
+		$features = $this->getAllFeaturePresetsOrderedByPriority();
+		$fea = $slots[$slotName];
+		$features = $slot->getFeatures();
+		$feature = $features[$featureName];
+		$feature->activate();
+		*/
 	}
 }

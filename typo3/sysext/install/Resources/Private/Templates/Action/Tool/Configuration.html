@@ -8,8 +8,8 @@
 		<f:render partial="Action/Common/StatusMessage" arguments="{message: statusMessage}" />
 	</f:for>
 
-	<f:for each="{slotFeatures}" as="slot" key="slotName">
-		<f:render partial="Action/Tool/Configuration/{slotName}/{slotName}Slot" arguments="{_all}" />
+	<f:for each="{features}" as="feature">
+		<f:render partial="Action/Tool/Configuration/{feature.name}" arguments="{_all}" />
 	</f:for>
 
 </f:section>

@@ -29,29 +29,47 @@ namespace TYPO3\CMS\Install\Configuration\Charset;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class Slot {
+class IconvPreset {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
+	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
 	 * @inject
 	 */
-	protected $objectManager = NULL;
+	protected $configurationManager = NULL;
 
-	protected $featureRegistry = array(
-		'Mbstring' => 'TYPO3\CMS\Install\Configuration\Charset\MbstringFeature',
-	);
+	protected $name = 'Iconv';
 
-	protected $featureInstances = array();
+	protected $priority = 80;
 
-	public function initializeFeatures() {
-		foreach ($this->featureRegistry as $featureName => $featureClass) {
-			$featureInstance = $this->objectManager->get($featureClass);
-			$this->featureInstances[$featureName] = $featureInstance;
+	public function isAvailable() {
+		$result = FALSE;
+		if (extension_loaded('iconv')) {
+			$result = TRUE;
 		}
+		return $result;
 	}
 
-	public function getFeatures() {
-		return $this->featureInstances;
+	public function getIsAvailable() {
+		return $this->isAvailable();
 	}
 
+	public function activate() {
+		$configuration = array(
+			'SYS/t3lib_cs_convMethod' => 'iconv',
+			'SYS/t3lib_cs_utils' => 'iconv',
+		);
+		$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($configuration);
+	}
+
+	public function isActivated() {
+		return FALSE;
+	}
+
+	public function getName() {
+		return $this->name;
+	}
+
+	public function getPriority() {
+		return $this->priority;
+	}
 }
