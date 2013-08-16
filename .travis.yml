@@ -53,6 +53,7 @@ script:
     if [[ "$PHPLINT" == "1" ]]; then
     	phpLint all
     fi
+  - >
     if [[ "$UNITTESTS" == "1" ]]; then
     	php $PWD/typo3/cli_dispatch.phpsh phpunit -c typo3/sysext/core/Build/UnitTests.xml
     fi
