@@ -13,8 +13,15 @@ env:
 services:
   - memcached
 
+notifications:
+  email:
+    recipients:
+      - lolli@schwarzbu.ch
+    on_success: change
+    on_failure: change
+
 before_script:
-  - git clone --single-branch --branch master --depth 1 git://github.com/typo3-ci/TYPO3-Travis-Integration.git build-environment
+  - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh
 
   - >
