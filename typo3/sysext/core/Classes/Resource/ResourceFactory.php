@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -97,7 +97,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $driverIdentificationString The driver class (or identifier) to use.
 	 * @param array $driverConfiguration The configuration of the storage
-	 * @return Driver\AbstractDriver
+	 * @return Driver\DriverInterface
 	 * @throws \InvalidArgumentException
 	 */
 	public function getDriverObject($driverIdentificationString, array $driverConfiguration) {
@@ -182,12 +182,10 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		$bestMatchStorageUid = 0;
 		$bestMatchLength = 0;
 		foreach ($this->localDriverStorageCache as $storageUid => $basePath) {
-			$matchLength = strlen($basePath);
-			if (substr($localPath, 0, $matchLength) !== $basePath) {
-				continue;
-			}
+			$matchLength = strlen(PathUtility::getCommonPrefix(array($basePath, $localPath)));
+			$basePathLength = strlen($basePath);
 
-			if ($matchLength > $bestMatchLength) {
+			if ($matchLength >= $basePathLength && $matchLength > $bestMatchLength) {
 				$bestMatchStorageUid = intval($storageUid);
 				$bestMatchLength = $matchLength;
 			}
@@ -387,18 +385,14 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	public function getFileObjectByStorageAndIdentifier($storageUid, &$fileIdentifier) {
 		$storage = $this->getStorageObject($storageUid, array(), $fileIdentifier);
 		$fileData = $this->getFileIndexRepository()->findOneByStorageUidAndIdentifier($storage->getUid(), $fileIdentifier);
-		if ($fileData !== FALSE) {
-			$fileObject = $this->getFileObject($fileData['uid'], $fileData);
+		if ($fileData === FALSE) {
+			$fileObject = $this->getIndexer($storage)->createIndexEntry($fileIdentifier);
 		} else {
-			$fileData = $storage->getFileInfoByIdentifier($fileIdentifier);
-			$fileObject = $this->createFileObject($fileData, $storage);
-			if (!array_key_exists('uid', $fileData)) {
-				$this->getFileIndexRepository()->add($fileObject);
-			}
-			$this->fileInstances[$fileObject->getUid()] = $fileObject;
+			$fileObject = $this->getFileObject($fileData['uid'], $fileData);
 		}
 		return $fileObject;
 	}
+
 	/**
 	 * Bulk function, can be used for anything to get a file or folder
 	 *
@@ -436,6 +430,9 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 				return $this->getObjectFromCombinedIdentifier($input);
 			} elseif ($prefix == 'EXT') {
 				$input = GeneralUtility::getFileAbsFileName($input);
+				if (empty($input)) {
+					return NULL;
+				}
 				$input = PathUtility::getRelativePath(PATH_site, dirname($input)) . basename($input);
 				return $this->getFileObjectFromCombinedIdentifier($input);
 			} else {
@@ -473,7 +470,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$folderIdentifier = $parts[0];
 			// make sure to not use an absolute path, and remove PATH_site if it is prepended
 			if (GeneralUtility::isFirstPartOfStr($folderIdentifier, PATH_site)) {
-				$folderIdentifier = substr($parts[0], strlen(PATH_site));
+				$folderIdentifier = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($parts[0]);
 			}
 		}
 		return $this->getStorageObject($storageUid, array(), $folderIdentifier)->getFolder($folderIdentifier);
@@ -590,4 +587,14 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function getFileIndexRepository() {
 		return FileIndexRepository::getInstance();
 	}
+
+	/**
+	 * Returns an instance of the Indexer
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
+	 */
+	protected function getIndexer(ResourceStorage $storage) {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
+	}
+
 }

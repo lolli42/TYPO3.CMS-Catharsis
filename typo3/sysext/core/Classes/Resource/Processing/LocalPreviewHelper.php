@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource\Processing;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -67,8 +67,8 @@ class LocalPreviewHelper {
 
 		$originalFileName = $sourceFile->getForLocalProcessing(FALSE);
 
-			// Create the thumb filename in typo3temp/preview_....jpg
-		$temporaryFileName = Utility\GeneralUtility::tempnam('preview_') . '.' . $task->getTargetFileExtension();
+			// Create a temporaryFile
+		$temporaryFileName = Utility\GeneralUtility::tempnam('preview_', '.' . $task->getTargetFileExtension());
 			// Check file extension
 		if ($sourceFile->getType() != Resource\File::FILETYPE_IMAGE &&
 			!Utility\GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $sourceFile->getExtension())) {

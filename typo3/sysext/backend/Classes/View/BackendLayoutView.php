@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\View;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -188,7 +188,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 			if ($this->selectedCombinedIdentifier[$pageId] === '-1') {
 				// If it is set to "none" - don't use any
 				$this->selectedCombinedIdentifier[$pageId] = FALSE;
-			} elseif ($this->selectedCombinedIdentifier[$pageId] === '0') {
+			} elseif ($this->selectedCombinedIdentifier[$pageId] === '' || $this->selectedCombinedIdentifier[$pageId] === '0') {
 				// If it not set check the root-line for a layout on next level and use this
 				// (root-line starts with current page and has page "0" at the end)
 				$rootLine = $this->getRootLine($pageId);
@@ -201,7 +201,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 						// If layout for "next level" is set to "none" - don't use any and stop searching
 						$this->selectedCombinedIdentifier[$pageId] = FALSE;
 						break;
-					} elseif ($this->selectedCombinedIdentifier[$pageId] !== '0') {
+					} elseif ($this->selectedCombinedIdentifier[$pageId] !== '' && $this->selectedCombinedIdentifier[$pageId] !== '0') {
 						// Stop searching if a layout for "next level" is set
 						break;
 					}
@@ -244,7 +244,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 		$pageId = $this->determinePageId($parameters['table'], $parameters['row']);
 
 		if ($pageId !== NULL) {
-			$params['items'] = $this->addColPosListLayoutItems($pageId, $parameters['items']);
+			$parameters['items'] = $this->addColPosListLayoutItems($pageId, $parameters['items']);
 		}
 	}
 
@@ -299,17 +299,20 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 		if (isset($this->selectedBackendLayout[$pageId])) {
 			return $this->selectedBackendLayout[$pageId];
 		}
-
 		$backendLayoutData = NULL;
 
 		$selectedCombinedIdentifier = $this->getSelectedCombinedIdentifier($pageId);
-
 		// If no backend layout is selected, use default
 		if (empty($selectedCombinedIdentifier)) {
 			$selectedCombinedIdentifier = 'default';
 		}
 
-		$backendLayout = $this->getDataProviderCollection()->getBackendLayout($selectedCombinedIdentifier);
+		$backendLayout = $this->getDataProviderCollection()->getBackendLayout($selectedCombinedIdentifier, $pageId);
+		// If backend layout is not found available anymore, use default
+		if (is_null($backendLayout)) {
+			$selectedCombinedIdentifier = 'default';
+			$backendLayout = $this->getDataProviderCollection()->getBackendLayout($selectedCombinedIdentifier, $pageId);
+		}
 
 		if (!empty($backendLayout)) {
 			/** @var $parser \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */

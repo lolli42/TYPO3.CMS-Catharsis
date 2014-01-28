@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Core;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -27,16 +27,15 @@ namespace TYPO3\CMS\Core\Core;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Core\Package\PackageInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Cache;
 
 /**
  * Class Loader implementation which loads .php files found in the classes
  * directory of an object.
  */
 class ClassLoader {
-
-	const VALID_CLASSNAME_PATTERN = '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9\\\\_\x7f-\xff]*$/';
 
 	/**
 	 * @var ClassAliasMap
@@ -49,9 +48,14 @@ class ClassLoader {
 	static protected $staticAliasMap;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\StringFrontend
 	 */
 	protected $classesCache;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend
+	 */
+	protected $coreCache;
 
 	/**
 	 * @var string
@@ -59,29 +63,37 @@ class ClassLoader {
 	protected $cacheIdentifier;
 
 	/**
-	 * @var array<\TYPO3\Flow\Package\Package>
+	 * @var \TYPO3\Flow\Package\Package[]
 	 */
 	protected $packages = array();
 
 	/**
+	 * @var boolean
+	 */
+	protected $isEarlyCache = TRUE;
+
+	/**
 	 * @var array
 	 */
-	protected $earlyClassFileAutoloadRegistry = array();
+	protected $runtimeClassLoadingInformationCache = array();
 
 	/**
 	 * @var array A list of namespaces this class loader is definitely responsible for
 	 */
-	protected $packageNamespaces = array(
-		'TYPO3\CMS\Core' => 14
-	);
+	protected $packageNamespaces = array();
 
 	/**
 	 * @var array A list of packages and their replaces pointing to class paths
 	 */
 	protected $packageClassesPaths = array();
 
-	public function __construct() {
-		$this->classesCache = new \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend('cache_classes', new \TYPO3\CMS\Core\Cache\Backend\EarlyClassLoaderBackend());
+	/**
+	 * Constructor
+	 *
+	 * @param ApplicationContext $context
+	 */
+	public function __construct(ApplicationContext $context) {
+		$this->classesCache = new Cache\Frontend\StringFrontend('cache_classes', new Cache\Backend\TransientMemoryBackend($context));
 	}
 
 	/**
@@ -95,18 +107,31 @@ class ClassLoader {
 	}
 
 	/**
+	 * Get core cache injected
+	 *
+	 * @param \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $coreCache
+	 */
+	public function injectCoreCache(Cache\Frontend\PhpFrontend $coreCache) {
+		$this->coreCache = $coreCache;
+		$this->classAliasMap->injectCoreCache($coreCache);
+	}
+
+	/**
 	 * Get classes cache injected
 	 *
-	 * @param \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $classesCache
+	 * @param \TYPO3\CMS\Core\Cache\Frontend\StringFrontend $classesCache
 	 */
-	public function injectClassesCache(\TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $classesCache) {
-		/** @var $earlyClassLoaderBackend \TYPO3\CMS\Core\Cache\Backend\EarlyClassLoaderBackend */
-		$earlyClassLoaderBackend = $this->classesCache->getBackend();
+	public function injectClassesCache(Cache\Frontend\StringFrontend $classesCache) {
+		/** @var $earlyClassLoaderBackend Cache\Backend\TransientMemoryBackend */
+		$earlyClassesCache = $this->classesCache;
 		$this->classesCache = $classesCache;
+		$this->isEarlyCache = FALSE;
 		$this->classAliasMap->injectClassesCache($classesCache);
-		foreach ($earlyClassLoaderBackend->getAll() as $cacheEntryIdentifier => $classFilePath) {
+		foreach ($earlyClassesCache->getByTag('early') as $originalClassLoadingInformation) {
+			$classLoadingInformation = explode("\xff", $originalClassLoadingInformation);
+			$cacheEntryIdentifier = strtolower(str_replace('\\', '_', $classLoadingInformation[1]));
 			if (!$this->classesCache->has($cacheEntryIdentifier)) {
-				$this->addClassToCache($classFilePath, $cacheEntryIdentifier);
+				$this->classesCache->set($cacheEntryIdentifier, $originalClassLoadingInformation);
 			}
 		}
 	}
@@ -116,107 +141,123 @@ class ClassLoader {
 	 * a package and specifically registered classes.
 	 *
 	 * @param string $className Name of the class/interface to load
-	 * @param bool $require TRUE if file should be required
 	 * @return boolean
 	 */
-	public function loadClass($className, $require = TRUE) {
+	public function loadClass($className) {
 		if ($className[0] === '\\') {
 			$className = substr($className, 1);
 		}
 
-		if (!$this->isValidClassname($className)) {
+		if (!$this->isValidClassName($className)) {
 			return FALSE;
 		}
 
 		$cacheEntryIdentifier = strtolower(str_replace('\\', '_', $className));
-		$cacheEntryCreated = FALSE;
+		try {
+			if ($this->classesCache->has($cacheEntryIdentifier)) {
+				$classLoadingInformation = explode("\xff", $this->classesCache->get($cacheEntryIdentifier));
+			} else {
+				$classLoadingInformation = $this->buildClassLoadingInformation($className);
+				if ($classLoadingInformation !== NULL) {
+					$this->classesCache->set($cacheEntryIdentifier, implode("\xff", $classLoadingInformation), $this->isEarlyCache ? array('early') : array());
+				}
+			}
+		} catch (\InvalidArgumentException $exception) {
+			return FALSE;
+		}
 
-		// Loads any known class via caching framework
-		if ($require) {
-			if ($this->classesCache->has($cacheEntryIdentifier) && $this->classesCache->requireOnce($cacheEntryIdentifier) !== FALSE) {
-				$cacheEntryCreated = TRUE;
+		// Class loading information structure
+		// array(
+		//   0 => class file path
+		//   1 => original class name
+		//   2 and following => alias class names
+		// )
+
+		$loadingSuccessful = FALSE;
+		if ($classLoadingInformation !== NULL) {
+			$loadingSuccessful = (boolean)require_once $classLoadingInformation[0];
+		}
+		if ($loadingSuccessful && count($classLoadingInformation) > 2) {
+			$originalClassName = $classLoadingInformation[1];
+			foreach (array_slice($classLoadingInformation, 2) as $aliasClassName) {
+				$this->setAliasForClassName($aliasClassName, $originalClassName);
 			}
 		}
 
-		if (!$cacheEntryCreated) {
-			$cacheEntryCreated = $this->createCacheEntryForClassFromCorePackage($className, $cacheEntryIdentifier);
+		return $loadingSuccessful;
+	}
+
+	/**
+	 * @param string $className
+	 * @return array|null
+	 */
+	public function buildClassLoadingInformation($className) {
+		$classLoadingInformation = $this->buildClassLoadingInformationForClassFromCorePackage($className);
+
+		if ($classLoadingInformation === NULL) {
+			$classLoadingInformation = $this->fetchClassLoadingInformationFromRuntimeCache($className);
 		}
 
-		if (!$cacheEntryCreated) {
-			$cacheEntryCreated = $this->createCacheEntryForClassFromEarlyAutoloadRegistry($className, $cacheEntryIdentifier);
+		if ($classLoadingInformation === NULL) {
+			$classLoadingInformation = $this->buildClassLoadingInformationForClassFromRegisteredPackages($className);
 		}
 
-		if (!$cacheEntryCreated) {
-			$cacheEntryCreated = $this->createCacheEntryForClassFromRegisteredPackages($className, $cacheEntryIdentifier);
+		if ($classLoadingInformation === NULL) {
+			$classLoadingInformation = $this->buildClassLoadingInformationForClassByNamingConvention($className);
 		}
 
-		if (!$cacheEntryCreated) {
-			$cacheEntryCreated = $this->createCacheEntryForClassByNamingConvention($className, $cacheEntryIdentifier);
-		}
-
-		if ($cacheEntryCreated && $require) {
-			if ($this->classesCache->has($cacheEntryIdentifier) && $this->classesCache->requireOnce($cacheEntryIdentifier) !== FALSE) {
-				$cacheEntryCreated = TRUE;
-			}
-		}
-
-		return $cacheEntryCreated;
+		return $classLoadingInformation;
 	}
 
 	/**
 	 * Find out if a class name is valid
 	 *
 	 * @param string $className
-	 * @return bool
+	 * @return boolean
 	 */
-	protected function isValidClassname($className) {
-		return (bool) preg_match(self::VALID_CLASSNAME_PATTERN, $className);
+	protected function isValidClassName($className) {
+		return strpos($className, ' ') === FALSE;
 	}
 
 	/**
-	 * Create cache entry for class from core package
+	 * Retrieve class loading information for class from core package
 	 *
 	 * @param string $className
-	 * @param string $cacheEntryIdentifier
-	 * @return boolean TRUE if cache entry exists
+	 * @return array|null
 	 */
-	protected function createCacheEntryForClassFromCorePackage($className, $cacheEntryIdentifier) {
-		if (substr($cacheEntryIdentifier, 0, 14) === 'typo3_cms_core') {
-			$classesFolder = substr($cacheEntryIdentifier, 15, 5) === 'tests' ? '' : 'Classes/';
+	protected function buildClassLoadingInformationForClassFromCorePackage($className) {
+		if (substr($className, 0, 14) === 'TYPO3\\CMS\\Core') {
+			$classesFolder = substr($className, 15, 5) === 'Tests' ? '' : 'Classes/';
 			$classFilePath = PATH_typo3 . 'sysext/core/' . $classesFolder . str_replace('\\', '/', substr($className, 15)) . '.php';
 			if (@file_exists($classFilePath)) {
-				$this->addClassToCache($classFilePath, $cacheEntryIdentifier);
-				return TRUE;
+				return array($classFilePath, $className);
 			}
 		}
-		return FALSE;
+		return NULL;
 	}
 
 	/**
-	 * Create early class name autoload registry cache
+	 * Retrieve class loading information from early class name autoload registry cache
 	 *
 	 * @param string $className
-	 * @param string $cacheEntryIdentifier
-	 * @return boolean TRUE if cache file was created
+	 * @return array|null
 	 */
-	protected function createCacheEntryForClassFromEarlyAutoloadRegistry($className, $cacheEntryIdentifier) {
-		if (isset($this->earlyClassFileAutoloadRegistry[$lowercasedClassName = strtolower($className)])) {
-			if (@file_exists($this->earlyClassFileAutoloadRegistry[$lowercasedClassName])) {
-				$this->addClassToCache($this->earlyClassFileAutoloadRegistry[$lowercasedClassName], $cacheEntryIdentifier);
-				return TRUE;
-			}
+	protected function fetchClassLoadingInformationFromRuntimeCache($className) {
+		$lowercasedClassName = strtolower($className);
+		if (!isset($this->runtimeClassLoadingInformationCache[$lowercasedClassName])) {
+			return NULL;
 		}
-		return FALSE;
+		$classInformation = $this->runtimeClassLoadingInformationCache[$lowercasedClassName];
+		return @file_exists($classInformation[0]) ? $classInformation : NULL;
 	}
 
 	/**
-	 * Create cache entry from registered packages
+	 * Retrieve class loading information from registered packages
 	 *
 	 * @param string $className
-	 * @param string $cacheEntryIdentifier
-	 * @return boolean TRUE File was created
+	 * @return array|null
 	 */
-	protected function createCacheEntryForClassFromRegisteredPackages($className, $cacheEntryIdentifier) {;
+	protected function buildClassLoadingInformationForClassFromRegisteredPackages($className) {;
 		foreach ($this->packageNamespaces as $packageNamespace => $packageData) {
 			if (substr(str_replace('_', '\\', $className), 0, $packageData['namespaceLength']) === $packageNamespace) {
 				if ($packageData['substituteNamespaceInPath']) {
@@ -240,24 +281,20 @@ class ClassLoader {
 					$classPathAndFilename = $packageData['classesPath'] . $classPathAndFilename;
 				}
 				if (@file_exists($classPathAndFilename)) {
-					$this->addClassToCache($classPathAndFilename, $cacheEntryIdentifier);
-					return TRUE;
+					return array($classPathAndFilename, $className);
 				}
 			}
 		}
-		return FALSE;
+		return NULL;
 	}
 
 	/**
-	 * Try to load a given class name based on 'extbase' naming convention into the registry.
-	 * If the file is found it writes an entry to $classNameToFileMapping and re-caches the
-	 * array to the file system to save this lookup for next call.
+	 * Retrieve class loading information based on 'extbase' naming convention into the registry.
 	 *
 	 * @param string $className Class name to find source file of
-	 * @param string $classCacheEntryIdentifier
-	 * @return boolean TRUE if was created
+	 * @return array|null
 	 */
-	protected function createCacheEntryForClassByNamingConvention($className, $classCacheEntryIdentifier) {
+	protected function buildClassLoadingInformationForClassByNamingConvention($className) {
 		$delimiter = '_';
 		// To handle namespaced class names, split the class name at the
 		// namespace delimiters.
@@ -270,10 +307,15 @@ class ClassLoader {
 		// We only handle classes that follow the convention Vendor\Product\Classname or is longer
 		// so we won't deal with class names that only have one or two parts
 		if (count($classNameParts) <= 2) {
-			return FALSE;
+			return NULL;
 		}
 
-		if (isset($classNameParts[0]) && $classNameParts[0] === 'TYPO3' && (isset($classNameParts[1]) && $classNameParts[1] === 'CMS')) {
+		if (
+				isset($classNameParts[0])
+				&& isset($classNameParts[1])
+				&& $classNameParts[0] === 'TYPO3'
+				&& $classNameParts[1] === 'CMS'
+		) {
 			$extensionKey = GeneralUtility::camelCaseToLowerCaseUnderscored($classNameParts[2]);
 			$classNameWithoutVendorAndProduct = $classNameParts[3];
 		} else {
@@ -291,14 +333,15 @@ class ClassLoader {
 			} else {
 				$classesPath = $this->packageClassesPaths[$extensionKey];
 			}
-			$classFilePath = $classesPath . strtr($classNameWithoutVendorAndProduct, $delimiter, '/') . '.php';
+			// Naming convention is to capitalize each part of the path
+			$classNameWithoutVendorAndProduct = ucwords(strtr($classNameWithoutVendorAndProduct, $delimiter, LF));
+			$classFilePath = $classesPath . strtr($classNameWithoutVendorAndProduct, LF, '/') . '.php';
 			if (@file_exists($classFilePath)) {
-				$this->addClassToCache($classFilePath, $classCacheEntryIdentifier);
-				return TRUE;
+				return array($classFilePath, $className);
 			}
 		}
 
-		return FALSE;
+		return NULL;
 	}
 
 	/**
@@ -313,11 +356,12 @@ class ClassLoader {
 	/**
 	 * Get cache entry identifier
 	 *
-	 * @return string identifier
+	 * @return string|null identifier
 	 */
 	protected function getCacheEntryIdentifier() {
-		$cacheIdentifier = $this->getCacheIdentifier();
-		return $cacheIdentifier !== NULL ? 'ClassLoader_' . $this->getCacheIdentifier() : NULL;
+		return $this->getCacheIdentifier() !== NULL
+			? 'ClassLoader_' . $this->getCacheIdentifier()
+			: NULL;
 	}
 
 	/**
@@ -340,18 +384,62 @@ class ClassLoader {
 	 */
 	public function setPackages(array $packages) {
 		$this->packages = $packages;
-		if (!$this->loadPackageNamespacesFromCache()) {
-			$this->buildPackageNamespaces();
-			$this->buildPackageClassesPathsForLegacyExtensions();
-			$this->savePackageNamespacesAndClassesPathsToCache();
-			// Rebuild the class alias map too because ext_autoload can contain aliases
-			$classNameToAliasMapping = $this->classAliasMap->setPackagesButDontBuildMappingFilesReturnClassNameToAliasMappingInstead($packages);
-			$this->buildAutoloadRegistryAndSaveToCache();
-			$this->classAliasMap->buildMappingFiles($classNameToAliasMapping);
+		if (!$this->loadPackageNamespacesFromCache() || !$this->classAliasMap->loadEarlyInstanceMappingFromCache()) {
+			$this->buildPackageNamespacesAndClassesPaths();
 		} else {
 			$this->classAliasMap->setPackages($packages);
 		}
+		// Clear the runtime cache for runtime activated packages
+		$this->runtimeClassLoadingInformationCache = array();
 		return $this;
+	}
+
+	/**
+	 * Add a package to class loader just during runtime, so classes can be loaded without the need for a new request
+	 *
+	 * @param \TYPO3\Flow\Package\PackageInterface $package
+	 * @return ClassLoader
+	 */
+	public function addRuntimeActivatedPackage(\TYPO3\Flow\Package\PackageInterface $package) {
+		$this->packages[] = $package;
+		$this->buildPackageNamespaceAndClassesPath($package);
+		$this->sortPackageNamespaces();
+		$this->loadClassFilesFromAutoloadRegistryIntoRuntimeClassInformationCache(array($package));
+		return $this;
+	}
+
+	/**
+	 * Builds the package namespaces and classes paths for the given packages
+	 *
+	 * @return void
+	 */
+	protected function buildPackageNamespacesAndClassesPaths() {
+		foreach ($this->packages as $package) {
+			$this->buildPackageNamespaceAndClassesPath($package);
+		}
+		$this->sortPackageNamespaces();
+		$this->savePackageNamespacesAndClassesPathsToCache();
+		// The class alias map has to be rebuilt first, because ext_autoload files can contain
+		// old class names that need established class aliases.
+		$classNameToAliasMapping = $this->classAliasMap->setPackages($this->packages)->buildMappingAndInitializeEarlyInstanceMapping();
+		$this->loadClassFilesFromAutoloadRegistryIntoRuntimeClassInformationCache($this->packages);
+		$this->classAliasMap->buildMappingFiles($classNameToAliasMapping);
+		$this->transferRuntimeClassInformationCacheEntriesToClassesCache();
+	}
+
+	/**
+	 * Builds the namespace and class paths for a single package
+	 *
+	 * @param \TYPO3\Flow\Package\PackageInterface $package
+	 * @return void
+	 */
+	protected function buildPackageNamespaceAndClassesPath(\TYPO3\Flow\Package\PackageInterface $package) {
+		if ($package instanceof \TYPO3\Flow\Package\PackageInterface) {
+			$this->buildPackageNamespace($package);
+		}
+		if ($package instanceof PackageInterface) {
+			$this->buildPackageClassPathsForLegacyExtension($package);
+		}
 	}
 
 	/**
@@ -361,8 +449,8 @@ class ClassLoader {
 	 */
 	protected function loadPackageNamespacesFromCache() {
 		$cacheEntryIdentifier = $this->getCacheEntryIdentifier();
-		if ($cacheEntryIdentifier !== NULL && $this->classesCache->has($cacheEntryIdentifier)) {
-			list($packageNamespaces, $packageClassesPaths) = $this->classesCache->requireOnce($cacheEntryIdentifier);
+		if ($cacheEntryIdentifier !== NULL && $this->coreCache->has($cacheEntryIdentifier)) {
+			list($packageNamespaces, $packageClassesPaths) = $this->coreCache->requireOnce($cacheEntryIdentifier);
 			if (is_array($packageNamespaces) && is_array($packageClassesPaths)) {
 				$this->packageNamespaces = $packageNamespaces;
 				$this->packageClassesPaths = $packageClassesPaths;
@@ -373,44 +461,33 @@ class ClassLoader {
 	}
 
 	/**
-	 * Build package namespaces
+	 * Extracts the namespace from a package
 	 *
-	 * @return void
+	 * @param \TYPO3\Flow\Package\PackageInterface $package
 	 */
-	protected function buildPackageNamespaces() {
-		/** @var $package \TYPO3\Flow\Package\Package */
-		foreach ($this->packages as $package) {
-			$packageNamespace = $package->getNamespace();
-			// Ignore legacy extensions with unkown vendor name
-			if ($packageNamespace[0] !== '*') {
-				$this->packageNamespaces[$packageNamespace] = array(
-					'namespaceLength' => strlen($packageNamespace),
-					'classesPath' => $package->getClassesPath(),
-					'packagePath' => $package->getPackagePath(),
-					'substituteNamespaceInPath' => ($package instanceof \TYPO3\CMS\Core\Package\Package)
-				);
-			}
+	protected function buildPackageNamespace(\TYPO3\Flow\Package\PackageInterface $package) {
+		$packageNamespace = $package->getNamespace();
+		// Ignore legacy extensions with unkown vendor name
+		if ($packageNamespace[0] !== '*') {
+			$this->packageNamespaces[$packageNamespace] = array(
+				'namespaceLength' => strlen($packageNamespace),
+				'classesPath' => $package->getClassesPath(),
+				'packagePath' => $package->getPackagePath(),
+				'substituteNamespaceInPath' => ($package instanceof PackageInterface)
+			);
 		}
-		// Sort longer package namespaces first, to find specific matches before generic ones
-		$sortPackages = function($a, $b) {
-			if (($lenA = strlen($a)) === ($lenB = strlen($b))) {
-				return strcmp($a, $b);
-			}
-			return ($lenA > $lenB) ? -1 : 1;
-		};
-		uksort($this->packageNamespaces, $sortPackages);
 	}
 
 	/**
-	 * Build autoload registry
+	 * Save autoload registry to cache
 	 *
+	 * @param array $packages
 	 * @return void
 	 */
-	protected function buildAutoloadRegistryAndSaveToCache() {
+	protected function loadClassFilesFromAutoloadRegistryIntoRuntimeClassInformationCache(array $packages) {
 		$classFileAutoloadRegistry = array();
-		foreach ($this->packages as $package) {
-			/** @var $package \TYPO3\CMS\Core\Package\Package */
-			if ($package instanceof \TYPO3\CMS\Core\Package\Package) {
+		foreach ($packages as $package) {
+			if ($package instanceof PackageInterface) {
 				$classFilesFromAutoloadRegistry = $package->getClassFilesFromAutoloadRegistry();
 				if (is_array($classFilesFromAutoloadRegistry)) {
 					$classFileAutoloadRegistry = array_merge($classFileAutoloadRegistry, $classFilesFromAutoloadRegistry);
@@ -418,25 +495,34 @@ class ClassLoader {
 			}
 		}
 		foreach ($classFileAutoloadRegistry as $className => $classFilePath) {
-			if (@file_exists($classFilePath)) {
-				$this->addClassToCache($classFilePath, strtolower(str_replace('\\', '_', $className)));
+			$lowercasedClassName = strtolower($className);
+			if (!isset($this->runtimeClassLoadingInformationCache[$lowercasedClassName]) && @file_exists($classFilePath)) {
+				$this->runtimeClassLoadingInformationCache[$lowercasedClassName] = array($classFilePath, $className);
 			}
 		}
 	}
 
 	/**
-	 * Builds the classes paths for legacy extensions with unknown vendor name
-	 *
+	 * Transfers all entries from the early class information cache to
+	 * the classes cache in order to make them persistent
+	 */
+	protected function transferRuntimeClassInformationCacheEntriesToClassesCache() {
+		foreach ($this->runtimeClassLoadingInformationCache as $classLoadingInformation) {
+			$cacheEntryIdentifier = strtolower(str_replace('\\', '_', $classLoadingInformation[1]));
+			if (!$this->classesCache->has($cacheEntryIdentifier)) {
+				$this->classesCache->set($cacheEntryIdentifier, implode("\xff", $classLoadingInformation));
+			}
+		}
+	}
+
+	/**
+	 * @param PackageInterface $package
 	 * @return void
 	 */
-	protected function buildPackageClassesPathsForLegacyExtensions() {
-		foreach ($this->packages as $package) {
-			if ($package instanceof \TYPO3\CMS\Core\Package\PackageInterface) {
-				$this->packageClassesPaths[$package->getPackageKey()] = $package->getClassesPath();
-				foreach ($package->getPackageReplacementKeys() as $packageToReplace => $versionConstraint) {
-					$this->packageClassesPaths[$packageToReplace] = $package->getClassesPath();
-				}
-			}
+	protected function buildPackageClassPathsForLegacyExtension(PackageInterface $package) {
+		$this->packageClassesPaths[$package->getPackageKey()] = $package->getClassesPath();
+		foreach (array_keys($package->getPackageReplacementKeys()) as $packageToReplace) {
+			$this->packageClassesPaths[$packageToReplace] = $package->getClassesPath();
 		}
 	}
 
@@ -448,7 +534,7 @@ class ClassLoader {
 	protected function savePackageNamespacesAndClassesPathsToCache() {
 		$cacheEntryIdentifier = $this->getCacheEntryIdentifier();
 		if ($cacheEntryIdentifier !== NULL) {
-			$this->classesCache->set(
+			$this->coreCache->set(
 				$this->getCacheEntryIdentifier(),
 				'return ' . var_export(array($this->packageNamespaces, $this->packageClassesPaths), TRUE) . ';'
 			);
@@ -456,27 +542,33 @@ class ClassLoader {
 	}
 
 	/**
-	 * Adds a single class to class loader cache.
+	 * Sorts longer package namespaces first, to find specific matches before generic ones
 	 *
-	 * @param string $classFilePathAndName Physical path of file containing $className
-	 * @param string $classCacheEntryIdentifier
+	 * @return void
 	 */
-	protected function addClassToCache($classFilePathAndName, $classCacheEntryIdentifier) {
-		/** @var $classesCacheBackend \TYPO3\CMS\Core\Cache\Backend\EarlyClassLoaderBackend|\TYPO3\CMS\Core\Cache\Backend\ClassLoaderBackend */
-		$classesCacheBackend = $this->classesCache->getBackend();
-		$classesCacheBackend->setLinkToPhpFile(
-			$classCacheEntryIdentifier,
-			$classFilePathAndName
-		);
+	protected function sortPackageNamespaces() {
+		$sortPackages = function ($a, $b) {
+			if (($lenA = strlen($a)) === ($lenB = strlen($b))) {
+				return strcmp($a, $b);
+			}
+			return $lenA > $lenB ? -1 : 1;
+		};
+		uksort($this->packageNamespaces, $sortPackages);
 	}
 
 	/**
 	 * This method is necessary for the early loading of the cores autoload registry
 	 *
 	 * @param array $classFileAutoloadRegistry
+	 * @return void
 	 */
-	public function setEarlyClassFileAutoloadRegistry($classFileAutoloadRegistry) {
-		$this->earlyClassFileAutoloadRegistry = $classFileAutoloadRegistry;
+	public function setRuntimeClassLoadingInformationFromAutoloadRegistry(array $classFileAutoloadRegistry) {
+		foreach ($classFileAutoloadRegistry as $className => $classFilePath) {
+			$lowercasedClassName = strtolower($className);
+			if (!isset($this->runtimeClassLoadingInformationCache[$lowercasedClassName])) {
+				$this->runtimeClassLoadingInformationCache[$lowercasedClassName] = array($classFilePath, $className);
+			}
+		}
 	}
 
 	/**
@@ -509,7 +601,7 @@ class ClassLoader {
 	 */
 	static public function getAliasForClassName($className) {
 		$aliases = static::$staticAliasMap->getAliasesForClassName($className);
-		return (is_array($aliases) && isset($aliases[0])) ? $aliases[0] : NULL;
+		return is_array($aliases) && isset($aliases[0]) ? $aliases[0] : NULL;
 	}
 
 	/**

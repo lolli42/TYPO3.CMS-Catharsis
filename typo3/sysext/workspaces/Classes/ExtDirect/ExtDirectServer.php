@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -142,7 +142,7 @@ class ExtDirectServer extends \TYPO3\CMS\Workspaces\ExtDirect\AbstractHandler {
 			// check for exclude fields
 			if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['TCA'][$parameter->table]['columns'][$fieldName]['exclude'] == 0 || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($GLOBALS['BE_USER']->groupData['non_exclude_fields'], $parameter->table . ':' . $fieldName)) {
 				// call diff class only if there is a difference
-				if (strcmp($liveRecord[$fieldName], $versionRecord[$fieldName]) !== 0) {
+				if ((string)$liveRecord[$fieldName] !== (string)$versionRecord[$fieldName]) {
 					// Select the human readable values before diff
 					$liveRecord[$fieldName] = BackendUtility::getProcessedValue(
 						$parameter->table,

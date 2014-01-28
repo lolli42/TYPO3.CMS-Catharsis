@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Opendocs\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -66,7 +66,7 @@ class OpendocsController implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookIn
 	 */
 	public function checkAccess() {
 		$conf = $GLOBALS['BE_USER']->getTSConfig('backendToolbarItem.tx_opendocs.disabled');
-		return $conf['value'] == 1 ? FALSE : TRUE;
+		return $conf['value'] != 1;
 	}
 
 	/**

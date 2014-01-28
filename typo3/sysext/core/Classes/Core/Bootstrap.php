@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Core;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -29,7 +29,7 @@ namespace TYPO3\CMS\Core\Core;
 
 use TYPO3\CMS\Core\Utility;
 
-require __DIR__ . '/SystemEnvironmentBuilder.php';
+require_once __DIR__ . '/SystemEnvironmentBuilder.php';
 
 /**
  * This class encapsulates bootstrap related methods.
@@ -101,6 +101,7 @@ class Bootstrap {
 	 */
 	static public function getInstance() {
 		if (is_null(static::$instance)) {
+			require_once(__DIR__ . '/../Exception.php');
 			require_once(__DIR__ . '/ApplicationContext.php');
 			$applicationContext = trim(getenv('TYPO3_CONTEXT'), '"\' ') ? : 'Production';
 			self::$instance = new static($applicationContext);
@@ -225,8 +226,9 @@ class Bootstrap {
 			->initializeClassLoader()
 			->populateLocalConfiguration()
 			->initializeCachingFramework()
-			->initializeClassLoaderCache()
-			->initializePackageManagement($packageManagerClassName);
+			->initializeClassLoaderCaches()
+			->initializePackageManagement($packageManagerClassName)
+			->initializeRuntimeActivatedPackagesFromConfiguration();
 
 		// @TODO dig into this
 		if (!$allowCaching) {
@@ -236,7 +238,6 @@ class Bootstrap {
 		$this->defineDatabaseConstants()
 			->defineUserAgentConstant()
 			->registerExtDirectComponents()
-			->checkUtf8DatabaseSettingsOrDie()
 			->transferDeprecatedCurlSettings()
 			->setCacheHashOptions()
 			->setDefaultTimezone()
@@ -258,9 +259,9 @@ class Bootstrap {
 	 * @return Bootstrap
 	 */
 	protected function initializeClassLoader() {
-		$classLoader = new \TYPO3\CMS\Core\Core\ClassLoader();
+		$classLoader = new ClassLoader($this->applicationContext);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader', $classLoader);
-		$classLoader->setEarlyClassFileAutoloadRegistry((array) include __DIR__ . '/../../ext_autoload.php');
+		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array) include __DIR__ . '/../../ext_autoload.php');
 		$classAliasMap = new \TYPO3\CMS\Core\Core\ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassAliasMap', $classAliasMap);
@@ -273,6 +274,7 @@ class Bootstrap {
 	 * Reinitializes the class loader during clear cache actions
 	 * Beware! This is not public API and necessary for edge cases in the install tool
 	 *
+	 * @param string $packageManagerClassName
 	 * @return void
 	 */
 	public function reinitializeClassLoaderAndCachesAndPackageManagement($packageManagerClassName = 'TYPO3\\CMS\\Core\\Package\\PackageManager') {
@@ -283,7 +285,7 @@ class Bootstrap {
 			->initializeClassLoader()
 			->populateLocalConfiguration()
 			->initializeCachingFramework()
-			->initializeClassLoaderCache()
+			->initializeClassLoaderCaches()
 			->initializePackageManagement($packageManagerClassName);
 	}
 
@@ -292,9 +294,10 @@ class Bootstrap {
 	 *
 	 * @return Bootstrap
 	 */
-	protected function initializeClassLoaderCache() {
-		/** @var $classLoader \TYPO3\CMS\Core\Core\ClassLoader */
+	protected function initializeClassLoaderCaches() {
+		/** @var $classLoader ClassLoader */
 		$classLoader = $this->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader');
+		$classLoader->injectCoreCache($this->getEarlyInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_core'));
 		$classLoader->injectClassesCache($this->getEarlyInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_classes'));
 		return $this;
 	}
@@ -307,14 +310,32 @@ class Bootstrap {
 	 * @return Bootstrap
 	 */
 	protected function initializePackageManagement($packageManagerClassName) {
+		/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
 		$packageManager = new $packageManagerClassName();
 		$this->setEarlyInstance('TYPO3\\Flow\\Package\\PackageManager', $packageManager);
 		Utility\ExtensionManagementUtility::setPackageManager($packageManager);
 		$packageManager->injectClassLoader($this->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader'));
 		$packageManager->injectCoreCache($this->getEarlyInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_core'));
 		$packageManager->initialize($this, PATH_site);
-		Utility\GeneralUtility::setSingletonInstance($packageManagerClassName, $packageManager);
+		Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Package\\PackageManager', $packageManager);
 		$GLOBALS['TYPO3_LOADED_EXT'] = new \TYPO3\CMS\Core\Compatibility\LoadedExtensionsArray($packageManager);
+		return $this;
+	}
+
+	/**
+	 * Activates a package during runtime. This is used in AdditionalConfiguration.php
+	 * to enable extensions under conditions.
+	 *
+	 * @return Bootstrap
+	 */
+	protected function initializeRuntimeActivatedPackagesFromConfiguration() {
+		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']) && is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'])) {
+			/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
+			$packageManager = $this->getEarlyInstance('TYPO3\\Flow\\Package\\PackageManager');
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'] as $runtimeAddedPackageKey) {
+				$packageManager->activatePackageDuringRuntime($runtimeAddedPackageKey);
+			}
+		}
 		return $this;
 	}
 
@@ -335,7 +356,6 @@ class Bootstrap {
 	 * Load TYPO3_LOADED_EXT, recreate class loader registry and load ext_localconf
 	 *
 	 * @TODO: This method was changed with the package manager patch, do we still need it?
-	 * @param boolean $allowCaching
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -463,35 +483,6 @@ class Bootstrap {
 		// @todo Please deuglify
 		\TYPO3\CMS\Core\Cache\Cache::initializeCachingFramework();
 		$this->setEarlyInstance('TYPO3\CMS\Core\Cache\CacheManager', $GLOBALS['typo3CacheManager']);
-		return $this;
-	}
-
-	/**
-	 * Checking for UTF-8 in the settings since TYPO3 4.5
-	 *
-	 * Since TYPO3 4.5, everything other than UTF-8 is deprecated.
-	 *
-	 * [SYS][setDBinit] is used to set the DB connection
-	 * and both settings need to be adjusted for UTF-8 in order to work properly
-	 *
-	 * @return Bootstrap
-	 */
-	protected function checkUtf8DatabaseSettingsOrDie() {
-		if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit']) &&
-			$GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit'] !== '-1' &&
-			preg_match('/SET NAMES [\'"]?utf8[\'"]?/i', $GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit']) === FALSE &&
-			TYPO3_enterInstallScript !== '1') {
-
-			// Only accept "SET NAMES utf8" for this setting, otherwise die with a nice error
-			die('This TYPO3 installation is using the $GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'setDBinit\'] property with the following value:' . chr(10) .
-				$GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit'] . chr(10) . chr(10) .
-				'It looks like UTF-8 is not used for this connection.' . chr(10) . chr(10) .
-				'Everything other than UTF-8 is unsupported since TYPO3 4.7.' . chr(10) .
-				'The DB, its connection and TYPO3 should be migrated to UTF-8 therefore. Please check your setup.'
-			);
-		} else {
-			$GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit'] = 'SET NAMES utf8;';
-		}
 		return $this;
 	}
 
@@ -750,7 +741,6 @@ class Bootstrap {
 	/**
 	 * Initialize database connection in $GLOBALS and connect if requested
 	 *
-	 * @param boolean $connect Whether db should be connected
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -913,11 +903,11 @@ class Bootstrap {
 		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
 		$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
 		if ($codeCache->has($cacheIdentifier)) {
-			$codeCache->requireOnce($cacheIdentifier);
+			// substr is necessary, because the php frontend wraps php code around the cache value
+			$GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
 		} else {
 			$this->loadExtensionTables(TRUE);
-			$phpCodeToCache = '$GLOBALS[\'TCA\'] = ' . var_export($GLOBALS['TCA'], TRUE) . ';';
-			$codeCache->set($cacheIdentifier, $phpCodeToCache);
+			$codeCache->set($cacheIdentifier, serialize($GLOBALS['TCA']));
 		}
 		return $this;
 	}

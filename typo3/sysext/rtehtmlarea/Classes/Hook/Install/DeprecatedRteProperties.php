@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Hook\Install;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -160,17 +160,17 @@ class DeprecatedRteProperties extends \TYPO3\CMS\Install\Updates\AbstractUpdate 
 				if (count($updateablePages)) {
 					$this->updatePages($updateablePages, $dbQueries, $customMessages);
 				} else {
-					$customMessages = '<p>Some deprecated Page TSconfig properties were found. However, the wizard was unable to automatically replace any of the deprecated properties found. They will have to be replaced manually.</p>' . LF;
+					$customMessages = 'Some deprecated Page TSconfig properties were found. However, the wizard was unable to automatically replace any of the deprecated properties found. They will have to be replaced manually.' . LF . LF;
 					$success = TRUE;
 				}
 			} else {
-				$customMessages = '<p>No deprecated Page TSconfig properties were found on page records.</p>' . LF;
+				$customMessages = '>No deprecated Page TSconfig properties were found on page records.' . LF . LF;
 				$success = TRUE;
 			}
-			$customMessages .= '<p>Only page records were searched for deprecated properties. However, such properties can also be used in BE group and BE user records (prepended with page.). These are not searched nor updated by this wizard.</p>' . LF . '<p>Page TSconfig may also be included from external files. These were not updated by this wizard. If required, the update will need to be done manually.</p>';
+			$customMessages .= 'Only page records were searched for deprecated properties. However, such properties can also be used in BE group and BE user records (prepended with page.). These are not searched nor updated by this wizard.' . LF . LF . 'Page TSconfig may also be included from external files. These were not updated by this wizard. If required, the update will need to be done manually.';
 		}
 		$this->markWizardAsDone();
-		return empty($customMessages) || $success;
+		return empty($customMessages) ? $success : FALSE;
 	}
 
 	/**

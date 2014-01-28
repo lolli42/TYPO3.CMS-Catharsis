@@ -1954,6 +1954,22 @@ tt_content.menu {
 				outerWrap = <ul class="csc-menu csc-menu-9">|</ul>
 			}
 		}
+
+		# Menu of categorized content elements
+		categorized_content = RECORDS
+		categorized_content {
+			categories.field = selected_categories
+			categories.relation.field = category_field
+			tables = tt_content
+			conf.tt_content = TEXT
+			conf.tt_content {
+				field = header
+				typolink.parameter = {field:pid}#{field:uid}
+				typolink.parameter.insertData = 1
+				wrap = <li>|</li>
+			}
+			wrap = <ul>|</ul>
+		}
 	}
 
 	20.stdWrap {
@@ -2067,7 +2083,8 @@ tt_content.html = TEXT
 tt_content.html {
 	field = bodytext
 
-	editIcons = tt_content: pages
+	editIcons = tt_content:bodytext
+	editIcons.beforeLastTag = 1
 	editIcons.iconTitle.data = LLL:EXT:css_styled_content/pi1/locallang.xml:eIcon.html
 
 	prefixComment = 2 | Raw HTML content:
@@ -2137,7 +2154,7 @@ plugin.tx_cssstyledcontent._CSS_DEFAULT_STYLE (
 	DIV.csc-textpic-imagecolumn, TD.csc-textpic-imagecolumn .csc-textpic-image { margin-right: {$styles.content.imgtext.colSpace}px; }
 	DIV.csc-textpic-imagecolumn.csc-textpic-lastcol, TD.csc-textpic-imagecolumn.csc-textpic-lastcol .csc-textpic-image { margin-right: 0; }
 
-	/* Add margin from image-block to text (in case of "Text w/ images") */
+	/* Add margin from image-block to text (in case of "Text & Images") */
 	DIV.csc-textpic-intext-left .csc-textpic-imagewrap,
 	DIV.csc-textpic-intext-left-nowrap .csc-textpic-imagewrap {
 		margin-right: {$styles.content.imgtext.textMargin}px;

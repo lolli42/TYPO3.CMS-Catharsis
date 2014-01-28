@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Template;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -245,7 +245,7 @@ class DocumentTemplate {
 	 *
 	 * @var string
 	 */
-	protected $xUaCompatibilityVersion = 'IE=9';
+	protected $xUaCompatibilityVersion = 'IE=10';
 
 	// Skinning
 	// stylesheets from core
@@ -349,7 +349,7 @@ class DocumentTemplate {
 		if (($temp_M = (string) GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
 			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M] . 'index.php');
 		} else {
-			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', substr(PATH_thisScript, strlen(PATH_site)));
+			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(PATH_thisScript));
 		}
 		if (TYPO3_mainDir != 'typo3/' && substr($this->scriptID, 0, strlen(TYPO3_mainDir)) == TYPO3_mainDir) {
 			// This fixes if TYPO3_mainDir has been changed so the script ids are STILL "typo3/..."
@@ -361,7 +361,7 @@ class DocumentTemplate {
 			// Make copy
 			$ovr = $GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID];
 			// merge styles.
-			$GLOBALS['TBE_STYLES'] = GeneralUtility::array_merge_recursive_overrule($GLOBALS['TBE_STYLES'], $ovr);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($GLOBALS['TBE_STYLES'], $ovr);
 			// Have to unset - otherwise the second instantiation will do it again!
 			unset($GLOBALS['TBE_STYLES']['scriptIDindex'][$this->scriptID]);
 		}
@@ -480,7 +480,7 @@ class DocumentTemplate {
 	public function wrapClickMenuOnIcon($str, $table, $uid = 0, $listFr = TRUE, $addParams = '', $enDisItems = '', $returnOnClick = FALSE) {
 		$backPath = rawurlencode($this->backPath) . '|' . GeneralUtility::shortMD5(($this->backPath . '|' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']));
 		$onClick = 'Clickmenu.show("' . $table . '","' . ($uid !== 0 ? $uid : '') . '","' . strval($listFr) . '","' . str_replace('+', '%2B', $enDisItems) . '","' . str_replace('&', '&amp;', addcslashes($backPath, '"')) . '","' . str_replace('&', '&amp;', addcslashes($addParams, '"')) . '");return false;';
-		return $returnOnClick ? $onClick : '<a href="#" onclick="' . htmlspecialchars($onClick) . '" oncontextmenu="' . htmlspecialchars($onClick) . '">' . $str . '</a>';
+		return $returnOnClick ? $onClick : '<a href="#" onclick="' . htmlspecialchars($onClick) . '" oncontextmenu="this.click();return false;">' . $str . '</a>';
 	}
 
 	/**
@@ -599,7 +599,7 @@ class DocumentTemplate {
 		if (preg_match('/typo3\\/mod\\.php$/', $pathInfo['path']) && isset($GLOBALS['TBE_MODULES']['_PATHS'][$modName])) {
 			$storeUrl = '&M=' . $modName . $storeUrl;
 		}
-		if (!strcmp($motherModName, '1')) {
+		if ($motherModName === '1') {
 			$mMN = '&motherModName=\'+top.currentModuleLoaded+\'';
 		} elseif ($motherModName) {
 			$mMN = '&motherModName=' . rawurlencode($motherModName);
@@ -792,7 +792,7 @@ class DocumentTemplate {
 				$headerStart = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">';
 				$htmlTag = '<html>';
 				// Disable rendering of XHTML tags
-				$this->getPageRenderer()->setRenderXhtml(FALSE);
+				$this->pageRenderer->setRenderXhtml(FALSE);
 				break;
 			case 'xhtml_strict':
 				$headerStart = '<!DOCTYPE html
@@ -816,7 +816,7 @@ class DocumentTemplate {
 				$headerStart = '<!DOCTYPE html>' . LF;
 				$htmlTag = '<html>';
 				// Disable rendering of XHTML tags
-				$this->getPageRenderer()->setRenderXhtml(FALSE);
+				$this->pageRenderer->setRenderXhtml(FALSE);
 		}
 		$this->pageRenderer->setHtmlTag($htmlTag);
 		// This loads the tabulator-in-textarea feature. It automatically modifies
@@ -1261,7 +1261,7 @@ class DocumentTemplate {
 					// for EXT:myskin/stylesheets/ syntax
 					if (substr($stylesheetDir, 0, 4) === 'EXT:') {
 						list($extKey, $path) = explode('/', substr($stylesheetDir, 4), 2);
-						if (strcmp($extKey, '') && ExtensionManagementUtility::isLoaded($extKey) && strcmp($path, '')) {
+						if (!empty($extKey) && ExtensionManagementUtility::isLoaded($extKey) && !empty($path)) {
 							$stylesheetDirectories[] = ExtensionManagementUtility::extRelPath($extKey) . $path;
 						}
 					} else {
@@ -1630,7 +1630,7 @@ class DocumentTemplate {
 			}
 			$menuDef = array();
 			foreach ($menuItems as $value => $label) {
-				$menuDef[$value]['isActive'] = !strcmp($currentValue, $value);
+				$menuDef[$value]['isActive'] = (string)$currentValue === (string)$value;
 				$menuDef[$value]['label'] = GeneralUtility::deHSCentities(htmlspecialchars($label));
 				$menuDef[$value]['url'] = $script . '?' . $mainParams . $addparams . '&' . $elementName . '=' . $value;
 			}
@@ -1730,7 +1730,7 @@ class DocumentTemplate {
 				} else {
 					$onclick = 'this.blur(); DTM_activate("' . $id . '","' . $index . '", ' . ($toggle < 0 ? 1 : 0) . '); return false;';
 				}
-				$isEmpty = !(strcmp(trim($def['content']), '') || strcmp(trim($def['icon']), ''));
+				$isEmpty = trim($def['content']) === '' && trim($def['icon']) === '';
 				// "Removes" empty tabs
 				if ($isEmpty && $dividers2tabs == 1) {
 					continue;

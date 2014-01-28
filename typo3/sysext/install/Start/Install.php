@@ -13,7 +13,7 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -124,11 +124,11 @@ if (isset($getPost['controller']) && $getPost['controller'] === 'tool') {
 	);
 } elseif ($getPost['controller'] === 'ajax') {
 	$controller = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-		'TYPO3\CMS\install\Controller\AjaxController'
+		'TYPO3\\CMS\\Install\\Controller\\AjaxController'
 	);
 } else {
 	$controller = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-		'TYPO3\CMS\install\Controller\StepController'
+		'TYPO3\\CMS\\Install\\Controller\\StepController'
 	);
 }
 $controller->execute();

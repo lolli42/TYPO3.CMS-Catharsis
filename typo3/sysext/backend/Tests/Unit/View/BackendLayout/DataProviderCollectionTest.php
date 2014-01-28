@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Tests\Unit\View\BackendLayout;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -87,7 +87,7 @@ class DataProviderCollectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$dataProviderMock->expects($this->once())->method('getBackendLayout')->will($this->returnValue($backendLayoutMock));
 
 		$this->dataProviderCollection->add('default', $dataProviderMock);
-		$providedBackendLayout = $this->dataProviderCollection->getBackendLayout($backendLayoutIdentifier);
+		$providedBackendLayout = $this->dataProviderCollection->getBackendLayout($backendLayoutIdentifier, 123);
 
 		$this->assertNotNull($providedBackendLayout);
 		$this->assertEquals($backendLayoutIdentifier, $providedBackendLayout->getIdentifier());
@@ -106,7 +106,7 @@ class DataProviderCollectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$dataProviderMock->expects($this->once())->method('getBackendLayout')->will($this->returnValue($backendLayoutMock));
 
 		$this->dataProviderCollection->add($dataProviderIdentifier, $dataProviderMock);
-		$providedBackendLayout = $this->dataProviderCollection->getBackendLayout($dataProviderIdentifier . '__' . $backendLayoutIdentifier);
+		$providedBackendLayout = $this->dataProviderCollection->getBackendLayout($dataProviderIdentifier . '__' . $backendLayoutIdentifier, 123);
 
 		$this->assertNotNull($providedBackendLayout);
 		$this->assertEquals($backendLayoutIdentifier, $providedBackendLayout->getIdentifier());

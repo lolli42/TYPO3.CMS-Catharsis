@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Install\Service;
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
  *
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -98,7 +98,7 @@ class CoreUpdateService {
 	}
 
 	/**
-	 * In future implementations we might implement some sarter logic here
+	 * In future implementations we might implement some smarter logic here
 	 *
 	 * @return string
 	 */
@@ -257,7 +257,7 @@ class CoreUpdateService {
 			$success = FALSE;
 			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-			$message->setTitle('Core download exists in download location: ' . substr($this->downloadTargetPath, strlen(PATH_site)));
+			$message->setTitle('Core download exists in download location: ' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->downloadTargetPath));
 			$messages[] = $message;
 		} else {
 			$fileContent = GeneralUtility::getUrl($downloadUri);
@@ -343,7 +343,7 @@ class CoreUpdateService {
 			$success = FALSE;
 			/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
 			$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
-			$message->setTitle('Unpacked core exists in download location: ' . substr($this->downloadTargetPath, strlen(PATH_site)));
+			$message->setTitle('Unpacked core exists in download location: ' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->downloadTargetPath));
 			$messages[] = $message;
 		} else {
 			$unpackCommand = 'tar xf ' . escapeshellarg($fileLocation) . ' -C ' . escapeshellarg($this->downloadTargetPath) . ' 2>&1';

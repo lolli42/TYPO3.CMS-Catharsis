@@ -39,11 +39,12 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		/** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
 		$backendUser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
 		$backendUser->user['admin'] = 1;
+		$backendUser->user['uid'] = 1;
 		$GLOBALS['BE_USER'] = $backendUser;
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->initializeLanguageObject();
 
 		$this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/pages.xml');
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/pages.xml');
+		$this->importDataSet(__DIR__ . '/../Fixtures/pages.xml');
 	}
 
 	/**
@@ -51,7 +52,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function canChangeTtContentInTheWorkspace() {
 		$this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/core/Tests/Functional/Fixtures/tt_content.xml');
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/sys_workspace.xml');
+		$this->importDataSet(__DIR__ . '/../Fixtures/sys_workspace.xml');
 
 		$workspaceId = 90;
 		/** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */

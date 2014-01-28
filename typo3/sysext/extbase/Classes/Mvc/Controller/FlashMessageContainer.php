@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -73,7 +73,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param integer $severity optional severity code. One of the \TYPO3\CMS\Core\Messaging\FlashMessage constants
 	 * @throws \InvalidArgumentException
 	 * @return void
-	 * @deprecated since 6.1, will be removed 2 versions later
+	 * @deprecated since 6.1, will be removed 2 versions later use Mvc\Controller\AbstractController->addFlashMessage instead
 	 */
 	public function add($message, $title = '', $severity = \TYPO3\CMS\Core\Messaging\FlashMessage::OK) {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
@@ -87,7 +87,7 @@ class FlashMessageContainer implements \TYPO3\CMS\Core\SingletonInterface {
 		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
 			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $message, $title, $severity, TRUE
 		);
-		$this->controllerContext->getFlashMessageQueue()->addMessage($flashMessage);
+		$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
 	}
 
 	/**

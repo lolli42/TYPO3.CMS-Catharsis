@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Reflection;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -472,10 +472,10 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function convertParameterReflectionToArray(\ReflectionParameter $parameter, $parameterPosition, \ReflectionMethod $method = NULL) {
 		$parameterInformation = array(
 			'position' => $parameterPosition,
-			'byReference' => $parameter->isPassedByReference() ? TRUE : FALSE,
-			'array' => $parameter->isArray() ? TRUE : FALSE,
-			'optional' => $parameter->isOptional() ? TRUE : FALSE,
-			'allowsNull' => $parameter->allowsNull() ? TRUE : FALSE
+			'byReference' => $parameter->isPassedByReference(),
+			'array' => $parameter->isArray(),
+			'optional' => $parameter->isOptional(),
+			'allowsNull' => $parameter->allowsNull()
 		);
 		$parameterClass = $parameter->getClass();
 		$parameterInformation['class'] = $parameterClass !== NULL ? $parameterClass->getName() : NULL;

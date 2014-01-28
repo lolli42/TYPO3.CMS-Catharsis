@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -306,6 +306,23 @@ class PathUtility {
 		}
 
 		return $protocol . $absolutePathPrefix . implode('/', $theDirParts);
+	}
+
+	/**
+	 * Strip first part of a path, equal to the length of PATH_site
+	 *
+	 * @param string $path
+	 * @return array
+	 * @internal
+	 */
+	static public function stripPathSitePrefix($path) {
+		static $pathSiteLength = NULL;
+
+		// calculate length when first needed
+		if (!isset($pathSiteLength)) {
+			$pathSiteLength = strlen(PATH_site);
+		}
+		return substr($path, $pathSiteLength);
 	}
 
 	/*********************

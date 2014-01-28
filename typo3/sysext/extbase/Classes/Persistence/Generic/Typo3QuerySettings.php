@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -398,7 +398,7 @@ class Typo3QuerySettings implements \TYPO3\CMS\Extbase\Persistence\Generic\Query
 	 * @deprecated since Extbase 6.2, will be removed two versions later. Please use argument in query->execute() instead.
 	 */
 	public function getReturnRawQueryResult() {
-		GeneralUtility::logDeprecatedFunction();
+		// We do not log this call intentionally, otherwise the deprecation log would be filled up
 		return $this->returnRawQueryResult;
 	}
 }

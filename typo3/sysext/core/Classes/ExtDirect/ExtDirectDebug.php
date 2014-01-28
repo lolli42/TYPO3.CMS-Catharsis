@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\ExtDirect;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -46,7 +46,6 @@ class ExtDirectDebug {
 	 * Currently empty, but automatically registered and called during
 	 * ExtDirect shutdown.
 	 *
-	 * @see http://bugs.typo3.org/view.php?id=17891
 	 * @see http://forge.typo3.org/issues/25278
 	 */
 	public function __destruct() {

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Saltedpasswords\Tests\Unit\Salt;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -76,7 +76,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function hasCorrectBaseClass() {
-		$hasCorrectBaseClass = 0 === strcmp('TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt', get_class($this->objectInstance)) ? TRUE : FALSE;
+		$hasCorrectBaseClass = get_class($this->objectInstance) === 'TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt';
 		// XCLASS ?
 		if (!$hasCorrectBaseClass && FALSE != get_parent_class($this->objectInstance)) {
 			$hasCorrectBaseClass = is_subclass_of($this->objectInstance, 'TYPO3\\CMS\\Saltedpasswords\\Salt\\Md5Salt');
@@ -234,7 +234,7 @@ class Md5SaltTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$password = str_repeat($pad, max($i, 1));
 			$saltedHashPasswordPrevious = $saltedHashPasswordCurrent;
 			$saltedHashPasswordCurrent = $this->objectInstance->getHashedPassword($password, $salt);
-			if ($i > 0 && 0 == strcmp($saltedHashPasswordPrevious, $saltedHashPasswordCurrent)) {
+			if ($i > 0 && $saltedHashPasswordPrevious === $saltedHashPasswordCurrent) {
 				$criticalPwLength = $i;
 				break;
 			}

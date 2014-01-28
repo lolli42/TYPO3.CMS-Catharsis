@@ -101,6 +101,7 @@ abstract class AbstractViewHelper {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
@@ -110,14 +111,6 @@ abstract class AbstractViewHelper {
 	 * @var boolean
 	 */
 	protected $escapingInterceptorEnabled = TRUE;
-
-	/**
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
-	}
 
 	/**
 	 * @param array $arguments
@@ -382,10 +375,11 @@ abstract class AbstractViewHelper {
 		}
 		foreach ($argumentDefinitions as $argumentName => $registeredArgument) {
 			if ($this->hasArgument($argumentName)) {
-				$type = $registeredArgument->getType();
 				if ($this->arguments[$argumentName] === $registeredArgument->getDefaultValue()) {
 					continue;
 				}
+
+				$type = $registeredArgument->getType();
 				if ($type === 'array') {
 					if (!is_array($this->arguments[$argumentName]) && !$this->arguments[$argumentName] instanceof \ArrayAccess && !$this->arguments[$argumentName] instanceof \Traversable) {
 						throw new \InvalidArgumentException('The argument "' . $argumentName . '" was registered with type "array", but is of type "' . gettype($this->arguments[$argumentName]) . '" in view helper "' . get_class($this) . '"', 1237900529);

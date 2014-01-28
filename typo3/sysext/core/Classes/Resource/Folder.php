@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -141,19 +141,22 @@ class Folder implements FolderInterface {
 	}
 
 	/**
+	 * Get hashed identifier
+	 *
+	 * @return string
+	 */
+	public function getHashedIdentifier() {
+		return $this->storage->hashFileIdentifier($this->identifier);
+	}
+
+	/**
 	 * Returns a combined identifier of this folder, i.e. the storage UID and
 	 * the folder identifier separated by a colon ":".
 	 *
 	 * @return string Combined storage and folder identifier, e.g. StorageUID:folder/path/
 	 */
 	public function getCombinedIdentifier() {
-		// @todo $this->properties is never defined nor used here
-		if (is_array($this->properties) && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->properties['storage'])) {
-			$combinedIdentifier = $this->properties['storage'] . ':' . $this->getIdentifier();
-		} else {
-			$combinedIdentifier = $this->getStorage()->getUid() . ':' . $this->getIdentifier();
-		}
-		return $combinedIdentifier;
+		return $this->getStorage()->getUid() . ':' . $this->getIdentifier();
 	}
 
 	/**
@@ -179,34 +182,18 @@ class Folder implements FolderInterface {
 	 * @param integer $numberOfItems The number of items to return
 	 * @param integer $filterMode The filter mode to use for the file list.
 	 * @param boolean $recursive
-	 * @return File[]
+	 * @return \TYPO3\CMS\Core\Resource\File[]
 	 */
 	public function getFiles($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, $recursive = FALSE) {
-		$useFilters = TRUE;
-
 		// Fallback for compatibility with the old method signature variable $useFilters that was used instead of $filterMode
-		if ($filterMode === TRUE) {
-			$filterMode = self::FILTER_MODE_USE_STORAGE_FILTERS;
-		} elseif ($filterMode === FALSE) {
+		if ($filterMode === FALSE) {
 			$useFilters = FALSE;
+			$backedUpFilters = array();
 		} else {
 			list($backedUpFilters, $useFilters) = $this->prepareFiltersInStorage($filterMode);
 		}
 
-		/** @var $factory ResourceFactory */
-		$factory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
-		$fileArray = $this->storage->getFileList($this->identifier, $start, $numberOfItems, $useFilters, TRUE, $recursive);
-		$fileObjects = array();
-		foreach ($fileArray as $fileInfo) {
-			$fileObject = $factory->createFileObject($fileInfo, $this->storage);
-
-			// we might have duplicate filenames when fetching a recursive list, so don't use the filename as array key
-			if ($recursive == TRUE) {
-				$fileObjects[] = $fileObject;
-			} else {
-				$fileObjects[$fileInfo['name']] = $fileObject;
-			}
-		}
+		$fileObjects = $this->storage->getFilesInFolder($this, $start, $numberOfItems, $useFilters, $recursive);
 
 		$this->restoreBackedUpFiltersInStorage($backedUpFilters);
 
@@ -223,8 +210,7 @@ class Folder implements FolderInterface {
 	 * @return integer
 	 */
 	public function getFileCount(array $filterMethods = array(), $recursive = FALSE) {
-		// TODO replace by call to count()
-		return count($this->storage->getFileList($this->identifier, 0, 0, $filterMethods, FALSE, $recursive));
+		return count($this->storage->getFileIdentifiersInFolder($this->identifier, TRUE, $recursive));
 	}
 
 	/**
@@ -255,19 +241,8 @@ class Folder implements FolderInterface {
 	 */
 	public function getSubfolders($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS) {
 		list($backedUpFilters, $useFilters) = $this->prepareFiltersInStorage($filterMode);
-
-		$folderObjects = array();
-		$folderArray = $this->storage->getFolderList($this->identifier, $start, $numberOfItems, $useFilters);
-		if (count($folderArray) > 0) {
-			/** @var $factory ResourceFactory */
-			$factory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
-			foreach ($folderArray as $folder) {
-				$folderObjects[$folder['name']] = $factory->createFolderObject($this->storage, $folder['identifier'], $folder['name']);
-			}
-		}
-
+		$folderObjects = $this->storage->getFoldersInFolder($this, $start, $numberOfItems, $useFilters);
 		$this->restoreBackedUpFiltersInStorage($backedUpFilters);
-
 		return $folderObjects;
 	}
 

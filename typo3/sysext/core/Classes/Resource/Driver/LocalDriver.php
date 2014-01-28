@@ -6,6 +6,7 @@ namespace TYPO3\CMS\Core\Resource\Driver;
  *
  * (c) 2011-2013 Andreas Wolf <andreas.wolf@ikt-werk.de>
  * (c) 2013 Stefan Neufeind <info (at) speedpartner.de>
+ * (c) 2013 Steffen Ritter <steffen.ritter@typo3.org>
  * All rights reserved
  *
  * This script is part of the TYPO3 project. The TYPO3 project is
@@ -16,7 +17,7 @@ namespace TYPO3\CMS\Core\Resource\Driver;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -35,7 +36,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 /**
  * Driver for the local file system
  *
- * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
  */
 class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 
@@ -74,17 +74,6 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	);
 
 	/**
-	 * Checks if a configuration is valid for this storage.
-	 *
-	 * @param array $configuration The configuration
-	 * @return void
-	 * @throws \TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException
-	 */
-	static public function verifyConfiguration(array $configuration) {
-		self::calculateBasePath($configuration);
-	}
-
-	/**
 	 * Processes the configuration for this driver.
 	 *
 	 * @return void
@@ -102,7 +91,9 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	public function initialize() {
 		$this->determineBaseUrl();
 		// The capabilities of this driver. See CAPABILITY_* constants for possible values
-		$this->capabilities = \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE | \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC | \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
+		$this->capabilities = \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_BROWSABLE
+			| \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC
+			| \TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_WRITABLE;
 	}
 
 	/**
@@ -112,14 +103,11 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * @return void
 	 */
 	protected function determineBaseUrl() {
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($this->absoluteBasePath, PATH_site)) {
+		if (GeneralUtility::isFirstPartOfStr($this->absoluteBasePath, PATH_site)) {
 			// use site-relative URLs
-			// TODO add unit test
-			$this->baseUri = substr($this->absoluteBasePath, strlen(PATH_site));
-		} elseif (isset($this->configuration['baseUri']) && \TYPO3\CMS\Core\Utility\GeneralUtility::isValidUrl($this->configuration['baseUri'])) {
+			$this->baseUri = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->absoluteBasePath);
+		} elseif (isset($this->configuration['baseUri']) && GeneralUtility::isValidUrl($this->configuration['baseUri'])) {
 			$this->baseUri = rtrim($this->configuration['baseUri'], '/') . '/';
-		} else {
-
 		}
 	}
 
@@ -132,7 +120,10 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 */
 	protected function calculateBasePath(array $configuration) {
 		if (!array_key_exists('basePath', $configuration) || empty($configuration['basePath'])) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException('Configuration must contain base path.', 1346510477);
+			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+				'Configuration must contain base path.',
+				1346510477
+			);
 		}
 
 		if ($configuration['pathType'] === 'relative') {
@@ -143,7 +134,10 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		}
 		$absoluteBasePath = rtrim($absoluteBasePath, '/') . '/';
 		if (!is_dir($absoluteBasePath)) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException('Base path "' . $absoluteBasePath . '" does not exist or is no directory.', 1299233097);
+			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidConfigurationException(
+				'Base path "' . $absoluteBasePath . '" does not exist or is no directory.',
+				1299233097
+			);
 		}
 		return $absoluteBasePath;
 	}
@@ -152,65 +146,77 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * Returns the public URL to a file. For the local driver, this will always
 	 * return a path relative to PATH_site.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\ResourceInterface  $fileOrFolder
-	 * @param bool $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
+	 * @param string $identifier
+	 * @param boolean $relativeToCurrentScript Determines whether the URL returned should be relative to the current script,
+	 *                                         in case it is relative at all (only for the LocalDriver)
+	 *
 	 * @return string
+	 * @throws \TYPO3\CMS\Core\Resource\Exception
 	 */
-	public function getPublicUrl(\TYPO3\CMS\Core\Resource\ResourceInterface $fileOrFolder, $relativeToCurrentScript = FALSE) {
+	public function getPublicUrl($identifier, $relativeToCurrentScript = FALSE) {
 		if ($this->configuration['pathType'] === 'relative' && rtrim($this->configuration['basePath'], '/') !== '') {
-			$publicUrl = rtrim($this->configuration['basePath'], '/') . '/' . ltrim($fileOrFolder->getIdentifier(), '/');
+			$publicUrl = rtrim($this->configuration['basePath'], '/') . '/' . ltrim($identifier, '/');
 		} elseif (isset($this->baseUri)) {
-			$publicUrl = $this->baseUri . ltrim($fileOrFolder->getIdentifier(), '/');
+			$publicUrl = $this->baseUri . ltrim($identifier, '/');
 		} else {
 			throw new \TYPO3\CMS\Core\Resource\Exception('Public URL of file cannot be determined', 1329765518);
 		}
 		// If requested, make the path relative to the current script in order to make it possible
 		// to use the relative file
 		if ($relativeToCurrentScript) {
-			$publicUrl = PathUtility::getRelativePathTo(PathUtility::dirname((PATH_site . $publicUrl))) . PathUtility::basename($publicUrl);
+			$publicUrl = PathUtility::getRelativePathTo(PathUtility::dirname((PATH_site . $publicUrl))) .
+				PathUtility::basename($publicUrl);
 		}
 		return $publicUrl;
 	}
 
 	/**
-	 * Returns the root level folder of the storage.
+	 * Returns the Identifier of the root level folder of the storage.
 	 *
-	 * @return \TYPO3\CMS\Core\Resource\Folder
+	 * @return string
 	 */
 	public function getRootLevelFolder() {
-		if (!$this->rootLevelFolder) {
-			$this->rootLevelFolder = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->createFolderObject($this->storage, '/', '');
-		}
-		return $this->rootLevelFolder;
+		return '/';
 	}
 
 	/**
-	 * Returns the default folder new files should be put into.
+	 * Returns identifier of the default folder new files should be put into.
 	 *
-	 * @return \TYPO3\CMS\Core\Resource\Folder
+	 * @return string
 	 */
 	public function getDefaultFolder() {
-		if (!$this->defaultLevelFolder) {
-			if (!file_exists(($this->absoluteBasePath . 'user_upload/'))) {
-				mkdir($this->absoluteBasePath . 'user_upload/');
-			}
-			$this->defaultLevelFolder = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->createFolderObject($this->storage, '/user_upload/', '');
+		$identifier = '/user_upload/';
+		$createFolder = !$this->folderExists($identifier);
+		if ($createFolder === TRUE) {
+			$identifier = $this->createFolder('user_upload');
 		}
-		return $this->defaultLevelFolder;
+		return $identifier;
 	}
 
 	/**
-	 * Creates a folder.
+	 * Creates a folder, within a parent folder.
+	 * If no parent folder is given, a rootlevel folder will be created
 	 *
 	 * @param string $newFolderName
-	 * @param \TYPO3\CMS\Core\Resource\Folder $parentFolder
-	 * @return \TYPO3\CMS\Core\Resource\Folder The new (created) folder object
+	 * @param string $parentFolderIdentifier
+	 * @param boolean $recursive
+	 * @return string the Identifier of the new folder
 	 */
-	public function createFolder($newFolderName, \TYPO3\CMS\Core\Resource\Folder $parentFolder) {
-		$newFolderName = trim($this->sanitizeFileName($newFolderName), '/');
-		$newFolderPath = $this->canonicalizeAndCheckFolderPath($parentFolder->getIdentifier() . '/' . $newFolderName);
-		\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($this->getAbsoluteBasePath() . $newFolderPath);
-		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->createFolderObject($this->storage, $newFolderPath, $newFolderName);
+	public function createFolder($newFolderName, $parentFolderIdentifier = '', $recursive = FALSE) {
+		$parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
+		$newFolderName = trim($newFolderName, '/');
+		if ($recursive == FALSE) {
+			$newFolderName = $this->sanitizeFileName($newFolderName);
+			$newIdentifier = $parentFolderIdentifier . $newFolderName . '/';
+			GeneralUtility::mkdir($this->getAbsoluteBasePath() . $newIdentifier);
+		} else {
+			$parts = GeneralUtility::trimExplode('/', $newFolderName);
+			array_map(array($this, 'sanitizeFileName'), $parts);
+			$newFolderName = implode('/', $parts);
+			$newIdentifier = $parentFolderIdentifier . $newFolderName . '/';
+			GeneralUtility::mkdir_deep($this->getAbsoluteBasePath() . $parentFolderIdentifier, $newFolderName);
+		}
+		return $newIdentifier;
 	}
 
 	/**
@@ -222,15 +228,10 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * @throws \InvalidArgumentException
 	 */
 	public function getFileInfoByIdentifier($fileIdentifier, array $propertiesToExtract = array()) {
-		// Makes sure the Path given as parameter is valid
-		$fileIdentifier = $this->canonicalizeAndCheckFilePath($fileIdentifier);
 		$dirPath = PathUtility::dirname($fileIdentifier);
-		if ($dirPath === '' || $dirPath === '.') {
-			$dirPath = '/';
-		} elseif ($dirPath !== '/') {
-			$dirPath = '/' . trim($dirPath, '/') . '/';
-		}
-		$absoluteFilePath = $this->absoluteBasePath . ltrim($fileIdentifier, '/');
+		$dirPath = $this->canonicalizeAndCheckFolderIdentifier($dirPath);
+
+		$absoluteFilePath = $this->getAbsolutePath($fileIdentifier);
 		// don't use $this->fileExists() because we need the absolute path to the file anyways, so we can directly
 		// use PHP's filesystem method.
 		if (!file_exists($absoluteFilePath)) {
@@ -239,6 +240,28 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		return $this->extractFileInformation($absoluteFilePath, $dirPath, $propertiesToExtract);
 	}
 
+	/**
+	 * Returns information about a folder.
+	 *
+	 * @param string $folderIdentifier In the case of the LocalDriver, this is the (relative) path to the file.
+	 * @return array
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException
+	 */
+	public function getFolderInfoByIdentifier($folderIdentifier) {
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+
+		if (!$this->folderExists($folderIdentifier)) {
+			throw new \TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException(
+				'File ' . $folderIdentifier . ' does not exist.',
+				1314516809
+			);
+		}
+		return array(
+			'identifier' => $folderIdentifier,
+			'name' => PathUtility::basename($folderIdentifier),
+			'storage' => $this->storageUid
+		);
+	}
 
 	/**
 	 * Returns a string where any character not matching [.a-zA-Z0-9_-] is
@@ -277,30 +300,36 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		// Strip trailing dots and return
 		$cleanFileName = preg_replace('/\\.*$/', '', $cleanFileName);
 		if (!$cleanFileName) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException('File name ' . $cleanFileName . ' is invalid.', 1320288991);
+			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException(
+				'File name ' . $cleanFileName . ' is invalid.',
+				1320288991
+			);
 		}
 		return $cleanFileName;
 	}
 
 	/**
-	 * Generic wrapper for extracting a list of items from a path. The
-	 * extraction itself is done by the given handler method
+	 * Generic wrapper for extracting a list of items from a path.
 	 *
-	 * @param string $basePath
+	 * @param string $folderIdentifier
 	 * @param integer $start The position to start the listing; if not set, start from the beginning
 	 * @param integer $numberOfItems The number of items to list; if set to zero, all items are returned
 	 * @param array $filterMethods The filter methods used to filter the directory items
-	 * @param string $itemHandlerMethod The method (in this class) that handles the single iterator elements.
-	 * @param array $itemRows
+	 * @param boolean $includeFiles
+	 * @param boolean $includeDirs
 	 * @param boolean $recursive
+	 *
 	 * @return array
+	 * @throws \InvalidArgumentException
 	 */
-	// TODO add unit tests
-	protected function getDirectoryItemList($basePath, $start, $numberOfItems, array $filterMethods, $itemHandlerMethod, $itemRows = array(), $recursive = FALSE) {
-		$basePath = $this->canonicalizeAndCheckFolderPath($basePath);
-		$realPath = rtrim($this->absoluteBasePath . trim($basePath, '/'), '/') . '/';
+	protected function getDirectoryItemList($folderIdentifier, $start = 0, $numberOfItems = 0, array $filterMethods, $includeFiles = TRUE, $includeDirs = TRUE, $recursive = FALSE) {
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$realPath = $this->getAbsolutePath($folderIdentifier);
 		if (!is_dir($realPath)) {
-			throw new \InvalidArgumentException('Cannot list items in directory ' . $basePath . ' - does not exist or is no directory', 1314349666);
+			throw new \InvalidArgumentException(
+				'Cannot list items in directory ' . $folderIdentifier . ' - does not exist or is no directory',
+				1314349666
+			);
 		}
 
 		if ($start > 0) {
@@ -310,53 +339,40 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		// Fetch the files and folders and sort them by name; we have to do
 		// this here because the directory iterator does return them in
 		// an arbitrary order
-		$items = $this->getFileAndFoldernamesInPath($realPath, $recursive);
+		$items = $this->retrieveFileAndFoldersInPath($realPath, $recursive, $includeFiles, $includeDirs);
 		uksort(
 			$items,
 			array('\\TYPO3\\CMS\\Core\\Utility\\ResourceUtility', 'recursiveFileListSortingHelper')
 		);
 
 		$iterator = new \ArrayIterator($items);
-		if ($iterator->count() == 0) {
+		if ($iterator->count() === 0) {
 			return array();
 		}
 		$iterator->seek($start);
 
-		if ($basePath !== '' && $basePath !== '/') {
-			$basePath = '/' . trim($basePath, '/') . '/';
-		}
-
 		// $c is the counter for how many items we still have to fetch (-1 is unlimited)
-		$c = $numberOfItems > 0 ? $numberOfItems : -1;
+		$c = $numberOfItems > 0 ? $numberOfItems : - 1;
 		$items = array();
-		while ($iterator->valid() && ($numberOfItems == 0 || $c > 0)) {
+		while ($iterator->valid() && ($numberOfItems === 0 || $c > 0)) {
 			// $iteratorItem is the file or folder name
 			$iteratorItem = $iterator->current();
-
 			// go on to the next iterator item now as we might skip this one early
 			$iterator->next();
-			$identifier = $basePath . $iteratorItem['path'];
 
-			if ($this->applyFilterMethodsToDirectoryItem($filterMethods, $iteratorItem['name'], $identifier, dirname($identifier) . '/', isset($itemRows[$identifier]) ? array('indexData' => $itemRows[$identifier]) : array()) === FALSE) {
+			if (
+				!$this->applyFilterMethodsToDirectoryItem(
+					$filterMethods,
+					$iteratorItem['name'],
+					$iteratorItem['identifier'],
+					$this->getParentFolderIdentifierOfIdentifier($iteratorItem['identifier'])
+				)
+			) {
 				continue;
 			}
 
-			// dirname returns "/" when called with "/" as the argument, so strip trailing slashes here to be sure
-			$path = rtrim(GeneralUtility::fixWindowsFilePath(dirname($identifier)), '/') . '/';
-			if (isset($itemRows[$identifier])) {
-				list($key, $item) = $this->{$itemHandlerMethod}($iteratorItem['name'], $path, $itemRows[$identifier]);
-			} else {
-				list($key, $item) = $this->{$itemHandlerMethod}($iteratorItem['name'], $path);
-			}
 
-			if (empty($item)) {
-				continue;
-			}
-			if ($recursive) {
-				$key = $iteratorItem['path'];
-			}
-
-			$items[$key] = $item;
+			$items[$iteratorItem['identifier']] = $iteratorItem['identifier'];
 			// Decrement item counter to make sure we only return $numberOfItems
 			// we cannot do this earlier in the method (unlike moving the iterator forward) because we only add the
 			// item here
@@ -366,66 +382,81 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	}
 
 	/**
-	 * Handler for items in a file list.
+	 * Applies a set of filter methods to a file name to find out if it should be used or not. This is e.g. used by
+	 * directory listings.
 	 *
-	 * @param string $fileName
-	 * @param string $path
-	 * @param array $fileRow The pre-loaded file row
-	 * @return array
+	 * @param array $filterMethods The filter methods to use
+	 * @param string $itemName
+	 * @param string $itemIdentifier
+	 * @param string $parentIdentifier
+	 * @throws \RuntimeException
+	 * @return boolean
 	 */
-	protected function getFileList_itemCallback($fileName, $path, array $fileRow = array()) {
-		$filePath = $this->getAbsolutePath($this->canonicalizeAndCheckFilePath($path . $fileName));
-		if (!is_file($filePath)) {
-			return array('', array());
+	protected function applyFilterMethodsToDirectoryItem(array $filterMethods, $itemName, $itemIdentifier, $parentIdentifier) {
+		foreach ($filterMethods as $filter) {
+			if (is_array($filter)) {
+				$result = call_user_func($filter, $itemName, $itemIdentifier, $parentIdentifier, array(), $this);
+				// We have to use -1 as the „don't include“ return value, as call_user_func() will return FALSE
+				// If calling the method succeeded and thus we can't use that as a return value.
+				if ($result === -1) {
+					return FALSE;
+				} elseif ($result === FALSE) {
+					throw new \RuntimeException('Could not apply file/folder name filter ' . $filter[0] . '::' . $filter[1]);
+				}
+			}
 		}
-
-		// TODO add unit test for existing file row case
-		if (!empty($fileRow) && filemtime($filePath) <= $fileRow['modification_date']) {
-			return array($fileName, $fileRow);
-		} else {
-			return array($fileName, $this->extractFileInformation($filePath, $path));
-		}
+		return TRUE;
 	}
 
 	/**
-	 * Handler for items in a directory listing.
+	 * Returns a list of files inside the specified path
 	 *
-	 * @param string $folderName The folder's name
-	 * @param string $parentPath The path to the folder's parent folder
-	 * @param array $folderRow [optional]
-	 * @return array
+	 * @param string $folderIdentifier
+	 * @param integer $start
+	 * @param integer $numberOfItems
+	 * @param boolean $recursive
+	 * @param array $filenameFilterCallbacks The method callbacks to use for filtering the items
+	 *
+	 * @return array of FileIdentifiers
 	 */
-	protected function getFolderList_itemCallback($folderName, $parentPath, array $folderRow = array()) {
-		$folderPath = $this->getAbsolutePath($this->canonicalizeAndCheckFilePath($parentPath . $folderName));
+	public function getFilesInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $filenameFilterCallbacks = array()) {
+		return $this->getDirectoryItemList($folderIdentifier, $start, $numberOfItems, $filenameFilterCallbacks, TRUE, FALSE, $recursive);
+	}
 
-		if (!is_dir($folderPath)) {
-			return array('', array());
-		}
-
-		// also don't show hidden files
-		if ($folderName === '..' || $folderName === '.' || $folderName === '') {
-			return array('', array());
-		}
-
-		// remove the trailing slash from the folder name (the trailing slash comes from the DirectoryIterator)
-		$folderName = substr($folderName, 0, -1);
-
-		return array($folderName, $this->extractFolderInformation($folderPath, $parentPath));
+	/**
+	 * Returns a list of folders inside the specified path
+	 *
+	 * @param string $folderIdentifier
+	 * @param integer $start
+	 * @param integer $numberOfItems
+	 * @param boolean $recursive
+	 * @param array $folderNameFilterCallbacks The method callbacks to use for filtering the items
+	 *
+	 * @return array of Folder Identifier
+	 */
+	public function getFoldersInFolder($folderIdentifier, $start = 0, $numberOfItems = 0, $recursive = FALSE, array $folderNameFilterCallbacks = array()) {
+		return $this->getDirectoryItemList($folderIdentifier, $start, $numberOfItems, $folderNameFilterCallbacks, FALSE, TRUE, $recursive);
 	}
 
 	/**
 	 * Returns a list with the names of all files and folders in a path, optionally recursive.
-	 * Folder names have a trailing slash.
 	 *
 	 * @param string $path The absolute path
-	 * @param bool $recursive If TRUE, recursively fetches files and folders
+	 * @param boolean $recursive If TRUE, recursively fetches files and folders
+	 * @param boolean $includeFiles
+	 * @param boolean $includeDirs
 	 * @return array
 	 */
-	protected function getFileAndFoldernamesInPath($path, $recursive = FALSE) {
+	protected function retrieveFileAndFoldersInPath($path, $recursive = FALSE, $includeFiles = TRUE, $includeDirs = TRUE) {
+		$pathLength = strlen($this->getAbsoluteBasePath());
+		$iteratorMode = \FilesystemIterator::UNIX_PATHS | \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO;
 		if ($recursive) {
-			$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::CURRENT_AS_FILEINFO), \RecursiveIteratorIterator::SELF_FIRST);
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($path, $iteratorMode),
+				\RecursiveIteratorIterator::SELF_FIRST
+			);
 		} else {
-			$iterator = new \RecursiveDirectoryIterator($path, \FilesystemIterator::CURRENT_AS_FILEINFO);
+			$iterator = new \RecursiveDirectoryIterator($path, $iteratorMode);
 		}
 
 		$directoryEntries = array();
@@ -433,28 +464,22 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 			/** @var $entry \SplFileInfo */
 			$entry = $iterator->current();
 			// skip non-files/non-folders, and empty entries
-			if (!$entry->isFile() && !$entry->isDir() || $entry->getFilename() == '') {
+			if ((!$entry->isFile() && !$entry->isDir()) || $entry->getFilename() == '' ||
+				($entry->isFile() && !$includeFiles) || ($entry->isDir() && !$includeDirs)) {
 				$iterator->next();
 				continue;
 			}
-			// skip the pseudo-directories "." and ".."
-			if ($entry->getFilename() == '..' || $entry->getFilename() == '.') {
-				$iterator->next();
-				continue;
-			}
-			$entryPath = substr($entry->getPathname(), strlen($path));
-			$entryPath = GeneralUtility::fixWindowsFilePath($entryPath);
-			$entryName = PathUtility::basename(basename($entryPath));
+			$entryIdentifier = '/' . substr($entry->getPathname(), $pathLength);
+			$entryName = PathUtility::basename($entryIdentifier);
 			if ($entry->isDir()) {
-				$entryPath .= '/';
-				$entryName .= '/';
+				$entryIdentifier .= '/';
 			}
-			$entry = array(
-				'path' => $entryPath,
+			$entryArray = array(
+				'identifier' => $entryIdentifier,
 				'name' => $entryName,
 				'type' => $entry->isDir() ? 'dir' : 'file'
 			);
-			$directoryEntries[$entryPath] = $entry;
+			$directoryEntries[$entryIdentifier] = $entryArray;
 			$iterator->next();
 		}
 		return $directoryEntries;
@@ -470,7 +495,10 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 */
 	protected function extractFileInformation($filePath, $containerPath, array $propertiesToExtract = array()) {
 		if (count($propertiesToExtract) === 0) {
-			$propertiesToExtract = array('size', 'atime', 'atime', 'mtime', 'ctime', 'mimetype', 'name', 'identifier', 'storage');
+			$propertiesToExtract = array(
+				'size', 'atime', 'atime', 'mtime', 'ctime', 'mimetype', 'name',
+				'identifier', 'identifier_hash', 'storage', 'folder_hash'
+			);
 		}
 		$fileInformation = array();
 		foreach ($propertiesToExtract as $property) {
@@ -479,56 +507,45 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		return $fileInformation;
 	}
 
+
 	/**
 	 * Extracts a specific FileInformation from the FileSystems.
 	 *
-	 * @param string $filePath
+	 * @param string $fileIdentifier
 	 * @param string $containerPath
 	 * @param string $property
 	 *
 	 * @return bool|int|string
 	 * @throws \InvalidArgumentException
 	 */
-	public function getSpecificFileInformation($filePath, $containerPath, $property) {
+	public function getSpecificFileInformation($fileIdentifier, $containerPath, $property) {
+		$identifier = $this->canonicalizeAndCheckFileIdentifier($containerPath . PathUtility::basename($fileIdentifier));
+
 		switch ($property) {
 			case 'size':
-				return filesize($filePath);
+				return filesize($fileIdentifier);
 			case 'atime':
-				return fileatime($filePath);
+				return fileatime($fileIdentifier);
 			case 'mtime':
-				return filemtime($filePath);
+				return filemtime($fileIdentifier);
 			case 'ctime':
-				return filectime($filePath);
+				return filectime($fileIdentifier);
 			case 'name':
-				return PathUtility::basename($filePath);
+				return PathUtility::basename($fileIdentifier);
 			case 'mimetype':
-				return $this->getMimeTypeOfFile($filePath);
+				return $this->getMimeTypeOfFile($fileIdentifier);
 			case 'identifier':
-				return $containerPath . PathUtility::basename($filePath);
+				return $identifier;
 			case 'storage':
-				return $this->storage->getUid();
+				return $this->storageUid;
+			case 'identifier_hash':
+				return $this->hashIdentifier($identifier);
+			case 'folder_hash':
+				return $this->hashIdentifier($this->getParentFolderIdentifierOfIdentifier($identifier));
 			default:
 				throw new \InvalidArgumentException(sprintf('The information "%s" is not available.', $property));
 		}
-	}
-
-	/**
-	 * Extracts information about a folder from the filesystem.
-	 *
-	 * @param string $folderPath The absolute path to the folder
-	 * @param string $containerPath The relative path to the folder's container inside the storage (must end with a trailing slash)
-	 * @return array
-	 */
-	protected function extractFolderInformation($folderPath, $containerPath) {
-		$folderName = PathUtility::basename($folderPath);
-		$folderInformation = array(
-			'ctime' => filectime($folderPath),
-			'mtime' => filemtime($folderPath),
-			'name' => $folderName,
-			'identifier' => $containerPath . $folderName . '/',
-			'storage' => $this->storage->getUid()
-		);
-		return $folderInformation;
+		return NULL;
 	}
 
 	/**
@@ -536,27 +553,19 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 *
 	 * @return string
 	 */
-	public function getAbsoluteBasePath() {
+	protected function getAbsoluteBasePath() {
 		return $this->absoluteBasePath;
 	}
 
 	/**
 	 * Returns the absolute path of a file or folder.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface|\TYPO3\CMS\Core\Resource\Folder|string $file
+	 * @param string $fileIdentifier
 	 * @return string
 	 */
-	public function getAbsolutePath($file) {
-		if ($file instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-			$path = $this->absoluteBasePath . $this->canonicalizeAndCheckFilePath(ltrim($file->getIdentifier(), '/'));
-		} elseif ($file instanceof \TYPO3\CMS\Core\Resource\Folder) {
-			// We can assume a trailing slash here because it is added by the folder object on construction.
-			$path = $this->absoluteBasePath . $this->canonicalizeAndCheckFolderPath(ltrim($file->getIdentifier(), '/'));
-		} elseif (is_string($file)) {
-			$path = $this->absoluteBasePath . ltrim($file, '/');
-		} else {
-			throw new \RuntimeException('Type "' . gettype($file) . '" is not supported.', 1325191178);
-		}
+	protected function getAbsolutePath($fileIdentifier) {
+		$relativeFilePath = ltrim($this->canonicalizeAndCheckFileIdentifier($fileIdentifier), '/');
+		$path = $this->absoluteBasePath . $relativeFilePath;
 		return $path;
 	}
 
@@ -579,20 +588,22 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Creates a (cryptographic) hash for a file.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @param string $hashAlgorithm The hash algorithm to use
 	 * @return string
+	 * @throws \RuntimeException
+	 * @throws \InvalidArgumentException
 	 */
-	public function hash(\TYPO3\CMS\Core\Resource\FileInterface $file, $hashAlgorithm) {
-		if (!in_array($hashAlgorithm, $this->getSupportedHashAlgorithms())) {
+	public function hash($fileIdentifier, $hashAlgorithm) {
+		if (!in_array($hashAlgorithm, $this->supportedHashAlgorithms)) {
 			throw new \InvalidArgumentException('Hash algorithm "' . $hashAlgorithm . '" is not supported.', 1304964032);
 		}
 		switch ($hashAlgorithm) {
 			case 'sha1':
-				$hash = sha1_file($this->getAbsolutePath($file));
+				$hash = sha1_file($this->getAbsolutePath($fileIdentifier));
 				break;
 			case 'md5':
-				$hash = md5_file($this->getAbsolutePath($file));
+				$hash = md5_file($this->getAbsolutePath($fileIdentifier));
 				break;
 			default:
 				throw new \RuntimeException('Hash algorithm ' . $hashAlgorithm . ' is not implemented.', 1329644451);
@@ -602,212 +613,164 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 
 	/**
 	 * Adds a file from the local server hard disk to a given path in TYPO3s virtual file system.
-	 *
 	 * This assumes that the local file exists, so no further check is done here!
+	 * After a successful the original file must not exist anymore.
 	 *
-	 * @param string $localFilePath
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
-	 * @param string $fileName The name to add the file under
-	 * @param \TYPO3\CMS\Core\Resource\AbstractFile $updateFileObject File object to update (instead of creating a new object). With this parameter, this function can be used to "populate" a dummy file object with a real file underneath.
-	 * @todo \TYPO3\CMS\Core\Resource\File $updateFileObject should be \TYPO3\CMS\Core\Resource\FileInterface, but indexer logic is only in \TYPO3\CMS\Core\Resource\File
-	 * @return \TYPO3\CMS\Core\Resource\FileInterface
+	 * @param string $localFilePath (within PATH_site)
+	 * @param string $targetFolderIdentifier
+	 * @param string $newFileName optional, if not given original name is used
+	 * @param boolean $removeOriginal if set the original file will be removed after successful operation
+	 * @return string the identifier of the new file
+	 * @throws \RuntimeException
+	 * @throws \InvalidArgumentException
 	 */
-	public function addFile($localFilePath, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $fileName, \TYPO3\CMS\Core\Resource\AbstractFile $updateFileObject = NULL) {
+	public function addFile($localFilePath, $targetFolderIdentifier, $newFileName = '', $removeOriginal = TRUE) {
 		$localFilePath = $this->canonicalizeAndCheckFilePath($localFilePath);
 		// as for the "virtual storage" for backwards-compatibility, this check always fails, as the file probably lies under PATH_site
 		// thus, it is not checked here
-		if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($localFilePath, $this->absoluteBasePath) && $this->storage->getUid() > 0) {
+		// @ todo is check in storage
+		if (GeneralUtility::isFirstPartOfStr($localFilePath, $this->absoluteBasePath) && $this->storageUid > 0) {
 			throw new \InvalidArgumentException('Cannot add a file that is already part of this storage.', 1314778269);
 		}
-		$relativeTargetPath = ltrim($targetFolder->getIdentifier(), '/');
-		$relativeTargetPath .= $this->sanitizeFileName($fileName ? $fileName : PathUtility::basename($localFilePath));
-		$targetPath = $this->absoluteBasePath . $relativeTargetPath;
-		if (is_uploaded_file($localFilePath)) {
-			$moveResult = move_uploaded_file($localFilePath, $targetPath);
+		$newFileName = $this->sanitizeFileName($newFileName !== '' ? $newFileName : PathUtility::basename($localFilePath));
+		$newFileIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier) . $newFileName;
+		$targetPath = $this->absoluteBasePath . $newFileIdentifier;
+
+		if ($removeOriginal) {
+			if (is_uploaded_file($localFilePath)) {
+				$result = move_uploaded_file($localFilePath, $targetPath);
+			} else {
+				$result = rename($localFilePath, $targetPath);
+			}
 		} else {
-			$moveResult = rename($localFilePath, $targetPath);
+			$result = copy($localFilePath, $targetPath);
 		}
-		if ($moveResult !== TRUE) {
-			throw new \RuntimeException('Moving file ' . $localFilePath . ' to ' . $targetPath . ' failed.', 1314803096);
+		if ($result === FALSE || !file_exists($targetPath)) {
+			throw new \RuntimeException('Adding file ' . $localFilePath . ' at ' . $newFileIdentifier . ' failed.');
 		}
 		clearstatcache();
 		// Change the permissions of the file
-		\TYPO3\CMS\Core\Utility\GeneralUtility::fixPermissions($targetPath);
-		$fileInfo = $this->getFileInfoByIdentifier($relativeTargetPath);
-		if ($updateFileObject) {
-			$updateFileObject->updateProperties($fileInfo);
-			return $updateFileObject;
-		} else {
-			$fileObject = $this->getFileObject($fileInfo);
-			return $fileObject;
-		}
-	}
-
-	/**
-	 * Checks if a resource exists - does not care for the type (file or folder).
-	 *
-	 * @param $identifier
-	 * @return boolean
-	 */
-	public function resourceExists($identifier) {
-		$identifier = $this->canonicalizeAndCheckFilePath(ltrim($identifier, '/'));
-		$absoluteResourcePath = $this->absoluteBasePath . $identifier;
-		return file_exists($absoluteResourcePath);
+		GeneralUtility::fixPermissions($targetPath);
+		return $newFileIdentifier;
 	}
 
 	/**
 	 * Checks if a file exists.
 	 *
-	 * @param string $identifier
+	 * @param string $fileIdentifier
+	 *
 	 * @return boolean
 	 */
-	public function fileExists($identifier) {
-		$identifier = $this->canonicalizeAndCheckFilePath(ltrim($identifier, '/'));
-		$absoluteFilePath = $this->absoluteBasePath . $identifier;
+	public function fileExists($fileIdentifier) {
+		$absoluteFilePath = $this->getAbsolutePath($fileIdentifier);
 		return is_file($absoluteFilePath);
 	}
 
 	/**
-	 * Checks if a file inside a storage folder exists
+	 * Checks if a file inside a folder exists
 	 *
 	 * @param string $fileName
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
+	 * @param string $folderIdentifier
 	 * @return boolean
 	 */
-	public function fileExistsInFolder($fileName, \TYPO3\CMS\Core\Resource\Folder $folder) {
-		$identifier = ltrim($folder->getIdentifier(), '/') . $fileName;
+	public function fileExistsInFolder($fileName, $folderIdentifier) {
+		$identifier = $folderIdentifier . '/' . $fileName;
+		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
 		return $this->fileExists($identifier);
 	}
 
 	/**
 	 * Checks if a folder exists.
 	 *
-	 * @param string $identifier
+	 * @param string $folderIdentifier
+	 *
 	 * @return boolean
 	 */
-	public function folderExists($identifier) {
-		$identifier = $this->canonicalizeAndCheckFilePath(ltrim($identifier, '/'));
-		$absoluteFilePath = $this->absoluteBasePath . $identifier;
+	public function folderExists($folderIdentifier) {
+		$absoluteFilePath = $this->getAbsolutePath($folderIdentifier);
 		return is_dir($absoluteFilePath);
 	}
 
 	/**
-	 * Checks if a file inside a storage folder exists.
+	 * Checks if a folder inside a folder exists.
 	 *
 	 * @param string $folderName
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
+	 * @param string $folderIdentifier
 	 * @return boolean
 	 */
-	public function folderExistsInFolder($folderName, \TYPO3\CMS\Core\Resource\Folder $folder) {
-		$identifier = $folder->getIdentifier() . $folderName;
-		$identifier = $this->canonicalizeAndCheckFilePath($identifier);
+	public function folderExistsInFolder($folderName, $folderIdentifier) {
+		$identifier = $folderIdentifier . '/' . $folderName;
+		$identifier = $this->canonicalizeAndCheckFolderIdentifier($identifier);
 		return $this->folderExists($identifier);
 	}
 
 	/**
-	 * Returns a folder within the given folder.
+	 * Returns the Identifier for a folder within a given folder.
 	 *
-	 * @param string $name The name of the folder to get
-	 * @param \TYPO3\CMS\Core\Resource\Folder $parentFolder
-	 * @return \TYPO3\CMS\Core\Resource\Folder
+	 * @param string $folderName The name of the target folder
+	 * @param string $folderIdentifier
+	 *
+	 * @return string
 	 */
-	public function getFolderInFolder($name, \TYPO3\CMS\Core\Resource\Folder $parentFolder) {
-		$folderIdentifier = $parentFolder->getIdentifier() . $name . '/';
-		return $this->getFolder($folderIdentifier);
+	public function getFolderInFolder($folderName, $folderIdentifier) {
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier . '/' . $folderName);
+		return $folderIdentifier;
 	}
 
 	/**
 	 * Replaces the contents (and file-specific metadata) of a file object with a local file.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\AbstractFile $file
+	 * @param string $fileIdentifier
 	 * @param string $localFilePath
 	 * @return boolean TRUE if the operation succeeded
+	 * @throws \RuntimeException
 	 */
-	public function replaceFile(\TYPO3\CMS\Core\Resource\AbstractFile $file, $localFilePath) {
-		$filePath = $this->getAbsolutePath($file);
+	public function replaceFile($fileIdentifier, $localFilePath) {
+		$filePath = $this->getAbsolutePath($fileIdentifier);
 		$result = rename($localFilePath, $filePath);
 		if ($result === FALSE) {
-			throw new \RuntimeException('Replacing file ' . $filePath . ' with ' . $localFilePath . ' failed.', 1315314711);
+			throw new \RuntimeException('Replacing file ' . $fileIdentifier . ' with ' . $localFilePath . ' failed.', 1315314711);
 		}
-		$fileInfo = $this->getFileInfoByIdentifier($file->getIdentifier());
-		$file->updateProperties($fileInfo);
-		// TODO update index
 		return $result;
 	}
 
 	/**
-	 * Adds a file at the specified location. This should only be used internally.
-	 *
-	 * @param string $localFilePath
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
-	 * @param string $targetFileName
-	 * @return boolean TRUE if adding the file succeeded
-	 */
-	public function addFileRaw($localFilePath, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $targetFileName) {
-		$fileIdentifier = $targetFolder->getIdentifier() . $targetFileName;
-		$absoluteFilePath = $this->absoluteBasePath . $fileIdentifier;
-		$result = copy($localFilePath, $absoluteFilePath);
-		if ($result === FALSE || !file_exists($absoluteFilePath)) {
-			throw new \RuntimeException('Adding file ' . $localFilePath . ' at ' . $fileIdentifier . ' failed.');
-		}
-		return $fileIdentifier;
-	}
-
-	/**
-	 * Deletes a file without access and usage checks. This should only be used internally.
-	 *
-	 * This accepts an identifier instead of an object because we might want to delete files that have no object
-	 * associated with (or we don't want to create an object for) them - e.g. when moving a file to another storage.
-	 *
-	 * @param string $identifier
-	 * @return boolean TRUE if removing the file succeeded
-	 */
-	public function deleteFileRaw($identifier) {
-		$identifier = $this->canonicalizeAndCheckFilePath(ltrim($identifier, '/'));
-
-		$targetPath = $this->absoluteBasePath . $identifier;
-		$result = unlink($targetPath);
-		if ($result === FALSE || file_exists($targetPath)) {
-			throw new \RuntimeException('Deleting file ' . $identifier . ' failed.', 1320381534);
-		}
-		return TRUE;
-	}
-
-	/**
 	 * Copies a file *within* the current storage.
-	 * Note that this is only about an intra-storage move action, where a file is just
-	 * moved to another folder in the same storage.
+	 * Note that this is only about an intra-storage copy action, where a file is just
+	 * copied to another folder in the same storage.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
+	 * @param string $fileIdentifier
+	 * @param string $targetFolderIdentifier
 	 * @param string $fileName
-	 * @return \TYPO3\CMS\Core\Resource\FileInterface The new (copied) file object.
+	 * @return string the Identifier of the new file
 	 */
-	public function copyFileWithinStorage(\TYPO3\CMS\Core\Resource\FileInterface $file, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $fileName) {
-		// TODO add unit test
-		$sourcePath = $this->getAbsolutePath($file);
-		$targetPath = ltrim($targetFolder->getIdentifier(), '/') . $fileName;
-		$targetPath = $this->canonicalizeAndCheckFilePath($targetPath);
+	public function copyFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $fileName) {
+		$sourcePath = $this->getAbsolutePath($fileIdentifier);
+		$newIdentifier = $targetFolderIdentifier . '/' . $fileName;
+		$newIdentifier = $this->canonicalizeAndCheckFileIdentifier($newIdentifier);
 
-		copy($sourcePath, $this->absoluteBasePath . $targetPath);
-		return $this->getFile($targetPath);
+		copy($sourcePath, $this->absoluteBasePath . $newIdentifier);
+		GeneralUtility::fixPermissions($this->absoluteBasePath . $newIdentifier);
+		return $newIdentifier;
 	}
 
 	/**
 	 * Moves a file *within* the current storage.
-	 * Note that this is only about an intra-storage move action, where a file is just
+	 * Note that this is only about an inner-storage move action, where a file is just
 	 * moved to another folder in the same storage.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
-	 * @param string $fileName
-	 * @return boolean
+	 * @param string $fileIdentifier
+	 * @param string $targetFolderIdentifier
+	 * @param string $newFileName
+	 *
+	 * @return string
+	 * @throws \RuntimeException
 	 */
-	public function moveFileWithinStorage(\TYPO3\CMS\Core\Resource\FileInterface $file, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $fileName) {
-		$sourcePath = $this->getAbsolutePath($file);
-		$targetIdentifier = $targetFolder->getIdentifier() . $fileName;
-		$targetIdentifier = $this->canonicalizeAndCheckFilePath($targetIdentifier);
-		$result = rename($sourcePath, $this->absoluteBasePath . $targetIdentifier);
+	public function moveFileWithinStorage($fileIdentifier, $targetFolderIdentifier, $newFileName) {
+		$sourcePath = $this->getAbsolutePath($fileIdentifier);
+		$targetIdentifier = $targetFolderIdentifier . '/' . $newFileName;
+		$targetIdentifier = $this->canonicalizeAndCheckFileIdentifier($targetIdentifier);
+		$result = rename($sourcePath, $this->getAbsolutePath($targetIdentifier));
 		if ($result === FALSE) {
 			throw new \RuntimeException('Moving file ' . $sourcePath . ' to ' . $targetIdentifier . ' failed.', 1315314712);
 		}
@@ -817,15 +780,17 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Copies a file to a temporary path and returns that path.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @return string The temporary path
+	 * @throws \RuntimeException
 	 */
-	public function copyFileToTemporaryPath(\TYPO3\CMS\Core\Resource\FileInterface $file) {
-		$sourcePath = $this->getAbsolutePath($file);
-		$temporaryPath = $this->getTemporaryPathForFile($file);
+	protected function copyFileToTemporaryPath($fileIdentifier) {
+		$sourcePath = $this->getAbsolutePath($fileIdentifier);
+		$temporaryPath = $this->getTemporaryPathForFile($fileIdentifier);
 		$result = copy($sourcePath, $temporaryPath);
+		touch($temporaryPath, filemtime($sourcePath));
 		if ($result === FALSE) {
-			throw new \RuntimeException('Copying file ' . $file->getIdentifier() . ' to temporary path failed.', 1320577649);
+			throw new \RuntimeException('Copying file ' . $fileIdentifier . ' to temporary path failed.', 1320577649);
 		}
 		return $temporaryPath;
 	}
@@ -835,18 +800,32 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * moving a folder. The old identifier is used as the key, the new one as the value.
 	 *
 	 * @param array $filesAndFolders
-	 * @param string $relativeSourcePath
-	 * @param string $relativeTargetPath
+	 * @param string $sourceFolderIdentifier
+	 * @param string $targetFolderIdentifier
+	 *
 	 * @return array
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException
 	 */
-	protected function createIdentifierMap(array $filesAndFolders, $relativeSourcePath, $relativeTargetPath) {
+	protected function createIdentifierMap(array $filesAndFolders, $sourceFolderIdentifier, $targetFolderIdentifier) {
 		$identifierMap = array();
-		$identifierMap[$relativeSourcePath] = $relativeTargetPath;
+		$identifierMap[$sourceFolderIdentifier] = $targetFolderIdentifier;
 		foreach ($filesAndFolders as $oldItem) {
-			$oldIdentifier = $relativeSourcePath . $oldItem['path'];
-			$newIdentifier = $relativeTargetPath . $oldItem['path'];
-			if (!$this->resourceExists($newIdentifier)) {
-				throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException(sprintf('File "%1$s" was not found (should have been copied/moved from "%2$s").', $newIdentifier, $oldIdentifier), 1330119453);
+			if ($oldItem['type'] == 'dir') {
+				$oldIdentifier = $oldItem['identifier'];
+				$newIdentifier = $this->canonicalizeAndCheckFolderIdentifier(
+					str_replace($sourceFolderIdentifier, $targetFolderIdentifier, $oldItem['identifier'])
+				);
+			} else {
+				$oldIdentifier = $oldItem['identifier'];
+				$newIdentifier = $this->canonicalizeAndCheckFileIdentifier(
+					str_replace($sourceFolderIdentifier, $targetFolderIdentifier, $oldItem['identifier'])
+				);
+			}
+			if (!file_exists($this->getAbsolutePath($newIdentifier))) {
+				throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException(
+					sprintf('File "%1$s" was not found (should have been copied/moved from "%2$s").', $newIdentifier, $oldIdentifier),
+					1330119453
+				);
 			}
 			$identifierMap[$oldIdentifier] = $newIdentifier;
 		}
@@ -856,45 +835,51 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Folder equivalent to moveFileWithinStorage().
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderToMove
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
+	 * @param string $sourceFolderIdentifier
+	 * @param string $targetFolderIdentifier
 	 * @param string $newFolderName
+	 *
 	 * @return array A map of old to new file identifiers
+	 * @throws \RuntimeException
 	 */
-	public function moveFolderWithinStorage(\TYPO3\CMS\Core\Resource\Folder $folderToMove, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $newFolderName) {
-		$relativeSourcePath = $folderToMove->getIdentifier();
-		$sourcePath = $this->getAbsolutePath($relativeSourcePath);
-		$relativeTargetPath = $this->canonicalizeAndCheckFolderPath($targetFolder->getIdentifier() . $newFolderName);
+	public function moveFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName) {
+		$sourcePath = $this->getAbsolutePath($sourceFolderIdentifier);
+		$relativeTargetPath = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier . '/' . $newFolderName);
 		$targetPath = $this->getAbsolutePath($relativeTargetPath);
 		// get all files and folders we are going to move, to have a map for updating later.
-		$filesAndFolders = $this->getFileAndFoldernamesInPath($sourcePath, TRUE);
+		$filesAndFolders = $this->retrieveFileAndFoldersInPath($sourcePath, TRUE);
 		$result = rename($sourcePath, $targetPath);
 		if ($result === FALSE) {
 			throw new \RuntimeException('Moving folder ' . $sourcePath . ' to ' . $targetPath . ' failed.', 1320711817);
 		}
 		// Create a mapping from old to new identifiers
-		$identifierMap = $this->createIdentifierMap($filesAndFolders, $relativeSourcePath, $relativeTargetPath);
+		$identifierMap = $this->createIdentifierMap($filesAndFolders, $sourceFolderIdentifier, $relativeTargetPath);
 		return $identifierMap;
 	}
 
 	/**
 	 * Folder equivalent to copyFileWithinStorage().
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderToCopy
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetFolder
+	 * @param string $sourceFolderIdentifier
+	 * @param string $targetFolderIdentifier
 	 * @param string $newFolderName
-	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException
+	 *
 	 * @return boolean
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException
 	 */
-	public function copyFolderWithinStorage(\TYPO3\CMS\Core\Resource\Folder $folderToCopy, \TYPO3\CMS\Core\Resource\Folder $targetFolder, $newFolderName) {
+	public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName) {
 		// This target folder path already includes the topmost level, i.e. the folder this method knows as $folderToCopy.
 		// We can thus rely on this folder being present and just create the subfolder we want to copy to.
-		$newFolderName = $this->canonicalizeAndCheckFolderPath($targetFolder->getIdentifier() . '/' . $newFolderName);
-		$targetFolderPath = $this->getAbsoluteBasePath() . $newFolderName . '/';
+		$newFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($targetFolderIdentifier . '/' . $newFolderName);
+		$sourceFolderPath = $this->getAbsolutePath($sourceFolderIdentifier);
+		$targetFolderPath = $this->getAbsolutePath($newFolderIdentifier);
+
 		mkdir($targetFolderPath);
-		$sourceFolderPath = $this->getAbsolutePath($folderToCopy);
 		/** @var $iterator \RecursiveDirectoryIterator */
-		$iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($sourceFolderPath), \RecursiveIteratorIterator::SELF_FIRST);
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($sourceFolderPath),
+			\RecursiveIteratorIterator::SELF_FIRST
+		);
 		// Rewind the iterator as this is important for some systems e.g. Windows
 		$iterator->rewind();
 		while ($iterator->valid()) {
@@ -903,65 +888,45 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 			$fileName = $current->getFilename();
 			$itemSubPath = GeneralUtility::fixWindowsFilePath($iterator->getSubPathname());
 			if ($current->isDir() && !($fileName === '..' || $fileName === '.')) {
-				mkdir($targetFolderPath . $itemSubPath);
+				GeneralUtility::mkdir($targetFolderPath . '/' . $itemSubPath);
 			} elseif ($current->isFile()) {
-				$result = copy($sourceFolderPath . $itemSubPath, $targetFolderPath . $itemSubPath);
+				$result = copy($sourceFolderPath . '/' . $itemSubPath, $targetFolderPath . '/' . $itemSubPath);
 				if ($result === FALSE) {
+					// rollback
+					GeneralUtility::rmdir($targetFolderIdentifier, TRUE);
 					throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException(
 						'Copying file "' . $sourceFolderPath . $itemSubPath . '" to "' . $targetFolderPath . $itemSubPath . '" failed.',
 						1330119452
 					);
+
 				}
 			}
 			$iterator->next();
 		}
+		GeneralUtility::fixPermissions($targetFolderPath, TRUE);
 		return TRUE;
-	}
-
-	/**
-	 * Move a folder from another storage.
-	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderToMove
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetParentFolder
-	 * @param string $newFolderName
-	 * @return boolean
-	 */
-	public function moveFolderBetweenStorages(\TYPO3\CMS\Core\Resource\Folder $folderToMove, \TYPO3\CMS\Core\Resource\Folder $targetParentFolder, $newFolderName) {
-		// TODO implement a clever shortcut here if both storages are of type local
-		return parent::moveFolderBetweenStorages($folderToMove, $targetParentFolder, $newFolderName);
-	}
-
-	/**
-	 * Copy a folder from another storage.
-	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderToCopy
-	 * @param \TYPO3\CMS\Core\Resource\Folder $targetParentFolder
-	 * @param string $newFolderName
-	 * @return boolean
-	 */
-	public function copyFolderBetweenStorages(\TYPO3\CMS\Core\Resource\Folder $folderToCopy, \TYPO3\CMS\Core\Resource\Folder $targetParentFolder, $newFolderName) {
-		// TODO implement a clever shortcut here if both storages are of type local
-		return parent::copyFolderBetweenStorages($folderToCopy, $targetParentFolder, $newFolderName);
 	}
 
 	/**
 	 * Renames a file in this storage.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @param string $newName The target path (including the file name!)
 	 * @return string The identifier of the file after renaming
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException
+	 * @throws \RuntimeException
 	 */
-	public function renameFile(\TYPO3\CMS\Core\Resource\FileInterface $file, $newName) {
+	public function renameFile($fileIdentifier, $newName) {
 		// Makes sure the Path given as parameter is valid
-		$newName = $this->canonicalizeAndCheckFilePath($newName);
 		$newName = $this->sanitizeFileName($newName);
-		$newIdentifier = rtrim(GeneralUtility::fixWindowsFilePath(PathUtility::dirname($file->getIdentifier())), '/') . '/' . $newName;
+		$newIdentifier = rtrim(GeneralUtility::fixWindowsFilePath(PathUtility::dirname($fileIdentifier)), '/') . '/' . $newName;
+		$newIdentifier = $this->canonicalizeAndCheckFileIdentifier($newIdentifier);
 		// The target should not exist already
 		if ($this->fileExists($newIdentifier)) {
 			throw new \TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException('The target file already exists.', 1320291063);
 		}
-		$sourcePath = $this->getAbsolutePath($file);
-		$targetPath = $this->absoluteBasePath . '/' . ltrim($newIdentifier, '/');
+		$sourcePath = $this->getAbsolutePath($fileIdentifier);
+		$targetPath = $this->getAbsolutePath($newIdentifier);
 		$result = rename($sourcePath, $targetPath);
 		if ($result === FALSE) {
 			throw new \RuntimeException('Renaming file ' . $sourcePath . ' to ' . $targetPath . ' failed.', 1320375115);
@@ -973,47 +938,56 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Renames a folder in this storage.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
-	 * @param string $newName The target path (including the file name!)
-	 * @return array A map of old to new file identifiers
+	 * @param string $folderIdentifier
+	 * @param string $newName
+	 * @return array A map of old to new file identifiers of all affected files and folders
 	 * @throws \RuntimeException if renaming the folder failed
 	 */
-	public function renameFolder(\TYPO3\CMS\Core\Resource\Folder $folder, $newName) {
-		// Makes sure the path given as parameter is valid
+	public function renameFolder($folderIdentifier, $newName) {
+		$folderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
 		$newName = $this->sanitizeFileName($newName);
-		$newName = $this->canonicalizeAndCheckFolderPath($newName);
-		$relativeSourcePath = $folder->getIdentifier();
-		$sourcePath = $this->getAbsolutePath($relativeSourcePath);
-		$relativeTargetPath = $this->canonicalizeAndCheckFolderPath(PathUtility::dirname($relativeSourcePath). '/' . $newName);
-		$targetPath = $this->getAbsolutePath($relativeTargetPath);
+
+		$newIdentifier = PathUtility::dirname($folderIdentifier) . '/' . $newName;
+		$newIdentifier = $this->canonicalizeAndCheckFolderIdentifier($newIdentifier);
+
+		$sourcePath = $this->getAbsolutePath($folderIdentifier);
+		$targetPath = $this->getAbsolutePath($newIdentifier);
 		// get all files and folders we are going to move, to have a map for updating later.
-		$filesAndFolders = $this->getFileAndFoldernamesInPath($sourcePath, TRUE);
+		$filesAndFolders = $this->retrieveFileAndFoldersInPath($sourcePath, TRUE);
 		$result = rename($sourcePath, $targetPath);
 		if ($result === FALSE) {
 			throw new \RuntimeException(sprintf('Renaming folder "%1$s" to "%2$s" failed."', $sourcePath, $targetPath), 1320375116);
 		}
 		try {
 			// Create a mapping from old to new identifiers
-			$identifierMap = $this->createIdentifierMap($filesAndFolders, $relativeSourcePath, $relativeTargetPath);
+			$identifierMap = $this->createIdentifierMap($filesAndFolders, $folderIdentifier, $newIdentifier);
 		} catch (\Exception $e) {
 			rename($targetPath, $sourcePath);
-			throw new \RuntimeException(sprintf('Creating filename mapping after renaming "%1$s" to "%2$s" failed. Reverted rename operation.\\n\\nOriginal error: %3$s"', $sourcePath, $targetPath, $e->getMessage()), 1334160746);
+			throw new \RuntimeException(
+				sprintf(
+					'Creating filename mapping after renaming "%1$s" to "%2$s" failed. Reverted rename operation.\\n\\nOriginal error: %3$s"',
+					$sourcePath, $targetPath, $e->getMessage()
+				),
+				1334160746
+			);
 		}
 		return $identifierMap;
 	}
 
 	/**
-	 * Removes a file from this storage.
+	 * Removes a file from the filesystem. This does not check if the file is
+	 * still used or if it is a bad idea to delete it for some other reason
+	 * this has to be taken care of in the upper layers (e.g. the Storage)!
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @return boolean TRUE if deleting the file succeeded
 	 * @throws \RuntimeException
 	 */
-	public function deleteFile(\TYPO3\CMS\Core\Resource\FileInterface $file) {
-		$filePath = $this->getAbsolutePath($file);
+	public function deleteFile($fileIdentifier) {
+		$filePath = $this->getAbsolutePath($fileIdentifier);
 		$result = unlink($filePath);
 		if ($result === FALSE) {
-			throw new \RuntimeException('Deletion of file ' . $file->getIdentifier() . ' failed.', 1320855304);
+			throw new \RuntimeException('Deletion of file ' . $fileIdentifier . ' failed.', 1320855304);
 		}
 		return $result;
 	}
@@ -1021,15 +995,19 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Removes a folder from this storage.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
-	 * @param bool $deleteRecursively
+	 * @param string $folderIdentifier
+	 * @param boolean $deleteRecursively
 	 * @return boolean
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException
 	 */
-	public function deleteFolder(\TYPO3\CMS\Core\Resource\Folder $folder, $deleteRecursively = FALSE) {
-		$folderPath = $this->getAbsolutePath($folder);
-		$result = \TYPO3\CMS\Core\Utility\GeneralUtility::rmdir($folderPath, $deleteRecursively);
+	public function deleteFolder($folderIdentifier, $deleteRecursively = FALSE) {
+		$folderPath = $this->getAbsolutePath($folderIdentifier);
+		$result = GeneralUtility::rmdir($folderPath, $deleteRecursively);
 		if ($result === FALSE) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException('Deleting folder "' . $folder->getIdentifier() . '" failed.', 1330119451);
+			throw new \TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException(
+				'Deleting folder "' . $folderIdentifier . '" failed.',
+				1330119451
+			);
 		}
 		return $result;
 	}
@@ -1037,11 +1015,11 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	/**
 	 * Checks if a folder contains files and (if supported) other folders.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
+	 * @param string $folderIdentifier
 	 * @return boolean TRUE if there are no files and folders within $folder
 	 */
-	public function isFolderEmpty(\TYPO3\CMS\Core\Resource\Folder $folder) {
-		$path = $this->getAbsolutePath($folder);
+	public function isFolderEmpty($folderIdentifier) {
+		$path = $this->getAbsolutePath($folderIdentifier);
 		$dirHandle = opendir($path);
 		while ($entry = readdir($dirHandle)) {
 			if ($entry !== '.' && $entry !== '..') {
@@ -1049,111 +1027,92 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 				return FALSE;
 			}
 		}
+		closedir($dirHandle);
 		return TRUE;
 	}
 
 	/**
-	 * Returns a (local copy of) a file for processing it. This makes a copy
-	 * first when in writable mode, so if you change the file,
-	 * you have to update it yourself afterwards.
+	 * Returns (a local copy of) a file for processing it. This makes a copy
+	 * first when in writable mode, so if you change the file, you have to update it yourself afterwards.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
-	 * @param boolean $writable Set this to FALSE if you only need the file for read operations. This might speed up things, e.g. by using a cached local version. Never modify the file if you have set this flag!
+	 * @param string $fileIdentifier
+	 * @param boolean $writable Set this to FALSE if you only need the file for read operations.
+	 *                          This might speed up things, e.g. by using a cached local version.
+	 *                          Never modify the file if you have set this flag!
 	 * @return string The path to the file on the local disk
 	 */
-	public function getFileForLocalProcessing(\TYPO3\CMS\Core\Resource\FileInterface $file, $writable = TRUE) {
+	public function getFileForLocalProcessing($fileIdentifier, $writable = TRUE) {
 		if ($writable === FALSE) {
-			// TODO check if this is ok or introduce additional measures against file changes
-			return $this->getAbsolutePath($file);
+			return $this->getAbsolutePath($fileIdentifier);
 		} else {
-			// TODO check if this might also serve as a dump basic implementation in the abstract driver.
-			return $this->copyFileToTemporaryPath($file);
+			return $this->copyFileToTemporaryPath($fileIdentifier);
 		}
 	}
 
-	/**
-	 * Returns the permissions of a file as an array (keys r, w) of boolean flags
-	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file The file object to check
-	 * @return array
-	 * @throws \RuntimeException If fetching the permissions failed
-	 */
-	public function getFilePermissions(\TYPO3\CMS\Core\Resource\FileInterface $file) {
-		$filePath = $this->getAbsolutePath($file);
-		return $this->getPermissions($filePath);
-	}
 
 	/**
-	 * Returns the permissions of a folder as an array (keys r, w) of boolean flags
+	 * Returns the permissions of a file/folder as an array (keys r, w) of boolean flags
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
+	 * @param string $identifier
 	 * @return array
-	 * @throws \RuntimeException If fetching the permissions failed
+	 * @throws \RuntimeException
 	 */
-	public function getFolderPermissions(\TYPO3\CMS\Core\Resource\Folder $folder) {
-		$folderPath = $this->getAbsolutePath($folder);
-		return $this->getPermissions($folderPath);
-	}
-
-	/**
-	 * Helper function to unify access to permission information
-	 *
-	 * @param string $path
-	 * @return array
-	 * @throws \RuntimeException If fetching the permissions failed
-	 */
-	protected function getPermissions($path) {
+	public function getPermissions($identifier) {
+		$path = $this->getAbsolutePath($identifier);
 		$permissionBits = fileperms($path);
 		if ($permissionBits === FALSE) {
 			throw new \RuntimeException('Error while fetching permissions for ' . $path, 1319455097);
 		}
 		return array(
-			'r' => (bool) is_readable($path),
-			'w' => (bool) is_writable($path)
+			'r' => (bool)is_readable($path),
+			'w' => (bool)is_writable($path)
 		);
 	}
 
 	/**
-	 * Checks if a given object or identifier is within a container, e.g. if
+	 * Checks if a given identifier is within a container, e.g. if
 	 * a file or folder is within another folder.
 	 * This can e.g. be used to check for webmounts.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $container
-	 * @param mixed $content An object or an identifier to check
-	 * @return boolean TRUE if $content is within $container, always FALSE if $container is not within this storage
+	 * @param string $folderIdentifier
+	 * @param string $identifier identifier to be checked against $folderIdentifier
+	 *
+	 * @return boolean TRUE if $content is within $folderIdentifier
 	 */
-	public function isWithin(\TYPO3\CMS\Core\Resource\Folder $container, $content) {
-		if ($container->getStorage() != $this->storage) {
-			return FALSE;
-		}
-		if ($content instanceof \TYPO3\CMS\Core\Resource\FileInterface || $content instanceof \TYPO3\CMS\Core\Resource\Folder) {
-			$content = $container->getIdentifier();
-		}
-		$folderPath = $container->getIdentifier();
-		$content = '/' . ltrim($content, '/');
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($content, $folderPath);
+	public function isWithin($folderIdentifier, $identifier) {
+		$folderPath = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
+		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
+		return GeneralUtility::isFirstPartOfStr($identifier, $folderPath);
 	}
 
 	/**
-	 * Creates a new file and returns the matching file object for it.
+	 * Creates a new (empty) file and returns the identifier.
 	 *
 	 * @param string $fileName
-	 * @param \TYPO3\CMS\Core\Resource\Folder $parentFolder
-	 * @return \TYPO3\CMS\Core\Resource\File
+	 * @param string $parentFolderIdentifier
+	 * @return string
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException
+	 * @throws \RuntimeException
 	 */
-	public function createFile($fileName, \TYPO3\CMS\Core\Resource\Folder $parentFolder) {
+	public function createFile($fileName, $parentFolderIdentifier) {
 		if (!$this->isValidFilename($fileName)) {
-			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException('Invalid characters in fileName "' . $fileName . '"', 1320572272);
+			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidFileNameException(
+				'Invalid characters in fileName "' . $fileName . '"',
+				1320572272
+			);
 		}
-		$filePath = $parentFolder->getIdentifier() . $this->sanitizeFileName(ltrim($fileName, '/'));
-		$result = touch($this->absoluteBasePath . $filePath);
-		GeneralUtility::fixPermissions($this->absoluteBasePath . ltrim($filePath, '/'));
+		$parentFolderIdentifier = $this->canonicalizeAndCheckFolderIdentifier($parentFolderIdentifier);
+		$fileIdentifier =  $this->canonicalizeAndCheckFileIdentifier(
+			$parentFolderIdentifier . $this->sanitizeFileName(ltrim($fileName, '/'))
+		);
+		$absoluteFilePath = $this->getAbsolutePath($fileIdentifier);
+		$result = touch($absoluteFilePath);
+		GeneralUtility::fixPermissions($absoluteFilePath);
 		clearstatcache();
 		if ($result !== TRUE) {
-			throw new \RuntimeException('Creating file ' . $filePath . ' failed.', 1320569854);
+			throw new \RuntimeException('Creating file ' . $fileIdentifier . ' failed.', 1320569854);
 		}
-		$fileInfo = $this->getFileInfoByIdentifier($filePath);
-		return $this->getFileObject($fileInfo);
+		return $fileIdentifier;
 	}
 
 	/**
@@ -1162,27 +1121,31 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * external location. So this might be an expensive operation (both in terms of
 	 * processing resources and money) for large files.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @return string The file contents
 	 */
-	public function getFileContents(\TYPO3\CMS\Core\Resource\FileInterface $file) {
-		$filePath = $this->getAbsolutePath($file);
+	public function getFileContents($fileIdentifier) {
+		$filePath = $this->getAbsolutePath($fileIdentifier);
 		return file_get_contents($filePath);
 	}
 
 	/**
 	 * Sets the contents of a file to the specified value.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $file
+	 * @param string $fileIdentifier
 	 * @param string $contents
 	 * @return integer The number of bytes written to the file
 	 * @throws \RuntimeException if the operation failed
 	 */
-	public function setFileContents(\TYPO3\CMS\Core\Resource\FileInterface $file, $contents) {
-		$filePath = $this->getAbsolutePath($file);
+	public function setFileContents($fileIdentifier, $contents) {
+		$filePath = $this->getAbsolutePath($fileIdentifier);
 		$result = file_put_contents($filePath, $contents);
+
+		// Make sure later calls to filesize() etc. return correct values.
+		clearstatcache(TRUE, $filePath);
+
 		if ($result === FALSE) {
-			throw new \RuntimeException('Setting contents of file "' . $file->getIdentifier() . '" failed.', 1325419305);
+			throw new \RuntimeException('Setting contents of file "' . $fileIdentifier . '" failed.', 1325419305);
 		}
 		return $result;
 	}
@@ -1201,21 +1164,21 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 				$this->charsetConversion = $GLOBALS['LANG']->csConvObj;
 			} else {
 				// The object may not exist yet, so we need to create it now. Happens in the Install Tool for example.
-				$this->charsetConversion = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
+				$this->charsetConversion = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
 			}
 		}
 		return $this->charsetConversion;
 	}
 
-
 	/**
 	 * Returns the role of an item (currently only folders; can later be extended for files as well)
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\ResourceInterface $item
+	 * @param string $folderIdentifier
 	 * @return string
 	 */
-	public function getRole(\TYPO3\CMS\Core\Resource\ResourceInterface $item) {
-		$role = $this->mappingFolderNameToRole[$item->getName()];
+	public function getRole($folderIdentifier) {
+		$name = PathUtility::basename($folderIdentifier);
+		$role = $this->mappingFolderNameToRole[$name];
 		if (empty($role)) {
 			$role = FolderInterface::ROLE_DEFAULT;
 		}

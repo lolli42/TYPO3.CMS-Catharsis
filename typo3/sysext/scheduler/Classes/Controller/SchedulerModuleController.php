@@ -72,6 +72,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	protected $scheduler;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 */
+	protected $pageRenderer;
+
+	/**
 	 * Constructor
 	 *
 	 * @return \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController
@@ -92,7 +97,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		// Initialize document
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->setModuleTemplate(ExtensionManagementUtility::extPath('scheduler') . 'mod1/mod_template.html');
-		$this->doc->getPageRenderer()->addCssFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.css');
+		$this->pageRenderer = $this->doc->getPageRenderer();
+		$this->pageRenderer->addCssFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.css');
 		$this->doc->backPath = $this->backPath;
 		$this->doc->bodyTagId = 'typo3-mod-php';
 		$this->doc->bodyTagAdditions = 'class="tx_scheduler_mod1"';
@@ -136,7 +142,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 					}
 				</script>
 			';
-			$this->doc->getPageRenderer()->addInlineSetting('scheduler', 'runningIcon', ExtensionManagementUtility::extRelPath('scheduler') . 'res/gfx/status_running.png');
+			$this->pageRenderer->addInlineSetting('scheduler', 'runningIcon', ExtensionManagementUtility::extRelPath('scheduler') . 'res/gfx/status_running.png');
 			// Prepare main content
 			$this->content = $this->doc->header($GLOBALS['LANG']->getLL('function.' . $this->MOD_SETTINGS['function']));
 			$this->content .= $this->getModuleContent();
@@ -433,9 +439,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$tr++;
 			// Display information about each service
 			foreach ($registeredClasses as $class => $classInfo) {
-				$table[$tr][] = $classInfo['title'];
-				$table[$tr][] = $classInfo['extension'];
-				$table[$tr][] = $classInfo['description'];
+				$table[$tr][] = htmlspecialchars($classInfo['title']);
+				$table[$tr][] = htmlspecialchars($classInfo['extension']);
+				$table[$tr][] = htmlspecialchars($classInfo['description']);
 				$link = $GLOBALS['MCONF']['_'] . '&SET[function]=list&CMD=add&tx_scheduler[class]=' . $class;
 				$table[$tr][] = '<a href="' . htmlspecialchars($link) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:new', TRUE) . '" class="icon">' . IconUtility::getSpriteIcon('actions-document-new') . '</a>';
 				$tr++;
@@ -620,7 +626,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		if (count($this->submittedData) > 0) {
 			// If some data was already submitted, use it to override
 			// existing data
-			$taskInfo = GeneralUtility::array_merge_recursive_overrule($taskInfo, $this->submittedData);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($taskInfo, $this->submittedData);
 		}
 		// Get the extra fields to display for each task that needs some
 		$allAdditionalFields = array();
@@ -644,19 +650,17 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			}
 		}
 		// Load necessary JavaScript
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $this->doc->getPageRenderer();
-		$pageRenderer->loadExtJS();
-		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.js');
-		$pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/tceforms.js');
-		$pageRenderer->addJsFile($this->backPath . 'js/extjs/ux/Ext.ux.DateTimePicker.js');
+		$this->pageRenderer->loadExtJS();
+		$this->pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.js');
+		$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/tceforms.js');
+		$this->pageRenderer->addJsFile($this->backPath . 'js/extjs/ux/Ext.ux.DateTimePicker.js');
 		// Define settings for Date Picker
 		$typo3Settings = array(
 			'datePickerUSmode' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? 1 : 0,
 			'dateFormat' => array('j-n-Y', 'G:i j-n-Y'),
 			'dateFormatUS' => array('n-j-Y', 'G:i n-j-Y')
 		);
-		$pageRenderer->addInlineSettingArray('', $typo3Settings);
+		$this->pageRenderer->addInlineSettingArray('', $typo3Settings);
 		// Define table layout for add/edit form
 		$tableLayout = array(
 			'table' => array('<table border="0" cellspacing="0" cellpadding="0" id="edit_form" class="typo3-usersettings">', '</table>')
@@ -701,10 +705,10 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			ksort($groupedClasses);
 			// Loop on all grouped classes to display a selector
 			foreach ($groupedClasses as $extension => $class) {
-				$cell .= '<optgroup label="' . $extension . '">';
+				$cell .= '<optgroup label="' . htmlspecialchars($extension) . '">';
 				foreach ($groupedClasses[$extension] as $class => $classInfo) {
 					$selected = $class == $taskInfo['class'] ? ' selected="selected"' : '';
-					$cell .= '<option value="' . $class . '"' . 'title="' . $classInfo['description'] . '"' . $selected . '>' . $classInfo['title'] . '</option>';
+					$cell .= '<option value="' . $class . '"' . 'title="' . htmlspecialchars($classInfo['description']) . '"' . $selected . '>' . htmlspecialchars($classInfo['title']) . '</option>';
 				}
 				$cell .= '</optgroup>';
 			}
@@ -924,10 +928,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$content .= $flashMessage->render();
 		} else {
 			// Load ExtJS framework and specific JS library
-			/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-			$pageRenderer = $this->doc->getPageRenderer();
-			$pageRenderer->loadExtJS();
-			$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.js');
+			$this->pageRenderer->loadExtJS();
+			$this->pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('scheduler') . 'res/tx_scheduler_be.js');
 			// Initialise table layout
 			$tableLayout = array(
 				'table' => array(

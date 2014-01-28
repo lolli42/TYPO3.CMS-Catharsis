@@ -15,7 +15,7 @@ namespace TYPO3\CMS\CssStyledContent\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -82,7 +82,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// Get bodytext field content, returning blank if empty:
 			$field = isset($conf['field']) && trim($conf['field']) ? trim($conf['field']) : 'bodytext';
 			$content = trim($this->cObj->data[$field]);
-			if (!strcmp($content, '')) {
+			if ($content === '') {
 				return '';
 			}
 			// Split into single lines:
@@ -119,7 +119,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// Get bodytext field content
 			$field = isset($conf['field']) && trim($conf['field']) ? trim($conf['field']) : 'bodytext';
 			$content = trim($this->cObj->data[$field]);
-			if (!strcmp($content, '')) {
+			if ($content === '') {
 				return '';
 			}
 			// get flexform values
@@ -158,7 +158,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				$cells = str_getcsv($v, $delimiter, $quotedInput);
 				$newCells = array();
 				for ($a = 0; $a < $cols; $a++) {
-					if (!strcmp(trim($cells[$a]), '')) {
+					if (trim($cells[$a]) === '') {
 						$cells[$a] = '&nbsp;';
 					}
 					$cellAttribs = $noStyles ? '' : ($a > 0 && $cols - 1 == $a ? ' class="td-last td-' . $a . '"' : ' class="td-' . $a . '"');
@@ -472,7 +472,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		}
 		// Specific configuration for the chosen rendering method
 		if (is_array($conf['rendering.'][$renderMethod . '.'])) {
-			$conf = $this->cObj->joinTSarrays($conf, $conf['rendering.'][$renderMethod . '.']);
+			$conf = array_replace_recursive($conf, $conf['rendering.'][$renderMethod . '.']);
 		}
 		// Image or Text with Image?
 		if (is_array($conf['text.'])) {
@@ -504,7 +504,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			$fallbackRenderMethod = $this->cObj->cObjGetSingle($conf['fallbackRendering'], $conf['fallbackRendering.']);
 		}
 		if ($fallbackRenderMethod && is_array($conf['rendering.'][$fallbackRenderMethod . '.'])) {
-			$conf = $this->cObj->joinTSarrays($conf, $conf['rendering.'][$fallbackRenderMethod . '.']);
+			$conf = array_replace_recursive($conf, $conf['rendering.'][$fallbackRenderMethod . '.']);
 		}
 		// Set the accessibility mode which uses a different type of markup, used 4.7+
 		$accessibilityMode = FALSE;
@@ -570,20 +570,24 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		// EqualHeight
 		$equalHeight = intval($this->cObj->stdWrap($conf['equalH'], $conf['equalH.']));
 		if ($equalHeight) {
-			// Initiate gifbuilder object in order to get dimensions AND calculate the imageWidth's
-			$gifCreator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
-			$gifCreator->init();
 			$relations_cols = array();
 			// contains the individual width of all images after scaling to $equalHeight
 			$imgWidths = array();
 			for ($a = 0; $a < $imgCount; $a++) {
 				$imgKey = $a + $imgStart;
-				$imgInfo = $gifCreator->getImageDimensions($imgPath . $imgs[$imgKey]);
+
+				/** @var $file \TYPO3\CMS\Core\Resource\File */
+				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
+					$file = $this->getResourceFactory()->getFileObject((int)$imgs[$imgKey]);
+				} else {
+					$file = $this->getResourceFactory()->getFileObjectFromCombinedIdentifier($imgPath . $imgs[$imgKey]);
+				}
+
 				// relationship between the original height and the wished height
-				$rel = $imgInfo[1] / $equalHeight;
+				$rel = $file->getProperty('height') / $equalHeight;
 				// if relations is zero, then the addition of this value is omitted as the image is not expected to display because of some error.
 				if ($rel) {
-					$imgWidths[$a] = $imgInfo[0] / $rel;
+					$imgWidths[$a] = $file->getProperty('width') / $rel;
 					// counts the total width of the row with the new height taken into consideration.
 					$relations_cols[(int)floor($a / $colCount)] += $imgWidths[$a];
 				}
@@ -1033,11 +1037,19 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 				$images = $this->cObj->stdWrap($images, $conf['imageStdWrapNoWidth.']);
 			}
 		}
-		$output = $this->cObj->cObjGetSingle($conf['layout'], $conf['layout.']);
-		$output = str_replace('###TEXT###', $content, $output);
-		$output = str_replace('###IMAGES###', $images, $output);
-		$output = str_replace('###CLASSES###', $class, $output);
-		return $output;
+		return str_replace(
+			array(
+				'###TEXT###',
+				'###IMAGES###',
+				'###CLASSES###'
+			),
+			array(
+				$content,
+				$images,
+				$class
+			),
+			$this->cObj->cObjGetSingle($conf['layout'], $conf['layout.'])
+		);
 	}
 
 	/***********************************
@@ -1211,4 +1223,12 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 		}
 	}
 
+	/**
+	 * Get the ResourceFactory
+	 *
+	 * @return \TYPO3\CMS\Core\Resource\ResourceFactory
+	 */
+	protected function getResourceFactory() {
+		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+	}
 }

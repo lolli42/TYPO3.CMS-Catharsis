@@ -21,7 +21,7 @@
 		<div class="typo3-extensionmanager-headerRowRight">
 		</div>
 	</div>
-	<table id="typo3-extension-list" class="typo3-extension-list">
+	<table id="typo3-extension-list" class="t3-table typo3-extension-list">
 		<thead>
 			<tr>
 				<th title="{f:translate(key:'extensionList.header.title.update')}"><f:translate key="extensionList.header.update"/></th>
@@ -73,8 +73,10 @@
 						<td>
 					</f:else>
 				</f:if>
-
-					<em:image src="../{extension.siteRelPath}/{extension.ext_icon}" alt="{extension.title}" height="16" /><em:configureExtension extension="{extension}" forceConfiguration="0">{extension.title}</em:configureExtension>
+					<f:if condition="{extension.ext_icon}">
+						<img class="ext-icon" src="../{extension.siteRelPath}/{extension.ext_icon}" alt="{extension.title}" />
+					</f:if>
+					<em:configureExtension extension="{extension}" forceConfiguration="0" showDescription="1">{extension.title}</em:configureExtension>
 				</td>
 				<td>
 					{extensionKey}

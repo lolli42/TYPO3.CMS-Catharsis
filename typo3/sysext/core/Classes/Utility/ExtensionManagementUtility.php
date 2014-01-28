@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -136,7 +136,7 @@ class ExtensionManagementUtility {
 	 * @return string
 	 */
 	static public function siteRelPath($key) {
-		return substr(self::extPath($key), strlen(PATH_site));
+		return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(self::extPath($key));
 	}
 
 	/**
@@ -215,15 +215,17 @@ class ExtensionManagementUtility {
 	 *
 	 * @param string $table The table name of a table already present in $GLOBALS['TCA'] with a columns section
 	 * @param array $columnArray The array with the additional columns (typical some fields an extension wants to add)
-	 * @param boolean $addTofeInterface If $addTofeInterface is TRUE the list of fields are also added to the fe_admin_fieldList.
+	 * @param boolean $addTofeInterface DEPRECATED: Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.
 	 * @return void
 	 */
-	static public function addTCAcolumns($table, $columnArray, $addTofeInterface = 0) {
+	static public function addTCAcolumns($table, $columnArray, $addTofeInterface = FALSE) {
 		if (is_array($columnArray) && is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'])) {
 			// Candidate for array_merge() if integer-keys will some day make trouble...
 			$GLOBALS['TCA'][$table]['columns'] = array_merge($GLOBALS['TCA'][$table]['columns'], $columnArray);
 			if ($addTofeInterface) {
-				$GLOBALS['TCA'][$table]['feInterface']['fe_admin_fieldList'] .= ',' . implode(',', array_keys($columnArray));
+				GeneralUtility::deprecationLog(
+					'Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.'
+				);
 			}
 		}
 	}
@@ -497,7 +499,8 @@ class ExtensionManagementUtility {
 				'localizeChildrenAtParentLocalization' => TRUE,
 			),
 		);
-		return GeneralUtility::array_merge_recursive_overrule($fileFieldTCAConfig, $customSettingOverride);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($fileFieldTCAConfig, $customSettingOverride);
+		return $fileFieldTCAConfig;
 	}
 
 	/**
@@ -737,7 +740,8 @@ class ExtensionManagementUtility {
 		if ($mainModuleName === 'web') {
 			$defaultModuleConfiguration['navigationComponentId'] = 'typo3-pagetree';
 		}
-		$moduleConfiguration = GeneralUtility::array_merge_recursive_overrule($defaultModuleConfiguration, $moduleConfiguration);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
+		$moduleConfiguration = $defaultModuleConfiguration;
 		if (strlen($subModuleName) > 0) {
 			$moduleSignature = $mainModuleName . '_' . $subModuleName;
 		} else {
@@ -812,7 +816,7 @@ class ExtensionManagementUtility {
 						$pointer = 0;
 						$found = FALSE;
 						foreach ($mods as $k => $m) {
-							if (!strcmp($m, $modRef)) {
+							if ($m === $modRef) {
 								$pointer = strtolower($place) == 'after' ? $k + 1 : $k;
 								$found = TRUE;
 							}
@@ -1182,7 +1186,7 @@ class ExtensionManagementUtility {
 		}
 		if (is_array($GLOBALS['TCA']['tt_content']['columns']) && is_array($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'])) {
 			foreach ($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'] as $k => $v) {
-				if (!strcmp($v[1], $itemArray[1])) {
+				if ((string)$v[1] === (string)$itemArray[1]) {
 					$GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'][$k] = $itemArray;
 					return;
 				}
@@ -1515,7 +1519,8 @@ tt_content.' . $key . $prefix . ' {
 			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
 			$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
-				$codeCache->requireOnce($cacheIdentifier);
+				// substr is necessary, because the php frontend wraps php code around the cache value
+				$GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
 			} else {
 				self::buildBaseTcaFromSingleFiles();
 				self::createBaseTcaCacheFile();
@@ -1565,10 +1570,9 @@ tt_content.' . $key . $prefix . ' {
 	 * @return void
 	 */
 	static protected function createBaseTcaCacheFile() {
-		$phpCodeToCache = '$GLOBALS[\'TCA\'] = ' . var_export($GLOBALS['TCA'], TRUE) . ';';
 		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
 		$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
-		$codeCache->set(static::getBaseTcaCacheIdentifier(), $phpCodeToCache);
+		$codeCache->set(static::getBaseTcaCacheIdentifier(), serialize($GLOBALS['TCA']));
 	}
 
 	/**
@@ -1740,7 +1744,7 @@ tt_content.' . $key . $prefix . ' {
 	}
 
 	/**
-	 * Remove cache files from php code cache, tagged with 'core'
+	 * Remove cache files from php code cache, grouped by 'system'
 	 *
 	 * This removes the following cache entries:
 	 * - autoloader cache registry
@@ -1755,9 +1759,7 @@ tt_content.' . $key . $prefix . ' {
 	 * @return void
 	 */
 	static public function removeCacheFiles() {
-		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-		$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
-		$codeCache->flush();
+		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
 	}
 
 	/**

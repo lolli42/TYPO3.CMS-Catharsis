@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -255,11 +255,6 @@ class NewContentElementController {
 			}
 			// Add the wizard table to the content, wrapped in tabs:
 			if ($this->config['renderMode'] == 'tabs') {
-				$this->doc->inDocStylesArray[] = '
-					.typo3-dyntabmenu-divs { background-color: #fafafa; border: 1px solid #adadad; width: 680px; }
-					.typo3-dyntabmenu-divs table { margin: 15px; }
-					.typo3-dyntabmenu-divs table td { padding: 3px; }
-				';
 				$code = $GLOBALS['LANG']->getLL('sel1', 1) . '<br /><br />' . $this->doc->getDynTabMenu($menuItems, 'new-content-element-wizard', FALSE, FALSE);
 			} else {
 				$code = $GLOBALS['LANG']->getLL('sel1', 1) . '<br /><br />';
@@ -277,7 +272,7 @@ class NewContentElementController {
 				$code = $GLOBALS['LANG']->getLL('sel2', 1) . '<br /><br />';
 				// Load SHARED page-TSconfig settings and retrieve column list from there, if applicable:
 				$modTSconfig_SHARED = BackendUtility::getModTSconfig($this->id, 'mod.SHARED');
-				$colPosList = strcmp(trim($modTSconfig_SHARED['properties']['colPos_list']), '') ? trim($modTSconfig_SHARED['properties']['colPos_list']) : '1,0,2,3';
+				$colPosList = trim($modTSconfig_SHARED['properties']['colPos_list']) !== '' ? trim($modTSconfig_SHARED['properties']['colPos_list']) : '1,0,2,3';
 				$colPosList = implode(',', array_unique(GeneralUtility::intExplode(',', $colPosList)));
 				// Removing duplicates, if any
 				// Finally, add the content of the column selector to the content:
@@ -365,7 +360,7 @@ class NewContentElementController {
 			foreach ($wizards as $groupKey => $wizardGroup) {
 				$groupKey = preg_replace('/\\.$/', '', $groupKey);
 				$showItems = GeneralUtility::trimExplode(',', $wizardGroup['show'], TRUE);
-				$showAll = strcmp($wizardGroup['show'], '*') ? FALSE : TRUE;
+				$showAll = $wizardGroup['show'] === '*';
 				$groupItems = array();
 				if (is_array($appendWizards[$groupKey . '.']['elements.'])) {
 					$wizardElements = array_merge((array) $wizardGroup['elements.'], $appendWizards[$groupKey . '.']['elements.']);

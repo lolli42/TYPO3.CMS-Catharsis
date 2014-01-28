@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\Aspect;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -26,7 +26,6 @@ namespace TYPO3\CMS\Frontend\Aspect;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-
 
 /**
  * Class FileMetadataTranslationAspect
@@ -53,7 +52,9 @@ class FileMetadataOverlayAspect {
 			$this->getTsfe()->sys_language_content,
 			$this->getTsfe()->sys_language_contentOL
 		);
-		$data->exchangeArray($overlayedMetaData);
+		if ($overlayedMetaData !== NULL) {
+			$data->exchangeArray($overlayedMetaData);
+		}
 	}
 
 	/**

@@ -52,7 +52,7 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	 */
 	public function initializeAction() {
 		$this->objects = $this->widgetConfiguration['objects'];
-		$this->configuration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->configuration, $this->widgetConfiguration['configuration'], TRUE);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->configuration, $this->widgetConfiguration['configuration'], FALSE);
 		$this->numberOfPages = ceil(count($this->objects) / (integer) $this->configuration['itemsPerPage']);
 		$this->maximumNumberOfLinks = (integer) $this->configuration['maximumNumberOfLinks'];
 	}
@@ -100,7 +100,7 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 		}
 		$delta = floor($maximumNumberOfLinks / 2);
 		$this->displayRangeStart = $this->currentPage - $delta;
-		$this->displayRangeEnd = $this->currentPage + $delta + ($maximumNumberOfLinks % 2 === 0 ? 1 : 0);
+		$this->displayRangeEnd = $this->currentPage + $delta - ($maximumNumberOfLinks % 2 === 0 ? 1 : 0);
 		if ($this->displayRangeStart < 1) {
 			$this->displayRangeEnd -= $this->displayRangeStart - 1;
 		}

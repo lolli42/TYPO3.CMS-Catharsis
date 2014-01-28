@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -93,10 +93,10 @@ class CommandLineController {
 	 * @todo Define visibility
 	 */
 	public function cli_getArgArray($option, $argv) {
-		while (count($argv) && strcmp($argv[0], $option)) {
+		while (count($argv) && (string)$argv[0] !== (string)$option) {
 			array_shift($argv);
 		}
-		if (!strcmp($argv[0], $option)) {
+		if ((string)$argv[0] === (string)$option) {
 			array_shift($argv);
 			return count($argv) ? $argv : array('');
 		}
@@ -174,7 +174,7 @@ class CommandLineController {
 					$ii = $i;
 					if ($i > 0) {
 						if (!isset($cli_args_copy[$argSplit[0]][($i - 1)]) && $v[0] != '[') {
-							// Using "[]" around a paramter makes it optional
+							// Using "[]" around a parameter makes it optional
 							echo 'ERROR: Option "' . $argSplit[0] . '" requires a value ("' . $v . '") on position ' . $i . LF;
 							die;
 						}

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -156,7 +156,7 @@ class RteController {
 			$rec['pid'] = $rawRec['pid'];
 			// TSconfig, setting width:
 			$fieldTSConfig = $tceforms->setTSconfig($this->P['table'], $rec, $this->P['field']);
-			if (strcmp($fieldTSConfig['RTEfullScreenWidth'], '')) {
+			if ((string)$fieldTSConfig['RTEfullScreenWidth'] !== '') {
 				$width = $fieldTSConfig['RTEfullScreenWidth'];
 			} else {
 				$width = '100%';
@@ -255,8 +255,9 @@ class RteController {
 	 *
 	 * @param string $table Table name
 	 * @param integer $uid Record uid
-	 * @return void
+	 * @return boolean
 	 * @todo Define visibility
+	 * @todo: Refactor to remove duplicate code (see FormsController, TableController)
 	 */
 	public function checkEditAccess($table, $uid) {
 		$calcPRec = BackendUtility::getRecord($table, $uid);

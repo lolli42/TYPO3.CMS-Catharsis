@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Mvc;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -167,21 +167,43 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	public function getControllerObjectName() {
 		if (NULL !== $this->controllerVendorName) {
 			// It's safe to assume a namespaced name as namespaced names have to follow PSR-0
-			$lowercaseObjectName = str_replace('@extension', $this->controllerExtensionName, $this->namespacedControllerObjectNamePattern);
-			$lowercaseObjectName = str_replace('@subpackage', $this->controllerSubpackageKey, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@controller', $this->controllerName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@vendor', $this->controllerVendorName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('\\\\', '\\', $lowercaseObjectName);
+			$objectName = str_replace(
+				array(
+					'@extension',
+					'@subpackage',
+					'@controller',
+					'@vendor',
+					'\\\\'
+				),
+				array(
+					$this->controllerExtensionName,
+					$this->controllerSubpackageKey,
+					$this->controllerName,
+					$this->controllerVendorName,
+					'\\'
+				),
+				$this->namespacedControllerObjectNamePattern
+			);
 		} else {
-			$lowercaseObjectName = str_replace('@extension', $this->controllerExtensionName, $this->controllerObjectNamePattern);
-			$lowercaseObjectName = str_replace('@subpackage', $this->controllerSubpackageKey, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('@controller', $this->controllerName, $lowercaseObjectName);
-			$lowercaseObjectName = str_replace('__', '_', $lowercaseObjectName);
+			$objectName = str_replace(
+				array(
+					'@extension',
+					'@subpackage',
+					'@controller',
+					'__'
+				),
+				array(
+					$this->controllerExtensionName,
+					$this->controllerSubpackageKey,
+					$this->controllerName,
+					'_'
+				),
+				$this->controllerObjectNamePattern
+			);
 		}
 		// TODO implement getCaseSensitiveObjectName()
-		$objectName = $lowercaseObjectName;
 		if ($objectName === FALSE) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException('The controller object "' . $lowercaseObjectName . '" does not exist.', 1220884009);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException('The controller object "' . $objectName . '" does not exist.', 1220884009);
 		}
 		return $objectName;
 	}

@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Validation\Validator;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -64,6 +64,8 @@ class CollectionValidator extends GenericObjectValidator {
 		if ($this->acceptsEmptyValues === FALSE || $this->isEmpty($value) === FALSE) {
 			if ((is_object($value) && !\TYPO3\CMS\Extbase\Utility\TypeHandlingUtility::isCollectionType(get_class($value))) && !is_array($value)) {
 				$this->addError('The given subject was not a collection.', 1317204797);
+				return $this->result;
+			} elseif ($value instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage && !$value->isInitialized()) {
 				return $this->result;
 			} elseif (is_object($value) && $this->isValidatedAlready($value)) {
 				return $this->result;

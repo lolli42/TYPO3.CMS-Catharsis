@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\View\BackendLayout;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -63,9 +63,10 @@ class DefaultDataProvider implements DataProviderInterface {
 	 * Gets a backend layout by (regular) identifier.
 	 *
 	 * @param string $identifier
+	 * @param integer $pageId
 	 * @return NULL|BackendLayout
 	 */
-	public function getBackendLayout($identifier) {
+	public function getBackendLayout($identifier, $pageId) {
 		$backendLayout = NULL;
 
 		if ((string) $identifier === 'default') {
@@ -121,7 +122,7 @@ class DefaultDataProvider implements DataProviderInterface {
 
 		if (!empty($icon)) {
 			$path = rtrim($GLOBALS['TCA']['backend_layout']['ctrl']['selicon_field_path'], '/') . '/';
-			$iconPath = $path . $icon;
+			$iconPath = '../' . $path . $icon;
 		}
 
 		return $iconPath;

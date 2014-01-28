@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -121,7 +121,7 @@ class SuggestDefaultReceiver {
 			$depth = intval($config['pidDepth']);
 			foreach ($pageIds as $pageId) {
 				if ($pageId > 0) {
-					$allowedPages = GeneralUtility::array_merge_recursive_overrule($allowedPages, $this->getAllSubpagesOfPage($pageId, $depth));
+					\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($allowedPages, $this->getAllSubpagesOfPage($pageId, $depth));
 				}
 			}
 			$this->allowedPages = array_unique($allowedPages);

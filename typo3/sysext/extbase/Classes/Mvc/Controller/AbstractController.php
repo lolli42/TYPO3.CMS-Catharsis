@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -189,6 +189,29 @@ abstract class AbstractController implements \TYPO3\CMS\Extbase\Mvc\Controller\C
 	 */
 	public function injectFlashMessageContainer(\TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer $flashMessageContainer) {
 		$this->flashMessageContainer = $flashMessageContainer;
+	}
+
+	/**
+	 * Creates a Message object and adds it to the FlashMessageQueue.
+	 *
+	 * @param string $messageBody The message
+	 * @param string $messageTitle Optional message title
+	 * @param integer $severity Optional severity, must be one of \TYPO3\CMS\Core\Messaging\FlashMessage constants
+	 * @param boolean $storeInSession Optional, defines whether the message should be stored in the session (default) or not
+	 * @return void
+	 * @throws \InvalidArgumentException if the message body is no string
+	 * @see \TYPO3\CMS\Core\Messaging\FlashMessage
+	 * @api
+	 */
+	public function addFlashMessage($messageBody, $messageTitle = '', $severity = \TYPO3\CMS\Core\Messaging\AbstractMessage::OK, $storeInSession = TRUE) {
+		if (!is_string($messageBody)) {
+			throw new \InvalidArgumentException('The message body must be of type string, "' . gettype($messageBody) . '" given.', 1243258395);
+		}
+		/* @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $messageBody, $messageTitle, $severity, $storeInSession
+		);
+		$this->controllerContext->getFlashMessageQueue()->enqueue($flashMessage);
 	}
 
 	/**

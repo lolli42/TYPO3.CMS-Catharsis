@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Version\DataHandler;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -532,7 +532,8 @@ class CommandMap {
 	 * @return void
 	 */
 	protected function mergeToTop(array $commandMap) {
-		$this->commandMap = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($commandMap, $this->commandMap);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($commandMap, $this->commandMap);
+		$this->commandMap = $commandMap;
 	}
 
 	/**
@@ -542,7 +543,7 @@ class CommandMap {
 	 * @return void
 	 */
 	protected function mergeToBottom(array $commandMap) {
-		$this->commandMap = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($this->commandMap, $commandMap);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->commandMap, $commandMap);
 	}
 
 	/**

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\Be;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -37,7 +37,7 @@ namespace TYPO3\CMS\Install\ViewHelpers\Be;
  * <f:be.container>your module content</f:be.container>
  * </code>
  * <output>
- * "your module content" wrapped with propper head & body tags.
+ * "your module content" wrapped with proper head & body tags.
  * Default backend CSS styles and JavaScript will be included
  * </output>
  *

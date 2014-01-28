@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Utility\File;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -74,11 +74,6 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * @todo Define visibility
 	 */
 	public $dontCheckForUnique = 0;
-
-	/**
-	 * @var \TYPO3\CMS\Core\Resource\Service\IndexerService
-	 */
-	protected $indexerService = NULL;
 
 	/**
 	 * This array is self-explaining (look in the class below).
@@ -392,12 +387,14 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		// @todo implement the recycler feature which has been removed from the original implementation
 		// checks to delete the file
 		if ($fileObject instanceof File) {
+			// check if the file still has references
+			// Exclude sys_file_metadata records as these are no use references
 			$refIndexRecords = $this->getDatabaseConnection()->exec_SELECTgetRows(
 				'*',
 				'sys_refindex',
 				'deleted=0 AND ref_table="sys_file" AND ref_uid=' . intval($fileObject->getUid())
+				. ' AND tablename != "sys_file_metadata"'
 			);
-			// check if the file still has references
 			if (count($refIndexRecords) > 0) {
 				$shortcutContent = array();
 				foreach ($refIndexRecords as $fileReferenceRow) {
@@ -406,7 +403,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
 						$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
 						$onClick = 'Clickmenu.show("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
-						$shortcutContent[] = '<a href="#" oncontextmenu="' . htmlspecialchars($onClick) . '" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
+						$shortcutContent[] = '<a href="#" oncontextmenu="this.click();return false;" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
 					}
 				}
 
@@ -924,7 +921,10 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 				}
 				/** @var $fileObject File */
 				$fileObject = $targetFolderObject->addUploadedFile($fileInfo, $conflictMode);
-				$fileObject = $this->getIndexerService()->indexFile($fileObject);
+				$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($targetFolderObject->getStorage()->getUid(), $fileObject->getIdentifier());
+				if ($conflictMode === 'replace') {
+					$this->getIndexer($fileObject->getStorage())->updateIndexEntry($fileObject);
+				}
 				$resultObjects[] = $fileObject;
 				$this->writelog(1, 0, 1, 'Uploading file "%s" to "%s"', array($fileInfo['name'], $targetFolderObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\UploadException $e) {
@@ -1016,6 +1016,15 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		$defaultFlashMessageQueue->enqueue($flashMessage);
 	}
 
+	/**
+	 * Gets Indexer
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\ResourceStorage $storage
+	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
+	 */
+	protected function getIndexer(\TYPO3\CMS\Core\Resource\ResourceStorage $storage) {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
+	}
 
 	/**
 	 * Get database connection
@@ -1033,16 +1042,4 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		return $GLOBALS['BE_USER'];
 	}
 
-	/**
-	 * Internal function to retrieve the indexer service,
-	 * if it does not exist, an instance will be created
-	 *
-	 * @return \TYPO3\CMS\Core\Resource\Service\IndexerService
-	 */
-	protected function getIndexerService() {
-		if ($this->indexerService === NULL) {
-			$this->indexerService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\IndexerService');
-		}
-		return $this->indexerService;
-	}
 }

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -93,7 +93,7 @@ class ListController {
 		}
 		// Make redirect:
 		// If pid is blank OR if id is set, then return...
-		if (!strcmp($this->pid, '') || strcmp($this->id, '')) {
+		if ((string)$this->id !== '') {
 			$redirectUrl = GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']);
 		} else {
 			// Otherwise, show the list:

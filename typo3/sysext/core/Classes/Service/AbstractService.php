@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Service;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -89,6 +89,11 @@ abstract class AbstractService {
 	 * @todo Define visibility
 	 */
 	public $tempFiles = array();
+
+	/**
+	 * @var array list of registered shutdown functions; should be used to prevent registering the same function multiple times
+	 */
+	protected $shutdownRegistry = array();
 
 	/**
 	 * @var string Prefix for temporary files
@@ -396,6 +401,10 @@ abstract class AbstractService {
 	 * @todo Define visibility
 	 */
 	public function registerTempFile($absFile) {
+		if (!isset($this->shutdownRegistry[__METHOD__])) {
+			register_shutdown_function(array($this, 'unlinkTempFiles'));
+			$this->shutdownRegistry[__METHOD__] = TRUE;
+		}
 		$this->tempFiles[] = $absFile;
 	}
 
@@ -534,9 +543,6 @@ abstract class AbstractService {
 	 * @todo Define visibility
 	 */
 	public function init() {
-		// Does not work :-(  but will not hurt
-		// use it as inspiration for a service based on this class
-		register_shutdown_function(array(&$this, '__destruct'));
 		// look in makeInstanceService()
 		$this->reset();
 		// Check for external programs which are defined by $info['exec']

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Core;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -198,10 +198,12 @@ class SystemEnvironmentBuilder {
 		require_once __DIR__ . '/../Cache/Frontend/AbstractFrontend.php';
 		require_once __DIR__ . '/../Cache/Frontend/StringFrontend.php';
 		require_once __DIR__ . '/../Cache/Frontend/PhpFrontend.php';
+		require_once __DIR__ . '/../Cache/Frontend/VariableFrontend.php';
 		require_once __DIR__ . '/../Cache/Backend/BackendInterface.php';
 		require_once __DIR__ . '/../Cache/Backend/PhpCapableBackendInterface.php';
+		require_once __DIR__ . '/../Cache/Backend/TaggableBackendInterface.php';
 		require_once __DIR__ . '/../Cache/Backend/AbstractBackend.php';
-		require_once __DIR__ . '/../Cache/Backend/EarlyClassLoaderBackend.php';
+		require_once __DIR__ . '/../Cache/Backend/TransientMemoryBackend.php';
 		require_once __DIR__ . '/ClassLoader.php';
 		require_once __DIR__ . '/ClassAliasMap.php';
 	}
@@ -445,7 +447,7 @@ class SystemEnvironmentBuilder {
 	 * @return string Absolute path to document root of installation
 	 */
 	static protected function getPathSiteByTypo3ModulePath() {
-		if (substr(TYPO3_MOD_PATH, 0, strlen('sysext/')) === 'sysext/' || substr(TYPO3_MOD_PATH, 0, strlen('ext/')) === 'ext/' || substr(TYPO3_MOD_PATH, 0, strlen('install/')) === 'install/') {
+		if (substr(TYPO3_MOD_PATH, 0, 7) === 'sysext/' || substr(TYPO3_MOD_PATH, 0, 4) === 'ext/' || substr(TYPO3_MOD_PATH, 0, 8) === 'install/') {
 			$pathPartRelativeToDocumentRoot = TYPO3_mainDir . TYPO3_MOD_PATH;
 		} elseif (substr(TYPO3_MOD_PATH, 0, strlen('../typo3conf/')) === '../typo3conf/') {
 			$pathPartRelativeToDocumentRoot = substr(TYPO3_MOD_PATH, 3);

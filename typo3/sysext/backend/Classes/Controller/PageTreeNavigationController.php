@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -162,10 +162,12 @@ class PageTreeNavigationController {
 		// Adding javascript code for AJAX (prototype), drag&drop and the pagetree as well as the click menu code
 		$this->doc->getDragDropCode('pages');
 		$this->doc->getContextMenuCode();
-		$this->doc->getPageRenderer()->loadScriptaculous('effects');
-		$this->doc->getPageRenderer()->loadExtJS();
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $this->doc->getPageRenderer();
+		$pageRenderer->loadScriptaculous('effects');
+		$pageRenderer->loadExtJS();
 		if ($this->hasFilterBox) {
-			$this->doc->getPageRenderer()->addJsFile('sysext/backend/Resources/Public/JavaScript/pagetreefiltermenu.js');
+			$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/pagetreefiltermenu.js');
 		}
 		$this->doc->JScode .= $this->doc->wrapScriptTags(($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
 		// setting prefs for pagetree and drag & drop

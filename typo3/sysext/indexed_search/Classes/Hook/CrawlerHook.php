@@ -15,7 +15,7 @@ namespace TYPO3\CMS\IndexedSearch\Hook;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -300,7 +300,7 @@ class CrawlerHook {
 				$indexerObj->hash['phash'] = -1;
 				// EXPERIMENT - but to avoid phash_t3 being written to file sections (otherwise they are removed when page is reindexed!!!)
 				// Index document:
-				$indexerObj->indexRegularDocument(substr($readpath, strlen(PATH_site)), TRUE);
+				$indexerObj->indexRegularDocument(\TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($readpath), TRUE);
 			} elseif (@is_dir($readpath)) {
 				// If dir, read content and create new pending items for log:
 				// Select files and directories in path:

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -71,7 +71,7 @@ class ConfigurationUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		/** @var $configurationManager \TYPO3\CMS\Core\Configuration\ConfigurationManager */
 		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
 		$configurationManager->setLocalConfigurationValueByPath('EXT/extConf/' . $extensionKey, serialize($configuration));
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::removeCacheFiles();
+		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
 	}
 
 	/**
@@ -81,15 +81,15 @@ class ConfigurationUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array
 	 */
 	public function getCurrentConfiguration($extensionKey) {
-		$defaultConfiguration = $this->getDefaultConfigurationFromExtConfTemplateAsValuedArray($extensionKey);
+		$mergedConfiguration = $this->getDefaultConfigurationFromExtConfTemplateAsValuedArray($extensionKey);
 		$currentExtensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$extensionKey]);
 		$currentExtensionConfig = is_array($currentExtensionConfig) ? $currentExtensionConfig : array();
 		$currentExtensionConfig = $this->convertNestedToValuedConfiguration($currentExtensionConfig);
-		$currentFullConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule(
-			$defaultConfiguration,
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+			$mergedConfiguration,
 			$currentExtensionConfig
 		);
-		return $currentFullConfiguration;
+		return $mergedConfiguration;
 	}
 
 	/**

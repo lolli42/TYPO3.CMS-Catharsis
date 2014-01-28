@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Localization;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -71,7 +71,7 @@ class LocalizationFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function initializeCache() {
-		$this->cacheInstance = $GLOBALS['typo3CacheManager']->getCache('t3lib_l10n');
+		$this->cacheInstance = $GLOBALS['typo3CacheManager']->getCache('l10n');
 	}
 
 	/**
@@ -150,7 +150,7 @@ class LocalizationFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		if (count($overrides) > 0) {
 			foreach ($overrides as $overrideFile) {
 				$languageOverrideFileName = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($overrideFile);
-				$LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($LOCAL_LANG, $this->getParsedData($languageOverrideFileName, $languageKey, $charset, $errorMode, TRUE));
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($LOCAL_LANG, $this->getParsedData($languageOverrideFileName, $languageKey, $charset, $errorMode, TRUE));
 			}
 		}
 	}

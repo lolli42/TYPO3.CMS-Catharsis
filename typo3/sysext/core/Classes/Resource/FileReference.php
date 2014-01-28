@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -166,10 +166,11 @@ class FileReference implements FileInterface {
 	 */
 	public function getProperties() {
 		if (empty($this->mergedProperties)) {
-			$this->mergedProperties = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule(
-				$this->propertiesOfFileReference,
+			$this->mergedProperties = $this->propertiesOfFileReference;
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
+				$this->mergedProperties,
 				$this->originalFile->getProperties(),
-				FALSE,
+				TRUE,
 				TRUE,
 				FALSE
 			);
@@ -406,7 +407,7 @@ class FileReference implements FileInterface {
 		// TODO: Implement this function. This should only delete the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::delete().', 1333754461);
-		return $this->fileRepository->removeUsageRecord($this);
+		//return $this->fileRepository->removeUsageRecord($this);
 	}
 
 	/**
@@ -421,7 +422,7 @@ class FileReference implements FileInterface {
 		// TODO: Implement this function. This should only rename the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::rename().', 1333754473);
-		return $this->fileRepository->renameUsageRecord($this, $newName);
+		//return $this->fileRepository->renameUsageRecord($this, $newName);
 	}
 
 	/*****************
@@ -484,4 +485,12 @@ class FileReference implements FileInterface {
 		return $this->originalFile;
 	}
 
+	/**
+	 * Get hashed identifier
+	 *
+	 * @return string
+	 */
+	public function getHashedIdentifier() {
+		return $this->getStorage()->hashFileIdentifier($this->getIdentifier());
+	}
 }

@@ -871,7 +871,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 			$fullPath = GeneralUtility::getFileAbsFileName($icon);
 			if ($fullPath) {
 				$info = @getimagesize($fullPath);
-				$iconPath = $GLOBALS['BACK_PATH'] . '../' . substr($fullPath, strlen(PATH_site));
+				$iconPath = $GLOBALS['BACK_PATH'] . '../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fullPath);
 				$this->iconFileNameCache[$it] = is_array($info) ? '<img src="' . $iconPath . '" ' . $info[3] . ' title="###TITLE_ATTRIBUTE###" alt="" />' : '';
 			}
 		}
@@ -1012,7 +1012,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 		$lines = array();
 		$isRemoved = 0;
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if (!$isRemoved && !strcmp($row['gr_list'], $gr_list)) {
+			if (!$isRemoved && (string)$row['gr_list'] === (string)$gr_list) {
 				$isRemoved = 1;
 			} else {
 				$lines[] = $row;

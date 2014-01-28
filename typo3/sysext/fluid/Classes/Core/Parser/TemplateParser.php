@@ -253,6 +253,7 @@ class TemplateParser {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
+	 * @inject
 	 */
 	protected $objectManager;
 
@@ -271,8 +272,17 @@ class TemplateParser {
 	 * inserting the correct namespace separator.
 	 */
 	public function __construct() {
-		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace('LEGACY_NAMESPACE_SEPARATOR', preg_quote(\TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR), self::$SCAN_PATTERN_NAMESPACEDECLARATION);
-		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace('FLUID_NAMESPACE_SEPARATOR', preg_quote(\TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR), self::$SCAN_PATTERN_NAMESPACEDECLARATION);
+		self::$SCAN_PATTERN_NAMESPACEDECLARATION = str_replace(
+			array(
+				'LEGACY_NAMESPACE_SEPARATOR',
+				'FLUID_NAMESPACE_SEPARATOR'
+			),
+			array(
+				preg_quote(\TYPO3\CMS\Fluid\Fluid::LEGACY_NAMESPACE_SEPARATOR),
+				preg_quote(\TYPO3\CMS\Fluid\Fluid::NAMESPACE_SEPARATOR)
+			),
+			self::$SCAN_PATTERN_NAMESPACEDECLARATION
+		);
 	}
 
 	/**
@@ -282,16 +292,6 @@ class TemplateParser {
 	 */
 	public function injectSettings(array $settings) {
 		$this->settings = $settings;
-	}
-
-	/**
-	 * Inject object factory
-	 *
-	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
-	 * @return void
-	 */
-	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
-		$this->objectManager = $objectManager;
 	}
 
 	/**
@@ -579,6 +579,7 @@ class TemplateParser {
 		}
 		$className .= 'ViewHelper';
 		$name = $this->namespaces[$namespaceIdentifier] . $namespaceSeparator . $className;
+		$name = \TYPO3\CMS\Core\Core\ClassLoader::getClassNameForAlias($name);
 		return $name;
 	}
 

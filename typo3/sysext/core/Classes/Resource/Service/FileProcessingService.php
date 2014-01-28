@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource\Service;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -43,7 +43,7 @@ class FileProcessingService {
 	protected $storage;
 
 	/**
-	 * @var Resource\Driver\AbstractDriver
+	 * @var Resource\Driver\DriverInterface
 	 */
 	protected $driver;
 
@@ -64,9 +64,9 @@ class FileProcessingService {
 	 * Creates this object.
 	 *
 	 * @param Resource\ResourceStorage $storage
-	 * @param Resource\Driver\AbstractDriver $driver
+	 * @param Resource\Driver\DriverInterface $driver
 	 */
-	public function __construct(Resource\ResourceStorage $storage, Resource\Driver\AbstractDriver $driver) {
+	public function __construct(Resource\ResourceStorage $storage, Resource\Driver\DriverInterface $driver) {
 		$this->storage = $storage;
 		$this->driver = $driver;
 

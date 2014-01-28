@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\Page;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -329,8 +329,17 @@ class PageRepository {
 		}
 		// Create output:
 		if (is_array($pageInput)) {
-			// If the input was an array, simply overlay the newfound array and return...
-			return is_array($row) ? array_merge($pageInput, $row) : $pageInput;
+			if (is_array($row)) {
+				// Overwrite the original field with the overlay
+				foreach ($row as $fieldName => $fieldValue) {
+					if ($fieldName !== 'uid' && $fieldName !== 'pid') {
+						if ($this->shouldFieldBeOverlaid('pages_language_overlay', $fieldName, $fieldValue)) {
+							$pageInput[$fieldName] = $fieldValue;
+						}
+					}
+				}
+			}
+			return $pageInput;
 		} else {
 			// Always an array in return
 			return is_array($row) ? $row : array();
@@ -383,10 +392,7 @@ class PageRepository {
 								}
 								foreach ($row as $fN => $fV) {
 									if ($fN != 'uid' && $fN != 'pid' && isset($olrow[$fN])) {
-										if (
-											$GLOBALS['TCA'][$table]['columns'][$fN]['l10n_mode'] != 'exclude'
-											&& ($GLOBALS['TCA'][$table]['columns'][$fN]['l10n_mode'] != 'mergeIfNotBlank' || strcmp(trim($olrow[$fN]), ''))
-										) {
+										if ($this->shouldFieldBeOverlaid($table, $fN, $olrow[$fN])) {
 											$row[$fN] = $olrow[$fN];
 										}
 									} elseif ($fN == 'uid') {
@@ -533,7 +539,7 @@ class PageRepository {
 				if ($statusCode && defined('TYPO3\\CMS\\Core\\Utility\\HttpUtility::HTTP_STATUS_' . $statusCode)) {
 					\TYPO3\CMS\Core\Utility\HttpUtility::redirect($redirectUrl, constant('TYPO3\\CMS\\Core\\Utility\\HttpUtility::HTTP_STATUS_' . $statusCode));
 				} else {
-					\TYPO3\CMS\Core\Utility\HttpUtility::redirect($redirectUrl, 'TYPO3\\CMS\\Core\\Utility\\HttpUtility::HTTP_STATUS_301');
+					\TYPO3\CMS\Core\Utility\HttpUtility::redirect($redirectUrl, \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_301);
 				}
 				die;
 			} else {
@@ -836,7 +842,7 @@ class PageRepository {
 	 */
 	public function deleteClause($table) {
 		// Hardcode for pages because TCA might not be loaded yet (early frontend initialization)
-		if (!strcmp($table, 'pages')) {
+		if ($table === 'pages') {
 			return ' AND pages.deleted=0';
 		} else {
 			return $GLOBALS['TCA'][$table]['ctrl']['delete'] ? ' AND ' . $table . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'] . '=0' : '';
@@ -993,7 +999,7 @@ class PageRepository {
 				}
 			}
 			// If workspace ids matches and ID of current online version is found, look up the PID value of that:
-			if ($oid && ($this->versioningWorkspaceId == 0 && $this->checkWorkspaceAccess($wsid) || !strcmp((int) $wsid, $this->versioningWorkspaceId))) {
+			if ($oid && ((int)$this->versioningWorkspaceId === 0 && $this->checkWorkspaceAccess($wsid) || (int)$wsid === (int)$this->versioningWorkspaceId)) {
 				$oidRec = $this->getRawRecord($table, $oid, 'pid', TRUE);
 				if (is_array($oidRec)) {
 					// SWAP uid as well? Well no, because when fixing a versioning PID happens it is assumed that this is a "branch" type page and therefore the uid should be kept (like in versionOL()).
@@ -1221,4 +1227,36 @@ class PageRepository {
 		return $ws['_ACCESS'] != '';
 	}
 
+	/**
+	 * Determine if a field needs an overlay
+	 *
+	 * @param string $table TCA tablename
+	 * @param string $field TCA fieldname
+	 * @param mixed $value Current value of the field
+	 * @return boolean Returns TRUE if a given record field needs to be overlaid
+	 */
+	protected function shouldFieldBeOverlaid($table, $field, $value) {
+		$l10n_mode = isset($GLOBALS['TCA'][$table]['columns'][$field]['l10n_mode'])
+			? $GLOBALS['TCA'][$table]['columns'][$field]['l10n_mode']
+			: '';
+
+		$shouldFieldBeOverlaid = TRUE;
+
+		if ($l10n_mode === 'exclude') {
+			$shouldFieldBeOverlaid = FALSE;
+		} elseif ($l10n_mode === 'mergeIfNotBlank') {
+			$checkValue = $value;
+
+			// 0 values are considered blank when coming from a group field
+			if (empty($value) && $GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] === 'group') {
+				$checkValue = '';
+			}
+
+			if (trim($checkValue) === '') {
+				$shouldFieldBeOverlaid = FALSE;
+			}
+		}
+
+		return $shouldFieldBeOverlaid;
+	}
 }

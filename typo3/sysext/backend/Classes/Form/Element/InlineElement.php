@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -380,7 +380,7 @@ class InlineElement {
 		// e.g. data[<curTable>][<curId>][<curField>] => data-<pid>-<parentTable>-<parentId>-<parentField>-<curTable>-<curId>-<curField>
 		$this->inlineData['map'][$this->inlineNames['form']] = $this->inlineNames['object'];
 		// Set this variable if we handle a brand new unsaved record:
-		$isNewRecord = MathUtility::canBeInterpretedAsInteger($rec['uid']) ? FALSE : TRUE;
+		$isNewRecord = !MathUtility::canBeInterpretedAsInteger($rec['uid']);
 		// Set this variable if the record is virtual and only show with header and not editable fields:
 		$isVirtualRecord = isset($rec['__virtual']) && $rec['__virtual'];
 		// If there is a selector field, normalize it:
@@ -565,7 +565,7 @@ class InlineElement {
 				$recTitle = BackendUtility::getRecordTitle($itemParts[0], $recTemp, FALSE);
 			}
 			$recTitle = BackendUtility::getRecordTitlePrep($recTitle);
-			if (!strcmp(trim($recTitle), '')) {
+			if (trim($recTitle) === '') {
 				$recTitle = BackendUtility::getNoRecordTitle(TRUE);
 			}
 		} else {
@@ -1548,7 +1548,7 @@ class InlineElement {
 			$removeItems = GeneralUtility::trimExplode(',', $PA['fieldTSConfig']['removeItems'], TRUE);
 			foreach ($selItems as $tk => $p) {
 				// Checking languages and authMode:
-				$languageDeny = $tcaTableCtrl['languageField'] && !strcmp($tcaTableCtrl['languageField'], $field) && !$GLOBALS['BE_USER']->checkLanguageAccess($p[1]);
+				$languageDeny = $tcaTableCtrl['languageField'] && (string)$tcaTableCtrl['languageField'] === $field && !$GLOBALS['BE_USER']->checkLanguageAccess($p[1]);
 				$authModeDeny = $config['form_type'] == 'select' && $config['authMode'] && !$GLOBALS['BE_USER']->checkAuthMode($table, $field, $p[1], $config['authMode']);
 				if (in_array($p[1], $removeItems) || $languageDeny || $authModeDeny) {
 					unset($selItems[$tk]);
@@ -1610,7 +1610,7 @@ class InlineElement {
 	 */
 	protected function getNewRecordPid($table, $parentPid = NULL) {
 		$newRecordPid = $this->inlineFirstPid;
-		$pageTS = BackendUtility::getPagesTSconfig($parentPid, TRUE);
+		$pageTS = BackendUtility::getPagesTSconfig($parentPid);
 		if (isset($pageTS['TCAdefaults.'][$table . '.']['pid']) && MathUtility::canBeInterpretedAsInteger($pageTS['TCAdefaults.'][$table . '.']['pid'])) {
 			$newRecordPid = $pageTS['TCAdefaults.'][$table . '.']['pid'];
 		} elseif (isset($parentPid) && MathUtility::canBeInterpretedAsInteger($parentPid)) {
@@ -2260,7 +2260,7 @@ class InlineElement {
 			$PA = array();
 			$PA['fieldConf'] = $GLOBALS['TCA'][$foreign_table]['columns'][$field];
 			if ($PA['fieldConf'] && $conf['foreign_selector_fieldTcaOverride']) {
-				$PA['fieldConf'] = GeneralUtility::array_merge_recursive_overrule($PA['fieldConf'], $conf['foreign_selector_fieldTcaOverride']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($PA['fieldConf'], $conf['foreign_selector_fieldTcaOverride']);
 			}
 			$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
 			// Using "form_type" locally in this script

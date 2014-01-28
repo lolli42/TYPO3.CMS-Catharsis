@@ -16,7 +16,7 @@ namespace TYPO3\CMS\IndexedSearch\Domain\Repository;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -154,7 +154,7 @@ class IndexSearchRepository {
 			// Total search-result count
 			$count = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
 			// The pointer is set to the result page that is currently being viewed
-			$pointer = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->resultpagePointer, 0, floor($count / $this->resultsPerPage));
+			$pointer = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->resultpagePointer, 0, floor($count / $this->numberOfResults));
 			// Initialize result accumulation variables:
 			$c = 0;
 			// Result pointer: Counts up the position in the current search-result
@@ -298,7 +298,7 @@ class IndexSearchRepository {
 					*/
 					$indexerObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\IndexedSearch\\Indexer');
 					// Perform metaphone search
-					$storeMetaphoneInfoAsWords = $this->isTableUsed('index_words') ? FALSE : TRUE;
+					$storeMetaphoneInfoAsWords = !$this->isTableUsed('index_words');
 					$res = $this->searchMetaphone($indexerObj->metaphone($sWord, $storeMetaphoneInfoAsWords));
 					unset($indexerObj);
 					break;
@@ -674,7 +674,7 @@ class IndexSearchRepository {
 			}
 		} else {
 			// Ordinary TYPO3 pages:
-			if (strcmp($row['gr_list'], $this->frontendUserGroupList)) {
+			if ((string)$row['gr_list'] !== (string)$this->frontendUserGroupList) {
 				// Selecting for the grlist records belonging to the phash-row where the current users gr_list exists. If it is found it is proof that this user has direct access to the phash-rows content although he did not himself initiate the indexing...
 				if ($this->isTableUsed('index_grlist')) {
 					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('phash', 'index_grlist', 'phash=' . intval($row['phash']) . ' AND gr_list=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->frontendUserGroupList, 'index_grlist'));

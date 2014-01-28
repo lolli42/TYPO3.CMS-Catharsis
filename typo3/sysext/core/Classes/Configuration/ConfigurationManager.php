@@ -160,10 +160,8 @@ class ConfigurationManager {
 	 * @return void
 	 */
 	public function updateLocalConfiguration(array $configurationToMerge) {
-		$newLocalConfiguration = Utility\GeneralUtility::array_merge_recursive_overrule(
-			$this->getLocalConfiguration(),
-			$configurationToMerge
-		);
+		$newLocalConfiguration = $this->getLocalConfiguration();
+		Utility\ArrayUtility::mergeRecursiveWithOverrule($newLocalConfiguration, $configurationToMerge);
 		$this->writeLocalConfiguration($newLocalConfiguration);
 	}
 
@@ -195,12 +193,9 @@ class ConfigurationManager {
 	 * @return mixed
 	 */
 	public function getConfigurationValueByPath($path) {
-		return Utility\ArrayUtility::getValueByPath(
-			Utility\GeneralUtility::array_merge_recursive_overrule(
-				$this->getDefaultConfiguration(), $this->getLocalConfiguration()
-			),
-			$path
-		);
+		$defaultConfiguration = $this->getDefaultConfiguration();
+		Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultConfiguration, $this->getLocalConfiguration());
+		return Utility\ArrayUtility::getValueByPath($defaultConfiguration, $path);
 	}
 
 	/**
@@ -265,17 +260,8 @@ class ConfigurationManager {
 	 * @access private
 	 */
 	public function canWriteConfiguration() {
-		$result = TRUE;
-		if (!@is_writable($this->pathTypo3Conf)) {
-			$result = FALSE;
-		}
-		if (
-			file_exists($this->getLocalConfigurationFileLocation())
-			&& !@is_writable($this->getLocalConfigurationFileLocation())
-		) {
-			$result = FALSE;
-		}
-		return $result;
+		$fileLocation = $this->getLocalConfigurationFileLocation();
+		return @is_writable($this->pathTypo3Conf) && (!file_exists($fileLocation) || @is_writable($fileLocation));
 	}
 
 	/**
@@ -289,7 +275,9 @@ class ConfigurationManager {
 		if (@is_file($this->getLocalConfigurationFileLocation())) {
 			$localConfiguration = $this->getLocalConfiguration();
 			if (is_array($localConfiguration)) {
-				$GLOBALS['TYPO3_CONF_VARS'] = Utility\GeneralUtility::array_merge_recursive_overrule($this->getDefaultConfiguration(), $localConfiguration);
+				$defaultConfiguration = $this->getDefaultConfiguration();
+				Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultConfiguration, $localConfiguration);
+				$GLOBALS['TYPO3_CONF_VARS'] = $defaultConfiguration;
 			} else {
 				throw new \UnexpectedValueException('LocalConfiguration invalid.', 1349272276);
 			}
@@ -318,7 +306,7 @@ class ConfigurationManager {
 			);
 		}
 		$configuration = Utility\ArrayUtility::sortByKeyRecursive($configuration);
-		$result = Utility\GeneralUtility::writeFile(
+		return Utility\GeneralUtility::writeFile(
 			$localConfigurationFile,
 			'<?php' . LF .
 				'return ' .
@@ -329,7 +317,6 @@ class ConfigurationManager {
 			'?>',
 			TRUE
 		);
-		return $result === FALSE ? FALSE : TRUE;
 	}
 
 	/**
@@ -341,13 +328,12 @@ class ConfigurationManager {
 	 * @access private
 	 */
 	public function writeAdditionalConfiguration(array $additionalConfigurationLines) {
-		$result = Utility\GeneralUtility::writeFile(
+		return Utility\GeneralUtility::writeFile(
 			PATH_site . $this->additionalConfigurationFile,
 			'<?php' . LF .
 				implode(LF, $additionalConfigurationLines) . LF .
 			'?>'
 		);
-		return $result === FALSE ? FALSE : TRUE;
 	}
 
 	/**
@@ -370,7 +356,7 @@ class ConfigurationManager {
 		$additionalFactoryConfigurationFileLocation = $this->getAdditionalFactoryConfigurationFileLocation();
 		if (file_exists($additionalFactoryConfigurationFileLocation)) {
 			$additionalFactoryConfigurationArray = require $additionalFactoryConfigurationFileLocation;
-			$localConfigurationArray = Utility\GeneralUtility::array_merge_recursive_overrule(
+			Utility\ArrayUtility::mergeRecursiveWithOverrule(
 				$localConfigurationArray,
 				$additionalFactoryConfigurationArray
 			);

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Localization\Parser;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -138,7 +138,7 @@ class LocallangArrayParser implements \TYPO3\CMS\Core\Localization\Parser\Locali
 		// Get PHP data
 		include $sourcePath;
 		if (!is_array($LOCAL_LANG)) {
-			$fileName = substr($sourcePath, strlen(PATH_site));
+			$fileName = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($sourcePath);
 			throw new \RuntimeException('TYPO3 Fatal Error: "' . $fileName . '" is no TYPO3 language file!', 1308898491);
 		}
 		// Converting the default language (English)
@@ -176,7 +176,7 @@ class LocallangArrayParser implements \TYPO3\CMS\Core\Localization\Parser\Locali
 	 * @return void
 	 */
 	protected function generateCacheFileName($sourcePath, $languageKey) {
-		$this->hashSource = substr($sourcePath, strlen(PATH_site)) . '|' . date('d-m-Y H:i:s', filemtime($sourcePath)) . '|version=2.3';
+		$this->hashSource = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($sourcePath) . '|' . date('d-m-Y H:i:s', filemtime($sourcePath)) . '|version=2.3';
 		$this->cacheFileName = PATH_site . 'typo3temp/llxml/' . substr(basename($sourcePath), 10, 15) . '_' . \TYPO3\CMS\Core\Utility\GeneralUtility::shortMD5($this->hashSource) . '.' . $languageKey . '.' . $this->targetCharset . '.cache';
 	}
 

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -86,7 +86,7 @@ class CustomAttributeController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugi
 		if ($fileUid) {
 			$fileObject = $fileFactory->getFileObject($fileUid);
 			$filePath = $fileObject->getForLocalProcessing(FALSE);
-			$file = substr($filePath, strlen(PATH_site));
+			$file = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
 		} else {
 			// Pre-FAL backward compatibility
 			$path = $this->cObj->parameters['src'];

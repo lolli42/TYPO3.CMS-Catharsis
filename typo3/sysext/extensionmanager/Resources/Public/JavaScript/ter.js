@@ -11,7 +11,11 @@
 			"bPaginate": false,
 			"bFilter": false,
 			"bSort": false,
-			"fnDrawCallback": bindDownload
+			"fnDrawCallback": bindDownload,
+			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
+				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
+				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
+			}
 		});
 
 		$('#terVersionTable').dataTable({
@@ -23,6 +27,10 @@
 			"bPaginate":false,
 			"bFilter":false,
 			"fnDrawCallback":bindDownload,
+			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
+				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
+				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
+			},
 			"aaSorting": [
 				[2, 'asc']
 			],
@@ -47,7 +55,11 @@
 				"sSearch": "Filter results:"
 			},
 			"bSort": false,
-			"fnDrawCallback": bindDownload
+			"fnDrawCallback": bindDownload,
+			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
+				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
+				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
+			}
 		});
 
 		bindDownload();
@@ -59,6 +71,7 @@
 		installButtons.off('click');
 		installButtons.on('click', function(event) {
 			event.preventDefault();
+			$('.typo3-extension-manager').mask();
 			var url = $(event.currentTarget.form).attr('href');
 			downloadPath = $(event.currentTarget.form).find('input.downloadPath:checked').val();
 			$.ajax({
@@ -79,6 +92,7 @@
 			});
 		} else {
 			if(data.hasErrors) {
+				$('.typo3-extension-manager').unmask();
 				TYPO3.Flashmessage.display(TYPO3.Severity.error, data.title, data.message, 10);
 			} else {
 				var button = 'yes';

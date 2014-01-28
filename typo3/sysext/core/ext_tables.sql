@@ -12,14 +12,14 @@ CREATE TABLE be_groups (
   explicit_allowdeny text,
   allowed_languages varchar(255) DEFAULT '' NOT NULL,
   custom_options text,
-  db_mountpoints varchar(255) DEFAULT '' NOT NULL,
+  db_mountpoints text,
   pagetypes_select varchar(255) DEFAULT '' NOT NULL,
   tables_select text,
   tables_modify text,
   crdate int(11) unsigned DEFAULT '0' NOT NULL,
   cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
   groupMods text,
-  file_mountpoints varchar(255) DEFAULT '' NOT NULL,
+  file_mountpoints text,
   file_permissions text,
   hidden tinyint(1) unsigned DEFAULT '0' NOT NULL,
   inc_access_lists tinyint(3) unsigned DEFAULT '0' NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE be_users (
   endtime int(11) unsigned DEFAULT '0' NOT NULL,
   lang char(2) DEFAULT '' NOT NULL,
   email varchar(80) DEFAULT '' NOT NULL,
-  db_mountpoints varchar(255) DEFAULT '' NOT NULL,
+  db_mountpoints text,
   options tinyint(4) unsigned DEFAULT '0' NOT NULL,
   crdate int(11) unsigned DEFAULT '0' NOT NULL,
   cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE be_users (
   userMods text,
   allowed_languages varchar(255) DEFAULT '' NOT NULL,
   uc mediumtext,
-  file_mountpoints varchar(255) DEFAULT '' NOT NULL,
+  file_mountpoints text,
   file_permissions text,
   workspace_perms tinyint(3) DEFAULT '1' NOT NULL,
   lockToDomain varchar(50) DEFAULT '' NOT NULL,
@@ -175,8 +175,8 @@ CREATE TABLE pages (
   alias varchar(32) DEFAULT '' NOT NULL,
   l18n_cfg tinyint(4) DEFAULT '0' NOT NULL,
   fe_login_mode tinyint(4) DEFAULT '0' NOT NULL,
-  backend_layout varchar(64) DEFAULT '0' NOT NULL,
-  backend_layout_next_level varchar(64) DEFAULT '0' NOT NULL,
+  backend_layout varchar(64) DEFAULT '' NOT NULL,
+  backend_layout_next_level varchar(64) DEFAULT '' NOT NULL,
   PRIMARY KEY (uid),
   KEY t3ver_oid (t3ver_oid,t3ver_wsid),
   KEY parent (pid,deleted,sorting),
@@ -262,7 +262,7 @@ CREATE TABLE sys_file_storage (
 	deleted tinyint(4) DEFAULT '0' NOT NULL,
 	hidden tinyint(4) DEFAULT '0' NOT NULL,
 
-	name tinytext,
+	name varchar(30) DEFAULT '' NOT NULL,
 	description text,
 	driver tinytext,
 	configuration text,
@@ -273,7 +273,8 @@ CREATE TABLE sys_file_storage (
 	processingfolder tinytext,
 
 	PRIMARY KEY (uid),
-	KEY parent (pid,deleted)
+	KEY parent (pid,deleted),
+	KEY deleted_hidden (deleted,hidden)
 );
 
 #
@@ -284,6 +285,7 @@ CREATE TABLE sys_file (
 	pid int(11) DEFAULT '0' NOT NULL,
 	# update timestamp of the database record, not the file!
 	tstamp int(11) DEFAULT '0' NOT NULL,
+	last_indexed int(11) DEFAULT '0' NOT NULL,
 
 	# management information
 	missing tinyint(4) DEFAULT '0' NOT NULL,
@@ -292,7 +294,9 @@ CREATE TABLE sys_file (
 	metadata int(11) DEFAULT '0' NOT NULL,
 
 	# file info data
-	identifier varchar(200) DEFAULT '' NOT NULL,
+	identifier text,
+	identifier_hash varchar(40) DEFAULT '' NOT NULL,
+	folder_hash varchar(40) DEFAULT '' NOT NULL,
 	extension varchar(255) DEFAULT '' NOT NULL,
 	mime_type varchar(255) DEFAULT '' NOT NULL,
 	name tinytext,
@@ -302,7 +306,10 @@ CREATE TABLE sys_file (
 	modification_date int(11) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
-	KEY sel01 (storage,identifier(20)),
+	KEY sel01 (storage,identifier_hash),
+	KEY folder (storage,folder_hash),
+	KEY tstamp (tstamp),
+	KEY lastindex (last_indexed),
 	KEY sha1 (sha1(40))
 );
 
@@ -342,7 +349,8 @@ CREATE TABLE sys_file_metadata (
 
 	PRIMARY KEY (uid),
 	KEY file (file),
-	KEY t3ver_oid (t3ver_oid,t3ver_wsid)
+	KEY t3ver_oid (t3ver_oid,t3ver_wsid),
+	KEY fal_filelist (l10n_parent,sys_language_uid),
 );
 
 
@@ -362,13 +370,15 @@ CREATE TABLE sys_file_processedfile (
 	identifier varchar(512) DEFAULT '' NOT NULL,
 	name tinytext,
 	configuration text,
+	configurationsha1 varchar(40) DEFAULT '' NOT NULL,
 	originalfilesha1 varchar(40) DEFAULT '' NOT NULL,
 	task_type varchar(200) DEFAULT '' NOT NULL,
 	checksum varchar(255) DEFAULT '' NOT NULL,
 	width int(11) DEFAULT '0',
 	height int(11) DEFAULT '0',
 
-	PRIMARY KEY (uid)
+	PRIMARY KEY (uid),
+	KEY combined_1 (original,task_type,configurationsha1)
 );
 
 #
@@ -405,10 +415,10 @@ CREATE TABLE sys_file_reference (
 	# Reference fields (basically same as MM table)
 	uid_local int(11) DEFAULT '0' NOT NULL,
 	uid_foreign int(11) DEFAULT '0' NOT NULL,
-	tablenames varchar(255) DEFAULT '' NOT NULL,
-	fieldname tinytext,
+	tablenames varchar(64) DEFAULT '' NOT NULL,
+	fieldname varchar(64) DEFAULT '' NOT NULL,
 	sorting_foreign int(11) DEFAULT '0' NOT NULL,
-	table_local varchar(255) DEFAULT '' NOT NULL,
+	table_local varchar(64) DEFAULT '' NOT NULL,
 
 	# Local usage overlay fields
 	title tinytext,
@@ -418,7 +428,10 @@ CREATE TABLE sys_file_reference (
 	downloadname tinytext,
 
 	PRIMARY KEY (uid),
-	KEY parent (pid,deleted)
+	KEY parent (pid,deleted),
+	KEY tablenames_fieldname (tablenames(32),fieldname(12)),
+	KEY deleted (deleted),
+	KEY uid_foreign (uid_foreign)
 );
 
 
@@ -670,7 +683,9 @@ CREATE TABLE sys_category (
 
 	PRIMARY KEY (uid),
 	KEY parent (pid),
-	KEY t3ver_oid (t3ver_oid,t3ver_wsid)
+	KEY t3ver_oid (t3ver_oid,t3ver_wsid),
+	KEY category_parent (parent),
+	KEY category_list (pid,deleted,sys_language_uid),
 );
 
 #

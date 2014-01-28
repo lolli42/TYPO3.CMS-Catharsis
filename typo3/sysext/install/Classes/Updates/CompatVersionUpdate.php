@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Updates;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -172,8 +172,8 @@ class CompatVersionUpdate extends AbstractUpdate {
 	/**
 	 * Performs the update itself
 	 *
-	 * @param array Pointer where to insert all DB queries made, so they can be shown to the user if wanted
-	 * @param string Pointer to output custom messages
+	 * @param array $dbQueries where to insert all DB queries made, so they can be shown to the user if wanted
+	 * @param string $customMessages to output custom messages
 	 * @return boolean TRUE if update succeeded, FALSE otherwise
 	 */
 	public function performUpdate(array &$dbQueries, &$customMessages) {

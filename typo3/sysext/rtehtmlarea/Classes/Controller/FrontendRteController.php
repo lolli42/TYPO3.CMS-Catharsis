@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -243,7 +243,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		 * LOAD JS, CSS and more
 		 * =======================================
 		 */
-		$this->pageRenderer = $this->getPageRenderer();
+		$this->getPageRenderer();
 		// Preloading the pageStyle and including RTE skin stylesheets
 		$this->addPageStyle();
 		$this->addSkin();

@@ -32,7 +32,7 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 */
-	protected $typoScriptParser;
+	protected $typoScriptParser = NULL;
 
 	/**
 	 * Set up
@@ -328,6 +328,116 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'second' => '2',
 				),
 			),
+			'nested assignment repeated segment names' => array(
+				'test.test.test = 1',
+				array(
+					'test.' => array(
+						'test.' => array(
+							'test' => '1',
+						),
+					)
+				),
+			),
+			'simple assignment operator with tab character before "="' => array(
+				'test	 = someValue',
+				array(
+					'test' => 'someValue',
+				),
+			),
+			'simple assignment operator character as value "="' => array(
+				'test ==TEST=',
+				array(
+					'test' => '=TEST=',
+				),
+			),
+			'nested assignment operator character as value "="' => array(
+				'test.test ==TEST=',
+				array(
+					'test.' => array(
+						'test' => '=TEST=',
+					),
+				),
+			),
+			'simple assignment character as value "<"' => array(
+				'test =<TEST>',
+				array(
+					'test' => '<TEST>',
+				),
+			),
+			'nested assignment character as value "<"' => array(
+				'test.test =<TEST>',
+				array(
+					'test.' => array(
+						'test' => '<TEST>',
+					),
+				),
+			),
+			'simple assignment character as value ">"' => array(
+				'test =>TEST<',
+				array(
+					'test' => '>TEST<',
+				),
+			),
+			'nested assignment character as value ">"' => array(
+				'test.test =>TEST<',
+				array(
+					'test.' => array(
+						'test' => '>TEST<',
+					),
+				),
+			),
+			'nested assignment repeated segment names with whitespaces' => array(
+				'test.test.test = 1' . " \t",
+				array(
+					'test.' => array(
+						'test.' => array(
+							'test' => '1',
+						),
+					)
+				),
+			),
+			'simple assignment operator character as value "=" with whitespaces' => array(
+				'test = =TEST=' . " \t",
+				array(
+					'test' => '=TEST=',
+				),
+			),
+			'nested assignment operator character as value "=" with whitespaces' => array(
+				'test.test = =TEST=' . " \t",
+				array(
+					'test.' => array(
+						'test' => '=TEST=',
+					),
+				),
+			),
+			'simple assignment character as value "<" with whitespaces' => array(
+				'test = <TEST>' . " \t",
+				array(
+					'test' => '<TEST>',
+				),
+			),
+			'nested assignment character as value "<" with whitespaces' => array(
+				'test.test = <TEST>' . " \t",
+				array(
+					'test.' => array(
+						'test' => '<TEST>',
+					),
+				),
+			),
+			'simple assignment character as value ">" with whitespaces' => array(
+				'test = >TEST<' . " \t",
+				array(
+					'test' => '>TEST<',
+				),
+			),
+			'nested assignment character as value ">" with whitespaces' => array(
+				'test.test = >TEST<',
+				array(
+					'test.' => array(
+						'test' => '>TEST<',
+					),
+				),
+			),
 			'CSC example #1' => array(
 				'linkParams.ATagParams.dataWrap =  class="{$styles.content.imgtext.linkWrap.lightboxCssClass}" rel="{$styles.content.imgtext.linkWrap.lightboxRelAttribute}"',
 				array(
@@ -365,4 +475,23 @@ class TypoScriptParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 	}
 
+	/**
+	 * @test
+	 */
+	public function setValCanBeCalledWithArrayValueParameter() {
+		$string = '';
+		$setup = array();
+		$value = array();
+		$this->typoScriptParser->setVal($string, $setup, $value);
+	}
+
+	/**
+	 * @test
+	 */
+	public function setValCanBeCalledWithStringValueParameter() {
+		$string = '';
+		$setup = array();
+		$value = '';
+		$this->typoScriptParser->setVal($string, $setup, $value);
+	}
 }

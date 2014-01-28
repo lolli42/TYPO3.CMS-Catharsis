@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -114,7 +114,7 @@ class DiffUtility {
 						$outString .= '<' . $wrapTag . ' class="diff-g">' . htmlspecialchars(implode(' ', $diffResArray[($a + 1)]['new'])) . '</' . $wrapTag . '> ';
 					}
 					$chInfParts = explode(',', $diffResArray[$a + 1]['changeInfo']);
-					if (!strcmp($chInfParts[0], ($a + 1))) {
+					if ((string)$chInfParts[0] === (string)($a + 1)) {
 						$newLine = intval($chInfParts[1]) - 1;
 						if ($newLine > $a) {
 							$a = $newLine;

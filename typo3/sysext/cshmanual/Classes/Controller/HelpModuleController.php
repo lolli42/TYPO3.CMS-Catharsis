@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Cshmanual\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -162,9 +162,6 @@ class HelpModuleController {
 	 * @todo Define visibility
 	 */
 	public function main() {
-		// Start HTML output accumulation:
-		$GLOBALS['TBE_TEMPLATE']->divClass = 'typo3-view-help';
-		$this->content .= $GLOBALS['TBE_TEMPLATE']->startPage($GLOBALS['LANG']->getLL('title'));
 		if ($this->field == '*') {
 			// If ALL fields is supposed to be shown:
 			$this->createGlossaryIndex();
@@ -177,9 +174,15 @@ class HelpModuleController {
 			// Render Table Of Contents if nothing else:
 			$this->content .= $this->render_TOC();
 		}
-		// End page:
-		$this->content .= '<br/>';
-		$this->content .= $GLOBALS['TBE_TEMPLATE']->endPage();
+
+		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc->backPath = $GLOBALS['BACK_PATH'];
+		$this->doc->setModuleTemplate('EXT:cshmanual/Resources/Private/Templates/cshmanual.html');
+
+		$markers = array('CONTENT' => $this->content);
+
+		$this->content = $this->doc->moduleBody(array(), array(), $markers);
+		$this->content = $this->doc->render($GLOBALS['LANG']->getLL('title'), $this->content);
 	}
 
 	/**
@@ -377,7 +380,7 @@ class HelpModuleController {
 			$parts[0] = '';
 			// Traverse table columns as listed in TCA_DESCR
 			foreach ($GLOBALS['TCA_DESCR'][$key]['columns'] as $field => $_) {
-				$fieldValue = isset($GLOBALS['TCA'][$key]) && strcmp($field, '') ? $GLOBALS['TCA'][$key]['columns'][$field] : array();
+				$fieldValue = isset($GLOBALS['TCA'][$key]) && (string)$field !== '' ? $GLOBALS['TCA'][$key]['columns'][$field] : array();
 				if (is_array($fieldValue) && (!$this->limitAccess || !$fieldValue['exclude'] || $GLOBALS['BE_USER']->check('non_exclude_fields', $table . ':' . $field))) {
 					if (!$field) {
 						// Header
@@ -456,7 +459,7 @@ class HelpModuleController {
 				} elseif (substr($iPUrl[1], 0, 5) == 'FILE:') {
 					$fileName = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName(substr($iPUrl[1], 5), 1, 1);
 					if ($fileName && @is_file($fileName)) {
-						$fileName = '../' . substr($fileName, strlen(PATH_site));
+						$fileName = '../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fileName);
 						$lines[] = '<a href="' . htmlspecialchars($fileName) . '" target="_blank"><em>' . htmlspecialchars($iPUrl[0]) . '</em></a>';
 					}
 				} else {
@@ -494,7 +497,7 @@ class HelpModuleController {
 				$descr = $descrArray[$k];
 				$absImagePath = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($image, 1, 1);
 				if ($absImagePath && @is_file($absImagePath)) {
-					$imgFile = substr($absImagePath, strlen(PATH_site));
+					$imgFile = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($absImagePath);
 					$imgInfo = @getimagesize($absImagePath);
 					if (is_array($imgInfo)) {
 						$imgFile = '../' . $imgFile;

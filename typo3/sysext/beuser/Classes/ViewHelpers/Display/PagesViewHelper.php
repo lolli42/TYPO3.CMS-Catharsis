@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Beuser\ViewHelpers\Display;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -52,7 +52,7 @@ class PagesViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelpe
 			'uid ASC'
 		);
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			$content .= '<li>' . $row['title'] . ' [' . $row['uid'] . ']</li>';
+			$content .= '<li>' . htmlspecialchars($row['title']) . ' [' . htmlspecialchars($row['uid']) . ']</li>';
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		return '<ul>' . $content . '</ul>';

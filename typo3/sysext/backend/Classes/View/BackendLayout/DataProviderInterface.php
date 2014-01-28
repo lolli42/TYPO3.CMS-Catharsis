@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\View\BackendLayout;
 	 *
 	 *  The GNU General Public License can be found at
 	 *  http://www.gnu.org/copyleft/gpl.html.
-	 *  A copy is found in the textfile GPL.txt and important notices to the license
+	 *  A copy is found in the text file GPL.txt and important notices to the license
 	 *  from the author is found in LICENSE.txt distributed with these scripts.
 	 *
 	 *  This script is distributed in the hope that it will be useful,
@@ -48,8 +48,9 @@ interface DataProviderInterface {
 	 * Gets a backend layout by (regular) identifier.
 	 *
 	 * @param string $identifier
+	 * @param integer $pageId
 	 * @return NULL|BackendLayout
 	 */
-	public function getBackendLayout($identifier);
+	public function getBackendLayout($identifier, $pageId);
 
 }

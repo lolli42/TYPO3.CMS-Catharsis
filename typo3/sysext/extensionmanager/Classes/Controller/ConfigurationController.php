@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -89,8 +89,8 @@ class ConfigurationController extends \TYPO3\CMS\Extensionmanager\Controller\Abs
 	public function saveAction(array $config, $extensionKey) {
 		/** @var $configurationUtility \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility */
 		$configurationUtility = $this->objectManager->get('TYPO3\\CMS\\Extensionmanager\\Utility\\ConfigurationUtility');
-		$currentFullConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
-		$newConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($currentFullConfiguration, $config);
+		$newConfiguration = $configurationUtility->getCurrentConfiguration($extensionKey);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newConfiguration, $config);
 		$configurationUtility->writeConfiguration(
 			$configurationUtility->convertValuedToNestedConfiguration($newConfiguration),
 			$extensionKey

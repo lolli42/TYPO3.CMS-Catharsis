@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\Hooks;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -60,7 +60,7 @@ class TreelistCacheUpdateHooks {
 		// example: $TYPO3_CONF_VARS['BE']['additionalTreelistUpdateFields'] .= ',my_field';
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['additionalTreelistUpdateFields'])) {
 			$additionalTreelistUpdateFields = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['BE']['additionalTreelistUpdateFields'], TRUE);
-			$this->updateRequiringFields += $additionalTreelistUpdateFields;
+			$this->updateRequiringFields = array_merge($this->updateRequiringFields, $additionalTreelistUpdateFields);
 		}
 	}
 

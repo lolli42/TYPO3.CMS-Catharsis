@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Core\Page;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -48,7 +48,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const EXTJS_ADAPTER_PROTOTYPE = 'prototype';
 	const EXTJS_ADAPTER_YUI = 'yui';
 	// jQuery Core version that is shipped with TYPO3
-	const JQUERY_VERSION_LATEST = '1.9.1';
+	const JQUERY_VERSION_LATEST = '1.11.0';
 	// jQuery namespace options
 	const JQUERY_NAMESPACE_NONE = 'none';
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
@@ -2192,7 +2192,13 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$out .= $this->inlineJavascriptWrap[0] . '
 				Ext.ns("TYPO3");
-				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF . $inlineSettings . 'Ext.onReady(function() {' . ($this->enableExtJSQuickTips ? 'Ext.QuickTips.init();' . LF : '') . $code . ' });' . $this->inlineJavascriptWrap[1];
+				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF
+				. $inlineSettings
+				. 'Ext.onReady(function() {'
+					. ($this->enableExtJSQuickTips ? 'Ext.QuickTips.init();' . LF : '')
+					. $code
+				. ' });'
+				. $this->inlineJavascriptWrap[1];
 			unset($this->extOnReadyCode);
 			// Include TYPO3.l10n object
 			if (TYPO3_MODE === 'BE') {
@@ -2465,7 +2471,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				if ($selectionPrefix === '') {
 					$labelsFromFile[$label] = $value;
 				} elseif (strpos($label, $selectionPrefix) === 0) {
-					$key = preg_replace($labelPattern, '', $label);
+					preg_replace($labelPattern, '', $label);
 					$labelsFromFile[$label] = $value;
 				}
 			}
@@ -2501,7 +2507,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			if ($this->lang !== 'default' && isset($tempLL[$language])) {
 				// Merge current language labels onto labels from previous language
 				// This way we have a labels with fall back applied
-				$localLanguage[$this->lang] = GeneralUtility::array_merge_recursive_overrule($localLanguage[$this->lang], $tempLL[$language], FALSE, FALSE);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($localLanguage[$this->lang], $tempLL[$language], TRUE, FALSE);
 			}
 		}
 

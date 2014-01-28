@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -206,9 +206,11 @@ class LoginController {
 		// Initialize template object:
 		$GLOBALS['TBE_TEMPLATE']->bodyTagAdditions = ' onload="startUp();"';
 		$GLOBALS['TBE_TEMPLATE']->moduleTemplate = $GLOBALS['TBE_TEMPLATE']->getHtmlTemplate('EXT:backend/Resources/Private/Templates/login.html');
-		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->loadExtJS();
-		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->loadPrototype();
-		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->loadScriptaculous();
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $GLOBALS['TBE_TEMPLATE']->getPageRenderer();
+		$pageRenderer->loadExtJS();
+		$pageRenderer->loadPrototype();
+		$pageRenderer->loadScriptaculous();
 		// Set JavaScript for creating a MD5 hash of the password:
 		$GLOBALS['TBE_TEMPLATE']->JScode .= $this->getJScode();
 		// Checking, if we should make a redirect.
@@ -228,7 +230,7 @@ class LoginController {
 			$loginForm = $this->makeLogoutForm();
 		}
 		// Starting page:
-		$this->content .= $GLOBALS['TBE_TEMPLATE']->startPage('TYPO3 Login: ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'], FALSE);
+		$this->content .= $GLOBALS['TBE_TEMPLATE']->startPage('TYPO3 CMS Login: ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'], FALSE);
 		// Add login form:
 		$this->content .= $this->wrapLoginForm($loginForm);
 		$this->content .= $GLOBALS['TBE_TEMPLATE']->endPage();

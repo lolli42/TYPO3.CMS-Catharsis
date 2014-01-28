@@ -26,7 +26,6 @@ body {
 /* Preformatted text - not used so much in TYPO3 */
 pre {
 	font-family: "Lucida Console", "Lucida Sans Typewriter", "Bitstream Vera Sans Mono", monospace;
-	font-size: 11px;
 }
 
 /* Links in general */
@@ -44,6 +43,10 @@ a:hover {
 
 tr:hover a {
 	text-decoration: underline;
+}
+
+tr:hover .t3-page-ce a {
+	text-decoration: none;
 }
 
 a.t3-link {

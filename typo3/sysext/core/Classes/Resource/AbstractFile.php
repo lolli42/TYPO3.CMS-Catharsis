@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -162,6 +162,15 @@ abstract class AbstractFile implements FileInterface {
 	 */
 	public function getIdentifier() {
 		return $this->identifier;
+	}
+
+	/**
+	 * Get hashed identifier
+	 *
+	 * @return string
+	 */
+	public function getHashedIdentifier() {
+		return $this->properties['identifier_hash'];
 	}
 
 	/**
@@ -349,10 +358,12 @@ abstract class AbstractFile implements FileInterface {
 	/****************************************
 	 * STORAGE AND MANAGEMENT RELATED METHDOS
 	 ****************************************/
+
 	/**
 	 * Get the storage this file is located in
 	 *
 	 * @return ResourceStorage
+	 * @throws \RuntimeException
 	 */
 	public function getStorage() {
 		if ($this->storage === NULL) {

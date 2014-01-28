@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource\Driver;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -54,6 +54,7 @@ abstract class AbstractHierarchicalFilesystemDriver extends AbstractDriver {
 	 */
 	protected function canonicalizeAndCheckFilePath($filePath) {
 		$filePath = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($filePath);
+
 		// filePath must be valid
 		if (!$this->isPathValid($filePath)) {
 			throw new \TYPO3\CMS\Core\Resource\Exception\InvalidPathException('File ' . $filePath . ' is not valid (".." and "//" is not allowed in path).', 1320286857);
@@ -64,10 +65,40 @@ abstract class AbstractHierarchicalFilesystemDriver extends AbstractDriver {
 	/**
 	 * Makes sure the Path given as parameter is valid
 	 *
+	 * @param string $fileIdentifier The file path (including the file name!)
+	 * @return string
+	 */
+	protected function canonicalizeAndCheckFileIdentifier($fileIdentifier) {
+		if ($fileIdentifier !== '') {
+			$fileIdentifier = $this->canonicalizeAndCheckFilePath($fileIdentifier);
+			$fileIdentifier = '/' . ltrim($fileIdentifier, '/');
+			if (!$this->isCaseSensitiveFileSystem()) {
+				$fileIdentifier = strtolower($fileIdentifier);
+			}
+		}
+		return $fileIdentifier;
+	}
+
+	/**
+	 * Makes sure the Path given as parameter is valid
+	 *
 	 * @param string $folderPath The file path (including the file name!)
 	 * @return string
 	 */
-	protected function canonicalizeAndCheckFolderPath($folderPath) {
-		return $this->canonicalizeAndCheckFilePath($folderPath) . '/';
+	protected function canonicalizeAndCheckFolderIdentifier($folderPath) {
+		return $this->canonicalizeAndCheckFileIdentifier($folderPath) . '/';
 	}
+
+	/**
+	 * Returns the identifier of the folder the file resides in
+	 *
+	 * @param string $fileIdentifier
+	 * @return mixed
+	 */
+	public function getParentFolderIdentifierOfIdentifier($fileIdentifier) {
+		$fileIdentifier = $this->canonicalizeAndCheckFileIdentifier($fileIdentifier);
+		return \TYPO3\CMS\Core\Utility\PathUtility::dirname($fileIdentifier) . '/';
+	}
+
+
 }

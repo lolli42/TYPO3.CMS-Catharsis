@@ -24,6 +24,9 @@ return array(
 		),
 		'typeicon_classes' => array(
 			'default' => 'mimetypes-x-sys_category'
+		),
+		'security' => array(
+			'ignoreRootLevelRestriction' => TRUE,
 		)
 	),
 	'interface' => array(
@@ -150,6 +153,7 @@ return array(
 				'internal_type' => 'db',
 				'allowed' => '*',
 				'MM' => 'sys_category_record_mm',
+				'size' => 10,
 				'show_thumbs' => FALSE
 			)
 		)

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Database;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -205,7 +205,7 @@ class ReferenceIndex {
 				}
 				// Word indexing:
 				foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
-					if (GeneralUtility::inList('input,text', $conf['config']['type']) && strcmp($record[$field], '') && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($record[$field])) {
+					if (GeneralUtility::inList('input,text', $conf['config']['type']) && (string)$record[$field] !== '' && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($record[$field])) {
 						$this->words_strings[$field] = $record[$field];
 					}
 				}
@@ -282,7 +282,7 @@ class ReferenceIndex {
 		foreach ($items as $sort => $i) {
 			$filePath = $i['ID_absFile'];
 			if (GeneralUtility::isFirstPartOfStr($filePath, PATH_site)) {
-				$filePath = substr($filePath, strlen(PATH_site));
+				$filePath = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
 			}
 			$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_FILE', 0, $filePath, $sort);
 		}
@@ -405,7 +405,7 @@ class ReferenceIndex {
 							}
 						}
 					}
-					if (is_array($outRow[$field]['softrefs']) && count($outRow[$field]['softrefs']) && strcmp($value, $softRefValue) && strstr($softRefValue, '{softref:')) {
+					if (is_array($outRow[$field]['softrefs']) && count($outRow[$field]['softrefs']) && (string)$value !== (string)$softRefValue && strstr($softRefValue, '{softref:')) {
 						$outRow[$field]['softrefs']['tokenizedContent'] = $softRefValue;
 					}
 				}
@@ -457,7 +457,7 @@ class ReferenceIndex {
 					}
 				}
 			}
-			if (count($this->temp_flexRelations['softrefs']) && strcmp($dataValue, $softRefValue)) {
+			if (count($this->temp_flexRelations['softrefs']) && (string)$dataValue !== (string)$softRefValue) {
 				$this->temp_flexRelations['softrefs'][$structurePath]['tokenizedContent'] = $softRefValue;
 			}
 		}
@@ -542,10 +542,10 @@ class ReferenceIndex {
 			$dbAnalysis->start($value, $allowedTables, $conf['MM'], $uid, $table, $conf);
 			return $dbAnalysis->itemArray;
 		} elseif ($conf['type'] == 'inline' && $conf['foreign_table'] == 'sys_file_reference') {
-			$files = (array) $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid_local', 'sys_file_reference', ('tablenames=\'' . $table . '\' AND fieldname=\'' . $field . '\' AND uid_foreign=' . $uid));
-			$fileArray = array('0' => array());
+			$files = (array)$GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid_local', 'sys_file_reference', ('tablenames=\'' . $table . '\' AND fieldname=\'' . $field . '\' AND uid_foreign=' . $uid . ' AND deleted=0'));
+			$fileArray = array();
 			foreach ($files as $fileUid) {
-				$fileArray[0][] = array('table' => 'sys_file', 'id' => $fileUid);
+				$fileArray[] = array('table' => 'sys_file', 'id' => $fileUid['uid_local']);
 			}
 			return $fileArray;
 		} elseif ($conf['type'] == 'input' && isset($conf['wizards']['link']) && trim($value)) {
@@ -692,7 +692,7 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function setReferenceValue_dbRels($refRec, $itemArray, $newValue, &$dataArray, $flexpointer = '') {
-		if (!strcmp($itemArray[$refRec['sorting']]['id'], $refRec['ref_uid']) && !strcmp($itemArray[$refRec['sorting']]['table'], $refRec['ref_table'])) {
+		if ((int)$itemArray[$refRec['sorting']]['id'] === (int)$refRec['ref_uid'] && (string)$itemArray[$refRec['sorting']]['table'] === (string)$refRec['ref_table']) {
 			// Setting or removing value:
 			// Remove value:
 			if ($newValue === NULL) {
@@ -730,7 +730,8 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function setReferenceValue_fileRels($refRec, $itemArray, $newValue, &$dataArray, $flexpointer = '') {
-		if (!strcmp(substr($itemArray[$refRec['sorting']]['ID_absFile'], strlen(PATH_site)), $refRec['ref_string']) && !strcmp('_FILE', $refRec['ref_table'])) {
+		$ID_absFile = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($itemArray[$refRec['sorting']]['ID_absFile']);
+		if ($ID_absFile === (string)$refRec['ref_string'] && $refRec['ref_table'] === '_FILE') {
 			// Setting or removing value:
 			// Remove value:
 			if ($newValue === NULL) {
@@ -807,7 +808,13 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function isReferenceField($conf) {
-		return $conf['type'] == 'group' && $conf['internal_type'] == 'db' || ($conf['type'] == 'select' || $conf['type'] == 'inline') && $conf['foreign_table'] && $conf['foreign_table'] !== 'sys_file_reference';
+		return (
+			($conf['type'] == 'group' && $conf['internal_type'] == 'db')
+			|| (
+				($conf['type'] == 'select' || $conf['type'] == 'inline')
+				&& $conf['foreign_table']
+			)
+		);
 	}
 
 	/**
@@ -848,7 +855,7 @@ class ReferenceIndex {
 		$tableNames = array();
 		$recCount = 0;
 		$tableCount = 0;
-		$headerContent = $testOnly ? 'Reference Index being TESTED (nothing written, use "-e" to update)' : 'Reference Index being Updated';
+		$headerContent = $testOnly ? 'Reference Index being TESTED (nothing written, use "--refindex update" to update)' : 'Reference Index being Updated';
 		if ($cli_echo) {
 			echo '*******************************************' . LF . $headerContent . LF . '*******************************************' . LF;
 		}

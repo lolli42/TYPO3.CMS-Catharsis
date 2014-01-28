@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\View;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -199,10 +199,6 @@ class ModuleMenuView {
 	 */
 	public function getRawModuleData() {
 		$modules = array();
-		// Remove the 'doc' module?
-		if ($GLOBALS['BE_USER']->getTSConfigVal('options.disableDocModuleInAB')) {
-			unset($this->loadedModules['doc']);
-		}
 
 		// Unset modules that are meant to be hidden from the menu.
 		$this->unsetHiddenModules();
@@ -318,7 +314,7 @@ class ModuleMenuView {
 	 */
 	protected function getModuleIconRelative($iconFilename) {
 		if (GeneralUtility::isAbsPath($iconFilename)) {
-			$iconFilename = '../' . substr($iconFilename, strlen(PATH_site));
+			$iconFilename = '../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($iconFilename);
 		}
 		return $this->backPath . $iconFilename;
 	}

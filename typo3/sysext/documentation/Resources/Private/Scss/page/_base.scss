@@ -66,15 +66,11 @@
 	display: inline;
 }
 
-.typo3-documentation-list td.formats {
+.typo3-documentation-list td.actions {
 	width: 140px;
 
 	a {
 		padding: 2px;
-
-		&:hover {
-			border: 1px solid #333;
-		}
 	}
 }
 

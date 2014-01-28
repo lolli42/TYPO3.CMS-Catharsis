@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Impexp;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -533,7 +533,7 @@ class ImportExport {
 	 */
 	public function export_addRecord($table, $row, $relationLevel = 0) {
 		BackendUtility::workspaceOL($table, $row);
-		if (strcmp($table, '') && is_array($row) && $row['uid'] > 0 && !$this->excludeMap[($table . ':' . $row['uid'])]) {
+		if ((string)$table !== '' && is_array($row) && $row['uid'] > 0 && !$this->excludeMap[($table . ':' . $row['uid'])]) {
 			if ($this->checkPID($table === 'pages' ? $row['uid'] : $row['pid'])) {
 				if (!isset($this->dat['records'][($table . ':' . $row['uid'])])) {
 					// Prepare header info:
@@ -802,7 +802,7 @@ class ImportExport {
 				$fileRec['filename'] = basename($fI['ID_absFile']);
 				$fileRec['filemtime'] = filemtime($fI['ID_absFile']);
 				//for internal type file_reference
-				$fileRec['relFileRef'] = substr($fI['ID_absFile'], strlen(PATH_site));
+				$fileRec['relFileRef'] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fI['ID_absFile']);
 				if ($recordRef) {
 					$fileRec['record_ref'] = $recordRef . '/' . $fieldname;
 				}
@@ -843,7 +843,7 @@ class ImportExport {
 							$fileRec['content_md5'] = md5($fileRec['content']);
 							$this->dat['files'][$RTEoriginal_ID] = $fileRec;
 						} else {
-							$this->error('RTE original file "' . substr($RTEoriginal_absPath, strlen(PATH_site)) . '" was not found!');
+							$this->error('RTE original file "' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($RTEoriginal_absPath) . '" was not found!');
 						}
 					}
 					// Files with external media?
@@ -1902,7 +1902,7 @@ class ImportExport {
 							$this->writeFileVerify($copyDestName, $cfg['file_ID'], TRUE);
 							$this->writeFileVerify($origDestName, $fileHeaderInfo['RTE_ORIG_ID'], TRUE);
 							// Return the relative path of the copy file name:
-							return substr($copyDestName, strlen(PATH_site));
+							return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($copyDestName);
 						} else {
 							$this->error('ERROR: Could not find original file ID');
 						}
@@ -1945,7 +1945,7 @@ class ImportExport {
 	public function processSoftReferences_saveFile_createRelFile($origDirPrefix, $fileName, $fileID, $table, $uid) {
 		// If the fileID map contains an entry for this fileID then just return the relative filename of that entry; we don't want to write another unique filename for this one!
 		if ($this->fileIDMap[$fileID]) {
-			return substr($this->fileIDMap[$fileID], strlen(PATH_site));
+			return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->fileIDMap[$fileID]);
 		}
 		// Verify FileMount access to dir-prefix. Returns the best alternative relative path if any
 		$dirPrefix = $this->verifyFolderAccess($origDirPrefix);
@@ -1976,7 +1976,7 @@ class ImportExport {
 								$absResourceFileName = GeneralUtility::resolveBackPath(PATH_site . $origDirPrefix . $relResourceFileName);
 								$absResourceFileName = GeneralUtility::getFileAbsFileName($absResourceFileName);
 								if ($absResourceFileName && GeneralUtility::isFirstPartOfStr($absResourceFileName, PATH_site . $this->fileadminFolderName . '/')) {
-									$destDir = substr(dirname($absResourceFileName) . '/', strlen(PATH_site));
+									$destDir = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(dirname($absResourceFileName) . '/');
 									if ($this->verifyFolderAccess($destDir, TRUE) && $this->checkOrCreateDir($destDir)) {
 										$this->writeFileVerify($absResourceFileName, $res_fileID);
 									} else {
@@ -2009,7 +2009,7 @@ class ImportExport {
 						GeneralUtility::writeFile($newName, $tokenizedContent);
 					}
 				}
-				return substr($newName, strlen(PATH_site));
+				return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($newName);
 			}
 		}
 	}
@@ -2113,7 +2113,7 @@ class ImportExport {
 				if (GeneralUtility::isFirstPartOfStr($dirPrefix, $this->fileadminFolderName . '/')) {
 					$dirPrefix = substr($dirPrefix, strlen($this->fileadminFolderName . '/'));
 				}
-				return substr($fileProcObj->mounts[$result]['path'] . $dirPrefix, strlen(PATH_site));
+				return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fileProcObj->mounts[$result]['path'] . $dirPrefix);
 			}
 		} else {
 			return $dirPrefix;
@@ -2191,10 +2191,10 @@ class ImportExport {
 		$initStr = fread($fd, $initStrLen);
 		$initStrDat = explode(':', $initStr);
 		if (strstr($initStrDat[0], 'Warning') == FALSE) {
-			if (!strcmp($initStrDat[3], '')) {
+			if ((string)$initStrDat[3] === '') {
 				$datString = fread($fd, intval($initStrDat[2]));
 				fread($fd, 1);
-				if (!strcmp(md5($datString), $initStrDat[0])) {
+				if (md5($datString) === $initStrDat[0]) {
 					if ($initStrDat[1]) {
 						if ($this->compress) {
 							$datString = gzuncompress($datString);
@@ -2246,10 +2246,10 @@ class ImportExport {
 		$initStr = substr($filecontent, $pointer, $initStrLen);
 		$pointer += $initStrLen;
 		$initStrDat = explode(':', $initStr);
-		if (!strcmp($initStrDat[3], '')) {
+		if ((string)$initStrDat[3] === '') {
 			$datString = substr($filecontent, $pointer, intval($initStrDat[2]));
 			$pointer += intval($initStrDat[2]) + 1;
-			if (!strcmp(md5($datString), $initStrDat[0])) {
+			if (md5($datString) === $initStrDat[0]) {
 				if ($initStrDat[1]) {
 					if ($this->compress) {
 						$datString = gzuncompress($datString);
@@ -2745,7 +2745,7 @@ class ImportExport {
 					$testDirPrefix2 = $this->verifyFolderAccess($testDirPrefix);
 					if (!$testDirPrefix2) {
 						$pInfo['msg'] = 'ERROR: There are no available filemounts to write file in! ';
-					} elseif (strcmp($testDirPrefix, $testDirPrefix2)) {
+					} elseif ($testDirPrefix !== $testDirPrefix2) {
 						$pInfo['msg'] = 'File will be attempted written to "' . $testDirPrefix2 . '". ';
 					}
 				}
@@ -2768,7 +2768,7 @@ class ImportExport {
 					$pInfo['msg'] = 'You user profile does not allow you to create files on the server!';
 				}
 			}
-			$pInfo['showDiffContent'] = substr($this->fileIDMap[$ID], strlen(PATH_site));
+			$pInfo['showDiffContent'] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->fileIDMap[$ID]);
 			$lines[] = $pInfo;
 			unset($this->remainHeader['files'][$ID]);
 			// RTE originals:
@@ -2780,7 +2780,7 @@ class ImportExport {
 					$pInfo['msg'] = 'MISSING RTE original FILE: ' . $ID;
 					$this->error('MISSING RTE original FILE: ' . $ID, 1);
 				}
-				$pInfo['showDiffContent'] = substr($this->fileIDMap[$ID], strlen(PATH_site));
+				$pInfo['showDiffContent'] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->fileIDMap[$ID]);
 				$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-reference-file');
 				$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Original)</em>';
 				$pInfo['ref'] = 'FILE';
@@ -2801,7 +2801,7 @@ class ImportExport {
 					} else {
 						$pInfo['updatePath'] = $fI['parentRelFileName'];
 					}
-					$pInfo['showDiffContent'] = substr($this->fileIDMap[$ID], strlen(PATH_site));
+					$pInfo['showDiffContent'] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->fileIDMap[$ID]);
 					$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-insert-reference');
 					$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Resource)</em>';
 					$pInfo['ref'] = 'FILE';
@@ -3027,13 +3027,13 @@ class ImportExport {
 		$opt = array();
 		$isSelFlag = 0;
 		foreach ($optValues as $k => $v) {
-			$sel = !strcmp($k, $value) ? ' selected="selected"' : '';
+			$sel = (string)$k === (string)$value ? ' selected="selected"' : '';
 			if ($sel) {
 				$isSelFlag++;
 			}
 			$opt[] = '<option value="' . htmlspecialchars($k) . '"' . $sel . '>' . htmlspecialchars($v) . '</option>';
 		}
-		if (!$isSelFlag && strcmp('', $value)) {
+		if (!$isSelFlag && (string)$value !== '') {
 			$opt[] = '<option value="' . htmlspecialchars($value) . '" selected="selected">' . htmlspecialchars(('[\'' . $value . '\']')) . '</option>';
 		}
 		return '<select name="' . $prefix . '">' . implode('', $opt) . '</select>';
@@ -3060,7 +3060,7 @@ class ImportExport {
 			foreach ($databaseRecord as $fN => $value) {
 				if (is_array($GLOBALS['TCA'][$table]['columns'][$fN]) && $GLOBALS['TCA'][$table]['columns'][$fN]['config']['type'] != 'passthrough') {
 					if (isset($importRecord[$fN])) {
-						if (strcmp(trim($databaseRecord[$fN]), trim($importRecord[$fN]))) {
+						if (trim($databaseRecord[$fN]) !== trim($importRecord[$fN])) {
 							// Create diff-result:
 							$output[$fN] = $t3lib_diff_Obj->makeDiffDisplay(BackendUtility::getProcessedValue($table, $fN, !$inverseDiff ? $importRecord[$fN] : $databaseRecord[$fN], 0, 1, 1), BackendUtility::getProcessedValue($table, $fN, !$inverseDiff ? $databaseRecord[$fN] : $importRecord[$fN], 0, 1, 1));
 						}

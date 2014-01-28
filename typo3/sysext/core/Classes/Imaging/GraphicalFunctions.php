@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Imaging;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -1618,7 +1618,7 @@ class GraphicalFunctions {
 	}
 
 	/**
-	 * Creating ImageMagick paramters from TypoScript property
+	 * Creating ImageMagick parameters from TypoScript property
 	 *
 	 * @param string $setup A string with effect keywords=value pairs separated by "|
 	 * @return string ImageMagick prepared parameters.
@@ -2613,7 +2613,7 @@ class GraphicalFunctions {
 			} else {
 				$frame = '';
 			}
-			$cmd = GeneralUtility::imageMagickCommand('convert', $params . ' ' . $this->wrapFileName($input) . $frame . ' ' . $this->wrapFileName($output));
+			$cmd = GeneralUtility::imageMagickCommand('convert', $params . ' ' . $this->wrapFileName($input . $frame) . ' ' . $this->wrapFileName($output));
 			$this->IM_commands[] = array($output, $cmd);
 			$ret = \TYPO3\CMS\Core\Utility\CommandUtility::exec($cmd);
 			// Change the permissions of the file

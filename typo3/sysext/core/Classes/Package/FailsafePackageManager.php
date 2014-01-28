@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Package;
 *
 *  The GNU General Public License can be found at
 *  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
+*  A copy is found in the text file GPL.txt and important notices to the license
 *  from the author is found in LICENSE.txt distributed with these scripts.
 *
 *
@@ -91,5 +91,13 @@ class FailsafePackageManager extends \TYPO3\CMS\Core\Package\PackageManager {
 		if (!$this->inFailsafeMode) {
 			parent::sortAndSavePackageStates();
 		}
+	}
+
+	/**
+	 * To enable writing of the package states file the package states
+	 * migration needs to override eventual failsafe blocks.
+	 */
+	public function forceSortAndSavePackageStates() {
+		parent::sortAndSavePackageStates();
 	}
 }

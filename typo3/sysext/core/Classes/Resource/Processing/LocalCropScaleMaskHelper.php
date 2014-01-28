@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource\Processing;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -66,6 +66,7 @@ class LocalCropScaleMaskHelper {
 		/** @var $gifBuilder \TYPO3\CMS\Frontend\Imaging\GifBuilder */
 		$gifBuilder = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
 		$gifBuilder->init();
+		$gifBuilder->absPrefix = PATH_site;
 
 		$configuration = $targetFile->getProcessingConfiguration();
 		$configuration['additionalParameters'] = $this->modifyImageMagickStripProfileParameters($configuration['additionalParameters'], $configuration);

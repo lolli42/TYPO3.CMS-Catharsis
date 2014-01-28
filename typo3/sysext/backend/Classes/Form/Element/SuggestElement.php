@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -96,10 +96,17 @@ class SuggestElement {
 			$minChars = intval($config['fieldTSConfig']['suggest.']['default.']['minimumCharacters']);
 		}
 		$minChars = $minChars > 0 ? $minChars : 2;
+
+		// fetch the TCA field type to hand it over to the JS class
+		$type = '';
+		if (isset($config['fieldConf']['config']['type'])) {
+			$type = $config['fieldConf']['config']['type'];
+		}
+
 		// Replace "-" with ucwords for the JS object name
 		$jsObj = str_replace(' ', '', ucwords(str_replace('-', ' ', GeneralUtility::strtolower($suggestId))));
 		$this->TCEformsObj->additionalJS_post[] = '
-			var ' . $jsObj . ' = new TCEForms.Suggest("' . $fieldname . '", "' . $table . '", "' . $field . '", "' . $row['uid'] . '", ' . $row['pid'] . ', ' . $minChars . ');
+			var ' . $jsObj . ' = new TCEForms.Suggest("' . $fieldname . '", "' . $table . '", "' . $field . '", "' . $row['uid'] . '", ' . $row['pid'] . ', ' . $minChars . ', "' . $type . '");
 			' . $jsObj . '.defaultValue = "' . GeneralUtility::slashJS($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.findRecord')) . '";
 		';
 		return $selector;
@@ -218,23 +225,23 @@ class SuggestElement {
 			}
 			$config = (array) $wizardConfig['default'];
 			if (is_array($wizardConfig[$queryTable])) {
-				$config = GeneralUtility::array_merge_recursive_overrule($config, $wizardConfig[$queryTable]);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($config, $wizardConfig[$queryTable]);
 			}
 			// merge the configurations of different "levels" to get the working configuration for this table and
 			// field (i.e., go from the most general to the most special configuration)
 			if (is_array($TSconfig['TCEFORM.']['suggest.']['default.'])) {
-				$config = GeneralUtility::array_merge_recursive_overrule($config, $TSconfig['TCEFORM.']['suggest.']['default.']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($config, $TSconfig['TCEFORM.']['suggest.']['default.']);
 			}
 			if (is_array($TSconfig['TCEFORM.']['suggest.'][$queryTable . '.'])) {
-				$config = GeneralUtility::array_merge_recursive_overrule($config, $TSconfig['TCEFORM.']['suggest.'][$queryTable . '.']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($config, $TSconfig['TCEFORM.']['suggest.'][$queryTable . '.']);
 			}
 			// use $table instead of $queryTable here because we overlay a config
 			// for the input-field here, not for the queried table
 			if (is_array($TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.']['default.'])) {
-				$config = GeneralUtility::array_merge_recursive_overrule($config, $TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.']['default.']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($config, $TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.']['default.']);
 			}
 			if (is_array($TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.'][$queryTable . '.'])) {
-				$config = GeneralUtility::array_merge_recursive_overrule($config, $TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.'][$queryTable . '.']);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($config, $TSconfig['TCEFORM.'][$table . '.'][$field . '.']['suggest.'][$queryTable . '.']);
 			}
 			//process addWhere
 			if (!isset($config['addWhere']) && $foreign_table_where) {

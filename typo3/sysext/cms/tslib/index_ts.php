@@ -13,7 +13,7 @@
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -147,7 +147,9 @@ $TT->pull();
 if ($TSFE->isBackendUserLoggedIn()) {
 	$BE_USER->initializeFrontendEdit();
 	if ($BE_USER->adminPanel instanceof \TYPO3\CMS\Frontend\View\AdminPanelView) {
-		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->initializeLanguageObject();
+		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+			->initializeLanguageObject()
+			->initializeSpriteManager();
 	}
 	if ($BE_USER->frontendEdit instanceof \TYPO3\CMS\Core\FrontendEditing\FrontendEditingController) {
 		$BE_USER->frontendEdit->initConfigOptions();

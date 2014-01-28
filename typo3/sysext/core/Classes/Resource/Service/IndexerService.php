@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource\Service;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -35,6 +35,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * should only be accessed through the FileRepository for now
  *
  * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
+ * @deprecated since TYPO3 CMS 6.2 LTS - will be removed 2 versions later
  */
 class IndexerService implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -205,7 +206,8 @@ class IndexerService implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 
 		// check for deleted files (file not found during indexing are marked as missing)
-		foreach ($this->getRepository()->getFileIndexRecordsForFolder($folder) as $file) {
+		$fileIndexRecords = $this->getFileIndexRepository()->findByFolder($folder);
+		foreach ($fileIndexRecords as $file) {
 			if (!in_array($file['identifier'], $fileIdentifiers)) {
 				/** @var $fileObject File */
 				$fileObject = $this->getRepository()->findByIdentifier($file['uid']);
@@ -256,6 +258,8 @@ class IndexerService implements \TYPO3\CMS\Core\SingletonInterface {
 				'modification_date' => $info['mtime'],
 				'size' => $info['size'],
 				'identifier' => $file->getIdentifier(),
+				'identifier_hash' => $storage->hashFileIdentifier($file->getIdentifier()),
+				'folder_hash' => $storage->hashFileIdentifier($storage->getFolderIdentifierFromFileIdentifier($file->getIdentifier())),
 				'storage' => $storage->getUid(),
 				'name' => $file->getName(),
 				'sha1' => $storage->hashFile($file, 'sha1'),

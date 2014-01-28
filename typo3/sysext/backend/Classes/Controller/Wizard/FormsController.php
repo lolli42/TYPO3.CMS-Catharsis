@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -277,6 +277,9 @@ class FormsController {
 	 * @todo Define visibility
 	 */
 	public function formsWizard() {
+		if (!$this->checkEditAccess($this->P['table'], $this->P['uid'])) {
+			throw new \RuntimeException('Wizard Error: No access', 1385807526);
+		}
 		// First, check the references by selecting the record:
 		$row = BackendUtility::getRecord($this->P['table'], $this->P['uid']);
 		if (!is_array($row)) {
@@ -725,12 +728,17 @@ class FormsController {
 					$thisLine[1] = str_replace('|', '', $thisLine[1]);
 					// Default:
 					if ($vv['type'] == 'select' || $vv['type'] == 'radio') {
-						$thisLine[2] = str_replace(LF, ', ', str_replace(',', '', $vv['options']));
+						$options = str_replace(',', '', $vv['options']);
+						$options = str_replace(
+							array(CR . LF, CR, LF),
+							', ',
+							$options);
+						$thisLine[2] = $options;
 					} elseif ($vv['type'] == 'check') {
 						if ($vv['default']) {
 							$thisLine[2] = 1;
 						}
-					} elseif (strcmp(trim($vv['default']), '')) {
+					} elseif (trim($vv['default']) !== '') {
 						$thisLine[2] = $vv['default'];
 					}
 					if (isset($thisLine[2])) {
@@ -844,7 +852,7 @@ class FormsController {
 	 */
 	public function cleanT($tArr) {
 		for ($a = count($tArr); $a > 0; $a--) {
-			if (strcmp($tArr[$a - 1], '')) {
+			if ((string)$tArr[$a - 1] !== '') {
 				break;
 			} else {
 				unset($tArr[$a - 1]);
@@ -884,4 +892,34 @@ class FormsController {
 			</table>';
 	}
 
+	/**
+	 * Checks access for element
+	 *
+	 * @param string $table Table name
+	 * @param integer $uid Record uid
+	 * @return boolean
+	 * @todo: Refactor to remove duplicate code (see TableController, RteController)
+	 */
+	protected function checkEditAccess($table, $uid) {
+		$calcPRec = BackendUtility::getRecord($table, $uid);
+		BackendUtility::fixVersioningPid($table, $calcPRec);
+		if (is_array($calcPRec)) {
+			// If pages:
+			if ($table == 'pages') {
+				$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms($calcPRec);
+				$hasAccess = $CALC_PERMS & 2 ? TRUE : FALSE;
+			} else {
+				// Fetching pid-record first.
+				$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
+				$hasAccess = $CALC_PERMS & 16 ? TRUE : FALSE;
+			}
+			// Check internals regarding access:
+			if ($hasAccess) {
+				$hasAccess = $GLOBALS['BE_USER']->recordEditAccessInternals($table, $calcPRec);
+			}
+		} else {
+			$hasAccess = FALSE;
+		}
+		return $hasAccess;
+	}
 }

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Recordlist\Browser;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -307,7 +307,7 @@ class ElementBrowser {
 					$currentLinkParts[0] = rawurldecode(substr($this->curUrlArray['href'], 5));
 				} elseif (file_exists(PATH_site . rawurldecode($this->curUrlArray['href']))) {
 					if (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($this->curUrlArray['href'], PATH_site)) {
-						$currentLinkParts[0] = substr($this->curUrlArray['href'], strlen(PATH_site));
+						$currentLinkParts[0] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->curUrlArray['href']);
 					}
 					$this->curUrlInfo = $this->parseCurUrl($this->siteURL . $this->curUrlArray['href'], $this->siteURL);
 				} elseif (strstr($this->curUrlArray['href'], '@')) {
@@ -412,9 +412,9 @@ class ElementBrowser {
 			$P2['formName'] = $this->P['formName'];
 			$P2['fieldChangeFunc'] = $this->P['fieldChangeFunc'];
 			$P2['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($this->P['fieldChangeFunc']));
-			$P2['params']['allowedExtensions'] = $this->P['params']['allowedExtensions'];
-			$P2['params']['blindLinkOptions'] = $this->P['params']['blindLinkOptions'];
-			$P2['params']['blindLinkFields'] = $this->P['params']['blindLinkFields'];
+			$P2['params']['allowedExtensions'] = isset($this->P['params']['allowedExtensions']) ? $this->P['params']['allowedExtensions'] : '';
+			$P2['params']['blindLinkOptions'] = isset($this->P['params']['blindLinkOptions']) ? $this->P['params']['blindLinkOptions'] : '';
+			$P2['params']['blindLinkFields'] = isset($this->P['params']['blindLinkFields']) ? $this->P['params']['blindLinkFields']: '';
 			$addPassOnParams .= GeneralUtility::implodeArrayForUrl('P', $P2);
 			$JScode .= '
 				function link_typo3Page(id,anchor) {	//
@@ -707,15 +707,30 @@ class ElementBrowser {
 	public function main_rte($wiz = 0) {
 		// Starting content:
 		$content = $this->doc->startPage('RTE link');
+
 		// Initializing the action value, possibly removing blinded values etc:
-		$allowedItems = array_diff(explode(',', 'page,file,folder,url,mail,spec'), GeneralUtility::trimExplode(',', $this->thisConfig['blindLinkOptions'], TRUE));
-		$allowedItems = array_diff($allowedItems, GeneralUtility::trimExplode(',', $this->P['params']['blindLinkOptions']));
+		$blindLinkOptions = isset($this->thisConfig['blindLinkOptions'])
+			? GeneralUtility::trimExplode(',', $this->thisConfig['blindLinkOptions'], TRUE)
+			: array();
+		$pBlindLinkOptions = isset($this->P['params']['blindLinkOptions'])
+			? GeneralUtility::trimExplode(',', $this->P['params']['blindLinkOptions'])
+			: array();
+		$allowedItems = array_diff(array('page', 'file', 'folder', 'url', 'mail', 'spec'), $blindLinkOptions, $pBlindLinkOptions);
+
 		// Call hook for extra options
 		foreach ($this->hookObjects as $hookObject) {
 			$allowedItems = $hookObject->addAllowedItems($allowedItems);
 		}
+
 		// Removing link fields if configured
-		$allowedFields = array_diff(array('target', 'title', 'class', 'params'), GeneralUtility::trimExplode(',', $this->thisConfig['blindLinkFields'], TRUE), GeneralUtility::trimExplode(',', $this->P['params']['blindLinkFields'], TRUE));
+		$blindLinkFields = isset($this->thisConfig['blindLinkFields'])
+			? GeneralUtility::trimExplode(',', $this->thisConfig['blindLinkFields'], TRUE)
+			: array();
+		$pBlindLinkFields = isset($this->P['params']['blindLinkFields'])
+			? GeneralUtility::trimExplode(',', $this->P['params']['blindLinkFields'], TRUE)
+			: array();
+		$allowedFields = array_diff(array('target', 'title', 'class', 'params'), $blindLinkFields, $pBlindLinkFields);
+
 		// If $this->act is not allowed, default to first allowed
 		if (!in_array($this->act, $allowedItems)) {
 			$this->act = reset($allowedItems);
@@ -822,7 +837,10 @@ class ElementBrowser {
 				// Create upload/create folder forms, if a path is given
 				if ($this->expandFolder) {
 					$selectedFolder = FALSE;
-					$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+					try {
+						$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+					} catch (\Exception $e) {
+					}
 
 					if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
 						// It's a folder
@@ -842,11 +860,9 @@ class ElementBrowser {
 				// Build the file upload and folder creation form
 				$uploadForm = '';
 				$createFolder = '';
-				if ($selectedFolder && !$this->isReadOnlyFolder($selectedFolder)) {
+				if ($selectedFolder) {
 					$uploadForm = ($this->act === 'file') ? $this->uploadForm($selectedFolder) : '';
-					if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.createFoldersInEB')) {
-						$createFolder = $this->createFolder($selectedFolder);
-					}
+					$createFolder = $this->createFolder($selectedFolder);
 				}
 				// Insert the upload form on top, if so configured
 				if ($GLOBALS['BE_USER']->getTSConfigVal('options.uploadFieldsInTopOfEB')) {
@@ -1107,7 +1123,7 @@ class ElementBrowser {
 		// Making the browsable pagetree:
 		$pagetree = GeneralUtility::makeInstance('TBE_PageTree');
 		$pagetree->thisScript = $this->thisScript;
-		$pagetree->ext_pArrPages = !strcmp($tables, 'pages') ? 1 : 0;
+		$pagetree->ext_pArrPages = $tables === 'pages' ? 1 : 0;
 		$pagetree->ext_showNavTitle = $GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.showNavTitle');
 		$pagetree->ext_showPageId = $GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.showPageIdWithTitle');
 
@@ -1192,7 +1208,15 @@ class ElementBrowser {
 		// Create upload/create folder forms, if a path is given
 		if ($this->expandFolder) {
 			$this->selectedFolder = FALSE;
-			$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+
+			// try to fetch the folder the user had open the last time he browsed files
+			// fallback to the default folder in case the last used folder is not existing
+			try {
+				$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+			} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $inexistentFolderException) {
+				// we're just catching the exception here, nothing to be done if folder does not exist
+			};
+
 			if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
 				// It's a folder
 				$this->selectedFolder = $fileOrFolderObject;
@@ -1211,17 +1235,9 @@ class ElementBrowser {
 			// Build the file upload and folder creation form
 		$uploadForm = '';
 		$createFolder = '';
-		if ($this->selectedFolder && !$this->isReadOnlyFolder($this->selectedFolder)) {
-			$uploadForm = ($this->act === 'file') ? $this->uploadForm($this->selectedFolder) : '';
-			if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.createFoldersInEB')) {
-				$createFolder =  $this->createFolder($this->selectedFolder);
-			}
-		}
 		if ($this->selectedFolder) {
 			$uploadForm = $this->uploadForm($this->selectedFolder);
 			$createFolder = $this->createFolder($this->selectedFolder);
-		} else {
-			$uploadForm = $createFolder = '';
 		}
 		// Insert the upload form on top, if so configured
 		if ($GLOBALS['BE_USER']->getTSConfigVal('options.uploadFieldsInTopOfEB')) {
@@ -1242,10 +1258,14 @@ class ElementBrowser {
 		$foldertree->ext_noTempRecyclerDirs = $this->mode == 'filedrag';
 		$tree = $foldertree->getBrowsableTree();
 		list(, , $specUid) = explode('_', $this->PM);
-		if ($this->mode == 'filedrag') {
-			$files = $this->TBE_dragNDrop($this->selectedFolder, $pArr[3]);
+		if ($this->selectedFolder) {
+			if ($this->mode == 'filedrag') {
+				$files = $this->TBE_dragNDrop($this->selectedFolder, $pArr[3]);
+			} else {
+				$files = $this->TBE_expandFolder($this->selectedFolder, $pArr[3], $noThumbs);
+			}
 		} else {
-			$files = $this->TBE_expandFolder($this->selectedFolder, $pArr[3], $noThumbs);
+			$files = '';
 		}
 		// Putting the parts together, side by side:
 		$content .= '
@@ -1295,7 +1315,7 @@ class ElementBrowser {
 		if ($this->expandFolder) {
 			$this->selectedFolder = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($this->expandFolder);
 		}
-		if ($this->selectedFolder && !$this->isReadOnlyFolder($this->selectedFolder)) {
+		if ($this->selectedFolder) {
 			$createFolder = $this->createFolder($this->selectedFolder);
 		} else {
 			$createFolder = '';
@@ -1325,9 +1345,7 @@ class ElementBrowser {
 			</table>
 			';
 		// Adding create folder if applicable:
-		if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.createFoldersInEB')) {
-			$content .= $createFolder;
-		}
+		$content .= $createFolder;
 		// Add some space
 		$content .= '<br /><br />';
 		// Ending page, returning content:
@@ -1408,7 +1426,7 @@ class ElementBrowser {
 		$out = '';
 		if ($this->expandPage >= 0 && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->expandPage) && $GLOBALS['BE_USER']->isInWebMount($this->expandPage)) {
 			// Set array with table names to list:
-			if (!strcmp(trim($tables), '*')) {
+			if (trim($tables) === '*') {
 				$tablesArr = array_keys($GLOBALS['TCA']);
 			} else {
 				$tablesArr = GeneralUtility::trimExplode(',', $tables, TRUE);
@@ -1504,7 +1522,7 @@ class ElementBrowser {
 	/**
 	 * For RTE: This displays all files from folder. No thumbnails shown
 	 *
-	 * @param string $folder The folder path to expand
+	 * @param \TYPO3\CMS\Core\Resource\Folder $folder The folder path to expand
 	 * @param string $extensionList List of fileextensions to show
 	 * @return string HTML output
 	 * @todo Define visibility
@@ -1533,11 +1551,7 @@ class ElementBrowser {
 			if ($renderFolders) {
 				$items = $folder->getSubfolders();
 			} else {
-				$filter = new \TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter();
-				$filter->setAllowedFileExtensions($extensionList);
-				$folder->getStorage()->setFileAndFolderNameFilters(array(array($filter, 'filterFileList')));
-
-				$items = $folder->getFiles();
+				$items = $this->getFilesInFolder($folder, $extensionList);
 			}
 			$c = 0;
 			$totalItems = count($items);
@@ -1578,16 +1592,13 @@ class ElementBrowser {
 	 * @return string HTML output
 	 * @todo Define visibility
 	 */
-	public function TBE_expandFolder(\TYPO3\CMS\Core\Resource\Folder $folder, $extensionList = '', $noThumbs = 0) {
-		$extensionList = $extensionList == '*' ? '' : $extensionList;
-		$content = '';
-		if ($folder->checkActionPermission('read')) {
-			// Listing the files:
-			$files = $folder->getFiles($extensionList);
-			$content = $this->fileList($files, $folder, $noThumbs);
+	public function TBE_expandFolder(\TYPO3\CMS\Core\Resource\Folder $folder, $extensionList = '', $noThumbs = FALSE) {
+		if (!$folder->checkActionPermission('read')) {
+			return '';
 		}
-		// Return accumulated content for filelisting:
-		return $content;
+		$extensionList = $extensionList == '*' ? '' : $extensionList;
+		$files = $this->getFilesInFolder($folder, $extensionList);
+		return $this->fileList($files, $folder, $noThumbs);
 	}
 
 	/**
@@ -1807,86 +1818,85 @@ class ElementBrowser {
 	 * @todo Define visibility
 	 */
 	public function TBE_dragNDrop(\TYPO3\CMS\Core\Resource\Folder $folder, $extensionList = '') {
-		$extensionList = $extensionList == '*' ? '' : $extensionList;
+		if (!$folder) {
+			return '';
+		}
 		$out = '';
-		if ($folder) {
-			if ($folder->getStorage()->isPublic()) {
-				// Read files from directory:
-				$files = $folder->getFiles($extensionList);
-				if (is_array($files)) {
-					$out .= $this->barheader(sprintf($GLOBALS['LANG']->getLL('files') . ' (%s):', count($files)));
-					$titleLen = intval($GLOBALS['BE_USER']->uc['titleLen']);
-					$picon = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif', 'width="18" height="16"') . ' alt="" />';
-					$picon .= htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs(basename($folder->getName()), $titleLen));
-					$out .= $picon . '<br />';
-					// Init row-array:
-					$lines = array();
-					// Add "drag-n-drop" message:
+		if ($folder->getStorage()->isPublic()) {
+			// Read files from directory:
+			$extensionList = $extensionList == '*' ? '' : $extensionList;
+			$files = $this->getFilesInFolder($folder, $extensionList);
+			$out .= $this->barheader(sprintf($GLOBALS['LANG']->getLL('files') . ' (%s):', count($files)));
+			$titleLen = intval($GLOBALS['BE_USER']->uc['titleLen']);
+			$picon = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif', 'width="18" height="16"') . ' alt="" />';
+			$picon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($folder->getName()), $titleLen));
+			$out .= $picon . '<br />';
+			// Init row-array:
+			$lines = array();
+			// Add "drag-n-drop" message:
+			$lines[] = '
+				<tr>
+					<td colspan="2">' . $this->getMsgBox($GLOBALS['LANG']->getLL('findDragDrop')) . '</td>
+				</tr>';
+			// Traverse files:
+			foreach ($files as $fileObject) {
+				$fileInfo = $fileObject->getStorage()->getFileInfo($fileObject);
+				// URL of image:
+				$iUrl = GeneralUtility::rawurlencodeFP($fileObject->getPublicUrl(TRUE));
+				// Show only web-images
+				$fileExtension = strtolower($fileObject->getExtension());
+				if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('gif,jpeg,jpg,png', $fileExtension)) {
+					$imgInfo = @getimagesize($fileObject->getForLocalProcessing(FALSE));
+					$pDim = $imgInfo[0] . 'x' . $imgInfo[1] . ' pixels';
+					$size = ' (' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes' . ($pDim ? ', ' . $pDim : '') . ')';
+					$filenameAndIcon = IconUtility::getSpriteIconForFile($fileExtension, array('title' => $fileObject->getName() . $size));
+					if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('noLimit')) {
+						$maxW = 10000;
+						$maxH = 10000;
+					} else {
+						$maxW = 380;
+						$maxH = 500;
+					}
+					$IW = $imgInfo[0];
+					$IH = $imgInfo[1];
+					if ($IW > $maxW) {
+						$IH = ceil($IH / $IW * $maxW);
+						$IW = $maxW;
+					}
+					if ($IH > $maxH) {
+						$IW = ceil($IW / $IH * $maxH);
+						$IH = $maxH;
+					}
+					// Make row:
+					$lines[] = '
+						<tr class="bgColor4">
+							<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
+							<td nowrap="nowrap">' . ($imgInfo[0] != $IW ? '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('noLimit' => '1'))) . '">' . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_warning2.gif', 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('clickToRedrawFullSize', TRUE) . '" alt="" />' . '</a>' : '') . $pDim . '&nbsp;</td>
+						</tr>';
 					$lines[] = '
 						<tr>
-							<td colspan="2">' . $this->getMsgBox($GLOBALS['LANG']->getLL('findDragDrop')) . '</td>
+							<td colspan="2"><img src="' . $iUrl . '" data-htmlarea-file-uid="' . $fileObject->getUid() . '" width="' . $IW . '" height="' . $IH . '" border="1" alt="" /></td>
 						</tr>';
-					// Traverse files:
-					foreach ($files as $fileObject) {
-						$fileInfo = $fileObject->getStorage()->getFileInfo($fileObject);
-						// URL of image:
-						$iUrl = GeneralUtility::rawurlencodeFP($fileObject->getPublicUrl(TRUE));
-						// Show only web-images
-						$fileExtension = strtolower($fileObject->getExtension());
-						if (\TYPO3\CMS\Core\Utility\GeneralUtility::inList('gif,jpeg,jpg,png', $fileExtension)) {
-							$imgInfo = @getimagesize($fileObject->getForLocalProcessing(FALSE));
-							$pDim = $imgInfo[0] . 'x' . $imgInfo[1] . ' pixels';
-							$size = ' (' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes' . ($pDim ? ', ' . $pDim : '') . ')';
-							$filenameAndIcon = IconUtility::getSpriteIconForFile($fileExtension, array('title' => $fileObject->getName() . $size));
-							if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('noLimit')) {
-								$maxW = 10000;
-								$maxH = 10000;
-							} else {
-								$maxW = 380;
-								$maxH = 500;
-							}
-							$IW = $imgInfo[0];
-							$IH = $imgInfo[1];
-							if ($IW > $maxW) {
-								$IH = ceil($IH / $IW * $maxW);
-								$IW = $maxW;
-							}
-							if ($IH > $maxH) {
-								$IW = ceil($IW / $IH * $maxH);
-								$IH = $maxH;
-							}
-							// Make row:
-							$lines[] = '
-								<tr class="bgColor4">
-									<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
-									<td nowrap="nowrap">' . ($imgInfo[0] != $IW ? '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('noLimit' => '1'))) . '">' . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_warning2.gif', 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('clickToRedrawFullSize', TRUE) . '" alt="" />' . '</a>' : '') . $pDim . '&nbsp;</td>
-								</tr>';
-							$lines[] = '
-								<tr>
-									<td colspan="2"><img src="' . $iUrl . '" data-htmlarea-file-uid="' . $fileObject->getUid() . '" width="' . $IW . '" height="' . $IH . '" border="1" alt="" /></td>
-								</tr>';
-							$lines[] = '
-								<tr>
-									<td colspan="2"><img src="clear.gif" width="1" height="3" alt="" /></td>
-								</tr>';
-						}
-					}
-					// Finally, wrap all rows in a table tag:
-					$out .= '
-
-
-			<!--
-				File listing / Drag-n-drop
-			-->
-						<table border="0" cellpadding="0" cellspacing="1" id="typo3-dragBox">
-							' . implode('', $lines) . '
-						</table>';
+					$lines[] = '
+						<tr>
+							<td colspan="2"><img src="clear.gif" width="1" height="3" alt="" /></td>
+						</tr>';
 				}
-			} else {
-				// Print this warning if the folder is NOT a web folder:
-				$out .= $this->barheader($GLOBALS['LANG']->getLL('files'));
-				$out .= $this->getMsgBox($GLOBALS['LANG']->getLL('noWebFolder'), 'icon_warning2');
 			}
+			// Finally, wrap all rows in a table tag:
+			$out .= '
+
+
+	<!--
+		File listing / Drag-n-drop
+	-->
+				<table border="0" cellpadding="0" cellspacing="1" id="typo3-dragBox">
+					' . implode('', $lines) . '
+				</table>';
+		} else {
+			// Print this warning if the folder is NOT a web folder:
+			$out .= $this->barheader($GLOBALS['LANG']->getLL('files'));
+			$out .= $this->getMsgBox($GLOBALS['LANG']->getLL('noWebFolder'), 'icon_warning2');
 		}
 		return $out;
 	}
@@ -1917,17 +1927,6 @@ class ElementBrowser {
 	 */
 	public function checkFolder($folder) {
 		return $this->fileProcessor->checkPathAgainstMounts(rtrim($folder, '/') . '/') ? TRUE : FALSE;
-	}
-
-	/**
-	 * Checks, if a path is within a read-only mountpoint of the backend user
-	 *
-	 * @param string $folder Absolute filepath
-	 * @return boolean If the input path is found in the backend users filemounts and if the filemount is of type readonly, then return TRUE.
-	 * @todo Define visibility
-	 */
-	public function isReadOnlyFolder($folder) {
-		return $GLOBALS['FILEMOUNTS'][$this->fileProcessor->checkPathAgainstMounts(rtrim($folder, '/') . '/')]['type'] == 'readonly';
 	}
 
 	/**
@@ -2174,6 +2173,9 @@ class ElementBrowser {
 		if (!$folderObject->checkActionPermission('write')) {
 			return '';
 		}
+		if (!($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.createFoldersInEB'))) {
+			return '';
+		}
 		// Don't show Folder-create form if it's denied
 		if ($GLOBALS['BE_USER']->getTSConfigVal('options.folderTree.hideCreateFolder')) {
 			return '';
@@ -2264,6 +2266,23 @@ class ElementBrowser {
 			$result = $this->P['fieldChangeFuncHash'] === GeneralUtility::hmac(serialize($fieldChangeFunctions));
 		}
 		return $result;
+	}
+
+	/**
+	 * Get a list of Files in a folder filtered by extension
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\Folder $folder
+	 * @param string $extensionList
+	 * @return \TYPO3\CMS\Core\Resource\File[]
+	 */
+	protected function getFilesInFolder(\TYPO3\CMS\Core\Resource\Folder $folder, $extensionList) {
+		if ($extensionList !== '') {
+			/** @var \TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter $filter */
+			$filter = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Filter\\FileExtensionFilter');
+			$filter->setAllowedFileExtensions($extensionList);
+			$folder->setFileAndFolderNameFilters(array(array($filter, 'filterFileList')));
+		}
+		return $folder->getFiles();
 	}
 
 }

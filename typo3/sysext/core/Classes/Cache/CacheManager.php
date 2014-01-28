@@ -50,12 +50,23 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $cacheConfigurations = array();
 
 	/**
+	 * Used to flush caches of a specific group
+	 * is an associative array containing the group identifier as key
+	 * and the identifier as an array within that group
+	 * groups are set via the cache configurations of each cache.
+	 *
+	 * @var array
+	 */
+	protected $cacheGroups = array();
+
+	/**
 	 * @var array Default cache configuration as fallback
 	 */
 	protected $defaultCacheConfiguration = array(
 		'frontend' => 'TYPO3\\CMS\\Core\\Cache\\Frontend\\VariableFrontend',
 		'backend' => 'TYPO3\\CMS\\Core\\Cache\\Backend\\Typo3DatabaseBackend',
-		'options' => array()
+		'options' => array(),
+		'groups' => array('all')
 	);
 
 	/**
@@ -150,6 +161,45 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Flushes all registered caches of a specific group
+	 *
+	 * @param string $groupIdentifier
+	 * @return void
+	 * @api
+	 */
+	public function flushCachesInGroup($groupIdentifier) {
+		$this->createAllCaches();
+		if (isset($this->cacheGroups[$groupIdentifier])) {
+			foreach ($this->cacheGroups[$groupIdentifier] as $cacheIdentifier) {
+				if (isset($this->caches[$cacheIdentifier])) {
+					$this->caches[$cacheIdentifier]->flush();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Flushes entries tagged by the specified tag of all registered
+	 * caches of a specific group.
+	 *
+	 * @param string $groupIdentifier
+	 * @param string $tag Tag to search for
+	 * @return void
+	 * @api
+	 */
+	public function flushCachesInGroupByTag($groupIdentifier, $tag) {
+		$this->createAllCaches();
+		if (isset($this->cacheGroups[$groupIdentifier])) {
+			foreach ($this->cacheGroups[$groupIdentifier] as $cacheIdentifier) {
+				if (isset($this->caches[$cacheIdentifier])) {
+					$this->caches[$cacheIdentifier]->flushByTag($tag);
+				}
+			}
+		}
+	}
+
+
+	/**
 	 * Flushes entries tagged by the specified tag of all registered
 	 * caches.
 	 *
@@ -193,8 +243,7 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 					$pathAndFilename = str_replace(FLOW3_PATH_PACKAGES, '', $pathAndFilename);
 					$matches = array();
 					if (preg_match('/[^\\/]+\\/(.+)\\/(Classes|Tests)\\/(.+)\\.php/', $pathAndFilename, $matches) === 1) {
-						$classNameWithUnderscores = str_replace('/', '_', $matches[1] . '_' . ($matches[2] === 'Tests' ? 'Tests_' : '') . $matches[3]);
-						$classNameWithUnderscores = str_replace('.', '_', $classNameWithUnderscores);
+						$classNameWithUnderscores = str_replace(array('/', '.'), '_', $matches[1] . '_' . ($matches[2] === 'Tests' ? 'Tests_' : '') . $matches[3]);
 						$modifiedClassNamesWithUnderscores[$classNameWithUnderscores] = TRUE;
 						// If an aspect was modified, the whole code cache needs to be flushed, so keep track of them:
 						if (substr($classNameWithUnderscores, -6, 6) === 'Aspect') {
@@ -234,11 +283,11 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 					if (!in_array($filename, array('Policy.yaml', 'Routes.yaml'))) {
 						continue;
 					}
-					if ($policyChangeDetected === FALSE && basename($pathAndFilename) === 'Policy.yaml') {
+					if ($policyChangeDetected === FALSE && $filename === 'Policy.yaml') {
 						$this->systemLogger->log('The security policies have changed, flushing the policy cache.', LOG_INFO);
 						$this->getCache('FLOW3_Security_Policy')->flush();
 						$policyChangeDetected = TRUE;
-					} elseif ($routesChangeDetected === FALSE && basename($pathAndFilename) === 'Routes.yaml') {
+					} elseif ($routesChangeDetected === FALSE && $filename === 'Routes.yaml') {
 						$this->systemLogger->log('A Routes.yaml file has been changed, flushing the routing cache.', LOG_INFO);
 						$this->getCache('FLOW3_Mvc_Routing_FindMatchResults')->flush();
 						$this->getCache('FLOW3_Mvc_Routing_Resolve')->flush();
@@ -317,6 +366,20 @@ class CacheManager implements \TYPO3\CMS\Core\SingletonInterface {
 		} else {
 			$backendOptions = $this->defaultCacheConfiguration['options'];
 		}
+
+		// Add the cache identifier to the groups that it should be attached to, or use the default ones.
+		if (isset($this->cacheConfigurations[$identifier]['groups']) && is_array($this->cacheConfigurations[$identifier]['groups'])) {
+			$assignedGroups = $this->cacheConfigurations[$identifier]['groups'];
+		} else {
+			$assignedGroups = $this->defaultCacheConfiguration['groups'];
+		}
+		foreach ($assignedGroups as $groupIdentifier) {
+			if (!isset($this->cacheGroups[$groupIdentifier])) {
+				$this->cacheGroups[$groupIdentifier] = array();
+			}
+			$this->cacheGroups[$groupIdentifier][] = $identifier;
+		}
+
 		$this->cacheFactory->create($identifier, $frontend, $backend, $backendOptions);
 	}
 

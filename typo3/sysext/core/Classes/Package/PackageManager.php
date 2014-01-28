@@ -59,6 +59,11 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	protected $packageAliasMap = array();
 
 	/**
+	 * @var array
+	 */
+	protected $runtimeActivatedPackages = array();
+
+	/**
 	 * Adjacency matrix for the dependency graph (DAG)
 	 *
 	 * Example structure is:
@@ -204,7 +209,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			$this->coreCache->set($packageObjectsCacheEntryIdentifier, serialize($this->packages));
 			$this->coreCache->set(
 				$cacheEntryIdentifier,
-				'return __DIR__ !== \'' . $cacheEntryPath . '\' ? FALSE : ' . PHP_EOL .
+				'return ' . PHP_EOL .
 					var_export($packageCache, TRUE) . ';'
 			);
 		}
@@ -511,7 +516,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		if (isset($this->packageAliasMap[$lowercasedPackageKey = strtolower($packageKey)])) {
 			$packageKey = $this->packageAliasMap[$lowercasedPackageKey];
 		}
-		return parent::isPackageActive($packageKey);
+		return parent::isPackageActive($packageKey) || isset($this->runtimeActivatedPackages[$packageKey]);
 	}
 
 	/**
@@ -528,6 +533,18 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	public function activatePackage($packageKey) {
 		$package = $this->getPackage($packageKey);
 		parent::activatePackage($package->getPackageKey());
+	}
+
+	/**
+	 * Enables packages during runtime, but no class aliases will be available
+	 *
+	 * @param string $packageKey
+	 * @api
+	 */
+	public function activatePackageDuringRuntime($packageKey) {
+		$package = $this->getPackage($packageKey);
+		$this->runtimeActivatedPackages[$package->getPackageKey()] = $package;
+		$this->classLoader->addRuntimeActivatedPackage($package);
 	}
 
 
@@ -572,6 +589,17 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		parent::refreezePackage($package->getPackageKey());
 	}
 
+	/**
+	 * Returns an array of \TYPO3\Flow\Package objects of all active packages.
+	 * A package is active, if it is available and has been activated in the package
+	 * manager settings. This method returns runtime activated packages too
+	 *
+	 * @return array Array of \TYPO3\Flow\Package\PackageInterface
+	 * @api
+	 */
+	public function getActivePackages() {
+		return array_merge(parent::getActivePackages(), $this->runtimeActivatedPackages);
+	}
 
 	/**
 	 * Get packages of specific type
@@ -580,9 +608,9 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	 * @param array $excludedTypes Array of package types to exclude
 	 * @return array List of packages
 	 */
-	protected function getPackageKeysOfType($type, array $excludedTypes = array()) {
+	protected function getActivePackageKeysOfType($type, array $excludedTypes = array()) {
 		$packageKeys = array();
-		foreach ($this->packages as $packageKey => $package) {
+		foreach ($this->activePackages as $packageKey => $package) {
 			$packageType = $package->getComposerManifest('type');
 			if (($type === '' || $packageType === $type) && !in_array($packageType, $excludedTypes)) {
 				$packageKeys[] = $packageKey;
@@ -628,8 +656,8 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 				$rootPackageKeys[] = $packageKey;
 			}
 		}
-		$extensionPackageKeys = $this->getPackageKeysOfType('', array('typo3-cms-framework'));
-		$frameworkPackageKeys = $this->getPackageKeysOfType('typo3-cms-framework');
+		$extensionPackageKeys = $this->getActivePackageKeysOfType('', array('typo3-cms-framework'));
+		$frameworkPackageKeys = $this->getActivePackageKeysOfType('typo3-cms-framework');
 		foreach ($extensionPackageKeys as $packageKey) {
 			// Remove framework packages from list
 			$packageKeysWithoutFramework = array_diff(
@@ -655,7 +683,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	protected function buildDependencyGraph() {
 		$this->resolvePackageDependencies();
 
-		$frameworkPackageKeys = $this->getPackageKeysOfType('typo3-cms-framework');
+		$frameworkPackageKeys = $this->getActivePackageKeysOfType('typo3-cms-framework');
 		$this->buildDependencyGraphForPackages($frameworkPackageKeys);
 
 		$this->addDependencyToFrameworkToAllExtensions();
@@ -755,5 +783,21 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 
 		$this->packages = $newPackages;
 		$this->packageStatesConfiguration['packages'] = $newPackageStatesConfiguration;
+	}
+
+	/**
+	 * Resolves the dependent packages from the meta data of all packages recursively. The
+	 * resolved direct or indirect dependencies of each package will put into the package
+	 * states configuration array.
+	 *
+	 * @return void
+	 */
+	protected function resolvePackageDependencies() {
+		foreach ($this->packages as $packageKey => $package) {
+			$this->packageStatesConfiguration['packages'][$packageKey]['dependencies'] = array();
+		}
+		foreach ($this->activePackages as $packageKey => $package) {
+			$this->packageStatesConfiguration['packages'][$packageKey]['dependencies'] = $this->getDependencyArrayForPackage($packageKey);
+		}
 	}
 }

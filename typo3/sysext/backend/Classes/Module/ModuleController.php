@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Module;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -102,7 +102,7 @@ class ModuleController {
 			$entry->setName($module['name']);
 		}
 		if (!empty($module['title']) && is_string($module['title'])) {
-			$entry->setTitle($GLOBALS['LANG']->sL($module['title']));
+			$entry->setTitle($this->getLanguageService()->sL($module['title']));
 		}
 		if (!empty($module['onclick']) && is_string($module['onclick'])) {
 			$entry->setOnClick($module['onclick']);
@@ -152,4 +152,12 @@ class ModuleController {
 		}
 	}
 
+	/**
+	 * Return language service instance
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
 }

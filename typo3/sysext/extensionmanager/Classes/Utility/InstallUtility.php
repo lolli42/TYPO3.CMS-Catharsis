@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -76,6 +76,12 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	public $extensionRepository;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Package\PackageManager
+	 * @inject
+	 */
+	protected $packageManager;
+
+	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 * @inject
 	 */
@@ -110,15 +116,15 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->processDatabaseUpdates($extension);
 		$this->ensureConfiguredDirectoriesExist($extension);
 		$this->importInitialFiles($extension['siteRelPath'], $extensionKey);
-		if ($extension['clearcacheonload']) {
-			$GLOBALS['typo3CacheManager']->flushCaches();
-		}
 		if (!$this->isLoaded($extensionKey)) {
 			$this->loadExtension($extensionKey);
 		}
 		$this->reloadCaches();
 		$this->processCachingFrameworkUpdates();
 		$this->saveDefaultConfiguration($extension['key']);
+		if ($extension['clearcacheonload']) {
+			$GLOBALS['typo3CacheManager']->flushCaches();
+		}
 	}
 
 	/**
@@ -151,7 +157,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return boolean TRUE if extension is loaded
 	 */
 	public function isLoaded($extensionKey) {
-		return \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extensionKey);
+		return $this->packageManager->isPackageActive($extensionKey);
 	}
 
 	/**
@@ -161,7 +167,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function loadExtension($extensionKey) {
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtension($extensionKey);
+		$this->packageManager->activatePackage($extensionKey);
 	}
 
 	/**
@@ -171,7 +177,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function unloadExtension($extensionKey) {
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::unloadExtension($extensionKey);
+		$this->packageManager->deactivatePackage($extensionKey);
 		$this->reloadCaches();
 	}
 
@@ -182,8 +188,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return boolean
 	 */
 	public function isAvailable($extensionKey) {
-		$availableExtensions = $this->listUtility->getAvailableExtensions();
-		return array_key_exists($extensionKey, $availableExtensions);
+		return $this->packageManager->isPackageAvailable($extensionKey);
 	}
 
 	/**
@@ -257,7 +262,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	public function reloadCaches() {
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::removeCacheFiles();
+		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->reloadTypo3LoadedExtAndClassLoaderAndExtLocalconf();
 	}
 
@@ -373,6 +378,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return boolean
 	 */
 	public function isUpdateAvailable(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData) {
+		$isUpdateAvailable = FALSE;
 		// Only check for update for TER extensions
 		$version = $extensionData->getIntegerVersion();
 		/** @var $highestTerVersionExtension \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
@@ -380,10 +386,14 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		if ($highestTerVersionExtension instanceof \TYPO3\CMS\Extensionmanager\Domain\Model\Extension) {
 			$highestVersion = $highestTerVersionExtension->getIntegerVersion();
 			if ($highestVersion > $version) {
-				return TRUE;
+				try {
+					$this->dependencyUtility->buildExtensionDependenciesTree($highestTerVersionExtension);
+					$isUpdateAvailable = TRUE;
+				} catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
+				}
 			}
 		}
-		return FALSE;
+		return $isUpdateAvailable;
 	}
 
 	/**

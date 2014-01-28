@@ -16,7 +16,7 @@ namespace TYPO3\CMS\IndexedSearch\ViewHelpers;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -40,7 +40,6 @@ class PageBrowsingViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractVi
 	/**
 	 * main render function
 	 *
-	 * @param array $details	an array with the browser settings
 	 * @param integer $maximumNumberOfResultPages
 	 * @param integer $numberOfResults
 	 * @param integer $resultsPerPage

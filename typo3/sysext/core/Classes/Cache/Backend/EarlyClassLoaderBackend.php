@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -140,7 +140,7 @@ class EarlyClassLoaderBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBack
 	 * @api
 	 */
 	public function requireOnce($entryIdentifier) {
-		return require_once ($this->memoryBackend[$entryIdentifier]);
+		return isset($this->memoryBackend[$entryIdentifier]) ? require_once ($this->memoryBackend[$entryIdentifier]) : FALSE;
 	}
 
 	/**

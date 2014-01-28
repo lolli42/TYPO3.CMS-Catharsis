@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Documentation\ViewHelpers;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -44,16 +44,30 @@ class FormatsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 		$output = '';
 		foreach ($documentTranslation->getFormats() as $format) {
 			/** @var \TYPO3\CMS\Documentation\Domain\Model\DocumentFormat $format */
+			$output .= '<a ';
 
 			// TODO: Encode uri with official TYPO3 API?
 			$uri = $this->controllerContext->getRequest()->getBaseURI() . '../' . $format->getPath();
 			$extension = substr($uri, strrpos($uri, '.') + 1);
 			if (strlen($extension) < 5) {
 				// This is direct link to a file
-				$output .= '<a href="' . $uri . '">' . htmlspecialchars($format->getFormat()) . '</a> ';
+				$output .= 'href="' . $uri . '"';
 			} else {
-				$output .= '<a href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(\'' . $uri . '\')">' . htmlspecialchars($format->getFormat()) . '</a> ';
+				$extension = $format->getFormat();
+				if ($extension === 'json') {
+					$extension = 'js';
+				}
+				$output .= 'href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(\'' . $uri . '\')"';
 			}
+
+			$xliff = 'LLL:EXT:documentation/Resources/Private/Language/locallang.xlf';
+			$title = sprintf(
+				$GLOBALS['LANG']->sL($xliff . ':tx_documentation_domain_model_documentformat.format.title'),
+				$format->getFormat()
+			);
+			$output .= ' title="' . htmlspecialchars($title) . '">';
+			$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile($extension);
+			$output .= $spriteIconHtml . '</a>';
 		}
 		return $output;
 	}

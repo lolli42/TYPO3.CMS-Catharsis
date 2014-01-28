@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Database;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -135,6 +135,14 @@ class DatabaseConnection {
 	 * @var boolean TRUE if connection between client and sql server is compressed
 	 */
 	protected $connectionCompression = FALSE;
+
+	/**
+	 * The charset for the connection; will be passed on to
+	 * mysqli_set_charset during connection initialization.
+	 *
+	 * @var string
+	 */
+	protected $connectionCharset = 'utf8';
 
 	/**
 	 * @var array List of commands executed after connection was established
@@ -474,7 +482,7 @@ class DatabaseConnection {
 				$hookObject->INSERTquery_preProcessAction($table, $fields_values, $no_quote_fields, $this);
 			}
 			// Quote and escape values
-			$fields_values = $this->fullQuoteArray($fields_values, $table, $no_quote_fields);
+			$fields_values = $this->fullQuoteArray($fields_values, $table, $no_quote_fields, TRUE);
 			// Build query
 			$query = 'INSERT INTO ' . $table . ' (' . implode(',', array_keys($fields_values)) . ') VALUES ' . '(' . implode(',', $fields_values) . ')';
 			// Return query
@@ -547,7 +555,7 @@ class DatabaseConnection {
 				}
 			}
 			// Build query
-			$query = 'UPDATE ' . $table . ' SET ' . implode(',', $fields) . (strlen($where) > 0 ? ' WHERE ' . $where : '');
+			$query = 'UPDATE ' . $table . ' SET ' . implode(',', $fields) . ((string)$where !== '' ? ' WHERE ' . $where : '');
 			if ($this->debugOutput || $this->store_lastBuiltQuery) {
 				$this->debug_lastBuiltQuery = $query;
 			}
@@ -572,7 +580,7 @@ class DatabaseConnection {
 				$hookObject->DELETEquery_preProcessAction($table, $where, $this);
 			}
 			// Table and fieldnames should be "SQL-injection-safe" when supplied to this function
-			$query = 'DELETE FROM ' . $table . (strlen($where) > 0 ? ' WHERE ' . $where : '');
+			$query = 'DELETE FROM ' . $table . ((string)$where !== '' ? ' WHERE ' . $where : '');
 			if ($this->debugOutput || $this->store_lastBuiltQuery) {
 				$this->debug_lastBuiltQuery = $query;
 			}
@@ -600,13 +608,13 @@ class DatabaseConnection {
 		}
 		// Table and fieldnames should be "SQL-injection-safe" when supplied to this function
 		// Build basic query
-		$query = 'SELECT ' . $select_fields . ' FROM ' . $from_table . (strlen($where_clause) > 0 ? ' WHERE ' . $where_clause : '');
+		$query = 'SELECT ' . $select_fields . ' FROM ' . $from_table . ((string)$where_clause !== '' ? ' WHERE ' . $where_clause : '');
 		// Group by
-		$query .= strlen($groupBy) > 0 ? ' GROUP BY ' . $groupBy : '';
+		$query .= (string)$groupBy !== '' ? ' GROUP BY ' . $groupBy : '';
 		// Order by
-		$query .= strlen($orderBy) > 0 ? ' ORDER BY ' . $orderBy : '';
+		$query .= (string)$orderBy !== '' ? ' ORDER BY ' . $orderBy : '';
 		// Group by
-		$query .= strlen($limit) > 0 ? ' LIMIT ' . $limit : '';
+		$query .= (string)$limit !== '' ? ' LIMIT ' . $limit : '';
 		// Return query
 		if ($this->debugOutput || $this->store_lastBuiltQuery) {
 			$this->debug_lastBuiltQuery = $query;
@@ -626,7 +634,7 @@ class DatabaseConnection {
 	public function SELECTsubquery($select_fields, $from_table, $where_clause) {
 		// Table and fieldnames should be "SQL-injection-safe" when supplied to this function
 		// Build basic query:
-		$query = 'SELECT ' . $select_fields . ' FROM ' . $from_table . (strlen($where_clause) > 0 ? ' WHERE ' . $where_clause : '');
+		$query = 'SELECT ' . $select_fields . ' FROM ' . $from_table . ((string)$where_clause !== '' ? ' WHERE ' . $where_clause : '');
 		// Return query
 		if ($this->debugOutput || $this->store_lastBuiltQuery) {
 			$this->debug_lastBuiltQuery = $query;
@@ -1194,6 +1202,15 @@ class DatabaseConnection {
 
 		if ($connected) {
 			$this->isConnected = TRUE;
+
+			if ($this->link->set_charset($this->connectionCharset) === FALSE) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(
+					'Error setting connection charset to "' . $this->connectionCharset . '"',
+					'Core',
+					\TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR
+				);
+			}
+
 			foreach ($this->initializeCommandsAfterConnect as $command) {
 				if ($this->link->query($command) === FALSE) {
 					\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(
@@ -1204,6 +1221,7 @@ class DatabaseConnection {
 				}
 			}
 			$this->setSqlMode();
+			$this->checkConnectionCharset();
 		} else {
 			// @TODO: This should raise an exception. Would be useful especially to work during installation.
 			$error_msg = $this->link->connect_error;
@@ -1524,6 +1542,20 @@ class DatabaseConnection {
 	}
 
 	/**
+	 * Set the charset that should be used for the MySQL connection.
+	 * The given value will be passed on to mysqli_set_charset().
+	 *
+	 * The default value of this setting is utf8.
+	 *
+	 * @param string $connectionCharset The connection charset that will be passed on to mysqli_set_charset() when connecting the database. Default is utf8.
+	 * @return void
+	 */
+	public function setConnectionCharset($connectionCharset = 'utf8') {
+		$this->disconnectIfConnected();
+		$this->connectionCharset = $connectionCharset;
+	}
+
+	/**
 	 * Connects to database for TYPO3 sites:
 	 *
 	 * @param string $host Deprecated since 6.1, will be removed in two versions Database. host IP/domain[:port]
@@ -1598,6 +1630,82 @@ class DatabaseConnection {
 	 */
 	public function isConnected() {
 		return $this->isConnected;
+	}
+
+	/**
+	 * Checks if the current connection character set has the same value
+	 * as the connectionCharset variable.
+	 *
+	 * To determine the character set these MySQL session variables are
+	 * checked: character_set_client, character_set_results and
+	 * character_set_connection.
+	 *
+	 * If the character set does not match or if the session variables
+	 * can not be read a RuntimeException is thrown.
+	 *
+	 * @return void
+	 * @throws \RuntimeException
+	 */
+	protected function checkConnectionCharset() {
+		$sessionResult = $this->sql_query('SHOW SESSION VARIABLES LIKE \'character_set%\'');
+
+		if ($sessionResult === FALSE) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(
+				'Error while retrieving the current charset session variables from the database: ' . $this->sql_error(),
+				'Core',
+				\TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR
+			);
+			throw new \RuntimeException(
+				'TYPO3 Fatal Error: Could not determine the current charset of the database.',
+				1381847136
+			);
+		}
+
+		$charsetVariables = array();
+		while (($row = $this->sql_fetch_row($sessionResult)) !== FALSE) {
+			$variableName = $row[0];
+			$variableValue = $row[1];
+			$charsetVariables[$variableName] = $variableValue;
+		}
+		$this->sql_free_result($sessionResult);
+
+		// These variables are set with the "Set names" command which was
+		// used in the past. This is why we check them.
+		$charsetRequiredVariables = array(
+			'character_set_client',
+			'character_set_results',
+			'character_set_connection',
+		);
+
+		$hasValidCharset = TRUE;
+		foreach ($charsetRequiredVariables as $variableName) {
+			if (empty($charsetVariables[$variableName])) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(
+					'A required session variable is missing in the current MySQL connection: ' . $variableName,
+					'Core',
+					\TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR
+				);
+				throw new \RuntimeException(
+					'TYPO3 Fatal Error: Could not determine the value of the database session variable: ' . $variableName,
+					1381847779
+				);
+			}
+
+			if ($charsetVariables[$variableName] !== $this->connectionCharset) {
+				$hasValidCharset = FALSE;
+				break;
+			}
+		}
+
+		if (!$hasValidCharset) {
+			throw new \RuntimeException(
+				'It looks like the character set ' . $this->connectionCharset . ' is not used for this connection even though it is configured as connection charset. ' .
+				'This TYPO3 installation is using the $GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'setDBinit\'] property with the following value: "' .
+				$GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit'] . '". Please make sure that this command does not overwrite the configured charset. ' .
+				'Please note that for the TYPO3 database everything other than utf8 is unsupported since version 4.7.',
+				1389697515
+			);
+		}
 	}
 
 	/**

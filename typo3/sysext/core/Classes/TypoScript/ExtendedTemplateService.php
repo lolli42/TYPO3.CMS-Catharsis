@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\TypoScript;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -209,6 +209,11 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	public $templateTitles = array();
 
 	/**
+	 * @var array|NULL
+	 */
+	protected $lnToScript = NULL;
+
+	/**
 	 * This flattens a hierarchical setuparray to $this->flatSetup
 	 * The original function fetched the resource-file if any ('file.'). This functions doesn't.
 	 *
@@ -287,15 +292,14 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	public function substituteCMarkers($all) {
 		switch ($this->constantMode) {
 			case 'const':
-				$all = str_replace('##' . $this->Cmarker . '_B##', '<font color="green"><strong>', $all);
-				$all = str_replace('##' . $this->Cmarker . '_E##', '</strong></font>', $all);
-				break;
 			case 'subst':
-				$all = str_replace('##' . $this->Cmarker . '_B##', '<font color="green"><strong>', $all);
-				$all = str_replace('##' . $this->Cmarker . '_E##', '</strong></font>', $all);
+				$all = str_replace(
+					array('##' . $this->Cmarker . '_B##', '##' . $this->Cmarker . '_E##'),
+					array('<font color="green"><strong>', '</strong></font>'),
+					$all
+				);
 				break;
 			default:
-				$all = $all;
 		}
 		return $all;
 	}
@@ -353,14 +357,14 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	 */
 	public function ext_getSetup($theSetup, $theKey) {
 		$parts = explode('.', $theKey, 2);
-		if (strcmp($parts[0], '') && is_array($theSetup[$parts[0] . '.'])) {
-			if (strcmp(trim($parts[1]), '')) {
+		if ((string)$parts[0] !== '' && is_array($theSetup[$parts[0] . '.'])) {
+			if (trim($parts[1]) !== '') {
 				return $this->ext_getSetup($theSetup[$parts[0] . '.'], trim($parts[1]));
 			} else {
 				return array($theSetup[$parts[0] . '.'], $theSetup[$parts[0]]);
 			}
 		} else {
-			if (strcmp(trim($theKey), '')) {
+			if (trim($theKey) !== '') {
 				return array(array(), $theSetup[$theKey]);
 			} else {
 				return array($theSetup, '');
@@ -499,23 +503,33 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	}
 
 	/**
-	 * [Describe function...]
+	 * Find the originating template name for an array of line numbers (TypoScript setup only!)
+	 * Given an array of linenumbers the method will try to find the corresponding template where this line originated
+	 * The linenumber indicates the *last* lineNumber that is part of the template
 	 *
-	 * @param 	[type]		$lnArr: ...
-	 * @return 	[type]		...
+	 * lineNumbers are in sync with the calculated lineNumbers '.ln..' in TypoScriptParser
+	 *
+	 * @param array $lnArr Array with linenumbers (might have some extra symbols, for example for unsetting) to be processed
+	 * @return array The same array where each entry has been prepended by the template title if available
 	 * @todo Define visibility
 	 */
-	public function lineNumberToScript($lnArr) {
+	public function lineNumberToScript(array $lnArr) {
+		// On the first call, construct the lnToScript array.
 		if (!is_array($this->lnToScript)) {
 			$this->lnToScript = array();
-			$c = 1;
-			$c += substr_count($GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup'], LF) + 2;
-			$this->lnToScript[$c] = '[Default]';
-			foreach ($this->hierarchyInfoToRoot as $info) {
-				$c += $info['configLines'] + 1;
+
+			// aggregatedTotalLineCount
+			$c = 0;
+			foreach ($this->hierarchyInfo as $templateNumber => $info) {
+				// hierarchyInfo has the number of lines in configLines, but unfortunatly this value
+				// was calculated *before* processing of any INCLUDE instructions
+				// for some yet unknown reason we have to add an extra +2 offset
+				$linecountAfterIncludeProcessing = substr_count($this->config[$templateNumber], LF) + 2;
+				$c += $linecountAfterIncludeProcessing;
 				$this->lnToScript[$c] = $info['title'];
 			}
 		}
+
 		foreach ($lnArr as $k => $ln) {
 			foreach ($this->lnToScript as $endLn => $title) {
 				if ($endLn >= intval($ln)) {
@@ -524,6 +538,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 				}
 			}
 		}
+
 		return implode('; ', $lnArr);
 	}
 
@@ -676,7 +691,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 							<td align="center">' . ($row['clConf'] ? \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
 							<td align="center">' . ($row['clConst'] ? \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
 							<td align="center">' . ($row['pid'] ? $row['pid'] : '') . '</td>
-							<td align="center">' . (strcmp($RL, '') ? $RL : '') . '</td>
+							<td align="center">' . ((string)$RL !== '' ? $RL : '') . '</td>
 							<td>' . ($row['next'] ? '&nbsp;' . $row['next'] . '&nbsp;&nbsp;' : '') . '</td>
 						</tr>';
 			if ($deeper) {
@@ -687,14 +702,15 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	}
 
 	/**
-	 * [Describe function...]
+	 * Processes the flat array from TemplateService->hierarchyInfo
+	 * and turns it into a hierachical array to show dependencies (used by TemplateAnalyzer)
 	 *
-	 * @param 	[type]		$depthDataArr: ...
-	 * @param 	[type]		$pointer: ...
-	 * @return 	[type]		...
-	 * @todo Define visibility
+	 * @param array $depthDataArr (empty array on external call)
+	 * @param integer &$pointer Element number (1! to count()) of $this->hierarchyInfo that should be processed.
+	 *
+	 * @return array Processed hierachyInfo.
 	 */
-	public function ext_process_hierarchyInfo($depthDataArr, &$pointer) {
+	public function ext_process_hierarchyInfo(array $depthDataArr, &$pointer) {
 		$parent = $this->hierarchyInfo[$pointer - 1]['templateParent'];
 		while ($pointer > 0 && $this->hierarchyInfo[$pointer - 1]['templateParent'] == $parent) {
 			$pointer--;
@@ -713,25 +729,27 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	}
 
 	/**
-	 * [Describe function...]
+	 * Get formatted HTML output for TypoScript either with Syntaxhiglighting or in plain mode
 	 *
-	 * @param 	[type]		$config: ...
-	 * @param 	[type]		$lineNumbers: ...
-	 * @param 	[type]		$comments: ...
-	 * @param 	[type]		$crop: ...
-	 * @param 	[type]		$syntaxHL: ...
-	 * @param 	[type]		$syntaxHLBlockmode: ...
-	 * @return 	[type]		...
+	 * @param array $config Array with simple strings of typoscript code.
+	 * @param boolean $lineNumbers Prepend linNumbers to each line.
+	 * @param boolean $comments Enable including comments in output.
+	 * @param boolean $crop Enable cropping of long lines.
+	 * @param boolean $syntaxHL Enrich output with syntaxhighlighting.
+	 * @param integer $syntaxHLBlockmode
+	 *
+	 * @return string
+	 *
 	 * @todo Define visibility
 	 */
-	public function ext_outputTS($config, $lineNumbers = 0, $comments = 0, $crop = 0, $syntaxHL = 0, $syntaxHLBlockmode = 0) {
+	public function ext_outputTS(
+		array $config, $lineNumbers = FALSE, $comments = FALSE, $crop = FALSE, $syntaxHL = FALSE, $syntaxHLBlockmode = 0
+	) {
 		$all = '';
 		foreach ($config as $str) {
-			$all .= LF . '[GLOBAL]' . LF . $str;
+			$all .= '[GLOBAL]' . LF . $str;
 		}
 		if ($syntaxHL) {
-			$all = preg_replace('/^[^' . LF . ']*./', '', $all);
-			$all = chop($all);
 			$tsparser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 			$tsparser->lineNumberOffset = $this->ext_lineNumberOffset + 1;
 			$tsparser->parentObject = $this;
@@ -787,8 +805,6 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	 * @todo Define visibility
 	 */
 	public function ext_formatTS($input, $ln, $comments = 1, $crop = 0) {
-		$input = preg_replace('/^[^' . LF . ']*./', '', $input);
-		$input = chop($input);
 		$cArr = explode(LF, $input);
 		$n = ceil(log10(count($cArr) + $this->ext_lineNumberOffset));
 		$lineNum = '';
@@ -1079,7 +1095,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 		} elseif (substr($imgConf, 0, 4) == 'EXT:') {
 			$iFile = GeneralUtility::getFileAbsFileName($imgConf);
 			if ($iFile) {
-				$f = substr($iFile, strlen(PATH_site));
+				$f = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($iFile);
 				$tFile = $GLOBALS['BACK_PATH'] . '../' . $f;
 			}
 		}
@@ -1547,7 +1563,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 								}
 								break;
 						}
-						if ($this->ext_printAll || strcmp($theConstants[$key]['value'], $var)) {
+						if ($this->ext_printAll || (string)$theConstants[$key]['value'] !== (string)$var) {
 							// Put value in, if changed.
 							$this->ext_putValueInConf($key, $var);
 						}

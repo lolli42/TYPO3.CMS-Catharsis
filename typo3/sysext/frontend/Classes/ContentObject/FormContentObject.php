@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -92,7 +92,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 						if (is_array($singleKeyArray['valueArray.'])) {
 							$temp_accumulated = array();
 							foreach ($singleKeyArray['valueArray.'] as $singleKey => $singleKey_valueArray) {
-								if (is_array($singleKey_valueArray) && !strcmp((intval($singleKey) . '.'), $singleKey)) {
+								if (is_array($singleKey_valueArray) && (int)$singleKey . '.' === (string)$singleKey) {
 									$temp_valueArray = array();
 									$valueArrayLabel = isset($singleKey_valueArray['label.']) ? $this->cObj->stdWrap($singleKey_valueArray['label'], $singleKey_valueArray['label.']) : $singleKey_valueArray['label'];
 									list($temp_valueArray[0]) = explode('=', $valueArrayLabel);
@@ -193,7 +193,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 					} else {
 						$addParams = isset($conf['params.']) ? trim($this->cObj->stdWrap($conf['params'], $conf['params.'])) : trim($conf['params']);
 					}
-					if (strcmp('', $addParams)) {
+					if ((string)$addParams !== '') {
 						$addParams = ' ' . $addParams;
 					}
 				} else {
@@ -354,7 +354,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 							} else {
 								$radioLabelIdAttribute = '';
 							}
-							$optionParts .= '<input type="radio" name="' . $confData['fieldname'] . '"' . $radioLabelIdAttribute . ' value="' . $items[$a][1] . '"' . (!strcmp($items[$a][1], $default) ? ' checked="checked"' : '') . $addParams . ' />';
+							$optionParts .= '<input type="radio" name="' . $confData['fieldname'] . '"' . $radioLabelIdAttribute . ' value="' . $items[$a][1] . '"' . ((string)$items[$a][1] === (string)$default ? ' checked="checked"' : '') . $addParams . ' />';
 							if ($accessibility) {
 								$label = isset($conf['radioWrap.']) ? $this->cObj->stdWrap(trim($items[$a][0]), $conf['radioWrap.']) : trim($items[$a][0]);
 								$optionParts .= '<label for="' . $radioId . '">' . $label . '</label>';
@@ -385,7 +385,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 						// If this form includes an auto responder message, include a HMAC checksum field
 						// in order to verify potential abuse of this feature.
 						if (strlen($value) && GeneralUtility::inList($confData['fieldname'], 'auto_respond_msg')) {
-							$hmacChecksum = GeneralUtility::hmac($value);
+							$hmacChecksum = GeneralUtility::hmac($value, 'content_form');
 							$hiddenfields .= sprintf('<input type="hidden" name="auto_respond_checksum" id="%sauto_respond_checksum" value="%s" />', $prefix, $hmacChecksum);
 						}
 						if (strlen($value) && GeneralUtility::inList('recipient_copy,recipient', $confData['fieldname']) && $GLOBALS['TYPO3_CONF_VARS']['FE']['secureFormmail']) {
@@ -511,11 +511,20 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 							$result = $labelLayout;
 						}
 					}
-					$result = str_replace('###FIELD###', $fieldCode, $result);
-					$result = str_replace('###LABEL###', $labelCode, $result);
-					$result = str_replace('###COMMENT###', $commentCode, $result);
 					//RTF
-					$content .= $result;
+					$content .= str_replace(
+						array(
+							'###FIELD###',
+							'###LABEL###',
+							'###COMMENT###'
+						),
+						array(
+							$fieldCode,
+							$labelCode,
+							$commentCode
+						),
+						$result
+					);
 				}
 			}
 		}
@@ -602,7 +611,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 				}
 			}
 		}
-		// Wrap all hidden fields in a div tag (see http://bugs.typo3.org/view.php?id=678)
+		// Wrap all hidden fields in a div tag (see http://forge.typo3.org/issues/14491)
 		$hiddenfields = isset($conf['hiddenFields.']['stdWrap.']) ? $this->cObj->stdWrap($hiddenfields, $conf['hiddenFields.']['stdWrap.']) : '<div style="display:none;">' . $hiddenfields . '</div>';
 		if ($conf['REQ']) {
 			$goodMess = isset($conf['goodMess.']) ? $this->cObj->stdWrap($conf['goodMess'], $conf['goodMess.']) : $conf['goodMess'];

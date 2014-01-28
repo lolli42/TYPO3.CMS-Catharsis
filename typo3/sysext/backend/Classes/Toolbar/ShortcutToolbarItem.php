@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Toolbar;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -269,7 +269,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 				}
 			}
 			$shortcutGroup = $row['sc_group'];
-			if ($shortcutGroup && strcmp($lastGroup, $shortcutGroup) && $shortcutGroup != -100) {
+			if ($shortcutGroup && (string)$lastGroup !== (string)$shortcutGroup && $shortcutGroup != -100) {
 				$shortcut['groupLabel'] = $this->getShortcutGroupLabel($shortcutGroup);
 			}
 			if ($row['description']) {
@@ -333,8 +333,8 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 		$bookmarkGroups = $GLOBALS['BE_USER']->getTSConfigProp('options.bookmarkGroups');
 		if (is_array($bookmarkGroups) && count($bookmarkGroups)) {
 			foreach ($bookmarkGroups as $groupId => $label) {
-				if (strcmp('', $label) && strcmp('0', $label)) {
-					$this->shortcutGroups[$groupId] = (string) $label;
+				if (!empty($label)) {
+					$this->shortcutGroups[$groupId] = (string)$label;
 				} elseif ($GLOBALS['BE_USER']->isAdmin()) {
 					unset($this->shortcutGroups[$groupId]);
 				}
@@ -622,7 +622,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 					// Change icon of fileadmin references - otherwise it doesn't differ with Web->List
 					$icon = str_replace('mod/file/list/list.gif', 'mod/file/file.gif', $icon);
 					if (GeneralUtility::isAbsPath($icon)) {
-						$icon = '../' . substr($icon, strlen(PATH_site));
+						$icon = '../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($icon);
 					}
 				} else {
 					$icon = 'gfx/dummy_module.gif';

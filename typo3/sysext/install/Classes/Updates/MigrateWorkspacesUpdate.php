@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Updates;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -111,7 +111,7 @@ class MigrateWorkspacesUpdate extends InstallSysExtsUpdate {
 	 * This method requests input from the user about the upgrade process, if needed
 	 *
 	 * @param string $inputPrefix
-	 * @return void
+	 * @return string
 	 */
 	public function getUserInput($inputPrefix) {
 		$content = '';
@@ -339,7 +339,7 @@ class MigrateWorkspacesUpdate extends InstallSysExtsUpdate {
 	}
 
 	/**
-	 * Migrate all workspace adminusers fields to support groups aswell,
+	 * Migrate all workspace admin users fields to support groups as well,
 	 * this means that the old comma separated list of uids (referring to be_users)
 	 * is updated to be a list of uids with the tablename as prefix
 	 *

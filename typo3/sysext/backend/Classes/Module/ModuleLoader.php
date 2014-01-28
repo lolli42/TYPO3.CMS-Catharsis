@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Module;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -215,7 +215,7 @@ class ModuleLoader {
 	 */
 	public function checkExtensionModule($name) {
 		if (isset($this->absPathArray[$name])) {
-			return rtrim(substr($this->absPathArray[$name], strlen(PATH_site)), '/');
+			return rtrim(\TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->absPathArray[$name]), '/');
 		}
 	}
 

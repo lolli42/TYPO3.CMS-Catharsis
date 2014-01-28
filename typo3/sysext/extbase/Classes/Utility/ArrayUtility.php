@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -63,7 +63,7 @@ class ArrayUtility {
 		$chunksArr = explode($delimiter, $string);
 		$newChunksArr = array();
 		foreach ($chunksArr as $value) {
-			if ($onlyNonEmptyValues === FALSE || strcmp('', trim($value))) {
+			if ($onlyNonEmptyValues === FALSE || trim($value) !== '') {
 				$newChunksArr[] = trim($value);
 			}
 		}
@@ -311,5 +311,26 @@ class ArrayUtility {
 			}
 		}
 		return $result;
+	}
+
+	/**
+	 * If the array contains numerical keys only, sort it in ascending order
+	 *
+	 * @param array $array
+	 *
+	 * @return array
+	 */
+	public static function sortArrayWithIntegerKeys($array) {
+		$containsNumericalKeysOnly = TRUE;
+		array_walk($array, function($value, $key) use (&$containsNumericalKeysOnly) {
+			if (!is_integer($key)) {
+				$containsNumericalKeysOnly = FALSE;
+				return;
+			}
+		});
+		if ($containsNumericalKeysOnly === TRUE) {
+			ksort($array);
+		}
+		return $array;
 	}
 }

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\TypoScript;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -251,13 +251,16 @@ class TemplateService {
 	 */
 	public $sectionsMatch;
 
-	// Backend: ts_analyzer
 	/**
+	 * Used by Backend only (Typoscript Template Analyzer)
+	 *
 	 * @todo Define visibility
 	 */
 	public $clearList_const = array();
 
 	/**
+	 * Used by Backend only (Typoscript Template Analyzer)
+	 *
 	 * @todo Define visibility
 	 */
 	public $clearList_setup = array();
@@ -439,11 +442,11 @@ class TemplateService {
 			if ($GLOBALS['TSFE']->all) {
 				$cc = $GLOBALS['TSFE']->all;
 				// The two rowSums must NOT be different from each other - which they will be if start/endtime or hidden has changed!
-				if (strcmp(serialize($this->rowSum), serialize($cc['rowSum']))) {
+				if (serialize($this->rowSum) !== serialize($cc['rowSum'])) {
 					unset($cc);
 				} else {
 					// If $TSFE->all contains valid data, we don't need to update cache_pagesection (because this data was fetched from there already)
-					if (!strcmp(serialize($this->rootLine), serialize($cc['rootLine']))) {
+					if (serialize($this->rootLine) === serialize($cc['rootLine'])) {
 						$isCached = TRUE;
 					}
 					// When the data is serialized below (ROWSUM hash), it must not contain the rootline by concept. So this must be removed (and added again later)...
@@ -782,16 +785,16 @@ class TemplateService {
 			foreach ($include_static_fileArr as $ISF_file) {
 				if (substr($ISF_file, 0, 4) == 'EXT:') {
 					list($ISF_extKey, $ISF_localPath) = explode('/', substr($ISF_file, 4), 2);
-					if (strcmp($ISF_extKey, '') && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($ISF_extKey) && strcmp($ISF_localPath, '')) {
+					if ((string)$ISF_extKey !== '' && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($ISF_extKey) && (string)$ISF_localPath !== '') {
 						$ISF_localPath = rtrim($ISF_localPath, '/') . '/';
 						$ISF_filePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($ISF_extKey) . $ISF_localPath;
 						if (@is_dir($ISF_filePath)) {
 							$mExtKey = str_replace('_', '', $ISF_extKey . '/' . $ISF_localPath);
 							$subrow = array(
-								'constants' => @is_file(($ISF_filePath . 'constants.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'constants.txt') : '',
-								'config' => @is_file(($ISF_filePath . 'setup.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'setup.txt') : '',
-								'include_static' => @is_file(($ISF_filePath . 'include_static.txt')) ? implode(',', array_unique(GeneralUtility::intExplode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static.txt')))) : '',
-								'include_static_file' => @is_file(($ISF_filePath . 'include_static_file.txt')) ? implode(',', array_unique(explode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static_file.txt')))) : '',
+								'constants' => @file_exists(($ISF_filePath . 'constants.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'constants.txt') : '',
+								'config' => @file_exists(($ISF_filePath . 'setup.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'setup.txt') : '',
+								'include_static' => @file_exists(($ISF_filePath . 'include_static.txt')) ? implode(',', array_unique(GeneralUtility::intExplode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static.txt')))) : '',
+								'include_static_file' => @file_exists(($ISF_filePath . 'include_static_file.txt')) ? implode(',', array_unique(explode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static_file.txt')))) : '',
 								'title' => $ISF_file,
 								'uid' => $mExtKey
 							);
@@ -1073,7 +1076,7 @@ class TemplateService {
 		$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 		$parseObj->parse($userTS);
 		if (is_array($parseObj->setup['TSFE.']['constants.'])) {
-			$constArray = GeneralUtility::array_merge_recursive_overrule($constArray, $parseObj->setup['TSFE.']['constants.']);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($constArray, $parseObj->setup['TSFE.']['constants.']);
 		}
 		return $constArray;
 	}
@@ -1240,14 +1243,14 @@ class TemplateService {
 		if (isset($this->fileCache[$hash])) {
 			return $this->fileCache[$hash];
 		}
-		if (!strcmp(substr($file, 0, 4), 'EXT:')) {
+		if (substr($file, 0, 4) === 'EXT:') {
 			$newFile = '';
 			list($extKey, $script) = explode('/', substr($file, 4), 2);
 			if ($extKey && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extKey)) {
 				$extPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($extKey);
-				$newFile = substr($extPath, strlen(PATH_site)) . $script;
+				$newFile = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($extPath) . $script;
 			}
-			if (!@is_file((PATH_site . $newFile))) {
+			if (!@file_exists((PATH_site . $newFile))) {
 				if ($this->tt_track) {
 					$GLOBALS['TT']->setTSlogMessage('Extension media file "' . $newFile . '" was not found!', 3);
 				}
@@ -1263,10 +1266,10 @@ class TemplateService {
 		if (strpos($file, '/') !== FALSE) {
 			// If the file is in the media/ folder but it doesn't exist,
 			// it is assumed that it's in the tslib folder
-			if (GeneralUtility::isFirstPartOfStr($file, 'media/') && !is_file(($this->getFileName_backPath . $file))) {
+			if (GeneralUtility::isFirstPartOfStr($file, 'media/') && !file_exists(($this->getFileName_backPath . $file))) {
 				$file = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('cms') . 'tslib/' . $file;
 			}
-			if (is_file($this->getFileName_backPath . $file)) {
+			if (file_exists($this->getFileName_backPath . $file)) {
 				$outFile = $file;
 				$fileInfo = GeneralUtility::split_fileref($outFile);
 				$OK = 0;
@@ -1473,7 +1476,7 @@ class TemplateService {
 		if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($typeOverride) && intval($GLOBALS['TSFE']->config['config']['forceTypeValue'])) {
 			$typeOverride = intval($GLOBALS['TSFE']->config['config']['forceTypeValue']);
 		}
-		if (strcmp($typeOverride, '')) {
+		if ((string)$typeOverride !== '') {
 			$typeNum = $typeOverride;
 		}
 		// Override...
@@ -1628,14 +1631,31 @@ class TemplateService {
 	 * @see isDefaultTypoScriptAdded
 	 */
 	protected function addDefaultTypoScript() {
-			// Add default TS for all code types, if not done already
+		// Add default TS for all code types, if not done already
 		if (!$this->isDefaultTypoScriptAdded) {
-			if (!empty($GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants'])) {
-				array_unshift($this->constants, (string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants']);
-			}
-			if (!empty($GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup'])) {
-				array_unshift($this->config, (string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup']);
-			}
+			// adding default setup and constants
+			// defaultTypoScript_setup is *very* unlikely to be empty
+			// the count of elements in ->constants and ->config have to be in sync so we always add *both*
+			array_unshift($this->constants, (string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants']);
+			array_unshift($this->config, (string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup']);
+			// prepare a proper entry to hierachyInfo (used by TemplateAnalyzer in BE)
+			$rootTemplateId = $this->hierarchyInfo[count($this->hierarchyInfo)-1]['templateID'];
+			$defaultTemplateInfo = array(
+				'root' => '',
+				'next' => '',
+				'clConst' => '',
+				'clConf' => '',
+				'templateID' => '_defaultTypoScript_',
+				'templateParent' => $rootTemplateId,
+				'title' => 'SYS:TYPO3_CONF_VARS:FE:defaultTypoScript',
+				'uid' => '_defaultTypoScript_',
+				'pid' => '',
+				'configLines' => substr_count((string)$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup'], LF) + 1
+			);
+			// push info to information arrays used in BE by TemplateTools (Analyzer)
+			array_unshift($this->clearList_const, $defaultTemplateInfo['uid']);
+			array_unshift($this->clearList_setup, $defaultTemplateInfo['uid']);
+			array_unshift($this->hierarchyInfo, $defaultTemplateInfo);
 			$this->isDefaultTypoScriptAdded = TRUE;
 		}
 	}

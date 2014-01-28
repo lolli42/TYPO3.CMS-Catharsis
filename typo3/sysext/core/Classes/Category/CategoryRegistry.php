@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Category;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -145,6 +145,8 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 		// Define the table being looked up from the type of menu
 		if ($configuration['row']['menu_type'] == 9) {
 			$table = 'pages';
+		} elseif ($configuration['row']['menu_type'] == 'categorized_content') {
+			$table = 'tt_content';
 		}
 		// Return early if no table is defined
 		if (empty($table)) {
@@ -347,7 +349,7 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 			);
 
 			if (!empty($options['fieldConfiguration'])) {
-				$fieldConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule(
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
 					$fieldConfiguration,
 					$options['fieldConfiguration']
 				);

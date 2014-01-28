@@ -467,7 +467,7 @@ Do you want to continue WITHOUT saving?</source>
 				<source>Upload complete! Filelist reloading...</source>
 			</trans-unit>
 			<trans-unit id="file_upload.overwriteExistingFiles" xml:space="preserve">
-				<source>Shall existing files be overwritten?</source>
+				<source>The files below will be overwritten.</source>
 			</trans-unit>
 			<trans-unit id="file_upload.php.number_of_files" xml:space="preserve">
 				<source>Number of files:</source>
@@ -591,11 +591,17 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="mess.move_into" xml:space="preserve">
 				<source>Move "%s" into "%s"?</source>
 			</trans-unit>
+			<trans-unit id="mess.move_into_colPos" xml:space="preserve">
+				<source>Move "%1$s" into column "%3$s" on page "%2$s"?</source>
+			</trans-unit>
 			<trans-unit id="mess.move_after" xml:space="preserve">
 				<source>Move "%s" to after "%s"?</source>
 			</trans-unit>
 			<trans-unit id="mess.copy_into" xml:space="preserve">
 				<source>Copy "%s" into "%s"?</source>
+			</trans-unit>
+			<trans-unit id="mess.copy_into_colPos" xml:space="preserve">
+				<source>Copy "%1$s" into column "%3$s" on page "%2$s"?</source>
 			</trans-unit>
 			<trans-unit id="mess.copy_after" xml:space="preserve">
 				<source>Copy "%s" to after "%s"?</source>
@@ -666,6 +672,24 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="rm.clearCacheMenu_allTypo3Conf" xml:space="preserve">
 				<source>Clear configuration cache</source>
 			</trans-unit>
+			<trans-unit id="flushPageCachesTitle" xml:space="preserve">
+				<source>Flush frontend caches</source>
+			</trans-unit>
+			<trans-unit id="flushPageCachesDescription" xml:space="preserve">
+				<source>Clear frontend and page-related caches.</source>
+			</trans-unit>
+			<trans-unit id="flushAllCachesTitle" xml:space="preserve">
+				<source>Flush all caches</source>
+			</trans-unit>
+			<trans-unit id="flushAllCachesDescription" xml:space="preserve">
+				<source>Clear all caches, including frontend caches, and extension-specific caches. Compile-time caches / system caches that are needed for TYPO3 to run are not touched.</source>
+			</trans-unit>
+			<trans-unit id="flushSystemCachesTitle" xml:space="preserve">
+				<source>Flush system caches</source>
+			</trans-unit>
+			<trans-unit id="flushSystemCachesDescription" xml:space="preserve">
+				<source>Clears all system-related caches. This includes the class loader cache, the cache of all extension configuration files. Rebuilding this cache may take some time.</source>
+			</trans-unit>
 			<trans-unit id="rm.adminFunctions" xml:space="preserve">
 				<source>Admin functions</source>
 			</trans-unit>
@@ -729,6 +753,9 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="cm.edit" xml:space="preserve">
 				<source>Edit</source>
+			</trans-unit>
+			<trans-unit id="cm.editcontent" xml:space="preserve">
+				<source>Edit content</source>
 			</trans-unit>
 			<trans-unit id="cm.new" xml:space="preserve">
 				<source>New</source>
@@ -995,6 +1022,9 @@ Check also the following points:\n
 			</trans-unit>
 			<trans-unit id="error.database_schema_mismatch_title" xml:space="preserve">
 				<source>Database Error</source>
+			</trans-unit>
+			<trans-unit id="error.items_proc_func_error" xml:space="preserve">
+				<source>An error occurred trying to process items for field "%1$s" (%2$s).</source>
 			</trans-unit>
 		</body>
 	</file>

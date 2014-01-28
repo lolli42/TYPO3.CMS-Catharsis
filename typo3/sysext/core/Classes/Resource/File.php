@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -27,7 +27,6 @@ namespace TYPO3\CMS\Core\Resource;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Resource\Index\MetaDataRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -74,6 +73,11 @@ class File extends AbstractFile {
 	protected $updatedProperties = array();
 
 	/**
+	 * @var \TYPO3\CMS\Core\Resource\Service\IndexerService
+	 */
+	protected $indexerService = NULL;
+
+	/**
 	 * Constructor for a file object. Should normally not be used directly, use
 	 * the corresponding factory methods instead.
 	 *
@@ -113,6 +117,21 @@ class File extends AbstractFile {
 	}
 
 	/**
+	 * Checks if the file has a (metadata) property which
+	 * can be retrieved by "getProperty"
+	 *
+	 * @param string $key
+	 * @return boolean
+	 */
+	public function hasProperty($key) {
+		if (!parent::hasProperty($key)) {
+			return array_key_exists($key, $this->metaDataProperties);
+		}
+		return TRUE;
+	}
+
+
+	/**
 	 * Returns the properties of this object.
 	 *
 	 * @return array
@@ -144,6 +163,18 @@ class File extends AbstractFile {
 	 */
 	public function getContents() {
 		return $this->getStorage()->getFileContents($this);
+	}
+
+	/**
+	 * Gets SHA1 hash.
+	 *
+	 * @return string
+	 */
+	public function getSha1() {
+		if (empty($this->properties['sha1'])) {
+			$this->properties['sha1'] = parent::getSha1();
+		}
+		return $this->properties['sha1'];
 	}
 
 	/**
@@ -186,11 +217,8 @@ class File extends AbstractFile {
 
 		$indexRecord = $this->getFileIndexRepository()->findOneByCombinedIdentifier($this->getCombinedIdentifier());
 		if ($indexRecord === FALSE && $indexIfNotIndexed) {
-			// the IndexerService is not used at this place since, its not about additional MetaData anymore
-			$indexRecord = $this->getIndexerService()->indexFile($this, FALSE);
-			$this->mergeIndexRecord($indexRecord);
-			$this->indexed = TRUE;
-			$this->loadMetaData();
+			$this->getIndexerService()->updateIndexEntry($this);
+			$this->updatedProperties = array();
 		} elseif ($indexRecord !== FALSE) {
 			$this->mergeIndexRecord($indexRecord);
 			$this->indexed = TRUE;
@@ -264,6 +292,7 @@ class File extends AbstractFile {
 		// Updating indexing status
 		if (isset($properties['uid']) && intval($properties['uid']) > 0) {
 			$this->indexed = TRUE;
+			$this->loadMetaData();
 		}
 		if (array_key_exists('storage', $properties) && in_array('storage', $this->updatedProperties)) {
 			$this->storage = ResourceFactory::getInstance()->getStorageObject($properties['storage']);
@@ -417,11 +446,11 @@ class File extends AbstractFile {
 	 * Internal function to retrieve the indexer service,
 	 * if it does not exist, an instance will be created
 	 *
-	 * @return Service\IndexerService
+	 * @return Index\Indexer
 	 */
 	protected function getIndexerService() {
 		if ($this->indexerService === NULL) {
-			$this->indexerService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\IndexerService');
+			$this->indexerService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $this->storage);
 		}
 		return $this->indexerService;
 	}

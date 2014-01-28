@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -66,9 +66,13 @@ class BackendLayoutWizardController {
 	 */
 	public function init() {
 		// Setting GET vars (used in frameset script):
-		$this->P = GeneralUtility::_GP('P', 1);
+		$this->P = GeneralUtility::_GP('P');
 		$this->formName = $this->P['formName'];
 		$this->fieldName = $this->P['itemName'];
+		$hmac_validate = GeneralUtility::hmac($this->formName . $this->fieldName, 'wizard_js');
+		if (!$this->P['hmac'] || ($this->P['hmac'] !== $hmac_validate)) {
+			throw new \InvalidArgumentException('Hmac Validation failed for backend_layout wizard', 1385811397);
+		}
 		$this->md5ID = $this->P['md5ID'];
 		$uid = intval($this->P['uid']);
 		// Initialize document object:
@@ -78,8 +82,8 @@ class BackendLayoutWizardController {
 		$pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . TYPO3_MOD_PATH . 'res/grideditor.js');
 		$pageRenderer->addJsInlineCode('storeData', '
 			function storeData(data) {
-				if (parent.opener && parent.opener.document && parent.opener.document.' . $this->formName . ' && parent.opener.document.' . $this->formName . '["' . $this->fieldName . '"]) {
-					parent.opener.document.' . $this->formName . '["' . $this->fieldName . '"].value = data;
+				if (parent.opener && parent.opener.document && parent.opener.document.' . $this->formName . ' && parent.opener.document.' . $this->formName . '[' . GeneralUtility::quoteJSvalue($this->fieldName) . ']) {
+					parent.opener.document.' . $this->formName . '[' . GeneralUtility::quoteJSvalue($this->fieldName) . '].value = data;
 					parent.opener.TBE_EDITOR.fieldChanged("backend_layout","' . $uid . '","config","data[backend_layout][' . $uid . '][config]");
 				}
 			}

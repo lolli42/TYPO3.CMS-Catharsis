@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Rtehtmlarea;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -243,7 +243,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 			if ($magicImage instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
 				$filePath = $magicImage->getForLocalProcessing(FALSE);
 				$imageInfo = @getimagesize($filePath);
-				$imageUrl = $this->siteURL . substr($filePath, strlen(PATH_site));
+				$imageUrl = $this->siteURL . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
 				$this->imageInsertJS($imageUrl, $imageInfo[0], $imageInfo[1], $altText, $titleText, $additionalParams);
 			}
 		} else {
@@ -263,7 +263,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	public function insertPlainImage(\TYPO3\CMS\Core\Resource\FileInterface $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
 		$filePath = $fileObject->getForLocalProcessing(FALSE);
 		$imageInfo = @getimagesize($filePath);
-		$imageUrl = $this->siteURL . substr($filePath, strlen(PATH_site));
+		$imageUrl = $this->siteURL . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
 		$this->imageInsertJS($imageUrl, $imageInfo[0], $imageInfo[1], $altText, $titleText, $additionalParams);
 	}
 
@@ -743,11 +743,9 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				// Build the file upload and folder creation form
 				$uploadForm = '';
 				$createFolder = '';
-				if ($selectedFolder && !$this->isReadOnlyFolder($selectedFolder)) {
+				if ($selectedFolder) {
 					$uploadForm = $this->uploadForm($selectedFolder);
-					if ($GLOBALS['BE_USER']->isAdmin() || $GLOBALS['BE_USER']->getTSConfigVal('options.createFoldersInEB')) {
-						$createFolder = $this->createFolder($selectedFolder);
-					}
+					$createFolder = $this->createFolder($selectedFolder);
 				}
 				// Insert the upload form on top, if so configured
 				if ($GLOBALS['BE_USER']->getTSConfigVal('options.uploadFieldsInTopOfEB')) {

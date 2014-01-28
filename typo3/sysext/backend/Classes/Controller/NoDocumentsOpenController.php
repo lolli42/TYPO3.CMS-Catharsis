@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -120,11 +120,11 @@ class NoDocumentsOpenController {
 		// Finding module images: PAGE
 		$imgFile = $GLOBALS['LANG']->moduleLabels['tabs_images']['web_layout_tab'];
 		$imgInfo = @getimagesize($imgFile);
-		$img_web_layout = is_array($imgInfo) ? '<img src="../' . substr($imgFile, strlen(PATH_site)) . '" ' . $imgInfo[3] . ' alt="" />' : '';
+		$img_web_layout = is_array($imgInfo) ? '<img src="../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($imgFile) . '" ' . $imgInfo[3] . ' alt="" />' : '';
 		// Finding module images: LIST
 		$imgFile = $GLOBALS['LANG']->moduleLabels['tabs_images']['web_list_tab'];
 		$imgInfo = @getimagesize($imgFile);
-		$img_web_list = is_array($imgInfo) ? '<img src="../' . substr($imgFile, strlen(PATH_site)) . '" ' . $imgInfo[3] . ' alt="" />' : '';
+		$img_web_list = is_array($imgInfo) ? '<img src="../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($imgFile) . '" ' . $imgInfo[3] . ' alt="" />' : '';
 		// If either the Web>List OR Web>Page module are active, show the little message with links to those modules:
 		if ($a_wl || $a_wp) {
 			$msg_2 = array();

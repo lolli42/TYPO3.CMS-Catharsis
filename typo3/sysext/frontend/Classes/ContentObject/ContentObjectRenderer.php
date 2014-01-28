@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -573,7 +573,7 @@ class ContentObjectRenderer {
 	 * would back-reference to the original ContentObjectRender instance instead of the
 	 * newly cloned ContentObjectRender instance.
 	 *
-	 * @see http://bugs.typo3.org/view.php?id=16568
+	 * @see http://forge.typo3.org/issues/24204
 	 */
 	public function __clone() {
 		$this->contentObjects = array();
@@ -703,6 +703,7 @@ class ContentObjectRenderer {
 	 * @param array $conf The array with TypoScript properties for the content object
 	 * @param string $TSkey A string label used for the internal debugging tracking.
 	 * @return string cObject output
+	 * @throws \UnexpectedValueException
 	 * @todo Define visibility
 	 */
 	public function cObjGetSingle($name, $conf, $TSkey = '__') {
@@ -716,14 +717,14 @@ class ContentObjectRenderer {
 				$GLOBALS['TT']->push($TSkey, $name);
 			}
 			// Checking if the COBJ is a reference to another object. (eg. name of 'blabla.blabla = < styles.something')
-			if (substr($name, 0, 1) == '<') {
+			if ($name{0} === '<') {
 				$key = trim(substr($name, 1));
 				$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 				// $name and $conf is loaded with the referenced values.
 				$old_conf = $conf;
 				list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
 				if (is_array($old_conf) && count($old_conf)) {
-					$conf = $this->joinTSarrays($conf, $old_conf);
+					$conf = array_replace_recursive($conf, $old_conf);
 				}
 				// Getting the cObject
 				$GLOBALS['TT']->incStackPointer();
@@ -732,8 +733,9 @@ class ContentObjectRenderer {
 			} else {
 				$hooked = FALSE;
 				// Application defined cObjects
-				foreach ($this->cObjHookObjectsArr as $cObjName => $hookObj) {
-					if ($name === $cObjName && method_exists($hookObj, 'cObjGetSingleExt')) {
+				if (!empty($this->cObjHookObjectsArr[$name])) {
+					$hookObj = $this->cObjHookObjectsArr[$name];
+					if (method_exists($hookObj, 'cObjGetSingleExt')) {
 						$content .= $hookObj->cObjGetSingleExt($name, $conf, $TSkey, $this);
 						$hooked = TRUE;
 					}
@@ -815,12 +817,13 @@ class ContentObjectRenderer {
 		);
 		$name = $classMapping[$name];
 		if (!array_key_exists($name, $this->contentObjects)) {
-			try {
+			$fullyQualifiedClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $name . 'ContentObject';
+			if (class_exists($fullyQualifiedClassName)) {
 				$this->contentObjects[$name] = GeneralUtility::makeInstance(
-					'TYPO3\\CMS\\Frontend\\ContentObject\\' . $name . 'ContentObject',
+					$fullyQualifiedClassName,
 					$this
 				);
-			} catch (\ReflectionException $e) {
+			} else {
 				$this->contentObjects[$name] = NULL;
 			}
 		}
@@ -1275,7 +1278,7 @@ class ContentObjectRenderer {
 	 */
 	public function getSlidePids($pidList, $pidConf) {
 		$pidList = isset($pidConf) ? trim($this->stdWrap($pidList, $pidConf)) : trim($pidList);
-		if (!strcmp($pidList, '')) {
+		if ($pidList === '') {
 			$pidList = 'this';
 		}
 		if (trim($pidList)) {
@@ -1329,7 +1332,7 @@ class ContentObjectRenderer {
 		$info = $this->getImgResource($file, $conf['file.']);
 		$GLOBALS['TSFE']->lastImageInfo = $info;
 		if (is_array($info)) {
-			if (GeneralUtility::isAllowedAbsPath(PATH_site . $info['3'])) {
+			if (is_file(PATH_site . $info['3'])) {
 				$source = GeneralUtility::rawUrlEncodeFP(GeneralUtility::png_to_gif_by_imagemagick($info[3]));
 				$source = $GLOBALS['TSFE']->absRefPrefix . $source;
 			} else {
@@ -1343,10 +1346,11 @@ class ContentObjectRenderer {
 			// This array is used to collect the image-refs on the page...
 			$GLOBALS['TSFE']->imagesOnPage[] = $source;
 			$altParam = $this->getAltParam($conf);
+			$params = '';
 			if ($conf['params'] && !isset($conf['params.'])) {
 				$params = ' ' . $conf['params'];
-			} else {
-				$params = isset($conf['params.']) ? ' ' . $this->stdWrap($conf['params'], $conf['params.']) : '';
+			} elseif ($conf['params'] && is_array($conf['params.'])) {
+				$params = ' ' . $this->stdWrap($conf['params'], $conf['params.']);
 			}
 
 			$imageTagValues = array(
@@ -1518,8 +1522,8 @@ class ContentObjectRenderer {
 			if (isset($conf['file.'])) {
 				$imageFile = $this->stdWrap($imageFile, $conf['file.']);
 			}
-			// imageFileLink:
-			if ($content == $string && @is_file($imageFile)) {
+			// Create imageFileLink if not created with typolink
+			if ($content == $string) {
 				$parameterNames = array('width', 'height', 'effects', 'alternativeTempPath', 'bodyTag', 'title', 'wrap');
 				$parameters = array();
 				$sample = isset($conf['sample.']) ? $this->stdWrap($conf['sample'], $conf['sample.']) : $conf['sample'];
@@ -2280,8 +2284,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_field($content = '', $conf = array()) {
-		$content = $this->getFieldVal($conf['field']);
-		return $content;
+		return $this->getFieldVal($conf['field']);
 	}
 
 	/**
@@ -2294,8 +2297,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_current($content = '', $conf = array()) {
-		$content = $this->data[$this->currentValKey];
-		return $content;
+		return $this->data[$this->currentValKey];
 	}
 
 	/**
@@ -2308,8 +2310,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_cObject($content = '', $conf = array()) {
-		$content = $this->cObjGetSingle($conf['cObject'], $conf['cObject.'], '/stdWrap/.cObject');
-		return $content;
+		return $this->cObjGetSingle($conf['cObject'], $conf['cObject.'], '/stdWrap/.cObject');
 	}
 
 	/**
@@ -2322,8 +2323,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_numRows($content = '', $conf = array()) {
-		$content = $this->numRows($conf['numRows.']);
-		return $content;
+		return $this->numRows($conf['numRows.']);
 	}
 
 	/**
@@ -2335,8 +2335,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_filelist($content = '', $conf = array()) {
-		$content = $this->filelist($conf['filelist']);
-		return $content;
+		return $this->filelist($conf['filelist']);
 	}
 
 	/**
@@ -2348,8 +2347,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_preUserFunc($content = '', $conf = array()) {
-		$content = $this->callUserFunction($conf['preUserFunc'], $conf['preUserFunc.'], $content);
-		return $content;
+		return $this->callUserFunction($conf['preUserFunc'], $conf['preUserFunc.'], $content);
 	}
 
 	/**
@@ -2393,8 +2391,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_preIfEmptyListNum($content = '', $conf = array()) {
-		$content = $this->listNum($content, $conf['preIfEmptyListNum'], $conf['preIfEmptyListNum.']['splitChar']);
-		return $content;
+		return $this->listNum($content, $conf['preIfEmptyListNum'], $conf['preIfEmptyListNum.']['splitChar']);
 	}
 
 	/**
@@ -2455,8 +2452,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_listNum($content = '', $conf = array()) {
-		$content = $this->listNum($content, $conf['listNum'], $conf['listNum.']['splitChar']);
-		return $content;
+		return $this->listNum($content, $conf['listNum'], $conf['listNum.']['splitChar']);
 	}
 
 	/**
@@ -2468,8 +2464,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_trim($content = '', $conf = array()) {
-		$content = trim($content);
-		return $content;
+		return trim($content);
 	}
 
 	/**
@@ -2491,7 +2486,7 @@ class ContentObjectRenderer {
 			$length = isset($conf['strPad.']['length.']) ? $this->stdWrap($conf['strPad.']['length'], $conf['strPad.']['length.']) : $conf['strPad.']['length'];
 			$length = intval($length);
 		}
-		if (!empty($conf['strPad.']['padWith'])) {
+		if (isset($conf['strPad.']['padWith']) && strlen($conf['strPad.']['padWith']) > 0) {
 			$padWith = isset($conf['strPad.']['padWith.']) ? $this->stdWrap($conf['strPad.']['padWith'], $conf['strPad.']['padWith.']) : $conf['strPad.']['padWith'];
 		}
 		if (!empty($conf['strPad.']['type'])) {
@@ -2518,8 +2513,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_stdWrap($content = '', $conf = array()) {
-		$content = $this->stdWrap($content, $conf['stdWrap.']);
-		return $content;
+		return $this->stdWrap($content, $conf['stdWrap.']);
 	}
 
 	/**
@@ -2548,7 +2542,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_required($content = '', $conf = array()) {
-		if ((string) $content == '') {
+		if ((string) $content === '') {
 			$content = '';
 			$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
 		}
@@ -2598,8 +2592,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_csConv($content = '', $conf = array()) {
-		$content = $GLOBALS['TSFE']->csConv($content, $conf['csConv']);
-		return $content;
+		return $GLOBALS['TSFE']->csConv($content, $conf['csConv']);
 	}
 
 	/**
@@ -2612,8 +2605,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_parseFunc($content = '', $conf = array()) {
-		$content = $this->parseFunc($content, $conf['parseFunc.'], $conf['parseFunc']);
-		return $content;
+		return $this->parseFunc($content, $conf['parseFunc.'], $conf['parseFunc']);
 	}
 
 	/**
@@ -2642,8 +2634,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_split($content = '', $conf = array()) {
-		$content = $this->splitObj($content, $conf['split.']);
-		return $content;
+		return $this->splitObj($content, $conf['split.']);
 	}
 
 	/**
@@ -2655,8 +2646,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_replacement($content = '', $conf = array()) {
-		$content = $this->replacement($content, $conf['replacement.']);
-		return $content;
+		return $this->replacement($content, $conf['replacement.']);
 	}
 
 	/**
@@ -2685,8 +2675,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_char($content = '', $conf = array()) {
-		$content = chr(intval($conf['char']));
-		return $content;
+		return chr(intval($conf['char']));
 	}
 
 	/**
@@ -2698,8 +2687,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_intval($content = '', $conf = array()) {
-		$content = intval($content);
-		return $content;
+		return intval($content);
 	}
 
 	/**
@@ -2730,8 +2718,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_round($content = '', $conf = array()) {
-		$content = $this->round($content, $conf['round.']);
-		return $content;
+		return $this->round($content, $conf['round.']);
 	}
 
 	/**
@@ -2743,8 +2730,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_numberFormat($content = '', $conf = array()) {
-		$content = $this->numberFormat($content, $conf['numberFormat.']);
-		return $content;
+		return $this->numberFormat($content, $conf['numberFormat.']);
 	}
 
 	/**
@@ -2756,8 +2742,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_expandList($content = '', $conf = array()) {
-		$content = GeneralUtility::expandList($content);
-		return $content;
+		return GeneralUtility::expandList($content);
 	}
 
 	/**
@@ -2805,8 +2790,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_age($content = '', $conf = array()) {
-		$content = $this->calcAge($GLOBALS['EXEC_TIME'] - $content, $conf['age']);
-		return $content;
+		return $this->calcAge($GLOBALS['EXEC_TIME'] - $content, $conf['age']);
 	}
 
 	/**
@@ -2819,8 +2803,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_case($content = '', $conf = array()) {
-		$content = $this->HTMLcaseshift($content, $conf['case']);
-		return $content;
+		return $this->HTMLcaseshift($content, $conf['case']);
 	}
 
 	/**
@@ -2832,8 +2815,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_bytes($content = '', $conf = array()) {
-		$content = GeneralUtility::formatSize($content, $conf['bytes.']['labels']);
-		return $content;
+		return GeneralUtility::formatSize($content, $conf['bytes.']['labels']);
 	}
 
 	/**
@@ -2845,8 +2827,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_substring($content = '', $conf = array()) {
-		$content = $this->substring($content, $conf['substring']);
-		return $content;
+		return $this->substring($content, $conf['substring']);
 	}
 
 	/**
@@ -2858,8 +2839,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_removeBadHTML($content = '', $conf = array()) {
-		$content = $this->removeBadHTML($content, $conf['removeBadHTML.']);
-		return $content;
+		return $this->removeBadHTML($content, $conf['removeBadHTML.']);
 	}
 
 	/**
@@ -2871,8 +2851,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_cropHTML($content = '', $conf = array()) {
-		$content = $this->cropHTML($content, $conf['cropHTML']);
-		return $content;
+		return $this->cropHTML($content, $conf['cropHTML']);
 	}
 
 	/**
@@ -2884,8 +2863,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_stripHtml($content = '', $conf = array()) {
-		$content = strip_tags($content);
-		return $content;
+		return strip_tags($content);
 	}
 
 	/**
@@ -2897,8 +2875,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_crop($content = '', $conf = array()) {
-		$content = $this->crop($content, $conf['crop']);
-		return $content;
+		return $this->crop($content, $conf['crop']);
 	}
 
 	/**
@@ -2910,8 +2887,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_rawUrlEncode($content = '', $conf = array()) {
-		$content = rawurlencode($content);
-		return $content;
+		return rawurlencode($content);
 	}
 
 	/**
@@ -2940,12 +2916,11 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_doubleBrTag($content = '', $conf = array()) {
-		$content = preg_replace('/
+		return preg_replace('/
 ?
 [	 ]*
 ?
 /', $conf['doubleBrTag'], $content);
-		return $content;
 	}
 
 	/**
@@ -2958,8 +2933,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_br($content = '', $conf = array()) {
-		$content = nl2br($content, !empty($GLOBALS['TSFE']->xhtmlDoctype));
-		return $content;
+		return nl2br($content, !empty($GLOBALS['TSFE']->xhtmlDoctype));
 	}
 
 	/**
@@ -2971,8 +2945,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_brTag($content = '', $conf = array()) {
-		$content = str_replace(LF, $conf['brTag'], $content);
-		return $content;
+		return str_replace(LF, $conf['brTag'], $content);
 	}
 
 	/**
@@ -2985,8 +2958,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_encapsLines($content = '', $conf = array()) {
-		$content = $this->encaps_lineSplit($content, $conf['encapsLines.']);
-		return $content;
+		return $this->encaps_lineSplit($content, $conf['encapsLines.']);
 	}
 
 	/**
@@ -2998,8 +2970,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_keywords($content = '', $conf = array()) {
-		$content = $this->keywords($content);
-		return $content;
+		return $this->keywords($content);
 	}
 
 	/**
@@ -3012,8 +2983,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_innerWrap($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['innerWrap']);
-		return $content;
+		return $this->wrap($content, $conf['innerWrap']);
 	}
 
 	/**
@@ -3026,8 +2996,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_innerWrap2($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['innerWrap2']);
-		return $content;
+		return $this->wrap($content, $conf['innerWrap2']);
 	}
 
 	/**
@@ -3041,8 +3010,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_fontTag($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['fontTag']);
-		return $content;
+		return $this->wrap($content, $conf['fontTag']);
 	}
 
 	/**
@@ -3054,8 +3022,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_addParams($content = '', $conf = array()) {
-		$content = $this->addParams($content, $conf['addParams.']);
-		return $content;
+		return $this->addParams($content, $conf['addParams.']);
 	}
 
 	/**
@@ -3068,8 +3035,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_textStyle($content = '', $conf = array()) {
-		$content = $this->textStyle($content, $conf['textStyle.']);
-		return $content;
+		return $this->textStyle($content, $conf['textStyle.']);
 	}
 
 	/**
@@ -3082,8 +3048,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_tableStyle($content = '', $conf = array()) {
-		$content = $this->tableStyle($content, $conf['tableStyle.']);
-		return $content;
+		return $this->tableStyle($content, $conf['tableStyle.']);
 	}
 
 	/**
@@ -3096,8 +3061,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_filelink($content = '', $conf = array()) {
-		$content = $this->filelink($content, $conf['filelink.']);
-		return $content;
+		return $this->filelink($content, $conf['filelink.']);
 	}
 
 	/**
@@ -3109,8 +3073,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_preCObject($content = '', $conf = array()) {
-		$content = $this->cObjGetSingle($conf['preCObject'], $conf['preCObject.'], '/stdWrap/.preCObject') . $content;
-		return $content;
+		return $this->cObjGetSingle($conf['preCObject'], $conf['preCObject.'], '/stdWrap/.preCObject') . $content;
 	}
 
 	/**
@@ -3122,8 +3085,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_postCObject($content = '', $conf = array()) {
-		$content .= $this->cObjGetSingle($conf['postCObject'], $conf['postCObject.'], '/stdWrap/.postCObject');
-		return $content;
+		return $content . $this->cObjGetSingle($conf['postCObject'], $conf['postCObject.'], '/stdWrap/.postCObject');
 	}
 
 	/**
@@ -3154,8 +3116,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_typolink($content = '', $conf = array()) {
-		$content = $this->typolink($content, $conf['typolink.']);
-		return $content;
+		return $this->typolink($content, $conf['typolink.']);
 	}
 
 	/**
@@ -3183,8 +3144,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_spaceBefore($content = '', $conf = array()) {
-		$content = $this->wrapSpace($content, trim($conf['spaceBefore']) . '|', $conf['space.']);
-		return $content;
+		return $this->wrapSpace($content, trim($conf['spaceBefore']) . '|', $conf['space.']);
 	}
 
 	/**
@@ -3197,8 +3157,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_spaceAfter($content = '', $conf = array()) {
-		$content = $this->wrapSpace($content, '|' . trim($conf['spaceAfter']), $conf['space.']);
-		return $content;
+		return $this->wrapSpace($content, '|' . trim($conf['spaceAfter']), $conf['space.']);
 	}
 
 	/**
@@ -3212,8 +3171,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_space($content = '', $conf = array()) {
-		$content = $this->wrapSpace($content, trim($conf['space']), $conf['space.']);
-		return $content;
+		return $this->wrapSpace($content, trim($conf['space']), $conf['space.']);
 	}
 
 	/**
@@ -3229,8 +3187,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_wrap($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['wrap'], $conf['wrap.']['splitChar'] ? $conf['wrap.']['splitChar'] : '|');
-		return $content;
+		return $this->wrap($content, $conf['wrap'], $conf['wrap.']['splitChar'] ? $conf['wrap.']['splitChar'] : '|');
 	}
 
 	/**
@@ -3267,8 +3224,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_wrap2($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['wrap2'], $conf['wrap2.']['splitChar'] ? $conf['wrap2.']['splitChar'] : '|');
-		return $content;
+		return $this->wrap($content, $conf['wrap2'], $conf['wrap2.']['splitChar'] ? $conf['wrap2.']['splitChar'] : '|');
 	}
 
 	/**
@@ -3281,8 +3237,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_dataWrap($content = '', $conf = array()) {
-		$content = $this->dataWrap($content, $conf['dataWrap']);
-		return $content;
+		return $this->dataWrap($content, $conf['dataWrap']);
 	}
 
 	/**
@@ -3294,8 +3249,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_prepend($content = '', $conf = array()) {
-		$content = $this->cObjGetSingle($conf['prepend'], $conf['prepend.'], '/stdWrap/.prepend') . $content;
-		return $content;
+		return $this->cObjGetSingle($conf['prepend'], $conf['prepend.'], '/stdWrap/.prepend') . $content;
 	}
 
 	/**
@@ -3307,8 +3261,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_append($content = '', $conf = array()) {
-		$content .= $this->cObjGetSingle($conf['append'], $conf['append.'], '/stdWrap/.append');
-		return $content;
+		return $content . $this->cObjGetSingle($conf['append'], $conf['append.'], '/stdWrap/.append');
 	}
 
 	/**
@@ -3321,8 +3274,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_wrap3($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['wrap3'], $conf['wrap3.']['splitChar'] ? $conf['wrap3.']['splitChar'] : '|');
-		return $content;
+		return $this->wrap($content, $conf['wrap3'], $conf['wrap3.']['splitChar'] ? $conf['wrap3.']['splitChar'] : '|');
 	}
 
 	/**
@@ -3350,8 +3302,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_outerWrap($content = '', $conf = array()) {
-		$content = $this->wrap($content, $conf['outerWrap']);
-		return $content;
+		return $this->wrap($content, $conf['outerWrap']);
 	}
 
 	/**
@@ -3363,8 +3314,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_insertData($content = '', $conf = array()) {
-		$content = $this->insertData($content);
-		return $content;
+		return $this->insertData($content);
 	}
 
 	/**
@@ -3400,8 +3350,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_postUserFunc($content = '', $conf = array()) {
-		$content = $this->callUserFunction($conf['postUserFunc'], $conf['postUserFunc.'], $content);
-		return $content;
+		return $this->callUserFunction($conf['postUserFunc'], $conf['postUserFunc.'], $content);
 	}
 
 	/**
@@ -3542,8 +3491,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_debug($content = '', $conf = array()) {
-		$content = '<pre>' . htmlspecialchars($content) . '</pre>';
-		return $content;
+		return '<pre>' . htmlspecialchars($content) . '</pre>';
 	}
 
 	/**
@@ -4275,11 +4223,11 @@ class ContentObjectRenderer {
 			// adds/overrides attributes
 			foreach ($conf as $pkey => $val) {
 				if (substr($pkey, -1) != '.' && substr($pkey, 0, 1) != '_') {
-					$tmpVal = isset($conf[$pkey . '.']) ? $this->stdWrap($conf[$pkey], $conf[$pkey . '.']) : $conf[$pkey];
+					$tmpVal = isset($conf[$pkey . '.']) ? $this->stdWrap($conf[$pkey], $conf[$pkey . '.']) : (string)$val;
 					if ($lowerCaseAttributes) {
 						$pkey = strtolower($pkey);
 					}
-					if (strcmp($tmpVal, '')) {
+					if ($tmpVal !== '') {
 						$attribs[$pkey] = $tmpVal;
 					}
 				}
@@ -4740,7 +4688,7 @@ class ContentObjectRenderer {
 			$conf = $temp_conf['parseFunc.'];
 		}
 		// Process:
-		if (strcmp($conf['externalBlocks'], '')) {
+		if ((string)$conf['externalBlocks'] !== '') {
 			$tags = strtolower(implode(',', GeneralUtility::trimExplode(',', $conf['externalBlocks'])));
 			$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
 			$parts = $htmlParser->splitIntoBlock($tags, $theValue);
@@ -5057,7 +5005,7 @@ class ContentObjectRenderer {
 		$encapTags = GeneralUtility::trimExplode(',', strtolower($conf['encapsTagList']), TRUE);
 		$nonWrappedTag = $conf['nonWrappedTag'];
 		$defaultAlign = isset($conf['defaultAlign.']) ? trim($this->stdWrap($conf['defaultAlign'], $conf['defaultAlign.'])) : trim($conf['defaultAlign']);
-		if (!strcmp('', $theValue)) {
+		if ((string)$theValue === '') {
 			return '';
 		}
 		foreach ($lParts as $k => $l) {
@@ -5106,7 +5054,7 @@ class ContentObjectRenderer {
 					foreach ($conf['addAttributes.'][$uTagName . '.'] as $kk => $vv) {
 						if (!is_array($vv)) {
 							if ((string) $conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'blank') {
-								if (!strcmp($attrib[$kk], '')) {
+								if ((string)$attrib[$kk] === '') {
 									$attrib[$kk] = $vv;
 								}
 							} elseif ((string) $conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'exists') {
@@ -5317,7 +5265,7 @@ class ContentObjectRenderer {
 					}
 				} catch(\TYPO3\CMS\Core\Resource\Exception $exception) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The image "' . $file . '" could not be found and won\'t be included in frontend output');
 					return NULL;
 				}
@@ -5416,7 +5364,7 @@ class ContentObjectRenderer {
 		} else {
 			$sections = GeneralUtility::trimExplode('//', $field, TRUE);
 			foreach ($sections as $k) {
-				if (strcmp($this->data[$k], '')) {
+				if ((string)$this->data[$k] !== '') {
 					return $this->data[$k];
 				}
 			}
@@ -5447,7 +5395,9 @@ class ContentObjectRenderer {
 				switch ($type) {
 					case 'gp':
 						// Merge GET and POST and get $key out of the merged array
-						$retVal = $this->getGlobal($key, GeneralUtility::array_merge_recursive_overrule(GeneralUtility::_GET(), GeneralUtility::_POST()));
+						$getPostArray = GeneralUtility::_GET();
+						\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($getPostArray, GeneralUtility::_POST());
+						$retVal = $this->getGlobal($key, $getPostArray);
 						break;
 					case 'tsfe':
 						$retVal = $this->getGlobal('TSFE|' . $key);
@@ -5593,7 +5543,7 @@ class ContentObjectRenderer {
 			}
 		} catch (\TYPO3\CMS\Core\Resource\Exception $exception) {
 			/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-			$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+			$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 			$logger->warning('The file "' . $fileUidOrCurrentKeyword . '" could not be found and won\'t be included in frontend output');
 			$fileObject = NULL;
 		}
@@ -5748,7 +5698,7 @@ class ContentObjectRenderer {
 				// Traverse the items-array...
 				foreach ($GLOBALS['TCA'][$table]['columns'][$field]['config']['items'] as $item) {
 					// ... and return the first found label where the value was equal to $key
-					if (!strcmp($item[1], trim($value))) {
+					if ((string)$item[1] === trim($value)) {
 						$output[] = $GLOBALS['TSFE']->sL($item[0]);
 					}
 				}
@@ -5795,7 +5745,7 @@ class ContentObjectRenderer {
 			$link_paramA = GeneralUtility::unQuoteFilenames($link_param, TRUE);
 			// Check for link-handler keyword:
 			list($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($link_paramA[0]), 2);
-			if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && strcmp($linkHandlerValue, '')) {
+			if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && (string)$linkHandlerValue !== '') {
 				$linkHandlerObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword]);
 				if (method_exists($linkHandlerObj, 'main')) {
 					return $linkHandlerObj->main($linktxt, $conf, $linkHandlerKeyword, $linkHandlerValue, $link_param, $this);
@@ -5987,7 +5937,7 @@ class ContentObjectRenderer {
 					// Link-data del
 					$link_param = trim($link_params_parts[0]);
 					// If no id or alias is given
-					if (!strcmp($link_param, '')) {
+					if ($link_param === '') {
 						$link_param = $GLOBALS['TSFE']->id;
 					}
 					if ($link_params_parts[1] && !$sectionMark) {
@@ -6041,7 +5991,7 @@ class ContentObjectRenderer {
 							$addQueryParams = '';
 						}
 						if ($conf['useCacheHash']) {
-							// Mind the order below! See http://bugs.typo3.org/view.php?id=5117
+							// Mind the order below! See http://forge.typo3.org/issues/17070
 							$params = $GLOBALS['TSFE']->linkVars . $addQueryParams;
 							if (trim($params, '& ') != '') {
 								/** @var $cacheHash \TYPO3\CMS\Frontend\Page\CacheHashCalculator */
@@ -6093,6 +6043,8 @@ class ContentObjectRenderer {
 								$absoluteUrlScheme = $conf['forceAbsoluteUrl.']['scheme'];
 							} elseif ($page['url_scheme'] > 0) {
 								$absoluteUrlScheme = (int) $page['url_scheme'] === \TYPO3\CMS\Core\Utility\HttpUtility::SCHEME_HTTP ? 'http' : 'https';
+							} elseif (GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+								$absoluteUrlScheme = 'https';
 							}
 							// If no domain records are defined, use current domain:
 							$currentUrlScheme = parse_url(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), PHP_URL_SCHEME);
@@ -6115,11 +6067,8 @@ class ContentObjectRenderer {
 							}
 							$LD['target'] = $target;
 							// Convert IDNA-like domain (if any)
-							if (!preg_match('/^[a-z0-9\\.\\-]*$/i', $targetDomain)) {
-								require_once PATH_typo3 . 'contrib/idna/idna_convert.class.php';
-								$IDN = new \idna_convert();
-								$targetDomain = $IDN->encode($targetDomain);
-								unset($IDN);
+							if (!preg_match('/^[a-z0-9.\\-]*$/i', $targetDomain)) {
+								$targetDomain =  GeneralUtility::idnaEncode($targetDomain);
 							}
 							$this->lastTypoLinkUrl = $this->URLqMark(($absoluteUrlScheme . '://' . $targetDomain . '/index.php?id=' . $page['uid']), $addQueryParams) . $sectionMark;
 						} else {
@@ -6167,9 +6116,17 @@ class ContentObjectRenderer {
 						// If link is to a access restricted page which should be redirected, then find new URL:
 						if ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] !== 'NONE' && !$GLOBALS['TSFE']->checkPageGroupAccess($page)) {
 							$thePage = $GLOBALS['TSFE']->sys_page->getPage($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages']);
-							$addParams = $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages_addParams'];
-							$addParams = str_replace('###RETURN_URL###', rawurlencode($this->lastTypoLinkUrl), $addParams);
-							$addParams = str_replace('###PAGE_ID###', $page['uid'], $addParams);
+							$addParams = str_replace(
+								array(
+									'###RETURN_URL###',
+									'###PAGE_ID###'
+								),
+								array(
+									rawurlencode($this->lastTypoLinkUrl),
+									$page['uid']
+								),
+								$GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages_addParams']
+							);
 							$this->lastTypoLinkUrl = $this->getTypoLink_URL($thePage['uid'] . ($theTypeP ? ',' . $theTypeP : ''), $addParams, $target);
 							$this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
 							$this->lastTypoLinkLD['totalUrl'] = $this->lastTypoLinkUrl;
@@ -6196,7 +6153,7 @@ class ContentObjectRenderer {
 				} else {
 					$target = '';
 				}
-				$onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',\'' . $JSwindowParams . '\');vHWin.focus();return false;';
+				$onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',' . GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
 				$res = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . $title . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			} else {
 				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii' && $finalTagParts['TYPE'] === 'mailto') {
@@ -6382,7 +6339,7 @@ class ContentObjectRenderer {
 		// MountPoints:
 		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['enable_mount_pids'] && $GLOBALS['TSFE']->MP) {
 			// Same page as current.
-			if (!strcmp($GLOBALS['TSFE']->id, $pageId)) {
+			if ((int)$GLOBALS['TSFE']->id === (int)$pageId) {
 				$MP = $GLOBALS['TSFE']->MP;
 			} else {
 				// ... otherwise find closest meeting point:
@@ -6434,7 +6391,7 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function getMailTo($mailAddress, $linktxt, $initP = '?') {
-		if (!strcmp($linktxt, '')) {
+		if ((string)$linktxt === '') {
 			$linktxt = $mailAddress;
 		}
 		$mailToUrl = 'mailto:' . $mailAddress;
@@ -6502,9 +6459,9 @@ class ContentObjectRenderer {
 			$newQueryArray = $currentQueryArray;
 		}
 		if ($forceOverruleArguments) {
-			$newQueryArray = GeneralUtility::array_merge_recursive_overrule($newQueryArray, $overruleQueryArguments);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments);
 		} else {
-			$newQueryArray = GeneralUtility::array_merge_recursive_overrule($newQueryArray, $overruleQueryArguments, TRUE);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments, FALSE);
 		}
 		return GeneralUtility::implodeArrayForUrl('', $newQueryArray, '', FALSE, TRUE);
 	}
@@ -6877,7 +6834,7 @@ class ContentObjectRenderer {
 			$old_conf = $confArr[$prop . '.'];
 			list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
 			if (is_array($old_conf) && count($old_conf)) {
-				$conf = $this->joinTSarrays($conf, $old_conf);
+				$conf = array_replace_recursive($conf, $old_conf);
 			}
 			$confArr[$prop . '.'] = $conf;
 		}
@@ -6891,19 +6848,12 @@ class ContentObjectRenderer {
 	 * @param array $old_conf TypoScript property array, the "overlay
 	 * @return array The resulting array
 	 * @see mergeTSRef(), tx_tstemplatestyler_modfunc1::joinTSarrays()
+	 * @deprecated since 6.2, will be removed in two versions, use array_replace_recursive() instead
 	 * @todo Define visibility
 	 */
 	public function joinTSarrays($conf, $old_conf) {
-		if (is_array($old_conf)) {
-			foreach ($old_conf as $key => $val) {
-				if (is_array($val)) {
-					$conf[$key] = $this->joinTSarrays($conf[$key], $val);
-				} else {
-					$conf[$key] = $val;
-				}
-			}
-		}
-		return $conf;
+		GeneralUtility::logDeprecatedFunction();
+		return array_replace_recursive($conf, $old_conf);
 	}
 
 	/**
@@ -7055,7 +7005,7 @@ class ContentObjectRenderer {
 	 * @param string $className The name of the PHP class to be checked
 	 * @param array $config TypoScript configuration (naturally of a USER or COA cObject)
 	 * @return boolean Whether the class is available
-	 * @link http://bugs.typo3.org/view.php?id=9654
+	 * @link http://forge.typo3.org/issues/19510
 	 * @TODO This method was introduced in TYPO3 4.3 and can be removed if the autoload was integrated
 	 */
 	protected function isClassAvailable($className, array $config = NULL) {
@@ -7239,7 +7189,7 @@ class ContentObjectRenderer {
 				}
 			}
 			// If $feEditSelf is set, fe_users may always edit them selves...
-			if ($feEditSelf && $table == 'fe_users' && !strcmp($feUserRow['uid'], $row['uid'])) {
+			if ($feEditSelf && $table == 'fe_users' && (int)$feUserRow['uid'] === (int)$row['uid']) {
 				$ok = 1;
 			}
 			// Points to the field (integer) that holds the fe_group-id of the creator fe_user's first group
@@ -7676,7 +7626,7 @@ class ContentObjectRenderer {
 				$conf['pidInList'] = implode(',', $expandedPidList);
 			}
 		}
-		if (!strcmp($conf['pidInList'], '')) {
+		if ((string)$conf['pidInList'] === '') {
 			$conf['pidInList'] = 'this';
 		}
 		$queryParts = $this->getWhere($table, $conf, TRUE);

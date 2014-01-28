@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Module;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -234,7 +234,8 @@ abstract class AbstractFunctionModule {
 		if ($this->localLangFile && (@is_file(($this->thisPath . '/' . $this->localLangFile)) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xml')) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xlf')))) {
 			$LOCAL_LANG = $GLOBALS['LANG']->includeLLFile($this->thisPath . '/' . $this->localLangFile, FALSE);
 			if (is_array($LOCAL_LANG)) {
-				$GLOBALS['LOCAL_LANG'] = GeneralUtility::array_merge_recursive_overrule((array) $GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
+				$GLOBALS['LOCAL_LANG'] = (array)$GLOBALS['LOCAL_LANG'];
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
 			}
 		}
 	}

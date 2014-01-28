@@ -26,6 +26,7 @@ $flowClasses = array(
 	'typo3\flow\package\exception\missingpackagemanifestexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/MissingPackageManifestException.php',
 	'typo3\flow\package\exception\packagekeyalreadyexistsexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/PackageKeyAlreadyExistsException.php',
 	'typo3\flow\package\exception\packagerepositoryexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/PackageRepositoryException.php',
+	'typo3\flow\package\exception\packagestatesfilenotwritableexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/PackageStatesFileNotWritableException.php',
 	'typo3\flow\package\exception\protectedpackagekeyexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/ProtectedPackageKeyException.php',
 	'typo3\flow\package\exception\unknownpackageexception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception/UnknownPackageException.php',
 	'typo3\flow\package\exception' => $flowClassesPath . 'TYPO3/Flow/Package/Exception.php',
@@ -43,6 +44,7 @@ $flowClasses = array(
 	'typo3\flow\package\packagemanager' => $flowClassesPath . 'TYPO3/Flow/Package/PackageManager.php',
 	'typo3\flow\package\packagemanagerinterface' => $flowClassesPath . 'TYPO3/Flow/Package/PackageManagerInterface.php',
 	'typo3\flow\utility\files' => $flowClassesPath . 'TYPO3/Flow/Utility/Files.php',
+	'typo3\flow\utility\exception' => $flowClassesPath . 'TYPO3/Flow/Utility/Exception.php',
 	'typo3\flow\exception' => $flowClassesPath . 'TYPO3/Flow/Exception.php',
 );
 return array_merge($typo3Classes, $flowClasses);

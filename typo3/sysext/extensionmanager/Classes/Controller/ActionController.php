@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -78,6 +78,15 @@ class ActionController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractCo
 				);
 			}
 		} catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
+			$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				htmlspecialchars($e->getMessage()),
+				'',
+				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
+				TRUE
+			);
+			$this->getControllerContext()->getFlashMessageQueue()->enqueue($flashMessage);
+		} catch (\TYPO3\Flow\Package\Exception\PackageStatesFileNotWritableException $e) {
 			$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
 				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 				htmlspecialchars($e->getMessage()),

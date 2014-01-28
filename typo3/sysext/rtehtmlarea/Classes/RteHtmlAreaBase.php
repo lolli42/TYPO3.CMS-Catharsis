@@ -17,7 +17,7 @@ namespace TYPO3\CMS\Rtehtmlarea;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -1109,7 +1109,9 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 		foreach ($labelsArray as $labels => $subArray) {
 			$LOCAL_LANG = GeneralUtility::readLLfile('EXT:' . $this->ID . '/htmlarea/locallang_' . $labels . '.xlf', $this->language, 'utf-8');
 			if (!empty($LOCAL_LANG[$this->language])) {
-				$LOCAL_LANG[$this->language] = GeneralUtility::array_merge_recursive_overrule($LOCAL_LANG['default'], $LOCAL_LANG[$this->language], FALSE, FALSE);
+				$mergedLocalLang = $LOCAL_LANG['default'];
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($mergedLocalLang, $LOCAL_LANG[$this->language], TRUE, FALSE);
+				$LOCAL_LANG[$this->language] = $mergedLocalLang;
 			} else {
 				$LOCAL_LANG[$this->language] = $LOCAL_LANG['default'];
 			}
@@ -1180,13 +1182,14 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 * @todo Define visibility
 	 */
 	public function buildJSLangArray($plugin) {
-		$LOCAL_LANG = FALSE;
 		$extensionKey = is_object($this->registeredPlugins[$plugin]) ? $this->registeredPlugins[$plugin]->getExtensionKey() : $this->ID;
 		$LOCAL_LANG = GeneralUtility::readLLfile('EXT:' . $extensionKey . '/htmlarea/plugins/' . $plugin . '/locallang.xlf', $this->language, 'utf-8', 1);
 		$JSLanguageArray = 'HTMLArea.I18N["' . $plugin . '"] = new Object();' . LF;
 		if (is_array($LOCAL_LANG)) {
 			if (!empty($LOCAL_LANG[$this->language])) {
-				$LOCAL_LANG[$this->language] = GeneralUtility::array_merge_recursive_overrule($LOCAL_LANG['default'], $LOCAL_LANG[$this->language], FALSE, FALSE);
+				$defaultLocalLang = $LOCAL_LANG['default'];
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultLocalLang, $LOCAL_LANG[$this->language], TRUE, FALSE);
+				$LOCAL_LANG[$this->language] = $defaultLocalLang;
 			} else {
 				$LOCAL_LANG[$this->language] = $LOCAL_LANG['default'];
 			}
@@ -1266,7 +1269,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	public function getPageConfigLabel($string, $JScharCode = 1) {
 		global $LANG, $TSFE, $TYPO3_CONF_VARS;
 		if ($this->is_FE()) {
-			if (strcmp(substr($string, 0, 4), 'LLL:')) {
+			if (substr($string, 0, 4) !== 'LLL:') {
 				// A pure string coming from Page TSConfig must be in utf-8
 				$label = $TSFE->csConvObj->conv($TSFE->sL(trim($string)), 'utf-8', $this->OutputCharset);
 			} else {
@@ -1275,7 +1278,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			$label = str_replace('"', '\\"', str_replace('\\\'', '\'', $label));
 			$label = $JScharCode ? $this->feJScharCode($label) : $label;
 		} else {
-			if (strcmp(substr($string, 0, 4), 'LLL:')) {
+			if (substr($string, 0, 4) !== 'LLL:') {
 				$label = $string;
 			} else {
 				$label = $LANG->sL(trim($string));
@@ -1304,7 +1307,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			// extension
 			list($extKey, $local) = explode('/', substr($filename, 4), 2);
 			$newFilename = '';
-			if (strcmp($extKey, '') && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extKey) && strcmp($local, '')) {
+			if ((string)$extKey !== '' && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extKey) && (string)$local !== '') {
 				$newFilename = ($this->is_FE() || $this->isFrontendEditActive() ? \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath($extKey) : $this->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($extKey)) . $local;
 			}
 		} elseif (substr($filename, 0, 1) != '/') {
@@ -1448,7 +1451,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			if ($pp[0] && $pp[1]) {
 				foreach ($matchParts as $el) {
 					$star = substr($el, -1) == '*';
-					if (!strcmp($pp[0], $el) || $star && GeneralUtility::isFirstPartOfStr($pp[0], substr($el, 0, -1))) {
+					if ($pp[0] === (string)$el || $star && GeneralUtility::isFirstPartOfStr($pp[0], substr($el, 0, -1))) {
 						$nStyle[] = $pp[0] . ':' . $pp[1];
 					} else {
 						unset($styleParts[$k]);

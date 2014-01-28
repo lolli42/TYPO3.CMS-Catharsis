@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -679,14 +679,14 @@ class EditDocumentController {
 			if ($editForm) {
 				$this->firstEl = reset($this->elementsData);
 				// Checking if the currently open document is stored in the list of "open documents" - if not, then add it:
-				if ((strcmp($this->docDat[1], $this->storeUrlMd5) || !isset($this->docHandler[$this->storeUrlMd5])) && !$this->dontStoreDocumentRef) {
+				if (($this->docDat[1] !== $this->storeUrlMd5 || !isset($this->docHandler[$this->storeUrlMd5])) && !$this->dontStoreDocumentRef) {
 					$this->docHandler[$this->storeUrlMd5] = array($this->storeTitle, $this->storeArray, $this->storeUrl, $this->firstEl);
 					$GLOBALS['BE_USER']->pushModuleData('alt_doc.php', array($this->docHandler, $this->storeUrlMd5));
 					BackendUtility::setUpdateSignal('OpendocsController::updateNumber', count($this->docHandler));
 				}
 				// Module configuration
 				$this->modTSconfig = $this->viewId ? BackendUtility::getModTSconfig($this->viewId, 'mod.xMOD_alt_doc') : array();
-				$body .= $this->tceforms->printNeededJSFunctions_top();
+				$body = $this->tceforms->printNeededJSFunctions_top();
 				$body .= $this->compileForm($editForm);
 				$body .= $this->tceforms->printNeededJSFunctions();
 				$body .= $this->functionMenus();
@@ -1419,7 +1419,7 @@ class EditDocumentController {
 		}
 		// If ->returnEditConf is set, then add the current content of editconf to the ->retUrl variable: (used by other scripts, like wizard_add, to know which records was created or so...)
 		if ($this->returnEditConf && $this->retUrl != 'dummy.php') {
-			$this->retUrl .= '&returnEditConf=' . rawurlencode(serialize($this->editconf));
+			$this->retUrl .= '&returnEditConf=' . rawurlencode(json_encode($this->editconf));
 		}
 		// If code is NOT set OR set to 1, then make a header location redirect to $this->retUrl
 		if (!$code || $code == 1) {
@@ -1439,7 +1439,7 @@ class EditDocumentController {
 	 * @todo Define visibility
 	 */
 	public function setDocument($currentDocFromHandlerMD5 = '', $retUrl = 'alt_doc_nodoc.php') {
-		if (!ExtensionManagementUtility::isLoaded('cms') && !strcmp($retUrl, 'alt_doc_nodoc.php')) {
+		if (!ExtensionManagementUtility::isLoaded('cms') && $retUrl === 'alt_doc_nodoc.php') {
 			return;
 		}
 		if (!$this->modTSconfig['properties']['disableDocSelector'] && is_array($this->docHandler) && count($this->docHandler)) {

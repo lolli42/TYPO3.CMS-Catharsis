@@ -15,7 +15,7 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -122,6 +122,12 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public $domain_records = array();
 
+	// Select clauses for individual words
+	/**
+	 * @todo Define visibility
+	 */
+	public $wSelClauses = array();
+
 	// Domain records (?)
 	/**
 	 * @todo Define visibility
@@ -214,7 +220,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Indexer configuration from Extension Manager interface:
 		$this->indexerConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']);
 		$this->enableMetaphoneSearch = $this->indexerConfig['enableMetaphoneSearch'] ? TRUE : FALSE;
-		$this->storeMetaphoneInfoAsWords = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_words') ? FALSE : TRUE;
+		$this->storeMetaphoneInfoAsWords = !\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_words');
 		// Initialize external document parsers for icon display and other soft operations
 		if (is_array($TYPO3_CONF_VARS['EXTCONF']['indexed_search']['external_parsers'])) {
 			foreach ($TYPO3_CONF_VARS['EXTCONF']['indexed_search']['external_parsers'] as $extension => $_objRef) {
@@ -918,6 +924,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		$wildcard_left = $mode & self::WILDCARD_LEFT ? '%' : '';
 		$wildcard_right = $mode & self::WILDCARD_RIGHT ? '%' : '';
 		$wSel = 'IW.baseword LIKE \'' . $wildcard_left . $GLOBALS['TYPO3_DB']->quoteStr($sWord, 'index_words') . $wildcard_right . '\'';
+		$this->wSelClauses[] = $wSel;
 		$res = $this->execPHashListQuery($wSel, ' AND is_stopword=0');
 		return $res;
 	}
@@ -931,6 +938,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public function searchDistinct($sWord) {
 		$wSel = 'IW.wid=' . \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::md5inthash($sWord);
+		$this->wSelClauses[] = $wSel;
 		$res = $this->execPHashListQuery($wSel, ' AND is_stopword=0');
 		return $res;
 	}
@@ -946,6 +954,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('ISEC.phash', 'index_section ISEC, index_fulltext IFT', 'IFT.fulltextdata LIKE \'%' . $GLOBALS['TYPO3_DB']->quoteStr($sSentence, 'index_fulltext') . '%\' AND
 				ISEC.phash = IFT.phash
 			' . $this->sectionTableWhere(), 'ISEC.phash');
+		$this->wSelClauses[] = '1=1';
 		return $res;
 	}
 
@@ -958,6 +967,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public function searchMetaphone($sWord) {
 		$wSel = 'IW.metaphone=' . $sWord;
+		$this->wSelClauses[] = $wSel;
 		$res = $this->execPHashListQuery($wSel, ' AND is_stopword=0');
 	}
 
@@ -1150,14 +1160,26 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					$grsel = 'SUM(IR.freq) AS order_val';
 					$orderBy = 'order_val' . $this->isDescending();
 			}
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('ISEC.*, IP.*, ' . $grsel, 'index_words IW,
-							index_rel IR,
-							index_section ISEC,
-							index_phash IP' . $page_join, 'IP.phash IN (' . $list . ') ' . $this->mediaTypeWhere() . ' ' . $this->languageWhere() . $freeIndexUidClause . '
-							AND IW.wid=IR.wid
-							AND ISEC.phash = IR.phash
-							AND IP.phash = IR.phash
-							AND ' . $page_where, 'IP.phash,ISEC.phash,ISEC.phash_t3,ISEC.rl0,ISEC.rl1,ISEC.rl2 ,ISEC.page_id,ISEC.uniqid,IP.phash_grouping,IP.data_filename ,IP.data_page_id ,IP.data_page_reg1,IP.data_page_type,IP.data_page_mp,IP.gr_list,IP.item_type,IP.item_title,IP.item_description,IP.item_mtime,IP.tstamp,IP.item_size,IP.contentHash,IP.crdate,IP.parsetime,IP.sys_language_uid,IP.item_crdate,IP.cHashParams,IP.externalUrl,IP.recordUid,IP.freeIndexUid,IP.freeIndexSetId', $orderBy);
+
+			// So, words are imploded into an OR statement (no "sentence search" should be done here - may deselect results)
+			$wordSel = '(' . implode(' OR ', $this->wSelClauses) . ') AND ';
+
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				'ISEC.*, IP.*, ' . $grsel,
+				'index_words IW,
+					index_rel IR,
+					index_section ISEC,
+					index_phash IP' . $page_join,
+				$wordSel .
+				'IP.phash IN (' . $list . ') ' .
+					$this->mediaTypeWhere() . ' ' . $this->languageWhere() . $freeIndexUidClause . '
+					AND IW.wid=IR.wid
+					AND ISEC.phash = IR.phash
+					AND IP.phash = IR.phash
+					AND ' . $page_where,
+				'IP.phash,ISEC.phash,ISEC.phash_t3,ISEC.rl0,ISEC.rl1,ISEC.rl2 ,ISEC.page_id,ISEC.uniqid,IP.phash_grouping,IP.data_filename ,IP.data_page_id ,IP.data_page_reg1,IP.data_page_type,IP.data_page_mp,IP.gr_list,IP.item_type,IP.item_title,IP.item_description,IP.item_mtime,IP.tstamp,IP.item_size,IP.contentHash,IP.crdate,IP.parsetime,IP.sys_language_uid,IP.item_crdate,IP.cHashParams,IP.externalUrl,IP.recordUid,IP.freeIndexUid,IP.freeIndexSetId',
+				$orderBy
+			);
 		} else {
 			// Otherwise, if sorting are done with the pages table or other fields, there is no need for joining with the rel/word tables:
 			$orderBy = '';
@@ -1213,7 +1235,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			}
 		} else {
 			// Ordinary TYPO3 pages:
-			if (strcmp($row['gr_list'], $GLOBALS['TSFE']->gr_list)) {
+			if ((string)$row['gr_list'] !== (string)$GLOBALS['TSFE']->gr_list) {
 				// Selecting for the grlist records belonging to the phash-row where the current users gr_list exists. If it is found it is proof that this user has direct access to the phash-rows content although he did not himself initiate the indexing...
 				if (\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_grlist')) {
 					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('phash', 'index_grlist', 'phash=' . intval($row['phash']) . ' AND gr_list=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($GLOBALS['TSFE']->gr_list, 'index_grlist'));
@@ -1451,7 +1473,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$opt = array();
 			$isSelFlag = 0;
 			foreach ($optValues as $k => $v) {
-				$sel = !strcmp($k, $value) ? ' selected="selected"' : '';
+				$sel = (string)$k === (string)$value ? ' selected="selected"' : '';
 				if ($sel) {
 					$isSelFlag++;
 				}
@@ -1626,9 +1648,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			' . implode('', $links) . '
 		</ul>';
 		}
-		$label = $this->pi_getLL('pi_list_browseresults_display', 'Displaying results ###TAG_BEGIN###%s to %s###TAG_END### out of ###TAG_BEGIN###%s###TAG_END###');
-		$label = str_replace('###TAG_BEGIN###', '<strong>', $label);
-		$label = str_replace('###TAG_END###', '</strong>', $label);
+		$label = str_replace(
+			array('###TAG_BEGIN###', '###TAG_END###'),
+			array('<strong>', '</strong>'),
+			$this->pi_getLL('pi_list_browseresults_display', 'Displaying results ###TAG_BEGIN###%s to %s###TAG_END### out of ###TAG_BEGIN###%s###TAG_END###')
+		);
 		$sTables = '<div' . $this->pi_classParam('browsebox') . '>' . ($showResultCount ? '<p>' . sprintf($label, $pR1, min(array($this->internal['res_count'], $pR2)), $this->internal['res_count']) . $addString . '</p>' : '') . $addPart . '</div>';
 		return $sTables;
 	}
@@ -1754,7 +1778,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$opt = array();
 			$isSelFlag = 0;
 			foreach ($optValues as $k => $v) {
-				$sel = !strcmp($k, $value) ? ' selected="selected"' : '';
+				$sel = (string)$k === (string)$value ? ' selected="selected"' : '';
 				if ($sel) {
 					$isSelFlag++;
 				}
@@ -1816,7 +1840,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					$fullPath = GeneralUtility::getFileAbsFileName($icon);
 					if ($fullPath) {
 						$info = @getimagesize($fullPath);
-						$iconPath = substr($fullPath, strlen(PATH_site));
+						$iconPath = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fullPath);
 						$this->iconFileNameCache[$it] = is_array($info) ? '<img src="' . $iconPath . '" ' . $info[3] . ' title="' . htmlspecialchars($alt) . '" alt="" />' : '';
 					}
 				}
@@ -2082,7 +2106,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				$flag = $rowDat['flag'];
 				if ($flag) {
 					// FIXME not all flags from typo3/gfx/flags are available in media/flags/
-					$file = substr(PATH_tslib, strlen(PATH_site)) . 'media/flags/flag_' . $flag;
+					$file = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(PATH_tslib) . 'media/flags/flag_' . $flag;
 					$imgInfo = @getimagesize((PATH_site . $file));
 					if (is_array($imgInfo)) {
 						$output = '<img src="' . $file . '" ' . $imgInfo[3] . ' title="' . htmlspecialchars($rowDat['title']) . '" alt="' . htmlspecialchars($rowDat['title']) . '" />';

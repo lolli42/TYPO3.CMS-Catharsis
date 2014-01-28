@@ -356,7 +356,7 @@ return array(
 				'type' => 'input',
 				'size' => '50',
 				'max' => '255',
-				'eval' => ''
+				'eval' => 'trim'
 			)
 		),
 		'target' => array(
@@ -760,14 +760,13 @@ return array(
 			'config' => array(
 				'type' => 'select',
 				'items' => array(
-					array('', 0),
+					array('', ''),
 					array('LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout.none', -1)
 				),
 				'itemsProcFunc' => 'TYPO3\\CMS\\Backend\\View\\BackendLayoutView->addBackendLayoutItems',
 				'selicon_cols' => 5,
 				'size' => 1,
 				'maxitems' => 1,
-				'default' => ''
 			)
 		),
 		'backend_layout_next_level' => array(
@@ -776,14 +775,13 @@ return array(
 			'config' => array(
 				'type' => 'select',
 				'items' => array(
-					array('', 0),
+					array('', ''),
 					array('LLL:EXT:cms/locallang_tca.xlf:pages.backend_layout.none', -1)
 				),
 				'itemsProcFunc' => 'TYPO3\\CMS\\Backend\\View\\BackendLayoutView->addBackendLayoutItems',
 				'selicon_cols' => 5,
 				'size' => 1,
 				'maxitems' => 1,
-				'default' => ''
 			)
 		)
 	),

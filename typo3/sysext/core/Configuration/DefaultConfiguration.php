@@ -71,7 +71,7 @@ return array(
 		'encryptionKey' => '',					// This is a "salt" used for various kinds of encryption, CRC checksums and validations. You can enter any rubbish string here but try to keep it secret. You should notice that a change to this value might invalidate temporary information, URLs etc. At least, clear all cache if you change this so any such information can be rebuild with the new key.
 		'cookieDomain' => '',					// Restricts the domain name for FE and BE session cookies. When setting the value to ".domain.com" (replace domain.com with your domain!), login sessions will be shared across subdomains. Alternatively, if you have more than one domain with sub-domains, you can set the value to a regular expression to match against the domain of the HTTP request. The result of the match is used as the domain for the cookie. eg. /\.(example1|example2)\.com$/ or /\.(example1\.com)|(example2\.net)$/. Separate domains for FE and BE can be set using <a href="#FE-cookieDomain">$TYPO3_CONF_VARS['FE']['cookieDomain']</a> and <a href="#BE-cookieDomain">$TYPO3_CONF_VARS['BE']['cookieDomain']</a> respectively.
 		'cookieSecure' => 0,					// <p>Integer (0, 1, 2): Indicates that the cookie should only be transmitted over a secure HTTPS connection from the client.</p><dl><dt>0</dt><dd>always send cookie</dd><dt>1 (force HTTPS)</dt><dd>the cookie will only be set if a secure (HTTPS) connection exists - use this in combination with lockSSL since otherwise the application will fail and throw an exception</dd><dt>2</dt><dd>the cookie will be set in each case, but uses the secure flag if a secure (HTTPS) connection exists.</dd></dl>
-		'cookieHttpOnly' => FALSE,				// Boolean: When enabled the cookie will be made accessible only through the HTTP protocol. This means that the cookie won't be accessible by scripting languages, such as JavaScript. This setting can effectively help to reduce identity theft through XSS attacks (although it is not supported by all browsers).
+		'cookieHttpOnly' => TRUE,				// Boolean: When enabled the cookie will be made accessible only through the HTTP protocol. This means that the cookie won't be accessible by scripting languages, such as JavaScript. This setting can effectively help to reduce identity theft through XSS attacks (although it is not supported by all browsers).
 		'doNotCheckReferer' => FALSE,			// Boolean: If set, it's NOT checked numerous places that the refering host is the same as the current. This is an option you should set if you have problems with proxies not passing the HTTP_REFERER variable.
 		'recursiveDomainSearch' => FALSE,		// Boolean: If set, the search for domain records will be done recursively by stripping parts of the host name off until a matching domain record is found.
 		'devIPmask' => '127.0.0.1,::1',			// Defines a list of IP addresses which will allow development-output to display. The debug() function will use this as a filter. See the function \TYPO3\CMS\Core\Utility\GeneralUtility::cmpIP() for details on syntax. Setting this to blank value will deny all. Setting to "*" will allow all.
@@ -102,7 +102,7 @@ return array(
 		 */
 		'curlTimeout' => 0,						// Integer: Timeout value for cURL requests in seconds. 0 means to wait indefinitely. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		'form_enctype' => 'multipart/form-data',// String: This is the default form encoding type for most forms in TYPO3. It allows for file uploads to be in the form. However if file-upload is disabled for your PHP version even ordinary data sent with this encryption will not get to the server. So if you have file_upload disabled, you will have to change this to eg. 'application/x-www-form-urlencoded'
-		'textfile_ext' => 'txt,html,htm,css,tmpl,js,sql,xml,csv',		// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
+		'textfile_ext' => 'txt,html,htm,css,tmpl,js,sql,xml,csv,xlf',		// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
 		'contentTable' => '',					// This is the page-content table (Normally 'tt_content')
 		'binPath' => '',						// String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
 		'binSetup' => '',						// String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
@@ -110,6 +110,7 @@ return array(
 		't3lib_cs_utils' => '',					// String (values: "iconv", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset processing functions in t3lib_cs. Will speed up charset functions radically.
 		'no_pconnect' => TRUE,					// Boolean: If TRUE, "connect" is used to connect to the database. If FALSE, a persistent connection using "pconnect" will be established!
 		'dbClientCompress' => FALSE,			// Boolean: if TRUE, data exchange between TYPO3 and database server will be compressed. This may improve performance if (1) database serever is on the different server and (2) network connection speed to database server is 100mbps or less. CPU usage will be higher if this option is used but database operations will be executed faster due to much less (up to 3 times) database network traffic. This option has no effect if MySQL server is localhost.
+		'setDBinit' => '',						// String (textarea): These commands are executed after the database connection was established. Hint: The previous default "SET NAMES utf8;" is not required any more and will be removed automatically if set!
 		'setMemoryLimit' => 0,					// Integer: memory_limit in MB: If more than 16, TYPO3 will try to use ini_set() to set the memory limit of PHP to the value. This works only if the function ini_set() is not disabled by your sysadmin.
 		'serverTimeZone' => 1,					// Integer: GMT offset of servers time (from time()). Default is "1" which is "GMT+1" (central european time). This value can be used in extensions that are GMT aware and wants to convert times to/from other timezones.
 		'phpTimeZone' => '',					// String: timezone to force for all date() and mktime() functions. A list of supported values can be found at <a href="http://php.net/manual/en/timezones.php" target="_blank">php.net</a>. If this is not set, a valid fallback will be searched for by PHP (php.ini's <a href="http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone" target="_blank">date.timezone</a> setting, server defaults, etc); and if no fallback is found, the value of "UTC" is used instead.
@@ -132,53 +133,68 @@ return array(
 				'cache_core' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\PhpFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend',
-					'options' => array()
+					'options' => array(
+						'defaultLifetime' => 0,
+					),
+					'groups' => array('system')
 				),
-				// The cache_classes cache is for the class loader/class alias map only
-				// and must not be abused by third party extensions.
 				'cache_classes' => array(
-					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\PhpFrontend',
-					'backend' => 'TYPO3\CMS\Core\Cache\Backend\ClassLoaderBackend',
-					'options' => array()
+					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\StringFrontend',
+					'backend' => 'TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend',
+					'options' => array(
+						'defaultLifetime' => 0,
+					),
+					'groups' => array('system')
 				),
 				'cache_hash' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
-					'options' => array()
+					'options' => array(),
+					'groups' => array('pages', 'all')
 				),
 				'cache_pages' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
 					'options' => array(
 						'compression' => TRUE
-					)
+					),
+					'groups' => array('pages', 'all')
 				),
 				'cache_pagesection' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
 					'options' => array(
 						'compression' => TRUE
-					)
+					),
+					'groups' => array('pages', 'all')
 				),
 				'cache_phpcode' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\PhpFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\FileBackend',
-					'options' => array()
+					'options' => array(
+						'defaultLifetime' => 0,
+					),
+					'groups' => array('system')
 				),
 				'cache_runtime' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\TransientMemoryBackend',
-					'options' => array()
+					'options' => array(),
+					'groups' => array()
 				),
 				'cache_rootline' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
-					'options' => array()
+					'options' => array(),
+					'groups' => array('pages', 'all')
 				),
-				't3lib_l10n' => array(
+				'l10n' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend',
-					'options' => array(),
+					'options' => array(
+						'defaultLifetime' => 0,
+					),
+					'groups' => array('system')
 				),
 				'extbase_object' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
@@ -186,6 +202,7 @@ return array(
 					'options' => array(
 						'defaultLifetime' => 0,
 					),
+					'groups' => array('system')
 				),
 				'extbase_reflection' => array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
@@ -193,6 +210,7 @@ return array(
 					'options' => array(
 						'defaultLifetime' => 0,
 					),
+					'groups' => array('system')
 				),
 			),
 		),
@@ -281,8 +299,8 @@ return array(
 		'lang' => array(
 			'debug' => FALSE
 		),
-		'unzip_path' => '',								// Path to "unzip".
-		'diff_path' => 'diff',							// Path to "diff". For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
+		'unzip_path' => '',								// Path to "unzip". Only specify the path here, do not include the program name, it is expected to be called "unzip".
+		'diff_path' => 'diff',							// Path to "diff" including the program name. Example: /somepath/specialdiff<br />For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
 		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site. (Automatically mounted for admin-users if set)
 		'RTEenabled' => TRUE,							// Boolean: If set, the Rich Text editor will be an option in the backend. Notice that the editor must be enabled per-user and options are configurable. See admin guide.
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
@@ -638,9 +656,6 @@ return array(
 	),
 	'FE' => array( // Configuration for the TypoScript frontend (FE). Nothing here relates to the administration backend!
 		'png_to_gif' => FALSE,		// Boolean: Enables conversion back to gif of all png-files generated in the frontend libraries. Notice that this leaves an increased number of temporary files in typo3temp/
-		'tidy' => FALSE,		// Boolean: If set, the output html-code will be passed through "tidy" which is a little program you can get from <a href="http://www.w3.org/People/Raggett/tidy/" target="_blank">w3c.org</a>. "Tidy" cleans the HTML-code for nice display!
-		'tidy_option' => 'cached',		// options [all, cached, output]. "all" = the content is always passed through "tidy" before it may be stored in cache. "cached" = only if the page is put into the cache, "output" = only the output code just before it's echoed out.
-		'tidy_path' => 'tidy -i --quiet true --tidy-mark true -wrap 0 -raw',		// Path with options for tidy. For XHTML output, add " --output-xhtml true"
 		'addAllowedPaths' => '',		// Additional relative paths (comma-list) to allow TypoScript resources be in. Should be prepended with '/'. If not, then any path where the first part is like this path will match. That is: 'myfolder/ , myarchive' will match eg. 'myfolder/', 'myarchive/', 'myarchive_one/', 'myarchive_2/' ... No check is done to see if this directory actually exists in the root of the site. Paths are matched by simply checking if these strings equals the first part of any TypoScript resource filepath. (See class template, function init() in \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser)
 		'allowedTempPaths' => '',		// Additional paths allowed for temporary images. Used with imgResource. Eg. 'alttypo3temp/,another_temp_dir/';
 		'debug' => FALSE,		// Boolean: If set, some debug HTML-comments may be output somewhere. Can also be set by TypoScript.
@@ -669,8 +684,8 @@ return array(
 		'defaultUserTSconfig' => '',		// String (textarea). Enter lines of default frontend user/group TSconfig.
 		'defaultTypoScript_constants' => '',		// String (textarea). Enter lines of default TypoScript, constants-field.
 		'defaultTypoScript_constants.' => array(),		// Lines of TS to include after a static template with the uid = the index in the array (Constants)
-		'defaultTypoScript_setup' => '',		// Enter lines of default TypoScript, setup-field.
-		'defaultTypoScript_setup.' => array(),		// As above, but for Setup
+		'defaultTypoScript_setup' => '',		// String (textarea). Enter lines of default TypoScript, setup-field.
+		'defaultTypoScript_setup.' => array(),		// Lines of TS to include after a static template with the uid = the index in the array (Setup)
 		'dontSetCookie' => FALSE,		// Boolean: If set, the no cookies is attempted to be set in the front end. Of course no userlogins are possible either...
 		'additionalAbsRefPrefixDirectories' => '',		// Enter additional directories to be prepended with absRefPrefix. Directories must be comma-separated. TYPO3 already prepends the following directories: media/, typo3conf/ext/, fileadmin/
 		'IPmaskMountGroups' => array( // This allows you to specify an array of IPmaskLists/fe_group-uids. If the REMOTE_ADDR of the user matches an IPmaskList, then the given fe_group is add to the gr_list. So this is an automatic mounting of a user-group. But no fe_user is logged in though! This feature is implemented for the default frontend user authentication and might not be implemented for alternative authentication services.

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Viewpage\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -170,7 +170,7 @@ class ViewModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionContr
 					$data['height'] = $conf['height'];
 				}
 
-				if (strcmp(substr($conf['label'], 0, 4), 'LLL:')) {
+				if (substr($conf['label'], 0, 4) !== 'LLL:') {
 					$label .= $conf['label'];
 				} else {
 					$label .= $GLOBALS['LANG']->sL(trim($conf['label']));

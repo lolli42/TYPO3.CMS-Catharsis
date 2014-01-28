@@ -3,16 +3,7 @@ if (!defined('TYPO3_MODE')) die ('Access denied.');
 
 $tca = array(
 	'ctrl' => array(
-		'type' => 'type',
-		'typeicon_column' => 'type',
-		'typeicon_classes' => array(
-			'1' => 'mimetypes-text-text',
-			'2' => 'mimetypes-media-image',
-			'3' => 'mimetypes-media-audio',
-			'4' => 'mimetypes-media-video',
-			'5' => 'mimetypes-application',
-			'default' => 'mimetypes-other-other'
-		),
+		'type' => 'file:type',
 	),
 	'types' => array(
 		TYPO3\CMS\Core\Resource\File::FILETYPE_UNKNOWN => array('showitem' => '
@@ -88,7 +79,7 @@ $tca = array(
 	),
 	'palettes' => array(
 		'10' => array('showitem' => 'visible, status, ranking', 'canNotCollapse' => '1'),
-		'20' => array('showitem' => 'publisher, source', 'canNotCollapse' => '1'),
+		'20' => array('showitem' => 'creator_tool, publisher, source', 'canNotCollapse' => '1'),
 		'30' => array('showitem' => 'latitude, longitude', 'canNotCollapse' => '1'),
 		'40' => array('showitem' => 'location_country, location_region, location_city', 'canNotCollapse' => '1'),
 		'50' => array('showitem' => 'width, height, unit, color_space', 'canNotCollapse' => '1'),
@@ -422,21 +413,31 @@ $tca = array(
 		),
 		'fe_groups' => array(
 			'exclude' => 1,
-			'l10n_mode' => 'exclude',
-			'label' => 'LLL:EXT:filemetadata/Resources/Private/Language/locallang_tca.xlf:sys_file_metadata.fe_groups',
+			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.fe_group',
 			'config' => array(
 				'type' => 'select',
-				'size' => 10,
-				'minitems' => 0,
-				'maxitems' => 9999,
-				'autoSizeMax' => 30,
-				'multiple' => 0,
+				'size' => 5,
+				'maxitems' => 20,
+				'items' => array(
+					array(
+						'LLL:EXT:lang/locallang_general.xlf:LGL.hide_at_login',
+						-1
+					),
+					array(
+						'LLL:EXT:lang/locallang_general.xlf:LGL.any_login',
+						-2
+					),
+					array(
+						'LLL:EXT:lang/locallang_general.xlf:LGL.usergroups',
+						'--div--'
+					)
+				),
+				'exclusiveKeys' => '-1,-2',
 				'foreign_table' => 'fe_groups',
-				'MM' => 'sys_file_fegroups_mm',
-			),
+				'foreign_table_where' => 'ORDER BY fe_groups.title'
+			)
 		),
 	),
 );
 
-
-return \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($GLOBALS['TCA']['sys_file_metadata'], $tca);
+return array_replace_recursive($GLOBALS['TCA']['sys_file_metadata'], $tca);

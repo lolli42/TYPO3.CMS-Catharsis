@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Service;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -520,7 +520,7 @@ class SqlSchemaMigrationService {
 			if (stristr($lineContent, 'auto_increment')) {
 				$lineContent = preg_replace('/ default \'0\'/i', '', $lineContent);
 			}
-			if (!$removeNonSQL || strcmp(trim($lineContent), '') && substr(trim($lineContent), 0, 1) != '#' && substr(trim($lineContent), 0, 2) != '--') {
+			if (!$removeNonSQL || trim($lineContent) !== '' && substr(trim($lineContent), 0, 1) != '#' && substr(trim($lineContent), 0, 2) != '--') {
 				// '--' is seen as mysqldump comments from server version 3.23.49
 				$statementArray[$statementArrayPointer] .= $lineContent;
 				$is_set = 1;
@@ -588,7 +588,7 @@ class SqlSchemaMigrationService {
 			$reg = array();
 			if (preg_match('/^insert[[:space:]]*into[[:space:]]*[`]?([[:alnum:]_]*)[`]?/i', substr($lineContent, 0, 100), $reg)) {
 				$nTable = trim($reg[1]);
-				if ($nTable && !strcmp($table, $nTable)) {
+				if ($nTable && $table === $nTable) {
 					$outStatements[] = $lineContent;
 				}
 			}

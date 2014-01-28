@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Resource\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -142,17 +142,11 @@ class FileExtensionFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider extensionFilterIgnoresCaseInAllowedExtensionCheckDataProvider
 	 */
 	public function extensionFilterIgnoresCaseInAllowedExtensionCheck($fileExtension, $allowedExtensions, $disallowedExtensions, $isAllowed) {
-
-		/** @var \TYPO3\CMS\Core\Resource\File $file */
-		$file = new \TYPO3\CMS\Core\Resource\File(array('name' => 'file.' . $fileExtension),
-			$this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE)
-		);
-
 		/** @var \TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter $filter */
 		$filter = $this->getAccessibleMock('\TYPO3\CMS\Core\Resource\Filter\FileExtensionFilter', array('dummy'));
 		$filter->setAllowedFileExtensions($allowedExtensions);
 		$filter->setDisallowedFileExtensions($disallowedExtensions);
-		$result = $filter->_call('isAllowed', $file);
+		$result = $filter->_call('isAllowed', 'file.' . $fileExtension);
 		$this->assertEquals($isAllowed, $result);
 	}
 }

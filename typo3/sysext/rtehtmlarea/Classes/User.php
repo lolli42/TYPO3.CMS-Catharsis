@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Rtehtmlarea;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -215,7 +215,8 @@ class User {
 						}
 						if (is_array($mArray)) {
 							if ($v['merge']) {
-								$v = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($mArray, $v);
+								\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($mArray, $v);
+								$v = $mArray;
 							} else {
 								$v = $mArray;
 							}

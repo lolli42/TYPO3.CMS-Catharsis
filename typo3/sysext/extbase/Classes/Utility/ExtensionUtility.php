@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Extbase\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -90,9 +90,15 @@ class ExtensionUtility {
 		}
 	}
 	view {
-		templateRootPath =
-		layoutRootPath =
-		partialRootPath =
+		templateRootPaths {
+			#example: fooKey = EXT:bar/foo
+		}
+		layoutRootPaths {
+			#example: fooKey = EXT:bar/foo
+		}
+		partialRootPaths {
+			#example: fooKey = EXT:bar/foo
+		}
 		 # with defaultPid you can specify the default page uid of this plugin. If you set this to the string "auto" the target page will be determined automatically. Defaults to an empty string that expects the target page to be the current page.
 		defaultPid =
 	}
@@ -231,7 +237,8 @@ tt_content.' . $pluginSignature . ' {
 		if ($mainModuleName === 'web') {
 			$defaultModuleConfiguration['navigationComponentId'] = 'typo3-pagetree';
 		}
-		$moduleConfiguration = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($defaultModuleConfiguration, $moduleConfiguration);
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
+		$moduleConfiguration = $defaultModuleConfiguration;
 		$moduleSignature = $mainModuleName;
 		if (strlen($subModuleName) > 0) {
 			$subModuleName = $extensionName . \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToUpperCamelCase($subModuleName);

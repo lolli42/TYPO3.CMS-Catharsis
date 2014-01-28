@@ -3,18 +3,11 @@
 
 	$(document).ready(function() {
 		manageExtensionListing();
-		$("#typo3-extension-configuration-forms ul").tabs("div.category");
+		$("#typo3-extension-configuration-forms").tabs();
 
 		$('.onClickMaskExtensionManager').click(function() {
 			$('.typo3-extension-manager').mask();
 		});
-
-		// IE 8 needs extra 'change' event on form
-		if ($.browser.msie) {
-			$('form.onClickMaskExtensionManager').bind("change", function () {
-				$('.typo3-extension-manager').mask();
-			});
-		}
 
 		$('.dataTables_wrapper .dataTables_filter input').clearable({
 			onClear: function() {
@@ -54,6 +47,10 @@
 			"oLanguage": {"sSearch": TYPO3.l10n.localize('extensionList.search')},
 			"bStateSave":true,
 			"fnDrawCallback": bindActions,
+			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
+				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
+				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
+			},
 			'aoColumns': [
 				null,
 				null,

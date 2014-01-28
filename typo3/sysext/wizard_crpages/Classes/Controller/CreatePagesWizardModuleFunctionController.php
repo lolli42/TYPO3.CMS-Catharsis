@@ -15,7 +15,7 @@ namespace TYPO3\CMS\WizardCrpages\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -186,7 +186,6 @@ class CreatePagesWizardModuleFunctionController extends \TYPO3\CMS\Backend\Modul
 				#formFieldContainer {float: left; margin: 0 0 10px 0;}
 				.clearLeft {clear: left;}
 				#formFieldContainer label {width: 70px; display: inline-block;}
-				#formFieldContainer input {margin:4px 2px; padding:1px; vertical-align:middle}
 				#formFieldContainer span {padding: 0 3px;}
 				');
 			}

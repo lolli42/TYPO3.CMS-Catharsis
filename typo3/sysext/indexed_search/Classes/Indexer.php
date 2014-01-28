@@ -15,7 +15,7 @@ namespace TYPO3\CMS\IndexedSearch;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -258,7 +258,7 @@ class Indexer {
 			if (!$indexerConfig['disableFrontendIndexing'] || $this->crawlerActive) {
 				if (!$pObj->page['no_search']) {
 					if (!$pObj->no_cache) {
-						if (!strcmp($pObj->sys_language_uid, $pObj->sys_language_content)) {
+						if ((int)$pObj->sys_language_uid === (int)$pObj->sys_language_content) {
 							// Setting up internal configuration from config array:
 							$this->conf = array();
 							// Information about page for which the indexing takes place
@@ -2011,10 +2011,10 @@ class Indexer {
 			$GLOBALS['TYPO3_DB']->exec_DELETEquery('index_rel', 'phash=' . intval($phash));
 			foreach ($wordList as $val) {
 				$insertFields = array(
-					'phash' => $phash,
-					'wid' => $val['hash'],
-					'count' => $val['count'],
-					'first' => $val['first'],
+					'phash' => (integer)$phash,
+					'wid' => (integer)$val['hash'],
+					'count' => (integer)$val['count'],
+					'first' => (integer)$val['first'],
 					'freq' => $this->freqMap($val['count'] / $this->wordcount),
 					'flags' => $val['cmp'] & $this->flagBitMask
 				);
@@ -2148,7 +2148,7 @@ class Indexer {
 	 *
 	 * @param string $keywordList
 	 * @return string
-	 * @see http://bugs.typo3.org/view.php?id=1436
+	 * @see http://forge.typo3.org/issues/14959
 	 */
 	protected function addSpacesToKeywordList($keywordList) {
 		$keywords = GeneralUtility::trimExplode(',', $keywordList);

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Filelist\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -216,11 +216,13 @@ class FileListController {
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:filelist/Resources/Private/Templates/file_list.html');
-		$this->doc->getPageRenderer()->loadPrototype();
-		$this->doc->getPageRenderer()->loadJQuery();
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/FileListLocalisation');
-		$this->doc->getPageRenderer()->addInlineLanguagelabelFile(
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $this->doc->getPageRenderer();
+		$pageRenderer->loadPrototype();
+		$pageRenderer->loadJQuery();
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FileListLocalisation');
+		$pageRenderer->addInlineLanguagelabelFile(
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
 			'file_upload'
 		);
@@ -369,7 +371,7 @@ class FileListController {
 			$content = '';
 			if ($this->errorMessage) {
 				$this->errorMessage->setSeverity(\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
-				$content = $this->doc->moduleBody(array(), array_merge(array('LEVEL_UP' => '', 'REFRESH' => ''), $this->getButtons()), array('CSH' => '', 'TITLE' => '', 'FOLDER_INFO' => '', 'PAGE_ICON' => '', 'FUNC_MENU' => '', 'CONTENT' => $this->errorMessage->render()));
+				$content = $this->doc->moduleBody(array(), array_merge(array('REFRESH' => ''), $this->getButtons()), array('CSH' => '', 'TITLE' => '', 'FOLDER_INFO' => '', 'PAGE_ICON' => '', 'FUNC_MENU' => '', 'CONTENT' => $this->errorMessage->render()));
 			}
 			// Create output - no access (no warning though)
 			$this->content = $this->doc->render($GLOBALS['LANG']->getLL('files'), $content);

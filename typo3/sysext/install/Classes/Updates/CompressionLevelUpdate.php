@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Updates;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -46,7 +46,7 @@ class CompressionLevelUpdate extends AbstractUpdate {
 	 */
 	public function checkForUpdate(&$description) {
 		$description = '<p><strong>TYPO3_CONF_VARS[BE][compressionLevel] is enabled.</strong><br />
-		In TYPO3 4.4, compressionLevel was expanded to include automatic gzip compression of JavaScript and CSS stylessheet files.
+		In TYPO3 4.4, compressionLevel was expanded to include automatic gzip compression of JavaScript and CSS stylesheet files.
 		<strong>To prevent the TYPO3 backend from being unusable, you must include the relevant lines from _.htaccess.</strong></p>';
 		if (!$this->isWizardDone() && intval($GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel']) > 0) {
 			return TRUE;

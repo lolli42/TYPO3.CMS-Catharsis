@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Lang;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -295,7 +295,7 @@ class LanguageService {
 			$restStr = trim(substr($input, 4));
 			$extPrfx = '';
 				// ll-file refered to is found in an extension.
-			if (!strcmp(substr($restStr, 0, 4), 'EXT:')) {
+			if (substr($restStr, 0, 4) === 'EXT:') {
 				$restStr = trim(substr($restStr, 4));
 				$extPrfx = 'EXT:';
 			}
@@ -409,7 +409,8 @@ class LanguageService {
 		if (is_array($localLanguage) && count($localLanguage)) {
 				// it depends on, whether we should return the result or set it in the global $LOCAL_LANG array
 			if ($setGlobal) {
-				$globalLanguage = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule((array) $GLOBALS['LOCAL_LANG'], $localLanguage);
+				$globalLanguage = (array)$GLOBALS['LOCAL_LANG'];
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($globalLanguage, $localLanguage);
 			} else {
 				$globalLanguage = $localLanguage;
 			}
@@ -417,7 +418,7 @@ class LanguageService {
 			$lFileRef = $this->localizedFileRef($fileRef);
 			if ($lFileRef && (string) $globalLanguage[$this->lang] == 'EXT') {
 				$localLanguage = $this->readLLfile($lFileRef);
-				$globalLanguage = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($globalLanguage, $localLanguage);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($globalLanguage, $localLanguage);
 			}
 				// Merge local onto default
 			if ($mergeLocalOntoDefault && $this->lang !== 'default' && is_array($globalLanguage[$this->lang]) && is_array($globalLanguage['default'])) {
@@ -457,7 +458,7 @@ class LanguageService {
 			if ($this->lang !== 'default' && isset($tempLL[$language])) {
 					// Merge current language labels onto labels from previous language
 					// This way we have a labels with fall back applied
-				$localLanguage[$this->lang] = \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge_recursive_overrule($localLanguage[$this->lang], $tempLL[$language], FALSE, FALSE);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($localLanguage[$this->lang], $tempLL[$language], TRUE, FALSE);
 			}
 		}
 		return $localLanguage;

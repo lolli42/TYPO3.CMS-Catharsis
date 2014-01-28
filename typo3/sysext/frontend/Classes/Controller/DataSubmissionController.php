@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -135,7 +135,7 @@ class DataSubmissionController {
 			if ($this->autoRespondMessage !== '') {
 				// Check if the value of the auto responder message has been modified with evil intentions
 				$autoRespondChecksum = $valueList['auto_respond_checksum'];
-				$correctHmacChecksum = Utility\GeneralUtility::hmac($this->autoRespondMessage);
+				$correctHmacChecksum = Utility\GeneralUtility::hmac($this->autoRespondMessage, 'content_form');
 				if ($autoRespondChecksum !== $correctHmacChecksum) {
 					Utility\GeneralUtility::sysLog('Possible misuse of DataSubmissionController auto respond method. Subject: ' . $valueList['subject'], 'Core', Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
 					return;
@@ -267,8 +267,11 @@ class DataSubmissionController {
 		if ($this->autoRespondMessage) {
 			$theParts = explode('/', $this->autoRespondMessage, 2);
 			$theParts[0] = str_replace('###SUBJECT###', $this->subject, $theParts[0]);
-			$theParts[1] = str_replace('/', LF, $theParts[1]);
-			$theParts[1] = str_replace('###MESSAGE###', $this->plainContent, $theParts[1]);
+			$theParts[1] = str_replace(
+				array('/', '###MESSAGE###'),
+				array(LF, $this->plainContent),
+				$theParts[1]
+			);
 			/** @var $autoRespondMail \TYPO3\CMS\Core\Mail\MailMessage */
 			$autoRespondMail = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
 			$autoRespondMail->setTo($this->fromAddress)->setSubject($theParts[0])->setFrom($this->recipient)->setBody($theParts[1]);

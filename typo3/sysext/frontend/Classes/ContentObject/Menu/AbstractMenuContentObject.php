@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -851,7 +851,7 @@ class AbstractMenuContentObject {
 			// Fill in the menuArr with elements that should go into the menu:
 			$this->menuArr = array();
 			foreach ($temp as $data) {
-				$spacer = GeneralUtility::inList($this->spacerIDList, $data['doktype']) || !strcmp($data['ITEM_STATE'], 'SPC') ? 1 : 0;
+				$spacer = GeneralUtility::inList($this->spacerIDList, $data['doktype']) || $data['ITEM_STATE'] === 'SPC' ? 1 : 0;
 				// if item is a spacer, $spacer is set
 				if ($this->filterMenuPages($data, $banUidArray, $spacer)) {
 					$c_b++;
@@ -1326,7 +1326,9 @@ class AbstractMenuContentObject {
 			// Open in popup window?
 			if ($matches[3] && $matches[4]) {
 				$JSparamWH = 'width=' . $matches[3] . ',height=' . $matches[4] . ($matches[5] ? ',' . substr($matches[5], 1) : '');
-				$onClick = 'vHWin=window.open(\'' . $LD['totalURL'] . '\',\'FEopenLink\',\'' . $JSparamWH . '\');vHWin.focus();return false;';
+				$onClick = 'vHWin=window.open('
+					. GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($LD['totalURL']))
+					. ',\'FEopenLink\',\'' . $JSparamWH . '\');vHWin.focus();return false;';
 				$LD['target'] = '';
 			}
 		}
@@ -1355,9 +1357,17 @@ class AbstractMenuContentObject {
 		// If access restricted pages should be shown in menus, change the link of such pages to link to a redirection page:
 		if ($this->mconf['showAccessRestrictedPages'] && $this->mconf['showAccessRestrictedPages'] !== 'NONE' && !$GLOBALS['TSFE']->checkPageGroupAccess($page)) {
 			$thePage = $this->sys_page->getPage($this->mconf['showAccessRestrictedPages']);
-			$addParams = $this->mconf['showAccessRestrictedPages.']['addParams'];
-			$addParams = str_replace('###RETURN_URL###', rawurlencode($LD['totalURL']), $addParams);
-			$addParams = str_replace('###PAGE_ID###', $page['uid'], $addParams);
+			$addParams = str_replace(
+				array(
+					'###RETURN_URL###',
+					'###PAGE_ID###'
+				),
+				array(
+					rawurlencode($LD['totalURL']),
+					$page['uid']
+				),
+				$this->mconf['showAccessRestrictedPages.']['addParams']
+			);
 			$LD = $this->menuTypoLink($thePage, $mainTarget, '', '', '', $addParams, $typeOverride);
 		}
 	}
@@ -1469,7 +1479,7 @@ class AbstractMenuContentObject {
 	 */
 	public function isCurrent($uid, $MPvar = '') {
 		$testUid = $uid . ($MPvar ? ':' . $MPvar : '');
-		if ($uid && !strcmp(end($this->rL_uidRegister), ('ITEM:' . $testUid))) {
+		if ($uid && end($this->rL_uidRegister) === 'ITEM:' . $testUid) {
 			return TRUE;
 		}
 	}
@@ -1538,7 +1548,7 @@ class AbstractMenuContentObject {
 		$natVal = 0;
 		// If any value is set for ITEM_STATE the normal evaluation is discarded
 		if ($this->menuArr[$key]['ITEM_STATE']) {
-			if (!strcmp($this->menuArr[$key]['ITEM_STATE'], $kind)) {
+			if ((string)$this->menuArr[$key]['ITEM_STATE'] === (string)$kind) {
 				$natVal = 1;
 			}
 		} else {
@@ -1636,7 +1646,7 @@ class AbstractMenuContentObject {
 	 * @todo Define visibility
 	 */
 	public function getPageTitle($title, $nav_title) {
-		return strcmp(trim($nav_title), '') ? $nav_title : $title;
+		return trim($nav_title) !== '' ? $nav_title : $title;
 	}
 
 	/**

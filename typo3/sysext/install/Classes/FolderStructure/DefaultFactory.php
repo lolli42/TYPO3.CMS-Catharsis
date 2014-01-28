@@ -25,7 +25,7 @@ namespace TYPO3\CMS\Install\FolderStructure;
  ***************************************************************/
 
 /**
- * Factory returns default folder structure object hierachie
+ * Factory returns default folder structure object hierarchy
  */
 class DefaultFactory {
 
@@ -212,7 +212,7 @@ class DefaultFactory {
 					),
 				),
 				array(
-					'name' => 'fileadmin',
+					'name' => !empty($GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir']) ? rtrim($GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'], '/') : 'fileadmin',
 					'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 					'targetPermission' => $directoryPermission,
 					'children' => array(

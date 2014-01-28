@@ -15,7 +15,7 @@ namespace TYPO3\CMS\InfoPagetsconfig\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -88,7 +88,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 		$theOutput = $this->pObj->doc->header($GLOBALS['LANG']->getLL('tsconf_title'));
 
 		if ($this->pObj->MOD_SETTINGS['tsconf_parts'] == 99) {
-			$TSparts = BackendUtility::getPagesTSconfig($this->pObj->id, '', TRUE);
+			$TSparts = BackendUtility::getPagesTSconfig($this->pObj->id, NULL, TRUE);
 			$lines = array();
 			$pUids = array();
 			foreach ($TSparts as $k => $v) {

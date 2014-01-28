@@ -204,8 +204,8 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 				$inputFile = $this->imageBasePath . 'TestInput/Test.' . $formatToTest;
 				$imageProcessor->imageMagickConvert_forceFileNameBody = uniqid('read') . '-' . $formatToTest;
 				$imResult = $imageProcessor->imageMagickConvert($inputFile, 'jpg', '170', '', '', '', array(), TRUE);
+				$result['title'] = 'Read ' . $formatToTest;
 				if ($imResult !== NULL) {
-					$result['title'] = 'Read ' . $formatToTest;
 					$result['outputFile'] = $imResult[3];
 					$result['referenceFile'] = $this->imageBasePath . 'TestReference/Read-' . $formatToTest . '.jpg';
 					$result['command'] = $imageProcessor->IM_commands;
@@ -594,7 +594,7 @@ class TestSetup extends Action\AbstractAction implements Action\ActionInterface 
 		$result['imageMagickEnabled'] =  $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'];
 		$result['imageMagickPath'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path'];
 		$result['imageMagickVersion'] = $this->determineImageMagickVersion();
-		$result['imageMagick5Effecs'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_v5effects'];
+		$result['imageMagick5Effects'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_v5effects'];
 		$result['gdlibEnabled'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
 		$result['gdlibPng'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
 		$result['freeTypeDpi'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi'];

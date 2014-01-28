@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -556,7 +556,7 @@ class BackendUtility {
 							// Check for items:
 							foreach ($fCfg['items'] as $iVal) {
 								// Values '' is not controlled by this setting.
-								if (strcmp($iVal[1], '')) {
+								if ((string)$iVal[1] !== '') {
 									// Find iMode
 									$iMode = '';
 									switch ((string) $fCfg['authMode']) {
@@ -567,9 +567,9 @@ class BackendUtility {
 											$iMode = 'DENY';
 											break;
 										case 'individual':
-											if (!strcmp($iVal[4], 'EXPL_ALLOW')) {
+											if ($iVal[4] === 'EXPL_ALLOW') {
 												$iMode = 'ALLOW';
-											} elseif (!strcmp($iVal[4], 'EXPL_DENY')) {
+											} elseif ($iVal[4] === 'EXPL_DENY') {
 												$iMode = 'DENY';
 											}
 											break;
@@ -792,7 +792,7 @@ class BackendUtility {
 				$typeNum = $row[$field];
 			}
 			// If that value is an empty string, set it to "0" (zero)
-			if (!strcmp($typeNum, '')) {
+			if (empty($typeNum)) {
 				$typeNum = 0;
 			}
 		}
@@ -1128,35 +1128,53 @@ class BackendUtility {
 	 * @return array Page TSconfig
 	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
 	 */
-	static public function getPagesTSconfig($id, $rootLine = '', $returnPartArray = 0) {
+	static public function getPagesTSconfig($id, $rootLine = NULL, $returnPartArray = FALSE) {
+		static $pagesTSconfig_cache = array();
+
 		$id = intval($id);
-		if (!is_array($rootLine)) {
-			$rootLine = self::BEgetRootLine($id, '', TRUE);
-		}
-		// Order correctly
-		ksort($rootLine);
-		$TSdataArray = array();
-		// Setting default configuration
-		$TSdataArray['defaultPageTSconfig'] = $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'];
-		foreach ($rootLine as $k => $v) {
-			$TSdataArray['uid_' . $v['uid']] = $v['TSconfig'];
-		}
-		$TSdataArray = TypoScriptParser::checkIncludeLines_array($TSdataArray);
-		if ($returnPartArray) {
-			return $TSdataArray;
-		}
-		// Parsing the page TS-Config
-		$pageTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
-		/* @var $parseObj \TYPO3\CMS\Backend\Configuration\TsConfigParser */
-		$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TsConfigParser');
-		$res = $parseObj->parseTSconfig($pageTS, 'PAGES', $id, $rootLine);
-		if ($res) {
-			$TSconfig = $res['TSconfig'];
-		}
-		// Get User TSconfig overlay
-		$userTSconfig = $GLOBALS['BE_USER']->userTS['page.'];
-		if (is_array($userTSconfig)) {
-			$TSconfig = GeneralUtility::array_merge_recursive_overrule($TSconfig, $userTSconfig);
+		if ($returnPartArray === FALSE
+			&& $rootLine === NULL
+			&& isset($pagesTSconfig_cache[$id])
+		) {
+			return $pagesTSconfig_cache[$id];
+		} else {
+			$TSconfig = array();
+			if (!is_array($rootLine)) {
+				$useCacheForCurrentPageId = TRUE;
+				$rootLine = self::BEgetRootLine($id, '', TRUE);
+			} else {
+				$useCacheForCurrentPageId = FALSE;
+			}
+
+			// Order correctly
+			ksort($rootLine);
+			$TSdataArray = array();
+			// Setting default configuration
+			$TSdataArray['defaultPageTSconfig'] = $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'];
+			foreach ($rootLine as $k => $v) {
+				$TSdataArray['uid_' . $v['uid']] = $v['TSconfig'];
+			}
+			$TSdataArray = TypoScriptParser::checkIncludeLines_array($TSdataArray);
+			if ($returnPartArray) {
+				return $TSdataArray;
+			}
+			// Parsing the page TS-Config
+			$pageTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
+			/* @var $parseObj \TYPO3\CMS\Backend\Configuration\TsConfigParser */
+			$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TsConfigParser');
+			$res = $parseObj->parseTSconfig($pageTS, 'PAGES', $id, $rootLine);
+			if ($res) {
+				$TSconfig = $res['TSconfig'];
+			}
+			// Get User TSconfig overlay
+			$userTSconfig = $GLOBALS['BE_USER']->userTS['page.'];
+			if (is_array($userTSconfig)) {
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($TSconfig, $userTSconfig);
+			}
+
+			if ($useCacheForCurrentPageId) {
+				$pagesTSconfig_cache[$id] = $TSconfig;
+			}
 		}
 		return $TSconfig;
 	}
@@ -1186,7 +1204,7 @@ class BackendUtility {
 			$set = array();
 			foreach ($pageTS as $f => $v) {
 				$f = $TSconfPrefix . $f;
-				if (!isset($impParams[$f]) && trim($v) || strcmp(trim($impParams[$f]), trim($v))) {
+				if (!isset($impParams[$f]) && trim($v) || trim($impParams[$f]) !== trim($v)) {
 					$set[$f] = trim($v);
 				}
 			}
@@ -1793,7 +1811,7 @@ class BackendUtility {
 			// Traverse the items-array...
 			foreach ($GLOBALS['TCA'][$table]['columns'][$col]['config']['items'] as $k => $v) {
 				// ... and return the first found label where the value was equal to $key
-				if (!strcmp($v[1], $key)) {
+				if ((string)$v[1] === (string)$key) {
 					return $v[0];
 				}
 			}
@@ -1908,7 +1926,7 @@ class BackendUtility {
 			} else {
 				// No userFunc: Build label
 				$t = self::getProcessedValue($table, $GLOBALS['TCA'][$table]['ctrl']['label'], $row[$GLOBALS['TCA'][$table]['ctrl']['label']], 0, 0, FALSE, $row['uid'], $forceResult);
-				if ($GLOBALS['TCA'][$table]['ctrl']['label_alt'] && ($GLOBALS['TCA'][$table]['ctrl']['label_alt_force'] || !strcmp($t, ''))) {
+				if ($GLOBALS['TCA'][$table]['ctrl']['label_alt'] && ($GLOBALS['TCA'][$table]['ctrl']['label_alt_force'] || (string)$t === '')) {
 					$altFields = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['label_alt'], TRUE);
 					$tA = array();
 					if (!empty($t)) {
@@ -1916,7 +1934,7 @@ class BackendUtility {
 					}
 					foreach ($altFields as $fN) {
 						$t = trim(strip_tags($row[$fN]));
-						if (strcmp($t, '')) {
+						if ((string)$t !== '') {
 							$t = self::getProcessedValue($table, $fN, $t, 0, 0, FALSE, $row['uid']);
 							if (!$GLOBALS['TCA'][$table]['ctrl']['label_alt_force']) {
 								break;
@@ -1934,7 +1952,7 @@ class BackendUtility {
 				if ($prep) {
 					$t = self::getRecordTitlePrep($t);
 				}
-				if (!strcmp(trim($t), '')) {
+				if (trim($t) === '') {
 					$t = self::getNoRecordTitle($prep);
 				}
 			}
@@ -2040,9 +2058,13 @@ class BackendUtility {
 							if (is_array($selectUids) && count($selectUids) > 0) {
 								$MMres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid, ' . $MMfield, $theColConf['foreign_table'], 'uid IN (' . implode(',', $selectUids) . ')' . self::deleteClause($theColConf['foreign_table']));
 								while ($MMrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($MMres)) {
-									$mmlA[] = $noRecordLookup ? $MMrow['uid'] : self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+									// Keep sorting of $selectUids
+									$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup ?
+										$MMrow['uid'] :
+										self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
 								}
 								$GLOBALS['TYPO3_DB']->sql_free_result($MMres);
+								ksort($mmlA);
 								if (is_array($mmlA)) {
 									$l = implode('; ', $mmlA);
 								} else {
@@ -2682,8 +2704,8 @@ class BackendUtility {
 		if (is_null($BE_USER_modOptions['value'])) {
 			unset($BE_USER_modOptions['value']);
 		}
-		$modTSconfig = GeneralUtility::array_merge_recursive_overrule($pageTS_modOptions, $BE_USER_modOptions);
-		return $modTSconfig;
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($pageTS_modOptions, $BE_USER_modOptions);
+		return $pageTS_modOptions;
 	}
 
 	/**
@@ -2714,7 +2736,7 @@ class BackendUtility {
 		}
 		$options = array();
 		foreach ($menuItems as $value => $label) {
-			$options[] = '<option value="' . htmlspecialchars($value) . '"' . (!strcmp($currentValue, $value) ? ' selected="selected"' : '') . '>' . GeneralUtility::deHSCentities(htmlspecialchars($label)) . '</option>';
+			$options[] = '<option value="' . htmlspecialchars($value) . '"' . ((string)$currentValue === (string)$value ? ' selected="selected"' : '') . '>' . GeneralUtility::deHSCentities(htmlspecialchars($label)) . '</option>';
 		}
 		if (count($options)) {
 			$onChange = 'jumpToUrl(\'' . $script . '?' . $mainParams . $addparams . '&' . $elementName . '=\'+this.options[this.selectedIndex].value,this);';
@@ -2921,12 +2943,12 @@ class BackendUtility {
 					if (is_array($CHANGED_SETTINGS) && isset($CHANGED_SETTINGS[$key])) {
 						if (is_array($CHANGED_SETTINGS[$key])) {
 							$serializedSettings = serialize($CHANGED_SETTINGS[$key]);
-							if (strcmp($settings[$key], $serializedSettings)) {
+							if ((string)$settings[$key] !== $serializedSettings) {
 								$settings[$key] = $serializedSettings;
 								$changed = 1;
 							}
 						} else {
-							if (strcmp($settings[$key], $CHANGED_SETTINGS[$key])) {
+							if ((string)$settings[$key] !== (string)$CHANGED_SETTINGS[$key]) {
 								$settings[$key] = $CHANGED_SETTINGS[$key];
 								$changed = 1;
 							}
@@ -3184,16 +3206,29 @@ class BackendUtility {
 			}
 			$whereClause = implode('', $whereClauseParts);
 		}
-		$whereClause = str_replace('###CURRENT_PID###', intval($tsConfig['_CURRENT_PID']), $whereClause);
-		$whereClause = str_replace('###THIS_UID###', intval($tsConfig['_THIS_UID']), $whereClause);
-		$whereClause = str_replace('###THIS_CID###', intval($tsConfig['_THIS_CID']), $whereClause);
-		$whereClause = str_replace('###STORAGE_PID###', intval($tsConfig['_STORAGE_PID']), $whereClause);
-		$whereClause = str_replace('###SITEROOT###', intval($tsConfig['_SITEROOT']), $whereClause);
-		$whereClause = str_replace('###PAGE_TSCONFIG_ID###', intval($tsConfig[$field]['PAGE_TSCONFIG_ID']), $whereClause);
-		$whereClause = str_replace('###PAGE_TSCONFIG_IDLIST###', $GLOBALS['TYPO3_DB']->cleanIntList($tsConfig[$field]['PAGE_TSCONFIG_IDLIST']), $whereClause);
-		$whereClause = str_replace('###PAGE_TSCONFIG_STR###', $GLOBALS['TYPO3_DB']->quoteStr($tsConfig[$field]['PAGE_TSCONFIG_STR'], $table), $whereClause);
-
-		return $whereClause;
+		return str_replace (
+			array (
+				'###CURRENT_PID###',
+				'###THIS_UID###',
+				'###THIS_CID###',
+				'###STORAGE_PID###',
+				'###SITEROOT###',
+				'###PAGE_TSCONFIG_ID###',
+				'###PAGE_TSCONFIG_IDLIST###',
+				'###PAGE_TSCONFIG_STR###'
+			),
+			array(
+				intval($tsConfig['_CURRENT_PID']),
+				intval($tsConfig['_THIS_UID']),
+				intval($tsConfig['_THIS_CID']),
+				intval($tsConfig['_STORAGE_PID']),
+				intval($tsConfig['_SITEROOT']),
+				intval($tsConfig[$field]['PAGE_TSCONFIG_ID']),
+				$GLOBALS['TYPO3_DB']->cleanIntList($tsConfig[$field]['PAGE_TSCONFIG_IDLIST']),
+				$GLOBALS['TYPO3_DB']->quoteStr($tsConfig[$field]['PAGE_TSCONFIG_STR'], $table)
+			),
+			$whereClause
+		);
 	}
 
 	/**
@@ -3210,17 +3245,16 @@ class BackendUtility {
 		$typeVal = self::getTCAtypeValue($table, $row);
 		// Get main config for the table
 		list($TScID, $cPid) = self::getTSCpid($table, $row['uid'], $row['pid']);
-		$rootLine = self::BEgetRootLine($TScID, '', TRUE);
 		if ($TScID >= 0) {
-			$tempConf = $GLOBALS['BE_USER']->getTSConfig('TCEFORM.' . $table, self::getPagesTSconfig($TScID, $rootLine));
+			$tempConf = $GLOBALS['BE_USER']->getTSConfig('TCEFORM.' . $table, self::getPagesTSconfig($TScID));
 			if (is_array($tempConf['properties'])) {
 				foreach ($tempConf['properties'] as $key => $val) {
 					if (is_array($val)) {
 						$fieldN = substr($key, 0, -1);
 						$res[$fieldN] = $val;
 						unset($res[$fieldN]['types.']);
-						if (strcmp($typeVal, '') && is_array($val['types.'][$typeVal . '.'])) {
-							$res[$fieldN] = GeneralUtility::array_merge_recursive_overrule($res[$fieldN], $val['types.'][$typeVal . '.']);
+						if ((string)$typeVal !== '' && is_array($val['types.'][$typeVal . '.'])) {
+							\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($res[$fieldN], $val['types.'][$typeVal . '.']);
 						}
 					}
 				}
@@ -3231,6 +3265,7 @@ class BackendUtility {
 		$res['_THIS_CID'] = $row['cid'];
 		// So the row will be passed to foreign_table_where_query()
 		$res['_THIS_ROW'] = $row;
+		$rootLine = self::BEgetRootLine($TScID, '', TRUE);
 		foreach ($rootLine as $rC) {
 			if (!$res['_STORAGE_PID']) {
 				$res['_STORAGE_PID'] = intval($rC['storage_pid']);
@@ -3378,10 +3413,10 @@ class BackendUtility {
 		$thisFieldConf = $RTEprop['config.'][$table . '.'][$field . '.'];
 		if (is_array($thisFieldConf)) {
 			unset($thisFieldConf['types.']);
-			$thisConfig = GeneralUtility::array_merge_recursive_overrule($thisConfig, $thisFieldConf);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $thisFieldConf);
 		}
 		if ($type && is_array($RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.'])) {
-			$thisConfig = GeneralUtility::array_merge_recursive_overrule($thisConfig, $RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.']);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.']);
 		}
 		return $thisConfig;
 	}
@@ -3509,7 +3544,7 @@ class BackendUtility {
 			// Look up the path:
 			if ($table == '_FILE') {
 				if (GeneralUtility::isFirstPartOfStr($ref, PATH_site)) {
-					$ref = substr($ref, strlen(PATH_site));
+					$ref = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($ref);
 					$condition = 'ref_string=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($ref, 'sys_refindex');
 				} else {
 					return '';
@@ -3625,7 +3660,7 @@ class BackendUtility {
 					}
 				}
 				// If ID of current online version is found, look up the PID value of that:
-				if ($oid && ($ignoreWorkspaceMatch || !strcmp((int) $wsid, $GLOBALS['BE_USER']->workspace))) {
+				if ($oid && ($ignoreWorkspaceMatch || (int)$wsid === (int)$GLOBALS['BE_USER']->workspace)) {
 					$oidRec = self::getRecord($table, $oid, 'pid');
 					if (is_array($oidRec)) {
 						$rr['_ORIG_pid'] = $rr['pid'];

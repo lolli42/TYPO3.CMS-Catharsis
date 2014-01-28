@@ -15,7 +15,6 @@ body#ext-taskcenter-task-index-php div#typo3-inner-docbody {
 }
 
 #typo3-inner-docbody p.help {
-	font-size: 12px;
 	margin-bottom: 10px;
 }
 
@@ -218,13 +217,6 @@ body#ext-taskcenter-task-index-php h3 {
 	width: 120px;
 	display: block;
 	float: left;
-}
-
-#taskcenter-item fieldset.fields input, #taskcenter-item fieldset.fields select {
-	width: 160px;
-	float: left;
-	border: 1px solid #ccc;
-	padding: 2px 3px;
 }
 
 #taskcenter-item fieldset.fields select {

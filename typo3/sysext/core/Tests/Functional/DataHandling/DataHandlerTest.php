@@ -39,9 +39,12 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		/** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
 		$backendUser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
 		$backendUser->user['admin'] = 1;
+		$backendUser->user['uid'] = 1;
+		// By default make tests on live workspace
+		$backendUser->workspace = 0;
 		$GLOBALS['BE_USER'] = $backendUser;
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->initializeLanguageObject();
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/pages.xml');
+		$this->importDataSet(__DIR__ . '/../Fixtures/pages.xml');
 	}
 
 	/**
@@ -79,9 +82,9 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @test
 	 */
 	public function canLocalizeTtContent() {
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/sys_language.xml');
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/pages_language_overlay.xml');
-		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/tt_content.xml');
+		$this->importDataSet(__DIR__. '/../Fixtures/sys_language.xml');
+		$this->importDataSet(__DIR__ . '/../Fixtures/pages_language_overlay.xml');
+		$this->importDataSet(__DIR__ . '/../Fixtures/tt_content.xml');
 
 		$dataHandler = $this->getDataHandler();
 		$originalRecordId  = 1;
@@ -108,6 +111,100 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertContains('Test content', $row['header']);
 		$this->assertEquals($uid, $row['uid']);
 		$this->assertEquals(1, $row['l18n_parent']);
+	}
+
+	/**
+	 * @test
+	 */
+	public function canCopyPasteTtContent() {
+		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/tt_content.xml');
+		$database = $this->getDatabase();
+
+		$dataHandler = $this->getDataHandler();
+		$originalRecordId  = 1;
+		$originalRecord = $database->exec_SELECTgetSingleRow('*', 'tt_content', 'uid = ' . $originalRecordId);
+		$targetPage = 2;
+		$targetColumn = 3;
+
+		$commandMap = array(
+			'tt_content' => array(
+				$originalRecordId => array(
+					'copy' => array(
+						'action' => 'paste',
+						'target' => $targetPage,
+						'update' => array(
+							'colPos' => $targetColumn
+						)
+					),
+				)
+			)
+		);
+
+		$dataHandler->start(array(), $commandMap);
+		$dataHandler->process_cmdmap();
+
+		$rows = $database->exec_SELECTgetRows('*', 'tt_content', '1=1');
+
+		// Check whether there are exactly two records now
+		$rowCount = $database->exec_SELECTcountRows('*', 'tt_content', '1=1');
+		$this->assertEquals(2, $rowCount);
+
+		// Retrieve the UID of the copied record. Should be 2 (auto_increment)
+		$uid = $dataHandler->copyMappingArray_merged['tt_content'][$originalRecordId];
+		$this->assertGreaterThanOrEqual(2, $uid);
+
+		// Retrieve copied record
+		$row = $database->exec_SELECTgetSingleRow('*', 'tt_content', 'uid = ' . $uid);
+		$this->assertNotEmpty($row);
+
+		// Check whether the copy&pasted record is at expected page and column
+		$this->assertEquals($targetPage, $row['pid']);
+		$this->assertEquals($targetColumn, $row['colPos']);
+
+		// Check whether original record has not changed
+		$checkRecord = $database->exec_SELECTgetSingleRow('*', 'tt_content', 'uid = ' . $originalRecordId);
+		$this->assertEquals($checkRecord, $originalRecord);
+	}
+
+	/**
+	 * @test
+	 */
+	public function canCutPasteTtContent() {
+		$this->importDataSet(dirname(__FILE__) . '/../Fixtures/tt_content.xml');
+		$database = $this->getDatabase();
+
+		$dataHandler = $this->getDataHandler();
+		$originalRecordId  = 1;
+		$targetPage = 2;
+		$targetColumn = 3;
+
+		$commandMap = array(
+			'tt_content' => array(
+				$originalRecordId => array(
+					'move' => array(
+						'action' => 'paste',
+						'target' => $targetPage,
+						'update' => array(
+							'colPos' => $targetColumn
+						)
+					),
+				)
+			)
+		);
+
+		$dataHandler->start(array(), $commandMap);
+		$dataHandler->process_cmdmap();
+
+		$row = $database->exec_SELECTgetSingleRow('*', 'tt_content', 'uid = ' . $originalRecordId);
+		$this->assertNotEmpty($row);
+
+		// Check whether the pasted record is at expected page and column
+		$this->assertEquals($targetPage, $row['pid']);
+		$this->assertEquals($targetColumn, $row['colPos']);
+
+		// Check whether this was the only existing record
+		$rowCount = $database->exec_SELECTcountRows('*', 'tt_content', '1=1');
+		$this->assertEquals(1, $rowCount);
 	}
 
 	/**

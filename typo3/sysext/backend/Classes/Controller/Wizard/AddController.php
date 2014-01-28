@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -115,13 +115,13 @@ class AddController {
 			$this->pid = intval($this->P['params']['pid']);
 		}
 		// Return if new record as parent (not possibly/allowed)
-		if (!strcmp($this->pid, '')) {
+		if ($this->pid > 0) {
 			HttpUtility::redirect(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
 		}
 		// Else proceed:
 		// If a new id has returned from a newly created record...
 		if ($this->returnEditConf) {
-			$eC = unserialize($this->returnEditConf);
+			$eC = json_decode($this->returnEditConf, TRUE);
 			if (is_array($eC[$this->table]) && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->P['uid'])) {
 				// Getting id and cmd from returning editConf array.
 				reset($eC[$this->table]);

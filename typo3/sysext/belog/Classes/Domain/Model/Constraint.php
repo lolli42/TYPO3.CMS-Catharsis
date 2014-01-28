@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Belog\Domain\Model;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *  This script is distributed in the hope that it will be useful,
@@ -251,7 +251,7 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @param \DateTime $manualDateStart
 	 * @return void
 	 */
-	public function setManualDateStart(\DateTime $manualDateStart) {
+	public function setManualDateStart(\DateTime $manualDateStart = NULL) {
 		$this->manualDateStart = $manualDateStart;
 	}
 
@@ -270,7 +270,7 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @param \DateTime $manualDateStop
 	 * @return void
 	 */
-	public function setManualDateStop(\DateTime $manualDateStop) {
+	public function setManualDateStop(\DateTime $manualDateStop = NULL) {
 		$this->manualDateStop = $manualDateStop;
 	}
 

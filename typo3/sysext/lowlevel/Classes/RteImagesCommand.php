@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Lowlevel;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -194,7 +194,7 @@ Reports problems with RTE images';
 											clearstatcache();
 											if (@is_file($copyDestName)) {
 												$sysRefObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
-												$error = $sysRefObj->setReferenceValue($hash, substr($copyDestName, strlen(PATH_site)));
+												$error = $sysRefObj->setReferenceValue($hash, \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($copyDestName));
 												if ($error) {
 													echo '	- ERROR:	TYPO3\\CMS\\Core\\Database\\ReferenceIndex::setReferenceValue(): ' . $error . LF;
 													die;

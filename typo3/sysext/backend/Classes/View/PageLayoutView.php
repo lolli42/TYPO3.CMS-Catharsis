@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\View;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -166,6 +166,18 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @todo Define visibility
 	 */
 	public $itemLabels = array();
+
+	/**
+	 * Used to store the RTE setup of a particular page
+	 *
+	 * @var array
+	 */
+	protected $rteSetup = array();
+
+	/**
+	 * @var \TYPO3\CMS\Backend\Clipboard\Clipboard
+	 */
+	protected $clipboard;
 
 	/*****************************************
 	 *
@@ -353,13 +365,16 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 */
 	public function getTable_tt_content($id) {
 		$this->initializeLanguages();
+		$this->initializeClipboard();
 		// Initialize:
 		$RTE = $GLOBALS['BE_USER']->isRTE();
 		$lMarg = 1;
 		$showHidden = $this->tt_contentConfig['showHidden'] ? '' : BackendUtility::BEenableFields('tt_content');
 		$pageTitleParamForAltDoc = '&recTitle=' . rawurlencode(BackendUtility::getRecordTitle('pages', BackendUtility::getRecordWSOL('pages', $id), TRUE));
-		$GLOBALS['SOBE']->doc->getPageRenderer()->loadExtJs();
-		$GLOBALS['SOBE']->doc->getPageRenderer()->addJsFile($GLOBALS['BACK_PATH'] . 'sysext/cms/layout/js/typo3pageModule.js');
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
+		$pageRenderer->loadExtJs();
+		$pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . 'sysext/cms/layout/js/typo3pageModule.js');
 		// Get labels for CTypes and tt_content element fields in general:
 		$this->CType_labels = array();
 		foreach ($GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'] as $val) {
@@ -491,7 +506,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$colTitle = $GLOBALS['LANG']->sL($item[0]);
 						}
 					}
-					$head[$key] .= $this->tt_content_drawColHeader($colTitle, $this->doEdit && count($rowArr) ? '&edit[tt_content][' . $editUidList . ']=edit' . $pageTitleParamForAltDoc : '', $newP);
+					$pasteP = array('colPos' => $key, 'sys_language_uid' => $lP);
+					$head[$key] .= $this->tt_content_drawColHeader($colTitle, $this->doEdit && count($rowArr) ? '&edit[tt_content][' . $editUidList . ']=edit' . $pageTitleParamForAltDoc : '', $newP, $pasteP);
 					$editUidList = '';
 				}
 				// For each column, fit the rendered content into a table cell:
@@ -533,16 +549,27 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							// Render the grid cell
 							$colSpan = intval($columnConfig['colspan']);
 							$rowSpan = intval($columnConfig['rowspan']);
-							$grid .= '<td valign="top"' . ($colSpan > 0 ? ' colspan="' . $colSpan . '"' : '') . ($rowSpan > 0 ? ' rowspan="' . $rowSpan . '"' : '') . ' class="t3-gridCell t3-page-column t3-page-column-' . $columnKey . (!isset($columnConfig['colPos']) ? ' t3-gridCell-unassigned' : '') . (isset($columnConfig['colPos']) && !$head[$columnKey] ? ' t3-gridCell-restricted' : '') . ($colSpan > 0 ? ' t3-gridCell-width' . $colSpan : '') . ($rowSpan > 0 ? ' t3-gridCell-height' . $rowSpan : '') . '">';
+							$grid .= '<td valign="top"' .
+								($colSpan > 0 ? ' colspan="' . $colSpan . '"' : '') .
+								($rowSpan > 0 ? ' rowspan="' . $rowSpan . '"' : '') .
+								' class="t3-gridCell t3-page-column t3-page-column-' . $columnKey .
+								((!isset($columnConfig['colPos']) || $columnConfig['colPos'] === '') ? ' t3-gridCell-unassigned' : '') .
+								((isset($columnConfig['colPos']) && $columnConfig['colPos'] !== '' && !$head[$columnKey]) ? ' t3-gridCell-restricted' : '') .
+								($colSpan > 0 ? ' t3-gridCell-width' . $colSpan : '') .
+								($rowSpan > 0 ? ' t3-gridCell-height' . $rowSpan : '') . '">';
+
 							// Draw the pre-generated header with edit and new buttons if a colPos is assigned.
 							// If not, a new header without any buttons will be generated.
-							if (isset($columnConfig['colPos']) && $head[$columnKey]) {
+							if (isset($columnConfig['colPos']) && $columnConfig['colPos'] !== '' && $head[$columnKey]) {
 								$grid .= $head[$columnKey] . $content[$columnKey];
-							} elseif ($columnConfig['colPos']) {
+							} elseif (isset($columnConfig['colPos']) && $columnConfig['colPos'] !== '') {
 								$grid .= $this->tt_content_drawColHeader($GLOBALS['LANG']->getLL('noAccess'), '', '');
+							} elseif (isset($columnConfig['name']) && strlen($columnConfig['name']) > 0) {
+								$grid .= $this->tt_content_drawColHeader($GLOBALS['LANG']->sL($columnConfig['name']) . ' (' . $GLOBALS['LANG']->getLL('notAssigned') . ')', '', '');
 							} else {
 								$grid .= $this->tt_content_drawColHeader($GLOBALS['LANG']->getLL('notAssigned'), '', '');
 							}
+
 							$grid .= '</td>';
 						}
 						$grid .= '</tr>';
@@ -703,12 +730,13 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					}
 					// Add section header:
 					$newP = $this->newContentElementOnClick($id, $key, $this->tt_contentConfig['sys_language_uid']);
+					$pasteP = array('colPos' => $key, 'sys_language_uid' => $this->tt_contentConfig['sys_language_uid']);
 					$out .= '
 
 						<!-- Column header: -->
 						<tr>
 							<td></td>
-							<td valign="top" colspan="3">' . $this->tt_content_drawColHeader(BackendUtility::getProcessedValue('tt_content', 'colPos', $key), ($this->doEdit && count($rowArr) ? '&edit[tt_content][' . $editUidList . ']=edit' . $pageTitleParamForAltDoc : ''), $newP) . $theNewButton . '<br /></td>
+							<td valign="top" colspan="3">' . $this->tt_content_drawColHeader(BackendUtility::getProcessedValue('tt_content', 'colPos', $key), ($this->doEdit && count($rowArr) ? '&edit[tt_content][' . $editUidList . ']=edit' . $pageTitleParamForAltDoc : ''), $newP, $pasteP) . $theNewButton . '<br /></td>
 						</tr>';
 					// Finally, add the content from the records in this column:
 					$out .= $rowOut;
@@ -1051,20 +1079,36 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @param string $colName Column name
 	 * @param string $editParams Edit params (Syntax: &edit[...] for alt_doc.php)
 	 * @param string $newParams New element params (Syntax: &edit[...] for alt_doc.php) OBSOLETE
+	 * @param array|NULL $pasteParams Paste element params (i.e. array(colPos => 1, sys_language_uid => 2))
 	 * @return string HTML table
 	 * @todo Define visibility
 	 */
-	public function tt_content_drawColHeader($colName, $editParams, $newParams) {
-		$icons = '';
+	public function tt_content_drawColHeader($colName, $editParams, $newParams, array $pasteParams = NULL) {
+		$iconsArr = array();
 		// Create command links:
 		if ($this->tt_contentConfig['showCommands']) {
 			// Edit whole of column:
 			if ($editParams) {
-				$icons .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($editParams, $this->backPath)) . '" title="' . $GLOBALS['LANG']->getLL('editColumn', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+				$iconsArr['edit'] = '<a href="#" onclick="'
+					. htmlspecialchars(BackendUtility::editOnClick($editParams, $this->backPath)) . '" title="'
+					. $GLOBALS['LANG']->getLL('editColumn', TRUE) . '">'
+					. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+			}
+			if ($pasteParams) {
+				$elFromTable = $this->clipboard->elFromTable('tt_content');
+				if (count($elFromTable)) {
+					$iconsArr['paste'] = '<a href="'
+						. htmlspecialchars($this->clipboard->pasteUrl('tt_content', $this->id, TRUE, $pasteParams))
+						. '" onclick="' . htmlspecialchars(('return '
+						. $this->clipboard->confirmMsg('pages', $this->pageRecord, 'into', $elFromTable, $colName)))
+						. '" title="' . $GLOBALS['LANG']->getLL('clip_paste', TRUE) . '">'
+						. IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
+				}
 			}
 		}
-		if (strlen($icons)) {
-			$icons = '<div class="t3-page-colHeader-icons">' . $icons . '</div>';
+		$icons = '';
+		if (count($iconsArr)) {
+			$icons = '<div class="t3-page-colHeader-icons">' . implode('', $iconsArr) . '</div>';
 		}
 		// Create header row:
 		$out = '<div class="t3-page-colHeader t3-row-header">
@@ -1307,7 +1351,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$hookOut .= GeneralUtility::callUserFunction($_funcRef, $_params, $this);
 						}
 					}
-					if (strcmp($hookOut, '')) {
+					if ((string)$hookOut !== '') {
 						$out .= $hookOut;
 					} elseif (!empty($row['list_type'])) {
 						$label = BackendUtility::getLabelFromItemlist('tt_content', 'list_type', $row['list_type']);
@@ -1577,6 +1621,33 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * Various helper functions
 	 *
 	 ********************************/
+
+	/**
+	 * Initializes the clipboard for generating paste links
+	 *
+	 * @return void
+	 *
+	 * @see \TYPO3\CMS\Recordlist\RecordList::main()
+	 * @see \TYPO3\CMS\Backend\Controller\ClickMenuController::main()
+	 * @see \TYPO3\CMS\Filelist\Controller\FileListController::main()
+	 */
+	protected function initializeClipboard() {
+		// Start clipboard
+		$this->clipboard = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
+
+		// Initialize - reads the clipboard content from the user session
+		$this->clipboard->initializeClipboard();
+
+		// This locks the clipboard to the Normal for this request.
+		$this->clipboard->lockToNormal();
+
+		// Clean up pad
+		$this->clipboard->cleanCurrent();
+
+		// Save the clipboard content
+		$this->clipboard->endClipboard();
+	}
+
 	/**
 	 * Counts and returns the number of records on the page with $pid
 	 *
@@ -1740,9 +1811,11 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			list($tscPID, $thePidValue) = BackendUtility::getTSCpid($table, $row['uid'], $row['pid']);
 			// If the pid-value is not negative (that is, a pid could NOT be fetched)
 			if ($thePidValue >= 0) {
-				$RTEsetup = $GLOBALS['BE_USER']->getTSConfig('RTE', BackendUtility::getPagesTSconfig($tscPID));
+				if (!isset($this->rteSetup[$tscPID])) {
+					$this->rteSetup[$tscPID] = $GLOBALS['BE_USER']->getTSConfig('RTE', BackendUtility::getPagesTSconfig($tscPID));
+				}
 				$RTEtypeVal = BackendUtility::getTCAtypeValue($table, $row);
-				$thisConfig = BackendUtility::RTEsetup($RTEsetup['properties'], $table, $field, $RTEtypeVal);
+				$thisConfig = BackendUtility::RTEsetup($this->rteSetup[$tscPID]['properties'], $table, $field, $RTEtypeVal);
 				if (!$thisConfig['disabled']) {
 					return TRUE;
 				}
@@ -1781,94 +1854,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * External renderings
 	 *
 	 *****************************************/
-	/**
-	 * Creates an info-box for the current page (identified by input record).
-	 *
-	 * @param array $rec Page record
-	 * @param boolean $edit If set, there will be shown an edit icon, linking to editing of the page properties.
-	 * @return string HTML for the box.
-	 * @deprecated and unused since 6.0, will be removed two versions later
-	 * @todo Define visibility
-	 */
-	public function getPageInfoBox($rec, $edit = 0) {
-		GeneralUtility::logDeprecatedFunction();
-		// If editing of the page properties is allowed:
-		if ($edit) {
-			$params = '&edit[pages][' . $rec['uid'] . ']=edit';
-			$editIcon = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath)) . '" title="' . $GLOBALS['LANG']->getLL('edit', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
-		} else {
-			$editIcon = $this->noEditIcon('noEditPage');
-		}
-		// Setting page icon, link, title:
-		$outPutContent = IconUtility::getSpriteIconForRecord('pages', $rec, array('title' => BackendUtility::titleAttribForPages($rec))) . $editIcon . '&nbsp;' . htmlspecialchars($rec['title']);
-		// Init array where infomation is accumulated as label/value pairs.
-		$lines = array();
-		// Owner user/group:
-		if ($this->pI_showUser) {
-			// User:
-			$users = BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,realName');
-			$groupArray = explode(',', $GLOBALS['BE_USER']->user['usergroup_cached_list']);
-			$users = BackendUtility::blindUserNames($users, $groupArray);
-			$lines[] = array($GLOBALS['LANG']->getLL('pI_crUser') . ':', htmlspecialchars($users[$rec['cruser_id']]['username']) . ' (' . $users[$rec['cruser_id']]['realName'] . ')');
-		}
-		// Created:
-		$lines[] = array(
-			$GLOBALS['LANG']->getLL('pI_crDate') . ':',
-			BackendUtility::datetime($rec['crdate']) . ' (' . BackendUtility::calcAge(($GLOBALS['EXEC_TIME'] - $rec['crdate']), $this->agePrefixes) . ')'
-		);
-		// Last change:
-		$lines[] = array(
-			$GLOBALS['LANG']->getLL('pI_lastChange') . ':',
-			BackendUtility::datetime($rec['tstamp']) . ' (' . BackendUtility::calcAge(($GLOBALS['EXEC_TIME'] - $rec['tstamp']), $this->agePrefixes) . ')'
-		);
-		// Last change of content:
-		if ($rec['SYS_LASTCHANGED']) {
-			$lines[] = array(
-				$GLOBALS['LANG']->getLL('pI_lastChangeContent') . ':',
-				BackendUtility::datetime($rec['SYS_LASTCHANGED']) . ' (' . BackendUtility::calcAge(($GLOBALS['EXEC_TIME'] - $rec['SYS_LASTCHANGED']), $this->agePrefixes) . ')'
-			);
-		}
-		// Spacer:
-		$lines[] = '';
-		// Display contents of certain page fields, if any value:
-		$dfields = explode(',', 'alias,target,hidden,starttime,endtime,fe_group,no_cache,cache_timeout,newUntil,lastUpdated,subtitle,keywords,description,abstract,author,author_email');
-		foreach ($dfields as $fV) {
-			if ($rec[$fV]) {
-				$lines[] = array($GLOBALS['LANG']->sL(BackendUtility::getItemLabel('pages', $fV)), BackendUtility::getProcessedValue('pages', $fV, $rec[$fV]));
-			}
-		}
-		// Finally, wrap the elements in the $lines array in table cells/rows
-		foreach ($lines as $fV) {
-			if (is_array($fV)) {
-				if (!$fV[2]) {
-					$fV[1] = htmlspecialchars($fV[1]);
-				}
-				$out .= '
-				<tr>
-					<td class="bgColor4" nowrap="nowrap"><strong>' . htmlspecialchars($fV[0]) . '&nbsp;&nbsp;</strong></td>
-					<td class="bgColor4">' . $fV[1] . '</td>
-				</tr>';
-			} else {
-				$out .= '
-				<tr>
-					<td colspan="2"><img src="clear.gif" width="1" height="3" alt="" /></td>
-				</tr>';
-			}
-		}
-		// Wrap table tags around...
-		$outPutContent .= '
-
-
-
-			<!--
-				Page info box:
-			-->
-			<table border="0" cellpadding="0" cellspacing="1" id="typo3-page-info">
-				' . $out . '
-			</table>';
-		// ... and return it.
-		return $outPutContent;
-	}
 
 	/**
 	 * Creates a menu of the tables that can be listed by this function
@@ -1914,25 +1899,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			</table>';
 		// Return the content:
 		return $out;
-	}
-
-	/**
-	 * Enhancement for the strip_tags function that provides the feature to fill in empty tags.
-	 * Example <link email@hostname.com></link> is accepted by TYPO3 but would not displayed in the Backend otherwise.
-	 *
-	 * @param string $content Input string
-	 * @param boolean $fillEmptyContent If TRUE, empty tags will be filled with the first attribute of the tag before.
-	 * @return string Input string with all HTML and PHP tags stripped
-	 * @deprecated since TYPO3 4.6, deprecationLog since 6.0, will be removed two versions later - use php-function strip_tags instead
-	 * @todo Define visibility
-	 */
-	public function strip_tags($content, $fillEmptyContent = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($fillEmptyContent && strstr($content, '><')) {
-			$content = preg_replace('/(<[^ >]* )([^ >]*)([^>]*>)(<\\/[^>]*>)/', '$1$2$3$2$4', $content);
-		}
-		$content = preg_replace('/<br.?\\/?>/', LF, $content);
-		return strip_tags($content);
 	}
 
 	/**

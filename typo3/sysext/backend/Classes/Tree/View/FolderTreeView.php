@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Tree\View;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -59,6 +59,11 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * @var boolean
 	 */
 	protected $ajaxStatus = FALSE;
+
+	/**
+	 * @var array
+	 */
+	protected $scope;
 
 	/**
 	 * Constructor function of the class
@@ -105,15 +110,23 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * @internal
 	 */
 	public function PMiconATagWrap($icon, $cmd, $isExpand = TRUE) {
+
+		if (empty($this->scope)) {
+			$this->scope = array(
+				'class' => get_class($this),
+				'script' => $this->thisScript,
+				'ext_noTempRecyclerDirs' => $this->ext_noTempRecyclerDirs,
+				'browser' => array(
+					'mode' => $GLOBALS['SOBE']->browser->mode,
+					'act' => $GLOBALS['SOBE']->browser->act,
+				),
+			);
+		}
+
 		if ($this->thisScript) {
 			// Activates dynamic AJAX based tree
-			$scopeData = '';
-			$scopeHash = '';
-			// $this->scope is defined in TBE_FolderTree
-			if (!empty($this->scope)) {
-				$scopeData = serialize($this->scope);
-				$scopeHash = GeneralUtility::hmac($scopeData);
-			}
+			$scopeData = serialize($this->scope);
+			$scopeHash = GeneralUtility::hmac($scopeData);
 			$js = htmlspecialchars('Tree.load(\'' . $cmd . '\', ' . intval($isExpand) . ', this, \'' . $scopeData . '\', \'' . $scopeHash . '\');');
 			return '<a class="pm" onclick="' . $js . '">' . $icon . '</a>';
 		} else {
@@ -138,7 +151,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 			if ($folderObject->getStorage()->hasFolder('/')) {
 				$theFolderIcon = $GLOBALS['TBE_TEMPLATE']->wrapClickMenuOnIcon($theFolderIcon, $folderObject->getCombinedIdentifier(), '', 0);
 			}
-		} elseif (!strcmp($this->ext_IconMode, 'titlelink')) {
+		} elseif ($this->ext_IconMode === 'titlelink') {
 			$aOnClick = 'return jumpTo(\'' . $this->getJumpToParam($folderObject) . '\',this,\'' . $this->domIdPrefix . $this->getId($folderObject) . '\',' . $this->bank . ');';
 			$theFolderIcon = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $theFolderIcon . '</a>';
 		}

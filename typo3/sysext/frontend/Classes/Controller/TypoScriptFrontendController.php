@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -323,12 +323,6 @@ class TypoScriptFrontendController {
 	 * @todo Define visibility
 	 */
 	public $cHash_array = array();
-
-	// Loaded with the serialized array that is used for generating a hashstring for the cache
-	/**
-	 * @todo Define visibility
-	 */
-	public $hash_base = '';
 
 	// May be set to the pagesTSconfig
 	/**
@@ -748,6 +742,13 @@ class TypoScriptFrontendController {
 	protected $cacheHash;
 
 	/**
+	 * Runtime cache of domains per processed page ids.
+	 *
+	 * @var array
+	 */
+	protected $domainDataCache = array();
+
+	/**
 	 * Class constructor
 	 * Takes a number of GET/POST input variable as arguments and stores them internally.
 	 * The processing of these variables goes on later in this class.
@@ -917,7 +918,7 @@ class TypoScriptFrontendController {
 		if (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('FE_SESSION_KEY')) {
 			$fe_sParts = explode('-', GeneralUtility::_GP('FE_SESSION_KEY'));
 			// If the session key hash check is OK:
-			if (!strcmp(md5(($fe_sParts[0] . '/' . $this->TYPO3_CONF_VARS['SYS']['encryptionKey'])), $fe_sParts[1])) {
+			if (md5(($fe_sParts[0] . '/' . $this->TYPO3_CONF_VARS['SYS']['encryptionKey'])) === (string)$fe_sParts[1]) {
 				$cookieName = \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::getCookieName();
 				$_COOKIE[$cookieName] = $fe_sParts[0];
 				if (isset($_SERVER['HTTP_COOKIE'])) {
@@ -1908,7 +1909,7 @@ class TypoScriptFrontendController {
 		}
 		// Create response:
 		// Simply boolean; Just shows TYPO3 error page with reason:
-		if (gettype($code) == 'boolean' || !strcmp($code, 1)) {
+		if (gettype($code) == 'boolean' || (string)$code === '1') {
 			$title = 'Page Not Found';
 			$message = 'The page did not exist or was inaccessible.' . ($reason ? ' Reason: ' . htmlspecialchars($reason) : '');
 			$messagePage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\ErrorpageMessage', $message, $title);
@@ -1925,10 +1926,17 @@ class TypoScriptFrontendController {
 		} elseif (\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($code, 'READFILE:')) {
 			$readFile = GeneralUtility::getFileAbsFileName(trim(substr($code, 9)));
 			if (@is_file($readFile)) {
-				$fileContent = GeneralUtility::getUrl($readFile);
-				$fileContent = str_replace('###CURRENT_URL###', GeneralUtility::getIndpEnv('REQUEST_URI'), $fileContent);
-				$fileContent = str_replace('###REASON###', htmlspecialchars($reason), $fileContent);
-				echo $fileContent;
+				echo str_replace(
+					array(
+						'###CURRENT_URL###',
+						'###REASON###'
+					),
+					array(
+						GeneralUtility::getIndpEnv('REQUEST_URI'),
+						htmlspecialchars($reason)
+					),
+					GeneralUtility::getUrl($readFile)
+				);
 			} else {
 				throw new \RuntimeException('Configuration Error: 404 page "' . $readFile . '" could not be found.', 1294587214);
 			}
@@ -2052,7 +2060,7 @@ class TypoScriptFrontendController {
 				$realGet = array();
 			}
 			// Merge new values on top:
-			$realGet = GeneralUtility::array_merge_recursive_overrule($realGet, $GET_VARS);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($realGet, $GET_VARS);
 			// Write values back to $_GET:
 			\TYPO3\CMS\Core\Utility\GeneralUtility::_GETset($realGet);
 			// Setting these specifically (like in the init-function):
@@ -2279,14 +2287,13 @@ class TypoScriptFrontendController {
 	 * This hash is unique to the template, the variables ->id, ->type, ->gr_list (list of groups), ->MP (Mount Points) and cHash array
 	 * Used to get and later store the cached data.
 	 *
-	 * @return string MD5 hash of $this->hash_base which is a serialized version of there variables.
+	 * @return string MD5 hash of serialized hash base from createHashBase()
 	 * @access private
 	 * @see getFromCache(), getLockHash()
 	 * @todo Define visibility
 	 */
 	public function getHash() {
-		$this->hash_base = $this->createHashBase(FALSE);
-		return md5($this->hash_base);
+		return md5($this->createHashBase(FALSE));
 	}
 
 	/**
@@ -2377,7 +2384,7 @@ class TypoScriptFrontendController {
 					}
 					// override it with the page/type-specific "config."
 					if (is_array($this->pSetup['config.'])) {
-						$this->config['config'] = GeneralUtility::array_merge_recursive_overrule($this->config['config'], $this->pSetup['config.']);
+						\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->config['config'], $this->pSetup['config.']);
 					}
 					if ($this->config['config']['typolinkEnableLinksAcrossDomains']) {
 						$this->config['config']['typolinkCheckRootline'] = TRUE;
@@ -2426,8 +2433,9 @@ class TypoScriptFrontendController {
 		}
 		// Merge GET with defaultGetVars
 		if (!empty($this->config['config']['defaultGetVars.'])) {
-			$modifiedGetVars = GeneralUtility::array_merge_recursive_overrule(\TYPO3\CMS\Core\Utility\GeneralUtility::removeDotsFromTS($this->config['config']['defaultGetVars.']), GeneralUtility::_GET());
-			\TYPO3\CMS\Core\Utility\GeneralUtility::_GETset($modifiedGetVars);
+			$modifiedGetVars = GeneralUtility::removeDotsFromTS($this->config['config']['defaultGetVars.']);
+			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($modifiedGetVars, GeneralUtility::_GET());
+			GeneralUtility::_GETset($modifiedGetVars);
 		}
 		// Hook for postProcessing the configuration array
 		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['configArrayPostProc'])) {
@@ -2460,7 +2468,7 @@ class TypoScriptFrontendController {
 	}
 
 	/**
-	 * Includes TCA definitions from loaded extensions (ext_table.php files).
+	 * Includes TCA definitions from loaded extensions (ext_tables.php files).
 	 * Normally in the frontend only a part of the global $TCA array is loaded,
 	 * namely the "ctrl" part. Thus it doesn't take up too much memory. To load
 	 * full TCA for the table, use GeneralUtility::loadTCA($tableName)
@@ -2525,7 +2533,7 @@ class TypoScriptFrontendController {
 							case 'content_fallback':
 								$fallBackOrder = GeneralUtility::intExplode(',', $sys_language_content);
 								foreach ($fallBackOrder as $orderValue) {
-									if (!strcmp($orderValue, '0') || count($this->sys_page->getPageOverlay($this->id, $orderValue))) {
+									if ((string)$orderValue === '0' || count($this->sys_page->getPageOverlay($this->id, $orderValue))) {
 										$this->sys_language_content = $orderValue;
 										// Setting content uid (but leaving the sys_language_uid)
 										break;
@@ -2973,7 +2981,7 @@ class TypoScriptFrontendController {
 				}
 				$value = '&' . $linkVar . '=' . $temp;
 			} else {
-				if ($test !== '' && strcmp('array', $test)) {
+				if ($test !== '' && $test !== 'array') {
 					// Error: This key must not be an array!
 					continue;
 				}
@@ -3046,7 +3054,7 @@ class TypoScriptFrontendController {
 		<strong>Page is being generated.</strong><br />
 		If this message does not disappear within ' . $seconds . ' seconds, please reload.';
 			$message = $this->config['config']['message_page_is_being_generated'];
-			if (strcmp('', $message)) {
+			if ((string)$message !== '') {
 				// This page is always encoded as UTF-8
 				$message = $this->csConvObj->utf8_encode($message, $this->renderCharset);
 				$message = str_replace('###TITLE###', $title, $message);
@@ -3276,8 +3284,6 @@ class TypoScriptFrontendController {
 		// Same codeline as in getFromCache(). But $this->all has been changed by
 		// \TYPO3\CMS\Core\TypoScript\TemplateService::start() in the meantime, so this must be called again!
 		$this->newHash = $this->getHash();
-		// For cache management informational purposes.
-		$this->config['hash_base'] = $this->hash_base;
 		if (!is_object($this->pages_lockObj) || $this->pages_lockObj->getLockStatus() == FALSE) {
 			// Here we put some temporary stuff in the cache in order to let the first hit generate the page. The temporary cache will expire after a few seconds (typ. 30) or will be cleared by the rendered page, which will also clear and rewrite the cache.
 			$this->tempPageCacheContent();
@@ -3303,7 +3309,7 @@ class TypoScriptFrontendController {
 
 	/**
 	 * Does some processing AFTER the pagegen script is included.
-	 * This includes calling tidy (if configured), XHTML cleaning (if configured), caching the page, indexing the page (if configured) and setting sysLastChanged
+	 * This includes calling XHTML cleaning (if configured), caching the page, indexing the page (if configured) and setting sysLastChanged
 	 *
 	 * @return void
 	 * @todo Define visibility
@@ -3312,12 +3318,6 @@ class TypoScriptFrontendController {
 		// This is to ensure, that the page is NOT cached if the no_cache parameter was set before the page was generated. This is a safety precaution, as it could have been unset by some script.
 		if ($this->no_cacheBeforePageGen) {
 			$this->set_no_cache('no_cache has been set before the page was generated - safety check', TRUE);
-		}
-		// Tidy up the code, if flag...
-		if ($this->TYPO3_CONF_VARS['FE']['tidy_option'] == 'all') {
-			$GLOBALS['TT']->push('Tidy, all', '');
-			$this->content = $this->tidyHTML($this->content);
-			$GLOBALS['TT']->pull();
 		}
 		// XHTML-clean the code, if flag set
 		if ($this->doXHTML_cleaning() == 'all') {
@@ -3341,12 +3341,6 @@ class TypoScriptFrontendController {
 		}
 		// Processing if caching is enabled:
 		if (!$this->no_cache) {
-			// Tidy up the code, if flag...
-			if ($this->TYPO3_CONF_VARS['FE']['tidy_option'] == 'cached') {
-				$GLOBALS['TT']->push('Tidy, cached', '');
-				$this->content = $this->tidyHTML($this->content);
-				$GLOBALS['TT']->pull();
-			}
 			// XHTML-clean the code, if flag set
 			if ($this->doXHTML_cleaning() == 'cached') {
 				$GLOBALS['TT']->push('XHTML clean, cached', '');
@@ -3413,10 +3407,19 @@ class TypoScriptFrontendController {
 		$this->recursivelyReplaceIntPlaceholdersInContent();
 		$GLOBALS['TT']->push('Substitute header section');
 		$this->INTincScript_loadJSCode();
-		$this->content = $this->getPageRenderer()->renderJavaScriptAndCssForProcessingOfUncachedContentObjects($this->content, $this->config['INTincScript_ext']['divKey']);
-		$this->content = str_replace('<!--HD_' . $this->config['INTincScript_ext']['divKey'] . '-->', $this->convOutputCharset(implode(LF, $this->additionalHeaderData), 'HD'), $this->content);
-		$this->content = str_replace('<!--FD_' . $this->config['INTincScript_ext']['divKey'] . '-->', $this->convOutputCharset(implode(LF, $this->additionalFooterData), 'FD'), $this->content);
-		$this->content = str_replace('<!--TDS_' . $this->config['INTincScript_ext']['divKey'] . '-->', $this->convOutputCharset($this->divSection, 'TDS'), $this->content);
+		$this->content = str_replace(
+			array(
+				'<!--HD_' . $this->config['INTincScript_ext']['divKey'] . '-->',
+				'<!--FD_' . $this->config['INTincScript_ext']['divKey'] . '-->',
+				'<!--TDS_' . $this->config['INTincScript_ext']['divKey'] . '-->'
+			),
+			array(
+				$this->convOutputCharset(implode(LF, $this->additionalHeaderData), 'HD'),
+				$this->convOutputCharset(implode(LF, $this->additionalFooterData), 'FD'),
+				$this->convOutputCharset($this->divSection, 'TDS'),
+			),
+			$this->getPageRenderer()->renderJavaScriptAndCssForProcessingOfUncachedContentObjects($this->content, $this->config['INTincScript_ext']['divKey'])
+		);
 		// Replace again, because header and footer data and page renderer replacements may introduce additional placeholders (see #44825)
 		$this->recursivelyReplaceIntPlaceholdersInContent();
 		$this->setAbsRefPrefix();
@@ -3612,7 +3615,7 @@ if (version == "n3") {
 
 	/**
 	 * Process the output before it's actually outputted. Sends headers also.
-	 * This includes substituting the "username" comment, sending additional headers (as defined in the TypoScript "config.additionalheaders" object), tidy'ing content, XHTML cleaning content (if configured)
+	 * This includes substituting the "username" comment, sending additional headers (as defined in the TypoScript "config.additionalheaders" object), XHTML cleaning content (if configured)
 	 * Works on $this->content.
 	 *
 	 * @return void
@@ -3643,12 +3646,6 @@ if (version == "n3") {
 		// Make substitution of eg. username/uid in content only if cache-headers for client/proxy caching is NOT sent!
 		if (!$this->isClientCachable) {
 			$this->contentStrReplace();
-		}
-		// Tidy up the code, if flag...
-		if ($this->TYPO3_CONF_VARS['FE']['tidy_option'] == 'output') {
-			$GLOBALS['TT']->push('Tidy, output', '');
-			$this->content = $this->tidyHTML($this->content);
-			$GLOBALS['TT']->pull();
 		}
 		// XHTML-clean the code, if flag set
 		if ($this->doXHTML_cleaning() == 'output') {
@@ -4038,7 +4035,7 @@ if (version == "n3") {
 		if ($decode) {
 			list($md5Hash, $str) = explode(':', $string, 2);
 			$newHash = substr(md5($this->TYPO3_CONF_VARS['SYS']['encryptionKey'] . ':' . $str), 0, 10);
-			if (!strcmp($md5Hash, $newHash)) {
+			if ($md5Hash === $newHash) {
 				$str = base64_decode($str);
 				$str = $this->roundTripCryptString($str);
 				return $str;
@@ -4111,20 +4108,38 @@ if (version == "n3") {
 	 * @todo Define visibility
 	 */
 	public function setAbsRefPrefix() {
-		if ($this->absRefPrefix) {
-			$this->content = str_replace('"typo3temp/', '"' . $this->absRefPrefix . 'typo3temp/', $this->content);
-			$this->content = str_replace('"typo3conf/ext/', '"' . $this->absRefPrefix . 'typo3conf/ext/', $this->content);
-			$this->content = str_replace('"' . TYPO3_mainDir . 'contrib/', '"' . $this->absRefPrefix . TYPO3_mainDir . 'contrib/', $this->content);
-			$this->content = str_replace('"' . TYPO3_mainDir . 'ext/', '"' . $this->absRefPrefix . TYPO3_mainDir . 'ext/', $this->content);
-			$this->content = str_replace('"' . TYPO3_mainDir . 'sysext/', '"' . $this->absRefPrefix . TYPO3_mainDir . 'sysext/', $this->content);
-			$this->content = str_replace('"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'], '"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'], $this->content);
-			$this->content = str_replace('"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'], '"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'], $this->content);
-			// Process additional directories
-			$directories = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['additionalAbsRefPrefixDirectories'], TRUE);
-			foreach ($directories as $directory) {
-				$this->content = str_replace('"' . $directory, '"' . $this->absRefPrefix . $directory, $this->content);
-			}
+		if (!$this->absRefPrefix) {
+			return;
 		}
+		$search = array(
+			'"typo3temp/',
+			'"typo3conf/ext/',
+			'"' . TYPO3_mainDir . 'contrib/',
+			'"' . TYPO3_mainDir . 'ext/',
+			'"' . TYPO3_mainDir . 'sysext/',
+			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
+			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
+		);
+		$replace = array(
+			'"' . $this->absRefPrefix . 'typo3temp/',
+			'"' . $this->absRefPrefix . 'typo3conf/ext/',
+			'"' . $this->absRefPrefix . TYPO3_mainDir . 'contrib/',
+			'"' . $this->absRefPrefix . TYPO3_mainDir . 'ext/',
+			'"' . $this->absRefPrefix . TYPO3_mainDir . 'sysext/',
+			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
+			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
+		);
+		// Process additional directories
+		$directories = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['additionalAbsRefPrefixDirectories'], TRUE);
+		foreach ($directories as $directory) {
+			$search[] = '"' . $directory;
+			$replace[] = '"' . $this->absRefPrefix . $directory;
+		}
+		$this->content = str_replace(
+			$search,
+			$replace,
+			$this->content
+		);
 	}
 
 	/**
@@ -4182,9 +4197,11 @@ if (version == "n3") {
 	 *
 	 * @param string $content The page content to clean up. Will be written to a temporary file which "tidy" is then asked to clean up. File content is read back and returned.
 	 * @return string Returns the
+	 * @deprecated tidy and its options were deprecated with TYPO3 CMS 6.2, this function will be removed two versions later. If you need tidy, use the extension "tidy" from TER.
 	 * @todo Define visibility
 	 */
 	public function tidyHTML($content) {
+		GeneralUtility::logDeprecatedFunction();
 		if ($this->TYPO3_CONF_VARS['FE']['tidy'] && $this->TYPO3_CONF_VARS['FE']['tidy_path']) {
 			$oldContent = $content;
 			// Create temporary name
@@ -4608,7 +4625,7 @@ if (version == "n3") {
 		if (!isset($this->LL_labels_cache[$this->lang][$input])) {
 			$restStr = trim(substr($input, 4));
 			$extPrfx = '';
-			if (!strcmp(substr($restStr, 0, 4), 'EXT:')) {
+			if (substr($restStr, 0, 4) === 'EXT:') {
 				$restStr = trim(substr($restStr, 4));
 				$extPrfx = 'EXT:';
 			}
@@ -4651,7 +4668,7 @@ if (version == "n3") {
 			if ($this->lang !== 'default' && isset($tempLL[$language])) {
 				// Merge current language labels onto labels from previous language
 				// This way we have a label with fall back applied
-				$localLanguage[$this->lang] = GeneralUtility::array_merge_recursive_overrule($localLanguage[$this->lang], $tempLL[$language], FALSE, FALSE);
+				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($localLanguage[$this->lang], $tempLL[$language], TRUE, FALSE);
 			}
 		}
 
@@ -4894,19 +4911,25 @@ if (version == "n3") {
 	 * @return mixed Return domain data or NULL
 	*/
 	public function getDomainDataForPid($targetPid) {
-		$result = NULL;
-
-		$sysDomainData = $this->getSysDomainCache();
-		$rootline = $this->sys_page->getRootLine($targetPid);
-		// walk the rootline downwards from the target page to the root, until a domain record is found
-		foreach ($rootline as $pageInRootline) {
-			$pidInRootline = $pageInRootline['uid'];
-			if (isset($sysDomainData[$pidInRootline])) {
-				$result = $sysDomainData[$pidInRootline];
-				break;
+		// Using array_key_exists() here, nice $result can be NULL
+		// (happens, if there's no domain records defined)
+		if (!array_key_exists($targetPid, $this->domainDataCache)) {
+			$result = NULL;
+			$sysDomainData = $this->getSysDomainCache();
+			$rootline = $this->sys_page->getRootLine($targetPid);
+			// walk the rootline downwards from the target page
+			// to the root page, until a domain record is found
+			foreach ($rootline as $pageInRootline) {
+				$pidInRootline = $pageInRootline['uid'];
+				if (isset($sysDomainData[$pidInRootline])) {
+					$result = $sysDomainData[$pidInRootline];
+					break;
+				}
 			}
+			$this->domainDataCache[$targetPid] = $result;
 		}
-		return $result;
+
+		return $this->domainDataCache[$targetPid];
 	}
 
 	/**

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -78,7 +78,7 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 					$this->addToArray($this->getFileRepository()->findFileReferenceByUid($referenceUid), $fileObjects);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file-reference with uid  "' . $referenceUid . '" could not be found and won\'t be included in frontend output');
 				}
 			}
@@ -110,7 +110,7 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 					$this->addToArray($this->getFileRepository()->findByUid($fileUid), $fileObjects);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file with uid  "' . $fileUid . '" could not be found and won\'t be included in frontend output');
 				}
 			}
@@ -126,7 +126,7 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 					}
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 					$logger->warning('The file-collection with uid  "' . $collectionUid . '" could not be found or contents could not be loaded and won\'t be included in frontend output');
 				}
 			}
@@ -138,11 +138,11 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 					try {
 						$folder = $this->getFileFactory()->getFolderObjectFromCombinedIdentifier($folderIdentifier);
 						if ($folder instanceof \TYPO3\CMS\Core\Resource\Folder) {
-							$this->addToArray($folder->getFiles(), $fileObjects);
+							$this->addToArray(array_values($folder->getFiles()), $fileObjects);
 						}
 					} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 						/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-						$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger();
+						$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 						$logger->warning('The folder with identifier  "' . $folderIdentifier . '" could not be found and won\'t be included in frontend output');
 					}
 				}
@@ -166,6 +166,9 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 					return 0;
 				}
 			});
+			if (is_array($conf['sorting.']) && isset($conf['sorting.']['direction']) && strtolower($conf['sorting.']['direction']) === 'desc') {
+				$fileObjects = array_reverse($fileObjects);
+			}
 		}
 
 		$availableFileObjectCount = count($fileObjects);

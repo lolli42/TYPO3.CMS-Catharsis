@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -132,7 +132,7 @@ class ColorpickerController {
 	 */
 	protected function init() {
 		// Setting GET vars (used in frameset script):
-		$this->P = GeneralUtility::_GP('P', 1);
+		$this->P = GeneralUtility::_GP('P');
 		// Setting GET vars (used in colorpicker script):
 		$this->colorValue = GeneralUtility::_GP('colorValue');
 		$this->fieldChangeFunc = GeneralUtility::_GP('fieldChangeFunc');
@@ -235,7 +235,7 @@ class ColorpickerController {
 			// If the save/close button is clicked, then close:
 			if (GeneralUtility::_GP('save_close')) {
 				$content .= $this->doc->wrapScriptTags('
-					setValue(\'' . $this->colorValue . '\');
+					setValue(' . GeneralUtility::quoteJSvalue($this->colorValue) . ');
 					parent.close();
 				');
 			}
@@ -371,7 +371,7 @@ class ColorpickerController {
 				}
 				$pickerFormImage = '
 				<p class="c-head">' . $GLOBALS['LANG']->getLL('colorpicker_fromImage', TRUE) . '</p>
-				<input type="image" src="../' . substr($this->pickerImage, strlen(PATH_site)) . '" name="coords" style="cursor:crosshair;" /><br />';
+				<input type="image" src="../' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($this->pickerImage) . '" name="coords" style="cursor:crosshair;" /><br />';
 			} else {
 				$pickerFormImage = '';
 			}

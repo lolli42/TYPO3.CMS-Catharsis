@@ -16,7 +16,7 @@ use \TYPO3\CMS\Core\Utility;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -154,7 +154,7 @@ class ProcessedFileRepository extends AbstractRepository {
 			$this->table,
 			'original=' . intval($file->getUid()) .
 				' AND task_type=' . $this->databaseConnection->fullQuoteStr($taskType, $this->table) .
-				' AND configuration=' . $this->databaseConnection->fullQuoteStr(serialize($configuration), $this->table)
+				' AND configurationsha1=' . $this->databaseConnection->fullQuoteStr(sha1(serialize($configuration)), $this->table)
 		);
 
 		if (is_array($databaseRow)) {
@@ -167,7 +167,7 @@ class ProcessedFileRepository extends AbstractRepository {
 
 	/**
 	 * @param FileInterface $file
-	 * @return array<ProcessedFile>
+	 * @return ProcessedFile[]
 	 * @throws \InvalidArgumentException
 	 */
 	public function findAllByOriginalFile(FileInterface $file) {

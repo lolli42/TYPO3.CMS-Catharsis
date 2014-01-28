@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Tstemplate\Controller;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -274,6 +274,8 @@ class TypoScriptTemplateInformationModuleFunctionController extends \TYPO3\CMS\B
 					$this->tce_processed = TRUE;
 					// re-read the template ...
 					$this->initialize_editor($this->pObj->id, $template_uid);
+					// reload template menu
+					$manyTemplatesMenu = $this->pObj->templateMenu();
 				}
 				// If files has been edited:
 				if (is_array($edit)) {
@@ -314,8 +316,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends \TYPO3\CMS\B
 					}
 				}
 			}
-			$content = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('sys_template', $tplRow, array('oncontextmenu' => "Clickmenu.show(
-'sys_template', '" . $tplRow['uid'] . "', '1', '', '', ''); return false;", 'onclick' => "Clickmenu.show('sys_template', '" . $tplRow['uid'] . "', '1', '','', ''); return false;")) . '<strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
+			$content = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('sys_template', $tplRow, array('oncontextmenu' => "this.click();return false;", 'onclick' => "Clickmenu.show('sys_template', '" . $tplRow['uid'] . "', '1', '','', ''); return false;")) . '<strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
 			$theOutput .= $this->pObj->doc->section($GLOBALS['LANG']->getLL('templateInformation'), $content, 0, 1);
 			if ($manyTemplatesMenu) {
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);

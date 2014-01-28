@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Service;
  *
  *  The GNU General Public License can be found at
  *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  A copy is found in the text file GPL.txt and important notices to the license
  *  from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -60,7 +60,7 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	private $cookieName = 'Typo3InstallTool';
 
 	/**
-	 * time (minutes) to expire an ununsed session
+	 * time (minutes) to expire an unused session
 	 *
 	 * @var integer
 	 */

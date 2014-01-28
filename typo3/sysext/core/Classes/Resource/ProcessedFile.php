@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  * The GNU General Public License can be found at
  * http://www.gnu.org/copyleft/gpl.html.
- * A copy is found in the textfile GPL.txt and important notices to the license
+ * A copy is found in the text file GPL.txt and important notices to the license
  * from the author is found in LICENSE.txt distributed with these scripts.
  *
  *
@@ -357,11 +357,13 @@ class ProcessedFile extends AbstractFile {
 			$properties['name'] = $this->getName();
 		}
 
+		$properties['configuration'] = serialize($this->processingConfiguration);
+
 		return array_merge($properties, array(
 			'storage' => $this->getStorage()->getUid(),
 			'checksum' => $this->calculateChecksum(),
 			'task_type' => $this->taskType,
-			'configuration' => serialize($this->processingConfiguration),
+			'configurationsha1' => sha1($properties['configuration']),
 			'original' => $this->originalFile->getUid(),
 			'originalfilesha1' => $this->originalFileSha1
 		));
