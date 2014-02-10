@@ -253,7 +253,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		if (!$this->folderExists($folderIdentifier)) {
 			throw new \TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException(
 				'File ' . $folderIdentifier . ' does not exist.',
-				1314516809
+				1314516810
 			);
 		}
 		return array(
@@ -1071,18 +1071,20 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 
 	/**
 	 * Checks if a given identifier is within a container, e.g. if
-	 * a file or folder is within another folder.
-	 * This can e.g. be used to check for webmounts.
+	 * a file or folder is within another folder. It will also return
+	 * TRUE if both canonicalized identifiers are equal.
 	 *
 	 * @param string $folderIdentifier
 	 * @param string $identifier identifier to be checked against $folderIdentifier
-	 *
-	 * @return boolean TRUE if $content is within $folderIdentifier
+	 * @return boolean TRUE if $content is within or matches $folderIdentifier
 	 */
 	public function isWithin($folderIdentifier, $identifier) {
-		$folderPath = $this->canonicalizeAndCheckFolderIdentifier($folderIdentifier);
-		$identifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
-		return GeneralUtility::isFirstPartOfStr($identifier, $folderPath);
+		$folderIdentifier = $this->canonicalizeAndCheckFileIdentifier($folderIdentifier);
+		$entryIdentifier = $this->canonicalizeAndCheckFileIdentifier($identifier);
+		if ($folderIdentifier === $entryIdentifier) {
+			return TRUE;
+		}
+		return GeneralUtility::isFirstPartOfStr($entryIdentifier, $folderIdentifier . '/');
 	}
 
 	/**
@@ -1184,5 +1186,19 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		}
 		return $role;
 	}
+
+	/**
+	 * Directly output the contents of the file to the output
+	 * buffer. Should not take care of header files or flushing
+	 * buffer before. Will be taken care of by the Storage.
+	 *
+	 * @param string $identifier
+	 *
+	 * @return void
+	 */
+	public function dumpFileContents($identifier) {
+		readfile($this->getAbsolutePath($this->canonicalizeAndCheckFileIdentifier($identifier)), 0);
+	}
+
 
 }

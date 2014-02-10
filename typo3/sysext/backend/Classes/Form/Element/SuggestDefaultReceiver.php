@@ -118,7 +118,7 @@ class SuggestDefaultReceiver {
 		// get a list of all the pages that should be looked on
 		if (isset($config['pidList'])) {
 			$allowedPages = ($pageIds = GeneralUtility::trimExplode(',', $config['pidList']));
-			$depth = intval($config['pidDepth']);
+			$depth = (int)$config['pidDepth'];
 			foreach ($pageIds as $pageId) {
 				if ($pageId > 0) {
 					\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($allowedPages, $this->getAllSubpagesOfPage($pageId, $depth));
@@ -217,7 +217,7 @@ class SuggestDefaultReceiver {
 	protected function prepareSelectStatement() {
 		$searchWholePhrase = $this->config['searchWholePhrase'];
 		$searchString = $this->params['value'];
-		$searchUid = intval($searchString);
+		$searchUid = (int)$searchString;
 		if (strlen($searchString)) {
 			$searchString = $GLOBALS['TYPO3_DB']->quoteStr($searchString, $this->table);
 			$likeCondition = ' LIKE \'' . ($searchWholePhrase ? '%' : '') . $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $this->table) . '%\'';
@@ -307,7 +307,7 @@ class SuggestDefaultReceiver {
 	 */
 	protected function checkRecordAccess($row, $uid) {
 		$retValue = TRUE;
-		$table = $this->mmForeignTable ? $this->mmForeignTable : $this->table;
+		$table = $this->mmForeignTable ?: $this->table;
 		if ($table == 'pages') {
 			if (!BackendUtility::readPageAccess($uid, $GLOBALS['BE_USER']->getPagePermsClause(1))) {
 				$retValue = FALSE;

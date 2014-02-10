@@ -28,7 +28,7 @@ namespace TYPO3\CMS\Saltedpasswords\Salt;
  ***************************************************************/
 
 /**
- * Abtract class with methods needed to be extended
+ * Abstract class with methods needed to be extended
  * in a salted hashing class.
  *
  * @author Marcus Krause <marcus#exp2009@t3sec.info>
@@ -107,7 +107,7 @@ abstract class AbstractSalt {
 	 */
 	protected function getLengthBase64FromBytes($byteLength) {
 		// Calculates bytes in bits in base64
-		return intval(ceil($byteLength * 8 / 6));
+		return (int)ceil($byteLength * 8 / 6);
 	}
 
 }

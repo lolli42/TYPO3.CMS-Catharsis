@@ -116,7 +116,7 @@ return array(
 		'phpTimeZone' => '',					// String: timezone to force for all date() and mktime() functions. A list of supported values can be found at <a href="http://php.net/manual/en/timezones.php" target="_blank">php.net</a>. If this is not set, a valid fallback will be searched for by PHP (php.ini's <a href="http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone" target="_blank">date.timezone</a> setting, server defaults, etc); and if no fallback is found, the value of "UTC" is used instead.
 		'systemLog' => '',						// <p>String: semi-colon separated list. Defines one or more logging methods. Possible methods:</p><dl><dt>file,&lt;abs-path-to-file&gt;[,&lt;level&gt;]</dt><dd>logs to a file</dd><dt>mail,&lt;to&gt;[/&lt;from&gt;][,&lt;level&gt;]</dt><dd>sends the log entries via mail</dd><dt>syslog,&lt;facility&gt;,[,&lt;level&gt;]</dt><dd>uses the operating system's log. Facility may be one of LOCAL0..LOCAL7, USER (on Windows USER is the only valid type).</dd><dt>error_log[,,&lt;level&gt;]</dt><dd>uses the PHP error log</dd></dl><p>The &lt;level&gt; is the individual logging level (see <a href="#SYS-systemLogLevel">[SYS][systemLogLevel]</a>).</p>
 		'systemLogLevel' => 0,					// <p>Integer (0, 1, 2, 3, 4): Only messages with same or higher severity are logged.</p><ul><li>0: info</li><li>1: notice</li><li>2: warning</li><li>3: error</li><li>4: fatal error</li></ul>
-		'enableDeprecationLog' => 'file',		// If set, this configuration enables the logging of deprecated methods and functions. The following options are allowed: <dl><dt>String: &quot;file&quot; (or integer &quot;1&quot;)</dt><dd>The log file will be written to typo3conf/deprecation_[hash-value].log</dd><dt>String: &quot;devlog&quot;</dt><dd>The log will be written to the development log</dd><dt>String: &quot;console&quot;<dt><dd>The log will be displayed in the Backend's Debug Console.</dd></dl>Logging options &quot;file&quot;, &quot;devlog&quot; and &quot;console&quot; can be combined by comma-separating them. Default is &quot;file&quot;.
+		'enableDeprecationLog' => '',				// If set, this configuration enables the logging of deprecated methods and functions. The following options are allowed: <dl><dt>String: &quot;file&quot; (or integer &quot;1&quot;)</dt><dd>The log file will be written to typo3conf/deprecation_[hash-value].log</dd><dt>String: &quot;devlog&quot;</dt><dd>The log will be written to the development log</dd><dt>String: &quot;console&quot;<dt><dd>The log will be displayed in the Backend's Debug Console.</dd></dl>Logging options &quot;file&quot;, &quot;devlog&quot; and &quot;console&quot; can be combined by comma-separating them.
 		'maxFileNameLength' => 60,				// Integer: This is the maximum file name length. The value will be taken into account by basic file operations like renaming or creation of files and folders.
 		'UTF8filesystem' => FALSE,				// Boolean: If TRUE then TYPO3 uses utf-8 to store file names. This allows for accented Latin letters as well as any other non-latin characters like Cyrillic and Chinese.
 		'systemLocale' => '',					// String: locale used for certain system related functions, e.g. escaping shell commands. If problems with filenames containing special characters occur, the value of this option is probably wrong. See <a href="http://php.net/manual/en/function.setlocale.php" target="_blank">setlocale()</a>.
@@ -164,7 +164,8 @@ return array(
 					'frontend' => 'TYPO3\CMS\Core\Cache\Frontend\VariableFrontend',
 					'backend' => 'TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend',
 					'options' => array(
-						'compression' => TRUE
+						'compression' => TRUE,
+						'defaultLifetime' => 2592000   //  30 days; set this to a lower value in case your cache gets too big
 					),
 					'groups' => array('pages', 'all')
 				),
@@ -254,7 +255,6 @@ return array(
 		'allowGlobalInstall' => FALSE,		// Boolean: If set, global extensions in typo3/ext/ are allowed to be installed, updated and deleted etc.
 		'allowLocalInstall' => TRUE,		// Boolean: If set, local extensions in typo3conf/ext/ are allowed to be installed, updated and deleted etc.
 		'allowSystemInstall' => FALSE,		// Boolean: If set, you can install extensions in the sysext/ dir. Use this to upgrade the 'cms' and 'lang' extensions.
-		'requiredExt' => array(),		// String. List of additional extensions which are REQUIRED and cannot be unloaded by the Extension Manager!
 		'excludeForPackaging' => '(CVS|\\..*|.*~|.*\\.bak)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
 		'extListArray' => array(
 			'filelist',
@@ -301,7 +301,7 @@ return array(
 		),
 		'unzip_path' => '',								// Path to "unzip". Only specify the path here, do not include the program name, it is expected to be called "unzip".
 		'diff_path' => 'diff',							// Path to "diff" including the program name. Example: /somepath/specialdiff<br />For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
-		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site. (Automatically mounted for admin-users if set)
+		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site, DefaultStorage will be created with that configuration, do not access manually but ResourceFactory::getDefaultStorage()
 		'RTEenabled' => TRUE,							// Boolean: If set, the Rich Text editor will be an option in the backend. Notice that the editor must be enabled per-user and options are configurable. See admin guide.
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
 		'RTE_reg' => array(),							// Contains arrays of possible RTEs available (keys=extKey, values=cfg-array). Each array contains a key, "objRef", which contains a user function call with prefixed script path and instanciating a persistent global object. This can report back if browser requirements are OK, draw the RTE and do the transformations needed.
@@ -686,7 +686,6 @@ return array(
 		'defaultTypoScript_constants.' => array(),		// Lines of TS to include after a static template with the uid = the index in the array (Constants)
 		'defaultTypoScript_setup' => '',		// String (textarea). Enter lines of default TypoScript, setup-field.
 		'defaultTypoScript_setup.' => array(),		// Lines of TS to include after a static template with the uid = the index in the array (Setup)
-		'dontSetCookie' => FALSE,		// Boolean: If set, the no cookies is attempted to be set in the front end. Of course no userlogins are possible either...
 		'additionalAbsRefPrefixDirectories' => '',		// Enter additional directories to be prepended with absRefPrefix. Directories must be comma-separated. TYPO3 already prepends the following directories: media/, typo3conf/ext/, fileadmin/
 		'IPmaskMountGroups' => array( // This allows you to specify an array of IPmaskLists/fe_group-uids. If the REMOTE_ADDR of the user matches an IPmaskList, then the given fe_group is add to the gr_list. So this is an automatic mounting of a user-group. But no fe_user is logged in though! This feature is implemented for the default frontend user authentication and might not be implemented for alternative authentication services.
 			// array('IPmaskList_1','fe_group uid'), array('IPmaskList_2','fe_group uid')

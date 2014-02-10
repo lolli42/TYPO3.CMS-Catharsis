@@ -971,7 +971,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					// cast numerical values
 					$mt = $this->sql_field_metatype($table, $k);
 					if ($mt[0] == 'I') {
-						$v = (int) $v;
+						$v = (int)$v;
 					} elseif ($mt[0] == 'F') {
 						$v = (double) $v;
 					}
@@ -1085,7 +1085,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						// cast numeric values
 						$mt = $this->sql_field_metatype($table, $k);
 						if ($mt[0] == 'I') {
-							$v = (int) $v;
+							$v = (int)$v;
 						} elseif ($mt[0] == 'F') {
 							$v = (double) $v;
 						}
@@ -1124,7 +1124,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			}
 			return $query;
 		} else {
-			throw new \InvalidArgumentException('TYPO3 Fatal Error: "Where" clause argument for UPDATE query was not a string in $this->UPDATEquery() !', 1270853880);
+			throw new \InvalidArgumentException('TYPO3 Fatal Error: "Where" clause argument for UPDATE query was not a string in $this->UPDATEquery() !', 1270853887);
 		}
 	}
 
@@ -2144,7 +2144,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			case 'adodb':
 				// Check if method exists for the current $res object.
 				// If a table exists in TCA but not in the db, a error
-				// occured because $res is not a valid object.
+				// occurred because $res is not a valid object.
 				if (method_exists($res, 'FetchRow')) {
 					$output = $res->FetchRow();
 					$tableList = $res->TYPO3_DBAL_tableList;
@@ -2204,7 +2204,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			case 'adodb':
 				// Check if method exists for the current $res object.
 				// If a table exists in TCA but not in the db, a error
-				// occured because $res is not a valid object.
+				// occurred because $res is not a valid object.
 				if (method_exists($res, 'FetchRow')) {
 					$output = $res->FetchRow();
 					// Removing all assoc. keys.
@@ -2689,7 +2689,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				if ($keyRows !== FALSE) {
 					foreach ($keyRows as $k => $theKey) {
 						$theKey['Table'] = $tableName;
-						$theKey['Non_unique'] = (int) (!$theKey['unique']);
+						$theKey['Non_unique'] = (int)(!$theKey['unique']);
 						$theKey['Key_name'] = str_replace($tableName . '_', '', $k);
 						// the following are probably not needed anyway...
 						$theKey['Collation'] = '';
@@ -3615,7 +3615,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function debug_WHERE($table, $where, $script = '') {
 		$insertArray = array(
 			'tstamp' => $GLOBALS['EXEC_TIME'],
-			'beuser_id' => intval($GLOBALS['BE_USER']->user['uid']),
+			'beuser_id' => (int)$GLOBALS['BE_USER']->user['uid'],
 			'script' => $script,
 			'tablename' => $table,
 			'whereclause' => $where
@@ -3648,7 +3648,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		$insertArray = array(
 			'tstamp' => $GLOBALS['EXEC_TIME'],
-			'beuser_id' => intval($GLOBALS['BE_USER']->user['uid']),
+			'beuser_id' => (int)$GLOBALS['BE_USER']->user['uid'],
 			'script' => $script,
 			'exec_time' => $ms,
 			'table_join' => $join,

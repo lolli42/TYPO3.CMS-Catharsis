@@ -4,8 +4,6 @@ return array(
 		'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file',
 		'label' => 'name',
 		'tstamp' => 'tstamp',
-		'crdate' => 'crdate',
-		'cruser_id' => 'cruser_id',
 		'type' => 'type',
 		'hideTable' => TRUE,
 		'rootLevel' => TRUE,
@@ -135,7 +133,8 @@ return array(
 				'foreign_table' => 'sys_file_metadata',
 				'foreign_field' => 'file',
 				'size' => 1,
-				'minitems' => 1
+				'minitems' => 1,
+				'maxitems' => 1,
 			)
 		)
 	),

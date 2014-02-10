@@ -55,7 +55,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 	}
 
 	/**
-	 * Will traverse input array with configuratoin per-item and create corresponding GIF files for the menu.
+	 * Will traverse input array with configuration per-item and create corresponding GIF files for the menu.
 	 * The data of the files are stored in $this->result
 	 *
 	 * @param array $conf Array with configuration for each item.
@@ -76,7 +76,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 			if (is_array($conf)) {
 				$gifObjCount = 0;
 				$sKeyArray = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($conf);
-				$gifObjCount = intval(end($sKeyArray));
+				$gifObjCount = (int)end($sKeyArray);
 				$lastOriginal = $gifObjCount;
 				// Now we add graphical objects to the gifbuilder-setup
 				$waArr = array();
@@ -87,8 +87,8 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 						$sKeyArray = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($val);
 						foreach ($sKeyArray as $theKey) {
 							$theValue = $val[$theKey];
-							if (intval($theKey) && ($theValArr = $val[$theKey . '.'])) {
-								$cObjData = $this->menuArr[$key] ? $this->menuArr[$key] : array();
+							if ((int)$theKey && ($theValArr = $val[$theKey . '.'])) {
+								$cObjData = $this->menuArr[$key] ?: array();
 								$gifObjCount++;
 								if ($theValue == 'TEXT') {
 									$waArr[$key]['textNum'] = $gifObjCount;
@@ -137,7 +137,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 										$temp_sKeyArray = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($theValArr['file.']);
 										foreach ($temp_sKeyArray as $temp_theKey) {
 											if ($theValArr['mask.'][$temp_theKey] == 'TEXT') {
-												$gifCreator->data = $this->menuArr[$key] ? $this->menuArr[$key] : array();
+												$gifCreator->data = $this->menuArr[$key] ?: array();
 												$theValArr['mask.'][$temp_theKey . '.'] = $gifCreator->checkTextObj($theValArr['mask.'][$temp_theKey . '.']);
 												// If this is not done it seems that imageMaps will be rendered wrong!!
 												unset($theValArr['mask.'][$temp_theKey . '.']['text.']);
@@ -148,7 +148,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 										$temp_sKeyArray = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($theValArr['mask.']);
 										foreach ($temp_sKeyArray as $temp_theKey) {
 											if ($theValArr['mask.'][$temp_theKey] == 'TEXT') {
-												$gifCreator->data = $this->menuArr[$key] ? $this->menuArr[$key] : array();
+												$gifCreator->data = $this->menuArr[$key] ?: array();
 												$theValArr['mask.'][$temp_theKey . '.'] = $gifCreator->checkTextObj($theValArr['mask.'][$temp_theKey . '.']);
 												// if this is not done it seems that imageMaps will be rendered wrong!!
 												unset($theValArr['mask.'][$temp_theKey . '.']['text.']);
@@ -192,8 +192,8 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 				foreach ($waArr as $key => $val) {
 					$index = $val['free'];
 					$gifCreator->setup[$index] = 'WORKAREA';
-					$workArea[2] = $dConf[$key][2] ? $dConf[$key][2] : $dConf[$key][0];
-					$workArea[3] = $dConf[$key][3] ? $dConf[$key][3] : $dConf[$key][1];
+					$workArea[2] = $dConf[$key][2] ?: $dConf[$key][0];
+					$workArea[3] = $dConf[$key][3] ?: $dConf[$key][1];
 					$gifCreator->setup[$index . '.']['set'] = implode(',', $workArea);
 					$workArea[0] += $dConf[$key][0];
 					$workArea[1] += $dConf[$key][1];

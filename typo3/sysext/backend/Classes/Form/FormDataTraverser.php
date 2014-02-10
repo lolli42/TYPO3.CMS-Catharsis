@@ -122,7 +122,7 @@ class FormDataTraverser {
 	protected function initializeOriginalLanguageUid() {
 		$fieldCtrlConfig = $GLOBALS['TCA'][$this->currentTable]['ctrl'];
 		if (!empty($fieldCtrlConfig['languageField']) && isset($this->currentRow[$fieldCtrlConfig['languageField']])) {
-			$this->originalLanguageUid = intval($this->currentRow[$fieldCtrlConfig['languageField']]);
+			$this->originalLanguageUid = (int)$this->currentRow[$fieldCtrlConfig['languageField']];
 		} else {
 			$this->originalLanguageUid = FALSE;
 		}
@@ -290,7 +290,7 @@ class FormDataTraverser {
 		$values = GeneralUtility::trimExplode(',', $value);
 		$selectedValues = array();
 
-		if ($maxItems !== NULL && (count($values) > intval($maxItems))) {
+		if ($maxItems !== NULL && (count($values) > (int)$maxItems)) {
 			return $selectedValues;
 		}
 
@@ -314,7 +314,7 @@ class FormDataTraverser {
 	 *
 	 * @param array $fieldConfig "config" section of the TCA configuration of the related inline field.
 	 * @param string $fieldName The name of the inline field.
-	 * @param string $value The value in the local table (normally a comma seperated list of the inline record UIDs).
+	 * @param string $value The value in the local table (normally a comma separated list of the inline record UIDs).
 	 * @return array Array of related UIDs.
 	 */
 	protected function getRelatedInlineFieldUids(array $fieldConfig, $fieldName, $value) {
@@ -395,7 +395,7 @@ class FormDataTraverser {
 			if (!isset($currentRow[$languageField])) {
 				continue;
 			}
-			if (intval($currentRow[$languageField]) === $this->originalLanguageUid) {
+			if ((int)$currentRow[$languageField] === $this->originalLanguageUid) {
 				$foundRows[] = $currentRow;
 			}
 		}

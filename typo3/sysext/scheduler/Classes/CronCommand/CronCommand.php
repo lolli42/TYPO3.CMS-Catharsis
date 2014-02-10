@@ -24,7 +24,7 @@ namespace TYPO3\CMS\Scheduler\CronCommand;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * This class provides calulations for the cron command format.
+ * This class provides calculations for the cron command format.
  *
  * @author Markus Friedrich <markus.friedrich@dkd.de>
  * @author Christian Kuhn <lolli@schwarzbu.ch>
@@ -143,8 +143,8 @@ class CronCommand {
 	 * @return boolean TRUE if cron command conditions are met
 	 */
 	protected function minuteAndHourMatchesCronCommand($timestamp) {
-		$minute = intval(date('i', $timestamp));
-		$hour = intval(date('G', $timestamp));
+		$minute = (int)date('i', $timestamp);
+		$hour = (int)date('G', $timestamp);
 		$commandMatch = FALSE;
 		if ($this->isInCommandList($this->cronCommandSections[0], $minute) && $this->isInCommandList($this->cronCommandSections[1], $hour)) {
 			$commandMatch = TRUE;

@@ -55,7 +55,7 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 	 */
 	public $operator_translate_table_caseinsensitive = TRUE;
 
-	// case-sensitiv. Defineres the words, which will be operators between words
+	// case-sensitive. Defines the words, which will be operators between words
 	/**
 	 * @todo Define visibility
 	 */
@@ -161,11 +161,11 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 				}
 			} elseif (\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('stype')) {
 				if (substr(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('stype'), 0, 1) == 'L') {
-					$pointer = intval(substr(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('stype'), 1));
+					$pointer = (int)substr(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('stype'), 1);
 					$theRootLine = $GLOBALS['TSFE']->tmpl->rootLine;
 					// location Data:
 					$locDat_arr = explode(':', \TYPO3\CMS\Core\Utility\GeneralUtility::_POST('locationData'));
-					$pId = intval($locDat_arr[0]);
+					$pId = (int)$locDat_arr[0];
 					if ($pId) {
 						$altRootLine = $GLOBALS['TSFE']->sys_page->getRootLine($pId);
 						ksort($altRootLine);
@@ -201,7 +201,7 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 			if ($conf['languageField.'][$this->fTable]) {
 				// (using sys_language_uid which is the ACTUAL language of the page.
 				// sys_language_content is only for selecting DISPLAY content!)
-				$endClause .= ' AND ' . $this->fTable . '.' . $conf['languageField.'][$this->fTable] . ' = ' . intval($GLOBALS['TSFE']->sys_language_uid);
+				$endClause .= ' AND ' . $this->fTable . '.' . $conf['languageField.'][$this->fTable] . ' = ' . (int)$GLOBALS['TSFE']->sys_language_uid;
 			}
 			// Build query
 			$this->build_search_query($endClause);
@@ -212,10 +212,10 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 				$this->count_query();
 			}
 			// Range
-			$spointer = intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('spointer'));
+			$spointer = (int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('spointer');
 			$range = isset($conf['range.']) ? $this->cObj->stdWrap($conf['range'], $conf['range.']) : $conf['range'];
 			if ($range) {
-				$theRange = intval($range);
+				$theRange = (int)$range;
 			} else {
 				$theRange = 20;
 			}
@@ -391,7 +391,7 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 					} elseif (strlen($val) > 1) {
 						// A searchword MUST be at least two characters long!
 						$this->sword_array[$i]['sword'] = $val;
-						$this->sword_array[$i]['oper'] = $lastoper ? $lastoper : $this->default_operator;
+						$this->sword_array[$i]['oper'] = $lastoper ?: $this->default_operator;
 						$lastoper = '';
 						$i++;
 					}
@@ -407,7 +407,7 @@ class SearchResultContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstra
 	 * @param string $origSword The raw sword string from outside
 	 * @param string $specchars Special chars which are used as operators (+- is default)
 	 * @param string $delchars Special chars which are deleted if the append the searchword (+-., is default)
-	 * @return mixed Returns an ARRAY if there were search words, othervise the return value may be unset.
+	 * @return mixed Returns an ARRAY if there were search words, otherwise the return value may be unset.
 	 * @todo Define visibility
 	 */
 	public function split($origSword, $specchars = '+-', $delchars = '+.,-') {

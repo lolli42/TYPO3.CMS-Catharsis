@@ -67,14 +67,6 @@ class FileReference implements FileInterface {
 	protected $name;
 
 	/**
-	 * The FileRepository object. Is needed e.g. for the delete() method to delete the usage record
-	 * (sys_file_reference record) of this file usage.
-	 *
-	 * @var FileRepository
-	 */
-	protected $fileRepository;
-
-	/**
 	 * Reference to the original File object underlying this FileReference.
 	 *
 	 * @var File
@@ -107,10 +99,9 @@ class FileReference implements FileInterface {
 		}
 		if (!$factory) {
 			/** @var $factory ResourceFactory */
-			$factory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+			$factory = ResourceFactory::getInstance();
 		}
 		$this->originalFile = $factory->getFileObject($fileReferenceData['uid_local']);
-		$this->fileRepository = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
 		if (!is_object($this->originalFile)) {
 			throw new \RuntimeException('Original File not found for FileReference.', 1300098529);
 		}
@@ -260,7 +251,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getUid() {
-		return (int) $this->propertiesOfFileReference['uid'];
+		return (int)$this->propertiesOfFileReference['uid'];
 	}
 
 	/**
@@ -269,7 +260,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getSize() {
-		return (int) $this->originalFile->getSize();
+		return (int)$this->originalFile->getSize();
 	}
 
 	/**
@@ -314,7 +305,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getModificationTime() {
-		return (int) $this->originalFile->getModificationTime();
+		return (int)$this->originalFile->getModificationTime();
 	}
 
 	/**
@@ -323,7 +314,7 @@ class FileReference implements FileInterface {
 	 * @return integer
 	 */
 	public function getCreationTime() {
-		return (int) $this->originalFile->getCreationTime();
+		return (int)$this->originalFile->getCreationTime();
 	}
 
 	/**
@@ -332,7 +323,7 @@ class FileReference implements FileInterface {
 	 * @return integer $fileType
 	 */
 	public function getType() {
-		return (int) $this->originalFile->getType();
+		return (int)$this->originalFile->getType();
 	}
 
 	/**
@@ -492,5 +483,14 @@ class FileReference implements FileInterface {
 	 */
 	public function getHashedIdentifier() {
 		return $this->getStorage()->hashFileIdentifier($this->getIdentifier());
+	}
+
+	/**
+	 * Returns the parent folder.
+	 *
+	 * @return FolderInterface
+	 */
+	public function getParentFolder() {
+		return $this->originalFile->getParentFolder();
 	}
 }

@@ -274,6 +274,7 @@ abstract class AbstractUserAuthentication {
 	// to come from $_COOKIE).
 	/**
 	 * @todo Define visibility
+	 * @deprecated since TYPO3 CMS 6.2, remove two versions later, use $this->isCookieSet() instead
 	 */
 	public $cookieId;
 
@@ -315,11 +316,18 @@ abstract class AbstractUserAuthentication {
 	 */
 	public $forceSetCookie = FALSE;
 
-	// Will prevent the setting of the session cookie (takes precedence over forceSetCookie)
 	/**
+	 * Will prevent the setting of the session cookie (takes precedence over forceSetCookie)
+	 * @var bool
 	 * @todo Define visibility
 	 */
 	public $dontSetCookie = FALSE;
+
+	/**
+	 * is set to know on this current request if a cookie was set
+	 * @var bool
+	 */
+	protected $cookieWasSetOnCurrentRequest = FALSE;
 
 	// If set, the challenge value will be stored in a session as well so the
 	// server can check that is was not forged.
@@ -390,10 +398,7 @@ abstract class AbstractUserAuthentication {
 		// $id is set to ses_id if cookie is present. Else set to FALSE, which will start a new session
 		$id = $this->getCookie($this->name);
 		$this->svConfig = $GLOBALS['TYPO3_CONF_VARS']['SVCONF']['auth'];
-		// If we have a flash client, take the ID from the GP
-		if (!$id && $GLOBALS['CLIENT']['BROWSER'] == 'flash') {
-			$id = GeneralUtility::_GP($this->name);
-		}
+
 		// If fallback to get mode....
 		if (!$id && $this->getFallBack && $this->get_name) {
 			$id = isset($_GET[$this->get_name]) ? GeneralUtility::_GET($this->get_name) : '';
@@ -402,7 +407,7 @@ abstract class AbstractUserAuthentication {
 			}
 			$mode = 'get';
 		}
-		$this->cookieId = $id;
+
 		// If new session or client tries to fix session...
 		if (!$id || !$this->isExistingSessionRecord($id)) {
 			// New random session-$id is made
@@ -470,6 +475,7 @@ abstract class AbstractUserAuthentication {
 	 * Sets the session cookie for the current disposal.
 	 *
 	 * @return void
+	 * @throws \TYPO3\CMS\Core\Exception
 	 */
 	protected function setSessionCookie() {
 		$isSetSessionCookie = $this->isSetSessionCookie();
@@ -487,8 +493,9 @@ abstract class AbstractUserAuthentication {
 			// Deliver cookies only via HTTP and prevent possible XSS by JavaScript:
 			$cookieHttpOnly = (bool) $settings['cookieHttpOnly'];
 			// Do not set cookie if cookieSecure is set to "1" (force HTTPS) and no secure channel is used:
-			if ((int) $settings['cookieSecure'] !== 1 || GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+			if ((int)$settings['cookieSecure'] !== 1 || GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 				setcookie($this->name, $this->id, $cookieExpire, $cookiePath, $cookieDomain, $cookieSecure, $cookieHttpOnly);
+				$this->cookieWasSetOnCurrentRequest = TRUE;
 			} else {
 				throw new \TYPO3\CMS\Core\Exception('Cookie was not set since HTTPS was forced in $TYPO3_CONF_VARS[SYS][cookieSecure].', 1254325546);
 			}
@@ -543,6 +550,7 @@ abstract class AbstractUserAuthentication {
 	 * @return string The value stored in the cookie
 	 */
 	protected function getCookie($cookieName) {
+		$cookieValue = '';
 		if (isset($_SERVER['HTTP_COOKIE'])) {
 			$cookies = GeneralUtility::trimExplode(';', $_SERVER['HTTP_COOKIE']);
 			foreach ($cookies as $cookie) {
@@ -736,10 +744,10 @@ abstract class AbstractUserAuthentication {
 					$serviceObj->initAuth($subType, $loginData, $authInfo, $this);
 					if (($ret = $serviceObj->authUser($tempuser)) > 0) {
 						// If the service returns >=200 then no more checking is needed - useful for IP checking without password
-						if (intval($ret) >= 200) {
+						if ((int)$ret >= 200) {
 							$authenticated = TRUE;
 							break;
-						} elseif (intval($ret) >= 100) {
+						} elseif ((int)$ret >= 100) {
 
 						} else {
 							$authenticated = TRUE;
@@ -797,8 +805,8 @@ abstract class AbstractUserAuthentication {
 				if ($requestStr == $backendScript && GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 					list(, $url) = explode('://', GeneralUtility::getIndpEnv('TYPO3_SITE_URL'), 2);
 					list($server, $address) = explode('/', $url, 2);
-					if (intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'])) {
-						$sslPortSuffix = ':' . intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']);
+					if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']) {
+						$sslPortSuffix = ':' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'];
 						// strip port from server
 						$server = str_replace($sslPortSuffix, '', $server);
 					}
@@ -922,10 +930,10 @@ abstract class AbstractUserAuthentication {
 			// A user was found
 			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->auth_timeout_field)) {
 				// Get timeout from object
-				$timeout = intval($this->auth_timeout_field);
+				$timeout = (int)$this->auth_timeout_field;
 			} else {
 				// Get timeout-time from usertable
-				$timeout = intval($user[$this->auth_timeout_field]);
+				$timeout = (int)$user[$this->auth_timeout_field];
 			}
 			// If timeout > 0 (TRUE) and currenttime has not exceeded the latest sessions-time plus the timeout in seconds then accept user
 			// Option later on: We could check that last update was at least x seconds ago in order not to update twice in a row if one script redirects to another...
@@ -981,6 +989,19 @@ abstract class AbstractUserAuthentication {
 	}
 
 	/**
+	 * Empty / unset the cookie
+	 *
+	 * @param string $cookieName usually, this is $this->name
+	 * @return void
+	 */
+	public function removeCookie($cookieName) {
+		$cookieDomain = $this->getCookieDomain();
+		// If no cookie domain is set, use the base path
+		$cookiePath = $cookieDomain ? '/' : GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		setcookie($cookieName, NULL, -1, $cookiePath, $cookieDomain);
+	}
+
+	/**
 	 * Determine whether there's an according session record to a given session_id
 	 * in the database. Don't care if session record is still valid or not.
 	 *
@@ -994,6 +1015,17 @@ abstract class AbstractUserAuthentication {
 		$row = $statement->fetch(\TYPO3\CMS\Core\Database\PreparedStatement::FETCH_NUM);
 		$statement->free();
 		return $row[0] ? TRUE : FALSE;
+	}
+
+	/**
+	 * Returns whether this request is going to set a cookie
+	 * or a cookie was already found in the system
+	 * replaces the old functionality for "$this->cookieId"
+	 *
+	 * @return boolean Returns TRUE if a cookie is set
+	 */
+	public function isCookieSet() {
+		return $this->cookieWasSetOnCurrentRequest || $this->getCookie($this->name);
 	}
 
 	/*************************
@@ -1117,7 +1149,7 @@ abstract class AbstractUserAuthentication {
 	 * @access private
 	 */
 	protected function hashLockClause() {
-		$wherePart = 'AND ' . $this->session_table . '.ses_hashlock=' . intval($this->hashLockClause_getHashInt());
+		$wherePart = 'AND ' . $this->session_table . '.ses_hashlock=' . $this->hashLockClause_getHashInt();
 		return $wherePart;
 	}
 
@@ -1155,9 +1187,9 @@ abstract class AbstractUserAuthentication {
 				$variable = $this->uc;
 			}
 			if ($this->writeDevLog) {
-				GeneralUtility::devLog('writeUC: ' . $this->userid_column . '=' . intval($this->user[$this->userid_column]), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication');
+				GeneralUtility::devLog('writeUC: ' . $this->userid_column . '=' . (int)$this->user[$this->userid_column], 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication');
 			}
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery($this->user_table, $this->userid_column . '=' . intval($this->user[$this->userid_column]), array('uc' => serialize($variable)));
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery($this->user_table, $this->userid_column . '=' . (int)$this->user[$this->userid_column], array('uc' => serialize($variable)));
 		}
 	}
 
@@ -1284,7 +1316,7 @@ abstract class AbstractUserAuthentication {
 	 * @todo Define visibility
 	 */
 	public function processLoginData($loginData, $passwordTransmissionStrategy = '') {
-		$passwordTransmissionStrategy = $passwordTransmissionStrategy ? $passwordTransmissionStrategy : ($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel'] ? trim($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel']) : $this->security_level);
+		$passwordTransmissionStrategy = $passwordTransmissionStrategy ?: ($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel'] ? trim($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel']) : $this->security_level);
 		if ($this->writeDevLog) {
 			GeneralUtility::devLog('Login data before processing: ' . GeneralUtility::arrayToLogString($loginData), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication');
 		}
@@ -1300,7 +1332,7 @@ abstract class AbstractUserAuthentication {
 			if (!empty($serviceResult)) {
 				$isLoginDataProcessed = TRUE;
 				// If the service returns >=200 then no more processing is needed
-				if (intval($serviceResult) >= 200) {
+				if ((int)$serviceResult >= 200) {
 					unset($serviceObject);
 					break;
 				}
@@ -1363,7 +1395,7 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function compareUident($user, $loginData, $passwordCompareStrategy = '') {
 		$OK = FALSE;
-		$passwordCompareStrategy = $passwordCompareStrategy ? $passwordCompareStrategy : $this->security_level;
+		$passwordCompareStrategy = $passwordCompareStrategy ?: $this->security_level;
 		switch ($passwordCompareStrategy) {
 			case 'superchallenged':
 
@@ -1400,7 +1432,7 @@ abstract class AbstractUserAuthentication {
 	 * @todo Define visibility
 	 */
 	public function gc() {
-		$GLOBALS['TYPO3_DB']->exec_DELETEquery($this->session_table, 'ses_tstamp < ' . intval(($GLOBALS['EXEC_TIME'] - $this->gc_time)) . ' AND ses_name = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->name, $this->session_table));
+		$GLOBALS['TYPO3_DB']->exec_DELETEquery($this->session_table, 'ses_tstamp < ' . (int)($GLOBALS['EXEC_TIME'] - $this->gc_time) . ' AND ses_name = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->name, $this->session_table));
 	}
 
 	/**
@@ -1477,7 +1509,7 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function getRawUserByUid($uid) {
 		$user = FALSE;
-		$dbres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $this->user_table, 'uid=' . intval($uid) . ' ' . $this->user_where_clause());
+		$dbres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $this->user_table, 'uid=' . (int)$uid . ' ' . $this->user_where_clause());
 		if ($dbres) {
 			$user = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($dbres);
 			$GLOBALS['TYPO3_DB']->sql_free_result($dbres);

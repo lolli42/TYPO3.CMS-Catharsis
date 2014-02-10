@@ -40,6 +40,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class PageGenerator {
 
 	/**
+	 * Do not render title tag
+	 * Typoscript setting: [config][noPageTitle]
+	 */
+	const NO_PAGE_TITLE = 2;
+
+	/**
 	 * Setting some vars in TSFE, primarily based on TypoScript config settings.
 	 *
 	 * @return void
@@ -52,7 +58,7 @@ class PageGenerator {
 			$temp_copy_TSFE->id = $GLOBALS['TSFE']->page['content_from_pid'];
 			$temp_copy_TSFE->MP = '';
 			$temp_copy_TSFE->getPageAndRootlineWithDomain($GLOBALS['TSFE']->config['config']['content_from_pid_allowOutsideDomain'] ? 0 : $GLOBALS['TSFE']->domainStartPage);
-			$GLOBALS['TSFE']->contentPid = intval($temp_copy_TSFE->id);
+			$GLOBALS['TSFE']->contentPid = (int)$temp_copy_TSFE->id;
 			unset($temp_copy_TSFE);
 		}
 		if ($GLOBALS['TSFE']->config['config']['MP_defaults']) {
@@ -89,7 +95,7 @@ class PageGenerator {
 		}
 		$GLOBALS['TSFE']->compensateFieldWidth = '' . $GLOBALS['TSFE']->config['config']['compensateFieldWidth'];
 		$GLOBALS['TSFE']->lockFilePath = '' . $GLOBALS['TSFE']->config['config']['lockFilePath'];
-		$GLOBALS['TSFE']->lockFilePath = $GLOBALS['TSFE']->lockFilePath ? $GLOBALS['TSFE']->lockFilePath : $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'];
+		$GLOBALS['TSFE']->lockFilePath = $GLOBALS['TSFE']->lockFilePath ?: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'];
 		$GLOBALS['TYPO3_CONF_VARS']['GFX']['im_noScaleUp'] = isset($GLOBALS['TSFE']->config['config']['noScaleUp']) ? '' . $GLOBALS['TSFE']->config['config']['noScaleUp'] : $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_noScaleUp'];
 		$GLOBALS['TSFE']->TYPO3_CONF_VARS['GFX']['im_noScaleUp'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_noScaleUp'];
 		$GLOBALS['TSFE']->ATagParams = trim($GLOBALS['TSFE']->config['config']['ATagParams']) ? ' ' . trim($GLOBALS['TSFE']->config['config']['ATagParams']) : '';
@@ -271,7 +277,7 @@ class PageGenerator {
 		// Reset the content variables:
 		$GLOBALS['TSFE']->content = '';
 		$htmlTagAttributes = array();
-		$htmlLang = $GLOBALS['TSFE']->config['config']['htmlTag_langKey'] ? $GLOBALS['TSFE']->config['config']['htmlTag_langKey'] : 'en';
+		$htmlLang = $GLOBALS['TSFE']->config['config']['htmlTag_langKey'] ?: 'en';
 		// Set content direction: (More info: http://www.tau.ac.il/~danon/Hebrew/HTML_and_Hebrew.html)
 		if ($GLOBALS['TSFE']->config['config']['htmlTag_dir']) {
 			$htmlTagAttributes['dir'] = htmlspecialchars($GLOBALS['TSFE']->config['config']['htmlTag_dir']);
@@ -395,7 +401,7 @@ class PageGenerator {
 		}
 		$pageRenderer->setHtmlTag($htmlTag);
 		// Head tag:
-		$headTag = $GLOBALS['TSFE']->pSetup['headTag'] ? $GLOBALS['TSFE']->pSetup['headTag'] : '<head>';
+		$headTag = $GLOBALS['TSFE']->pSetup['headTag'] ?: '<head>';
 		$pageRenderer->setHeadTag($headTag);
 		// Setting charset meta tag:
 		$pageRenderer->setCharSet($theCharset);
@@ -456,32 +462,29 @@ class PageGenerator {
 			}
 		}
 		/**********************************************************************/
-		/* includeCSS
-		/* config.includeCSS {
-		/*
-		/* }
+		/* config.includeCSS / config.includeCSSLibs
 		/**********************************************************************/
 		if (is_array($GLOBALS['TSFE']->pSetup['includeCSS.'])) {
 			foreach ($GLOBALS['TSFE']->pSetup['includeCSS.'] as $key => $CSSfile) {
 				if (!is_array($CSSfile)) {
-					$ss = $GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['external'] ? $CSSfile : $GLOBALS['TSFE']->tmpl->getFileName($CSSfile);
-					if (isset($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['if.']) && !$GLOBALS['TSFE']->cObj->checkIf($GLOBALS['TSFE']->pSetup['includeCSS.'][($key . '.')]['if.'])) {
+					$cssFileConfig = &$GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.'];
+					if (isset($cssFileConfig['if.']) && !$GLOBALS['TSFE']->cObj->checkIf($cssFileConfig['if.'])) {
 						continue;
 					}
+					$ss = $cssFileConfig['external'] ? $CSSfile : $GLOBALS['TSFE']->tmpl->getFileName($CSSfile);
 					if ($ss) {
-						if ($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['import']) {
-							if (!$GLOBALS['TSFE']->pSetup['includeCSS.'][($key . '.')]['external'] && substr($ss, 0, 1) != '/') {
+						if ($cssFileConfig['import']) {
+							if (!$cssFileConfig['external'] && $ss[0] !== '/') {
 								// To fix MSIE 6 that cannot handle these as relative paths (according to Ben v Ende)
 								$ss = GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . $ss;
 							}
-							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($GLOBALS['TSFE']->pSetup['includeCSS.'][($key . '.')]['media']) . ';', empty($GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['disableCompression']), $GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.']['forceOnTop'] ? TRUE : FALSE, '');
+							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), $cssFileConfig['forceOnTop'] ? TRUE : FALSE, '');
 						} else {
-							$cssFileConfig = &$GLOBALS['TSFE']->pSetup['includeCSS.'][$key . '.'];
 							$pageRenderer->addCssFile(
 								$ss,
 								$cssFileConfig['alternate'] ? 'alternate stylesheet' : 'stylesheet',
-								$cssFileConfig['media'] ? $cssFileConfig['media'] : 'all',
-								$cssFileConfig['title'] ? $cssFileConfig['title'] : '',
+								$cssFileConfig['media'] ?: 'all',
+								$cssFileConfig['title'] ?: '',
 								empty($cssFileConfig['disableCompression']),
 								$cssFileConfig['forceOnTop'] ? TRUE : FALSE,
 								$cssFileConfig['allWrap'],
@@ -494,6 +497,40 @@ class PageGenerator {
 				}
 			}
 		}
+		if (is_array($GLOBALS['TSFE']->pSetup['includeCSSLibs.'])) {
+			foreach ($GLOBALS['TSFE']->pSetup['includeCSSLibs.'] as $key => $CSSfile) {
+				if (!is_array($CSSfile)) {
+					$cssFileConfig = &$GLOBALS['TSFE']->pSetup['includeCSSLibs.'][$key . '.'];
+					if (isset($cssFileConfig['if.']) && !$GLOBALS['TSFE']->cObj->checkIf($cssFileConfig['if.'])) {
+						continue;
+					}
+					$ss = $cssFileConfig['external'] ? $CSSfile : $GLOBALS['TSFE']->tmpl->getFileName($CSSfile);
+					if ($ss) {
+						if ($cssFileConfig['import']) {
+							if (!$cssFileConfig['external'] && $ss[0] !== '/') {
+								// To fix MSIE 6 that cannot handle these as relative paths (according to Ben v Ende)
+								$ss = GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . $ss;
+							}
+							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), $cssFileConfig['forceOnTop'] ? TRUE : FALSE, '');
+						} else {
+							$pageRenderer->addCssLibrary(
+								$ss,
+								$cssFileConfig['alternate'] ? 'alternate stylesheet' : 'stylesheet',
+								$cssFileConfig['media'] ?: 'all',
+								$cssFileConfig['title'] ?: '',
+								empty($cssFileConfig['disableCompression']),
+								$cssFileConfig['forceOnTop'] ? TRUE : FALSE,
+								$cssFileConfig['allWrap'],
+								$cssFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+								$cssFileConfig['allWrap.']['splitChar']
+							);
+							unset($cssFileConfig);
+						}
+					}
+				}
+			}
+		}
+
 		// Stylesheets
 		$style = '';
 		if ($GLOBALS['TSFE']->pSetup['insertClassesFromRTE']) {
@@ -519,7 +556,7 @@ class PageGenerator {
 		}
 		// Setting body tag margins in CSS:
 		if (isset($GLOBALS['TSFE']->pSetup['bodyTagMargins']) && $GLOBALS['TSFE']->pSetup['bodyTagMargins.']['useCSS']) {
-			$margins = intval($GLOBALS['TSFE']->pSetup['bodyTagMargins']);
+			$margins = (int)$GLOBALS['TSFE']->pSetup['bodyTagMargins'];
 			$style .= '
 	BODY {margin: ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px;}';
 		}
@@ -562,7 +599,7 @@ class PageGenerator {
 				$pageRenderer->loadPrototype();
 			}
 			if ($GLOBALS['TSFE']->pSetup['javascriptLibs.']['Scriptaculous']) {
-				$modules = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['Scriptaculous.']['modules'] ? $GLOBALS['TSFE']->pSetup['javascriptLibs.']['Scriptaculous.']['modules'] : '';
+				$modules = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['Scriptaculous.']['modules'] ?: '';
 				$pageRenderer->loadScriptaculous($modules);
 			}
 			if ($GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtCore']) {
@@ -593,7 +630,7 @@ class PageGenerator {
 			if ($GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs']) {
 				$css = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['css'] ? TRUE : FALSE;
 				$theme = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['theme'] ? TRUE : FALSE;
-				$adapter = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['adapter'] ? $GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['adapter'] : '';
+				$adapter = $GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['adapter'] ?: '';
 				$pageRenderer->loadExtJs($css, $theme, $adapter);
 				if ($GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.']['debug']) {
 					$pageRenderer->enableExtJsDebug();
@@ -724,14 +761,8 @@ class PageGenerator {
 		if (is_array($GLOBALS['TSFE']->pSetup['footerData.'])) {
 			$pageRenderer->addFooterData($GLOBALS['TSFE']->cObj->cObjGet($GLOBALS['TSFE']->pSetup['footerData.'], 'footerData.'));
 		}
-		// Title
-		$titleTagContent = $GLOBALS['TSFE']->tmpl->printTitle($GLOBALS['TSFE']->altPageTitle ? $GLOBALS['TSFE']->altPageTitle : $GLOBALS['TSFE']->page['title'], $GLOBALS['TSFE']->config['config']['noPageTitle'], $GLOBALS['TSFE']->config['config']['pageTitleFirst']);
-		if ($GLOBALS['TSFE']->config['config']['titleTagFunction']) {
-			$titleTagContent = $GLOBALS['TSFE']->cObj->callUserFunction($GLOBALS['TSFE']->config['config']['titleTagFunction'], array(), $titleTagContent);
-		}
-		if (strlen($titleTagContent) && intval($GLOBALS['TSFE']->config['config']['noPageTitle']) !== 2) {
-			$pageRenderer->setTitle($titleTagContent);
-		}
+		static::generatePageTitle();
+
 		// Add ending slash only to documents rendered as xhtml
 		$endingSlash = $GLOBALS['TSFE']->xhtmlVersion ? ' /' : '';
 		$pageRenderer->addMetaTag('<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS"' . $endingSlash . '>');
@@ -956,7 +987,7 @@ class PageGenerator {
 				$bodyTag = preg_replace('/>$/', '', trim($bodyTag)) . ' background="' . $GLOBALS['TSFE']->absRefPrefix . $bgImg[3] . '">';
 			}
 			if (isset($GLOBALS['TSFE']->pSetup['bodyTagMargins'])) {
-				$margins = intval($GLOBALS['TSFE']->pSetup['bodyTagMargins']);
+				$margins = (int)$GLOBALS['TSFE']->pSetup['bodyTagMargins'];
 				if ($GLOBALS['TSFE']->pSetup['bodyTagMargins.']['useCSS']) {
 
 				} else {
@@ -1081,4 +1112,29 @@ class PageGenerator {
 		return $OK;
 	}
 
+	/**
+	 * Generate title for page.
+	 * Takes the settings ['config']['noPageTitle'], ['config']['pageTitleFirst'], ['config']['titleTagFunction']
+	 * and ['config']['noPageTitle'] into account.
+	 * Furthermore $GLOBALS['TSFE']->altPageTitle is observed.
+	 *
+	 * @return void
+	 */
+	static public function generatePageTitle() {
+		$titleTagContent = $GLOBALS['TSFE']->tmpl->printTitle(
+			$GLOBALS['TSFE']->altPageTitle ? $GLOBALS['TSFE']->altPageTitle : $GLOBALS['TSFE']->page['title'],
+			$GLOBALS['TSFE']->config['config']['noPageTitle'],
+			$GLOBALS['TSFE']->config['config']['pageTitleFirst']
+		);
+		if ($GLOBALS['TSFE']->config['config']['titleTagFunction']) {
+			$titleTagContent = $GLOBALS['TSFE']->cObj->callUserFunction(
+				$GLOBALS['TSFE']->config['config']['titleTagFunction'],
+				array(),
+				$titleTagContent
+			);
+		}
+		if ($titleTagContent !== '' && (int)$GLOBALS['TSFE']->config['config']['noPageTitle'] !== self::NO_PAGE_TITLE) {
+			$GLOBALS['TSFE']->getPageRenderer()->setTitle($titleTagContent);
+		}
+	}
 }

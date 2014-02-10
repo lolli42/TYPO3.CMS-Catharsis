@@ -330,6 +330,11 @@ class FormEngine {
 	 */
 	public $edit_showFieldHelp = '';
 
+	/**
+	 * @var bool
+	 */
+	public $edit_docModuleUpload = FALSE;
+
 	// If set, the forms will be rendered a little wider, more precisely with a factor of $this->form_largeComp.
 	/**
 	 * @todo Define visibility
@@ -645,7 +650,7 @@ class FormEngine {
 		$this->setNewBEDesign();
 		$this->docLarge = $GLOBALS['BE_USER']->uc['edit_wideDocument'] ? 1 : 0;
 		$this->edit_showFieldHelp = $GLOBALS['BE_USER']->uc['edit_showFieldHelp'];
-		$this->edit_docModuleUpload = $GLOBALS['BE_USER']->uc['edit_docModuleUpload'];
+		$this->edit_docModuleUpload = (bool)$GLOBALS['BE_USER']->uc['edit_docModuleUpload'];
 		$this->inline->init($this);
 		$this->suggest->init($this);
 	}
@@ -767,17 +772,17 @@ class FormEngine {
 						// Getting the style information out:
 						$color_style_parts = GeneralUtility::trimExplode('-', $parts[4]);
 						if ($color_style_parts[0] !== '') {
-							$this->setColorScheme($GLOBALS['TBE_STYLES']['colorschemes'][intval($color_style_parts[0])]);
+							$this->setColorScheme($GLOBALS['TBE_STYLES']['colorschemes'][(int)$color_style_parts[0]]);
 						}
 						if ($color_style_parts[1] !== '') {
-							$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][intval($color_style_parts[1])];
+							$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][(int)$color_style_parts[1]];
 							if (!isset($this->fieldStyle)) {
 								$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][0];
 							}
 						}
 						if ($color_style_parts[2] !== '') {
 							$this->wrapBorder($out_array[$out_sheet], $out_pointer);
-							$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][intval($color_style_parts[2])];
+							$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][(int)$color_style_parts[2]];
 							if (!isset($this->borderStyle)) {
 								$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][0];
 							}
@@ -1020,7 +1025,7 @@ class FormEngine {
 		$PA['pal'] = $pal;
 		// Get the TCA configuration for the current field:
 		$PA['fieldConf'] = $GLOBALS['TCA'][$table]['columns'][$field];
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
+		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 
 		// Using "form_type" locally in this script
 		$skipThisField = $this->inline->skipField($table, $field, $row, $PA['fieldConf']['config']);
@@ -1103,9 +1108,9 @@ class FormEngine {
 					$PA['onFocus'] = $palJSfunc && !$GLOBALS['BE_USER']->uc['dontShowPalettesOnFocusInAB'] ? ' onfocus="' . htmlspecialchars($palJSfunc) . '"' : '';
 					// Find item
 					$item = '';
-					$PA['label'] = $PA['altName'] ? $PA['altName'] : $PA['fieldConf']['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label'] ? $PA['fieldTSConfig']['label'] : $PA['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label.'][$GLOBALS['LANG']->lang] ? $PA['fieldTSConfig']['label.'][$GLOBALS['LANG']->lang] : $PA['label'];
+					$PA['label'] = $PA['altName'] ?: $PA['fieldConf']['label'];
+					$PA['label'] = $PA['fieldTSConfig']['label'] ?: $PA['label'];
+					$PA['label'] = $PA['fieldTSConfig']['label.'][$GLOBALS['LANG']->lang] ?: $PA['label'];
 					$PA['label'] = $this->sL($PA['label']);
 					// JavaScript code for event handlers:
 					$PA['fieldChangeFunc'] = array();
@@ -1222,7 +1227,7 @@ class FormEngine {
 	 * @todo Define visibility
 	 */
 	public function getSingleField_SW($table, $field, $row, &$PA) {
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
+		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 		// Using "form_type" locally in this script
 		// Hook: getSingleField_beforeRender
 		foreach ($this->hookObjectsSingleField as $hookObject) {
@@ -1307,10 +1312,10 @@ class FormEngine {
 			}
 			$dateRange = '';
 			if (isset($config['range']['lower'])) {
-				$dateRange .= ' lower-' . intval($config['range']['lower']);
+				$dateRange .= ' lower-' . (int)$config['range']['lower'];
 			}
 			if (isset($config['range']['upper'])) {
-				$dateRange .= ' upper-' . intval($config['range']['upper']);
+				$dateRange .= ' upper-' . (int)$config['range']['upper'];
 			}
 			$inputId = uniqid('tceforms-' . $class . 'field-');
 			$cssClasses[] = 'tceforms-textfield tceforms-' . $class . 'field' . $dateRange;
@@ -1396,7 +1401,7 @@ class FormEngine {
 		if (isset($config['checkbox'])) {
 			$item .= IconUtility::getSpriteIcon('actions-input-clear', array('tag' => 'a', 'class' => 't3-tceforms-input-clearer', 'onclick' => 'document.getElementById(\'' . $inputId . '\').value=\'\';document.getElementById(\'' . $inputId . '\').focus();' . implode('', $PA['fieldChangeFunc'])));
 		}
-		$mLgd = $config['max'] ? $config['max'] : 256;
+		$mLgd = $config['max'] ?: 256;
 		$iOnChange = implode('', $PA['fieldChangeFunc']);
 		$cssClasses[] = 'hasDefaultValue';
 		$item .= '<input type="text" ' . $this->getPlaceholderAttribute($table, $field, $config, $row) . 'id="' . $inputId . '" ' . 'class="' . implode(' ', $cssClasses) . '" ' . 'name="' . $PA['itemFormElName'] . '_hr" ' . 'value=""' . 'style="' . $cssStyle . '" ' . 'maxlength="' . $mLgd . '" ' . 'onchange="' . htmlspecialchars($iOnChange) . '"' . $PA['onFocus'] . ' />';
@@ -1573,7 +1578,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				if ($specConf['nowrap']) {
 					$wrap = 'off';
 				} else {
-					$wrap = $config['wrap'] ? $config['wrap'] : 'virtual';
+					$wrap = $config['wrap'] ?: 'virtual';
 				}
 				$classes = array();
 				if ($specConf['fixed-font']) {
@@ -1647,8 +1652,8 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		if (!count($selItems)) {
 			$selItems[] = array('', '');
 		}
-		$thisValue = intval($PA['itemFormElValue']);
-		$cols = intval($config['cols']);
+		$thisValue = (int)$PA['itemFormElValue'];
+		$cols = (int)$config['cols'];
 		$selItemsCount = count($selItems);
 		if ($cols > 1) {
 			$item .= '<table border="0" cellspacing="0" cellpadding="0" class="typo3-TCEforms-checkboxArray">';
@@ -1752,7 +1757,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		// Creating the label for the "No Matching Value" entry.
 		$nMV_label = isset($PA['fieldTSConfig']['noMatchingValue_label']) ? $this->sL($PA['fieldTSConfig']['noMatchingValue_label']) : '[ ' . $this->getLL('l_noMatchingValue') . ' ]';
 		// Prepare some values:
-		$maxitems = intval($config['maxitems']);
+		$maxitems = (int)$config['maxitems'];
 		// If a SINGLE selector box...
 		if ($maxitems <= 1 && $config['renderMode'] !== 'tree') {
 			$item = $this->getSingleField_typeSelect_single($table, $field, $row, $PA, $config, $selItems, $nMV_label);
@@ -1895,7 +1900,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		$opt = array();
 		$selicons = array();
 		$onlySelectedIconShown = 0;
-		$size = intval($config['size']);
+		$size = (int)$config['size'];
 		// Style set on <select/>
 		$selectedStyle = '';
 		$item = '';
@@ -2003,7 +2008,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		// Create icon table:
 		if (count($selicons) && !$config['noIconsBelowSelect']) {
 			$item .= '<table border="0" cellpadding="0" cellspacing="0" class="typo3-TCEforms-selectIcons">';
-			$selicon_cols = intval($config['selicon_cols']);
+			$selicon_cols = (int)$config['selicon_cols'];
 			if (!$selicon_cols) {
 				$selicon_cols = count($selicons);
 			}
@@ -2219,7 +2224,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		// Compile selector box:
 		$sOnChange = implode('', $PA['fieldChangeFunc']);
 		$selector_itemListStyle = isset($config['itemListStyle']) ? ' style="' . htmlspecialchars($config['itemListStyle']) . '"' : ' style="' . $this->defaultMultipleSelectorStyle . '"';
-		$size = intval($config['size']);
+		$size = (int)$config['size'];
 		$cssPrefix = $size === 1 ? 'tceforms-select' : 'tceforms-multiselect';
 		$size = $config['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($selItems) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax']) : $size;
 		$selectBox = '<select id="' . uniqid($cssPrefix) . '" name="' . $PA['itemFormElName'] . '[]"' . $this->insertDefStyle('select', $cssPrefix) . ($size ? ' size="' . $size . '"' : '') . ' multiple="multiple" onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus'] . $selector_itemListStyle . $disabled . '>
@@ -2332,17 +2337,11 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			}
 			// Put together the selector box:
 			$selector_itemListStyle = isset($config['itemListStyle']) ? ' style="' . htmlspecialchars($config['itemListStyle']) . '"' : ' style="' . $this->defaultMultipleSelectorStyle . '"';
-			$size = intval($config['size']);
+			$size = (int)$config['size'];
 			$size = $config['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($itemArray) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax']) : $size;
-			if ($config['exclusiveKeys']) {
-				$sOnChange = 'setFormValueFromBrowseWin(\'' . $PA['itemFormElName'] . '\',this.options[this.selectedIndex].value, this.options[this.selectedIndex].text, this.options[this.selectedIndex].title,\'' . $config['exclusiveKeys'] . '\'); ';
-			} else {
-				$sOnChange = 'setFormValueFromBrowseWin(\'' . $PA['itemFormElName'] . '\',this.options[this.selectedIndex].value, this.options[this.selectedIndex].text, this.options[this.selectedIndex].title); ';
-			}
-			$sOnChange .= implode('', $PA['fieldChangeFunc']);
-			$multiSelectId = uniqid('tceforms-multiselect-');
+			$sOnChange = implode('', $PA['fieldChangeFunc']);
 			$itemsToSelect = '
-				<select id="' . $multiSelectId . '" name="' . $PA['itemFormElName'] . '_sel"' . $this->insertDefStyle('select', 'tceforms-multiselect tceforms-itemstoselect') . ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus'] . $selector_itemListStyle . '>
+				<select data-relatedfieldname="' . $PA['itemFormElName'] . '" data-exclusivevalues="' . $config['exclusiveKeys'] . '" id="' . uniqid('tceforms-multiselect-') . '" name="' . $PA['itemFormElName'] . '_sel"' . $this->insertDefStyle('select', 'tceforms-multiselect tceforms-itemstoselect t3-form-select-itemstoselect') . ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus'] . $selector_itemListStyle . '>
 					' . implode('
 					', $opt) . '
 				</select>';
@@ -2408,7 +2407,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		$config = $PA['fieldConf']['config'];
 		$internal_type = $config['internal_type'];
 		$show_thumbs = $config['show_thumbs'];
-		$size = intval($config['size']);
+		$size = (int)$config['size'];
 		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
 		if (!$maxitems) {
 			$maxitems = 100000;
@@ -2676,7 +2675,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		if ($config['format']) {
 			$itemValue = $this->formatValue($config, $itemValue);
 		}
-		$rows = intval($config['rows']);
+		$rows = (int)$config['rows'];
 		if ($rows > 1) {
 			if (!$config['pass_content']) {
 				$itemValue = nl2br(htmlspecialchars($itemValue));
@@ -2764,7 +2763,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			// Look up page overlays:
 			$checkPageLanguageOverlay = $GLOBALS['BE_USER']->getTSConfigVal('options.checkPageLanguageOverlay') ? TRUE : FALSE;
 			if ($checkPageLanguageOverlay) {
-				$pageOverlays = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages_language_overlay', 'pid=' . intval($row['pid']) . BackendUtility::deleteClause('pages_language_overlay') . BackendUtility::versioningPlaceholderClause('pages_language_overlay'), '', '', '', 'sys_language_uid');
+				$pageOverlays = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'pages_language_overlay', 'pid=' . (int)$row['pid'] . BackendUtility::deleteClause('pages_language_overlay') . BackendUtility::versioningPlaceholderClause('pages_language_overlay'), '', '', '', 'sys_language_uid');
 			}
 			$languages = $this->getAvailableLanguages();
 			foreach ($languages as $lInfo) {
@@ -3288,7 +3287,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				$itemValue = md5($itemValue);
 				break;
 			case 'filesize':
-				$value = GeneralUtility::formatSize(intval($itemValue));
+				$value = GeneralUtility::formatSize((int)$itemValue);
 				if ($config['format.']['appendByteSize']) {
 					$value .= ' (' . $itemValue . ')';
 				}
@@ -3425,7 +3424,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 					$bit = substr($bitKey, 1);
 					if (MathUtility::canBeInterpretedAsInteger($bit)) {
 						$bit = MathUtility::forceIntegerInRange($bit, 0, 30);
-						if (substr($bitKey, 0, 1) == '-' && !($sTValue & pow(2, $bit)) || substr($bitKey, 0, 1) == '+' && $sTValue & pow(2, $bit)) {
+						if ($bitKey[0] === '-' && !($sTValue & pow(2, $bit)) || $bitKey[0] === '+' && $sTValue & pow(2, $bit)) {
 							$excludeElements = array_merge($excludeElements, GeneralUtility::trimExplode(',', $eList, TRUE));
 						}
 					}
@@ -3652,10 +3651,10 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 	 */
 	public function registerDefaultLanguageData($table, $rec) {
 		// Add default language:
-		if ($GLOBALS['TCA'][$table]['ctrl']['languageField'] && $rec[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0 && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] && intval($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]) > 0) {
+		if ($GLOBALS['TCA'][$table]['ctrl']['languageField'] && $rec[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0 && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] && (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] > 0) {
 			$lookUpTable = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'] ? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'] : $table;
 			// Get data formatted:
-			$this->defaultLanguageData[$table . ':' . $rec['uid']] = BackendUtility::getRecordWSOL($lookUpTable, intval($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]));
+			$this->defaultLanguageData[$table . ':' . $rec['uid']] = BackendUtility::getRecordWSOL($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]);
 			// Get data for diff:
 			if ($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']) {
 				$this->defaultLanguageData_diff[$table . ':' . $rec['uid']] = unserialize($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']]);
@@ -3665,9 +3664,9 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			foreach ($prLang as $prL) {
 				/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
 				$t8Tools = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
-				$tInfo = $t8Tools->translationInfo($lookUpTable, intval($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]), $prL['uid']);
+				$tInfo = $t8Tools->translationInfo($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']], $prL['uid']);
 				if (is_array($tInfo['translations']) && is_array($tInfo['translations'][$prL['uid']])) {
-					$this->additionalPreviewLanguageData[$table . ':' . $rec['uid']][$prL['uid']] = BackendUtility::getRecordWSOL($table, intval($tInfo['translations'][$prL['uid']]['uid']));
+					$this->additionalPreviewLanguageData[$table . ':' . $rec['uid']][$prL['uid']] = BackendUtility::getRecordWSOL($table, (int)$tInfo['translations'][$prL['uid']]['uid']);
 				}
 			}
 		}
@@ -3896,12 +3895,28 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			}
 			if (!$params['dontShowMoveIcons']) {
 				if ($sSize >= 5) {
-					$icons['L'][] = '<a href="#" onclick="setFormValueManipulate(\'' . $fName . '\',\'Top\'); return false;">' . IconUtility::getSpriteIcon('actions-move-to-top', array('title' => htmlspecialchars($this->getLL('l_move_to_top')))) . '</a>';
+					$icons['L'][] = IconUtility::getSpriteIcon('actions-move-to-top', array(
+						'data-fieldname' => $fName,
+						'class' => 't3-btn t3-btn-moveoption-top',
+						'title' => htmlspecialchars($this->getLL('l_move_to_top'))
+					));
 				}
-				$icons['L'][] = '<a href="#" onclick="setFormValueManipulate(\'' . $fName . '\',\'Up\'); return false;">' . IconUtility::getSpriteIcon('actions-move-up', array('title' => htmlspecialchars($this->getLL('l_move_up')))) . '</a>';
-				$icons['L'][] = '<a href="#" onclick="setFormValueManipulate(\'' . $fName . '\',\'Down\'); return false;">' . IconUtility::getSpriteIcon('actions-move-down', array('title' => htmlspecialchars($this->getLL('l_move_down')))) . '</a>';
+				$icons['L'][] = IconUtility::getSpriteIcon('actions-move-up', array(
+					'data-fieldname' => $fName,
+					'class' => 't3-btn t3-btn-moveoption-up',
+					'title' => htmlspecialchars($this->getLL('l_move_up'))
+				));
+				$icons['L'][] = IconUtility::getSpriteIcon('actions-move-down', array(
+					'data-fieldname' => $fName,
+					'class' => 't3-btn t3-btn-moveoption-down',
+					'title' => htmlspecialchars($this->getLL('l_move_down'))
+				));
 				if ($sSize >= 5) {
-					$icons['L'][] = '<a href="#" onclick="setFormValueManipulate(\'' . $fName . '\',\'Bottom\'); return false;">' . IconUtility::getSpriteIcon('actions-move-to-bottom', array('title' => htmlspecialchars($this->getLL('l_move_to_bottom')))) . '</a>';
+					$icons['L'][] = IconUtility::getSpriteIcon('actions-move-to-bottom', array(
+						'data-fieldname' => $fName,
+						'class' => 't3-btn t3-btn-moveoption-bottom',
+						'title' => htmlspecialchars($this->getLL('l_move_to_bottom'))
+					));
 				}
 			}
 			$clipElements = $this->getClipboardElements($allowed, $mode);
@@ -3910,7 +3925,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				foreach ($clipElements as $elValue) {
 					if ($mode == 'db') {
 						list($itemTable, $itemUid) = explode('|', $elValue);
-						$itemTitle = $GLOBALS['LANG']->JScharCode(BackendUtility::getRecordTitle($itemTable, BackendUtility::getRecordWSOL($itemTable, $itemUid)));
+						$itemTitle = GeneralUtility::quoteJSvalue(BackendUtility::getRecordTitle($itemTable, BackendUtility::getRecordWSOL($itemTable, $itemUid)));
 						$elValue = $itemTable . '_' . $itemUid;
 					} else {
 						// 'file', 'file_reference' and 'folder' mode
@@ -3923,8 +3938,13 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			}
 		}
 		if (!$params['readOnly'] && !$params['noDelete']) {
-			$rOnClick = $rOnClickInline . 'setFormValueManipulate(\'' . $fName . '\',\'Remove\'); return false';
-			$icons['L'][] = '<a href="#" onclick="' . htmlspecialchars($rOnClick) . '">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => htmlspecialchars($this->getLL('l_remove_selected')))) . '</a>';
+			$icons['L'][] = IconUtility::getSpriteIcon('actions-selection-delete', array(
+				'onclick' => $rOnClickInline,
+				'data-fieldname' => $fName,
+				'class' => 't3-btn t3-btn-removeoption',
+				'title' => htmlspecialchars($this->getLL('l_remove_selected'))
+
+			));
 		}
 		$imagesOnly = FALSE;
 		if ($params['thumbnails'] && $params['info']) {
@@ -3983,7 +4003,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		$str .= '</td>
 					<td valign="top" class="icons">' . implode('<br />', $icons['L']) . '</td>
 					<td valign="top" class="icons">' . implode('<br />', $icons['R']) . '</td>
-					<td valign="top" class="thumbnails">' . $rightbox . '</td>
+					<td valign="top">' . $rightbox . '</td>
 			</tr>
 		</table>';
 		// Creating the hidden field which contains the actual value as a comma list.
@@ -4101,7 +4121,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		if (is_array($wizConf) && !$this->disableWizards) {
 			$parametersOfWizards = &$specConf['wizards']['parameters'];
 			foreach ($wizConf as $wid => $wConf) {
-				if (substr($wid, 0, 1) != '_' && (!$wConf['enableByTypeConfig'] || is_array($parametersOfWizards) && in_array($wid, $parametersOfWizards)) && ($RTE || !$wConf['RTEonly'])) {
+				if ($wid[0] !== '_' && (!$wConf['enableByTypeConfig'] || is_array($parametersOfWizards) && in_array($wid, $parametersOfWizards)) && ($RTE || !$wConf['RTEonly'])) {
 					// Title / icon:
 					$iTitle = htmlspecialchars($this->sL($wConf['title']));
 					if ($wConf['icon']) {
@@ -4167,7 +4187,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 
 									case 'colorbox':
 										// Current form value is passed as P[currentValue]!
-										$addJS = $wConf['popup_onlyOpenIfSelected'] ? 'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){alert(' . $GLOBALS['LANG']->JScharCode($this->getLL('m_noSelItemForEdit')) . '); return false;}' : '';
+										$addJS = $wConf['popup_onlyOpenIfSelected'] ? 'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){alert(' . GeneralUtility::quoteJSvalue($this->getLL('m_noSelItemForEdit')) . '); return false;}' : '';
 										$curSelectedValues = '+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')';
 										$aOnClick = $this->blur() . $addJS . 'vHWin=window.open(\'' . $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params)) . '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' . $this->elName($itemName) . '.value,200)' . $curSelectedValues . ',\'popUp' . $md5ID . '\',\'' . $wConf['JSopenParams'] . '\');' . 'vHWin.focus();return false;';
 										// Setting "colorBoxLinks" - user LATER to wrap around the color box as well:
@@ -4260,7 +4280,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				$outStr = '';
 				$vAlign = $wizConf['_VALIGN'] ? ' style="vertical-align:' . $wizConf['_VALIGN'] . '"' : '';
 				if (count($outArr) > 1 || $wizConf['_PADDING']) {
-					$dist = intval($wizConf['_DISTANCE']);
+					$dist = (int)$wizConf['_DISTANCE'];
 					if ($wizConf['_VERTICAL']) {
 						$dist = $dist ? '<tr><td><img src="clear.gif" width="1" height="' . $dist . '" alt="" /></td></tr>' : '';
 						$outStr = '<tr><td>' . implode(('</td></tr>' . $dist . '<tr><td>'), $outArr) . '</td></tr>';
@@ -4268,7 +4288,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 						$dist = $dist ? '<td><img src="clear.gif" height="1" width="' . $dist . '" alt="" /></td>' : '';
 						$outStr = '<tr><td' . $vAlign . '>' . implode(('</td>' . $dist . '<td' . $vAlign . '>'), $outArr) . '</td></tr>';
 					}
-					$outStr = '<table border="0" cellpadding="' . intval($wizConf['_PADDING']) . '" cellspacing="' . intval($wizConf['_PADDING']) . '">' . $outStr . '</table>';
+					$outStr = '<table border="0" cellpadding="' . (int)$wizConf['_PADDING'] . '" cellspacing="' . (int)$wizConf['_PADDING'] . '">' . $outStr . '</table>';
 				} else {
 					$outStr = implode('', $outArr);
 				}
@@ -5538,6 +5558,8 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			}
 			/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 			$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
+			// load the main module for FormEngine with all important JS functions
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine');
 			$pageRenderer->loadPrototype();
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
@@ -5567,6 +5589,8 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			// If IRRE fields were processed, add the JavaScript functions:
 			if ($this->inline->inlineCount) {
 				$pageRenderer->loadScriptaculous();
+				// We want to load jQuery-ui inside our js. Enable this using requirejs.
+				$pageRenderer->loadRequireJs();
 				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 				$out .= '
 				inline.setPrependFormFieldNames("' . $this->inline->prependNaming . '");
@@ -5659,7 +5683,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg($this->backPath, 'gfx/content_selected.gif', '', 1) . '";
 			TBE_EDITOR.images.clear.src = "' . $this->backPath . 'clear.gif";
 
-			TBE_EDITOR.auth_timeout_field = ' . intval($GLOBALS['BE_USER']->auth_timeout_field) . ';
+			TBE_EDITOR.auth_timeout_field = ' . (int)$GLOBALS['BE_USER']->auth_timeout_field . ';
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
 			TBE_EDITOR.backPath = "' . addslashes($this->backPath) . '";
@@ -5668,10 +5692,10 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
 			TBE_EDITOR.isPalettedoc = ' . ($this->isPalettedoc ? addslashes($this->isPalettedoc) : 'null') . ';
 			TBE_EDITOR.doSaveFieldName = "' . ($this->doSaveFieldName ? addslashes($this->doSaveFieldName) : '') . '";
-			TBE_EDITOR.labels.fieldsChanged = ' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
-			TBE_EDITOR.labels.fieldsMissing = ' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
-			TBE_EDITOR.labels.refresh_login = ' . $GLOBALS['LANG']->JScharCode($this->getLL('m_refresh_login')) . ';
-			TBE_EDITOR.labels.onChangeAlert = ' . $GLOBALS['LANG']->JScharCode($this->getLL('m_onChangeAlert')) . ';
+			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
+			TBE_EDITOR.labels.fieldsMissing = ' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
+			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($this->getLL('m_refresh_login')) . ';
+			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($this->getLL('m_onChangeAlert')) . ';
 			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
 			TBE_EDITOR.backend_interface = "' . $GLOBALS['BE_USER']->uc['interfaceSetup'] . '";
 
@@ -5723,343 +5747,35 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 	 *
 	 * @param string $formObj Form object reference (including "document.")
 	 * @return string JavaScript functions/code (NOT contained in a <script>-element)
-	 * @todo Define visibility
+	 * @deprecated since TYPO3 6.2, remove two versions later. This is now done in an external file, see printNeededJSfunctions
 	 */
 	public function dbFileCon($formObj = 'document.forms[0]') {
-		// @TODO: Export this to an own file, it is more static than dynamic JavaScript -- olly
-		$str = '
-
-			// ***************
-			// Used to connect the db/file browser with this document and the formfields on it!
-			// ***************
-
-			var browserWin="";
-
-			function setFormValueOpenBrowser(mode,params) {	//
-				var url = "' . $this->backPath . 'browser.php?mode="+mode+"&bparams="+params;
-
-				browserWin = window.open(url,"Typo3WinBrowser","height=650,width="+(mode=="db"?650:600)+",status=0,menubar=0,resizable=1,scrollbars=1");
-				browserWin.focus();
-			}
-			function setFormValueFromBrowseWin(fName,value,label,title,exclusiveValues) {
-				var formObj = setFormValue_getFObj(fName), fObj, isMultiple = false, isList = false, isCheckboxList = false, len;
-				if (formObj && value !== "--div--") {
-						// Check if the form object has a "_list" element or not
-						// The "_list" element exists for multiple selection select types
-					if (formObj[fName + "_list"]) {
-						fObj = formObj[fName + "_list"];
-						isMultiple =  fObj.multiple && fObj.getAttribute("size") != "1";
-						isList = true;
-					} else {
-						isCheckboxList = formObj[fName].className == "select-checkbox";
-						fObj = formObj[fName];
-					}
-
-					if (isMultiple || isList) {
-						if (!isMultiple) {
-								// clear field before adding value, if configured so (maxitems==1)
-							if (typeof TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName] != "undefined") {
-								clearSettings = TBE_EDITOR.clearBeforeSettingFormValueFromBrowseWin[fName];
-								setFormValueManipulate(fName, "Remove");
-
-									// Clear the upload field
-								var filesContainer = document.getElementById(clearSettings.itemFormElID_file);
-								if(filesContainer) {
-									filesContainer.innerHTML = filesContainer.innerHTML;
-								}
-
-								// update len after removing value
-								len = fObj.length;
-							}
-
-								// If multiple values are not allowed, clear anything that is in the control already
-							fObj.options.length = 0;
-							fObj.length = 0; // Note: this is dangerous! "length" on the object is a reserved JS attribute!
-						}
-						len = fObj.length;
-
-							// Clear elements if exclusive values are found
-						if (exclusiveValues) {
-							var m = new RegExp("(^|,)" + value + "($|,)");
-							if (exclusiveValues.match(m)) {
-									// the new value is exclusive
-								for (a = len - 1; a >= 0; a--) {
-									fObj[a] = null; // This is dangerous because it works on the object\'s numeric properties directly instead of using a custom attribute!
-								}
-								len = 0;
-							} else if (len == 1) {
-								m = new RegExp("(^|,)" + fObj.options[0].value + "($|,)");
-								if (exclusiveValues.match(m)) {
-										// the old value is exclusive
-									fObj[0] = null;
-									len = 0;
-								}
-							}
-						}
-							// Inserting element
-						var setOK = true;
-						if (!formObj[fName + "_mul"] || formObj[fName + "_mul"].value == 0) {
-							for (a = 0; a < len; a++) {
-								if (fObj.options[a].value == value) {
-									setOK = false;
-								}
-							}
-						}
-						if (setOK) {
-							fObj.length++;
-							fObj.options[len].value = value;
-							fObj.options[len].text = unescape(label);
-							fObj.options[len].title = title;
-
-								// Traversing list and set the hidden-field
-							setHiddenFromList(fObj,formObj[fName]);
-							' . $this->TBE_EDITOR_fieldChanged_func . '
-						}
-					} else if (isCheckboxList) {
-						var i=0;
-						while (formObj[fName + "[" + i + "]"]) {
-							if (formObj[fName + "[" + i + "]"].value == value) {
-								fObj = formObj[fName + "[" + i + "]"];
-								break;
-							}
-							i++;
-						};
-
-						if (fObj && !fObj.checked) {
-							fObj.click();
-							' . str_replace('_list', '', $this->TBE_EDITOR_fieldChanged_func) . '
-						}
-					} else {
-							// The incoming value consists of the table name, an underscore and the uid
-							// For a single selection field we need only the uid, so we extract it
-						var uidValue = value;
-						var pattern = /_(\\d+)$/;
-						var result = value.match(pattern);
-						if (result != null) {
-							uidValue = result[1];
-						}
-							// Change the selected value
-						fObj.value = uidValue;
-					}
-				}
-			}
-			function setHiddenFromList(fObjSel,fObjHid) {	//
-				l=fObjSel.length;
-				fObjHid.value="";
-				for (a=0;a<l;a++) {
-					fObjHid.value+=fObjSel.options[a].value+",";
-				}
-			}
-			function setFormValueManipulate(fName, type, maxLength) {
-				var formObj = setFormValue_getFObj(fName);
-				if (formObj) {
-					var localArray_V = new Array();
-					var localArray_L = new Array();
-					var localArray_S = new Array();
-					var localArray_T = new Array();
-					var fObjSel = formObj[fName+"_list"];
-					var l=fObjSel.length;
-					var c=0;
-
-					if (type == "RemoveFirstIfFull") {
-						if (maxLength == 1) {
-							for (a = 1; a < l; a++) {
-								if (fObjSel.options[a].selected != 1) {
-									localArray_V[c] = fObjSel.options[a].value;
-									localArray_L[c] = fObjSel.options[a].text;
-									localArray_S[c] = 0;
-									localArray_T[c] = fObjSel.options[a].title;
-									c++;
-								}
-							}
-						} else {
-							return;
-						}
-					}
-
-					if ((type=="Remove" && fObjSel.size > 1) || type=="Top" || type=="Bottom") {
-						if (type=="Top") {
-							for (a=0;a<l;a++) {
-								if (fObjSel.options[a].selected==1) {
-									localArray_V[c]=fObjSel.options[a].value;
-									localArray_L[c]=fObjSel.options[a].text;
-									localArray_S[c]=1;
-									localArray_T[c] = fObjSel.options[a].title;
-									c++;
-								}
-							}
-						}
-						for (a=0;a<l;a++) {
-							if (fObjSel.options[a].selected!=1) {
-								localArray_V[c]=fObjSel.options[a].value;
-								localArray_L[c]=fObjSel.options[a].text;
-								localArray_S[c]=0;
-								localArray_T[c] = fObjSel.options[a].title;
-								c++;
-							}
-						}
-						if (type=="Bottom") {
-							for (a=0;a<l;a++) {
-								if (fObjSel.options[a].selected==1) {
-									localArray_V[c]=fObjSel.options[a].value;
-									localArray_L[c]=fObjSel.options[a].text;
-									localArray_S[c]=1;
-									localArray_T[c] = fObjSel.options[a].title;
-									c++;
-								}
-							}
-						}
-					}
-					if (type=="Down") {
-						var tC = 0;
-						var tA = new Array();
-
-						for (a=0;a<l;a++) {
-							if (fObjSel.options[a].selected!=1) {
-									// Add non-selected element:
-								localArray_V[c]=fObjSel.options[a].value;
-								localArray_L[c]=fObjSel.options[a].text;
-								localArray_S[c]=0;
-								localArray_T[c] = fObjSel.options[a].title;
-								c++;
-
-									// Transfer any accumulated and reset:
-								if (tA.length > 0) {
-									for (aa=0;aa<tA.length;aa++) {
-										localArray_V[c]=fObjSel.options[tA[aa]].value;
-										localArray_L[c]=fObjSel.options[tA[aa]].text;
-										localArray_S[c]=1;
-										localArray_T[c] = fObjSel.options[tA[aa]].title;
-										c++;
-									}
-
-									var tC = 0;
-									var tA = new Array();
-								}
-							} else {
-								tA[tC] = a;
-								tC++;
-							}
-						}
-							// Transfer any remaining:
-						if (tA.length > 0) {
-							for (aa=0;aa<tA.length;aa++) {
-								localArray_V[c]=fObjSel.options[tA[aa]].value;
-								localArray_L[c]=fObjSel.options[tA[aa]].text;
-								localArray_S[c]=1;
-								localArray_T[c] = fObjSel.options[tA[aa]].title;
-								c++;
-							}
-						}
-					}
-					if (type=="Up") {
-						var tC = 0;
-						var tA = new Array();
-						var c = l-1;
-
-						for (a=l-1;a>=0;a--) {
-							if (fObjSel.options[a].selected!=1) {
-
-									// Add non-selected element:
-								localArray_V[c]=fObjSel.options[a].value;
-								localArray_L[c]=fObjSel.options[a].text;
-								localArray_S[c]=0;
-								localArray_T[c] = fObjSel.options[a].title;
-								c--;
-
-									// Transfer any accumulated and reset:
-								if (tA.length > 0) {
-									for (aa=0;aa<tA.length;aa++) {
-										localArray_V[c]=fObjSel.options[tA[aa]].value;
-										localArray_L[c]=fObjSel.options[tA[aa]].text;
-										localArray_S[c]=1;
-										localArray_T[c] = fObjSel.options[tA[aa]].title;
-										c--;
-									}
-
-									var tC = 0;
-									var tA = new Array();
-								}
-							} else {
-								tA[tC] = a;
-								tC++;
-							}
-						}
-							// Transfer any remaining:
-						if (tA.length > 0) {
-							for (aa=0;aa<tA.length;aa++) {
-								localArray_V[c]=fObjSel.options[tA[aa]].value;
-								localArray_L[c]=fObjSel.options[tA[aa]].text;
-								localArray_S[c]=1;
-								localArray_T[c] = fObjSel.options[tA[aa]].title;
-								c--;
-							}
-						}
-						c=l;	// Restore length value in "c"
-					}
-
-						// Transfer items in temporary storage to list object:
-					fObjSel.length = c;
-					for (a=0;a<c;a++) {
-						fObjSel.options[a].value = localArray_V[a];
-						fObjSel.options[a].text = localArray_L[a];
-						fObjSel.options[a].selected = localArray_S[a];
-						fObjSel.options[a].title = localArray_T[a];
-					}
-					setHiddenFromList(fObjSel,formObj[fName]);
-
-					' . $this->TBE_EDITOR_fieldChanged_func . '
-				}
-			}
-			function setFormValue_getFObj(fName) {	//
-				var formObj = ' . $formObj . ';
-				if (formObj) {
-						// Take the form object if it is either of type select-one or of type-multiple and it has a "_list" element
-					if (formObj[fName] &&
-						(
-							(formObj[fName].type == "select-one") ||
-							(formObj[fName].className == "select-checkbox") ||
-							(formObj[fName + "_list"] && formObj[fName + "_list"].type.match(/select-(one|multiple)/))
-						)
-					) {
-						return formObj;
-					} else {
-						alert("Formfields missing:\\n fName: " + formObj[fName] + "\\n fName_list:" + formObj[fName + "_list"] + "\\n type:" + formObj[fName + "_list"].type + "\\n fName:" + fName);
-					}
-				}
-				return "";
-			}
-
-			// END: dbFileCon parts.
-		';
-		return $str;
+		GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**
 	 * Prints necessary JavaScript for TCEforms (after the form HTML).
+	 * currently this is used to transform page-specific options in the TYPO3.Settings array for JS
+	 * so the JS module can access these values
 	 *
 	 * @return void
 	 * @todo Define visibility
 	 */
 	public function printNeededJSFunctions() {
-		// JS evaluation:
-		$out = $this->JSbottom($this->formName);
-		// Integrate JS functions for the element browser if such fields or IRRE fields or suggest wizard were processed:
-		if ($this->printNeededJS['dbFileIcons'] > 0 || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
-			$out .= '
 
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
 
+		// set variables to be accessible for JS
+		$pageRenderer->addInlineSetting('FormEngine', 'formName', $this->formName);
+		$pageRenderer->addInlineSetting('FormEngine', 'backPath', $this->backPath);
 
-			<!--
-			 	JavaScript after the form has been drawn:
-			-->
-
-			<script type="text/javascript">
-				/*<![CDATA[*/
-			' . $this->dbFileCon('document.' . $this->formName) . '
-				/*]]>*/
-			</script>';
+		// Integrate JS functions for the element browser if such fields or IRRE fields were processed
+		if ($this->printNeededJS['dbFileIcons'] || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
+			$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
 		}
+
+		$out = $this->JSbottom($this->formName);
 		return $out;
 	}
 

@@ -439,20 +439,23 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="file_upload.php.files" xml:space="preserve">
 				<source>files</source>
 			</trans-unit>
-			<trans-unit id="file_upload.draginformation.message" xml:space="preserve">
-				<source>You simply can drag your files into the filelist. Click again for classic mode.</source>
+			<trans-unit id="file_upload.dropzonehint.title" xml:space="preserve">
+				<source>Drag &amp; drop to upload files</source>
 			</trans-unit>
-			<trans-unit id="file_upload.draginformation.title" xml:space="preserve">
-				<source>Drag &amp; Drop available</source>
+			<trans-unit id="file_upload.dropzonehint.message" xml:space="preserve">
+				<source>Drop your files here, or &lt;u&gt;click, browse &amp; choose files&lt;/u&gt;</source>
 			</trans-unit>
-			<trans-unit id="file_upload.dropzonehint" xml:space="preserve">
-				<source>Drop your files here!</source>
+			<trans-unit id="file_upload.select-and-submit" xml:space="preserve">
+				<source>Select &amp; upload files</source>
 			</trans-unit>
-			<trans-unit id="file_upload.maxFilesizeExceeded" xml:space="preserve">
-				<source>File &quot;{0}&quot; exceeds maximum filesize of {1} bytes!</source>
+			<trans-unit id="file_upload.maxFileSizeExceeded" xml:space="preserve">
+				<source>File &quot;{0}&quot; exceeds maximum file size of {1}!</source>
 			</trans-unit>
-			<trans-unit id="file_upload.fileNotAllowwed" xml:space="preserve">
+			<trans-unit id="file_upload.fileNotAllowed" xml:space="preserve">
 				<source>Filename &quot;{0}&quot; is not allowed!</source>
+			</trans-unit>
+			<trans-unit id="file_upload.fileExtensionExpected" xml:space="preserve">
+				<source>Upload failed! A file with &quot;{0}&quot; extension is expected!</source>
 			</trans-unit>
 			<trans-unit id="file_upload.uploadFailed" xml:space="preserve">
 				<source>Upload of file &quot;{0}&quot; failed!</source>
@@ -467,7 +470,7 @@ Do you want to continue WITHOUT saving?</source>
 				<source>Upload complete! Filelist reloading...</source>
 			</trans-unit>
 			<trans-unit id="file_upload.overwriteExistingFiles" xml:space="preserve">
-				<source>The files below will be overwritten.</source>
+				<source>Shall existing files be overwritten?</source>
 			</trans-unit>
 			<trans-unit id="file_upload.php.number_of_files" xml:space="preserve">
 				<source>Number of files:</source>
@@ -813,6 +816,9 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="cm.createnew" xml:space="preserve">
 				<source>Create new</source>
+			</trans-unit>
+			<trans-unit id="cm.createnew.link" xml:space="preserve">
+				<source>Create new %s</source>
 			</trans-unit>
 			<trans-unit id="cm.tempMountPoint" xml:space="preserve">
 				<source>Mount as treeroot</source>

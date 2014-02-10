@@ -190,7 +190,7 @@ class InlineElement {
 		$config = $PA['fieldConf']['config'];
 		$foreign_table = $config['foreign_table'];
 		if (BackendUtility::isTableLocalizable($table)) {
-			$language = intval($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']]);
+			$language = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
 		}
 		$minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
 		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
@@ -294,11 +294,11 @@ class InlineElement {
 			if ($language > 0 && $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] > 0) {
 				// Add the "Localize all records" link before all child records:
 				if (isset($config['appearance']['showAllLocalizationLink']) && $config['appearance']['showAllLocalizationLink']) {
-					$levelLinks .= $this->getLevelInteractionLink('localize', $nameObject . self::Structure_Separator . $foreign_table, $config);
+					$levelLinks .= ' ' . $this->getLevelInteractionLink('localize', $nameObject . self::Structure_Separator . $foreign_table, $config);
 				}
 				// Add the "Synchronize with default language" link before all child records:
 				if (isset($config['appearance']['showSynchronizationLink']) && $config['appearance']['showSynchronizationLink']) {
-					$levelLinks .= $this->getLevelInteractionLink('synchronize', $nameObject . self::Structure_Separator . $foreign_table, $config);
+					$levelLinks .= ' ' . $this->getLevelInteractionLink('synchronize', $nameObject . self::Structure_Separator . $foreign_table, $config);
 				}
 			}
 		}
@@ -434,7 +434,10 @@ class InlineElement {
 			} else {
 				// Set additional field for processing for saving
 				$fields .= '<input type="hidden" name="' . $this->prependCmdFieldNames . $appendFormFieldNames . '[delete]" value="1" disabled="disabled" />';
-				if (!$isExpanded && !empty($GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'])) {
+				if (!$isExpanded
+					&& !empty($GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'])
+					&& $ajaxLoad
+				) {
 					$checked = !empty($rec['hidden']) ? ' checked="checked"' : '';
 					$fields .= '<input type="checkbox" name="' . $this->prependFormFieldNames . $appendFormFieldNames . '[hidden]_0" value="1"' . $checked . ' />';
 					$fields .= '<input type="input" name="' . $this->prependFormFieldNames . $appendFormFieldNames . '[hidden]" value="' . $rec['hidden'] . '" />';
@@ -452,7 +455,7 @@ class InlineElement {
 			if ($isVirtualRecord) {
 				$class .= ' t3-form-field-container-inline-placeHolder';
 			}
-			if (isset($rec['hidden']) && intval($rec['hidden'])) {
+			if (isset($rec['hidden']) && (int)$rec['hidden']) {
 				$class .= ' t3-form-field-container-inline-hidden';
 			}
 			$out = '<div class="t3-form-field-record-inline" id="' . $objectId . '_fields" data-expandSingle="' . ($config['appearance']['expandSingle'] ? 1 : 0) . '" data-returnURL="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $fields . $combination . '</div>';
@@ -592,15 +595,29 @@ class InlineElement {
 				} elseif($fileObject) {
 					$imageSetup = $config['appearance']['headerThumbnail'];
 					unset($imageSetup['field']);
-					$imageSetup = array_merge(array('width' => 64, 'height' => 64), $imageSetup);
-					$imageUrl = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW, $imageSetup)->getPublicUrl(TRUE);
-					$thumbnail = '<img src="' . $imageUrl . '" alt="' . htmlspecialchars($recTitle) . '">';
+					$imageSetup = array_merge(array('width' => '45', 'height' => '45c'), $imageSetup);
+					$imageUrl = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, $imageSetup)->getPublicUrl(TRUE);
+					$thumbnail = '<img class="t3-form-field-header-inline-thumbnail-image" src="' . $imageUrl . '" alt="' . htmlspecialchars($recTitle) . '">';
 				}
 			}
 		}
-		$header = '<table>' . '<tr>' . (!empty($config['appearance']['headerThumbnail']['field']) && $thumbnail ?
-				'<td class="t3-form-field-header-inline-thumbnail" id="' . $objectId . '_thumbnailcontainer">' . $thumbnail . '</td>' :
-				'<td class="t3-form-field-header-inline-icon" id="' . $objectId . '_iconcontainer">' . $iconImg . '</td>') . '<td class="t3-form-field-header-inline-summary">' . $label . '</td>' . '<td clasS="t3-form-field-header-inline-ctrl">' . $ctrl . '</td>' . '</tr>' . '</table>';
+
+		if (!empty($config['appearance']['headerThumbnail']['field']) && $thumbnail) {
+			$headerClasses = ' t3-form-field-header-inline-has-thumbnail';
+			$mediaContainer = '<div class="t3-form-field-header-inline-thumbnail" id="' . $objectId . '_thumbnailcontainer">' . $thumbnail . '</div>';
+		} else {
+			$headerClasses = ' t3-form-field-header-inline-has-icon';
+			$mediaContainer = '<div class="t3-form-field-header-inline-icon" id="' . $objectId . '_iconcontainer">' . $iconImg . '</div>';
+		}
+
+		$header = '<div class="t3-form-field-header-inline-wrap' . $headerClasses . '">'
+				. '<div class="t3-form-field-header-inline-ctrl">' . $ctrl . '</div>'
+				. '<div class="t3-form-field-header-inline-body">'
+				. $mediaContainer
+				. '<div class="t3-form-field-header-inline-summary">' . $label . '</div>'
+				. '</div>'
+				. '</div>';
+
 		return $header;
 	}
 
@@ -681,7 +698,7 @@ class InlineElement {
 			// "Delete" link:
 			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & 4 || !$isPagesTable && $calcPerms & 16)) {
 				$onClick = 'inline.deleteRecord(\'' . $nameObjectFtId . '\');';
-				$cells['delete'] = '<a href="#" onclick="' . htmlspecialchars(('if (confirm(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->getLL('deleteWarning')) . ')) {	' . $onClick . ' } return false;')) . '">' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:delete', TRUE))) . '</a>';
+				$cells['delete'] = '<a href="#" onclick="' . htmlspecialchars(('if (confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('deleteWarning')) . ')) {	' . $onClick . ' } return false;')) . '">' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:delete', TRUE))) . '</a>';
 			}
 
 			// "Hide/Unhide" links:
@@ -702,7 +719,7 @@ class InlineElement {
 			}
 			// Drag&Drop Sorting: Sortable handler for script.aculo.us
 			if ($enabledControls['dragdrop'] && $permsEdit && $enableManualSorting && $config['appearance']['useSortable']) {
-				$cells['dragdrop'] = IconUtility::getSpriteIcon('actions-move-move', array('class' => 'sortableHandle', 'title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
+				$cells['dragdrop'] = IconUtility::getSpriteIcon('actions-move-move', array('data-id' => $rec['uid'], 'class' => 'sortableHandle', 'title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
 			}
 		} elseif ($isVirtualRecord) {
 			if ($enabledControls['localize'] && isset($rec['__create'])) {
@@ -712,7 +729,7 @@ class InlineElement {
 		}
 		// If the record is edit-locked	by another user, we will show a little warning sign:
 		if ($lockInfo = BackendUtility::isRecordLocked($foreign_table, $rec['uid'])) {
-			$cells['locked'] = '<a href="#" onclick="' . htmlspecialchars(('alert(' . $GLOBALS['LANG']->JScharCode($lockInfo['msg']) . ');return false;')) . '">' . IconUtility::getSpriteIcon('status-warning-in-use', array('title' => htmlspecialchars($lockInfo['msg']))) . '</a>';
+			$cells['locked'] = '<a href="#" onclick="alert(' . GeneralUtility::quoteJSvalue($lockInfo['msg']) . ');return false;">' . IconUtility::getSpriteIcon('status-warning-in-use', array('title' => $lockInfo['msg'])) . '</a>';
 		}
 		// Hook: Post-processing of single controls for specific child records:
 		foreach ($this->hookObjects as $hookObj) {
@@ -802,7 +819,7 @@ class InlineElement {
 		$foreign_selector = $conf['foreign_selector'];
 		$PA = array();
 		$PA['fieldConf'] = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector];
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
+		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 		// Using "form_type" locally in this script
 		$PA['fieldTSConfig'] = $this->fObj->setTSconfig($foreign_table, array(), $foreign_selector);
 		$config = $PA['fieldConf']['config'];
@@ -822,7 +839,7 @@ class InlineElement {
 			}
 			// Put together the selector box:
 			$selector_itemListStyle = isset($config['itemListStyle']) ? ' style="' . htmlspecialchars($config['itemListStyle']) . '"' : ' style="' . $this->fObj->defaultMultipleSelectorStyle . '"';
-			$size = intval($conf['size']);
+			$size = (int)$conf['size'];
 			$size = $conf['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($selItems) + 1, MathUtility::forceIntegerInRange($size, 1), $conf['autoSizeMax']) : $size;
 			$onChange = 'return inline.importNewRecord(\'' . $this->inlineNames['object'] . self::Structure_Separator . $conf['foreign_table'] . '\')';
 			$item = '
@@ -831,7 +848,7 @@ class InlineElement {
 					', $opt) . '
 				</select>';
 			// Add a "Create new relation" link for adding new relations
-			// This is neccessary, if the size of the selector is "1" or if
+			// This is necessary, if the size of the selector is "1" or if
 			// there is only one record item in the select-box, that is selected by default
 			// The selector-box creates a new relation on using a onChange event (see some line above)
 			if (!empty($conf['appearance']['createNewRelationLinkTitle'])) {
@@ -839,16 +856,15 @@ class InlineElement {
 			} else {
 				$createNewRelationText = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.createNewRelation', TRUE);
 			}
-			$item .= '<a href="#" onclick="' . htmlspecialchars($onChange) . '" align="abstop">' . IconUtility::getSpriteIcon('actions-document-new', array('title' => $createNewRelationText)) . $createNewRelationText . '</a>';
-			// Wrap the selector and add a spacer to the bottom
-			$item = '<div style="margin-bottom: 20px;">' . $item . '</div>';
+			$item .= ' <a href="#" class="t3-button" onclick="' . htmlspecialchars($onChange) . '" align="abstop">' . IconUtility::getSpriteIcon('actions-document-new', array('title' => $createNewRelationText)) . $createNewRelationText . '</a>';
+			$item = '<div class="t3-form-field-group">' . $item . '</div>';
 		}
 		return $item;
 	}
 
 	/**
 	 * Generate a link that opens an element browser in a new window.
-	 * For group/db there is no way o use a "selector" like a <select>|</select>-box.
+	 * For group/db there is no way to use a "selector" like a <select>|</select>-box.
 	 *
 	 * @param array $conf TCA configuration of the parent(!) field
 	 * @param array $PA An array with additional configuration options
@@ -861,6 +877,7 @@ class InlineElement {
 		$allowed = $config['allowed'];
 		$objectPrefix = $this->inlineNames['object'] . self::Structure_Separator . $foreign_table;
 		$mode = 'db';
+		$showUpload = FALSE;
 		if (!empty($conf['appearance']['createNewRelationLinkTitle'])) {
 			$createNewRelationText = $GLOBALS['LANG']->sL($conf['appearance']['createNewRelationLinkTitle'], TRUE);
 		} else {
@@ -870,14 +887,61 @@ class InlineElement {
 			if (isset($config['appearance']['elementBrowserType'])) {
 				$mode = $config['appearance']['elementBrowserType'];
 			}
+			if ($mode === 'file') {
+				$showUpload = TRUE;
+			}
+			if (isset($config['appearance']['fileUploadAllowed'])) {
+				$showUpload = (bool)$config['appearance']['fileUploadAllowed'];
+			}
 			if (isset($config['appearance']['elementBrowserAllowed'])) {
 				$allowed = $config['appearance']['elementBrowserAllowed'];
 			}
 		}
 		$browserParams = '|||' . $allowed . '|' . $objectPrefix . '|inline.checkUniqueElement||inline.importElement';
 		$onClick = 'setFormValueOpenBrowser(\'' . $mode . '\', \'' . $browserParams . '\'); return false;';
-		$item = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . IconUtility::getSpriteIcon('actions-insert-record', array('title' => $createNewRelationText)) . $createNewRelationText . '</a>';
+
+		$item = '<a href="#" class="t3-button" onclick="' . htmlspecialchars($onClick) . '">';
+		$item .= IconUtility::getSpriteIcon('actions-insert-record', array('title' => $createNewRelationText));
+		$item .= $createNewRelationText . '</a>';
+
+		if ($showUpload && $this->fObj->edit_docModuleUpload) {
+			$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
+			if (
+				$folder instanceof \TYPO3\CMS\Core\Resource\Folder
+				&& $folder->checkActionPermission('add')
+			) {
+				$maxFileSize = GeneralUtility::getMaxUploadFileSize() * 1024;
+				$item .= ' <a href="#" class="t3-button t3-drag-uploader"
+					style="display:none"
+					data-dropzone-target="#' . htmlspecialchars($this->inlineNames['object']) . '"
+					data-insert-dropzone-before="1"
+					data-file-irre-object="' . htmlspecialchars($objectPrefix) . '"
+					data-file-allowed="' . htmlspecialchars($allowed) . '"
+					data-target-folder="' . htmlspecialchars($folder->getCombinedIdentifier()) . '"
+					data-max-file-size="' . htmlspecialchars($maxFileSize) . '"
+					><span class="t3-icon t3-icon-actions t3-icon-actions-edit t3-icon-edit-upload">&nbsp;</span>';
+				$item .= $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.select-and-submit', TRUE);
+				$item .= '</a>';
+
+				$this->loadDragUploadJs();
+			}
+		}
 		return $item;
+	}
+
+	/**
+	 * Load the required javascript for the DragUploader
+	 */
+	protected function loadDragUploadJs() {
+
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FileListLocalisation');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
+		$pageRenderer->addInlineLanguagelabelFile(
+			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
+			'file_upload'
+		);
 	}
 
 	/**
@@ -897,14 +961,17 @@ class InlineElement {
 				$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew', TRUE);
 				$icon = 'actions-document-new';
 				$className = 'typo3-newRecordLink';
-				$attributes['class'] = 'inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
+				$attributes['class'] = 't3-button inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
 				$attributes['onclick'] = 'return inline.createNewRecord(\'' . $objectPrefix . '\')';
-				if (isset($conf['inline']['inlineNewButtonStyle']) && $conf['inline']['inlineNewButtonStyle']) {
+				if (!empty($conf['inline']['inlineNewButtonStyle'])) {
 					$attributes['style'] = $conf['inline']['inlineNewButtonStyle'];
 				}
-				if (isset($conf['appearance']['newRecordLinkAddTitle']) && $conf['appearance']['newRecordLinkAddTitle']) {
-					$titleAddon = ' ' . $GLOBALS['LANG']->sL($GLOBALS['TCA'][$conf['foreign_table']]['ctrl']['title'], TRUE);
-				} elseif (isset($conf['appearance']['newRecordLinkTitle']) && strlen($conf['appearance']['newRecordLinkTitle'])) {
+				if (!empty($conf['appearance']['newRecordLinkAddTitle'])) {
+					$title = sprintf(
+						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.createnew.link', TRUE),
+						$GLOBALS['LANG']->sL($GLOBALS['TCA'][$conf['foreign_table']]['ctrl']['title'], TRUE)
+					);
+				} elseif (isset($conf['appearance']['newRecordLinkTitle']) && $conf['appearance']['newRecordLinkTitle'] !== '') {
 					$title = $GLOBALS['LANG']->sL($conf['appearance']['newRecordLinkTitle'], TRUE);
 				}
 				break;
@@ -912,19 +979,24 @@ class InlineElement {
 				$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:localizeAllRecords', 1);
 				$icon = 'actions-document-localize';
 				$className = 'typo3-localizationLink';
+				$attributes['class'] = 't3-button';
 				$attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(\'' . $objectPrefix . '\', \'localize\')';
 				break;
 			case 'synchronize':
 				$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:synchronizeWithOriginalLanguage', TRUE);
 				$icon = 'actions-document-synchronize';
 				$className = 'typo3-synchronizationLink';
-				$attributes['class'] = 'inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
+				$attributes['class'] = 't3-button inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'];
 				$attributes['onclick'] = 'return inline.synchronizeLocalizeRecords(\'' . $objectPrefix . '\', \'synchronize\')';
 				break;
+			default:
+				$title = '';
+				$icon = '';
+				$className = '';
 		}
 		// Create the link:
-		$icon = $icon ? IconUtility::getSpriteIcon($icon, array('title' => htmlspecialchars($title . $titleAddon))) : '';
-		$link = $this->wrapWithAnchor($icon . $title . $titleAddon, '#', $attributes);
+		$icon = $icon ? IconUtility::getSpriteIcon($icon, array('title' => htmlspecialchars($title))) : '';
+		$link = $this->wrapWithAnchor($icon . $title, '#', $attributes);
 		return '<div' . ($className ? ' class="' . $className . '"' : '') . '>' . $link . '</div>';
 	}
 
@@ -1040,7 +1112,7 @@ class InlineElement {
 		// Initialize TCEforms (rendering the forms)
 		$GLOBALS['SOBE']->tceforms = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FormEngine');
 		$GLOBALS['SOBE']->tceforms->inline = $this;
-		$GLOBALS['SOBE']->tceforms->RTEcounter = intval(array_shift($ajaxArguments));
+		$GLOBALS['SOBE']->tceforms->RTEcounter = (int)array_shift($ajaxArguments);
 		$GLOBALS['SOBE']->tceforms->initDefaultBEMode();
 		$GLOBALS['SOBE']->tceforms->palettesCollapsed = !$GLOBALS['SOBE']->MOD_SETTINGS['showPalettes'];
 		$GLOBALS['SOBE']->tceforms->disableRTE = $GLOBALS['SOBE']->MOD_SETTINGS['disableRTE'];
@@ -1395,8 +1467,8 @@ class InlineElement {
 		$foreignTable = $config['foreign_table'];
 		$localizationMode = BackendUtility::getInlineLocalizationMode($table, $config);
 		if ($localizationMode != FALSE) {
-			$language = intval($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']]);
-			$transOrigPointer = intval($row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]);
+			$language = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
+			$transOrigPointer = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']];
 			$transOrigTable = BackendUtility::getOriginalTranslationTable($table);
 
 			if ($language > 0 && $transOrigPointer) {
@@ -2130,7 +2202,7 @@ class InlineElement {
 	 * );
 	 *
 	 * It is possible to use the array keys '%AND.1', '%AND.2', etc. to prevent
-	 * overwriting the sub-array. It could be neccessary, if you use complex comparisons.
+	 * overwriting the sub-array. It could be necessary, if you use complex comparisons.
 	 *
 	 * The example above means, key1 *AND* key2 (and their values) have to match with
 	 * the $subjectArray and additional one *OR* key3 or key4 have to meet the same
@@ -2140,7 +2212,7 @@ class InlineElement {
 	 *
 	 * @param array $subjectArray The array to search in
 	 * @param array $searchArray The array with keys and values to search for
-	 * @param string $type Use '%AND' or '%OR' for comparision
+	 * @param string $type Use '%AND' or '%OR' for comparison
 	 * @return boolean The result of the comparison
 	 * @todo Define visibility
 	 */
@@ -2262,7 +2334,7 @@ class InlineElement {
 			if ($PA['fieldConf'] && $conf['foreign_selector_fieldTcaOverride']) {
 				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($PA['fieldConf'], $conf['foreign_selector_fieldTcaOverride']);
 			}
-			$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
+			$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 			// Using "form_type" locally in this script
 			$PA['fieldTSConfig'] = $this->fObj->setTSconfig($foreign_table, array(), $field);
 			$config = $PA['fieldConf']['config'];
@@ -2478,7 +2550,7 @@ class InlineElement {
 	 */
 	protected function wrapWithAnchor($text, $link, $attributes = array()) {
 		$link = trim($link);
-		$result = '<a href="' . ($link ? $link : '#') . '"';
+		$result = '<a href="' . ($link ?: '#') . '"';
 		foreach ($attributes as $key => $value) {
 			$result .= ' ' . $key . '="' . htmlspecialchars(trim($value)) . '"';
 		}

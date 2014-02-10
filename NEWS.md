@@ -55,6 +55,24 @@ The options array (the fourth parameter) now can contain a 'label' to set a
 custom label for each category field.
 
 
+#### CSS Styled Content
+
+* Removed deprecated DB fields
+
+There are 5 DB fields in tt_content that haven't been used in TYPO3 since
+version 4.0, and were disabled by default when using CSS Styled Content.
+
+The DB fields are
+  - text_align
+  - text_face
+  - text_size
+  - text_color
+  - text_properties
+
+The fields have been removed from the code and are removed by the
+DB Compare after upgrading.
+
+
 #### Caching
 
 * Caching behaviour by newly introduced grouping parameter
@@ -123,6 +141,22 @@ incomplete HTML when a frontend page is rendered was removed from the TYPO3
 Core. Its functionality is now provided by the TER extension "Tidy".
 The extension works with the same options as before.
 
+* Change in Hook TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['pageLoadedFromCache']
+
+Previously $row['cache_data'] was a serialized array. To avoid double serializing and unserializing,
+from now on $row['cache_data'] is just reconstituted as array when fetching from cache.
+
+* Frontend Cookie now only set when needed, not set by default anymore
+
+The cookie "fe_typo_user" set in the frontend by each request, is now only
+being set if the session data is used via $TSFE->fe_user->setKey('ses')
+so it can be used for shopping baskets for non-logged-in users
+out-of-the-box without hacking the default behaviour of setting the
+cookie.
+The previous behaviour always set the "fe_typo_user" cookie, but changed
+the session ID on each request, until it was fixated by a user login.
+The superfluous option "dontSetCookie" is now ineffective as the cookie
+is not set anymore by default.
 
 ### Administration / Customization
 
@@ -159,6 +193,12 @@ Example:
     <img src="fileadmin/xxxx.jpg" alt="Alt-Attribute" />
   and not
     <img src="fileadmin/xxxx.jpg" alt="Alt-Attribute" title="Alt-Attribute" />
+
+* Date view helper uses configured default format
+
+The fluid date view helper now uses $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy']
+as fallback format instead of hardcoded Y-m-d if no explicit format is given as
+argument. This may change the output of dates from Y-m-d to d-m-y.
 
 ### System categories
 

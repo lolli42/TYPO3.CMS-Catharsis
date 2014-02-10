@@ -68,7 +68,7 @@ abstract class FunctionalTestCase extends BaseTestCase {
 	 * be loaded for every test of a test case and it is not possible to change
 	 * the list of loaded extensions between single tests of a test case.
 	 *
-	 * A default list of core extensions is alwas loaded.
+	 * A default list of core extensions is always loaded.
 	 *
 	 * @see FunctionalTestCaseUtility $defaultActivatedCoreExtensions
 	 * @var array

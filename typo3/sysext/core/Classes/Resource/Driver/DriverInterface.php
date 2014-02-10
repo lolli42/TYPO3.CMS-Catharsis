@@ -365,14 +365,27 @@ interface DriverInterface {
 	public function getPermissions($identifier);
 
 	/**
+	 * Directly output the contents of the file to the output
+	 * buffer. Should not take care of header files or flushing
+	 * buffer before. Will be taken care of by the Storage.
+	 *
+	 * @param string $identifier
+	 * @return void
+	 */
+	public function dumpFileContents($identifier);
+
+	/**
 	 * Checks if a given identifier is within a container, e.g. if
 	 * a file or folder is within another folder.
 	 * This can e.g. be used to check for web-mounts.
 	 *
+	 * Hint: this also needs to return TRUE if the given identifier
+	 * matches the container identifier to allow access to the root
+	 * folder of a filemount.
+	 *
 	 * @param string $folderIdentifier
 	 * @param string $identifier identifier to be checked against $folderIdentifier
-	 *
-	 * @return boolean TRUE if $content is within $folderIdentifier
+	 * @return boolean TRUE if $content is within or matches $folderIdentifier
 	 */
 	public function isWithin($folderIdentifier, $identifier);
 

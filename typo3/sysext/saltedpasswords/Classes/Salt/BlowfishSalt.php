@@ -121,7 +121,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 		$firstSplitPos = strpos($setting, '$');
 		// Hashcount existing
 		if ($firstSplitPos !== FALSE && $firstSplitPos <= 2 && is_numeric(substr($setting, 0, $firstSplitPos))) {
-			$countLog2 = intval(substr($setting, 0, $firstSplitPos));
+			$countLog2 = (int)substr($setting, 0, $firstSplitPos);
 		}
 		return $countLog2;
 	}
@@ -151,7 +151,7 @@ class BlowfishSalt extends \TYPO3\CMS\Saltedpasswords\Salt\Md5Salt {
 	}
 
 	/**
-	 * Returns wether all prequesites for the hashing methods are matched
+	 * Returns whether all prerequisites for the hashing methods are matched
 	 *
 	 * @return boolean Method available
 	 */

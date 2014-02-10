@@ -671,9 +671,9 @@ class CharsetConverter {
 			$script = $this->lang_to_script[$language];
 		}
 		if (TYPO3_OS == 'WIN') {
-			$cs = $this->script_to_charset_windows[$script] ? $this->script_to_charset_windows[$script] : 'windows-1252';
+			$cs = $this->script_to_charset_windows[$script] ?: 'windows-1252';
 		} else {
-			$cs = $this->script_to_charset_unix[$script] ? $this->script_to_charset_unix[$script] : 'utf-8';
+			$cs = $this->script_to_charset_unix[$script] ?: 'utf-8';
 		}
 		return $cs;
 	}
@@ -1098,7 +1098,7 @@ class CharsetConverter {
 	 */
 	public function utf8CharToUnumber($str, $hex = 0) {
 		// First char
-		$ord = ord(substr($str, 0, 1));
+		$ord = ord($str[0]);
 		// This verifyes that it IS a multi byte string
 		if (($ord & 192) == 192) {
 			$binBuf = '';
@@ -1113,7 +1113,7 @@ class CharsetConverter {
 					break;
 				}
 			}
-			$binBuf = substr(('00000000' . decbin(ord(substr($str, 0, 1)))), -(6 - $b)) . $binBuf;
+			$binBuf = substr(('00000000' . decbin(ord($str[0]))), -(6 - $b)) . $binBuf;
 			$int = bindec($binBuf);
 		} else {
 			$int = $ord;
@@ -1158,7 +1158,7 @@ class CharsetConverter {
 					$detectedType = '';
 					foreach ($lines as $value) {
 						// Comment line or blanks are ignored.
-						if (trim($value) && substr($value, 0, 1) != '#') {
+						if (trim($value) && $value[0] !== '#') {
 							// Detect type if not done yet: (Done on first real line)
 							// The "whitespaced" type is on the syntax 	"0x0A	0x000A	#LINE FEED" 	while 	"ms-token" is like 		"B9 = U+00B9 : SUPERSCRIPT ONE"
 							if (!$detectedType) {
@@ -1639,7 +1639,7 @@ class CharsetConverter {
 	 * @see mb_strlen(), mb_substr()
 	 */
 	protected function cropMbstring($charset, $string, $len, $crop = '') {
-		if (intval($len) === 0 || mb_strlen($string, $charset) <= abs($len)) {
+		if ((int)$len === 0 || mb_strlen($string, $charset) <= abs($len)) {
 			return $string;
 		}
 		if ($len > 0) {
@@ -1666,7 +1666,7 @@ class CharsetConverter {
 		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['t3lib_cs_utils'] == 'mbstring') {
 			return $this->cropMbstring($charset, $string, $len, $crop);
 		}
-		if (intval($len) == 0) {
+		if ((int)$len === 0) {
 			return $string;
 		}
 		if ($charset == 'utf-8') {
@@ -2074,7 +2074,7 @@ class CharsetConverter {
 			$d = -1;
 		}
 		for (; strlen($str[$i]) && $n < $p; $i += $d) {
-			$c = (int) ord($str[$i]);
+			$c = (int)ord($str[$i]);
 			// single-byte (0xxxxxx)
 			if (!($c & 128)) {
 				$n++;
@@ -2112,7 +2112,7 @@ class CharsetConverter {
 		// Number of characters
 		$n = 0;
 		for ($i = $pos; $i > 0; $i--) {
-			$c = (int) ord($str[$i]);
+			$c = (int)ord($str[$i]);
 			// single-byte (0xxxxxx)
 			if (!($c & 128)) {
 				$n++;

@@ -129,6 +129,12 @@ class ToolController extends AbstractController {
 					// Add action if specified
 					$parameters[] = 'install[action]=loadExtensions';
 
+					// Add error to display a message what triggered the check
+					$errorEncoded = json_encode($error);
+					$parameters[] = 'install[lastError]=' . rawurlencode($errorEncoded);
+					// We do not use GeneralUtility here to be sure that hash generation works even if that class might not exist any more.
+					$parameters[] = 'install[lastErrorHash]=' . hash_hmac('sha1', $errorEncoded, $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . 'InstallToolError');
+
 					$redirectLocation = 'Install.php?' . implode('&', $parameters);
 
 					if (!headers_sent()) {
@@ -149,6 +155,23 @@ class ToolController extends AbstractController {
 	}
 
 	/**
+	 * Get last error values of install tool.
+	 *
+	 * @return array
+	 */
+	protected function getLastError() {
+		$getVars = \TYPO3\CMS\Core\Utility\GeneralUtility::_GET('install');
+		$lastError = array();
+		if (isset($getVars['lastError']) && isset($getVars['lastErrorHash']) && !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) {
+			$calculatedHash = hash_hmac('sha1', $getVars['lastError'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . 'InstallToolError');
+			if ($calculatedHash === $getVars['lastErrorHash']) {
+				$lastError = json_decode($getVars['lastError'], TRUE);
+			}
+		}
+		return $lastError;
+	}
+
+	/**
 	 * Call an action that needs authentication
 	 *
 	 * @throws Exception
@@ -166,13 +189,14 @@ class ToolController extends AbstractController {
 		if (!($toolAction instanceof \TYPO3\CMS\Install\Controller\Action\ActionInterface)) {
 			throw new Exception(
 				$action . ' does not implement ActionInterface',
-				1369474308
+				1369474309
 			);
 		}
 		$toolAction->setController('tool');
 		$toolAction->setAction($action);
 		$toolAction->setToken($this->generateTokenForAction($action));
 		$toolAction->setPostValues($this->getPostValues());
+		$toolAction->setLastError($this->getLastError());
 		$this->output($toolAction->handle());
 	}
 }

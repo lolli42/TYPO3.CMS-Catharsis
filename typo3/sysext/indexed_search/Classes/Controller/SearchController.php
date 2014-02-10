@@ -129,7 +129,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		$this->searchWords = $this->getSearchWords($searchData['defaultOperand']);
 		// This is the id of the site root.
 		// This value may be a commalist of integer (prepared for this)
-		$this->searchRootPageIdList = intval($GLOBALS['TSFE']->config['rootLine'][0]['uid']);
+		$this->searchRootPageIdList = (int)$GLOBALS['TSFE']->config['rootLine'][0]['uid'];
 		// Setting the list of root PIDs for the search. Notice, these page IDs MUST
 		// have a TypoScript template with root flag on them! Basically this list is used
 		// to select on the "rl0" field and page ids are registered as "rl0" only if
@@ -189,7 +189,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 			// Create header if we are searching more than one indexing configuration
 			if (count($indexCfgs) > 1) {
 				if ($freeIndexUid > 0) {
-					$indexCfgRec = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('title', 'index_config', 'uid=' . intval($freeIndexUid) . $GLOBALS['TSFE']->cObj->enableFields('index_config'));
+					$indexCfgRec = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('title', 'index_config', 'uid=' . (int)$freeIndexUid . $GLOBALS['TSFE']->cObj->enableFields('index_config'));
 					$categoryTitle = $indexCfgRec['title'];
 				} else {
 					$categoryTitle = \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('indexingConfigurationHeader.' . $freeIndexUid, 'indexed_search');
@@ -394,7 +394,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 			}
 			$resultData['path'] = '<a href="' . htmlspecialchars($row['data_filename']) . '"' . $targetAttribute . '>' . htmlspecialchars($row['data_filename']) . '</a>';
 		} else {
-			$pathId = $row['data_page_id'] ? $row['data_page_id'] : $row['page_id'];
+			$pathId = $row['data_page_id'] ?: $row['page_id'];
 			$pathMP = $row['data_page_id'] ? $row['data_page_mp'] : '';
 			$pathStr = htmlspecialchars($this->getPathFromPageId($pathId, $pathMP));
 			$resultData['path'] = $this->linkPage($pathId, $pathStr, array(
@@ -433,7 +433,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * @return array Configuration array
 	 */
 	protected function getSpecialConfigForResultRow($row) {
-		$pathId = $row['data_page_id'] ? $row['data_page_id'] : $row['page_id'];
+		$pathId = $row['data_page_id'] ?: $row['page_id'];
 		$pathMP = $row['data_page_id'] ? $row['data_page_mp'] : '';
 		$rl = $GLOBALS['TSFE']->sys_page->getRootLine($pathId, $pathMP);
 		$specConf = $this->settings['specialConfiguration.']['0.'];
@@ -507,7 +507,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 				$output = $cObj->cObjGetSingle($this->settings['flagRendering'], $this->settings['flagRendering.']);
 			} else {
 				// ... otherwise, get flag from sys_language record:
-				$languageRow = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('flag, title', 'sys_language', 'uid=' . intval($row['sys_language_uid']) . $GLOBALS['TSFE']->cObj->enableFields('sys_language'));
+				$languageRow = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('flag, title', 'sys_language', 'uid=' . (int)$row['sys_language_uid'] . $GLOBALS['TSFE']->cObj->enableFields('sys_language'));
 				// Flag code:
 				$flag = $languageRow['flag'];
 				if ($flag) {
@@ -583,7 +583,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		if ($row['show_resume']) {
 			if (!$noMarkup) {
 				$markedSW = '';
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'index_fulltext', 'phash=' . intval($row['phash']));
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
 				if ($ftdrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 					// Cut HTTP references after some length
 					$content = preg_replace('/(http:\\/\\/[^ ]{60})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
@@ -595,7 +595,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 				$outputStr = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $row['item_description'], $length);
 				$outputStr = htmlspecialchars($outputStr);
 			}
-			$output = $outputStr ? $outputStr : $markedSW;
+			$output = $outputStr ?: $markedSW;
 			$output = $GLOBALS['TSFE']->csConv($output, 'utf-8');
 		} else {
 			$output = '<span class="noResume">' . \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('result.noResume', 'indexed_search') . '</span>';
@@ -684,13 +684,13 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 		$insertFields = array(
 			'searchstring' => $this->sword,
 			'searchoptions' => serialize(array($searchParams, $searchWords, $pt)),
-			'feuser_id' => intval($GLOBALS['TSFE']->fe_user->user['uid']),
+			'feuser_id' => (int)$GLOBALS['TSFE']->fe_user->user['uid'],
 			// cookie as set or retrieved. If people has cookies disabled this will vary all the time
 			'cookie' => $GLOBALS['TSFE']->fe_user->id,
 			// Remote IP address
 			'IP' => GeneralUtility::getIndpEnv('REMOTE_ADDR'),
 			// Number of hits on the search
-			'hits' => intval($count),
+			'hits' => (int)$count,
 			// Time stamp
 			'tstamp' => $GLOBALS['EXEC_TIME']
 		);
@@ -1197,7 +1197,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	protected function getMenuOfPages($pageUid) {
 		if ($this->settings['displayLevelxAllTypes']) {
 			$menu = array();
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title,uid', 'pages', 'pid=' . intval($pageUid) . $GLOBALS['TSFE']->cObj->enableFields('pages'), '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title,uid', 'pages', 'pid=' . (int)$pageUid . $GLOBALS['TSFE']->cObj->enableFields('pages'), '', 'sorting');
 			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				$menu[$row['uid']] = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
 			}
@@ -1257,7 +1257,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * @return string Domain name
 	 */
 	protected function getFirstSysDomainRecordForPage($id) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('domainName', 'sys_domain', 'pid=' . intval($id) . $GLOBALS['TSFE']->cObj->enableFields('sys_domain'), '', 'sorting');
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('domainName', 'sys_domain', 'pid=' . (int)$id . $GLOBALS['TSFE']->cObj->enableFields('sys_domain'), '', 'sorting');
 		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 		return rtrim($row['domainName'], '/');
 	}

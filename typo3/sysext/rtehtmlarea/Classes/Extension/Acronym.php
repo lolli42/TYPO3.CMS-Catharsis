@@ -140,7 +140,7 @@ class Acronym extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 			}
 			$webMounts = $GLOBALS['BE_USER']->returnWebmounts();
 			$perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
-			$recursive = isset($this->thisConfig['buttons.'][$button . '.']['recursive']) ? intval($this->thisConfig['buttons.'][$button . '.']['recursive']) : 0;
+			$recursive = isset($this->thisConfig['buttons.'][$button . '.']['recursive']) ? (int)$this->thisConfig['buttons.'][$button . '.']['recursive'] : 0;
 			if (trim($this->thisConfig['buttons.'][$button . '.']['pages'])) {
 				$pids = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->thisConfig['buttons.'][$button . '.']['pages'], TRUE);
 				foreach ($pids as $key => $val) {
@@ -163,7 +163,7 @@ class Acronym extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 				}
 				$pageTree .= $pageTreePrefix . $queryGenerator->getTreeList($val, $recursive, ($begin = 0), $perms_clause);
 			}
-			$whereClause .= ' AND ' . $tableA . '.pid IN (' . $GLOBALS['TYPO3_DB']->fullQuoteStr(($pageTree ? $pageTree : ''), $tableA) . ')';
+			$whereClause .= ' AND ' . $tableA . '.pid IN (' . $GLOBALS['TYPO3_DB']->fullQuoteStr(($pageTree ?: ''), $tableA) . ')';
 		}
 		// Restrict to acronyms applicable to the language of current content element
 		if ($this->htmlAreaRTE->contentLanguageUid > -1) {

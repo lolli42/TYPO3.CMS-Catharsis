@@ -125,7 +125,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	protected $originalRequestMappingResults = NULL;
 
 	/**
-	 * @var array Errors that occured during this request
+	 * @var array Errors that occurred during this request
 	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	protected $errors = array();
@@ -345,7 +345,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	 */
 	public function setControllerActionName($actionName) {
 		if (!is_string($actionName) && $actionName !== NULL) {
-			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must be a valid string, ' . gettype($actionName) . ' given (' . $actionName . ').', 1187176358);
+			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must be a valid string, ' . gettype($actionName) . ' given (' . $actionName . ').', 1187176359);
 		}
 		if ($actionName[0] !== strtolower($actionName[0]) && $actionName !== NULL) {
 			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidActionNameException('The action name must start with a lower case letter, "' . $actionName . '" does not match this criteria.', 1218473352);
@@ -514,7 +514,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Set errors that occured during the request (e.g. argument mapping errors)
+	 * Set errors that occurred during the request (e.g. argument mapping errors)
 	 *
 	 * @param array $errors An array of \TYPO3\CMS\Extbase\Error\Error objects
 	 *
@@ -526,9 +526,9 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Get errors that occured during the request (e.g. argument mapping errors)
+	 * Get errors that occurred during the request (e.g. argument mapping errors)
 	 *
-	 * @return array The errors that occured during the request
+	 * @return array The errors that occurred during the request
 	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
 	 */
 	public function getErrors() {
@@ -536,7 +536,7 @@ class Request implements \TYPO3\CMS\Extbase\Mvc\RequestInterface {
 	}
 
 	/**
-	 * Returns the original request. Filled only if a property mapping error occured.
+	 * Returns the original request. Filled only if a property mapping error occurred.
 	 *
 	 * @return \TYPO3\CMS\Extbase\Mvc\Request the original request.
 	 */

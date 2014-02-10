@@ -75,7 +75,10 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			$referencesUidArray = GeneralUtility::intExplode(',', $referencesUid, TRUE);
 			foreach ($referencesUidArray as $referenceUid) {
 				try {
-					$this->addToArray($this->getFileRepository()->findFileReferenceByUid($referenceUid), $fileObjects);
+					$this->addToArray(
+						$this->getFileFactory()->getFileReferenceObject($referenceUid),
+						$fileObjects
+					);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
 					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
@@ -88,7 +91,7 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 				$referencesFieldName = $this->stdWrapValue('fieldName', $conf['references.']);
 				if ($referencesFieldName) {
 					$table = $this->cObj->getCurrentTable();
-					if ($table === 'pages' && isset($this->cObj->data['_LOCALIZED_UID']) && intval($this->cObj->data['sys_language_uid']) > 0) {
+					if ($table === 'pages' && isset($this->cObj->data['_LOCALIZED_UID']) && (int)$this->cObj->data['sys_language_uid'] > 0) {
 						$table = 'pages_language_overlay';
 					}
 					$referencesForeignTable = $this->stdWrapValue('table', $conf['references.'], $table);
@@ -107,7 +110,7 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			$fileUids = GeneralUtility::intExplode(',', $this->stdWrapValue('files', $conf), TRUE);
 			foreach ($fileUids as $fileUid) {
 				try {
-					$this->addToArray($this->getFileRepository()->findByUid($fileUid), $fileObjects);
+					$this->addToArray($this->getFileFactory()->getFileObject($fileUid), $fileObjects);
 				} catch (\TYPO3\CMS\Core\Resource\Exception $e) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
 					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
@@ -175,19 +178,19 @@ class FilesContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 
 		$start = 0;
 		if (!empty($conf['begin'])) {
-			$start = intval($conf['begin']);
+			$start = (int)$conf['begin'];
 		}
 		if (!empty($conf['begin.'])) {
-			$start = intval($this->cObj->stdWrap($start, $conf['begin.']));
+			$start = (int)$this->cObj->stdWrap($start, $conf['begin.']);
 		}
 		$start = MathUtility::forceIntegerInRange($start, 0, $availableFileObjectCount);
 
 		$limit = $availableFileObjectCount;
 		if (!empty($conf['maxItems'])) {
-			$limit = intval($conf['maxItems']);
+			$limit = (int)$conf['maxItems'];
 		}
 		if (!empty($conf['maxItems.'])) {
-			$limit = intval($this->cObj->stdWrap($limit, $conf['maxItems.']));
+			$limit = (int)$this->cObj->stdWrap($limit, $conf['maxItems.']);
 		}
 
 		$end = MathUtility::forceIntegerInRange($start + $limit, $start, $availableFileObjectCount);

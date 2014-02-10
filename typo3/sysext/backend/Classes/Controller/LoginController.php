@@ -180,12 +180,12 @@ class LoginController {
 		$preferredBrowserLanguage = $GLOBALS['LANG']->csConvObj->getPreferredClientLanguage(GeneralUtility::getIndpEnv('HTTP_ACCEPT_LANGUAGE'));
 		// If we found a $preferredBrowserLanguage and it is not the default language and no be_user is logged in
 		// initialize $GLOBALS['LANG'] again with $preferredBrowserLanguage
-		if ($preferredBrowserLanguage != 'default' && !$GLOBALS['BE_USER']->user['uid']) {
+		if ($preferredBrowserLanguage !== 'default' && empty($GLOBALS['BE_USER']->user['uid'])) {
 			$GLOBALS['LANG']->init($preferredBrowserLanguage);
 		}
 		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_login.xlf');
 		// Setting the redirect URL to "backend.php" if no alternative input is given
-		$this->redirectToURL = $this->redirect_url ? $this->redirect_url : 'backend.php';
+		$this->redirectToURL = $this->redirect_url ?: 'backend.php';
 		// Do a logout if the command is set
 		if ($this->L == 'OUT' && is_object($GLOBALS['BE_USER'])) {
 			$GLOBALS['BE_USER']->logoff();
@@ -219,7 +219,7 @@ class LoginController {
 		// Initialize interface selectors:
 		$this->makeInterfaceSelectorBox();
 		// Creating form based on whether there is a login or not:
-		if (!$GLOBALS['BE_USER']->user['uid']) {
+		if (empty($GLOBALS['BE_USER']->user['uid'])) {
 			$GLOBALS['TBE_TEMPLATE']->form = $this->startForm();
 			$loginForm = $this->makeLoginForm();
 		} else {
@@ -378,7 +378,7 @@ class LoginController {
 	public function checkRedirect() {
 		// Do redirect:
 		// If a user is logged in AND a) if either the login is just done (isLoginInProgress) or b) a loginRefresh is done or c) the interface-selector is NOT enabled (If it is on the other hand, it should not just load an interface, because people has to choose then...)
-		if ($GLOBALS['BE_USER']->user['uid'] && ($this->isLoginInProgress() || $this->loginRefresh || !$this->interfaceSelector)) {
+		if (!empty($GLOBALS['BE_USER']->user['uid']) && ($this->isLoginInProgress() || $this->loginRefresh || !$this->interfaceSelector)) {
 			// If no cookie has been set previously we tell people that this is a problem. This assumes that a cookie-setting script (like this one) has been hit at least once prior to this instance.
 			if (!$_COOKIE[\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::getCookieName()]) {
 				if ($this->commandLI == 'setCookie') {
@@ -428,7 +428,7 @@ class LoginController {
 					}
 				');
 			}
-		} elseif (!$GLOBALS['BE_USER']->user['uid'] && $this->isLoginInProgress()) {
+		} elseif (empty($GLOBALS['BE_USER']->user['uid']) && $this->isLoginInProgress()) {
 			// Wrong password, wait for 5 seconds
 			sleep(5);
 		}

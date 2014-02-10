@@ -29,6 +29,7 @@ namespace TYPO3\CMS\Backend\Controller\File;
  ***************************************************************/
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Gateway for TCE (TYPO3 Core Engine) file-handling through POST forms.
@@ -58,8 +59,12 @@ class FileController {
 	// the page where the user should be redirected after everything is done
 	protected $redirect;
 
-	// Internal, dynamic:
-	// File processor object
+	/**
+	 * Internal, dynamic:
+	 * File processor object
+	 *
+	 * @var \TYPO3\CMS\Core\Utility\File\ExtendedFileUtility
+	 */
 	protected $fileProcessor;
 
 	// the result array from the file processor
@@ -138,9 +143,9 @@ class FileController {
 	 * @return void
 	 */
 	public function finish() {
-		// Prints errors, if there are any
-		$this->fileProcessor->printLogErrorMessages($this->redirect);
-		\TYPO3\CMS\Backend\Utility\BackendUtility::setUpdateSignal('updateFolderTree');
+		// Push errors to flash message queue, if there are any
+		$this->fileProcessor->pushErrorMessagesToFlashMessageQueue();
+		BackendUtility::setUpdateSignal('updateFolderTree');
 		if ($this->redirect) {
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirect);
 		}
@@ -163,7 +168,22 @@ class FileController {
 		if (count($errors)) {
 			$ajaxObj->setError(implode(',', $errors));
 		} else {
-			$ajaxObj->addContent('result', $this->fileData);
+			$fileData = array();
+			foreach ($this->fileData as $action => $result) {
+				foreach ($result as $files) {
+					/** @var $file \TYPO3\CMS\Core\Resource\File */
+					foreach ($files as $file) {
+						$fileData[$action][] = array_merge(
+							$file->toArray(),
+							array (
+								'date' => BackendUtility::date($file->getModificationTime()),
+								'iconClasses' => \TYPO3\CMS\Backend\Utility\IconUtility::mapFileExtensionToSpriteIconClass($file->getExtension()),
+							)
+						);
+					}
+				}
+			}
+			$ajaxObj->addContent('result', $fileData);
 			if ($this->redirect) {
 				$ajaxObj->addContent('redirect', $this->redirect);
 			}

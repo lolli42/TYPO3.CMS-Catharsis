@@ -203,13 +203,14 @@ class ExtensionManagementUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 	 * @expectedException \BadFunctionCallException
 	 */
 	public function extPathThrowsExceptionIfExtensionIsNotLoaded() {
+		$packageName = uniqid('foo');
 		$packageManager = $this->getMock('TYPO3\\CMS\\Core\\Package\\PackageManager', array('isPackageActive'));
 		$packageManager->expects($this->once())
 				->method('isPackageActive')
-				->with($this->equalTo('bar'))
+				->with($this->equalTo($packageName))
 				->will($this->returnValue(FALSE));
 		ExtensionManagementUtility::setPackageManager($packageManager);
-		ExtensionManagementUtility::extPath('bar');
+		ExtensionManagementUtility::extPath($packageName);
 	}
 
 	/**
@@ -234,36 +235,6 @@ class ExtensionManagementUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 				->will($this->returnValue($package));
 		ExtensionManagementUtility::setPackageManager($packageManager);
 		$this->assertSame(PATH_site . 'foo/bar.txt', ExtensionManagementUtility::extPath('foo', 'bar.txt'));
-	}
-
-	/**
-	 * @test
-	 * @expectedException \BadFunctionCallException
-	 */
-	public function extPathThrowsExceptionIfExtensionIsNotLoadedAndTypo3LoadedExtensionsIsEmpty() {
-		unset($GLOBALS['TYPO3_LOADED_EXT']);
-		$GLOBALS['TYPO3_CONF_VARS']['EXT']['requiredExt'] = '';
-		ExtensionManagementUtility::extPath('bar');
-	}
-
-	/**
-	 * @test
-	 */
-	public function extPathSearchesForPathOfExtensionInRequiredExtensionList() {
-		$this->setExpectedException('BadFunctionCallException', '', 1365429656);
-		unset($GLOBALS['TYPO3_LOADED_EXT']);
-		$GLOBALS['TYPO3_CONF_VARS']['EXT']['requiredExt'] = 'foo';
-		ExtensionManagementUtility::extPath('foo');
-	}
-
-	/**
-	 * @test
-	 */
-	public function extPathSearchesForPathOfExtensionInExtList() {
-		$this->setExpectedException('BadFunctionCallException', '', 1365429656);
-		unset($GLOBALS['TYPO3_LOADED_EXT']);
-		$GLOBALS['TYPO3_CONF_VARS']['EXT']['requiredExt'] = '';
-		ExtensionManagementUtility::extPath('foo');
 	}
 
 	//////////////////////
@@ -294,6 +265,42 @@ class ExtensionManagementUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 			'paletteD' => array('showitem' => 'fieldX, fieldY')
 		);
 		return $tca;
+	}
+
+	/**
+	 * Data provider for getClassNamePrefixForExtensionKey.
+	 *
+	 * @return array
+	 */
+	public function extensionKeyDataProvider() {
+		return array(
+			'Without underscores' => array(
+				'testkey',
+				'tx_testkey'
+			),
+			'With underscores' => array(
+				'this_is_a_test_extension',
+				'tx_thisisatestextension'
+			),
+			'With user prefix and without underscores' => array(
+				'user_testkey',
+				'user_testkey'
+			),
+			'With user prefix and with underscores' => array(
+				'user_test_key',
+				'user_testkey'
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @param string $extensionName
+	 * @param string $expectedPrefix
+	 * @dataProvider extensionKeyDataProvider
+	 */
+	public function getClassNamePrefixForExtensionKey($extensionName, $expectedPrefix) {
+		$this->assertSame($expectedPrefix, ExtensionManagementUtility::getCN($extensionName));
 	}
 
 	/////////////////////////////////////////////
@@ -737,6 +744,77 @@ class ExtensionManagementUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 		ExtensionManagementUtilityAccessibleProxy::loadSingleExtLocalconfFiles();
 	}
 
+
+	/////////////////////////////////////////
+	// Tests concerning addModule
+	/////////////////////////////////////////
+
+	/**
+	 * Data provider for addModule tests
+	 * @return array
+	 */
+	public function addModulePositionTestsDataProvider() {
+		return array(
+			'can add new main module if none exists' => array(
+				'top',
+				'',
+				'newModule'
+			),
+			'can add new sub module if no position specified' => array(
+				'',
+				'some,modules',
+				'some,modules,newModule'
+			),
+			'can add new sub module to top of module' => array(
+				'top',
+				'some,modules',
+				'newModule,some,modules'
+			),
+			'can add new sub module if bottom of module' => array(
+				'bottom',
+				'some,modules',
+				'some,modules,newModule'
+			),
+			'can add new sub module before specified sub module' => array(
+				'before:modules',
+				'some,modules',
+				'some,newModule,modules'
+			),
+			'can add new sub module after specified sub module' => array(
+				'after:some',
+				'some,modules',
+				'some,newModule,modules'
+			),
+			'can add new sub module at the bottom if specified sub module to add before does not exist' => array(
+				'before:modules',
+				'some,otherModules',
+				'some,otherModules,newModule'
+			),
+			'can add new sub module at the bottom if specified sub module to add after does not exist' => array(
+				'after:some',
+				'someOther,modules',
+				'someOther,modules,newModule'
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider addModulePositionTestsDataProvider
+	 */
+	public function addModuleCanAddModule($position, $existing, $expected) {
+		$mainModule = 'foobar';
+		$subModule = 'newModule';
+		if ($existing) {
+			$GLOBALS['TBE_MODULES'][$mainModule] = $existing;
+		}
+
+		ExtensionManagementUtility::addModule($mainModule, $subModule, $position);
+
+		$this->assertTrue(isset($GLOBALS['TBE_MODULES'][$mainModule]));
+		$this->assertEquals($expected, $GLOBALS['TBE_MODULES'][$mainModule]);
+	}
+
 	/////////////////////////////////////////
 	// Tests concerning createExtLocalconfCacheEntry
 	/////////////////////////////////////////
@@ -1167,66 +1245,33 @@ class ExtensionManagementUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 	 * @expectedException \RuntimeException
 	 */
 	public function unloadExtensionThrowsExceptionIfExtensionIsNotLoaded() {
-		$className = uniqid('ExtensionManagementUtility');
-		eval(
-			'namespace ' . __NAMESPACE__ . ';' .
-			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ExtensionManagementUtility {' .
-			'  public static function isLoaded() {' .
-			'    return FALSE;' .
-			'  }' .
-			'}'
-		);
-		$className = __NAMESPACE__ . '\\' . $className;
-		$className::unloadExtension('test');
+		$packageName = uniqid('foo');
+		$packageManager = $this->getMock('TYPO3\\CMS\\Core\\Package\\PackageManager', array('isPackageActive'));
+		$packageManager->expects($this->once())
+			->method('isPackageActive')
+			->with($this->equalTo($packageName))
+			->will($this->returnValue(FALSE));
+		ExtensionManagementUtility::setPackageManager($packageManager);
+		ExtensionManagementUtility::unloadExtension($packageName);
 	}
 
 	/**
 	 * @test
-	 * @expectedException \RuntimeException
 	 */
-	public function unloadExtensionThrowsExceptionIfExtensionIsRequired() {
-		$extensionKey = uniqid('test');
-		$className = uniqid('ExtensionManagementUtility');
-		eval(
-			'namespace ' . __NAMESPACE__ . ';' .
-			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ExtensionManagementUtility {' .
-			'  public static function isLoaded() {' .
-			'    return TRUE;' .
-			'  }' .
-			'  public static function getRequiredExtensionListArray() {' .
-			'    return array(\'' . $extensionKey . '\');' .
-			'  }' .
-			'}'
+	public function unloadExtensionCallsPackageManagerToDeactivatePackage() {
+		$packageName = uniqid('foo');
+		$packageManager = $this->getMock(
+			'TYPO3\\CMS\\Core\\Package\\PackageManager',
+			array('isPackageActive', 'deactivatePackage')
 		);
-		$className = __NAMESPACE__ . '\\' . $className;
-		$className::unloadExtension($extensionKey);
-	}
-
-	/**
-	 * @test
-	 * @expectedException \RuntimeException
-	 */
-	public function unloadExtensionRemovesExtensionFromExtList() {
-		if (!file_exists((PATH_typo3conf . 'LocalConfiguration.php'))) {
-			$this->markTestSkipped('Test is not available until update wizard to transform localconf.php was run.');
-		}
-		$extensionKeyToUnload = uniqid('unloadMe');
-		$className = uniqid('ExtensionManagementUtility');
-		eval(
-			'namespace ' . __NAMESPACE__ . ';' .
-			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ExtensionManagementUtility {' .
-			'  public static function isLoaded() {' .
-			'    return TRUE;' .
-			'  }' .
-			'  public static function writeNewExtensionList($extList) {' .
-			'    if (!in_array(' . $extensionKeyToUnload . ', $extList)) {' .
-			'      throw new \\RuntimeException(\'test\');' .
-			'    }' .
-			'  }' .
-			'}'
-		);
-		$className = __NAMESPACE__ . '\\' . $className;
-		$className::unloadExtension($extensionKeyToUnload);
+		$packageManager->expects($this->any())
+			->method('isPackageActive')
+			->will($this->returnValue(TRUE));
+		$packageManager->expects($this->once())
+			->method('deactivatePackage')
+			->with($packageName);
+		ExtensionManagementUtility::setPackageManager($packageManager);
+		ExtensionManagementUtility::unloadExtension($packageName);
 	}
 
 	/////////////////////////////////////////

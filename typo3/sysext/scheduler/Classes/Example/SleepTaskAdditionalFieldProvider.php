@@ -24,7 +24,7 @@ namespace TYPO3\CMS\Scheduler\Example;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 /**
- * Aditional fields provider class for usage with the Scheduler's sleep task
+ * Additional fields provider class for usage with the Scheduler's sleep task
  *
  * @author 		François Suter <francois@typo3.org>
  */
@@ -75,7 +75,7 @@ class SleepTaskAdditionalFieldProvider implements \TYPO3\CMS\Scheduler\Additiona
 	 * @return boolean TRUE if validation was ok (or selected class is not relevant), FALSE otherwise
 	 */
 	public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject) {
-		$submittedData['sleepTime'] = intval($submittedData['sleepTime']);
+		$submittedData['sleepTime'] = (int)$submittedData['sleepTime'];
 		if ($submittedData['sleepTime'] < 0) {
 			$parentObject->addMessage($GLOBALS['LANG']->sL('LLL:EXT:scheduler/mod1/locallang.xlf:msg.invalidSleepTime'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			$result = FALSE;

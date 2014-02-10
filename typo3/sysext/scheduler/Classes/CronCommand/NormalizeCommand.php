@@ -30,7 +30,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  *
  * Special fields like three letter weekdays, ranges and steps are substituted
  * to a comma separated list of integers. Example:
- * '2-4 10-40/10 * mar * fri'  will be nolmalized to '2,4 10,20,30,40 * * 3 1,2'
+ * '2-4 10-40/10 * mar * fri'  will be normalized to '2,4 10,20,30,40 * * 3 1,2'
  *
  * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
@@ -130,7 +130,7 @@ class NormalizeCommand {
 		if ((string) $expression === '*') {
 			$fieldValues = '*';
 		} else {
-			// Fragment espression by , / and - and substitute three letter code of month and weekday to numbers
+			// Fragment expression by , / and - and substitute three letter code of month and weekday to numbers
 			$listOfCommaValues = explode(',', $expression);
 			$fieldArray = array();
 			foreach ($listOfCommaValues as $listElement) {
@@ -230,7 +230,7 @@ class NormalizeCommand {
 			if (!MathUtility::canBeInterpretedAsInteger($fieldValue)) {
 				throw new \InvalidArgumentException('Unable to convert value to integer.', 1291237668);
 			}
-			$rangeArray[$fieldNumber] = (int) $fieldValue;
+			$rangeArray[$fieldNumber] = (int)$fieldValue;
 		}
 		$resultList = '';
 		if (count($rangeArray) === 1) {
@@ -239,7 +239,7 @@ class NormalizeCommand {
 			$left = $rangeArray[0];
 			$right = $rangeArray[1];
 			if ($left > $right) {
-				throw new \InvalidArgumentException('Unable to convert range to list: Left integer must not be greather than right integer.', 1291237145);
+				throw new \InvalidArgumentException('Unable to convert range to list: Left integer must not be greater than right integer.', 1291237145);
 			}
 			$resultListArray = array();
 			for ($i = $left; $i <= $right; $i++) {
@@ -247,7 +247,7 @@ class NormalizeCommand {
 			}
 			$resultList = implode(',', $resultListArray);
 		} else {
-			throw new \InvalidArgumentException('Unable to convert range to list of values.', 1291234985);
+			throw new \InvalidArgumentException('Unable to convert range to list of values.', 1291234986);
 		}
 		return (string) $resultList;
 	}
@@ -264,7 +264,7 @@ class NormalizeCommand {
 	 */
 	static protected function reduceListOfValuesByStepValue($stepExpression) {
 		if (strlen($stepExpression) === 0) {
-			throw new \InvalidArgumentException('Unable to convert step values.', 1291234985);
+			throw new \InvalidArgumentException('Unable to convert step values.', 1291234987);
 		}
 		$stepValuesAndStepArray = explode('/', $stepExpression);
 		if (count($stepValuesAndStepArray) < 1 || count($stepValuesAndStepArray) > 2) {
@@ -281,7 +281,7 @@ class NormalizeCommand {
 		if (!MathUtility::canBeInterpretedAsInteger($right)) {
 			throw new \InvalidArgumentException('Unable to convert step values: Right part must be a single integer.', 1291414957);
 		}
-		$right = (int) $right;
+		$right = (int)$right;
 		$leftArray = explode(',', $left);
 		$validValues = array();
 		$currentStep = $right;
@@ -293,12 +293,12 @@ class NormalizeCommand {
 				$currentStep = $right;
 			}
 			if ($currentStep === $right) {
-				$validValues[] = (int) $leftValue;
+				$validValues[] = (int)$leftValue;
 			}
 			$currentStep--;
 		}
 		if (count($validValues) === 0) {
-			throw new \InvalidArgumentException('Unable to convert step values: Result value list is empty.', 1291414958);
+			throw new \InvalidArgumentException('Unable to convert step values: Result value list is empty.', 1291414959);
 		}
 		return implode(',', $validValues);
 	}
@@ -329,7 +329,7 @@ class NormalizeCommand {
 		if (!$timestamp || $timestamp < strtotime('2010-01-01') || $timestamp > strtotime('2010-12-01')) {
 			throw new \InvalidArgumentException('Unable to convert given month name.', 1291083486);
 		}
-		return (int) date('n', $timestamp);
+		return (int)date('n', $timestamp);
 	}
 
 	/**
@@ -347,7 +347,7 @@ class NormalizeCommand {
 			$weekday = 7;
 		}
 		if ($weekday >= 1 && $weekday <= 7) {
-			$normalizedWeekday = (int) $weekday;
+			$normalizedWeekday = (int)$weekday;
 		}
 		if (!$normalizedWeekday) {
 			// Convert string representation like 'sun' to integer
@@ -355,7 +355,7 @@ class NormalizeCommand {
 			if (!$timestamp || $timestamp < strtotime('2010-01-01') || $timestamp > strtotime('2010-01-08')) {
 				throw new \InvalidArgumentException('Unable to convert given weekday name.', 1291163589);
 			}
-			$normalizedWeekday = (int) date('N', $timestamp);
+			$normalizedWeekday = (int)date('N', $timestamp);
 		}
 		return $normalizedWeekday;
 	}

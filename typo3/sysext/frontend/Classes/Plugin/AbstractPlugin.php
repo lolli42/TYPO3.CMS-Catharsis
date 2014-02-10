@@ -425,7 +425,7 @@ class AbstractPlugin {
 				$overrulePIvars = array_merge($overrulePIvars, (array) $mergeArr);
 				$str = $this->pi_linkTP($str, array($this->prefixId => $overrulePIvars), $cache, $altPageId);
 			} else {
-				$overrulePIvars = array('showUid' => $uid ? $uid : '');
+				$overrulePIvars = array('showUid' => $uid ?: '');
 				$overrulePIvars = array_merge($overrulePIvars, (array) $mergeArr);
 				$str = $this->pi_linkTP_keepPIvars($str, $overrulePIvars, $cache, 0, $altPageId);
 			}
@@ -497,8 +497,8 @@ class AbstractPlugin {
 		'activeLinkWrap' => '<span class="activeLinkWrap">|</span>'
 		);*/
 		// Initializing variables:
-		$pointer = intval($this->piVars[$pointerName]);
-		$count = intval($this->internal['res_count']);
+		$pointer = (int)$this->piVars[$pointerName];
+		$count = (int)$this->internal['res_count'];
 		$results_at_a_time = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->internal['results_at_a_time'], 1, 1000);
 		$totalPages = ceil($count / $results_at_a_time);
 		$maxPages = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->internal['maxPages'], 1, 100);
@@ -510,7 +510,7 @@ class AbstractPlugin {
 		// If set to 0: only the result-browser will be shown
 		//	 		 1: (default) the text "Displaying results..." and the result-browser will be shown.
 		//	 		 2: only the text "Displaying results..." will be shown
-		$showResultCount = intval($showResultCount);
+		$showResultCount = (int)$showResultCount;
 		// If this is set, two links named "<< First" and "LAST >>" will be shown and point to the very first or last page.
 		$showFirstLast = $this->internal['showFirstLast'];
 		// If this has a value the "previous" button is always visible (will be forced if "showFirstLast" is set)
@@ -563,7 +563,7 @@ class AbstractPlugin {
 			// Link to previous page
 			if ($alwaysPrev >= 0) {
 				if ($pointer > 0) {
-					$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($this->pi_getLL('pi_list_browseresults_prev', '< Previous', $hscText), array($pointerName => $pointer - 1 ? $pointer - 1 : ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+					$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($this->pi_getLL('pi_list_browseresults_prev', '< Previous', $hscText), array($pointerName => ($pointer - 1) ?: ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
 				} elseif ($alwaysPrev) {
 					$links[] = $this->cObj->wrap($this->pi_getLL('pi_list_browseresults_prev', '< Previous', $hscText), $wrapper['disabledLinkWrap']);
 				}
@@ -580,10 +580,10 @@ class AbstractPlugin {
 					if ($this->internal['dontLinkActivePage']) {
 						$links[] = $this->cObj->wrap($pageText, $wrapper['activeLinkWrap']);
 					} else {
-						$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ? $a : ''), $pi_isOnlyFields), $wrapper['activeLinkWrap']);
+						$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ?: ''), $pi_isOnlyFields), $wrapper['activeLinkWrap']);
 					}
 				} else {
-					$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ? $a : ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
+					$links[] = $this->cObj->wrap($this->pi_linkTP_keepPIvars($pageText, array($pointerName => $a ?: ''), $pi_isOnlyFields), $wrapper['inactiveLinkWrap']);
 				}
 			}
 			if ($pointer < $totalPages - 1 || $showFirstLast) {
@@ -1068,8 +1068,7 @@ class AbstractPlugin {
 				}
 			}
 			// Limit data:
-			$pointer = $this->piVars['pointer'];
-			$pointer = intval($pointer);
+			$pointer = (int)$this->piVars['pointer'];
 			$results_at_a_time = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->internal['results_at_a_time'], 1, 1000);
 			$LIMIT = $pointer * $results_at_a_time . ',' . $results_at_a_time;
 			// Add 'SELECT'
@@ -1156,7 +1155,7 @@ class AbstractPlugin {
 	 * @todo Define visibility
 	 */
 	public function pi_getCategoryTableContents($table, $pid, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'pid=' . intval($pid) . $this->cObj->enableFields($table) . ' ' . $whereClause, $groupBy, $orderBy, $limit);
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'pid=' . (int)$pid . $this->cObj->enableFields($table) . ' ' . $whereClause, $groupBy, $orderBy, $limit);
 		$outArr = array();
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 			$outArr[$row['uid']] = $row;
@@ -1209,7 +1208,7 @@ class AbstractPlugin {
 				if (!strcmp($inArray[$fN], '')) {
 					unset($inArray[$fN]);
 				} elseif (is_array($this->pi_autoCacheFields[$fN])) {
-					if (is_array($this->pi_autoCacheFields[$fN]['range']) && intval($inArray[$fN]) >= intval($this->pi_autoCacheFields[$fN]['range'][0]) && intval($inArray[$fN]) <= intval($this->pi_autoCacheFields[$fN]['range'][1])) {
+					if (is_array($this->pi_autoCacheFields[$fN]['range']) && (int)$inArray[$fN] >= (int)$this->pi_autoCacheFields[$fN]['range'][0] && (int)$inArray[$fN] <= (int)$this->pi_autoCacheFields[$fN]['range'][1]) {
 						unset($inArray[$fN]);
 					}
 					if (is_array($this->pi_autoCacheFields[$fN]['list']) && in_array($inArray[$fN], $this->pi_autoCacheFields[$fN]['list'])) {

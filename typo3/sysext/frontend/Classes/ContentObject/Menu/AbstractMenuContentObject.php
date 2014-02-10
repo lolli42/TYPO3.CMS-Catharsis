@@ -28,12 +28,13 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  ***************************************************************/
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Generating navigation / menus from TypoScript
  *
  * Base class. The HMENU content object uses this (or more precisely one of the extension classes).
- * Amoung others the class generates an array of menuitems. Thereafter functions from the subclasses are called.
+ * Among others the class generates an array of menuitems. Thereafter functions from the subclasses are called.
  * The class is ALWAYS used through extension classes (like GraphicalMenuContentObject or TextMenuContentObject which are classics) and
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
@@ -268,10 +269,10 @@ class AbstractMenuContentObject {
 			// Set parent page: If $id not stated with start() then the base-id will be found from rootLine[$this->entryLevel]
 			// Called as the next level in a menu. It is assumed that $this->MP_array is set from parent menu.
 			if ($id) {
-				$this->id = intval($id);
+				$this->id = (int)$id;
 			} else {
 				// This is a BRAND NEW menu, first level. So we take ID from rootline and also find MP_array (mount points)
-				$this->id = intval($this->tmpl->rootLine[$this->entryLevel]['uid']);
+				$this->id = (int)$this->tmpl->rootLine[$this->entryLevel]['uid'];
 				// Traverse rootline to build MP_array of pages BEFORE the entryLevel
 				// (MP var for ->id is picked up in the next part of the code...)
 				foreach ($this->tmpl->rootLine as $entryLevel => $levelRec) {
@@ -325,11 +326,11 @@ class AbstractMenuContentObject {
 				if ($value == '') {
 					$value = $GLOBALS['TSFE']->page['uid'];
 				}
-				$directoryLevel = intval($GLOBALS['TSFE']->tmpl->getRootlineLevel($value));
+				$directoryLevel = (int)$GLOBALS['TSFE']->tmpl->getRootlineLevel($value);
 			}
 			// Setting "nextActive": This is the page uid + MPvar of the NEXT page in rootline. Used to expand the menu if we are in the right branch of the tree
 			// Notice: The automatic expansion of a menu is designed to work only when no "special" modes (except "directory") are used.
-			$startLevel = $directoryLevel ? $directoryLevel : $this->entryLevel;
+			$startLevel = $directoryLevel ?: $this->entryLevel;
 			$currentLevel = $startLevel + $this->menuNumber;
 			if (is_array($this->tmpl->rootLine[$currentLevel])) {
 				$nextMParray = $this->MP_array;
@@ -382,7 +383,7 @@ class AbstractMenuContentObject {
 			// Begin production of menu:
 			$temp = array();
 			$altSortFieldValue = trim($this->mconf['alternativeSortingField']);
-			$altSortField = $altSortFieldValue ? $altSortFieldValue : 'sorting';
+			$altSortField = $altSortFieldValue ?: 'sorting';
 			// ... only for the FIRST level of a HMENU
 			if ($this->menuNumber == 1 && $this->conf['special']) {
 				$value = isset($this->conf['special.']['value.']) ? $this->parent_cObj->stdWrap($this->conf['special.']['value'], $this->conf['special.']['value.']) : $this->conf['special.']['value'];
@@ -531,14 +532,14 @@ class AbstractMenuContentObject {
 							$value = $GLOBALS['TSFE']->page['uid'];
 						}
 						$items = GeneralUtility::intExplode(',', $value);
-						if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->conf['special.']['depth'])) {
-							$depth = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['depth'], 1, 20);
+						if (MathUtility::canBeInterpretedAsInteger($this->conf['special.']['depth'])) {
+							$depth = MathUtility::forceIntegerInRange($this->conf['special.']['depth'], 1, 20);
 						} else {
 							$depth = 20;
 						}
 						// Max number of items
-						$limit = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
-						$maxAge = intval($this->parent_cObj->calc($this->conf['special.']['maxAge']));
+						$limit = MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
+						$maxAge = (int)$this->parent_cObj->calc($this->conf['special.']['maxAge']);
 						if (!$limit) {
 							$limit = 10;
 						}
@@ -547,7 +548,7 @@ class AbstractMenuContentObject {
 						// Get id's
 						$id_list_arr = array();
 						foreach ($items as $id) {
-							$bA = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
+							$bA = MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
 							$id_list_arr[] = \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(-1 * $id, $depth - 1 + $bA, $bA - 1);
 						}
 						$id_list = implode(',', $id_list_arr);
@@ -627,20 +628,20 @@ class AbstractMenuContentObject {
 								$sortField = 'SYS_LASTCHANGED';
 						}
 						// Depth, limit, extra where
-						if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->conf['special.']['depth'])) {
-							$depth = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['depth'], 0, 20);
+						if (MathUtility::canBeInterpretedAsInteger($this->conf['special.']['depth'])) {
+							$depth = MathUtility::forceIntegerInRange($this->conf['special.']['depth'], 0, 20);
 						} else {
 							$depth = 20;
 						}
 						// Max number of items
-						$limit = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
+						$limit = MathUtility::forceIntegerInRange($this->conf['special.']['limit'], 0, 100);
 						$extraWhere = ' AND pages.uid<>' . $value . ($this->conf['includeNotInMenu'] ? '' : ' AND pages.nav_hide=0') . $this->getDoktypeExcludeWhere();
 						if ($this->conf['special.']['excludeNoSearchPages']) {
 							$extraWhere .= ' AND pages.no_search=0';
 						}
 						// Start point
 						$eLevel = $this->parent_cObj->getKey(isset($this->conf['special.']['entryLevel.']) ? $this->parent_cObj->stdWrap($this->conf['special.']['entryLevel'], $this->conf['special.']['entryLevel.']) : $this->conf['special.']['entryLevel'], $this->tmpl->rootLine);
-						$startUid = intval($this->tmpl->rootLine[$eLevel]['uid']);
+						$startUid = (int)$this->tmpl->rootLine[$eLevel]['uid'];
 						// Which field is for keywords
 						$kfield = 'keywords';
 						if ($this->conf['special.']['keywordsField']) {
@@ -648,7 +649,7 @@ class AbstractMenuContentObject {
 						}
 						// If there are keywords and the startuid is present.
 						if ($kw && $startUid) {
-							$bA = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
+							$bA = MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
 							$id_list = \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(-1 * $startUid, $depth - 1 + $bA, $bA - 1);
 							$kwArr = explode(',', $kw);
 							foreach ($kwArr as $word) {
@@ -674,8 +675,8 @@ class AbstractMenuContentObject {
 					case 'rootline':
 						$range = isset($this->conf['special.']['range.']) ? $this->parent_cObj->stdWrap($this->conf['special.']['range'], $this->conf['special.']['range.']) : $this->conf['special.']['range'];
 						$begin_end = explode('|', $range);
-						$begin_end[0] = intval($begin_end[0]);
-						if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($begin_end[1])) {
+						$begin_end[0] = (int)$begin_end[0];
+						if (!MathUtility::canBeInterpretedAsInteger($begin_end[1])) {
 							$begin_end[1] = -1;
 						}
 						$beginKey = $this->parent_cObj->getKey($begin_end[0], $this->tmpl->rootLine);
@@ -799,8 +800,8 @@ class AbstractMenuContentObject {
 							$c = 0;
 							foreach ($items as $k_b => $v_b) {
 								$v_b = strtolower(trim($v_b));
-								if (intval($this->conf['special.'][$v_b . '.']['uid'])) {
-									$recArr[$v_b] = $this->sys_page->getPage(intval($this->conf['special.'][$v_b . '.']['uid']));
+								if ((int)$this->conf['special.'][$v_b . '.']['uid']) {
+									$recArr[$v_b] = $this->sys_page->getPage((int)$this->conf['special.'][$v_b . '.']['uid']);
 								}
 								if (is_array($recArr[$v_b])) {
 									$temp[$c] = $recArr[$v_b];
@@ -838,8 +839,8 @@ class AbstractMenuContentObject {
 			}
 			$c = 0;
 			$c_b = 0;
-			$minItems = intval($this->mconf['minItems'] ? $this->mconf['minItems'] : $this->conf['minItems']);
-			$maxItems = intval($this->mconf['maxItems'] ? $this->mconf['maxItems'] : $this->conf['maxItems']);
+			$minItems = (int)$this->mconf['minItems'] ? $this->mconf['minItems'] : $this->conf['minItems'];
+			$maxItems = (int)$this->mconf['maxItems'] ? $this->mconf['maxItems'] : $this->conf['maxItems'];
 			$begin = $this->parent_cObj->calc($this->mconf['begin'] ? $this->mconf['begin'] : $this->conf['begin']);
 			$minItemsConf = isset($this->mconf['minItems.']) ? $this->mconf['minItems.'] : (isset($this->conf['minItems.']) ? $this->conf['minItems.'] : NULL);
 			$minItems = is_array($minItemsConf) ? $this->parent_cObj->stdWrap($minItems, $minItemsConf) : $minItems;
@@ -958,7 +959,7 @@ class AbstractMenuContentObject {
 							if ($tok) {
 								// Checking if "&L" should be modified so links to non-accessible pages will not happen.
 								if ($this->conf['protectLvar']) {
-									$languageUid = intval($GLOBALS['TSFE']->config['config']['sys_language_uid']);
+									$languageUid = (int)$GLOBALS['TSFE']->config['config']['sys_language_uid'];
 									if ($languageUid && ($this->conf['protectLvar'] == 'all' || GeneralUtility::hideIfNotTranslated($data['l18n_cfg']))) {
 										$olRec = $GLOBALS['TSFE']->sys_page->getPageOverlay($data['uid'], $languageUid);
 										if (!count($olRec)) {
@@ -1018,7 +1019,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $IFSUBROconf[$key] ? $IFSUBROconf[$key] : $IFSUBconf[$key];
+						$ROconf[$key] = $IFSUBROconf[$key] ?: $IFSUBconf[$key];
 					}
 				}
 			}
@@ -1044,7 +1045,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $ACTROconf[$key] ? $ACTROconf[$key] : $ACTconf[$key];
+						$ROconf[$key] = $ACTROconf[$key] ?: $ACTconf[$key];
 					}
 				}
 			}
@@ -1071,7 +1072,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $ACTIFSUBROconf[$key] ? $ACTIFSUBROconf[$key] : $ACTIFSUBconf[$key];
+						$ROconf[$key] = $ACTIFSUBROconf[$key] ?: $ACTIFSUBconf[$key];
 					}
 				}
 			}
@@ -1098,7 +1099,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $CURROconf[$key] ? $CURROconf[$key] : $CURconf[$key];
+						$ROconf[$key] = $CURROconf[$key] ?: $CURconf[$key];
 					}
 				}
 			}
@@ -1124,7 +1125,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the current
 					if ($ROconf) {
 						// If RollOver on current then apply this
-						$ROconf[$key] = $CURIFSUBROconf[$key] ? $CURIFSUBROconf[$key] : $CURIFSUBconf[$key];
+						$ROconf[$key] = $CURIFSUBROconf[$key] ?: $CURIFSUBconf[$key];
 					}
 				}
 			}
@@ -1150,7 +1151,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $USRROconf[$key] ? $USRROconf[$key] : $USRconf[$key];
+						$ROconf[$key] = $USRROconf[$key] ?: $USRconf[$key];
 					}
 				}
 			}
@@ -1193,7 +1194,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $USERDEF1ROconf[$key] ? $USERDEF1ROconf[$key] : $USERDEF1conf[$key];
+						$ROconf[$key] = $USERDEF1ROconf[$key] ?: $USERDEF1conf[$key];
 					}
 				}
 			}
@@ -1219,7 +1220,7 @@ class AbstractMenuContentObject {
 					// If rollOver on normal, we must apply a state for rollOver on the active
 					if ($ROconf) {
 						// If RollOver on active then apply this
-						$ROconf[$key] = $USERDEF2ROconf[$key] ? $USERDEF2ROconf[$key] : $USERDEF2conf[$key];
+						$ROconf[$key] = $USERDEF2ROconf[$key] ?: $USERDEF2conf[$key];
 					}
 				}
 			}
@@ -1246,7 +1247,7 @@ class AbstractMenuContentObject {
 		if ($this->mconf['overrideId'] || $this->menuArr[$key]['overrideId']) {
 			$overrideArray = array();
 			// If a user script returned the value overrideId in the menu array we use that as page id
-			$overrideArray['uid'] = $this->mconf['overrideId'] ? $this->mconf['overrideId'] : $this->menuArr[$key]['overrideId'];
+			$overrideArray['uid'] = $this->mconf['overrideId'] ?: $this->menuArr[$key]['overrideId'];
 			$overrideArray['alias'] = '';
 			// Clear MP parameters since ID was changed.
 			$MP_params = '';
@@ -1316,11 +1317,11 @@ class AbstractMenuContentObject {
 		// 230 _blank						will add type=230 to the link and open with target "_blank"
 		// 230x450:resizable=0,location=1	will open in popup window with 500x600 pixels with settings "resizable=0,location=1"
 		$matches = array();
-		$targetIsType = $LD['target'] && (string) intval($LD['target']) == trim($LD['target']) ? intval($LD['target']) : FALSE;
+		$targetIsType = $LD['target'] && MathUtility::canBeInterpretedAsInteger($LD['target']) ? (int)$LD['target'] : FALSE;
 		if (preg_match('/([0-9]+[\\s])?(([0-9]+)x([0-9]+))?(:.+)?/s', $LD['target'], $matches) || $targetIsType) {
 			// has type?
-			if (intval($matches[1]) || $targetIsType) {
-				$LD['totalURL'] = $this->parent_cObj->URLqMark($LD['totalURL'], '&type=' . ($targetIsType ? $targetIsType : intval($matches[1])));
+			if ((int)$matches[1] || $targetIsType) {
+				$LD['totalURL'] = $this->parent_cObj->URLqMark($LD['totalURL'], '&type=' . ($targetIsType ?: (int)$matches[1]));
 				$LD['target'] = $targetIsType ? '' : trim(substr($LD['target'], strlen($matches[1]) + 1));
 			}
 			// Open in popup window?
@@ -1717,7 +1718,7 @@ class AbstractMenuContentObject {
 		$conf = array(
 			'parameter' => is_array($overrideArray) && $overrideArray['uid'] ? $overrideArray['uid'] : $page['uid']
 		);
-		if ($typeOverride && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($typeOverride)) {
+		if ($typeOverride && MathUtility::canBeInterpretedAsInteger($typeOverride)) {
 			$conf['parameter'] .= ',' . $typeOverride;
 		}
 		if ($addParams) {
@@ -1750,7 +1751,7 @@ class AbstractMenuContentObject {
 	 * @return array
 	 */
 	protected function sectionIndex($altSortField, $pid = NULL) {
-		$pid = intval($pid ? $pid : $this->id);
+		$pid = (int)($pid ?: $this->id);
 		$basePageRow = $this->sys_page->getPage($pid);
 		if (!is_array($basePageRow)) {
 			return array();
@@ -1759,7 +1760,7 @@ class AbstractMenuContentObject {
 		$useColPos = 0;
 		if (trim($configuration['useColPos']) !== '' || is_array($configuration['useColPos.'])) {
 			$useColPos = $GLOBALS['TSFE']->cObj->stdWrap($configuration['useColPos'], $configuration['useColPos.']);
-			$useColPos = intval($useColPos);
+			$useColPos = (int)$useColPos;
 		}
 		$selectSetup = array(
 			'pidInList' => $pid,
@@ -1781,7 +1782,7 @@ class AbstractMenuContentObject {
 			if ($this->mconf['sectionIndex.']['type'] !== 'all') {
 				$doIncludeInSectionIndex = $row['sectionIndex'] >= 1;
 				$doHeaderCheck = $this->mconf['sectionIndex.']['type'] === 'header';
-				$isValidHeader = intval($row['header_layout']) !== 100 && trim($row['header']) !== '';
+				$isValidHeader = (int)$row['header_layout'] !== 100 && trim($row['header']) !== '';
 				if (!$doIncludeInSectionIndex || $doHeaderCheck && !$isValidHeader) {
 					continue;
 				}

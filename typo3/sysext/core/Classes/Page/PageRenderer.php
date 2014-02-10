@@ -146,6 +146,11 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $cssFiles = array();
 
 	/**
+	 * @var array
+	 */
+	protected $cssLibs = array();
+
+	/**
 	 * The title of the page
 	 *
 	 * @var string
@@ -1528,6 +1533,36 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * Adds CSS file
+	 *
+	 * @param string $file
+	 * @param string $rel
+	 * @param string $media
+	 * @param string $title
+	 * @param boolean $compress
+	 * @param boolean $forceOnTop
+	 * @param string $allWrap
+	 * @param boolean $excludeFromConcatenation
+	 * @param string $splitChar The char used to split the allWrap value, default is "|"
+	 * @return void
+	 */
+	public function addCssLibrary($file, $rel = 'stylesheet', $media = 'all', $title = '', $compress = TRUE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|') {
+		if (!isset($this->cssLibs[$file])) {
+			$this->cssLibs[$file] = array(
+				'file' => $file,
+				'rel' => $rel,
+				'media' => $media,
+				'title' => $title,
+				'compress' => $compress,
+				'forceOnTop' => $forceOnTop,
+				'allWrap' => $allWrap,
+				'excludeFromConcatenation' => $excludeFromConcatenation,
+				'splitChar' => $splitChar
+			);
+		}
+	}
+
+	/**
 	 * Adds CSS inline code
 	 *
 	 * @param string $name
@@ -1588,8 +1623,11 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 			// load all paths to map to package names / namespaces
 		if (count($this->requireJsConfig) === 0) {
-				// first, load all paths for the namespaces
-			$this->requireJsConfig['paths'] = array();
+			// first, load all paths for the namespaces, and configure contrib libs.
+			$this->requireJsConfig['paths'] = array(
+				'jquery-ui' => 'contrib/jqueryui',
+				'jquery' => 'contrib/jquery'
+			);
 			// get all extensions that are loaded
 			$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
 			foreach ($loadedExtensions as $packageName) {
@@ -1609,6 +1647,25 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 
 		$this->addRequireJs = TRUE;
+	}
+
+	/**
+	 * Add additional configuration to require js.
+	 *
+	 * Configuration will be merged recursive with overrule.
+	 *
+	 * To add another path mapping deliver the following configuration:
+	 * 		'paths' => array(
+     *			'EXTERN/JQUERY-UI/1.10.3' => 'contrib/jqueryui/jquery-ui-1.10.4.custom.min',
+	 *      ),
+	 *
+	 * @author Daniel Siepmann <daniel.siepmann@typo3.org>
+	 *
+	 * @param array $configuration The configuration that will be merged with existing one.
+	 * @return void
+	 */
+	public function addRequireJsConfiguration(array $configuration) {
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($this->requireJsConfig, $configuration);
 	}
 
 	/**
@@ -1886,9 +1943,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function render($part = self::PART_COMPLETE) {
 		$this->prepareRendering();
-		list($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs) = $this->renderJavaScriptAndCss();
+		list($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs) = $this->renderJavaScriptAndCss();
 		$metaTags = implode(LF, $this->metaTags);
-		$markerArray = $this->getPreparedMarkerArray($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs, $metaTags);
+		$markerArray = $this->getPreparedMarkerArray($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs, $metaTags);
 		$template = $this->getTemplateForPart($part);
 		$this->reset();
 		return trim(\TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markerArray, '###|###'));
@@ -1919,8 +1976,11 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function renderJavaScriptAndCssForProcessingOfUncachedContentObjects($cachedPageContent, $substituteHash) {
 		$this->prepareRendering();
-		list($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs) = $this->renderJavaScriptAndCss();
+		list($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs) = $this->renderJavaScriptAndCss();
+		$title = $this->title ? str_replace('|', htmlspecialchars($this->title), $this->titleTag) : '';
 		$markerArray = array(
+			'<!-- ###TITLE' . $substituteHash . '### -->' => $title,
+			'<!-- ###CSS_LIBS' . $substituteHash . '### -->' => $cssLibs,
 			'<!-- ###CSS_INCLUDE' . $substituteHash . '### -->' => $cssFiles,
 			'<!-- ###CSS_INLINE' . $substituteHash . '### -->' => $cssInline,
 			'<!-- ###JS_INLINE' . $substituteHash . '### -->' => $jsInline,
@@ -1974,6 +2034,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$this->doCompress();
 		}
 		$this->executeRenderPostTransformHook();
+		$cssLibs = $this->renderCssLibraries();
 		$cssFiles = $this->renderCssFiles();
 		$cssInline = $this->renderCssInline();
 		list($jsLibs, $jsFooterLibs) = $this->renderAdditionalJavaScriptLibraries();
@@ -1988,8 +2049,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$jsFooterInline = $jsInline . LF . $jsFooterInline;
 			$jsInline = '';
 		}
-		$this->executePostRenderHook($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs);
-		return array($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs);
+		$this->executePostRenderHook($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs);
+		return array($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs);
 	}
 
 	/**
@@ -1998,6 +2059,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param $jsLibs string
 	 * @param $jsFiles string
 	 * @param $jsFooterFiles string
+	 * @param $cssLibs string
 	 * @param $cssFiles string
 	 * @param $jsInline string
 	 * @param $cssInline string
@@ -2006,7 +2068,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param $metaTags string
 	 * @return array Marker array
 	 */
-	protected function getPreparedMarkerArray($jsLibs, $jsFiles, $jsFooterFiles, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs, $metaTags) {
+	protected function getPreparedMarkerArray($jsLibs, $jsFiles, $jsFooterFiles, $cssLibs, $cssFiles, $jsInline, $cssInline, $jsFooterInline, $jsFooterLibs, $metaTags) {
 		$markerArray = array(
 			'XMLPROLOG_DOCTYPE' => $this->xmlPrologAndDocType,
 			'HTMLTAG' => $this->htmlTag,
@@ -2015,6 +2077,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			'INLINECOMMENT' => $this->inlineComments ? LF . LF . '<!-- ' . LF . implode(LF, $this->inlineComments) . '-->' . LF . LF : '',
 			'BASEURL' => $this->baseUrl ? str_replace('|', $this->baseUrl, $this->baseUrlTag) : '',
 			'SHORTCUT' => $this->favIcon ? sprintf($this->shortcutTag, htmlspecialchars($this->favIcon), $this->iconMimeType) : '',
+			'CSS_LIBS' => $cssLibs,
 			'CSS_INCLUDE' => $cssFiles,
 			'CSS_INLINE' => $cssInline,
 			'JS_INLINE' => $jsInline,
@@ -2048,9 +2111,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			'INLINECOMMENT' => $this->inlineComments ? LF . LF . '<!-- ' . LF . implode(LF, $this->inlineComments) . '-->' . LF . LF : '',
 			'BASEURL' => $this->baseUrl ? str_replace('|', $this->baseUrl, $this->baseUrlTag) : '',
 			'SHORTCUT' => $this->favIcon ? sprintf($this->shortcutTag, htmlspecialchars($this->favIcon), $this->iconMimeType) : '',
-			'TITLE' => $this->title ? str_replace('|', htmlspecialchars($this->title), $this->titleTag) : '',
 			'META' => implode(LF, $this->metaTags),
 			'BODY' => $this->bodyContent,
+			'TITLE' => '<!-- ###TITLE' . $substituteHash . '### -->',
+			'CSS_LIBS' => '<!-- ###CSS_LIBS' . $substituteHash . '### -->',
 			'CSS_INCLUDE' => '<!-- ###CSS_INCLUDE' . $substituteHash . '### -->',
 			'CSS_INLINE' => '<!-- ###CSS_INLINE' . $substituteHash . '### -->',
 			'JS_INLINE' => '<!-- ###JS_INLINE' . $substituteHash . '### -->',
@@ -2204,18 +2268,18 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			if (TYPO3_MODE === 'BE') {
 				$out .= '<script src="' . $this->processJsFile(($this->backPath . 'sysext/lang/Resources/Public/JavaScript/Typo3Lang.js')) . '" type="text/javascript" charset="utf-8"></script>' . LF;
 			}
-			if ($this->extJStheme) {
-				if (isset($GLOBALS['TBE_STYLES']['extJS']['theme'])) {
-					$this->addCssFile($this->backPath . $GLOBALS['TBE_STYLES']['extJS']['theme'], 'stylesheet', 'all', '', TRUE, TRUE);
-				} else {
-					$this->addCssFile($this->backPath . $this->extJsPath . 'resources/css/xtheme-blue.css', 'stylesheet', 'all', '', TRUE, TRUE);
-				}
-			}
 			if ($this->extJScss) {
 				if (isset($GLOBALS['TBE_STYLES']['extJS']['all'])) {
-					$this->addCssFile($this->backPath . $GLOBALS['TBE_STYLES']['extJS']['all'], 'stylesheet', 'all', '', TRUE, TRUE);
+					$this->addCssLibrary($this->backPath . $GLOBALS['TBE_STYLES']['extJS']['all'], 'stylesheet', 'all', '', TRUE);
 				} else {
-					$this->addCssFile($this->backPath . $this->extJsPath . 'resources/css/ext-all-notheme.css', 'stylesheet', 'all', '', TRUE, TRUE);
+					$this->addCssLibrary($this->backPath . $this->extJsPath . 'resources/css/ext-all-notheme.css', 'stylesheet', 'all', '', TRUE);
+				}
+			}
+			if ($this->extJStheme) {
+				if (isset($GLOBALS['TBE_STYLES']['extJS']['theme'])) {
+					$this->addCssLibrary($this->backPath . $GLOBALS['TBE_STYLES']['extJS']['theme'], 'stylesheet', 'all', '', TRUE);
+				} else {
+					$this->addCssLibrary($this->backPath . $this->extJsPath . 'resources/css/xtheme-blue.css', 'stylesheet', 'all', '', TRUE);
 				}
 			}
 		} else {
@@ -2273,6 +2337,36 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				$scriptTag .= GeneralUtility::wrapJS('var TYPO3 = TYPO3 || {}; TYPO3.' . $namespace . ' = jQuery.noConflict(true);') . LF;
 		}
 		return $scriptTag;
+	}
+
+	/**
+	 * Render CSS library files
+	 *
+	 * @return string
+	 */
+	protected function renderCssLibraries() {
+		$cssFiles = '';
+		if (count($this->cssLibs)) {
+			foreach ($this->cssLibs as $file => $properties) {
+				$file = GeneralUtility::resolveBackPath($file);
+				$file = GeneralUtility::createVersionNumberedFilename($file);
+				$tag = '<link rel="' . htmlspecialchars($properties['rel'])
+					. '" type="text/css" href="' . htmlspecialchars($file)
+					. '" media="' . htmlspecialchars($properties['media']) . '"'
+					. ($properties['title'] ? ' title="' . htmlspecialchars($properties['title']) . '"' : '')
+					. $this->endingSlash . '>';
+				if ($properties['allWrap']) {
+					$wrapArr = explode($properties['splitChar'] ?: '|', $properties['allWrap'], 2);
+					$tag = $wrapArr[0] . $tag . $wrapArr[1];
+				}
+				if ($properties['forceOnTop']) {
+					$cssFiles = $tag . LF . $cssFiles;
+				} else {
+					$cssFiles .= LF . $tag;
+				}
+			}
+		}
+		return $cssFiles;
 	}
 
 	/**
@@ -2752,6 +2846,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param $jsLibs string
 	 * @param $jsFiles string
 	 * @param $jsFooterFiles string
+	 * @param $cssLibs string
 	 * @param $cssFiles string
 	 * @param $jsInline string
 	 * @param $cssInline string
@@ -2759,12 +2854,13 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param $jsFooterLibs string
 	 * @return void
 	 */
-	protected function executePostRenderHook(&$jsLibs, &$jsFiles, &$jsFooterFiles, &$cssFiles, &$jsInline, &$cssInline, &$jsFooterInline, &$jsFooterLibs) {
+	protected function executePostRenderHook(&$jsLibs, &$jsFiles, &$jsFooterFiles, &$cssLibs, &$cssFiles, &$jsInline, &$cssInline, &$jsFooterInline, &$jsFooterLibs) {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_pagerenderer.php']['render-postProcess'])) {
 			$params = array(
 				'jsLibs' => &$jsLibs,
 				'jsFiles' => &$jsFiles,
 				'jsFooterFiles' => &$jsFooterFiles,
+				'cssLibs' => &$cssLibs,
 				'cssFiles' => &$cssFiles,
 				'headerData' => &$this->headerData,
 				'footerData' => &$this->footerData,

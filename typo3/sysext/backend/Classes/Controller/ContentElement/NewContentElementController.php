@@ -120,11 +120,11 @@ class NewContentElementController {
 			$this->include_once = array_merge($this->include_once, $GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses']);
 		}
 		// Setting internal vars:
-		$this->id = intval(GeneralUtility::_GP('id'));
-		$this->sys_language = intval(GeneralUtility::_GP('sys_language_uid'));
+		$this->id = (int)GeneralUtility::_GP('id');
+		$this->sys_language = (int)GeneralUtility::_GP('sys_language_uid');
 		$this->R_URI = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
 		$this->colPos = GeneralUtility::_GP('colPos');
-		$this->uid_pid = intval(GeneralUtility::_GP('uid_pid'));
+		$this->uid_pid = (int)GeneralUtility::_GP('uid_pid');
 		$this->MCONF['name'] = 'xMOD_db_new_content_el';
 		$this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.wizards.newContentElement');
 		$config = BackendUtility::getPagesTSconfig($this->id);
@@ -186,7 +186,7 @@ class NewContentElementController {
 				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms']['db_new_content_el']['wizardItemsHook'] as $classData) {
 					$hookObject = GeneralUtility::getUserObj($classData);
 					if (!$hookObject instanceof \TYPO3\CMS\Backend\Wizard\NewContentElementWizardHookInterface) {
-						throw new \UnexpectedValueException('$hookObject must implement interface cms_newContentElementWizardItemsHook', 1227834741);
+						throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Backend\\Wizard\\NewContentElementWizardHookInterface', 1227834741);
 					}
 					$hookObject->manipulateWizardItems($wizardItems, $this);
 				}
@@ -224,7 +224,7 @@ class NewContentElementController {
 					if (!$this->onClickEvent) {
 						// Radio button:
 						$oC = 'document.editForm.defValues.value=unescape(\'' . rawurlencode($wInfo['params']) . '\');goToalt_doc();' . (!$this->onClickEvent ? 'window.location.hash=\'#sel2\';' : '');
-						$content .= '<div class="input"><input type="radio" name="tempB" value="' . htmlspecialchars($k) . '" onclick="' . htmlspecialchars($oC) . '" /></div>';
+						$content .= '<div class="contentelement-wizard-item-input"><input type="radio" name="tempB" value="' . htmlspecialchars($k) . '" onclick="' . htmlspecialchars($oC) . '" /></div>';
 						// Onclick action for icon/title:
 						$aOnClick = 'document.getElementsByName(\'tempB\')[' . $cc . '].checked=1;' . $oC . 'return false;';
 					} else {
@@ -233,17 +233,19 @@ class NewContentElementController {
 
 					$menuItems[$key]['content'] .=
 						'<li>
-							' . $content . '
-							<div class="icon">
-								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-									<img' . IconUtility::skinImg($this->doc->backPath, $wInfo['icon'], '') . ' alt="" />
-								</a>
-							</div>
-							<div class="text">
-								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-									<strong>' . htmlspecialchars($wInfo['title']) . '</strong>
-									<br />' . nl2br(htmlspecialchars(trim($wInfo['description']))) .
-								'</a>
+							<div class="contentelement-wizard-item">
+								' . $content . '
+								<div class="contentelement-wizard-item-icon">
+									<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
+										<img' . IconUtility::skinImg($this->doc->backPath, $wInfo['icon'], '') . ' alt="" />
+									</a>
+								</div>
+								<div class="contentelement-wizard-item-text">
+									<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
+										<strong>' . htmlspecialchars($wInfo['title']) . '</strong>
+										<br />' . nl2br(htmlspecialchars(trim($wInfo['description']))) .
+									'</a>
+								</div>
 							</div>
 						</li>';
 					$cc++;

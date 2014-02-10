@@ -68,7 +68,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$this->doc->getContextMenuCode();
 		$this->doc->postCode = $this->doc->wrapScriptTags('
 			script_ended = 1;
-			if (top.fsMod) top.fsMod.recentIds["web"] = ' . intval($this->id) . ';
+			if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
 		');
 		$this->doc->form = '<form action="' . htmlspecialchars($GLOBALS['MCONF']['_']) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '"><input type="hidden" name="id" value="' . $this->id . '" />';
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('title'));
@@ -296,7 +296,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					$fExt = ($this->export->doOutputCompress() ? '-z' : '') . '.t3d';
 			}
 			// Filename:
-			$dlFile = $inData['filename'] ? $inData['filename'] : 'T3D_' . substr(preg_replace('/[^[:alnum:]_]/', '-', $inData['download_export_name']), 0, 20) . '_' . date('Y-m-d_H-i') . $fExt;
+			$dlFile = $inData['filename'] ?: 'T3D_' . substr(preg_replace('/[^[:alnum:]_]/', '-', $inData['download_export_name']), 0, 20) . '_' . date('Y-m-d_H-i') . $fExt;
 			// Export for download:
 			if ($inData['download_export']) {
 				$mimeType = 'application/octet-stream';
@@ -412,7 +412,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 			'*',
 			$table,
-			'pid=' . intval($pid) . BackendUtility::deleteClause($table) . BackendUtility::versioningPlaceholderClause($table),
+			'pid=' . (int)$pid . BackendUtility::deleteClause($table) . BackendUtility::versioningPlaceholderClause($table),
 			'',
 			$GLOBALS['TYPO3_DB']->stripOrderBy($orderBy),
 			$limit
@@ -631,7 +631,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				<td colspan="2">' . $LANG->getLL('makesavefo_presets', TRUE) . '</td>
 			</tr>';
 		$opt = array('');
-		$presets = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'tx_impexp_presets', '(public>0 OR user_uid=' . intval($GLOBALS['BE_USER']->user['uid']) . ')' . ($inData['pagetree']['id'] ? ' AND (item_uid=' . intval($inData['pagetree']['id']) . ' OR item_uid=0)' : ''));
+		$presets = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'tx_impexp_presets', '(public>0 OR user_uid=' . (int)$GLOBALS['BE_USER']->user['uid'] . ')' . ($inData['pagetree']['id'] ? ' AND (item_uid=' . (int)$inData['pagetree']['id'] . ' OR item_uid=0)' : ''));
 		if (is_array($presets)) {
 			foreach ($presets as $presetCfg) {
 				$opt[$presetCfg['uid']] = $presetCfg['title'] . ' [' . $presetCfg['uid'] . ']' . ($presetCfg['public'] ? ' [Public]' : '') . ($presetCfg['user_uid'] === $GLOBALS['BE_USER']->user['uid'] ? ' [Own]' : '');
@@ -884,19 +884,12 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 						}
 					}
 					if (count($extKeysToInstall)) {
-						$passParams = GeneralUtility::_POST('tx_impexp');
-						unset($passParams['import_mode']);
-						unset($passParams['import_file']);
-						$thisScriptUrl = GeneralUtility::getIndpEnv('REQUEST_URI') . '?M=xMOD_tximpexp&id=' . $this->id . GeneralUtility::implodeArrayForUrl('tx_impexp', $passParams);
-						$emURL = $this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('em') . 'classes/index.php?CMD[requestInstallExtensions]=' . implode(',', $extKeysToInstall) . '&returnUrl=' . rawurlencode($thisScriptUrl);
-						$extensionInstallationMessage = 'Before you can install this T3D file you need to install the extensions "' . implode('", "', $extKeysToInstall) . '". Clicking Import will first take you to the Extension Manager so these dependencies can be resolved.';
+						$extensionInstallationMessage = 'Before you can install this T3D file you need to install the extensions "' . implode('", "', $extKeysToInstall) . '".';
 					}
 					if ($inData['import_file']) {
 						if (!count($extKeysToInstall)) {
 							$import->importData($this->id);
 							BackendUtility::setUpdateSignal('updatePageTree');
-						} else {
-							\TYPO3\CMS\Core\Utility\HttpUtility::redirect($emURL);
 						}
 					}
 					$import->display_import_pid_record = $this->pageinfo;
@@ -1003,7 +996,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 						'item_uid' => $inData['pagetree']['id'],
 						'preset_data' => serialize($inData)
 					);
-					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_impexp_presets', 'uid=' . intval($preset['uid']), $fields_values);
+					$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_impexp_presets', 'uid=' . (int)$preset['uid'], $fields_values);
 					$msg = 'Preset #' . $preset['uid'] . ' saved!';
 				} else {
 					$msg = 'ERROR: The preset was not saved because you were not the owner of it!';
@@ -1028,7 +1021,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 			if (is_array($preset)) {
 				// Update existing
 				if ($GLOBALS['BE_USER']->isAdmin() || $preset['user_uid'] === $GLOBALS['BE_USER']->user['uid']) {
-					$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_impexp_presets', 'uid=' . intval($preset['uid']));
+					$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_impexp_presets', 'uid=' . (int)$preset['uid']);
 					$msg = 'Preset #' . $preset['uid'] . ' deleted!';
 				} else {
 					$msg = 'ERROR: You were not the owner of the preset so you could not delete it.';
@@ -1082,7 +1075,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @todo Define visibility
 	 */
 	public function getPreset($uid) {
-		$preset = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_impexp_presets', 'uid=' . intval($uid));
+		$preset = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'tx_impexp_presets', 'uid=' . (int)$uid);
 		return $preset;
 	}
 
@@ -1246,7 +1239,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		foreach ($exclude as $element) {
 			list($table, $uid) = explode(':', $element);
 			if ($table === 'pages') {
-				$pageIds[] = intval($uid);
+				$pageIds[] = (int)$uid;
 			}
 		}
 		// Add to clause:

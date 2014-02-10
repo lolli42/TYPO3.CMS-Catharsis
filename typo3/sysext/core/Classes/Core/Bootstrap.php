@@ -155,7 +155,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function baseSetup($relativePathPart = '') {
-		\TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::run($relativePathPart);
+		SystemEnvironmentBuilder::run($relativePathPart);
 		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
 	}
@@ -262,7 +262,7 @@ class Bootstrap {
 		$classLoader = new ClassLoader($this->applicationContext);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader', $classLoader);
 		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array) include __DIR__ . '/../../ext_autoload.php');
-		$classAliasMap = new \TYPO3\CMS\Core\Core\ClassAliasMap();
+		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassAliasMap', $classAliasMap);
 		$classLoader->injectClassAliasMap($classAliasMap);
@@ -316,6 +316,7 @@ class Bootstrap {
 		Utility\ExtensionManagementUtility::setPackageManager($packageManager);
 		$packageManager->injectClassLoader($this->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader'));
 		$packageManager->injectCoreCache($this->getEarlyInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_core'));
+		$packageManager->injectDependencyResolver(Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Package\\DependencyResolver'));
 		$packageManager->initialize($this, PATH_site);
 		Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Package\\PackageManager', $packageManager);
 		$GLOBALS['TYPO3_LOADED_EXT'] = new \TYPO3\CMS\Core\Compatibility\LoadedExtensionsArray($packageManager);
@@ -363,7 +364,7 @@ class Bootstrap {
 		$bootstrap = $this->getInstance();
 		// Commented out for package management patch, method is still used in extensionmanager
 		//		$bootstrap->populateTypo3LoadedExtGlobal(FALSE);
-		//		\TYPO3\CMS\Core\Core\ClassLoader::loadClassLoaderCache();
+		//		ClassLoader::loadClassLoaderCache();
 		$bootstrap->loadAdditionalConfigurationFromExtensions(FALSE);
 		return $this;
 	}
@@ -604,7 +605,7 @@ class Bootstrap {
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['productionExceptionHandler'];
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors'];
 		// Turn error logging on/off.
-		if (($displayErrors = intval($GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors'])) != '-1') {
+		if (($displayErrors = (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors']) != '-1') {
 			// Special value "2" enables this feature only if $GLOBALS['TYPO3_CONF_VARS'][SYS][devIPmask] matches
 			if ($displayErrors == 2) {
 				if (Utility\GeneralUtility::cmpIP(Utility\GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask'])) {
@@ -635,8 +636,8 @@ class Bootstrap {
 	 * @return Bootstrap
 	 */
 	protected function setMemoryLimit() {
-		if (intval($GLOBALS['TYPO3_CONF_VARS']['SYS']['setMemoryLimit']) > 16) {
-			@ini_set('memory_limit', (intval($GLOBALS['TYPO3_CONF_VARS']['SYS']['setMemoryLimit']) . 'm'));
+		if ((int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['setMemoryLimit'] > 16) {
+			@ini_set('memory_limit', ((int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['setMemoryLimit'] . 'm'));
 		}
 		return $this;
 	}
@@ -806,7 +807,7 @@ class Bootstrap {
 	 */
 	public function checkLockedBackendAndRedirectOrDie() {
 		if ($GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'] < 0) {
-			throw new \RuntimeException('TYPO3 Backend locked: Backend and Install Tool are locked for maintenance. [BE][adminOnly] is set to "' . intval($GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly']) . '".', 1294586847);
+			throw new \RuntimeException('TYPO3 Backend locked: Backend and Install Tool are locked for maintenance. [BE][adminOnly] is set to "' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'] . '".', 1294586847);
 		}
 		if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
 			if (TYPO3_PROCEED_IF_NO_USER === 2) {
@@ -830,16 +831,12 @@ class Bootstrap {
 	 *
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
+	 * @throws \RuntimeException
 	 */
 	public function checkBackendIpOrDie() {
 		if (trim($GLOBALS['TYPO3_CONF_VARS']['BE']['IPmaskList'])) {
 			if (!Utility\GeneralUtility::cmpIP(Utility\GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['BE']['IPmaskList'])) {
-				// Send Not Found header - if the webserver can make use of it
-				header('Status: 404 Not Found');
-				// Just point us away from here...
-				header('Location: http://');
-				// ... and exit good!
-				die;
+				throw new \RuntimeException('TYPO3 Backend access denied: The IP address of your client does not match the list of allowed IP addresses.', 1389265900);
 			}
 		}
 		return $this;
@@ -851,11 +848,12 @@ class Bootstrap {
 	 *
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
+	 * @throws \RuntimeException
 	 */
 	public function checkSslBackendAndRedirectIfNeeded() {
-		if (intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'])) {
-			if (intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'])) {
-				$sslPortSuffix = ':' . intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']);
+		if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL']) {
+			if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort']) {
+				$sslPortSuffix = ':' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSLPort'];
 			} else {
 				$sslPortSuffix = '';
 			}
@@ -868,18 +866,14 @@ class Bootstrap {
 					die;
 				}
 			} elseif (!Utility\GeneralUtility::getIndpEnv('TYPO3_SSL')) {
-				if (intval($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL']) === 2) {
+				if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 2) {
 					list(, $url) = explode('://', Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir, 2);
 					list($server, $address) = explode('/', $url, 2);
 					header('Location: https://' . $server . $sslPortSuffix . '/' . $address);
+					die;
 				} else {
-					// Send Not Found header - if the webserver can make use of it...
-					header('Status: 404 Not Found');
-					// Just point us away from here...
-					header('Location: http://');
+					throw new \RuntimeException('TYPO3 Backend not accessed via SSL: TYPO3 Backend is configured to only be accessible through SSL. Change the URL in your browser and try again.', 1389265726);
 				}
-				// ... and exit good!
-				die;
 			}
 		}
 		return $this;
@@ -1004,7 +998,7 @@ class Bootstrap {
 		$backendUser = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
 		$backendUser->warningEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
 		$backendUser->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
-		$backendUser->auth_timeout_field = intval($GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout']);
+		$backendUser->auth_timeout_field = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'];
 		$backendUser->OS = TYPO3_OS;
 		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
 			$backendUser->dontSetCookie = TRUE;
@@ -1079,19 +1073,6 @@ class Bootstrap {
 			}
 			ob_start('ob_gzhandler');
 		}
-		return $this;
-	}
-
-	/**
-	 * Initialize module menu object
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeModuleMenuObject() {
-		/** @var $moduleMenuUtility \TYPO3\CMS\Backend\Module\ModuleController */
-		$moduleMenuUtility = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleController');
-		$moduleMenuUtility->createModuleMenu();
 		return $this;
 	}
 

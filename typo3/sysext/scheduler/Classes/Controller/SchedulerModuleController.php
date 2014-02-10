@@ -167,7 +167,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$sectionTitle = '';
 		// Get submitted data
 		$this->submittedData = GeneralUtility::_GPmerged('tx_scheduler');
-		$this->submittedData['uid'] = intval($this->submittedData['uid']);
+		$this->submittedData['uid'] = (int)$this->submittedData['uid'];
 		// If a save command was submitted, handle saving now
 		if ($this->CMD == 'save' || $this->CMD == 'saveclose') {
 			$previousCMD = GeneralUtility::_GP('previousCMD');
@@ -504,7 +504,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			}
 		} catch (\UnexpectedValueException $e) {
 			// The task could not be unserialized properly, simply delete the database record
-			$result = $GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_scheduler_task', 'uid = ' . intval($this->submittedData['uid']));
+			$result = $GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_scheduler_task', 'uid = ' . (int)$this->submittedData['uid']);
 			if ($result) {
 				$this->addMessage($GLOBALS['LANG']->getLL('msg.deleteSuccess'));
 			} else {
@@ -589,7 +589,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						// If an interval or a cron command is defined, it's a recurring task
 						// FIXME: remove magic numbers for the type, use class constants instead
 						$taskInfo['type'] = 2;
-						$taskInfo['frequency'] = empty($taskInfo['interval']) ? $taskInfo['croncmd'] : $taskInfo['interval'];
+						$taskInfo['frequency'] = $taskInfo['interval'] ?: $taskInfo['croncmd'];
 					} else {
 						// It's not a recurring task
 						// Make sure interval and cron command are both empty
@@ -1009,10 +1009,15 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				// Loop on all tasks
 				while ($schedulerRecord = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 					// Define action icons
-					$editAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:edit', TRUE) . '" class="icon">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
-					$deleteAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('msg.delete') . '\');" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="icon">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
-					$stopAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('msg.stop') . '\');" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon"><img ' . IconUtility::skinImg($this->backPath, (ExtensionManagementUtility::extRelPath('scheduler') . '/res/gfx/stop.png')) . ' alt="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:stop') . '" /></a>';
-					$runAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&tx_scheduler[execute][]=' . $schedulerRecord['uid'] . '" title="' . $GLOBALS['LANG']->getLL('action.run_task') . '" class="icon">' . IconUtility::getSpriteIcon('extensions-scheduler-run-task') . '</a>';
+					$editAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:edit', TRUE) . '" class="icon">' .
+							IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+					$deleteAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('msg.delete') . '\');" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="icon">' .
+							IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+					$stopAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $GLOBALS['LANG']->getLL('msg.stop') . '\');" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon">' .
+							'<img ' . IconUtility::skinImg($this->backPath, (ExtensionManagementUtility::extRelPath('scheduler') . '/res/gfx/stop.png')) . ' alt="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:stop') . '" /></a>';
+					$runAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&tx_scheduler[execute][]=' . $schedulerRecord['uid'] . '" title="' . $GLOBALS['LANG']->getLL('action.run_task') . '" class="icon">' .
+							IconUtility::getSpriteIcon('extensions-scheduler-run-task') . '</a>';
+
 					// Define some default values
 					$lastExecution = '-';
 					$isRunning = FALSE;
@@ -1163,9 +1168,13 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				}
 				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			}
+
 			// Render table
 			$content .= $this->doc->table($table, $tableLayout);
-			$content .= '<input type="submit" class="button" name="go" id="scheduler_executeselected" value="' . $GLOBALS['LANG']->getLL('label.executeSelected') . '" />';
+
+			$content .= '<button name="go" id="scheduler_executeselected">' .
+					IconUtility::getSpriteIcon('extensions-scheduler-run-task') . ' ' .
+					$GLOBALS['LANG']->getLL('label.executeSelected') . '</button>';
 		}
 		if (!count($registeredClasses) > 0) {
 			/** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
@@ -1298,7 +1307,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	protected function preprocessData() {
 		$result = TRUE;
 		// Validate id
-		$this->submittedData['uid'] = empty($this->submittedData['uid']) ? 0 : intval($this->submittedData['uid']);
+		$this->submittedData['uid'] = empty($this->submittedData['uid']) ? 0 : (int)$this->submittedData['uid'];
 		// Validate selected task class
 		if (!class_exists($this->submittedData['class'])) {
 			$this->addMessage($GLOBALS['LANG']->getLL('msg.noTaskClassFound'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
@@ -1354,7 +1363,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 					// Check if the frequency is a valid number
 					// If yes, assume it is a frequency in seconds, and unset cron error code
 					if (is_numeric($frequency)) {
-						$this->submittedData['interval'] = intval($frequency);
+						$this->submittedData['interval'] = (int)$frequency;
 						unset($cronErrorCode);
 					}
 				}

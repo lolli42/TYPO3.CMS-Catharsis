@@ -124,7 +124,7 @@ class SetupModuleController {
 	 *
 	 ******************************/
 	/**
-	 * Instanciate the form protection before a simulated user is initialized.
+	 * Instantiate the form protection before a simulated user is initialized.
 	 */
 	public function __construct() {
 		$this->formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
@@ -444,7 +444,7 @@ class SetupModuleController {
 		$code = array();
 		$i = 0;
 		$fieldArray = $this->getFieldsFromShowItem();
-		$this->dividers2tabs = isset($GLOBALS['TYPO3_USER_SETTINGS']['ctrl']['dividers2tabs']) ? intval($GLOBALS['TYPO3_USER_SETTINGS']['ctrl']['dividers2tabs']) : 0;
+		$this->dividers2tabs = isset($GLOBALS['TYPO3_USER_SETTINGS']['ctrl']['dividers2tabs']) ? (int)$GLOBALS['TYPO3_USER_SETTINGS']['ctrl']['dividers2tabs'] : 0;
 		$tabLabel = '';
 		foreach ($fieldArray as $fieldName) {
 			$more = '';
@@ -475,7 +475,7 @@ class SetupModuleController {
 				continue;
 			}
 			$label = $this->getLabel($config['label'], $fieldName);
-			$label = $this->getCSH($config['csh'] ? $config['csh'] : $fieldName, $label);
+			$label = $this->getCSH($config['csh'] ?: $fieldName, $label);
 			$type = $config['type'];
 			$eval = $config['eval'];
 			$class = $config['class'];
@@ -656,7 +656,7 @@ class SetupModuleController {
 		$this->simulateSelector = '';
 		unset($this->OLD_BE_USER);
 		if ($GLOBALS['BE_USER']->isAdmin()) {
-			$this->simUser = intval(GeneralUtility::_GP('simUser'));
+			$this->simUser = (int)GeneralUtility::_GP('simUser');
 			// Make user-selector:
 			$users = BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,realName', BackendUtility::BEenableFields('be_users'));
 			$opt = array();
@@ -728,11 +728,11 @@ class SetupModuleController {
 		} else {
 			$out = htmlspecialchars($str);
 		}
-		if (isset($this->overrideConf[$key ? $key : $str])) {
+		if (isset($this->overrideConf[$key ?: $str])) {
 			$out = '<span style="color:#999999">' . $out . '</span>';
 		}
 		if ($addLabelTag) {
-			$out = '<label for="' . ($altLabelTagId ? $altLabelTagId : 'field_' . $key) . '">' . $out . '</label>';
+			$out = '<label for="' . ($altLabelTagId ?: 'field_' . $key) . '">' . $out . '</label>';
 		}
 		return $out;
 	}

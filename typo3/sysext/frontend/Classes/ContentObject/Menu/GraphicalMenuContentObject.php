@@ -78,7 +78,7 @@ class GraphicalMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\
 	}
 
 	/**
-	 * Will traverse input array with configuratoin per-item and create corresponding GIF files for the menu.
+	 * Will traverse input array with configuration per-item and create corresponding GIF files for the menu.
 	 * The data of the files are stored in $this->result
 	 *
 	 * @param array $conf Array with configuration for each item.
@@ -253,8 +253,8 @@ class GraphicalMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\
 			// File exists
 			if (file_exists($gifFileName)) {
 				$info = @getimagesize($gifFileName);
-				$this->result[$resKey][$key]['output_w'] = intval($info[0]);
-				$this->result[$resKey][$key]['output_h'] = intval($info[1]);
+				$this->result[$resKey][$key]['output_w'] = (int)$info[0];
+				$this->result[$resKey][$key]['output_h'] = (int)$info[1];
 				$this->result[$resKey][$key]['output_file'] = $gifFileName;
 			} elseif ($isGD) {
 				// file is generated

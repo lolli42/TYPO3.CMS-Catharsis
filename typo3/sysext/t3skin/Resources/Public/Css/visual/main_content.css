@@ -28,6 +28,16 @@ pre {
 	font-family: "Lucida Console", "Lucida Sans Typewriter", "Bitstream Vera Sans Mono", monospace;
 }
 
+/* Lists */
+
+ul {
+	list-style-type: disc;
+}
+
+ol {
+	list-style-type: decimal;
+}
+
 /* Links in general */
 a {
 	color: #212424;
@@ -55,10 +65,10 @@ a.t3-link {
 
 /* horizontal ruler */
 hr, div.hr {
-	background-color: #ddd;
-	border-bottom: 1px solid black;
+	background: none;
+	border: none;
 	border-top: 1px solid #7a7a7a;
-	color: #ddd;
+	height: 1px;
 }
 
 img {
@@ -227,4 +237,10 @@ div.warningbox {
 
 span.warningboxheader {
 	margin-left: 5px;
+}
+
+
+/* all buttons have the "click" mouse cursor */
+.t3-btn {
+	cursor: pointer;
 }

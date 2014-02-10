@@ -77,7 +77,7 @@ class SystemEnvironmentBuilder {
 		// This version, branch and copyright
 		define('TYPO3_version', '6.2-dev');
 		define('TYPO3_branch', '6.2');
-		define('TYPO3_copyright_year', '1998-2013');
+		define('TYPO3_copyright_year', '1998-2014');
 
 		// TYPO3 external links
 		define('TYPO3_URL_GENERAL', 'http://typo3.org/');
@@ -382,7 +382,7 @@ class SystemEnvironmentBuilder {
 				$isRelativePath = TRUE;
 			}
 		} else {
-			if (substr($scriptPath, 0, 1) !== '/') {
+			if ($scriptPath[0] !== '/') {
 				$isRelativePath = TRUE;
 			}
 		}

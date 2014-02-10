@@ -29,7 +29,6 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Storage;
  ***************************************************************/
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
 
 /**
  * A Storage backend
@@ -140,7 +139,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		if (!$isRelation) {
 			$this->clearPageCache($tableName, $uid);
 		}
-		return (integer) $uid;
+		return (int)$uid;
 	}
 
 	/**
@@ -156,7 +155,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		if (!isset($row['uid'])) {
 			throw new \InvalidArgumentException('The given row must contain a value for "uid".');
 		}
-		$uid = (integer) $row['uid'];
+		$uid = (int)$row['uid'];
 		unset($row['uid']);
 		$fields = array();
 		$parameters = array();
@@ -190,8 +189,8 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 				'The given row must contain a value for "uid_local" and "uid_foreign".', 1360500126
 			);
 		}
-		$uidLocal = (int) $row['uid_local'];
-		$uidForeign = (int) $row['uid_foreign'];
+		$uidLocal = (int)$row['uid_local'];
+		$uidForeign = (int)$row['uid_foreign'];
 		unset($row['uid_local']);
 		unset($row['uid_foreign']);
 		$fields = array();
@@ -356,7 +355,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 			$count = current(current($rows));
 		}
 		$this->databaseHandle->sql_free_result($result);
-		return (integer) $count;
+		return (int)$count;
 	}
 
 	/**
@@ -452,7 +451,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		$this->checkSqlErrors($statement);
 		$row = $this->databaseHandle->sql_fetch_assoc($res);
 		if ($row !== FALSE) {
-			return (integer) $row['uid'];
+			return (int)$row['uid'];
 		} else {
 			return FALSE;
 		}
@@ -624,16 +623,16 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 				if ($typeOfRelation === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_AND_BELONGS_TO_MANY) {
 					$relationTableName = $columnMap->getRelationTableName();
 					$sql['where'][] = $tableName . '.uid IN (SELECT ' . $columnMap->getParentKeyFieldName() . ' FROM ' . $relationTableName . ' WHERE ' . $columnMap->getChildKeyFieldName() . '=?)';
-					$parameters[] = intval($this->getPlainValue($operand2));
+					$parameters[] = (int)$this->getPlainValue($operand2);
 				} elseif ($typeOfRelation === \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::RELATION_HAS_MANY) {
 					$parentKeyFieldName = $columnMap->getParentKeyFieldName();
 					if (isset($parentKeyFieldName)) {
 						$childTableName = $columnMap->getChildTableName();
 						$sql['where'][] = $tableName . '.uid=(SELECT ' . $childTableName . '.' . $parentKeyFieldName . ' FROM ' . $childTableName . ' WHERE ' . $childTableName . '.uid=?)';
-						$parameters[] = intval($this->getPlainValue($operand2));
+						$parameters[] = (int)$this->getPlainValue($operand2);
 					} else {
 						$sql['where'][] = 'FIND_IN_SET(?,' . $tableName . '.' . $columnName . ')';
-						$parameters[] = intval($this->getPlainValue($operand2));
+						$parameters[] = (int)$this->getPlainValue($operand2);
 					}
 				} else {
 					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\RepositoryException('Unsupported or non-existing property name "' . $propertyName . '" used in relation matching.', 1327065745);
@@ -665,7 +664,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		}
 		if ($input instanceof \DateTime) {
 			return $input->format('U');
-		} elseif (TypeHandlingUtility::isCoreType($input)) {
+		} elseif ($input instanceof \TYPO3\CMS\Core\Type\TypeInterface) {
 			return (string) $input;
 		} elseif (is_object($input)) {
 			if ($input instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
@@ -991,7 +990,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		if (is_array($GLOBALS['TCA'][$tableName]['ctrl'])) {
 			if (!empty($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])) {
 				// Select all entries for the current language
-				$additionalWhereClause = $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . ' IN (' . intval($querySettings->getLanguageUid()) . ',-1)';
+				$additionalWhereClause = $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . ' IN (' . (int)$querySettings->getLanguageUid() . ',-1)';
 				// If any language is set -> get those entries which are not translated yet
 				// They will be removed by t3lib_page::getRecordOverlay if not matching overlay mode
 				if (isset($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
@@ -1066,7 +1065,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 					$order = 'DESC';
 					break;
 				default:
-					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedOrderException('Unsupported order encountered.', 1242816074);
+					throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnsupportedOrderException('Unsupported order encountered.', 1242816075);
 			}
 			$className = '';
 			$tableName = '';
@@ -1098,9 +1097,9 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 	 */
 	protected function parseLimitAndOffset($limit, $offset, array &$sql) {
 		if ($limit !== NULL && $offset !== NULL) {
-			$sql['limit'] = intval($offset) . ', ' . intval($limit);
+			$sql['limit'] = (int)$offset . ', ' . (int)$limit;
 		} elseif ($limit !== NULL) {
-			$sql['limit'] = intval($limit);
+			$sql['limit'] = (int)$limit;
 		}
 	}
 
@@ -1163,7 +1162,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 						$row = $this->databaseHandle->exec_SELECTgetSingleRow(
 							$tableName . '.*',
 							$tableName,
-							$tableName . '.uid=' . (integer) $row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] .
+							$tableName . '.uid=' . (int)$row[$GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField']] .
 								' AND ' . $tableName . '.' . $GLOBALS['TCA'][$tableName]['ctrl']['languageField'] . '=0'
 						);
 					}
@@ -1244,7 +1243,7 @@ class Typo3DbBackend implements \TYPO3\CMS\Extbase\Persistence\Generic\Storage\B
 		$storagePage = NULL;
 		$columns = $this->databaseHandle->admin_get_fields($tableName);
 		if (array_key_exists('pid', $columns)) {
-			$result = $this->databaseHandle->exec_SELECTquery('pid', $tableName, 'uid=' . intval($uid));
+			$result = $this->databaseHandle->exec_SELECTquery('pid', $tableName, 'uid=' . (int)$uid);
 			if ($row = $this->databaseHandle->sql_fetch_assoc($result)) {
 				$storagePage = $row['pid'];
 				$pageIdsToClear[] = $storagePage;

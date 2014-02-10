@@ -227,7 +227,7 @@ class ElementConditionMatcher {
 			case '!-':
 				list($minimum, $maximum) = explode('-', $operand);
 				$result = $fieldValue >= $minimum && $fieldValue <= $maximum;
-				if ($operator{0} === '!') {
+				if ($operator[0] === '!') {
 					$result = !$result;
 				}
 				break;
@@ -236,14 +236,14 @@ class ElementConditionMatcher {
 			case '=':
 			case '!=':
 				$result = \TYPO3\CMS\Core\Utility\GeneralUtility::inList($operand, $fieldValue);
-				if ($operator{0} === '!') {
+				if ($operator[0] === '!') {
 					$result = !$result;
 				}
 				break;
 			case 'BIT':
 			case '!BIT':
-				$result = (intval($fieldValue) & $operand) ? TRUE : FALSE;
-				if ($operator{0} === '!') {
+				$result = ((int)$fieldValue & $operand) ? TRUE : FALSE;
+				if ($operator[0] === '!') {
 					$result = !$result;
 				}
 				break;
@@ -292,9 +292,9 @@ class ElementConditionMatcher {
 		list($operator, $operand) = explode(':', $condition, 2);
 		if ($operator === 'NEW') {
 			if (strtoupper($operand) === 'TRUE') {
-				$result = !(intval($this->record['uid']) > 0);
+				$result = !((int)$this->record['uid'] > 0);
 			} elseif (strtoupper($operand) === 'FALSE') {
-				$result = (intval($this->record['uid']) > 0);
+				$result = ((int)$this->record['uid'] > 0);
 			}
 		}
 		return $result;
@@ -311,10 +311,10 @@ class ElementConditionMatcher {
 		$result = FALSE;
 		list($operator, $operand) = explode(':', $condition, 2);
 		if ($operator === 'IS') {
-			$isNewRecord = !(intval($this->record['uid']) > 0);
+			$isNewRecord = !((int)$this->record['uid'] > 0);
 			// Detection of version can be done be detecting the workspace of the user
 			$isUserInWorkspace = $this->getBackendUser()->workspace > 0;
-			if (intval($this->record['pid']) == -1 || intval($this->record['_ORIG_pid']) == -1) {
+			if ((int)$this->record['pid'] === -1 || (int)$this->record['_ORIG_pid'] === -1) {
 				$isRecordDetectedAsVersion = TRUE;
 			} else {
 				$isRecordDetectedAsVersion = FALSE;

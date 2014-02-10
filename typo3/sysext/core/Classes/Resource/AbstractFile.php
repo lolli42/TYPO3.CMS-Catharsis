@@ -138,7 +138,6 @@ abstract class AbstractFile implements FileInterface {
 	 * @return mixed Property value
 	 */
 	public function getProperty($key) {
-
 		if ($this->hasProperty($key)) {
 			return $this->properties[$key];
 		} else {
@@ -555,4 +554,12 @@ abstract class AbstractFile implements FileInterface {
 	 */
 	abstract public function updateProperties(array $properties);
 
+	/**
+	 * Returns the parent folder.
+	 *
+	 * @return FolderInterface
+	 */
+	public function getParentFolder() {
+		return $this->getStorage()->getFolder($this->getStorage()->getFolderIdentifierFromFileIdentifier($this->getIdentifier()));
+	}
 }

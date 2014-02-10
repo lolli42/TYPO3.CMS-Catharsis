@@ -166,7 +166,7 @@ class ShowImageController {
 		$this->height = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->height, 0);
 		$this->width = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->width, 0);
 		if ($this->frame) {
-			$this->frame = intval($this->frame);
+			$this->frame = (int)$this->frame;
 		}
 		$imgInfo = $img->imageMagickConvert($this->file, 'web', $this->width . $max, $this->height, $img->IMparams($this->effects), $this->frame);
 		// Create HTML output:
@@ -176,10 +176,10 @@ class ShowImageController {
 
 <html>
 <head>
-	<title>' . htmlspecialchars(($this->title ? $this->title : 'Image')) . '</title>
+	<title>' . htmlspecialchars(($this->title ?: 'Image')) . '</title>
 	' . ($this->title ? '' : '<meta name="robots" content="noindex,follow" />') . '
 </head>
-		' . ($this->bodyTag ? $this->bodyTag : '<body>');
+		' . ($this->bodyTag ?: '<body>');
 		if (is_array($imgInfo)) {
 			$wrapParts = explode('|', $this->wrap);
 			$this->content .= trim($wrapParts[0]) . $img->imgTag($imgInfo) . trim($wrapParts[1]);

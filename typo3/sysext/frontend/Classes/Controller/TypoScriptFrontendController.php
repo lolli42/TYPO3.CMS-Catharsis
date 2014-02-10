@@ -730,7 +730,7 @@ class TypoScriptFrontendController {
 	 * The page cache object, use this to save pages to the cache and to
 	 * retrieve them again
 	 *
-	 * @var \TYPO3\CMS\Cache\Backend\AbstractBackend
+	 * @var \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	 */
 	protected $pageCache;
 
@@ -910,7 +910,7 @@ class TypoScriptFrontendController {
 		$this->fe_user = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Authentication\\FrontendUserAuthentication');
 		$this->fe_user->lockIP = $this->TYPO3_CONF_VARS['FE']['lockIP'];
 		$this->fe_user->checkPid = $this->TYPO3_CONF_VARS['FE']['checkFeUserPid'];
-		$this->fe_user->lifetime = intval($this->TYPO3_CONF_VARS['FE']['lifetime']);
+		$this->fe_user->lifetime = (int)$this->TYPO3_CONF_VARS['FE']['lifetime'];
 		// List of pid's acceptable
 		$pid = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pid');
 		$this->fe_user->checkPid_value = $pid ? $GLOBALS['TYPO3_DB']->cleanIntList($pid) : 0;
@@ -928,9 +928,6 @@ class TypoScriptFrontendController {
 				$this->fe_user->forceSetCookie = 1;
 				unset($cookieName);
 			}
-		}
-		if ($this->TYPO3_CONF_VARS['FE']['dontSetCookie']) {
-			$this->fe_user->dontSetCookie = 1;
 		}
 		$this->fe_user->start();
 		$this->fe_user->unpack_uc('');
@@ -950,7 +947,7 @@ class TypoScriptFrontendController {
 		}
 		// For every 60 seconds the is_online timestamp is updated.
 		if (is_array($this->fe_user->user) && $this->fe_user->user['uid'] && $this->fe_user->user['is_online'] < $GLOBALS['EXEC_TIME'] - 60) {
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('fe_users', 'uid=' . intval($this->fe_user->user['uid']), array('is_online' => $GLOBALS['EXEC_TIME']));
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('fe_users', 'uid=' . (int)$this->fe_user->user['uid'], array('is_online' => $GLOBALS['EXEC_TIME']));
 		}
 	}
 
@@ -1220,9 +1217,9 @@ class TypoScriptFrontendController {
 		}
 		// Final cleaning.
 		// Make sure it's an integer
-		$this->id = ($this->contentPid = intval($this->id));
+		$this->id = ($this->contentPid = (int)$this->id);
 		// Make sure it's an integer
-		$this->type = intval($this->type);
+		$this->type = (int)$this->type;
 		// Call post processing function for id determination:
 		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['determineId-PostProc'])) {
 			$_params = array('pObj' => &$this);
@@ -1269,7 +1266,7 @@ class TypoScriptFrontendController {
 		$GLOBALS['TT']->push('fetch_the_id initialize/', '');
 		// Initialize the page-select functions.
 		$this->sys_page = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
-		$this->sys_page->versioningPreview = $this->fePreview === 2 || intval($this->workspacePreview) || GeneralUtility::_GP('ADMCMD_view') ? TRUE : FALSE;
+		$this->sys_page->versioningPreview = $this->fePreview === 2 || (int)$this->workspacePreview || GeneralUtility::_GP('ADMCMD_view') ? TRUE : FALSE;
 		$this->sys_page->versioningWorkspaceId = $this->whichWorkspace();
 		$this->sys_page->init($this->showHiddenPage);
 		// Set the valid usergroups for FE
@@ -1313,8 +1310,8 @@ class TypoScriptFrontendController {
 		// If $this->id is a string, it's an alias
 		$this->checkAndSetAlias();
 		// The id and type is set to the integer-value - just to be sure...
-		$this->id = intval($this->id);
-		$this->type = intval($this->type);
+		$this->id = (int)$this->id;
+		$this->type = (int)$this->type;
 		$GLOBALS['TT']->pull();
 		// We find the first page belonging to the current domain
 		$GLOBALS['TT']->push('fetch_the_id domain/', '');
@@ -1358,9 +1355,9 @@ class TypoScriptFrontendController {
 		if ($this->page['url_scheme'] > 0) {
 			$newUrl = '';
 			$requestUrlScheme = parse_url(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), PHP_URL_SCHEME);
-			if ((int) $this->page['url_scheme'] === HttpUtility::SCHEME_HTTP && $requestUrlScheme == 'https') {
+			if ((int)$this->page['url_scheme'] === HttpUtility::SCHEME_HTTP && $requestUrlScheme == 'https') {
 				$newUrl = 'http://' . substr(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 8);
-			} elseif ((int) $this->page['url_scheme'] === HttpUtility::SCHEME_HTTPS && $requestUrlScheme == 'http') {
+			} elseif ((int)$this->page['url_scheme'] === HttpUtility::SCHEME_HTTPS && $requestUrlScheme == 'http') {
 				$newUrl = 'https://' . substr(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 7);
 			}
 			if ($newUrl !== '') {
@@ -1377,9 +1374,9 @@ class TypoScriptFrontendController {
 			$this->set_no_cache('no_cache is set in page properties');
 		}
 		// Init SYS_LASTCHANGED
-		$this->register['SYS_LASTCHANGED'] = intval($this->page['tstamp']);
-		if ($this->register['SYS_LASTCHANGED'] < intval($this->page['SYS_LASTCHANGED'])) {
-			$this->register['SYS_LASTCHANGED'] = intval($this->page['SYS_LASTCHANGED']);
+		$this->register['SYS_LASTCHANGED'] = (int)$this->page['tstamp'];
+		if ($this->register['SYS_LASTCHANGED'] < (int)$this->page['SYS_LASTCHANGED']) {
+			$this->register['SYS_LASTCHANGED'] = (int)$this->page['SYS_LASTCHANGED'];
 		}
 		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['fetchPageId-PostProcessing'])) {
 			foreach ($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['fetchPageId-PostProcessing'] as $functionReference) {
@@ -1521,7 +1518,7 @@ class TypoScriptFrontendController {
 				$pageArray = $this->sys_page->getMenu($idArray[0] ? $idArray[0] : $thisUid, '*', 'sorting', 'AND pages.doktype<199 AND pages.doktype!=' . \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_BE_USER_SECTION);
 				$pO = 0;
 				if ($mode == \TYPO3\CMS\Frontend\Page\PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE && count($pageArray)) {
-					$randval = intval(rand(0, count($pageArray) - 1));
+					$randval = (int)rand(0, count($pageArray) - 1);
 					$pO = $randval;
 				}
 				$c = 0;
@@ -1587,7 +1584,7 @@ class TypoScriptFrontendController {
 			if ($this->rootLine[$a]['doktype'] == \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_BE_USER_SECTION) {
 				// If there is a backend user logged in, check if he has read access to the page:
 				if ($this->beUserLogin) {
-					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', 'pages', 'uid=' . intval($this->id) . ' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
+					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$this->id . ' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
 					// versionOL()?
 					list($isPage) = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
 					if (!$isPage) {
@@ -1651,7 +1648,7 @@ class TypoScriptFrontendController {
 		if (!is_array($groupList)) {
 			$groupList = explode(',', $groupList);
 		}
-		$pageGroupList = explode(',', $row['fe_group'] ? $row['fe_group'] : 0);
+		$pageGroupList = explode(',', $row['fe_group'] ?: 0);
 		return count(array_intersect($groupList, $pageGroupList)) > 0;
 	}
 
@@ -1683,10 +1680,10 @@ class TypoScriptFrontendController {
 			// If a value is set for login state:
 			if ($this->rootLine[$a]['fe_login_mode'] > 0) {
 				// Determine state from value:
-				if ((int) $this->rootLine[$a]['fe_login_mode'] === 1) {
+				if ((int)$this->rootLine[$a]['fe_login_mode'] === 1) {
 					$disable = TRUE;
 					$this->loginAllowedInBranch_mode = 'all';
-				} elseif ((int) $this->rootLine[$a]['fe_login_mode'] === 3) {
+				} elseif ((int)$this->rootLine[$a]['fe_login_mode'] === 3) {
 					$disable = TRUE;
 					$this->loginAllowedInBranch_mode = 'groups';
 				} else {
@@ -1822,7 +1819,7 @@ class TypoScriptFrontendController {
 	 * @todo Define visibility
 	 */
 	public function pageUnavailableAndExit($reason = '', $header = '') {
-		$header = $header ? $header : $this->TYPO3_CONF_VARS['FE']['pageUnavailable_handling_statheader'];
+		$header = $header ?: $this->TYPO3_CONF_VARS['FE']['pageUnavailable_handling_statheader'];
 		$this->pageUnavailableHandler($this->TYPO3_CONF_VARS['FE']['pageUnavailable_handling'], $header, $reason);
 		die;
 	}
@@ -1836,7 +1833,7 @@ class TypoScriptFrontendController {
 	 * @todo Define visibility
 	 */
 	public function pageNotFoundAndExit($reason = '', $header = '') {
-		$header = $header ? $header : $this->TYPO3_CONF_VARS['FE']['pageNotFound_handling_statheader'];
+		$header = $header ?: $this->TYPO3_CONF_VARS['FE']['pageNotFound_handling_statheader'];
 		$this->pageNotFoundHandler($this->TYPO3_CONF_VARS['FE']['pageNotFound_handling'], $header, $reason);
 		die;
 	}
@@ -2065,7 +2062,7 @@ class TypoScriptFrontendController {
 			\TYPO3\CMS\Core\Utility\GeneralUtility::_GETset($realGet);
 			// Setting these specifically (like in the init-function):
 			if (isset($GET_VARS['type'])) {
-				$this->type = intval($GET_VARS['type']);
+				$this->type = (int)$GET_VARS['type'];
 			}
 			if (isset($GET_VARS['cHash'])) {
 				$this->cHash = $GET_VARS['cHash'];
@@ -2223,7 +2220,7 @@ class TypoScriptFrontendController {
 						}
 					}
 					// Fetches the lowlevel config stored with the cached data
-					$this->config = (array) unserialize($row['cache_data']);
+					$this->config = $row['cache_data'];
 					// Getting the content
 					$this->content = $row['content'];
 					// Flag for temp content
@@ -2322,8 +2319,8 @@ class TypoScriptFrontendController {
 	 */
 	protected function createHashBase($createLockHashBase = FALSE) {
 		$hashParameters = array(
-			'id' => intval($this->id),
-			'type' => intval($this->type),
+			'id' => (int)$this->id,
+			'type' => (int)$this->type,
 			'gr_list' => (string) $this->gr_list,
 			'MP' => (string) $this->MP,
 			'cHash' => $this->cHash_array,
@@ -2403,7 +2400,7 @@ class TypoScriptFrontendController {
 					}
 					// Processing for the config_array:
 					$this->config['rootLine'] = $this->tmpl->rootLine;
-					$this->config['mainScript'] = trim($this->config['config']['mainScript']) ? trim($this->config['config']['mainScript']) : 'index.php';
+					$this->config['mainScript'] = trim($this->config['config']['mainScript']) ?: 'index.php';
 					// Class for render Header and Footer parts
 					$template = '';
 					if ($this->pSetup['pageHeaderFooterTemplateFile']) {
@@ -2508,7 +2505,7 @@ class TypoScriptFrontendController {
 			}
 		}
 		// Get values from TypoScript:
-		$this->sys_language_uid = ($this->sys_language_content = intval($this->config['config']['sys_language_uid']));
+		$this->sys_language_uid = ($this->sys_language_content = (int)$this->config['config']['sys_language_uid']);
 		list($this->sys_language_mode, $sys_language_content) = GeneralUtility::trimExplode(';', $this->config['config']['sys_language_mode']);
 		$this->sys_language_contentOL = $this->config['config']['sys_language_overlay'];
 		// If sys_language_uid is set to another language than default:
@@ -2801,7 +2798,7 @@ class TypoScriptFrontendController {
 		$fdef = array();
 		//|recipient_copy=hidden|karsten@localhost.localdomain
 		preg_match('/^[\\s]*\\|[\\s]*recipient_copy[\\s]*=[\\s]*hidden[\\s]*\\|(.*)$/m', $bodytext, $fdef);
-		$recipient_copy = !empty($fdef[1]) ? $fdef[1] : '';
+		$recipient_copy = $fdef[1] ?: '';
 		return $recipient_copy;
 	}
 
@@ -2863,7 +2860,7 @@ class TypoScriptFrontendController {
 						$absoluteFileName = GeneralUtility::getFileAbsFileName(\TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath($this->jumpurl), FALSE);
 						if (\TYPO3\CMS\Core\Utility\GeneralUtility::isAllowedAbsPath($absoluteFileName) && GeneralUtility::verifyFilenameAgainstDenyPattern($absoluteFileName) && !\TYPO3\CMS\Core\Utility\GeneralUtility::isFirstPartOfStr($absoluteFileName, (PATH_site . 'typo3conf'))) {
 							if (@is_file($absoluteFileName)) {
-								$mimeType = $mimeType ? $mimeType : 'application/octet-stream';
+								$mimeType = $mimeType ?: 'application/octet-stream';
 								header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 								header('Content-Type: ' . $mimeType);
 								header('Content-Disposition: attachment; filename="' . basename($absoluteFileName) . '"');
@@ -2884,31 +2881,6 @@ class TypoScriptFrontendController {
 					throw new \Exception('jumpurl Secure: Calculated juHash did not match the submitted juHash.', 1294585196);
 				}
 			} else {
-				$TSConf = $this->getPagesTSconfig();
-				if ($TSConf['TSFE.']['jumpUrl_transferSession']) {
-					$uParts = parse_url($this->jumpurl);
-					$params = '&FE_SESSION_KEY=' . rawurlencode(($this->fe_user->id . '-' . md5(($this->fe_user->id . '/' . $this->TYPO3_CONF_VARS['SYS']['encryptionKey']))));
-					// Add the session parameter ...
-					$this->jumpurl .= ($uParts['query'] ? '' : '?') . $params;
-				}
-				if ($TSConf['TSFE.']['jumpURL_HTTPStatusCode']) {
-					switch (intval($TSConf['TSFE.']['jumpURL_HTTPStatusCode'])) {
-						case 301:
-							$statusCode = HttpUtility::HTTP_STATUS_301;
-							break;
-						case 302:
-							$statusCode = HttpUtility::HTTP_STATUS_302;
-							break;
-						case 307:
-							$statusCode = HttpUtility::HTTP_STATUS_307;
-							break;
-						case 303:
-
-						default:
-							$statusCode = HttpUtility::HTTP_STATUS_303;
-					}
-				}
-
 				$allowRedirect = FALSE;
 				if (\TYPO3\CMS\Core\Utility\GeneralUtility::hmac($this->jumpurl, 'jumpurl') === (string)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('juHash')) {
 					$allowRedirect = TRUE;
@@ -2925,8 +2897,28 @@ class TypoScriptFrontendController {
 						}
 					}
 				}
-
 				if ($allowRedirect) {
+					$TSConf = $this->getPagesTSconfig();
+					if ($TSConf['TSFE.']['jumpUrl_transferSession']) {
+						$uParts = parse_url($this->jumpurl);
+						$params = '&FE_SESSION_KEY=' . rawurlencode(($this->fe_user->id . '-' . md5(($this->fe_user->id . '/' . $this->TYPO3_CONF_VARS['SYS']['encryptionKey']))));
+						// Add the session parameter ...
+						$this->jumpurl .= ($uParts['query'] ? '' : '?') . $params;
+					}
+					$statusCode = HttpUtility::HTTP_STATUS_303;
+					if ($TSConf['TSFE.']['jumpURL_HTTPStatusCode']) {
+						switch ((int)$TSConf['TSFE.']['jumpURL_HTTPStatusCode']) {
+							case 301:
+								$statusCode = HttpUtility::HTTP_STATUS_301;
+								break;
+							case 302:
+								$statusCode = HttpUtility::HTTP_STATUS_302;
+								break;
+							case 307:
+								$statusCode = HttpUtility::HTTP_STATUS_307;
+								break;
+						}
+					}
 					HttpUtility::redirect($this->jumpurl, $statusCode);
 				} else {
 					throw new \Exception('jumpurl: Calculated juHash did not match the submitted juHash.', 1359987599);
@@ -3144,14 +3136,14 @@ class TypoScriptFrontendController {
 			'page_id' => $this->id,
 			'content' => $content,
 			'temp_content' => $this->tempContent,
-			'cache_data' => serialize($data),
+			'cache_data' => $data,
 			'expires' => $expirationTstamp,
 			'tstamp' => $GLOBALS['EXEC_TIME']
 		);
 		$this->cacheExpires = $expirationTstamp;
 		$this->pageCacheTags[] = 'pageId_' . $cacheData['page_id'];
 		if ($this->page_cache_reg1) {
-			$reg1 = intval($this->page_cache_reg1);
+			$reg1 = (int)$this->page_cache_reg1;
 			$cacheData['reg1'] = $reg1;
 			$this->pageCacheTags[] = 'reg1_' . $reg1;
 		}
@@ -3182,7 +3174,7 @@ class TypoScriptFrontendController {
 	public function clearPageCacheContent_pidList($pidList) {
 		$pageIds = GeneralUtility::trimExplode(',', $pidList);
 		foreach ($pageIds as $pageId) {
-			$this->pageCache->flushByTag('pageId_' . (int) $pageId);
+			$this->pageCache->flushByTag('pageId_' . (int)$pageId);
 		}
 	}
 
@@ -3195,8 +3187,8 @@ class TypoScriptFrontendController {
 	 * @todo Define visibility
 	 */
 	public function setSysLastChanged() {
-		if ($this->page['SYS_LASTCHANGED'] < intval($this->register['SYS_LASTCHANGED'])) {
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('pages', 'uid=' . intval($this->id), array('SYS_LASTCHANGED' => intval($this->register['SYS_LASTCHANGED'])));
+		if ($this->page['SYS_LASTCHANGED'] < (int)$this->register['SYS_LASTCHANGED']) {
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('pages', 'uid=' . (int)$this->id, array('SYS_LASTCHANGED' => (int)$this->register['SYS_LASTCHANGED']));
 		}
 	}
 
@@ -3289,7 +3281,7 @@ class TypoScriptFrontendController {
 			$this->tempPageCacheContent();
 		}
 		// Setting cache_timeout_default. May be overridden by PHP include scripts.
-		$this->cacheTimeOutDefault = intval($this->config['config']['cache_period']);
+		$this->cacheTimeOutDefault = (int)$this->config['config']['cache_period'];
 		// Page is generated
 		$this->no_cacheBeforePageGen = $this->no_cache;
 	}
@@ -3387,6 +3379,15 @@ class TypoScriptFrontendController {
 	}
 
 	/**
+	 * Generate the page title again as TSFE->altPageTitle might have been modified by an inc script
+	 *
+	 * @return void
+	 */
+	protected function regeneratePageTitle() {
+		\TYPO3\CMS\Frontend\Page\PageGenerator::generatePageTitle();
+	}
+
+	/**
 	 * Processes the INTinclude-scripts
 	 *
 	 * @return void
@@ -3407,6 +3408,7 @@ class TypoScriptFrontendController {
 		$this->recursivelyReplaceIntPlaceholdersInContent();
 		$GLOBALS['TT']->push('Substitute header section');
 		$this->INTincScript_loadJSCode();
+		$this->regeneratePageTitle();
 		$this->content = str_replace(
 			array(
 				'<!--HD_' . $this->config['INTincScript_ext']['divKey'] . '-->',
@@ -3667,7 +3669,7 @@ if (version == "n3") {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($_funcRef, $_params, $this);
 			}
 		}
-		// Send content-lenght header.
+		// Send content-length header.
 		// Notice that all HTML content outside the length of the content-length header will be cut off!
 		// Therefore content of unknown length from included PHP-scripts and if admin users are logged
 		// in (admin panel might show...) or if debug mode is turned on, we disable it!
@@ -4001,7 +4003,7 @@ if (version == "n3") {
 		} else {
 			// like str_rot13() but with a variable offset and a wider character range
 			$len = strlen($string);
-			$offset = intval($this->spamProtectEmailAddresses) * ($back ? -1 : 1);
+			$offset = (int)$this->spamProtectEmailAddresses * ($back ? -1 : 1);
 			for ($i = 0; $i < $len; $i++) {
 				$charValue = ord($string[$i]);
 				// 0-9 . , - + / :
@@ -4224,7 +4226,7 @@ if (version == "n3") {
 				$content = $oldContent;
 				$GLOBALS['TT']->setTSlogMessage('"tidy" returned an empty value!', 2);
 			}
-			$GLOBALS['TT']->setTSlogMessage('"tidy" content lenght: ' . strlen($content), 0);
+			$GLOBALS['TT']->setTSlogMessage('"tidy" content length: ' . strlen($content), 0);
 		}
 		return $content;
 	}
@@ -4268,7 +4270,7 @@ if (version == "n3") {
 	 */
 	public function whichWorkspace($returnTitle = FALSE) {
 		if ($this->doWorkspacePreview()) {
-			$ws = intval($this->workspacePreview);
+			$ws = (int)$this->workspacePreview;
 		} elseif ($this->beUserLogin) {
 			$ws = $GLOBALS['BE_USER']->workspace;
 		} else {
@@ -4276,7 +4278,7 @@ if (version == "n3") {
 		}
 		if ($returnTitle) {
 			if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title', 'sys_workspace', 'uid=' . intval($ws));
+				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title', 'sys_workspace', 'uid=' . (int)$ws);
 				if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 					return $row['title'];
 				}
@@ -4325,10 +4327,10 @@ if (version == "n3") {
 		}
 		foreach ($this->rootLine as $rC) {
 			if (!$res['_STORAGE_PID']) {
-				$res['_STORAGE_PID'] = intval($rC['storage_pid']);
+				$res['_STORAGE_PID'] = (int)$rC['storage_pid'];
 			}
 			if (!$res['_SITEROOT']) {
-				$res['_SITEROOT'] = $rC['is_siteroot'] ? intval($rC['uid']) : 0;
+				$res['_SITEROOT'] = $rC['is_siteroot'] ? (int)$rC['uid'] : 0;
 			}
 		}
 		return $res;
@@ -4489,7 +4491,7 @@ if (version == "n3") {
 	 * @todo Define visibility
 	 */
 	public function set_cache_timeout_default($seconds) {
-		$this->cacheTimeOutDefault = intval($seconds);
+		$this->cacheTimeOutDefault = (int)$seconds;
 	}
 
 	/**
@@ -4560,7 +4562,7 @@ if (version == "n3") {
 		if ($urlmode) {
 			$message = GeneralUtility::substUrlsInPlainText($message, $urlmode);
 		}
-		$encoding = $this->config['config']['notification_email_encoding'] ? $this->config['config']['notification_email_encoding'] : '';
+		$encoding = $this->config['config']['notification_email_encoding'] ?: '';
 		$charset = $this->renderCharset;
 		$convCharset = FALSE;
 		// do we need to convert mail data?
@@ -4700,7 +4702,7 @@ if (version == "n3") {
 	 */
 	public function initLLvars() {
 		// Setting language key and split index:
-		$this->lang = $this->config['config']['language'] ? $this->config['config']['language'] : 'default';
+		$this->lang = $this->config['config']['language'] ?: 'default';
 		$this->getPageRenderer()->setLanguage($this->lang);
 
 		// Finding the requested language in this list based
@@ -4737,7 +4739,7 @@ if (version == "n3") {
 	public function csConv($str, $from = '') {
 		if ($from) {
 			$output = $this->csConvObj->conv($str, $this->csConvObj->parse_charset($from), $this->renderCharset, 1);
-			return $output ? $output : $str;
+			return $output ?: $str;
 		} else {
 			return $str;
 		}
@@ -4843,7 +4845,7 @@ if (version == "n3") {
 				$selectField = 'MIN(' . $timeField . ') AS ' . $field;
 				$whereCondition = $timeField . ' > ' . $now;
 				// Find the smallest timestamp which could influence the cache duration (but is larger than 0)
-				$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow($selectField, $tableName, 'pid = ' . intval($pid) . ' AND ' . $whereCondition . $enableFields);
+				$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow($selectField, $tableName, 'pid = ' . (int)$pid . ' AND ' . $whereCondition . $enableFields);
 				if ($row && !is_null($row[$timeField])) {
 					$result = min($result, $row[$timeField]);
 				}

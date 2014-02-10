@@ -1,6 +1,8 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /***************************************************************
  *  Copyright notice
  *
@@ -95,7 +97,7 @@ class User {
 				if(!editor.getSelection().isEmpty()) {
 					editor.getSelection().surroundHtml(wrap1,wrap2);
 				} else {
-					alert(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->getLL('noTextSelection')) . ');
+					alert(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('noTextSelection')) . ');
 				}
 				if(!noHide) plugin.close();
 			};
@@ -185,7 +187,7 @@ class User {
 		if (is_array($thisConfig['userElements.'])) {
 			$categories = array();
 			foreach ($thisConfig['userElements.'] as $k => $value) {
-				$ki = intval($k);
+				$ki = (int)$k;
 				$v = $thisConfig['userElements.'][$ki . '.'];
 				if (substr($k, -1) == '.' && is_array($v)) {
 					$subcats = array();
@@ -222,7 +224,7 @@ class User {
 							}
 						}
 						foreach ($v as $k2 => $dummyValue) {
-							$k2i = intval($k2);
+							$k2i = (int)$k2;
 							if (substr($k2, -1) == '.' && is_array($v[$k2i . '.'])) {
 								$title = trim($v[$k2i]);
 								if (!$title) {
@@ -234,12 +236,12 @@ class User {
 								if (!$v[($k2i . '.')]['dontInsertSiteUrl']) {
 									$v[$k2i . '.']['content'] = str_replace('###_URL###', $this->siteUrl, $v[$k2i . '.']['content']);
 								}
-								$logo = $v[$k2i . '.']['_icon'] ? $v[$k2i . '.']['_icon'] : '';
+								$logo = $v[$k2i . '.']['_icon'] ?: '';
 								$onClickEvent = '';
 								switch ((string) $v[($k2i . '.')]['mode']) {
 									case 'wrap':
 										$wrap = explode('|', $v[$k2i . '.']['content']);
-										$onClickEvent = 'wrapHTML(' . $GLOBALS['LANG']->JScharCode($wrap[0]) . ',' . $GLOBALS['LANG']->JScharCode($wrap[1]) . ',false);';
+										$onClickEvent = 'wrapHTML(' . GeneralUtility::quoteJSvalue($wrap[0]) . ',' . GeneralUtility::quoteJSvalue($wrap[1]) . ',false);';
 										break;
 									case 'processor':
 										$script = trim($v[$k2i . '.']['submitToScript']);
@@ -247,13 +249,13 @@ class User {
 											$script = $this->siteUrl . $script;
 										}
 										if ($script) {
-											$onClickEvent = 'processSelection(' . $GLOBALS['LANG']->JScharCode($script) . ');';
+											$onClickEvent = 'processSelection(' . GeneralUtility::quoteJSvalue($script) . ');';
 										}
 										break;
 									case 'insert':
 
 									default:
-										$onClickEvent = 'insertHTML(' . $GLOBALS['LANG']->JScharCode($v[($k2i . '.')]['content']) . ');';
+										$onClickEvent = 'insertHTML(' . GeneralUtility::quoteJSvalue($v[($k2i . '.')]['content']) . ');';
 								}
 								$A = array('<a href="#" onClick="' . $onClickEvent . 'return false;">', '</a>');
 								$subcats[$k2i] = '<tr>

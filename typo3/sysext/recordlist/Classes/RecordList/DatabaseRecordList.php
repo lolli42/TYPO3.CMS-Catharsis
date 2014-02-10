@@ -464,7 +464,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 				// Get first two rows and initialize prevPrevUid and prevUid if on page > 1
 				if ($this->firstElementNumber > 2 && $this->iLimit > 0) {
 					$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
-					$prevPrevUid = -((int) $row['uid']);
+					$prevPrevUid = -((int)$row['uid']);
 					$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($result);
 					$prevUid = $row['uid'];
 				}
@@ -518,7 +518,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 									// $lRow isn't always what we want - if record was moved we've to work with the
 									// placeholder records otherwise the list is messed up a bit
 									if ($row['_MOVE_PLH_uid'] && $row['_MOVE_PLH_pid']) {
-										$tmpRow = BackendUtility::getRecordRaw($table, 't3ver_move_id="' . intval($lRow['uid']) . '" AND pid="' . $row['_MOVE_PLH_pid'] . '" AND t3ver_wsid=' . $row['t3ver_wsid'] . BackendUtility::deleteClause($table), $selFieldList);
+										$tmpRow = BackendUtility::getRecordRaw($table, 't3ver_move_id="' . (int)$lRow['uid'] . '" AND pid="' . $row['_MOVE_PLH_pid'] . '" AND t3ver_wsid=' . $row['t3ver_wsid'] . BackendUtility::deleteClause($table), $selFieldList);
 										$lRow = is_array($tmpRow) ? $tmpRow : $lRow;
 									}
 									// In offline workspace, look for alternative record:
@@ -542,7 +542,8 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 					if ($this->totalItems > $this->itemsLimitPerTable) {
 						$countOnFirstPage = $this->totalItems > $this->itemsLimitSingleTable ? $this->itemsLimitSingleTable : $this->totalItems;
 						$hasMore = $this->totalItems > $this->itemsLimitSingleTable;
-						$iOut .= '<tr><td colspan="' . count($this->fieldArray) . '" style="padding:5px;">
+						$colspan = $this->showIcon ? count($this->fieldArray) + 1 : count($this->fieldArray);
+						$iOut .= '<tr><td colspan="' . $colspan . '" style="padding:5px;">
 								<a href="' . htmlspecialchars(($this->listURL() . '&table=' . rawurlencode($table))) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/pildown.gif', 'width="14" height="14"') . ' alt="" />' . ' <i>[1 - ' . $countOnFirstPage . ($hasMore ? '+' : '') . ']</i></a>
 								</td></tr>';
 					}
@@ -638,7 +639,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 					$recTitle = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
 					// If the record is edit-locked	by another user, we will show a little warning sign:
 					if ($lockInfo = BackendUtility::isRecordLocked($table, $row['uid'])) {
-						$warning = '<a href="#" onclick="' . htmlspecialchars(('alert(' . $GLOBALS['LANG']->JScharCode($lockInfo['msg']) . '); return false;')) . '" title="' . htmlspecialchars($lockInfo['msg']) . '">' . IconUtility::getSpriteIcon('status-warning-in-use') . '</a>';
+						$warning = '<a href="#" onclick="alert(' . GeneralUtility::quoteJSvalue($lockInfo['msg']) . '); return false;" title="' . htmlspecialchars($lockInfo['msg']) . '">' . IconUtility::getSpriteIcon('status-warning-in-use') . '</a>';
 					}
 					$theData[$fCol] = $warning . $this->linkWrapItems($table, $row['uid'], $recTitle, $row);
 					// Render thumbnails, if:
@@ -818,7 +819,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 							} else {
 								$params = '&edit[' . $table . '][' . $this->id . ']=new';
 								if ($table == 'pages_language_overlay') {
-									$params .= '&overrideVals[pages_language_overlay][doktype]=' . (int) $this->pageRow['doktype'];
+									$params .= '&overrideVals[pages_language_overlay][doktype]=' . (int)$this->pageRow['doktype'];
 								}
 								$icon = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1)) . '" title="' . $GLOBALS['LANG']->getLL('new', TRUE) . '">' . ($table == 'pages' ? IconUtility::getSpriteIcon('actions-page-new') : IconUtility::getSpriteIcon('actions-document-new')) . '</a>';
 							}
@@ -1128,14 +1129,14 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 
 					$titleOrig = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
 					$title = GeneralUtility::slashJS(GeneralUtility::fixed_lgd_cs($titleOrig, $this->fixedL), 1);
-					$warningText = $GLOBALS['LANG']->JScharCode(
+					$warningText = GeneralUtility::quoteJSvalue(
 						$GLOBALS['LANG']->getLL($actionName . 'Warning') . ' "' . $title . '" ' . $refCountMsg
 					);
 
 					$params = '&cmd[' . $table . '][' . $row['uid'] . '][delete]=1';
 					$onClick = htmlspecialchars(
 						('if (confirm(' . $warningText . ')) {jumpToUrl(\''
-						. $GLOBALS['SOBE']->doc->issueCommand($params, -1) . '\');} return false;')
+							. $GLOBALS['SOBE']->doc->issueCommand($params, -1) . '\');} return false;')
 					);
 
 					$icon = IconUtility::getSpriteIcon('actions-edit-' . $actionName);
@@ -1290,7 +1291,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 			'tablename, recuid, field',
 			'sys_refindex',
 			'ref_table = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') .
-				' AND ref_uid = ' . $uid . ' AND deleted = 0'
+			' AND ref_uid = ' . $uid . ' AND deleted = 0'
 		);
 		return $this->generateReferenceToolTip($rows, '\'' . $tableName . '\', \'' . $uid . '\'');
 	}
@@ -1413,7 +1414,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 	public function linkClipboardHeaderIcon($string, $table, $cmd, $warning = '') {
 		$onClickEvent = 'document.dblistForm.cmd.value=\'' . $cmd . '\';document.dblistForm.cmd_table.value=\'' . $table . '\';document.dblistForm.submit();';
 		if ($warning) {
-			$onClickEvent = 'if (confirm(' . $GLOBALS['LANG']->JScharCode($warning) . ')){' . $onClickEvent . '}';
+			$onClickEvent = 'if (confirm(' . GeneralUtility::quoteJSvalue($warning) . ')){' . $onClickEvent . '}';
 		}
 		return '<a href="#" onclick="' . htmlspecialchars(($onClickEvent . 'return false;')) . '">' . $string . '</a>';
 	}
@@ -1580,9 +1581,11 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 		// Setting filename:
 		$filename = $prefix . '_' . date('dmy-Hi') . '.csv';
 		// Creating output header:
-		$mimeType = 'application/octet-stream';
-		header('Content-Type: ' . $mimeType);
+		header('Content-Type: application/octet-stream');
 		header('Content-Disposition: attachment; filename=' . $filename);
+		// Cache-Control header is needed here to solve an issue with browser IE and
+		// versions lower then 9. See for more information: http://support.microsoft.com/kb/323308
+		header("Cache-Control: ''");
 		// Printing the content of the CSV lines:
 		echo implode(chr(13) . chr(10), $this->csvLines);
 		// Exits:

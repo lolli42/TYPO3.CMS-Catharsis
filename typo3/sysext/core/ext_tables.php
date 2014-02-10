@@ -319,6 +319,7 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'actions-edit-cut',
 	'actions-edit-cut-release',
 	'actions-edit-delete',
+	'actions-edit-download',
 	'actions-edit-hide',
 	'actions-edit-insert-default',
 	'actions-edit-localize-status-high',
@@ -604,7 +605,20 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'status-version-50',
 	'status-version-no-version',
 	'status-warning-in-use',
-	'status-warning-lock'
+	'status-warning-lock',
+	'treeline-blank',
+	'treeline-join',
+	'treeline-joinbottom',
+	'treeline-jointop',
+	'treeline-line',
+	'treeline-minus',
+	'treeline-minusbottom',
+	'treeline-minusonly',
+	'treeline-minustop',
+	'treeline-plus',
+	'treeline-plusbottom',
+	'treeline-plusonly',
+	'treeline-stopper'
 );
 
 

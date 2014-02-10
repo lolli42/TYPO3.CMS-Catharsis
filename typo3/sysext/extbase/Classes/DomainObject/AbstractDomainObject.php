@@ -87,7 +87,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	 */
 	public function getUid() {
 		if ($this->uid !== NULL) {
-			return (integer) $this->uid;
+			return (int)$this->uid;
 		} else {
 			return NULL;
 		}
@@ -103,7 +103,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		if ($pid === NULL) {
 			$this->pid = NULL;
 		} else {
-			$this->pid = (integer) $pid;
+			$this->pid = (int)$pid;
 		}
 	}
 
@@ -116,7 +116,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 		if ($this->pid === NULL) {
 			return NULL;
 		} else {
-			return (integer) $this->pid;
+			return (int)$this->pid;
 		}
 	}
 
@@ -153,7 +153,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 	public function _getProperties() {
 		$properties = get_object_vars($this);
 		foreach ($properties as $propertyName => $propertyValue) {
-			if (substr($propertyName, 0, 1) === '_') {
+			if ($propertyName[0] === '_') {
 				unset($properties[$propertyName]);
 			}
 		}
@@ -193,7 +193,7 @@ abstract class AbstractDomainObject implements \TYPO3\CMS\Extbase\DomainObject\D
 			$this->_cleanProperties = array();
 			$properties = get_object_vars($this);
 			foreach ($properties as $propertyName => $propertyValue) {
-				if (substr($propertyName, 0, 1) === '_') {
+				if ($propertyName[0] === '_') {
 					continue;
 				}
 				// Do not memorize "internal" properties

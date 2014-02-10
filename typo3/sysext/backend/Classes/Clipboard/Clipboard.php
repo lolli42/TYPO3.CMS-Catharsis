@@ -293,7 +293,7 @@ class Clipboard {
 		if ($elCount) {
 			if ($GLOBALS['BE_USER']->jsConfirmation(4)) {
 				$js = '
-			if (confirm(' . $GLOBALS['LANG']->JScharCode(sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elCount)) . ')){
+			if (confirm(' . GeneralUtility::quoteJSvalue(sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elCount)) . ')){
 				window.location.href=\'' . $this->deleteUrl(0, ($this->fileMode ? 1 : 0)) . '&redirect=\'+top.rawurlencode(window.location.href);
 			}
 					';
@@ -387,7 +387,7 @@ class Clipboard {
 								<tr>
 									<td class="' . $bgColClass . '">' . $this->linkItemText(IconUtility::getSpriteIconForRecord($table, $rec, array('style' => 'margin: 0 20px;', 'title' => htmlspecialchars(BackendUtility::getRecordIconAltText($rec, $table)))), $rec, $table) . '</td>
 									<td class="' . $bgColClass . '" nowrap="nowrap" width="95%">&nbsp;' . $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(BackendUtility::getRecordTitle($table, $rec), $GLOBALS['BE_USER']->uc['titleLen'])), $rec, $table) . ($pad == 'normal' ? ' <strong>(' . ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) . ')</strong>' : '') . '&nbsp;</td>
-									<td class="' . $bgColClass . '" align="center" nowrap="nowrap">' . '<a href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . intval($uid) . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>' . '</td>
+									<td class="' . $bgColClass . '" align="center" nowrap="nowrap">' . '<a href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . (int)$uid . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>' . '</td>
 								</tr>';
 							$localizationData = $this->getLocalizations($table, $rec, $bgColClass, $pad);
 							if ($localizationData) {
@@ -427,7 +427,7 @@ class Clipboard {
 		$tcaCtrl = $GLOBALS['TCA'][$table]['ctrl'];
 		if ($table != 'pages' && BackendUtility::isTableLocalizable($table) && !$tcaCtrl['transOrigPointerTable']) {
 			$where = array();
-			$where[] = $tcaCtrl['transOrigPointerField'] . '=' . intval($parentRec['uid']);
+			$where[] = $tcaCtrl['transOrigPointerField'] . '=' . (int)$parentRec['uid'];
 			$where[] = $tcaCtrl['languageField'] . '<>0';
 			if (isset($tcaCtrl['delete']) && $tcaCtrl['delete']) {
 				$where[] = $tcaCtrl['delete'] . '=0';
@@ -652,7 +652,7 @@ class Clipboard {
 			}
 
 			// Message
-			$conf = 'confirm(' . $GLOBALS['LANG']->JScharCode(sprintf($msg, GeneralUtility::fixed_lgd_cs($selRecTitle, 30), GeneralUtility::fixed_lgd_cs($thisRecTitle, 30), GeneralUtility::fixed_lgd_cs($columnLabel, 30))) . ')';
+			$conf = 'confirm(' . GeneralUtility::quoteJSvalue(sprintf($msg, GeneralUtility::fixed_lgd_cs($selRecTitle, 30), GeneralUtility::fixed_lgd_cs($thisRecTitle, 30), GeneralUtility::fixed_lgd_cs($columnLabel, 30))) . ')';
 		} else {
 			$conf = '';
 		}
@@ -880,7 +880,7 @@ class Clipboard {
 	 */
 	public function makePasteCmdArray($ref, $CMD, array $update = NULL) {
 		list($pTable, $pUid) = explode('|', $ref);
-		$pUid = intval($pUid);
+		$pUid = (int)$pUid;
 		// pUid must be set and if pTable is not set (that means paste ALL elements)
 		// the uid MUST be positive/zero (pointing to page id)
 		if ($pTable || $pUid >= 0) {

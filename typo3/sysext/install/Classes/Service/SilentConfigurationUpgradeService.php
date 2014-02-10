@@ -71,10 +71,14 @@ class SilentConfigurationUpgradeService {
 		'EXT/em_wsdlURL',
 		// #43094
 		'EXT/extList',
+		// #47018
+		'EXT/extListArray',
 		// #35877
 		'EXT/extList_FE',
 		// #41813
 		'EXT/noEdit',
+		// #47018
+		'EXT/requiredExt',
 		// #26090
 		'FE/defaultTypoScript_editorcfg',
 		'FE/defaultTypoScript_editorcfg.',
@@ -82,6 +86,8 @@ class SilentConfigurationUpgradeService {
 		'FE/simulateStaticDocuments',
 		// #52786
 		'FE/logfile_dir',
+		// #55549
+		'FE/dontSetCookie',
 		// #52011
 		'GFX/im_combine_filename',
 		// #52088
@@ -123,6 +129,7 @@ class SilentConfigurationUpgradeService {
 		$this->generateEncryptionKeyIfNeeded();
 		$this->configureBackendLoginSecurity();
 		$this->configureSaltedPasswords();
+		$this->migrateOldInstallWizardDoneSettingsToNewClassNames();
 		$this->setProxyAuthScheme();
 		$this->disableImageMagickAndGdlibIfImageProcessingIsDisabled();
 		$this->disableImageMagickDetailSettingsIfImageMagickIsDisabled();
@@ -439,6 +446,71 @@ class SilentConfigurationUpgradeService {
 		if ($actual !== '' && $actual !== $default && !in_array('sys_file_metadata', $tables)) {
 			$tables[] = 'sys_file_metadata';
 			$configurationManager->setLocalConfigurationValueByPath('SYS/defaultCategorizedTables', implode(',', $tables));
+			$this->throwRedirectException();
+		}
+	}
+
+	/**
+	 * Migrate old Install Tool Wizard "done"-settings to new class names
+	 * this happens usually when an existing 6.0/6.1 has called the TceformsUpdateWizard wizard
+	 * and has written Tx_Install_Updates_File_TceformsUpdateWizard in TYPO3's LocalConfiguration.php
+	 *
+	 * @return void
+	 */
+	protected function migrateOldInstallWizardDoneSettingsToNewClassNames() {
+		$classNamesToConvert = array();
+		$localConfiguration = $this->configurationManager->getLocalConfiguration();
+		// check for wizards that have been run already and don't start with TYPO3...
+		if (isset($localConfiguration['INSTALL']['wizardDone']) && is_array($localConfiguration['INSTALL']['wizardDone'])) {
+			$classNames = array_keys($localConfiguration['INSTALL']['wizardDone']);
+			foreach ($classNames as $className) {
+				if (!GeneralUtility::isFirstPartOfStr($className, 'TYPO3')) {
+					$classNamesToConvert[] = $className;
+				}
+			}
+		}
+		if (!count($classNamesToConvert)) {
+			return;
+		}
+
+		$migratedClassesMapping = array(
+			'Tx_Install_Updates_File_TceformsUpdateWizard' => 'TYPO3\\CMS\\Install\\Updates\\TceformsUpdateWizard'
+		);
+
+		$migratedSettings = array();
+		$settingsToRemove = array();
+		foreach ($classNamesToConvert as $oldClassName) {
+			if (isset($migratedClassesMapping[$oldClassName])) {
+				$newClassName = $migratedClassesMapping[$oldClassName];
+			} else {
+				continue;
+			}
+			$oldValue = NULL;
+			$newValue = NULL;
+			try {
+				$oldValue = $this->configurationManager->getLocalConfigurationValueByPath('INSTALL/wizardDone/' . $oldClassName);
+			} catch (\RuntimeException $e) {
+				// The old configuration does not exist
+				continue;
+			}
+			try {
+				$newValue = $this->configurationManager->getLocalConfigurationValueByPath('INSTALL/wizardDone/' . $newClassName);
+			} catch (\RuntimeException $e) {
+				// The new configuration does not exist yet
+			}
+			if ($newValue === NULL) {
+				// Migrate the old configuration to the new one
+				$migratedSettings['INSTALL/wizardDone/' . $newClassName] = $oldValue;
+			}
+			$settingsToRemove[] = 'INSTALL/wizardDone/' . $oldClassName;
+
+		}
+
+		if (count($migratedSettings)) {
+			$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($migratedSettings);
+		}
+		$this->configurationManager->removeLocalConfigurationKeysByPath($settingsToRemove);
+		if (count($migratedSettings) || count($settingsToRemove)) {
 			$this->throwRedirectException();
 		}
 	}

@@ -45,7 +45,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		$content = '';
 		// Add flex parameters to configuration
 		$flexParams = isset($conf['flexParams.']) ? $this->cObj->stdWrap($conf['flexParams'], $conf['flexParams.']) : $conf['flexParams'];
-		if (substr($flexParams, 0, 1) === '<') {
+		if ($flexParams[0] === '<') {
 			// It is a content element rather a TS object
 			$flexParams = \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array($flexParams, 'T3');
 			foreach ($flexParams['data'] as $sheetData) {
@@ -123,11 +123,11 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 			}
 		}
 		$mime = $renderType . 'object';
-		$typeConf = $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] ? $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] : array();
+		$typeConf = $conf['mimeConf.'][$mime . '.'][$conf['type'] . '.'] ?: array();
 		$conf['predefined'] = array();
 		// Width and height
-		$conf['width'] = intval($this->doFlexFormOverlay($conf, 'width'));
-		$conf['height'] = intval($this->doFlexFormOverlay($conf, 'height'));
+		$conf['width'] = (int)$this->doFlexFormOverlay($conf, 'width');
+		$conf['height'] = (int)$this->doFlexFormOverlay($conf, 'height');
 		if (is_array($conf['parameter.']['mmMediaOptions'])) {
 			foreach ($conf['parameter.']['mmMediaOptions'] as $key => $value) {
 				if ($key == 'mmMediaCustomParameterContainer') {
@@ -138,7 +138,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 						$tmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $rawTS);
 						if (count($tmp)) {
 							foreach ($tmp as $tsLine) {
-								if (substr($tsLine, 0, 1) != '#' && ($pos = strpos($tsLine, '.'))) {
+								if ($tsLine[0] !== '#' && ($pos = strpos($tsLine, '.'))) {
 									$parts[0] = substr($tsLine, 0, $pos);
 									$parts[1] = substr($tsLine, $pos + 1);
 									$valueParts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode('=', $parts[1], TRUE);

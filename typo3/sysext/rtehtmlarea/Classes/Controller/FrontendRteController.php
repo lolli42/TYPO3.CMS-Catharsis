@@ -128,7 +128,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		// Get the path to this extension:
 		$this->extHttpPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath($this->ID);
 		// Get the site URL
-		$this->siteURL = $GLOBALS['TSFE']->absRefPrefix ? $GLOBALS['TSFE']->absRefPrefix : '';
+		$this->siteURL = $GLOBALS['TSFE']->absRefPrefix ?: '';
 		// Get the host URL
 		$this->hostURL = '';
 		// Element ID + pid
@@ -172,7 +172,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		if ($this->language == 'default' || !$this->language) {
 			$this->language = 'en';
 		}
-		$this->contentLanguageUid = $row['sys_language_uid'] > 0 ? $row['sys_language_uid'] : 0;
+		$this->contentLanguageUid = max($row['sys_language_uid'], 0);
 		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {
 			if ($this->contentLanguageUid) {
 				$tableA = 'sys_language';
@@ -189,7 +189,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 					$this->contentTypo3Language = strtolower(trim($languageRow['lg_typo3']));
 				}
 			} else {
-				$this->contentISOLanguage = $GLOBALS['TSFE']->sys_language_isocode ? $GLOBALS['TSFE']->sys_language_isocode : 'en';
+				$this->contentISOLanguage = $GLOBALS['TSFE']->sys_language_isocode ?: 'en';
 				$selectFields = 'lg_iso_2, lg_typo3';
 				$tableAB = 'static_languages';
 				$whereClause = 'lg_iso_2 = ' . $TYPO3_DB->fullQuoteStr(strtoupper($this->contentISOLanguage), $tableAB);
@@ -199,18 +199,18 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 				}
 			}
 		}
-		$this->contentISOLanguage = $this->contentISOLanguage ? $this->contentISOLanguage : ($GLOBALS['TSFE']->sys_language_isocode ? $GLOBALS['TSFE']->sys_language_isocode : 'en');
-		$this->contentTypo3Language = $this->contentTypo3Language ? $this->contentTypo3Language : $GLOBALS['TSFE']->lang;
+		$this->contentISOLanguage = $this->contentISOLanguage ?: ($GLOBALS['TSFE']->sys_language_isocode ?: 'en');
+		$this->contentTypo3Language = $this->contentTypo3Language ?: $GLOBALS['TSFE']->lang;
 		if ($this->contentTypo3Language == 'default') {
 			$this->contentTypo3Language = 'en';
 		}
 		// Character set
 		$this->charset = $TSFE->renderCharset;
-		$this->OutputCharset = $TSFE->metaCharset ? $TSFE->metaCharset : $TSFE->renderCharset;
+		$this->OutputCharset = $TSFE->metaCharset ?: $TSFE->renderCharset;
 		// Set the charset of the content
 		$this->contentCharset = $TSFE->csConvObj->charSetArray[$this->contentTypo3Language];
-		$this->contentCharset = $this->contentCharset ? $this->contentCharset : 'utf-8';
-		$this->contentCharset = trim($TSFE->config['config']['metaCharset']) ? trim($TSFE->config['config']['metaCharset']) : $this->contentCharset;
+		$this->contentCharset = $this->contentCharset ?: 'utf-8';
+		$this->contentCharset = trim($TSFE->config['config']['metaCharset']) ?: $this->contentCharset;
 		/* =======================================
 		 * TOOLBAR CONFIGURATION
 		 * =======================================
@@ -224,21 +224,21 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		if (isset($this->thisConfig['RTEWidthOverride'])) {
 			if (strstr($this->thisConfig['RTEWidthOverride'], '%')) {
 				if ($this->client['browser'] != 'msie') {
-					$width = intval($this->thisConfig['RTEWidthOverride']) > 0 ? $this->thisConfig['RTEWidthOverride'] : '100%';
+					$width = (int)$this->thisConfig['RTEWidthOverride'] > 0 ? $this->thisConfig['RTEWidthOverride'] : '100%';
 				}
 			} else {
-				$width = intval($this->thisConfig['RTEWidthOverride']) > 0 ? intval($this->thisConfig['RTEWidthOverride']) : $width;
+				$width = (int)$this->thisConfig['RTEWidthOverride'] > 0 ? (int)$this->thisConfig['RTEWidthOverride'] : $width;
 			}
 		}
 		$RTEWidth = strstr($width, '%') ? $width : $width . 'px';
 		$editorWrapWidth = strstr($width, '%') ? $width : ($width + 2) . 'px';
 		$height = 380;
-		$RTEHeightOverride = intval($this->thisConfig['RTEHeightOverride']);
+		$RTEHeightOverride = (int)$this->thisConfig['RTEHeightOverride'];
 		$height = $RTEHeightOverride > 0 ? $RTEHeightOverride : $height;
 		$RTEHeight = $height . 'px';
 		$editorWrapHeight = ($height + 2) . 'px';
-		$this->RTEWrapStyle = $this->RTEWrapStyle ? $this->RTEWrapStyle : ($this->RTEdivStyle ? $this->RTEdivStyle : 'height:' . $editorWrapHeight . '; width:' . $editorWrapWidth . ';');
-		$this->RTEdivStyle = $this->RTEdivStyle ? $this->RTEdivStyle : 'position:relative; left:0px; top:0px; height:' . $RTEHeight . '; width:' . $RTEWidth . '; border: 1px solid black;';
+		$this->RTEWrapStyle = $this->RTEWrapStyle ?: ($this->RTEdivStyle ?: 'height:' . $editorWrapHeight . '; width:' . $editorWrapWidth . ';');
+		$this->RTEdivStyle = $this->RTEdivStyle ?: 'position:relative; left:0px; top:0px; height:' . $RTEHeight . '; width:' . $RTEWidth . '; border: 1px solid black;';
 		/* =======================================
 		 * LOAD JS, CSS and more
 		 * =======================================

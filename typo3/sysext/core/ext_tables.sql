@@ -180,7 +180,8 @@ CREATE TABLE pages (
   PRIMARY KEY (uid),
   KEY t3ver_oid (t3ver_oid,t3ver_wsid),
   KEY parent (pid,deleted,sorting),
-  KEY alias (alias)
+  KEY alias (alias),
+  KEY determineSiteRoot (deleted,hidden,is_siteroot),
 );
 
 #
@@ -266,6 +267,7 @@ CREATE TABLE sys_file_storage (
 	description text,
 	driver tinytext,
 	configuration text,
+	is_default tinyint(4) DEFAULT '0' NOT NULL,
 	is_browsable tinyint(4) DEFAULT '0' NOT NULL,
 	is_public tinyint(4) DEFAULT '0' NOT NULL,
 	is_writable tinyint(4) DEFAULT '0' NOT NULL,

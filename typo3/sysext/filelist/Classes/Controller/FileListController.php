@@ -145,7 +145,13 @@ class FileListController {
 			if ($combinedIdentifier) {
 				/** @var $fileFactory \TYPO3\CMS\Core\Resource\ResourceFactory */
 				$fileFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
-				$this->folderObject = $fileFactory->getFolderObjectFromCombinedIdentifier($combinedIdentifier);
+				$storage = $fileFactory->getStorageObjectFromCombinedIdentifier($combinedIdentifier);
+				$identifier = substr($combinedIdentifier, strpos($combinedIdentifier, ':') + 1);
+				if (!$storage->hasFolder($identifier)) {
+					$identifier = $storage->getFolderIdentifierFromFileIdentifier($identifier);
+				}
+
+				$this->folderObject = $fileFactory->getFolderObjectFromCombinedIdentifier($storage->getUid() . ':' . $identifier);
 				// Disallow the rendering of the processing folder (e.g. could be called manually)
 				// and all folders without any defined storage
 				if ($this->folderObject && ($this->folderObject->getStorage()->getUid() == 0 || trim($this->folderObject->getStorage()->getProcessingFolder()->getIdentifier(), '/') === trim($this->folderObject->getIdentifier(), '/'))) {
@@ -164,9 +170,16 @@ class FileListController {
 					throw new \RuntimeException('Could not find any folder to be displayed.', 1349276894);
 				}
 			}
-		} catch (\TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException $fileException) {
-			// Set folder object to null and throw a message later on
-			$this->folderObject = NULL;
+		} catch (\TYPO3\CMS\Core\Resource\Exception $fileException) {
+			// Take the first object of the first storage
+			$fileStorages = $GLOBALS['BE_USER']->getFileStorages();
+			$fileStorage = reset($fileStorages);
+			if ($fileStorage) {
+				// Set folder object to null and throw a message later on
+				$this->folderObject = $fileStorage->getRootLevelFolder();
+			} else {
+				$this->folderObject = NULL;
+			}
 			$this->errorMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 				sprintf($GLOBALS['LANG']->getLL('folderNotFoundMessage', TRUE),
 						htmlspecialchars($this->id)
@@ -188,7 +201,7 @@ class FileListController {
 	public function menuConfig() {
 		// MENU-ITEMS:
 		// If array, then it's a selector box menu
-		// If empty string it's just a variable, that'll be saved.
+		// If empty string it's just a variable, that will be saved.
 		// Values NOT in this array will not be saved in the settings-array for the module.
 		$this->MOD_MENU = array(
 			'sort' => '',
@@ -216,16 +229,18 @@ class FileListController {
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:filelist/Resources/Private/Templates/file_list.html');
+
 		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 		$pageRenderer = $this->doc->getPageRenderer();
 		$pageRenderer->loadPrototype();
 		$pageRenderer->loadJQuery();
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
-		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FileListLocalisation');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
 		$pageRenderer->addInlineLanguagelabelFile(
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
 			'file_upload'
 		);
+
 		// There there was access to this file path, continue, make the list
 		if ($this->folderObject) {
 
@@ -287,7 +302,7 @@ class FileListController {
 					$fileProcessor->dontCheckForUnique = $this->overwriteExistingFiles ? 1 : 0;
 					$fileProcessor->start($FILE);
 					$fileProcessor->processData();
-					$fileProcessor->printLogErrorMessages();
+					$fileProcessor->pushErrorMessagesToFlashMessageQueue();
 				}
 			}
 			if (!isset($this->MOD_SETTINGS['sort'])) {
@@ -371,7 +386,7 @@ class FileListController {
 			$content = '';
 			if ($this->errorMessage) {
 				$this->errorMessage->setSeverity(\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
-				$content = $this->doc->moduleBody(array(), array_merge(array('REFRESH' => ''), $this->getButtons()), array('CSH' => '', 'TITLE' => '', 'FOLDER_INFO' => '', 'PAGE_ICON' => '', 'FUNC_MENU' => '', 'CONTENT' => $this->errorMessage->render()));
+				$content = $this->doc->moduleBody(array(), array_merge(array('REFRESH' => '', 'PASTE' => '', 'LEVEL_UP' => ''), $this->getButtons()), array('CSH' => '', 'TITLE' => '', 'FOLDER_INFO' => '', 'PAGE_ICON' => '', 'FUNC_MENU' => '', 'CONTENT' => $this->errorMessage->render()));
 			}
 			// Create output - no access (no warning though)
 			$this->content = $this->doc->render($GLOBALS['LANG']->getLL('files'), $content);

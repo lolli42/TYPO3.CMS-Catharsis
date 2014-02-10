@@ -90,7 +90,7 @@ class DocumentTemplate {
 	 */
 	public $JScodeArray = array();
 
-	// Additional 'page-end' code could be accommulated in this var. It will be outputted at the end of page before </body> and some other internal page-end code.
+	// Additional 'page-end' code could be accumulated in this var. It will be outputted at the end of page before </body> and some other internal page-end code.
 	/**
 	 * @todo Define visibility
 	 */
@@ -441,7 +441,7 @@ class DocumentTemplate {
 				$this->pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . $file);
 			}
 		}
-		if (intval($GLOBALS['TYPO3_CONF_VARS']['BE']['debug']) === 1) {
+		if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1) {
 			$this->pageRenderer->enableDebugMode();
 		}
 		return $this->pageRenderer;
@@ -606,7 +606,7 @@ class DocumentTemplate {
 		} else {
 			$mMN = '';
 		}
-		$onClick = 'top.ShortcutManager.createShortcut(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')) . ', ' . '\'' . $backPath . '\', ' . '\'' . rawurlencode($modName) . '\', ' . '\'' . rawurlencode(($pathInfo['path'] . '?' . $storeUrl)) . $mMN . '\'' . ');return false;';
+		$onClick = 'top.ShortcutManager.createShortcut(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')) . ', ' . '\'' . $backPath . '\', ' . '\'' . rawurlencode($modName) . '\', ' . '\'' . rawurlencode(($pathInfo['path'] . '?' . $storeUrl)) . $mMN . '\'' . ');return false;';
 		$sIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
 		return $sIcon;
 	}
@@ -1023,7 +1023,7 @@ class DocumentTemplate {
 	 * @todo Define visibility
 	 */
 	public function divider($dist) {
-		$dist = intval($dist);
+		$dist = (int)$dist;
 		$str = '
 
 	<!-- DIVIDER -->
@@ -1044,7 +1044,7 @@ class DocumentTemplate {
 			return '
 
 	<!-- Spacer element -->
-	<div style="padding-top: ' . intval($dist) . 'px;"></div>
+	<div style="padding-top: ' . (int)$dist . 'px;"></div>
 ';
 		}
 	}
@@ -1061,7 +1061,7 @@ class DocumentTemplate {
 	 */
 	public function sectionHeader($label, $sH = FALSE, $addAttrib = '') {
 		$tag = $sH ? 'h2' : 'h3';
-		if ($addAttrib && substr($addAttrib, 0, 1) !== ' ') {
+		if ($addAttrib && $addAttrib[0] !== ' ') {
 			$addAttrib = ' ' . $addAttrib;
 		}
 		$str = '
@@ -1164,6 +1164,12 @@ class DocumentTemplate {
 		$this->inDocStylesArray[] = $this->inDocStyles_TBEstyle;
 		// Implode it all:
 		$inDocStyles = implode(LF, $this->inDocStylesArray);
+
+		// Reset styles so they won't be added again in insertStylesAndJS()
+		$this->inDocStylesArray = array();
+		$this->inDocStyles = '';
+		$this->inDocStyles_TBEstyle = '';
+
 		if ($this->styleSheetFile) {
 			$this->pageRenderer->addCssFile($this->backPath . $this->styleSheetFile);
 		}
@@ -1187,7 +1193,7 @@ class DocumentTemplate {
 	 * @todo Define visibility
 	 */
 	public function addStyleSheet($key, $href, $title = '', $relation = 'stylesheet') {
-		if (strpos($href, '://') !== FALSE || substr($href, 0, 1) === '/') {
+		if (strpos($href, '://') !== FALSE || $href[0] === '/') {
 			$file = $href;
 		} else {
 			$file = $this->backPath . $href;
@@ -1225,9 +1231,12 @@ class DocumentTemplate {
 	 */
 	public function insertStylesAndJS($content) {
 		// Insert accumulated CSS
-		$this->inDocStylesArray[] = $this->inDocStyles;
+		if (!empty($this->inDocStyles)) {
+			$this->inDocStylesArray[] = $this->inDocStyles;
+		}
 		$styles = LF . implode(LF, $this->inDocStylesArray);
 		$content = str_replace('/*###POSTCSSMARKER###*/', $styles, $content);
+
 		// Insert accumulated JS
 		$jscode = $this->JScode . LF . $this->wrapScriptTags(implode(LF, $this->JScodeArray));
 		$content = str_replace('<!--###POSTJSMARKER###-->', $jscode, $content);
@@ -1735,17 +1744,16 @@ class DocumentTemplate {
 				if ($isEmpty && $dividers2tabs == 1) {
 					continue;
 				}
-				$mouseOverOut = ' onmouseover="DTM_mouseOver(this);" onmouseout="DTM_mouseOut(this);"';
 				$requiredIcon = '<img name="' . $id . '-' . $index . '-REQ" src="' . $GLOBALS['BACK_PATH'] . 'gfx/clear.gif" class="t3-TCEforms-reqTabImg" alt="" />';
 				if (!$foldout) {
 					// Create TAB cell:
 					$options[$tabRows][] = '
-							<td class="' . ($isEmpty ? 'disabled' : 'tab') . '" id="' . $id . '-' . $index . '-MENU"' . $noWrap . $mouseOverOut . '>' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . $this->icons($def['stateIcon'], 'margin-left: 10px;') . ($isEmpty ? '' : '</a>') . '</td>';
+							<td class="' . ($isEmpty ? 'disabled' : 'tab') . '" id="' . $id . '-' . $index . '-MENU"' . $noWrap . '>' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . $this->icons($def['stateIcon'], 'margin-left: 10px;') . ($isEmpty ? '' : '</a>') . '</td>';
 					$titleLenCount += strlen($def['label']);
 				} else {
 					// Create DIV layer for content:
 					$divs[] = '
-						<div class="' . ($isEmpty ? 'disabled' : 'tab') . '" id="' . $id . '-' . $index . '-MENU"' . $mouseOverOut . '>' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . ($isEmpty ? '' : '</a>') . '</div>';
+						<div class="' . ($isEmpty ? 'disabled' : 'tab') . '" id="' . $id . '-' . $index . '-MENU">' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . ($isEmpty ? '' : '</a>') . '</div>';
 				}
 				// Create DIV layer for content:
 				$divs[] = '
@@ -1790,7 +1798,7 @@ class DocumentTemplate {
 				<script type="text/javascript">
 					DTM_array["' . $id . '"] = new Array();
 					' . implode('', $JSinit) . '
-					' . ($toggle <= 0 ? 'DTM_activate("' . $id . '", top.DTM_currentTabs["' . $id . '"]?top.DTM_currentTabs["' . $id . '"]:' . intval($defaultTabIndex) . ', 0);' : '') . '
+					' . ($toggle <= 0 ? 'DTM_activate("' . $id . '", top.DTM_currentTabs["' . $id . '"]?top.DTM_currentTabs["' . $id . '"]:' . (int)$defaultTabIndex . ', 0);' : '') . '
 				</script>
 
 				';
@@ -1899,13 +1907,9 @@ class DocumentTemplate {
 		}
 		// adding flash messages
 		if ($this->showFlashMessages) {
-			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
-			/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-			$flashMessages = $defaultFlashMessageQueue->renderFlashMessages();
+			$flashMessages = $this->getFlashMessages();
 			if (!empty($flashMessages)) {
-				$markerArray['FLASHMESSAGES'] = '<div id="typo3-messages">' . $flashMessages . '</div>';
+				$markerArray['FLASHMESSAGES'] = $flashMessages;
 				// If there is no dedicated marker for the messages present
 				// then force them to appear before the content
 				if (strpos($moduleBody, '###FLASHMESSAGES###') === FALSE) {
@@ -1928,6 +1932,23 @@ class DocumentTemplate {
 		}
 		// Replacing all markers with the finished markers and return the HTML content
 		return HtmlParser::substituteMarkerArray($moduleBody, $markerArray, '###|###');
+	}
+
+	/**
+	 * Get the default rendered FlashMessages from queue
+	 *
+	 * @return string
+	 */
+	public function getFlashMessages() {
+		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+		$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+		$flashMessages = $defaultFlashMessageQueue->renderFlashMessages();
+		if (!empty($flashMessages)) {
+			$flashMessages = '<div id="typo3-messages">' . $flashMessages . '</div>';
+		}
+		return $flashMessages;
 	}
 
 	/**

@@ -557,7 +557,7 @@ class HtmlParser {
 				if ($val != '=') {
 					if ($valuemode) {
 						if ($name) {
-							$attributes[$name] = $deHSC ? GeneralUtility::htmlspecialchars_decode($val) : $val;
+							$attributes[$name] = $deHSC ? htmlspecialchars_decode($val) : $val;
 							$attributesMeta[$name]['dashType'] = $metaC[$key];
 							$name = '';
 						}
@@ -599,7 +599,7 @@ class HtmlParser {
 		$matches = array();
 		if (preg_match_all('/("[^"]*"|\'[^\']*\'|[^\\s"\'\\=]+|\\=)/s', $tag_tmp, $matches) > 0) {
 			foreach ($matches[1] as $part) {
-				$firstChar = substr($part, 0, 1);
+				$firstChar = $part[0];
 				if ($firstChar == '"' || $firstChar == '\'') {
 					$metaValue[] = $firstChar;
 					$value[] = substr($part, 1, -1);
@@ -748,7 +748,7 @@ class HtmlParser {
 				$tok = substr($tok, $eocPos + 3);
 				$skipTag = TRUE;
 			}
-			$firstChar = substr($tok, 0, 1);
+			$firstChar = $tok[0];
 			// It is a tag... (first char is a-z0-9 or /) (fixed 19/01 2004). This also avoids triggering on <?xml..> and <!DOCTYPE..>
 			if (!$skipTag && preg_match('/[[:alnum:]\\/]/', $firstChar) == 1) {
 				$tagEnd = strpos($tok, '>');
@@ -811,7 +811,7 @@ class HtmlParser {
 												$tagAttrib[0][$attr] = trim($tagAttrib[0][$attr]);
 											}
 											if ($params['intval']) {
-												$tagAttrib[0][$attr] = intval($tagAttrib[0][$attr]);
+												$tagAttrib[0][$attr] = (int)$tagAttrib[0][$attr];
 											}
 											if ($params['lower']) {
 												$tagAttrib[0][$attr] = strtolower($tagAttrib[0][$attr]);
@@ -821,9 +821,9 @@ class HtmlParser {
 											}
 											if ($params['range']) {
 												if (isset($params['range'][1])) {
-													$tagAttrib[0][$attr] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tagAttrib[0][$attr], intval($params['range'][0]), intval($params['range'][1]));
+													$tagAttrib[0][$attr] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tagAttrib[0][$attr], (int)$params['range'][0], (int)$params['range'][1]);
 												} else {
-													$tagAttrib[0][$attr] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tagAttrib[0][$attr], intval($params['range'][0]));
+													$tagAttrib[0][$attr] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($tagAttrib[0][$attr], (int)$params['range'][0]);
 												}
 											}
 											if (is_array($params['list'])) {
@@ -855,7 +855,7 @@ class HtmlParser {
 												unset($tagAttrib[0][$attr]);
 											}
 											if ($params['prefixLocalAnchors']) {
-												if (substr($tagAttrib[0][$attr], 0, 1) == '#') {
+												if ($tagAttrib[0][$attr][0] === '#') {
 													$prefix = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
 													$tagAttrib[0][$attr] = $prefix . $tagAttrib[0][$attr];
 													if ($params['prefixLocalAnchors'] == 2 && GeneralUtility::isFirstPartOfStr($prefix, GeneralUtility::getIndpEnv('TYPO3_SITE_URL'))) {
@@ -865,7 +865,7 @@ class HtmlParser {
 											}
 											if ($params['prefixRelPathWith']) {
 												$urlParts = parse_url($tagAttrib[0][$attr]);
-												if (!$urlParts['scheme'] && substr($urlParts['path'], 0, 1) != '/') {
+												if (!$urlParts['scheme'] && $urlParts['path'][0] !== '/') {
 													// If it is NOT an absolute URL (by http: or starting "/")
 													$tagAttrib[0][$attr] = $params['prefixRelPathWith'] . $tagAttrib[0][$attr];
 												}
@@ -990,7 +990,7 @@ class HtmlParser {
 		} elseif ($dir == 2) {
 			$value = GeneralUtility::deHSCentities(htmlspecialchars($value));
 		} elseif ($dir == -1) {
-			$value = GeneralUtility::htmlspecialchars_decode($value);
+			$value = htmlspecialchars_decode($value);
 		}
 		return $value;
 	}
@@ -1103,7 +1103,7 @@ class HtmlParser {
 	public function prefixRelPath($prefix, $srcVal, $suffix = '') {
 		// Only prefix if it's not an absolute URL or
 		// only a link to a section within the page.
-		if (substr($srcVal, 0, 1) != '/' && substr($srcVal, 0, 1) != '#') {
+		if ($srcVal[0] !== '/' && $srcVal[0] !== '#') {
 			$urlParts = parse_url($srcVal);
 			// Only prefix URLs without a scheme
 			if (!$urlParts['scheme']) {
@@ -1183,7 +1183,7 @@ class HtmlParser {
 		next($contentParts);
 		// bypass the first
 		while (list($k, $tok) = each($contentParts)) {
-			$firstChar = substr($tok, 0, 1);
+			$firstChar = $tok[0];
 			if (trim($firstChar) !== '') {
 				$subparts = explode('&gt;', $tok, 2);
 				$tagEnd = strlen($subparts[0]);
@@ -1283,9 +1283,9 @@ class HtmlParser {
 					$attr .= '="' . htmlspecialchars($v) . '"';
 				}
 			} else {
-				$attr = $meta[$k]['origTag'] ? $meta[$k]['origTag'] : $k;
-				if ((string)$v !== '' || isset($meta[$k]['dashType'])) {
-					$dash = $meta[$k]['dashType'] ? $meta[$k]['dashType'] : (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($v) ? '' : '"');
+				$attr = $meta[$k]['origTag'] ?: $k;
+				if (strcmp($v, '') || isset($meta[$k]['dashType'])) {
+					$dash = $meta[$k]['dashType'] ?: (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($v) ? '' : '"');
 					$attr .= '=' . $dash . $v . $dash;
 				}
 			}
@@ -1441,7 +1441,7 @@ class HtmlParser {
 		return array(
 			$keepTags,
 			'' . $TSconfig['keepNonMatchedTags'],
-			intval($TSconfig['htmlSpecialChars']),
+			(int)$TSconfig['htmlSpecialChars'],
 			$addConfig
 		);
 	}

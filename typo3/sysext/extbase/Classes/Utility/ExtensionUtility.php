@@ -71,7 +71,8 @@ class ExtensionUtility {
 			$extensionName = substr($extensionName, $delimiterPosition + 1);
 		}
 		$extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
-		$pluginSignature = strtolower($extensionName) . '_' . strtolower($pluginName);
+
+		$pluginSignature = strtolower($extensionName . '_' . $pluginName);
 		if (!is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName])) {
 			$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName] = array();
 		}
@@ -81,31 +82,7 @@ class ExtensionUtility {
 				$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['extensions'][$extensionName]['plugins'][$pluginName]['controllers'][$controllerName]['nonCacheableActions'] = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $nonCacheableControllerActions[$controllerName]);
 			}
 		}
-		$pluginTemplate = 'plugin.tx_' . strtolower($extensionName) . ' {
-	settings {
-	}
-	persistence {
-		storagePid =
-		classes {
-		}
-	}
-	view {
-		templateRootPaths {
-			#example: fooKey = EXT:bar/foo
-		}
-		layoutRootPaths {
-			#example: fooKey = EXT:bar/foo
-		}
-		partialRootPaths {
-			#example: fooKey = EXT:bar/foo
-		}
-		 # with defaultPid you can specify the default page uid of this plugin. If you set this to the string "auto" the target page will be determined automatically. Defaults to an empty string that expects the target page to be the current page.
-		defaultPid =
-	}
-}';
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript($extensionName, 'setup', '
-# Setting ' . $extensionName . ' plugin TypoScript
-' . $pluginTemplate);
+
 		switch ($pluginType) {
 			case self::PLUGIN_TYPE_PLUGIN:
 				$pluginContent = trim('
@@ -151,10 +128,10 @@ tt_content.' . $pluginSignature . ' {
 	 */
 	static public function registerPlugin($extensionName, $pluginName, $pluginTitle, $pluginIconPathAndFilename = NULL) {
 		if (empty($pluginName)) {
-			throw new \InvalidArgumentException('The plugin name must not be empty', 1239891987);
+			throw new \InvalidArgumentException('The plugin name must not be empty', 1239891988);
 		}
 		if (empty($extensionName)) {
-			throw new \InvalidArgumentException('The extension name was invalid (must not be empty and must match /[A-Za-z][_A-Za-z0-9]/)', 1239891989);
+			throw new \InvalidArgumentException('The extension name was invalid (must not be empty and must match /[A-Za-z][_A-Za-z0-9]/)', 1239891991);
 		}
 		$delimiterPosition = strrpos($extensionName, '.');
 		if ($delimiterPosition !== FALSE) {
@@ -210,9 +187,9 @@ tt_content.' . $pluginSignature . ' {
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 */
-	static public function registerModule($extensionName, $mainModuleName = '', $subModuleName = '', $position = '', array $controllerActions, array $moduleConfiguration = array()) {
+	static public function registerModule($extensionName, $mainModuleName = '', $subModuleName = '', $position = '', array $controllerActions = array(), array $moduleConfiguration = array()) {
 		if (empty($extensionName)) {
-			throw new \InvalidArgumentException('The extension name must not be empty', 1239891989);
+			throw new \InvalidArgumentException('The extension name must not be empty', 1239891990);
 		}
 		// Check if vendor name is prepended to extensionName in the format {vendorName}.{extensionName}
 		$vendorName = NULL;

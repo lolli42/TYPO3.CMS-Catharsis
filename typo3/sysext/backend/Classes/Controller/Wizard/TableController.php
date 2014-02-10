@@ -253,8 +253,8 @@ class TableController {
 		// Get delimiter settings
 		$flexForm = GeneralUtility::xml2array($row['pi_flexform']);
 		if (is_array($flexForm)) {
-			$this->tableParsing_quote = $flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'] ? chr(intval($flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'])) : '';
-			$this->tableParsing_delimiter = $flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'] ? chr(intval($flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'])) : '|';
+			$this->tableParsing_quote = $flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF'] ? chr((int)$flexForm['data']['s_parsing']['lDEF']['tableparsing_quote']['vDEF']) : '';
+			$this->tableParsing_delimiter = $flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF'] ? chr((int)$flexForm['data']['s_parsing']['lDEF']['tableparsing_delimiter']['vDEF']) : '|';
 		}
 		// If some data has been submitted, then construct
 		if (isset($this->TABLECFG['c'])) {
@@ -582,7 +582,7 @@ class TableController {
 		if (!$cols && trim($tLines[0])) {
 			$cols = count(explode($this->tableParsing_delimiter, $tLines[0]));
 		}
-		$cols = $cols ? $cols : 4;
+		$cols = $cols ?: 4;
 		// Traverse the number of table elements:
 		$cfgArr = array();
 		foreach ($tLines as $k => $v) {
@@ -590,7 +590,7 @@ class TableController {
 			$vParts = explode($this->tableParsing_delimiter, $v);
 			// Traverse columns:
 			for ($a = 0; $a < $cols; $a++) {
-				if ($this->tableParsing_quote && substr($vParts[$a], 0, 1) == $this->tableParsing_quote && substr($vParts[$a], -1, 1) == $this->tableParsing_quote) {
+				if ($this->tableParsing_quote && $vParts[$a][0] === $this->tableParsing_quote && substr($vParts[$a], -1, 1) === $this->tableParsing_quote) {
 					$vParts[$a] = substr(trim($vParts[$a]), 1, -1);
 				}
 				$cfgArr[$k][$a] = $vParts[$a];

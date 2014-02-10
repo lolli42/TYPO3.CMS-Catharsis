@@ -108,6 +108,29 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		return $driverObject;
 	}
 
+
+	/**
+	 * Returns the Default Storage
+	 *
+	 * The Default Storage is considered to be the replacement for the fileadmin/ construct.
+	 * It is automatically created with the setting fileadminDir from install tool.
+	 * getDefaultStorage->getDefaultFolder() will get you fileadmin/user_upload/ in a standard
+	 * TYPO3 installation.
+	 *
+	 * @return null|ResourceStorage
+	 */
+	public function getDefaultStorage() {
+		/** @var $storageRepository StorageRepository */
+		$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
+
+		$allStorages = $storageRepository->findAll();
+		foreach ($allStorages as $storage) {
+			if ($storage->isDefault()) {
+				return $storage;
+			}
+		}
+		return NULL;
+	}
 	/**
 	 * Creates an instance of the storage from given UID. The $recordData can
 	 * be supplied to increase performance.
@@ -123,18 +146,19 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		if (!is_numeric($uid)) {
 			throw new \InvalidArgumentException('uid of Storage has to be numeric.', 1314085991);
 		}
-		if (intval($uid) === 0 && $fileIdentifier !== NULL) {
+		$uid = (int)$uid;
+		if ($uid === 0 && $fileIdentifier !== NULL) {
 			$uid = $this->findBestMatchingStorageByLocalPath($fileIdentifier);
 		}
 		if (!$this->storageInstances[$uid]) {
 			$storageConfiguration = NULL;
 			$storageObject = NULL;
 			// If the built-in storage with UID=0 is requested:
-			if (intval($uid) === 0) {
+			if ($uid === 0) {
 				$recordData = array(
 					'uid' => 0,
 					'pid' => 0,
-					'name' => 'Default Storage',
+					'name' => 'Fallback Storage',
 					'description' => 'Internal storage, mounting the main TYPO3_site directory.',
 					'driver' => 'Local',
 					'processingfolder' => 'typo3temp/_processed_/',
@@ -143,13 +167,14 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 					'is_online' => TRUE,
 					'is_browsable' => TRUE,
 					'is_public' => TRUE,
-					'is_writable' => TRUE
+					'is_writable' => TRUE,
+					'is_default' => FALSE,
 				);
 				$storageConfiguration = array(
 					'basePath' => '/',
 					'pathType' => 'relative'
 				);
-			} elseif (count($recordData) === 0 || $recordData['uid'] !== $uid) {
+			} elseif (count($recordData) === 0 || (int)$recordData['uid'] !== $uid) {
 				/** @var $storageRepository StorageRepository */
 				$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
 				/** @var $storage ResourceStorage */
@@ -186,7 +211,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$basePathLength = strlen($basePath);
 
 			if ($matchLength >= $basePathLength && $matchLength > $bestMatchLength) {
-				$bestMatchStorageUid = intval($storageUid);
+				$bestMatchStorageUid = (int)$storageUid;
 				$bestMatchLength = $matchLength;
 			}
 		}
@@ -253,7 +278,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			// Get mount data if not already supplied as argument to this function
 			if (count($recordData) === 0 || $recordData['uid'] !== $uid) {
 				/** @var $GLOBALS['TYPO3_DB'] \TYPO3\CMS\Core\Database\DatabaseConnection */
-				$recordData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_collection', 'uid=' . intval($uid) . ' AND deleted=0');
+				$recordData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_collection', 'uid=' . (int)$uid . ' AND deleted=0');
 				if (!is_array($recordData)) {
 					throw new \InvalidArgumentException('No collection found for given UID.', 1314085992);
 				}
@@ -519,7 +544,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	public function createFileObject(array $fileData, ResourceStorage $storage = NULL) {
 		/** @var File $fileObject */
 		if (array_key_exists('storage', $fileData) && MathUtility::canBeInterpretedAsInteger($fileData['storage'])) {
-			$storageObject = $this->getStorageObject(intval($fileData['storage']));
+			$storageObject = $this->getStorageObject((int)$fileData['storage']);
 		} elseif ($storage !== NULL) {
 			$storageObject = $storage;
 			$fileData['storage'] = $storage->getUid();
@@ -554,7 +579,7 @@ class ResourceFactory implements \TYPO3\CMS\Core\SingletonInterface {
 					$fileReferenceData = $GLOBALS['TSFE']->sys_page->checkRecord('sys_file_reference', $uid);
 				} else {
 					/** @var $GLOBALS['TYPO3_DB'] \TYPO3\CMS\Core\Database\DatabaseConnection */
-					$fileReferenceData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_reference', 'uid=' . intval($uid) . ' AND deleted=0');
+					$fileReferenceData = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', 'sys_file_reference', 'uid=' . (int)$uid . ' AND deleted=0');
 				}
 				if (!is_array($fileReferenceData)) {
 					throw new \InvalidArgumentException('No fileusage (sys_file_reference) found for given UID.', 1317178794);

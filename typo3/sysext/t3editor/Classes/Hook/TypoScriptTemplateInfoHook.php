@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\T3Editor\Hook;
+namespace TYPO3\CMS\T3editor\Hook;
 
 /***************************************************************
  *  Copyright notice
@@ -35,7 +35,7 @@ namespace TYPO3\CMS\T3Editor\Hook;
 class TypoScriptTemplateInfoHook {
 
 	/**
-	 * @var \TYPO3\CMS\T3Editor\T3Editor
+	 * @var \TYPO3\CMS\T3editor\T3editor
 	 */
 	protected $t3editor = NULL;
 
@@ -45,11 +45,11 @@ class TypoScriptTemplateInfoHook {
 	protected $ajaxSaveType = 'TypoScriptTemplateInformationModuleFunctionController';
 
 	/**
-	 * @return \TYPO3\CMS\T3Editor\T3Editor
+	 * @return \TYPO3\CMS\T3editor\T3editor
 	 */
 	protected function getT3editor() {
 		if ($this->t3editor == NULL) {
-			$this->t3editor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\T3Editor\\T3Editor')->setMode(\TYPO3\CMS\T3Editor\T3Editor::MODE_TYPOSCRIPT)->setAjaxSaveType($this->ajaxSaveType);
+			$this->t3editor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\T3editor\\T3editor')->setMode(\TYPO3\CMS\T3editor\T3editor::MODE_TYPOSCRIPT)->setAjaxSaveType($this->ajaxSaveType);
 		}
 		return $this->t3editor;
 	}
@@ -90,7 +90,7 @@ class TypoScriptTemplateInfoHook {
 				$attributes = 'rows="' . $parameters['numberOfRows'] . '" ' . 'wrap="off" ' . $pObj->pObj->doc->formWidthText(48, 'width:98%;height:60%', 'off');
 				$title = $GLOBALS['LANG']->getLL('template') . ' ' . htmlspecialchars($parameters['tplRow']['title']) . $GLOBALS['LANG']->getLL('delimiter') . ' ' . $GLOBALS['LANG']->getLL($type);
 				$outCode = $t3editor->getCodeEditor('data[' . $type . ']', 'fixed-font enable-tab', '$1', $attributes, $title, array(
-					'pageId' => intval($pObj->pObj->id)
+					'pageId' => (int)$pObj->pObj->id
 				));
 				$parameters['theOutput'] = preg_replace('/\\<textarea name="data\\[' . $type . '\\]".*\\>([^\\<]*)\\<\\/textarea\\>/mi', $outCode, $parameters['theOutput']);
 			}
@@ -112,7 +112,7 @@ class TypoScriptTemplateInfoHook {
 			// If given use the requested template_uid
 			// if not, use the first template-record on the page (in this case there should only be one record!)
 			$set = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET');
-			$template_uid = $set['templatesOnPage'] ? $set['templatesOnPage'] : 0;
+			$template_uid = $set['templatesOnPage'] ?: 0;
 			// Defined global here!
 			$tmpl = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\ExtendedTemplateService');
 			// Do not log time-performance information
@@ -122,7 +122,7 @@ class TypoScriptTemplateInfoHook {
 			$tplRow = $tmpl->ext_getFirstTemplate($pageId, $template_uid);
 			$existTemplate = is_array($tplRow) ? TRUE : FALSE;
 			if ($existTemplate) {
-				$saveId = $tplRow['_ORIG_uid'] ? $tplRow['_ORIG_uid'] : $tplRow['uid'];
+				$saveId = $tplRow['_ORIG_uid'] ?: $tplRow['uid'];
 				// Update template ?
 				$POST = \TYPO3\CMS\Core\Utility\GeneralUtility::_POST();
 				if ($POST['submit']) {

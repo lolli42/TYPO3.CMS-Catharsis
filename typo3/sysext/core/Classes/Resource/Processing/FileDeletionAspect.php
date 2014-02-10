@@ -88,17 +88,38 @@ class FileDeletionAspect {
 	public function removeFromRepository(FileInterface $fileObject) {
 		// remove file from repository
 		if ($fileObject instanceof File) {
+			$this->cleanupProcessedFiles($fileObject);
+			$this->cleanupCategoryReferences($fileObject);
 			$this->getFileIndexRepository()->remove($fileObject->getUid());
 			$this->getMetaDataRepository()->removeByFileUid($fileObject->getUid());
+
 			// remove all references
 			$this->getDatabase()->exec_DELETEquery(
 				'sys_file_reference',
-				'uid_local=' . intval($fileObject->getUid()) . ' AND table_local = \'sys_file\''
+				'uid_local=' . (int)$fileObject->getUid() . ' AND table_local = \'sys_file\''
 			);
-			$this->cleanupProcessedFiles($fileObject);
+
 		} elseif ($fileObject instanceof ProcessedFile) {
-			$this->getDatabase()->exec_DELETEquery('sys_file_processedfile', 'uid=' . intval($fileObject->getUid()));
+			$this->getDatabase()->exec_DELETEquery('sys_file_processedfile', 'uid=' . (int)$fileObject->getUid());
 		}
+	}
+
+	/**
+	 * Remove all category references of the deleted file.
+	 *
+	 * @param File $fileObject
+	 * @return void
+	 */
+	protected function cleanupCategoryReferences(File $fileObject) {
+
+		// Retrieve the file metadata uid which is different from the file uid.
+		$metadataProperties = $fileObject->_getMetaData();
+
+		$metadDataUid = isset($metadataProperties['_ORIG_uid']) ? $metadataProperties['_ORIG_uid'] : $metadataProperties['uid'];
+		$this->getDatabase()->exec_DELETEquery(
+			'sys_category_record_mm',
+			'uid_foreign=' . (int)$metadDataUid . ' AND tablenames = \'sys_file_metadata\''
+		);
 	}
 
 	/**
@@ -107,7 +128,7 @@ class FileDeletionAspect {
 	 * @param FileInterface $fileObject
 	 * @return void
 	 */
-	public function cleanupProcessedFiles(FileInterface $fileObject) {
+	protected function cleanupProcessedFiles(FileInterface $fileObject) {
 
 		// only delete processed files of File objects
 		if (!$fileObject instanceof File) {
@@ -116,7 +137,10 @@ class FileDeletionAspect {
 
 		/** @var $processedFile \TYPO3\CMS\Core\Resource\ProcessedFile */
 		foreach ($this->getProcessedFileRepository()->findAllByOriginalFile($fileObject) as $processedFile) {
-			$processedFile->delete(TRUE);
+			if ($processedFile->exists()) {
+				$processedFile->delete(TRUE);
+			}
+			$this->removeFromRepository($processedFile);
 		}
 	}
 }

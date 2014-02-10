@@ -74,7 +74,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	public function getTask() {
 		$content = '';
-		$show = intval(GeneralUtility::_GP('show'));
+		$show = (int)GeneralUtility::_GP('show');
 		foreach ($this->hookObjects as $hookObject) {
 			if (method_exists($hookObject, 'getTask')) {
 				$show = $hookObject->getTask($show, $this);
@@ -125,7 +125,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	}
 
 	/**
-	 * Gemeral overview over the task in the taskcenter menu
+	 * General overview over the task in the taskcenter menu
 	 *
 	 * @return string Overview as HTML
 	 */
@@ -149,7 +149,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 
 	/**
 	 * Get all actions of an user. Admins can see any action, all others only those
-	 * whic are allowed in sys_action record itself.
+	 * which are allowed in sys_action record itself.
 	 *
 	 * @return array Array holding every needed information of a sys_action
 	 */
@@ -160,7 +160,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_action', '', '', 'sys_action.sorting');
 		} else {
 			// Editors can only see the actions which are assigned to a usergroup they belong to
-			$additionalWhere = 'be_groups.uid IN (' . ($GLOBALS['BE_USER']->groupList ? $GLOBALS['BE_USER']->groupList : 0) . ')';
+			$additionalWhere = 'be_groups.uid IN (' . ($GLOBALS['BE_USER']->groupList ?: 0) . ')';
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECT_mm_query('sys_action.*', 'sys_action', 'sys_action_asgr_mm', 'be_groups', ' AND sys_action.hidden=0 AND ' . $additionalWhere, 'sys_action.uid', 'sys_action.sorting');
 		}
 		while ($actionRow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
@@ -218,8 +218,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	protected function viewNewBackendUser($record) {
 		$content = '';
-		$beRec = BackendUtility::getRecord('be_users', intval($record['t1_copy_of_user']));
-		// A record is neeed which is used as copy for the new user
+		$beRec = BackendUtility::getRecord('be_users', (int)$record['t1_copy_of_user']);
+		// A record is need which is used as copy for the new user
 		if (!is_array($beRec)) {
 			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('action_notReady', TRUE), $GLOBALS['LANG']->getLL('action_error'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			$content .= $flashMessage->render();
@@ -254,14 +254,14 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			} else {
 				// Save user
 				$key = $this->saveNewBackendUser($record, $vars);
-				// Success messsage
+				// Success message
 				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $vars['key'] === 'NEW' ? $GLOBALS['LANG']->getLL('success-user-created') : $GLOBALS['LANG']->getLL('success-user-updated'), $GLOBALS['LANG']->getLL('success'), \TYPO3\CMS\Core\Messaging\FlashMessage::OK);
 				$content .= $flashMessage->render() . '<br />';
 			}
 		}
 		// Load BE user to edit
-		if (intval(GeneralUtility::_GP('be_users_uid')) > 0) {
-			$tmpUserId = intval(GeneralUtility::_GP('be_users_uid'));
+		if ((int)GeneralUtility::_GP('be_users_uid') > 0) {
+			$tmpUserId = (int)GeneralUtility::_GP('be_users_uid');
 			// Check if the selected user is created by the current user
 			$rawRecord = $this->isCreatedByUser($tmpUserId, $record);
 			if ($rawRecord) {
@@ -368,7 +368,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		$content = '';
 		$userList = array();
 		// List of users
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'be_users', 'cruser_id=' . $GLOBALS['BE_USER']->user['uid'] . ' AND createdByAction=' . intval($action['uid']) . BackendUtility::deleteClause('be_users'), '', 'username');
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'be_users', 'cruser_id=' . $GLOBALS['BE_USER']->user['uid'] . ' AND createdByAction=' . (int)$action['uid'] . BackendUtility::deleteClause('be_users'), '', 'username');
 		// Render the user records
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 			$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('be_users', $row, array('title' => 'uid=' . $row['uid']));
@@ -401,10 +401,10 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$username .= ' (' . $realName . ')';
 		}
 		// Link to update the user record
-		$href = 'mod.php?M=user_task&SET[function]=sys_action.tx_sysaction_task&show=' . intval($sysActionUid) . '&be_users_uid=' . intval($userId);
+		$href = 'mod.php?M=user_task&SET[function]=sys_action.tx_sysaction_task&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
 		$link = '<a href="' . htmlspecialchars($href) . '">' . htmlspecialchars($username) . '</a>';
 		// Link to delete the user record
-		$onClick = ' onClick="return confirm(' . $GLOBALS['LANG']->JScharCode($GLOBALS['LANG']->getLL('lDelete_warning')) . ');"';
+		$onClick = ' onClick="return confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('lDelete_warning')) . ');"';
 		$link .= '
 				<a href="' . htmlspecialchars(($href . '&delete=1')) . '" ' . $onClick . '>
 					<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/delete_record.gif') . ' alt="" />
@@ -432,7 +432,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		$data = '';
 		$newUserId = 0;
 		if ($key === 'NEW') {
-			$beRec = BackendUtility::getRecord('be_users', intval($record['t1_copy_of_user']));
+			$beRec = BackendUtility::getRecord('be_users', (int)$record['t1_copy_of_user']);
 			if (is_array($beRec)) {
 				$data = array();
 				$data['be_users'][$key] = $beRec;
@@ -440,7 +440,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				$data['be_users'][$key]['password'] = trim($vars['password']);
 				$data['be_users'][$key]['realName'] = $vars['realName'];
 				$data['be_users'][$key]['email'] = $vars['email'];
-				$data['be_users'][$key]['disable'] = intval($vars['disable']);
+				$data['be_users'][$key]['disable'] = (int)$vars['disable'];
 				$data['be_users'][$key]['admin'] = 0;
 				$data['be_users'][$key]['usergroup'] = $vars['usergroup'];
 				$data['be_users'][$key]['db_mountpoints'] = $vars['db_mountpoints'];
@@ -448,7 +448,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			}
 		} else {
 			// Check ownership
-			$beRec = BackendUtility::getRecord('be_users', intval($key));
+			$beRec = BackendUtility::getRecord('be_users', (int)$key);
 			if (is_array($beRec) && $beRec['cruser_id'] == $GLOBALS['BE_USER']->user['uid']) {
 				$data = array();
 				$data['be_users'][$key]['username'] = $this->fixUsername($vars['username'], $record['t1_userprefix']);
@@ -457,7 +457,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				}
 				$data['be_users'][$key]['realName'] = $vars['realName'];
 				$data['be_users'][$key]['email'] = $vars['email'];
-				$data['be_users'][$key]['disable'] = intval($vars['disable']);
+				$data['be_users'][$key]['disable'] = (int)$vars['disable'];
 				$data['be_users'][$key]['admin'] = 0;
 				$data['be_users'][$key]['usergroup'] = $vars['usergroup'];
 				$data['be_users'][$key]['db_mountpoints'] = $vars['db_mountpoints'];
@@ -471,13 +471,13 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$tce->start($data, array(), $GLOBALS['BE_USER']);
 			$tce->admin = 1;
 			$tce->process_datamap();
-			$newUserId = intval($tce->substNEWwithIDs['NEW']);
+			$newUserId = (int)$tce->substNEWwithIDs['NEW'];
 			if ($newUserId) {
 				// Create
 				$this->action_createDir($newUserId);
 			} else {
 				// Update
-				$newUserId = intval($key);
+				$newUserId = (int)$key;
 			}
 			unset($tce);
 		}
@@ -507,7 +507,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$cleanGroupList = array();
 			// Create an array from the allowed usergroups using the uid as key
 			$allowedUsergroups = array_flip(explode(',', $actionRecord['t1_allowed_groups']));
-			// Walk through the array and check every uid if it is undder the allowed ines
+			// Walk through the array and check every uid if it is under the allowed ines
 			foreach ($appliedUsergroups as $group) {
 				if (isset($allowedUsergroups[$group])) {
 					$cleanGroupList[] = $group;
@@ -531,7 +531,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$dbMounts = GeneralUtility::trimExplode(',', $appliedDbMounts, TRUE);
 			// Walk through every wanted DB-Mount and check if it allowed for the current user
 			foreach ($dbMounts as $dbMount) {
-				$uid = intval(substr($dbMount, strrpos($dbMount, '_') + 1));
+				$uid = (int)substr($dbMount, strrpos($dbMount, '_') + 1);
 				$page = BackendUtility::getRecord('pages', $uid);
 				// Check rootline and access rights
 				if ($this->checkRootline($uid) && $GLOBALS['BE_USER']->calcPerms($page)) {
@@ -635,7 +635,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	protected function viewNewRecord($record) {
 		$returnUrl = rawurlencode('mod.php?M=user_task');
-		$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[' . $record['t3_tables'] . '][' . intval($record['t3_listPid']) . ']=new';
+		$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[' . $record['t3_tables'] . '][' . (int)$record['t3_listPid'] . ']=new';
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($link);
 	}
 
@@ -658,7 +658,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$record = BackendUtility::getRecord($el['table'], $dbAnalysis->results[$el['table']][$el['id']]);
 			$title = BackendUtility::getRecordTitle($el['table'], $dbAnalysis->results[$el['table']][$el['id']]);
 			$description = $GLOBALS['LANG']->sL($GLOBALS['TCA'][$el['table']]['ctrl']['title'], TRUE);
-			// @todo: which information could be needfull
+			// @todo: which information could be needful
 			if (isset($record['crdate'])) {
 				$description .= ' - ' . BackendUtility::dateTimeAge($record['crdate']);
 			}
@@ -752,7 +752,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	protected function viewRecordList($record) {
 		$content = '';
-		$this->id = intval($record['t3_listPid']);
+		$this->id = (int)$record['t3_listPid'];
 		$this->table = $record['t3_tables'];
 		if ($this->id == 0 || $this->table == '') {
 			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('action_notReady', TRUE), $GLOBALS['LANG']->getLL('action_error'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
@@ -837,7 +837,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				}
 				T3_THIS_LOCATION = "' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '";
 
-				if (top.fsMod) top.fsMod.recentIds["web"] = ' . intval($this->id) . ';
+				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
 			');
 			// Setting up the context sensitive menu:
 			$this->taskObject->doc->getContextMenuCode();

@@ -29,6 +29,7 @@ namespace TYPO3\CMS\Rtehtmlarea;
  ***************************************************************/
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Resource;
 
 /**
  * Script Class
@@ -62,8 +63,6 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	protected $magicMaxHeight;
 
 	protected $imgPath;
-
-	protected $RTEImageStorageDir;
 
 	public $editorNo;
 
@@ -180,10 +179,12 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	/**
 	 * Get the path to the folder where RTE images are stored
 	 *
-	 * @return 	string		the path to the folder where RTE images are stored
+	 * @return  string the path to the folder where RTE images are stored
+	 * @deprecated since 6.2, will be removed in two versions
 	 */
 	protected function getRTEImageStorageDir() {
-		return $this->imgPath ? $this->imgPath : $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'];
+		GeneralUtility::logDeprecatedFunction();
+		return $this->imgPath ?: $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'];
 	}
 
 	/**
@@ -192,10 +193,11 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	 * @return 	void
 	 */
 	protected function insertImage() {
-		if (GeneralUtility::_GP('insertImage')) {
-			$table = GeneralUtility::_GP('table');
-			$uid = GeneralUtility::_GP('uid');
-			$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject($uid);
+		$table = htmlspecialchars(GeneralUtility::_GP('table'));
+		$uid = (int) GeneralUtility::_GP('uid');
+		if (GeneralUtility::_GP('insertImage') && $uid) {
+			/** @var $fileObject Resource\File */
+			$fileObject = Resource\ResourceFactory::getInstance()->getFileObject($uid);
 			// Get default values for alt and title attributes from file properties
 			$altText = $fileObject->getProperty('alternative');
 			$titleText = $fileObject->getProperty('name');
@@ -222,49 +224,57 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	/**
 	 * Insert a magic image
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $fileObject: the image file
-	 * @param 	string		$altText: text for the alt attribute of the image
-	 * @param 	string		$titleText: text for the title attribute of the image
-	 * @param 	string		$additionalParams: text representing more HTML attributes to be added on the img tag
-	 * @return 	void
+	 * @param Resource\File $fileObject: the image file
+	 * @param string $altText: text for the alt attribute of the image
+	 * @param string $titleText: text for the title attribute of the image
+	 * @param string $additionalParams: text representing more HTML attributes to be added on the img tag
+	 * @return void
 	 */
-	public function insertMagicImage(\TYPO3\CMS\Core\Resource\FileInterface $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
-		if ($this->RTEImageStorageDir) {
-			// Create the magic image
-			/** @var $magicImageService \TYPO3\CMS\Core\Resource\Service\MagicImageService */
-			$magicImageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
-			$imageConfiguration = array(
-				'width' => GeneralUtility::_GP('cWidth'),
-				'height' => GeneralUtility::_GP('cHeight'),
-				'maxW' => $this->magicMaxWidth,
-				'maxH' => $this->magicMaxHeight
-			);
-			$magicImage = $magicImageService->createMagicImage($fileObject, $imageConfiguration, $this->getRTEImageStorageDir());
-			if ($magicImage instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-				$filePath = $magicImage->getForLocalProcessing(FALSE);
-				$imageInfo = @getimagesize($filePath);
-				$imageUrl = $this->siteURL . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
-				$this->imageInsertJS($imageUrl, $imageInfo[0], $imageInfo[1], $altText, $titleText, $additionalParams);
-			}
-		} else {
-			GeneralUtility::sysLog('Attempt at creating a magic image failed due to absent RTE_imageStorageDir', $this->extKey . '/tx_rtehtmlarea_select_image', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+	public function insertMagicImage(Resource\File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
+		// Create the magic image service
+		/** @var $magicImageService Resource\Service\MagicImageService */
+		$magicImageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
+		// Create the magic image
+		$imageConfiguration = array(
+			'width' => GeneralUtility::_GP('cWidth'),
+			'height' => GeneralUtility::_GP('cHeight'),
+			'maxW' => $this->magicMaxWidth,
+			'maxH' => $this->magicMaxHeight
+		);
+		$magicImage = $magicImageService->createMagicImage($fileObject, $imageConfiguration);
+		$imageUrl = $magicImage->getPublicUrl();
+		// If file is local, make the url absolute
+		if (substr($imageUrl, 0, 4) !== 'http') {
+			$imageUrl = $this->siteURL . $imageUrl;
 		}
+		// Insert the magic image
+		$this->imageInsertJS($imageUrl, $magicImage->getProperty('width'), $magicImage->getProperty('height'), $altText, $titleText, $additionalParams);
 	}
 
 	/**
 	 * Insert a plain image
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\FileInterface $fileObject: the image file
+	 * @param \TYPO3\CMS\Core\Resource\File $fileObject: the image file
 	 * @param 	string		$altText: text for the alt attribute of the image
 	 * @param 	string		$titleText: text for the title attribute of the image
 	 * @param 	string		$additionalParams: text representing more HTML attributes to be added on the img tag
 	 * @return 	void
 	 */
-	public function insertPlainImage(\TYPO3\CMS\Core\Resource\FileInterface $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
-		$filePath = $fileObject->getForLocalProcessing(FALSE);
-		$imageInfo = @getimagesize($filePath);
-		$imageUrl = $this->siteURL . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($filePath);
-		$this->imageInsertJS($imageUrl, $imageInfo[0], $imageInfo[1], $altText, $titleText, $additionalParams);
+	public function insertPlainImage(Resource\File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
+		$width = $fileObject->getProperty('width');
+		$height = $fileObject->getProperty('height');
+		if (!$width || !$height) {
+			$filePath = $fileObject->getForLocalProcessing(FALSE);
+			$imageInfo = @getimagesize($filePath);
+			$width = $imageInfo[0];
+			$height = $imageInfo[1];
+		}
+		$imageUrl = $fileObject->getPublicUrl();
+		// If file is local, make the url absolute
+		if (substr($imageUrl, 0, 4) !== 'http') {
+			$imageUrl = $this->siteURL . $imageUrl;
+		}
+		$this->imageInsertJS($imageUrl, $width, $height, $altText, $titleText, $additionalParams);
 	}
 
 	/**
@@ -837,7 +847,6 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		$this->thisConfig = $this->getRTEConfig();
 		$this->buttonConfig = $this->getButtonConfig();
 		$this->imgPath = $this->getImgPath();
-		$this->RTEImageStorageDir = $this->getRTEImageStorageDir();
 		$this->defaultClass = $this->getDefaultClass();
 		$this->setMaximumImageDimensions();
 	}
@@ -988,137 +997,6 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 			default:
 				return '';
 		}
-	}
-
-	/**
-	 * Render list of files.
-	 *
-	 * @param 	array		List of files. See \TYPO3\CMS\Core\Utility\GeneralUtility::getFilesInDir
-	 * @param 	string		If set a header with a folder icon and folder name are shown
-	 * @param 	boolean		Whether to show thumbnails or not. If set, no thumbnails are shown.
-	 * @return 	string		HTML output
-	 * @todo Define visibility
-	 */
-	public function fileList(array $files, \TYPO3\CMS\Core\Resource\Folder $folder = NULL, $noThumbs = 0) {
-		$out = '';
-		// Listing the files:
-		if (is_array($files)) {
-			$lines = array();
-			// Create headline (showing number of files):
-			$filesCount = count($files);
-			$out .= $this->barheader(sprintf($GLOBALS['LANG']->getLL('files') . ' (%s):', $filesCount));
-			$out .= '<div id="filelist">';
-			$out .= $this->getBulkSelector($filesCount);
-			$titleLen = intval($GLOBALS['BE_USER']->uc['titleLen']);
-			// Create the header of current folder:
-			if ($folder) {
-				$folderIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile('folder');
-				$lines[] = '<tr class="t3-row-header">
-					<td colspan="4">' . $folderIcon . htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen)) . '</td>
-				</tr>';
-			}
-			if ($filesCount == 0) {
-				$lines[] = '
-					<tr class="file_list_normal">
-						<td colspan="4">No files found.</td>
-					</tr>';
-			}
-			// Init graphic object for reading file and image dimensions:
-			/** @var $imgObj \TYPO3\CMS\Core\Imaging\GraphicalFunctions */
-			$imgObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Imaging\\GraphicalFunctions');
-			$imgObj->init();
-			$imgObj->mayScaleUp = 0;
-			$imgObj->tempPath = PATH_site . $imgObj->tempPath;
-			// Traverse the file list:
-			/** @var $fileObject \TYPO3\CMS\Core\Resource\File */
-			foreach ($files as $fileObject) {
-				$fileExtension = $fileObject->getExtension();
-				// Thumbnail/size generation:
-				if (GeneralUtility::inList(strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']), strtolower($fileExtension)) && !$noThumbs) {
-					$imageUrl = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW, array('width' => 64, 'height' => 64))->getPublicUrl(TRUE);
-					$imgInfo = $imgObj->getImageDimensions($fileObject->getForLocalProcessing(FALSE));
-					$pDim = $imgInfo[0] . 'x' . $imgInfo[1] . ' pixels';
-					$clickIcon = '<img src="' . $imageUrl . '" hspace="5" vspace="5" border="1"';
-				} else {
-					$clickIcon = '';
-					$pDim = '';
-				}
-				// Create file icon:
-				$size = ' (' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes' . ($pDim ? ', ' . $pDim : '') . ')';
-				$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile($fileExtension, array('title' => $fileObject->getName() . $size));
-				// Create links for adding the file:
-				$filesIndex = count($this->elements);
-				$this->elements['file_' . $filesIndex] = array(
-					'type' => 'file',
-					'table' => 'sys_file',
-					'uid' => $fileObject->getUid(),
-					'fileName' => $fileObject->getName(),
-					'filePath' => $fileObject->getUid(),
-					'fileExt' => $fileExtension,
-					'fileIcon' => $icon
-				);
-				$element = $this->elements['file_' . $filesIndex];
-				if ($this->act === 'plain' && ($imgInfo[0] > $this->plainMaxWidth || $imgInfo[1] > $this->plainMaxHeight) || !GeneralUtility::inList('jpg,jpeg,gif,png', $fileExtension)) {
-					$ATag = '';
-					$ATag_alt = '';
-					$ATag_e = '';
-				} else {
-					$this->elements['file_' . $filesIndex] = array(
-						'type' => 'file',
-						'table' => 'sys_file',
-						'uid' => $fileObject->getUid(),
-						'fileName' => $fileObject->getName(),
-						'filePath' => $fileObject->getUid(),
-						'fileExt' => $fileExtension,
-						'fileIcon' => $icon
-					);
-					$ATag = '<a href="#" onclick="return BrowseLinks.File.insertElement(\'file_' . $filesIndex . '\');">';
-					$ATag_alt = substr($ATag, 0, -4) . ',1);">';
-					$ATag_e = '</a>';
-				}
-				// Create link to showing details about the file in a window:
-				$Ahref = $GLOBALS['BACK_PATH'] . 'show_item.php?type=file&table=' . rawurlencode($fileObject->getCombinedIdentifier()) . '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
-				$ATag2 = '<a href="' . htmlspecialchars($Ahref) . '">';
-				$ATag2_e = '</a>';
-				// Combine the stuff:
-				$filenameAndIcon = $ATag_alt . $icon . htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getName(), $titleLen)) . $ATag_e;
-				// Show element:
-				if ($pDim) {
-					// Image...
-					$lines[] = '
-						<tr class="file_list_normal">
-							<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
-							<td nowrap="nowrap">' . ($ATag2 . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/zoom2.gif', 'width="12" height="12"') . ' title="' . $GLOBALS['LANG']->getLL('info', TRUE) . '" alt="" /> ' . $GLOBALS['LANG']->getLL('info', TRUE) . $ATag2_e) . '</td>
-							<td nowrap="nowrap">&nbsp;' . $pDim . '</td>
-						</tr>';
-					$lines[] = '
-						<tr>
-							<td class="filelistThumbnail" colspan="4">' . $ATag_alt . $clickIcon . $ATag_e . '</td>
-						</tr>';
-				} else {
-					$lines[] = '
-						<tr class="file_list_normal">
-							<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
-							<td nowrap="nowrap">' . ($ATag2 . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/zoom2.gif', 'width="12" height="12"') . ' title="' . $GLOBALS['LANG']->getLL('info', TRUE) . '" alt="" /> ' . $GLOBALS['LANG']->getLL('info', TRUE) . $ATag2_e) . '</td>
-							<td>&nbsp;</td>
-						</tr>';
-				}
-			}
-			// Wrap all the rows in table tags:
-			$out .= '
-
-
-
-		<!--
-			File listing
-		-->
-				<table cellpadding="0" cellspacing="0" id="typo3-filelist">
-					' . implode('', $lines) . '
-				</table>';
-		}
-		// Return accumulated content for filelisting:
-		$out .= '</div>';
-		return $out;
 	}
 
 }

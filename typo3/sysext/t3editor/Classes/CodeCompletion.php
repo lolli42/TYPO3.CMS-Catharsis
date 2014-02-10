@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\T3Editor;
+namespace TYPO3\CMS\T3editor;
 
 /***************************************************************
  *  Copyright notice
@@ -41,6 +41,13 @@ class CodeCompletion {
 	protected $ajaxObj;
 
 	/**
+	 * Default constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:t3editor/locallang.xlf');
+	}
+
+	/**
 	 * General processor for AJAX requests.
 	 * (called by typo3/ajax.php)
 	 *
@@ -56,7 +63,7 @@ class CodeCompletion {
 		$response = array();
 		// Process the AJAX requests:
 		if ($ajaxMethod == 'loadTemplates') {
-			$ajaxObj->setContent($this->loadTemplates(intval(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pageId'))));
+			$ajaxObj->setContent($this->loadTemplates((int)\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('pageId')));
 			$ajaxObj->setContentFormat('jsonbody');
 		}
 	}

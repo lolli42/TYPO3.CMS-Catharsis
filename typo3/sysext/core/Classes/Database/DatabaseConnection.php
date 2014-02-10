@@ -198,10 +198,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_INSERTquery($table, $fields_values, $no_quote_fields = FALSE) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($this->INSERTquery($table, $fields_values, $no_quote_fields));
+		$res = $this->query($this->INSERTquery($table, $fields_values, $no_quote_fields));
 		if ($this->debugOutput) {
 			$this->debug('exec_INSERTquery');
 		}
@@ -222,10 +219,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_INSERTmultipleRows($table, array $fields, array $rows, $no_quote_fields = FALSE) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($this->INSERTmultipleRows($table, $fields, $rows, $no_quote_fields));
+		$res = $this->query($this->INSERTmultipleRows($table, $fields, $rows, $no_quote_fields));
 		if ($this->debugOutput) {
 			$this->debug('exec_INSERTmultipleRows');
 		}
@@ -247,10 +241,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_UPDATEquery($table, $where, $fields_values, $no_quote_fields = FALSE) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($this->UPDATEquery($table, $where, $fields_values, $no_quote_fields));
+		$res = $this->query($this->UPDATEquery($table, $where, $fields_values, $no_quote_fields));
 		if ($this->debugOutput) {
 			$this->debug('exec_UPDATEquery');
 		}
@@ -269,10 +260,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_DELETEquery($table, $where) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($this->DELETEquery($table, $where));
+		$res = $this->query($this->DELETEquery($table, $where));
 		if ($this->debugOutput) {
 			$this->debug('exec_DELETEquery');
 		}
@@ -296,11 +284,8 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '') {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$query = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
-		$res = $this->link->query($query);
+		$res = $this->query($query);
 		if ($this->debugOutput) {
 			$this->debug('exec_SELECTquery');
 		}
@@ -339,7 +324,7 @@ class DatabaseConnection {
 		$mmWhere .= ($local_table and $foreign_table) ? ' AND ' : '';
 		$tables = ($local_table ? $local_table . ',' : '') . $mm_table;
 		if ($foreign_table) {
-			$mmWhere .= ($foreign_table_as ? $foreign_table_as : $foreign_table) . '.uid=' . $mm_table . '.uid_foreign';
+			$mmWhere .= ($foreign_table_as ?: $foreign_table) . '.uid=' . $mm_table . '.uid_foreign';
 			$tables .= ',' . $foreign_table . ($foreign_table_as ? ' AS ' . $foreign_table_as : '');
 		}
 		return $this->exec_SELECTquery($select, $tables, $mmWhere . ' ' . $whereClause, $groupBy, $orderBy, $limit);
@@ -434,7 +419,7 @@ class DatabaseConnection {
 		$resultSet = $this->exec_SELECTquery('COUNT(' . $field . ')', $table, $where);
 		if ($resultSet !== FALSE) {
 			list($count) = $this->sql_fetch_row($resultSet);
-			$count = intval($count);
+			$count = (int)$count;
 			$this->sql_free_result($resultSet);
 		}
 		return $count;
@@ -447,10 +432,7 @@ class DatabaseConnection {
 	 * @return mixed Result from handler
 	 */
 	public function exec_TRUNCATEquery($table) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($this->TRUNCATEquery($table));
+		$res = $this->query($this->TRUNCATEquery($table));
 		if ($this->debugOutput) {
 			$this->debug('exec_TRUNCATEquery');
 		}
@@ -459,6 +441,20 @@ class DatabaseConnection {
 			$hookObject->exec_TRUNCATEquery_postProcessAction($table, $this);
 		}
 		return $res;
+	}
+
+	/**
+	 * Central query method. Also checks if there is a database connection.
+	 * Use this to execute database queries instead of directly calling $this->link->query()
+	 *
+	 * @param string $query The query to send to the database
+	 * @return bool|\mysqli_result
+	 */
+	protected function query($query) {
+		if (!$this->isConnected) {
+			$this->connectDB();
+		}
+		return $this->link->query($query);
 	}
 
 	/**************************************
@@ -765,10 +761,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_PREPAREDquery($query, array $queryComponents) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($query);
+		$res = $this->query($query);
 		if ($this->debugOutput) {
 			$this->debug('stmt_execute', $query);
 		}
@@ -863,12 +856,12 @@ class DatabaseConnection {
 	 * Useful when you want to make sure an array contains only integers before imploding them in a select-list.
 	 *
 	 * @param array $arr Array with values
-	 * @return array The input array with all values passed through intval()
+	 * @return array The input array with all values cast to (int)
 	 * @see cleanIntList()
 	 */
 	public function cleanIntArray($arr) {
 		foreach ($arr as $k => $v) {
-			$arr[$k] = intval($arr[$k]);
+			$arr[$k] = (int)$arr[$k];
 		}
 		return $arr;
 	}
@@ -878,7 +871,7 @@ class DatabaseConnection {
 	 * Useful when you want to make sure a commalist of supposed integers really contain only integers; You want to know that when you don't trust content that could go into an SQL statement.
 	 *
 	 * @param string $list List of comma-separated values which should be integers
-	 * @return string The input list but with every value passed through intval()
+	 * @return string The input list but with every value cast to (int)
 	 * @see cleanIntArray()
 	 */
 	public function cleanIntList($list) {
@@ -987,10 +980,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function sql_query($query) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($query);
+		$res = $this->query($query);
 		if ($this->debugOutput) {
 			$this->debug('sql_query', $query);
 		}
@@ -1212,7 +1202,7 @@ class DatabaseConnection {
 			}
 
 			foreach ($this->initializeCommandsAfterConnect as $command) {
-				if ($this->link->query($command) === FALSE) {
+				if ($this->query($command) === FALSE) {
 					\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(
 						'Could not initialize DB connection with query "' . $command . '": ' . $this->sql_error(),
 						'Core',
@@ -1303,11 +1293,8 @@ class DatabaseConnection {
 	 * @return array Each entry represents a database name
 	 */
 	public function admin_get_dbs() {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$dbArr = array();
-		$db_list = $this->link->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
+		$db_list = $this->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
 		if ($db_list === FALSE) {
 			throw new \RuntimeException(
 				'MySQL Error: Cannot get tablenames: "' . $this->sql_error() . '"!',
@@ -1338,11 +1325,8 @@ class DatabaseConnection {
 	 * @return array Array with tablenames as key and arrays with status information as value
 	 */
 	public function admin_get_tables() {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$whichTables = array();
-		$tables_result = $this->link->query('SHOW TABLE STATUS FROM `' . $this->databaseName . '`');
+		$tables_result = $this->query('SHOW TABLE STATUS FROM `' . $this->databaseName . '`');
 		if ($tables_result !== FALSE) {
 			while ($theTable = $tables_result->fetch_assoc()) {
 				$whichTables[$theTable['Name']] = $theTable;
@@ -1364,11 +1348,8 @@ class DatabaseConnection {
 	 * @return array Field information in an associative array with fieldname => field row
 	 */
 	public function admin_get_fields($tableName) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$output = array();
-		$columns_res = $this->link->query('SHOW COLUMNS FROM `' . $tableName . '`');
+		$columns_res = $this->query('SHOW COLUMNS FROM `' . $tableName . '`');
 		if ($columns_res !== FALSE) {
 			while ($fieldRow = $columns_res->fetch_assoc()) {
 				$output[$fieldRow['Field']] = $fieldRow;
@@ -1386,11 +1367,8 @@ class DatabaseConnection {
 	 * @return array Key information in a numeric array
 	 */
 	public function admin_get_keys($tableName) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$output = array();
-		$keyRes = $this->link->query('SHOW KEYS FROM `' . $tableName . '`');
+		$keyRes = $this->query('SHOW KEYS FROM `' . $tableName . '`');
 		if ($keyRes !== FALSE) {
 			while ($keyRow = $keyRes->fetch_assoc()) {
 				$output[] = $keyRow;
@@ -1413,11 +1391,8 @@ class DatabaseConnection {
 	 * @return array Array with Charset as key and an array of "Charset", "Description", "Default collation", "Maxlen" as values
 	 */
 	public function admin_get_charsets() {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
 		$output = array();
-		$columns_res = $this->link->query('SHOW CHARACTER SET');
+		$columns_res = $this->query('SHOW CHARACTER SET');
 		if ($columns_res !== FALSE) {
 			while ($row = $columns_res->fetch_assoc()) {
 				$output[$row['Charset']] = $row;
@@ -1434,10 +1409,7 @@ class DatabaseConnection {
 	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function admin_query($query) {
-		if (!$this->isConnected) {
-			$this->connectDB();
-		}
-		$res = $this->link->query($query);
+		$res = $this->query($query);
 		if ($this->debugOutput) {
 			$this->debug('admin_query', $query);
 		}
@@ -1629,6 +1601,11 @@ class DatabaseConnection {
 	 * @return boolean
 	 */
 	public function isConnected() {
+		// We think we're still connected
+		if ($this->isConnected) {
+			// Check if this is really the case or if the database server has gone away for some reason
+			$this->isConnected = $this->link->ping();
+		}
 		return $this->isConnected;
 	}
 
@@ -1714,7 +1691,7 @@ class DatabaseConnection {
 	 * @return void
 	 */
 	protected function disconnectIfConnected() {
-		if ($this->isConnected()) {
+		if ($this->isConnected) {
 			$this->link->close();
 			$this->isConnected = FALSE;
 		}
@@ -1786,7 +1763,7 @@ class DatabaseConnection {
 	 */
 	public function debug($func, $query = '') {
 		$error = $this->sql_error();
-		if ($error || (int) $this->debugOutput === 2) {
+		if ($error || (int)$this->debugOutput === 2) {
 			\TYPO3\CMS\Core\Utility\DebugUtility::debug(
 				array(
 					'caller' => 'TYPO3\\CMS\\Core\\Database\\DatabaseConnection::' . $func,
@@ -1866,7 +1843,7 @@ class DatabaseConnection {
 		) {
 			// Raw HTML output
 			$explainMode = 1;
-		} elseif ((int) $this->explainOutput == 3 && is_object($GLOBALS['TT'])) {
+		} elseif ((int)$this->explainOutput == 3 && is_object($GLOBALS['TT'])) {
 			// Embed the output into the TS admin panel
 			$explainMode = 2;
 		} else {

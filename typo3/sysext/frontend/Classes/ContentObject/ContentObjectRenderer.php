@@ -464,7 +464,7 @@ class ContentObjectRenderer {
 	 */
 	public $recordRegister = array();
 
-	// Containig hooks for userdefined cObjects
+	// Containing hooks for userdefined cObjects
 	/**
 	 * @todo Define visibility
 	 */
@@ -687,7 +687,7 @@ class ContentObjectRenderer {
 			$content = '';
 			foreach ($sKeyArray as $theKey) {
 				$theValue = $setup[$theKey];
-				if (intval($theKey) && !strstr($theKey, '.')) {
+				if ((int)$theKey && strpos($theKey, '.') === FALSE) {
 					$conf = $setup[$theKey . '.'];
 					$content .= $this->cObjGetSingle($theValue, $conf, $addKey . $theKey);
 				}
@@ -717,7 +717,7 @@ class ContentObjectRenderer {
 				$GLOBALS['TT']->push($TSkey, $name);
 			}
 			// Checking if the COBJ is a reference to another object. (eg. name of 'blabla.blabla = < styles.something')
-			if ($name{0} === '<') {
+			if ($name[0] === '<') {
 				$key = trim(substr($name, 1));
 				$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 				// $name and $conf is loaded with the referenced values.
@@ -1359,7 +1359,7 @@ class ContentObjectRenderer {
 				'src' => htmlspecialchars($source),
 				'params' => $params,
 				'altParams' => $altParam,
-				'border' =>  $this->getBorderAttr(' border="' . intval($conf['border']) . '"'),
+				'border' =>  $this->getBorderAttr(' border="' . (int)$conf['border'] . '"'),
 				'sourceCollection' => $sourceCollection,
 				'selfClosingTagSlash' => (!empty($GLOBALS['TSFE']->xhtmlDoctype) ? ' /' : ''),
 			);
@@ -1450,7 +1450,7 @@ class ContentObjectRenderer {
 				);
 
 				if (isset($sourceConfiguration['pixelDensity'])) {
-					$pixelDensity = (int) $this->stdWrap($sourceConfiguration['pixelDensity'], $sourceConfiguration['pixelDensity.']);
+					$pixelDensity = (int)$this->stdWrap($sourceConfiguration['pixelDensity'], $sourceConfiguration['pixelDensity.']);
 				} else {
 					$pixelDensity = 1;
 				}
@@ -1463,12 +1463,12 @@ class ContentObjectRenderer {
 					if ($dimension) {
 						if (strstr($dimension, 'c') !== FALSE && ($dimensionKey === 'width' || $dimensionKey === 'height')) {
 							$dimensionParts = explode('c', $dimension, 2);
-							$dimension = intval($dimensionParts[0] * $pixelDensity) . 'c';
+							$dimension = (int)($dimensionParts[0] * $pixelDensity) . 'c';
 							if ($dimensionParts[1]) {
 								$dimension .= $dimensionParts[1];
 							}
 						} else {
-							$dimension = intval($dimension * $pixelDensity);
+							$dimension = (int)($dimension * $pixelDensity);
 						}
 						$sourceRenderConfiguration['file.'][$dimensionKey] = $dimension;
 					}
@@ -1633,8 +1633,8 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function lastChanged($tstamp) {
-		$tstamp = intval($tstamp);
-		if ($tstamp > intval($GLOBALS['TSFE']->register['SYS_LASTCHANGED'])) {
+		$tstamp = (int)$tstamp;
+		if ($tstamp > (int)$GLOBALS['TSFE']->register['SYS_LASTCHANGED']) {
 			$GLOBALS['TSFE']->register['SYS_LASTCHANGED'] = $tstamp;
 		}
 	}
@@ -1949,7 +1949,7 @@ class ContentObjectRenderer {
 			if (!is_array($valueArr[$keyN])) {
 				$content .= $valueArr[$keyN];
 			} else {
-				$content .= $valueArr[$keyN][intval($wSCA_reg[$keyN]) % 2];
+				$content .= $valueArr[$keyN][(int)$wSCA_reg[$keyN] % 2];
 				$wSCA_reg[$keyN]++;
 			}
 		}
@@ -2082,87 +2082,83 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap($content = '', $conf = array()) {
-		if (count($this->stdWrapHookObjects)) {
-			foreach ($this->stdWrapHookObjects as $hookObject) {
-				if (is_callable(array($hookObject, 'stdWrapPreProcess'))) {
-					$conf['stdWrapPreProcess'] = 1;
+		// If there is any hook object, activate all of the process and override functions.
+		// The hook interface ContentObjectStdWrapHookInterface takes care that all 4 methods exist.
+		if ($this->stdWrapHookObjects) {
+			$conf['stdWrapPreProcess'] = 1;
+			$conf['stdWrapOverride'] = 1;
+			$conf['stdWrapProcess'] = 1;
+			$conf['stdWrapPostProcess'] = 1;
+		}
+
+		if (!is_array($conf) || !$conf) {
+			return $content;
+		}
+
+		// Cache handling
+		if (is_array($conf['cache.'])) {
+			$conf['cache.']['key'] = $this->stdWrap($conf['cache.']['key'], $conf['cache.']['key.']);
+			$conf['cache.']['tags'] = $this->stdWrap($conf['cache.']['tags'], $conf['cache.']['tags.']);
+			$conf['cache.']['lifetime'] = $this->stdWrap($conf['cache.']['lifetime'], $conf['cache.']['lifetime.']);
+			$conf['cacheRead'] = 1;
+			$conf['cacheStore'] = 1;
+		}
+		// Check, which of the available stdWrap functions is needed for the current conf Array
+		// and keep only those but still in the same order
+		$sortedConf = array_intersect_key($this->stdWrapOrder, $conf);
+		// Functions types that should not make use of nested stdWrap function calls to avoid conflicts with internal TypoScript used by these functions
+		$stdWrapDisabledFunctionTypes = 'cObject,functionName,stdWrap';
+		// Additional Array to check whether a function has already been executed
+		$isExecuted = array();
+		// Additional switch to make sure 'required', 'if' and 'fieldRequired'
+		// will still stop rendering immediately in case they return FALSE
+		$this->stdWrapRecursionLevel++;
+		$this->stopRendering[$this->stdWrapRecursionLevel] = FALSE;
+		// execute each function in the predefined order
+		foreach ($sortedConf as $stdWrapName => $functionType) {
+			// eliminate the second key of a pair 'key'|'key.' to make sure functions get called only once and check if rendering has been stopped
+			if (!$isExecuted[$stdWrapName] && !$this->stopRendering[$this->stdWrapRecursionLevel]) {
+				$functionName = rtrim($stdWrapName, '.');
+				$functionProperties = $functionName . '.';
+				// If there is any code one the next level, check if it contains "official" stdWrap functions
+				// if yes, execute them first - will make each function stdWrap aware
+				// so additional stdWrap calls within the functions can be removed, since the result will be the same
+				// exception: the recursive stdWrap function and cObject will still be using their own stdWrap call, since it modifies the content and not a property
+				if (count($conf[$functionProperties]) && !GeneralUtility::inList($stdWrapDisabledFunctionTypes, $functionType)) {
+					if (array_intersect_key($this->stdWrapOrder, $conf[$functionProperties])) {
+						$conf[$functionName] = $this->stdWrap($conf[$functionName], $conf[$functionProperties]);
+					}
 				}
-				if (is_callable(array($hookObject, 'stdWrapOverride'))) {
-					$conf['stdWrapOverride'] = 1;
+				// Get just that part of $conf that is needed for the particular function
+				$singleConf = array(
+					$functionName => $conf[$functionName],
+					$functionProperties => $conf[$functionProperties]
+				);
+				// In this special case 'spaceBefore' and 'spaceAfter' need additional stuff from 'space.''
+				if ($functionName == 'spaceBefore' || $functionName == 'spaceAfter') {
+					$singleConf['space.'] = $conf['space.'];
 				}
-				if (is_callable(array($hookObject, 'stdWrapProcess'))) {
-					$conf['stdWrapProcess'] = 1;
+				// Hand over the whole $conf array to the stdWrapHookObjects
+				if ($functionType === 'hook') {
+					$singleConf = $conf;
 				}
-				if (is_callable(array($hookObject, 'stdWrapPostProcess'))) {
-					$conf['stdWrapPostProcess'] = 1;
+				// Check if key is still containing something, since it might have been changed by next level stdWrap before
+				if ((isset($conf[$functionName]) || $conf[$functionProperties]) && !($functionType == 'boolean' && !$conf[$functionName])) {
+					// Add both keys - with and without the dot - to the set of executed functions
+					$isExecuted[$functionName] = TRUE;
+					$isExecuted[$functionProperties] = TRUE;
+					// Call the function with the prefix stdWrap_ to make sure nobody can execute functions just by adding their name to the TS Array
+					$functionName = 'stdWrap_' . $functionName;
+					$content = $this->{$functionName}($content, $singleConf);
+				} elseif ($functionType == 'boolean' && !$conf[$functionName]) {
+					$isExecuted[$functionName] = TRUE;
+					$isExecuted[$functionProperties] = TRUE;
 				}
 			}
 		}
-		if (is_array($conf) && count($conf)) {
-			// Cache handling
-			if (is_array($conf['cache.'])) {
-				$conf['cache.']['key'] = $this->stdWrap($conf['cache.']['key'], $conf['cache.']['key.']);
-				$conf['cache.']['tags'] = $this->stdWrap($conf['cache.']['tags'], $conf['cache.']['tags.']);
-				$conf['cache.']['lifetime'] = $this->stdWrap($conf['cache.']['lifetime'], $conf['cache.']['lifetime.']);
-				$conf['cacheRead'] = 1;
-				$conf['cacheStore'] = 1;
-			}
-			// Check, which of the available stdWrap functions is needed for the current conf Array
-			// and keep only those but still in the same order
-			$sortedConf = array_intersect_key($this->stdWrapOrder, $conf);
-			// Functions types that should not make use of nested stdWrap function calls to avoid conflicts with internal TypoScript used by these functions
-			$stdWrapDisabledFunctionTypes = 'cObject,functionName,stdWrap';
-			// Additional Array to check whether a function has already been executed
-			$isExecuted = array();
-			// Additional switch to make sure 'required', 'if' and 'fieldRequired'
-			// will still stop rendering immediately in case they return FALSE
-			$this->stdWrapRecursionLevel++;
-			$this->stopRendering[$this->stdWrapRecursionLevel] = FALSE;
-			// execute each function in the predefined order
-			foreach ($sortedConf as $stdWrapName => $functionType) {
-				// eliminate the second key of a pair 'key'|'key.' to make sure functions get called only once and check if rendering has been stopped
-				if (!$isExecuted[$stdWrapName] && !$this->stopRendering[$this->stdWrapRecursionLevel]) {
-					$functionName = rtrim($stdWrapName, '.');
-					$functionProperties = $functionName . '.';
-					// If there is any code one the next level, check if it contains "official" stdWrap functions
-					// if yes, execute them first - will make each function stdWrap aware
-					// so additional stdWrap calls within the functions can be removed, since the result will be the same
-					// exception: the recursive stdWrap function and cObject will still be using their own stdWrap call, since it modifies the content and not a property
-					if (count($conf[$functionProperties]) && !GeneralUtility::inList($stdWrapDisabledFunctionTypes, $functionType)) {
-						if (array_intersect_key($this->stdWrapOrder, $conf[$functionProperties])) {
-							$conf[$functionName] = $this->stdWrap($conf[$functionName], $conf[$functionProperties]);
-						}
-					}
-					// Get just that part of $conf that is needed for the particular function
-					$singleConf = array(
-						$functionName => $conf[$functionName],
-						$functionProperties => $conf[$functionProperties]
-					);
-					// In this special case 'spaceBefore' and 'spaceAfter' need additional stuff from 'space.''
-					if ($functionName == 'spaceBefore' || $functionName == 'spaceAfter') {
-						$singleConf['space.'] = $conf['space.'];
-					}
-					// Hand over the whole $conf array to the stdWrapHookObjects
-					if ($functionType === 'hook') {
-						$singleConf = $conf;
-					}
-					// Check if key is still containing something, since it might have been changed by next level stdWrap before
-					if ((isset($conf[$functionName]) || $conf[$functionProperties]) && !($functionType == 'boolean' && !$conf[$functionName])) {
-						// Add both keys - with and without the dot - to the set of executed functions
-						$isExecuted[$functionName] = TRUE;
-						$isExecuted[$functionProperties] = TRUE;
-						// Call the function with the prefix stdWrap_ to make sure nobody can execute functions just by adding their name to the TS Array
-						$functionName = 'stdWrap_' . $functionName;
-						$content = $this->{$functionName}($content, $singleConf);
-					} elseif ($functionType == 'boolean' && !$conf[$functionName]) {
-						$isExecuted[$functionName] = TRUE;
-						$isExecuted[$functionProperties] = TRUE;
-					}
-				}
-			}
-			unset($this->stopRendering[$this->stdWrapRecursionLevel]);
-			$this->stdWrapRecursionLevel--;
-		}
+		unset($this->stopRendering[$this->stdWrapRecursionLevel]);
+		$this->stdWrapRecursionLevel--;
+
 		return $content;
 	}
 
@@ -2484,7 +2480,7 @@ class ContentObjectRenderer {
 		$padType = STR_PAD_RIGHT;
 		if (!empty($conf['strPad.']['length'])) {
 			$length = isset($conf['strPad.']['length.']) ? $this->stdWrap($conf['strPad.']['length'], $conf['strPad.']['length.']) : $conf['strPad.']['length'];
-			$length = intval($length);
+			$length = (int)$length;
 		}
 		if (isset($conf['strPad.']['padWith']) && strlen($conf['strPad.']['padWith']) > 0) {
 			$padWith = isset($conf['strPad.']['padWith.']) ? $this->stdWrap($conf['strPad.']['padWith'], $conf['strPad.']['padWith.']) : $conf['strPad.']['padWith'];
@@ -2661,7 +2657,7 @@ class ContentObjectRenderer {
 	public function stdWrap_prioriCalc($content = '', $conf = array()) {
 		$content = \TYPO3\CMS\Core\Utility\MathUtility::calculateWithParentheses($content);
 		if ($conf['prioriCalc'] == 'intval') {
-			$content = intval($content);
+			$content = (int)$content;
 		}
 		return $content;
 	}
@@ -2675,7 +2671,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_char($content = '', $conf = array()) {
-		return chr(intval($conf['char']));
+		return chr((int)$conf['char']);
 	}
 
 	/**
@@ -2687,7 +2683,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_intval($content = '', $conf = array()) {
-		return intval($content);
+		return (int)$content;
 	}
 
 	/**
@@ -2756,7 +2752,7 @@ class ContentObjectRenderer {
 	 */
 	public function stdWrap_date($content = '', $conf = array()) {
 		// Check for zero length string to mimic default case of date/gmdate.
-		$content = $content == '' ? $GLOBALS['EXEC_TIME'] : intval($content);
+		$content = $content == '' ? $GLOBALS['EXEC_TIME'] : (int)$content;
 		$content = $conf['date.']['GMT'] ? gmdate($conf['date'], $content) : date($conf['date'], $content);
 		return $content;
 	}
@@ -2772,7 +2768,7 @@ class ContentObjectRenderer {
 	 */
 	public function stdWrap_strftime($content = '', $conf = array()) {
 			// Check for zero length string to mimic default case of strtime/gmstrftime
-		$content = $content == '' ? $GLOBALS['EXEC_TIME'] : intval($content);
+		$content = $content == '' ? $GLOBALS['EXEC_TIME'] : (int)$content;
 		$content = $conf['strftime.']['GMT'] ? gmstrftime($conf['strftime'], $content) : strftime($conf['strftime'], $content);
 		$tmp_charset = $conf['strftime.']['charset'] ? $conf['strftime.']['charset'] : $GLOBALS['TSFE']->localeCharset;
 		if ($tmp_charset) {
@@ -3442,9 +3438,9 @@ class ContentObjectRenderer {
 				} elseif (strtolower($conf['cache.']['lifetime']) == 'default') {
 					// default lifetime
 					$lifetime = NULL;
-				} elseif (intval($conf['cache.']['lifetime']) > 0) {
+				} elseif ((int)$conf['cache.']['lifetime'] > 0) {
 					// lifetime in seconds
-					$lifetime = intval($conf['cache.']['lifetime']);
+					$lifetime = (int)$conf['cache.']['lifetime'];
 				} else {
 					// default lifetime
 					$lifetime = NULL;
@@ -3543,7 +3539,7 @@ class ContentObjectRenderer {
 			$GLOBALS['TT']->setTSlogMessage($error, 3);
 		} else {
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_row($res);
-			$result = intval($row[0]);
+			$result = (int)$row[0];
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
 		return $result;
@@ -3559,7 +3555,7 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function listNum($content, $listNum, $char) {
-		$char = $char ? $char : ',';
+		$char = $char ?: ',';
 		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($char)) {
 			$char = chr($char);
 		}
@@ -3853,7 +3849,7 @@ class ContentObjectRenderer {
 	}
 
 	/**
-	 * Implements the stdWrap property "crop" which is a modified "substr" function allowing to limit a string lenght to a certain number of chars (from either start or end of string) and having a pre/postfix applied if the string really was cropped.
+	 * Implements the stdWrap property "crop" which is a modified "substr" function allowing to limit a string length to a certain number of chars (from either start or end of string) and having a pre/postfix applied if the string really was cropped.
 	 *
 	 * @param string $content The string to perform the operation on
 	 * @param string $options The parameters splitted by "|": First parameter is the max number of chars of the string. Negative value means cropping from end of string. Second parameter is the pre/postfix string to apply if cropping occurs. Third parameter is a boolean value. If set then crop will be applied at nearest space.
@@ -3864,7 +3860,7 @@ class ContentObjectRenderer {
 	 */
 	public function crop($content, $options) {
 		$options = explode('|', $options);
-		$chars = intval($options[0]);
+		$chars = (int)$options[0];
 		$afterstring = trim($options[1]);
 		$crop2space = trim($options[2]);
 		if ($chars) {
@@ -3904,7 +3900,7 @@ class ContentObjectRenderer {
 	 */
 	public function cropHTML($content, $options) {
 		$options = explode('|', $options);
-		$chars = intval($options[0]);
+		$chars = (int)$options[0];
 		$absChars = abs($chars);
 		$replacementForEllipsis = trim($options[1]);
 		$crop2space = trim($options[2]) === '1' ? TRUE : FALSE;
@@ -4168,9 +4164,9 @@ class ContentObjectRenderer {
 		$conf['color.'][243] = 'gray';
 		$conf['color.'][244] = 'silver';
 		$align = isset($conf['align.']) ? $this->stdWrap($conf['align'], $conf['align.']) : $conf['align'];
-		$border = isset($conf['border.']) ? intval($this->stdWrap($conf['border'], $conf['border.'])) : intval($conf['border']);
-		$cellspacing = isset($conf['cellspacing.']) ? intval($this->stdWrap($conf['cellspacing'], $conf['cellspacing.'])) : intval($conf['cellspacing']);
-		$cellpadding = isset($conf['cellpadding.']) ? intval($this->stdWrap($conf['cellpadding'], $conf['cellpadding.'])) : intval($conf['cellpadding']);
+		$border = isset($conf['border.']) ? (int)$this->stdWrap($conf['border'], $conf['border.']) : (int)$conf['border'];
+		$cellspacing = isset($conf['cellspacing.']) ? (int)$this->stdWrap($conf['cellspacing'], $conf['cellspacing.']) : (int)$conf['cellspacing'];
+		$cellpadding = isset($conf['cellpadding.']) ? (int)$this->stdWrap($conf['cellpadding'], $conf['cellpadding.']) : (int)$conf['cellpadding'];
 		$color = $this->data[$conf['color.']['field']];
 		$theColor = $conf['color.'][$color] ? $conf['color.'][$color] : $conf['color.']['default'];
 		// Assembling the table tag
@@ -4212,8 +4208,8 @@ class ContentObjectRenderer {
 		}
 		$key = 1;
 		$parts = explode('<', $content);
-		if (intval($conf['_offset'])) {
-			$key = intval($conf['_offset']) < 0 ? count($parts) + intval($conf['_offset']) : intval($conf['_offset']);
+		if ((int)$conf['_offset']) {
+			$key = (int)$conf['_offset'] < 0 ? count($parts) + (int)$conf['_offset'] : (int)$conf['_offset'];
 		}
 		$subparts = explode('>', $parts[$key]);
 		if (trim($subparts[0])) {
@@ -4222,7 +4218,7 @@ class ContentObjectRenderer {
 			list($tagName) = explode(' ', $subparts[0], 2);
 			// adds/overrides attributes
 			foreach ($conf as $pkey => $val) {
-				if (substr($pkey, -1) != '.' && substr($pkey, 0, 1) != '_') {
+				if (substr($pkey, -1) !== '.' && $pkey[0] !== '_') {
 					$tmpVal = isset($conf[$pkey . '.']) ? $this->stdWrap($conf[$pkey], $conf[$pkey . '.']) : (string)$val;
 					if ($lowerCaseAttributes) {
 						$pkey = strtolower($pkey);
@@ -4423,8 +4419,8 @@ class ContentObjectRenderer {
 		foreach ($parts as $part) {
 			$theVal = $part[1];
 			$sign = $part[0];
-			if ((string) intval($theVal) == (string) $theVal) {
-				$theVal = intval($theVal);
+			if ((string) (int)$theVal === (string) $theVal) {
+				$theVal = (int)$theVal;
 			} else {
 				$theVal = 0;
 			}
@@ -4435,8 +4431,8 @@ class ContentObjectRenderer {
 				$value += $theVal;
 			}
 			if ($sign == '/') {
-				if (intval($theVal)) {
-					$value /= intval($theVal);
+				if ((int)$theVal) {
+					$value /= (int)$theVal;
 				}
 			}
 			if ($sign == '*') {
@@ -4447,7 +4443,7 @@ class ContentObjectRenderer {
 	}
 
 	/**
-	 * This explodes a comma-list into an array where the values are parsed through ContentObjectRender::calc() and intval() (so you are sure to have integers in the output array)
+	 * This explodes a comma-list into an array where the values are parsed through ContentObjectRender::calc() and cast to (int)(so you are sure to have integers in the output array)
 	 * Used to split and calculate min and max values for GMENUs.
 	 *
 	 * @param string $delim Delimited to explode by
@@ -4459,7 +4455,7 @@ class ContentObjectRenderer {
 	public function calcIntExplode($delim, $string) {
 		$temp = explode($delim, $string);
 		foreach ($temp as $key => $val) {
-			$temp[$key] = intval($this->calc($val));
+			$temp[$key] = (int)$this->calc($val);
 		}
 		return $temp;
 	}
@@ -4481,11 +4477,11 @@ class ContentObjectRenderer {
 		if ($conf['token'] === '') {
 			return $value;
 		}
-		$conf['max'] = isset($conf['max.']) ? intval($this->stdWrap($conf['max'], $conf['max.'])) : intval($conf['max']);
-		$conf['min'] = isset($conf['min.']) ? intval($this->stdWrap($conf['min'], $conf['min.'])) : intval($conf['min']);
+		$conf['max'] = isset($conf['max.']) ? (int)$this->stdWrap($conf['max'], $conf['max.']) : (int)$conf['max'];
+		$conf['min'] = isset($conf['min.']) ? (int)$this->stdWrap($conf['min'], $conf['min.']) : (int)$conf['min'];
 		$valArr = explode($conf['token'], $value);
 		if (count($valArr) && (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($conf['returnKey']) || $conf['returnKey.'])) {
-			$key = isset($conf['returnKey.']) ? intval($this->stdWrap($conf['returnKey'], $conf['returnKey.'])) : intval($conf['returnKey']);
+			$key = isset($conf['returnKey.']) ? (int)$this->stdWrap($conf['returnKey'], $conf['returnKey.']) : (int)$conf['returnKey'];
 			$content = isset($valArr[$key]) ? $valArr[$key] : '';
 		} else {
 			// calculate splitCount
@@ -4512,7 +4508,7 @@ class ContentObjectRenderer {
 				$value = '' . $valArr[$a];
 				$this->data[$this->currentValKey] = $value;
 				if ($splitArr[$a]['cObjNum']) {
-					$objName = intval($splitArr[$a]['cObjNum']);
+					$objName = (int)$splitArr[$a]['cObjNum'];
 					$value = isset($conf[$objName . '.']) ? $this->stdWrap($this->cObjGet($conf[$objName . '.'], $objName . '.'), $conf[$objName . '.']) : $this->cObjGet($conf[$objName . '.'], $objName . '.');
 				}
 				$wrap = isset($splitArr[$a]['wrap.']) ? $this->stdWrap($splitArr[$a]['wrap'], $splitArr[$a]['wrap.']) : $splitArr[$a]['wrap'];
@@ -4635,7 +4631,7 @@ class ContentObjectRenderer {
 			case 'round':
 
 			default:
-				$content = round($floatVal, intval($decimals));
+				$content = round($floatVal, (int)$decimals);
 		}
 		return $content;
 	}
@@ -4898,7 +4894,7 @@ class ContentObjectRenderer {
 				$data = substr($theValue, $pointer, $len);
 				$tag = explode(' ', trim(substr($data, 1, -1)), 2);
 				$tag[0] = strtolower($tag[0]);
-				if (substr($tag[0], 0, 1) == '/') {
+				if ($tag[0][0] === '/') {
 					$tag[0] = substr($tag[0], 1);
 					$tag['out'] = 1;
 				}
@@ -5014,7 +5010,7 @@ class ContentObjectRenderer {
 			$l = trim($l);
 			$attrib = array();
 			$nWrapped = 0;
-			if (substr($l, 0, 1) == '<' && substr($l, -1) == '>') {
+			if ($l[0] === '<' && substr($l, -1) === '>') {
 				$fwParts = explode('>', substr($l, 1), 2);
 				list($tagName, $tagParams) = explode(' ', $fwParts[0], 2);
 				if (!$fwParts[1]) {
@@ -5274,10 +5270,10 @@ class ContentObjectRenderer {
 					$processingConfiguration['width'] = isset($fileArray['width.']) ? $this->stdWrap($fileArray['width'], $fileArray['width.']) : $fileArray['width'];
 					$processingConfiguration['height'] = isset($fileArray['height.']) ? $this->stdWrap($fileArray['height'], $fileArray['height.']) : $fileArray['height'];
 					$processingConfiguration['fileExtension'] = isset($fileArray['ext.']) ? $this->stdWrap($fileArray['ext'], $fileArray['ext.']) : $fileArray['ext'];
-					$processingConfiguration['maxWidth'] = isset($fileArray['maxW.']) ? intval($this->stdWrap($fileArray['maxW'], $fileArray['maxW.'])) : intval($fileArray['maxW']);
-					$processingConfiguration['maxHeight'] = isset($fileArray['maxH.']) ? intval($this->stdWrap($fileArray['maxH'], $fileArray['maxH.'])) : intval($fileArray['maxH']);
-					$processingConfiguration['minWidth'] = isset($fileArray['minW.']) ? intval($this->stdWrap($fileArray['minW'], $fileArray['minW.'])) : intval($fileArray['minW']);
-					$processingConfiguration['minHeight'] = isset($fileArray['minH.']) ? intval($this->stdWrap($fileArray['minH'], $fileArray['minH.'])) : intval($fileArray['minH']);
+					$processingConfiguration['maxWidth'] = isset($fileArray['maxW.']) ? (int)$this->stdWrap($fileArray['maxW'], $fileArray['maxW.']) : (int)$fileArray['maxW'];
+					$processingConfiguration['maxHeight'] = isset($fileArray['maxH.']) ? (int)$this->stdWrap($fileArray['maxH'], $fileArray['maxH.']) : (int)$fileArray['maxH'];
+					$processingConfiguration['minWidth'] = isset($fileArray['minW.']) ? (int)$this->stdWrap($fileArray['minW'], $fileArray['minW.']) : (int)$fileArray['minW'];
+					$processingConfiguration['minHeight'] = isset($fileArray['minH.']) ? (int)$this->stdWrap($fileArray['minH'], $fileArray['minH.']) : (int)$fileArray['minH'];
 					$processingConfiguration['noScale'] = isset($fileArray['noScale.']) ? $this->stdWrap($fileArray['noScale'], $fileArray['noScale.']) : $fileArray['noScale'];
 					$processingConfiguration['additionalParameters'] = isset($fileArray['params.']) ? $this->stdWrap($fileArray['params'], $fileArray['params.']) : $fileArray['params'];
 					// Possibility to cancel/force profile extraction
@@ -5447,7 +5443,7 @@ class ContentObjectRenderer {
 						break;
 					case 'fullrootline':
 						$keyParts = GeneralUtility::trimExplode(',', $key);
-						$fullKey = intval($keyParts[0]) - count($GLOBALS['TSFE']->tmpl->rootLine) + count($GLOBALS['TSFE']->rootLine);
+						$fullKey = (int)$keyParts[0] - count($GLOBALS['TSFE']->tmpl->rootLine) + count($GLOBALS['TSFE']->rootLine);
 						if ($fullKey >= 0) {
 							$retVal = $this->rootLineValue($fullKey, $keyParts[1], stristr($keyParts[2], 'slide'), $GLOBALS['TSFE']->rootLine);
 						}
@@ -5665,7 +5661,7 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function getKey($key, $arr) {
-		$key = intval($key);
+		$key = (int)$key;
 		if (is_array($arr)) {
 			if ($key < 0) {
 				$key = count($arr) + $key;
@@ -5683,7 +5679,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param mixed $inputValue Comma-separated list of values to look up
 	 * @param array $conf TS-configuration array, see TSref for details
-	 * @return string String of translated values, seperated by $delimiter. If no matches were found, the input value is simply returned.
+	 * @return string String of translated values, separated by $delimiter. If no matches were found, the input value is simply returned.
 	 * @todo It would be nice it this function basically looked up any type of value, db-relations etc.
 	 * @todo Define visibility
 	 */
@@ -5839,8 +5835,8 @@ class ContentObjectRenderer {
 				$finalTagParts['TYPE'] = 'mailto';
 			} else {
 				$isLocalFile = 0;
-				$fileChar = intval(strpos($link_param, '/'));
-				$urlChar = intval(strpos($link_param, '.'));
+				$fileChar = (int)strpos($link_param, '/');
+				$urlChar = (int)strpos($link_param, '.');
 				// Firsts, test if $link_param is numeric and page with such id exists. If yes, do not attempt to link to file
 				if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($link_param) || count($GLOBALS['TSFE']->sys_page->getPage_noCheck($link_param)) == 0) {
 					// Detects if a file is found in site-root and if so it will be treated like a normal file.
@@ -5987,7 +5983,7 @@ class ContentObjectRenderer {
 						// Query Params:
 						$addQueryParams = $conf['addQueryString'] ? $this->getQueryArguments($conf['addQueryString.']) : '';
 						$addQueryParams .= isset($conf['additionalParams.']) ? trim($this->stdWrap($conf['additionalParams'], $conf['additionalParams.'])) : trim($conf['additionalParams']);
-						if ($addQueryParams == '&' || substr($addQueryParams, 0, 1) != '&') {
+						if ($addQueryParams === '&' || $addQueryParams[0] !== '&') {
 							$addQueryParams = '';
 						}
 						if ($conf['useCacheHash']) {
@@ -6042,7 +6038,7 @@ class ContentObjectRenderer {
 							if (isset($conf['forceAbsoluteUrl.']['scheme']) && $conf['forceAbsoluteUrl.']['scheme']) {
 								$absoluteUrlScheme = $conf['forceAbsoluteUrl.']['scheme'];
 							} elseif ($page['url_scheme'] > 0) {
-								$absoluteUrlScheme = (int) $page['url_scheme'] === \TYPO3\CMS\Core\Utility\HttpUtility::SCHEME_HTTP ? 'http' : 'https';
+								$absoluteUrlScheme = (int)$page['url_scheme'] === \TYPO3\CMS\Core\Utility\HttpUtility::SCHEME_HTTP ? 'http' : 'https';
 							} elseif (GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 								$absoluteUrlScheme = 'https';
 							}
@@ -6104,7 +6100,7 @@ class ContentObjectRenderer {
 							list($URLparams) = explode('#', $URLparams);
 							parse_str($URLparams . $LD['orig_type'], $URLparamsArray);
 							// Type nums must match as well as page ids
-							if (intval($URLparamsArray['type']) == $GLOBALS['TSFE']->type) {
+							if ((int)$URLparamsArray['type'] == $GLOBALS['TSFE']->type) {
 								unset($URLparamsArray['id']);
 								unset($URLparamsArray['type']);
 								// If there are no parameters left.... set the new url.
@@ -6524,8 +6520,8 @@ class ContentObjectRenderer {
 	public function wrapSpace($content, $wrap, array $conf = NULL) {
 		if (trim($wrap)) {
 			$wrapArray = explode('|', $wrap);
-			$wrapBefore = intval($wrapArray[0]);
-			$wrapAfter = intval($wrapArray[1]);
+			$wrapBefore = (int)$wrapArray[0];
+			$wrapAfter = (int)$wrapArray[1];
 			$useDivTag = isset($conf['useDiv']) && $conf['useDiv'];
 			if ($wrapBefore) {
 				if ($useDivTag) {
@@ -6603,8 +6599,9 @@ class ContentObjectRenderer {
 		$lines = GeneralUtility::trimExplode(LF, $params, TRUE);
 		foreach ($lines as $val) {
 			$pair = explode('=', $val, 2);
-			if (!GeneralUtility::inList('#,/', substr(trim($pair[0]), 0, 1))) {
-				$paramArr[trim($pair[0])] = trim($pair[1]);
+			$pair[0] = trim($pair[0]);
+			if (!GeneralUtility::inList('#,/', $pair[0][0])) {
+				$paramArr[$pair[0]] = trim($pair[1]);
 			}
 		}
 		return $paramArr;
@@ -6827,7 +6824,7 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function mergeTSRef($confArr, $prop) {
-		if (substr($confArr[$prop], 0, 1) == '<') {
+		if ($confArr[$prop][0] === '<') {
 			$key = trim(substr($confArr[$prop], 1));
 			$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 			// $name and $conf is loaded with the referenced values.
@@ -6867,14 +6864,14 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function gifBuilderTextBox($gifbuilderConf, $conf, $text) {
-		$chars = intval($conf['chars']) ? intval($conf['chars']) : 20;
-		$lineDist = intval($conf['lineDist']) ? intval($conf['lineDist']) : 20;
+		$chars = (int)$conf['chars'] ?: 20;
+		$lineDist = (int)$conf['lineDist'] ?: 20;
 		$Valign = strtolower(trim($conf['Valign']));
-		$tmplObjNumber = intval($conf['tmplObjNumber']);
-		$maxLines = intval($conf['maxLines']);
+		$tmplObjNumber = (int)$conf['tmplObjNumber'];
+		$maxLines = (int)$conf['maxLines'];
 		if ($tmplObjNumber && $gifbuilderConf[$tmplObjNumber] == 'TEXT') {
 			$textArr = $this->linebreaks($text, $chars, $maxLines);
-			$angle = intval($gifbuilderConf[$tmplObjNumber . '.']['angle']);
+			$angle = (int)$gifbuilderConf[$tmplObjNumber . '.']['angle'];
 			foreach ($textArr as $c => $textChunk) {
 				$index = $tmplObjNumber + 1 + $c * 2;
 				// Workarea
@@ -7038,7 +7035,8 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function DBgetDelete($table, $uid, $doExec = FALSE) {
-		if (intval($uid)) {
+		if ((int)$uid) {
+			$uid = (int)$uid;
 			if ($GLOBALS['TCA'][$table]['ctrl']['delete']) {
 				$updateFields = array();
 				$updateFields[$GLOBALS['TCA'][$table]['ctrl']['delete']] = 1;
@@ -7047,15 +7045,15 @@ class ContentObjectRenderer {
 				}
 
 				if ($doExec) {
-					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
+					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . $uid, $updateFields);
 				} else {
-					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
+					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . $uid, $updateFields);
 				}
 			} else {
 				if ($doExec) {
-					return $GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'uid=' . intval($uid));
+					return $GLOBALS['TYPO3_DB']->exec_DELETEquery($table, 'uid=' . $uid);
 				} else {
-					return $GLOBALS['TYPO3_DB']->DELETEquery($table, 'uid=' . intval($uid));
+					return $GLOBALS['TYPO3_DB']->DELETEquery($table, 'uid=' . $uid);
 				}
 			}
 		}
@@ -7079,7 +7077,7 @@ class ContentObjectRenderer {
 	public function DBgetUpdate($table, $uid, $dataArr, $fieldList, $doExec = FALSE) {
 		// uid can never be set
 		unset($dataArr['uid']);
-		$uid = intval($uid);
+		$uid = (int)$uid;
 		if ($uid) {
 			$fieldList = implode(',', GeneralUtility::trimExplode(',', $fieldList, TRUE));
 			$updateFields = array();
@@ -7093,9 +7091,9 @@ class ContentObjectRenderer {
 			}
 			if (count($updateFields)) {
 				if ($doExec) {
-					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
+					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . $uid, $updateFields);
 				} else {
-					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . intval($uid), $updateFields);
+					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . $uid, $updateFields);
 				}
 			}
 		}
@@ -7135,13 +7133,13 @@ class ContentObjectRenderer {
 		}
 		if ($GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']) {
 			$field = $GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id'];
-			$dataArr[$field] = intval($GLOBALS['TSFE']->fe_user->user['uid']);
+			$dataArr[$field] = (int)$GLOBALS['TSFE']->fe_user->user['uid'];
 			$extraList .= ',' . $field;
 		}
 		if ($GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']) {
 			$field = $GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id'];
 			list($dataArr[$field]) = explode(',', $GLOBALS['TSFE']->fe_user->user['usergroup']);
-			$dataArr[$field] = intval($dataArr[$field]);
+			$dataArr[$field] = (int)$dataArr[$field];
 			$extraList .= ',' . $field;
 		}
 		// Uid can never be set
@@ -7183,7 +7181,7 @@ class ContentObjectRenderer {
 		if (!$GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock'] || !$row[$GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock']]) {
 			// Points to the field (integer) that holds the fe_users-id of the creator fe_user
 			if ($GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']) {
-				$rowFEUser = intval($row[$GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']]);
+				$rowFEUser = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']];
 				if ($rowFEUser && $rowFEUser == $feUserRow['uid']) {
 					$ok = 1;
 				}
@@ -7194,7 +7192,7 @@ class ContentObjectRenderer {
 			}
 			// Points to the field (integer) that holds the fe_group-id of the creator fe_user's first group
 			if ($GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']) {
-				$rowFEUser = intval($row[$GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']]);
+				$rowFEUser = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']];
 				if ($rowFEUser) {
 					if (GeneralUtility::inList($groupList, $rowFEUser)) {
 						$ok = 1;
@@ -7237,7 +7235,7 @@ class ContentObjectRenderer {
 		}
 		// If $feEditSelf is set, fe_users may always edit them selves...
 		if ($feEditSelf && $table == 'fe_users') {
-			$OR_arr[] = 'uid=' . intval($feUserRow['uid']);
+			$OR_arr[] = 'uid=' . (int)$feUserRow['uid'];
 		}
 		$whereDef = ' AND 1=0';
 		if (count($OR_arr)) {
@@ -7283,27 +7281,27 @@ class ContentObjectRenderer {
 	 * Mount Pages are also descended but notice that these ID numbers are not
 	 * useful for links unless the correct MPvar is set.
 	 *
-	 * @param integer $id The id of the start page from which point in the page tree to decend. IF NEGATIVE the id itself is included in the end of the list (only if $begin is 0) AND the output does NOT contain a last comma. Recommended since it will resolve the input ID for mount pages correctly and also check if the start ID actually exists!
-	 * @param integer $depth The number of levels to decend. If you want to decend infinitely, just set this to 100 or so. Should be at least "1" since zero will just make the function return (no decend...)
+	 * @param integer $id The id of the start page from which point in the page tree to descend. IF NEGATIVE the id itself is included in the end of the list (only if $begin is 0) AND the output does NOT contain a last comma. Recommended since it will resolve the input ID for mount pages correctly and also check if the start ID actually exists!
+	 * @param integer $depth The number of levels to descend. If you want to descend infinitely, just set this to 100 or so. Should be at least "1" since zero will just make the function return (no decend...)
 	 * @param integer $begin Is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
 	 * @param boolean $dontCheckEnableFields See function description
 	 * @param string $addSelectFields Additional fields to select. Syntax: ",[fieldname],[fieldname],...
 	 * @param string $moreWhereClauses Additional where clauses. Syntax: " AND [fieldname]=[value] AND ...
 	 * @param array $prevId_array array of IDs from previous recursions. In order to prevent infinite loops with mount pages.
 	 * @param integer $recursionLevel Internal: Zero for the first recursion, incremented for each recursive call.
-	 * @return string Returns the list of ids as a comma seperated string
+	 * @return string Returns the list of ids as a comma separated string
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkEnableFields(), \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkPagerecordForIncludeSection()
 	 */
 	public function getTreeList($id, $depth, $begin = 0, $dontCheckEnableFields = FALSE, $addSelectFields = '', $moreWhereClauses = '', array $prevId_array = array(), $recursionLevel = 0) {
-		$id = intval($id);
+		$id = (int)$id;
 		if (!$id) {
 			return '';
 		}
 
 		// Init vars:
 		$allFields = 'uid,hidden,starttime,endtime,fe_group,extendToSubpages,doktype,php_tree_stop,mount_pid,mount_pid_ol,t3ver_state' . $addSelectFields;
-		$depth = intval($depth);
-		$begin = intval($begin);
+		$depth = (int)$depth;
+		$begin = (int)$begin;
 		$theList = array();
 		$addId = 0;
 		$requestHash = '';
@@ -7361,7 +7359,7 @@ class ContentObjectRenderer {
 			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
 				$allFields,
 				'pages',
-				'pid = ' . intval($id) . ' AND deleted = 0 ' . $moreWhereClauses,
+				'pid = ' . (int)$id . ' AND deleted = 0 ' . $moreWhereClauses,
 				'',
 				'sorting'
 			);
@@ -7388,7 +7386,7 @@ class ContentObjectRenderer {
 						$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
 							$allFields,
 							'pages',
-							'uid = ' . intval($next_id) . ' AND deleted = 0 ' . $moreWhereClauses,
+							'uid = ' . (int)$next_id . ' AND deleted = 0 ' . $moreWhereClauses,
 							'',
 							'sorting'
 						);
@@ -7603,7 +7601,7 @@ class ContentObjectRenderer {
 		// Construct WHERE clause:
 		// Handle recursive function for the pidInList
 		if (isset($conf['recursive'])) {
-			$conf['recursive'] = intval($conf['recursive']);
+			$conf['recursive'] = (int)$conf['recursive'];
 			if ($conf['recursive'] > 0) {
 				$pidList = GeneralUtility::trimExplode(',', $conf['pidInList'], TRUE);
 				array_walk($pidList, function (&$storagePid) {
@@ -7715,7 +7713,7 @@ class ContentObjectRenderer {
 		if (trim($conf['uidInList'])) {
 			$listArr = GeneralUtility::intExplode(',', str_replace('this', $GLOBALS['TSFE']->contentPid, $conf['uidInList']));
 			if (count($listArr) == 1) {
-				$query .= ' AND ' . $table . '.uid=' . intval($listArr[0]);
+				$query .= ' AND ' . $table . '.uid=' . (int)$listArr[0];
 			} else {
 				$query .= ' AND ' . $table . '.uid IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($listArr)) . ')';
 			}
@@ -7747,7 +7745,7 @@ class ContentObjectRenderer {
 		}
 		if ($conf['languageField']) {
 			// The sys_language record UID of the content of the page
-			$sys_language_content = intval($GLOBALS['TSFE']->sys_language_content);
+			$sys_language_content = (int)$GLOBALS['TSFE']->sys_language_content;
 
 			if ($GLOBALS['TSFE']->sys_language_contentOL
 				&& isset($GLOBALS['TCA'][$table])
@@ -7869,9 +7867,9 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function checkPid($uid) {
-		$uid = intval($uid);
+		$uid = (int)$uid;
 		if (!isset($this->checkPid_cache[$uid])) {
-			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'pages', 'uid=' . intval($uid) . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
+			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'pages', 'uid=' . $uid . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
 			$this->checkPid_cache[$uid] = (bool) $count;
 		}
 		return $this->checkPid_cache[$uid];
@@ -7899,9 +7897,9 @@ class ContentObjectRenderer {
 					$tempValue = isset($conf['markers.'][$dottedMarker]) ? $this->stdWrap($conf['markers.'][$dottedMarker]['value'], $conf['markers.'][$dottedMarker]) : $conf['markers.'][$dottedMarker]['value'];
 					// Quote/escape if needed
 					if (is_numeric($tempValue)) {
-						if ((int) $tempValue == $tempValue) {
+						if ((int)$tempValue == $tempValue) {
 							// Handle integer
-							$markerValues[$marker] = intval($tempValue);
+							$markerValues[$marker] = (int)$tempValue;
 						} else {
 							// Handle float
 							$markerValues[$marker] = floatval($tempValue);
@@ -7917,8 +7915,8 @@ class ContentObjectRenderer {
 							$tempArray = array();
 							foreach ($explodeValues as $listValue) {
 								if (is_numeric($listValue)) {
-									if ((int) $listValue == $listValue) {
-										$tempArray[] = intval($listValue);
+									if ((int)$listValue == $listValue) {
+										$tempArray[] = (int)$listValue;
 									} else {
 										$tempArray[] = floatval($listValue);
 									}

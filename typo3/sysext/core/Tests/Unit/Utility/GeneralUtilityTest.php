@@ -890,7 +890,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function htmlspecialcharsDecodeReturnsDecodedString() {
 		$string = '<typo3 version="6.0">&nbsp;</typo3>';
 		$encoded = htmlspecialchars($string);
-		$decoded = Utility\GeneralUtility::htmlspecialchars_decode($encoded);
+		$decoded = htmlspecialchars_decode($encoded);
 		$this->assertEquals($string, $decoded);
 	}
 
@@ -1351,13 +1351,48 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	//////////////////////////////////
 	// Tests concerning revExplode
 	//////////////////////////////////
+
+	public function revExplodeDataProvider() {
+		return array(
+			'limit 0 should return unexploded string' => array(
+				'my:words:here',
+				0,
+				array('my:words:here')
+			),
+			'limit 1 should return unexploded string' => array(
+				'my:words:here',
+				1,
+				array('my:words:here')
+			),
+			'limit 2 should return two pieces' => array(
+				'my:words:here',
+				2,
+				array('my:words', 'here')
+			),
+			'limit 3 should return unexploded string' => array(
+				'my:words:here',
+				3,
+				array('my', 'words', 'here')
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider revExplodeDataProvider
+	 */
+	public function revExplodeCorrectlyExplodesStringForGivenPartsCount($testString, $count, $expectedArray) {
+		$actualArray = Utility\GeneralUtility::revExplode(':', $testString, $count);
+		$this->assertEquals($expectedArray, $actualArray);
+	}
+
 	/**
 	 * @test
 	 */
-	public function revExplodeExplodesString() {
-		$testString = 'my:words:here';
-		$expectedArray = array('my:words', 'here');
-		$actualArray = Utility\GeneralUtility::revExplode(':', $testString, 2);
+	public function revExplodeRespectsLimitThreeWhenExploding() {
+		$testString = 'even:more:of:my:words:here';
+		$expectedArray = array('even:more:of:my', 'words', 'here');
+		$actualArray = Utility\GeneralUtility::revExplode(':', $testString, 3);
 		$this->assertEquals($expectedArray, $actualArray);
 	}
 
@@ -2335,13 +2370,17 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 				'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 			),
-			'Angel brackets and ampersand are encoded' => array(
+			'Angle brackets and ampersand are encoded' => array(
 				'<>&',
-				'\\x3C\\x3E\\x26'
+				'\\u003C\\u003E\\u0026'
 			),
-			'Quotes and slashes are encoded' => array(
-				'"\'\\/',
-				'\\x22\\x27\\x5C\\x2F'
+			'Quotes and backslashes are encoded' => array(
+				'"\'\\',
+				'\\u0022\\u0027\\u005C'
+			),
+			'Forward slashes are escaped' => array(
+				'</script>',
+				'\\u003C\\/script\\u003E'
 			),
 			'Empty string stays empty' => array(
 				'',
@@ -2349,19 +2388,19 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 			'Exclamation mark and space are properly encoded' => array(
 				'Hello World!',
-				'Hello\\x20World\\x21'
+				'Hello\\u0020World\\u0021'
 			),
 			'Whitespaces are properly encoded' => array(
 				TAB . LF . CR . ' ',
-				'\\x09\\x0A\\x0D\\x20'
+				'\\u0009\\u000A\\u000D\\u0020'
 			),
 			'Null byte is properly encoded' => array(
 				chr(0),
-				'\\x00'
+				'\\u0000'
 			),
 			'Umlauts are properly encoded' => array(
 				'ÜüÖöÄä',
-				'\\xDC\\xFC\\xD6\\xF6\\xC4\\xE4'
+				'\\u00dc\\u00fc\\u00d6\\u00f6\\u00c4\\u00e4'
 			)
 		);
 	}
@@ -2600,36 +2639,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function minifyJavaScriptErroneousCallback() {
 		throw new \RuntimeException('foo', 1344888548);
-	}
-
-	///////////////////////////
-	// Tests concerning getUrl
-	///////////////////////////
-
-	/**
-	 * @test
-	 */
-	public function getUrlWithAdditionalRequestHeadersProvidesHttpHeaderOnError() {
-		if (!$this->isConnected()) {
-			$this->markTestSkipped('No internet connection detected');
-		}
-		$url = 'http://typo3.org/i-do-not-exist-' . time();
-		$report = array();
-		Utility\GeneralUtility::getUrl($url, 0, array(), $report);
-		$this->assertContains('404', $report['message']);
-	}
-
-	/**
-	 * @test
-	 */
-	public function getUrlProvidesWithoutAdditionalRequestHeadersHttpHeaderOnError() {
-		if (!$this->isConnected()) {
-			$this->markTestSkipped('No internet connection detected');
-		}
-		$url = 'http://typo3.org/i-do-not-exist-' . time();
-		$report = array();
-		Utility\GeneralUtility::getUrl($url, 0, FALSE, $report);
-		$this->assertContains('404', $report['message'], 'Did not provide the HTTP response header when requesting a failing URL.');
 	}
 
 	///////////////////////////////
@@ -2990,7 +2999,13 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$this->markTestSkipped($methodName . '() test cannot be done when the web server user is only member of 1 group.');
 			return FALSE;
 		}
-		$groupInfo = posix_getgrgid($groups[1]);
+		$uname = strtolower(php_uname());
+		$groupOffset = 1;
+		if (strpos($uname, 'darwin') !== FALSE) {
+			// We are on OSX and it seems that the first group needs to be fetched since Mavericks
+			$groupOffset = 0;
+		}
+		$groupInfo = posix_getgrgid($groups[$groupOffset]);
 		return $groupInfo['name'];
 	}
 
@@ -3282,6 +3297,178 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		symlink($notExistingFile, $symlinkName);
 		Utility\GeneralUtility::rmdir($symlinkName, TRUE);
 		$this->assertFalse(is_link($symlinkName));
+	}
+
+	///////////////////////////////////
+	// Tests concerning getFilesInDir
+	///////////////////////////////////
+
+	/**
+	 * Helper method to create test directory.
+	 *
+	 * @return string A unique directory name prefixed with test_.
+	 */
+	protected function getFilesInDirCreateTestDirectory() {
+		$directory = 'typo3temp/' . uniqid('test_');
+		Utility\GeneralUtility::mkdir_deep(PATH_site, $directory);
+		$this->testFilesToDelete[] = PATH_site . $directory;
+		return $directory;
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirFindsRegularFile() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirFindsRegularFile';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory);
+		$this->assertContains($unique . '.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirFindsHiddenFile() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirFindsHiddenFile';
+		$file = PATH_site . $directory . '/.' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory);
+		$this->assertContains('.' . $unique . '.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirByExtensionFindsFiles() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirByExtensionFindsFiles';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$file = PATH_site . $directory . '/' . $unique . '.js';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory, 'txt,js');
+		$this->assertContains($unique . '.txt', $files);
+		$this->assertContains($unique . '.js', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirByExtensionDoesNotFindFilesWithOtherExtensions() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirFindsRegularFile';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$file = PATH_site . $directory . '/' . $unique . '.js';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$file = PATH_site . $directory . '/' . $unique . '.css';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory, 'txt,js');
+		$this->assertNotContains($unique . '.css', $files);
+		$this->assertContains($unique . '.txt', $files);
+		$this->assertContains($unique . '.js', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirExcludesFilesMatchingPattern() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirExcludesFilesMatchingPattern';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$file = PATH_site . $directory . '/' . $unique . '.js';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$excludeUnique = uniqid('excludeMe');
+		$file = PATH_site . $directory . '/' . $excludeUnique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory, '', FALSE, '', 'excludeMe.*');
+		$this->assertNotContains($excludeUnique . '.txt', $files);
+		$this->assertContains($unique . '.js', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirCanPrependPath() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirCanPrependPath';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory, '', TRUE);
+		$this->assertContains(PATH_site . $directory . '/' . $unique . '.txt', $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirCanOrderAlphabetically() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$uniqueB = uniqid('test_B_');
+		$content = 'test_B';
+		$file = PATH_site . $directory . '/' . $uniqueB . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$uniqueA = uniqid('test_A_');
+		$content = 'test_A';
+		$file = PATH_site . $directory . '/' . $uniqueA . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+
+		$this->assertSame(
+			array_values(Utility\GeneralUtility::getFilesInDir(PATH_site . $directory, '', FALSE, '1')),
+			array($uniqueA . '.txt', $uniqueB . '.txt')
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirReturnsArrayWithMd5OfElementAndPathAsArrayKey() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirReturnsArrayWithMd5OfElementAndPathAsArrayKey';
+		$file = PATH_site . $directory . '/' . $unique . '.txt';
+		$md5 = md5($file);
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory);
+		$this->assertArrayHasKey($md5, $files);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getFilesInDirDoesNotFindDirectories() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$subDirectory = $directory . '/testSubdirectory';
+		Utility\GeneralUtility::mkdir_deep(PATH_site, $subDirectory);
+		$this->testFilesToDelete[] = PATH_site . $subDirectory;
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory);
+		$this->assertNotContains('testSubdirectory', $files);
+	}
+
+	/**
+	 * Dotfiles; current directory: '.' and parent directory: '..' must not be
+	 * present.
+	 *
+	 * @test
+	 */
+	public function getFilesInDirDoesNotFindDotfiles() {
+		$directory = $this->getFilesInDirCreateTestDirectory();
+		$unique = uniqid('test_');
+		$content = 'getFilesInDirDoesNotFindDotfiles';
+		$file = PATH_site . $directory . '/.' . $unique . '.txt';
+		Utility\GeneralUtility::writeFileToTypo3tempDir($file, $content);
+		$files = Utility\GeneralUtility::getFilesInDir(PATH_site . $directory);
+		$this->assertNotContains('..', $files);
+		$this->assertNotContains('.', $files);
 	}
 
 	///////////////////////////////

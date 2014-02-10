@@ -82,6 +82,8 @@ class ResourceStorage {
 	const SIGNAL_PostFileRename = 'postFileRename';
 	const SIGNAL_PreFileReplace = 'preFileReplace';
 	const SIGNAL_PostFileReplace = 'postFileReplace';
+	const SIGNAL_PreFolderAdd = 'preFolderAdd';
+	const SIGNAL_PostFolderAdd = 'postFolderAdd';
 	const SIGNAL_PreFolderCopy = 'preFolderCopy';
 	const SIGNAL_PostFolderCopy = 'postFolderCopy';
 	const SIGNAL_PreFolderMove = 'preFolderMove';
@@ -193,6 +195,11 @@ class ResourceStorage {
 	protected $isOnline = NULL;
 
 	/**
+	 * @var boolean
+	 */
+	protected $isDefault = FALSE;
+
+	/**
 	 * The filters used for the files and folder names.
 	 *
 	 * @var array
@@ -219,6 +226,7 @@ class ResourceStorage {
 		}
 		$this->driver->initialize();
 		$this->capabilities = ($this->storageRecord['is_browsable'] && $this->driver->hasCapability(self::CAPABILITY_BROWSABLE) ? self::CAPABILITY_BROWSABLE : 0) + ($this->storageRecord['is_public'] && $this->driver->hasCapability(self::CAPABILITY_PUBLIC) ? self::CAPABILITY_PUBLIC : 0) + ($this->storageRecord['is_writable'] && $this->driver->hasCapability(self::CAPABILITY_WRITABLE) ? self::CAPABILITY_WRITABLE : 0);
+		$this->isDefault = (isset($storageRecord['is_default']) && $storageRecord['is_default'] == 1);
 		// TODO do not set the "public" capability if no public URIs can be generated
 		$this->processConfiguration();
 		$this->resetFileAndFolderNameFiltersToDefault();
@@ -332,7 +340,7 @@ class ResourceStorage {
 	 * @return integer
 	 */
 	public function getUid() {
-		return (int) $this->storageRecord['uid'];
+		return (int)$this->storageRecord['uid'];
 	}
 
 	/**
@@ -354,7 +362,7 @@ class ResourceStorage {
 	 * @see CAPABILITY_* constants
 	 */
 	public function getCapabilities() {
-		return (int) $this->capabilities;
+		return (int)$this->capabilities;
 	}
 
 	/**
@@ -448,7 +456,7 @@ class ResourceStorage {
 	public function markAsPermanentlyOffline() {
 		if ($this->getUid() > 0) {
 			// @todo: move this to the storage repository
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_storage', 'uid=' . intval($this->getUid()), array('is_online' => 0));
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('sys_file_storage', 'uid=' . (int)$this->getUid(), array('is_online' => 0));
 		}
 		$this->storageRecord['is_online'] = 0;
 		$this->isOnline = FALSE;
@@ -934,7 +942,7 @@ class ResourceStorage {
 		}
 		// Check if target folder is writable
 		if (!$this->checkFolderActionPermission('write', $targetFolder)) {
-			throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to write to the target folder "' . $targetFolder->getIdentifier() . '"', 1319219349);
+			throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to write to the target folder "' . $targetFolder->getIdentifier() . '"', 1319219350);
 		}
 	}
 
@@ -956,14 +964,14 @@ class ResourceStorage {
 		}
 		// Check if user is allowed to rename
 		if (!$this->checkFileActionPermission('rename', $file)) {
-			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files."', 1319219349);
+			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files."', 1319219351);
 		}
 		// Check if the user is allowed to write to folders
 		// Although it would be good to check, we cannot check here if the folder actually is writable
 		// because we do not know in which folder the file resides.
 		// So we rely on the driver to throw an exception in case the renaming failed.
 		if (!$this->checkFolderActionPermission('write')) {
-			throw new Exception\InsufficientFileWritePermissionsException('You are not allowed to write to folders', 1319219349);
+			throw new Exception\InsufficientFileWritePermissionsException('You are not allowed to write to folders', 1319219352);
 		}
 	}
 
@@ -989,7 +997,7 @@ class ResourceStorage {
 		}
 		// Check if user is allowed to copy
 		if (!$file->getStorage()->checkFileActionPermission('copy', $file)) {
-			throw new Exception\InsufficientFileReadPermissionsException('You are not allowed to copy the file "' . $file->getIdentifier() . '"', 1319550425);
+			throw new Exception\InsufficientFileReadPermissionsException('You are not allowed to copy the file "' . $file->getIdentifier() . '"', 1319550426);
 		}
 		// Check if targetFolder is writable
 		if (!$this->checkFolderActionPermission('write', $targetFolder)) {
@@ -1126,7 +1134,7 @@ class ResourceStorage {
 	 */
 	public function updateProcessedFile($localFilePath, ProcessedFile $processedFile) {
 		if (!file_exists($localFilePath)) {
-			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552745);
+			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552746);
 		}
 		$fileIdentifier = $this->driver->addFile($localFilePath, $this->getProcessingFolder()->getIdentifier(), $processedFile->getName());
 		// @todo check if we have to update the processed file other then the identifier
@@ -1431,6 +1439,37 @@ class ResourceStorage {
 	}
 
 	/**
+	 * Outputs file Contents,
+	 * clears output buffer first and sends headers accordingly.
+	 *
+	 * @param FileInterface $file
+	 * @param boolean $asDownload If set Content-Disposition headers are sent
+	 * @param string $alternativeFilename the filename for the download (if $asDownload is set)
+	 * @return void
+	 */
+	public function dumpFileContents(FileInterface $file, $asDownload = FALSE, $alternativeFilename = NULL) {
+		if ($asDownload) {
+			$downloadName = $alternativeFilename ?: $file->getName();
+			header('Content-Disposition: attachment; filename=' . $downloadName);
+		}
+		header('Content-Type: ' . $file->getMimeType());
+		header('Content-Length: ' . $file->getSize());
+
+		// Cache-Control header is needed here to solve an issue with browser IE8 and lower
+		// See for more information: http://support.microsoft.com/kb/323308
+		header("Cache-Control: ''");
+		header('Last-Modified: ' .
+			gmdate('D, d M Y H:i:s', array_pop($this->driver->getFileInfoByIdentifier($file->getIdentifier(), array('mtime')))) . ' GMT',
+			TRUE,
+			200
+		);
+		ob_clean();
+		$this->driver->dumpFileContents($file->getIdentifier());
+		flush();
+		exit();
+	}
+
+	/**
 	 * Set contents of a file object.
 	 *
 	 * @param AbstractFile $file
@@ -1517,7 +1556,7 @@ class ResourceStorage {
 		$this->emitPreFileCopySignal($file, $targetFolder);
 		// File exists and we should abort, let's abort
 		if ($conflictMode === 'cancel' && $targetFolder->hasFile($targetFileName)) {
-			throw new Exception\ExistingTargetFileNameException('The target file already exists.', 1320291063);
+			throw new Exception\ExistingTargetFileNameException('The target file already exists.', 1320291064);
 		}
 		// File exists and we should find another name, let's find another one
 		if ($conflictMode === 'renameNewFile' && $targetFolder->hasFile($targetFileName)) {
@@ -1760,7 +1799,7 @@ class ResourceStorage {
 		// TODO implement the $conflictMode handling
 		$this->assureFolderCopyPermissions($folderToCopy, $targetParentFolder);
 		$returnObject = NULL;
-		$newFolderName = $newFolderName ? $newFolderName : $folderToCopy->getName();
+		$newFolderName = $newFolderName ?: $folderToCopy->getName();
 		$this->emitPreFolderCopySignal($folderToCopy, $targetParentFolder, $newFolderName);
 		$sourceStorage = $folderToCopy->getStorage();
 		// call driver method to move the file
@@ -1892,7 +1931,7 @@ class ResourceStorage {
 		}
 		$folders = array();
 		foreach ($folderIdentifiers as $folderIdentifier) {
-			$folders[$folderIdentifier] = $this->getFolder($folderIdentifier);
+			$folders[$folderIdentifier] = $this->getFolder($folderIdentifier, TRUE);
 		}
 		return $folders;
 	}
@@ -1968,8 +2007,15 @@ class ResourceStorage {
 		if (!$this->checkFolderActionPermission('add', $parentFolder)) {
 			throw new Exception\InsufficientFolderWritePermissionsException('You are not allowed to create directories in the folder "' . $parentFolder->getIdentifier() . '"', 1323059807);
 		}
+
+		$this->emitPreFolderAddSignal($parentFolder, $folderName);
+
 		$newFolder = $this->getDriver()->createFolder($folderName, $parentFolder->getIdentifier(), TRUE);
-		return $this->getFolder($newFolder);
+		$newFolder = $this->getFolder($newFolder);
+
+		$this->emitPostFolderAddSignal($newFolder);
+
+		return $newFolder;
 	}
 
 	/**
@@ -1983,14 +2029,32 @@ class ResourceStorage {
 
 	/**
 	 * @param string $identifier
+	 * @param boolean $returnInaccessibleFolderObject
 	 *
 	 * @return Folder
 	 */
-	public function getFolder($identifier) {
+	public function getFolder($identifier, $returnInaccessibleFolderObject = FALSE) {
 		$data = $this->driver->getFolderInfoByIdentifier($identifier);
 		$folder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
-		$this->assureFolderReadPermission($folder);
 
+		try {
+			$this->assureFolderReadPermission($folder);
+		} catch (Exception\InsufficientFolderAccessPermissionsException $e) {
+			$folder = NULL;
+			if ($returnInaccessibleFolderObject) {
+				// if parent folder is readable return innaccessible folder object
+				$parentPermissions = $this->driver->getPermissions($this->driver->getParentFolderIdentifierOfIdentifier($identifier));
+				if ($parentPermissions['r']) {
+					$folder = GeneralUtility::makeInstance(
+						'TYPO3\\CMS\\Core\\Resource\\InaccessibleFolder', $this, $data['identifier'], $data['name']
+					);
+				}
+			}
+
+			if ($folder === NULL) {
+				throw $e;
+			}
+		}
 		return $folder;
 	}
 
@@ -2158,6 +2222,27 @@ class ResourceStorage {
 	}
 
 	/**
+	 * Emits the folder pre-add signal
+	 *
+	 * @param Folder $targetFolder
+	 * @param string $name
+	 * @return void
+	 */
+	protected function emitPreFolderAddSignal(Folder $targetFolder, $name) {
+		$this->getSignalSlotDispatcher()->dispatch('ResourceStorage', self::SIGNAL_PreFolderAdd, array($targetFolder, $name));
+	}
+
+	/**
+	 * Emits the folder post-add signal
+	 *
+	 * @param Folder $folder
+	 * @return void
+	 */
+	protected function emitPostFolderAddSignal(Folder $folder) {
+		$this->getSignalSlotDispatcher()->dispatch('ResourceStorage', self::SIGNAL_PostFolderAdd, array($folder));
+	}
+
+	/**
 	 * Emits the folder pre-copy signal
 	 *
 	 * @param Folder $folder
@@ -2304,7 +2389,7 @@ class ResourceStorage {
 			// The destinations file
 			$theDestFile = $theTestFile;
 			// If the file does NOT exist we return this fileName
-			if (!$this->driver->fileExistsInFolder($theDestFile, $folder)) {
+			if (!$this->driver->fileExistsInFolder($theDestFile, $folder->getIdentifier())) {
 				return $theDestFile;
 			}
 		}
@@ -2389,10 +2474,11 @@ class ResourceStorage {
 				$processingFolder = $this->storageRecord['processingfolder'];
 			}
 			if ($this->driver->folderExists($processingFolder) === FALSE) {
-				$processingFolder = $this->createFolder($processingFolder);
+				$this->processingFolder = $this->createFolder($processingFolder);
+			} else {
+				$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
+				$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
 			}
-			$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
-			$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
 		}
 		return $this->processingFolder;
 	}
@@ -2413,5 +2499,20 @@ class ResourceStorage {
 	 */
 	protected function getIndexer() {
 		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $this);
+	}
+
+	/**
+	 * @param boolean $isDefault
+	 * @return void
+	 */
+	public function setDefault($isDefault) {
+		$this->isDefault = (boolean)$isDefault;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function isDefault() {
+		return $this->isDefault;
 	}
 }

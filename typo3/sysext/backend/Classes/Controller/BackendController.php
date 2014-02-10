@@ -85,7 +85,7 @@ class BackendController {
 	 */
 	public function __construct() {
 		// Set debug flag for BE development only
-		$this->debug = intval($GLOBALS['TYPO3_CONF_VARS']['BE']['debug']) === 1;
+		$this->debug = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1;
 		// Initializes the backend modules structure for use later.
 		$this->moduleLoader = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
 		$this->moduleLoader->load($GLOBALS['TBE_MODULES']);
@@ -129,8 +129,8 @@ class BackendController {
 		$this->toolbarItems = array();
 		$this->initializeCoreToolbarItems();
 		$this->menuWidth = $this->menuWidthDefault;
-		if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) && (int) $GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] != (int) $this->menuWidth) {
-			$this->menuWidth = (int) $GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
+		if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) && (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] != (int)$this->menuWidth) {
+			$this->menuWidth = (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
 		}
 		$this->executeHook('constructPostProcess');
 	}
@@ -181,7 +181,7 @@ class BackendController {
 		 ******************************************************/
 		foreach ($this->cssFiles as $cssFileName => $cssFile) {
 			$this->pageRenderer->addCssFile($cssFile);
-			// Load addditional css files to overwrite existing core styles
+			// Load additional css files to overwrite existing core styles
 			if (!empty($GLOBALS['TBE_STYLES']['stylesheets'][$cssFileName])) {
 				$this->pageRenderer->addCssFile($GLOBALS['TBE_STYLES']['stylesheets'][$cssFileName]);
 			}
@@ -316,7 +316,7 @@ class BackendController {
 		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-user-' . ($GLOBALS['BE_USER']->isAdmin() ? 'admin' : 'backend'));
 		$realName = $GLOBALS['BE_USER']->user['realName'];
 		$username = $GLOBALS['BE_USER']->user['username'];
-		$label = $realName ? $realName : $username;
+		$label = $realName ?: $username;
 		$title = $username;
 		// Link to user setup if it's loaded and user has access
 		$link = '';
@@ -484,8 +484,8 @@ class BackendController {
 			'veriCode' => $GLOBALS['BE_USER']->veriCode(),
 			'denyFileTypes' => PHP_EXTENSIONS_DEFAULT,
 			'moduleMenuWidth' => $this->menuWidth - 1,
-			'topBarHeight' => isset($GLOBALS['TBE_STYLES']['dims']['topFrameH']) ? intval($GLOBALS['TBE_STYLES']['dims']['topFrameH']) : 30,
-			'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? intval($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) : FALSE,
+			'topBarHeight' => isset($GLOBALS['TBE_STYLES']['dims']['topFrameH']) ? (int)$GLOBALS['TBE_STYLES']['dims']['topFrameH'] : 30,
+			'showRefreshLoginPopup' => isset($GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup']) ? (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] : FALSE,
 			'listModulePath' => ExtensionManagementUtility::isLoaded('recordlist') ? ExtensionManagementUtility::extRelPath('recordlist') . 'mod1/' : '',
 			'debugInWindow' => $GLOBALS['BE_USER']->uc['debugInWindow'] ? 1 : 0,
 			'ContextHelpWindows' => array(
@@ -516,7 +516,7 @@ class BackendController {
 	 *
 	 * Used in main modules with a frameset for submodules to keep the ID between modules
 	 * Typically that is set by something like this in a Web>* sub module:
-	 *		if (top.fsMod) top.fsMod.recentIds["web"] = "\'.intval($this->id).\'";
+	 *		if (top.fsMod) top.fsMod.recentIds["web"] = "\'.(int)$this->id.\'";
 	 * 		if (top.fsMod) top.fsMod.recentIds["file"] = "...(file reference/string)...";
 	 */
 	function fsModules() {	//
@@ -537,7 +537,6 @@ class BackendController {
 
 	/**
 	 * Checking if the "&edit" variable was sent so we can open it for editing the page.
-	 * Code based on code from "alt_shortcut.php"
 	 *
 	 * @return void
 	 */
@@ -565,18 +564,18 @@ class BackendController {
 				// Setting JS code to open editing:
 				$this->js .= '
 		// Load page to edit:
-	window.setTimeout("top.loadEditId(' . intval($editRecord['uid']) . ');", 500);
+	window.setTimeout("top.loadEditId(' . (int)$editRecord['uid'] . ');", 500);
 			';
 				// Checking page edit parameter:
 				if (!$GLOBALS['BE_USER']->getTSConfigVal('options.bookmark_onEditId_dontSetPageTree')) {
 					$bookmarkKeepExpanded = $GLOBALS['BE_USER']->getTSConfigVal('options.bookmark_onEditId_keepExistingExpanded');
 					// Expanding page tree:
-					BackendUtility::openPageTree(intval($editRecord['pid']), !$bookmarkKeepExpanded);
+					BackendUtility::openPageTree((int)$editRecord['pid'], !$bookmarkKeepExpanded);
 				}
 			} else {
 				$this->js .= '
 		// Warning about page editing:
-	alert(' . $GLOBALS['LANG']->JScharCode(sprintf($GLOBALS['LANG']->getLL('noEditPage'), $editId)) . ');
+	alert(' . GeneralUtility::quoteJSvalue(sprintf($GLOBALS['LANG']->getLL('noEditPage'), $editId)) . ');
 			';
 			}
 		}
@@ -629,7 +628,7 @@ class BackendController {
 	 */
 	public function addJavascriptFile($javascriptFile) {
 		$jsFileAdded = FALSE;
-		//TODO add more checks if neccessary
+		//TODO add more checks if necessary
 		if (file_exists(GeneralUtility::resolveBackPath(PATH_typo3 . $javascriptFile))) {
 			$this->jsFiles[] = $javascriptFile;
 			$jsFileAdded = TRUE;

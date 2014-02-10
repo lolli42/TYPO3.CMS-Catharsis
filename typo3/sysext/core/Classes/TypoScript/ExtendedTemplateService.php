@@ -415,7 +415,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 			$a++;
 			$depth = $depth_in . $key;
 			// This excludes all constants starting with '_' from being shown.
-			if ($this->bType != 'const' || substr($depth, 0, 1) != '_') {
+			if ($this->bType !== 'const' || $depth[0] !== '_') {
 				$goto = substr(md5($depth), 0, 6);
 				$deeper = is_array($arr[$key . '.']) && ($this->tsbrowser_depthKeys[$depth] || $this->ext_expandAllNotes) ? 1 : 0;
 				$PM = 'join';
@@ -532,7 +532,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 
 		foreach ($lnArr as $k => $ln) {
 			foreach ($this->lnToScript as $endLn => $title) {
-				if ($endLn >= intval($ln)) {
+				if ($endLn >= (int)$ln) {
 					$lnArr[$k] = '"' . $title . '", ' . $ln;
 					break;
 				}
@@ -690,8 +690,8 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 							<td align="center">' . ($row['root'] ? \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;</td>
 							<td align="center">' . ($row['clConf'] ? \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
 							<td align="center">' . ($row['clConst'] ? \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
-							<td align="center">' . ($row['pid'] ? $row['pid'] : '') . '</td>
-							<td align="center">' . ((string)$RL !== '' ? $RL : '') . '</td>
+							<td align="center">' . ($row['pid'] ?: '') . '</td>
+							<td align="center">' . (strcmp($RL, '') ? $RL : '') . '</td>
 							<td>' . ($row['next'] ? '&nbsp;' . $row['next'] . '&nbsp;&nbsp;' : '') . '</td>
 						</tr>';
 			if ($deeper) {
@@ -843,11 +843,11 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	 */
 	public function ext_getFirstTemplate($id, $template_uid = 0) {
 		// Query is taken from the runThroughTemplates($theRootLine) function in the parent class.
-		if (intval($id)) {
+		if ((int)$id) {
 			if ($template_uid) {
 				$addC = ' AND uid=' . $template_uid;
 			}
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . intval($id) . $addC . ' ' . $this->whereClause, '', 'sorting', '1');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . (int)$id . $addC . ' ' . $this->whereClause, '', 'sorting', '1');
 			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
 			BackendUtility::workspaceOL('sys_template', $row);
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
@@ -865,9 +865,9 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 	 */
 	public function ext_getAllTemplates($id) {
 		// Query is taken from the runThroughTemplates($theRootLine) function in the parent class.
-		if (intval($id)) {
+		if ((int)$id) {
 			$outRes = array();
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . intval($id) . ' ' . $this->whereClause, '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . (int)$id . ' ' . $this->whereClause, '', 'sorting');
 			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				BackendUtility::workspaceOL('sys_template', $row);
 				if (is_array($row)) {
@@ -1013,9 +1013,9 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 					$retArr['paramstr'] = $p;
 					switch ($retArr['type']) {
 						case 'int':
-							if (substr($retArr['paramstr'], 0, 1) == '-') {
+							if ($retArr['paramstr'][0] === '-') {
 								$retArr['params'] = GeneralUtility::intExplode('-', substr($retArr['paramstr'], 1));
-								$retArr['params'][0] = intval('-' . $retArr['params'][0]);
+								$retArr['params'][0] = (int)('-' . $retArr['params'][0]);
 							} else {
 								$retArr['params'] = GeneralUtility::intExplode('-', $retArr['paramstr']);
 							}
@@ -1369,13 +1369,13 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 			}
 			$this->rawP++;
 			if ($line) {
-				if (substr($line, 0, 1) == '[') {
+				if ($line[0] === '[') {
 
 				} elseif (strcspn($line, '}#/') != 0) {
 					$varL = strcspn($line, ' {=<');
 					$var = substr($line, 0, $varL);
 					$line = ltrim(substr($line, $varL));
-					switch (substr($line, 0, 1)) {
+					switch ($line[0]) {
 						case '=':
 							$this->objReg[$pre . $var] = $this->rawP - 1;
 							break;
@@ -1385,7 +1385,7 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 							break;
 					}
 					$this->lastComment = '';
-				} elseif (substr($line, 0, 1) == '}') {
+				} elseif ($line[0] === '}') {
 					$this->lastComment = '';
 					$this->ext_inBrace--;
 					if ($this->ext_inBrace < 0) {
@@ -1502,24 +1502,24 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 								if ($typeDat['paramstr']) {
 									$var = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($var, $typeDat['params'][0], $typeDat['params'][1]);
 								} else {
-									$var = intval($var);
+									$var = (int)$var;
 								}
 								break;
 							case 'int+':
-								$var = max(0, intval($var));
+								$var = max(0, (int)$var);
 								break;
 							case 'color':
 								$col = array();
 								if ($var && !GeneralUtility::inList($this->HTMLcolorList, strtolower($var))) {
 									$var = preg_replace('/[^A-Fa-f0-9]*/', '', $var);
 									$useFulHex = strlen($var) > 3;
-									$col[] = HexDec(substr($var, 0, 1));
-									$col[] = HexDec(substr($var, 1, 1));
-									$col[] = HexDec(substr($var, 2, 1));
+									$col[] = HexDec($var[0]);
+									$col[] = HexDec($var[1]);
+									$col[] = HexDec($var[2]);
 									if ($useFulHex) {
-										$col[] = HexDec(substr($var, 3, 1));
-										$col[] = HexDec(substr($var, 4, 1));
-										$col[] = HexDec(substr($var, 5, 1));
+										$col[] = HexDec($var[3]);
+										$col[] = HexDec($var[4]);
+										$col[] = HexDec($var[5]);
 									}
 									$var = substr(('0' . DecHex($col[0])), -1) . substr(('0' . DecHex($col[1])), -1) . substr(('0' . DecHex($col[2])), -1);
 									if ($useFulHex) {
@@ -1542,15 +1542,15 @@ class ExtendedTemplateService extends \TYPO3\CMS\Core\TypoScript\TemplateService
 								break;
 							case 'offset':
 								if (isset($Wdata[$key])) {
-									$var = intval($var) . ',' . intval($Wdata[$key]);
+									$var = (int)$var . ',' . (int)$Wdata[$key];
 									if (isset($W2data[$key])) {
-										$var .= ',' . intval($W2data[$key]);
+										$var .= ',' . (int)$W2data[$key];
 										if (isset($W3data[$key])) {
-											$var .= ',' . intval($W3data[$key]);
+											$var .= ',' . (int)$W3data[$key];
 											if (isset($W4data[$key])) {
-												$var .= ',' . intval($W4data[$key]);
+												$var .= ',' . (int)$W4data[$key];
 												if (isset($W5data[$key])) {
-													$var .= ',' . intval($W5data[$key]);
+													$var .= ',' . (int)$W5data[$key];
 												}
 											}
 										}

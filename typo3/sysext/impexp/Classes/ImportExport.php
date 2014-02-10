@@ -797,10 +797,11 @@ class ImportExport {
 	public function export_addFile($fI, $recordRef = '', $fieldname = '') {
 		if (@is_file($fI['ID_absFile'])) {
 			if (filesize($fI['ID_absFile']) < $this->maxFileSize) {
+				$fileInfo = stat($fI['ID_absFile']);
 				$fileRec = array();
-				$fileRec['filesize'] = filesize($fI['ID_absFile']);
+				$fileRec['filesize'] = $fileInfo['size'];
 				$fileRec['filename'] = basename($fI['ID_absFile']);
-				$fileRec['filemtime'] = filemtime($fI['ID_absFile']);
+				$fileRec['filemtime'] = $fileInfo['mtime'];
 				//for internal type file_reference
 				$fileRec['relFileRef'] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($fI['ID_absFile']);
 				if ($recordRef) {
@@ -830,10 +831,11 @@ class ImportExport {
 						$RTEoriginal_absPath = dirname($fI['ID_absFile']) . '/' . $RTEoriginal;
 						if (@is_file($RTEoriginal_absPath)) {
 							$RTEoriginal_ID = md5($RTEoriginal_absPath);
+							$fileInfo = stat($RTEoriginal_absPath);
 							$fileRec = array();
-							$fileRec['filesize'] = filesize($RTEoriginal_absPath);
+							$fileRec['filesize'] = $fileInfo['size'];
 							$fileRec['filename'] = basename($RTEoriginal_absPath);
-							$fileRec['filemtime'] = filemtime($RTEoriginal_absPath);
+							$fileRec['filemtime'] = $fileInfo['mtime'];
 							$fileRec['record_ref'] = '_RTE_COPY_ID:' . $fI['ID'];
 							$this->dat['header']['files'][$fI['ID']]['RTE_ORIG_ID'] = $RTEoriginal_ID;
 							// Setting this data in the header
@@ -870,10 +872,11 @@ class ImportExport {
 									$prefixedMedias[$k] = '{EXT_RES_ID:' . $EXTres_ID . '}';
 									// Add file to memory if it is not set already:
 									if (!isset($this->dat['header']['files'][$EXTres_ID])) {
+										$fileInfo = stat($EXTres_absPath);
 										$fileRec = array();
-										$fileRec['filesize'] = filesize($EXTres_absPath);
+										$fileRec['filesize'] = $fileInfo['size'];
 										$fileRec['filename'] = basename($EXTres_absPath);
-										$fileRec['filemtime'] = filemtime($EXTres_absPath);
+										$fileRec['filemtime'] = $fileInfo['mtime'];
 										$fileRec['record_ref'] = '_EXT_PARENT_:' . $fI['ID'];
 										// Media relative to the HTML file.
 										$fileRec['parentRelFileName'] = $v;
@@ -1082,7 +1085,7 @@ class ImportExport {
 			)
 		);
 		// Creating XML file from $outputArray:
-		$charset = $this->dat['header']['charset'] ? $this->dat['header']['charset'] : 'utf-8';
+		$charset = $this->dat['header']['charset'] ?: 'utf-8';
 		$XML = '<?xml version="1.0" encoding="' . $charset . '" standalone="yes" ?>' . LF;
 		$XML .= GeneralUtility::array2xml($this->dat, '', 0, 'T3RecordDocument', 0, $options);
 		return $XML;
@@ -2192,7 +2195,7 @@ class ImportExport {
 		$initStrDat = explode(':', $initStr);
 		if (strstr($initStrDat[0], 'Warning') == FALSE) {
 			if ((string)$initStrDat[3] === '') {
-				$datString = fread($fd, intval($initStrDat[2]));
+				$datString = fread($fd, (int)$initStrDat[2]);
 				fread($fd, 1);
 				if (md5($datString) === $initStrDat[0]) {
 					if ($initStrDat[1]) {
@@ -2247,8 +2250,8 @@ class ImportExport {
 		$pointer += $initStrLen;
 		$initStrDat = explode(':', $initStr);
 		if ((string)$initStrDat[3] === '') {
-			$datString = substr($filecontent, $pointer, intval($initStrDat[2]));
-			$pointer += intval($initStrDat[2]) + 1;
+			$datString = substr($filecontent, $pointer, (int)$initStrDat[2]);
+			$pointer += (int)$initStrDat[2] + 1;
 			if (md5($datString) === $initStrDat[0]) {
 				if ($initStrDat[1]) {
 					if ($this->compress) {
@@ -2690,7 +2693,7 @@ class ImportExport {
 					$staticFixed = TRUE;
 				}
 				$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/rel_db' . $Iprepend . '.gif'), 'width="13" height="12"') . ' align="top" title="' . htmlspecialchars($pInfo['ref']) . '" alt="" />';
-				$pInfo['class'] = $htmlColorClass ? $htmlColorClass : 'bgColor3';
+				$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 				$pInfo['type'] = 'rel';
 				if (!$staticFixed || $this->showStaticRelations) {
 					$lines[] = $pInfo;
@@ -2734,7 +2737,7 @@ class ImportExport {
 			$pInfo['title'] = htmlspecialchars($fI['filename']);
 			$pInfo['ref'] = 'FILE';
 			$pInfo['size'] = $fI['filesize'];
-			$pInfo['class'] = $htmlColorClass ? $htmlColorClass : 'bgColor3';
+			$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 			$pInfo['type'] = 'file';
 			// If import mode and there is a non-RTE softreference, check the destination directory:
 			if ($this->mode === 'import' && $tokenID && !$fI['RTE_ORIG_ID']) {
@@ -2785,7 +2788,7 @@ class ImportExport {
 				$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Original)</em>';
 				$pInfo['ref'] = 'FILE';
 				$pInfo['size'] = $fI['filesize'];
-				$pInfo['class'] = $htmlColorClass ? $htmlColorClass : 'bgColor3';
+				$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 				$pInfo['type'] = 'file';
 				$lines[] = $pInfo;
 				unset($this->remainHeader['files'][$ID]);
@@ -2806,7 +2809,7 @@ class ImportExport {
 					$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Resource)</em>';
 					$pInfo['ref'] = 'FILE';
 					$pInfo['size'] = $fI['filesize'];
-					$pInfo['class'] = $htmlColorClass ? $htmlColorClass : 'bgColor3';
+					$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 					$pInfo['type'] = 'file';
 					$lines[] = $pInfo;
 					unset($this->remainHeader['files'][$ID]);

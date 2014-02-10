@@ -85,7 +85,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	/**
 	 * Returns TRUE/FALSE if the next level for $id should be expanded - and all levels should, so we always return 1.
 	 *
-	 * @param integer $id ID (uid) to test for (see extending classes where this is checked againts session data)
+	 * @param integer $id ID (uid) to test for (see extending classes where this is checked against session data)
 	 * @return boolean
 	 * @todo Define visibility
 	 */
@@ -110,7 +110,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	public function PMicon($row, $a, $c, $nextCount, $exp) {
 		$PM = 'join';
 		$BTM = $a == $c ? 'bottom' : '';
-		$icon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->backPath, ('gfx/ol/' . $PM . $BTM . '.gif'), 'width="18" height="16"') . ' alt="" />';
+		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('treeline-' . $PM . $BTM);
 		return $icon;
 	}
 

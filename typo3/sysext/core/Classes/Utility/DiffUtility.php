@@ -84,14 +84,14 @@ class DiffUtility {
 			$diffResArray = array();
 			$differenceStr = '';
 			foreach ($diffRes as $lValue) {
-				if (intval($lValue)) {
-					$c = intval($lValue);
+				if ((int)$lValue) {
+					$c = (int)$lValue;
 					$diffResArray[$c]['changeInfo'] = $lValue;
 				}
-				if (substr($lValue, 0, 1) == '<') {
+				if ($lValue[0] === '<') {
 					$differenceStr .= ($diffResArray[$c]['old'][] = substr($lValue, 2));
 				}
-				if (substr($lValue, 0, 1) == '>') {
+				if ($lValue[0] === '>') {
 					$differenceStr .= ($diffResArray[$c]['new'][] = substr($lValue, 2));
 				}
 			}
@@ -115,7 +115,7 @@ class DiffUtility {
 					}
 					$chInfParts = explode(',', $diffResArray[$a + 1]['changeInfo']);
 					if ((string)$chInfParts[0] === (string)($a + 1)) {
-						$newLine = intval($chInfParts[1]) - 1;
+						$newLine = (int)$chInfParts[1] - 1;
 						if ($newLine > $a) {
 							$a = $newLine;
 						}

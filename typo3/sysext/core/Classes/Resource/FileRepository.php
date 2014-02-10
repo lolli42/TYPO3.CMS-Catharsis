@@ -62,6 +62,17 @@ class FileRepository extends AbstractRepository {
 	protected $indexerService = NULL;
 
 	/**
+	 * @param int $uid
+	 * @return File
+	 * @deprecated since TYPO3 6.2 CMS, will be removed 2 versions later
+	 */
+	public function findByUid($uid) {
+		GeneralUtility::logDeprecatedFunction();
+		return ResourceFactory::getInstance()->getFileObject($uid);
+	}
+
+
+	/**
 	 * Internal function to retrieve the indexer service,
 	 * if it does not exist, an instance will be created
 	 *
@@ -176,7 +187,7 @@ class FileRepository extends AbstractRepository {
 			'tablenames=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_file_reference') .
 				' AND deleted = 0' .
 				' AND hidden = 0' .
-				' AND uid_foreign=' . intval($uid) .
+				' AND uid_foreign=' . (int)$uid .
 				' AND fieldname=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($fieldName, 'sys_file_reference'),
 			'',
 			'sorting_foreign'

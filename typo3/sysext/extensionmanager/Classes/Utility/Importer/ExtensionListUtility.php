@@ -181,22 +181,22 @@ class ExtensionListUtility implements \SplObserver {
 			$subject->getExtkey(),
 			$subject->getVersion(),
 			$versionRepresentations['version_int'],
-			intval($subject->getAlldownloadcounter()),
-			intval($subject->getDownloadcounter()),
+			(int)$subject->getAlldownloadcounter(),
+			(int)$subject->getDownloadcounter(),
 			!is_null($subject->getTitle()) ? $subject->getTitle() : '',
 			$subject->getOwnerusername(),
 			!is_null($subject->getAuthorname()) ? $subject->getAuthorname() : '',
 			!is_null($subject->getAuthoremail()) ? $subject->getAuthoremail() : '',
 			!is_null($subject->getAuthorcompany()) ? $subject->getAuthorcompany() : '',
-			intval($subject->getLastuploaddate()),
+			(int)$subject->getLastuploaddate(),
 			$subject->getT3xfilemd5(),
 			$this->repositoryUid,
-			$this->extensionModel->getDefaultState($subject->getState() ? $subject->getState() : ''),
-			intval($subject->getReviewstate()),
-			$this->extensionModel->getCategoryIndexFromStringOrNumber($subject->getCategory() ? $subject->getCategory() : ''),
-			$subject->getDescription() ? $subject->getDescription() : '',
-			$subject->getDependencies() ? $subject->getDependencies() : '',
-			$subject->getUploadcomment() ? $subject->getUploadcomment() : ''
+			$this->extensionModel->getDefaultState($subject->getState() ?: ''),
+			(int)$subject->getReviewstate(),
+			$this->extensionModel->getCategoryIndexFromStringOrNumber($subject->getCategory() ?: ''),
+			$subject->getDescription() ?: '',
+			$subject->getDependencies() ?: '',
+			$subject->getUploadcomment() ?: ''
 		);
 		++$this->sumRecords;
 	}
