@@ -42,4 +42,23 @@ abstract class UnitTestCase extends BaseTestCase {
 	 */
 	protected $backupGlobalsBlacklist = array('TYPO3_LOADED_EXT');
 
+	/**
+	 *
+	 */
+	protected function tearDown() {
+		$reflection = new \ReflectionObject($this);
+		foreach ($reflection->getProperties() as $property) {
+			$declaringClass = $property->getDeclaringClass()->getName();
+			if (
+				!$property->isStatic()
+				&& $declaringClass !== 'TYPO3\CMS\Core\Tests\UnitTestCase'
+				&& $declaringClass !== 'TYPO3\CMS\Core\Tests\BaseTestCase'
+				&& strpos($property->getDeclaringClass()->getName(), 'PHPUnit_') !== 0
+			) {
+				$propertyName = $property->getName();
+				unset($this->$propertyName);
+			}
+		}
+		unset($reflection);
+	}
 }
