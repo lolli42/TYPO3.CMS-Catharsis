@@ -234,12 +234,7 @@ class FileListController {
 		$pageRenderer = $this->doc->getPageRenderer();
 		$pageRenderer->loadPrototype();
 		$pageRenderer->loadJQuery();
-		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
-		$pageRenderer->addInlineLanguagelabelFile(
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
-			'file_upload'
-		);
 
 		// There there was access to this file path, continue, make the list
 		if ($this->folderObject) {
@@ -297,7 +292,7 @@ class FileListController {
 					}
 					// Init file processing object for deleting and pass the cmd array.
 					$fileProcessor = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\ExtendedFileUtility');
-					$fileProcessor->init($GLOBALS['FILEMOUNTS'], $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
+					$fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 					$fileProcessor->setActionPermissions();
 					$fileProcessor->dontCheckForUnique = $this->overwriteExistingFiles ? 1 : 0;
 					$fileProcessor->start($FILE);
@@ -316,14 +311,7 @@ class FileListController {
 			// Generate the list
 			$this->filelist->generateList();
 			// Set top JavaScript:
-			$this->doc->JScode = $this->doc->wrapScriptTags('
-
-			if (top.fsMod) top.fsMod.recentIds["file"] = "' . rawurlencode($this->id) . '";
-			function jumpToUrl(URL) {	//
-				window.location.href = URL;
-			}
-
-			' . $this->filelist->CBfunctions());
+			$this->doc->JScode = $this->doc->wrapScriptTags('if (top.fsMod) top.fsMod.recentIds["file"] = "' . rawurlencode($this->id) . '";' . $this->filelist->CBfunctions());
 			// This will return content necessary for the context sensitive clickmenus to work: bodytag events, JavaScript functions and DIV-layers.
 			$this->doc->getContextMenuCode();
 			// Setting up the buttons and markers for docheader
@@ -331,6 +319,18 @@ class FileListController {
 			// add the folder info to the marker array
 			$otherMarkers['FOLDER_INFO'] = $this->filelist->getFolderInfo();
 			$docHeaderButtons = array_merge($this->getButtons(), $buttons);
+
+			// Include DragUploader only if we have write access
+			if ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File')
+				&& $this->folderObject->checkActionPermission('write')
+			) {
+				$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
+				$pageRenderer->addInlineSetting('DragUploader', 'ajaxUrl', BackendUtility::getAjaxUrl('TYPO3_tcefile::process'));
+				$pageRenderer->addInlineLanguagelabelFile(
+					\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
+					'file_upload'
+				);
+			}
 
 			// Build the <body> for the module
 			$moduleHeadline = $this->getModuleHeadline();
@@ -449,7 +449,9 @@ class FileListController {
 			$buttons['upload'] = '<a href="' . $GLOBALS['BACK_PATH'] . 'file_upload.php?target=' . rawurlencode($this->folderObject->getCombinedIdentifier()) . '&amp;returnUrl=' . rawurlencode($this->filelist->listURL()) . '" id="button-upload" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-upload') . '</a>';
 		}
 		// New folder button
-		if ($this->folderObject && ($this->folderObject->checkActionPermission('add') || $this->folderObject->getStorage()->checkUserActionPermission('add', 'File'))) {
+		if ($this->folderObject && $this->folderObject->checkActionPermission('write')
+			&& ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File') || $this->folderObject->checkActionPermission('add'))
+		) {
 			$buttons['new'] = '<a href="' . $GLOBALS['BACK_PATH'] . 'file_newfolder.php?target=' . rawurlencode($this->folderObject->getCombinedIdentifier()) . '&amp;returnUrl=' . rawurlencode($this->filelist->listURL()) . '" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new') . '</a>';
 		}
 		return $buttons;

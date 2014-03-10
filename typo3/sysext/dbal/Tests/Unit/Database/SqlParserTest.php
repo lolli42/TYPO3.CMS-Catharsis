@@ -40,8 +40,10 @@ class SqlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Prepares the environment before running a test.
 	 */
 	public function setUp() {
-		$className = self::buildAccessibleProxy('TYPO3\\CMS\\Dbal\\Database\\SqlParser');
-		$this->fixture = new $className();
+		$GLOBALS['TYPO3_DB'] = new \TYPO3\CMS\Dbal\Database\DatabaseConnection();
+		$this->fixture = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\SqlParser', array('dummy'));
+		$GLOBALS['TYPO3_DB']->lastHandlerKey = '_DEFAULT';
+		$GLOBALS['TYPO3_DB']->SQLparser = $this->fixture;
 	}
 
 	/**
@@ -295,8 +297,7 @@ FROM pages WHERE pid IN (1,2,3,4)';
 		$this->assertTrue(is_array($components), $components);
 		$alterTable = $this->cleanSql($this->fixture->_callRef('compileALTERTABLE', $components));
 		$expected = 'ALTER TABLE tx_realurl_pathcache ENGINE = InnoDB';
-		$this->assertTrue(is_array($alterTable), $alterTable);
-		$this->assertEquals($expected, $alterTable[0]);
+		$this->assertEquals($expected, $alterTable);
 	}
 
 	/**
@@ -309,8 +310,7 @@ FROM pages WHERE pid IN (1,2,3,4)';
 		$this->assertTrue(is_array($components), $components);
 		$alterTable = $this->cleanSql($this->fixture->_callRef('compileALTERTABLE', $components));
 		$expected = 'ALTER TABLE index_phash DEFAULT CHARACTER SET utf8';
-		$this->assertTrue(is_array($alterTable), $alterTable);
-		$this->assertEquals($expected, $alterTable[0]);
+		$this->assertEquals($expected, $alterTable);
 	}
 
 	/**
@@ -505,9 +505,7 @@ FROM pages WHERE pid IN (1,2,3,4)';
 		$expected = $sql;
 		$alterTables = $this->fixture->_callRef('parseALTERTABLE', $sql);
 		$queries = $this->fixture->compileSQL($alterTables);
-		$this->assertTrue(is_array($queries), $queries);
-		$this->assertTrue(count($queries) == 1, $queries);
-		$this->assertEquals($expected, $queries[0]);
+		$this->assertEquals($expected, $queries);
 	}
 
 	///////////////////////////////////////

@@ -897,7 +897,7 @@ class TypoScriptFrontendController {
 	 * @return void
 	 */
 	protected function initCaches() {
-		$this->pageCache = $GLOBALS['typo3CacheManager']->getCache('cache_pages');
+		$this->pageCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pages');
 	}
 
 	/**
@@ -1127,13 +1127,16 @@ class TypoScriptFrontendController {
 		$this->setIDfromArgV();
 		// If there is a Backend login we are going to check for any preview settings:
 		$GLOBALS['TT']->push('beUserLogin', '');
+		$originalFrontendUser = NULL;
 		if ($this->beUserLogin || $this->doWorkspacePreview()) {
 			// Backend user preview features:
 			if ($this->beUserLogin && $GLOBALS['BE_USER']->adminPanel instanceof \TYPO3\CMS\Frontend\View\AdminPanelView) {
 				$this->fePreview = $GLOBALS['BE_USER']->adminPanel->extGetFeAdminValue('preview') ? TRUE : FALSE;
 				// If admin panel preview is enabled...
 				if ($this->fePreview) {
-					$fe_user_OLD_USERGROUP = $this->fe_user->user['usergroup'];
+					if ($this->fe_user->user) {
+						$originalFrontendUser = $this->fe_user->user;
+					}
 					$this->showHiddenPage = $GLOBALS['BE_USER']->adminPanel->extGetFeAdminValue('preview', 'showHiddenPages');
 					$this->showHiddenRecords = $GLOBALS['BE_USER']->adminPanel->extGetFeAdminValue('preview', 'showHiddenRecords');
 					// Simulate date
@@ -1146,7 +1149,13 @@ class TypoScriptFrontendController {
 					$simUserGroup = $GLOBALS['BE_USER']->adminPanel->extGetFeAdminValue('preview', 'simulateUserGroup');
 					$this->simUserGroup = $simUserGroup;
 					if ($simUserGroup) {
-						$this->fe_user->user['usergroup'] = $simUserGroup;
+						if ($this->fe_user->user) {
+							$this->fe_user->user[$this->fe_user->usergroup_column] = $simUserGroup;
+						} else {
+							$this->fe_user->user = array(
+								$this->fe_user->usergroup_column => $simUserGroup
+							);
+						}
 					}
 					if (!$simUserGroup && !$simTime && !$this->showHiddenPage && !$this->showHiddenRecords) {
 						$this->fePreview = 0;
@@ -1193,7 +1202,7 @@ class TypoScriptFrontendController {
 			if (!$GLOBALS['BE_USER']->doesUserHaveAccess($this->page, 1)) {
 				// Resetting
 				$this->clear_preview();
-				$this->fe_user->user['usergroup'] = $fe_user_OLD_USERGROUP;
+				$this->fe_user->user = $originalFrontendUser;
 				// Fetching the id again, now with the preview settings reset.
 				$this->fetch_the_id();
 			}
@@ -2421,8 +2430,7 @@ class TypoScriptFrontendController {
 				}
 			}
 		}
-		// Initialize charset settings etc.
-		$this->initLLvars();
+
 		// No cache
 		// Set $this->no_cache TRUE if the config.no_cache value is set!
 		if ($this->config['config']['no_cache']) {
@@ -2504,6 +2512,10 @@ class TypoScriptFrontendController {
 				\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($_funcRef, $_params, $this);
 			}
 		}
+
+		// Initialize charset settings etc.
+		$this->initLLvars();
+
 		// Get values from TypoScript:
 		$this->sys_language_uid = ($this->sys_language_content = (int)$this->config['config']['sys_language_uid']);
 		list($this->sys_language_mode, $sys_language_content) = GeneralUtility::trimExplode(';', $this->config['config']['sys_language_mode']);
@@ -3758,7 +3770,7 @@ if (version == "n3") {
 		$search = array();
 		$replace = array();
 		// Substitutes username mark with the username
-		if ($this->fe_user->user['uid']) {
+		if (!empty($this->fe_user->user['uid'])) {
 			// User name:
 			$token = isset($this->config['config']['USERNAME_substToken']) ? trim($this->config['config']['USERNAME_substToken']) : '';
 			$search[] = $token ? $token : '<!--###USERNAME###-->';
@@ -4502,7 +4514,7 @@ if (version == "n3") {
 	 */
 	public function get_cache_timeout() {
 		/** @var $runtimeCache \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend */
-		$runtimeCache = $GLOBALS['typo3CacheManager']->getCache('cache_runtime');
+		$runtimeCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_runtime');
 		$cachedCacheLifetimeIdentifier = 'core-tslib_fe-get_cache_timeout';
 		$cachedCacheLifetime = $runtimeCache->get($cachedCacheLifetimeIdentifier);
 		if ($cachedCacheLifetime === FALSE) {
@@ -4524,11 +4536,11 @@ if (version == "n3") {
 				if ($midnightTime > $GLOBALS['EXEC_TIME']) {
 					$cacheTimeout = $midnightTime - $GLOBALS['EXEC_TIME'];
 				}
-			} else {
-				// If cache_clearAtMidnight is not set calculate the timeout time for records on the page
-				$calculatedCacheTimeout = $this->calculatePageCacheTimeout();
-				$cacheTimeout = $calculatedCacheTimeout < $cacheTimeout ? $calculatedCacheTimeout : $cacheTimeout;
 			}
+
+			// Calculate the timeout time for records on the page and adjust cache timeout if necessary
+			$cacheTimeout = min($this->calculatePageCacheTimeout(), $cacheTimeout);
+
 			if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['get_cache_timeout'])) {
 				foreach ($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['get_cache_timeout'] as $_funcRef) {
 					$params = array('cacheTimeout' => $cacheTimeout);
@@ -4701,6 +4713,8 @@ if (version == "n3") {
 	 * @todo Define visibility
 	 */
 	public function initLLvars() {
+		// Init languageDependencies list
+		$this->languageDependencies = array();
 		// Setting language key and split index:
 		$this->lang = $this->config['config']['language'] ?: 'default';
 		$this->getPageRenderer()->setLanguage($this->lang);
@@ -4863,7 +4877,7 @@ if (version == "n3") {
 	protected function getSysDomainCache() {
 		$entryIdentifier = 'core-database-sys_domain-complete';
 		/** @var $runtimeCache \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend */
-		$runtimeCache = $GLOBALS['typo3CacheManager']->getCache('cache_runtime');
+		$runtimeCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_runtime');
 
 		$sysDomainData = array();
 		if ($runtimeCache->has($entryIdentifier)) {

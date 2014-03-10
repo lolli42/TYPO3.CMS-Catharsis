@@ -188,19 +188,25 @@ class ResourceCompressor {
 			$filenameFromMainDir = $this->getFilenameFromMainDir($fileOptions['file']);
 			// if $options['baseDirectories'] set, we only include files below these directories
 			if ((!isset($options['baseDirectories']) || $this->checkBaseDirectory($filenameFromMainDir, array_merge($options['baseDirectories'], array($this->targetDirectory)))) && $fileOptions['media'] === 'all') {
-				$filesToInclude[] = $filenameFromMainDir;
+				if ($fileOptions['forceOnTop']) {
+					array_unshift($filesToInclude, $filenameFromMainDir);
+				} else {
+					$filesToInclude[] = $filenameFromMainDir;
+				}
 				// remove the file from the incoming file array
 				unset($cssFiles[$key]);
 			}
 		}
-		if (count($filesToInclude)) {
+		if (!empty($filesToInclude)) {
 			$targetFile = $this->createMergedCssFile($filesToInclude);
 			$targetFileRelative = $this->relativePath . $targetFile;
 			$concatenatedOptions = array(
 				'file' => $targetFileRelative,
 				'rel' => 'stylesheet',
 				'media' => 'all',
-				'compress' => TRUE
+				'compress' => TRUE,
+				'forceOnTop' => FALSE,
+				'allWrap' => ''
 			);
 			// place the merged stylesheet on top of the stylesheets
 			$cssFiles = array_merge(array($targetFileRelative => $concatenatedOptions), $cssFiles);
@@ -221,8 +227,16 @@ class ResourceCompressor {
 			if (empty($fileOptions['section']) || !empty($fileOptions['excludeFromConcatenation'])) {
 				continue;
 			}
+			if (!isset($filesToInclude[$fileOptions['section']])) {
+				$filesToInclude[$fileOptions['section']] = array();
+			}
 			// we remove BACK_PATH from $filename, so make it relative to root path
-			$filesToInclude[$fileOptions['section']][] = $this->getFilenameFromMainDir($fileOptions['file']);
+			$filenameFromMainDir = $this->getFilenameFromMainDir($fileOptions['file']);
+			if ($fileOptions['forceOnTop']) {
+				array_unshift($filesToInclude[$fileOptions['section']], $filenameFromMainDir);
+			} else {
+				$filesToInclude[$fileOptions['section']][] = $filenameFromMainDir;
+			}
 			// remove the file from the incoming file array
 			unset($jsFiles[$key]);
 		}
@@ -652,13 +666,13 @@ class ResourceCompressor {
 		if (stripos($contents, '@charset') === FALSE && stripos($contents, '@import') === FALSE && stripos($contents, '@namespace') === FALSE) {
 			return $contents;
 		}
-		$regex = '/@(charset|import|namespace)\\s*(url)?\\s*\\(?\\s*["\']?[^"\']+["\']?\\s*\\)?.*;/i';
+		$regex = '/@(charset|import|namespace)\\s*(url)?\\s*\\(?\\s*["\']?[^"\'\\)]+["\']?\\s*\\)?\\s*;/i';
 		preg_match_all($regex, $contents, $matches);
 		if (!empty($matches[0])) {
 			// remove existing statements
 			$contents = str_replace($matches[0], '', $contents);
 			// add statements to the top of contents in the order they occur in original file
-			$contents = $comment . implode($comment, $matches[0]) . LF . $contents;
+			$contents = $comment . implode($comment, $matches[0]) . LF . trim($contents);
 		}
 		return $contents;
 	}

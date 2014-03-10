@@ -24,12 +24,10 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Install\Controller\Action;
-
 /**
  * Set production defaults
  */
-class DefaultConfiguration extends Action\AbstractAction implements StepInterface {
+class DefaultConfiguration extends AbstractStepAction {
 
 	/**
 	 * Set defaults of auto configuration, mark installation as completed
@@ -41,6 +39,18 @@ class DefaultConfiguration extends Action\AbstractAction implements StepInterfac
 		$featureManager = $this->objectManager->get('TYPO3\\CMS\\Install\\Configuration\\FeatureManager');
 		// Get best matching configuration presets
 		$configurationValues = $featureManager->getBestMatchingConfigurationForAllFeatures();
+
+		// let the admin user redirect to the distributions page on first login
+		if (isset($this->postValues['values']['loaddistributions'])) {
+
+			// update the admin backend user to show the distribution management on login
+			$adminUserFirstLogin = array('startModuleOnFirstLogin' => 'tools_ExtensionmanagerExtensionmanager->tx_extensionmanager_tools_extensionmanagerextensionmanager%5Baction%5D=distributions&tx_extensionmanager_tools_extensionmanagerextensionmanager%5Bcontroller%5D=List');
+			$this->getDatabase()->exec_UPDATEquery(
+					'be_users',
+					'admin=1',
+					array('uc' => serialize($adminUserFirstLogin))
+			);
+		}
 
 		// Setting SYS/isInitialInstallationInProgress to FALSE marks this instance installation as complete
 		$configurationValues['SYS/isInitialInstallationInProgress'] = FALSE;
@@ -84,12 +94,11 @@ class DefaultConfiguration extends Action\AbstractAction implements StepInterfac
 	}
 
 	/**
-	 * Render this step
+	 * Executes the step
 	 *
-	 * @return string
+	 * @return string Rendered content
 	 */
-	public function handle() {
-		$this->initializeHandle();
+	protected function executeAction() {
 		return $this->view->render();
 	}
 }

@@ -322,6 +322,21 @@ class ImportExport {
 	 */
 	public $fileProcObj = '';
 
+	/**
+	 * Keys are [recordname], values are an array of fields to be included
+	 * in the export
+	 *
+	 * @var array
+	 */
+	protected $recordTypesIncludeFields = array();
+
+	/**
+	 * Default array of fields to be included in the export
+	 *
+	 * @var array
+	 */
+	protected $defaultRecordIncludeFields = array('uid', 'pid');
+
 	/**************************
 	 * Initialize
 	 *************************/
@@ -522,6 +537,33 @@ class ImportExport {
 	 *************************/
 
 	/**
+	 * Sets the fields of record types to be included in the export
+	 *
+	 * @param array $recordTypesIncludeFields Keys are [recordname], values are an array of fields to be included in the export
+	 * @throws \TYPO3\CMS\Core\Exception if an array value is not type of array
+	 * @return void
+	 */
+	public function setRecordTypesIncludeFields(array $recordTypesIncludeFields) {
+		foreach ($recordTypesIncludeFields as $table => $fields) {
+			if (!is_array($fields)) {
+				throw new \TYPO3\CMS\Core\Exception('The include fields for record type ' . htmlspecialchars($table) . ' are not defined by an array.', 1391440658);
+			}
+			$this->setRecordTypeIncludeFields($table, $fields);
+		}
+	}
+
+	/**
+	 * Sets the fields of a record type to be included in the export
+	 *
+	 * @param string $table The record type
+	 * @param array $fields The fields to be included
+	 * @return void
+	 */
+	public function setRecordTypeIncludeFields($table, array $fields) {
+		$this->recordTypesIncludeFields[$table] = $fields;
+	}
+
+	/**
 	 * Adds the record $row from $table.
 	 * No checking for relations done here. Pure data.
 	 *
@@ -537,6 +579,7 @@ class ImportExport {
 			if ($this->checkPID($table === 'pages' ? $row['uid'] : $row['pid'])) {
 				if (!isset($this->dat['records'][($table . ':' . $row['uid'])])) {
 					// Prepare header info:
+					$row = $this->filterRecordFields($table, $row);
 					$headerInfo = array();
 					$headerInfo['uid'] = $row['uid'];
 					$headerInfo['pid'] = $row['pid'];
@@ -705,7 +748,7 @@ class ImportExport {
 		// Traverse all "rels" registered for "records"
 		if (is_array($this->dat['records'])) {
 			foreach ($this->dat['records'] as $k => $value) {
-				if (is_array($this->dat['records'][$k]['rels'])) {
+				if (isset($this->dat['records'][$k]['rels']) && is_array($this->dat['records'][$k]['rels'])) {
 					foreach ($this->dat['records'][$k]['rels'] as $fieldname => $vR) {
 						// For all file type relations:
 						if ($vR['type'] == 'file') {
@@ -784,6 +827,61 @@ class ImportExport {
 			$this->error('There were no records available.');
 		}
 	}
+
+	/**
+	 * This adds all files from sys_file records
+	 *
+	 * @return void
+	 */
+	public function export_addFilesFromSysFilesRecords() {
+		if (!isset($this->dat['header']['records']['sys_file']) || !is_array($this->dat['header']['records']['sys_file'])) {
+			return;
+		}
+		foreach (array_keys($this->dat['header']['records']['sys_file']) as $sysFileUid) {
+			$recordData = $this->dat['records']['sys_file:' . $sysFileUid]['data'];
+			$file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->createFileObject($recordData);
+			$this->export_addSysFile($file);
+		}
+	}
+
+	/**
+	 * Adds a files content from a sys file record to the export memory
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\File $file
+	 * @return void
+	 */
+	public function export_addSysFile(\TYPO3\CMS\Core\Resource\File $file) {
+		if ($file->getProperty('size') >= $this->maxFileSize) {
+			$this->error('File ' . $file->getPublicUrl() . ' was larger (' . GeneralUtility::formatSize($file->getProperty('size')) . ') than the maxFileSize (' . GeneralUtility::formatSize($this->maxFileSize) . ')! Skipping.');
+			return;
+		}
+		try {
+			$fileContent = $file->getContents();
+		} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException $e) {
+			$this->error('File ' . $file->getPublicUrl() . ': ' . $e->getMessage());
+			return;
+		} catch (\TYPO3\CMS\Core\Resource\Exception\IllegalFileExtensionException $e) {
+			$this->error('File ' . $file->getPublicUrl() . ': ' . $e->getMessage());
+			return;
+		}
+		$fileRec = array();
+		$fileRec['filesize'] = $file->getProperty('size');
+		$fileRec['filename'] = $file->getProperty('name');
+		$fileRec['filemtime'] = $file->getProperty('modification_date');
+
+		// build unique id based on the storage and the file identifier
+		$fileId = md5($file->getStorage()->getUid() . ':' . $file->getProperty('identifier_hash'));
+
+		// Setting this data in the header
+		$this->dat['header']['files_fal'][$fileId] = $fileRec;
+
+		// ... and finally add the heavy stuff:
+		$fileRec['content'] = $fileContent;
+		$fileRec['content_sha1'] = $file->getProperty('sha1');
+
+		$this->dat['files_fal'][$fileId] = $fileRec;
+	}
+
 
 	/**
 	 * Adds a files content to the export memory
@@ -974,6 +1072,33 @@ class ImportExport {
 		return $list;
 	}
 
+	/**
+	 * If include fields for a specific record type are set, the data
+	 * are filtered out with fields are not included in the fields.
+	 *
+	 * @param string $table The record type to be filtered
+	 * @param array $row The data to be filtered
+	 * @return array The filtered record row
+	 */
+	protected function filterRecordFields($table, array $row) {
+		if (isset($this->recordTypesIncludeFields[$table])) {
+			$includeFields = array_unique(array_merge(
+				$this->recordTypesIncludeFields[$table],
+				$this->defaultRecordIncludeFields
+			));
+			$newRow = array();
+			foreach ($row as $key => $value) {
+				if (in_array($key, $includeFields)) {
+					$newRow[$key] = $value;
+				}
+			}
+		} else {
+			$newRow = $row;
+		}
+		return $newRow;
+	}
+
+
 	/**************************
 	 * File Output
 	 *************************/
@@ -997,6 +1122,8 @@ class ImportExport {
 			$out .= $this->addFilePart(serialize($this->dat['records']), $compress);
 			// adding files:
 			$out .= $this->addFilePart(serialize($this->dat['files']), $compress);
+			// adding files_fal:
+			$out .= $this->addFilePart(serialize($this->dat['files_fal']), $compress);
 		}
 		return $out;
 	}
@@ -1016,6 +1143,7 @@ class ImportExport {
 					'clearStackPath' => TRUE,
 					'parentTagMap' => array(
 						'files' => 'file',
+						'files_fal' => 'file',
 						'records' => 'table',
 						'table' => 'rec',
 						'rec:rels' => 'relations',
@@ -1080,6 +1208,12 @@ class ImportExport {
 					'disableTypeAttrib' => TRUE,
 					'parentTagMap' => array(
 						'files' => 'file'
+					)
+				),
+				'/files_fal' => array(
+					'disableTypeAttrib' => TRUE,
+					'parentTagMap' => array(
+						'files_fal' => 'file'
 					)
 				)
 			)
@@ -2163,6 +2297,7 @@ class ImportExport {
 					if ($all) {
 						$this->dat['records'] = $this->getNextFilePart($fd, 1, 'records');
 						$this->dat['files'] = $this->getNextFilePart($fd, 1, 'files');
+						$this->dat['files_fal'] = $this->getNextFilePart($fd, 1, 'files_fal');
 					}
 					$this->loadInit();
 					return TRUE;
@@ -3124,7 +3259,7 @@ class ImportExport {
 	public function getFileProcObj() {
 		if (!is_object($this->fileProcObj)) {
 			$this->fileProcObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\ExtendedFileUtility');
-			$this->fileProcObj->init($GLOBALS['FILEMOUNTS'], $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
+			$this->fileProcObj->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 			$this->fileProcObj->setActionPermissions();
 		}
 		return $this->fileProcObj;

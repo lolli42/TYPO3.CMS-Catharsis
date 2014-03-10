@@ -24,8 +24,6 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Install\Controller\Action;
-
 /**
  * Very first install step:
  * - Needs execution if typo3conf/LocalConfiguration.php does not exist
@@ -33,7 +31,7 @@ use TYPO3\CMS\Install\Controller\Action;
  * - Creates folders like typo3temp, see FolderStructure/DefaultFactory for details
  * - Creates typo3conf/LocalConfiguration.php from factory
  */
-class EnvironmentAndFolders extends Action\AbstractAction implements StepInterface {
+class EnvironmentAndFolders extends AbstractStepAction {
 
 	/**
 	 * Execute environment and folder step:
@@ -95,19 +93,19 @@ class EnvironmentAndFolders extends Action\AbstractAction implements StepInterfa
 	}
 
 	/**
-	 * Render this step
+	 * Executes the step
 	 *
-	 * @return string
+	 * @return string Rendered content
 	 */
-	public function handle() {
-		$this->initializeHandle();
-
+	protected function executeAction() {
 		/** @var \TYPO3\CMS\Install\SystemEnvironment\Check $statusCheck */
 		$statusCheck = $this->objectManager->get('TYPO3\\CMS\\Install\\SystemEnvironment\\Check');
 		$statusObjects = $statusCheck->getStatus();
 		/** @var \TYPO3\CMS\Install\Status\StatusUtility $statusUtility */
 		$statusUtility = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\StatusUtility');
 		$environmentStatus = $statusUtility->sortBySeverity($statusObjects);
+		$alerts = $statusUtility->filterBySeverity($statusObjects, 'alert');
+		$this->view->assign('alerts', $alerts);
 		$this->view->assign('environmentStatus', $environmentStatus);
 
 		/** @var $folderStructureFactory \TYPO3\CMS\Install\FolderStructure\DefaultFactory */
@@ -126,6 +124,6 @@ class EnvironmentAndFolders extends Action\AbstractAction implements StepInterfa
 			$this->view->assign('errorsOrWarningsFromStatus', TRUE);
 		}
 
-		return $this->view->render();
+		return $this->view->render(!empty($alerts));
 	}
 }

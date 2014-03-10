@@ -88,7 +88,12 @@ class DocumentTemplate {
 	/**
 	 * @todo Define visibility
 	 */
-	public $JScodeArray = array();
+	public $JScodeArray = array('jumpToUrl' => '
+function jumpToUrl(URL) {
+	window.location.href = URL;
+	return false;
+}
+	');
 
 	// Additional 'page-end' code could be accumulated in this var. It will be outputted at the end of page before </body> and some other internal page-end code.
 	/**
@@ -141,12 +146,6 @@ class DocumentTemplate {
 	 * @todo Define visibility
 	 */
 	public $inDocStylesArray = array();
-
-	// Multiplication factor for formWidth() input size (default is 48* this value).
-	/**
-	 * @todo Define visibility
-	 */
-	public $form_rowsToStylewidth = 9.58;
 
 	// Compensation for large documents (used in \TYPO3\CMS\Backend\Form\FormEngine)
 	/**
@@ -422,6 +421,7 @@ class DocumentTemplate {
 		if (!isset($this->pageRenderer)) {
 			$this->pageRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Page\\PageRenderer');
 			$this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
+			$this->pageRenderer->addCssLibrary($GLOBALS['BACK_PATH'] . 'contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 			$this->pageRenderer->enableConcatenateFiles();
 			$this->pageRenderer->enableCompressCss();
 			$this->pageRenderer->enableCompressJavascript();
@@ -532,7 +532,7 @@ class DocumentTemplate {
 	 */
 	public function isCMlayers() {
 		GeneralUtility::logDeprecatedFunction();
-		return !$GLOBALS['BE_USER']->uc['disableCMlayers'] && $GLOBALS['CLIENT']['FORMSTYLE'] && !($GLOBALS['CLIENT']['SYSTEM'] == 'mac' && $GLOBALS['CLIENT']['BROWSER'] == 'Opera');
+		return !$GLOBALS['BE_USER']->uc['disableCMlayers'] && !($GLOBALS['CLIENT']['SYSTEM'] == 'mac' && $GLOBALS['CLIENT']['BROWSER'] == 'Opera');
 	}
 
 	/**
@@ -566,6 +566,26 @@ class DocumentTemplate {
 	}
 
 	/**
+	 * Like ->getHeader() but for files and folders
+	 * Returns the icon with the path of the file/folder set in the alt/title attribute. Shows the name after the icon.
+	 *
+	 * @param \TYPO3\CMS\Core\Resource\ResourceInterface $resource
+	 * @param array $tWrap is an array with indexes 0 and 1 each representing HTML-tags (start/end) which will wrap the title
+	 * @return string
+	 */
+	public function getResourceHeader(\TYPO3\CMS\Core\Resource\ResourceInterface $resource, $tWrap = array('', '')) {
+		$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
+		$iconImgTag = IconUtility::getSpriteIconForResource($resource, array('title' => htmlspecialchars($path)));
+
+		if ($resource instanceof \TYPO3\CMS\Core\Resource\File) {
+			$metaData = $resource->_getMetaData();
+			$iconImgTag = $this->wrapClickMenuOnIcon($iconImgTag, 'sys_file_metadata', $metaData['uid']);
+		}
+
+		return '<span class="typo3-moduleHeader">' . $iconImgTag .  $tWrap[0] . htmlspecialchars(GeneralUtility::fixed_lgd_cs($resource->getName(), 45)) .  $tWrap[1] . '</span>';
+	}
+
+	/**
 	 * Like ->getHeader() but for files in the File>* main module/submodules
 	 * Returns the file-icon with the path of the file set in the alt/title attribute. Shows the file-name after the icon.
 	 *
@@ -573,9 +593,10 @@ class DocumentTemplate {
 	 * @param string $path Alt text
 	 * @param string $iconfile The icon file (relative to TYPO3 dir)
 	 * @return string HTML content
-	 * @todo Define visibility
+	 * @deprecated since 6.2 remove 2 version later use getResourceHeader() instead
 	 */
 	public function getFileheader($title, $path, $iconfile) {
+		GeneralUtility::logDeprecatedFunction();
 		$fileInfo = GeneralUtility::split_fileref($title);
 		$title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileInfo['path'], -35)) . '<strong>' . htmlspecialchars($fileInfo['file']) . '</strong>';
 		return '<span class="typo3-moduleHeader"><img' . IconUtility::skinImg($this->backPath, $iconfile, 'width="18" height="16"') . ' title="' . htmlspecialchars($path) . '" alt="" />' . $title . '</span>';
@@ -635,23 +656,13 @@ class DocumentTemplate {
 	 * For CSS compliant browsers (recommended) a ' style="width: ...px;"' is returned.
 	 *
 	 * @param integer $size A relative number which multiplied with approx. 10 will lead to the width in pixels
-	 * @param boolean $textarea A flag you can set for textareas - DEPRECATED, use ->formWidthText() for textareas!!!
+	 * @param boolean $textarea A flag you can set for textareas - DEPRECATED as there is no difference any more between the two
 	 * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
 	 * @return string Tag attributes for an <input> tag (regarding width)
-	 * @see formWidthText()
 	 * @todo Define visibility
 	 */
 	public function formWidth($size = 48, $textarea = FALSE, $styleOverride = '') {
-		$wAttrib = $textarea ? 'cols' : 'size';
-		// If not setting the width by style-attribute
-		if (!$GLOBALS['CLIENT']['FORMSTYLE']) {
-			$retVal = ' ' . $wAttrib . '="' . $size . '"';
-		} else {
-			// Setting width by style-attribute. 'cols' MUST be avoided with NN6+
-			$pixels = ceil($size * $this->form_rowsToStylewidth);
-			$retVal = $styleOverride ? ' style="' . $styleOverride . '"' : ' style="width:' . $pixels . 'px;"';
-		}
-		return $retVal;
+		return ' style="' . ($styleOverride ?: 'width:' . ceil($size * 9.58) . 'px;') . '"';
 	}
 
 	/**
@@ -666,15 +677,12 @@ class DocumentTemplate {
 	 * @param string $wrap Pass on the wrap-attribute value you use in your <textarea>! This will be used to make sure that some browsers will detect wrapping alright.
 	 * @return string Tag attributes for an <input> tag (regarding width)
 	 * @see formWidth()
+	 * @deprecated since TYPO3 CMS 6.2, remove two versions later, as this is function is not needed anymore, use formWidth()
 	 * @todo Define visibility
 	 */
 	public function formWidthText($size = 48, $styleOverride = '', $wrap = '') {
-		$wTags = $this->formWidth($size, 1, $styleOverride);
-		// Netscape 6+/Mozilla seems to have this ODD problem where there WILL ALWAYS be wrapping with the cols-attribute set and NEVER without the col-attribute...
-		if (strtolower(trim($wrap)) != 'off' && $GLOBALS['CLIENT']['BROWSER'] == 'net' && $GLOBALS['CLIENT']['VERSION'] >= 5) {
-			$wTags .= ' cols="' . $size . '"';
-		}
-		return $wTags;
+		GeneralUtility::logDeprecatedFunction();
+		return $this->formWidth($size, TRUE, $styleOverride);
 	}
 
 	/**
@@ -1593,6 +1601,8 @@ class DocumentTemplate {
 		$this->pageRenderer->loadPrototype();
 		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/common.js');
 		$this->loadJavascriptLib('js/tree.js');
+		$this->getPageRenderer()->addInlineSetting('Tree.SC_alt_db_navframe', 'ajaxUrl', BackendUtility::getAjaxUrl('SC_alt_db_navframe::expandCollapse'));
+		$this->getPageRenderer()->addInlineSetting('Tree.SC_alt_file_navframe', 'ajaxUrl', BackendUtility::getAjaxUrl('SC_alt_file_navframe::expandCollapse'));
 		// Setting prefs for drag & drop
 		$this->JScodeArray['dragdrop'] = '
 			DragDrop.changeURL = "' . $this->backPath . 'alt_clickmenu.php";

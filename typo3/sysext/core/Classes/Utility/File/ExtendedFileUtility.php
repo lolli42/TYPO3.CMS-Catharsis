@@ -222,6 +222,19 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					$this->writelog(1, 1, 108, 'No file was uploaded!', '');
 				}
 			}
+
+			// Check if there were new folder names expected, but non given
+			if ($this->fileCmdMap['newfolder']) {
+				foreach ($this->fileCmdMap['newfolder'] as $key => $cmdArr) {
+					if (empty($cmdArr['data'])) {
+						unset($this->fileCmdMap['newfolder'][$key]);
+					}
+				}
+				if (count($this->fileCmdMap['newfolder']) === 0) {
+					$this->writeLog(6, 1, 108, 'No name for new folder given!', '');
+				}
+			}
+
 			// Traverse each set of actions
 			foreach ($this->fileCmdMap as $action => $actionData) {
 				// Traverse all action data. More than one file might be affected at the same time.
@@ -473,7 +486,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					$this->writelog(4, 0, 3, 'Directory "%s" deleted', array($fileObject->getIdentifier()));
 				}
 
-			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException $e) {
+			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException $e) {
 				$this->writelog(4, 1, 123, 'You are not allowed to access the directory', array($fileObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\NotInMountPointException $e) {
 				$this->writelog(4, 1, 121, 'Target was not within your mountpoints! T="%s"', array($fileObject->getIdentifier()));

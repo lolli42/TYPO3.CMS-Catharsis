@@ -55,6 +55,19 @@ The options array (the fourth parameter) now can contain a 'label' to set a
 custom label for each category field.
 
 
+* Ajax API addition
+
+New API has been added to register an Ajax handler for the backend.
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::registerAjaxHandler('TxMyExt::process', '\Vendor\Ext\AjaxHandler->process');
+
+Along with that, new API has been added to get the Ajax URL for a given AjaxId.
+This URL will contain a CSRF protection token that will be checked
+in the ajax.php dispatcher:
+$ajaxUrl = \TYPO3\CMS\Core\Utility\BackendUtility::getAjaxUrl('TxMyExt::process');
+
+Registering an Ajax script the "old" way by just adding it to TYPO3_CONF_VARS has been deprecated,
+but no deprecation log is been written and the handler still work in a backwards compatible way.
+
 #### CSS Styled Content
 
 * Removed deprecated DB fields
@@ -158,6 +171,13 @@ the session ID on each request, until it was fixated by a user login.
 The superfluous option "dontSetCookie" is now ineffective as the cookie
 is not set anymore by default.
 
+* No backward compatibility for classes inheriting localPageTree or localFolderTree
+
+Backwards compatibility for extensions that inherit from one of the classes
+localPageTree, localFolderTree, rtefoldertree, rtepagetree, tbe_foldertree or tbe_pagetree
+is dropped.
+
+
 ### Administration / Customization
 
 * Content-length header (TypoScript setting config.enableContentLengthHeader)
@@ -210,3 +230,8 @@ Pages and content elements are now categorizable by default.
 
 The "Special Menus" content element type now offers the possibility to display
 a list of categorized pages or content elements.
+
+* Category fields are excluded by default
+
+Category fields are created as exclude field (TCA) by default.
+If you're upgrading don't forget to add the permission for users.

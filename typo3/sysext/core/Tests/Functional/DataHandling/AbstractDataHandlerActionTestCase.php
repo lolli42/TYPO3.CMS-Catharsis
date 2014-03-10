@@ -26,11 +26,15 @@ namespace TYPO3\CMS\Core\Tests\Functional\DataHandling;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\DataSet;
+use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\Response;
+use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\ResponseContent;
 
 /**
  * Functional test for the DataHandler
  */
 abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
+
+	const VALUE_BackendUserId = 1;
 
 	/**
 	 * @var string
@@ -38,11 +42,24 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	protected $dataSetDirectory;
 
 	/**
+	 * @var int
+	 */
+	protected $expectedErrorLogEntries = 0;
+
+	/**
 	 * @var array
 	 */
 	protected $testExtensionsToLoad = array(
 		'typo3/sysext/core/Tests/Functional/Fixtures/Extensions/irre_tutorial',
 		// 'typo3conf/ext/datahandler',
+	);
+
+	/**
+	 * @var array
+	 */
+	protected $pathsToLinkInTestInstance = array(
+		'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/AdditionalConfiguration.php' => 'typo3conf/AdditionalConfiguration.php',
+		'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/extTables.php' => 'typo3conf/extTables.php',
 	);
 
 	/**
@@ -58,20 +75,17 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	public function setUp() {
 		parent::setUp();
 
-		$this->backendUser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
-		$this->backendUser->user['admin'] = 1;
-		$this->backendUser->user['uid'] = 1;
+		$this->backendUser = $this->setUpBackendUserFromFixture(self::VALUE_BackendUserId);
 		// By default make tests on live workspace
 		$this->backendUser->workspace = 0;
-		$GLOBALS['BE_USER'] = $this->backendUser;
 
 		$this->actionService = $this->getActionService();
-
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->initializeLanguageObject();
 	}
 
 	public function tearDown() {
 		unset($this->actionService);
+		parent::tearDown();
 	}
 
 	/**
@@ -120,6 +134,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 		$fileName = GeneralUtility::getFileAbsFileName($fileName);
 
 		$dataSet = DataSet::read($fileName);
+		$failMessages = array();
 
 		foreach ($dataSet->getTableNames() as $tableName) {
 			$hasUidField = ($dataSet->getIdIndex($tableName) !== NULL);
@@ -128,11 +143,16 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 				$result = $this->assertInRecords($assertion, $records);
 				if ($result === FALSE) {
 					if ($hasUidField && empty($records[$assertion['uid']])) {
-						$this->fail('Record "' . $tableName . ':' . $assertion['uid'] . '" not found in database');
+						$failMessages[] = 'Record "' . $tableName . ':' . $assertion['uid'] . '" not found in database';
+						continue;
 					}
 					$recordIdentifier = $tableName . ($hasUidField ? ':' . $assertion['uid'] : '');
 					$additionalInformation = ($hasUidField ? $this->renderRecords($assertion, $records[$assertion['uid']]) : $this->arrayToString($assertion));
-					$this->fail('Assertion in data-set failed for "' . $recordIdentifier . '":' . LF . $additionalInformation);
+					$failMessages[] = 'Assertion in data-set failed for "' . $recordIdentifier . '":' . LF . $additionalInformation;
+					// Unset failed asserted record
+					if ($hasUidField) {
+						unset($records[$assertion['uid']]);
+					}
 				} else {
 					// Unset asserted record
 					unset($records[$result]);
@@ -140,6 +160,17 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 					$this->assertTrue($result !== FALSE);
 				}
 			}
+			if (!empty($records)) {
+				foreach ($records as $record) {
+					$recordIdentifier = $tableName . ':' . $record['uid'];
+					$additionalInformation = $this->arrayToString($record);
+					$failMessages[] = 'Not asserted record found for "' . $recordIdentifier . '":' . LF . $additionalInformation;
+				}
+			}
+		}
+
+		if (!empty($failMessages)) {
+			$this->fail(implode(LF, $failMessages));
 		}
 	}
 
@@ -197,7 +228,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 			}
 			$elements[] = "'" . $key . "' => '" . $value . "'";
 		}
-		return 'array(' . implode(', ', $elements) . ')';
+		return 'array(' . PHP_EOL . '   ' . implode(', ' . PHP_EOL . '   ', $elements) . PHP_EOL . ')' . PHP_EOL;
 	}
 
 	/**
@@ -213,6 +244,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 			'record' => array('Record'),
 		);
 		$lines = array();
+		$linesFromXmlValues = array();
 		$result = '';
 
 		foreach ($differentFields as $differentField) {
@@ -224,18 +256,35 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 		foreach ($columns as $columnIndex => $column) {
 			$columnLength = NULL;
 			foreach ($column as $value) {
+				if (strpos($value, '<?xml') === 0) {
+					$value = '[see diff]';
+				}
 				$valueLength = strlen($value);
 				if (empty($columnLength) || $valueLength > $columnLength) {
 					$columnLength = $valueLength;
 				}
 			}
 			foreach ($column as $valueIndex => $value) {
+				if (strpos($value, '<?xml') === 0) {
+					if ($columnIndex === 'assertion') {
+						try {
+							$this->assertXmlStringEqualsXmlString((string)$value, (string)$record[$columns['fields'][$valueIndex]]);
+						} catch(\PHPUnit_Framework_ExpectationFailedException $e) {
+							$linesFromXmlValues[] = 'Diff for field "' . $columns['fields'][$valueIndex] . '":' . PHP_EOL . $e->getComparisonFailure()->getDiff();
+						}
+					}
+					$value = '[see diff]';
+				}
 				$lines[$valueIndex][$columnIndex] = str_pad($value, $columnLength, ' ');
 			}
 		}
 
 		foreach ($lines as $line) {
 			$result .= implode('|', $line) . PHP_EOL;
+		}
+
+		foreach ($linesFromXmlValues as $lineFromXmlValues) {
+			$result .= PHP_EOL . $lineFromXmlValues . PHP_EOL;
 		}
 
 		return $result;
@@ -252,12 +301,157 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 		foreach ($assertion as $field => $value) {
 			if (strpos($value, '\\*') === 0) {
 				continue;
+			} elseif (strpos($value, '<?xml') === 0) {
+				try {
+					$this->assertXmlStringEqualsXmlString((string)$value, (string)$record[$field]);
+				} catch (\PHPUnit_Framework_ExpectationFailedException $e) {
+					$differentFields[] = $field;
+				}
+			} elseif ($value === NULL && $record[$field] !== $value) {
+				$differentFields[] = $field;
 			} elseif ((string)$record[$field] !== (string)$value) {
 				$differentFields[] = $field;
 			}
 		}
 
 		return $differentFields;
+	}
+
+	/**
+	 * @param ResponseContent $responseContent
+	 * @param string $structureRecordIdentifier
+	 * @param string $structureFieldName
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param string|array $values
+	 */
+	protected function assertResponseContentStructureHasRecords(ResponseContent $responseContent, $structureRecordIdentifier, $structureFieldName, $tableName, $fieldName, $values) {
+		$nonMatchingVariants = array();
+
+		foreach ($responseContent->findStructures($structureRecordIdentifier, $structureFieldName) as $path => $structure) {
+			$nonMatchingValues = $this->getNonMatchingValuesFrontendResponseRecords($structure, $tableName, $fieldName, $values);
+
+			if (empty($nonMatchingValues)) {
+				// Increase assertion counter
+				$this->assertEmpty($nonMatchingValues);
+				return;
+			}
+
+			$nonMatchingVariants[$path] = $nonMatchingValues;
+		}
+
+		$nonMatchingMessage = '';
+		foreach ($nonMatchingVariants as $path => $nonMatchingValues) {
+			$nonMatchingMessage .= '* ' . $path . ': ' . implode(', ', $nonMatchingValues);
+		}
+
+		$this->fail('Could not assert all values for "' . $tableName . '.' . $fieldName . '"' . LF . $nonMatchingMessage);
+	}
+
+	/**
+	 * @param ResponseContent $responseContent
+	 * @param string $structureRecordIdentifier
+	 * @param string $structureFieldName
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param string|array $values
+	 */
+	protected function assertResponseContentStructureDoesNotHaveRecords(ResponseContent $responseContent, $structureRecordIdentifier, $structureFieldName, $tableName, $fieldName, $values) {
+		if (is_string($values)) {
+			$values = array($values);
+		}
+
+		$matchingVariants = array();
+
+		foreach ($responseContent->findStructures($structureRecordIdentifier, $structureFieldName) as $path => $structure) {
+			$nonMatchingValues = $this->getNonMatchingValuesFrontendResponseRecords($structure, $tableName, $fieldName, $values);
+			$matchingValues = array_diff($values, $nonMatchingValues);
+
+			if (!empty($matchingValues)) {
+				$matchingVariants[$path] = $matchingValues;
+			}
+		}
+
+		if (empty($matchingVariants)) {
+			// Increase assertion counter
+			$this->assertEmpty($matchingVariants);
+			return;
+		}
+
+		$matchingMessage = '';
+		foreach ($matchingVariants as $path => $matchingValues) {
+			$matchingMessage .= '* ' . $path . ': ' . implode(', ', $matchingValues);
+		}
+
+		$this->fail('Could not assert not having values for "' . $tableName . '.' . $fieldName . '"' . LF . $matchingMessage);
+	}
+
+	/**
+	 * @param ResponseContent $responseContent
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param string|array $values
+	 */
+	protected function assertResponseContentHasRecords(ResponseContent $responseContent, $tableName, $fieldName, $values) {
+		$nonMatchingValues = $this->getNonMatchingValuesFrontendResponseRecords($responseContent->getRecords(), $tableName, $fieldName, $values);
+
+		if (!empty($nonMatchingValues)) {
+			$this->fail('Could not assert all values for "' . $tableName . '.' . $fieldName . '": ' . implode(', ', $nonMatchingValues));
+		}
+
+		// Increase assertion counter
+		$this->assertEmpty($nonMatchingValues);
+	}
+
+	/**
+	 * @param ResponseContent $responseContent
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param string|array $values
+	 */
+	protected function assertResponseContentDoesNotHaveRecords(ResponseContent $responseContent, $tableName, $fieldName, $values) {
+		if (is_string($values)) {
+			$values = array($values);
+		}
+
+		$nonMatchingValues = $this->getNonMatchingValuesFrontendResponseRecords($responseContent->getRecords(), $tableName, $fieldName, $values);
+		$matchingValues = array_diff($values, $nonMatchingValues);
+
+		if (!empty($matchingValues)) {
+			$this->fail('Could not assert not having values for "' . $tableName . '.' . $fieldName . '": ' . implode(', ', $matchingValues));
+		}
+
+		// Increase assertion counter
+		$this->assertTrue(TRUE);
+	}
+
+	/**
+	 * @param string|array $data
+	 * @param string $tableName
+	 * @param string $fieldName
+	 * @param string|array $values
+	 * @return array
+	 */
+	protected function getNonMatchingValuesFrontendResponseRecords($data, $tableName, $fieldName, $values) {
+		if (empty($data) || !is_array($data)) {
+			$this->fail('Frontend Response data does not have any records');
+		}
+
+		if (is_string($values)) {
+			$values = array($values);
+		}
+
+		foreach ($data as $recordIdentifier => $recordData) {
+			if (strpos($recordIdentifier, $tableName . ':') !== 0) {
+				continue;
+			}
+
+			if (($foundValueIndex = array_search($recordData[$fieldName], $values)) !== FALSE) {
+				unset($values[$foundValueIndex]);
+			}
+		}
+
+		return $values;
 	}
 
 }

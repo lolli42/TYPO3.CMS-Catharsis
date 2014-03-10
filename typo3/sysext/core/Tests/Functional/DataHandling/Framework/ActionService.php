@@ -61,9 +61,10 @@ class ActionService {
 	 * @param string $tableName
 	 * @param integer $pageId
 	 * @param array $recordData
+	 * @return array
 	 */
 	public function createNewRecord($tableName, $pageId, array $recordData) {
-		$this->createNewRecords($pageId, array($tableName => $recordData));
+		return $this->createNewRecords($pageId, array($tableName => $recordData));
 	}
 
 	/**
@@ -75,12 +76,22 @@ class ActionService {
 		$dataMap = array();
 		$newTableIds = array();
 		$currentUid = NULL;
+		$previousTableName = NULL;
+		$previousUid = NULL;
 		foreach ($tableRecordData as $tableName => $recordData) {
 			$recordData = $this->resolvePreviousUid($recordData, $currentUid);
 			$recordData['pid'] = $pageId;
 			$currentUid = uniqid('NEW');
 			$newTableIds[$tableName][] = $currentUid;
 			$dataMap[$tableName][$currentUid] = $recordData;
+			if ($previousTableName !== NULL && $previousUid !== NULL) {
+				$dataMap[$previousTableName][$previousUid] = $this->resolveNextUid(
+					$dataMap[$previousTableName][$previousUid],
+					$currentUid
+				);
+			}
+			$previousTableName = $tableName;
+			$previousUid = $currentUid;
 		}
 		$this->dataHandler->start($dataMap, array());
 		$this->dataHandler->process_datamap();
@@ -130,6 +141,8 @@ class ActionService {
 	public function modifyRecords($pageId, array $tableRecordData) {
 		$dataMap = array();
 		$currentUid = NULL;
+		$previousTableName = NULL;
+		$previousUid = NULL;
 		foreach ($tableRecordData as $tableName => $recordData) {
 			if (empty($recordData['uid'])) {
 				continue;
@@ -142,6 +155,14 @@ class ActionService {
 			}
 			unset($recordData['uid']);
 			$dataMap[$tableName][$currentUid] = $recordData;
+			if ($previousTableName !== NULL && $previousUid !== NULL) {
+				$dataMap[$previousTableName][$previousUid] = $this->resolveNextUid(
+					$dataMap[$previousTableName][$previousUid],
+					$currentUid
+				);
+			}
+			$previousTableName = $tableName;
+			$previousUid = $currentUid;
 		}
 		$this->dataHandler->start($dataMap, array());
 		$this->dataHandler->process_datamap();
@@ -150,15 +171,61 @@ class ActionService {
 	/**
 	 * @param string $tableName
 	 * @param integer $uid
+	 * @return array
 	 */
 	public function deleteRecord($tableName, $uid) {
-		$commandMap = array(
-			$tableName => array(
-				$uid => array(
-					'delete' => TRUE,
-				),
-			),
+		return $this->deleteRecords(
+			array(
+				$tableName => array($uid),
+			)
 		);
+	}
+
+	/**
+	 * @param array $tableRecordIds
+	 * @return array
+	 */
+	public function deleteRecords(array $tableRecordIds) {
+		$commandMap = array();
+		foreach ($tableRecordIds as $tableName => $ids) {
+			foreach ($ids as $uid) {
+				$commandMap[$tableName][$uid] = array(
+					'delete' => TRUE,
+				);
+			}
+		}
+		$this->dataHandler->start(array(), $commandMap);
+		$this->dataHandler->process_cmdmap();
+		// Deleting workspace records is actually a copy(!)
+		return $this->dataHandler->copyMappingArray;
+	}
+
+	/**
+	 * @param string $tableName
+	 * @param integer $uid
+	 */
+	public function clearWorkspaceRecord($tableName, $uid) {
+		$this->clearWorkspaceRecords(
+			array(
+				$tableName => array($uid),
+			)
+		);
+	}
+
+	/**
+	 * @param array $tableRecordIds
+	 */
+	public function clearWorkspaceRecords(array $tableRecordIds) {
+		$commandMap = array();
+		foreach ($tableRecordIds as $tableName => $ids) {
+			foreach ($ids as $uid) {
+				$commandMap[$tableName][$uid] = array(
+					'version' => array(
+						'action' => 'clearWSID',
+					)
+				);
+			}
+		}
 		$this->dataHandler->start(array(), $commandMap);
 		$this->dataHandler->process_cmdmap();
 	}
@@ -167,6 +234,7 @@ class ActionService {
 	 * @param string $tableName
 	 * @param integer $uid
 	 * @param integer $pageId
+	 * @return array
 	 */
 	public function copyRecord($tableName, $uid, $pageId) {
 		$commandMap = array(
@@ -178,6 +246,7 @@ class ActionService {
 		);
 		$this->dataHandler->start(array(), $commandMap);
 		$this->dataHandler->process_cmdmap();
+		return $this->dataHandler->copyMappingArray;
 	}
 
 	/**
@@ -201,6 +270,7 @@ class ActionService {
 	 * @param string $tableName
 	 * @param integer $uid
 	 * @param integer $languageId
+	 * @return array
 	 */
 	public function localizeRecord($tableName, $uid, $languageId) {
 		$commandMap = array(
@@ -212,6 +282,7 @@ class ActionService {
 		);
 		$this->dataHandler->start(array(), $commandMap);
 		$this->dataHandler->process_cmdmap();
+		return $this->dataHandler->copyMappingArray;
 	}
 
 	/**
@@ -266,7 +337,7 @@ class ActionService {
 
 	/**
 	 * @param array $recordData
-	 * @param NULL|int $previousUid
+	 * @param NULL|string|int $previousUid
 	 * @return array
 	 */
 	protected function resolvePreviousUid(array $recordData, $previousUid) {
@@ -278,6 +349,24 @@ class ActionService {
 				continue;
 			}
 			$recordData[$fieldName] = str_replace('__previousUid', $previousUid, $fieldValue);
+		}
+		return $recordData;
+	}
+
+	/**
+	 * @param array $recordData
+	 * @param NULL|string|int $nextUid
+	 * @return array
+	 */
+	protected function resolveNextUid(array $recordData, $nextUid) {
+		if ($nextUid === NULL) {
+			return $recordData;
+		}
+		foreach ($recordData as $fieldName => $fieldValue) {
+			if (strpos($fieldValue, '__nextUid') === FALSE) {
+				continue;
+			}
+			$recordData[$fieldName] = str_replace('__nextUid', $nextUid, $fieldValue);
 		}
 		return $recordData;
 	}

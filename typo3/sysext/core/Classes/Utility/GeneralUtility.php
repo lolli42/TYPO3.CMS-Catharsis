@@ -715,13 +715,14 @@ class GeneralUtility {
 	 * @return string New comma-separated list of items
 	 */
 	static public function rmFromList($element, $list) {
-		$items = explode(',', $list);
-		foreach ($items as $k => $v) {
-			if ($v == $element) {
-				unset($items[$k]);
-			}
-		}
-		return implode(',', $items);
+		return trim(
+			str_replace(
+				',' . $element . ',',
+				',',
+				',' . $list . ','
+			),
+			','
+		);
 	}
 
 	/**
@@ -1473,7 +1474,12 @@ class GeneralUtility {
 
 	/**
 	 * Reverse explode which explodes the string counting from behind.
-	 * Thus \TYPO3\CMS\Core\Utility\GeneralUtility::revExplode(':','my:words:here',2) will return array('my:words','here')
+	 *
+	 * Note: The delimiter has to given in the reverse order as
+	 *       it is occurring within the string.
+	 *
+	 * GeneralUtility::revExplode('[]', '[my][words][here]', 2)
+	 *   ==> array('[my][words', 'here]')
 	 *
 	 * @param string $delimiter Delimiter string to explode with
 	 * @param string $string The string to explode
@@ -1483,8 +1489,12 @@ class GeneralUtility {
 	static public function revExplode($delimiter, $string, $count = 0) {
 		// 2 is the (currently, as of 2014-02) most-used value for $count in the core, therefore we check it first
 		if ($count === 2) {
-			$position = strrpos($string, $delimiter);
-			return array(substr($string, 0, $position), substr($string, $position + 1));
+			$position = strrpos($string, strrev($delimiter));
+			if ($position !== FALSE) {
+				return array(substr($string, 0, $position), substr($string, $position + strlen($delimiter)));
+			} else {
+				return array($string);
+			}
 		} elseif ($count <= 1) {
 			return array($string);
 		} else {
@@ -1505,8 +1515,7 @@ class GeneralUtility {
 	 * @return array Exploded values
 	 */
 	static public function trimExplode($delim, $string, $removeEmptyValues = FALSE, $limit = 0) {
-		$explodedValues = explode($delim, $string);
-		$result = array_map('trim', $explodedValues);
+		$result = array_map('trim', explode($delim, $string));
 		if ($removeEmptyValues) {
 			$temp = array();
 			foreach ($result as $value) {
@@ -1516,14 +1525,12 @@ class GeneralUtility {
 			}
 			$result = $temp;
 		}
-		if ($limit !== 0) {
-			if ($limit < 0) {
-				$result = array_slice($result, 0, $limit);
-			} elseif (count($result) > $limit) {
-				$lastElements = array_slice($result, $limit - 1);
-				$result = array_slice($result, 0, $limit - 1);
-				$result[] = implode($delim, $lastElements);
-			}
+		if ($limit > 0 && count($result) > $limit) {
+			$lastElements = array_slice($result, $limit - 1);
+			$result = array_slice($result, 0, $limit - 1);
+			$result[] = implode($delim, $lastElements);
+		} elseif ($limit < 0) {
+			$result = array_slice($result, 0, $limit);
 		}
 		return $result;
 	}
@@ -2879,57 +2886,65 @@ Connection: close
 	}
 
 	/**
-	 * Returns an array with the names of files in a specific path
+	 * Finds all files in a given path and returns them as an array. Each
+	 * array key is a md5 hash of the full path to the file. This is done because
+	 * 'some' extensions like the import/export extension depend on this.
 	 *
-	 * @param string $path Is the path to the file
-	 * @param string $extensionList is the comma list of extensions to read only (blank = all)
-	 * @param boolean $prependPath If set, then the path is prepended the file names. Otherwise only the file names are returned in the array
-	 * @param string $order is sorting: 1= sort alphabetically, 'mtime' = sort by modification time.
-	 * @param string $excludePattern A comma separated list of file names to exclude, no wildcards
-	 * @return array Array of the files found
+	 * @param string $path The path to retrieve the files from.
+	 * @param string $extensionList A comma-separated list of file extensions. Only files of the specified types will be retrieved. When left blank, files of any type will be retrieved.
+	 * @param boolean $prependPath If TRUE, the full path to the file is returned. If FALSE only the file name is returned.
+	 * @param string $order The sorting order. The default sorting order is alphabetical. Setting $order to 'mtime' will sort the files by modification time.
+	 * @param string $excludePattern A regular expression pattern of file names to exclude. For example: 'clear.gif' or '(clear.gif|.htaccess)'. The pattern will be wrapped with: '/^' and '$/'.
+	 * @return array|string Array of the files found, or an error message in case the path could not be opened.
 	 */
 	static public function getFilesInDir($path, $extensionList = '', $prependPath = FALSE, $order = '', $excludePattern = '') {
-		// Initialize variables:
-		$filearray = array();
-		$sortarray = array();
+		$excludePattern = (string)$excludePattern;
 		$path = rtrim($path, '/');
-		// Find files+directories:
-		if (@is_dir($path)) {
-			$extensionList = strtolower($extensionList);
-			$d = dir($path);
-			if (is_object($d)) {
-				while ($entry = $d->read()) {
-					if (@is_file(($path . '/' . $entry))) {
-						$fI = pathinfo($entry);
-						// Don't change this ever - extensions may depend on the fact that the hash is an md5 of the path! (import/export extension)
-						$key = md5($path . '/' . $entry);
-						if ((!strlen($extensionList) || self::inList($extensionList, strtolower($fI['extension']))) && (!strlen($excludePattern) || !preg_match(('/^' . $excludePattern . '$/'), $entry))) {
-							$filearray[$key] = ($prependPath ? $path . '/' : '') . $entry;
-							if ($order == 'mtime') {
-								$sortarray[$key] = filemtime($path . '/' . $entry);
-							} elseif ($order) {
-								$sortarray[$key] = strtolower($entry);
-							}
-						}
-					}
+		if (!@is_dir($path)) {
+			return array();
+		}
+
+		$rawFileList = scandir($path);
+		if ($rawFileList === FALSE) {
+			return 'error opening path: "' . $path . '"';
+		}
+
+		$pathPrefix = $path . '/';
+		$extensionList = ',' . $extensionList . ',';
+		$files = array();
+		foreach ($rawFileList as $entry) {
+			$completePathToEntry = $pathPrefix . $entry;
+			if (!@is_file($completePathToEntry)) {
+				continue;
+			}
+
+			if (
+				($extensionList === ',,' || stripos($extensionList, ',' . pathinfo($entry, PATHINFO_EXTENSION) . ',') !== FALSE)
+				&& ($excludePattern === '' || !preg_match(('/^' . $excludePattern . '$/'), $entry))
+			) {
+				if ($order !== 'mtime') {
+					$files[] = $entry;
+				} else {
+					// Store the value in the key so we can do a fast asort later.
+					$files[$entry] = filemtime($completePathToEntry);
 				}
-				$d->close();
-			} else {
-				return 'error opening path: "' . $path . '"';
 			}
 		}
-		// Sort them:
-		if ($order) {
-			asort($sortarray);
-			$newArr = array();
-			foreach ($sortarray as $k => $v) {
-				$newArr[$k] = $filearray[$k];
-			}
-			$filearray = $newArr;
+
+		$valueName = 'value';
+		if ($order === 'mtime') {
+			asort($files);
+			$valueName = 'key';
 		}
-		// Return result
-		reset($filearray);
-		return $filearray;
+
+		$valuePathPrefix = $prependPath ? $pathPrefix : '';
+		$foundFiles = array();
+		foreach ($files as $key => $value) {
+			// Don't change this ever - extensions may depend on the fact that the hash is an md5 of the path! (import/export extension)
+			$foundFiles[md5($pathPrefix . ${$valueName})] = $valuePathPrefix . ${$valueName};
+		}
+
+		return $foundFiles;
 	}
 
 	/**
@@ -2949,7 +2964,7 @@ Connection: close
 		}
 		$fileArr = array_merge($fileArr, self::getFilesInDir($path, $extList, 1, 1, $excludePattern));
 		$dirs = self::get_dirs($path);
-		if (is_array($dirs) && $recursivityLevels > 0) {
+		if ($recursivityLevels > 0 && is_array($dirs)) {
 			foreach ($dirs as $subdirs) {
 				if ((string) $subdirs != '' && (!strlen($excludePattern) || !preg_match(('/^' . $excludePattern . '$/'), $subdirs))) {
 					$fileArr = self::getAllFilesAndFoldersInPath($fileArr, $path . $subdirs . '/', $extList, $regDirs, $recursivityLevels - 1, $excludePattern);
@@ -2985,7 +3000,7 @@ Connection: close
 	 * @return string
 	 */
 	static public function fixWindowsFilePath($theFile) {
-		return str_replace('//', '/', str_replace('\\', '/', $theFile));
+		return str_replace(array('\\', '//'), '/', $theFile);
 	}
 
 	/**
@@ -3002,17 +3017,17 @@ Connection: close
 		$parts = explode('/', $pathStr);
 		$output = array();
 		$c = 0;
-		foreach ($parts as $pV) {
-			if ($pV == '..') {
+		foreach ($parts as $part) {
+			if ($part === '..') {
 				if ($c) {
 					array_pop($output);
-					$c--;
+					--$c;
 				} else {
-					$output[] = $pV;
+					$output[] = $part;
 				}
 			} else {
-				$c++;
-				$output[] = $pV;
+				++$c;
+				$output[] = $part;
 			}
 		}
 		return implode('/', $output);
@@ -3050,7 +3065,7 @@ Connection: close
 	 */
 	static public function getMaxUploadFileSize($localLimit = 0) {
 		// Don't allow more than the global max file size at all
-		$t3Limit = (int)$localLimit > 0 ? $localLimit : $GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize'];
+		$t3Limit = (int)($localLimit > 0 ? $localLimit : $GLOBALS['TYPO3_CONF_VARS']['BE']['maxFileSize']);
 		// As TYPO3 is handling the file size in KB, multiply by 1024 to get bytes
 		$t3Limit = $t3Limit * 1024;
 		// Check for PHP restrictions of the maximum size of one of the $_FILES
@@ -3452,29 +3467,30 @@ Connection: close
 			case '_ARRAY':
 				$out = array();
 				// Here, list ALL possible keys to this function for debug display.
-				$envTestVars = self::trimExplode(',', '
-						HTTP_HOST,
-						TYPO3_HOST_ONLY,
-						TYPO3_PORT,
-						PATH_INFO,
-						QUERY_STRING,
-						REQUEST_URI,
-						HTTP_REFERER,
-						TYPO3_REQUEST_HOST,
-						TYPO3_REQUEST_URL,
-						TYPO3_REQUEST_SCRIPT,
-						TYPO3_REQUEST_DIR,
-						TYPO3_SITE_URL,
-						TYPO3_SITE_SCRIPT,
-						TYPO3_SSL,
-						TYPO3_REV_PROXY,
-						SCRIPT_NAME,
-						TYPO3_DOCUMENT_ROOT,
-						SCRIPT_FILENAME,
-						REMOTE_ADDR,
-						REMOTE_HOST,
-						HTTP_USER_AGENT,
-						HTTP_ACCEPT_LANGUAGE', TRUE);
+				$envTestVars = array(
+					'HTTP_HOST',
+					'TYPO3_HOST_ONLY',
+					'TYPO3_PORT',
+					'PATH_INFO',
+					'QUERY_STRING',
+					'REQUEST_URI',
+					'HTTP_REFERER',
+					'TYPO3_REQUEST_HOST',
+					'TYPO3_REQUEST_URL',
+					'TYPO3_REQUEST_SCRIPT',
+					'TYPO3_REQUEST_DIR',
+					'TYPO3_SITE_URL',
+					'TYPO3_SITE_SCRIPT',
+					'TYPO3_SSL',
+					'TYPO3_REV_PROXY',
+					'SCRIPT_NAME',
+					'TYPO3_DOCUMENT_ROOT',
+					'SCRIPT_FILENAME',
+					'REMOTE_ADDR',
+					'REMOTE_HOST',
+					'HTTP_USER_AGENT',
+					'HTTP_ACCEPT_LANGUAGE'
+				);
 				foreach ($envTestVars as $v) {
 					$out[$v] = self::getIndpEnv($v);
 				}
@@ -3498,7 +3514,7 @@ Connection: close
 	 * Client Browser Information
 	 *
 	 * @param string $useragent Alternative User Agent string (if empty, \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('HTTP_USER_AGENT') is used)
-	 * @return array Parsed information about the HTTP_USER_AGENT in categories BROWSER, VERSION, SYSTEM and FORMSTYLE
+	 * @return array Parsed information about the HTTP_USER_AGENT in categories BROWSER, VERSION, SYSTEM
 	 */
 	static public function clientInfo($useragent = '') {
 		if (!$useragent) {
@@ -3517,7 +3533,6 @@ Connection: close
 		} elseif (strpos($useragent, 'Flash') !== FALSE) {
 			$bInfo['BROWSER'] = 'flash';
 		}
-		$bInfo['FORMSTYLE'] = FALSE;
 		if (isset($bInfo['BROWSER'])) {
 			// Browser version
 			switch ($bInfo['BROWSER']) {
@@ -3555,8 +3570,6 @@ Connection: close
 			} elseif (strpos($useragent, 'Linux') !== FALSE || strpos($useragent, 'X11') !== FALSE || strpos($useragent, 'SGI') !== FALSE || strpos($useragent, ' SunOS ') !== FALSE || strpos($useragent, ' HP-UX ') !== FALSE) {
 				$bInfo['SYSTEM'] = 'unix';
 			}
-			// Is TRUE if the browser supports css to format forms, especially the width
-			$bInfo['FORMSTYLE'] = $bInfo['BROWSER'] == 'msie' || $bInfo['BROWSER'] == 'net' && $bInfo['VERSION'] >= 5 || $bInfo['BROWSER'] == 'opera' || $bInfo['BROWSER'] == 'konqu';
 		}
 		return $bInfo;
 	}
@@ -3605,27 +3618,27 @@ Connection: close
 	 *
 	 *************************/
 	/**
-	 * Returns the absolute filename of a relative reference, resolves the "EXT:" prefix (way of referring to files inside extensions) and checks that the file is inside the PATH_site of the TYPO3 installation and implies a check with \TYPO3\CMS\Core\Utility\GeneralUtility::validPathStr(). Returns FALSE if checks failed. Does not check if the file exists.
+	 * Returns the absolute filename of a relative reference, resolves the "EXT:" prefix
+	 * (way of referring to files inside extensions) and checks that the file is inside
+	 * the PATH_site of the TYPO3 installation and implies a check with
+	 * \TYPO3\CMS\Core\Utility\GeneralUtility::validPathStr().
 	 *
 	 * @param string $filename The input filename/filepath to evaluate
 	 * @param boolean $onlyRelative If $onlyRelative is set (which it is by default), then only return values relative to the current PATH_site is accepted.
 	 * @param boolean $relToTYPO3_mainDir If $relToTYPO3_mainDir is set, then relative paths are relative to PATH_typo3 constant - otherwise (default) they are relative to PATH_site
-	 * @return string Returns the absolute filename of $filename IF valid, otherwise blank string.
+	 * @return string Returns the absolute filename of $filename if valid, otherwise blank string.
 	 */
 	static public function getFileAbsFileName($filename, $onlyRelative = TRUE, $relToTYPO3_mainDir = FALSE) {
 		if ((string)$filename === '') {
 			return '';
 		}
+		$relPathPrefix = PATH_site;
 		if ($relToTYPO3_mainDir) {
-			if (!defined('PATH_typo3')) {
-				return '';
-			}
 			$relPathPrefix = PATH_typo3;
-		} else {
-			$relPathPrefix = PATH_site;
 		}
+
 		// Extension
-		if (substr($filename, 0, 4) == 'EXT:') {
+		if (strpos($filename, 'EXT:') === 0) {
 			list($extKey, $local) = explode('/', substr($filename, 4), 2);
 			$filename = '';
 			if ((string)$extKey !== '' && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extKey) && (string)$local !== '') {
@@ -3642,6 +3655,7 @@ Connection: close
 			// checks backpath.
 			return $filename;
 		}
+		return '';
 	}
 
 	/**
@@ -3657,10 +3671,8 @@ Connection: close
 	 * @todo Possible improvement: Should it rawurldecode the string first to check if any of these characters is encoded?
 	 */
 	static public function validPathStr($theFile) {
-		if (strpos($theFile, '//') === FALSE && strpos($theFile, '\\') === FALSE && !preg_match('#(?:^\\.\\.|/\\.\\./|[[:cntrl:]])#u', $theFile)) {
-			return TRUE;
-		}
-		return FALSE;
+		return strpos($theFile, '//') === FALSE && strpos($theFile, '\\') === FALSE
+			&& !preg_match('#(?:^\\.\\.|/\\.\\./|[[:cntrl:]])#u', $theFile);
 	}
 
 	/**
@@ -3670,12 +3682,7 @@ Connection: close
 	 * @return boolean
 	 */
 	static public function isAbsPath($path) {
-		// On Windows also a path starting with a drive letter is absolute: X:/
-		if (TYPO3_OS === 'WIN' && (substr($path, 1, 2) === ':/' || substr($path, 1, 2) === ':\\')) {
-			return TRUE;
-		}
-		// Path starting with a / is always absolute, on every system
-		return $path[0] === '/';
+		return $path[0] === '/' || TYPO3_OS === 'WIN' && (strpos($path, ':/') === 1 || strpos($path, ':\\') === 1);
 	}
 
 	/**
@@ -3685,31 +3692,28 @@ Connection: close
 	 * @return boolean
 	 */
 	static public function isAllowedAbsPath($path) {
-		if (self::isAbsPath($path) && self::validPathStr($path) && (self::isFirstPartOfStr($path, PATH_site) || $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath'] && self::isFirstPartOfStr($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath']))) {
-			return TRUE;
-		}
+		$lockRootPath = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockRootPath'];
+		return self::isAbsPath($path) && self::validPathStr($path)
+			&& (self::isFirstPartOfStr($path, PATH_site)
+				|| $lockRootPath && self::isFirstPartOfStr($path, $lockRootPath));
 	}
 
 	/**
 	 * Verifies the input filename against the 'fileDenyPattern'. Returns TRUE if OK.
 	 *
+	 * Filenames are not allowed to contain control characters. Therefore we
+	 * allways filter on [[:cntrl:]].
+	 *
 	 * @param string $filename File path to evaluate
 	 * @return boolean
 	 */
 	static public function verifyFilenameAgainstDenyPattern($filename) {
-		// Filenames are not allowed to contain control characters
-		if (preg_match('/[[:cntrl:]]/', $filename)) {
-			return FALSE;
-		}
+		$pattern = '/[[:cntrl:]]/';
 		if ((string)$filename !== '' && (string)$GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] !== '') {
-			$result = preg_match('/' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] . '/i', $filename);
-			if ($result) {
-				return FALSE;
-			}
+			$pattern = '/(?:[[:cntrl:]]|' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] . ')/i';
 		}
-		return TRUE;
+		return !preg_match($pattern, $filename);
 	}
-
 
 	/**
 	 * Low level utility function to copy directories and content recursive
@@ -4270,11 +4274,6 @@ Connection: close
 		}
 		// Create new instance and call constructor with parameters
 		$instance = static::instantiateClass($finalClassName, func_get_args());
-		// Create alias if not present
-		$alias = \TYPO3\CMS\Core\Core\ClassLoader::getAliasForClassName($finalClassName);
-		if ($finalClassName !== $alias && !class_exists($alias, FALSE)) {
-			class_alias($finalClassName, $alias);
-		}
 		// Register new singleton instance
 		if ($instance instanceof \TYPO3\CMS\Core\SingletonInterface) {
 			self::$singletonInstances[$finalClassName] = $instance;
@@ -4394,6 +4393,33 @@ Connection: close
 	static public function setSingletonInstance($className, \TYPO3\CMS\Core\SingletonInterface $instance) {
 		self::checkInstanceClassName($className, $instance);
 		self::$singletonInstances[$className] = $instance;
+	}
+
+	/**
+	 * Removes the instance of a singleton class to be returned by makeInstance.
+	 *
+	 * Warning:
+	 * This is NOT a public API method and must not be used in own extensions!
+	 * This methods exists mostly for unit tests to inject a mock of a singleton class.
+	 * If you use this, make sure to always combine this with getSingletonInstances()
+	 * and resetSingletonInstances() in setUp() and tearDown() of the test class.
+	 *
+	 * @see makeInstance
+	 * @throws \InvalidArgumentException
+	 * @param string $className
+	 * @param \TYPO3\CMS\Core\SingletonInterface $instance
+	 * @return void
+	 * @internal
+	 */
+	static public function removeSingletonInstance($className, \TYPO3\CMS\Core\SingletonInterface $instance) {
+		self::checkInstanceClassName($className, $instance);
+		if (!isset(self::$singletonInstances[$className])) {
+			throw new \InvalidArgumentException('No Instance registered for ' . $className . '.', 1394099179);
+		}
+		if ($instance !== self::$singletonInstances[$className]) {
+			throw new \InvalidArgumentException('The instance you are trying to remove has not been registered before.', 1394099256);
+		}
+		unset(self::$singletonInstances[$className]);
 	}
 
 	/**

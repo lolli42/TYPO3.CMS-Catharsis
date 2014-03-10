@@ -29,6 +29,10 @@ namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
  * @author Susanne Moog <typo3@susannemoog.de>
  */
 class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
+	/**
+	 * @var string
+	 */
+	const TABLE_NAME = 'tx_extensionmanager_domain_model_extension';
 
 	/**
 	 * @var \TYPO3\CMS\Core\Database\DatabaseConnection
@@ -238,43 +242,72 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	}
 
 	/**
-	 * Update the current_version field after update
-	 * For performance reason "native" TYPO3_DB is
-	 * used here directly.
+	 * Updates the current_version field after update.
 	 *
-	 * @param integer $repositoryUid
-	 * @return integer
+	 * @param int $repositoryUid
+	 * @return int
 	 */
 	public function insertLastVersion($repositoryUid = 1) {
-		$repositoryUid = (int)$repositoryUid;
-		$groupedRows = $this->databaseConnection->exec_SELECTgetRows(
-			'extension_key, max(integer_version) as maxintversion',
-			'tx_extensionmanager_domain_model_extension',
-			'repository=' . $repositoryUid,
-			'extension_key'
-		);
-		$extensions = count($groupedRows);
+		$this->markExtensionWithMaximumVersionAsCurrent($repositoryUid);
 
-		if ($extensions > 0) {
-			// set all to 0
-			$this->databaseConnection->exec_UPDATEquery(
-				'tx_extensionmanager_domain_model_extension',
-				'current_version=1 AND repository=' . $repositoryUid,
-				array('current_version' => 0)
-			);
-			// Find latest version of extensions and set current_version to 1 for these
-			foreach ($groupedRows as $row) {
-				$this->databaseConnection->exec_UPDATEquery(
-					'tx_extensionmanager_domain_model_extension',
-					'extension_key=' .
-							$this->databaseConnection->fullQuoteStr($row['extension_key'], 'tx_extensionmanager_domain_model_extension') .
-							' AND integer_version=' . (int)$row['maxintversion'] .
-							' AND repository=' . $repositoryUid,
-					array('current_version' => 1)
-				);
-			}
-		}
-		return $extensions;
+		return $this->getNumberOfCurrentExtensions();
+	}
+
+	/**
+	 * Sets current_version = 1 for all extensions where the extension version is maximal.
+	 *
+	 * For performance reasons, the "native" TYPO3_DB is used here directly.
+	 *
+	 * @param int $repositoryUid
+	 * @return void
+	 */
+	protected function markExtensionWithMaximumVersionAsCurrent($repositoryUid) {
+		$uidsOfCurrentVersion = $this->fetchMaximalVersionsForAllExtensions($repositoryUid);
+
+		$this->databaseConnection->exec_UPDATEquery(
+			self::TABLE_NAME,
+			'uid IN (' . implode(',', $uidsOfCurrentVersion) . ')',
+			array(
+				'current_version' => 1,
+			)
+		);
+	}
+
+	/**
+	 * Fetches the UIDs of all maximal versions for all extensions.
+	 * This is done by doing a subselect in the WHERE clause to get all
+	 * max versions and then the UID of that record in the outer select.
+	 *
+	 * @param int $repositoryUid
+	 * @return array
+	 */
+	protected function fetchMaximalVersionsForAllExtensions($repositoryUid) {
+		$extensionUids = $this->databaseConnection->exec_SELECTgetRows(
+			'a.uid AS uid',
+			self::TABLE_NAME . ' a',
+			'integer_version=(' .
+				$this->databaseConnection->SELECTquery(
+					'MAX(integer_version)',
+					self::TABLE_NAME . ' b',
+					'b.repository=' . (int)$repositoryUid . ' AND a.extension_key=b.extension_key'
+				) .
+			') AND repository=' . (int)$repositoryUid,
+			'', '', '', 'uid'
+		);
+		return array_keys($extensionUids);
+	}
+
+	/**
+	 * Returns the number of extensions that are current.
+	 *
+	 * @return int
+	 */
+	protected function getNumberOfCurrentExtensions() {
+		return $this->databaseConnection->exec_SELECTcountRows(
+			'*',
+			self::TABLE_NAME,
+			'current_version = 1'
+		);
 	}
 
 	/**
@@ -299,5 +332,4 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 		}
 		return $query;
 	}
-
 }

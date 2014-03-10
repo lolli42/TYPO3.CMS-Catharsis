@@ -45,7 +45,7 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	protected $fakedExtensions = array();
 
 	/**
-	 * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Extensionmanager\Utility\InstallUtility
+	 * @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Extensionmanager\Utility\InstallUtility|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface
 	 */
 	protected $installMock;
 
@@ -64,6 +64,7 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 				'loadExtension',
 				'unloadExtension',
 				'processDatabaseUpdates',
+				'processRuntimeDatabaseUpdates',
 				'reloadCaches',
 				'processCachingFrameworkUpdates',
 				'saveDefaultConfiguration',
@@ -120,20 +121,10 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	/**
 	 * @test
 	 */
-	public function installCallsProcessDatabaseUpdates() {
+	public function installCallsProcessRuntimeDatabaseUpdates() {
 		$this->installMock->expects($this->once())
-			->method('processDatabaseUpdates')
-			->with($this->extensionData);
-
-		$this->installMock->install($this->extensionKey);
-	}
-
-	/**
-	 * @test
-	 */
-	public function installCallsProcessCachingFrameworkUpdates() {
-		$this->installMock->expects($this->once())
-			->method('processCachingFrameworkUpdates');
+			->method('processRuntimeDatabaseUpdates')
+			->with($this->extensionKey);
 
 		$this->installMock->install($this->extensionKey);
 	}
@@ -151,8 +142,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 */
 	public function installCallsFlushCachesIfClearCacheOnLoadIsSet() {
 		$this->extensionData['clearcacheonload'] = TRUE;
-		$GLOBALS['typo3CacheManager'] = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
-		$GLOBALS['typo3CacheManager']->expects($this->once())->method('flushCaches');
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCaches');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->install($this->extensionKey);
 	}
 

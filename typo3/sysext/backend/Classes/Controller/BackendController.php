@@ -81,6 +81,13 @@ class BackendController {
 	protected $pageRenderer;
 
 	/**
+	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 */
+	public function getPageRenderer() {
+		return $this->pageRenderer;
+	}
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -96,6 +103,14 @@ class BackendController {
 		$this->pageRenderer->enableExtJSQuickTips();
 		$this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', FALSE);
 		$this->pageRenderer->addExtDirectCode();
+		$this->pageRenderer->addInlineSetting('ModuleMenu.getData', 'ajaxUrl', BackendUtility::getAjaxUrl('ModuleMenu::getData'));
+		$this->pageRenderer->addInlineSetting('ModuleMenu.saveMenuState', 'ajaxUrl', BackendUtility::getAjaxUrl('ModuleMenu::saveMenuState'));
+		$this->pageRenderer->addInlineSetting('BackendLogin.BackendLogin::login', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::login'));
+		$this->pageRenderer->addInlineSetting('BackendLogin.BackendLogin::logout', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::logout'));
+		$this->pageRenderer->addInlineSetting('BackendLogin.BackendLogin::refreshLogin', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::refreshLogin'));
+		$this->pageRenderer->addInlineSetting('BackendLogin.BackendLogin::isTimedOut', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::isTimedOut'));
+		$this->pageRenderer->addInlineSetting('BackendLogin.BackendLogin::getChallenge', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::getChallenge'));
+		$this->pageRenderer->addInlineSetting('ImportExport', 'moduleUrl', BackendUtility::getModuleUrl('xMOD_tximpexp'));
 		// Add default BE javascript
 		$this->js = '';
 		$this->jsFiles = array(
@@ -124,6 +139,7 @@ class BackendController {
 			unset($this->jsFiles['loginrefresh']);
 		}
 		// Add default BE css
+		$this->pageRenderer->addCssLibrary('contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 		$this->css = '';
 		$this->cssFiles = array();
 		$this->toolbarItems = array();
@@ -213,7 +229,7 @@ class BackendController {
 			if (typeof console === "undefined") {
 				console = TYPO3.Backend.DebugConsole;
 			}
-			TYPO3.ContextHelpWindow.init();';
+			TYPO3.ContextHelpWindow.init(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('help_cshmanual')) . ');';
 		$this->pageRenderer->addExtOnReadyCode($extOnReadyCode);
 		// Set document title:
 		$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ? $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . ' [TYPO3 CMS ' . TYPO3_version . ']' : 'TYPO3 CMS ' . TYPO3_version;
@@ -478,7 +494,6 @@ class BackendController {
 			'securityLevel' => $this->loginSecurityLevel,
 			'TYPO3_mainDir' => TYPO3_mainDir,
 			'pageModule' => $pageModule,
-			'condensedMode' => $GLOBALS['BE_USER']->uc['condensedMode'] ? 1 : 0,
 			'inWorkspace' => $GLOBALS['BE_USER']->workspace !== 0 ? 1 : 0,
 			'workspaceFrontendPreviewEnabled' => $GLOBALS['BE_USER']->user['workspace_preview'] ? 1 : 0,
 			'veriCode' => $GLOBALS['BE_USER']->veriCode(),
@@ -582,20 +597,37 @@ class BackendController {
 	}
 
 	/**
-	 * Sets the startup module from either GETvars module and mpdParams or user configuration.
+	 * Sets the startup module from either GETvars module and modParams or user configuration.
 	 *
-	 * @return void
+	 * @return string the JavaScript code for the startup module
 	 */
 	protected function setStartupModule() {
 		$startModule = preg_replace('/[^[:alnum:]_]/', '', GeneralUtility::_GET('module'));
 		if (!$startModule) {
-			if ($GLOBALS['BE_USER']->uc['startModule']) {
+			// start module on first login, will be removed once used the first time
+			if (isset($GLOBALS['BE_USER']->uc['startModuleOnFirstLogin'])) {
+				$startModule = $GLOBALS['BE_USER']->uc['startModuleOnFirstLogin'];
+				unset($GLOBALS['BE_USER']->uc['startModuleOnFirstLogin']);
+				$GLOBALS['BE_USER']->writeUC();
+			} elseif ($GLOBALS['BE_USER']->uc['startModule']) {
 				$startModule = $GLOBALS['BE_USER']->uc['startModule'];
 			} elseif ($GLOBALS['BE_USER']->uc['startInTaskCenter']) {
 				$startModule = 'user_task';
 			}
+
+			// check if the start module has additional parameters, so a redirect to a specific
+			// action is possible
+			if (strpos($startModule, '->') !== FALSE) {
+				list($startModule, $startModuleParameters) = explode('->', $startModule, 2);
+			}
 		}
+
 		$moduleParameters = GeneralUtility::_GET('modParams');
+		// if no GET parameters are set, check if there are parameters given from the UC
+		if (!$moduleParameters && $startModuleParameters) {
+			$moduleParameters = $startModuleParameters;
+		}
+
 		if ($startModule) {
 			return '
 					// start in module:
@@ -607,10 +639,11 @@ class BackendController {
 	}
 
 	/**
-	 * Sdds a javascript snippet to the backend
+	 * Adds a javascript snippet to the backend
 	 *
 	 * @param string $javascript Javascript snippet
 	 * @return void
+	 * @throws \InvalidArgumentException
 	 */
 	public function addJavascript($javascript) {
 		// TODO do we need more checks?
@@ -671,6 +704,7 @@ class BackendController {
 	 * @param string $toolbarItemName Toolbar item name, f.e. tx_toolbarExtension_coolItem
 	 * @param string $toolbarItemClassName Toolbar item class name, f.e. tx_toolbarExtension_coolItem
 	 * @return void
+	 * @throws \UnexpectedValueException
 	 */
 	public function addToolbarItem($toolbarItemName, $toolbarItemClassName) {
 		$toolbarItem = GeneralUtility::makeInstance($toolbarItemClassName, $this);

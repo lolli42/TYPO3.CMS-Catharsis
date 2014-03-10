@@ -78,6 +78,13 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 	protected $maxListPerPage;
 
 	/**
+	 * Default constructor loads additional locallang
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:indexed_search/modfunc1/locallang.xlf');
+	}
+
+	/**
 	 * Initialize menu array internally
 	 *
 	 * @return 	void
@@ -269,7 +276,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 				$out .= '
 				<tr class="bgColor-20">
 					<td>&nbsp;</td>
-					<td colspan="' . ($this->returnNumberOfColumns() - 1) . '">' . $this->pObj->doc->icons(3) . '<span class="">There were more than ' . $this->maxListPerPage . ' rows. <a href="' . htmlspecialchars(('index.php?id=' . $this->pObj->id . '&listALL=1')) . '">Click here to list them ALL!</a></span></td>
+					<td colspan="' . ($this->returnNumberOfColumns() - 1) . '">' . $this->pObj->doc->icons(3) . '<span class="">There were more than ' . $this->maxListPerPage . ' rows. <a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_info', array('id' => $this->pObj->id, 'listAll' => 1))) . '">Click here to list them ALL!</a></span></td>
 				</tr>';
 			}
 		} else {
@@ -796,7 +803,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 	 * @todo Define visibility
 	 */
 	public function linkList() {
-		return '<br /><a href="index.php?id=' . $this->pObj->id . '">Back to list.</a><br />';
+		return '<br /><a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_info', array('id' => $this->pObj->id))) . '">Back to list.</a><br />';
 	}
 
 	/**
@@ -808,7 +815,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 	 * @todo Define visibility
 	 */
 	public function showPageDetails($string, $id) {
-		return '<a href="' . htmlspecialchars(('index.php?id=' . $id . '&SET[depth]=0&SET[type]=1')) . '">' . $string . '</a>';
+		return '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_info', array('id' => $id, 'SET' => array('depth' => 0, 'type' => 1)))) . '">' . $string . '</a>';
 	}
 
 	/**
@@ -990,7 +997,7 @@ class IndexedPagesController extends \TYPO3\CMS\Backend\Module\AbstractFunctionM
 						while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 							$idList[] = (int)$row['page_id'];
 						}
-						$pageCache = $GLOBALS['typo3CacheManager']->getCache('cache_pages');
+						$pageCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pages');
 						foreach ($idList as $pageId) {
 							$pageCache->flushByTag('pageId_' . $pageId);
 						}

@@ -424,18 +424,25 @@ class PageLayoutController {
 			$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_layout.html');
 			// JavaScript:
 			$this->doc->JScode = '<script type="text/javascript" ' . 'src="' . GeneralUtility::createVersionNumberedFilename(($GLOBALS['BACK_PATH'] . 'js/jsfunc.updateform.js')) . '">' . '</script>';
-			$this->doc->JScode .= $this->doc->wrapScriptTags('
-				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
-				if (top.fsMod) top.fsMod.navFrameHighlightedID["web"] = "pages' . (int)$this->id . '_"+top.fsMod.currentBank; ' . (int)$this->id . ';
-				function jumpToUrl(URL,formEl) {	//
+
+			// override the default jumpToUrl
+			$this->doc->JScodeArray['jumpToUrl'] = '
+				function jumpToUrl(URL,formEl) {
 					if (document.editform && TBE_EDITOR.isFormChanged)	{	// Check if the function exists... (works in all browsers?)
-						if (!TBE_EDITOR.isFormChanged())	{	//
+						if (!TBE_EDITOR.isFormChanged()) {
 							window.location.href = URL;
 						} else if (formEl) {
 							if (formEl.type=="checkbox") formEl.checked = formEl.checked ? 0 : 1;
 						}
-					} else window.location.href = URL;
+					} else {
+						window.location.href = URL;
+					}
 				}
+';
+
+			$this->doc->JScode .= $this->doc->wrapScriptTags('
+				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
+				if (top.fsMod) top.fsMod.navFrameHighlightedID["web"] = "pages' . (int)$this->id . '_"+top.fsMod.currentBank; ' . (int)$this->id . ';
 			' . ($this->popView ? BackendUtility::viewOnClick($this->id, $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->id)) : '') . '
 
 				function deleteRecord(table,id,url) {	//
@@ -703,16 +710,13 @@ class PageLayoutController {
 		// Setting close url/return url for exiting this script:
 		// Goes to 'Columns' view if close is pressed (default)
 		$this->closeUrl = $this->local_linkThisScript(array('SET' => array('function' => 1)));
-		if ($GLOBALS['BE_USER']->uc['condensedMode']) {
-			$this->closeUrl = $GLOBALS['BACK_PATH'] . 'alt_db_navframe.php';
-		}
 		if ($this->returnUrl) {
 			$this->closeUrl = $this->returnUrl;
 		}
 		// Return-url for JavaScript:
 		$retUrlStr = $this->returnUrl ? '+\'&returnUrl=\'+\'' . rawurlencode($this->returnUrl) . '\'' : '';
 		// Drawing the edit record selectbox
-		$this->editSelect = '<select name="edit_record" onchange="' . htmlspecialchars(('jumpToUrl(\'db_layout.php?id=' . $this->id . '&edit_record=\'+escape(this.options[this.selectedIndex].value)' . $retUrlStr . ',this);')) . '">' . implode('', $opt) . '</select>';
+		$this->editSelect = '<select name="edit_record" onchange="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue('db_layout.php?id=' . $this->id . '&edit_record=') . '+escape(this.options[this.selectedIndex].value)' . $retUrlStr . ',this);')) . '">' . implode('', $opt) . '</select>';
 		// Creating editing form:
 		if ($GLOBALS['BE_USER']->check('tables_modify', $this->eRParts[0]) && $edit_record && ($this->eRParts[0] !== 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] === 'pages' && $this->CALC_PERMS & 1)) {
 			// Splitting uid parts for special features, if new:
@@ -1110,7 +1114,7 @@ class PageLayoutController {
 						onclick="' . htmlspecialchars(('window.location.href=\'' . $GLOBALS['BACK_PATH'] . 'show_rechis.php?element=' . rawurlencode(($this->eRParts[0] . ':' . $this->eRParts[1])) . '&revert=ALL_FIELDS&sumUp=-1&returnUrl=' . rawurlencode($this->R_URI) . '\'; return false;')) . '"
 						title="' . htmlspecialchars(sprintf($GLOBALS['LANG']->getLL('undoLastChange'), BackendUtility::calcAge(($GLOBALS['EXEC_TIME'] - $this->undoButtonR['tstamp']), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')))) . '">' . IconUtility::getSpriteIcon('actions-edit-undo') . '</a>';
 					// History button
-					$buttons['history_record'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(\'' . $GLOBALS['BACK_PATH'] . 'show_rechis.php?element=' . rawurlencode(($this->eRParts[0] . ':' . $this->eRParts[1])) . '&returnUrl=' . rawurlencode($this->R_URI) . '#latest\');return false;')) . '" title="' . $GLOBALS['LANG']->getLL('recordHistory', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
+					$buttons['history_record'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue($GLOBALS['BACK_PATH'] . 'show_rechis.php?element=' . rawurlencode(($this->eRParts[0] . ':' . $this->eRParts[1])) . '&returnUrl=' . rawurlencode($this->R_URI) . '#latest') . ');return false;')) . '" title="' . $GLOBALS['LANG']->getLL('recordHistory', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
 				}
 			}
 		}
@@ -1126,7 +1130,7 @@ class PageLayoutController {
 	 * Returns the number of hidden elements (including those hidden by start/end times)
 	 * on the current page (for the current sys_language)
 	 *
-	 * @return void
+	 * @return int
 	 * @todo Define visibility
 	 */
 	public function getNumberOfHiddenElements() {

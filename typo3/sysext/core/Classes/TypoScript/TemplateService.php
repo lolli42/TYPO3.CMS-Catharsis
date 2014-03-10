@@ -393,7 +393,7 @@ class TemplateService {
 	 * @return array Returns the unmatched array $currentPageData if found cached in "cache_pagesection". Otherwise FALSE is returned which means that the array must be generated and stored in the cache
 	 */
 	public function getCurrentPageData() {
-		return $GLOBALS['typo3CacheManager']->getCache('cache_pagesection')->get((int)$GLOBALS['TSFE']->id . '_' . GeneralUtility::md5int($GLOBALS['TSFE']->MP));
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pagesection')->get((int)$GLOBALS['TSFE']->id . '_' . GeneralUtility::md5int($GLOBALS['TSFE']->MP));
 	}
 
 	/**
@@ -520,7 +520,7 @@ class TemplateService {
 				// Only save the data if we're not simulating by hidden/starttime/endtime
 				$mpvarHash = GeneralUtility::md5int($GLOBALS['TSFE']->MP);
 				/** @var $pageSectionCache \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
-				$pageSectionCache = $GLOBALS['typo3CacheManager']->getCache('cache_pagesection');
+				$pageSectionCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pagesection');
 				$pageSectionCache->set((int)$GLOBALS['TSFE']->id . '_' . $mpvarHash, $cc, array(
 					'pageId_' . (int)$GLOBALS['TSFE']->id,
 					'mpvarHash_' . $mpvarHash
@@ -856,7 +856,7 @@ class TemplateService {
 
 	/**
 	 * Appends (not prepends) additional TypoScript code to static template records/files as set in TYPO3_CONF_VARS
-	 * For records the "uid" value is the integer of the "static_template" record
+	 * For DB records the "uid" value is the integer of the "static_template" record.
 	 * For files the "uid" value is the extension key but with any underscores removed. Possibly with a path if its a static file selected in the template record
 	 *
 	 * @param array $subrow Static template record/file
@@ -866,8 +866,15 @@ class TemplateService {
 	 * @todo Define visibility
 	 */
 	public function prependStaticExtra($subrow) {
-		$subrow['config'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup.'][$subrow['uid']];
-		$subrow['constants'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants.'][$subrow['uid']];
+		// the identifier can be "43" if coming from "static template" extension or a path like "cssstyledcontent/static/"
+		$identifier = $subrow['uid'];
+		$subrow['config'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup.'][$identifier];
+		$subrow['constants'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants.'][$identifier];
+		// if this is a template of type "default content rendering", also see if other extensions have added their TypoScript that should be included after the content definitions
+		if (in_array($identifier, $GLOBALS['TYPO3_CONF_VARS']['FE']['contentRenderingTemplates'], TRUE)) {
+			$subrow['config'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_setup.']['defaultContentRendering'];
+			$subrow['constants'] .= $GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_constants.']['defaultContentRendering'];
+		}
 		return $subrow;
 	}
 

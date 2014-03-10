@@ -1721,6 +1721,7 @@ class DataHandler {
 			// if so, set this value to "0" again
 			if ($maxCheckedRecords && count($otherRecordsWithSameValue) >= $maxCheckedRecords) {
 				$value = 0;
+				$this->log($table, $id, 5, 0, 1, 'Could not activate checkbox for field "%s". A total of %s record(s) can have this checkbox activated. Uncheck other records first in order to activate the checkbox of this record.', -1, array($GLOBALS['LANG']->sL(BackendUtility::getItemLabel($table, $field)), $maxCheckedRecords));
 			}
 		}
 		$res['value'] = $value;
@@ -1984,7 +1985,7 @@ class DataHandler {
 					$theDestFile = '';
 					// a FAL file was added, now resolve the file object and get the absolute path
 					// @todo in future versions this needs to be modified to handle FAL objects natively
-					if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($theFile)) {
+					if (!empty($theFile) && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($theFile)) {
 						$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject($theFile);
 						$theFile = $fileObject->getForLocalProcessing(FALSE);
 					}
@@ -2085,7 +2086,7 @@ class DataHandler {
 					$propArr = $this->getRecordProperties($table, $id);
 					foreach ($valueArray as &$theFile) {
 						// FAL handling: it's a UID, thus it is resolved to the absolute path
-						if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($theFile)) {
+						if (!empty($theFile) && \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($theFile)) {
 							$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject($theFile);
 							$theFile = $fileObject->getForLocalProcessing(FALSE);
 						}
@@ -5425,35 +5426,37 @@ class DataHandler {
 	 * Does not check for workspace, use BE_USER->workspaceAllowLiveRecordsInPID for this in addition to this function call.
 	 *
 	 * @param string $insertTable Tablename to check
-	 * @param integer $pid Integer PID
-	 * @param integer $action For logging: Action number.
-	 * @return boolean Returns TRUE if the user may insert a record from table $insertTable on page $pid
+	 * @param int $pid Integer PID
+	 * @param int $action For logging: Action number.
+	 * @return bool Returns TRUE if the user may insert a record from table $insertTable on page $pid
 	 * @todo Define visibility
 	 */
 	public function checkRecordInsertAccess($insertTable, $pid, $action = 1) {
-		$res = 0;
 		$pid = (int)$pid;
-		if ($pid >= 0) {
-			// If information is cached, return it
-			if (isset($this->recInsertAccessCache[$insertTable][$pid])) {
-				return $this->recInsertAccessCache[$insertTable][$pid];
+		if ($pid < 0) {
+			return FALSE;
+		}
+		// If information is cached, return it
+		if (isset($this->recInsertAccessCache[$insertTable][$pid])) {
+			return $this->recInsertAccessCache[$insertTable][$pid];
+		}
+
+		$res = FALSE;
+		$pageExists = (bool)$this->doesRecordExist('pages', $pid, ($insertTable === 'pages' ? $this->pMap['new'] : $this->pMap['editcontent']));
+		// If either admin and root-level or if page record exists and 1) if 'pages' you may create new ones 2) if page-content, new content items may be inserted on the $pid page
+		if ($pageExists || $pid === 0 && ($this->admin || BackendUtility::isRootLevelRestrictionIgnored($insertTable))) {
+			// Check permissions
+			if ($this->isTableAllowedForThisPage($pid, $insertTable)) {
+				$res = TRUE;
+				// Cache the result
+				$this->recInsertAccessCache[$insertTable][$pid] = $res;
 			} else {
-				// If either admin and root-level or if page record exists and 1) if 'pages' you may create new ones 2) if page-content, new content items may be inserted on the $pid page
-				if (!$pid && $this->admin || $this->doesRecordExist('pages', $pid, ($insertTable == 'pages' ? $this->pMap['new'] : $this->pMap['editcontent']))) {
-					// Check permissions
-					if ($this->isTableAllowedForThisPage($pid, $insertTable)) {
-						$res = 1;
-						// Cache the result
-						$this->recInsertAccessCache[$insertTable][$pid] = $res;
-					} else {
-						$propArr = $this->getRecordProperties('pages', $pid);
-						$this->log($insertTable, $pid, $action, 0, 1, 'Attempt to insert record on page \'%s\' (%s) where this table, %s, is not allowed', 11, array($propArr['header'], $pid, $insertTable), $propArr['event_pid']);
-					}
-				} else {
-					$propArr = $this->getRecordProperties('pages', $pid);
-					$this->log($insertTable, $pid, $action, 0, 1, 'Attempt to insert a record on page \'%s\' (%s) from table \'%s\' without permissions. Or non-existing page.', 12, array($propArr['header'], $pid, $insertTable), $propArr['event_pid']);
-				}
+				$propArr = $this->getRecordProperties('pages', $pid);
+				$this->log($insertTable, $pid, $action, 0, 1, 'Attempt to insert record on page \'%s\' (%s) where this table, %s, is not allowed', 11, array($propArr['header'], $pid, $insertTable), $propArr['event_pid']);
 			}
+		} else {
+			$propArr = $this->getRecordProperties('pages', $pid);
+			$this->log($insertTable, $pid, $action, 0, 1, 'Attempt to insert a record on page \'%s\' (%s) from table \'%s\' without permissions. Or non-existing page.', 12, array($propArr['header'], $pid, $insertTable), $propArr['event_pid']);
 		}
 		return $res;
 	}
@@ -5463,47 +5466,53 @@ class DataHandler {
 	 *
 	 * @param integer $page_uid Page id for which to check, including 0 (zero) if checking for page tree root.
 	 * @param string $checkTable Table name to check
-	 * @return boolean TRUE if OK
+	 * @return bool TRUE if OK
 	 * @todo Define visibility
 	 */
 	public function isTableAllowedForThisPage($page_uid, $checkTable) {
 		$page_uid = (int)$page_uid;
+		$rootLevelSetting = (int)$GLOBALS['TCA'][$checkTable]['ctrl']['rootLevel'];
 		// Check if rootLevel flag is set and we're trying to insert on rootLevel - and reversed - and that the table is not "pages" which are allowed anywhere.
-		if (($GLOBALS['TCA'][$checkTable]['ctrl']['rootLevel'] xor !$page_uid) && $GLOBALS['TCA'][$checkTable]['ctrl']['rootLevel'] != -1 && $checkTable != 'pages') {
+		if ($checkTable !== 'pages' && $rootLevelSetting !== -1 && ($rootLevelSetting xor !$page_uid)) {
 			return FALSE;
 		}
+		$allowed = FALSE;
 		// Check root-level
 		if (!$page_uid) {
-			if ($this->admin) {
-				return TRUE;
+			if ($this->admin || BackendUtility::isRootLevelRestrictionIgnored($checkTable)) {
+				$allowed = TRUE;
 			}
 		} else {
 			// Check non-root-level
 			$doktype = $this->pageInfo($page_uid, 'doktype');
-			$allowedTableList = isset($GLOBALS['PAGES_TYPES'][$doktype]['allowedTables']) ? $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'] : $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
+			$allowedTableList = isset($GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'])
+				? $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables']
+				: $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
 			$allowedArray = GeneralUtility::trimExplode(',', $allowedTableList, TRUE);
 			// If all tables or the table is listed as a allowed type, return TRUE
-			if (strstr($allowedTableList, '*') || in_array($checkTable, $allowedArray)) {
-				return TRUE;
+			if (strpos($allowedTableList, '*') !== FALSE || in_array($checkTable, $allowedArray)) {
+				$allowed = TRUE;
 			}
 		}
+		return $allowed;
 	}
 
 	/**
 	 * Checks if record can be selected based on given permission criteria
 	 *
 	 * @param string $table Record table name
-	 * @param integer $id Record UID
+	 * @param int $id Record UID
 	 * @param mixed $perms Permission restrictions to observe: Either an integer that will be bitwise AND'ed or a string, which points to a key in the ->pMap array
-	 * @return boolean Returns TRUE if the record given by $table, $id and $perms can be selected
+	 * @return bool Returns TRUE if the record given by $table, $id and $perms can be selected
+	 *
+	 * @throws \RuntimeException
 	 * @todo Define visibility
 	 */
 	public function doesRecordExist($table, $id, $perms) {
-		if ($this->bypassAccessCheckForRecords) {
-			return is_array(BackendUtility::getRecordRaw($table, 'uid=' . (int)$id, 'uid'));
-		}
-		$res = 0;
 		$id = (int)$id;
+		if ($this->bypassAccessCheckForRecords) {
+			return is_array(BackendUtility::getRecordRaw($table, 'uid=' . $id, 'uid'));
+		}
 		// Processing the incoming $perms (from possible string to integer that can be AND'ed)
 		if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($perms)) {
 			if ($table != 'pages') {
@@ -6060,6 +6069,10 @@ class DataHandler {
 					if ($lookForLiveVersion = BackendUtility::getLiveVersionOfRecord($table, $row['uid'], $sortRow . ',pid,uid')) {
 						$row = $lookForLiveVersion;
 					}
+					// Fetch move placeholder, since it might point to a new page in the current workspace
+					if ($movePlaceholder = BackendUtility::getMovePlaceholder($table, $row['uid'], 'uid,pid,' . $sortRow)) {
+						$row = $movePlaceholder;
+					}
 					// If the record should be inserted after itself, keep the current sorting information:
 					if ($row['uid'] == $uid) {
 						$sortNumber = $row[$sortRow];
@@ -6525,18 +6538,6 @@ class DataHandler {
 	}
 
 	/**
-	 * Unlink (delete) core cache files
-	 *
-	 * @return void
-	 * @deprecated since 6.0, will be removed in two versions, use the cache manager directly instead
-	 * @todo Define visibility
-	 */
-	public function removeCacheFiles() {
-		GeneralUtility::logDeprecatedFunction();
-		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
-	}
-
-	/**
 	 * Returns array, $CPtable, of pages under the $pid going down to $counter levels.
 	 * Selecting ONLY pages which the user has read-access to!
 	 *
@@ -6944,13 +6945,13 @@ class DataHandler {
 							// point to real pages and caches at all. Flushing caches for
 							// those records does not make sense and decreases performance
 							if ($pageId >= 0) {
-								$GLOBALS['typo3CacheManager']->flushCachesByTag('pageId_' . $pageId);
+								GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesByTag('pageId_' . $pageId);
 							}
 						}
 					}
 					// Delete cache for current table and record
-					$GLOBALS['typo3CacheManager']->flushCachesByTag($table);
-					$GLOBALS['typo3CacheManager']->flushCachesByTag($table . '_' . $uid);
+					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesByTag($table);
+					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesByTag($table . '_' . $uid);
 				}
 			}
 			// Clear cache for pages entered in TSconfig:
@@ -7018,13 +7019,13 @@ class DataHandler {
 		switch (strtolower($cacheCmd)) {
 			case 'pages':
 				if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.pages')) {
-					$GLOBALS['typo3CacheManager']->flushCachesInGroup('pages');
+					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroup('pages');
 				}
 				break;
 			case 'all':
 				if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.all')) {
 					// Clear cache group "all" of caching framework caches
-					$GLOBALS['typo3CacheManager']->flushCachesInGroup('all');
+					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroup('all');
 					if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms')) {
 						$GLOBALS['TYPO3_DB']->exec_TRUNCATEquery('cache_treelist');
 					}
@@ -7045,7 +7046,7 @@ class DataHandler {
 			case 'temp_cached':
 			case 'system':
 				if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.system')) {
-					$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
+					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroup('system');
 				}
 				break;
 		}
@@ -7079,7 +7080,7 @@ class DataHandler {
 		// process caching framwork operations
 		if (count($tagsToFlush) > 0) {
 			foreach ($tagsToFlush as $tag) {
-				$GLOBALS['typo3CacheManager']->flushCachesInGroupByTag('pages', $tag);
+				GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroupByTag('pages', $tag);
 			}
 		}
 
@@ -7200,7 +7201,7 @@ class DataHandler {
 	 */
 	public function internal_clearPageCache() {
 		GeneralUtility::logDeprecatedFunction();
-		$GLOBALS['typo3CacheManager']->flushCachesInGroup('pages');
+		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroup('pages');
 	}
 
 	/**
@@ -7310,7 +7311,7 @@ class DataHandler {
 	 * @return \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
 	 */
 	protected function getMemoryCache() {
-		return $GLOBALS['typo3CacheManager']->getCache('cache_runtime');
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_runtime');
 	}
 
 	/**

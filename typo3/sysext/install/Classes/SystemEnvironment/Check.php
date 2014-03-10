@@ -107,6 +107,8 @@ class Check {
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
 		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
 		$statusArray[] = $this->checkReflectionDocComment();
+		$statusArray[] = $this->checkSystemLocale();
+		$statusArray[] = $this->checkLocaleWithUTF8filesystem();
 		$statusArray[] = $this->checkWindowsApacheThreadStackSize();
 		foreach ($this->requiredPhpExtensions as $extension) {
 			$statusArray[] = $this->checkRequiredPhpExtension($extension);
@@ -741,29 +743,60 @@ class Check {
 	 * @return Status\StatusInterface
 	 */
 	protected function checkSomePhpOpcodeCacheIsLoaded() {
-		if (
-			// Currently APCu identifies itself both as "apcu" and "apc" (for compatibility) although it doesn't provide the APC-opcache functionality
-			extension_loaded('eaccelerator')
-			|| extension_loaded('xcache')
-			|| (extension_loaded('apc') && !extension_loaded('apcu'))
-			|| extension_loaded('Zend Optimizer+')
-			|| extension_loaded('Zend OPcache')
-			|| extension_loaded('wincache')
-		) {
-			$status = new Status\OkStatus();
-			$status->setTitle('A PHP opcode cache is loaded');
-		} else {
-			$status = new Status\WarningStatus();
+		$opcodeCaches = \TYPO3\CMS\Core\Utility\OpcodeCacheUtility::getAllActive();
+		if (count($opcodeCaches) === 0) {
+			// Set status to notice. It needs to be notice so email won't be triggered.
+			$status = new Status\NoticeStatus();
 			$status->setTitle('No PHP opcode cache loaded');
 			$status->setMessage(
 				'PHP opcode caches hold a compiled version of executed PHP scripts in' .
 				' memory and do not require to recompile any script on each access.' .
 				' This can be a massive performance improvement and can put load off a' .
-				' server in general, a parse time reduction by factor three for full cached' .
+				' server in general. A parse time reduction by factor three for fully cached' .
 				' pages can be achieved easily if using some opcode cache.' .
 				' If in doubt choosing one, APC runs well and can be used as data' .
 				' cache layer in TYPO3 CMS as additional feature.'
 			);
+		} else {
+			$status = new Status\OkStatus();
+			$message = '';
+
+			foreach ($opcodeCaches as $opcodeCache => $properties) {
+				$message .= 'Name: ' . $opcodeCache . ' Version: ' . $properties['version'];
+				$message .= LF;
+
+				if ($properties['error']) {
+					// Set status to error if not already set
+					if ($status->getSeverity() !== 'error') {
+						$status = new Status\ErrorStatus();
+					}
+					$message .= ' This opcode cache is marked as malfunctioning by the TYPO3 CMS Team.';
+				} elseif ($properties['canInvalidate']) {
+					$message .= ' This opcode cache should work correctly and has good performance.';
+				} else {
+					// Set status to notice if not already error set. It needs to be notice so email won't be triggered.
+					if ($status->getSeverity() !== 'error' || $status->getSeverity() !== 'warning') {
+						$status = new Status\NoticeStatus();
+					}
+					$message .= ' This opcode cache may work correctly but has medium performance.';
+				}
+				$message .= LF;
+			}
+
+			// Set title of status depending on serverity
+			switch ($status->getSeverity()) {
+				case 'error':
+					$status->setTitle('A possibly malfunctioning PHP opcode cache is loaded');
+					break;
+				case 'warning':
+					$status->setTitle('A PHP opcode cache is loaded, which may cause problems');
+					break;
+				case 'ok':
+				default:
+					$status->setTitle('A PHP opcode cache is loaded');
+					break;
+			}
+			$status->setMessage($message);
 		}
 		return $status;
 	}
@@ -775,21 +808,107 @@ class Check {
 	 */
 	protected function checkReflectionDocComment() {
 		$testReflection = new \ReflectionMethod(get_class($this), __FUNCTION__);
-		if (strlen($testReflection->getDocComment()) === 0) {
-			$status = new Status\ErrorStatus();
+		if ($testReflection->getDocComment() === FALSE) {
+			$status = new Status\AlertStatus();
 			$status->setTitle('PHP Doc comment reflection broken');
 			$status->setMessage(
-				'TYPO3 CMS core extensions like extbase and fluid heavily rely on method' .
-				' comment parsing to fetch annotations and add magic according to them.' .
-				' This does not work in the current environment and will lead to a lot of' .
-				' broken extensions. The PHP extension eaccelerator is known to break this if' .
-				' it is compiled without --with-eaccelerator-doc-comment-inclusion flag.' .
-				' This compile flag must be given, otherwise TYPO3 CMS is no fun.'
+				'TYPO3 CMS core extensions like extbase and fluid heavily rely on method'
+				. ' comment parsing to fetch annotations and add magic belonging to them.'
+				. ' This does not work in the current environment and so we can not install'
+				. ' TYPO3 CMS.' . LF
+				. ' Here are some possibilities: ' . LF
+				. '* In Zend OPcache you can disable to save/load comment. If you are using'
+				. ' Zend OPcache (included since PHP 5.5) then check your php.ini settings for'
+				. ' opcache.save_comments and opcache.load_comments and enable them.' . LF
+				. '* In Zend Optimizer+ you can disable to save comment. If you are using'
+				. ' Zend Optimizer+ then check your php.ini settings for'
+				. ' zend_optimizerplus.save_comments and enable it.' . LF
+				. '* The PHP extension eaccelerator is known to break this if'
+				. ' it is compiled without --with-eaccelerator-doc-comment-inclusion flag.'
+				. ' This compile flag must be given, otherwise TYPO3 CMS will not work.'
 			);
 		} else {
 			$status = new Status\OkStatus();
 			$status->setTitle('PHP Doc comment reflection works');
 		}
+		return $status;
+	}
+
+	/**
+	 * Check if systemLocale setting is correct (locale exists in the OS)
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSystemLocale() {
+
+		$currentLocale = setlocale(LC_CTYPE, 0);
+
+		// On Windows an empty locale value uses the regional settings from the Control Panel
+		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale'] === '' && TYPO3_OS !== 'WIN') {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Empty systemLocale setting');
+			$status->setMessage(
+				'$GLOBALS[TYPO3_CONF_VARS][SYS][systemLocale] is not set. This is fine as long as no UTF-8 file system is used.'
+			);
+		} elseif (setlocale(LC_CTYPE, $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale']) === FALSE) {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('Incorrect systemLocale setting');
+			$status->setMessage(
+				'Current value of the $GLOBALS[TYPO3_CONF_VARS][SYS][systemLocale] is incorrect. Locale with this name doesn\'t exist in the operating system.'
+			);
+			setlocale(LC_CTYPE, $currentLocale);
+		} else {
+			$status = new Status\OkStatus();
+			$status->setTitle('System locale is correct');
+		}
+
+		return $status;
+	}
+
+	/**
+	 * Checks whether we can use file names with UTF-8 characters.
+	 * Configured system locale must support UTF-8 when UTF8filesystem is set
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkLocaleWithUTF8filesystem() {
+
+		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['UTF8filesystem']) {
+
+			// On Windows an empty local value uses the regional settings from the Control Panel
+			if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale'] === '' && TYPO3_OS !== 'WIN') {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('System locale not set on UTF-8 file system');
+				$status->setMessage(
+					'$GLOBALS[TYPO3_CONF_VARS][SYS][UTF8filesystem] is set, but $GLOBALS[TYPO3_CONF_VARS][SYS][systemLocale] is empty. Make sure a valid locale which supports UTF-8 is set.'
+				);
+			} else {
+				$testString = 'ÖöĄĆŻĘĆćążąęó.jpg';
+				$currentLocale = setlocale(LC_CTYPE, 0);
+				$quote = TYPO3_OS === 'WIN' ? '"' : '\'';
+
+				setlocale(LC_CTYPE, $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale']);
+
+				if (escapeshellarg($testString) === $quote . $testString . $quote) {
+					$status = new Status\OkStatus();
+					$status->setTitle('File names with UTF-8 characters can be used.');
+				} else {
+					$status = new Status\ErrorStatus();
+					$status->setTitle('System locale setting doesn\'t support UTF-8 file names.');
+					$status->setMessage(
+						'Please check your $GLOBALS[TYPO3_CONF_VARS][SYS][systemLocale] setting.'
+					);
+				}
+
+				setlocale(LC_CTYPE, $currentLocale);
+			}
+
+
+		} else {
+			$status = new Status\OkStatus();
+			$status->setTitle('Skipping test, as UTF8filesystem is not enabled.');
+		}
+
 		return $status;
 	}
 

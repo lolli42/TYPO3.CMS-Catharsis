@@ -50,6 +50,8 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 		parent::setUp();
 		$this->importScenarioDataSet('LiveDefaultPages');
 		$this->importScenarioDataSet('LiveDefaultElements');
+
+		$this->setUpFrontendRootPage(1, array('typo3/sysext/core/Tests/Functional/Fixtures/Frontend/JsonRenderer.ts'));
 	}
 
 	/**
@@ -58,70 +60,105 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/createContentRecords.csv
 	 */
-	public function createContentRecords() {
+	public function createContents() {
 		// Creating record at the beginning of the page
 		$this->actionService->createNewRecord(self::TABLE_Content, self::VALUE_PageId, array('header' => 'Testing #1'));
 		// Creating record at the end of the page (after last one)
 		$this->actionService->createNewRecord(self::TABLE_Content, -self::VALUE_ContentIdLast, array('header' => 'Testing #2'));
-		$this->assertAssertionDataSet('createContentRecords');
+		$this->assertAssertionDataSet('createContents');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Testing #1', 'Testing #2'));
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/modifyContentRecord.csv
 	 */
-	public function modifyContentRecord() {
+	public function modifyContent() {
 		$this->actionService->modifyRecord(self::TABLE_Content, self::VALUE_ContentIdLast, array('header' => 'Testing #1'));
-		$this->assertAssertionDataSet('modifyContentRecord');
+		$this->assertAssertionDataSet('modifyContent');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', 'Testing #1');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/deleteContentRecord.csv
 	 */
-	public function deleteContentRecord() {
+	public function deleteContent() {
 		$this->actionService->deleteRecord(self::TABLE_Content, self::VALUE_ContentIdLast);
-		$this->assertAssertionDataSet('deleteContentRecord');
+		$this->assertAssertionDataSet('deleteContent');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', 'Regular Element #1');
+		$this->assertResponseContentDoesNotHaveRecords($responseContent, self::TABLE_Content, 'header', 'Regular Element #2');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/copyContentRecord.csv
 	 */
-	public function copyContentRecord() {
+	public function copyContent() {
 		$this->actionService->copyRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_PageId);
-		$this->assertAssertionDataSet('copyContentRecord');
+		$this->assertAssertionDataSet('copyContent');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', 'Regular Element #2 (copy 1)');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/localizeContentRecord.csv
 	 */
-	public function localizeContentRecord() {
+	public function localizeContent() {
 		$this->actionService->localizeRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_LanguageId);
-		$this->assertAssertionDataSet('localizeContentRecord');
+		$this->assertAssertionDataSet('localizeContent');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', '[Translate to Dansk:] Regular Element #2'));
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/changeContentRecordSorting.csv
 	 */
-	public function changeContentRecordSorting() {
+	public function changeContentSorting() {
 		$this->actionService->moveRecord(self::TABLE_Content, self::VALUE_ContentIdFirst, -self::VALUE_ContentIdLast);
-		$this->assertAssertionDataSet('changeContentRecordSorting');
+		$this->assertAssertionDataSet('changeContentSorting');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', 'Regular Element #2'));
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/moveContentRecordToDifferentPage.csv
 	 */
-	public function moveContentRecordToDifferentPage() {
+	public function moveContentToDifferentPage() {
 		$this->actionService->moveRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_PageIdTarget);
-		$this->assertAssertionDataSet('moveContentRecordToDifferentPage');
+		$this->assertAssertionDataSet('moveContentToDifferentPage');
+
+		$responseContentSource = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContentSource, self::TABLE_Content, 'header', 'Regular Element #1');
+		$responseContentTarget = $this->getFrontendResponse(self::VALUE_PageIdTarget)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContentTarget, self::TABLE_Content, 'header', 'Regular Element #2');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/moveContentRecordToDifferentPageAndChangeSorting.csv
 	 */
-	public function moveContentRecordToDifferentPageAndChangeSorting() {
+	public function moveContentToDifferentPageAndChangeSorting() {
 		$this->actionService->moveRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_PageIdTarget);
 		$this->actionService->moveRecord(self::TABLE_Content, self::VALUE_ContentIdFirst, -self::VALUE_ContentIdLast);
-		$this->assertAssertionDataSet('moveContentRecordToDifferentPageAndChangeSorting');
+		$this->assertAssertionDataSet('moveContentToDifferentPageNChangeSorting');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageIdTarget)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', 'Regular Element #2'));
 	}
 
 	/**
@@ -130,67 +167,104 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/createPageRecord.csv
 	 */
-	public function createPageRecord() {
-		$this->actionService->createNewRecord(self::TABLE_Page, self::VALUE_PageId, array('title' => 'Testing #1'));
-		$this->assertAssertionDataSet('createPageRecord');
+	public function createPage() {
+		$newTableIds = $this->actionService->createNewRecord(self::TABLE_Page, self::VALUE_PageId, array('title' => 'Testing #1', 'hidden' => 0));
+		$this->assertAssertionDataSet('createPage');
+
+		$newPageId = $newTableIds[self::TABLE_Page][0];
+		$responseContent = $this->getFrontendResponse($newPageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Testing #1');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/modifyPageRecord.csv
 	 */
-	public function modifyPageRecord() {
+	public function modifyPage() {
 		$this->actionService->modifyRecord(self::TABLE_Page, self::VALUE_PageId, array('title' => 'Testing #1'));
-		$this->assertAssertionDataSet('modifyPageRecord');
+		$this->assertAssertionDataSet('modifyPage');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Testing #1');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/deletePageRecord.csv
 	 */
-	public function deletePageRecord() {
+	public function deletePage() {
 		$this->actionService->deleteRecord(self::TABLE_Page, self::VALUE_PageId);
-		$this->assertAssertionDataSet('deletePageRecord');
+		$this->assertAssertionDataSet('deletePage');
+
+		$response = $this->getFrontendResponse(self::VALUE_PageId, 0, 0, 0, FALSE);
+		$this->assertContains('PageNotFoundException', $response->getError());
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/copyPageRecord.csv
 	 */
-	public function copyPageRecord() {
-		$this->actionService->copyRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_PageIdTarget);
-		$this->assertAssertionDataSet('copyPageRecord');
+	public function copyPage() {
+		$newTableIds = $this->actionService->copyRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_PageIdTarget);
+		$this->assertAssertionDataSet('copyPage');
+
+		$newPageId = $newTableIds[self::TABLE_Page][self::VALUE_PageId];
+		$responseContent = $this->getFrontendResponse($newPageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Relations');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/localizePageRecord.csv
 	 */
-	public function localizePageRecord() {
+	public function localizePage() {
 		$this->actionService->localizeRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_LanguageId);
-		$this->assertAssertionDataSet('localizePageRecord');
+		$this->assertAssertionDataSet('localizePage');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', '[Translate to Dansk:] Relations');
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/changePageRecordSorting.csv
 	 */
-	public function changePageRecordSorting() {
+	public function changePageSorting() {
 		$this->actionService->moveRecord(self::TABLE_Page, self::VALUE_PageId, -self::VALUE_PageIdTarget);
-		$this->assertAssertionDataSet('changePageRecordSorting');
+		$this->assertAssertionDataSet('changePageSorting');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Relations');
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', 'Regular Element #2'));
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/movePageRecordToDifferentPage.csv
 	 */
-	public function movePageRecordToDifferentPage() {
+	public function movePageToDifferentPage() {
 		$this->actionService->moveRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_PageIdTarget);
-		$this->assertAssertionDataSet('movePageRecordToDifferentPage');
+		$this->assertAssertionDataSet('movePageToDifferentPage');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Relations');
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', 'Regular Element #2'));
 	}
 
 	/**
 	 * @test
+	 * @see DataSet/Assertion/movePageRecordToDifferentPageAndChangeSorting.csv
 	 */
-	public function movePageRecordToDifferentPageAndChangeSorting() {
+	public function movePageToDifferentPageAndChangeSorting() {
 		$this->actionService->moveRecord(self::TABLE_Page, self::VALUE_PageIdTarget, self::VALUE_PageIdWebsite);
 		$this->actionService->moveRecord(self::TABLE_Page, self::VALUE_PageId, -self::VALUE_PageIdTarget);
-		$this->assertAssertionDataSet('movePageRecordToDifferentPageAndChangeSorting');
+		$this->assertAssertionDataSet('movePageToDifferentPageNChangeSorting');
+
+		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Page, 'title', 'Relations');
+		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', array('Regular Element #1', 'Regular Element #2'));
 	}
 
 }

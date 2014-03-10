@@ -65,27 +65,9 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 		if (!empty($loginData['uident_text'])) {
 			$loginData['uident_challenged'] = (string) md5(($loginData['uname'] . ':' . $loginData['uident_text'] . ':' . $loginData['chalvalue']));
 			$loginData['uident_superchallenged'] = (string) md5(($loginData['uname'] . ':' . md5($loginData['uident_text']) . ':' . $loginData['chalvalue']));
-			$this->processOriginalPasswordValue($loginData);
 			$isProcessed = TRUE;
 		}
 		return $isProcessed;
-	}
-
-	/**
-	 * This method ensures backwards compatibility of the processed loginData
-	 * with older TYPO3 versions.
-	 * Starting with TYPO3 6.1 $loginData['uident'] will always contain the raw
-	 * value of the submitted password field and will not be processed any further.
-	 *
-	 * @param array $loginData
-	 * @deprecated will be removed with 6.1
-	 */
-	protected function processOriginalPasswordValue(&$loginData) {
-		if ($this->authInfo['security_level'] === 'superchallenged') {
-			$loginData['uident'] = $loginData['uident_superchallenged'];
-		} elseif ($this->authInfo['security_level'] === 'challenged') {
-			$loginData['uident'] = $loginData['uident_challenged'];
-		}
 	}
 
 	/**
@@ -122,7 +104,15 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 * Authenticate a user (Check various conditions for the user that might invalidate its authentication, eg. password match, domain, IP, etc.)
 	 *
 	 * @param array $user Data of user.
-	 * @return boolean
+	 *
+	 * @return integer >= 200: User authenticated successfully.
+	 *                         No more checking is needed by other auth services.
+	 *                 >= 100: User not authenticated; this service is not responsible.
+	 *                         Other auth services will be asked.
+	 *                 > 0:    User authenticated successfully.
+	 *                         Other auth services will still be asked.
+	 *                 <= 0:   Authentication failed, no more checking needed
+	 *                         by other auth services.
 	 */
 	public function authUser(array $user) {
 		$OK = 100;
@@ -146,7 +136,7 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 					$this->writelog(255, 3, 3, 1, 'Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!', array($this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']));
 					\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']), 'Core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_WARNING);
 				}
-				$OK = FALSE;
+				$OK = 0;
 			}
 		}
 		return $OK;

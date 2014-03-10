@@ -45,31 +45,32 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	public $pageinfo;
 
 	/**
+	 * @var \TYPO3\CMS\Impexp\ImportExport
+	 */
+	protected $export;
+
+	/**
+	 * @var \TYPO3\CMS\Impexp\ImportExport
+	 */
+	protected $import;
+
+	/**
 	 * Main module function
 	 *
 	 * @return void
 	 * @todo Define visibility
 	 */
 	public function main() {
+		$GLOBALS['LANG']->includeLLFile('EXT:impexp/app/locallang.xlf');
 		// Start document template object:
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->bodyTagId = 'imp-exp-mod';
 		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('impexp') . '/app/template.html');
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
-		// JavaScript
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-			script_ended = 0;
-			function jumpToUrl(URL) {	//
-				window.location.href = URL;
-			}
-		');
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
-		$this->doc->postCode = $this->doc->wrapScriptTags('
-			script_ended = 1;
-			if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
-		');
+		$this->doc->postCode = $this->doc->wrapScriptTags('if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';');
 		$this->doc->form = '<form action="' . htmlspecialchars($GLOBALS['MCONF']['_']) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '"><input type="hidden" name="id" value="' . $this->id . '" />';
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('title'));
 		$this->content .= $this->doc->spacer(5);
@@ -282,6 +283,9 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		// Finally files are added:
 		// MUST be after the DBrelations are set so that files from ALL added records are included!
 		$this->export->export_addFilesFromRelations();
+
+		$this->export->export_addFilesFromSysFilesRecords();
+
 		// If the download button is clicked, return file
 		if ($inData['download_export'] || $inData['save_export']) {
 			switch ((string) $inData['filetype']) {
@@ -1084,42 +1088,35 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 ****************************/
 
 	/**
-	 * Returns first temporary folder of the user account (from $FILEMOUNTS)
+	 * Returns first temporary folder of the user account
 	 *
 	 * @return string Absolute path to first "_temp_" folder of the current user, otherwise blank.
 	 * @todo Define visibility
 	 */
 	public function userTempFolder() {
-		global $FILEMOUNTS;
-		foreach ($FILEMOUNTS as $filePathInfo) {
-			$tempFolder = $filePathInfo['path'] . '_temp_/';
-			if (@is_dir($tempFolder)) {
-				return $tempFolder;
-			}
+		/** @var $folder \TYPO3\CMS\Core\Resource\Folder */
+		$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
+		if ($folder !== FALSE) {
+			return PATH_site . $folder->getPublicUrl();
 		}
+		return '';
 	}
 
 	/**
 	 * Returns folder where user can save export files.
 	 *
 	 * @return string Absolute path to folder where export files can be saved.
-	 * @todo Define visibility
+	 * @todo Define visib
 	 */
 	public function userSaveFolder() {
-		global $FILEMOUNTS;
-		reset($FILEMOUNTS);
-		$filePathInfo = current($FILEMOUNTS);
-		if (is_array($filePathInfo)) {
-			$tempFolder = $filePathInfo['path'] . '_temp_/';
-			if (!@is_dir($tempFolder)) {
-				$tempFolder = $filePathInfo['path'];
-				if (!@is_dir($tempFolder)) {
-					return FALSE;
-				}
-			}
-			return $tempFolder;
+		/** @var $folder \TYPO3\CMS\Core\Resource\Folder */
+		$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
+		if ($folder !== FALSE) {
+			return PATH_site . $folder->getPublicUrl();
 		}
+		return '';
 	}
+
 
 	/**
 	 * Check if a file has been uploaded
@@ -1131,7 +1128,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$file = GeneralUtility::_GP('file');
 		// Initializing:
 		$this->fileProcessor = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\ExtendedFileUtility');
-		$this->fileProcessor->init($GLOBALS['FILEMOUNTS'], $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
+		$this->fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 		$this->fileProcessor->setActionPermissions();
 		$this->fileProcessor->dontCheckForUnique = GeneralUtility::_GP('overwriteExistingFiles') ? 1 : 0;
 		// Checking referer / executing:
@@ -1210,16 +1207,17 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @todo Define visibility
 	 */
 	public function extensionSelector($prefix, $value) {
-		global $TYPO3_LOADED_EXT;
-		$extTrav = array_keys($TYPO3_LOADED_EXT);
+		$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
+
 		// make box:
 		$opt = array();
 		$opt[] = '<option value=""></option>';
-		foreach ($extTrav as $v) {
+		foreach ($loadedExtensions as $extensionKey) {
+			$sel = '';
 			if (is_array($value)) {
-				$sel = in_array($v, $value) ? ' selected="selected"' : '';
+				$sel = in_array($extensionKey, $value) ? ' selected="selected"' : '';
 			}
-			$opt[] = '<option value="' . htmlspecialchars($v) . '"' . $sel . '>' . htmlspecialchars($v) . '</option>';
+			$opt[] = '<option value="' . htmlspecialchars($extensionKey) . '"' . $sel . '>' . htmlspecialchars($extensionKey) . '</option>';
 		}
 		return '<select name="' . $prefix . '[]" multiple="multiple" size="' . \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(count($opt), 5, 10) . '">' . implode('', $opt) . '</select>';
 	}

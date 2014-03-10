@@ -176,19 +176,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param string $name TypoScript name of content object
 	 * @param string $className Expected class name
 	 */
-	public function getContentObjectUsesExistingInstanceOfRequestedObjectType($name, $className) {
-		$fullClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $className . 'ContentObject';
-		$contentObjectInstance = $this->getMock($fullClassName, array(), array(), '', FALSE);
-		$this->cObj->_set('contentObjects', array($className => $contentObjectInstance));
-		$this->assertSame($contentObjectInstance, $this->cObj->getContentObject($name));
-	}
-
-	/**
-	 * @test
-	 * @dataProvider getContentObjectValidContentObjectsDataProvider
-	 * @param string $name TypoScript name of content object
-	 * @param string $className Expected class name
-	 */
 	public function getContentObjectCallsMakeInstanceForNewContentObjectInstance($name, $className) {
 		$fullClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $className . 'ContentObject';
 		$contentObjectInstance = $this->getMock($fullClassName, array(), array(), '', FALSE);
@@ -1242,6 +1229,23 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getQuery($table, $conf, $expected) {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					),
+					'versioningWS' => 2
+				)
+			),
+		);
 		$result = $this->cObj->getQuery($table, $conf, TRUE);
 		foreach ($expected as $field => $value) {
 			$this->assertEquals($value, $result[$field]);
@@ -1252,6 +1256,22 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getQueryCallsGetTreeListWithNegativeValuesIfRecursiveIsSet() {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+		);
 		$this->cObj = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
 		$this->cObj->start(array(), 'tt_content');
 		$conf = array(
@@ -1271,6 +1291,22 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getQueryCallsGetTreeListWithCurrentPageIfThisIsSet() {
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+			'tt_content' => array(
+				'ctrl' => array(
+					'enablecolumns' => array(
+						'disabled' => 'hidden'
+					)
+				)
+			),
+		);
 		$this->cObj = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
 		$GLOBALS['TSFE']->id = 27;
 		$this->cObj->start(array(), 'tt_content');
@@ -1475,6 +1511,63 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Data provider for stdWrap_escapeJsValue test
+	 *
+	 * @return array multi-dimensional array with the second level like this:
+	 * @see escapeJsValue
+	 */
+	public function stdWrap_escapeJsValueDataProvider() {
+		return array(
+			'double quote in string' => array(
+				'double quote"',
+				array(),
+				'double\u0020quote\u0022'
+			),
+			'backslash in string' => array(
+				'backslash \\',
+				array(),
+				'backslash\u0020\u005C'
+			),
+			'exclamation mark' => array(
+				'exclamation!',
+				array(),
+				'exclamation\u0021'
+			),
+			'whitespace tab, newline and carriage return' => array(
+				"white\tspace\ns\r",
+				array(),
+				'white\u0009space\u000As\u000D'
+			),
+			'single quote in string' => array(
+				'single quote \'',
+				array(),
+				'single\u0020quote\u0020\u0027'
+			),
+			'tag' => array(
+				'<tag>',
+				array(),
+				'\u003Ctag\u003E'
+			),
+			'ampersand in string' => array(
+				'amper&sand',
+				array(),
+				'amper\u0026sand'
+			),
+		);
+	}
+
+	/**
+	 * Check if escapeJsValue works properly
+	 *
+	 * @dataProvider stdWrap_escapeJsValueDataProvider
+	 * @test
+	 */
+	public function stdWrap_escapeJsValue($input, $conf, $expected) {
+		$result = $this->cObj->stdWrap_escapeJsValue($input, $conf);
+		$this->assertEquals($expected, $result);
 	}
 
 
@@ -1946,7 +2039,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// 17 = pageId, 5 = recursionLevel, 0 = begin (entry to recursion, internal), TRUE = do not check enable fields
 		// 17 is positive, we expect 17 NOT to be included in result
 		$result = $this->cObj->getTreeList(17, 5, 0, TRUE);
-		$expectedResult = '0,42,719,321';
+		$expectedResult = '42,719,321';
 		$this->assertEquals($expectedResult, $result);
 	}
 
@@ -1987,7 +2080,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// 17 = pageId, 5 = recursionLevel, 0 = begin (entry to recursion, internal), TRUE = do not check enable fields
 		// 17 is negative, we expect 17 to be included in result
 		$result = $this->cObj->getTreeList(-17, 5, 0, TRUE);
-		$expectedResult = '0,42,719,321,17';
+		$expectedResult = '42,719,321,17';
 		$this->assertEquals($expectedResult, $result);
 	}
 

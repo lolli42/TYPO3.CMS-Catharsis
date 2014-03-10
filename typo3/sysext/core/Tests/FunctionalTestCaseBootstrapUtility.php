@@ -69,30 +69,51 @@ class FunctionalTestCaseBootstrapUtility {
 	);
 
 	/**
+	 * @var array These folder are always created
+	 */
+	protected $defaultFoldersToCreate = array(
+		'',
+		'/fileadmin',
+		'/typo3temp',
+		'/typo3conf',
+		'/typo3conf/ext',
+		'/uploads'
+	);
+
+	/**
 	 * Set up creates a test instance and database.
 	 *
 	 * @param string $testCaseClassName Name of test case class
 	 * @param array $coreExtensionsToLoad Array of core extensions to load
 	 * @param array $testExtensionsToLoad Array of test extensions to load
-	 * @return void
+	 * @param array $pathsToLinkInTestInstance Array of source => destination path pairs to be linked
+	 * @param array $configurationToUse Array of TYPO3_CONF_VARS that need to be overridden
+	 * @param array $additionalFoldersToCreate Array of folder paths to be created
+	 * @return string Path to TYPO3 CMS test installation for this test case
 	 */
 	public function setUp(
 		$testCaseClassName,
 		array $coreExtensionsToLoad,
-		array $testExtensionsToLoad
+		array $testExtensionsToLoad,
+		array $pathsToLinkInTestInstance,
+		array $configurationToUse,
+		array $additionalFoldersToCreate
 	) {
 		$this->setUpIdentifier($testCaseClassName);
 		$this->setUpInstancePath();
 		$this->removeOldInstanceIfExists();
-		$this->setUpInstanceDirectories();
+		$this->setUpInstanceDirectories($additionalFoldersToCreate);
 		$this->setUpInstanceCoreLinks();
 		$this->linkTestExtensionsToInstance($testExtensionsToLoad);
-		$this->setUpLocalConfiguration();
+		$this->linkPathsInTestInstance($pathsToLinkInTestInstance);
+		$this->setUpLocalConfiguration($configurationToUse);
 		$this->setUpPackageStates($coreExtensionsToLoad, $testExtensionsToLoad);
 		$this->setUpBasicTypo3Bootstrap();
 		$this->setUpTestDatabase();
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(TRUE);
 		$this->createDatabaseStructure();
+
+		return $this->instancePath;
 	}
 
 	/**
@@ -102,6 +123,8 @@ class FunctionalTestCaseBootstrapUtility {
 	 * @return void
 	 */
 	public function tearDown() {
+		$classLoader = \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader');
+		spl_autoload_unregister(array($classLoader, 'loadClass'));
 		if (empty($this->identifier)) {
 			throw new Exception(
 				'Test identifier not set. Is parent::setUp() called in setUp()?',
@@ -148,18 +171,12 @@ class FunctionalTestCaseBootstrapUtility {
 	/**
 	 * Create folder structure of test instance.
 	 *
+	 * @param array $additionalFoldersToCreate Array of additional folders to be created
 	 * @throws Exception
 	 * @return void
 	 */
-	protected function setUpInstanceDirectories() {
-		$foldersToCreate = array(
-			'',
-			'/fileadmin',
-			'/typo3temp',
-			'/typo3conf',
-			'/typo3conf/ext',
-			'/uploads'
-		);
+	protected function setUpInstanceDirectories(array $additionalFoldersToCreate = array()) {
+		$foldersToCreate = array_merge($this->defaultFoldersToCreate, $additionalFoldersToCreate);
 		foreach ($foldersToCreate as $folder) {
 			$success = mkdir($this->instancePath . $folder);
 			if (!$success) {
@@ -202,13 +219,13 @@ class FunctionalTestCaseBootstrapUtility {
 	 */
 	protected function linkTestExtensionsToInstance(array $extensionPaths) {
 		foreach ($extensionPaths as $extensionPath) {
-			if (!is_dir($extensionPath)) {
+			$absoluteExtensionPath = ORIGINAL_ROOT . $extensionPath;
+			if (!is_dir($absoluteExtensionPath)) {
 				throw new Exception(
-					'Test extension path ' . $extensionPath . ' not found',
+					'Test extension path ' . $absoluteExtensionPath . ' not found',
 					1376745645
 				);
 			}
-			$absoluteExtensionPath = ORIGINAL_ROOT . $extensionPath;
 			$destinationPath = $this->instancePath . '/typo3conf/ext/'. basename($absoluteExtensionPath);
 			$success = symlink($absoluteExtensionPath, $destinationPath);
 			if (!$success) {
@@ -221,16 +238,49 @@ class FunctionalTestCaseBootstrapUtility {
 	}
 
 	/**
+	 * Link paths inside the test instance, e.g. from a fixture fileadmin subfolder to the
+	 * test instance fileadmin folder
+	 *
+	 * @param array $pathsToLinkInTestInstance Contains paths as array of source => destination in key => value pairs of folders relative to test instance root
+	 * @throws \TYPO3\CMS\Core\Tests\Exception if a source path could not be found
+	 * @throws \TYPO3\CMS\Core\Tests\Exception on failing creating the symlink
+	 * @return void
+	 * @see \TYPO3\CMS\Core\Tests\FunctionalTestCase::$pathsToLinkInTestInstance
+	 */
+	protected function linkPathsInTestInstance(array $pathsToLinkInTestInstance) {
+		foreach ($pathsToLinkInTestInstance as $sourcePathToLinkInTestInstance => $destinationPathToLinkInTestInstance) {
+			$sourcePath = $this->instancePath . '/' . ltrim($sourcePathToLinkInTestInstance, '/');
+			if (!file_exists($sourcePath)) {
+				throw new Exception(
+					'Path ' . $sourcePath . ' not found',
+					1376745645
+				);
+			}
+			$destinationPath = $this->instancePath . '/' . ltrim($destinationPathToLinkInTestInstance, '/');
+			$success = symlink($sourcePath, $destinationPath);
+			if (!$success) {
+				throw new Exception(
+					'Can not link the path ' . $sourcePath . ' to ' . $destinationPath,
+					1389969623
+				);
+			}
+		}
+	}
+
+	/**
 	 * Create LocalConfiguration.php file in the test instance
 	 *
+	 * @param array $configurationToMerge
 	 * @throws Exception
 	 * @return void
 	 */
-	protected function setUpLocalConfiguration() {
+	protected function setUpLocalConfiguration(array $configurationToMerge) {
 		$originalConfigurationArray = require ORIGINAL_ROOT . 'typo3conf/LocalConfiguration.php';
 		// Base of final LocalConfiguration is core factory configuration
 		$finalConfigurationArray = require ORIGINAL_ROOT .'typo3/sysext/core/Configuration/FactoryConfiguration.php';
 
+		$this->mergeRecursiveWithOverrule($finalConfigurationArray, require ORIGINAL_ROOT .'typo3/sysext/core/Build/Configuration/FunctionalTestsConfiguration.php');
+		$this->mergeRecursiveWithOverrule($finalConfigurationArray, $configurationToMerge);
 		$finalConfigurationArray['DB'] = $originalConfigurationArray['DB'];
 		// Calculate and set new database name
 		$this->originalDatabaseName = $originalConfigurationArray['DB']['database'];
@@ -306,13 +356,13 @@ class FunctionalTestCaseBootstrapUtility {
 
 		// Activate test extensions that have been symlinked before
 		foreach ($testExtensionPaths as $extensionPath) {
+			$extensionName = basename($extensionPath);
 			if (isset($packageSates['packages'][$extensionName])) {
 				throw new Exception(
 					$extensionName . ' is already registered as extension to load, no need to load it explicitly',
 					1390913894
 				);
 			}
-			$extensionName = basename($extensionPath);
 			$packageStates['packages'][$extensionName] = array(
 				'state' => 'active',
 				'packagePath' => 'typo3conf/ext/' . $extensionName . '/',
@@ -401,8 +451,10 @@ class FunctionalTestCaseBootstrapUtility {
 	protected function createDatabaseStructure() {
 		/** @var \TYPO3\CMS\Install\Service\SqlSchemaMigrationService $schemaMigrationService */
 		$schemaMigrationService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlSchemaMigrationService');
+		/** @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager */
+		$objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 		/** @var \TYPO3\CMS\Install\Service\SqlExpectedSchemaService $expectedSchemaService */
-		$expectedSchemaService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Install\\Service\\SqlExpectedSchemaService');
+		$expectedSchemaService = $objectManager->get('TYPO3\\CMS\\Install\\Service\\SqlExpectedSchemaService');
 
 		// Raw concatenated ext_tables.sql and friends string
 		$expectedSchemaString = $expectedSchemaService->getTablesDefinitionString(TRUE);
@@ -583,5 +635,48 @@ class FunctionalTestCaseBootstrapUtility {
 		}
 		$lines .= str_repeat(chr(9), ($level - 1)) . ')' . ($level - 1 == 0 ? '' : ',' . chr(10));
 		return $lines;
+	}
+
+	/**
+	 * COPIED FROM ArrayUtility
+	 *
+	 * Merges two arrays recursively and "binary safe" (integer keys are
+	 * overridden as well), overruling similar values in the original array
+	 * with the values of the overrule array.
+	 * In case of identical keys, ie. keeping the values of the overrule array.
+	 *
+	 * This method takes the original array by reference for speed optimization with large arrays
+	 *
+	 * The differences to the existing PHP function array_merge_recursive() are:
+	 *  * Keys of the original array can be unset via the overrule array. ($enableUnsetFeature)
+	 *  * Much more control over what is actually merged. ($addKeys, $includeEmptyValues)
+	 *  * Elements or the original array get overwritten if the same key is present in the overrule array.
+	 *
+	 * @param array $original Original array. It will be *modified* by this method and contains the result afterwards!
+	 * @param array $overrule Overrule array, overruling the original array
+	 * @param boolean $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
+	 * @param boolean $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
+	 * @param boolean $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
+	 * @return void
+	 */
+	protected function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {
+		foreach (array_keys($overrule) as $key) {
+			if ($enableUnsetFeature && $overrule[$key] === '__UNSET') {
+				unset($original[$key]);
+				continue;
+			}
+			if (isset($original[$key]) && is_array($original[$key])) {
+				if (is_array($overrule[$key])) {
+					self::mergeRecursiveWithOverrule($original[$key], $overrule[$key], $addKeys, $includeEmptyValues, $enableUnsetFeature);
+				}
+			} elseif (
+				($addKeys || isset($original[$key])) &&
+				($includeEmptyValues || $overrule[$key])
+			) {
+				$original[$key] = $overrule[$key];
+			}
+		}
+		// This line is kept for backward compatibility reasons.
+		reset($original);
 	}
 }

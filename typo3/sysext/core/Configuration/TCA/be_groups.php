@@ -73,7 +73,9 @@ return array(
 					'edit' => array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_edit_title',
-						'script' => 'wizard_edit.php',
+						'module' => array(
+							'name' => 'wizard_edit',
+						),
 						'popup_onlyOpenIfSelected' => 1,
 						'icon' => 'edit2.gif',
 						'JSopenParams' => 'height=350,width=580,status=0,menubar=0,scrollbars=1'
@@ -87,7 +89,9 @@ return array(
 							'pid' => '0',
 							'setValue' => 'prepend'
 						),
-						'script' => 'wizard_add.php'
+						'module' => array(
+							'name' => 'wizard_add'
+						)
 					),
 					'list' => array(
 						'type' => 'script',
@@ -97,7 +101,9 @@ return array(
 							'table' => 'sys_filemounts',
 							'pid' => '0'
 						),
-						'script' => 'wizard_list.php'
+						'module' => array(
+							'name' => 'wizard_list'
+						)
 					)
 				)
 			)
@@ -115,7 +121,7 @@ return array(
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_move', 'moveFolder', 'apps-filetree-folder-default'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_copy', 'copyFolder', 'apps-filetree-folder-default'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_delete', 'deleteFolder', 'apps-filetree-folder-default'),
-					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_recursivedelete', 'folder_recursivedelete', 'apps-filetree-folder-default'),
+					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.folder_recursivedelete', 'recursivedeleteFolder', 'apps-filetree-folder-default'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files', '--div--', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_read', 'readFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_write', 'writeFile', 'mimetypes-other-other'),

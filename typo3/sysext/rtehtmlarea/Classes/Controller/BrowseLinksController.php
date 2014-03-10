@@ -42,6 +42,13 @@ class BrowseLinksController {
 	protected $content = '';
 
 	/**
+	 * Initialize language files
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/mod3/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/htmlarea/locallang_dialogs.xlf');
+	}
+	/**
 	 * Main function, rendering the element browser in RTE mode.
 	 *
 	 * @return 	void
@@ -71,8 +78,6 @@ class BrowseLinksController {
 			foreach ($altMountPoints as $filePathRelativeToFileadmindir) {
 				$GLOBALS['BE_USER']->addFileMount('', $filePathRelativeToFileadmindir, $filePathRelativeToFileadmindir, 1, 'readonly');
 			}
-			$GLOBALS['BE_USER']->getFileStorages();
-			$GLOBALS['FILEMOUNTS'] = $GLOBALS['BE_USER']->groupData['filemounts'];
 		}
 		// Render type by user function
 		$browserRendered = FALSE;

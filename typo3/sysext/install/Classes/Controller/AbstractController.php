@@ -29,7 +29,7 @@ namespace TYPO3\CMS\Install\Controller;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Controller abstract for shared parts of Tool and Step controller
+ * Controller abstract for shared parts of Tool, Step and Ajax controller
  */
 class AbstractController {
 
@@ -431,7 +431,7 @@ class AbstractController {
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['fluid_template']['options'] = array();
 
 		/** @var $cacheManager \TYPO3\CMS\Core\Cache\CacheManager */
-		$cacheManager = $GLOBALS['typo3CacheManager'];
+		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
 		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
 	}
 

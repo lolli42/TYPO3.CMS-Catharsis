@@ -82,6 +82,8 @@ define('PATH_site', $webRoot);
 define('TYPO3_MODE', 'BE');
 define('TYPO3_cliMode', TRUE);
 
+unset($webRoot);
+
 /**
  * We need to fake the current script to be the cli dispatcher to satisfy some GeneralUtility::getIndpEnv tests
  * TODO: properly mock these tests
@@ -96,13 +98,10 @@ $_SERVER['SCRIPT_NAME'] = PATH_thisScript;
 require PATH_site . '/typo3/sysext/core/Classes/Core/Bootstrap.php';
 \TYPO3\CMS\Core\Core\Bootstrap::getInstance()
 	->baseSetup()
-	->loadConfigurationAndInitialize(FALSE)
+	->loadConfigurationAndInitialize(TRUE)
 	// TODO: Maybe load only core extensions here? Also check if we need to change the bootstrap since we have package management now
 	->loadTypo3LoadedExtAndExtLocalconf(FALSE)
 	->applyAdditionalConfigurationSettings()
 	// TODO: Unit Tests should be able to run without database connection
 	->initializeTypo3DbGlobal()
-	->loadExtensionTables(TRUE)
-	->initializeBackendUser()
-	// TODO: Fix FAL tests which fatal without initialized storages
-	->initializeBackendUserMounts();
+	->loadExtensionTables(TRUE);

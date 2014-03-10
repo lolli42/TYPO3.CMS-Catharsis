@@ -403,7 +403,12 @@ return array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:header_link_formlabel',
 						'icon' => 'link_popup.gif',
-						'script' => 'browse_links.php?mode=wizard',
+						'module' => array(
+							'name' => 'wizard_element_browser',
+							'urlParameters' => array(
+								'mode' => 'wizard'
+							)
+						),
 						'JSopenParams' => 'height=300,width=500,status=0,menubar=0,scrollbars=1'
 					)
 				),
@@ -475,7 +480,9 @@ return array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:bodytext.W.RTE',
 						'icon' => 'wizard_rte2.gif',
-						'script' => 'wizard_rte.php'
+						'module' => array(
+							'name' => 'wizard_rte'
+						)
 					),
 					'table' => array(
 						'notNewRecords' => 1,
@@ -483,7 +490,9 @@ return array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:bodytext.W.table',
 						'icon' => 'wizard_table.gif',
-						'script' => 'wizard_table.php',
+						'module' => array(
+							'name' => 'wizard_table'
+						),
 						'params' => array(
 							'xmlOutput' => 0
 						)
@@ -494,7 +503,12 @@ return array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:bodytext.W.forms',
 						'icon' => 'wizard_forms.gif',
-						'script' => 'wizard_forms.php?special=formtype_mail',
+						'module' => array(
+							'name' => 'wizard_forms',
+							'urlParameters' => array(
+								'special' => 'formtype_mail'
+							)
+						),
 						'params' => array(
 							'xmlOutput' => 0
 						)
@@ -681,7 +695,12 @@ return array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:image_link_formlabel',
 						'icon' => 'link_popup.gif',
-						'script' => 'browse_links.php?mode=wizard',
+						'module' => array(
+							'name' => 'wizard_element_browser',
+							'urlParameters' => array(
+								'mode' => 'wizard'
+							)
+						),
 						'JSopenParams' => 'height=300,width=500,status=0,menubar=0,scrollbars=1'
 					)
 				),
@@ -991,7 +1010,12 @@ return array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:cms/locallang_ttc.xlf:image_link_formlabel',
 						'icon' => 'link_popup.gif',
-						'script' => 'browse_links.php?mode=wizard',
+						'module' => array(
+							'name' => 'wizard_element_browser',
+							'urlParameters' => array(
+								'mode' => 'wizard'
+							)
+						),
 						'params' => array(
 							'blindLinkOptions' => 'folder,file,mail,spec',
 							'blindLinkFields' => 'target,title,class,params'
@@ -1725,17 +1749,13 @@ return array(
 				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.extended',
 			'subtype_value_field' => 'menu_type',
 			'subtypes_excludelist' => array(
-				'0' => 'selected_categories, category_field',
-				'1' => 'selected_categories, category_field',
-				'2' => 'pages, selected_categories, category_field',
-				'3' => 'selected_categories, category_field',
-				'4' => 'selected_categories, category_field',
-				'5' => 'selected_categories, category_field',
-				'6' => 'selected_categories, category_field',
-				'7' => 'selected_categories, category_field',
-				'8' => 'selected_categories, category_field',
-				'9' => 'pages',
+				'2' => 'pages',
+				'categorized_pages' => 'pages',
 				'categorized_content' => 'pages',
+			),
+			'subtypes_addlist' => array(
+				'categorized_pages' => 'selected_categories;;menu, category_field;;menu',
+				'categorized_content' => 'selected_categories;;menu, category_field;;menu',
 			)
 		),
 		'mailform' => array(
@@ -1915,7 +1935,7 @@ return array(
 			'canNotCollapse' => 1
 		),
 		'menu' => array(
-			'showitem' => 'menu_type;LLL:EXT:cms/locallang_ttc.xlf:menu_type_formlabel, --linebreak--, pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.menu_formlabel, --linebreak--, selected_categories, category_field',
+			'showitem' => 'menu_type;LLL:EXT:cms/locallang_ttc.xlf:menu_type_formlabel, --linebreak--, pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.menu_formlabel',
 			'canNotCollapse' => 1
 		),
 		'menu_accessibility' => array(

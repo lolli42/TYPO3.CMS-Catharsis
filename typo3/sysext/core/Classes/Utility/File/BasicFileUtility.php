@@ -40,6 +40,10 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BasicFileUtility {
+	/**
+	 * @var string
+	 */
+	const UNSAFE_FILENAME_CHARACTER_EXPRESSION = '\\x00-\\x2C\\/\\x3A-\\x3F\\x5B-\\x60\\x7B-\\xBF';
 
 	/**
 	 * @todo Define visibility
@@ -95,6 +99,11 @@ class BasicFileUtility {
 	 */
 	public $isInit = 0;
 
+	/**
+	 * @var \TYPO3\CMS\Core\Charset\CharsetConverter
+	 */
+	public $csConvObj;
+
 	// Set to TRUE after init()/start();
 	/**********************************
 	 *
@@ -125,9 +134,9 @@ class BasicFileUtility {
 	 * Typically TYPO3_CONF_VARS['BE']['fileExtensions'] would be passed along as $f_ext.
 	 *
 	 * Example:
-	 * $basicff->init($GLOBALS['FILEMOUNTS'],$GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
+	 * $basicff->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 	 *
-	 * @param 	array		Contains the paths of the file mounts for the current BE user. Normally $GLOBALS['FILEMOUNTS'] is passed. This variable is set during backend user initialization; $FILEMOUNTS = $GLOBALS['BE_USER']->returnFilemounts(); (see typo3/init.php)
+	 * @param 	array		Not in use anymore
 	 * @param 	array		Array with information about allowed and denied file extensions. Typically passed: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']
 	 * @return 	void
 	 * @see typo3/init.php, \TYPO3\CMS\Core\Authentication\BackendUserAuthentication::returnFilemounts()
@@ -141,7 +150,7 @@ class BasicFileUtility {
 		$this->f_ext['ftpspace']['allow'] = GeneralUtility::uniqueList(strtolower($f_ext['ftpspace']['allow']));
 		$this->f_ext['ftpspace']['deny'] = GeneralUtility::uniqueList(strtolower($f_ext['ftpspace']['deny']));
 
-		$this->mounts = $mounts;
+		$this->mounts = (!empty($mounts) ? $mounts : array());
 		$this->webPath = GeneralUtility::getIndpEnv('TYPO3_DOCUMENT_ROOT');
 		$this->isInit = 1;
 		$this->maxInputNameLen = $GLOBALS['TYPO3_CONF_VARS']['SYS']['maxFileNameLength'] ?: $this->maxInputNameLen;
@@ -490,16 +499,16 @@ class BasicFileUtility {
 	 * Returns a string where any character not matching [.a-zA-Z0-9_-] is substituted by '_'
 	 * Trailing dots are removed
 	 *
-	 * @param 	string		Input string, typically the body of a filename
-	 * @param 	string		Charset of the a filename (defaults to current charset; depending on context)
-	 * @return 	string		Output string with any characters not matching [.a-zA-Z0-9_-] is substituted by '_' and trailing dots removed
+	 * @param string $fileName Input string, typically the body of a filename
+	 * @param string $charset Charset of the a filename (defaults to current charset; depending on context)
+	 * @return string Output string with any characters not matching [.a-zA-Z0-9_-] is substituted by '_' and trailing dots removed
 	 * @todo Define visibility
 	 */
 	public function cleanFileName($fileName, $charset = '') {
 		// Handle UTF-8 characters
 		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['UTF8filesystem']) {
 			// allow ".", "-", 0-9, a-z, A-Z and everything beyond U+C0 (latin capital letter a with grave)
-			$cleanFileName = preg_replace('/[\\x00-\\x2C\\/\\x3A-\\x3F\\x5B-\\x60\\x7B-\\xBF]/u', '_', trim($fileName));
+			$cleanFileName = preg_replace('/[' . self::UNSAFE_FILENAME_CHARACTER_EXPRESSION . ']/u', '_', trim($fileName));
 		} else {
 			// Get conversion object or initialize if needed
 			if (!is_object($this->csConvObj)) {
@@ -527,7 +536,7 @@ class BasicFileUtility {
 				$fileName = $this->csConvObj->specCharsToASCII($charset, $fileName);
 			}
 			// Replace unwanted characters by underscores
-			$cleanFileName = preg_replace('/[^.[:alnum:]_-]/', '_', trim($fileName));
+			$cleanFileName = preg_replace('/[' . self::UNSAFE_FILENAME_CHARACTER_EXPRESSION . '\\xC0-\\xFF]/', '_', trim($fileName));
 		}
 		// Strip trailing dots and return
 		return preg_replace('/\\.*$/', '', $cleanFileName);

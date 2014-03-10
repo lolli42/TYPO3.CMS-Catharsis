@@ -549,7 +549,7 @@ class AbstractMenuContentObject {
 						$id_list_arr = array();
 						foreach ($items as $id) {
 							$bA = MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
-							$id_list_arr[] = \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(-1 * $id, $depth - 1 + $bA, $bA - 1);
+							$id_list_arr[] = $this->parent_cObj->getTreeList(-1 * $id, $depth - 1 + $bA, $bA - 1);
 						}
 						$id_list = implode(',', $id_list_arr);
 						// Get sortField (mode)
@@ -605,7 +605,7 @@ class AbstractMenuContentObject {
 							$value_rec = $this->sys_page->getPage($value);
 							$kfieldSrc = $this->conf['special.']['keywordsField.']['sourceField'] ? $this->conf['special.']['keywordsField.']['sourceField'] : 'keywords';
 							// keywords.
-							$kw = trim(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::keywords($value_rec[$kfieldSrc]));
+							$kw = trim($this->parent_cObj->keywords($value_rec[$kfieldSrc]));
 						}
 						// *'auto', 'manual', 'tstamp'
 						$mode = $this->conf['special.']['mode'];
@@ -650,7 +650,7 @@ class AbstractMenuContentObject {
 						// If there are keywords and the startuid is present.
 						if ($kw && $startUid) {
 							$bA = MathUtility::forceIntegerInRange($this->conf['special.']['beginAtLevel'], 0, 100);
-							$id_list = \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getTreeList(-1 * $startUid, $depth - 1 + $bA, $bA - 1);
+							$id_list = $this->parent_cObj->getTreeList(-1 * $startUid, $depth - 1 + $bA, $bA - 1);
 							$kwArr = explode(',', $kw);
 							foreach ($kwArr as $word) {
 								$word = trim($word);
@@ -839,8 +839,8 @@ class AbstractMenuContentObject {
 			}
 			$c = 0;
 			$c_b = 0;
-			$minItems = (int)$this->mconf['minItems'] ? $this->mconf['minItems'] : $this->conf['minItems'];
-			$maxItems = (int)$this->mconf['maxItems'] ? $this->mconf['maxItems'] : $this->conf['maxItems'];
+			$minItems = (int)($this->mconf['minItems'] ?: $this->conf['minItems']);
+			$maxItems = (int)($this->mconf['maxItems'] ?: $this->conf['maxItems']);
 			$begin = $this->parent_cObj->calc($this->mconf['begin'] ? $this->mconf['begin'] : $this->conf['begin']);
 			$minItemsConf = isset($this->mconf['minItems.']) ? $this->mconf['minItems.'] : (isset($this->conf['minItems.']) ? $this->conf['minItems.'] : NULL);
 			$minItems = is_array($minItemsConf) ? $this->parent_cObj->stdWrap($minItems, $minItemsConf) : $minItems;
@@ -1277,9 +1277,16 @@ class AbstractMenuContentObject {
 		}
 		// Override url if current page is a shortcut
 		if ($this->menuArr[$key]['doktype'] == \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_SHORTCUT && $this->menuArr[$key]['shortcut_mode'] != \TYPO3\CMS\Frontend\Page\PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE) {
+
+			$menuItem = $this->determineOriginalShortcutPage($this->menuArr[$key]);
+
 			$shortcut = NULL;
 			try {
-				$shortcut = $GLOBALS['TSFE']->getPageShortcut($this->menuArr[$key]['shortcut'], $this->menuArr[$key]['shortcut_mode'], $this->menuArr[$key]['uid']);
+				$shortcut = $GLOBALS['TSFE']->getPageShortcut(
+					$menuItem['shortcut'],
+					$menuItem['shortcut_mode'],
+					$menuItem['uid']
+				);
 			} catch (\Exception $ex) {
 
 			}
@@ -1289,7 +1296,7 @@ class AbstractMenuContentObject {
 			// Only setting url, not target
 			$LD['totalURL'] = $this->parent_cObj->typoLink_URL(array(
 				'parameter' => $shortcut['uid'],
-				'additionalParams' => $this->mconf['addParams'] . $MP_params . $this->I['val']['additionalParams'] . $this->menuArr[$key]['_ADD_GETVARS']
+				'additionalParams' => $this->mconf['addParams'] . $MP_params . $this->I['val']['additionalParams'] . $menuItem['_ADD_GETVARS'],
 			));
 		}
 		// Manipulation in case of access restricted pages:
@@ -1342,6 +1349,38 @@ class AbstractMenuContentObject {
 		$list['TARGET'] = $LD['target'];
 		$list['onClick'] = $onClick;
 		return $list;
+	}
+
+	/**
+	 * Determines original shortcut destination in page overlays.
+	 *
+	 * Since the pages records used for menu rendering are overlaid by default,
+	 * the original 'shortcut' value is lost, if a translation did not define one.
+	 * The behaviour in TSFE can be compared to the 'mergeIfNotBlank' feature, but
+	 * it's hardcoded there and not related to the mentioned setting at all.
+	 *
+	 * @param array $page
+	 * @return array
+	 * @todo Once the page_language_overlay behaviour was removed, this method can be removed again
+	 */
+	protected function determineOriginalShortcutPage(array $page) {
+		// Check if modification is required
+		if (
+			$GLOBALS['TSFE']->sys_language_uid > 0
+			&& empty($page['shortcut'])
+			&& !empty($page['uid'])
+			&& !empty($page['_PAGES_OVERLAY'])
+			&& !empty($page['_PAGES_OVERLAY_UID'])
+		) {
+			// Using raw record since the record was overlaid and is correct already:
+			$originalPage = $this->sys_page->getRawRecord('pages', $page['uid']);
+
+			if (!empty($originalPage['shortcut'])) {
+				$page['shortcut'] = $originalPage['shortcut'];
+			}
+		}
+
+		return $page;
 	}
 
 	/**

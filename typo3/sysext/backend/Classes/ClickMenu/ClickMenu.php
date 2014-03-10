@@ -170,7 +170,7 @@ class ClickMenu {
 		if ($this->iParts[2]) {
 			$this->listFrame = 1;
 		}
-		if ($GLOBALS['BE_USER']->uc['condensedMode'] || $this->iParts[2] == 2) {
+		if ($this->iParts[2] == 2) {
 			$this->alwaysContentFrame = 1;
 		}
 		if (isset($this->iParts[1]) && $this->iParts[1] !== '') {
@@ -195,18 +195,6 @@ class ClickMenu {
 		}
 		// Return clickmenu content:
 		return $CMcontent;
-	}
-
-	/**
-	 * Returns TRUE if the menu should (also?) be displayed in topframe, not just <div>-layers
-	 *
-	 * @return boolean
-	 * @todo Define visibility
-	 * @deprecated since TYPO3 6.0, will be removed in 6.2 as there is no click menu in the topframe anymore (no topframe at all actually)
-	 */
-	public function doDisplayTopFrameCM() {
-		GeneralUtility::logDeprecatedFunction();
-		return FALSE;
 	}
 
 	/***************************************
@@ -745,7 +733,7 @@ class ClickMenu {
 			$userMayEditStorage = FALSE;
 			$identifier = $fileObject->getCombinedIdentifier();
 			if ($fileObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
-				$icon = IconUtility::getSpriteIconForFile('folder', array(
+				$icon = IconUtility::getSpriteIconForResource($fileObject, array(
 					'class' => 'absmiddle',
 					'title' => htmlspecialchars($fileObject->getName())
 				));
@@ -763,7 +751,7 @@ class ClickMenu {
 					$isOnline = FALSE;
 				}
 			} else {
-				$icon = IconUtility::getSpriteIconForFile($fileObject->getExtension(), array(
+				$icon = IconUtility::getSpriteIconForResource($fileObject, array(
 					'class' => 'absmiddle',
 					'title' => htmlspecialchars($fileObject->getName() . ' (' . GeneralUtility::formatSize($fileObject->getSize()) . ')')
 				));
@@ -934,7 +922,7 @@ class ClickMenu {
 		} else {
 			$conf = '1==1';
 		}
-		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'tce_file.php?redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&file[delete][0][data]=' . rawurlencode($path) . '&vC=' . $GLOBALS['BE_USER']->veriCode() . '\';}hideCM();';
+		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'tce_file.php?redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&file[delete][0][data]=' . rawurlencode($path) . '&vC=' . $GLOBALS['BE_USER']->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';}hideCM();';
 		return $this->linkItem($this->label('delete'), $this->excludeIcon(IconUtility::getSpriteIcon('actions-edit-delete')), $editOnClick . 'return false;');
 	}
 
@@ -1056,7 +1044,7 @@ class ClickMenu {
 	public function dragDrop_copymovefolder($srcPath, $dstPath, $action) {
 		$editOnClick = '';
 		$loc = 'top.content.list_frame';
-		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"tce_file.php?redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&file[' . $action . '][0][data]=' . $srcPath . '&file[' . $action . '][0][target]=' . $dstPath . '&prErr=1&vC=' . $GLOBALS['BE_USER']->veriCode() . '";}hideCM();top.nav.refresh();';
+		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"tce_file.php?redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&file[' . $action . '][0][data]=' . $srcPath . '&file[' . $action . '][0][target]=' . $dstPath . '&prErr=1&vC=' . $GLOBALS['BE_USER']->veriCode() . BackendUtility::getUrlToken('tceAction') . '";}hideCM();top.nav.refresh();';
 		return $this->linkItem($this->label($action . 'Folder_into'), $this->excludeIcon(IconUtility::getSpriteIcon('apps-pagetree-drag-move-into')), $editOnClick . 'return false;', 0);
 	}
 

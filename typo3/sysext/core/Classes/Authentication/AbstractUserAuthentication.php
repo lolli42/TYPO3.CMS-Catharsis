@@ -28,7 +28,6 @@ namespace TYPO3\CMS\Core\Authentication;
  ***************************************************************/
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\HttpUtility;
 
 /**
  * Authentication of users in TYPO3
@@ -132,15 +131,6 @@ abstract class AbstractUserAuthentication {
 	 * @todo Define visibility
 	 */
 	public $formfield_status = '';
-
-	/**
-	 * Sets the level of security. *'normal' = clear-text. 'challenged' = hashed password/username.
-	 * from form in $formfield_uident. 'superchallenged' = hashed password hashed again with username.
-	 *
-	 * @var string
-	 * @deprecated since 4.7 will be removed in 6.1
-	 */
-	public $security_level = 'normal';
 
 	// Server session lifetime. If > 0: session-timeout in seconds. If FALSE or
 	// <0: no timeout. If string: The string is a fieldname from the usertable
@@ -370,14 +360,6 @@ abstract class AbstractUserAuthentication {
 		// Backend or frontend login - used for auth services
 		if (empty($this->loginType)) {
 			throw new \TYPO3\CMS\Core\Exception('No loginType defined, should be set explicitly by subclass');
-		}
-		// Set level to normal if not already set
-		if (!$this->security_level) {
-			// Notice: cannot use TYPO3_MODE here because BE user can be logged in and operate inside FE!
-			$this->security_level = trim($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel']);
-			if (!$this->security_level) {
-				$this->security_level = 'normal';
-			}
 		}
 		// Enable dev logging if set
 		if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['writeDevLog']) {
@@ -810,11 +792,10 @@ abstract class AbstractUserAuthentication {
 						// strip port from server
 						$server = str_replace($sslPortSuffix, '', $server);
 					}
-					HttpUtility::redirect('http://' . $server . '/' . $address . TYPO3_mainDir . $backendScript);
+					\TYPO3\CMS\Core\Utility\HttpUtility::redirect('http://' . $server . '/' . $address . TYPO3_mainDir . $backendScript);
 				}
 			}
 		} elseif ($activeLogin || count($tempuserArr)) {
-			HttpUtility::setResponseCode(HttpUtility::HTTP_STATUS_401);
 			$this->loginFailure = TRUE;
 			if ($this->writeDevLog && !count($tempuserArr) && $activeLogin) {
 				GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($loginData), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication', 2);
@@ -1194,14 +1175,15 @@ abstract class AbstractUserAuthentication {
 	}
 
 	/**
-	 * Sets $theUC as the internal variable ->uc IF $theUC is an array. If $theUC is FALSE, the 'uc' content from the ->user array will be unserialized and restored in ->uc
+	 * Sets $theUC as the internal variable ->uc IF $theUC is an array.
+	 * If $theUC is FALSE, the 'uc' content from the ->user array will be unserialized and restored in ->uc
 	 *
 	 * @param mixed $theUC If an array, then set as ->uc, otherwise load from user record
 	 * @return void
 	 * @todo Define visibility
 	 */
 	public function unpack_uc($theUC = '') {
-		if (!$theUC) {
+		if (!$theUC && isset($this->user['uc'])) {
 			$theUC = unserialize($this->user['uc']);
 		}
 		if (is_array($theUC)) {
@@ -1316,7 +1298,7 @@ abstract class AbstractUserAuthentication {
 	 * @todo Define visibility
 	 */
 	public function processLoginData($loginData, $passwordTransmissionStrategy = '') {
-		$passwordTransmissionStrategy = $passwordTransmissionStrategy ?: ($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel'] ? trim($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel']) : $this->security_level);
+		$passwordTransmissionStrategy = $passwordTransmissionStrategy ?: ($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel'] ? trim($GLOBALS['TYPO3_CONF_VARS'][$this->loginType]['loginSecurityLevel']) : 'normal');
 		if ($this->writeDevLog) {
 			GeneralUtility::devLog('Login data before processing: ' . GeneralUtility::arrayToLogString($loginData), 'TYPO3\\CMS\\Core\\Authentication\\AbstractUserAuthentication');
 		}
@@ -1362,8 +1344,6 @@ abstract class AbstractUserAuthentication {
 		$authInfo['HTTP_HOST'] = GeneralUtility::getIndpEnv('HTTP_HOST');
 		$authInfo['REMOTE_ADDR'] = GeneralUtility::getIndpEnv('REMOTE_ADDR');
 		$authInfo['REMOTE_HOST'] = GeneralUtility::getIndpEnv('REMOTE_HOST');
-		/** @deprecated the usage of $authInfo['security_level'] is deprecated since 4.7 */
-		$authInfo['security_level'] = $this->security_level;
 		$authInfo['showHiddenRecords'] = $this->showHiddenRecords;
 		// Can be overidden in localconf by SVCONF:
 		$authInfo['db_user']['table'] = $this->user_table;
@@ -1395,7 +1375,6 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function compareUident($user, $loginData, $passwordCompareStrategy = '') {
 		$OK = FALSE;
-		$passwordCompareStrategy = $passwordCompareStrategy ?: $this->security_level;
 		switch ($passwordCompareStrategy) {
 			case 'superchallenged':
 

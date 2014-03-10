@@ -55,9 +55,17 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	protected $hookObjects = array();
 
 	/**
+	 * URL to task module
+	 *
+	 * @var string
+	 */
+	protected $moduleUrl;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct(\TYPO3\CMS\Taskcenter\Controller\TaskModuleController $taskObject) {
+		$this->moduleUrl = BackendUtility::getModuleUrl('user_task');
 		$this->taskObject = $taskObject;
 		$GLOBALS['LANG']->includeLLFile('EXT:sys_action/locallang.xlf');
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'])) {
@@ -176,7 +184,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				'title' => $actionRow['title'],
 				'description' => $actionRow['description'],
 				'descriptionHtml' => nl2br(htmlspecialchars($actionRow['description'])) . $editActionLink,
-				'link' => 'mod.php?M=user_task&SET[function]=sys_action.tx_sysaction_task&show=' . $actionRow['uid'],
+				'link' => $this->moduleUrl . '&SET[function]=sys_action.tx_sysaction_task&show=' . $actionRow['uid'],
 				'icon' => 'EXT:sys_action/sys_action.gif'
 			);
 		}
@@ -202,7 +210,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		}
 		// Admin users can create a new action
 		if ($GLOBALS['BE_USER']->isAdmin()) {
-			$returnUrl = rawurlencode('mod.php?M=user_task');
+			$returnUrl = rawurlencode($this->moduleUrl);
 			$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[sys_action][0]=new';
 			$content .= '<br />
 						<a href="' . $link . '" title="' . $GLOBALS['LANG']->getLL('new-sys_action') . '">' . '<img class="icon"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/new_record.gif') . ' title="' . $GLOBALS['LANG']->getLL('new-sys_action') . '" alt="" /> ' . $GLOBALS['LANG']->getLL('new-sys_action') . '</a>';
@@ -236,7 +244,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			if (empty($vars['username'])) {
 				$errors[] = $GLOBALS['LANG']->getLL('error-username-empty');
 			}
-			if (empty($vars['password'])) {
+			if ($vars['key'] === 'NEW' && empty($vars['password'])) {
 				$errors[] = $GLOBALS['LANG']->getLL('error-password-empty');
 			}
 			if ($vars['key'] !== 'NEW' && !$this->isCreatedByUser($vars['key'], $record)) {
@@ -337,7 +345,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			'tstamp' => $GLOBALS['ACCESS_TIME']
 		));
 		// redirect to the original task
-		$redirectUrl = 'mod.php?M=user_task&show=' . $actionId;
+		$redirectUrl = $this->moduleUrl . '&show=' . $actionId;
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($redirectUrl);
 	}
 
@@ -401,7 +409,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$username .= ' (' . $realName . ')';
 		}
 		// Link to update the user record
-		$href = 'mod.php?M=user_task&SET[function]=sys_action.tx_sysaction_task&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
+		$href = $this->moduleUrl . '&SET[function]=sys_action.tx_sysaction_task&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
 		$link = '<a href="' . htmlspecialchars($href) . '">' . htmlspecialchars($username) . '</a>';
 		// Link to delete the user record
 		$onClick = ' onClick="return confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('lDelete_warning')) . ');"';
@@ -424,11 +432,12 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		$vars['db_mountpoints'] = $this->fixDbMount($vars['db_mountpoints']);
 		// Check if the usergroup is allowed
 		$vars['usergroup'] = $this->fixUserGroup($vars['usergroup'], $record);
+		$key = $vars['key'];
+		$vars['password'] = trim($vars['password']);
 		// Check if md5 is used as password encryption
-		if (strpos($GLOBALS['TCA']['be_users']['columns']['password']['config']['eval'], 'md5') !== FALSE) {
+		if ($vars['password'] !== '' && strpos($GLOBALS['TCA']['be_users']['columns']['password']['config']['eval'], 'md5') !== FALSE) {
 			$vars['password'] = md5($vars['password']);
 		}
-		$key = $vars['key'];
 		$data = '';
 		$newUserId = 0;
 		if ($key === 'NEW') {
@@ -437,7 +446,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				$data = array();
 				$data['be_users'][$key] = $beRec;
 				$data['be_users'][$key]['username'] = $this->fixUsername($vars['username'], $record['t1_userprefix']);
-				$data['be_users'][$key]['password'] = trim($vars['password']);
+				$data['be_users'][$key]['password'] = $vars['password'];
 				$data['be_users'][$key]['realName'] = $vars['realName'];
 				$data['be_users'][$key]['email'] = $vars['email'];
 				$data['be_users'][$key]['disable'] = (int)$vars['disable'];
@@ -452,8 +461,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			if (is_array($beRec) && $beRec['cruser_id'] == $GLOBALS['BE_USER']->user['uid']) {
 				$data = array();
 				$data['be_users'][$key]['username'] = $this->fixUsername($vars['username'], $record['t1_userprefix']);
-				if (trim($vars['password'])) {
-					$data['be_users'][$key]['password'] = trim($vars['password']);
+				if ($vars['password'] !== '') {
+					$data['be_users'][$key]['password'] = $vars['password'];
 				}
 				$data['be_users'][$key]['realName'] = $vars['realName'];
 				$data['be_users'][$key]['email'] = $vars['email'];
@@ -634,7 +643,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 * @return void Redirect to form to create a record
 	 */
 	protected function viewNewRecord($record) {
-		$returnUrl = rawurlencode('mod.php?M=user_task');
+		$returnUrl = rawurlencode($this->moduleUrl);
 		$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[' . $record['t3_tables'] . '][' . (int)$record['t3_listPid'] . ']=new';
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($link);
 	}
@@ -779,7 +788,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$dblist->counter++;
 			$dblist->MOD_MENU = array('bigControlPanel' => '', 'clipBoard' => '', 'localization' => '');
 			$dblist->modTSconfig = $this->taskObject->modTSconfig;
-			$dblist->dontShowClipControlPanels = $CLIENT['FORMSTYLE'] && !$this->taskObject->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers'];
+			$dblist->dontShowClipControlPanels = (!$this->taskObject->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
 			// Initialize the listing object, dblist, for rendering the list:
 			$this->pointer = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(GeneralUtility::_GP('pointer'), 0, 100000);
 			$dblist->start($this->id, $this->table, $this->pointer, $this->taskObject->search_field, $this->taskObject->search_levels, $this->taskObject->showLimit);
@@ -789,10 +798,6 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			// Add JavaScript functions to the page:
 			$this->taskObject->doc->JScode = $this->taskObject->doc->wrapScriptTags('
 
-				function jumpToUrl(URL) {
-					window.location.href = URL;
-					return false;
-				}
 				function jumpExt(URL,anchor) {
 					var anc = anchor?anchor:"";
 					window.location.href = URL+(T3_THIS_LOCATION?"&returnUrl="+T3_THIS_LOCATION:"")+anc;

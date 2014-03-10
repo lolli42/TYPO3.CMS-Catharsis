@@ -22,7 +22,8 @@ CREATE TABLE pages_language_overlay (
 # Table structure for table 'tt_content'
 #
 CREATE TABLE tt_content (
-    tx_irretutorial_hotels int(11) DEFAULT '0' NOT NULL,
+    tx_irretutorial_1nff_hotels int(11) DEFAULT '0' NOT NULL,
+    tx_irretutorial_1ncsv_hotels text NOT NULL,
     tx_irretutorial_flexform mediumtext
 );
 

@@ -150,12 +150,6 @@ class RecordList {
 	 */
 	public $MOD_SETTINGS = array();
 
-	// Array, where files to include is accumulated in the init() function
-	/**
-	 * @todo Define visibility
-	 */
-	public $include_once = array();
-
 	// Internal, dynamic:
 	// Module output accumulation
 	/**
@@ -316,7 +310,7 @@ class RecordList {
 		$dblist->clipObj->endClipboard();
 		// This flag will prevent the clipboard panel in being shown.
 		// It is set, if the clickmenu-layer is active AND the extended view is not enabled.
-		$dblist->dontShowClipControlPanels = $GLOBALS['CLIENT']['FORMSTYLE'] && !$this->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers'];
+		$dblist->dontShowClipControlPanels = (!$this->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
 		// If there is access to the page or root page is used for searching, then render the list contents and set up the document template object:
 		if ($access || ($this->id === 0 && $this->search_levels > 0 && strlen($this->search_field) > 0)) {
 			// Deleting records...:
@@ -352,10 +346,6 @@ class RecordList {
 			$listUrl = substr($dblist->listURL(), strlen($GLOBALS['BACK_PATH']));
 			// Add JavaScript functions to the page:
 			$this->doc->JScode = $this->doc->wrapScriptTags('
-				function jumpToUrl(URL) {	//
-					window.location.href = URL;
-					return false;
-				}
 				function jumpExt(URL,anchor) {	//
 					var anc = anchor?anchor:"";
 					window.location.href = URL+(T3_THIS_LOCATION?"&returnUrl="+T3_THIS_LOCATION:"")+anc;

@@ -88,8 +88,8 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 			throw new \InvalidArgumentException('TYPO3\\CMS\\Core\\Category\\CategoryRegistry No tableName given.', 1369122038);
 		}
 
-		// Makes sure there is an existing table configuration and nothing registered yet:
-		if (isset($GLOBALS['TCA'][$tableName]) && !$this->isRegistered($tableName, $fieldName)) {
+		// Makes sure nothing was registered yet.
+		if (!$this->isRegistered($tableName, $fieldName)) {
 			$this->registry[$extensionKey][$tableName][$fieldName] = $options;
 			$result = TRUE;
 		}
@@ -348,6 +348,7 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 				),
 			);
 
+			// Merge changes to TCA configuration
 			if (!empty($options['fieldConfiguration'])) {
 				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule(
 					$fieldConfiguration,
@@ -355,21 +356,60 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 				);
 			}
 
+			// Take specific label into account
 			$label = 'LLL:EXT:lang/locallang_tca.xlf:sys_category.categories';
 			if (!empty($options['label'])) {
 				$label = $options['label'];
 			}
 
+			// Take specific value of exclude flag into account
+			$exclude = TRUE;
+			if (isset($options['exclude'])) {
+				$exclude = (bool)$options['exclude'];
+			}
+
 			$columns = array(
 				$fieldName => array(
-					'exclude' => 0,
+					'exclude' => $exclude,
 					'label' => $label,
 					'config' => $fieldConfiguration,
 				),
 			);
 
+			if (empty($GLOBALS['TCA']['sys_category']['columns']['items']['config']['MM_oppositeUsage'][$tableName])) {
+				$GLOBALS['TCA']['sys_category']['columns']['items']['config']['MM_oppositeUsage'][$tableName] = array();
+			}
+			if (!in_array($fieldName, $GLOBALS['TCA']['sys_category']['columns']['items']['config']['MM_oppositeUsage'][$tableName])) {
+				$GLOBALS['TCA']['sys_category']['columns']['items']['config']['MM_oppositeUsage'][$tableName][] = $fieldName;
+			}
+
 			// Adding fields to an existing table definition
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns($tableName, $columns);
 		}
+	}
+
+	/**
+	 * A slot method to inject the required category database fields to the
+	 * tables definition string
+	 *
+	 * @param array $sqlString
+	 * @return array
+	 */
+	public function addCategoryDatabaseSchemaToTablesDefinition(array $sqlString) {
+		$sqlString[] = $this->getDatabaseTableDefinitions();
+		return array('sqlString' => $sqlString);
+	}
+
+	/**
+	 * A slot method to inject the required category database fields of an
+	 * extension to the tables definition string
+	 *
+	 * @param array $sqlString
+	 * @param string $extensionKey
+	 * @return array
+	 */
+	public function addExtensionCategoryDatabaseSchemaToTablesDefinition(array $sqlString, $extensionKey) {
+		$sqlString[] = $this->getDatabaseTableDefinition($extensionKey);
+		return array('sqlString' => $sqlString, 'extensionKey' => $extensionKey);
 	}
 }

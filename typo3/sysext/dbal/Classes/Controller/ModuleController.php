@@ -62,20 +62,13 @@ class ModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @return 	void
 	 */
 	public function main() {
-		$this->thisScript = 'mod.php?M=' . $this->MCONF['name'];
+		$this->thisScript = BackendUtility::getModuleUrl($this->MCONF['name']);
 		// Clean up settings:
 		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('SET'), $this->MCONF['name']);
 		// Draw the header
 		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->form = '<form action="" method="post">';
-		// JavaScript
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-				script_ended = 0;
-				function jumpToUrl(URL)	{	//
-					window.location.href = URL;
-				}
-			');
 		// DBAL page title:
 		$this->content .= $this->doc->startPage($GLOBALS['LANG']->getLL('title'));
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('title'));

@@ -26,6 +26,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  * Extension Manager Install Utility
  *
@@ -82,6 +83,12 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $packageManager;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Cache\CacheManager
+	 * @inject
+	 */
+	protected $cacheManager;
+
+	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 * @inject
 	 */
@@ -120,10 +127,10 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			$this->loadExtension($extensionKey);
 		}
 		$this->reloadCaches();
-		$this->processCachingFrameworkUpdates();
+		$this->processRuntimeDatabaseUpdates($extensionKey);
 		$this->saveDefaultConfiguration($extension['key']);
 		if ($extension['clearcacheonload']) {
-			$GLOBALS['typo3CacheManager']->flushCaches();
+			$this->cacheManager->flushCaches();
 		}
 	}
 
@@ -207,6 +214,14 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1342864081);
 		}
 		$availableAndInstalledExtensions = $this->listUtility->enrichExtensionsWithEmConfAndTerInformation(array($extensionKey => $extension));
+
+		if (!isset($availableAndInstalledExtensions[$extensionKey])) {
+			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+				'Please check your uploaded extension "' . $extensionKey . '". The configuration file "ext_emconf.php" seems to be invalid.',
+				1391432222
+			);
+		}
+
 		return $availableAndInstalledExtensions[$extensionKey];
 	}
 
@@ -240,20 +255,40 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Gets all registered caches and creates required caching framework tables.
+	 * Gets all database updates due to runtime configuration, like caching framework or
+	 * category api for example
 	 *
-	 * @return void
+	 * @param string $extensionKey
 	 */
-	protected function processCachingFrameworkUpdates() {
-		$extTablesSqlContent = '';
-
-		// @TODO: This should probably moved to TYPO3\CMS\Core\Cache\Cache->getDatabaseTableDefinitions ?!
-		$GLOBALS['typo3CacheManager']->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
-		$extTablesSqlContent .= \TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions();
-
-		if ($extTablesSqlContent !== '') {
-			$this->updateDbWithExtTablesSql($extTablesSqlContent);
+	protected function processRuntimeDatabaseUpdates($extensionKey) {
+		$sqlString = $this->emitTablesDefinitionIsBeingBuiltSignal($extensionKey);
+		if (!empty($sqlString)) {
+			$this->updateDbWithExtTablesSql(implode(LF . LF . LF . LF, $sqlString));
 		}
+	}
+
+	/**
+	 * Emits a signal to manipulate the tables definitions
+	 *
+	 * @param string $extensionKey
+	 * @return mixed
+	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 */
+	protected function emitTablesDefinitionIsBeingBuiltSignal($extensionKey) {
+		$signalReturn = $this->signalSlotDispatcher->dispatch(__CLASS__, 'tablesDefinitionIsBeingBuilt', array('sqlString' => array(), 'extensionKey' => $extensionKey));
+		$sqlString = $signalReturn['sqlString'];
+		if (!is_array($sqlString)) {
+			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+				sprintf(
+					'The signal %s of class %s returned a value of type %s, but array was expected.',
+					'tablesDefinitionIsBeingBuilt',
+					__CLASS__,
+					gettype($sqlString)
+				),
+				1382360258
+			);
+		}
+		return $sqlString;
 	}
 
 	/**
@@ -262,8 +297,8 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	public function reloadCaches() {
-		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
-		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->reloadTypo3LoadedExtAndClassLoaderAndExtLocalconf();
+		$this->cacheManager->flushCachesInGroup('system');
+		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->reloadTypo3LoadedExtAndClassLoaderAndExtLocalconf()->loadExtensionTables();
 	}
 
 	/**

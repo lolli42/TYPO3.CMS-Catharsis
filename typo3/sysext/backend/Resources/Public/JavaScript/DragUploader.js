@@ -62,7 +62,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery'], function($) {
 			event.stopPropagation();
 			event.preventDefault();
 			me.$dropzone.hide();
-		}
+		};
 
 		me.dragFileIntoDocument = function(event) {
 			event.stopPropagation();
@@ -140,7 +140,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery'], function($) {
 
 			// no filelist then create own progress table
 			if (me.$fileList.length === 0) {
-				me.$fileList = $('<table />').attr('id', 'typo3-filelist').addClass('t3-upload-queue').html('<tbody></tbody>').hide();
+				me.$fileList = $('<table />').attr('id', 'typo3-filelist').addClass('t3-table t3-upload-queue').html('<tbody></tbody>').hide();
 				if (me.dropZoneInsertBefore) {
 					me.$fileList.insertAfter(me.$dropzone);
 				} else {
@@ -164,7 +164,7 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery'], function($) {
 		me.file = file;
 		me.override = override;
 
-		me.$row = $('<tr />').addClass('file_list_normal t3-upload-queue-item uploading');
+		me.$row = $('<tr />').addClass('t3-upload-queue-item uploading');
 		me.$iconCol = $('<td />').addClass('col-icon').appendTo(me.$row);
 		me.$fileName = $('<td />').text(file.name).appendTo(me.$row);
 		me.$progress = $('<td />').addClass('t3-upload-queue-progress')
@@ -321,12 +321,11 @@ define('TYPO3/CMS/Backend/DragUploader', ['jquery'], function($) {
 			if(me.override) {
 				formData.append('overwriteExistingFiles', '1');
 			}
-			formData.append('ajaxID', 'TYPO3_tcefile::process');
 			formData.append('redirect', '');
 			formData.append('upload_1', me.file);
 
 			var s = $.extend(true, {}, $.ajaxSettings, {
-				url: 'ajax.php',
+				url: TYPO3.settings.DragUploader.ajaxUrl,
 				contentType: false,
 				processData: false,
 				data: formData,

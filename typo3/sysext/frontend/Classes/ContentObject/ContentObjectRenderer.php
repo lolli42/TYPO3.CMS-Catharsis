@@ -154,6 +154,8 @@ class ContentObjectRenderer {
 		'rawUrlEncode.' => 'array',
 		'htmlSpecialChars' => 'boolean',
 		'htmlSpecialChars.' => 'array',
+		'escapeJsValue' => 'boolean',
+		'escapeJsValue.' => 'array',
 		'doubleBrTag' => 'string',
 		'doubleBrTag.' => 'array',
 		'br' => 'boolean',
@@ -227,6 +229,48 @@ class ContentObjectRenderer {
 		'debugFunc.' => 'array',
 		'debugData' => 'boolean',
 		'debugData.' => 'array'
+	);
+
+	/**
+	 * Class names for accordant content objects
+	 *
+	 * @var array
+	 */
+	protected $contentObjectClassMapping = array(
+		'TEXT' => 'Text',
+		'CASE' => 'Case',
+		'CLEARGIF' => 'ClearGif',
+		'COBJ_ARRAY' => 'ContentObjectArray',
+		'COA' => 'ContentObjectArray',
+		'COA_INT' => 'ContentObjectArrayInternal',
+		'USER' => 'User',
+		'USER_INT' => 'UserInternal',
+		'FILE' => 'File',
+		'FILES' => 'Files',
+		'IMAGE' => 'Image',
+		'IMG_RESOURCE' => 'ImageResource',
+		'IMGTEXT' => 'ImageText',
+		'CONTENT' => 'Content',
+		'RECORDS' => 'Records',
+		'HMENU' => 'HierarchicalMenu',
+		'CTABLE' => 'ContentTable',
+		'OTABLE' => 'OffsetTable',
+		'COLUMNS' => 'Columns',
+		'HRULER' => 'HorizontalRuler',
+		'CASEFUNC' => 'Case',
+		'LOAD_REGISTER' => 'LoadRegister',
+		'RESTORE_REGISTER' => 'RestoreRegister',
+		'FORM' => 'Form',
+		'SEARCHRESULT' => 'SearchResult',
+		'TEMPLATE' => 'Template',
+		'FLUIDTEMPLATE' => 'FluidTemplate',
+		'MULTIMEDIA' => 'Multimedia',
+		'MEDIA' => 'Media',
+		'SWFOBJECT' => 'ShockwaveFlashObject',
+		'FLOWPLAYER' => 'FlowPlayer',
+		'QTOBJECT' => 'QuicktimeObject',
+		'SVG' => 'ScalableVectorGraphics',
+		'EDITPANEL' => 'EditPanel',
 	);
 
 	/**
@@ -477,11 +521,6 @@ class ContentObjectRenderer {
 	protected $getImgResourceHookObjects;
 
 	/**
-	 * @var array with members of AbstractContentObject
-	 */
-	protected $contentObjects = array();
-
-	/**
 	 * @var \TYPO3\CMS\Core\Resource\File Current file objects (during iterations over files)
 	 */
 	protected $currentFile = NULL;
@@ -562,44 +601,6 @@ class ContentObjectRenderer {
 	 */
 	public function getCurrentTable() {
 		return $this->table;
-	}
-
-	/**
-	 * Clone helper.
-	 *
-	 * Resets the references to the TypoScript Content Object implementation
-	 * objects of tslib_content_*. Otherwise they would still point to the
-	 * original ContentObjectRender instance's tslib_content_* instances, they in return
-	 * would back-reference to the original ContentObjectRender instance instead of the
-	 * newly cloned ContentObjectRender instance.
-	 *
-	 * @see http://forge.typo3.org/issues/24204
-	 */
-	public function __clone() {
-		$this->contentObjects = array();
-	}
-
-	/**
-	 * Serialization (sleep) helper.
-	 *
-	 * Removes properties of this object from serialization.
-	 * This action is necessary, since there might be closures used
-	 * in the accordant content objects (e.g. in FLUIDTEMPLATE) which
-	 * cannot be serialized. It's fine to reset $this->contentObjects
-	 * since elements will be recreated and are just a local cache,
-	 * but not required for runtime logic and behaviour.
-	 *
-	 * @return array Names of the properties to be serialized
-	 * @see http://forge.typo3.org/issues/36820
-	 */
-	public function __sleep() {
-		// Use get_objects_vars() instead of
-		// a much more expensive Reflection:
-		$properties = get_object_vars($this);
-		if (isset($properties['contentObjects'])) {
-			unset($properties['contentObjects']);
-		}
-		return array_keys($properties);
 	}
 
 	/**
@@ -776,58 +777,14 @@ class ContentObjectRenderer {
 	 * Returns a new content object of type $name.
 	 *
 	 * @param string $name
-	 * @return AbstractContentObject
+	 * @return NULL|AbstractContentObject
 	 */
 	public function getContentObject($name) {
-		$classMapping = array(
-			'TEXT' => 'Text',
-			'CASE' => 'Case',
-			'CLEARGIF' => 'ClearGif',
-			'COBJ_ARRAY' => 'ContentObjectArray',
-			'COA' => 'ContentObjectArray',
-			'COA_INT' => 'ContentObjectArrayInternal',
-			'USER' => 'User',
-			'USER_INT' => 'UserInternal',
-			'FILE' => 'File',
-			'FILES' => 'Files',
-			'IMAGE' => 'Image',
-			'IMG_RESOURCE' => 'ImageResource',
-			'IMGTEXT' => 'ImageText',
-			'CONTENT' => 'Content',
-			'RECORDS' => 'Records',
-			'HMENU' => 'HierarchicalMenu',
-			'CTABLE' => 'ContentTable',
-			'OTABLE' => 'OffsetTable',
-			'COLUMNS' => 'Columns',
-			'HRULER' => 'HorizontalRuler',
-			'CASEFUNC' => 'Case',
-			'LOAD_REGISTER' => 'LoadRegister',
-			'RESTORE_REGISTER' => 'RestoreRegister',
-			'FORM' => 'Form',
-			'SEARCHRESULT' => 'SearchResult',
-			'TEMPLATE' => 'Template',
-			'FLUIDTEMPLATE' => 'FluidTemplate',
-			'MULTIMEDIA' => 'Multimedia',
-			'MEDIA' => 'Media',
-			'SWFOBJECT' => 'ShockwaveFlashObject',
-			'FLOWPLAYER' => 'FlowPlayer',
-			'QTOBJECT' => 'QuicktimeObject',
-			'SVG' => 'ScalableVectorGraphics',
-			'EDITPANEL' => 'EditPanel',
-		);
-		$name = $classMapping[$name];
-		if (!array_key_exists($name, $this->contentObjects)) {
-			$fullyQualifiedClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $name . 'ContentObject';
-			if (class_exists($fullyQualifiedClassName)) {
-				$this->contentObjects[$name] = GeneralUtility::makeInstance(
-					$fullyQualifiedClassName,
-					$this
-				);
-			} else {
-				$this->contentObjects[$name] = NULL;
-			}
+		if (!isset($this->contentObjectClassMapping[$name])) {
+			return NULL;
 		}
-		return $this->contentObjects[$name];
+		$fullyQualifiedClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $this->contentObjectClassMapping[$name] . 'ContentObject';
+		return GeneralUtility::makeInstance($fullyQualifiedClassName, $this);
 	}
 
 	/********************************************
@@ -1457,7 +1414,7 @@ class ContentObjectRenderer {
 				$dimensionKeys = array('width', 'height', 'maxW', 'minW', 'maxH', 'minH');
 				foreach ($dimensionKeys as $dimensionKey) {
 					$dimension = $this->stdWrap($sourceConfiguration[$dimensionKey], $sourceConfiguration[$dimensionKey . '.']);
-					if (!$dimension && isset($conf['file.'][$dimensionKey])) {
+					if (!$dimension) {
 						$dimension = $this->stdWrap($conf['file.'][$dimensionKey], $conf['file.'][$dimensionKey . '.']);
 					}
 					if ($dimension) {
@@ -1471,9 +1428,10 @@ class ContentObjectRenderer {
 							$dimension = (int)($dimension * $pixelDensity);
 						}
 						$sourceRenderConfiguration['file.'][$dimensionKey] = $dimension;
+						// Remove the stdWrap properties for dimension as they have been processed already above.
+						unset($sourceRenderConfiguration['file.'][$dimensionKey . '.']);
 					}
 				}
-
 				$sourceInfo = $this->getImgResource($sourceRenderConfiguration['file'], $sourceRenderConfiguration['file.']);
 				$sourceConfiguration['width'] = $sourceInfo[0];
 				$sourceConfiguration['height'] = $sourceInfo[1];
@@ -2188,7 +2146,7 @@ class ContentObjectRenderer {
 	public function stdWrap_cacheRead($content = '', $conf = array()) {
 		if (!empty($conf['cache.']['key'])) {
 			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = $GLOBALS['typo3CacheManager']->getCache('cache_hash');
+			$cacheFrontend = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash');
 			if ($cacheFrontend && $cacheFrontend->has($conf['cache.']['key'])) {
 				$content = $cacheFrontend->get($conf['cache.']['key']);
 				$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
@@ -2904,6 +2862,19 @@ class ContentObjectRenderer {
 	}
 
 	/**
+	 * escapeJsValue
+	 * Escapes content to be used inside JavaScript strings. No quotes are added around the value
+	 * as this can easily be done in TypoScript
+	 *
+	 * @param string $content Input value undergoing processing in this function
+	 * @param array $conf stdWrap properties for escapeJsvalue
+	 * @return string The processed input value
+	 */
+	public function stdWrap_escapeJsValue($content = '', $conf = array()) {
+		return trim(GeneralUtility::quoteJSvalue($content), '\'');
+	}
+
+	/**
 	 * doubleBrTag
 	 * Searches for double line breaks and replaces them with the given value
 	 *
@@ -3429,7 +3400,7 @@ class ContentObjectRenderer {
 	public function stdWrap_cacheStore($content = '', $conf = array()) {
 		if (!empty($conf['cache.']['key'])) {
 			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = $GLOBALS['typo3CacheManager']->getCache('cache_hash');
+			$cacheFrontend = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash');
 			if ($cacheFrontend) {
 				$tags = !empty($conf['cache.']['tags']) ? GeneralUtility::trimExplode(',', $conf['cache.']['tags']) : array();
 				if (strtolower($conf['cache.']['lifetime']) == 'unlimited') {
@@ -7420,8 +7391,10 @@ class ContentObjectRenderer {
 								$theList = array_merge(
 									GeneralUtility::intExplode(
 										',',
-										self::getTreeList($next_id, $depth - 1, $begin - 1, $dontCheckEnableFields,
-											$addSelectFields, $moreWhereClauses, $prevId_array, $recursionLevel + 1)
+										$this->getTreeList($next_id, $depth - 1, $begin - 1,
+											$dontCheckEnableFields, $addSelectFields, $moreWhereClauses,
+											$prevId_array, $recursionLevel + 1),
+										TRUE
 									),
 									$theList
 								);
@@ -7630,7 +7603,7 @@ class ContentObjectRenderer {
 		$queryParts = $this->getWhere($table, $conf, TRUE);
 		// Fields:
 		if ($conf['selectFields']) {
-			$queryParts['SELECT'] = self::sanitizeSelectPart($conf['selectFields'], $table);
+			$queryParts['SELECT'] = $this->sanitizeSelectPart($conf['selectFields'], $table);
 		} else {
 			$queryParts['SELECT'] = '*';
 		}

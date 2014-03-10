@@ -14,10 +14,8 @@ class DatabaseConnectionOracleTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function setUp() {
 		// Reconfigure DBAL to use Oracle
 		require __DIR__ . '/Fixtures/oci8.config.php';
-		$className = self::buildAccessibleProxy('TYPO3\\CMS\\Dbal\\Database\\DatabaseConnection');
-		$GLOBALS['TYPO3_DB'] = new $className();
-		$parserClassName = self::buildAccessibleProxy('TYPO3\\CMS\\Dbal\\Database\\SqlParser');
-		$GLOBALS['TYPO3_DB']->SQLparser = new $parserClassName();
+		$GLOBALS['TYPO3_DB'] = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\DatabaseConnection', array('dummy'));
+		$GLOBALS['TYPO3_DB']->SQLparser = $this->getAccessibleMock('TYPO3\\CMS\\Dbal\\Database\\SqlParser', array('dummy'));
 		$this->assertFalse($GLOBALS['TYPO3_DB']->isConnected());
 		// Initialize a fake Oracle connection
 		\TYPO3\CMS\Dbal\Tests\Unit\Database\FakeDatabaseConnection::connect($GLOBALS['TYPO3_DB'], 'oci8');
@@ -107,13 +105,15 @@ class DatabaseConnectionOracleTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function canCompileExtendedInsert() {
+		$tableFields = array('uid', 'pid', 'tr_iso_nr', 'tr_parent_iso_nr', 'tr_name_en');
+		$GLOBALS['TYPO3_DB']->cache_fieldType['static_territories'] = array_flip($tableFields);
 		$parseString = 'INSERT INTO static_territories VALUES (\'1\', \'0\', \'2\', \'0\', \'Africa\'),(\'2\', \'0\', \'9\', \'0\', \'Oceania\'),' . '(\'3\', \'0\', \'19\', \'0\', \'Americas\'),(\'4\', \'0\', \'142\', \'0\', \'Asia\');';
 		$components = $GLOBALS['TYPO3_DB']->SQLparser->_callRef('parseINSERT', $parseString);
 		$this->assertTrue(is_array($components), $components);
 		$insert = $GLOBALS['TYPO3_DB']->SQLparser->_callRef('compileINSERT', $components);
 		$this->assertEquals(4, count($insert));
 		for ($i = 0; $i < count($insert); $i++) {
-			foreach (\TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', 'uid,pid,tr_iso_nr,tr_parent_iso_nr,tr_name_en') as $field) {
+			foreach ($tableFields as $field) {
 				$this->assertTrue(isset($insert[$i][$field]), 'Could not find ' . $field . ' column');
 			}
 		}
@@ -509,6 +509,7 @@ class DatabaseConnectionOracleTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @see http://forge.typo3.org/issues/22716
 	 */
 	public function likeIsRemappedAccordingToFieldType() {
+		$GLOBALS['TYPO3_DB']->cache_fieldType['tt_content']['bodytext']['metaType'] = 'B';
 		$select = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'tt_content', 'tt_content.bodytext LIKE \'foo%\''));
 		$expected = 'SELECT * FROM "tt_content" WHERE (dbms_lob.instr(LOWER("tt_content"."bodytext"), \'foo\',1,1) > 0)';
 		$this->assertEquals($expected, $select);
@@ -522,6 +523,7 @@ class DatabaseConnectionOracleTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @see http://forge.typo3.org/issues/23282
 	 */
 	public function notLikeIsRemappedAccordingToFieldType() {
+		$GLOBALS['TYPO3_DB']->cache_fieldType['tt_content']['bodytext']['metaType'] = 'B';
 		$select = $this->cleanSql($GLOBALS['TYPO3_DB']->SELECTquery('*', 'tt_content', 'tt_content.bodytext NOT LIKE \'foo%\''));
 		$expected = 'SELECT * FROM "tt_content" WHERE NOT (dbms_lob.instr(LOWER("tt_content"."bodytext"), \'foo\',1,1) > 0)';
 		$this->assertEquals($expected, $select);

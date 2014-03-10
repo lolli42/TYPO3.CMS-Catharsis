@@ -197,11 +197,6 @@ class FormsController {
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/wizard_forms.html');
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function jumpToUrl(URL,formEl) {	//
-				window.location.href = URL;
-			}
-		');
 		// Setting form tag:
 		list($rUri) = explode('#', GeneralUtility::getIndpEnv('REQUEST_URI'));
 		$this->doc->form = '<form action="' . htmlspecialchars($rUri) . '" method="post" name="wizardForm">';
@@ -470,7 +465,7 @@ class FormsController {
 					}
 					// Default data
 					if ($confData['type'] == 'select' || $confData['type'] == 'radio') {
-						$temp_cells[$GLOBALS['LANG']->getLL('forms_options')] = '<textarea ' . $this->doc->formWidthText(15) . ' rows="4" name="FORMCFG[c][' . ($k + 1) * 2 . '][options]" title="' . $GLOBALS['LANG']->getLL('forms_options', TRUE) . '">' . GeneralUtility::formatForTextarea($confData['default']) . '</textarea>';
+						$temp_cells[$GLOBALS['LANG']->getLL('forms_options')] = '<textarea ' . $this->doc->formWidth(15) . ' rows="4" name="FORMCFG[c][' . ($k + 1) * 2 . '][options]" title="' . $GLOBALS['LANG']->getLL('forms_options', TRUE) . '">' . GeneralUtility::formatForTextarea($confData['default']) . '</textarea>';
 					} elseif ($confData['type'] == 'check') {
 						$temp_cells[$GLOBALS['LANG']->getLL('forms_checked')] = '<input type="checkbox" name="FORMCFG[c][' . ($k + 1) * 2 . '][default]" value="1"' . (trim($confData['default']) ? ' checked="checked"' : '') . ' title="' . $GLOBALS['LANG']->getLL('forms_checked', TRUE) . '" />';
 					} elseif ($confData['type'] && $confData['type'] != 'file') {

@@ -27,8 +27,6 @@ namespace TYPO3\CMS\Core\Utility;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-
 /**
  * Extension Management functions
  *
@@ -67,6 +65,23 @@ class ExtensionManagementUtility {
 	 */
 	static public function setPackageManager(\TYPO3\CMS\Core\Package\PackageManager $packageManager) {
 		static::$packageManager = $packageManager;
+	}
+
+	/**
+	 * @var \TYPO3\CMS\Core\Cache\CacheManager
+	 */
+	static protected $cacheManager;
+
+	/**
+	 * Getter for the cache manager
+	 *
+	 * @return \TYPO3\CMS\Core\Cache\CacheManager $cacheManager
+	 */
+	static protected function getCacheManager() {
+		if (static::$cacheManager === NULL) {
+			static::$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		}
+		return static::$cacheManager;
 	}
 
 	/**************************************
@@ -560,7 +575,7 @@ class ExtensionManagementUtility {
 	 * @return string The extended list
 	 */
 	static protected function executePositionedStringInsertion($list, $insertionList, $insertionPosition = '') {
-		$list = $newList = trim($list, ', \\t\\n\\r\\0\\x0B');
+		$list = $newList = trim($list, ", \t\n\r\0\x0B");
 
 		$insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
 
@@ -571,7 +586,7 @@ class ExtensionManagementUtility {
 			return $insertionList;
 		}
 		if ($insertionPosition === '') {
-			return $list . ',' . $insertionList;
+			return $list . ', ' . $insertionList;
 		}
 
 		list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
@@ -582,16 +597,16 @@ class ExtensionManagementUtility {
 			$positionName = str_replace(';;', ';[^;]*;', $positionName);
 		}
 
-		$pattern = ('/(^|,\\s*)(' . $positionName . '[^,$]*)/');
+		$pattern = ('/(^|,\\s*)(' . $positionName . ')(;[^,$]+)?(,|$)/');
 		switch ($location) {
 			case 'after':
-				$newList = preg_replace($pattern, '$1$2, ' . $insertionList, $list);
+				$newList = preg_replace($pattern, '$1$2$3, ' . $insertionList . '$4', $list);
 				break;
 			case 'before':
-				$newList = preg_replace($pattern, '$1' . $insertionList . ', $2', $list);
+				$newList = preg_replace($pattern, '$1' . $insertionList . ', $2$3$4', $list);
 				break;
 			case 'replace':
-				$newList = preg_replace($pattern, '$1' . $insertionList, $list);
+				$newList = preg_replace($pattern, '$1' . $insertionList . '$4', $list);
 				break;
 			default:
 		}
@@ -883,6 +898,20 @@ class ExtensionManagementUtility {
 	}
 
 	/**
+	 * Registers an Ajax Handler
+	 *
+	 * @param string $ajaxId Identifier of the handler, that is used in the request
+	 * @param string $callbackMethod TYPO3 callback method (className->methodName).
+	 * @param bool $csrfTokenCheck Only set this to FALSE if you are sure that the registered handler does not modify any data!
+	 */
+	static public function registerAjaxHandler($ajaxId, $callbackMethod, $csrfTokenCheck = TRUE) {
+		$GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxId] = array(
+			'callbackMethod' => $callbackMethod,
+			'csrfTokenCheck' => $csrfTokenCheck
+		);
+	}
+
+	/**
 	 * Adds a module path to $GLOBALS['TBE_MODULES'] for used with the module dispatcher, mod.php
 	 * Used only for modules that are not placed in the main/sub menu hierarchy by the traditional mechanism of addModule()
 	 * Examples for this is context menu functionality (like import/export) which runs as an independent module through mod.php
@@ -905,7 +934,7 @@ class ExtensionManagementUtility {
 	 *
 	 * @param string $modname Module name
 	 * @param string $className Class name
-	 * @param string $classPath Class path
+	 * @param string $classPath Class path, deprecated since 6.2, use auto-loading instead
 	 * @param string $title Title of module
 	 * @param string $MM_key Menu array key - default is "function
 	 * @param string $WS Workspace conditions. Blank means all workspaces, any other string can be a comma list of "online", "offline" and "custom
@@ -913,6 +942,14 @@ class ExtensionManagementUtility {
 	 * @see \TYPO3\CMS\Backend\Module\BaseScriptClass::mergeExternalItems()
 	 */
 	static public function insertModuleFunction($modname, $className, $classPath, $title, $MM_key = 'function', $WS = '') {
+		if (!empty($classPath)) {
+			GeneralUtility::deprecationLog(
+				sprintf('insertModuleFunction(%s, %s, ...): Use auto-loading for the class and pass NULL as $classPath since 6.2.',
+					$modname,
+					$className
+				)
+			);
+		}
 		$GLOBALS['TBE_MODULES_EXT'][$modname]['MOD_MENU'][$MM_key][$className] = array(
 			'name' => $className,
 			'path' => $classPath,
@@ -1357,16 +1394,21 @@ tt_content.' . $key . $prefix . ' {
 	 * Adds $content to the default TypoScript code for either setup or constants as set in $GLOBALS['TYPO3_CONF_VARS'][FE]['defaultTypoScript_*']
 	 * (Basically this function can do the same as addTypoScriptSetup and addTypoScriptConstants - just with a little more hazzle, but also with some more options!)
 	 * FOR USE IN ext_localconf.php FILES
+	 * Note: As of TYPO3 CMS 6.2, static template #43 (content: default) was replaced with "defaultContentRendering" which makes it
+	 * possible that a first extension like css_styled_content registers a "contentRendering" template (= a template that defines default content rendering TypoScript)
+	 * by adding itself to $TYPO3_CONF_VARS[FE][contentRenderingTemplates][] = 'myext/Configuration/TypoScript'.
+	 * An extension calling addTypoScript('myext', 'setup', $typoScript, 'defaultContentRendering') will add its TypoScript directly after;
+	 * For now, "43" and "defaultContentRendering" can be used, but defaultContentRendering is more descriptive and should be used in the future
 	 *
 	 * @param string $key Is the extension key (informative only).
 	 * @param string $type Is either "setup" or "constants" and obviously determines which kind of TypoScript code we are adding.
-	 * @param string $content Is the TS content, prefixed with a [GLOBAL] line and a comment-header.
-	 * @param integer $afterStaticUid Is either an integer pointing to a uid of a static_template or a string pointing to the "key" of a static_file template ([reduced extension_key]/[local path]). The points is that the TypoScript you add is included only IF that static template is included (and in that case, right after). So effectively the TypoScript you set can specifically overrule settings from those static templates.
+	 * @param string $content Is the TS content, will be prefixed with a [GLOBAL] line and a comment-header.
+	 * @param int|string $afterStaticUid Is either an integer pointing to a uid of a static_template or a string pointing to the "key" of a static_file template ([reduced extension_key]/[local path]). The points is that the TypoScript you add is included only IF that static template is included (and in that case, right after). So effectively the TypoScript you set can specifically overrule settings from those static templates.
 	 *
 	 * @return void
 	 */
 	static public function addTypoScript($key, $type, $content, $afterStaticUid = 0) {
-		if ($type == 'setup' || $type == 'constants') {
+		if ($type === 'setup' || $type === 'constants') {
 			$content = '
 
 [GLOBAL]
@@ -1377,11 +1419,10 @@ tt_content.' . $key . $prefix . ' {
 ' . $content;
 			if ($afterStaticUid) {
 				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$afterStaticUid] .= $content;
-				// If 'content (default)' is targeted, also add to other 'content rendering templates', eg. css_styled_content
-				if ($afterStaticUid == 43 && is_array($GLOBALS['TYPO3_CONF_VARS']['FE']['contentRenderingTemplates'])) {
-					foreach ($GLOBALS['TYPO3_CONF_VARS']['FE']['contentRenderingTemplates'] as $templateName) {
-						$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$templateName] .= $content;
-					}
+				// If 'content (default)' is targeted (static uid 43),
+				// the content is added after typoscript of type contentRendering, eg. css_styled_content, see EXT:frontend/TemplateService for that
+				if ($afterStaticUid == 43 || $afterStaticUid === 'defaultContentRendering') {
+					$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.']['defaultContentRendering'] .= $content;
 				}
 			} else {
 				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type] .= $content;
@@ -1430,7 +1471,7 @@ tt_content.' . $key . $prefix . ' {
 		if ($allowCaching) {
 			$cacheIdentifier = self::getExtLocalconfCacheIdentifier();
 			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-			$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+			$codeCache = self::getCacheManager()->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
 				$codeCache->requireOnce($cacheIdentifier);
 			} else {
@@ -1500,7 +1541,7 @@ tt_content.' . $key . $prefix . ' {
 		$phpCodeToCache = implode(LF, $phpCodeToCache);
 		// Remove all start and ending php tags from content
 		$phpCodeToCache = preg_replace('/<\\?php|\\?>/is', '', $phpCodeToCache);
-		$GLOBALS['typo3CacheManager']->getCache('cache_core')->set(self::getExtLocalconfCacheIdentifier(), $phpCodeToCache);
+		self::getCacheManager()->getCache('cache_core')->set(self::getExtLocalconfCacheIdentifier(), $phpCodeToCache);
 	}
 
 	/**
@@ -1530,7 +1571,7 @@ tt_content.' . $key . $prefix . ' {
 		if ($allowCaching) {
 			$cacheIdentifier = static::getBaseTcaCacheIdentifier();
 			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-			$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+			$codeCache = self::getCacheManager()->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
 				// substr is necessary, because the php frontend wraps php code around the cache value
 				$GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
@@ -1584,7 +1625,7 @@ tt_content.' . $key . $prefix . ' {
 	 */
 	static protected function createBaseTcaCacheFile() {
 		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-		$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+		$codeCache = self::getCacheManager()->getCache('cache_core');
 		$codeCache->set(static::getBaseTcaCacheIdentifier(), serialize($GLOBALS['TCA']));
 	}
 
@@ -1614,7 +1655,7 @@ tt_content.' . $key . $prefix . ' {
 			self::$extTablesWasReadFromCacheOnce = TRUE;
 			$cacheIdentifier = self::getExtTablesCacheIdentifier();
 			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-			$codeCache = $GLOBALS['typo3CacheManager']->getCache('cache_core');
+			$codeCache = self::getCacheManager()->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
 				$codeCache->requireOnce($cacheIdentifier);
 			} else {
@@ -1691,7 +1732,7 @@ tt_content.' . $key . $prefix . ' {
 		$phpCodeToCache = implode(LF, $phpCodeToCache);
 		// Remove all start and ending php tags from content
 		$phpCodeToCache = preg_replace('/<\\?php|\\?>/is', '', $phpCodeToCache);
-		$GLOBALS['typo3CacheManager']->getCache('cache_core')->set(self::getExtTablesCacheIdentifier(), $phpCodeToCache);
+		self::getCacheManager()->getCache('cache_core')->set(self::getExtTablesCacheIdentifier(), $phpCodeToCache);
 	}
 
 	/**
@@ -1772,7 +1813,7 @@ tt_content.' . $key . $prefix . ' {
 	 * @return void
 	 */
 	static public function removeCacheFiles() {
-		$GLOBALS['typo3CacheManager']->flushCachesInGroup('system');
+		self::getCacheManager()->flushCachesInGroup('system');
 	}
 
 	/**

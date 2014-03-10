@@ -181,6 +181,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function thawProperties(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, array $row) {
 		$className = get_class($object);
+		$classSchema = $this->reflectionService->getClassSchema($className);
 		$dataMap = $this->getDataMap($className);
 		$object->_setProperty('uid', (int)$row['uid']);
 		$object->_setProperty('pid', (int)$row['pid']);
@@ -198,7 +199,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$columnMap = $dataMap->getColumnMap($propertyName);
 			$columnName = $columnMap->getColumnName();
-			$propertyData = $this->reflectionService->getClassSchema($className)->getProperty($propertyName);
+			$propertyData = $classSchema->getProperty($propertyName);
 			$propertyValue = NULL;
 			if ($row[$columnName] !== NULL) {
 				switch ($propertyData['type']) {
@@ -220,7 +221,11 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 					case 'SplObjectStorage':
 					case 'Tx_Extbase_Persistence_ObjectStorage':
 					case 'TYPO3\\CMS\\Extbase\\Persistence\\ObjectStorage':
-						$propertyValue = $this->mapResultToPropertyValue($object, $propertyName, $this->fetchRelated($object, $propertyName, $row[$columnName]));
+						$propertyValue = $this->mapResultToPropertyValue(
+							$object,
+							$propertyName,
+							$this->fetchRelated($object, $propertyName, $row[$columnName])
+						);
 						break;
 					default:
 						if ($propertyData['type'] === 'DateTime' || in_array('DateTime', class_parents($propertyData['type']))) {
@@ -228,8 +233,13 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 						} elseif (TypeHandlingUtility::isCoreType($propertyData['type'])) {
 							$propertyValue = $this->mapCoreType($propertyData['type'], $row[$columnName]);
 						} else {
-							$propertyValue = $this->mapResultToPropertyValue($object, $propertyName, $this->fetchRelated($object, $propertyName, $row[$columnName]));
+							$propertyValue = $this->mapObjectToClassProperty(
+								$object,
+								$propertyName,
+								$row[$columnName]
+							);
 						}
+
 				}
 			}
 			if ($propertyValue !== NULL) {
@@ -404,6 +414,54 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 		$joinCondition = $this->qomFactory->equiJoinCondition($columnMap->getRelationTableName(), $columnMap->getChildKeyFieldName(), $columnMap->getChildTableName(), 'uid');
 		$source = $this->qomFactory->join($left, $right, \TYPO3\CMS\Extbase\Persistence\Generic\Query::JCR_JOIN_TYPE_INNER, $joinCondition);
 		return $source;
+	}
+
+	/**
+	 * Returns the mapped classProperty from the identiyMap or
+	 * mapResultToPropertyValue()
+	 *
+	 * If the field value is empty and the column map has no parent key field name,
+	 * the relation will be empty. If the identityMap has a registered object of
+	 * the correct type and identity (fieldValue), this function returns that object.
+	 * Otherwise, it proceeds with mapResultToPropertyValue().
+	 *
+	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject
+	 * @param string $propertyName
+	 * @param mixed $fieldValue the raw field value
+	 * @return mixed
+	 * @see mapResultToPropertyValue()
+	 */
+	protected function mapObjectToClassProperty(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $propertyName, $fieldValue) {
+		if ($this->propertyMapsByForeignKey($parentObject, $propertyName)) {
+				$result = $this->fetchRelated($parentObject, $propertyName, $fieldValue);
+				$propertyValue = $this->mapResultToPropertyValue($parentObject, $propertyName, $result);
+		} else {
+			if ($fieldValue === '') {
+				$propertyValue = $this->getEmptyRelationValue($parentObject, $propertyName);
+			} else {
+				$propertyMetaData = $this->reflectionService->getClassSchema(get_class($parentObject))->getProperty($propertyName);
+				if ($this->persistenceSession->hasIdentifier($fieldValue, $propertyMetaData['type'])) {
+					$propertyValue = $this->persistenceSession->getObjectByIdentifier($fieldValue, $propertyMetaData['type']);
+				} else {
+					$result = $this->fetchRelated($parentObject, $propertyName, $fieldValue);
+					$propertyValue = $this->mapResultToPropertyValue($parentObject, $propertyName, $result);
+				}
+			}
+		}
+
+		return $propertyValue;
+	}
+
+	/**
+	 * Checks if the relation is based on a foreign key.
+	 *
+	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject
+	 * @param string $propertyName
+	 * @return boolean TRUE if the property is mapped
+	 */
+	protected function propertyMapsByForeignKey(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $propertyName) {
+		$columnMap = $this->getDataMap(get_class($parentObject))->getColumnMap($propertyName);
+		return ($columnMap->getParentKeyFieldName() !== NULL);
 	}
 
 	/**

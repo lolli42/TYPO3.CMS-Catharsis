@@ -24,6 +24,7 @@ namespace TYPO3\CMS\Taskcenter\Controller;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -71,20 +72,8 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	public function main() {
 		$docHeaderButtons = $this->getButtons();
 		$markers = array();
-		$this->doc->JScodeArray[] = '
-			script_ended = 0;
-			function jumpToUrl(URL) {
-				document.location = URL;
-			}
-		';
-		$this->doc->postCode = '
-			<script language="javascript" type="text/javascript">
-				script_ended = 1;
-				if (top.fsMod) {
-					top.fsMod.recentIds["web"] = 0;
-				}
-			</script>
-		';
+		$this->doc->postCode = $this->doc->wrapScriptTags('if (top.fsMod) { top.fsMod.recentIds["web"] = 0; }');
+
 		// Render content depending on the mode
 		$mode = (string) $this->MOD_SETTINGS['mode'];
 		if ($mode == 'information') {
@@ -288,7 +277,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					if (!$this->checkAccess($extKey, $taskClass)) {
 						continue;
 					}
-					$link = 'mod.php?M=user_task&SET[function]=' . $extKey . '.' . $taskClass;
+					$link = BackendUtility::getModuleUrl('user_task') . '&SET[function]=' . $extKey . '.' . $taskClass;
 					$taskTitle = $GLOBALS['LANG']->sL($task['title']);
 					$taskDescriptionHtml = '';
 					// Check for custom icon

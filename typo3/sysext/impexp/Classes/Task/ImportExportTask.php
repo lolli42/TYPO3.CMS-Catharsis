@@ -24,6 +24,7 @@ namespace TYPO3\CMS\Impexp\Task;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides a textarea to save personal notes
@@ -134,7 +135,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 						'icon' => $icon,
 						'title' => $title,
 						'descriptionHtml' => implode('<br />', $description),
-						'link' => 'mod.php?M=user_task&SET[function]=impexp.tx_impexp_task&display=' . $presetCfg['uid']
+						'link' => BackendUtility::getModuleUrl('user_task') . '&SET[function]=impexp.tx_impexp_task&display=' . $presetCfg['uid']
 					);
 				}
 				// Render preset list
@@ -170,17 +171,12 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	}
 
 	/**
-	 * Returns first temporary folder of the user account (from $FILEMOUNTS)
+	 * Returns first temporary folder of the user account
 	 *
 	 * @return string Absolute path to first "_temp_" folder of the current user, otherwise blank.
 	 */
 	protected function userTempFolder() {
-		foreach ($GLOBALS['FILEMOUNTS'] as $filePathInfo) {
-			$tempFolder = $filePathInfo['path'] . '_temp_/';
-			if (@is_dir($tempFolder)) {
-				return $tempFolder;
-			}
-		}
+		// @TODO: This is broken since move to FAL
 		return '';
 	}
 

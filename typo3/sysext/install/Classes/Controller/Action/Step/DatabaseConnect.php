@@ -24,7 +24,7 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Install\Controller\Action;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * Database connect step:
@@ -33,7 +33,7 @@ use TYPO3\CMS\Install\Controller\Action;
  * - Sets database credentials in LocalConfiguration
  * - Loads / unloads ext:dbal and ext:adodb if requested
  */
-class DatabaseConnect extends Action\AbstractAction implements StepInterface {
+class DatabaseConnect extends AbstractStepAction {
 
 	/**
 	 * Execute database step:
@@ -90,8 +90,8 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 				$config = $configurationManager->getConfigurationValueByPath('EXTCONF/dbal/handlerCfg');
 				$driver = $config['_DEFAULT']['config']['driver'];
 				if ($driver === 'oci8') {
-					$configurationManager['_DEFAULT']['config']['driverOptions']['connectSID']
-						= $postValues['type'] === 'sid' ? TRUE : FALSE;
+					$config['_DEFAULT']['config']['driverOptions']['connectSID'] = ($postValues['type'] === 'sid');
+					$localConfigurationPathValuePairs['EXTCONF/dbal/handlerCfg'] = $config;
 				}
 			}
 
@@ -177,13 +177,13 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 
 				// After setting new credentials, test again and create an error message if connect is not successful
 				// @TODO: This could be simplified, if isConnectSuccessful could be released from TYPO3_CONF_VARS
-				// and feeded with connect values directly in order to obsolete the bootstrap reload.
+				// and fed with connect values directly in order to obsolete the bootstrap reload.
 				\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
 					->populateLocalConfiguration()
-					->setCoreCacheToNullBackend();
+					->disableCoreAndClassesCache();
 				if ($this->isDbalEnabled()) {
-					require(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
-					$GLOBALS['typo3CacheManager']->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+					require(ExtensionManagementUtility::extPath('dbal') . 'ext_localconf.php');
+					\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
 				}
 				if (!$this->isConnectSuccessful()) {
 					/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
@@ -219,13 +219,11 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 	}
 
 	/**
-	 * Render this step
+	 * Executes the step
 	 *
-	 * @return string
+	 * @return string Rendered content
 	 */
-	public function handle() {
-		$this->initializeHandle();
-
+	protected function executeAction() {
 		$isDbalEnabled = $this->isDbalEnabled();
 		$this->view
 			->assign('isDbalEnabled', $isDbalEnabled)
@@ -564,11 +562,11 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function executeLoadDbalExtension() {
-		if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')) {
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtension('adodb');
+		if (!ExtensionManagementUtility::isLoaded('adodb')) {
+			ExtensionManagementUtility::loadExtension('adodb');
 		}
-		if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')) {
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtension('dbal');
+		if (!ExtensionManagementUtility::isLoaded('dbal')) {
+			ExtensionManagementUtility::loadExtension('dbal');
 		}
 		/** @var $errorStatus \TYPO3\CMS\Install\Status\WarningStatus */
 		$warningStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\WarningStatus');
@@ -582,11 +580,11 @@ class DatabaseConnect extends Action\AbstractAction implements StepInterface {
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
 	protected function executeUnloadDbalExtension() {
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')) {
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::unloadExtension('adodb');
+		if (ExtensionManagementUtility::isLoaded('adodb')) {
+			ExtensionManagementUtility::unloadExtension('adodb');
 		}
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal')) {
-			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::unloadExtension('dbal');
+		if (ExtensionManagementUtility::isLoaded('dbal')) {
+			ExtensionManagementUtility::unloadExtension('dbal');
 		}
 		// @TODO: Remove configuration from TYPO3_CONF_VARS['EXTCONF']['dbal']
 		/** @var $errorStatus \TYPO3\CMS\Install\Status\WarningStatus */

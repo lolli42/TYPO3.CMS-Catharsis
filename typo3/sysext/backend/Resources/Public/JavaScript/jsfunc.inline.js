@@ -191,13 +191,13 @@ var inline = {
 	makeAjaxCall: function(method, params, lock, context) {
 		var max, url='', urlParams='', options={};
 		if (method && params && params.length && this.lockAjaxMethod(method, lock)) {
-			url = TBE_EDITOR.getBackendPath() + 'ajax.php';
-			urlParams = '&ajaxID=t3lib_TCEforms_inline::'+method;
+			url = TBE_EDITOR.getBackendPath() + TYPO3.settings.TCEFORMS.Inline[method].ajaxUrl;
+			urlParams = '';
 			for (var i=0, max=params.length; i<max; i++) {
-				urlParams += '&ajax['+i+']='+params[i];
+				urlParams += '&ajax[' + i + ']=' + encodeURIComponent(params[i]);
 			}
 			if (context) {
-				urlParams += '&ajax[context]=' + Object.toJSON(context);
+				urlParams += '&ajax[context]=' + encodeURIComponent(Object.toJSON(context));
 			}
 			options = {
 				method:		'post',

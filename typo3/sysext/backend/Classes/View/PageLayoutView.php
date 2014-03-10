@@ -1037,7 +1037,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					$red = $this->plusPages[$row['uid']] ? '<font color="red"><strong>+&nbsp;</strong></font>' : '';
 					$pTitle = htmlspecialchars(BackendUtility::getProcessedValue('pages', $field, $row[$field], 20));
 					if ($red) {
-						$pTitle = '<a href="' . htmlspecialchars(($this->script . '?id=' . $row['uid'])) . '">' . $pTitle . '</a>';
+						$pTitle = '<a href="' . htmlspecialchars(($this->script . ((strpos($this->script, '?') !== FALSE) ? '&' : '?') . 'id=' . $row['uid'])) . '">' . $pTitle . '</a>';
 					}
 					$theData[$field] = $row['treeIcons'] . $theIcon . $red . $pTitle . '&nbsp;&nbsp;';
 					break;
@@ -1509,7 +1509,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		$params['pid'] = $row['pid'];
 		$params['field'] = 'bodytext';
 		$params['returnUrl'] = GeneralUtility::linkThisScript();
-		$RTEonClick = 'window.location.href=\'' . $this->backPath . 'wizard_rte.php?' . GeneralUtility::implodeArrayForUrl('', array('P' => $params)) . '\';return false;';
+		$RTEonClick = 'window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('wizard_rte', array('P' => $params))) . ';return false;';
 		$addButton = $this->option_showBigButtons && $this->doEdit ? $GLOBALS['SOBE']->doc->t3Button($RTEonClick, $GLOBALS['LANG']->getLL('editInRTE')) : '';
 		return $addButton;
 	}

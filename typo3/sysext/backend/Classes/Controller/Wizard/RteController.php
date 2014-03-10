@@ -93,7 +93,7 @@ class RteController {
 		$this->popView = GeneralUtility::_GP('popView');
 		$this->R_URI = GeneralUtility::linkThisScript(array('popView' => ''));
 		// "Module name":
-		$this->MCONF['name'] = 'xMOD_wizard_rte.php';
+		$this->MCONF['name'] = 'wizard_rte';
 		// Starting the document template object:
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
@@ -119,19 +119,26 @@ class RteController {
 			// Getting the raw record (we need only the pid-value from here...)
 			$rawRec = BackendUtility::getRecord($this->P['table'], $this->P['uid']);
 			BackendUtility::fixVersioningPid($this->P['table'], $rawRec);
-			// Setting JavaScript, including the pid value for viewing:
-			$this->doc->JScode = $this->doc->wrapScriptTags('
-					function jumpToUrl(URL,formEl) {	//
-						if (document.editform) {
-							if (!TBE_EDITOR.isFormChanged()) {
-								window.location.href = URL;
-							} else if (formEl) {
-								if (formEl.type=="checkbox") formEl.checked = formEl.checked ? 0 : 1;
-							}
-						} else window.location.href = URL;
-					}
-				' . ($this->popView ? BackendUtility::viewOnClick($rawRec['pid'], '', BackendUtility::BEgetRootLine($rawRec['pid'])) : '') . '
-			');
+
+			// override the default jumpToUrl
+			$this->doc->JScodeArray['jumpToUrl'] = '
+		function jumpToUrl(URL,formEl) {
+			if (document.editform) {
+				if (!TBE_EDITOR.isFormChanged()) {
+					window.location.href = URL;
+				} else if (formEl) {
+					if (formEl.type=="checkbox") formEl.checked = formEl.checked ? 0 : 1;
+				}
+			} else {
+				window.location.href = URL;
+			}
+		}
+';
+
+			// Setting JavaScript of the pid value for viewing:
+			if ($this->popView) {
+				$this->doc->JScode = $this->doc->wrapScriptTags(BackendUtility::viewOnClick($rawRec['pid'], '', BackendUtility::BEgetRootLine($rawRec['pid'])));
+			}
 			// Initialize TCeforms - for rendering the field:
 			$tceforms = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FormEngine');
 			// Init...

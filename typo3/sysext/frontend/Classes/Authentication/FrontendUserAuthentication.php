@@ -136,7 +136,6 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$this->formfield_uident = 'pass';
 		$this->formfield_chalvalue = 'challenge';
 		$this->formfield_status = 'logintype';
-		$this->security_level = '';
 		$this->auth_timeout_field = 6000;
 		$this->sendNoCacheHeaders = FALSE;
 		$this->getFallBack = TRUE;
@@ -195,8 +194,8 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function isSetSessionCookie() {
-		$retVal = ($this->newSessionID || $this->forceSetCookie) && ($this->lifetime == 0 || !$this->user['ses_permanent']);
-		return $retVal;
+		return ($this->newSessionID || $this->forceSetCookie)
+			&& ($this->lifetime == 0 || !isset($this->user['ses_permanent']) || !$this->user['ses_permanent']);
 	}
 
 	/**
@@ -207,7 +206,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @todo Define visibility
 	 */
 	public function isRefreshTimeBasedCookie() {
-		return $this->lifetime > 0 && $this->user['ses_permanent'];
+		return $this->lifetime > 0 && isset($this->user['ses_permanent']) && $this->user['ses_permanent'];
 	}
 
 	/**
@@ -414,7 +413,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 				// Remove session-data
 				$this->removeSessionData();
 				// Remove cookie if not logged in as the session data is removed as well
-				if (!empty($this->user['uid'])) {
+				if (empty($this->user['uid'])) {
 					$this->removeCookie($this->name);
 				}
 			} elseif ($this->sessionDataTimestamp === NULL) {
@@ -470,7 +469,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * @return void
 	 */
 	public function gc() {
-		$timeoutTimeStamp = (int)$GLOBALS['EXEC_TIME'] - $this->sessionDataLifetime;
+		$timeoutTimeStamp = (int)($GLOBALS['EXEC_TIME'] - $this->sessionDataLifetime);
 		$GLOBALS['TYPO3_DB']->exec_DELETEquery('fe_session_data', 'tstamp < ' . $timeoutTimeStamp);
 		parent::gc();
 	}

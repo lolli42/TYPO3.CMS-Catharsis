@@ -147,7 +147,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		if ($cacheIdentifier === NULL) {
 			// Create an artificial cache identifier if the package states file is not available yet
 			// in order that the class loader and class alias map can cache anyways.
-			$cacheIdentifier = substr(md5(implode('###', array_keys($this->activePackages))), 0, 13);
+			$cacheIdentifier = md5(implode('###', array_keys($this->activePackages)));
 		}
 		$this->classLoader->setCacheIdentifier($cacheIdentifier)->setPackages($this->activePackages);
 
@@ -164,7 +164,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	protected function getCacheIdentifier() {
 		if ($this->cacheIdentifier === NULL) {
 			if (@file_exists($this->packageStatesPathAndFilename)) {
-				$this->cacheIdentifier = substr(md5_file($this->packageStatesPathAndFilename), 0, 13);
+				$this->cacheIdentifier = md5_file($this->packageStatesPathAndFilename);
 			} else {
 				$this->cacheIdentifier = NULL;
 			}
@@ -514,7 +514,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		if (isset($this->packageAliasMap[$lowercasedPackageKey = strtolower($packageKey)])) {
 			$packageKey = $this->packageAliasMap[$lowercasedPackageKey];
 		}
-		return parent::isPackageActive($packageKey) || isset($this->runtimeActivatedPackages[$packageKey]);
+		return isset($this->runtimeActivatedPackages[$packageKey]) || parent::isPackageActive($packageKey);
 	}
 
 	/**
@@ -531,6 +531,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	public function activatePackage($packageKey) {
 		$package = $this->getPackage($packageKey);
 		parent::activatePackage($package->getPackageKey());
+		$this->classLoader->addActivePackage($package);
 	}
 
 	/**
@@ -542,7 +543,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	public function activatePackageDuringRuntime($packageKey) {
 		$package = $this->getPackage($packageKey);
 		$this->runtimeActivatedPackages[$package->getPackageKey()] = $package;
-		$this->classLoader->addRuntimeActivatedPackage($package);
+		$this->classLoader->addActivePackage($package);
 	}
 
 
@@ -619,4 +620,15 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		$this->packages = $newPackages;
 	}
 
+	/**
+	 * Saves the current content of $this->packageStatesConfiguration to the
+	 * PackageStates.php file.
+	 *
+	 * @return void
+	 */
+	protected function sortAndSavePackageStates() {
+		parent::sortAndSavePackageStates();
+
+		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($this->packageStatesPathAndFilename);
+	}
 }

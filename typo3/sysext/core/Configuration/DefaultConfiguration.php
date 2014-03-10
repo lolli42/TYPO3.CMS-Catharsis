@@ -247,6 +247,11 @@ return array(
 			'processingTaskTypes' => array(
 				'Image.Preview' => 'TYPO3\\CMS\\Core\\Resource\\Processing\\ImagePreviewTask',
 				'Image.CropScaleMask' => 'TYPO3\\CMS\\Core\\Resource\\Processing\\ImageCropScaleMaskTask'
+			),
+			'registeredCollections' => array(
+				'static' => 'TYPO3\\CMS\\Core\\Resource\\Collection\\StaticFileCollection',
+				'folder' => 'TYPO3\\CMS\\Core\\Resource\\Collection\\FolderBasedFileCollection',
+				'category' => 'TYPO3\\CMS\\Core\\Resource\\Collection\\CategoryBasedFileCollection',
 			)
 		),
 		'isInitialInstallationInProgress' => FALSE,		// Boolean: If TRUE, the installation is 'in progress'. This value is handled within the install tool step installer internally.
@@ -256,26 +261,6 @@ return array(
 		'allowLocalInstall' => TRUE,		// Boolean: If set, local extensions in typo3conf/ext/ are allowed to be installed, updated and deleted etc.
 		'allowSystemInstall' => FALSE,		// Boolean: If set, you can install extensions in the sysext/ dir. Use this to upgrade the 'cms' and 'lang' extensions.
 		'excludeForPackaging' => '(CVS|\\..*|.*~|.*\\.bak)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
-		'extListArray' => array(
-			'filelist',
-			'version',
-			'context_help',
-			'extra_page_cm_options',
-			'impexp',
-			'belog',
-			'about',
-			'documentation',
-			'cshmanual',
-			'aboutmodules',
-			'setup',
-			'opendocs',
-			'install',
-			't3editor',
-			'felogin',
-			'feedit',
-			'recycler',
-			'saltedpasswords',
-		),
 		'extConf' => array(
 			'saltedpasswords' => serialize(array(
 				'BE.' => array(
@@ -628,29 +613,101 @@ return array(
 		'spriteIconGenerator_handler' => 'TYPO3\\CMS\\Backend\\Sprite\\SimpleSpriteHandler',		// String: Used to register own/other spriteGenerating Handler, they have to implement the interface \TYPO3\CMS\Backend\Sprite\SpriteIconGeneratorInterface. If set to "\TYPO3\CMS\Backend\Sprite\SpriteBuildingHandler" icons from extensions will automatically merged into sprites.
 		'debug' => FALSE,									// Boolean: If set, the loginrefresh is disabled and pageRenderer is set to debug mode. Use this to debug the backend only!
 		'AJAX' => array(									// array of key-value pairs for a unified use of AJAX calls in the TYPO3 backend. Keys are the unique ajaxIDs where the value will be resolved to call a method in an object. See ajax.php for more information.
-			'SC_alt_db_navframe::expandCollapse' => 'TYPO3\\CMS\\Backend\\Controller\\PageTreeNavigationController->ajaxExpandCollapse',
-			'SC_alt_file_navframe::expandCollapse' => 'TYPO3\\CMS\\Backend\\Controller\\FileSystemNavigationFrameController->ajaxExpandCollapse',
-			'TYPO3_tcefile::process' => 'TYPO3\\CMS\\Backend\\Controller\\File\\FileController->processAjaxRequest',
-			't3lib_TCEforms_inline::createNewRecord' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
-			't3lib_TCEforms_inline::getRecordDetails' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
-			't3lib_TCEforms_inline::synchronizeLocalizeRecords' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
-			't3lib_TCEforms_inline::setExpandedCollapsedState' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
-			't3lib_TCEforms_suggest::searchRecord' => 'TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement->processAjaxRequest',
-			'ShortcutMenu::getGroups' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->getAjaxShortcutGroups',
-			'ShortcutMenu::saveShortcut' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->setAjaxShortcut',
-			'ShortcutMenu::render' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->renderAjax',
-			'ShortcutMenu::delete' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->deleteAjaxShortcut',
-			'ShortcutMenu::create' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->createAjaxShortcut',
-			'ModuleMenu::saveMenuState' => 'TYPO3\\CMS\\Backend\\View\\ModuleMenuView->saveMenuState',
-			'ModuleMenu::getData' => 'TYPO3\\CMS\\Backend\\View\\ModuleMenuView->getModuleData',
-			'BackendLogin::login' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->login',
-			'BackendLogin::logout' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->logout',
-			'BackendLogin::refreshLogin' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->refreshLogin',
-			'BackendLogin::isTimedOut' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->isTimedOut',
-			'BackendLogin::getChallenge' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->getChallenge',
-			'BackendLogin::refreshTokens' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->refreshTokens',
-			'ExtDirect::getAPI' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectApi->getAPI',
-			'ExtDirect::route' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectRouter->route'
+			'SC_alt_db_navframe::expandCollapse' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Controller\\PageTreeNavigationController->ajaxExpandCollapse',
+				'csrfTokenCheck' => TRUE
+			),
+			'SC_alt_file_navframe::expandCollapse' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Controller\\FileSystemNavigationFrameController->ajaxExpandCollapse',
+				'csrfTokenCheck' => TRUE
+			),
+			'TYPO3_tcefile::process' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Controller\\File\\FileController->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			't3lib_TCEforms_inline::createNewRecord' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			't3lib_TCEforms_inline::getRecordDetails' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			't3lib_TCEforms_inline::synchronizeLocalizeRecords' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			't3lib_TCEforms_inline::setExpandedCollapsedState' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			't3lib_TCEforms_suggest::searchRecord' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			'ShortcutMenu::getGroups' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->getAjaxShortcutGroups',
+				'csrfTokenCheck' => TRUE
+			),
+			'ShortcutMenu::saveShortcut' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->setAjaxShortcut',
+				'csrfTokenCheck' => TRUE
+			),
+			'ShortcutMenu::render' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->renderAjax',
+				'csrfTokenCheck' => TRUE
+			),
+			'ShortcutMenu::delete' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->deleteAjaxShortcut',
+				'csrfTokenCheck' => TRUE
+			),
+			'ShortcutMenu::create' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->createAjaxShortcut',
+				'csrfTokenCheck' => TRUE
+			),
+			'ModuleMenu::saveMenuState' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\View\\ModuleMenuView->saveMenuState',
+				'csrfTokenCheck' => TRUE
+			),
+			'ModuleMenu::getData' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\View\\ModuleMenuView->getModuleData',
+				'csrfTokenCheck' => TRUE
+			),
+			'BackendLogin::login' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->login',
+				// Needs to be unprotected
+				'csrfTokenCheck' => FALSE
+			),
+			'BackendLogin::logout' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->logout',
+				// Needs to be unprotected
+				'csrfTokenCheck' => FALSE
+			),
+			'BackendLogin::refreshLogin' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->refreshLogin',
+				// Needs to be unprotected
+				'csrfTokenCheck' => FALSE
+			),
+			'BackendLogin::isTimedOut' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->isTimedOut',
+				// Needs to be unprotected
+				'csrfTokenCheck' => FALSE
+			),
+			'BackendLogin::getChallenge' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\AjaxLoginHandler->getChallenge',
+				// Needs to be unprotected
+				'csrfTokenCheck' => FALSE
+			),
+			'ExtDirect::getAPI' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectApi->getAPI',
+				// No need to be CSRF protected
+				'csrfTokenCheck' => FALSE
+			),
+			'ExtDirect::route' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectRouter->route',
+				// All ExtJS calls are CSRF protected with another token
+				'csrfTokenCheck' => FALSE
+			),
 		),
 		'XCLASS' => array()
 	),
@@ -703,6 +760,7 @@ return array(
 		'cHashExcludedParametersIfEmpty' => '',		// Optional: Configure Parameters that are only relevant for the chash if there's an associated value available. And asterisk "*" can be used to skip all empty parameters.
 		'workspacePreviewLogoutTemplate' => '',		// If set, points to an HTML file relative to the TYPO3_site root which will be read and outputted as template for this message. Example: fileadmin/templates/template_workspace_preview_logout.html. Inside you can put the marker %1$s to insert the URL to go back to. Use this in &lt;a href="%1$s"&gt;Go back...&lt;/a&gt; links
 		'versionNumberInFilename' => 'querystring',		// String: embed,querystring,''. Allows to automatically include a version number (timestamp of the file) to referred CSS and JS filenames on the rendered page. This will make browsers and proxies reload the files if they change (thus avoiding caching issues). Set to 'embed' will have the timestamp embedded in the filename, ie. filename.1269312081.js. IMPORTANT: 'embed' requires extra .htaccess rules to work (please refer to _.htaccess or the _.htaccess file from the dummy package)<p>Set to 'querystring' (default setting) to append the version number as a query parameter (doesn't require mod_rewrite). Set to '' will turn this functionality off (behaves like TYPO3 &lt; v4.4).</p>
+		'contentRenderingTemplates' => array(),	// Array to define the TypoScript parts that define the main content rendering. Extensions like "css_styled_content" provide content rendering templates. Other extensions like "felogin" or "indexed search" extend these templates and their TypoScript parts are added directly after the content templates. See EXT:css_styled_content/ext_localconf.php and EXT:frontend/Classes/TypoScript/TemplateService.php
 		'XCLASS' => array(),		// See 'Inside TYPO3' document for more information.
 	),
 	'MAIL' => array( // Mail configurations to tune how \TYPO3\CMS\Core\Mail\ classes will send their mails.

@@ -1092,7 +1092,7 @@ class BackendUtility {
 	 * @return 	void
 	 */
 	static public function storeHash($hash, $data, $ident) {
-		$GLOBALS['typo3CacheManager']->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), 0);
+		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), 0);
 	}
 
 	/**
@@ -1102,12 +1102,12 @@ class BackendUtility {
 	 * IDENTICAL to the function by same name found in \TYPO3\CMS\Frontend\Page\PageRepository
 	 *
 	 * @param string $hash The hash-string which was used to store the data value
-	 * @param integer $expTime Variabele is not used in the function
+	 * @param integer $expTime Variable is not used in the function
 	 * @return mixed The "data" from the cache
 	 */
 	static public function getHash($hash, $expTime = 0) {
 		$hashContent = NULL;
-		$cacheEntry = $GLOBALS['typo3CacheManager']->getCache('cache_hash')->get($hash);
+		$cacheEntry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash')->get($hash);
 		if ($cacheEntry) {
 			$hashContent = $cacheEntry;
 		}
@@ -1177,64 +1177,6 @@ class BackendUtility {
 			}
 		}
 		return $TSconfig;
-	}
-
-	/**
-	 * Updates Page TSconfig for a page with $id
-	 * The function seems to take $pageTS as an array with properties and compare the values with those that already exists for the "object string", $TSconfPrefix, for the page, then sets those values which were not present.
-	 * $impParams can be supplied as already known Page TSconfig, otherwise it's calculated.
-	 *
-	 * THIS DOES NOT CHECK ANY PERMISSIONS. SHOULD IT?
-	 * More documentation is needed.
-	 *
-	 * @param integer $id Page id
-	 * @param array $pageTS Page TS array to write
-	 * @param string $TSconfPrefix Prefix for object paths
-	 * @param array $impParams [Description needed.]
-	 * @return 	void
-	 * @internal
-	 * @see implodeTSParams(), getPagesTSconfig()
-	 */
-	static public function updatePagesTSconfig($id, $pageTS, $TSconfPrefix, $impParams = '') {
-		$id = (int)$id;
-		if (is_array($pageTS) && $id > 0) {
-			if (!is_array($impParams)) {
-				$impParams = self::implodeTSParams(self::getPagesTSconfig($id));
-			}
-			$set = array();
-			foreach ($pageTS as $f => $v) {
-				$f = $TSconfPrefix . $f;
-				if (!isset($impParams[$f]) && trim($v) || trim($impParams[$f]) !== trim($v)) {
-					$set[$f] = trim($v);
-				}
-			}
-			if (count($set)) {
-				// Get page record and TS config lines
-				$pRec = self::getRecord('pages', $id);
-				$TSlines = explode(LF, $pRec['TSconfig']);
-				$TSlines = array_reverse($TSlines);
-				// Reset the set of changes.
-				foreach ($set as $f => $v) {
-					$inserted = 0;
-					foreach ($TSlines as $ki => $kv) {
-						if (substr($kv, 0, strlen($f) + 1) == $f . '=') {
-							$TSlines[$ki] = $f . '=' . $v;
-							$inserted = 1;
-							break;
-						}
-					}
-					if (!$inserted) {
-						$TSlines = array_reverse($TSlines);
-						$TSlines[] = $f . '=' . $v;
-						$TSlines = array_reverse($TSlines);
-					}
-				}
-				$TSlines = array_reverse($TSlines);
-				// Store those changes
-				$TSconf = implode(LF, $TSlines);
-				$GLOBALS['TYPO3_DB']->exec_UPDATEquery('pages', 'uid=' . (int)$id, array('TSconfig' => $TSconf));
-			}
-		}
 	}
 
 	/**
@@ -1574,7 +1516,7 @@ class BackendUtility {
 					$imgTag = '<img src="' . $imageUrl . '" alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
 				} else {
 					// Icon
-					$imgTag = IconUtility::getSpriteIconForFile(strtolower($fileObject->getExtension()), array('title' => $fileObject->getName()));
+					$imgTag = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
 				}
 				if ($linkInfoPopup) {
 					$onClick = 'top.launchView(\'_FILE\',\'' . $fileObject->getUid() . '\',\'' . $backPath . '\'); return false;';
@@ -1618,7 +1560,7 @@ class BackendUtility {
 						}
 					} else {
 						// Gets the icon
-						$fileIcon = IconUtility::getSpriteIconForFile($fileExtension, array('title' => $fileObject->getName()));
+						$fileIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
 						if ($linkInfoPopup) {
 							$onClick = 'top.launchView(\'_FILE\', \'' . $fileName . '\',\'\',\'' . $backPath . '\'); return false;';
 							$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $fileIcon . '</a> ';
@@ -1863,19 +1805,13 @@ class BackendUtility {
 			if (is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'][$column]) && is_array($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'])) {
 				// Loop on all selected values
 				foreach ($values as $aValue) {
-					$valueFound = FALSE;
 					foreach ($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'] as $itemConfiguration) {
 						// Loop on all available items
 						// Keep matches and move on to next value
 						if ($aValue == $itemConfiguration[1]) {
 							$labels[] = $GLOBALS['LANG']->sL($itemConfiguration[0]);
-							$valueFound = TRUE;
 							break;
 						}
-					}
-					// no item label found then we use the plain db value
-					if (!$valueFound) {
-						$labels[] = $aValue;
 					}
 				}
 			}
@@ -1898,7 +1834,7 @@ class BackendUtility {
 			return $GLOBALS['TCA'][$table]['columns'][$col]['label'];
 		}
 		if ($printAllWrap) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('The third parameter of getItemLabel() is deprecated with TYPO3 CMS 6.2 and will be removed two versions later.');
+			GeneralUtility::deprecationLog('The third parameter of getItemLabel() is deprecated with TYPO3 CMS 6.2 and will be removed two versions later.');
 			$parts = explode('|', $printAllWrap);
 			return $parts[0] . $col . $parts[1];
 		}
@@ -2105,6 +2041,10 @@ class BackendUtility {
 								}
 								$l = implode(', ', $lA);
 							}
+						}
+						if (empty($l) && !empty($value)) {
+							// Use plain database value when label is empty
+							$l = $value;
 						}
 					}
 					break;
@@ -2731,21 +2671,21 @@ class BackendUtility {
 		if (!is_array($menuItems) || count($menuItems) <= 1) {
 			return '';
 		}
-
 		if (!is_array($mainParams)) {
 			$mainParams = array('id' => $mainParams);
 		}
-		$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
 		if (!$script) {
-			$script = basename(PATH_thisScript);
-			$mainParams .= GeneralUtility::_GET('M') ? '&M=' . rawurlencode(GeneralUtility::_GET('M')) : '';
+			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
+		} else {
+			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
+			$scriptUrl = $script . '?' . $mainParams . $addparams;
 		}
 		$options = array();
 		foreach ($menuItems as $value => $label) {
 			$options[] = '<option value="' . htmlspecialchars($value) . '"' . ((string)$currentValue === (string)$value ? ' selected="selected"' : '') . '>' . GeneralUtility::deHSCentities(htmlspecialchars($label)) . '</option>';
 		}
 		if (count($options)) {
-			$onChange = 'jumpToUrl(\'' . $script . '?' . $mainParams . $addparams . '&' . $elementName . '=\'+this.options[this.selectedIndex].value,this);';
+			$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+this.options[this.selectedIndex].value,this);';
 			return '
 
 				<!-- Function Menu of module -->
@@ -2774,12 +2714,13 @@ class BackendUtility {
 		if (!is_array($mainParams)) {
 			$mainParams = array('id' => $mainParams);
 		}
-		$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
 		if (!$script) {
-			$script = basename(PATH_thisScript);
-			$mainParams .= GeneralUtility::_GET('M') ? '&M=' . rawurlencode(GeneralUtility::_GET('M')) : '';
+			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
+		} else {
+			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
+			$scriptUrl = $script . '?' . $mainParams . $addparams;
 		}
-		$onClick = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($script . '?' . $mainParams . $addparams . '&' . $elementName . '=') . '+(this.checked?1:0),this);';
+		$onClick = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+(this.checked?1:0),this);';
 
 		return
 		'<input' .
@@ -2810,12 +2751,13 @@ class BackendUtility {
 		if (!is_array($mainParams)) {
 			$mainParams = array('id' => $mainParams);
 		}
-		$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
 		if (!$script) {
-			$script = basename(PATH_thisScript);
-			$mainParams .= GeneralUtility::_GET('M') ? '&M=' . rawurlencode(GeneralUtility::_GET('M')) : '';
+			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
+		} else {
+			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
+			$scriptUrl = $script . '?' . $mainParams . $addparams;
 		}
-		$onChange = 'jumpToUrl(\'' . $script . '?' . $mainParams . $addparams . '&' . $elementName . '=\'+escape(this.value),this);';
+		$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+escape(this.value),this);';
 		return '<input type="text"' . $GLOBALS['TBE_TEMPLATE']->formWidth($size) . ' name="' . $elementName . '" value="' . htmlspecialchars($currentValue) . '" onchange="' . htmlspecialchars($onChange) . '" />';
 	}
 
@@ -2994,21 +2936,48 @@ class BackendUtility {
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
 	 * @param boolean/string $backPathOverride backpath that should be used instead of the global $BACK_PATH
 	 * @param boolean $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
-	 * @return boolean/string Calculated URL or FALSE
+	 * @return string Calculated URL
 	 */
 	static public function getModuleUrl($moduleName, $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
-		if (!$GLOBALS['BE_USER']->check('modules', $moduleName)) {
-			return FALSE;
-		}
 		if ($backPathOverride === FALSE) {
-			$backPath = $GLOBALS['BACK_PATH'];
+			$backPath = isset($GLOBALS['BACK_PATH']) ? $GLOBALS['BACK_PATH'] : '';
 		} else {
 			$backPath = $backPathOverride;
 		}
-		$allUrlParameters = array();
-		$allUrlParameters['M'] = $moduleName;
-		$allUrlParameters = array_merge($allUrlParameters, $urlParameters);
-		$url = 'mod.php?' . GeneralUtility::implodeArrayForUrl('', $allUrlParameters, '', TRUE);
+		$urlParameters = array(
+			'M' => $moduleName,
+			'moduleToken' => \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
+		) + $urlParameters;
+		$url = 'mod.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', TRUE, TRUE), '&');
+		if ($returnAbsoluteUrl) {
+			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
+		} else {
+			return $backPath . $url;
+		}
+	}
+
+	/**
+	 * Returns the Ajax URL for a given AjaxID including a CSRF token.
+	 *
+	 * @param string $ajaxIdentifier Identifier of the AJAX callback
+	 * @param array $urlParameters URL parameters that should be added as key value pairs
+	 * @param bool/string $backPathOverride Backpath that should be used instead of the global $BACK_PATH
+	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
+	 * @return string Calculated URL
+	 */
+	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
+		if ($backPathOverride) {
+			$backPath = $backPathOverride;
+		} else {
+			$backPath = isset($GLOBALS['BACK_PATH']) ? $GLOBALS['BACK_PATH'] : '';
+		}
+		$additionalUrlParameters = array(
+			'ajaxID' => $ajaxIdentifier
+		);
+		if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxIdentifier]['csrfTokenCheck'])) {
+			$additionalUrlParameters['ajaxToken'] = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()->generateToken('ajaxCall', $ajaxIdentifier);
+		}
+		$url = 'ajax.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', ($additionalUrlParameters + $urlParameters), '', TRUE, TRUE), '&');
 		if ($returnAbsoluteUrl) {
 			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
 		} else {
