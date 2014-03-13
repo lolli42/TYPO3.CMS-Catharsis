@@ -443,7 +443,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						if ($this->tt_contentConfig['languageMode']) {
 							$languageColumn[$key][$lP] = $head[$key] . $content[$key];
 							if (!$this->defLangBinding) {
-								$languageColumn[$key][$lP] .= '<br /><br />' . $this->newLanguageButton($this->getNonTranslatedTTcontentUids($defLanguageCount[$key], $id, $lP), $lP);
+								$languageColumn[$key][$lP] .= $this->newLanguageButton(
+									$this->getNonTranslatedTTcontentUids($defLanguageCount[$key], $id, $lP),
+									$lP
+								);
 							}
 						}
 						if (is_array($row) && !VersionState::cast($row['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
@@ -466,6 +469,9 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$singleElementHTML .= '</div>';
 							$statusHidden = $this->isDisabled('tt_content', $row) ? ' t3-page-ce-hidden' : '';
 							$singleElementHTML = '<div class="t3-page-ce' . $statusHidden . '" id="element-tt_content-' . $row['uid'] . '">' . $singleElementHTML . '</div>';
+							if ($this->tt_contentConfig['languageMode']) {
+								$singleElementHTML .= '<div class="t3-page-ce">';
+							}
 							$singleElementHTML .= '<div class="t3-page-ce-dropzone" id="colpos-' . $key . '-' . 'page-' . $id .
 								'-' . uniqid() . '">';
 							// Add icon "new content element below"
@@ -483,12 +489,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 									</div>
 								';
 							}
-							if (!$this->tt_contentConfig['languageMode']) {
-								$singleElementHTML .= '
-								</div>';
-							}
-							$singleElementHTML .= '
-							</div>';
+							$singleElementHTML .= '</div></div>';
 							if ($this->defLangBinding && $this->tt_contentConfig['languageMode']) {
 								$defLangBinding[$key][$lP][$row[$lP ? 'l18n_parent' : 'uid']] = $singleElementHTML;
 							} else {
@@ -519,7 +520,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					foreach ($cList as $k => $key) {
 						$languageColumn[$key][$lP] = $head[$key] . $content[$key];
 						if (!$this->defLangBinding) {
-							$languageColumn[$key][$lP] .= '<br /><br />' . $this->newLanguageButton($this->getNonTranslatedTTcontentUids($defLanguageCount[$key], $id, $lP), $lP);
+							$languageColumn[$key][$lP] .= $this->newLanguageButton(
+								$this->getNonTranslatedTTcontentUids($defLanguageCount[$key], $id, $lP),
+								$lP
+							);
 						}
 					}
 				} else {
@@ -620,15 +624,18 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 				foreach ($languageColumn as $cKey => $cCont) {
 					$out .= '
 					<tr>
-						<td valign="top" class="t3-gridCell t3-page-lang-column"">' . implode(('</td>' . '
-						<td valign="top" class="t3-gridCell t3-page-lang-column">'), $cCont) . '</td>
+						<td valign="top" class="t3-gridCell t3-page-column t3-page-lang-column">' . implode(('</td>' . '
+						<td valign="top" class="t3-gridCell t3-page-column t3-page-lang-column">'), $cCont) . '</td>
 					</tr>';
 					if ($this->defLangBinding) {
 						// "defLangBinding" mode
 						foreach ($defLanguageCount[$cKey] as $defUid) {
 							$cCont = array();
 							foreach ($langListArr as $lP) {
-								$cCont[] = $defLangBinding[$cKey][$lP][$defUid] . '<br/>' . $this->newLanguageButton($this->getNonTranslatedTTcontentUids(array($defUid), $id, $lP), $lP);
+								$cCont[] = $defLangBinding[$cKey][$lP][$defUid] . $this->newLanguageButton(
+									$this->getNonTranslatedTTcontentUids(array($defUid), $id, $lP),
+									$lP
+								);
 							}
 							$out .= '
 							<tr>
@@ -1450,7 +1457,11 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			// Copy for language:
 			$onClick = 'window.location.href=\'' . $GLOBALS['SOBE']->doc->issueCommand($params) . '\'; return false;';
-			$theNewButton = $GLOBALS['SOBE']->doc->t3Button($onClick, $GLOBALS['LANG']->getLL('newPageContent_copyForLang') . ' [' . count($defLanguageCount) . ']');
+			$theNewButton = '<div class="t3-page-lang-copyce">' .
+				$GLOBALS['SOBE']->doc->t3Button(
+					$onClick,
+					$GLOBALS['LANG']->getLL('newPageContent_copyForLang') . ' [' . count($defLanguageCount) . ']'
+				) . '</div>';
 			return $theNewButton;
 		}
 	}

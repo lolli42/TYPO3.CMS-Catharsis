@@ -38,7 +38,7 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$mockCache->expects($this->any())->method('set')->will($this->returnValue(TRUE));
 		$mockCache->expects($this->any())->method('getBackend')->will($this->returnValue($mockCacheBackend));
 		$mockCacheBackend->expects($this->any())->method('getCacheDirectory')->will($this->returnValue('vfs://Test/Cache'));
-		$this->packageManager = $this->getMock('TYPO3\\CMS\\Core\\Package\\PackageManager', array('sortAndSavePackageStates'));
+		$this->packageManager = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Package\\PackageManager', array('sortAndSavePackageStates'));
 
 		mkdir('vfs://Test/Packages/Application', 0700, TRUE);
 		mkdir('vfs://Test/Configuration');
@@ -54,7 +54,9 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->packageManager->injectClassLoader($mockClassLoader);
 		$this->packageManager->injectCoreCache($mockCache);
 		$this->inject($this->packageManager, 'composerNameToPackageKeyMap', $composerNameToPackageKeyMap);
-		$this->packageManager->initialize($mockBootstrap, 'vfs://Test/Packages/', 'vfs://Test/Configuration/PackageStates.php');
+		$this->packageManager->initialize($mockBootstrap);
+		$this->packageManager->_set('packagesBasePath', 'vfs://Test/Packages/');
+		$this->packageManager->_set('packageStatesPathAndFilename', 'vfs://Test/Configuration/PackageStates.php');
 	}
 
 	/**
@@ -343,7 +345,7 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function createPackageThrowsExceptionOnInvalidPackageKey() {
 		try {
-			$this->packageManager->createPackage('Invalid_PackageKey');
+			$this->packageManager->createPackage('Invalid.PackageKey');
 		} catch (\TYPO3\Flow\Package\Exception\InvalidPackageKeyException $exception) {
 		}
 		$this->assertFalse(is_dir('vfs://Test/Packages/Application/Invalid_PackageKey'), 'Package folder with invalid package key was created');

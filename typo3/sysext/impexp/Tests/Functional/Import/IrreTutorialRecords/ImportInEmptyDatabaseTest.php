@@ -31,14 +31,15 @@ require_once __DIR__ . '/../AbstractImportTestCase.php';
  */
 class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
 
-	protected $dataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/IrreTutorialRecords/DataSet/';
+	protected $scenarioDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/IrreTutorialRecords/DataSet/Scenario/';
+	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/IrreTutorialRecords/DataSet/Assertion/';
 
 	/**
 	 * @test
 	 */
 	public function importIrreRecords() {
 
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExport/irre-records.xml', 1);
+		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/irre-records.xml', 1);
 		$this->import->importData(0);
 
 		$this->assertAssertionDataSet('importIrreRecords');

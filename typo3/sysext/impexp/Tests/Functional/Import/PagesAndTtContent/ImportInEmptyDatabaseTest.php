@@ -31,14 +31,15 @@ require_once __DIR__ . '/../AbstractImportTestCase.php';
  */
 class ImportInEmptyDatabaseTest extends \TYPO3\CMS\Impexp\Tests\Functional\Import\AbstractImportTestCase {
 
-	protected $dataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContent/DataSet/';
+	protected $scenarioDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContent/DataSet/Scenario/';
+	protected $assertionDataSetDirectory = 'typo3/sysext/impexp/Tests/Functional/Import/PagesAndTtContent/DataSet/Assertion/';
 
 	/**
 	 * @test
 	 */
 	public function importSimplePagesAndRelatedTtContent() {
 
-		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExport/pages-and-ttcontent.xml', 1);
+		$this->import->loadFile(__DIR__ . '/../../Fixtures/ImportExportXml/pages-and-ttcontent.xml', 1);
 		$this->import->importData(0);
 
 		$this->assertAssertionDataSet('importSimplePagesAndRelatedTtContent');

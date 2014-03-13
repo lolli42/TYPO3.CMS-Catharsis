@@ -1295,27 +1295,6 @@ class TypoScriptFrontendController {
 		$this->idParts = explode(',', $this->id);
 		$this->id = $this->idParts[0];
 
-			// Hook for further id manipulation
-		if (is_array($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['modifyPageId'])) {
-			$_params = array('id' => $this->id);
-			$newId = FALSE;
-			foreach ($this->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['modifyPageId'] as $_funcRef) {
-				$deprecationMessage = 'Hook $TYPO3_CONF_VARS[SC_OPTIONS][tslib/class.tslib_fe.php][modifyPageId] is ' .
-					'deprecated since 6.0 and will be removed two versions later';
-				if (!is_object($_funcRef) || !is_a($_funcRef, 'Closure')) {
-					$deprecationMessage .= '- used by ' . $_funcRef;
-				}
-				\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog($deprecationMessage);
-				$newIdFromFunc = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
-				if ($newIdFromFunc !== FALSE) {
-					$newId = $newIdFromFunc;
-				}
-			}
-			if ($newId !== FALSE) {
-				$this->id = $newId;
-			}
-		}
-
 		// If $this->id is a string, it's an alias
 		$this->checkAndSetAlias();
 		// The id and type is set to the integer-value - just to be sure...
@@ -2714,18 +2693,6 @@ class TypoScriptFrontendController {
 	}
 
 	/**
-	 * Processes submitted user data (obsolete "Frontend TCE")
-	 *
-	 * @return void
-	 * @see tslib_feTCE
-	 * @deprecated since 6.0, will be removed two versions later
-	 * @todo Define visibility
-	 */
-	public function fe_tce() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
 	 * Checks if a formmail submission can be sent as email
 	 *
 	 * @param string $locationData The input from $_POST['locationData']
@@ -3806,19 +3773,6 @@ if (version == "n3") {
 	}
 
 	/**
-	 * Determines if any EXTincScripts should be included
-	 *
-	 * @return boolean TRUE, if external php scripts should be included (set by PHP_SCRIPT_EXT cObjects)
-	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::PHP_SCRIPT
-	 * @deprecated since 6.0, will be removed two versions later
-	 * @todo Define visibility
-	 */
-	public function isEXTincScript() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		return FALSE;
-	}
-
-	/**
 	 * Stores session data for the front end user
 	 *
 	 * @return void
@@ -3842,62 +3796,6 @@ if (version == "n3") {
 		$microtime_BE_USER_start = isset($GLOBALS['TYPO3_MISC']['microtime_BE_USER_start']) ? $GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] : NULL;
 		$microtime_BE_USER_end = isset($GLOBALS['TYPO3_MISC']['microtime_BE_USER_end']) ? $GLOBALS['TYPO3_MISC']['microtime_BE_USER_end'] : NULL;
 		$this->scriptParseTime = $GLOBALS['TT']->getMilliseconds($microtime_end) - $GLOBALS['TT']->getMilliseconds($microtime_start) - ($GLOBALS['TT']->getMilliseconds($microtime_BE_USER_end) - $GLOBALS['TT']->getMilliseconds($microtime_BE_USER_start));
-	}
-
-	/**
-	 * Get the (partially) anonymized IP address for the log file
-	 * Configure: set set config.stat_IP_anonymize=1
-	 *
-	 * @return string the IP to log
-	 * @deprecated since 6.0, will be removed with 6.2
-	 */
-	public function getLogIPAddress() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		$result = GeneralUtility::getIndpEnv('REMOTE_ADDR');
-		if ($this->config['config']['stat_IP_anonymize']) {
-			if (strpos($result, ':')) {
-				$result = $this->stripIPv6($result);
-			} else {
-				$result = $this->stripIPv4($result);
-			}
-		}
-		return $result;
-	}
-
-	/**
-	 * Get the (possibly) anonymized host name for the log file
-	 * Configure: set config.stat_IP_anonymize=1
-	 *
-	 * @return the host name to log
-	 * @deprecated since 6.0, will be removed with 6.2
-	 */
-	public function getLogHostName() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		if ($this->config['config']['stat_IP_anonymize']) {
-			// Ignore hostname if IP anonymized
-			$hostName = '<anonymized>';
-		} else {
-			$hostName = GeneralUtility::getIndpEnv('REMOTE_HOST');
-		}
-		return $hostName;
-	}
-
-	/**
-	 * Get the (possibly) anonymized username or user id for the log file
-	 * Configure: set config.stat_IP_anonymize=1
-	 *
-	 * @return string The user name /uid to log
-	 * @deprecated since 6.0, will be removed with 6.2
-	 */
-	public function getLogUserName() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		$logUser = isset($this->config['config']['stat_logUser']) ? $this->config['config']['stat_logUser'] : TRUE;
-		if ($this->loginUser && $logUser) {
-			$userName = $this->fe_user->user['username'];
-		} else {
-			$userName = '-';
-		}
-		return $userName;
 	}
 
 	/**

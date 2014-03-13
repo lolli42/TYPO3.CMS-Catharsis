@@ -125,6 +125,15 @@ class FileListController {
 	public $filelist = NULL;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_mod_file_list.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_misc.xlf');
+		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], TRUE);
+	}
+
+	/**
 	 * Initialize variables, file object
 	 * Incoming GET vars include id, pointer, table, imagemode
 	 *
@@ -326,6 +335,7 @@ class FileListController {
 			) {
 				$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
 				$pageRenderer->addInlineSetting('DragUploader', 'ajaxUrl', BackendUtility::getAjaxUrl('TYPO3_tcefile::process'));
+				$pageRenderer->addInlineSetting('DragUploader', 'ajaxFlashMessagesUrl', BackendUtility::getAjaxUrl('DocumentTemplate::getFlashMessages'));
 				$pageRenderer->addInlineLanguagelabelFile(
 					\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
 					'file_upload'

@@ -116,9 +116,6 @@ class ResourceStorageTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCa
 	 */
 	protected function createDriverMock($driverConfiguration, \TYPO3\CMS\Core\Resource\ResourceStorage $storageObject = NULL, $mockedDriverMethods = array()) {
 		$this->initializeVfs();
-		if ($storageObject == NULL) {
-			$storageObject = $this->getMock('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', array(), array(), '', FALSE);
-		}
 
 		if (!isset($driverConfiguration['basePath'])) {
 			$driverConfiguration['basePath'] = $this->getMountRootUrl();
@@ -131,20 +128,13 @@ class ResourceStorageTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCa
 				// when using the AbstractDriver we would be in trouble when wanting to mock away some concrete method
 			$driver = $this->getMock('TYPO3\\CMS\\Core\\Resource\\Driver\\LocalDriver', $mockedDriverMethods, array($driverConfiguration));
 		}
-		$storageObject->setDriver($driver);
+		if ($storageObject !== NULL) {
+			$storageObject->setDriver($driver);
+		}
 		$driver->setStorageUid(6);
 		$driver->processConfiguration();
 		$driver->initialize();
 		return $driver;
-	}
-
-	/**
-	 * @test
-	 */
-	public function baseUriGetsSlashAppended() {
-		$uri = 'http://example.org/somewhere/else';
-		$this->prepareFixture(array('baseUri' => $uri));
-		$this->assertEquals($uri . '/', $this->fixture->getBaseUri());
 	}
 
 	/**
@@ -194,19 +184,25 @@ class ResourceStorageTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCa
 	 * @test
 	 * @dataProvider capabilitiesDataProvider
 	 */
-	public function capabilitiesOfStorageObjectAreCorrectlySet(array $capabilites) {
+	public function capabilitiesOfStorageObjectAreCorrectlySet(array $capabilities) {
 		$storageRecord = array(
-			'is_public' => $capabilites['public'],
-			'is_writable' => $capabilites['writable'],
-			'is_browsable' => $capabilites['browsable'],
+			'is_public' => $capabilities['public'],
+			'is_writable' => $capabilities['writable'],
+			'is_browsable' => $capabilities['browsable'],
 			'is_online' => TRUE
 		);
-		$mockedDriver = $this->createDriverMock(array(), $this->fixture, array('hasCapability'));
-		$mockedDriver->expects($this->any())->method('hasCapability')->will($this->returnValue(TRUE));
+		$mockedDriver = $this->createDriverMock(
+			array(
+				'pathType' => 'relative',
+				'basePath' => 'fileadmin/',
+			),
+			$this->fixture,
+			NULL
+		);
 		$this->prepareFixture(array(), FALSE, $mockedDriver, $storageRecord);
-		$this->assertEquals($capabilites['public'], $this->fixture->isPublic(), 'Capability "public" is not correctly set.');
-		$this->assertEquals($capabilites['writable'], $this->fixture->isWritable(), 'Capability "writable" is not correctly set.');
-		$this->assertEquals($capabilites['browsable'], $this->fixture->isBrowsable(), 'Capability "browsable" is not correctly set.');
+		$this->assertEquals($capabilities['public'], $this->fixture->isPublic(), 'Capability "public" is not correctly set.');
+		$this->assertEquals($capabilities['writable'], $this->fixture->isWritable(), 'Capability "writable" is not correctly set.');
+		$this->assertEquals($capabilities['browsable'], $this->fixture->isBrowsable(), 'Capability "browsable" is not correctly set.');
 	}
 
 	/**

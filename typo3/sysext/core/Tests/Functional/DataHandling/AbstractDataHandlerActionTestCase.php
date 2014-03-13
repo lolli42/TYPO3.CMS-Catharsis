@@ -26,7 +26,6 @@ namespace TYPO3\CMS\Core\Tests\Functional\DataHandling;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\DataSet;
-use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\Response;
 use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\ResponseContent;
 
 /**
@@ -39,10 +38,18 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	/**
 	 * @var string
 	 */
-	protected $dataSetDirectory;
+	protected $scenarioDataSetDirectory;
 
 	/**
-	 * @var int
+	 * @var string
+	 */
+	protected $assertionDataSetDirectory;
+
+	/**
+	 * If this value is NULL, log entries are not considered.
+	 * If it's an integer value, the number of log entries is asserted.
+	 *
+	 * @var NULL|int
 	 */
 	protected $expectedErrorLogEntries = 0;
 
@@ -61,6 +68,11 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 		'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/AdditionalConfiguration.php' => 'typo3conf/AdditionalConfiguration.php',
 		'typo3/sysext/core/Tests/Functional/Fixtures/Frontend/extTables.php' => 'typo3conf/extTables.php',
 	);
+
+	/**
+	 * @var array
+	 */
+	protected $recordIds = array();
 
 	/**
 	 * @var \TYPO3\CMS\Core\Tests\Functional\DataHandling\Framework\ActionService
@@ -84,16 +96,10 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	}
 
 	public function tearDown() {
+		$this->assertErrorLogEntries();
 		unset($this->actionService);
+		unset($this->recordIds);
 		parent::tearDown();
-	}
-
-	/**
-	 * @return \TYPO3\CMS\Core\DataHandling\DataHandler
-	 */
-	protected function getDataHandler() {
-		$dataHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
-		return $dataHandler;
 	}
 
 	/**
@@ -101,8 +107,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	 */
 	protected function getActionService() {
 		return GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Tests\\Functional\\DataHandling\\Framework\\ActionService',
-			$this->getDataHandler()
+			'TYPO3\\CMS\\Core\\Tests\\Functional\\DataHandling\\Framework\\ActionService'
 		);
 	}
 
@@ -110,7 +115,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	 * @param string $dataSetName
 	 */
 	protected function importScenarioDataSet($dataSetName) {
-		$fileName = rtrim($this->dataSetDirectory, '/') . '/Scenario/' . $dataSetName . '.csv';
+		$fileName = rtrim($this->scenarioDataSetDirectory, '/') . '/' . $dataSetName . '.csv';
 		$fileName = GeneralUtility::getFileAbsFileName($fileName);
 
 		$dataSet = DataSet::read($fileName);
@@ -130,7 +135,7 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 	}
 
 	protected function assertAssertionDataSet($dataSetName) {
-		$fileName = rtrim($this->dataSetDirectory, '/') . '/Assertion/' . $dataSetName . '.csv';
+		$fileName = rtrim($this->assertionDataSetDirectory, '/') . '/' . $dataSetName . '.csv';
 		$fileName = GeneralUtility::getFileAbsFileName($fileName);
 
 		$dataSet = DataSet::read($fileName);
@@ -163,7 +168,9 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 			if (!empty($records)) {
 				foreach ($records as $record) {
 					$recordIdentifier = $tableName . ':' . $record['uid'];
-					$additionalInformation = $this->arrayToString($record);
+					$emptyAssertion = array_fill_keys($dataSet->getFields($tableName), '[none]');
+					$reducedRecord = array_intersect_key($record, $emptyAssertion);
+					$additionalInformation = ($hasUidField ? $this->renderRecords($emptyAssertion, $reducedRecord) : $this->arrayToString($reducedRecord));
 					$failMessages[] = 'Not asserted record found for "' . $recordIdentifier . '":' . LF . $additionalInformation;
 				}
 			}
@@ -189,6 +196,30 @@ abstract class AbstractDataHandlerActionTestCase extends \TYPO3\CMS\Core\Tests\F
 		}
 
 		return FALSE;
+	}
+
+	/**
+	 * Asserts correct number of warning and error log entries.
+	 *
+	 * @return void
+	 */
+	protected function assertErrorLogEntries() {
+		if ($this->expectedErrorLogEntries === NULL) {
+			return;
+		}
+		$errorLogEntries = $this->getDatabase()->exec_SELECTgetRows('*', 'sys_log', 'error IN (1,2)');
+		$actualErrorLogEntries = count($errorLogEntries);
+		if ($actualErrorLogEntries === $this->expectedErrorLogEntries) {
+			$this->assertSame($this->expectedErrorLogEntries, $actualErrorLogEntries);
+		} else {
+			$failureMessage = 'Expected ' . $this->expectedErrorLogEntries . ' entries in sys_log, but got ' . $actualErrorLogEntries . LF;
+			foreach ($errorLogEntries as $entry) {
+				$entryData = unserialize($entry['log_data']);
+				$entryMessage = vsprintf($entry['details'], $entryData);
+				$failureMessage .= '* ' . $entryMessage . LF;
+			}
+			$this->fail($failureMessage);
+		}
 	}
 
 	/**

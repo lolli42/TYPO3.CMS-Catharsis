@@ -2310,6 +2310,9 @@ class GeneralUtility {
 							case 'boolean':
 								$current[$tagName] = (bool) $current[$tagName];
 								break;
+							case 'NULL':
+								$current[$tagName] = NULL;
+								break;
 							case 'array':
 								// MUST be an empty array since it is processed as a value; Empty arrays would end up here because they would have no tags inside...
 								$current[$tagName] = array();
@@ -4215,31 +4218,6 @@ Connection: close
 	}
 
 	/**
-	 * Checks if a class or function has a valid prefix: tx_, Tx_ or custom, e.g. user_
-	 *
-	 * @param string $classRef The class or function to check
-	 * @param array $additionalPrefixes Additional allowed prefixes, mostly this will be user_
-	 * @return boolean TRUE if name is allowed
-	 * @deprecated since 6.0, will be removed two versions later
-	 */
-	static public function hasValidClassPrefix($classRef, array $additionalPrefixes = array()) {
-		self::logDeprecatedFunction();
-		return TRUE;
-	}
-
-	/**
-	 * Returns all valid class prefixes.
-	 *
-	 * @return array Array of valid prefixed of class names
-	 * @deprecated since 6.0, will be removed two versions later
-	 */
-	static public function getValidClassPrefixes() {
-		self::logDeprecatedFunction();
-		$validPrefixes = array('tx_', 'Tx_', 'user_', 'User_', 't3lib_', '');
-		return $validPrefixes;
-	}
-
-	/**
 	 * Creates an instance of a class taking into account the class-extensions
 	 * API of TYPO3. USE THIS method instead of the PHP "new" keyword.
 	 * Eg. "$obj = new myclass;" should be "$obj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance("myclass")" instead!
@@ -4953,17 +4931,12 @@ Connection: close
 			$msgLine = ' - ' . $extKey . ': ' . $msg;
 			// Write message to a file
 			if ($type == 'file') {
-				$lockObject = self::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', $destination, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
-				/** @var \TYPO3\CMS\Core\Locking\Locker $lockObject */
-				$lockObject->setEnableLogging(FALSE);
-				$lockObject->acquire();
 				$file = fopen($destination, 'a');
 				if ($file) {
 					fwrite($file, date(($dateFormat . ' ' . $timeFormat)) . $msgLine . LF);
 					fclose($file);
 					self::fixPermissions($destination);
 				}
-				$lockObject->release();
 			} elseif ($type == 'mail') {
 				list($to, $from) = explode('/', $destination);
 				if (!self::validEmail($from)) {
@@ -5031,17 +5004,12 @@ Connection: close
 			}
 			// Write a longer message to the deprecation log
 			$destination = self::getDeprecationLogFileName();
-			$lockObject = self::makeInstance('TYPO3\\CMS\\Core\\Locking\\Locker', $destination, $GLOBALS['TYPO3_CONF_VARS']['SYS']['lockingMode']);
-			/** @var \TYPO3\CMS\Core\Locking\Locker $lockObject */
-			$lockObject->setEnableLogging(FALSE);
-			$lockObject->acquire();
 			$file = @fopen($destination, 'a');
 			if ($file) {
 				@fwrite($file, ($date . $msg . LF));
 				@fclose($file);
 				self::fixPermissions($destination);
 			}
-			$lockObject->release();
 		}
 		if (in_array('devlog', $log) !== FALSE) {
 			// Copy message also to the developer log

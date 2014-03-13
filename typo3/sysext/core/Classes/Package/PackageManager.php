@@ -68,6 +68,12 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	protected $runtimeActivatedPackages = array();
 
 	/**
+	 * Absolute path leading to the various package directories
+	 * @var string
+	 */
+	protected $packagesBasePath = PATH_site;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -104,21 +110,18 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	 * Initializes the package manager
 	 *
 	 * @param \TYPO3\CMS\Core\Core\Bootstrap|\TYPO3\Flow\Core\Bootstrap $bootstrap The current bootstrap; Flow Bootstrap is here by intention to keep the PackageManager valid to the interface
-	 * @param string $packagesBasePath Absolute path of the Packages directory
-	 * @param string $packageStatesPathAndFilename
 	 * @return void
 	 */
-	public function initialize(\TYPO3\Flow\Core\Bootstrap $bootstrap, $packagesBasePath = PATH_site, $packageStatesPathAndFilename = '') {
-
+	public function initialize(\TYPO3\Flow\Core\Bootstrap $bootstrap) {
 		$this->bootstrap = $bootstrap;
-		$this->packagesBasePath = $packagesBasePath;
-		$this->packageStatesPathAndFilename = ($packageStatesPathAndFilename === '') ? PATH_typo3conf . 'PackageStates.php' : $packageStatesPathAndFilename;
+		$this->packageStatesPathAndFilename = PATH_typo3conf . 'PackageStates.php';
 		$this->packageFactory = new PackageFactory($this);
 
 		$this->loadPackageStates();
 
 		$requiredList = array();
 		foreach ($this->packages as $packageKey => $package) {
+			/** @var $package Package */
 			$protected = $package->isProtected();
 			if ($protected) {
 				$requiredList[$packageKey] = $package;
@@ -152,6 +155,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		$this->classLoader->setCacheIdentifier($cacheIdentifier)->setPackages($this->activePackages);
 
 		foreach ($this->activePackages as $package) {
+			/** @var $package Package */
 			$package->boot($bootstrap);
 		}
 
@@ -287,13 +291,16 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			}
 			try {
 				$composerManifest = self::getComposerManifest($composerManifestPath);
-				$packageKey = \TYPO3\CMS\Core\Package\PackageFactory::getPackageKeyFromManifest($composerManifest, $packagePath, $packagesBasePath);
+				$packageKey = PackageFactory::getPackageKeyFromManifest($composerManifest, $packagePath, $packagesBasePath);
 				$this->composerNameToPackageKeyMap[strtolower($composerManifest->name)] = $packageKey;
 				$this->packageStatesConfiguration['packages'][$packageKey]['manifestPath'] = substr($composerManifestPath, strlen($packagePath)) ? : '';
 				$this->packageStatesConfiguration['packages'][$packageKey]['composerName'] = $composerManifest->name;
 			} catch (\TYPO3\Flow\Package\Exception\MissingPackageManifestException $exception) {
 				$relativePackagePath = substr($packagePath, strlen($packagesBasePath));
 				$packageKey = substr($relativePackagePath, strpos($relativePackagePath, '/') + 1, -1);
+				if (!$this->isPackageKeyValid($packageKey)) {
+					continue;
+				}
 			} catch (\TYPO3\Flow\Package\Exception\InvalidPackageKeyException $exception) {
 				continue;
 			}
@@ -304,7 +311,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			$this->packageStatesConfiguration['packages'][$packageKey]['packagePath'] = str_replace($this->packagesBasePath, '', $packagePath);
 
 			// Change this to read the target from Composer or any other source
-			$this->packageStatesConfiguration['packages'][$packageKey]['classesPath'] = \TYPO3\Flow\Package\Package::DIRECTORY_CLASSES;
+			$this->packageStatesConfiguration['packages'][$packageKey]['classesPath'] = Package::DIRECTORY_CLASSES;
 		}
 
 		$registerOnlyNewPackages = !empty($this->packages);
@@ -399,7 +406,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	/**
 	 * Register a native Flow package
 	 *
-	 * @param string $packageKey The Package to be registered
+	 * @param \TYPO3\Flow\Package\PackageInterface $package The Package to be registered
 	 * @param boolean $sortAndSave allows for not saving packagestates when used in loops etc.
 	 * @return \TYPO3\Flow\Package\PackageInterface
 	 * @throws \TYPO3\Flow\Package\Exception\CorruptPackageException
@@ -566,10 +573,11 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 
 	/**
 	 * @param string $packageKey
+	 * @return bool
 	 */
 	public function isPackageFrozen($packageKey) {
 		$package = $this->getPackage($packageKey);
-		parent::isPackageFrozen($package->getPackageKey());
+		return parent::isPackageFrozen($package->getPackageKey());
 	}
 
 	/**
@@ -630,5 +638,16 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		parent::sortAndSavePackageStates();
 
 		\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($this->packageStatesPathAndFilename);
+	}
+
+	/**
+	 * Check the conformance of the given package key
+	 *
+	 * @param string $packageKey The package key to validate
+	 * @return boolean If the package key is valid, returns TRUE otherwise FALSE
+	 * @api
+	 */
+	public function isPackageKeyValid($packageKey) {
+		return parent::isPackageKeyValid($packageKey) || preg_match(\TYPO3\CMS\Core\Package\Package::PATTERN_MATCH_EXTENSIONKEY, $packageKey) === 1;
 	}
 }

@@ -49,7 +49,12 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 	/**
 	 * @var string
 	 */
-	protected $dataSetDirectory = 'typo3/sysext/core/Tests/Functional/DataHandling/IRRE/CSV/DataSet/';
+	protected $scenarioDataSetDirectory = 'typo3/sysext/core/Tests/Functional/DataHandling/IRRE/CSV/DataSet/Scenario/';
+
+	/**
+	 * @var string
+	 */
+	protected $assertionDataSetDirectory = 'typo3/sysext/core/Tests/Functional/DataHandling/IRRE/CSV/DataSet/Assertion/';
 
 	public function setUp() {
 		parent::setUp();
@@ -299,7 +304,6 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 	 * @see DataSet/Assertion/createAndLocalizeParentContentRecordWithHotelAndOfferChildRecords.csv
 	 */
 	public function createAndLocalizeParentContentWithHotelAndOfferChildren() {
-		// @todo Localizing the new child records is broken in the Core
 		$newTableIds = $this->actionService->createNewRecords(
 			self::VALUE_PageId,
 			array(
@@ -313,21 +317,18 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 		$localizedTableIds = $this->actionService->localizeRecord(self::TABLE_Content, $newContentId, self::VALUE_LanguageId);
 		$this->assertAssertionDataSet('createNLocalizeParentContentNHotelNOfferChildren');
 
-		$localizedContentId = $localizedTableIds[self::TABLE_Content][$newContentId];
 		$localizedHotelId = $localizedTableIds[self::TABLE_Hotel][$newHotelId];
 		$responseContent = $this->getFrontendResponse(self::VALUE_PageId, self::VALUE_LanguageId)->getResponseContent();
-
-		// @todo Does not work since children don't point to live-default record
-		/*
-			$this->assertResponseContentStructureHasRecords(
-				$responseContent, self::TABLE_Content . ':' . $localizedContentId, self::FIELD_ContentHotel,
-				self::TABLE_Hotel, 'title', '[Translate to Dansk:] Hotel #1'
-			);
-			$this->assertResponseContentStructureHasRecords(
-				$responseContent, self::TABLE_Hotel . ':' . $localizedHotelId, self::FIELD_HotelOffer,
-				self::TABLE_Offer, 'title', '[Translate to Dansk:] Offer #1'
-			);
-		*/
+		// Content record gets overlaid, thus using newContentId
+		$this->assertResponseContentStructureHasRecords(
+			$responseContent, self::TABLE_Content . ':' . $newContentId, self::FIELD_ContentHotel,
+			self::TABLE_Hotel, 'title', '[Translate to Dansk:] Hotel #1'
+		);
+		// Content record directly points to localized child, thus using localizedHotelId
+		$this->assertResponseContentStructureHasRecords(
+			$responseContent, self::TABLE_Hotel . ':' . $localizedHotelId, self::FIELD_HotelOffer,
+			self::TABLE_Offer, 'title', '[Translate to Dansk:] Offer #1'
+		);
 	}
 
 	/**

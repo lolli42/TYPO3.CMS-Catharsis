@@ -312,11 +312,9 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 			$selectFields[] = $thumbsCol;
 		}
 		if ($table == 'pages') {
-			if (ExtensionManagementUtility::isLoaded('cms')) {
-				$selectFields[] = 'module';
-				$selectFields[] = 'extendToSubpages';
-				$selectFields[] = 'nav_hide';
-			}
+			$selectFields[] = 'module';
+			$selectFields[] = 'extendToSubpages';
+			$selectFields[] = 'nav_hide';
 			$selectFields[] = 'doktype';
 		}
 		if (is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
@@ -646,8 +644,15 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\AbstractDataba
 					// - a thumbnail column exists
 					// - there is content in it
 					// - the thumbnail column is visible for the current type
-					$typeColumn = $GLOBALS['TCA'][$table]['ctrl']['type'];
-					$type = $row[$typeColumn];
+					$type = 0;
+					if (isset($GLOBALS['TCA'][$table]['ctrl']['type'])) {
+						$typeColumn = $GLOBALS['TCA'][$table]['ctrl']['type'];
+						$type = $row[$typeColumn];
+					}
+					// If current type doesn't exist, set it to 0 (or to 1 for historical reasons, if 0 doesn't exist)
+					if (!isset($GLOBALS['TCA'][$table]['types'][$type])) {
+						$type = isset($GLOBALS['TCA'][$table]['types'][0]) ? 0 : 1;
+					}
 					$visibleColumns = $GLOBALS['TCA'][$table]['types'][$type]['showitem'];
 
 					if ($this->thumbs &&

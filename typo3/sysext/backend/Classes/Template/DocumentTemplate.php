@@ -1292,21 +1292,6 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * Initialize the charset.
-	 * Sets the internal $this->charset variable to the charset defined in $GLOBALS["LANG"] (or the default as set in this class)
-	 * Returns the meta-tag for the document header
-	 *
-	 * @return string <meta> tag with charset from $this->charset or $GLOBALS['LANG']->charSet
-	 * @todo Define visibility
-	 * @deprecated since TYPO3 6.0, remove in 6.2. The charset is utf-8 all the time for the backend now
-	 */
-	public function initCharset() {
-		GeneralUtility::logDeprecatedFunction();
-		// Return meta tag:
-		return '<meta http-equiv="Content-Type" content="text/html; charset=' . $this->charset . '" />';
-	}
-
-	/**
 	 * Returns generator meta tag
 	 *
 	 * @return string <meta> tag with name "generator
@@ -1959,6 +1944,18 @@ function jumpToUrl(URL) {
 			$flashMessages = '<div id="typo3-messages">' . $flashMessages . '</div>';
 		}
 		return $flashMessages;
+	}
+
+	/**
+	 * Renders the FlashMessages from queue and returns them as AJAX.
+	 *
+	 * @param array $params Always empty.
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj The AjaxRequestHandler object used to return content and set content types
+	 * @return void
+	 */
+	public function renderFlashMessages(array $params, \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj) {
+		$ajaxObj->addContent('result', $this->getFlashMessages());
+		$ajaxObj->setContentFormat('html');
 	}
 
 	/**

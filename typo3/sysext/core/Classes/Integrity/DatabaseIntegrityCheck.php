@@ -148,9 +148,9 @@ class DatabaseIntegrityCheck {
 	 */
 	public function genTree($theID, $depthData, $versions = FALSE) {
 		if ($versions) {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,t3ver_wsid,t3ver_id,t3ver_count' . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') ? ',hidden' : ''), 'pages', 'pid=-1 AND t3ver_oid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,t3ver_wsid,t3ver_id,t3ver_count,hidden', 'pages', 'pid=-1 AND t3ver_oid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
 		} else {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted' . (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms') ? ',hidden' : ''), 'pages', 'pid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,title,doktype,deleted,hidden', 'pages', 'pid=' . (int)$theID . ' ' . (!$this->genTree_includeDeleted ? 'AND deleted=0' : '') . $this->perms_clause, '', 'sorting');
 		}
 		// Traverse the records selected:
 		$a = 0;
@@ -268,30 +268,6 @@ class DatabaseIntegrityCheck {
 			}
 		}
 		$GLOBALS['TYPO3_DB']->sql_free_result($res);
-	}
-
-	/**
-	 * Generates tree and returns statistics
-	 *
-	 * @param integer $root
-	 * @return array Record statistics
-	 * @deprecated and unused since 6.0, will be removed two versions later
-	 * @todo Define visibility
-	 */
-	public function genTreeStatus($root = 0) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		$this->genTree_includeDeleted = TRUE;
-		// if set, genTree() includes deleted pages. This is default.
-		$this->genTree_includeVersions = TRUE;
-		// if set, genTree() includes verisonized pages/records. This is default.
-		$this->genTree_includeRecords = TRUE;
-		// if set, genTree() includes records from pages.
-		$this->perms_clause = '';
-		// extra where-clauses for the tree-selection
-		$this->genTree_makeHTML = 0;
-		// if set, genTree() generates HTML, that visualizes the tree.
-		$this->genTree($root, '');
-		return $this->recStats;
 	}
 
 	/**

@@ -189,7 +189,7 @@ class DatabaseConnect extends AbstractStepAction {
 					/** @var $errorStatus \TYPO3\CMS\Install\Status\ErrorStatus */
 					$errorStatus = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
 					$errorStatus->setTitle('Database connect not successful');
-					$errorStatus->setMessage('Connecting the database with given settings failed. Please check.');
+					$errorStatus->setMessage('Connecting to the database with given settings failed. Please check.');
 					$result[] = $errorStatus;
 				}
 			}
@@ -291,6 +291,7 @@ class DatabaseConnect extends AbstractStepAction {
 	protected function isConnectSuccessful() {
 		/** @var $databaseConnection \TYPO3\CMS\Core\Database\DatabaseConnection */
 		$databaseConnection = $this->objectManager->get('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
+		$databaseConnection->initialize();
 
 		if ($this->isDbalEnabled()) {
 			// Set additional connect information based on dbal driver. postgres for example needs
