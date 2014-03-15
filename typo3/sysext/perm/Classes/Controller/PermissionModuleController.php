@@ -160,6 +160,14 @@ class PermissionModuleController {
 	public $lastEdited;
 
 	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_mod_web_perm.xlf');
+		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], TRUE);
+	}
+
+	/**
 	 * Initialization of the class
 	 *
 	 * @return void
@@ -637,7 +645,7 @@ class PermissionModuleController {
 					}
 					$lKey = $this->getLevels - $a + 1;
 					$opts .= '
-						<option value="' . htmlspecialchars(implode(',', $theIdListArr)) . '">' . GeneralUtility::deHSCentities(htmlspecialchars(($label_recur . ' ' . $lKey . ' ' . $label_levels))) . ' (' . count($theIdListArr) . ' ' . $label_pA . ')' . '</option>';
+						<option value="' . htmlspecialchars(implode(',', $theIdListArr)) . '">' . htmlspecialchars($label_recur . ' ' . $lKey . ' ' . $label_levels, ENT_COMPAT, 'UTF-8', FALSE) . ' (' . count($theIdListArr) . ' ' . $label_pA . ')' . '</option>';
 				}
 			}
 			// Put the selector box together:

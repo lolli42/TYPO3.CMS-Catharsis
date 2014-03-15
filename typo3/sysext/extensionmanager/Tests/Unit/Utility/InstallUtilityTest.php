@@ -27,7 +27,7 @@ namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 /**
  * Test case
  */
-class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
+class InstallUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @var string
@@ -126,6 +126,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 			->method('processRuntimeDatabaseUpdates')
 			->with($this->extensionKey);
 
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCachesInGroup');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->install($this->extensionKey);
 	}
 
@@ -133,6 +136,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @test
 	 */
 	public function installCallsLoadExtension() {
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCachesInGroup');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->expects($this->once())->method('loadExtension');
 		$this->installMock->install($this->extensionKey);
 	}
@@ -152,6 +158,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @test
 	 */
 	public function installationOfAnExtensionWillCallEnsureThatDirectoriesExist() {
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCachesInGroup');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->expects($this->once())->method('ensureConfiguredDirectoriesExist');
 		$this->installMock->install($this->extensionKey);
 	}
@@ -160,6 +169,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @test
 	 */
 	public function installCallsReloadCaches() {
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCachesInGroup');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->expects($this->once())->method('reloadCaches');
 		$this->installMock->install('dummy');
 	}
@@ -168,6 +180,9 @@ class InstallUtilityTest extends \TYPO3\CMS\Extbase\Tests\Unit\BaseTestCase {
 	 * @test
 	 */
 	public function installCallsSaveDefaultConfigurationWithExtensionKey() {
+		$cacheManagerMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManagerMock->expects($this->once())->method('flushCachesInGroup');
+		$this->installMock->_set('cacheManager', $cacheManagerMock);
 		$this->installMock->expects($this->once())->method('saveDefaultConfiguration')->with('dummy');
 		$this->installMock->install('dummy');
 	}

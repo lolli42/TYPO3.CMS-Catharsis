@@ -2839,9 +2839,10 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_htmlSpecialChars($content = '', $conf = array()) {
-		$content = htmlSpecialChars($content);
-		if ($conf['htmlSpecialChars.']['preserveEntities']) {
-			$content = GeneralUtility::deHSCentities($content);
+		if (!empty($conf['htmlSpecialChars.']['preserveEntities'])) {
+			$content = htmlspecialchars($content, ENT_COMPAT, 'UTF-8', FALSE);
+		} else {
+			$content = htmlspecialchars($content);
 		}
 		return $content;
 	}
@@ -7668,12 +7669,24 @@ class ContentObjectRenderer {
 			'ORDERBY' => '',
 			'LIMIT' => ''
 		);
+		$considerMovePlaceholders = (
+			$GLOBALS['TSFE']->sys_page->versioningPreview && $table !== 'pages'
+			&& !empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])
+			&& (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2
+		);
 		if (trim($conf['uidInList'])) {
 			$listArr = GeneralUtility::intExplode(',', str_replace('this', $GLOBALS['TSFE']->contentPid, $conf['uidInList']));
-			if (count($listArr) == 1) {
-				$query .= ' AND ' . $table . '.uid=' . (int)$listArr[0];
+			if (count($listArr) === 1) {
+				$comparison = '=' . (int)$listArr[0];
 			} else {
-				$query .= ' AND ' . $table . '.uid IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($listArr)) . ')';
+				$comparison = ' IN (' . implode(',', $GLOBALS['TYPO3_DB']->cleanIntArray($listArr)) . ')';
+			}
+			// If move placeholder shall be considered, select via t3ver_move_id
+			if ($considerMovePlaceholders) {
+				$movePlaceholderComparison = $table . '.t3ver_state=' . VersionState::cast(VersionState::MOVE_PLACEHOLDER) .  ' AND ' . $table . '.t3ver_move_id' . $comparison;
+				$query .= ' AND (' . $table . '.uid' . $comparison . ' OR ' . $movePlaceholderComparison .')';
+			} else {
+				$query .= ' AND ' . $table . '.uid' . $comparison;
 			}
 			$pid_uid_flag++;
 		}

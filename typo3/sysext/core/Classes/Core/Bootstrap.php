@@ -169,6 +169,7 @@ class Bootstrap {
 	 */
 	public function redirectToInstallerIfEssentialConfigurationDoesNotExist($pathUpToDocumentRoot = '') {
 		$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager;
+		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager', $configurationManager);
 		if (!file_exists($configurationManager->getLocalConfigurationFileLocation()) || !file_exists(PATH_typo3conf . 'PackageStates.php')) {
 			require_once __DIR__ . '/../Utility/HttpUtility.php';
 			Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/sysext/install/Start/Install.php');
@@ -272,7 +273,7 @@ class Bootstrap {
 	 * Beware! This is not public API and necessary for edge cases in the install tool
 	 *
 	 * @param string $packageManagerClassName
-	 * @return void
+	 * @return Bootstrap
 	 */
 	public function reinitializeClassLoaderAndCachesAndPackageManagement($packageManagerClassName = 'TYPO3\\CMS\\Core\\Package\\PackageManager') {
 		$currentClassLoader = $this->getEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader');
@@ -284,6 +285,7 @@ class Bootstrap {
 			->initializeCachingFramework()
 			->initializeClassLoaderCaches()
 			->initializePackageManagement($packageManagerClassName);
+		return $this;
 	}
 
 	/**
@@ -316,7 +318,6 @@ class Bootstrap {
 		$packageManager->injectDependencyResolver(Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Package\\DependencyResolver'));
 		$packageManager->initialize($this);
 		Utility\GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Core\\Package\\PackageManager', $packageManager);
-		$GLOBALS['TYPO3_LOADED_EXT'] = new \TYPO3\CMS\Core\Compatibility\LoadedExtensionsArray($packageManager);
 		return $this;
 	}
 
@@ -347,22 +348,6 @@ class Bootstrap {
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
 		$this->getInstance()
 			->loadAdditionalConfigurationFromExtensions($allowCaching);
-		return $this;
-	}
-
-	/**
-	 * Load TYPO3_LOADED_EXT, recreate class loader registry and load ext_localconf
-	 *
-	 * @TODO: This method was changed with the package manager patch, do we still need it?
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function reloadTypo3LoadedExtAndClassLoaderAndExtLocalconf() {
-		$bootstrap = $this->getInstance();
-		// Commented out for package management patch, method is still used in extensionmanager
-		//		$bootstrap->populateTypo3LoadedExtGlobal(FALSE);
-		//		ClassLoader::loadClassLoaderCache();
-		$bootstrap->loadAdditionalConfigurationFromExtensions(FALSE);
 		return $this;
 	}
 
@@ -403,8 +388,12 @@ class Bootstrap {
 	 * @return Bootstrap
 	 */
 	public function populateLocalConfiguration() {
-		$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager();
-		$this->setEarlyInstance('TYPO3\CMS\Core\Configuration\ConfigurationManager', $configurationManager);
+		try {
+			$configurationManager = $this->getEarlyInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+		} catch(\TYPO3\CMS\Core\Exception $exception) {
+			$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager();
+			$this->setEarlyInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager', $configurationManager);
+		}
 		$configurationManager->exportConfiguration();
 		return $this;
 	}
