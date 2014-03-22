@@ -161,6 +161,7 @@ return array(
 				'eval' => 'null',
 				'placeholder' => '__row|uid_local|metadata|title',
 				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			)
 		),
 		'link' => array(
@@ -184,7 +185,8 @@ return array(
 						),
 						'JSopenParams' => 'height=300,width=500,status=0,menubar=0,scrollbars=1'
 					)
-				)
+				),
+				'softref' => 'typolink'
 			)
 		),
 		'description' => array(
@@ -199,6 +201,7 @@ return array(
 				'eval' => 'null',
 				'placeholder' => '__row|uid_local|metadata|description',
 				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			)
 		),
 		'alternative' => array(
@@ -211,6 +214,7 @@ return array(
 				'eval' => 'null',
 				'placeholder' => '__row|uid_local|metadata|alternative',
 				'mode' => 'useOrOverridePlaceholder',
+				'default' => NULL,
 			),
 		),
 	),

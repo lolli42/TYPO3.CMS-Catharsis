@@ -29,14 +29,29 @@
 					<uid>1</uid>
 					<pid>1</pid>
 					<title>Test content</title>
-					<size>188</size>
+					<size>220</size>
 					<relations index="rels" type="array">
 						<element index="sys_file_reference:1" type="array">
 							<id>1</id>
 							<table>sys_file_reference</table>
 						</element>
+						<element index="sys_file:1" type="array">
+							<table>sys_file</table>
+							<id>1</id>
+						</element>
 					</relations>
 					<softrefs type="array">
+						<softref_element index="header_link:typolink:2487ce518ed56d22f20f259928ff43f1:0" type="array">
+							<field>header_link</field>
+							<spKey>typolink</spKey>
+							<matchString>file:1</matchString>
+							<subst type="array">
+								<type>db</type>
+								<recordRef>sys_file:1</recordRef>
+								<tokenID>2487ce518ed56d22f20f259928ff43f1</tokenID>
+								<tokenValue>file:1</tokenValue>
+							</subst>
+						</softref_element>
 					</softrefs>
 				</rec>
 			</table>
@@ -133,9 +148,9 @@
 							<id>1</id>
 							<table>sys_language</table>
 						</element>
-						<element index="sys_file_reference:1" type="array">
+						<element index="sys_file_metadata:1" type="array">
 							<id>1</id>
-							<table>sys_file_reference</table>
+							<table>sys_file_metadata</table>
 						</element>
 						<element index="sys_file:1" type="array">
 							<id>1</id>
@@ -233,6 +248,7 @@
 				<field index="header">Test content</field>
 				<field index="image">1</field>
 				<field index="deleted">0</field>
+				<field index="header_link">file:1</field>
 			</fieldlist>
 			<related index="rels" type="array">
 				<field index="image" type="array">
@@ -243,6 +259,31 @@
 							<table>sys_file_reference</table>
 						</element>
 					</relations>
+				</field>
+				<field index="header_link" type="array">
+					<type>db</type>
+					<relations index="itemArray" type="array">
+						<element index="0" type="array">
+							<table>sys_file</table>
+							<id>1</id>
+						</element>
+					</relations>
+					<softrefs type="array">
+						<keys type="array">
+							<softref_key index="typolink" type="array">
+								<softref_element index="2487ce518ed56d22f20f259928ff43f1:0" type="array">
+									<matchString>file:1</matchString>
+									<subst type="array">
+										<type>db</type>
+										<recordRef>sys_file:1</recordRef>
+										<tokenID>2487ce518ed56d22f20f259928ff43f1</tokenID>
+										<tokenValue>file:1</tokenValue>
+									</subst>
+								</softref_element>
+							</softref_key>
+						</keys>
+						<tokenizedContent>{softref:2487ce518ed56d22f20f259928ff43f1}</tokenizedContent>
+					</softrefs>
 				</field>
 			</related>
 		</tablerow>
@@ -424,7 +465,7 @@
 					<relations index="itemArray" type="array">
 						<element index="0" type="array">
 							<id>1</id>
-							<table>sys_file_reference</table>
+							<table>sys_file_metadata</table>
 						</element>
 					</relations>
 				</field>

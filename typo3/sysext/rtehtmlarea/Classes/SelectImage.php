@@ -76,10 +76,6 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	 */
 	protected $plainMaxHeight;
 
-	protected $magicMaxWidth;
-
-	protected $magicMaxHeight;
-
 	protected $imgPath;
 
 	public $editorNo;
@@ -225,12 +221,11 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		// Create the magic image service
 		/** @var $magicImageService Resource\Service\MagicImageService */
 		$magicImageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\MagicImageService');
+		$magicImageService->setMagicImageMaximumDimensions($this->thisConfig);
 		// Create the magic image
 		$imageConfiguration = array(
 			'width' => GeneralUtility::_GP('cWidth'),
-			'height' => GeneralUtility::_GP('cHeight'),
-			'maxW' => $this->magicMaxWidth,
-			'maxH' => $this->magicMaxHeight
+			'height' => GeneralUtility::_GP('cHeight')
 		);
 		$magicImage = $magicImageService->createMagicImage($fileObject, $imageConfiguration);
 		$imageUrl = $magicImage->getPublicUrl();
@@ -722,21 +717,27 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				// Get the selected folder
 				$selectedFolder = FALSE;
 				if ($this->expandFolder) {
-					$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+					$fileOrFolderObject = NULL;
+					try {
+						$fileOrFolderObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+					} catch (\Exception $e) {
+						// No path is selected
+					}
 					if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
 						// it's a folder
 						$selectedFolder = $fileOrFolderObject;
 					} elseif ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
 						// it's a file
-						// @todo: find the parent folder, right now done a bit ugly, because the file does not
-						// support finding the parent folder of a file on purpose
-						$folderIdentifier = dirname($fileOrFolderObject->getIdentifier());
-						$selectedFolder = $fileOrFolderObject->getStorage()->getFolder($folderIdentifier);
+						$selectedFolder = $fileOrFolderObject->getParentFolder();
 					}
 				}
 				// If no folder is selected, get the user's default upload folder
 				if (!$selectedFolder) {
-					$selectedFolder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
+					try {
+						$selectedFolder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
+					} catch (\Exception $e) {
+						// The configured default user folder does not exist
+					}
 				}
 				// Build the file upload and folder creation form
 				$uploadForm = '';
@@ -842,7 +843,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		$this->buttonConfig = $this->getButtonConfig();
 		$this->imgPath = $this->getImgPath();
 		$this->defaultClass = $this->getDefaultClass();
-		$this->setMaximumImageDimensions();
+		$this->setMaximumPlainImageDimensions();
 	}
 
 	/**
@@ -927,11 +928,11 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	}
 
 	/**
-	 * Set variables for maximum image dimensions
+	 * Set variables for maximum plain image dimensions
 	 *
 	 * @return 	void
 	 */
-	protected function setMaximumImageDimensions() {
+	protected function setMaximumPlainImageDimensions() {
 		if (is_array($this->buttonConfig['options.']) && is_array($this->buttonConfig['options.']['plain.'])) {
 			if ($this->buttonConfig['options.']['plain.']['maxWidth']) {
 				$this->plainMaxWidth = $this->buttonConfig['options.']['plain.']['maxWidth'];
@@ -945,21 +946,6 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		}
 		if (!$this->plainMaxHeight) {
 			$this->plainMaxHeight = 680;
-		}
-		if (is_array($this->buttonConfig['options.']) && is_array($this->buttonConfig['options.']['magic.'])) {
-			if ($this->buttonConfig['options.']['magic.']['maxWidth']) {
-				$this->magicMaxWidth = $this->buttonConfig['options.']['magic.']['maxWidth'];
-			}
-			if ($this->buttonConfig['options.']['magic.']['maxHeight']) {
-				$this->magicMaxHeight = $this->buttonConfig['options.']['magic.']['maxHeight'];
-			}
-		}
-		// These defaults allow images to be based on their width - to a certain degree - by setting a high height. Then we're almost certain the image will be based on the width
-		if (!$this->magicMaxWidth) {
-			$this->magicMaxWidth = 300;
-		}
-		if (!$this->magicMaxHeight) {
-			$this->magicMaxHeight = 1000;
 		}
 	}
 

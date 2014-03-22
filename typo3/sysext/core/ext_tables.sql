@@ -380,7 +380,7 @@ CREATE TABLE sys_file_processedfile (
 
 	PRIMARY KEY (uid),
 	KEY combined_1 (original,task_type,configurationsha1),
-	KEY identifier (storage,identifier(249))
+	KEY identifier (storage,identifier(200))
 );
 
 #
@@ -588,6 +588,7 @@ CREATE TABLE sys_refindex (
   softref_id varchar(40) DEFAULT '' NOT NULL,
   sorting int(11) DEFAULT '0' NOT NULL,
   deleted tinyint(1) DEFAULT '0' NOT NULL,
+  workspace int(11) DEFAULT '0' NOT NULL,
   ref_table varchar(255) DEFAULT '' NOT NULL,
   ref_uid int(11) DEFAULT '0' NOT NULL,
   ref_string varchar(200) DEFAULT '' NOT NULL,

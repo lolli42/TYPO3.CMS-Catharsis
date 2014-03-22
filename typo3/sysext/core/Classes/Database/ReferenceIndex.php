@@ -81,6 +81,29 @@ class ReferenceIndex {
 	public $hashVersion = 1;
 
 	/**
+	 * @var int
+	 */
+	protected $workspaceId = 0;
+
+	/**
+	 * Sets the current workspace id.
+	 *
+	 * @param int $workspaceId
+	 */
+	public function setWorkspaceId($workspaceId) {
+		$this->workspaceId = (int)$workspaceId;
+	}
+
+	/**
+	 * Gets the current workspace id.
+	 *
+	 * @return int
+	 */
+	public function getWorkspaceId() {
+		return $this->workspaceId;
+	}
+
+	/**
 	 * Call this function to update the sys_refindex table for a record (even one just deleted)
 	 * NOTICE: Currently, references updated for a deleted-flagged record will not include those from within flexform fields in some cases where the data structure is defined by another record since the resolving process ignores deleted records! This will also result in bad cleaning up in tcemain I think... Anyway, thats the story of flexforms; as long as the DS can change, lots of references can get lost in no time.
 	 *
@@ -172,7 +195,7 @@ class ReferenceIndex {
 							$this->createEntryData_dbRels($table, $uid, $fieldname, '', $deleted, $dat['itemArray']);
 							break;
 						case 'file_reference':
-
+							// not used (see getRelations()), but fallback to file
 						case 'file':
 							$this->createEntryData_fileRels($table, $uid, $fieldname, '', $deleted, $dat['newValueFiles']);
 							break;
@@ -242,6 +265,7 @@ class ReferenceIndex {
 			'softref_id' => $softref_id,
 			'sorting' => $sort,
 			'deleted' => $deleted,
+			'workspace' => $this->getWorkspaceId(),
 			'ref_table' => $ref_table,
 			'ref_uid' => $ref_uid,
 			'ref_string' => $ref_string
@@ -295,6 +319,7 @@ class ReferenceIndex {
 	 * @param integer $uid UID of source record (where reference is located)
 	 * @param string $fieldname Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform struc
+	 * @param integer $deleted
 	 * @param array $keys Data array with soft reference keys
 	 * @return void
 	 * @todo Define visibility
@@ -311,7 +336,7 @@ class ReferenceIndex {
 									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
 									break;
 								case 'file_reference':
-
+									// not used (see getRelations()), but fallback to file
 								case 'file':
 									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, '_FILE', 0, $el['subst']['relFileName'], -1, $spKey, $subKey);
 									break;
@@ -352,19 +377,42 @@ class ReferenceIndex {
 			if (!in_array($field, $nonFields) && is_array($GLOBALS['TCA'][$table]['columns'][$field]) && (!$onlyField || $onlyField === $field)) {
 				$conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 				// Add files
-				if ($result = $this->getRelations_procFiles($value, $conf, $uid)) {
-					// Creates an entry for the field with all the files:
-					$outRow[$field] = array(
-						'type' => 'db',
-						'itemArray' => $result
-					);
+				$resultsFromFiles = $this->getRelations_procFiles($value, $conf, $uid);
+				if (!empty($resultsFromFiles)) {
+					// We have to fill different arrays here depending on the result.
+					// internal_type file is still a relation of type file and
+					// since http://forge.typo3.org/issues/49538 internal_type file_reference
+					// is a database relation to a sys_file record
+					$fileResultsFromFiles = array();
+					$dbResultsFromFiles = array();
+					foreach ($resultsFromFiles as $resultFromFiles) {
+						if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
+							$dbResultsFromFiles[] = $resultFromFiles;
+						} else {
+							// Creates an entry for the field with all the files:
+							$fileResultsFromFiles[] = $resultFromFiles;
+						}
+					}
+					if (!empty($fileResultsFromFiles)) {
+						$outRow[$field] = array(
+							'type' => 'file',
+							'newValueFiles' => $fileResultsFromFiles
+						);
+					}
+					if (!empty($dbResultsFromFiles)) {
+						$outRow[$field] = array(
+							'type' => 'db',
+							'itemArray' => $dbResultsFromFiles
+						);
+					}
 				}
 				// Add DB:
-				if ($result = $this->getRelations_procDB($value, $conf, $uid, $table, $field)) {
+				$resultsFromDatabase = $this->getRelations_procDB($value, $conf, $uid, $table, $field);
+				if (!empty($resultsFromDatabase)) {
 					// Create an entry for the field with all DB relations:
 					$outRow[$field] = array(
 						'type' => 'db',
-						'itemArray' => $result
+						'itemArray' => $resultsFromDatabase
 					);
 				}
 				// For "flex" fieldtypes we need to traverse the structure looking for file and db references of course!
@@ -433,14 +481,33 @@ class ReferenceIndex {
 		// Implode parameter values:
 		list($table, $uid, $field) = array($PA['table'], $PA['uid'], $PA['field']);
 		// Add files
-		if ($result = $this->getRelations_procFiles($dataValue, $dsConf, $uid)) {
-			// Creates an entry for the field with all the files:
-			$this->temp_flexRelations['file'][$structurePath] = $result;
+		$resultsFromFiles = $this->getRelations_procFiles($dataValue, $dsConf, $uid);
+		if (!empty($resultsFromFiles)) {
+			// We have to fill different arrays here depending on the result.
+			// internal_type file is still a relation of type file and
+			// since http://forge.typo3.org/issues/49538 internal_type file_reference
+			// is a database relation to a sys_file record
+			$fileResultsFromFiles = array();
+			$dbResultsFromFiles = array();
+			foreach ($resultsFromFiles as $resultFromFiles) {
+				if (isset($resultFromFiles['table']) && $resultFromFiles['table'] === 'sys_file') {
+					$dbResultsFromFiles[] = $resultFromFiles;
+				} else {
+					$fileResultsFromFiles[] = $resultFromFiles;
+				}
+			}
+			if (!empty($fileResultsFromFiles)) {
+				$this->temp_flexRelations['file'][$structurePath] = $fileResultsFromFiles;
+			}
+			if (!empty($dbResultsFromFiles)) {
+				$this->temp_flexRelations['db'][$structurePath] = $dbResultsFromFiles;
+			}
 		}
 		// Add DB:
-		if ($result = $this->getRelations_procDB($dataValue, $dsConf, $uid, $field)) {
+		$resultsFromDatabase = $this->getRelations_procDB($dataValue, $dsConf, $uid, $field);
+		if (!empty($resultsFromDatabase)) {
 			// Create an entry for the field with all DB relations:
-			$this->temp_flexRelations['db'][$structurePath] = $result;
+			$this->temp_flexRelations['db'][$structurePath] = $resultsFromDatabase;
 		}
 		// Soft References:
 		if (strlen($dataValue) && ($softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref']))) {
@@ -469,7 +536,7 @@ class ReferenceIndex {
 	 * @param string $value Field value
 	 * @param array $conf Field configuration array of type "TCA/columns
 	 * @param integer $uid Field uid
-	 * @return array If field type is OK it will return an array with the files inside. Else FALSE
+	 * @return bool|array If field type is OK it will return an array with the files inside. Else FALSE
 	 * @todo Define visibility
 	 */
 	public function getRelations_procFiles($value, $conf, $uid) {
@@ -507,8 +574,12 @@ class ReferenceIndex {
 					try {
 						$file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($file);
 						if ($file instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-							$newValueFile['table'] = 'sys_file';
-							$newValueFile['id'] = $file->getUid();
+							// For setting this as sys_file relation later, the keys filename, ID and ID_absFile
+							// have not to be included, because the are not evaluated for db relations.
+							$newValueFile = array(
+								'table' => 'sys_file',
+								'id' => $file->getUid()
+							);
 						}
 					} catch (\Exception $e) {
 
@@ -532,8 +603,14 @@ class ReferenceIndex {
 	 * @todo Define visibility
 	 */
 	public function getRelations_procDB($value, $conf, $uid, $table = '', $field = '') {
+		// Get IRRE relations
+		if ($conf['type'] === 'inline' && !empty($conf['foreign_table']) && empty($conf['MM'])) {
+			$dbAnalysis = $this->getRelationHandler();
+			$dbAnalysis->setUseLiveReferenceIds(FALSE);
+			$dbAnalysis->start($value, $conf['foreign_table'], '', $uid, $table, $conf);
+			return $dbAnalysis->itemArray;
 		// DB record lists:
-		if ($this->isReferenceField($conf)) {
+		} elseif ($this->isReferenceField($conf)) {
 			$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
 			if ($conf['MM_opposite_field']) {
 				return array();
@@ -542,6 +619,7 @@ class ReferenceIndex {
 			$dbAnalysis->start($value, $allowedTables, $conf['MM'], $uid, $table, $conf);
 			return $dbAnalysis->itemArray;
 		} elseif ($conf['type'] == 'inline' && $conf['foreign_table'] == 'sys_file_reference') {
+			// @todo It looks like this was never called before since isReferenceField also checks for type 'inline' and any 'foreign_table'
 			$files = (array)$GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid_local', 'sys_file_reference', ('tablenames=\'' . $table . '\' AND fieldname=\'' . $field . '\' AND uid_foreign=' . $uid . ' AND deleted=0'));
 			$fileArray = array();
 			foreach ($files as $fileUid) {
@@ -609,7 +687,7 @@ class ReferenceIndex {
 									}
 									break;
 								case 'file_reference':
-
+									// not used (see getRelations()), but fallback to file
 								case 'file':
 									$error = $this->setReferenceValue_fileRels($refRec, $dat['newValueFiles'], $newValue, $dataArray);
 									if ($error) {
@@ -848,7 +926,6 @@ class ReferenceIndex {
 	 * @param boolean $testOnly If set, only a test
 	 * @param boolean $cli_echo If set, output CLI status
 	 * @return array Header and body status content
-	 * @todo Define visibility
 	 */
 	public function updateIndex($testOnly, $cli_echo = FALSE) {
 		$errors = array();
@@ -862,7 +939,8 @@ class ReferenceIndex {
 		// Traverse all tables:
 		foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
 			// Traverse all records in tables, including deleted records:
-			$allRecs = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $tableName, '1=1');
+			$fieldNames = (BackendUtility::isTableWorkspaceEnabled($tableName) ? 'uid,t3ver_wsid' : 'uid');
+			$allRecs = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fieldNames, $tableName, '1=1');
 			if (!is_array($allRecs)) {
 				// Table exists in $TCA but does not exist in the database
 				GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
@@ -872,7 +950,11 @@ class ReferenceIndex {
 			$tableCount++;
 			$uidList = array(0);
 			foreach ($allRecs as $recdat) {
+				/** @var $refIndexObj ReferenceIndex */
 				$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+				if (isset($recdat['t3ver_wsid'])) {
+					$refIndexObj->setWorkspaceId($recdat['t3ver_wsid']);
+				}
 				$result = $refIndexObj->updateRefIndexTable($tableName, $recdat['uid'], $testOnly);
 				$uidList[] = $recdat['uid'];
 				$recCount++;
@@ -921,6 +1003,13 @@ class ReferenceIndex {
 			$registry->set('core', 'sys_refindex_lastUpdate', $GLOBALS['EXEC_TIME']);
 		}
 		return array($headerContent, $bodyContent, count($errors));
+	}
+
+	/**
+	 * @return RelationHandler
+	 */
+	protected function getRelationHandler() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 	}
 
 }

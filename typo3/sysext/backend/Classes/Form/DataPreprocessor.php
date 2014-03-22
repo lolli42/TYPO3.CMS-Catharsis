@@ -261,8 +261,16 @@ class DataPreprocessor {
 			// Set $data variable for the field, either inputted value from $row - or if not found, the default value as defined in the "config" array
 			if (isset($row[$field])) {
 				$data = (string)$row[$field];
-			} elseif (array_key_exists($field, $row) && !empty($fieldConfig['config']['eval']) && GeneralUtility::inList($fieldConfig['config']['eval'], 'null')) {
-				$data = NULL;
+			} elseif (!empty($fieldConfig['config']['eval']) && GeneralUtility::inList($fieldConfig['config']['eval'], 'null')) {
+				// Field exists but is set to NULL
+				if (array_key_exists($field, $row)) {
+					$data = NULL;
+				// Only use NULL if default value was explicitly set to be backward compatible.
+				} elseif (array_key_exists('default', $fieldConfig['config']) && $fieldConfig['config']['default'] === NULL) {
+					$data = NULL;
+				} else {
+					$data = (string)$fieldConfig['config']['default'];
+				}
 			} else {
 				$data = (string)$fieldConfig['config']['default'];
 			}
@@ -807,9 +815,10 @@ class DataPreprocessor {
 	 * @todo Define visibility
 	 */
 	public function getDataIdList($elements, $fieldConfig, $row, $table) {
+		$liveDefaultId = $this->getLiveDefaultId($table, $row['uid']);
 		$loadDB = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 		$loadDB->registerNonTableValues = $fieldConfig['config']['allowNonIdValues'] ? 1 : 0;
-		$loadDB->start(implode(',', $elements), $fieldConfig['config']['foreign_table'] . ',' . $fieldConfig['config']['neg_foreign_table'], $fieldConfig['config']['MM'], $row['uid'], $table, $fieldConfig['config']);
+		$loadDB->start(implode(',', $elements), $fieldConfig['config']['foreign_table'] . ',' . $fieldConfig['config']['neg_foreign_table'], $fieldConfig['config']['MM'], $liveDefaultId, $table, $fieldConfig['config']);
 		$idList = $loadDB->convertPosNeg($loadDB->getValueArray(), $fieldConfig['config']['foreign_table'], $fieldConfig['config']['neg_foreign_table']);
 		return $idList;
 	}
@@ -927,6 +936,22 @@ class DataPreprocessor {
 	 */
 	public function sL($in) {
 		return $GLOBALS['LANG']->sL($in);
+	}
+
+	/**
+	 * Gets the record uid of the live default record. If already
+	 * pointing to the live record, the submitted record uid is returned.
+	 *
+	 * @param string $tableName
+	 * @param int $id
+	 * @return int
+	 */
+	protected function getLiveDefaultId($tableName, $id) {
+		$liveDefaultId = BackendUtility::getLiveVersionIdOfRecord($tableName, $id);
+		if ($liveDefaultId === NULL) {
+			$liveDefaultId = $id;
+		}
+		return $liveDefaultId;
 	}
 
 }

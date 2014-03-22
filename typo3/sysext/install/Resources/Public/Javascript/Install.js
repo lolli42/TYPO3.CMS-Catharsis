@@ -26,6 +26,34 @@
  */
 var TYPO3 = {};
 TYPO3.Install = {};
+
+TYPO3.Install.Status = {
+	getFolderStatus: function() {
+		var url = location.href + '&install[controller]=ajax&install[action]=folderStatus';
+		$.ajax({
+			url: url,
+			cache: false,
+			success: function(data) {
+				if (data > 0) {
+					$('#t3-install-menu-folderStructure a').append('<span class="t3-install-menu-errorCount">' + data + '</span>');
+				}
+			}
+		});
+	},
+	getEnvironmentStatus: function() {
+		var url = location.href + '&install[controller]=ajax&install[action]=environmentStatus';
+		$.ajax({
+			url: url,
+			cache: false,
+			success: function(data) {
+				if (data > 0) {
+					$('#t3-install-menu-systemEnvironment a').append('<span class="t3-install-menu-errorCount">' + data + '</span>');
+				}
+			}
+		});
+	}
+};
+
 TYPO3.Install.coreUpdate = {
 	/**
 	 * The action queue defines what actions are called in which order
@@ -391,6 +419,9 @@ $(document).ready(function() {
 			$(e.target).closest('.t3-install-form-submit').remove();
 		}));
 	}
+
+	TYPO3.Install.Status.getFolderStatus();
+	TYPO3.Install.Status.getEnvironmentStatus();
 });
 
 function handleButtonScrolling() {
@@ -495,14 +526,26 @@ function handleCheckExtensionsSuccess() {
 			} else {
 				$('.typo3-message', '#checkExtensions').hide();
 				$('.message-ok', '#checkExtensions').show();
-
 			}
 		},
-		error: function(data) {
+		error: function() {
 			$('.typo3-message', '#checkExtensions').hide();
 			$('.message-ok', '#checkExtensions').show();
 		}
-	})
+	});
+	$.getJSON(
+		$('#checkExtensions').data('errorprotocolurl'),
+		function(data) {
+			$.each(data, function(i, error) {
+				var messageToDisplay = error.message + ' in ' + error.file + ' on line ' + error.line;
+				$('#checkExtensions .typo3-message.message-error').before($(
+					'<div class="typo3-message message-warning"><div class="header-container"><div class="message-header">' +
+					'<strong>' + error.type + '</strong></div><div class="message-body">' +
+					messageToDisplay + '</div></div></div><p></p>'
+				));
+			});
+		}
+	);
 }
 
 /**

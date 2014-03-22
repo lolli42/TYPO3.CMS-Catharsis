@@ -38,6 +38,26 @@ class EnableFileService {
 	const INSTALL_TOOL_ENABLE_FILE_PATH = 'typo3conf/ENABLE_INSTALL_TOOL';
 
 	/**
+	 * @constant Relative path to  FIRST_INSTALL file
+	 */
+	const FIRST_INSTALL_FILE_PATH = 'FIRST_INSTALL';
+
+	/**
+	 * @constant Maximum age of ENABLE_INSTALL_TOOL file before it gets removed (in seconds)
+	 */
+	const INSTALL_TOOL_ENABLE_FILE_LIFETIME = 3600;
+
+	/**
+	 * @return bool
+	 */
+	static public function isFirstInstallAllowed() {
+		if (!is_dir(PATH_typo3conf) && is_file(self::getFirstInstallFilePath())) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	/**
 	 * Creates the INSTALL_TOOL_ENABLE file
 	 *
 	 * @return boolean
@@ -64,27 +84,69 @@ class EnableFileService {
 	}
 
 	/**
+	 * Removes the FIRST_INSTALL file
+	 *
+	 * @return boolean
+	 */
+	static public function removeFirstInstallFile() {
+		return unlink(self::getFirstInstallFilePath());
+	}
+
+	/**
+	 * Checks if the install tool file exists
+	 *
+	 * @return bool
+	 */
+	static public function installToolEnableFileExists() {
+		return @is_file(self::getInstallToolEnableFilePath());
+	}
+
+	/**
 	 * Checks if the install tool file exists
 	 *
 	 * @return boolean
 	 */
 	static public function checkInstallToolEnableFile() {
-		$enableFile = self::getInstallToolEnableFilePath();
-		if (@file_exists($enableFile)) {
-			$content = @file_get_contents($enableFile);
-			// if the file contains the pattern "KEEP_FILE", it will not be removed
-			if (strpos($content, 'KEEP_FILE') === FALSE) {
-				// maximum age of a valid INSTALL_TOOL_ENABLE file is 1 hour
-				if (time() - @filemtime($enableFile) > 3600) {
-					self::removeInstallToolEnableFile();
-					return FALSE;
-				}
+		if (!self::installToolEnableFileExists()) {
+			return FALSE;
+		}
+		if (!self::isInstallToolEnableFilePermanent()) {
+			if (self::installToolEnableFileLifetimeExpired()) {
+				self::removeInstallToolEnableFile();
+				return FALSE;
 			}
+			self::extendInstallToolEnableFileLifetime();
+		}
+		return TRUE;
+	}
+
+	/**
+	 * Checks if the install tool file should be kept
+	 *
+	 * @return bool
+	 */
+	static public function isInstallToolEnableFilePermanent() {
+		if (self::installToolEnableFileExists()) {
+			$content = @file_get_contents(self::getInstallToolEnableFilePath());
+			if (strpos($content, 'KEEP_FILE') !== FALSE) {
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+
+	/**
+	 * Checks if the lifetime of the instal tool file is expired
+	 *
+	 * @return bool
+	 */
+	static public function installToolEnableFileLifetimeExpired() {
+		if (time() - @filemtime(self::getInstallToolEnableFilePath()) > self::INSTALL_TOOL_ENABLE_FILE_LIFETIME) {
+			return TRUE;
 		} else {
 			return FALSE;
 		}
-		self::extendInstallToolEnableFileLifetime();
-		return TRUE;
 	}
 
 	/**
@@ -92,7 +154,7 @@ class EnableFileService {
 	 *
 	 * @return void
 	 */
-	static public function extendInstallToolEnableFileLifetime() {
+	static protected function extendInstallToolEnableFileLifetime() {
 		$enableFile = self::getInstallToolEnableFilePath();
 		// Extend the age of the ENABLE_INSTALL_TOOL file by one hour
 		if (is_file($enableFile)) {
@@ -113,5 +175,14 @@ class EnableFileService {
 	 */
 	static protected function getInstallToolEnableFilePath() {
 		return PATH_site . self::INSTALL_TOOL_ENABLE_FILE_PATH;
+	}
+
+	/**
+	 * Returns the path to the INSTALL_TOOL_ENABLE file
+	 *
+	 * @return string
+	 */
+	static protected function getFirstInstallFilePath() {
+		return PATH_site . self::FIRST_INSTALL_FILE_PATH;
 	}
 }

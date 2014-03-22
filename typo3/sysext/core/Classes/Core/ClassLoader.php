@@ -27,6 +27,7 @@ namespace TYPO3\CMS\Core\Core;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Core\Locking\Locker;
 use TYPO3\CMS\Core\Package\PackageInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Cache;
@@ -88,6 +89,16 @@ class ClassLoader {
 	protected $packageClassesPaths = array();
 
 	/**
+	 * @var bool Is TRUE while loading the Locker class to prevent a deadlock in the implicit call to loadClass
+	 */
+	protected $isLoadingLocker = FALSE;
+
+	/**
+	 * @var \TYPO3\CMS\Core\Locking\Locker
+	 */
+	protected $lockObject = NULL;
+
+	/**
 	 * Constructor
 	 *
 	 * @param ApplicationContext $context
@@ -100,6 +111,7 @@ class ClassLoader {
 	 * Get class alias map list injected
 	 *
 	 * @param ClassAliasMap
+	 * @return void
 	 */
 	public function injectClassAliasMap(ClassAliasMap $classAliasMap) {
 		$this->classAliasMap = $classAliasMap;
@@ -110,6 +122,7 @@ class ClassLoader {
 	 * Get core cache injected
 	 *
 	 * @param \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend $coreCache
+	 * @return void
 	 */
 	public function injectCoreCache(Cache\Frontend\PhpFrontend $coreCache) {
 		$this->coreCache = $coreCache;
@@ -120,6 +133,7 @@ class ClassLoader {
 	 * Get classes cache injected
 	 *
 	 * @param \TYPO3\CMS\Core\Cache\Frontend\StringFrontend $classesCache
+	 * @return void
 	 */
 	public function injectClassesCache(Cache\Frontend\StringFrontend $classesCache) {
 		$earlyClassesCache = $this->classesCache;
@@ -139,6 +153,8 @@ class ClassLoader {
 	 * Loads php files containing classes or interfaces found in the classes directory of
 	 * a package and specifically registered classes.
 	 *
+	 * Caution: This function may be called "recursively" by the spl_autoloader if a class depends on another classes.
+	 *
 	 * @param string $className Name of the class/interface to load
 	 * @return bool
 	 */
@@ -153,8 +169,8 @@ class ClassLoader {
 
 		$cacheEntryIdentifier = strtolower(str_replace('\\', '_', $className));
 		$classLoadingInformation = $this->getClassLoadingInformationFromCache($cacheEntryIdentifier);
-
-		if ($classLoadingInformation === NULL) {
+		// Handle a cache miss
+		if ($classLoadingInformation === FALSE) {
 			$classLoadingInformation = $this->buildCachedClassLoadingInformation($cacheEntryIdentifier, $className);
 		}
 
@@ -165,7 +181,7 @@ class ClassLoader {
 		//   2 and following => alias class names
 		// )
 		$loadingSuccessful = FALSE;
-		if ($classLoadingInformation !== NULL) {
+		if (!empty($classLoadingInformation)) {
 			// The call to class_exists fixes a rare case when early instances need to be aliased
 			// but PHP fails to recognize the real path of the class. See #55904
 			$loadingSuccessful = class_exists($classLoadingInformation[1], FALSE) || (bool)require_once $classLoadingInformation[0];
@@ -182,9 +198,13 @@ class ClassLoader {
 
 	/**
 	 * Get class loading information for the given identifier for cache
+	 * Return values:
+	 *  - array with class information (empty if the class is invalid)
+	 *  - FALSE if no class information is found in cache (cache miss)
+	 *  - NULL if the cache identifier is invalid (cache failure)
 	 *
 	 * @param string $cacheEntryIdentifier The identifier to fetch entry from cache
-	 * @return array|null The class information or NULL if class information was not found in cache
+	 * @return array|FALSE|NULL The class information, empty array if class is unkown or FALSE if class information was not found in cache. NULL if a cache identifier is invalid.
 	 */
 	public function getClassLoadingInformationFromCache($cacheEntryIdentifier) {
 		try {
@@ -193,55 +213,78 @@ class ClassLoader {
 			return NULL;
 		}
 
-		if ($rawClassLoadingInformation !== FALSE && $rawClassLoadingInformation !== '') {
+		if ($rawClassLoadingInformation === '') {
+			return array();
+		}
+
+		if ($rawClassLoadingInformation) {
 			return explode("\xff", $rawClassLoadingInformation);
 		}
-		return NULL;
+		return FALSE;
 	}
 
 	/**
 	 * Builds the class loading information and writes it to the cache. It handles Locking for this cache.
 	 *
+	 * Caution: The function loadClass can be called "recursively" by spl_autoloader. This needs to be observed when
+	 * locking for cache access. Only the first call to loadClass may acquire and release the lock!
+	 *
 	 * @param string $cacheEntryIdentifier Cache identifier for this class
 	 * @param string $className Name of class this information is for
 	 *
-	 * @return array|null The class information or NULL if class was not found
+	 * @return array|FALSE|NULL The class information, empty array if class is unkown or FALSE if class information was not found in cache. NULL if a cache identifier is invalid.
 	 */
 	protected function buildCachedClassLoadingInformation($cacheEntryIdentifier, $className) {
-		// Look again into cache after we got the look
+		// We do not need locking if we are in earlyCache mode
+		$didLock = FALSE;
+		if (!$this->isEarlyCache) {
+			$didLock = $this->acquireLock();
+		}
+
+		// Look again into the cache after we got the lock, data might have been generated meanwhile
 		$classLoadingInformation = $this->getClassLoadingInformationFromCache($cacheEntryIdentifier);
-		if ($classLoadingInformation === NULL) {
+		// Handle repeated cache miss
+		if ($classLoadingInformation === FALSE) {
+			// Generate class information
 			$classLoadingInformation = $this->buildClassLoadingInformation($className);
 
-			if ($classLoadingInformation !== NULL) {
+			if ($classLoadingInformation !== FALSE) {
+				// If we found class information, cache it
 				$this->classesCache->set(
 					$cacheEntryIdentifier,
 					implode("\xff", $classLoadingInformation),
 					$this->isEarlyCache ? array('early') : array()
 				);
 			} elseif (!$this->isEarlyCache) {
+				// Cache that the class is unknown
 				$this->classesCache->set($cacheEntryIdentifier, '');
 			}
 		}
+
+		$this->releaseLock($didLock);
+
 		return $classLoadingInformation;
 	}
 
 	/**
-	 * @param string $className
-	 * @return array|null
+	 * Builds the class loading information
+	 *
+	 * @param string $className Name of class this information is for
+	 *
+	 * @return array|FALSE The class information or FALSE if class was not found
 	 */
 	public function buildClassLoadingInformation($className) {
 		$classLoadingInformation = $this->buildClassLoadingInformationForClassFromCorePackage($className);
 
-		if ($classLoadingInformation === NULL) {
+		if ($classLoadingInformation === FALSE) {
 			$classLoadingInformation = $this->fetchClassLoadingInformationFromRuntimeCache($className);
 		}
 
-		if ($classLoadingInformation === NULL) {
+		if ($classLoadingInformation === FALSE) {
 			$classLoadingInformation = $this->buildClassLoadingInformationForClassFromRegisteredPackages($className);
 		}
 
-		if ($classLoadingInformation === NULL) {
+		if ($classLoadingInformation === FALSE) {
 			$classLoadingInformation = $this->buildClassLoadingInformationForClassByNamingConvention($className);
 		}
 
@@ -262,7 +305,7 @@ class ClassLoader {
 	 * Retrieve class loading information for class from core package
 	 *
 	 * @param string $className
-	 * @return array|null
+	 * @return array|FALSE
 	 */
 	protected function buildClassLoadingInformationForClassFromCorePackage($className) {
 		if (substr($className, 0, 14) === 'TYPO3\\CMS\\Core') {
@@ -272,29 +315,29 @@ class ClassLoader {
 				return array($classFilePath, $className);
 			}
 		}
-		return NULL;
+		return FALSE;
 	}
 
 	/**
 	 * Retrieve class loading information from early class name autoload registry cache
 	 *
 	 * @param string $className
-	 * @return array|null
+	 * @return array|FALSE
 	 */
 	protected function fetchClassLoadingInformationFromRuntimeCache($className) {
 		$lowercasedClassName = strtolower($className);
 		if (!isset($this->runtimeClassLoadingInformationCache[$lowercasedClassName])) {
-			return NULL;
+			return FALSE;
 		}
 		$classInformation = $this->runtimeClassLoadingInformationCache[$lowercasedClassName];
-		return @file_exists($classInformation[0]) ? $classInformation : NULL;
+		return @file_exists($classInformation[0]) ? $classInformation : FALSE;
 	}
 
 	/**
 	 * Retrieve class loading information from registered packages
 	 *
 	 * @param string $className
-	 * @return array|null
+	 * @return array|FALSE
 	 */
 	protected function buildClassLoadingInformationForClassFromRegisteredPackages($className) {;
 		foreach ($this->packageNamespaces as $packageNamespace => $packageData) {
@@ -324,14 +367,14 @@ class ClassLoader {
 				}
 			}
 		}
-		return NULL;
+		return FALSE;
 	}
 
 	/**
 	 * Retrieve class loading information based on 'extbase' naming convention into the registry.
 	 *
 	 * @param string $className Class name to find source file of
-	 * @return array|null
+	 * @return array|FALSE
 	 */
 	protected function buildClassLoadingInformationForClassByNamingConvention($className) {
 		$delimiter = '_';
@@ -346,7 +389,7 @@ class ClassLoader {
 		// We only handle classes that follow the convention Vendor\Product\Classname or is longer
 		// so we won't deal with class names that only have one or two parts
 		if (count($classNameParts) <= 2) {
-			return NULL;
+			return FALSE;
 		}
 
 		if (
@@ -378,13 +421,13 @@ class ClassLoader {
 			}
 		}
 
-		return NULL;
+		return FALSE;
 	}
 
 	/**
 	 * Get cache entry identifier for the package namespaces cache
 	 *
-	 * @return string|null identifier
+	 * @return string|NULL identifier
 	 */
 	protected function getCacheEntryIdentifier() {
 		return $this->cacheIdentifier !== NULL
@@ -445,17 +488,24 @@ class ClassLoader {
 	 * @return void
 	 */
 	protected function buildPackageNamespacesAndClassesPaths() {
-		foreach ($this->packages as $package) {
-			$this->buildPackageNamespaceAndClassesPath($package);
+		$didLock = $this->acquireLock();
+
+		// Take a look again, after lock is acquired
+		if (!$this->loadPackageNamespacesFromCache()) {
+			foreach ($this->packages as $package) {
+				$this->buildPackageNamespaceAndClassesPath($package);
+			}
+			$this->sortPackageNamespaces();
+			$this->savePackageNamespacesAndClassesPathsToCache();
+			// The class alias map has to be rebuilt first, because ext_autoload files can contain
+			// old class names that need established class aliases.
+			$classNameToAliasMapping = $this->classAliasMap->setPackages($this->packages)->buildMappingAndInitializeEarlyInstanceMapping();
+			$this->loadClassFilesFromAutoloadRegistryIntoRuntimeClassInformationCache($this->packages);
+			$this->classAliasMap->buildMappingFiles($classNameToAliasMapping);
+			$this->transferRuntimeClassInformationCacheEntriesToClassesCache();
 		}
-		$this->sortPackageNamespaces();
-		$this->savePackageNamespacesAndClassesPathsToCache();
-		// The class alias map has to be rebuilt first, because ext_autoload files can contain
-		// old class names that need established class aliases.
-		$classNameToAliasMapping = $this->classAliasMap->setPackages($this->packages)->buildMappingAndInitializeEarlyInstanceMapping();
-		$this->loadClassFilesFromAutoloadRegistryIntoRuntimeClassInformationCache($this->packages);
-		$this->classAliasMap->buildMappingFiles($classNameToAliasMapping);
-		$this->transferRuntimeClassInformationCacheEntriesToClassesCache();
+
+		$this->releaseLock($didLock);
 	}
 
 	/**
@@ -499,6 +549,7 @@ class ClassLoader {
 	 * Extracts the namespace from a package
 	 *
 	 * @param \TYPO3\Flow\Package\PackageInterface $package
+	 * @return void
 	 */
 	protected function buildPackageNamespace(\TYPO3\Flow\Package\PackageInterface $package) {
 		$packageNamespace = $package->getNamespace();
@@ -652,4 +703,77 @@ class ClassLoader {
 		return static::$staticAliasMap->getAliasesForClassName($className);
 	}
 
+	/**
+	 * Acquires a lock for the cache if we didn't already lock before.
+	 *
+	 * @return bool TRUE if the cache was acquired by this call and needs to be released
+	 * @throws \RuntimeException
+	 */
+	protected function acquireLock() {
+		if (!$this->isLoadingLocker) {
+			$lockObject = $this->getLocker();
+
+			if ($lockObject === NULL) {
+				// During installation typo3temp does not yet exist, so the locker can not
+				// do its job. In this case it does not need to be released again.
+				return FALSE;
+			}
+
+			// We didn't lock yet so do it
+			if (!$lockObject->getLockStatus()) {
+				if (!$lockObject->acquireExclusiveLock()) {
+					throw new \RuntimeException('Could not acquire lock for ClassLoader cache creation.', 1394480725);
+				}
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	/**
+	 * Releases a lock
+	 *
+	 * @param bool $needRelease The result of the call to acquireLock()
+	 *
+	 * @return void
+	 */
+	protected function releaseLock($needRelease) {
+		if ($needRelease) {
+			$lockObject = $this->getLocker();
+			$lockObject->release();
+		}
+	}
+
+	/**
+	 * Gets the TYPO3 Locker object or creates an instance of it.
+	 *
+	 * @throws \RuntimeException
+	 * @return \TYPO3\CMS\Core\Locking\Locker|NULL Only NULL if we are in installer and typo3temp does not exist yet
+	 */
+	protected function getLocker() {
+		if (NULL === $this->lockObject) {
+			$this->isLoadingLocker = TRUE;
+
+			try {
+				$this->lockObject = new Locker('ClassLoader-cache-classes', Locker::LOCKING_METHOD_SIMPLE);
+			} catch (\RuntimeException $e) {
+				// The RuntimeException in constructor happens if directory typo3temp/locks could not be created.
+				// This usually happens during installation step 1 where typo3temp itself does not exist yet. In
+				// this case we proceed without locking, otherwise a missing typo3temp directory indicates a
+				// hard problem of the instance and we throw up.
+				// @TODO: This solution currently conflicts with separation of concerns since the class loader
+				// handles installation specific stuff. Find a better way to do this.
+				if (defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript) {
+					// Installer is running => So work without Locking.
+					return NULL;
+				} else {
+					throw $e;
+				}
+			}
+			$this->lockObject->setEnableLogging(FALSE);
+			$this->isLoadingLocker = FALSE;
+		}
+
+		return $this->lockObject;
+	}
 }

@@ -41,6 +41,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 	const VALUE_CategoryIdLast = 31;
 	const VALUE_WorkspaceId = 1;
 
+	const TABLE_Page = 'pages';
 	const TABLE_Content = 'tt_content';
 	const TABLE_Category = 'sys_category';
 	const TABLE_ContentCategory_ManyToMany = 'sys_category_record_mm';
@@ -132,7 +133,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 		$newTableIds = $this->actionService->createNewRecords(
 			self::VALUE_PageId,
 			array(
-				self::TABLE_Category => array('title' => 'Testing #1'),
+				self::TABLE_Category => array('pid' => 0, 'title' => 'Testing #1'),
 				self::TABLE_Content => array('header' => 'Testing #1', 'categories' => '__previousUid'),
 			)
 		);
@@ -149,7 +150,7 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 			self::VALUE_PageId,
 			array(
 				self::TABLE_Content => array('header' => 'Testing #1',),
-				self::TABLE_Category => array('title' => 'Testing #1', 'items' => 'tt_content___previousUid'),
+				self::TABLE_Category => array('pid' => 0, 'title' => 'Testing #1', 'items' => 'tt_content___previousUid'),
 			)
 		);
 		$this->recordIds['newContentId'] = $newTableIds[self::TABLE_Content][0];
@@ -229,6 +230,16 @@ abstract class AbstractActionTestCase extends \TYPO3\CMS\Core\Tests\Functional\D
 	 */
 	public function moveContentOfRelationToDifferentPage() {
 		$this->actionService->moveRecord(self::TABLE_Content, self::VALUE_ContentIdLast, self::VALUE_PageIdTarget);
+	}
+
+	/**
+	 * @see DataSet/Assertion/copyPage.csv
+	 */
+	public function copyPage() {
+		$newTableIds = $this->actionService->copyRecord(self::TABLE_Page, self::VALUE_PageId, self::VALUE_PageIdTarget);
+		$this->recordIds['newPageId'] = $newTableIds[self::TABLE_Page][self::VALUE_PageId];
+		$this->recordIds['newContentIdFirst'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdFirst];
+		$this->recordIds['newContentIdLast'] = $newTableIds[self::TABLE_Content][self::VALUE_ContentIdLast];
 	}
 
 }

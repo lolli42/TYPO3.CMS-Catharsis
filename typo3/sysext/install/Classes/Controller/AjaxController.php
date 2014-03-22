@@ -53,6 +53,8 @@ class AjaxController extends AbstractController {
 		'coreUpdateUnpack',
 		'coreUpdateMove',
 		'coreUpdateActivate',
+		'folderStatus',
+		'environmentStatus'
 	);
 
 	/**
@@ -65,7 +67,7 @@ class AjaxController extends AbstractController {
 		$this->initializeObjectManager();
 		// Warning: Order of these methods is security relevant and interferes with different access
 		// conditions (new/existing installation). See the single method comments for details.
-		$this->checkInstallToolEnabled();
+		$this->outputInstallToolNotEnabledMessageIfNeeded();
 		$this->checkInstallToolPasswordNotSet();
 		$this->initializeSession();
 		$this->checkSessionToken();
@@ -79,13 +81,9 @@ class AjaxController extends AbstractController {
 	 *
 	 * @return void
 	 */
-	protected function checkInstallToolEnabled() {
-		if (is_dir(PATH_typo3conf)) {
-			/** @var \TYPO3\CMS\Install\Service\EnableFileService $installToolEnableService */
-			$installToolEnableService = $this->objectManager->get('TYPO3\\CMS\\Install\\Service\\EnableFileService');
-			if (!$installToolEnableService->checkInstallToolEnableFile()) {
-				$this->output($this->unauthorized);
-			}
+	protected function outputInstallToolNotEnabledMessageIfNeeded() {
+		if (!$this->isInstallToolAvailable()) {
+			$this->output($this->unauthorized);
 		}
 	}
 

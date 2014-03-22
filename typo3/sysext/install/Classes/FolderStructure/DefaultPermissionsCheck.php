@@ -77,26 +77,49 @@ class DefaultPermissionsCheck {
 			'ur' => (($dec & 0400) == 0400),
 			'setgid' => (($dec & 02000) == 02000),
 		);
-		$extraMessage = '.';
-		if ($perms['ow']) {
+		$extraMessage = '';
+		$groupPermissions = FALSE;
+		if (!$perms['uw'] || !$perms['ur']) {
 			$permissionStatus = new \TYPO3\CMS\Install\Status\ErrorStatus();
-			$extraMessage = ' (writable by anyone on the server)';
+			$extraMessage = ' (not read or writable by the user)';
+		} elseif ($perms['ow']) {
+			if (TYPO3_OS === 'WIN') {
+				$permissionStatus = new \TYPO3\CMS\Install\Status\InfoStatus();
+				$extraMessage = ' (writable by anyone on the server). This is the default behavior on a Windows system';
+			} else {
+				$permissionStatus = new \TYPO3\CMS\Install\Status\ErrorStatus();
+				$extraMessage = ' (writable by anyone on the server)';
+			}
 		} elseif ($perms['or']) {
 			$permissionStatus = new \TYPO3\CMS\Install\Status\WarningStatus();
 			$extraMessage = ' (readable by anyone on the server)';
 		} elseif ($perms['gw']) {
-			$permissionStatus = new \TYPO3\CMS\Install\Status\NoticeStatus();
+			$permissionStatus = new \TYPO3\CMS\Install\Status\OkStatus();
+			$extraMessage = ' (group writeable)';
+			$groupPermissions = TRUE;
 		} elseif ($perms['gr']) {
-			$permissionStatus = new \TYPO3\CMS\Install\Status\NoticeStatus();
+			$permissionStatus = new \TYPO3\CMS\Install\Status\OkStatus();
+			$extraMessage = ' (group readable)';
+			$groupPermissions = TRUE;
 		} else {
 			$permissionStatus = new \TYPO3\CMS\Install\Status\OkStatus();
 		}
 		$permissionStatus->setTitle($this->names[$which] . ' (BE/' . $which . ')');
-		$permissionStatus->setMessage('Currently configured as ' . $GLOBALS['TYPO3_CONF_VARS']['BE'][$which] .
-			$extraMessage . '.' .
-			' Recommended: ' . $this->recommended[$which] . '. Make sure that your' .
-			' server environment supports this before changing it.'
-		);
+		$message = 'Recommended: ' . $this->recommended[$which] . '.';
+		$message .= ' Currently configured as ';
+		if ($GLOBALS['TYPO3_CONF_VARS']['BE'][$which] === $this->recommended[$which]) {
+			$message .= 'recommended';
+		} else {
+			$message .= $GLOBALS['TYPO3_CONF_VARS']['BE'][$which];
+		}
+		$message .= $extraMessage . '.';
+		if ($groupPermissions) {
+			$message .= ' This is fine as long as the webserver\'s group only comprises trusted users.';
+			if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'])) {
+				$message .= ' Your site is configured (BE/createGroup) to write as group \'' . $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] . '\'.';
+			}
+		}
+		$permissionStatus->setMessage($message);
 		return $permissionStatus;
 	}
 

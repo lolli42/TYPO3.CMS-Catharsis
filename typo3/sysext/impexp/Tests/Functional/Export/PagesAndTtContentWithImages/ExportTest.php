@@ -67,6 +67,7 @@ class ExportTest extends \TYPO3\CMS\Impexp\Tests\Functional\Export\AbstractExpor
 				'tt_content' => array(
 					'CType',
 					'header',
+					'header_link',
 					'deleted',
 					'hidden',
 					'image',

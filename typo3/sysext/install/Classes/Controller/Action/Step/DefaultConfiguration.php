@@ -24,6 +24,8 @@ namespace TYPO3\CMS\Install\Controller\Action\Step;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Install\Service\EnableFileService;
+
 /**
  * Set production defaults
  */
@@ -45,7 +47,7 @@ class DefaultConfiguration extends AbstractStepAction {
 
 			// update the admin backend user to show the distribution management on login
 			$adminUserFirstLogin = array('startModuleOnFirstLogin' => 'tools_ExtensionmanagerExtensionmanager->tx_extensionmanager_tools_extensionmanagerextensionmanager%5Baction%5D=distributions&tx_extensionmanager_tools_extensionmanagerextensionmanager%5Bcontroller%5D=List');
-			$this->getDatabase()->exec_UPDATEquery(
+			$this->getDatabaseConnection()->exec_UPDATEquery(
 					'be_users',
 					'admin=1',
 					array('uc' => serialize($adminUserFirstLogin))
@@ -69,10 +71,8 @@ class DefaultConfiguration extends AbstractStepAction {
 		);
 		$formProtection->clean();
 
-		// @TODO: This and similar code in ToolController should be moved to enable install file service
-		$enableInstallToolFile = PATH_site . 'typo3conf/ENABLE_INSTALL_TOOL';
-		if (is_file($enableInstallToolFile) && trim(file_get_contents($enableInstallToolFile)) !== 'KEEP_FILE') {
-			unlink($enableInstallToolFile);
+		if (!EnableFileService::isInstallToolEnableFilePermanent()) {
+			EnableFileService::removeInstallToolEnableFile();
 		}
 
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect('../../../index.php', \TYPO3\CMS\Core\Utility\HttpUtility::HTTP_STATUS_303);
@@ -99,6 +99,7 @@ class DefaultConfiguration extends AbstractStepAction {
 	 * @return string Rendered content
 	 */
 	protected function executeAction() {
+		$this->assignSteps();
 		return $this->view->render();
 	}
 }
