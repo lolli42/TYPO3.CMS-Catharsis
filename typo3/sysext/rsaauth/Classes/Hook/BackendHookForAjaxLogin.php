@@ -48,6 +48,5 @@ class BackendHookForAjaxLogin {
 		foreach ($files as $file) {
 			$backendController->getPageRenderer()->addJsLibrary($file, $javascriptPath . $file);
 		}
-		$backendController->getPageRenderer()->addInlineSetting('BackendLogin.BackendLogin::getRsaPublicKey', 'ajaxUrl', BackendUtility::getAjaxUrl('BackendLogin::getRsaPublicKey'));
 	}
 }
