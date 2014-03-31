@@ -149,24 +149,15 @@ class RteFileLinksUpdateWizard extends AbstractUpdate {
 		$dbQueries = $this->queries;
 
 		if (count($this->errors) > 0) {
-			foreach ($this->errors as $errorMessage) {
-				$message = GeneralUtility::makeInstance(
-					'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
-					$errorMessage,
-					'',
-					\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING
-				);
-				/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
-				$customMessages .= '<br />' . $message->render();
-			}
+			$customMessages .= implode(PHP_EOL, $this->errors);
 			if ($this->convertedLinkCounter == 0) {
-					// no links converted only missing files: UPDATE was not successful
+				// no links converted only missing files: UPDATE was not successful
 				return FALSE;
 			}
 		}
 
 		if ($this->convertedLinkCounter > 0) {
-			$customMessages = $this->convertedLinkCounter . ' links converted.<br />' . $customMessages;
+			$customMessages = $this->convertedLinkCounter . ' links converted.' . PHP_EOL . $customMessages;
 		} else {
 			$customMessages .= 'No file links found';
 		}
@@ -213,7 +204,7 @@ class RteFileLinksUpdateWizard extends AbstractUpdate {
 		if ($fileObject instanceof \TYPO3\CMS\Core\Resource\AbstractFile) {
 			// Next, match the reference path in the content to be sure it's present inside a <link> tag
 			$content = $record[$reference['field']];
-			$regularExpression = '$<(link ' . $reference['ref_string'] . ').*>$';
+			$regularExpression = '$<(link ' . str_replace(' ', '%20', $reference['ref_string']) . ').*>$';
 			$matches = array();
 			$result = preg_match($regularExpression, $content, $matches);
 			if ($result) {

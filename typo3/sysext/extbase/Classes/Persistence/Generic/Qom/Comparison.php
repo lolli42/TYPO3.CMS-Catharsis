@@ -27,6 +27,8 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
+
 /**
  * Filters node-tuples based on the outcome of a binary operation.
  *
@@ -45,35 +47,35 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
  * If operand1 evaluates to null (for example, if the operand evaluates the value
  * of a property which does not exist), the constraint is not satisfied.
  *
- * The JCR_OPERATOR_EQUAL_TO operator is satisfied only if the value of operand1
+ * The OPERATOR_EQUAL_TO operator is satisfied only if the value of operand1
  * equals the value of operand2.
  *
- * The JCR_OPERATOR_NOT_EQUAL_TO operator is satisfied unless the value of
+ * The OPERATOR_NOT_EQUAL_TO operator is satisfied unless the value of
  * operand1 equals the value of operand2.
  *
- * The JCR_OPERATOR_LESSS_THAN operator is satisfied only if the value of
+ * The OPERATOR_LESSS_THAN operator is satisfied only if the value of
  * operand1 is ordered before the value of operand2.
  *
- * The JCR_OPERATOR_LESS_THAN_OR_EQUAL_TO operator is satisfied unless the value
+ * The OPERATOR_LESS_THAN_OR_EQUAL_TO operator is satisfied unless the value
  * of operand1 is ordered after the value of operand2.
  *
- * The JCR_OPERATOR_GREATER_THAN operator is satisfied only if the value of
+ * The OPERATOR_GREATER_THAN operator is satisfied only if the value of
  * operand1 is ordered after the value of operand2.
  *
- * The JCR_OPERATOR_GREATER_THAN_OR_EQUAL_TO operator is satisfied unless the
+ * The OPERATOR_GREATER_THAN_OR_EQUAL_TO operator is satisfied unless the
  * value of operand1 is ordered before the value of operand2.
  *
- * The JCR_OPERATOR_LIKE operator is satisfied only if the value of operand1
+ * The OPERATOR_LIKE operator is satisfied only if the value of operand1
  * matches the pattern specified by the value of operand2, where in the pattern:
  * the character "%" matches zero or more characters, and
  * the character "_" (underscore) matches exactly one character, and
  * the string "\x" matches the character "x", and
  * all other characters match themselves.
  */
-class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface {
+class Comparison implements ComparisonInterface {
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface
+	 * @var PropertyValueInterface
 	 */
 	protected $operand1;
 
@@ -87,7 +89,7 @@ class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Compariso
 	 */
 	protected $operand2;
 
-	/*
+	/**
 	 * @var string
 	 */
 	protected $parameterIdentifier;
@@ -95,11 +97,11 @@ class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Compariso
 	/**
 	 * Constructs this Comparison instance
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface $operand1
-	 * @param integer $operator one of \TYPO3\CMS\Extbase\Persistence\QueryInterface.OPERATOR_*
+	 * @param PropertyValueInterface $operand1
+	 * @param integer $operator one of QueryInterface::OPERATOR_*
 	 * @param mixed $operand2
 	 */
-	public function __construct(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface $operand1, $operator, $operand2) {
+	public function __construct(PropertyValueInterface $operand1, $operator, $operand2) {
 		$this->operand1 = $operand1;
 		$this->operator = $operator;
 		$this->operand2 = $operand2;
@@ -108,7 +110,7 @@ class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Compariso
 	/**
 	 * Gets the first operand.
 	 *
-	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface the operand; non-null
+	 * @return PropertyValueInterface the operand; non-null
 	 */
 	public function getOperand1() {
 		return $this->operand1;
@@ -117,10 +119,20 @@ class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Compariso
 	/**
 	 * Gets the operator.
 	 *
-	 * @return string one of \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelConstantsInterface.JCR_OPERATOR_*
+	 * @return string One of QueryInterface::OPERATOR_*
 	 */
 	public function getOperator() {
-		return $this->operator;
+		$operator = $this->operator;
+
+		if ($this->getOperand2() === NULL) {
+			if ($operator === QueryInterface::OPERATOR_EQUAL_TO) {
+				$operator = QueryInterface::OPERATOR_EQUAL_TO_NULL;
+			} elseif ($operator === QueryInterface::OPERATOR_NOT_EQUAL_TO) {
+				$operator = QueryInterface::OPERATOR_NOT_EQUAL_TO_NULL;
+			}
+		}
+
+		return $operator;
 	}
 
 	/**
@@ -145,5 +157,14 @@ class Comparison implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Compariso
 	 */
 	public function getParameterIdentifier() {
 		return $this->parameterIdentifier;
+	}
+
+	/**
+	 * Fills an array with the names of all bound variables in the constraints
+	 *
+	 * @param array &$boundVariables
+	 * @return void
+	 */
+	public function collectBoundVariableNames(&$boundVariables) {
 	}
 }

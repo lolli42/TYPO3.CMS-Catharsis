@@ -91,28 +91,31 @@ interface PersistenceManagerInterface {
 	/**
 	 * Returns the number of records matching the query.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
+	 * @param QueryInterface $query
 	 * @return integer
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
+	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0. It is deprecated only in the interface to be more
+	 * in sync with Flow in future and will stay in Generic Persistence.
 	 * @api
 	 */
-	public function getObjectCountByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query);
+	public function getObjectCountByQuery(QueryInterface $query);
 
 	/**
 	 * Returns the object data matching the $query.
 	 *
-	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
+	 * @param QueryInterface $query
 	 * @return array
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
+	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0. It is deprecated only in the interface to be more
+	 * in sync with Flow in future and will stay in Generic Persistence.
 	 * @api
 	 */
-	public function getObjectDataByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query);
+	public function getObjectDataByQuery(QueryInterface $query);
 
 	/**
 	 * Registers a repository
 	 *
 	 * @param string $className The class name of the repository to be reigistered
-	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0
+	 * @deprecated since Extbase 6.0, will be removed in Extbase 7.0. It is deprecated only in the interface to be more
+	 * in sync with Flow in future and will stay in Generic Persistence.
 	 * @return void
 	 */
 	public function registerRepositoryClassName($className);
@@ -180,7 +183,7 @@ interface PersistenceManagerInterface {
 	 * Return a query object for the given type.
 	 *
 	 * @param string $type
-	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
+	 * @return QueryInterface
 	 * @api
 	 */
 	public function createQueryForType($type);

@@ -89,4 +89,13 @@ interface DomainObjectInterface {
 	 * @return array The properties
 	 */
 	public function _getProperties();
+
+	/**
+	 * Returns the clean value of the given property. The returned value will be NULL if the clean state was not memorized before, or
+	 * if the clean value is NULL.
+	 *
+	 * @param string $propertyName The name of the property to be memorized.
+	 * @return mixed The clean property value or NULL
+	 */
+	public function _getCleanProperty($propertyName);
 }

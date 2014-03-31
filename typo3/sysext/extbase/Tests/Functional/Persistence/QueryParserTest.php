@@ -82,4 +82,51 @@ class QueryParserTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$this->assertNotSame($hashWithEquals, $hashWithIn);
 	}
+
+	/**
+	 * @test
+	 */
+	public function preparseQueryHashDiffersForIsNullOperator() {
+		$queryWithIsNull = $this->blogRepository->createQuery();
+
+		$queryWithIsNull->matching(
+			$queryWithIsNull->equals('title', NULL)
+		);
+
+		list($hashWithIsNull) = $this->queryParser->preparseQuery($queryWithIsNull);
+
+		$queryWithoutIsNull = $this->blogRepository->createQuery();
+
+		$queryWithoutIsNull->matching(
+			$queryWithoutIsNull->equals('title', '')
+		);
+
+		list($hashWithoutIsNull) = $this->queryParser->preparseQuery($queryWithoutIsNull);
+
+		$this->assertNotSame($hashWithIsNull, $hashWithoutIsNull);
+	}
+
+
+	/**
+	 * @test
+	 */
+	public function preparseQueryHashDiffersForEqualsCaseSensitiveArgument() {
+		$queryCaseSensitiveFalse = $this->blogRepository->createQuery();
+
+		$queryCaseSensitiveFalse->matching(
+			$queryCaseSensitiveFalse->equals('title', 'PoSt1', FALSE)
+		);
+
+		list($hashWithCaseSensitiveFalse) = $this->queryParser->preparseQuery($queryCaseSensitiveFalse);
+
+		$queryCaseSensitiveTrue = $this->blogRepository->createQuery();
+
+		$queryCaseSensitiveTrue->matching(
+			$queryCaseSensitiveTrue->equals('title', 'PoSt1', TRUE)
+		);
+
+		list($hashWithCaseSensitiveTrue) = $this->queryParser->preparseQuery($queryCaseSensitiveTrue);
+
+		$this->assertNotSame($hashWithCaseSensitiveFalse, $hashWithCaseSensitiveTrue);
+	}
 }

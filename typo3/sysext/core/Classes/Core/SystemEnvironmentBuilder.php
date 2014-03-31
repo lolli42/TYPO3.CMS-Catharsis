@@ -75,7 +75,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '6.2-dev');
+		define('TYPO3_version', '6.2.1-dev');
 		define('TYPO3_branch', '6.2');
 		define('TYPO3_copyright_year', '1998-2014');
 
@@ -94,6 +94,7 @@ class SystemEnvironmentBuilder {
 		define('TYPO3_URL_DOWNLOAD', 'http://typo3.org/download/');
 		define('TYPO3_URL_SYSTEMREQUIREMENTS', 'http://typo3.org/about/typo3-the-cms/system-requirements/');
 		define('TYPO3_URL_DONATE', 'http://typo3.org/donate/online-donation/');
+		define('TYPO3_URL_WIKI_OPCODECACHE', 'http://wiki.typo3.org/Opcode_Cache');
 
 		// A tabulator, a linefeed, a carriage return, a CR-LF combination
 		define('TAB', chr(9));

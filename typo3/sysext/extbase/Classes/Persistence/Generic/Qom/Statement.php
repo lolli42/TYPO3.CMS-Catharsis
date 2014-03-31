@@ -30,10 +30,10 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
 /**
  * A statement acting as a constraint.
  */
-class Statement {
+class Statement implements ConstraintInterface {
 
 	/**
-	 * @var mixed
+	 * @var string|\TYPO3\CMS\Core\Database\PreparedStatement
 	 */
 	protected $statement;
 
@@ -45,7 +45,7 @@ class Statement {
 	/**
 	 * Constructs the Statement instance
 	 *
-	 * @param mixed $statement The statement as sql string or TYPO3\CMS\Core\Database\PreparedStatement
+	 * @param string|\TYPO3\CMS\Core\Database\PreparedStatement $statement The statement as sql string or TYPO3\CMS\Core\Database\PreparedStatement
 	 * @param array $boundVariables An array of variables to bind to the statement, only to be used with preparedStatement
 	 */
 	public function __construct($statement, array $boundVariables = array()) {
@@ -65,7 +65,7 @@ class Statement {
 	/**
 	 * Gets the statement.
 	 *
-	 * @return string the statement; non-null
+	 * @return string|\TYPO3\CMS\Core\Database\PreparedStatement the statement; non-null
 	 */
 	public function getStatement() {
 		return $this->statement;
@@ -78,5 +78,14 @@ class Statement {
 	 */
 	public function getBoundVariables() {
 		return $this->boundVariables;
+	}
+
+	/**
+	 * Fills an array with the names of all bound variables in the constraints
+	 *
+	 * @param array &$boundVariables
+	 * @return void
+	 */
+	public function collectBoundVariableNames(&$boundVariables) {
 	}
 }

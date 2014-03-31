@@ -68,13 +68,28 @@ Ext.onReady(function() {
 		directFn : TYPO3.Workspaces.ExtDirect.getSystemLanguages
 	});
 
-	TYPO3.Workspaces.RowDetail.rowDataStore.proxy = new Ext.data.DirectProxy({
+	TYPO3.Workspaces.RowExpander.detailStore.proxy = new Ext.data.DirectProxy({
 		directFn: TYPO3.Workspaces.ExtDirect.getRowDetails
 	});
 	// late binding of ExtDirect
 	TYPO3.Workspaces.MainStore.proxy = new Ext.data.DirectProxy({
 		directFn : TYPO3.Workspaces.ExtDirect.getWorkspaceInfos
 	});
+
+	TYPO3.Workspaces.Tabs = new Ext.Panel({
+		renderTo: 'workspacetabs',
+		autoWidth: true,
+		layout: 'fit',
+		items: [
+			{
+				xtype: 'WorkspacesTabPanel',
+				unstyled: true,
+				items: TYPO3.settings.Workspaces.workspaceTabs,
+				activeTab: 'workspace-' + TYPO3.settings.Workspaces.activeWorkspaceId
+			}
+		]
+	});
+
 	// fire grid
 	var WS = new TYPO3.Workspaces.App.init();
 

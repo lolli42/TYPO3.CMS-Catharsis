@@ -1,11 +1,8 @@
 <?php
-namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
-
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
+ *  (c) 2014 Nicole Cordes (typo3@cordes.co)
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -27,9 +24,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
-/**
- * An operand whose value can only be determined in evaluating the query.
- */
-class DynamicOperand extends \TYPO3\CMS\Extbase\Persistence\Generic\Qom\Operand implements \TYPO3\CMS\Extbase\Persistence\Generic\Qom\DynamicOperandInterface {
 
-}
+$elementHistoryController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\ContentElement\\ElementHistoryController');
+$elementHistoryController->main();
+$elementHistoryController->printContent();

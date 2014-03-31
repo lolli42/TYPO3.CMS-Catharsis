@@ -28,6 +28,9 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
+use TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface;
+
 /**
  * A persistence backend. This backend maps objects to the relational model of the storage backend.
  * It persists all added, removed and changed objects.
@@ -111,7 +114,6 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Constructs the backend
 	 *
 	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
-	 * @return void
 	 */
 	public function __construct(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
 		$this->configurationManager = $configurationManager;
@@ -316,6 +318,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	protected function persistObjects() {
 		$this->visitedDuringPersistence = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
 		foreach ($this->aggregateRootObjects as $object) {
+			/** @var DomainObjectInterface $object */
 			if ($object->_isNew()) {
 				$this->insertObject($object);
 			}
@@ -359,7 +362,8 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 						$queue[] = $containedObject;
 					}
 				}
-			} elseif ($propertyValue instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface) {
+			} elseif ($propertyValue instanceof \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface
+				&& $object instanceof ObjectMonitoringInterface) {
 				if ($object->_isDirty($propertyName)) {
 					if ($propertyValue->_isNew()) {
 						$this->insertObject($propertyValue, $object, $propertyName);
@@ -426,6 +430,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 		$updateSortingOfFollowing = FALSE;
 
 		foreach ($objectStorage as $object) {
+			/** @var DomainObjectInterface $object */
 			if (empty($currentUids)) {
 				$sortingPosition = 1;
 			} else {
@@ -507,7 +512,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Updates the fields defining the relation between the object and the parent object.
 	 *
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object
-	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject
+	 * @param \TYPO3\CMS\Extbase\DomainObject\AbstractEntity $parentObject
 	 * @param string $parentPropertyName
 	 * @param integer $sortingPosition
 	 * @return void
@@ -1015,5 +1020,6 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 		} else {
 			return $input;
 		}
+		return NULL;
 	}
 }

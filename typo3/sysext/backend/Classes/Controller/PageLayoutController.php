@@ -360,7 +360,6 @@ class PageLayoutController {
 			$modules = $moduleLoader->modules;
 			if (is_array($modules['web']['sub']['list'])) {
 				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', '<p>' . $GLOBALS['LANG']->getLL('goToListModuleMessage') . '</p>
-					<br />
 					<p>' . IconUtility::getSpriteIcon('actions-system-list-open') . '<a href="javascript:top.goToModule( \'web_list\',1);">' . $GLOBALS['LANG']->getLL('goToListModule') . '
 						</a>
 					</p>', '', FlashMessage::INFO);
@@ -1111,10 +1110,34 @@ class PageLayoutController {
 				if ($this->undoButton) {
 					// Undo button
 					$buttons['undo'] = '<a href="#"
-						onclick="' . htmlspecialchars(('window.location.href=\'' . $GLOBALS['BACK_PATH'] . 'show_rechis.php?element=' . rawurlencode(($this->eRParts[0] . ':' . $this->eRParts[1])) . '&revert=ALL_FIELDS&sumUp=-1&returnUrl=' . rawurlencode($this->R_URI) . '\'; return false;')) . '"
+						onclick="' . htmlspecialchars('window.location.href=' .
+							GeneralUtility::quoteJSvalue(
+								$GLOBALS['BACK_PATH'] .
+								BackendUtility::getModuleUrl(
+									'record_history',
+									array(
+										'element' => $this->eRParts[0] . ':' . $this->eRParts[1],
+										'revert' => 'ALL_FIELDS',
+										'sumUp' => -1,
+										'returnUrl' => $this->R_URI,
+									)
+								)
+							) . '; return false;') . '"
 						title="' . htmlspecialchars(sprintf($GLOBALS['LANG']->getLL('undoLastChange'), BackendUtility::calcAge(($GLOBALS['EXEC_TIME'] - $this->undoButtonR['tstamp']), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')))) . '">' . IconUtility::getSpriteIcon('actions-edit-undo') . '</a>';
 					// History button
-					$buttons['history_record'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue($GLOBALS['BACK_PATH'] . 'show_rechis.php?element=' . rawurlencode(($this->eRParts[0] . ':' . $this->eRParts[1])) . '&returnUrl=' . rawurlencode($this->R_URI) . '#latest') . ');return false;')) . '" title="' . $GLOBALS['LANG']->getLL('recordHistory', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
+					$buttons['history_record'] = '<a href="#"
+						onclick="' . htmlspecialchars('jumpToUrl(' .
+							GeneralUtility::quoteJSvalue(
+								$GLOBALS['BACK_PATH'] .
+								BackendUtility::getModuleUrl(
+									'record_history',
+									array(
+										'element' => $this->eRParts[0] . ':' . $this->eRParts[1],
+										'returnUrl' => $this->R_URI,
+									)
+								) . '#latest'
+							) . ');return false;') . '"
+						title="' . $GLOBALS['LANG']->getLL('recordHistory', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
 				}
 			}
 		}
