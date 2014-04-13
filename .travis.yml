@@ -10,7 +10,7 @@ env:
 
 services:
   - memcached
-  - redis-server
+#  - redis-server
 
 notifications:
   email:
