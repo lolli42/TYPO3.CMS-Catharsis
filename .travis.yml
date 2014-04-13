@@ -39,4 +39,4 @@ script:
 #    echo;
 #    echo "Running functional tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
-  - echo "Running php lint"; if ! find typo3/ -name \*.php -print0 | xargs -0 -n1 -P8 php -l >/tmp/errors; then grep -v "No syntax errors detected in" /tmp/errors; exit 99; fi
+  - /bin/bash -c "if ! find typo3/ -name \*.php -print0 | xargs -0 -n1 -P8 php -l >/tmp/errors; then grep -v \"No syntax errors detected in\" /tmp/errors; exit 99; fi"
