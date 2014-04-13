@@ -40,7 +40,7 @@ before_script:
   - sudo chmod -R 700 /tmp/typo3ramdisk
   - sudo chown -R mysql:mysql /tmp/typo3ramdisk
   - sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables &
-  - sleep 5
+  - while [ ! -S /var/run/mysqld/mysqld-testing.sock ]; do sleep 1; done
 
 script:
 #  - >
@@ -48,7 +48,8 @@ script:
 #    echo "Running unit tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
-    ps xawu | grep -i mysql
+    ps xawu | grep -i mysql;
+    mysql -u root -h 127.0.0.1 -P 3307 -e "Show databases;"
 #    echo;
 #    echo "Running functional tests";
 #    export typo3DatabaseName="typo3";
