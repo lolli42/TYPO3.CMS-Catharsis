@@ -1,8 +1,8 @@
 language: php
 
 php:
-  - 5.3
-  - 5.4
+#  - 5.3
+#  - 5.4
   - 5.5
 
 env:
@@ -43,11 +43,10 @@ script:
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
     sudo mkdir /tmp/typo3ramdisk;
-    sudo mount -t ramfs ramfs /tmp/typo3ramdisk;
+    sudo mount -t tmpfs -o size=512M tmpfs /tmp/typo3ramdisk;
     sudo chmod -R 700 /tmp/typo3ramdisk;
     sudo chown -R mysql:mysql /tmp/typo3ramdisk;
-    sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables &
-
+    (sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables)&
     sleep 5;
     ps xawu | grep -i listen
 #    echo;
