@@ -20,15 +20,20 @@ notifications:
     on_failure: change
 
 before_script:
-  - composer self-update
-  - composer --dev install
-#  - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
-#  - source build-environment/install-helper.sh
-  - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
-  - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then pecl install igbinary > /dev/null; fi
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+        echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+        echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+        echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+    fi
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+        pecl install igbinary > /dev/null;
+    fi
   - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-#  - mv build-environment/typo3conf .
+  - composer self-update
+  - composer --dev install
   - mkdir -p fileadmin uploads typo3temp typo3conf/ext
 
 script:
