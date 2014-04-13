@@ -19,7 +19,7 @@ notifications:
     on_success: change
     on_failure: change
 
-#before_script:
+before_script:
   - composer self-update
   - composer --dev install
   - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
