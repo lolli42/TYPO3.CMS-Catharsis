@@ -20,6 +20,7 @@ notifications:
 
 before_script:
   - composer self-update
+  - composer --dev install
   - sudo apt-get install parallel
   - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh
@@ -29,16 +30,16 @@ before_script:
   - installPhpModule redis
   - mkdir fileadmin uploads typo3temp
   - mv build-environment/typo3conf .
-  - git clone --single-branch --branch master --depth 1 git://git.typo3.org/TYPO3CMS/Extensions/phpunit.git typo3conf/ext/phpunit/
 
 script:
-  - >
-    composer --dev install;
-    echo "Running unit tests";
-    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
 #  - >
-#    echo "Running functional tests";
-#    ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
+#    echo;
+#    echo "Running unit tests";
+#    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+  - >
+    echo;
+    echo "Running functional tests";
+    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
 #  - >
 #    echo "Running php lint";
 #    if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors; then
