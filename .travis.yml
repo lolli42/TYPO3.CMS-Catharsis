@@ -21,7 +21,6 @@ notifications:
 before_script:
   - composer self-update
   - composer --dev install
-  - sudo apt-get install parallel
   - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh
   - if [[ "$TRAVIS_PHP_VERSION" == "5.3" ]]; then installPhpModule -y apc; fi
@@ -36,15 +35,13 @@ script:
 #    echo;
 #    echo "Running unit tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+#  - >
+#    echo;
+#    echo "Running functional tests";
+#    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
   - >
     echo;
-    echo "Running functional tests";
-    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
-#  - >
-#    echo "Running php lint";
-#    if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors; then
-#        exit 0
-#    else
-#        grep -v "No syntax errors detected in" /tmp/errors;
-#        exit 99
-#    fi
+    echo "Running php lint";
+    if ! find typo3/ -name \*.php -print0 | xargs -0 -n1 -P8 php -l >/tmp/errors; then
+        grep -v "No syntax errors detected in" /tmp/errors;
+    fi
