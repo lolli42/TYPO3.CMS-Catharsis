@@ -649,7 +649,7 @@ class ExtensionManagementUtility {
 		// Remove the field names from the insertionlist.
 		$fieldReplacePatterns = array();
 		foreach ($listMatches[1] as $fieldName) {
-			$fieldReplacePatterns[] = '/(?:^|,)\\s*\\b' . $fieldName . '\\b[^,$]*/';
+			$fieldReplacePatterns[] = '/(?:^|,)\\s*\\b' . preg_quote($fieldName, '/') . '\\b[^,$]*/';
 		}
 		return preg_replace($fieldReplacePatterns, '', $insertionList);
 	}
@@ -1576,16 +1576,16 @@ tt_content.' . $key . $prefix . ' {
 		if ($allowCaching) {
 			$cacheIdentifier = static::getBaseTcaCacheIdentifier();
 			/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
-			$codeCache = self::getCacheManager()->getCache('cache_core');
+			$codeCache = static::getCacheManager()->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
 				// substr is necessary, because the php frontend wraps php code around the cache value
 				$GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
 			} else {
-				self::buildBaseTcaFromSingleFiles();
-				self::createBaseTcaCacheFile();
+				static::buildBaseTcaFromSingleFiles();
+				static::createBaseTcaCacheFile();
 			}
 		} else {
-			self::buildBaseTcaFromSingleFiles();
+			static::buildBaseTcaFromSingleFiles();
 		}
 	}
 
