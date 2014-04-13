@@ -26,7 +26,7 @@ before_script:
   - source build-environment/install-helper.sh
   - if [[ "$TRAVIS_PHP_VERSION" == "5.3" ]]; then installPhpModule -y apc; fi
   - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then installPhpModule igbinary; fi
-  - installPhpModule -y memcache
+  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - mv build-environment/typo3conf .
   - mkdir fileadmin uploads typo3temp typo3conf/ext
