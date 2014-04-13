@@ -10,6 +10,7 @@ env:
 
 services:
   - memcached
+  - redis-server
 
 notifications:
   email:
@@ -19,32 +20,32 @@ notifications:
     on_failure: change
 
 #before_script:
-#  - composer self-update
-#  - composer --dev install
-#  - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
-#  - source build-environment/install-helper.sh
-#  - if [[ "$TRAVIS_PHP_VERSION" == "5.3" ]]; then installPhpModule -y apc; fi
-#  - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then installPhpModule igbinary; fi
-#  - installPhpModule -y memcache
-#  - installPhpModule redis
-#  - mkdir fileadmin uploads typo3temp
+  - composer self-update
+  - composer --dev install
+  - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
+  - source build-environment/install-helper.sh
+  - if [[ "$TRAVIS_PHP_VERSION" == "5.3" ]]; then installPhpModule -y apc; fi
+  - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then installPhpModule igbinary; fi
+  - installPhpModule -y memcache
+  - installPhpModule redis
+  - mkdir fileadmin uploads typo3temp typo3conf
 #  - mv build-environment/typo3conf .
 
 script:
-#  - >
-#    echo;
-#    echo "Running unit tests";
-#    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+  - >
+    echo;
+    echo "Running unit tests";
+    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
 #  - >
 #    echo;
 #    echo "Running functional tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
-  - >
-    echo;
-    echo "Running php lint";
-    /bin/bash -c "
-        if ! find typo3/ -name \*.php -print0 | xargs -0 -n1 -P8 php -l >/tmp/errors 2>&1; then
-            grep -v \"No syntax errors detected in\" /tmp/errors;
-            exit 99;
-        fi
-    "
+#  - >
+#    echo;
+#    echo "Running php lint";
+#    /bin/bash -c "
+#        if ! find typo3/ -name \*.php -print0 | xargs -0 -n1 -P8 php -l >/tmp/errors 2>&1; then
+#            grep -v \"No syntax errors detected in\" /tmp/errors;
+#            exit 99;
+#        fi
+#    "
