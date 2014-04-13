@@ -8,9 +8,9 @@ php:
 env:
   - DB=mysql
 
-services:
-  - memcached
-  - redis-server
+#services:
+#  - memcached
+#  - redis-server
 
 notifications:
   email:
@@ -48,7 +48,7 @@ script:
 #    echo "Running unit tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
-    ps xawu | grep -i listen
+    ps xawu | grep -i mysql
 #    echo;
 #    echo "Running functional tests";
 #    export typo3DatabaseName="typo3";
