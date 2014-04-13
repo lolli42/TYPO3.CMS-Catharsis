@@ -31,6 +31,6 @@ before_script:
   - git clone --single-branch --branch master --depth 1 git://git.typo3.org/TYPO3CMS/Extensions/phpunit.git typo3conf/ext/phpunit/
 
 script:
-  - echo "Running unit tests"; ./build-environment/executeUnitTests.sh'
-  - echo "Running functional tests"; ./build-environment/executeFunctionalTests.sh'
-  - echo "Running php lint"; ./build-environment/executeLint.sh'
+  - echo "Running unit tests"; ./build-environment/executeUnitTests.sh
+  - echo "Running functional tests"; ./build-environment/executeFunctionalTests.sh
+  - echo "Running php lint"; ./build-environment/executeLint.sh
