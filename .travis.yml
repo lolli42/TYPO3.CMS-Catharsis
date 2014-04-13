@@ -19,6 +19,7 @@ notifications:
     on_failure: change
 
 before_script:
+  - composer self-update
   - sudo apt-get install parallel
   - git clone --single-branch --branch master --depth 1 git://github.com/lolli42/TYPO3-Travis-Integration.git build-environment
   - source build-environment/install-helper.sh
@@ -32,17 +33,17 @@ before_script:
 
 script:
   - >
+    composer --dev install
     echo "Running unit tests";
-    ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
 #  - >
 #    echo "Running functional tests";
 #    ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
 #  - >
 #    echo "Running php lint";
-#    if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors
-#    then
+#    if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors; then
 #        exit 0
 #    else
-#        grep -v "No syntax errors detected in" /tmp/errors
+#        grep -v "No syntax errors detected in" /tmp/errors;
 #        exit 99
 #    fi
