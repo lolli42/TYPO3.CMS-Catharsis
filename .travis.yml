@@ -32,17 +32,17 @@ before_script:
 
 script:
   - >
-	echo "Running unit tests"
-	./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+    echo "Running unit tests"
+    ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
-	echo "Running functional tests";
-	./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
+    echo "Running functional tests";
+    ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
   - >
-	echo "Running php lint";
-	if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors
-	then
-		exit 0
-	else
-		grep -v "No syntax errors detected in" /tmp/errors
-		exit 99
-	fi
+    echo "Running php lint";
+    if find typo3/ -name \*.php | parallel --gnu --keep-order 'php -l {}' > /tmp/errors
+    then
+        exit 0
+    else
+        grep -v "No syntax errors detected in" /tmp/errors
+        exit 99
+    fi
