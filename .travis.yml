@@ -20,20 +20,20 @@ notifications:
     on_failure: change
 
 before_script:
-  - >
-    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
-        echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-        echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-        echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-    fi
-  - >
-    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
-        pecl install igbinary > /dev/null;
-    fi
-  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - composer self-update
-  - composer --dev install
+#  - >
+#    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+#        echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+#        echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+#        echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+#    fi
+#  - >
+#    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+#        pecl install igbinary > /dev/null;
+#    fi
+#  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+#  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+#  - composer self-update
+#  - composer --dev install
   - mkdir -p fileadmin uploads typo3temp typo3conf/ext
 
 script:
@@ -42,13 +42,21 @@ script:
 #    echo "Running unit tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
-    echo;
-    echo "Running functional tests";
-    export typo3DatabaseName="typo3";
-    export typo3DatabaseHost="localhost";
-    export typo3DatabaseUsername="root";
-    export typo3DatabasePassword="";
-    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
+    sudo mkdir /tmp/typo3ramdisk;
+    sudo mount -t ramfs ramfs /tmp/typo3ramdisk;
+    sudo chmod -R 700 /tmp/typo3ramdisk;
+    sudo chown -R mysql:mysql /tmp/typo3ramdisk;
+    sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables &
+
+    sleep 5;
+    ps xawu | grep -i listen
+#    echo;
+#    echo "Running functional tests";
+#    export typo3DatabaseName="typo3";
+#    export typo3DatabaseHost="localhost";
+#    export typo3DatabaseUsername="root";
+#    export typo3DatabasePassword="";
+#    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
 #  - >
 #    echo;
 #    echo "Running php lint";
