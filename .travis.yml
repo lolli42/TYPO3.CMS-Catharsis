@@ -1,16 +1,16 @@
 language: php
 
 php:
-#  - 5.3
-#  - 5.4
+  - 5.3
+  - 5.4
   - 5.5
 
 env:
   - DB=mysql
 
-#services:
-#  - memcached
-#  - redis-server
+services:
+  - memcached
+  - redis-server
 
 notifications:
   email:
@@ -20,20 +20,20 @@ notifications:
     on_failure: change
 
 before_script:
-#  - >
-#    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
-#        echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-#        echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-#        echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
-#    fi
-#  - >
-#    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
-#        pecl install igbinary > /dev/null;
-#    fi
-#  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-#  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-#  - composer self-update
-#  - composer --dev install
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+        echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+        echo "apc.enable_cli=1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+        echo "apc.slam_defense=0" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+    fi
+  - >
+    if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then
+        pecl install igbinary > /dev/null;
+    fi
+  - echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - composer self-update
+  - composer --dev install
   - mkdir -p fileadmin uploads typo3temp typo3conf/ext
   - sudo mkdir /tmp/typo3ramdisk
   - sudo mount -t tmpfs -o size=512M tmpfs /tmp/typo3ramdisk
