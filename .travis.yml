@@ -10,7 +10,7 @@ env:
 
 services:
   - memcached
-#  - redis-server
+  - redis-server
 
 notifications:
   email:
@@ -28,8 +28,8 @@ before_script:
   - if [[ "$TRAVIS_PHP_VERSION" != "5.5" ]]; then installPhpModule igbinary; fi
   - installPhpModule -y memcache
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - mkdir fileadmin uploads typo3temp
   - mv build-environment/typo3conf .
+  - mkdir fileadmin uploads typo3temp typo3conf/ext
 
 script:
   - >
