@@ -32,7 +32,7 @@ before_script:
 
 script:
   - >
-    echo "Running unit tests"
+    echo "Running unit tests";
     ./typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
     echo "Running functional tests";
