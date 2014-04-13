@@ -33,7 +33,7 @@ before_script:
 
 script:
   - >
-    composer --dev install
+    composer --dev install;
     echo "Running unit tests";
     ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
 #  - >
