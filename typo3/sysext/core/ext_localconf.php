@@ -1,4 +1,5 @@
 <?php
+this is syntax error
 if (!defined('TYPO3_MODE')) {
 	die('Access denied.');
 }
