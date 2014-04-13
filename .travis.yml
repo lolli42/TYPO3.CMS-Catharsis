@@ -35,6 +35,12 @@ before_script:
 #  - composer self-update
 #  - composer --dev install
   - mkdir -p fileadmin uploads typo3temp typo3conf/ext
+  - sudo mkdir /tmp/typo3ramdisk
+  - sudo mount -t tmpfs -o size=512M tmpfs /tmp/typo3ramdisk
+  - sudo chmod -R 700 /tmp/typo3ramdisk
+  - sudo chown -R mysql:mysql /tmp/typo3ramdisk
+  - sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables &
+  - sleep 5
 
 script:
 #  - >
@@ -42,12 +48,6 @@ script:
 #    echo "Running unit tests";
 #    ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
   - >
-    sudo mkdir /tmp/typo3ramdisk;
-    sudo mount -t tmpfs -o size=512M tmpfs /tmp/typo3ramdisk;
-    sudo chmod -R 700 /tmp/typo3ramdisk;
-    sudo chown -R mysql:mysql /tmp/typo3ramdisk;
-    (sudo mysqld_safe --port=3307 --socket="/var/run/mysqld/mysqld-testing.sock" --user mysql --pid-file="/var/run/mysqld/mysqld-testing.pid" --datadir="/tmp/typo3ramdisk" --skip-grant-tables)&
-    sleep 5;
     ps xawu | grep -i listen
 #    echo;
 #    echo "Running functional tests";
