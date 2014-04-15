@@ -96,7 +96,6 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function checkIfFromArrayMethodSetCorrectProperties() {
-		$this->assertTrue(FALSE);
 		$this->fixture->fromArray($this->collectionRecord);
 		$this->assertEquals($this->collectionRecord['uid'], $this->fixture->getIdentifier());
 		$this->assertEquals($this->collectionRecord['uid'], $this->fixture->getUid());
