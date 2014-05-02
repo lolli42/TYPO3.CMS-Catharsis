@@ -26,12 +26,14 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
+
 /**
  * Controller for actions related to the TER download of an extension
  *
  * @author Susanne Moog, <typo3@susannemoog.de>
  */
-class DownloadController extends \TYPO3\CMS\Extensionmanager\Controller\AbstractController {
+class DownloadController extends AbstractController {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
@@ -100,10 +102,10 @@ class DownloadController extends \TYPO3\CMS\Extensionmanager\Controller\Abstract
 			$message = $e->getMessage();
 		}
 		$this->view->assign('extension', $extension)
-				->assign('hasDependencies', $hasDependencies)
-				->assign('hasErrors', $hasErrors)
-				->assign('message', $message)
-				->assign('title', $title);
+			->assign('hasDependencies', $hasDependencies)
+			->assign('hasErrors', $hasErrors)
+			->assign('message', $message)
+			->assign('title', $title);
 	}
 
 	/**
@@ -161,11 +163,23 @@ class DownloadController extends \TYPO3\CMS\Extensionmanager\Controller\Abstract
 	 * @return void
 	 */
 	protected function updateExtensionAction() {
+		$hasErrors = FALSE;
+		$errorMessage = '';
+		$result = array();
+
 		$extensionKey = $this->request->getArgument('extension');
-		/** @var $highestTerVersionExtension \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
+		/** @var Extension $highestTerVersionExtension */
 		$highestTerVersionExtension = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
-		$result = $this->managementService->resolveDependenciesAndInstall($highestTerVersionExtension);
-		$this->view->assign('result', $result)->assign('extension', $highestTerVersionExtension);
+		try {
+			$result = $this->managementService->resolveDependenciesAndInstall($highestTerVersionExtension);
+		} catch (\Exception $e) {
+			$hasErrors = TRUE;
+			$errorMessage = $e->getMessage();
+		}
+		$this->view->assign('result', $result)
+			->assign('extension', $highestTerVersionExtension)
+			->assign('hasErrors', $hasErrors)
+			->assign('errorMessage', $errorMessage);
 	}
 
 	/**
@@ -179,7 +193,7 @@ class DownloadController extends \TYPO3\CMS\Extensionmanager\Controller\Abstract
 		$extensionKey = $this->request->getArgument('extension');
 		$version = $this->request->getArgument('integerVersion');
 		$updateComments = array();
-		/** @var $updatableVersion \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
+		/** @var Extension[] $updatableVersions */
 		$updatableVersions = $this->extensionRepository->findByVersionRangeAndExtensionKeyOrderedByVersion($extensionKey, $version);
 		foreach ($updatableVersions as $updatableVersion) {
 			$updateComments[$updatableVersion->getVersion()] = $updatableVersion->getUpdateComment();
