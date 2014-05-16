@@ -176,6 +176,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'  static public function getRecordWSOL() {' .
 			'    static $called = 0;' .
 			'    $called ++;' .
+			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return array(\'title\' => \'Page 1\');' .
 			'    }' .
@@ -185,7 +186,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'  }' .
 			'  static public function getRecordTitle() {' .
 			'    static $called = 0;' .
-			'    $called ++;' .
+			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return \'Page 1\';' .
 			'    }' .
@@ -230,7 +231,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Backend\\Utility\\BackendUtility {' .
 			'  static public function getRecordWSOL() {' .
 			'    static $called = 0;' .
-			'    $called ++;' .
+			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return array(\'title\' => \'Page 1\');' .
 			'    }' .
@@ -240,7 +241,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'  }' .
 			'  static public function getRecordTitle() {' .
 			'    static $called = 0;' .
-			'    $called ++;' .
+			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return \'Page 1\';' .
 			'    }' .
@@ -908,7 +909,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Backend\\Utility\\BackendUtility {' .
 			'  static public function getRegisteredFlexForms($table) {' .
 			'    static $called = 0;' .
-			'    $called ++;' .
+			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return array();' .
 			'    }' .
@@ -1185,7 +1186,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'PAGE_TSCONFIG_IDLIST' => '1,a,2,b,3,c'
 			),
 		);
-		BackendUtility::replaceMarkersInWhereClause($whereClause, 'dummytable', 'dummyfield', $tsConfig);
+		BackendUtility::replaceMarkersInWhereClause($where, 'dummytable', 'dummyfield', $tsConfig);
 	}
 
 	/**
