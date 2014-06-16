@@ -6040,7 +6040,7 @@ class DataHandler {
 				}
 				// Set log message if there were fields with unmatching values:
 				if (count($errorString)) {
-					$this->log($table, $id, $action, 0, 102, 'These fields are not properly updated in database: (' . implode(',', $errorString) . ') Probably value mismatch with fieldtype.');
+					$this->log($table, $id, $action, 0, 1, 'These fields are not properly updated in database: (' . implode(',', $errorString) . ') Probably value mismatch with fieldtype.');
 				}
 				// Return selected rows:
 				return $row;
@@ -7166,7 +7166,8 @@ class DataHandler {
 				break;
 			case 'temp_cached':
 			case 'system':
-				if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.system')) {
+				if ($this->admin || $this->BE_USER->getTSConfigVal('options.clearCache.system')
+					|| ((bool) $GLOBALS['TYPO3_CONF_VARS']['SYS']['clearCacheSystem'] === TRUE && $this->admin)) {
 					GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->flushCachesInGroup('system');
 				}
 				break;
@@ -7230,25 +7231,26 @@ class DataHandler {
 	 * @param array $data Array with special information that may go into $details by '%s' marks / sprintf() when the log is shown
 	 * @param integer $event_pid The page_uid (pid) where the event occurred. Used to select log-content for specific pages.
 	 * @param string $NEWid NEW id for new records
-	 * @return integer Log entry UID
+	 * @return integer Log entry UID (0 if no log entry was written or logging is disabled)
 	 * @todo Define visibility
 	 */
 	public function log($table, $recuid, $action, $recpid, $error, $details, $details_nr = -1, $data = array(), $event_pid = -1, $NEWid = '') {
-		if ($this->enableLogging) {
-			// Type value for tce_db.php
-			$type = 1;
-			if (!$this->storeLogMessages) {
-				$details = '';
-			}
-			if ($error > 0) {
-				$detailMessage = $details;
-				if (is_array($data)) {
-					$detailMessage = vsprintf($details, $data);
-				}
-				$this->errorLog[] = '[' . $type . '.' . $action . '.' . $details_nr . ']: ' . $detailMessage;
-			}
-			return $this->BE_USER->writelog($type, $action, $error, $details_nr, $details, $data, $table, $recuid, $recpid, $event_pid, $NEWid);
+		if (!$this->enableLogging) {
+			return 0;
 		}
+		// Type value for tce_db.php
+		$type = 1;
+		if (!$this->storeLogMessages) {
+			$details = '';
+		}
+		if ($error > 0) {
+			$detailMessage = $details;
+			if (is_array($data)) {
+				$detailMessage = vsprintf($details, $data);
+			}
+			$this->errorLog[] = '[' . $type . '.' . $action . '.' . $details_nr . ']: ' . $detailMessage;
+		}
+		return $this->BE_USER->writelog($type, $action, $error, $details_nr, $details, $data, $table, $recuid, $recpid, $event_pid, $NEWid);
 	}
 
 	/**

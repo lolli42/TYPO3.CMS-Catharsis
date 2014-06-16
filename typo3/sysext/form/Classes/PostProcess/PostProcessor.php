@@ -32,6 +32,16 @@ namespace TYPO3\CMS\Form\PostProcess;
 class PostProcessor {
 
 	/**
+	 * @var \TYPO3\CMS\Form\View\Form\FormView
+	 */
+	protected $form;
+
+	/**
+	 * @var \TYPO3\CMS\Form\Domain\Factory\TypoScriptFactory
+	 */
+	protected $typoscriptFactory;
+
+	/**
 	 * Constructor
 	 *
 	 * @param \TYPO3\CMS\Form\Domain\Model\Form $form Form domain model
@@ -39,6 +49,7 @@ class PostProcessor {
 	 */
 	public function __construct(\TYPO3\CMS\Form\Domain\Model\Form $form, array $typoScript) {
 		$this->form = $form;
+		$this->typoscriptFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Form\\Domain\\Factory\\TypoScriptFactory');
 		$this->typoScript = $typoScript;
 	}
 
@@ -54,26 +65,32 @@ class PostProcessor {
 		$html = '';
 		if (is_array($this->typoScript)) {
 			$keys = $this->sortTypoScriptKeyList();
+			$layoutHandler = $this->typoscriptFactory->setLayoutHandler($this->typoScript);
+
 			foreach ($keys as $key) {
 				if (!(int)$key || strpos($key, '.') !== FALSE) {
 					continue;
 				}
 				$className = FALSE;
+				$processorName = $this->typoScript[$key];
 				$processorArguments = array();
 				if (isset($this->typoScript[$key . '.'])) {
 					$processorArguments = $this->typoScript[$key . '.'];
 				}
-				if (class_exists($this->typoScript[$key], TRUE)) {
-					$className = $this->typoScript[$key];
+				if (class_exists($processorName, TRUE)) {
+					$className = $processorName;
 				} else {
-					$classNameExpanded = 'TYPO3\\CMS\\Form\\PostProcess\\' . ucfirst(strtolower($this->typoScript[$key])) . 'PostProcessor';
+					$classNameExpanded = 'TYPO3\\CMS\\Form\\PostProcess\\' . ucfirst(strtolower($processorName)) . 'PostProcessor';
 					if (class_exists($classNameExpanded, TRUE)) {
 						$className = $classNameExpanded;
 					}
 				}
 				if ($className !== FALSE) {
+					$layout = $this->typoscriptFactory->getLayoutFromTypoScript($this->typoScript[$processorName . '.']);
+					$layoutHandler->setLayout($layout);
+
 					$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $this->form, $processorArguments);
-					if ($processor instanceof \TYPO3\CMS\Form\PostProcess\PostProcessorInterface) {
+					if ($processor instanceof PostProcessorInterface) {
 						$html .= $processor->process();
 					}
 				}

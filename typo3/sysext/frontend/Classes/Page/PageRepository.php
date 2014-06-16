@@ -954,12 +954,12 @@ class PageRepository {
 	 * @todo Define visibility
 	 */
 	public function enableFields($table, $show_hidden = -1, $ignore_array = array(), $noVersionPreview = FALSE) {
-		if ($show_hidden == -1 && is_object($GLOBALS['TSFE'])) {
+		if ($show_hidden === -1 && is_object($GLOBALS['TSFE'])) {
 			// If show_hidden was not set from outside and if TSFE is an object, set it
 			// based on showHiddenPage and showHiddenRecords from TSFE
 			$show_hidden = $table == 'pages' ? $GLOBALS['TSFE']->showHiddenPage : $GLOBALS['TSFE']->showHiddenRecords;
 		}
-		if ($show_hidden == -1) {
+		if ($show_hidden === -1) {
 			$show_hidden = 0;
 		}
 		// If show_hidden was not changed during the previous evaluation, do it here.
@@ -1357,6 +1357,48 @@ class PageRepository {
 			$this->workspaceCache[$wsid] = $ws;
 		}
 		return $ws['_ACCESS'] != '';
+	}
+
+	/**
+	 * Gets file references for a given record field.
+	 *
+	 * @param string $tableName Name of the table
+	 * @param string $fieldName Name of the field
+	 * @param array $element The parent element referencing to files
+	 * @return array
+	 */
+	public function getFileReferences($tableName, $fieldName, array $element) {
+		/** @var $fileRepository \TYPO3\CMS\Core\Resource\FileRepository */
+		$fileRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
+		$currentId = !empty($element['uid']) ? $element['uid'] : 0;
+
+		// Fetch the references of the default element
+		$references = $fileRepository->findByRelation($tableName, $fieldName, $currentId);
+
+		$localizedId = NULL;
+		if (isset($element['_LOCALIZED_UID'])) {
+			$localizedId = $element['_LOCALIZED_UID'];
+		} elseif (isset($element['_PAGES_OVERLAY_UID'])) {
+			$localizedId = $element['_PAGES_OVERLAY_UID'];
+		}
+
+		if (!empty($GLOBALS['TCA'][$tableName]['ctrl']['transForeignTable'])) {
+			$tableName = $GLOBALS['TCA'][$tableName]['ctrl']['transForeignTable'];
+		}
+
+		$isTableLocalizable = (
+			!empty($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])
+			&& !empty($GLOBALS['TCA'][$tableName]['ctrl']['transOrigPointerField'])
+		);
+		if ($isTableLocalizable && $localizedId !== NULL) {
+			$localizedReferences = $fileRepository->findByRelation($tableName, $fieldName, $localizedId);
+			$localizedReferencesValue = $localizedReferences ?: '';
+			if ($this->shouldFieldBeOverlaid($tableName, $fieldName, $localizedReferencesValue)) {
+				$references = $localizedReferences;
+			}
+		}
+
+		return $references;
 	}
 
 	/**
