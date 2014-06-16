@@ -175,7 +175,6 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Backend\\Utility\\BackendUtility {' .
 			'  static public function getRecordWSOL() {' .
 			'    static $called = 0;' .
-			'    $called ++;' .
 			'    ++$called;' .
 			'    if ($called === 1) {' .
 			'      return array(\'title\' => \'Page 1\');' .

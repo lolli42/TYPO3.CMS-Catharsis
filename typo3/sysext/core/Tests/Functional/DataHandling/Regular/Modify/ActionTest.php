@@ -109,18 +109,6 @@ class ActionTest extends \TYPO3\CMS\Core\Tests\Functional\DataHandling\Regular\A
 
 	/**
 	 * @test
-	 * @see DataSet/Assertion/copyContentRecord.csv
-	 */
-	public function copyPasteContent() {
-		parent::copyPasteContent();
-		$this->assertAssertionDataSet('copyPasteContent');
-
-		$responseContent = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
-		$this->assertResponseContentHasRecords($responseContent, self::TABLE_Content, 'header', 'Testing #1');
-	}
-
-	/**
-	 * @test
 	 * @see DataSet/Assertion/localizeContentRecord.csv
 	 */
 	public function localizeContent() {
@@ -175,20 +163,6 @@ class ActionTest extends \TYPO3\CMS\Core\Tests\Functional\DataHandling\Regular\A
 		$responseSectionsTarget = $this->getFrontendResponse(self::VALUE_PageIdTarget)->getResponseSections();
 		$this->assertThat($responseSectionsTarget, $this->getRequestSectionHasRecordConstraint()
 			->setTable(self::TABLE_Content)->setField('header')->setValues('Testing #1'));
-	}
-
-	/**
-	 * @test
-	 * @see DataSet/movePasteContentToDifferentPage.csv
-	 */
-	public function movePasteContentToDifferentPage() {
-		parent::movePasteContentToDifferentPage();
-		$this->assertAssertionDataSet('movePasteContentToDifferentPage');
-
-		$responseContentSource = $this->getFrontendResponse(self::VALUE_PageId)->getResponseContent();
-		$this->assertResponseContentHasRecords($responseContentSource, self::TABLE_Content, 'header', 'Regular Element #1');
-		$responseContentTarget = $this->getFrontendResponse(self::VALUE_PageIdTarget)->getResponseContent();
-		$this->assertResponseContentHasRecords($responseContentTarget, self::TABLE_Content, 'header', 'Testing #1');
 	}
 
 	/**
