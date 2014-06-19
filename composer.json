@@ -37,7 +37,9 @@
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.3.*@dev",
-		"phpunit/phpunit": "3.7.*"
+		"phpunit/phpunit": "4.3.*-dev",
+		"phpunit/php-code-coverage": "3.0.*-dev",
+		"phpunit/phpunit-mock-objects": "2.3.*-dev"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
