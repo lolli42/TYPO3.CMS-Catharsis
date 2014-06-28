@@ -2,31 +2,18 @@
 
 namespace TYPO3\CMS\Core\Resource\Index;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Steffen Ritter <steffen.ritter@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -122,7 +109,7 @@ class MetaDataRepository implements SingletonInterface {
 		$record = $emptyRecord;
 		$record['uid'] = $this->getDatabaseConnection()->sql_insert_id();
 
-		$this->emitRecordCreated($record);
+		$this->emitRecordCreatedSignal($record);
 
 		return $record;
 	}
@@ -148,7 +135,7 @@ class MetaDataRepository implements SingletonInterface {
 			$updateRow['tstamp'] = time();
 			$this->getDatabaseConnection()->exec_UPDATEquery($this->tableName, 'uid = ' . (int)$row['uid'], $updateRow);
 
-			$this->emitRecordUpdated(array_merge($row, $updateRow));
+			$this->emitRecordUpdatedSignal(array_merge($row, $updateRow));
 		}
 	}
 
@@ -160,7 +147,7 @@ class MetaDataRepository implements SingletonInterface {
 	 */
 	public function removeByFileUid($fileUid) {
 		$this->getDatabaseConnection()->exec_DELETEquery($this->tableName, 'file=' . (int)$fileUid);
-		$this->emitRecordDeleted($fileUid);
+		$this->emitRecordDeletedSignal($fileUid);
 	}
 
 	/**
@@ -199,7 +186,7 @@ class MetaDataRepository implements SingletonInterface {
 	 * @param array $data
 	 * @signal
 	 */
-	protected function emitRecordUpdated(array $data) {
+	protected function emitRecordUpdatedSignal(array $data) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository', 'recordUpdated', array($data));
 	}
 
@@ -209,7 +196,7 @@ class MetaDataRepository implements SingletonInterface {
 	 * @param array $data
 	 * @signal
 	 */
-	protected function emitRecordCreated(array $data) {
+	protected function emitRecordCreatedSignal(array $data) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository', 'recordCreated', array($data));
 	}
 
@@ -219,7 +206,7 @@ class MetaDataRepository implements SingletonInterface {
 	 * @param integer $fileUid
 	 * @signal
 	 */
-	protected function emitRecordDeleted($fileUid) {
+	protected function emitRecordDeletedSignal($fileUid) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\MetaDataRepository', 'recordDeleted', array($fileUid));
 	}
 

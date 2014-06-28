@@ -1,32 +1,20 @@
 <?php
 namespace TYPO3\CMS\Impexp\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Susanne Moog <susanne.moog@typo3.org>
- *  (c) 2013 Oliver Hader <oliver.hader@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Utility for import / export
@@ -53,8 +41,10 @@ class ImportExportUtility {
 			throw new \InvalidArgumentException('Input parameter $int has to be of type integer', 1377625646);
 		}
 		/** @var $import \TYPO3\CMS\Impexp\ImportExport */
-		$import = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Impexp\\ImportExport');
+		$import = GeneralUtility::makeInstance('TYPO3\\CMS\\Impexp\\ImportExport');
 		$import->init(0, 'import');
+
+		$this->emitAfterImportExportInitialisationSignal($import);
 
 		if ($file && @is_file($file)) {
 			if ($import->loadFile($file, 1)) {
@@ -73,5 +63,25 @@ class ImportExportUtility {
 		} else {
 			return $importResponse;
 		}
+	}
+
+	/**
+	 * Get the SignalSlot dispatcher
+	 *
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+	}
+
+	/**
+	 * Emits a signal after initialization
+	 *
+	 * @param \TYPO3\CMS\Impexp\ImportExport $import
+	 * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotException
+	 * @throws \TYPO3\CMS\Extbase\SignalSlot\Exception\InvalidSlotReturnException
+	 */
+	protected function emitAfterImportExportInitialisationSignal(\TYPO3\CMS\Impexp\ImportExport $import) {
+		$this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'afterImportExportInitialisation', array($import));
 	}
 }

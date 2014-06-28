@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Service;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Oliver Hader <oliver.hader@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Resource;
 use TYPO3\CMS\Core\Utility;
@@ -94,7 +81,7 @@ class FileProcessingService {
 
 		// set the storage of the processed file
 		// Pre-process the file
-		$this->emitPreFileProcess($processedFile, $fileObject, $taskType, $configuration);
+		$this->emitPreFileProcessSignal($processedFile, $fileObject, $taskType, $configuration);
 
 		// Only handle the file if it is not processed yet
 		// (maybe modified or already processed by a signal)
@@ -104,7 +91,7 @@ class FileProcessingService {
 		}
 
 		// Post-process (enrich) the file
-		$this->emitPostFileProcess($processedFile, $fileObject, $taskType, $configuration);
+		$this->emitPostFileProcessSignal($processedFile, $fileObject, $taskType, $configuration);
 
 		return $processedFile;
 	}
@@ -163,7 +150,7 @@ class FileProcessingService {
 	 * @param string $context
 	 * @param array $configuration
 	 */
-	protected function emitPreFileProcess(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
+	protected function emitPreFileProcessSignal(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PreFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
 	}
 
@@ -175,7 +162,7 @@ class FileProcessingService {
 	 * @param $context
 	 * @param array $configuration
 	 */
-	protected function emitPostFileProcess(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
+	protected function emitPostFileProcessSignal(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PostFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
 	}
 }

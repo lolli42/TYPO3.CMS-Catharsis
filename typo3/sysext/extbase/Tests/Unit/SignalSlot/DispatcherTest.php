@@ -1,32 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\SignalSlot;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Extbase Team (http://forge.typo3.org/projects/typo3v4-mvc)
- *  Extbase is a backport of TYPO3 Flow. All credits go to the TYPO3 Flow team.
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Test case
@@ -92,7 +78,7 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			($arguments = func_get_args());
 		};
 		$this->signalSlotDispatcher->connect('Foo', 'bar', $mockSlot, NULL, FALSE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'bar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'bar', array('bar', 'quux'));
 		$this->assertSame(array('bar', 'quux'), $arguments);
 	}
 
@@ -109,7 +95,7 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
 		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $slotClassName, 'slot', FALSE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
 		$this->assertSame($mockSlot->arguments, array('bar', 'quux'));
 	}
 
@@ -211,7 +197,7 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					));
 
 		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $mockSlot, 'slot', FALSE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
 	}
 
 	/**
@@ -260,7 +246,7 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
 		$this->signalSlotDispatcher->connect('Foo', 'emitBar', $slotClassName, 'unknownMethodName', TRUE);
-		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('Foo', 'emitBar', array('bar', 'quux'));
 		$this->assertSame($mockSlot->arguments, array('bar', 'quux'));
 	}
 
@@ -276,7 +262,7 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->signalSlotDispatcher->connect('SignalClassName', 'methodName', $mockSlot, NULL, TRUE);
 		$this->signalSlotDispatcher->_set('objectManager', $mockObjectManager);
 		$this->signalSlotDispatcher->_set('isInitialized', TRUE);
-		$this->signalSlotDispatcher->dispatch('SignalClassName', 'methodName', array('foo' => 'bar', 'baz' => 'quux'));
+		$this->signalSlotDispatcher->dispatch('SignalClassName', 'methodName', array('bar', 'quux'));
 		$this->assertSame(array('bar', 'quux', 'SignalClassName::methodName'), $arguments);
 	}
 
@@ -309,9 +295,9 @@ class DispatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function dispatchReturnsArgumentsArrayAsIsIfSignalIsNotRegistered() {
 		$arguments = array(
-			'argument1' => 42,
-			'argument2' => 'a string',
-			'argument3' => new \stdClass()
+			42,
+			'a string',
+			new \stdClass()
 		);
 		$this->assertSame($arguments, $this->signalSlotDispatcher->dispatch('ClassA', 'emitSomeSignal', $arguments));
 	}

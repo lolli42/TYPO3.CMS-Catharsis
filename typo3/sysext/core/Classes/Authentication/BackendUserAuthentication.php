@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Authentication;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 1999-2013 Kasper Skårhøj (kasperYYYY@typo3.com)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -1371,6 +1358,15 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 				// Refer to fetchGroups() function.
 				$this->fetchGroups($grList);
 			}
+
+			// Populating the $this->userGroupsUID -array with the groups in the order in which they were LAST included.!!
+			$this->userGroupsUID = array_reverse(array_unique(array_reverse($this->includeGroupArray)));
+			// Finally this is the list of group_uid's in the order they are parsed (including subgroups!)
+			// and without duplicates (duplicates are presented with their last entrance in the list,
+			// which thus reflects the order of the TypoScript in TSconfig)
+			$this->groupList = implode(',', $this->userGroupsUID);
+			$this->setCachedList($this->groupList);
+
 			// Add the TSconfig for this specific user:
 			$this->TSdataArray[] = $this->addTScomment('USER TSconfig field') . $this->user['TSconfig'];
 			// Check include lines.
@@ -1417,13 +1413,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 			$this->groupData['modules'] = GeneralUtility::uniqueList($this->dataLists['modList']);
 			$this->groupData['file_permissions'] = GeneralUtility::uniqueList($this->dataLists['file_permissions']);
 			$this->groupData['workspace_perms'] = $this->dataLists['workspace_perms'];
-			// Populating the $this->userGroupsUID -array with the groups in the order in which they were LAST included.!!
-			$this->userGroupsUID = array_reverse(array_unique(array_reverse($this->includeGroupArray)));
-			// Finally this is the list of group_uid's in the order they are parsed (including subgroups!)
-			// and without duplicates (duplicates are presented with their last entrance in the list,
-			// which thus reflects the order of the TypoScript in TSconfig)
-			$this->groupList = implode(',', $this->userGroupsUID);
-			$this->setCachedList($this->groupList);
+
 			// Checking read access to webmounts:
 			if (trim($this->groupData['webmounts']) !== '') {
 				$webmounts = explode(',', $this->groupData['webmounts']);

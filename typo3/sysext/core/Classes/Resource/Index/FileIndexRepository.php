@@ -2,31 +2,18 @@
 
 namespace TYPO3\CMS\Core\Resource\Index;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2013 Steffen Ritter <steffen.ritter@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -235,7 +222,7 @@ class FileIndexRepository implements SingletonInterface {
 		$data['tstamp'] = time();
 		$this->getDatabaseConnection()->exec_INSERTquery($this->table, $data);
 		$data['uid'] = $this->getDatabaseConnection()->sql_insert_id();
-		$this->emitRecordCreated($data);
+		$this->emitRecordCreatedSignal($data);
 		return $data['uid'];
 	}
 	/**
@@ -263,7 +250,7 @@ class FileIndexRepository implements SingletonInterface {
 		if (count($updateRow) > 0) {
 			$updateRow['tstamp'] = time();
 			$this->getDatabaseConnection()->exec_UPDATEquery($this->table, $this->getWhereClauseForFile($file), $updateRow);
-			$this->emitRecordUpdated(array_intersect_key($file->getProperties(), array_flip($this->fields)));
+			$this->emitRecordUpdatedSignal(array_intersect_key($file->getProperties(), array_flip($this->fields)));
 		}
 	}
 
@@ -352,7 +339,7 @@ class FileIndexRepository implements SingletonInterface {
 	 */
 	public function remove($fileUid) {
 		$this->getDatabaseConnection()->exec_DELETEquery($this->table, 'uid=' . (int)$fileUid);
-		$this->emitRecordDeleted($fileUid);
+		$this->emitRecordDeletedSignal($fileUid);
 	}
 
 	/*
@@ -381,7 +368,7 @@ class FileIndexRepository implements SingletonInterface {
 	 * @param array $data
 	 * @signal
 	 */
-	protected function emitRecordUpdated(array $data) {
+	protected function emitRecordUpdatedSignal(array $data) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\FileIndexRepository', 'recordUpdated', array($data));
 	}
 
@@ -391,7 +378,7 @@ class FileIndexRepository implements SingletonInterface {
 	 * @param array $data
 	 * @signal
 	 */
-	protected function emitRecordCreated(array $data) {
+	protected function emitRecordCreatedSignal(array $data) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\FileIndexRepository', 'recordCreated', array($data));
 	}
 
@@ -401,7 +388,7 @@ class FileIndexRepository implements SingletonInterface {
 	 * @param integer $fileUid
 	 * @signal
 	 */
-	protected function emitRecordDeleted($fileUid) {
+	protected function emitRecordDeletedSignal($fileUid) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\Index\\FileIndexRepository', 'recordDeleted', array($fileUid));
 	}
 }

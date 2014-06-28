@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Service;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2010-2013 Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -167,18 +154,15 @@ class GridDataService {
 					$versionArray['uid'] = $record['uid'];
 					$versionArray['workspace'] = $versionRecord['t3ver_id'];
 					$versionArray = array_merge($versionArray, $defaultGridColumns);
-					$versionArray['label_Workspace'] = htmlspecialchars(
-						BackendUtility::getRecordTitle($table, $versionRecord));
+					$versionArray['label_Workspace'] = htmlspecialchars(BackendUtility::getRecordTitle($table, $versionRecord));
 					$versionArray['label_Live'] = htmlspecialchars(BackendUtility::getRecordTitle($table, $origRecord));
 					$versionArray['label_Stage'] = htmlspecialchars($stagesObj->getStageTitle($versionRecord['t3ver_stage']));
 					$tempStage = $stagesObj->getNextStage($versionRecord['t3ver_stage']);
 					$versionArray['label_nextStage'] = htmlspecialchars($stagesObj->getStageTitle($tempStage['uid']));
 					$tempStage = $stagesObj->getPrevStage($versionRecord['t3ver_stage']);
 					$versionArray['label_prevStage'] = htmlspecialchars($stagesObj->getStageTitle($tempStage['uid']));
-					$versionArray['path_Live'] = htmlspecialchars(
-						BackendUtility::getRecordPath($record['livepid'], '', 999));
-					$versionArray['path_Workspace'] = htmlspecialchars(
-						BackendUtility::getRecordPath($record['wspid'], '', 999));
+					$versionArray['path_Live'] = htmlspecialchars(BackendUtility::getRecordPath($record['livepid'], '', 999));
+					$versionArray['path_Workspace'] = htmlspecialchars(BackendUtility::getRecordPath($record['wspid'], '', 999));
 					$versionArray['workspace_Title'] = htmlspecialchars(\TYPO3\CMS\Workspaces\Service\WorkspaceService::getWorkspaceTitle($versionRecord['t3ver_wsid']));
 					$versionArray['workspace_Tstamp'] = $versionRecord['tstamp'];
 					$versionArray['workspace_Formated_Tstamp'] = BackendUtility::datetime($versionRecord['tstamp']);
@@ -644,7 +628,7 @@ class GridDataService {
 	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
 	 */
 	protected function getObjectManager() {
-		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
 	}
 
 }

@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2011-2013 Andreas Wolf <andreas.wolf@typo3.org>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -1062,7 +1049,7 @@ class ResourceStorage implements ResourceStorageInterface {
 
 		// We do not care whether the file exists yet because $targetFileName may be changed by an
 		// external slot and only then we should check how to proceed according to $conflictMode
-		$this->emitPreFileAddSignal($targetFileName, $targetFolder, $localFilePath);
+		$targetFileName = $this->emitPreFileAddSignal($targetFileName, $targetFolder, $localFilePath);
 
 		if ($conflictMode === 'cancel' && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
 			throw new Exception\ExistingTargetFileNameException('File "' . $targetFileName . '" already exists in folder ' . $targetFolder->getIdentifier(), 1322121068);
@@ -1150,7 +1137,7 @@ class ResourceStorage implements ResourceStorageInterface {
 		$publicUrl = NULL;
 		if ($this->isOnline()) {
 			// Pre-process the public URL by an accordant slot
-			$this->emitPreGeneratePublicUrl($resourceObject, $relativeToCurrentScript, array('publicUrl' => &$publicUrl));
+			$this->emitPreGeneratePublicUrlSignal($resourceObject, $relativeToCurrentScript, array('publicUrl' => &$publicUrl));
 			// If slot did not handle the signal, use the default way to determine public URL
 			if ($publicUrl === NULL) {
 
@@ -2094,10 +2081,11 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $targetFileName
 	 * @param Folder $targetFolder
 	 * @param string $sourceFilePath
-	 * @return void
+	 * @return string Modified target file name
 	 */
-	protected function emitPreFileAddSignal(&$targetFileName, Folder $targetFolder, $sourceFilePath) {
+	protected function emitPreFileAddSignal($targetFileName, Folder $targetFolder, $sourceFilePath) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PreFileAdd, array(&$targetFileName, $targetFolder, $sourceFilePath, $this, $this->driver));
+		return $targetFileName;
 	}
 
 	/**
@@ -2360,7 +2348,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param bool $relativeToCurrentScript
 	 * @param array $urlData
 	 */
-	protected function emitPreGeneratePublicUrl(ResourceInterface $resourceObject, $relativeToCurrentScript, array $urlData) {
+	protected function emitPreGeneratePublicUrlSignal(ResourceInterface $resourceObject, $relativeToCurrentScript, array $urlData) {
 		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PreGeneratePublicUrl, array($this, $this->driver, $resourceObject, $relativeToCurrentScript, $urlData));
 	}
 

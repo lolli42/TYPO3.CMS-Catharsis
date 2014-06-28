@@ -1,31 +1,18 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/***************************************************************
- *  Copyright notice
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  (c) 2012-2013 Susanne Moog <typo3@susannemoog.de>
- *  All rights reserved
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the text file GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
 use TYPO3\CMS\Core\Package\PackageInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -78,7 +65,7 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @see getInstExtList()
 	 */
 	public function getAvailableExtensions() {
-		$this->emitPackagesMayHaveChanged();
+		$this->emitPackagesMayHaveChangedSignal();
 		$extensions = array();
 		foreach ($this->packageManager->getAvailablePackages() as $package) {
 			// Only TYPO3 related packages could be handled by the extension manager
@@ -100,7 +87,7 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Emits packages may have changed signal
 	 */
-	protected function emitPackagesMayHaveChanged() {
+	protected function emitPackagesMayHaveChangedSignal() {
 		$this->signalSlotDispatcher->dispatch('PackageManagement', 'packagesMayHaveChanged');
 	}
 
