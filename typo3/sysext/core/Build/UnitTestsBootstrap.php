@@ -76,6 +76,10 @@ $_SERVER['SCRIPT_NAME'] = PATH_thisScript;
 
 putenv('TYPO3_CONTEXT=Testing');
 
+mkdir(PATH_site . 'uploads');
+mkdir(PATH_site . 'typo3temp');
+mkdir(PATH_site . 'typo3conf/ext');
+
 require PATH_site . '/typo3/sysext/core/Classes/Core/Bootstrap.php';
 
 \TYPO3\CMS\Core\Core\Bootstrap::getInstance()
@@ -94,3 +98,14 @@ $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = '.*';
 	->initializeCachingFramework()
 	->initializeClassLoaderCaches()
 	->initializePackageManagement('TYPO3\\CMS\\Core\\Package\\UnitTestPackageManager');
+
+function mkdir($directory) {
+    if (!is_dir($directory)) {
+        if (!@\mkdir($directory, 0777, TRUE)) {
+            throw new \RuntimeException(
+                'Directory "' . $directory . '" could not be created',
+                1404038665
+            );
+        }
+    }
+}
