@@ -1,7 +1,6 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
-}
+defined('TYPO3_MODE') or die();
+
 if (TYPO3_MODE == 'BE') {
 	if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('workspaces')) {
 		// Register version_click_module

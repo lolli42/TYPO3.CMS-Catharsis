@@ -384,7 +384,7 @@ class DatabaseConnection {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param boolean $numIndex If set, the result will be fetched with sql_fetch_row, otherwise sql_fetch_assoc will be used.
-	 * @return array Single row or NULL if it fails.
+	 * @return array|FALSE|NULL Single row, FALSE on empty result, NULL on error
 	 */
 	public function exec_SELECTgetSingleRow($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $numIndex = FALSE) {
 		$res = $this->exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, '1');
@@ -1069,7 +1069,8 @@ class DatabaseConnection {
 	 */
 	public function sql_free_result($res) {
 		if ($this->debug_check_recordset($res) && is_object($res)) {
-			return $res->free();
+			$res->free();
+			return TRUE;
 		} else {
 			return FALSE;
 		}

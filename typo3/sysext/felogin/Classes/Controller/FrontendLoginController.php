@@ -34,6 +34,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * Path to this script relative to the extension dir.
 	 *
 	 * @todo Define visibility
+	 * @TODO This is still set to the "old" class location since the locallang.xlf file in the same dir is loaded by pi_loadLL
 	 */
 	public $scriptRelPath = 'pi1/class.tx_felogin_pi1.php';
 
@@ -153,7 +154,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		}
 		// What to display
 		$content = '';
-		if ($this->piVars['forgot'] && $this->conf['showForgotPassword']) {
+		if ($this->piVars['forgot'] && $this->conf['showForgotPasswordLink']) {
 			$content .= $this->showForgot();
 		} elseif ($this->piVars['forgothash']) {
 			$content .= $this->changePassword();
@@ -584,7 +585,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		$markerArray['###NOREDIRECT###'] = $this->noRedirect ? '1' : '0';
 		$markerArray['###PREFIXID###'] = $this->prefixId;
 		$markerArray = array_merge($markerArray, $this->getUserFieldMarkers());
-		if ($this->flexFormValue('showForgotPassword', 'sDEF') || $this->conf['showForgotPasswordLink']) {
+		if ($this->conf['showForgotPasswordLink']) {
 			$linkpartArray['###FORGOT_PASSWORD_LINK###'] = explode('|', $this->getPageLink('|', array($this->prefixId . '[forgot]' => 1)));
 			$markerArray['###FORGOT_PASSWORD###'] = $this->pi_getLL('ll_forgot_header', '', TRUE);
 		} else {
@@ -757,7 +758,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	protected function mergeflexFormValuesIntoConf() {
 		$flex = array();
 		if ($this->flexFormValue('showForgotPassword', 'sDEF')) {
-			$flex['showForgotPassword'] = $this->flexFormValue('showForgotPassword', 'sDEF');
+			$flex['showForgotPasswordLink'] = $this->flexFormValue('showForgotPassword', 'sDEF');
 		}
 		if ($this->flexFormValue('showPermaLogin', 'sDEF')) {
 			$flex['showPermaLogin'] = $this->flexFormValue('showPermaLogin', 'sDEF');

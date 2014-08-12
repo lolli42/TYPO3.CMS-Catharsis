@@ -60,9 +60,6 @@
 			<trans-unit id="extConfTemplate.backToList" xml:space="preserve">
 				<source>Back to list</source>
 			</trans-unit>
-			<trans-unit id="extConfTemplate.submitButton" xml:space="preserve">
-				<source>Submit</source>
-			</trans-unit>
 			<trans-unit id="updateScript.headline" xml:space="preserve">
 				<source>Update script for %s</source>
 			</trans-unit>
@@ -260,6 +257,9 @@
 			<trans-unit id="downloadExtension.dependencyType.install" xml:space="preserve">
 				<source>install</source>
 			</trans-unit>
+			<trans-unit id="downloadExtension.dependencyType.update" xml:space="preserve">
+				<source>update</source>
+			</trans-unit>
 			<trans-unit id="downloadExtension.updateExtension.error" xml:space="preserve">
 				<source>Error while updating extension</source>
 			</trans-unit>
@@ -386,6 +386,9 @@
 			<trans-unit id="extensionList.uninstall.dependencyError" xml:space="preserve">
 				<source>Cannot deactivate extension '%s' - The extension(s) '%s' depend on it.</source>
 			</trans-unit>
+			<trans-unit id="distribution.error.headline" xml:space="preserve">
+				<source>Could not install distribution '%s'</source>
+			</trans-unit>
 			<trans-unit id="distribution.welcome.headline" xml:space="preserve">
 				<source>Congratulations...</source>
 			</trans-unit>
@@ -496,6 +499,15 @@
 			</trans-unit>
 			<trans-unit id="report.status.existingOutdatedExtensions.outdatedExtensionExists.message.extension" xml:space="preserve">
 				<source>&lt;strong&gt;%1s&lt;/strong&gt; (version %2s)&lt;br&gt;</source>
+			</trans-unit>
+			<trans-unit id="fileHandling.couldNotRemoveDirectory" xml:space="preserve">
+				<source>ERROR: Could not remove extension directory "%s". Reasons:</source>
+			</trans-unit>
+			<trans-unit id="fileHandling.couldNotCreateDirectory" xml:space="preserve">
+				<source>ERROR: Could not create extension directory "%s"!</source>
+			</trans-unit>
+			<trans-unit id="fileHandling.installPathWasNoDirectory" xml:space="preserve">
+				<source>ERROR: The extension install path "%s" was no directory!</source>
 			</trans-unit>
 		</body>
 	</file>

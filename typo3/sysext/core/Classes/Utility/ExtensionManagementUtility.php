@@ -1038,12 +1038,18 @@ class ExtensionManagementUtility {
 	 *
 	 * @param string $module
 	 * @param string $componentId
-	 * @return void
+	 * @param string $extensionKey
+	 * @throws \RuntimeException
+	 *@return void
 	 */
-	static public function addNavigationComponent($module, $componentId) {
+	static public function addNavigationComponent($module, $componentId, $extensionKey = NULL) {
+		$extensionKey = $extensionKey ?: $GLOBALS['_EXTKEY'];
+		if (!isset($extensionKey)) {
+			throw new \RuntimeException('No extensionKey set in addNavigationComponent(). Provide it as third Parameter', 1404068039);
+		}
 		$GLOBALS['TBE_MODULES']['_navigationComponents'][$module] = array(
 			'componentId' => $componentId,
-			'extKey' => $GLOBALS['_EXTKEY'],
+			'extKey' => $extensionKey,
 			'isCoreComponent' => FALSE
 		);
 	}
@@ -1232,14 +1238,26 @@ class ExtensionManagementUtility {
 	 * Use this function to add a frontend plugin to this list of plugin-types - or more generally use this function to add an entry to any selectorbox/radio-button set in the TCEFORMS
 	 * FOR USE IN ext_tables.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
 	 *
-	 * @param array $itemArray Item Array
+	 * @param array $itemArray Numerical array: [0] => Plugin label, [1] => Underscored extension key, [2] => Path to plugin icon relative to TYPO3_mainDir
 	 * @param string $type Type (eg. "list_type") - basically a field from "tt_content" table
+	 * @param string $extensionKey The extension key
+	 * @throws \RuntimeException
 	 * @return void
 	 */
-	static public function addPlugin($itemArray, $type = 'list_type') {
-		$_EXTKEY = $GLOBALS['_EXTKEY'];
-		if ($_EXTKEY && !$itemArray[2]) {
-			$itemArray[2] = self::extRelPath($_EXTKEY) . $GLOBALS['TYPO3_LOADED_EXT'][$_EXTKEY]['ext_icon'];
+	static public function addPlugin($itemArray, $type = 'list_type', $extensionKey = NULL) {
+		$extensionKey = $extensionKey ?: $GLOBALS['_EXTKEY'];
+		if (!isset($extensionKey)) {
+			throw new \RuntimeException(
+				'No extension key could be determined when calling addPlugin()!'
+				. LF
+				. 'This method is meant to be called from an ext_tables.php or Configuration/TCA/Overrides file. '
+				. 'If you call it from Configuration/TCA/Overrides, the extension key needs to be specified as third parameter. '
+				. 'Calling it from any other place e.g. ext_localconf.php does not work and is not supported.',
+				1404068038
+			);
+		}
+		if ($extensionKey && !$itemArray[2] && isset($GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]['ext_icon'])) {
+			$itemArray[2] = self::extRelPath($extensionKey) . $GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]['ext_icon'];
 		}
 		if (is_array($GLOBALS['TCA']['tt_content']['columns']) && is_array($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'])) {
 			foreach ($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'] as $k => $v) {
@@ -1603,8 +1621,12 @@ tt_content.' . $key . $prefix . ' {
 	 */
 	static protected function buildBaseTcaFromSingleFiles() {
 		$GLOBALS['TCA'] = array();
-		foreach (self::getLoadedExtensionListArray() as $extensionName) {
-			$tcaConfigurationDirectory = self::extPath($extensionName) . 'Configuration/TCA';
+
+		$activePackages = static::$packageManager->getActivePackages();
+
+		// First load "full table" files from Configuration/TCA
+		foreach ($activePackages as $package) {
+			$tcaConfigurationDirectory = $package->getPackagePath() . 'Configuration/TCA';
 			if (is_dir($tcaConfigurationDirectory)) {
 				$files = scandir($tcaConfigurationDirectory);
 				foreach ($files as $file) {
@@ -1620,6 +1642,27 @@ tt_content.' . $key . $prefix . ' {
 							$tcaTableName = substr($file, 0, -4);
 							$GLOBALS['TCA'][$tcaTableName] = $tcaOfTable;
 						}
+					}
+				}
+			}
+		}
+
+		// Apply category stuff
+		\TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()->applyTcaForPreRegisteredTables();
+
+		// Execute override files from Configuration/TCA/Overrides
+		foreach ($activePackages as $package) {
+			$tcaOverridesPathForPackage = $package->getPackagePath() . 'Configuration/TCA/Overrides';
+			if (is_dir($tcaOverridesPathForPackage)) {
+				$files = scandir($tcaOverridesPathForPackage);
+				foreach ($files as $file) {
+					if (
+						is_file($tcaOverridesPathForPackage . '/' . $file)
+						&& ($file !== '.')
+						&& ($file !== '..')
+						&& (substr($file, -4, 4) === '.php')
+					) {
+						require($tcaOverridesPathForPackage . '/' . $file);
 					}
 				}
 			}
@@ -1927,7 +1970,7 @@ tt_content.' . $key . $prefix . ' {
 		if ($result === FALSE) {
 			$message = '\TYPO3\CMS\Core\Category\CategoryRegistry: no category registered for table "%s". Key was already registered.';
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */
-			$logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+			$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
 			$logger->warning(
 				sprintf($message, $tableName)
 			);

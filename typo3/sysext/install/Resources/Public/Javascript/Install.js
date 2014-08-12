@@ -1,31 +1,207 @@
-/***************************************************************
+/**
+ * This file is part of the TYPO3 CMS project.
  *
- *  Various JavaScript functions for the Install Tool
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
  *
- *  Copyright notice
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
  *
- *  (c) 2009-2010 Marcus Krause, Helmut Hummel, Lars Houmark
- *  (c) 2013 Wouter Wolters <typo3@wouterwolters.nl>
- *  All rights reserved
- *
- *  This script is part of the TYPO3 backend provided by
- *  Kasper Skaarhoj <kasper@typo3.com> together with TYPO3
- *
- *  Released under GNU/GPL (see license file in /typo3/)
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- *
- *  This copyright notice MUST APPEAR in all copies of this script
- *
- ***************************************************************/
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/**
+ * Various JavaScript functions for the Install Tool
+ */
 
 /**
  * Handle core update
  */
 var TYPO3 = {};
 TYPO3.Install = {};
+
+TYPO3.Install.Cache = {
+	/**
+	 * Ajax call to clear all caches.
+	 */
+	clearCache: function() {
+		$.ajax({
+			url: location.href + '&install[controller]=ajax&install[action]=clearCache',
+			cache: false
+		});
+	}
+};
+
+TYPO3.Install.Scrolling = {
+	isScrolledIntoView: function(elem) {
+		var docViewTop = $(window).scrollTop();
+		var docViewBottom = docViewTop + $(window).height();
+		var elemTop = $(elem).offset().top;
+		var elemBottom = elemTop + $(elem).height();
+
+		return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
+	},
+	handleButtonScrolling: function() {
+		if (!this.isScrolledIntoView($('#fixed-footer-handler'))) {
+			$('#fixed-footer').addClass('fixed');
+		} else {
+			$('#fixed-footer').removeClass('fixed');
+		}
+	}
+};
+
+TYPO3.Install.ExtensionChecker = {
+	/**
+	 * Call checkExtensionsCompatibility recursively on error
+	 * so we can find all incompatible extensions
+	 */
+	handleCheckExtensionsError: function() {
+		this.checkExtensionsCompatibility(false);
+	},
+	/**
+	 * Send an ajax request to uninstall an extension (or multiple extensions)
+	 *
+	 * @param extension string of extension(s) - may be comma separated
+	 */
+	uninstallExtension: function(extension) {
+		var self = this;
+		var url = location.href + '&install[controller]=ajax&install[action]=uninstallExtension' +
+			'&install[uninstallExtension][extensions]=' + extension;
+		$.ajax({
+			url: url,
+			cache: false,
+			success: function(data) {
+				if (data === 'OK') {
+					self.checkExtensionsCompatibility(true);
+				} else {
+					if(data === 'unauthorized') {
+						location.reload();
+					}
+					// workaround for xdebug returning 200 OK on fatal errors
+					if (data.substring(data.length - 2) === 'OK') {
+						self.checkExtensionsCompatibility(true);
+					} else {
+						$('.message-loading', '#checkExtensions').hide();
+						$('.message-error .message-body', '#checkExtensions').html(
+							'Something went wrong. Check failed.'
+						);
+					}
+				}
+			},
+			error: function(data) {
+				self.handleCheckExtensionsError();
+			}
+		});
+	},
+	/**
+	 * Handles result of extension compatibility check.
+	 * Displays uninstall buttons for non-compatible extensions.
+	 */
+	handleCheckExtensionsSuccess: function() {
+		var self = this;
+		$.ajax({
+			url: $('#checkExtensions').data('protocolurl'),
+			cache: false,
+			success: function(data) {
+				if (data) {
+					$('.message-error .message-body', '#checkExtensions').html(
+						'The following extensions are not compatible. Please uninstall them and try again. '
+					);
+					var extensions = data.split(',');
+					var unloadButtonWrapper = $('<fieldset class="t3-install-form-submit"></fieldset>');
+					for(var i=0; i<extensions.length; i++) {
+						var extension = extensions[i];
+						var unloadButton = $('<button />', {
+							text: 'Uninstall '+ $.trim(extension),
+							"class": $.trim(extension),
+							click: function(e) {
+								self.uninstallExtension($(this).attr('class'));
+								e.preventDefault();
+								return false;
+							}
+						});
+						var fullButton = unloadButtonWrapper.append(unloadButton);
+						$('.message-error .message-body', '#checkExtensions').append(fullButton);
+					}
+					var unloadAllButton = $('<button />', {
+						text: 'Uninstall all incompatible extensions: '+ data,
+						click: function(e) {
+							$('.message-loading', '#checkExtensions').show();
+							self.uninstallExtension(data);
+							e.preventDefault();
+							return false;
+						}
+					});
+					unloadButtonWrapper.append('<hr />');
+					var fullUnloadAllButton = unloadButtonWrapper.append(unloadAllButton);
+					$('.message-error .message-body', '#checkExtensions').append(fullUnloadAllButton);
+
+					$('.message-loading', '#checkExtensions').hide();
+					$('button', '#checkExtensions').show();
+					$('.message-error', '#checkExtensions').show();
+				} else {
+					$('.typo3-message', '#checkExtensions').hide();
+					$('.message-ok', '#checkExtensions').show();
+				}
+			},
+			error: function() {
+				$('.typo3-message', '#checkExtensions').hide();
+				$('.message-ok', '#checkExtensions').show();
+			}
+		});
+		$.getJSON(
+			$('#checkExtensions').data('errorprotocolurl'),
+			function(data) {
+				$.each(data, function(i, error) {
+					var messageToDisplay = error.message + ' in ' + error.file + ' on line ' + error.line;
+					$('#checkExtensions .typo3-message.message-error').before($(
+						'<div class="typo3-message message-warning"><div class="header-container"><div class="message-header">' +
+						'<strong>' + error.type + '</strong></div><div class="message-body">' +
+						messageToDisplay + '</div></div></div><p></p>'
+					));
+				});
+			}
+		);
+	},
+	/**
+	 * Checks extension compatibility by trying to load ext_tables and ext_localconf via ajax.
+	 *
+	 * @param force
+	 */
+	checkExtensionsCompatibility: function(force) {
+		var self = this;
+		var url = location.href + '&install[controller]=ajax&install[action]=extensionCompatibilityTester';
+		if (force) {
+			TYPO3.Install.Cache.clearCache();
+			url += '&install[extensionCompatibilityTester][forceCheck]=1';
+		} else {
+			url += '&install[extensionCompatibilityTester][forceCheck]=0';
+		}
+		$.ajax({
+			url: url,
+			cache: false,
+			success: function(data) {
+				if (data === 'OK') {
+					self.handleCheckExtensionsSuccess();
+				} else {
+					if(data === 'unauthorized') {
+						location.reload();
+					}
+					// workaround for xdebug returning 200 OK on fatal errors
+					if (data.substring(data.length - 2) === 'OK') {
+						self.handleCheckExtensionsSuccess();
+					} else {
+						self.handleCheckExtensionsError();
+					}
+				}
+			},
+			error: function(data) {
+				self.handleCheckExtensionsError();
+			}
+		});
+	}
+};
 
 TYPO3.Install.Status = {
 	getFolderStatus: function() {
@@ -333,7 +509,7 @@ $(document).ready(function() {
 		$toggleGroup = $(this).closest('.toggleGroup');
 		$toggleGroup.toggleClass('expanded');
 		$toggleGroup.find('.toggleData').toggle();
-		handleButtonScrolling();
+		TYPO3.Install.Scrolling.handleButtonScrolling();
 	});
 
 	$('.toggleAll').on('click', function() {
@@ -346,7 +522,7 @@ $(document).ready(function() {
 			$toggleAll.addClass('expanded');
 			$toggleAll.find('.toggleData').show();
 		}
-		handleButtonScrolling();
+		TYPO3.Install.Scrolling.handleButtonScrolling();
 	});
 
 	// Simple password strength indicator
@@ -397,15 +573,15 @@ $(document).ready(function() {
 		$('button', '#checkExtensions').hide();
 		$('.typo3-message', '#checkExtensions').hide();
 		$('.message-loading', '#checkExtensions').show();
-		checkExtensionsCompatibility(true);
+		TYPO3.Install.ExtensionChecker.checkExtensionsCompatibility(true);
 		e.preventDefault();
 		return false;
 	});
 
 	// Footer scrolling and visibility
 	if ($('#fixed-footer-handler').length > 0) {
-		$(window).scroll(handleButtonScrolling);
-		$('body.backend #typo3-docbody').scroll(handleButtonScrolling);
+		$(window).scroll(TYPO3.Install.Scrolling.handleButtonScrolling());
+		$('body.backend #typo3-docbody').scroll(TYPO3.Install.Scrolling.handleButtonScrolling());
 	}
 
 	// Handle core update
@@ -419,185 +595,9 @@ $(document).ready(function() {
 			$(e.target).closest('.t3-install-form-submit').remove();
 		}));
 	}
+
 	if ($('#t3-install-left').length > 0) {
 		TYPO3.Install.Status.getFolderStatus();
 		TYPO3.Install.Status.getEnvironmentStatus();
 	}
 });
-
-function handleButtonScrolling() {
-	if (!isScrolledIntoView($('#fixed-footer-handler'))) {
-		$('#fixed-footer').addClass('fixed');
-	} else {
-		$('#fixed-footer').removeClass('fixed');
-	}
-}
-function isScrolledIntoView(elem) {
-	var docViewTop = $(window).scrollTop();
-	var docViewBottom = docViewTop + $(window).height();
-	var elemTop = $(elem).offset().top;
-	var elemBottom = elemTop + $(elem).height();
-
-	return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
-}
-
-/**
- * Checks extension compatibility by trying to load ext_tables and ext_localconf
- * via ajax.
- *
- * @param force
- */
-function checkExtensionsCompatibility(force) {
-	var url = location.href + '&install[controller]=ajax&install[action]=extensionCompatibilityTester';
-	if (force) {
-		clearCache();
-		url += '&install[extensionCompatibilityTester][forceCheck]=1';
-	} else {
-		url += '&install[extensionCompatibilityTester][forceCheck]=0';
-	}
-	$.ajax({
-		url: url,
-		cache: false,
-		success: function(data) {
-			if (data === 'OK') {
-				handleCheckExtensionsSuccess();
-			} else {
-				if(data === 'unauthorized') {
-					location.reload();
-				}
-				// workaround for xdebug returning 200 OK on fatal errors
-				if (data.substring(data.length - 2) === 'OK') {
-					handleCheckExtensionsSuccess();
-				} else {
-					handleCheckExtensionsError();
-				}
-			}
-		},
-		error: function(data) {
-			handleCheckExtensionsError();
-		}
-	});
-}
-
-/**
- * Handles result of extension compatibility check.
- * Displays uninstall buttons for non-compatible extensions.
- */
-function handleCheckExtensionsSuccess() {
-	$.ajax({
-		url: $('#checkExtensions').data('protocolurl'),
-		cache: false,
-		success: function(data) {
-			if (data) {
-				$('.message-error .message-body', '#checkExtensions').html(
-					'The following extensions are not compatible. Please uninstall them and try again. '
-				);
-				var extensions = data.split(',');
-				var unloadButtonWrapper = $('<fieldset class="t3-install-form-submit"></fieldset>');
-				for(var i=0; i<extensions.length; i++) {
-					var extension = extensions[i];
-					var unloadButton = $('<button />', {
-						text: 'Uninstall '+ $.trim(extension),
-						"class": $.trim(extension),
-						click: function(e) {
-							uninstallExtension($(this).attr('class'));
-							e.preventDefault();
-							return false;
-						}
-					});
-					var fullButton = unloadButtonWrapper.append(unloadButton);
-					$('.message-error .message-body', '#checkExtensions').append(fullButton);
-				}
-				var unloadAllButton = $('<button />', {
-					text: 'Uninstall all incompatible extensions: '+ data,
-					click: function(e) {
-						$('.message-loading', '#checkExtensions').show();
-						uninstallExtension(data);
-						e.preventDefault();
-						return false;
-					}
-				});
-				unloadButtonWrapper.append('<hr />');
-				var fullUnloadAllButton = unloadButtonWrapper.append(unloadAllButton);
-				$('.message-error .message-body', '#checkExtensions').append(fullUnloadAllButton);
-
-				$('.message-loading', '#checkExtensions').hide();
-				$('button', '#checkExtensions').show();
-				$('.message-error', '#checkExtensions').show();
-			} else {
-				$('.typo3-message', '#checkExtensions').hide();
-				$('.message-ok', '#checkExtensions').show();
-			}
-		},
-		error: function() {
-			$('.typo3-message', '#checkExtensions').hide();
-			$('.message-ok', '#checkExtensions').show();
-		}
-	});
-	$.getJSON(
-		$('#checkExtensions').data('errorprotocolurl'),
-		function(data) {
-			$.each(data, function(i, error) {
-				var messageToDisplay = error.message + ' in ' + error.file + ' on line ' + error.line;
-				$('#checkExtensions .typo3-message.message-error').before($(
-					'<div class="typo3-message message-warning"><div class="header-container"><div class="message-header">' +
-					'<strong>' + error.type + '</strong></div><div class="message-body">' +
-					messageToDisplay + '</div></div></div><p></p>'
-				));
-			});
-		}
-	);
-}
-
-/**
- * Call checkExtensionsCompatibility recursively on error
- * so we can find all incompatible extensions
- */
-function handleCheckExtensionsError() {
-	checkExtensionsCompatibility(false);
-}
-
-/**
- * Send an ajax request to uninstall an extension (or multiple extensions)
- *
- * @param extension string of extension(s) - may be comma separated
- */
-function uninstallExtension(extension) {
-	var url = location.href + '&install[controller]=ajax&install[action]=uninstallExtension' +
-		'&install[uninstallExtension][extensions]=' + extension;
-	$.ajax({
-		url: url,
-		cache: false,
-		success: function(data) {
-			if (data === 'OK') {
-				checkExtensionsCompatibility(true);
-			} else {
-				if(data === 'unauthorized') {
-					location.reload();
-				}
-				// workaround for xdebug returning 200 OK on fatal errors
-				if (data.substring(data.length - 2) === 'OK') {
-					checkExtensionsCompatibility(true);
-				} else {
-					$('.message-loading', '#checkExtensions').hide();
-					$('.message-error .message-body', '#checkExtensions').html(
-						'Something went wrong. Check failed.'
-					);
-				}
-			}
-		},
-		error: function(data) {
-			handleCheckExtensionsError();
-		}
-	});
-}
-
-/**
- * Ajax call to clear all caches.
- */
-function clearCache() {
-	$.ajax({
-		url: location.href + '&install[controller]=ajax&install[action]=clearCache',
-		cache: false
-	});
-}

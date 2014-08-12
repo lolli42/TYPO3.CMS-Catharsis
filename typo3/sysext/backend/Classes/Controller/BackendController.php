@@ -99,7 +99,6 @@ class BackendController {
 			'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
 			'toolbarmanager' => 'sysext/backend/Resources/Public/JavaScript/toolbarmanager.js',
 			'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
-			'iecompatibility' => 'sysext/backend/Resources/Public/JavaScript/iecompatibility.js',
 			'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
 			'flashmessages' => 'sysext/backend/Resources/Public/JavaScript/flashmessages.js',
 			'tabclosemenu' => 'js/extjs/ux/ext.ux.tabclosemenu.js',
@@ -139,7 +138,7 @@ class BackendController {
 		$coreToolbarItems = array(
 			'shortcuts' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem',
 			'clearCacheActions' => 'TYPO3\\CMS\\Backend\\Toolbar\\ClearCacheToolbarItem',
-			'liveSearch' => '\\TYPO3\\CMS\\Backend\\Toolbar\\LiveSearchToolbarItem'
+			'liveSearch' => 'TYPO3\\CMS\\Backend\\Toolbar\\LiveSearchToolbarItem'
 		);
 		foreach ($coreToolbarItems as $toolbarItemName => $toolbarItemClassName) {
 			$toolbarItem = GeneralUtility::makeInstance($toolbarItemClassName, $this);

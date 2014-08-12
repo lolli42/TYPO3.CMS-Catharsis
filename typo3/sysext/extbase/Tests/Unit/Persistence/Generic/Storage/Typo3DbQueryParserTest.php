@@ -115,7 +115,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$querySettings->setLanguageUid(2);
 		$mockTypo3DbQueryParser = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser', array('dummy'), array(), '', FALSE);
 		$mockTypo3DbQueryParser->_callRef('addSysLanguageStatement', $table, $sql, $querySettings);
-		$expectedSql = array('additionalWhereClause' => array('(' . $table . '.sys_language_uid IN (2,-1) OR (' . $table . '.sys_language_uid=0 AND ' . $table . '.uid NOT IN (SELECT ' . $table . '.l10n_parent FROM ' . $table . ' WHERE ' . $table . '.l10n_parent>0 AND ' . $table . '.sys_language_uid>0)))'));
+		$expectedSql = array('additionalWhereClause' => array('(' . $table . '.sys_language_uid IN (2,-1) OR (' . $table . '.sys_language_uid=0 AND ' . $table . '.uid NOT IN (SELECT ' . $table . '.l10n_parent FROM ' . $table . ' WHERE ' . $table . '.l10n_parent>0 AND ' . $table . '.sys_language_uid=2)))'));
 		$this->assertSame($expectedSql, $sql);
 	}
 
@@ -139,7 +139,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				' OR (' . $table . '.sys_language_uid=0 AND ' . $table . '.uid NOT IN (' .
 				'SELECT ' . $table . '.l10n_parent FROM ' . $table .
 				' WHERE ' . $table . '.l10n_parent>0 AND ' .
-				$table . '.sys_language_uid>0 AND ' .
+				$table . '.sys_language_uid=2 AND ' .
 				$table . '.deleted=0)))')
 		);
 		$this->assertSame($expectedSql, $sql);
@@ -166,7 +166,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				' OR (' . $table . '.sys_language_uid=0 AND ' . $table . '.uid NOT IN (' .
 				'SELECT ' . $table . '.l10n_parent FROM ' . $table .
 				' WHERE ' . $table . '.l10n_parent>0 AND ' .
-				$table . '.sys_language_uid>0 AND ' .
+				$table . '.sys_language_uid=2 AND ' .
 				$table . '.deleted=0)))')
 		);
 		$this->assertSame($expectedSql, $sql);
@@ -386,128 +386,4 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame($expectedSql, $sql);
 	}
-
-	/**
-	 * @test
-	 * @expectedException \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException
-	 */
-	public function getPlainValueThrowsExceptionIfInputIsArray() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$mockTypo3DbQueryParser->_call('getPlainValue', array());
-	}
-
-	/**
-	 * @test
-	 */
-	public function getPlainValueReturnsTimestampIfDateTimeObjectIsGiven() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$input = new \DateTime('@1365866253');
-		$this->assertSame('1365866253', $mockTypo3DbQueryParser->_call('getPlainValue', $input));
-	}
-
-	/**
-	 * @test
-	 */
-	public function getPlainValueReturnsIntegerOneIfValueIsBooleanTrue() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$this->assertSame(1, $mockTypo3DbQueryParser->_call('getPlainValue', TRUE));
-	}
-
-	/**
-	 * @test
-	 */
-	public function getPlainValueReturnsIntegerZeroIfValueIsBooleanFalse() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$this->assertSame(0, $mockTypo3DbQueryParser->_call('getPlainValue', FALSE));
-	}
-
-	/**
-	 * @test
-	 * @expectedException \TYPO3\CMS\Extbase\Persistence\Generic\Exception\UnexpectedTypeException
-	 */
-	public function getPlainValueCallsGetRealInstanceOnInputIfInputIsInstanceOfLazyLoadingProxy() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$input = $this->getMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\LazyLoadingProxy',
-			array(),
-			array(),
-			'',
-			FALSE
-		);
-		$input
-			->expects($this->once())
-			->method('_loadRealInstance');
-		$mockTypo3DbQueryParser->_call('getPlainValue', $input);
-	}
-
-	/**
-	 * @test
-	 */
-	public function getPlainValueCallsGetUidOnDomainObjectInterfaceInput() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$input = $this->getMock(
-			'TYPO3\\CMS\\Extbase\\DomainObject\\DomainObjectInterface',
-			array(),
-			array(),
-			'',
-			FALSE
-		);
-		$input
-			->expects($this->once())
-			->method('getUid')
-			->will($this->returnValue(23));
-		$this->assertSame(23, $mockTypo3DbQueryParser->_call('getPlainValue', $input));
-	}
-
-	/**
-	 * @test
-	 */
-	public function getPlainValueReturnsSimpleType() {
-		$mockTypo3DbQueryParser = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Storage\\Typo3DbQueryParser',
-			array('dummy'),
-			array(),
-			'',
-			FALSE
-		);
-		$value = uniqid('foo_');
-		$this->assertSame($value, $mockTypo3DbQueryParser->_call('getPlainValue', $value));
-	}
-
 }

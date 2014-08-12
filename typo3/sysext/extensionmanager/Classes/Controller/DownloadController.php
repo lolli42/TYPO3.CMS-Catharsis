@@ -131,12 +131,27 @@ class DownloadController extends AbstractController {
 		if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('impexp')) {
 			$this->forward('distributions', 'List');
 		}
-		list($result, $errorMessage) = $this->installFromTer($extension);
-		if ($errorMessage) {
-			// @TODO: write Template
-			$this->view
-				->assign('result', $result)
-				->assign('errorMessage', $errorMessage);
+		list($result, $errorMessages) = $this->installFromTer($extension);
+		if ($errorMessages) {
+			foreach ($errorMessages as $extensionKey => $messages) {
+				foreach ($messages as $message) {
+					$this->addFlashMessage(
+						$message['message'],
+						\TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate(
+							'distribution.error.headline',
+							'extensionmanager',
+							array($extensionKey)
+						),
+						\TYPO3\CMS\Core\Messaging\AbstractMessage::ERROR
+					);
+				}
+			}
+
+			// Redirect back to distributions list action
+			$this->redirect(
+				'distributions',
+				'List'
+			);
 		} else {
 			// FlashMessage that extension is installed
 			$this->addFlashMessage(
@@ -166,18 +181,16 @@ class DownloadController extends AbstractController {
 	protected function updateExtensionAction() {
 		$hasErrors = FALSE;
 		$errorMessage = '';
-		$result = array();
 
 		$extensionKey = $this->request->getArgument('extension');
 		$highestTerVersionExtension = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
 		try {
-			$result = $this->managementService->installExtension($highestTerVersionExtension);
+			$this->managementService->downloadMainExtension($highestTerVersionExtension);
 		} catch (\Exception $e) {
 			$hasErrors = TRUE;
 			$errorMessage = $e->getMessage();
 		}
-		$this->view->assign('result', $result)
-			->assign('extension', $highestTerVersionExtension)
+		$this->view->assign('extension', $highestTerVersionExtension)
 			->assign('hasErrors', $hasErrors)
 			->assign('errorMessage', $errorMessage);
 	}
@@ -220,8 +233,10 @@ class DownloadController extends AbstractController {
 		} catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
 			$errorMessages = array(
 				$extension->getExtensionKey() => array(
-					'code' => $e->getCode(),
-					'message' => $e->getMessage(),
+					array(
+						'code' => $e->getCode(),
+						'message' => $e->getMessage(),
+					)
 				),
 			);
 		}

@@ -1,27 +1,15 @@
-/***************************************************************
-*  AJAX selectors for TCEforms
-*
-*  Copyright notice
-*
-*  (c) 2007-2011 Andreas Wolf <andreas.wolf@ikt-werk.de>
-*  All rights reserved
-*
-*  This script is part of the TYPO3 project. The TYPO3 project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*
-*  This script is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 
 /**
  * Class for JS handling of suggest fields in TCEforms.
@@ -93,34 +81,22 @@ TCEForms.Suggest = Class.create({
 			var arr = item.id.split('-');
 			var ins_table = arr[0];
 			var ins_uid = arr[1];
+			var ins_uid_string = (this.fieldType == 'select') ? ins_uid : (ins_table + '_' + ins_uid);
 			var rec_table = arr[2];
 			var rec_uid = arr[3];
 			var rec_field = arr[4];
 
 			var formEl = this.objectId;
-			var suggestLabelNode = Element.select(this.escapeObjectId(item.id), '.suggest-label')[0];
-			var label = (suggestLabelNode.textContent ? suggestLabelNode.textContent : suggestLabelNode.innerText)
-			var ins_uid_string = (this.fieldType == 'select') ? ins_uid : (ins_table + '_' + ins_uid);
 
-			setFormValueFromBrowseWin(formEl, ins_uid_string, label);
+			var suggestLabelNode = Element.select(item, '.suggest-label')[0];
+			var label = suggestLabelNode.textContent ? suggestLabelNode.textContent : suggestLabelNode.innerText;
+			var suggestLabelTitleNode = Element.select(suggestLabelNode, '[title]')[0];
+			var title = suggestLabelTitleNode ? suggestLabelTitleNode.readAttribute('title') : '';
+
+			setFormValueFromBrowseWin(formEl, ins_uid_string, label, title);
 			TBE_EDITOR.fieldChanged(rec_table, rec_uid, rec_field, formEl);
 
 			$(this.suggestField).value = this.defaultValue;
 		}
-	},
-
-	/**
-	 * Escapes object identifiers of e.g. Flexform CSS IDs
-	 *
-	 * @param string objectId
-	 * @return string
-	 */
-	escapeObjectId: function(objectId) {
-		var escapedObjectId;
-		escapedObjectId = objectId.replace(/:/g, '\\:');
-		escapedObjectId = objectId.replace(/\./g, '\\.');
-		escapedObjectId = objectId.replace(/\[/g, '\\[');
-		escapedObjectId = objectId.replace(/\]/g, '\\]');
-		return escapedObjectId;
 	}
 });

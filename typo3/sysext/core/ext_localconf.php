@@ -1,7 +1,6 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
-}
+defined('TYPO3_MODE') or die();
+
 /** @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher */
 $signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
 
@@ -25,13 +24,6 @@ $signalSlotDispatcher->connect(
 	\TYPO3\CMS\Core\Resource\ResourceStorageInterface::SIGNAL_PostFileDelete,
 	'TYPO3\\CMS\\Core\\Resource\\Processing\\FileDeletionAspect',
 	'removeFromRepository'
-);
-
-$signalSlotDispatcher->connect(
-	'TYPO3\\CMS\\Core\\Utility\\ExtensionManagementUtility',
-	'tcaIsBeingBuilt',
-	'TYPO3\\CMS\\Core\\Configuration\\TcaBuildingAspect',
-	'applyTcaOverrides'
 );
 
 unset($signalSlotDispatcher);

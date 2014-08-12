@@ -302,7 +302,7 @@ CREATE TABLE sys_file (
 	mime_type varchar(255) DEFAULT '' NOT NULL,
 	name tinytext,
 	sha1 tinytext,
-	size int(11) DEFAULT '0' NOT NULL,
+	size bigint(20) unsigned DEFAULT '0' NOT NULL,
 	creation_date int(11) DEFAULT '0' NOT NULL,
 	modification_date int(11) DEFAULT '0' NOT NULL,
 
@@ -530,7 +530,7 @@ CREATE TABLE sys_collection_entries (
 	uid int(11) NOT NULL auto_increment,
 	uid_local int(11) DEFAULT '0' NOT NULL,
 	uid_foreign int(11) DEFAULT '0' NOT NULL,
-	tablenames varchar(30) DEFAULT '' NOT NULL,
+	tablenames varchar(64) DEFAULT '' NOT NULL,
 	sorting int(11) DEFAULT '0' NOT NULL,
 
 	KEY uid_local (uid_local),

@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Backend\Tree\Pagetree;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Tree\Pagetree\Commands;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -113,6 +112,7 @@ class DataProvider extends \TYPO3\CMS\Backend\Tree\AbstractTreeDataProvider {
 		if ($level >= 99) {
 			return $nodeCollection;
 		}
+		$isVirtualRootNode = FALSE;
 		$subpages = $this->getSubpages($node->getId());
 		// check if fetching subpages the "root"-page
 		// and in case of a virtual root return the mountpoints as virtual "subpages"
@@ -124,6 +124,7 @@ class DataProvider extends \TYPO3\CMS\Backend\Tree\AbstractTreeDataProvider {
 				if (!in_array(0, $mountPoints)) {
 					// using a virtual root node
 					// so then return the mount points here as "subpages" of the first node
+					$isVirtualRootNode = TRUE;
 					$subpages = array();
 					foreach ($mountPoints as $webMountPoint) {
 						$subpages[] = array(
@@ -142,6 +143,9 @@ class DataProvider extends \TYPO3\CMS\Backend\Tree\AbstractTreeDataProvider {
 				// must be calculated above getRecordWithWorkspaceOverlay,
 				// because the information is lost otherwise
 				$isMountPoint = $subpage['isMountPoint'] === TRUE;
+				if ($isVirtualRootNode) {
+					$mountPoint = (int)$subpage['uid'];
+				}
 				$subpage = $this->getRecordWithWorkspaceOverlay($subpage['uid'], TRUE);
 				if (!$subpage) {
 					continue;

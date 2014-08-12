@@ -18,7 +18,6 @@ use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Html\HtmlParser;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -884,7 +883,7 @@ class EditDocumentController {
 									}
 									// Setting variables in TCEforms object:
 									$this->tceforms->hiddenFieldList = '';
-									$this->tceforms->globalShowHelp = $this->disHelp ? 0 : 1;
+									$this->tceforms->globalShowHelp = !$this->disHelp;
 									if (is_array($this->overrideVals) && is_array($this->overrideVals[$table])) {
 										$this->tceforms->hiddenFieldListArr = array_keys($this->overrideVals[$table]);
 									}

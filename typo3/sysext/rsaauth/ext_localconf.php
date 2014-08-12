@@ -1,7 +1,6 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
-}
+defined('TYPO3_MODE') or die();
+
 // Add the service
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addService($_EXTKEY, 'auth', 'TYPO3\\CMS\\Rsaauth\\RsaAuthService', array(
 	'title' => 'RSA authentication',
@@ -36,6 +35,6 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['displ
 
 // eID for FrontendLoginRsaPublicKey
 $GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['FrontendLoginRsaPublicKey'] =
-	'EXT:rsaauth/resources/Private/Php/FrontendLoginRsaPublicKey.php';
+	'EXT:rsaauth/Resources/Private/Php/FrontendLoginRsaPublicKey.php';
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/backend.php']['constructPostProcess'][] = 'TYPO3\\CMS\\Rsaauth\\Hook\\BackendHookForAjaxLogin->addRsaJsLibraries';

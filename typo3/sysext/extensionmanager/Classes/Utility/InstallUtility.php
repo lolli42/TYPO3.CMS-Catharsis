@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Impexp\Utility\ImportExportUtility;
 
 /**
  * Extension Manager Install Utility
@@ -106,7 +107,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->reloadCaches();
 		$this->processRuntimeDatabaseUpdates($extensionKey);
 		$this->saveDefaultConfiguration($extension['key']);
-		if ($extension['clearcacheonload']) {
+		if (!empty($extension['clearcacheonload']) || !empty($extension['clearCacheOnLoad'])) {
 			$this->cacheManager->flushCaches();
 		} else {
 			$this->cacheManager->flushCachesInGroup('system');
@@ -449,6 +450,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			$importFileToUse = $possibleImportFile;
 		}
 		if ($importFileToUse !== NULL) {
+			/** @var ImportExportUtility $importExportUtility */
 			$importExportUtility = $this->objectManager->get('TYPO3\\CMS\\Impexp\\Utility\\ImportExportUtility');
 			try {
 				$importResult = $importExportUtility->importT3DFile(PATH_site . $importFileToUse, 0);
@@ -466,9 +468,9 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Emits a signal after an t3d file was imported
 	 *
 	 * @param string $importFileToUse
-	 * @param array $importResult
+	 * @param int $importResult
 	 */
-	protected function emitAfterExtensionT3DImportSignal($importFileToUse, array $importResult) {
+	protected function emitAfterExtensionT3DImportSignal($importFileToUse, $importResult) {
 		$this->signalSlotDispatcher->dispatch(__CLASS__, 'afterExtensionT3DImport', array($importFileToUse, $importResult, $this));
 	}
 

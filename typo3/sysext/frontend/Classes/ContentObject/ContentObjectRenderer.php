@@ -531,6 +531,16 @@ class ContentObjectRenderer {
 	protected $userObjectType = FALSE;
 
 	/**
+	 * @var array
+	 */
+	protected $stopRendering = array();
+
+	/**
+	 * @var integer
+	 */
+	protected $stdWrapRecursionLevel = 0;
+
+	/**
 	 * Indicates that object type is USER.
 	 *
 	 * @see ContentObjectRender::$userObjectType
@@ -1359,10 +1369,7 @@ class ContentObjectRenderer {
 			$activeSourceCollections = array();
 			foreach ($conf['sourceCollection.'] as $sourceCollectionKey => $sourceCollectionConfiguration) {
 				if (substr($sourceCollectionKey, -1) == '.') {
-					if (
-						(isset($sourceCollectionConfiguration['if.']) && $this->checkIf($sourceCollectionConfiguration['if.']))
-						|| !isset($sourceCollectionConfiguration['if.'])
-					) {
+					if (empty($sourceCollectionConfiguration['if.']) || $this->checkIf($sourceCollectionConfiguration['if.'])) {
 						$activeSourceCollections[] = $sourceCollectionConfiguration;
 					}
 				}
@@ -2073,21 +2080,21 @@ class ContentObjectRenderer {
 						$conf[$functionName] = $this->stdWrap($conf[$functionName], $conf[$functionProperties]);
 					}
 				}
-				// Get just that part of $conf that is needed for the particular function
-				$singleConf = array(
-					$functionName => $conf[$functionName],
-					$functionProperties => $conf[$functionProperties]
-				);
-				// In this special case 'spaceBefore' and 'spaceAfter' need additional stuff from 'space.''
-				if ($functionName == 'spaceBefore' || $functionName == 'spaceAfter') {
-					$singleConf['space.'] = $conf['space.'];
-				}
-				// Hand over the whole $conf array to the stdWrapHookObjects
-				if ($functionType === 'hook') {
-					$singleConf = $conf;
-				}
 				// Check if key is still containing something, since it might have been changed by next level stdWrap before
-				if ((isset($conf[$functionName]) || $conf[$functionProperties]) && !($functionType == 'boolean' && !$conf[$functionName])) {
+				if ((isset($conf[$functionName]) || $conf[$functionProperties]) && ($functionType !== 'boolean' || $conf[$functionName])) {
+					// Get just that part of $conf that is needed for the particular function
+					$singleConf = array(
+						$functionName => $conf[$functionName],
+						$functionProperties => $conf[$functionProperties]
+					);
+					// In this special case 'spaceBefore' and 'spaceAfter' need additional stuff from 'space.''
+					if ($functionName === 'spaceBefore' || $functionName === 'spaceAfter') {
+						$singleConf['space.'] = $conf['space.'];
+					}
+					// Hand over the whole $conf array to the stdWrapHookObjects
+					if ($functionType === 'hook') {
+						$singleConf = $conf;
+					}
 					// Add both keys - with and without the dot - to the set of executed functions
 					$isExecuted[$functionName] = TRUE;
 					$isExecuted[$functionProperties] = TRUE;
@@ -2362,13 +2369,10 @@ class ContentObjectRenderer {
 	 *
 	 * @param string|NULL $content Input value undergoing processing in this function.
 	 * @param array $conf stdWrap properties for ifNull.
-	 * @return string|NULL The processed input value
+	 * @return string The processed input value
 	 */
 	public function stdWrap_ifNull($content = '', $conf = array()) {
-		if ($content === NULL) {
-			$content = $conf['ifNull'];
-		}
-		return $content;
+		return $content !== NULL ? $content : $conf['ifNull'];
 	}
 
 	/**
@@ -2521,11 +2525,11 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_if($content = '', $conf = array()) {
-		if (!$this->checkIf($conf['if.'])) {
-			$content = '';
-			$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
+		if (empty($conf['if.']) || $this->checkIf($conf['if.'])) {
+			return $content;
 		}
-		return $content;
+		$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
+		return '';
 	}
 
 	/**
@@ -4756,7 +4760,7 @@ class ContentObjectRenderer {
 	 * @todo Define visibility
 	 */
 	public function _parseFunc($theValue, $conf) {
-		if (!$this->checkIf($conf['if.'])) {
+		if (!empty($conf['if.']) && !$this->checkIf($conf['if.'])) {
 			return $theValue;
 		}
 		// Indicates that the data is from within a tag.
@@ -5404,7 +5408,7 @@ class ContentObjectRenderer {
 						$retVal = getenv($key);
 						break;
 					case 'getindpenv':
-						$retVal = GeneralUtility::getIndpEnv($key);
+						$retVal = $this->getEnvironmentVariable($key);
 						break;
 					case 'field':
 						$retVal = $fieldArray[$key];
@@ -6000,7 +6004,7 @@ class ContentObjectRenderer {
 							unset($params);
 						}
 						$targetDomain = '';
-						$currentDomain = GeneralUtility::getIndpEnv('HTTP_HOST');
+						$currentDomain = $this->getEnvironmentVariable('HTTP_HOST');
 						// Mount pages are always local and never link to another domain
 						if (count($MPvarAcc)) {
 							// Add "&MP" var:
@@ -6041,17 +6045,17 @@ class ContentObjectRenderer {
 								$absoluteUrlScheme = $conf['forceAbsoluteUrl.']['scheme'];
 							} elseif ($page['url_scheme'] > 0) {
 								$absoluteUrlScheme = (int)$page['url_scheme'] === \TYPO3\CMS\Core\Utility\HttpUtility::SCHEME_HTTP ? 'http' : 'https';
-							} elseif (GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+							} elseif ($this->getEnvironmentVariable('TYPO3_SSL')) {
 								$absoluteUrlScheme = 'https';
 							}
 							// If no domain records are defined, use current domain:
-							$currentUrlScheme = parse_url(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), PHP_URL_SCHEME);
+							$currentUrlScheme = parse_url($this->getEnvironmentVariable('TYPO3_REQUEST_URL'), PHP_URL_SCHEME);
 							if ($targetDomain === '' && ($conf['forceAbsoluteUrl'] || $absoluteUrlScheme !== $currentUrlScheme)) {
 								$targetDomain = $currentDomain;
 							}
 							// If go for an absolute link, add site path if it's not taken care about by absRefPrefix
 							if (!$GLOBALS['TSFE']->config['config']['absRefPrefix'] && $targetDomain == $currentDomain) {
-								$targetDomain = $currentDomain . rtrim(GeneralUtility::getIndpEnv('TYPO3_SITE_PATH'), '/');
+								$targetDomain = $currentDomain . rtrim($this->getEnvironmentVariable('TYPO3_SITE_PATH'), '/');
 							}
 						}
 						// If target page has a different domain and the current domain's linking scheme (e.g. RealURL/...) should not be used
@@ -6218,7 +6222,7 @@ class ContentObjectRenderer {
 				// Set scheme and host if not yet part of the URL:
 				if (empty($urlParts['host'])) {
 					$urlParts['scheme'] = 'http';
-					$urlParts['host'] = GeneralUtility::getIndpEnv('HTTP_HOST');
+					$urlParts['host'] = $this->getEnvironmentVariable('HTTP_HOST');
 					$isUrlModified = TRUE;
 				}
 				// Override scheme:
@@ -6447,7 +6451,7 @@ class ContentObjectRenderer {
 				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($currentQueryArray, GeneralUtility::_GET());
 				break;
 			default:
-				$currentQueryArray = GeneralUtility::explodeUrl2Array(GeneralUtility::getIndpEnv('QUERY_STRING'), TRUE);
+				$currentQueryArray = GeneralUtility::explodeUrl2Array($this->getEnvironmentVariable('QUERY_STRING'), TRUE);
 		}
 		if ($conf['exclude']) {
 			$exclude = str_replace(',', '&', $conf['exclude']);
@@ -8054,5 +8058,16 @@ class ContentObjectRenderer {
 	 */
 	protected function getResourceFactory() {
 		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+	}
+
+	/**
+	 * Wrapper function for GeneralUtility::getIndpEnv()
+	 *
+	 * @see GeneralUtility::getIndpEnv
+	 * @param string $key Name of the "environment variable"/"server variable" you wish to get.
+	 * @return string
+	 */
+	protected function getEnvironmentVariable($key) {
+		return GeneralUtility::getIndpEnv($key);
 	}
 }

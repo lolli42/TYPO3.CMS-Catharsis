@@ -13,7 +13,6 @@ namespace TYPO3\CMS\Rsaauth\Hook;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class adds RSA JavaScript to the backend
@@ -27,7 +26,7 @@ class BackendHookForAjaxLogin {
 	 * @return void
 	 */
 	public function addRsaJsLibraries(array $configuration, \TYPO3\CMS\Backend\Controller\BackendController $backendController) {
-		$javascriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('rsaauth') . 'resources/';
+		$javascriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('rsaauth') . 'Resources/Public/JavaScript/';
 		$files = array(
 			'jsbn/jsbn.js',
 			'jsbn/prng4.js',

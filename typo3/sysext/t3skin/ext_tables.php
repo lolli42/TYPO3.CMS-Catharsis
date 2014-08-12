@@ -1,8 +1,7 @@
 <?php
-if (!defined('TYPO3_MODE')) {
-	die('Access denied.');
-}
-if (TYPO3_MODE == 'BE' || TYPO3_MODE == 'FE' && isset($GLOBALS['BE_USER'])) {
+defined('TYPO3_MODE') or die();
+
+if (TYPO3_MODE === 'BE' || TYPO3_MODE === 'FE' && isset($GLOBALS['BE_USER'])) {
 	global $TBE_STYLES;
 	// Register as a skin
 	$TBE_STYLES['skins'][$_EXTKEY] = array(
@@ -389,8 +388,6 @@ if (TYPO3_MODE == 'BE' || TYPO3_MODE == 'FE' && isset($GLOBALS['BE_USER'])) {
 	$TBE_STYLES['logo_login'] = $temp_eP . 'images/login/typo3logo-white-greyback.gif';
 	// extJS theme
 	$TBE_STYLES['extJS']['theme'] = $temp_eP . 'extjs/xtheme-t3skin.css';
-	// Adding HTML template for login screen
-	$TBE_STYLES['htmlTemplates']['EXT:backend/Resources/Private/Templates/login.html'] = 'sysext/t3skin/Resources/Private/Templates/login.html';
 	$GLOBALS['TBE_STYLES']['stylesheets']['admPanel'] = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('t3skin') . 'stylesheets/standalone/admin_panel.css';
 	$flagIcons = array();
 	foreach ($flagNames as $flagName) {

@@ -120,45 +120,15 @@ class TemplateService {
 	 */
 	public $loaded = 0;
 
-	// Default TypoScript Setup code
 	/**
-	 * @todo Define visibility
+	 * @var array Contains TypoScript setup part after parsing
 	 */
-	public $setup = array(
-		'styles.' => array(
-			'insertContent' => 'CONTENT',
-			'insertContent.' => array(
-				'table' => 'tt_content',
-				'select.' => array(
-					'orderBy' => 'sorting',
-					'where' => 'colPos=0',
-					'languageField' => 'sys_language_uid'
-				)
-			)
-		),
-		'config.' => array(
-			'extTarget' => '_top',
-			'uniqueLinkVars' => 1
-		)
-	);
+	public $setup = array();
 
 	/**
 	 * @todo Define visibility
 	 */
 	public $flatSetup = array();
-
-	// Default TypoScript Constants code:
-	/**
-	 * @todo Define visibility
-	 */
-	public $const = array(
-		'_clear' => '<img src="clear.gif" width="1" height="1" alt="" />',
-		'_blackBorderWrap' => '<table border="0" bgcolor="black" cellspacing="0" cellpadding="1"><tr><td> | </td></tr></table>',
-		'_tableWrap' => '<table border="0" cellspacing="0" cellpadding="0"> | </table>',
-		'_tableWrap_DEBUG' => '<table border="1" cellspacing="0" cellpadding="0"> | </table>',
-		'_stdFrameParams' => 'frameborder="no" marginheight="0" marginwidth="0" noresize="noresize"',
-		'_stdFramesetParams' => 'border="0" framespacing="0" frameborder="no"'
-	);
 
 	// For fetching TypoScript code from template hierarchy before parsing it. Each array contains code field values from template records/files:
 	// Setup field
@@ -935,8 +905,7 @@ class TemplateService {
 		/** @var $constants \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */
 		$constants = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 		$constants->breakPointLN = (int)$this->ext_constants_BRP;
-		$constants->setup = $this->const;
-		$constants->setup = $this->mergeConstantsFromPageTSconfig($constants->setup);
+		$constants->setup = $this->mergeConstantsFromPageTSconfig(array());
 		/** @var $matchObj \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher */
 		$matchObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
 		$matchObj->setSimulateMatchConditions($this->matchAlternative);
@@ -1029,7 +998,6 @@ class TemplateService {
 				}
 			}
 		}
-		unset($this->setup['styles.']);
 		unset($this->setup['temp.']);
 		unset($constants);
 		// Storing the conditions found/matched information:
@@ -1369,10 +1337,12 @@ class TemplateService {
 	 * @param string $content The content to wrap
 	 * @param string $wrap The wrap value, eg. "<strong> | </strong>
 	 * @return string Wrapped input string
+	 * @deprecated since TYPO3 CMS 6.3, remove later - use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
 	 * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject, \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap()
 	 * @todo Define visibility
 	 */
 	public function wrap($content, $wrap) {
+		GeneralUtility::logDeprecatedFunction();
 		if ($wrap) {
 			$wrapArr = explode('|', $wrap);
 			return trim($wrapArr[0]) . $content . trim($wrapArr[1]);

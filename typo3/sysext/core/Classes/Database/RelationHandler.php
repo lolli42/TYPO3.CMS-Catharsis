@@ -818,7 +818,7 @@ class RelationHandler {
 		}
 		// Select children from the live(!) workspace only
 		if (BackendUtility::isTableWorkspaceEnabled($foreign_table)) {
-			$workspaceList = '0,' . (int)$GLOBALS['BE_USER']->workspace;
+			$workspaceList = '0,' . $this->getWorkspaceId();
 			$whereClause .= ' AND ' . $foreign_table . '.t3ver_wsid IN (' . $workspaceList . ') AND ' . $foreign_table . '.pid<>-1';
 		}
 		// Get the correct sorting field
@@ -1308,7 +1308,7 @@ class RelationHandler {
 	 * @return boolean Returns TRUE if looking from the symmetric ("other") side to the relation.
 	 * @todo Define visibility
 	 */
-	public function isOnSymmetricSide($parentUid, $parentConf, $childRec) {
+	static public function isOnSymmetricSide($parentUid, $parentConf, $childRec) {
 		return MathUtility::canBeInterpretedAsInteger($childRec['uid'])
 			&& $parentConf['symmetric_field']
 			&& $parentUid == $childRec[$parentConf['symmetric_field']];
