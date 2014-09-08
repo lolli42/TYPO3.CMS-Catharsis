@@ -2071,11 +2071,11 @@ class ContentObjectRenderer {
 			if (!$isExecuted[$stdWrapName] && !$this->stopRendering[$this->stdWrapRecursionLevel]) {
 				$functionName = rtrim($stdWrapName, '.');
 				$functionProperties = $functionName . '.';
-				// If there is any code one the next level, check if it contains "official" stdWrap functions
+				// If there is any code on the next level, check if it contains "official" stdWrap functions
 				// if yes, execute them first - will make each function stdWrap aware
 				// so additional stdWrap calls within the functions can be removed, since the result will be the same
 				// exception: the recursive stdWrap function and cObject will still be using their own stdWrap call, since it modifies the content and not a property
-				if (count($conf[$functionProperties]) && !GeneralUtility::inList($stdWrapDisabledFunctionTypes, $functionType)) {
+				if ($functionName !== 'stdWrap' && !empty($conf[$functionProperties]) && !GeneralUtility::inList($stdWrapDisabledFunctionTypes, $functionType)) {
 					if (array_intersect_key($this->stdWrapOrder, $conf[$functionProperties])) {
 						$conf[$functionName] = $this->stdWrap($conf[$functionName], $conf[$functionProperties]);
 					}
@@ -5881,7 +5881,7 @@ class ContentObjectRenderer {
 						$url = $GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP;
 						$jumpurl = $scheme . $link_param;
 						$juHash = GeneralUtility::hmac($jumpurl, 'jumpurl');
-						$this->lastTypoLinkUrl = $url . '&jumpurl=' . rawurlencode($jumpurl) . '&juHash='. $juHash . $GLOBALS['TSFE']->getMethodUrlIdToken;
+						$this->lastTypoLinkUrl = $url . '&jumpurl=' . rawurlencode($jumpurl) . '&juHash=' . $juHash . $GLOBALS['TSFE']->getMethodUrlIdToken;
 					} else {
 						$this->lastTypoLinkUrl = $scheme . $link_param;
 					}
@@ -7575,7 +7575,9 @@ class ContentObjectRenderer {
 			'orderBy',
 			'join',
 			'leftjoin',
-			'rightjoin'
+			'rightjoin',
+			'recursive',
+			'where'
 		);
 		foreach ($properties as $property) {
 			$conf[$property] = isset($conf[$property . '.']) ? trim($this->stdWrap($conf[$property], $conf[$property . '.'])) : trim($conf[$property]);
@@ -7736,8 +7738,8 @@ class ContentObjectRenderer {
 			}
 			// If move placeholder shall be considered, select via t3ver_move_id
 			if ($considerMovePlaceholders) {
-				$movePlaceholderComparison = $table . '.t3ver_state=' . VersionState::cast(VersionState::MOVE_PLACEHOLDER) .  ' AND ' . $table . '.t3ver_move_id' . $comparison;
-				$query .= ' AND (' . $table . '.uid' . $comparison . ' OR ' . $movePlaceholderComparison .')';
+				$movePlaceholderComparison = $table . '.t3ver_state=' . VersionState::cast(VersionState::MOVE_PLACEHOLDER) . ' AND ' . $table . '.t3ver_move_id' . $comparison;
+				$query .= ' AND (' . $table . '.uid' . $comparison . ' OR ' . $movePlaceholderComparison . ')';
 			} else {
 				$query .= ' AND ' . $table . '.uid' . $comparison;
 			}

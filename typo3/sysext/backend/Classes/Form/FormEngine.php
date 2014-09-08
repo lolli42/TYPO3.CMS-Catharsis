@@ -2151,7 +2151,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			// if there is an icon ($p[2]), icons should be shown, and, if only selected are visible, is it selected
 			if ($p[2] && !$suppressIcons && (!$onlySelectedIconShown || $sM)) {
 				list($selIconFile, $selIconInfo) = $this->getIcon($p[2]);
-				$iOnClick = $this->elName($PA['itemFormElName']) . '.selectedIndex=' . $c . '; '. $this->elName($PA['itemFormElName']);
+				$iOnClick = $this->elName($PA['itemFormElName']) . '.selectedIndex=' . $c . '; ' . $this->elName($PA['itemFormElName']);
 				$iOnClickOptions = $this->elName($PA['itemFormElName']) . '.options[' . $c . ']';
 				if (empty($selIconInfo)) {
 					$iOnClick .= '.className=' . $iOnClickOptions . '.className; ';
@@ -2574,7 +2574,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				$this->multiSelectFilterCount++;
 				$jsSelectBoxFilterName = str_replace(' ', '', ucwords(str_replace('-', ' ', GeneralUtility::strtolower($multiSelectId))));
 				$this->additionalJS_post[] = '
-					var '. $jsSelectBoxFilterName . ' = new TCEForms.SelectBoxFilter("' . $multiSelectId . '");
+					var ' . $jsSelectBoxFilterName . ' = new TCEForms.SelectBoxFilter("' . $multiSelectId . '");
 				';
 			}
 
@@ -2637,7 +2637,10 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		$config = $PA['fieldConf']['config'];
 		$show_thumbs = $config['show_thumbs'];
 		$size = isset($config['size']) ? (int)$config['size'] : 5;
-		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 1);
+		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
+		if (!$maxitems) {
+			$maxitems = 100000;
+		}
 		$minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
 		$allowed = trim($config['allowed']);
 		$disallowed = trim($config['disallowed']);
@@ -4755,6 +4758,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 	 * @todo Define visibility
 	 */
 	public function getIcon($icon) {
+		$selIconInfo = FALSE;
 		if (substr($icon, 0, 4) == 'EXT:') {
 			$file = GeneralUtility::getFileAbsFileName($icon);
 			if ($file) {
@@ -4763,18 +4767,23 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 				$selIconInfo = @getimagesize((PATH_site . $file));
 			} else {
 				$selIconFile = '';
-				$selIconInfo = FALSE;
 			}
 		} elseif (substr($icon, 0, 3) == '../') {
 			$selIconFile = $this->backPath . GeneralUtility::resolveBackPath($icon);
-			$selIconInfo = @getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
+			if (file_exists(PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3)))) {
+				$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
+			}
 		} elseif (substr($icon, 0, 4) == 'ext/' || substr($icon, 0, 7) == 'sysext/') {
 			$selIconFile = $this->backPath . $icon;
-			$selIconInfo = @getimagesize((PATH_typo3 . $icon));
+			if (file_exists(PATH_typo3 . $icon)) {
+				$selIconInfo = getimagesize(PATH_typo3 . $icon);
+			}
 		} else {
 			$selIconFile = IconUtility::skinImg($this->backPath, 'gfx/' . $icon, '', 1);
 			$iconPath = substr($selIconFile, strlen($this->backPath));
-			$selIconInfo = @getimagesize((PATH_typo3 . $iconPath));
+			if (file_exists(PATH_typo3 . $iconPath)) {
+				$selIconInfo = getimagesize(PATH_typo3 . $iconPath);
+			}
 		}
 		if ($selIconInfo === FALSE) {
 			// Unset to empty string if icon is not available
@@ -4793,7 +4802,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 	 */
 	protected function getIconHtml($icon, $alt = '', $title = '') {
 		$iconArray = $this->getIcon($icon);
-		if (is_file(GeneralUtility::resolveBackPath(PATH_typo3 . PATH_typo3_mod . $iconArray[0]))) {
+		if (!empty($iconArray[0]) && is_file(GeneralUtility::resolveBackPath(PATH_typo3 . PATH_typo3_mod . $iconArray[0]))) {
 			return '<img src="' . $iconArray[0] . '" alt="' . $alt . '" ' . ($title ? 'title="' . $title . '"' : '') . ' />';
 		} else {
 			return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));
@@ -6016,7 +6025,12 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			$pageRenderer->addInlineSettingArray('', $resizableSettings);
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tbe_editor.js');
-			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.placeholder.js');
+
+			// support placeholders for IE9 and lower
+			if ($this->clientInfo['BROWSER'] == 'msie' && $this->clientInfo['VERSION'] <= 9) {
+				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
+			}
+
 			// Needed for tceform manipulation (date picker)
 			$typo3Settings = array(
 				'datePickerUSmode' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? 1 : 0,

@@ -1469,6 +1469,43 @@ class BackendUtility {
 	}
 
 	/**
+	 * Resolves file references for a given record.
+	 *
+	 * @param string $tableName Name of the table of the record
+	 * @param string $fieldName Name of the field of the record
+	 * @param array $element Record data
+	 * @param NULL|int $workspaceId Workspace to fetch data for
+	 * @return NULL|array|\TYPO3\CMS\Core\Resource\FileReference[]
+	 */
+	static public function resolveFileReferences($tableName, $fieldName, $element, $workspaceId = NULL) {
+		if (empty($GLOBALS['TCA'][$tableName]['columns'][$fieldName]['config'])) {
+			return NULL;
+		}
+		$configuration = $GLOBALS['TCA'][$tableName]['columns'][$fieldName]['config'];
+		if (empty($configuration['type']) || $configuration['type'] !== 'inline'
+			|| empty($configuration['foreign_table']) || $configuration['foreign_table'] !== 'sys_file_reference') {
+			return NULL;
+		}
+
+		$fileReferences = array();
+		/** @var $relationHandler \TYPO3\CMS\Core\Database\RelationHandler */
+		$relationHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+		if ($workspaceId !== NULL) {
+			$relationHandler->setWorkspaceId($workspaceId);
+		}
+		$relationHandler->start($element[$fieldName], $configuration['foreign_table'], $configuration['MM'], $element['uid'], $tableName, $configuration);
+		$relationHandler->processDeletePlaceholder();
+		$referenceUids = $relationHandler->tableArray[$configuration['foreign_table']];
+
+		foreach ($referenceUids as $referenceUid) {
+			$fileReference = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid, array(), ($workspaceId === 0));
+			$fileReferences[$fileReference->getUid()] = $fileReference;
+		}
+
+		return $fileReferences;
+	}
+
+	/**
 	 * Returns a linked image-tag for thumbnail(s)/fileicons/truetype-font-previews from a database row with a list of image files in a field
 	 * All $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] extension are made to thumbnails + ttf file (renders font-example)
 	 * Thumbsnails are linked to the show_item.php script which will display further details.
@@ -1486,7 +1523,6 @@ class BackendUtility {
 	 * @return string Thumbnail image tag.
 	 */
 	static public function thumbCode($row, $table, $field, $backPath, $thumbScript = '', $uploaddir = NULL, $abs = 0, $tparams = '', $size = '', $linkInfoPopup = TRUE) {
-		$tcaConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 		// Check and parse the size parameter
 		$sizeParts = array(64, 64);
 		if ($size = trim($size)) {
@@ -1496,16 +1532,10 @@ class BackendUtility {
 			}
 		}
 		$thumbData = '';
+		$fileReferences = static::resolveFileReferences($table, $field, $row);
 		// FAL references
-		if ($tcaConfig['type'] === 'inline' && $tcaConfig['foreign_table'] === 'sys_file_reference') {
-			/** @var $relationHandler \TYPO3\CMS\Core\Database\RelationHandler */
-			$relationHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-			$relationHandler->start($row[$field], $tcaConfig['foreign_table'], $tcaConfig['MM'], $row['uid'], $table, $tcaConfig);
-			$relationHandler->processDeletePlaceholder();
-			$referenceUids = $relationHandler->tableArray[$tcaConfig['foreign_table']];
-
-			foreach ($referenceUids as $referenceUid) {
-				$fileReferenceObject = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid);
+		if ($fileReferences !== NULL) {
+			foreach ($fileReferences as $fileReferenceObject) {
 				$fileObject = $fileReferenceObject->getOriginalFile();
 
 				if ($fileObject->isMissing()) {
@@ -3402,7 +3432,7 @@ class BackendUtility {
 	 * Returns first found domain record "domainName" (without trailing slash) if found in the input $rootLine
 	 *
 	 * @param array $rootLine Root line array
-	 * @return string Domain name, if found.
+	 * @return string|NULL Domain name or NULL
 	 */
 	static public function firstDomainRecord($rootLine) {
 		foreach ($rootLine as $row) {
@@ -3412,6 +3442,7 @@ class BackendUtility {
 				return rtrim($dRecord['domainName'], '/');
 			}
 		}
+		return NULL;
 	}
 
 	/**
@@ -3634,6 +3665,7 @@ class BackendUtility {
 	static public function selectVersionsOfRecord($table, $uid, $fields = '*', $workspace = 0, $includeDeletedRecords = FALSE, $row = NULL) {
 		$realPid = 0;
 		$outputRows = array();
+		$workspace = (int)$workspace;
 		if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
 			if (is_array($row) && !$includeDeletedRecords) {
 				$row['_CURRENT_VERSION'] = TRUE;
@@ -3641,25 +3673,28 @@ class BackendUtility {
 				$outputRows[] = $row;
 			} else {
 				// Select UID version:
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($fields, $table, 'uid=' . (int)$uid . ($includeDeletedRecords ? '' : self::deleteClause($table)));
+				$row = BackendUtility::getRecord($table, $uid, $fields, '', !$includeDeletedRecords);
 				// Add rows to output array:
-				if ($res) {
-					$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-					if ($row) {
-						$row['_CURRENT_VERSION'] = TRUE;
-						$realPid = $row['pid'];
-						$outputRows[] = $row;
-					}
-					$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				if ($row) {
+					$row['_CURRENT_VERSION'] = TRUE;
+					$realPid = $row['pid'];
+					$outputRows[] = $row;
 				}
 			}
 			// Select all offline versions of record:
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($fields, $table, 'pid=-1 AND uid<>' . (int)$uid . ' AND t3ver_oid=' . (int)$uid . ($workspace != 0 ? ' AND t3ver_wsid=' . (int)$workspace : '') . ($includeDeletedRecords ? '' : self::deleteClause($table)), '', 't3ver_id DESC');
+			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+				$fields,
+				$table,
+				'pid=-1 AND uid<>' . (int)$uid . ' AND t3ver_oid=' . (int)$uid
+					. ' AND t3ver_wsid' . ($workspace !== 0 ? ' IN (0,' . (int)$workspace . ')' : '=0')
+					. ($includeDeletedRecords ? '' : self::deleteClause($table)),
+				'',
+				't3ver_id DESC'
+			);
 			// Add rows to output array:
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$outputRows[] = $row;
+			if (is_array($rows)) {
+				$outputRows = array_merge($outputRows, $rows);
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			// Set real-pid:
 			foreach ($outputRows as $idx => $oRow) {
 				$outputRows[$idx]['_REAL_PID'] = $realPid;

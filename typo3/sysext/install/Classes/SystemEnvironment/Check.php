@@ -92,7 +92,10 @@ class Check {
 		$statusArray[] = $this->checkOpenSslInstalled();
 		$statusArray[] = $this->checkSuhosinLoaded();
 		$statusArray[] = $this->checkSuhosinRequestMaxVars();
+		$statusArray[] = $this->checkSuhosinRequestMaxVarnameLength();
+		$statusArray[] = $this->checkSuhosinPostMaxNameLength();
 		$statusArray[] = $this->checkSuhosinPostMaxVars();
+		$statusArray[] = $this->checkSuhosinGetMaxNameLength();
 		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
 		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
@@ -411,7 +414,7 @@ class Check {
 			$status = new Status\WarningStatus();
 			$status->setTitle('Fetching external URLs is not allowed');
 			$status->setMessage(
-				'Either enable PHP runtime setting "allow_url_fopen"' . LF .  'or enable curl by setting [SYS][curlUse] accordingly.'
+				'Either enable PHP runtime setting "allow_url_fopen"' . LF . 'or enable curl by setting [SYS][curlUse] accordingly.'
 			);
 		}
 		return $status;
@@ -617,6 +620,76 @@ class Check {
 	}
 
 	/**
+	 * Check suhosin.request.max_varname_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinRequestMaxVarnameLength() {
+		$recommendedRequestMaxVarnameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentRequestMaxVarnameLength = ini_get('suhosin.request.max_varname_length');
+			if ($currentRequestMaxVarnameLength < $recommendedRequestMaxVarnameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.request.max_varname_length too low');
+				$status->setMessage(
+					'suhosin.request.max_varname_length=' . $currentRequestMaxVarnameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedRequestMaxVarnameLength . ':' . LF .
+					'suhosin.request.max_varname_length=' . $recommendedRequestMaxVarnameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.request.max_varname_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.request.max_varname_length' .
+				' should be set to at least ' . $recommendedRequestMaxVarnameLength . ':' . LF .
+				'suhosin.request.max_varname_length=' . $recommendedRequestMaxVarnameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Check suhosin.post.max_name_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinPostMaxNameLength() {
+		$recommendedPostMaxNameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentPostMaxNameLength = ini_get('suhosin.post.max_name_length');
+			if ($currentPostMaxNameLength < $recommendedPostMaxNameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.post.max_name_length too low');
+				$status->setMessage(
+					'suhosin.post.max_name_length=' . $currentPostMaxNameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedPostMaxNameLength . ':' . LF .
+					'suhosin.post.max_name_length=' . $recommendedPostMaxNameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.post.max_name_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.post.max_name_length' .
+				' should be set to at least ' . $recommendedPostMaxNameLength . ':' . LF .
+				'suhosin.post.max_name_length=' . $recommendedPostMaxNameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
 	 * Check suhosin.post.max_vars
 	 *
 	 * @return Status\StatusInterface
@@ -687,21 +760,56 @@ class Check {
 	}
 
 	/**
+	 * Check suhosin.get.max_name_length
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkSuhosinGetMaxNameLength() {
+		$recommendedGetMaxNameLength = 200;
+		if ($this->isSuhosinLoaded()) {
+			$currentGetMaxNameLength = ini_get('suhosin.get.max_name_length');
+			if ($currentGetMaxNameLength < $recommendedGetMaxNameLength) {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('PHP suhosin.get.max_name_length too low');
+				$status->setMessage(
+					'suhosin.get.max_name_length=' . $currentGetMaxNameLength . LF .
+					'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+					' (as the install tool does). It is highly recommended to raise this' .
+					' to at least ' . $recommendedGetMaxNameLength . ':' . LF .
+					'suhosin.get.max_name_length=' . $recommendedGetMaxNameLength
+				);
+			} else {
+				$status = new Status\OkStatus();
+				$status->setTitle('PHP suhosin.get.max_name_length ok');
+			}
+		} else {
+			$status = new Status\InfoStatus();
+			$status->setTitle('Suhosin not loaded');
+			$status->setMessage(
+				'If enabling suhosin, suhosin.get.max_name_length' .
+				' should be set to at least ' . $recommendedGetMaxNameLength . ':' . LF .
+				'suhosin.get.max_name_length=' . $recommendedGetMaxNameLength
+			);
+		}
+		return $status;
+	}
+
+	/**
 	 * Check suhosin.executor.include.whitelist contains phar
 	 *
 	 * @return Status\StatusInterface
 	 */
 	protected function checkSuhosinExecutorIncludeWhiteListContainsPhar() {
 		if ($this->isSuhosinLoaded()) {
-			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
-			if (!in_array('phar', $currentWhiteListArray)) {
+			$whitelist = (string)ini_get('suhosin.executor.include.whitelist');
+			if (strpos($whitelist, 'phar') === FALSE) {
 				$status = new Status\NoticeStatus();
 				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain phar');
 				$status->setMessage(
-					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . LF .
+					'suhosin.executor.include.whitelist= ' . $whitelist . LF .
 					'"phar" is currently not a hard requirement of TYPO3 CMS but is nice to have and a possible' .
 					' requirement in future versions. A useful setting is:' . LF .
-					'suhosin.executor.include.whitelist=phar vfs'
+					'suhosin.executor.include.whitelist=phar,vfs'
 				);
 			} else {
 				$status = new Status\OkStatus();
@@ -712,7 +820,7 @@ class Check {
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
 				'If enabling suhosin, a useful setting is:' . LF .
-				'suhosin.executor.include.whitelist=phar vfs'
+				'suhosin.executor.include.whitelist=phar,vfs'
 			);
 		}
 		return $status;
@@ -725,16 +833,16 @@ class Check {
 	 */
 	protected function checkSuhosinExecutorIncludeWhiteListContainsVfs() {
 		if ($this->isSuhosinLoaded()) {
-			$currentWhiteListArray = $this->trimExplode(' ', ini_get('suhosin.executor.include.whitelist'));
-			if (!in_array('vfs', $currentWhiteListArray)) {
+			$whitelist = (string)ini_get('suhosin.executor.include.whitelist');
+			if (strpos($whitelist, 'vfs') === FALSE) {
 				$status = new Status\WarningStatus();
 				$status->setTitle('PHP suhosin.executor.include.whitelist does not contain vfs');
 				$status->setMessage(
-					'suhosin.executor.include.whitelist= ' . implode(' ', $currentWhiteListArray) . LF .
+					'suhosin.executor.include.whitelist= ' . $whitelist . LF .
 					'"vfs" is currently not a hard requirement of TYPO3 CMS but tons of unit tests rely on it.' .
 					' Furthermore, vfs will likely be a base for an additional compatibility layer in the future.' .
 					' A useful setting is:' . LF .
-					'suhosin.executor.include.whitelist=phar vfs'
+					'suhosin.executor.include.whitelist=phar,vfs'
 				);
 			} else {
 				$status = new Status\OkStatus();
@@ -745,7 +853,7 @@ class Check {
 			$status->setTitle('Suhosin not loaded');
 			$status->setMessage(
 				'If enabling suhosin, a useful setting is:' . LF .
-				'suhosin.executor.include.whitelist=phar vfs'
+				'suhosin.executor.include.whitelist=phar,vfs'
 			);
 		}
 		return $status;
