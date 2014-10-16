@@ -30,102 +30,102 @@ class SpellCheckingController {
 
 	// The extension key
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $extKey = 'rtehtmlarea';
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $siteUrl;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $charset = 'utf-8';
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $parserCharset = 'utf-8';
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $defaultAspellEncoding = 'utf-8';
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $aspellEncoding;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $result;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $text;
 
 	/**
-	 * @todo Define visibility
+	 * @var array
 	 */
 	public $misspelled = array();
 
 	/**
-	 * @todo Define visibility
+	 * @var array
 	 */
 	public $suggestedWords;
 
 	/**
-	 * @todo Define visibility
+	 * @var int
 	 */
 	public $wordCount = 0;
 
 	/**
-	 * @todo Define visibility
+	 * @var int
 	 */
 	public $suggestionCount = 0;
 
 	/**
-	 * @todo Define visibility
+	 * @var int
 	 */
 	public $suggestedWordCount = 0;
 
 	/**
-	 * @todo Define visibility
+	 * @var int
 	 */
 	public $pspell_link;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $pspellMode = 'normal';
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $dictionary;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $AspellDirectory;
 
 	/**
-	 * @todo Define visibility
+	 * @var bool
 	 */
 	public $pspell_is_available;
 
 	/**
-	 * @todo Define visibility
+	 * @var bool
 	 */
 	public $forceCommandMode = 0;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $filePrefix = 'rtehtmlarea_';
 
@@ -139,7 +139,7 @@ class SpellCheckingController {
 	protected $personalDictionaryPath;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $xmlCharacterData = '';
 
@@ -147,7 +147,6 @@ class SpellCheckingController {
 	 * Main class of Spell Checker plugin for Typo3 CMS
 	 *
 	 * @return 	string		content produced by the plugin
-	 * @todo Define visibility
 	 */
 	public function main() {
 		$this->csConvObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
@@ -467,14 +466,12 @@ var selectedDictionary = "' . $this->dictionary . '";
 						}
 					}
 				}
-				$fileContent = implode(LF, $fileContent);
-				file_put_contents($fileName, $fileContent);
 			}
 		}
 	}
 
 	/**
-	 * @todo Define visibility
+	 * Handler for the opening of a tag
 	 */
 	public function startHandler($xml_parser, $tag, $attributes) {
 		if (strlen($this->xmlCharacterData)) {
@@ -515,7 +512,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 	}
 
 	/**
-	 * @todo Define visibility
+	 * Handler for the closing of a tag
 	 */
 	public function endHandler($xml_parser, $tag) {
 		if (strlen($this->xmlCharacterData)) {
@@ -551,7 +548,7 @@ var selectedDictionary = "' . $this->dictionary . '";
 	}
 
 	/**
-	 * @todo Define visibility
+	 * Handler for the content of a tag
 	 */
 	public function spellCheckHandler($xml_parser, $string) {
 		$incurrent = array();
@@ -592,8 +589,16 @@ var selectedDictionary = "' . $this->dictionary . '";
 					if (!fclose($filehandle)) {
 						echo 'SpellChecker tempfile close error';
 					}
-					$catCommand = TYPO3_OS == 'WIN' ? 'type' : 'cat';
-					$AspellCommand = $catCommand . ' ' . escapeshellarg($tmpFileName) . ' | ' . $this->AspellDirectory . ' -a check --mode=none --sug-mode=' . escapeshellarg($this->pspellMode) . ($this->personalDictionaryPath ? ' --home-dir=' . escapeshellarg($this->personalDictionaryPath) : '') . ' --lang=' . escapeshellarg($this->dictionary) . ' --encoding=' . escapeshellarg($this->aspellEncoding) . ' 2>&1';
+					$catCommand = TYPO3_OS === 'WIN' ? 'type' : 'cat';
+					$AspellCommand = $catCommand . ' ' . escapeshellarg($tmpFileName) . ' | '
+						. $this->AspellDirectory
+						. ' -a check'
+						. ' --mode=none'
+						. ' --sug-mode=' . escapeshellarg($this->pspellMode)
+						. ($this->personalDictionaryPath ? ' --home-dir=' . escapeshellarg($this->personalDictionaryPath) : '')
+						. ' --lang=' . escapeshellarg($this->dictionary)
+						. ' --encoding=' . escapeshellarg($this->aspellEncoding)
+						. ' 2>&1';
 					$AspellAnswer = shell_exec($AspellCommand);
 					$AspellResultLines = array();
 					$AspellResultLines = GeneralUtility::trimExplode(LF, $AspellAnswer, TRUE);
@@ -636,14 +641,14 @@ var selectedDictionary = "' . $this->dictionary . '";
 	}
 
 	/**
-	 * @todo Define visibility
+	 * Handler for collecting data within a tag
 	 */
 	public function collectDataHandler($xml_parser, $string) {
 		$this->xmlCharacterData .= $string;
 	}
 
 	/**
-	 * @todo Define visibility
+	 * Default handler for the xml parser
 	 */
 	public function defaultHandler($xml_parser, $string) {
 		$this->text .= $string;

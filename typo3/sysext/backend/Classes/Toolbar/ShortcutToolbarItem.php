@@ -30,19 +30,16 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 
 	/**
 	 * @var string
-	 * @todo define visibility
 	 */
 	public $perms_clause;
 
 	/**
 	 * @var string
-	 * @todo define visibility
 	 */
 	public $backPath;
 
 	/**
 	 * @var array
-	 * @todo define visibility
 	 */
 	public $fieldArray;
 
@@ -652,7 +649,7 @@ class ShortcutToolbarItem implements \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookI
 				}
 				$icon = IconUtility::skinImg($this->backPath, $icon, '', 1);
 				break;
-			case 'xMOD_file_edit.php':
+			case 'file_edit':
 				$icon = 'gfx/edit_file.gif';
 				break;
 			case 'wizard_rte':

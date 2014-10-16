@@ -22,9 +22,6 @@ namespace TYPO3\CMS\FuncWizards\Controller;
  */
 class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $function_key = 'wiz';
 
 	/**
@@ -34,7 +31,6 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * @param object $pObj A reference to the parent (calling) object (which is probably an instance of an extension class to \TYPO3\CMS\Backend\Module\BaseScriptClass)
 	 * @param array $conf The configuration set for this module - from global array TBE_MODULES_EXT
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init(&$pObj, $conf) {
 		// OK, handles ordinary init. This includes setting up the menu array with ->modMenu
@@ -48,7 +44,6 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * Modifies parent objects internal MOD_MENU array, adding items this module needs.
 	 *
 	 * @return array Items merged with the parent objects.
-	 * @todo Define visibility
 	 */
 	public function modMenu() {
 		$GLOBALS['LANG']->includeLLFile('EXT:func_wizards/locallang.xlf');
@@ -68,20 +63,22 @@ class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\Abstrac
 	 * Creation of the main content. Calling extObjContent() to trigger content generation from the sub-sub modules
 	 *
 	 * @return string The content
-	 * @todo Define visibility
 	 */
 	public function main() {
-		global $SOBE, $LANG;
-		$menu = $LANG->getLL('wiz_lWizards', TRUE) . ': ' . \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(
+		$menu = \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(
 			$this->pObj->id,
 			'SET[wiz]',
 			$this->pObj->MOD_SETTINGS['wiz'],
 			$this->pObj->MOD_MENU['wiz']
 		);
-		$theOutput .= $this->pObj->doc->section('', '<span class="nobr">' . $menu . '</span>');
+
 		$content = '';
-		$content .= $theOutput;
-		$content .= $this->pObj->doc->spacer(20);
+		if (!empty($menu)) {
+			$menu = $GLOBALS['LANG']->getLL('wiz_lWizards', TRUE) . ': ' . $menu;
+			$content = $this->pObj->doc->section('', '<span class="nobr">' . $menu . '</span>');
+			$content .= $this->pObj->doc->spacer(20);
+		}
+
 		$content .= $this->extObjContent();
 		return $content;
 	}

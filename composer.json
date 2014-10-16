@@ -37,7 +37,9 @@
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.3.*@dev",
-		"phpunit/phpunit": "~4.1.0"
+		"phpunit/phpunit": "~4.1.0",
+		"twbs/bootstrap": "3.2.*",
+		"fortawesome/font-awesome": "4.2.*"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -67,7 +69,6 @@
 		"typo3/cms-documentation": "self.version",
 		"typo3/cms-extbase": "self.version",
 		"typo3/cms-extensionmanager": "self.version",
-		"typo3/cms-extra-page-cm-options": "self.version",
 		"typo3/cms-feedit": "self.version",
 		"typo3/cms-felogin": "self.version",
 		"typo3/cms-filelist": "self.version",

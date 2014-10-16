@@ -1,0 +1,133 @@
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/* - - - - - - - - - - - - - - - - - - - - -
+Module menu
+- - - - - - - - - - - - - - - - - - - - - */
+
+#typo3-module-menu {
+	background: #dddddd;
+
+	.x-panel-body {
+		background-color: transparent;
+	}
+
+	#typo3-menu {
+	    margin-top: 18px;
+		padding-left: 0;
+		.list-unstyled;
+
+		> li {
+			margin-bottom: 6px;
+			border-bottom: 1px solid #c7c7c7;
+
+			div.modgroup {
+				color: #252524;
+				cursor: pointer;
+				font-weight: bold;
+				text-transform: uppercase;
+				font-size: 0.9em;
+				padding-left: 24px;
+				margin-bottom: 3px;
+				margin-left: 0px;
+				padding: 2px 0px 4px 16px;
+				background-repeat: no-repeat;
+
+				&.collapsed {
+					background-image: url('../../../../images/arrows/module-menu-left-gray.png');
+					background-position: right 23px top 7px;
+				}
+
+				&.expanded {
+					background-image: url('../../../../images/arrows/module-menu-down-gray.png');
+					background-position: right 22px top 9px;
+				}
+			}
+
+			ul {
+				.list-unstyled;
+				margin: 6px 0;
+
+				li {
+					&.highlighted {
+						font-weight: bold;
+					}
+
+					a {
+						display: block;
+						color: #1e2121;
+						text-decoration: none;
+						line-height: 16px;
+						padding: 3px 0 3px 24px;
+
+						span.submodule-icon {
+							position: absolute;
+						}
+
+						span.submodule-label {
+							display: block;
+							margin-left: 26px;
+						}
+
+					}
+				}
+
+				li a:hover {
+					background-color: #e8e8e8;
+				}
+
+				/* hovered menu item */
+				li a:hover,
+				li.highlighted a {
+					border-top: 1px solid #b8b8b8;
+					border-bottom: 1px solid #b8b8b8;
+					padding-top: 2px;
+					padding-bottom: 2px;
+
+					background-color: #ebebeb;
+					box-shadow: none;
+				}
+			}
+
+			img {
+				max-width: 16px;
+				max-height: 16px;
+			}
+		}
+
+		> li:last-child {
+			border-bottom: none;
+		}
+	}
+}
+
+/**
+ * Shadow on the right side of the module menu.
+ */
+#typo3-module-menu,
+#typo3-menu li li a:hover {
+	background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA9JREFUeNpi3LFjB0CAAQAEWAIqGE4BVwAAAABJRU5ErkJggg==");
+	background-position: right;
+	background-repeat: repeat-y;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+	.backgroundsize #typo3-menu li div.collapsed {
+		background-image: url('../../../../images/arrows/module-menu-left-gray@2x.png');
+		background-size: 6px 7px;
+	}
+	.backgroundsize #typo3-menu li div.expanded {
+		background-image: url('../../../../images/arrows/module-menu-down-gray@2x.png');
+		background-size: 7px 6px;
+	}
+}

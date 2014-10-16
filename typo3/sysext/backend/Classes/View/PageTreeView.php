@@ -26,35 +26,33 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 
 	/**
-	 * @todo Define visibility
+	 * @var bool
 	 */
 	public $ext_showPageId;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $ext_IconMode;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $ext_separateNotinmenuPages;
 
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $ext_alphasortNotinmenuPages;
 
 	// Indicates, whether the ajax call was successful, i.e. the requested page has been found
 	/**
-	 * @todo Define visibility
+	 * @var bool
 	 */
 	public $ajaxStatus = FALSE;
 
 	/**
 	 * Calls init functions
-	 *
-	 * @todo Define visibility
 	 */
 	public function __construct() {
 		$this->init();
@@ -66,7 +64,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @param string $thePageIcon Icon IMG code
 	 * @param array $row Data row for element.
 	 * @return string Page icon
-	 * @todo Define visibility
 	 */
 	public function wrapIcon($thePageIcon, &$row) {
 		// If the record is locked, present a warning sign.
@@ -108,7 +105,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @param array $row Record row with "php_tree_stop" field
 	 * @return string Modified string
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function wrapStop($str, $row) {
 		if ($row['php_tree_stop']) {
@@ -125,7 +121,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @param integer $bank Bank pointer (which mount point number)
 	 * @return string
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function wrapTitle($title, $row, $bank = 0) {
 		// Hook for overriding the page title
@@ -148,7 +143,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 *
 	 * @param array $treeArr "tree-array" - if blank string, the internal ->tree array is used.
 	 * @return string The HTML code for the tree
-	 * @todo Define visibility
 	 */
 	public function printTree($treeArr = '') {
 		$titleLen = (int)$this->BE_USER->uc['titleLen'];
@@ -256,7 +250,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @return string Image tag with the plus/minus icon.
 	 * @access private
 	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::PMicon()
-	 * @todo Define visibility
 	 */
 	public function PMicon($row, $a, $c, $nextCount, $exp) {
 		$PM = $nextCount ? ($exp ? 'minus' : 'plus') : 'join';
@@ -276,7 +269,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @param string $cmd Command for 'PM' get var
 	 * @return boolean $isExpand Link-wrapped input string
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function PMiconATagWrap($icon, $cmd, $isExpand = TRUE) {
 		if ($this->thisScript) {
@@ -293,7 +285,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * Is based on the mounts found in the internal array ->MOUNTS (set in the constructor)
 	 *
 	 * @return string HTML code for the browsable tree
-	 * @todo Define visibility
 	 */
 	public function getBrowsableTree() {
 		// Get stored tree structure AND updating it if needed according to incoming PM GET var.
@@ -354,7 +345,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @param string $blankLineCode ? (internal)
 	 * @param string $subCSSclass
 	 * @return integer The count of items on the level
-	 * @todo Define visibility
 	 */
 	public function getTree($uid, $depth = 999, $blankLineCode = '', $subCSSclass = '') {
 		// Buffer for id hierarchy is reset:

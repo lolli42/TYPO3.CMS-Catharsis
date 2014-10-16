@@ -27,45 +27,31 @@ use TYPO3\CMS\Backend\Utility\IconUtility;
  */
 class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $perms_clause;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $e;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $sObj;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $edit;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $textExtensions = 'html,htm,txt,css,tmpl,inc,js';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $modMenu_type = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $modMenu_dontValidateList = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $modMenu_setDefaultList = '';
+
+	/**
+	 * @var array
+	 */
+	public $pageinfo = array();
+
+	/**
+	 * @var bool
+	 */
+	public $access = FALSE;
 
 	/**
 	 * Constructor
@@ -79,7 +65,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * Init
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		parent::init();
@@ -94,7 +79,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * Clear cache
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function clearCache() {
 		if (GeneralUtility::_GP('clear_all_cache')) {
@@ -110,7 +94,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * Main
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Template markers
@@ -123,10 +106,13 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 		// Access check...
 		// The page will show only if there is a valid page and if this page may be viewed by the user
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
-		$this->access = is_array($this->pageinfo) ? 1 : 0;
+		$this->access = is_array($this->pageinfo);
+
+		/** @var \TYPO3\CMS\Backend\Template\DocumentTemplate doc */
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:tstemplate/Resources/Private/Templates/tstemplate.html');
+		$this->doc->addStyleSheet('module', 'sysext/tstemplate/Resources/Public/Styles/styles.css');
 
 		if ($this->id && $this->access) {
 			$urlParameters = array(
@@ -158,12 +144,9 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 				TABLE#typo3-objectBrowser A { text-decoration: none; }
 				TABLE#typo3-objectBrowser .comment { color: maroon; font-weight: bold; }
 				.ts-typoscript { width: 100%; }
-				.tsob-menu label, .tsob-menu-row2 label, .tsob-conditions label { padding: 0 5px 0 0; vertical-align: text-top;}
 				.tsob-menu-row2 {margin-top: 10px;}
-				.tsob-conditions {padding: 1px 2px;}
 				.tsob-search-submit {margin-left: 3px; margin-right: 3px;}
 				.tst-analyzer-options { margin:5px 0; }
-				.tst-analyzer-options label {padding-left:5px; vertical-align:text-top; }
 			';
 			// Setting up the context sensitive menu:
 			$this->doc->getContextMenuCode();
@@ -215,7 +198,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * Print content
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -292,7 +274,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * @param string $title
 	 * @param string $onlyKey
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function linkWrapTemplateTitle($title, $onlyKey = '') {
 		$urlParameters = array(
@@ -312,7 +293,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 *
 	 * @param integer $newStandardTemplate
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function noTemplate($newStandardTemplate = 0) {
 		// Defined global here!
@@ -366,9 +346,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 		return $theOutput;
 	}
 
-	/**
-	 * @todo Define visibility
-	 */
 	public function templateMenu() {
 		// Defined global here!
 		$tmpl = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\ExtendedTemplateService');
@@ -395,7 +372,6 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 	 * @param integer $id
 	 * @param integer $actTemplateId
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function createTemplate($id, $actTemplateId = 0) {
 		if (GeneralUtility::_GP('createExtension') || GeneralUtility::_GP('createExtension_x')) {
@@ -458,7 +434,6 @@ page.10.value = HELLO WORLD!
 	 * @param array $rlArr
 	 * @param array $row
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function setInPageArray(&$pArray, $rlArr, $row) {
 		ksort($rlArr);
@@ -486,7 +461,6 @@ page.10.value = HELLO WORLD!
 	 * @param array $lines
 	 * @param integer $c
 	 * @return array
-	 * @todo Define visibility
 	 */
 	public function renderList($pArray, $lines = array(), $c = 0) {
 		if (is_array($pArray)) {

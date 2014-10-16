@@ -281,7 +281,7 @@ class GeneralUtility {
 			// IM
 			if (($type == 'IM' || !$type) && $gfxConf['im'] && $gfxConf['im_path_lzw']) {
 				// Use temporary file to prevent problems with read and write lock on same file on network file systems
-				$temporaryName = dirname($theFile) . '/' . md5(uniqid()) . '.gif';
+				$temporaryName = dirname($theFile) . '/' . md5(uniqid('', TRUE)) . '.gif';
 				// Rename could fail, if a simultaneous thread is currently working on the same thing
 				if (@rename($theFile, $temporaryName)) {
 					$cmd = self::imageMagickCommand('convert', '"' . $temporaryName . '" "' . $theFile . '"', $gfxConf['im_path_lzw']);
@@ -764,18 +764,6 @@ class GeneralUtility {
 			}
 		}
 		return implode(',', $list);
-	}
-
-	/**
-	 * Returns an integer from a three part version number, eg '4.12.3' -> 4012003
-	 *
-	 * @param string $verNumberStr Version number on format x.x.x
-	 * @return integer Integer version of version number (where each part can count to 999)
-	 * @deprecated Use VersionNumberUtility::convertVersionNumberToInteger instead, will be removed after 6.2
-	 */
-	static public function int_from_ver($verNumberStr) {
-		self::logDeprecatedFunction();
-		return VersionNumberUtility::convertVersionNumberToInteger($verNumberStr);
 	}
 
 	/**
@@ -1289,7 +1277,7 @@ class GeneralUtility {
 	static protected function generateRandomBytesFallback($bytesToReturn) {
 		$bytes = '';
 		// We initialize with somewhat random.
-		$randomState = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . base_convert(memory_get_usage() % pow(10, 6), 10, 2) . microtime() . uniqid('') . getmypid();
+		$randomState = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . base_convert(memory_get_usage() % pow(10, 6), 10, 2) . microtime() . uniqid('', TRUE) . getmypid();
 		while (!isset($bytes[($bytesToReturn - 1)])) {
 			$randomState = sha1(microtime() . mt_rand() . $randomState);
 			$bytes .= sha1(mt_rand() . $randomState, TRUE);
@@ -2813,7 +2801,8 @@ Connection: close
 				$currentPath = substr($currentPath, 0, $separatorPosition);
 			} while (!is_dir($currentPath) && $separatorPosition !== FALSE);
 			$result = @mkdir($fullDirectoryPath, $permissionMask, TRUE);
-			if (!$result) {
+			// Check existence of directory again to avoid race condition. Directory could have get created by another process between previous is_dir() and mkdir()
+			if (!$result && !@is_dir($fullDirectoryPath)) {
 				throw new \RuntimeException('Could not create directory "' . $fullDirectoryPath . '"!', 1170251401);
 			}
 		}
@@ -2871,7 +2860,7 @@ Connection: close
 		$result = FALSE;
 
 		if (is_dir($directory)) {
-			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove') . '/';
+			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove', TRUE) . '/';
 			if (rename($directory, $temporaryDirectory)) {
 				if ($keepOriginalDirectory) {
 					self::mkdir($directory);
@@ -4056,10 +4045,6 @@ Connection: close
 			// Is test:
 			$validatedPrefix = PATH_site . 'tests/';
 			$location = $validatedPrefix;
-		} elseif (self::isFirstPartOfStr($fileRef, PATH_site . 'typo3_src/tests/')) {
-			// Is test (typo3_src deprecated as ov TYPO3 6.0):
-			$validatedPrefix = PATH_site . 'typo3_src/tests/';
-			$location = $validatedPrefix;
 		} else {
 			$validatedPrefix = '';
 		}
@@ -4081,23 +4066,6 @@ Connection: close
 		} else {
 			return NULL;
 		}
-	}
-
-	/**
-	 * Loads the $GLOBALS['TCA'] (Table Configuration Array) for the $table
-	 *
-	 * Requirements:
-	 * 1) must be configured table (the ctrl-section configured),
-	 * 2) columns must not be an array (which it is always if whole table loaded), and
-	 * 3) there is a value for dynamicConfigFile (filename in typo3conf)
-	 *
-	 * @param string $table Table name for which to load the full TCA array part into $GLOBALS['TCA']
-	 * @return void
-	 * @deprecated since 6.1, will be removed two versions later
-	 */
-	static public function loadTCA($table) {
-		// This method is obsolete, full TCA is always loaded in all context except eID
-		static::logDeprecatedFunction();
 	}
 
 	/**
@@ -4316,6 +4284,12 @@ Connection: close
 	 *
 	 * You can also pass arguments for a constructor:
 	 * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('myClass', $arg1, $arg2, ..., $argN)
+	 *
+	 * You may want to use \TYPO3\CMS\Extbase\Object\ObjectManager::get() if you
+	 * want TYPO3 to take care about injecting dependencies of the class to be
+	 * created. Therefore create an instance of ObjectManager via
+	 * GeneralUtility::makeInstance() first and call its get() method to get
+	 * the instance of a specific class.
 	 *
 	 * @throws \InvalidArgumentException if classname is an empty string
 	 * @param string $className name of the class to instantiate, must not be empty
@@ -4619,20 +4593,6 @@ Connection: close
 				$GLOBALS['T3_VAR']['makeInstanceService'][$info['className']]->reset();
 				return $GLOBALS['T3_VAR']['makeInstanceService'][$info['className']];
 			} else {
-				if (isset($info['classFile'])) {
-					// @deprecated since 6.1, will be removed in TYPO3 CMS 6.3
-					// Option is deprecated, since we now have the autoloader function
-					self::deprecationLog(
-						'The option "classFile" of "' . $info['className'] .
-						'" in T3_SERVICES has been deprecated, as this should now be done by the respective ' .
-						'ext_autoload.php of each extension. This option will be removed in TYPO3 CMS v6.3.'
-					);
-					$requireFile = self::getFileAbsFileName($info['classFile']);
-					if (@is_file($requireFile)) {
-						self::requireOnce($requireFile);
-					}
-				}
-
 				$obj = self::makeInstance($info['className']);
 				if (is_object($obj)) {
 					if (!@is_callable(array($obj, 'init'))) {
@@ -4681,74 +4641,6 @@ Connection: close
 		// Needed for require
 		global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
 		require $requireFile;
-	}
-
-	/**
-	 * Simple substitute for the PHP function mail() which allows you to specify encoding and character set
-	 * The fifth parameter ($encoding) will allow you to specify 'base64' encryption for the output (set $encoding=base64)
-	 * Further the output has the charset set to UTF-8 by default.
-	 *
-	 * @param string $email Email address to send to. (see PHP function mail())
-	 * @param string $subject Subject line, non-encoded. (see PHP function mail())
-	 * @param string $message Message content, non-encoded. (see PHP function mail())
-	 * @param string $headers Headers, separated by LF
-	 * @param string $encoding Encoding type: "base64", "quoted-printable", "8bit". Default value is "quoted-printable".
-	 * @param string $charset Charset used in encoding-headers (only if $encoding is set to a valid value which produces such a header)
-	 * @param boolean $dontEncodeHeader If set, the header content will not be encoded
-	 * @return boolean TRUE if mail was accepted for delivery, FALSE otherwise
-	 * @deprecated since 6.1, will be removed two versions later - Use \TYPO3\CMS\Core\Mail\Mailer instead
-	 */
-	static public function plainMailEncoded($email, $subject, $message, $headers = '', $encoding = 'quoted-printable', $charset = '', $dontEncodeHeader = FALSE) {
-		self::logDeprecatedFunction();
-		if (!$charset) {
-			$charset = 'utf-8';
-		}
-		$email = self::normalizeMailAddress($email);
-		if (!$dontEncodeHeader) {
-			// Mail headers must be ASCII, therefore we convert the whole header to either base64 or quoted_printable
-			$newHeaders = array();
-			// Split the header in lines and convert each line separately
-			foreach (explode(LF, $headers) as $line) {
-				// Field tags must not be encoded
-				$parts = explode(': ', $line, 2);
-				if (count($parts) == 2) {
-					if (0 == strcasecmp($parts[0], 'from')) {
-						$parts[1] = self::normalizeMailAddress($parts[1]);
-					}
-					$parts[1] = self::encodeHeader($parts[1], $encoding, $charset);
-					$newHeaders[] = implode(': ', $parts);
-				} else {
-					// Should never happen - is such a mail header valid? Anyway, just add the unchanged line...
-					$newHeaders[] = $line;
-				}
-			}
-			$headers = implode(LF, $newHeaders);
-			unset($newHeaders);
-			// Email address must not be encoded, but it could be appended by a name which should be so (e.g. "Kasper Skårhøj <kasperYYYY@typo3.com>")
-			$email = self::encodeHeader($email, $encoding, $charset);
-			$subject = self::encodeHeader($subject, $encoding, $charset);
-		}
-		switch ((string) $encoding) {
-			case 'base64':
-				$headers = trim($headers) . LF . 'Mime-Version: 1.0' . LF . 'Content-Type: text/plain; charset="' . $charset . '"' . LF . 'Content-Transfer-Encoding: base64';
-				// Adding LF because I think MS outlook 2002 wants it... may be removed later again.
-				$message = trim(chunk_split(base64_encode(($message . LF)))) . LF;
-				break;
-			case '8bit':
-				$headers = trim($headers) . LF . 'Mime-Version: 1.0' . LF . 'Content-Type: text/plain; charset=' . $charset . LF . 'Content-Transfer-Encoding: 8bit';
-				break;
-			case 'quoted-printable':
-
-			default:
-				$headers = trim($headers) . LF . 'Mime-Version: 1.0' . LF . 'Content-Type: text/plain; charset=' . $charset . LF . 'Content-Transfer-Encoding: quoted-printable';
-				$message = self::quoted_printable($message);
-		}
-		// Headers must be separated by CRLF according to RFC 2822, not just LF.
-		// But many servers (Gmail, for example) behave incorrectly and want only LF.
-		// So we stick to LF in all cases.
-		// Make sure no empty lines are there.
-		$headers = trim(implode(LF, self::trimExplode(LF, $headers, TRUE)));
-		return \TYPO3\CMS\Core\Utility\MailUtility::mail($email, $subject, $message, $headers);
 	}
 
 	/**
@@ -5094,7 +4986,7 @@ Connection: close
 				require_once ExtensionManagementUtility::extPath('core') . 'Classes/Locking/Locker.php';
 			}
 			// Write a longer message to the deprecation log
-			$destination = self::getDeprecationLogFileName();
+			$destination = static::getDeprecationLogFileName();
 			$file = @fopen($destination, 'a');
 			if ($file) {
 				@fwrite($file, ($date . $msg . LF));

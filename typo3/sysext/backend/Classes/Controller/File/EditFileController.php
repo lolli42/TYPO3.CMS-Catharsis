@@ -26,41 +26,25 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class EditFileController {
 
 	// Module content accumulated.
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $title;
 
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	// Internal, static: GPvar
 	// Original input target
-	/**
-	 * @todo Define visibility
-	 */
 	public $origTarget;
 
 	// The original target, but validated.
-	/**
-	 * @todo Define visibility
-	 */
 	public $target;
 
 	// Return URL of list module.
-	/**
-	 * @todo Define visibility
-	 */
 	public $returnUrl;
 
 	/**
@@ -151,7 +135,10 @@ class EditFileController {
 			// Read file content to edit:
 			$fileContent = $this->fileObject->getContents();
 			// Making the formfields
-			$hValue = 'file_edit.php?target=' . rawurlencode($this->origTarget) . '&returnUrl=' . rawurlencode($this->returnUrl);
+			$hValue = BackendUtility::getModuleUrl('file_edit', array(
+				'target' => $this->origTarget,
+				'returnUrl' => $this->returnUrl
+			));
 			// Edit textarea:
 			$code .= '
 				<div id="c-edit">
@@ -163,8 +150,7 @@ class EditFileController {
 				<br />';
 			// Make shortcut:
 			if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
-				$this->MCONF['name'] = 'xMOD_file_edit.php';
-				$docHeaderButtons['shortcut'] = $this->doc->makeShortcutIcon('target', '', $this->MCONF['name'], 1);
+				$docHeaderButtons['shortcut'] = $this->doc->makeShortcutIcon('target', '', 'file_edit', 1);
 			} else {
 				$docHeaderButtons['shortcut'] = '';
 			}
@@ -213,7 +199,6 @@ class EditFileController {
 	 * Builds the buttons for the docheader and returns them as an array
 	 *
 	 * @return array
-	 * @todo Define visibility
 	 */
 	public function getButtons() {
 		$buttons = array();

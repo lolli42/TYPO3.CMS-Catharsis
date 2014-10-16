@@ -27,24 +27,16 @@ class FileListController {
 	/**
 	 * Module configuration
 	 *
-	 * @todo Define visibility
 	 */
 	public $MCONF = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	/**
 	 * Accumulated HTML output
 	 *
-	 * @todo Define visibility
 	 */
 	public $content;
 
@@ -52,14 +44,12 @@ class FileListController {
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	/**
 	 * "id" -> the path to list.
 	 *
-	 * @todo Define visibility
 	 */
 	public $id;
 
@@ -76,32 +66,23 @@ class FileListController {
 	/**
 	 * Pointer to listing
 	 *
-	 * @todo Define visibility
 	 */
 	public $pointer;
 
 	/**
 	 * "Table"
 	 *
-	 * @todo Define visibility
 	 */
 	public $table;
 
 	/**
 	 * Thumbnail mode.
 	 *
-	 * @todo Define visibility
 	 */
 	public $imagemode;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $cmd;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $overwriteExistingFiles;
 
 	/**
@@ -125,7 +106,6 @@ class FileListController {
 	 * Incoming GET vars include id, pointer, table, imagemode
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		// Setting GPvars:
@@ -192,7 +172,6 @@ class FileListController {
 	 * Setting the menu/session variables
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function menuConfig() {
 		// MENU-ITEMS:
@@ -218,7 +197,6 @@ class FileListController {
 	 * Main function, creating the listing
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Initialize the template object
@@ -347,15 +325,30 @@ class FileListController {
 				';
 				// Add "display bigControlPanel" checkbox:
 				if ($GLOBALS['BE_USER']->getTSConfigVal('options.file_list.enableDisplayBigControlPanel') === 'selectable') {
-					$pageContent .= BackendUtility::getFuncCheck($this->id, 'SET[bigControlPanel]', $this->MOD_SETTINGS['bigControlPanel'], '', '', 'id="bigControlPanel"') . '<label for="bigControlPanel"> ' . $GLOBALS['LANG']->getLL('bigControlPanel', TRUE) . '</label><br />';
+					$pageContent .= '<div class="checkbox">' .
+						'<label for="bigControlPanel">' .
+							BackendUtility::getFuncCheck($this->id, 'SET[bigControlPanel]', $this->MOD_SETTINGS['bigControlPanel'], '', '', 'id="bigControlPanel"') .
+							$GLOBALS['LANG']->getLL('bigControlPanel', TRUE) .
+						'</label>' .
+					'</div>';
 				}
 				// Add "display thumbnails" checkbox:
 				if ($GLOBALS['BE_USER']->getTSConfigVal('options.file_list.enableDisplayThumbnails') === 'selectable') {
-					$pageContent .= BackendUtility::getFuncCheck($this->id, 'SET[displayThumbs]', $this->MOD_SETTINGS['displayThumbs'], '', '', 'id="checkDisplayThumbs"') . ' <label for="checkDisplayThumbs">' . $GLOBALS['LANG']->getLL('displayThumbs', TRUE) . '</label><br />';
+					$pageContent .= '<div class="checkbox">' .
+						'<label for="checkDisplayThumbs">' .
+							BackendUtility::getFuncCheck($this->id, 'SET[displayThumbs]', $this->MOD_SETTINGS['displayThumbs'], '', '', 'id="checkDisplayThumbs"') .
+							$GLOBALS['LANG']->getLL('displayThumbs', TRUE) .
+						'</label>' .
+					'</div>';
 				}
 				// Add "clipboard" checkbox:
 				if ($GLOBALS['BE_USER']->getTSConfigVal('options.file_list.enableClipBoard') === 'selectable') {
-					$pageContent .= BackendUtility::getFuncCheck($this->id, 'SET[clipBoard]', $this->MOD_SETTINGS['clipBoard'], '', '', 'id="checkClipBoard"') . ' <label for="checkClipBoard">' . $GLOBALS['LANG']->getLL('clipBoard', TRUE) . '</label>';
+					$pageContent .= '<div class="checkbox">' .
+						'<label for="checkClipBoard">' .
+							BackendUtility::getFuncCheck($this->id, 'SET[clipBoard]', $this->MOD_SETTINGS['clipBoard'], '', '', 'id="checkClipBoard"') .
+							$GLOBALS['LANG']->getLL('clipBoard', TRUE) .
+						'</label>' .
+					'</div>';
 				}
 				$pageContent .= '
 					</div>
@@ -414,7 +407,6 @@ class FileListController {
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -424,7 +416,6 @@ class FileListController {
 	 * Create the panel of buttons for submitting the form or otherwise perform operations.
 	 *
 	 * @return array All available buttons as an assoc. array
-	 * @todo Define visibility
 	 */
 	public function getButtons() {
 		$buttons = array(
@@ -441,13 +432,27 @@ class FileListController {
 		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_module', $GLOBALS['BACK_PATH'], '', TRUE);
 		// Upload button (only if upload to this directory is allowed)
 		if ($this->folderObject && $this->folderObject->getStorage()->checkUserActionPermission('add', 'File') && $this->folderObject->checkActionPermission('write')) {
-			$buttons['upload'] = '<a href="' . $GLOBALS['BACK_PATH'] . 'file_upload.php?target=' . rawurlencode($this->folderObject->getCombinedIdentifier()) . '&amp;returnUrl=' . rawurlencode($this->filelist->listURL()) . '" id="button-upload" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-upload') . '</a>';
+			$buttons['upload'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH']
+				. BackendUtility::getModuleUrl(
+					'file_upload',
+					array(
+						'target' => $this->folderObject->getCombinedIdentifier(),
+						'returnUrl' => $this->filelist->listURL(),
+					)
+				)) . '" id="button-upload" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.upload', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-upload') . '</a>';
 		}
 		// New folder button
 		if ($this->folderObject && $this->folderObject->checkActionPermission('write')
 			&& ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File') || $this->folderObject->checkActionPermission('add'))
 		) {
-			$buttons['new'] = '<a href="' . $GLOBALS['BACK_PATH'] . 'file_newfolder.php?target=' . rawurlencode($this->folderObject->getCombinedIdentifier()) . '&amp;returnUrl=' . rawurlencode($this->filelist->listURL()) . '" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new') . '</a>';
+			$buttons['new'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH']
+				. BackendUtility::getModuleUrl(
+					'file_newfolder',
+					array(
+						'target' => $this->folderObject->getCombinedIdentifier(),
+						'returnUrl' => $this->filelist->listURL(),
+					)
+				)) . '" title="' . $GLOBALS['LANG']->makeEntities($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new') . '</a>';
 		}
 		return $buttons;
 	}

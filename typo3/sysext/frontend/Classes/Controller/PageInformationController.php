@@ -27,7 +27,6 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 	 * Returns the menu array
 	 *
 	 * @return 	array
-	 * @todo Define visibility
 	 */
 	public function modMenu() {
 		global $LANG;
@@ -36,11 +35,6 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 				0 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:pages_0'),
 				2 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:pages_2'),
 				1 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:pages_1')
-			),
-			'stat_type' => array(
-				0 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:stat_type_0'),
-				1 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:stat_type_1'),
-				2 => $LANG->sL('LLL:EXT:cms/web_info/locallang.xlf:stat_type_2')
 			),
 			'depth' => array(
 				0 => $LANG->getLL('depth_0'),
@@ -56,7 +50,6 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 	 * MAIN function for page information display
 	 *
 	 * @return string Output HTML for the module.
-	 * @todo Define visibility
 	 */
 	public function main() {
 		global $BACK_PATH, $LANG, $SOBE;

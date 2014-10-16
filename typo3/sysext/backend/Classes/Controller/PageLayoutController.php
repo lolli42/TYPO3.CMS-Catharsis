@@ -30,82 +30,43 @@ class PageLayoutController {
 
 	// Internal, GPvars:
 	// Page Id for which to make the listing
-	/**
-	 * @todo Define visibility
-	 */
 	public $id;
 
 	// Pointer - for browsing list of records.
-	/**
-	 * @todo Define visibility
-	 */
 	public $pointer;
 
 	// Thumbnails or not
-	/**
-	 * @todo Define visibility
-	 */
 	public $imagemode;
 
 	// Search-fields
-	/**
-	 * @todo Define visibility
-	 */
 	public $search_field;
 
 	// Search-levels
-	/**
-	 * @todo Define visibility
-	 */
 	public $search_levels;
 
 	// Show-limit
-	/**
-	 * @todo Define visibility
-	 */
 	public $showLimit;
 
 	// Return URL
-	/**
-	 * @todo Define visibility
-	 */
 	public $returnUrl;
 
 	// Clear-cache flag - if set, clears page cache for current id.
-	/**
-	 * @todo Define visibility
-	 */
 	public $clear_cache;
 
 	// PopView id - for opening a window with the page
-	/**
-	 * @todo Define visibility
-	 */
 	public $popView;
 
 	// QuickEdit: Variable, that tells quick edit what to show/edit etc. Format is [tablename]:[uid] with some exceptional values for both parameters (with special meanings).
-	/**
-	 * @todo Define visibility
-	 */
 	public $edit_record;
 
 	// QuickEdit: If set, this variable tells quick edit that the last edited record had this value as UID and we should look up the new, real uid value in sys_log.
-	/**
-	 * @todo Define visibility
-	 */
 	public $new_unique_uid;
 
 	// Internal, static:
 	// Page select perms clause
-	/**
-	 * @todo Define visibility
-	 */
 	public $perms_clause;
 
 	// Module TSconfig
-	/**
-	 * @todo Define visibility
-	 */
 	public $modTSconfig;
 
 	/**
@@ -116,102 +77,56 @@ class PageLayoutController {
 	public $modSharedTSconfig;
 
 	// Current ids page record
-	/**
-	 * @todo Define visibility
-	 */
 	public $pageinfo;
 
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	// Back path of the module
-	/**
-	 * @todo Define visibility
-	 */
 	public $backPath;
 
 	// "Pseudo" Description -table name
-	/**
-	 * @todo Define visibility
-	 */
 	public $descrTable;
 
 	// List of column-integers to edit. Is set from TSconfig, default is "1,0,2,3"
-	/**
-	 * @todo Define visibility
-	 */
 	public $colPosList;
 
 	// Flag: If content can be edited or not.
-	/**
-	 * @todo Define visibility
-	 */
 	public $EDIT_CONTENT;
 
 	// Users permissions integer for this page.
-	/**
-	 * @todo Define visibility
-	 */
 	public $CALC_PERMS;
 
 	// Currently selected language for editing content elements
-	/**
-	 * @todo Define visibility
-	 */
 	public $current_sys_language;
 
 	// Module configuration
-	/**
-	 * @todo Define visibility
-	 */
 	public $MCONF = array();
 
 	// Menu configuration
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
 	// Module settings (session variable)
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	// Array, where files to include is accumulated in the init() function
-	/**
-	 * @todo Define visibility
-	 */
 	public $include_once = array();
 
 	// Array of tables to be listed by the Web > Page module in addition to the default tables
-	/**
-	 * @todo Define visibility
-	 */
 	public $externalTables = array();
 
 	// Internal, dynamic:
 	// Module output accumulation
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
 	// Function menu temporary storage
-	/**
-	 * @todo Define visibility
-	 */
 	public $topFuncMenu;
 
 	// Temporary storage for page edit icon
-	/**
-	 * @todo Define visibility
-	 */
 	public $editIcon;
 
 	/**
@@ -223,10 +138,14 @@ class PageLayoutController {
 	public $activeColPosList;
 
 	/**
+	 * @var array markers array
+	 */
+	protected $markers = array();
+
+	/**
 	 * Initializing the module
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		// Setting module configuration / page select clause
@@ -254,13 +173,15 @@ class PageLayoutController {
 		$this->current_sys_language = (int)$this->MOD_SETTINGS['language'];
 		// CSH / Descriptions:
 		$this->descrTable = '_MOD_' . $this->MCONF['name'];
+
+		$this->markers['SEARCHBOX'] = '';
+		$this->markers['BUTTONLIST_ADDITIONAL'] = '';
 	}
 
 	/**
 	 * Initialize menu array
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function menuConfig() {
 		// MENU-ITEMS:
@@ -336,7 +257,6 @@ class PageLayoutController {
 	 * Clears page cache for the current id, $this->id
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function clearCache() {
 		if ($this->clear_cache) {
@@ -409,7 +329,6 @@ class PageLayoutController {
 	 * Creates some general objects and calls other functions for the main rendering of module content.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Access check...
@@ -540,18 +459,19 @@ class PageLayoutController {
 			// Removing duplicates, if any
 			$this->colPosList = array_unique(GeneralUtility::intExplode(',', $this->colPosList));
 			// Accessible columns
-			if (trim($this->modSharedTSconfig['properties']['colPos_list']) !== '') {
+			if (isset($this->modSharedTSconfig['properties']['colPos_list']) && trim($this->modSharedTSconfig['properties']['colPos_list']) !== '') {
 				$this->activeColPosList = array_unique(GeneralUtility::intExplode(',', trim($this->modSharedTSconfig['properties']['colPos_list'])));
 				// Match with the list which is present in the colPosList for the current page
-				if (!empty($this->colPosList) && !empty($this->colActivePosList)) {
-					$this->activeColPosList = implode(',', array_unique(array_intersect(
+				if (!empty($this->colPosList) && !empty($this->activeColPosList)) {
+					$this->activeColPosList = array_unique(array_intersect(
 						$this->activeColPosList,
 						$this->colPosList
-					)));
+					));
 				}
 			} else {
-				$this->activeColPosList = implode(',', $this->colPosList);
+				$this->activeColPosList = $this->colPosList;
 			}
+			$this->activeColPosList = implode(',', $this->activeColPosList);
 			$this->colPosList = implode(',', $this->colPosList);
 
 			// Page title
@@ -567,14 +487,12 @@ class PageLayoutController {
 			}
 			// Setting up the buttons and markers for docheader
 			$docHeaderButtons = $this->getButtons($this->MOD_SETTINGS['function'] == 0 ? 'quickEdit' : '');
-			$markers = array(
-				'CSH' => $docHeaderButtons['csh'],
-				'TOP_FUNCTION_MENU' => $this->topFuncMenu . $this->editSelect,
-				'LANGSELECTOR' => $this->languageMenu,
-				'CONTENT' => $body
-			);
+			$this->markers['CSH'] = $docHeaderButtons['csh'];
+			$this->markers['TOP_FUNCTION_MENU'] = $this->topFuncMenu . $this->editSelect;
+			$this->markers['LANGSELECTOR'] = $this->languageMenu;
+			$this->markers['CONTENT'] = $body;
 			// Build the <body> for the module
-			$this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
+			$this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $this->markers);
 			// Renders the module page
 			$this->content = $this->doc->render($GLOBALS['LANG']->getLL('title'), $this->content);
 		} else {
@@ -607,13 +525,11 @@ class PageLayoutController {
 				'history_record' => '',
 				'edit_language' => ''
 			);
-			$markers = array(
-				'CSH' => BackendUtility::cshItem($this->descrTable, '', $GLOBALS['BACK_PATH'], '', TRUE),
-				'TOP_FUNCTION_MENU' => '',
-				'LANGSELECTOR' => '',
-				'CONTENT' => $body
-			);
-			$this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
+			$this->markers['CSH'] = BackendUtility::cshItem($this->descrTable, '', $GLOBALS['BACK_PATH'], '', TRUE);
+			$this->markers['TOP_FUNCTION_MENU'] = '';
+			$this->markers['LANGSELECTOR'] = '';
+			$this->markers['CONTENT'] = $body;
+			$this->content .= $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $this->markers);
 			// Renders the module page
 			$this->content = $this->doc->render($GLOBALS['LANG']->getLL('title'), $this->content);
 		}
@@ -623,7 +539,6 @@ class PageLayoutController {
 	 * Rendering the quick-edit view.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function renderQuickEdit() {
 		// Alternative template
@@ -758,7 +673,7 @@ class PageLayoutController {
 			reset($trData->regTableItems_data);
 			$rec = current($trData->regTableItems_data);
 			if ($uidVal == 'new') {
-				$new_unique_uid = uniqid('NEW');
+				$new_unique_uid = uniqid('NEW', TRUE);
 				$rec['uid'] = $new_unique_uid;
 				$rec['pid'] = (int)$ex_pid ?: $this->id;
 				$recordAccess = TRUE;
@@ -820,13 +735,36 @@ class PageLayoutController {
 		}
 		// Bottom controls (function menus):
 		$q_count = $this->getNumberOfHiddenElements();
-		$h_func_b = BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') . '<label for="checkTt_content_showHidden">' . (!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE', TRUE)) : $GLOBALS['LANG']->getLL('hiddenCE', TRUE) . ' (' . $q_count . ')') . '</label>';
-		$h_func_b .= '<br />' . BackendUtility::getFuncCheck($this->id, 'SET[showPalettes]', $this->MOD_SETTINGS['showPalettes'], 'db_layout.php', '', 'id="checkShowPalettes"') . '<label for="checkShowPalettes">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPalettes', TRUE) . '</label>';
+
+		$h_func_b = '<div class="checkbox">' .
+			'<label for="checkTt_content_showHidden">' .
+			BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') .
+			(!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE', TRUE)) : $GLOBALS['LANG']->getLL('hiddenCE', TRUE) . ' (' . $q_count . ')') .
+			'</label>' .
+			'</div>';
+
+		$h_func_b .= '<div class="checkbox">' .
+			'<label for="checkShowPalettes">' .
+			BackendUtility::getFuncCheck($this->id, 'SET[showPalettes]', $this->MOD_SETTINGS['showPalettes'], 'db_layout.php', '', 'id="checkShowPalettes"') .
+			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPalettes', TRUE) .
+			'</label>' .
+			'</div>';
+
 		if (ExtensionManagementUtility::isLoaded('context_help')) {
-			$h_func_b .= '<br />' . BackendUtility::getFuncCheck($this->id, 'SET[showDescriptions]', $this->MOD_SETTINGS['showDescriptions'], 'db_layout.php', '', 'id="checkShowDescriptions"') . '<label for="checkShowDescriptions">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showDescriptions', TRUE) . '</label>';
+			$h_func_b .= '<div class="checkbox">' .
+				'<label for="checkShowDescriptions">' .
+				BackendUtility::getFuncCheck($this->id, 'SET[showDescriptions]', $this->MOD_SETTINGS['showDescriptions'], 'db_layout.php', '', 'id="checkShowDescriptions"') .
+				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showDescriptions', TRUE) .
+				'</label>' .
+				'</div>';
 		}
 		if ($GLOBALS['BE_USER']->isRTE()) {
-			$h_func_b .= '<br />' . BackendUtility::getFuncCheck($this->id, 'SET[disableRTE]', $this->MOD_SETTINGS['disableRTE'], 'db_layout.php', '', 'id="checkDisableRTE"') . '<label for="checkDisableRTE">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.disableRTE', TRUE) . '</label>';
+			$h_func_b .= '<div class="checkbox">' .
+				'<label for="checkDisableRTE">' .
+				BackendUtility::getFuncCheck($this->id, 'SET[disableRTE]', $this->MOD_SETTINGS['disableRTE'], 'db_layout.php', '', 'id="checkDisableRTE"') .
+				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.disableRTE', TRUE) .
+				'</label>' .
+				'</div>';
 		}
 		// Add the function menus to bottom:
 		$content .= $this->doc->section('', $h_func_b, 0, 0);
@@ -859,7 +797,6 @@ class PageLayoutController {
 	 * Rendering all other listings than QuickEdit
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function renderListContent() {
 		// Initialize list object (see "class.db_layout.inc"):
@@ -897,7 +834,14 @@ class PageLayoutController {
 		foreach ($dblist->activeTables as $table => $value) {
 			if (!isset($dblist->externalTables[$table])) {
 				$q_count = $this->getNumberOfHiddenElements();
-				$h_func_b = BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') . '<label for="checkTt_content_showHidden">' . (!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE')) : $GLOBALS['LANG']->getLL('hiddenCE') . ' (' . $q_count . ')') . '</label>';
+
+				$h_func_b = '<div class="checkbox">' .
+					'<label for="checkTt_content_showHidden">' .
+					BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') .
+					(!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE')) : $GLOBALS['LANG']->getLL('hiddenCE') . ' (' . $q_count . ')') .
+					'</label>' .
+					'</div>';
+
 				// Boolean: Display up/down arrows and edit icons for tt_content records
 				$dblist->tt_contentConfig['showCommands'] = 1;
 				// Boolean: Display info-marks or not
@@ -992,8 +936,8 @@ class PageLayoutController {
 		}
 		// Making search form:
 		if (!$this->modTSconfig['properties']['disableSearchBox'] && count($tableOutput)) {
-			$sectionTitle = BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_searchbox', $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE));
-			$content .= $this->doc->section($sectionTitle, $dblist->getSearchBox(0), FALSE, TRUE, FALSE, TRUE);
+			$this->markers['BUTTONLIST_ADDITIONAL'] = '<a href="#" onclick="toggleSearchToolbox(); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon', TRUE) . '">'.\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-toolbar-menu-search').'</a>';
+			$this->markers['SEARCHBOX'] = $dblist->getSearchBox(0);
 		}
 		// Additional footer content
 		$footerContentHook = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/db_layout.php']['drawFooterHook'];
@@ -1010,7 +954,6 @@ class PageLayoutController {
 	 * Print accumulated content of module
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -1172,7 +1115,6 @@ class PageLayoutController {
 	 * on the current page (for the current sys_language)
 	 *
 	 * @return int
-	 * @todo Define visibility
 	 */
 	public function getNumberOfHiddenElements() {
 		return $GLOBALS['TYPO3_DB']->exec_SELECTcountRows(
@@ -1188,7 +1130,6 @@ class PageLayoutController {
 	 *
 	 * @param array $params Parameters array, merged with global GET vars.
 	 * @return string URL
-	 * @todo Define visibility
 	 */
 	public function local_linkThisScript($params) {
 		$params['popView'] = '';
@@ -1201,7 +1142,6 @@ class PageLayoutController {
 	 *
 	 * @param integer $id Page id: If zero, the query will select all sys_language records from root level which are NOT hidden. If set to another value, the query will select all sys_language records that has a pages_language_overlay record on that page (and is not hidden, unless you are admin user)
 	 * @return string Return query string.
-	 * @todo Define visibility
 	 */
 	public function exec_languageQuery($id) {
 		if ($id) {

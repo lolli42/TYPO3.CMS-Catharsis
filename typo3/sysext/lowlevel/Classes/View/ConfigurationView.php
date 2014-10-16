@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Lowlevel\View;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /**
  * Script class for the Config module
@@ -23,53 +24,46 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ConfigurationView {
+	/**
+	 * @var \TYPO3\CMS\Fluid\View\StandaloneView
+	 */
+	protected $view;
 
 	/**
-	 * @todo Define visibility
+	 * @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue
 	 */
+	protected $flashMessageQueue;
+
 	public $MCONF = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $include_once = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:lowlevel/config/locallang.xlf');
 		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], 1);
+		$this->view = GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$this->view->getRequest()->setControllerExtensionName('lowlevel');
 	}
 
 	/**
 	 * Initialization
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		global $BACK_PATH;
@@ -85,7 +79,6 @@ class ConfigurationView {
 	 * Menu Configuration
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function menuConfig() {
 		global $TYPO3_CONF_VARS;
@@ -95,16 +88,16 @@ class ConfigurationView {
 		// Values NOT in this array will not be saved in the settings-array for the module.
 		$this->MOD_MENU = array(
 			'function' => array(
-				0 => $GLOBALS['LANG']->getLL('typo3ConfVars', TRUE),
-				1 => $GLOBALS['LANG']->getLL('tca', TRUE),
-				2 => $GLOBALS['LANG']->getLL('tcaDescr', TRUE),
-				3 => $GLOBALS['LANG']->getLL('loadedExt', TRUE),
-				4 => $GLOBALS['LANG']->getLL('t3services', TRUE),
-				5 => $GLOBALS['LANG']->getLL('tbemodules', TRUE),
-				6 => $GLOBALS['LANG']->getLL('tbemodulesext', TRUE),
-				7 => $GLOBALS['LANG']->getLL('tbeStyles', TRUE),
-				8 => $GLOBALS['LANG']->getLL('beUser', TRUE),
-				9 => $GLOBALS['LANG']->getLL('usersettings', TRUE)
+				0 => LocalizationUtility::translate('typo3ConfVars', 'lowlevel'),
+				1 => LocalizationUtility::translate('tca', 'lowlevel'),
+				2 => LocalizationUtility::translate('tcaDescr', 'lowlevel'),
+				3 => LocalizationUtility::translate('loadedExt', 'lowlevel'),
+				4 => LocalizationUtility::translate('t3services', 'lowlevel'),
+				5 => LocalizationUtility::translate('tbemodules', 'lowlevel'),
+				6 => LocalizationUtility::translate('tbemodulesext', 'lowlevel'),
+				7 => LocalizationUtility::translate('tbeStyles', 'lowlevel'),
+				8 => LocalizationUtility::translate('beUser', 'lowlevel'),
+				9 => LocalizationUtility::translate('usersettings', 'lowlevel')
 			),
 			'regexsearch' => '',
 			'fixedLgd' => ''
@@ -117,23 +110,19 @@ class ConfigurationView {
 	 * [Describe function...]
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		$arrayBrowser = GeneralUtility::makeInstance('TYPO3\\CMS\\Lowlevel\\Utility\\ArrayBrowser');
 		$label = $this->MOD_MENU['function'][$this->MOD_SETTINGS['function']];
 		$search_field = GeneralUtility::_GP('search_field');
-		$this->content = $this->doc->header($GLOBALS['LANG']->getLL('configuration', TRUE));
-		$this->content .= '<h2>' . $label . '</h2>';
 
-		$this->content .= '<div id="lowlevel-config">
-						<label for="search_field">' . $GLOBALS['LANG']->getLL('enterSearchPhrase', TRUE) . '</label>
-						<input type="text" id="search_field" name="search_field" value="' . htmlspecialchars($search_field) . '"' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . ' />
-						<input type="submit" name="search" id="search" value="' . $GLOBALS['LANG']->getLL('search', TRUE) . '" />';
-		$this->content .= BackendUtility::getFuncCheck(0, 'SET[regexsearch]', $this->MOD_SETTINGS['regexsearch'], '', '', 'id="checkRegexsearch"') . '<label for="checkRegexsearch">' . $GLOBALS['LANG']->getLL('useRegExp', TRUE) . '</label>';
-		$this->content .= BackendUtility::getFuncCheck(0, 'SET[fixedLgd]', $this->MOD_SETTINGS['fixedLgd'], '', '', 'id="checkFixedLgd"') . '<label for="checkFixedLgd">' . $GLOBALS['LANG']->getLL('cropLines', TRUE) . '</label>
-						</div>';
-		$this->content .= $this->doc->spacer(5);
+		$templatePathAndFilename = GeneralUtility::getFileAbsFileName('EXT:lowlevel/Resources/Private/Templates/Backend/Configuration.html');
+		$this->view->setTemplatePathAndFilename($templatePathAndFilename);
+		$this->view->assign('label', $label);
+		$this->view->assign('search_field', $search_field);
+		$this->view->assign('checkbox_checkRegexsearch', BackendUtility::getFuncCheck(0, 'SET[regexsearch]', $this->MOD_SETTINGS['regexsearch'], '', '', 'id="checkRegexsearch"'));
+		$this->view->assign('checkbox_checkFixedLgd', BackendUtility::getFuncCheck(0, 'SET[fixedLgd]', $this->MOD_SETTINGS['fixedLgd'], '', '', 'id="checkFixedLgd"'));
+
 		switch ($this->MOD_SETTINGS['function']) {
 			case 0:
 				$theVar = $GLOBALS['TYPO3_CONF_VARS'];
@@ -213,9 +202,10 @@ class ConfigurationView {
 			$theVar['SYS']['encryptionKey'] = '***** (length: ' . strlen($GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']) . ' characters)';
 		}
 		$tree = $arrayBrowser->tree($theVar, '', '');
-		$this->content .= $this->doc->sectionEnd();
+		$this->view->assign('tree', $tree);
 		// Variable name:
 		if (GeneralUtility::_GP('varname')) {
+			$this->view->assign('varname', TRUE);
 			$line = GeneralUtility::_GP('_') ? GeneralUtility::_GP('_') : GeneralUtility::_GP('varname');
 			// Write the line to extTables.php
 			if (GeneralUtility::_GP('writetoexttables')) {
@@ -239,7 +229,7 @@ class ConfigurationView {
 						'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 						'',
 						sprintf(
-							$GLOBALS['LANG']->getLL('writeMessage', TRUE),
+							LocalizationUtility::translate('writeMessage', 'lowlevel'),
 							TYPO3_extTableDef_script,
 							'<br />',
 							'<strong>' . nl2br(htmlspecialchars($changedLine)) . '</strong>'
@@ -251,30 +241,31 @@ class ConfigurationView {
 					$flashMessage = GeneralUtility::makeInstance(
 						'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 						'',
-						sprintf($GLOBALS['LANG']->getLL('writeMessageFailed', TRUE), TYPO3_extTableDef_script),
+						sprintf(LocalizationUtility::translate('writeMessageFailed', 'lowlevel'), TYPO3_extTableDef_script),
 						\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
 					);
 				}
-				$this->content .= $flashMessage->render();
+				$this->getFlashMessageQueue()->enqueue($flashMessage);
 			}
-			$this->content .= '<div id="lowlevel-config-var">
-				<strong>' . $GLOBALS['LANG']->getLL('variable', TRUE) . '</strong><br />
-				<input type="text" name="_" value="' . trim(htmlspecialchars($line)) . '" size="120" /><br/>';
+
+			$this->view->assign('line', trim($line));
+
 			if (TYPO3_extTableDef_script !== '' && ($this->MOD_SETTINGS['function'] === '1' || $this->MOD_SETTINGS['function'] === '4')) {
 				// write only for $TCA and TBE_STYLES if  TYPO3_extTableDef_script is defined
-				$this->content .= '<br /><input type="submit" name="writetoexttables" value="' . $GLOBALS['LANG']->getLL('writeValue', TRUE) . '" /></div>';
+				$this->view->assign('showSaveButton', TRUE);
 			} else {
-				$this->content .= $GLOBALS['LANG']->getLL('copyPaste', TRUE) . LF . '</div>';
+				$this->view->assign('showSaveButton', FALSE);
 			}
+		} else {
+			$this->view->assign('varname', FALSE);
 		}
-		$this->content .= '<div class="nowrap">' . $tree . '</div>';
 
 		// Setting up the buttons and markers for docheader
 		$docHeaderButtons = $this->getButtons();
 		$markers = array(
 			'CSH' => $docHeaderButtons['csh'],
 			'FUNC_MENU' => $this->getFuncMenu(),
-			'CONTENT' => $this->content
+			'CONTENT' => $this->view->render(),
 		);
 		// Build the <body> for the module
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
@@ -286,7 +277,6 @@ class ConfigurationView {
 	 * Print output to browser
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -319,4 +309,16 @@ class ConfigurationView {
 		return $funcMenu;
 	}
 
+	/**
+	 * @return \TYPO3\CMS\Core\Messaging\FlashMessageQueue
+	 */
+	protected function getFlashMessageQueue() {
+		if (!$this->flashMessageQueue instanceof \TYPO3\CMS\Core\Messaging\FlashMessageQueue) {
+			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$this->flashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+		}
+
+		return $this->flashMessageQueue;
+	}
 }

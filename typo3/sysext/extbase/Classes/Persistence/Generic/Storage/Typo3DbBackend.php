@@ -184,6 +184,15 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 		unset($fieldValues['uid_local']);
 		unset($fieldValues['uid_foreign']);
 
+		if (!empty($fieldValues['tablenames'])) {
+			$where['tablenames'] = $fieldValues['tablenames'];
+			unset($fieldValues['tablenames']);
+		}
+		if (!empty($fieldValues['fieldname'])) {
+			$where['fieldname'] = $fieldValues['fieldname'];
+			unset($fieldValues['fieldname']);
+		}
+
 		$updateSuccessful = $this->databaseHandle->exec_UPDATEquery(
 			$tableName,
 			$this->resolveWhereStatement($where, $tableName),
@@ -303,7 +312,7 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 		return array(
 			'selectFields' => implode(' ', $statementParts['keywords']) . ' ' . implode(',', $statementParts['fields']),
 			'fromTable'    => implode(' ', $statementParts['tables']) . ' ' . implode(' ', $statementParts['unions']),
-			'whereClause'  => (!empty($statementParts['where']) ? implode('', $statementParts['where']) : '1')
+			'whereClause'  => (!empty($statementParts['where']) ? implode('', $statementParts['where']) : '1=1')
 				. (!empty($statementParts['additionalWhereClause'])
 					? ' AND ' . implode(' AND ', $statementParts['additionalWhereClause'])
 					: ''
@@ -722,6 +731,26 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 			$pageRepository->versioningWorkspaceId = $workspaceUid;
 		}
 
+		// Fetches the move-placeholder in case it is supported
+		// by the table and if there's only one row in the result set
+		// (applying this to all rows does not work, since the sorting
+		// order would be destroyed and possible limits not met anymore)
+		if (!empty($pageRepository->versioningWorkspaceId)
+			&& !empty($GLOBALS['TCA'][$tableName]['ctrl']['versioningWS'])
+			&& $GLOBALS['TCA'][$tableName]['ctrl']['versioningWS'] >= 2
+			&& count($rows) === 1
+		) {
+			$movePlaceholder = $this->databaseHandle->exec_SELECTgetSingleRow(
+				$tableName . '.*',
+				$tableName,
+				't3ver_state=3 AND t3ver_wsid=' . $pageRepository->versioningWorkspaceId
+					. ' AND t3ver_move_id=' . $rows[0]['uid']
+			);
+			if (!empty($movePlaceholder)) {
+				$rows = array($movePlaceholder);
+			}
+		}
+
 		$overlaidRows = array();
 		foreach ($rows as $row) {
 			// If current row is a translation select its parent
@@ -742,9 +771,6 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 				}
 			}
 			$pageRepository->versionOL($tableName, $row, TRUE);
-			if ($pageRepository->versioningPreview && isset($row['_ORIG_uid'])) {
-				$row['uid'] = $row['_ORIG_uid'];
-			}
 			if ($tableName == 'pages') {
 				$row = $pageRepository->getPageOverlay($row, $querySettings->getLanguageUid());
 			} elseif (isset($GLOBALS['TCA'][$tableName]['ctrl']['languageField'])

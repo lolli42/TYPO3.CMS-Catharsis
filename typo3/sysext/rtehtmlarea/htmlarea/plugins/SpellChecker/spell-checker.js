@@ -111,7 +111,7 @@ HTMLArea.SpellChecker = Ext.extend(HTMLArea.Plugin, {
 			bodyCssClass: 'spell-check',
 			border: false,
 			width: dimensions.width,
-			height: Ext.isIE ? dimensions.height - 50 : 'auto',
+			height: dimensions.height - 50,
 			iconCls: this.getButton(buttonId).iconCls,
 			listeners: {
 				afterrender: {
@@ -147,7 +147,7 @@ HTMLArea.SpellChecker = Ext.extend(HTMLArea.Plugin, {
 							xtype: 'hidden',
 							itemId: 'dictionary',
 							name: 'dictionary',
-							value: this.defaultDictionary ? this.defaultDictionary : this.contentISOLanguage
+							value: this.defaultDictionary ? this.defaultDictionary : this.contentISOLanguage.toLowerCase()
 						},{
 							xtype: 'hidden',
 							name: 'pspell_charset',
@@ -288,7 +288,9 @@ HTMLArea.SpellChecker = Ext.extend(HTMLArea.Plugin, {
 									fn: this.onSuggestionSelect,
 									scope: this
 								}
-							}
+							},
+							x: 7,
+							width: 160
 						}, this.configDefaults['combo'])
 					]
 				},{
@@ -318,7 +320,9 @@ HTMLArea.SpellChecker = Ext.extend(HTMLArea.Plugin, {
 									fn: this.onDictionarySelect,
 									scope: this
 								}
-							}
+							},
+							x: 7,
+							width: 160
 						}, this.configDefaults['combo']),
 						{
 							itemId: 'recheck',

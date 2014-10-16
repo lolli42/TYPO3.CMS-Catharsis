@@ -31,9 +31,6 @@ use TYPO3\CMS\Frontend\Imaging\GifBuilder;
  */
 class ContentObjectRenderer {
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $align = array(
 		'center',
 		'right',
@@ -44,7 +41,6 @@ class ContentObjectRenderer {
 	 * stdWrap functions in their correct order
 	 *
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public $stdWrapOrder = array(
 		'stdWrapPreProcess' => 'hook',
@@ -264,7 +260,6 @@ class ContentObjectRenderer {
 	 * Holds ImageMagick parameters and extensions used for compression
 	 *
 	 * @see IMGTEXT()
-	 * @todo Define visibility
 	 */
 	public $image_compression = array(
 		10 => array(
@@ -361,7 +356,6 @@ class ContentObjectRenderer {
 	 * ImageMagick parameters for image effects
 	 *
 	 * @see IMGTEXT()
-	 * @todo Define visibility
 	 */
 	public $image_effects = array(
 		1 => '-rotate 90',
@@ -382,117 +376,62 @@ class ContentObjectRenderer {
 	 * The function stdWrap has TypoScript properties that fetch field-data from this array.
 	 *
 	 * @see init()
-	 * @todo Define visibility
 	 */
 	public $data = array();
 
 	protected $table = '';
 
 	// Used for backup...
-	/**
-	 * @todo Define visibility
-	 */
 	public $oldData = array();
 
 	// If this is set with an array before stdWrap, it's used instead of $this->data in the data-property in stdWrap
-	/**
-	 * @todo Define visibility
-	 */
 	public $alternativeData = '';
 
 	// Used by the parseFunc function and is loaded with tag-parameters when parsing tags.
-	/**
-	 * @todo Define visibility
-	 */
 	public $parameters = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $currentValKey = 'currentValue_kidjls9dksoje';
 
 	// This is set to the [table]:[uid] of the record delivered in the $data-array, if the cObjects CONTENT or RECORD is in operation.
 	// Note that $GLOBALS['TSFE']->currentRecord is set to an equal value but always indicating the latest record rendered.
-	/**
-	 * @todo Define visibility
-	 */
 	public $currentRecord = '';
 
 	// Set in cObj->RECORDS and cObj->CONTENT to the current number of records selected in a query.
-	/**
-	 * @todo Define visibility
-	 */
 	public $currentRecordTotal = 0;
 
 	// Incremented in cObj->RECORDS and cObj->CONTENT before each record rendering.
-	/**
-	 * @todo Define visibility
-	 */
 	public $currentRecordNumber = 0;
 
 	// Incremented in parent cObj->RECORDS and cObj->CONTENT before each record rendering.
-	/**
-	 * @todo Define visibility
-	 */
 	public $parentRecordNumber = 0;
 
 	// If the ContentObjectRender was started from CONTENT, RECORD or SEARCHRESULT cObject's this array has two keys, 'data' and 'currentRecord' which indicates the record and data for the parent cObj.
-	/**
-	 * @todo Define visibility
-	 */
 	public $parentRecord = array();
 
 	// This may be set as a reference to the calling object of eg. cObjGetSingle. Anyway, just use it as you like. It's used in productsLib.inc for example.
-	/**
-	 * @todo Define visibility
-	 */
 	public $regObj;
 
 	// internal
 	// Is set to 1 if the instance of this cObj is executed from a *_INT plugin (see pagegen, bottom of document)
-	/**
-	 * @todo Define visibility
-	 */
 	public $INT_include = 0;
 
 	// This is used by checkPid, that checks if pages are accessible. The $checkPid_cache['page_uid'] is set TRUE or FALSE upon this check featuring a caching function for the next request.
-	/**
-	 * @todo Define visibility
-	 */
 	public $checkPid_cache = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $checkPid_badDoktypeList = '255';
 
 	// This will be set by typoLink() to the url of the most recent link created.
-	/**
-	 * @todo Define visibility
-	 */
 	public $lastTypoLinkUrl = '';
 
 	// DO. link target.
-	/**
-	 * @todo Define visibility
-	 */
 	public $lastTypoLinkTarget = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $lastTypoLinkLD = array();
 
 	// Caching substituteMarkerArrayCached function
-	/**
-	 * @todo Define visibility
-	 */
 	public $substMarkerCache = array();
 
 	// array that registers rendered content elements (or any table) to make sure they are not rendered recursively!
-	/**
-	 * @todo Define visibility
-	 */
 	public $recordRegister = array();
 
 	// Containing hooks for userdefined cObjects
@@ -502,9 +441,6 @@ class ContentObjectRenderer {
 	 */
 	protected $cObjHookObjectsRegistry = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $cObjHookObjectsArr = array();
 
 	// Containing hook objects for stdWrap
@@ -560,7 +496,6 @@ class ContentObjectRenderer {
 	 * @param array $data The record data that is rendered.
 	 * @param string $table The table that the data record is from.
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function start($data, $table = '') {
 		global $TYPO3_CONF_VARS;
@@ -636,7 +571,6 @@ class ContentObjectRenderer {
 	 * @param string $currentRecord This is set to the [table]:[uid] of the record delivered in the $data-array, if the cObjects CONTENT or RECORD is in operation. Note that $GLOBALS['TSFE']->currentRecord is set to an equal value but always indicating the latest record rendered.
 	 * @return void
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function setParent($data, $currentRecord) {
 		$this->parentRecord = array(
@@ -657,7 +591,6 @@ class ContentObjectRenderer {
 	 * The TSref will tell if functions are setting this value before calling some other object so that you know if it holds any special information.
 	 *
 	 * @return mixed The "current" value
-	 * @todo Define visibility
 	 */
 	public function getCurrentVal() {
 		return $this->data[$this->currentValKey];
@@ -669,7 +602,6 @@ class ContentObjectRenderer {
 	 * @param mixed $value The variable that you want to set as "current
 	 * @return void
 	 * @see getCurrentVal()
-	 * @todo Define visibility
 	 */
 	public function setCurrentVal($value) {
 		$this->data[$this->currentValKey] = $value;
@@ -683,7 +615,6 @@ class ContentObjectRenderer {
 	 * @param string $addKey A prefix for the debugging information
 	 * @return string Rendered output from the cObjects in the array.
 	 * @see cObjGetSingle()
-	 * @todo Define visibility
 	 */
 	public function cObjGet($setup, $addKey = '') {
 		if (is_array($setup)) {
@@ -708,7 +639,6 @@ class ContentObjectRenderer {
 	 * @param string $TSkey A string label used for the internal debugging tracking.
 	 * @return string cObject output
 	 * @throws \UnexpectedValueException
-	 * @todo Define visibility
 	 */
 	public function cObjGetSingle($name, $conf, $TSkey = '__') {
 		global $TYPO3_CONF_VARS;
@@ -725,11 +655,9 @@ class ContentObjectRenderer {
 				$key = trim(substr($name, 1));
 				$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
 				// $name and $conf is loaded with the referenced values.
-				$old_conf = $conf;
+				$confOverride = is_array($conf) ? $conf : array();
 				list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
-				if (is_array($old_conf) && count($old_conf)) {
-					$conf = array_replace_recursive($conf, $old_conf);
-				}
+				$conf = array_replace_recursive(is_array($conf) ? $conf : array(), $confOverride);
 				// Getting the cObject
 				$GLOBALS['TT']->incStackPointer();
 				$content .= $this->cObjGetSingle($name, $conf, $key);
@@ -804,7 +732,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function FLOWPLAYER($conf) {
 		return $this->getContentObject('FLOWPLAYER')->render($conf);
@@ -815,7 +742,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function TEXT($conf) {
 		return $this->getContentObject('TEXT')->render($conf);
@@ -826,7 +752,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function CLEARGIF($conf) {
 		return $this->getContentObject('CLEARGIF')->render($conf);
@@ -838,7 +763,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @param string $ext If "INT" then the cObject is a "COBJ_ARRAY_INT" (non-cached), otherwise just "COBJ_ARRAY" (cached)
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function COBJ_ARRAY($conf, $ext = '') {
 		if ($ext === 'INT') {
@@ -854,7 +778,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @param string $ext If "INT" then the cObject is a "USER_INT" (non-cached), otherwise just "USER" (cached)
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function USER($conf, $ext = '') {
 		if ($ext === 'INT') {
@@ -904,7 +827,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function FILE($conf) {
 		return $this->getContentObject('FILE')->render($conf);
@@ -915,7 +837,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function FILES($conf) {
 		return $this->getContentObject('FILES')->render($conf);
@@ -927,7 +848,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
 	 * @see cImage()
-	 * @todo Define visibility
 	 */
 	public function IMAGE($conf) {
 		return $this->getContentObject('IMAGE')->render($conf);
@@ -939,7 +859,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
 	 * @see getImgResource()
-	 * @todo Define visibility
 	 */
 	public function IMG_RESOURCE($conf) {
 		return $this->getContentObject('IMG_RESOURCE')->render($conf);
@@ -950,7 +869,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function IMGTEXT($conf) {
 		return $this->getContentObject('IMGTEXT')->render($conf);
@@ -961,7 +879,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function CONTENT($conf) {
 		return $this->getContentObject('CONTENT')->render($conf);
@@ -972,7 +889,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function RECORDS($conf) {
 		return $this->getContentObject('RECORDS')->render($conf);
@@ -983,7 +899,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function HMENU($conf) {
 		return $this->getContentObject('HMENU')->render($conf);
@@ -994,7 +909,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function CTABLE($conf) {
 		return $this->getContentObject('CTABLE')->render($conf);
@@ -1005,7 +919,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function OTABLE($conf) {
 		return $this->getContentObject('OTABLE')->render($conf);
@@ -1016,7 +929,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function COLUMNS($conf) {
 		return $this->getContentObject('COLUMNS')->render($conf);
@@ -1027,7 +939,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function HRULER($conf) {
 		return $this->getContentObject('HRULER')->render($conf);
@@ -1038,7 +949,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function CASEFUNC($conf) {
 		return $this->getContentObject('CASE')->render($conf);
@@ -1051,7 +961,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @param string $name If "RESTORE_REGISTER" then the cObject rendered is "RESTORE_REGISTER", otherwise "LOAD_REGISTER
 	 * @return string Empty string (the cObject only sets internal data!)
-	 * @todo Define visibility
 	 */
 	public function LOAD_REGISTER($conf, $name) {
 		if ($name === 'RESTORE_REGISTER') {
@@ -1067,7 +976,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @param array $formData Alternative formdata overriding whatever comes from TypoScript
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function FORM($conf, $formData = '') {
 		return $this->getContentObject('FORM')->render($conf, $formData);
@@ -1078,7 +986,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function SEARCHRESULT($conf) {
 		return $this->getContentObject('SEARCHRESULT')->render($conf);
@@ -1090,7 +997,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
 	 * @see substituteMarkerArrayCached()
-	 * @todo Define visibility
 	 */
 	public function TEMPLATE($conf) {
 		return $this->getContentObject('TEMPLATE')->render($conf);
@@ -1113,7 +1019,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
-	 * @todo Define visibility
 	 */
 	public function MULTIMEDIA($conf) {
 		return $this->getContentObject('MULTIMEDIA')->render($conf);
@@ -1176,7 +1081,7 @@ class ContentObjectRenderer {
 		if ($recursive === FALSE && is_string($flexData)) {
 			$flexData = GeneralUtility::xml2array($flexData, 'T3');
 		}
-		if (isset($flexData['data']['sDEF']['lDEF'])) {
+		if (is_array($flexData) && isset($flexData['data']['sDEF']['lDEF'])) {
 			$flexData = $flexData['data']['sDEF']['lDEF'];
 		}
 		if (!is_array($flexData)) {
@@ -1216,7 +1121,6 @@ class ContentObjectRenderer {
 	 * @param array $pidConf stdWrap array for the list
 	 * @return string A list of PIDs
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function getSlidePids($pidList, $pidConf) {
 		$pidList = isset($pidConf) ? trim($this->stdWrap($pidList, $pidConf)) : trim($pidList);
@@ -1248,7 +1152,6 @@ class ContentObjectRenderer {
 	 * @param string $defaultVal The current default value
 	 * @return string The default value, either from INPUT var or the current default, based on whether caching is enabled or not.
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function getFieldDefaultValue($noValueInsert, $fieldName, $defaultVal) {
 		if (!$GLOBALS['TSFE']->no_cache || !isset($_POST[$fieldName]) && !isset($_GET[$fieldName]) || $noValueInsert) {
@@ -1268,7 +1171,6 @@ class ContentObjectRenderer {
 	 * @return string <img> tag, (possibly wrapped in links and other HTML) if any image found.
 	 * @access private
 	 * @see IMAGE()
-	 * @todo Define visibility
 	 */
 	public function cImage($file, $conf) {
 		$info = $this->getImgResource($file, $conf['file.']);
@@ -1327,7 +1229,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $borderAttr The border attribute
 	 * @return string The border attribute
-	 * @todo Define visibility
 	 */
 	public function getBorderAttr($borderAttr) {
 		if (!GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $GLOBALS['TSFE']->xhtmlDoctype) && $GLOBALS['TSFE']->config['config']['doctype'] != 'html5' && !$GLOBALS['TSFE']->config['config']['disableImgBorderAttr']) {
@@ -1450,7 +1351,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties for the "imageLinkWrap" function
 	 * @return string The input string, $string, wrapped as configured.
 	 * @see cImage()
-	 * @todo Define visibility
 	 */
 	public function imageLinkWrap($string, $imageFile, $conf) {
 		$a1 = '';
@@ -1557,11 +1457,10 @@ class ContentObjectRenderer {
 	 * @param string $addParams Additional parameters (attributes). Default is empty alt and title tags.
 	 * @return string If jpg,gif,jpeg,png: returns image_tag with picture in. If html,txt: returns content string
 	 * @see FILE()
-	 * @todo Define visibility
 	 */
 	public function fileResource($fName, $addParams = 'alt="" title=""') {
 		$incFile = $GLOBALS['TSFE']->tmpl->getFileName($fName);
-		if ($incFile) {
+		if ($incFile && file_exists($incFile)) {
 			$fileinfo = GeneralUtility::split_fileref($incFile);
 			if (GeneralUtility::inList('jpg,gif,jpeg,png', $fileinfo['fileext'])) {
 				$imgFile = $incFile;
@@ -1581,7 +1480,6 @@ class ContentObjectRenderer {
 	 * @param integer $tstamp Unix timestamp (number of seconds since 1970)
 	 * @return void
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::setSysLastChanged()
-	 * @todo Define visibility
 	 */
 	public function lastChanged($tstamp) {
 		$tstamp = (int)$tstamp;
@@ -1598,7 +1496,6 @@ class ContentObjectRenderer {
 	 * @param string $wrap A string where the first two parts separated by "|" (vertical line) will be wrapped around the input string
 	 * @return string Wrapped output string
 	 * @see wrap(), cImage(), FILE()
-	 * @todo Define visibility
 	 */
 	public function linkWrap($content, $wrap) {
 		$wrapArr = explode('|', $wrap);
@@ -1618,7 +1515,6 @@ class ContentObjectRenderer {
 	 * @param boolean $longDesc If set, the longdesc attribute will be generated - must only be used for img elements!
 	 * @return string Parameter string containing alt and title parameters (if any)
 	 * @see IMGTEXT(), FILE(), FORM(), cImage(), filelink()
-	 * @todo Define visibility
 	 */
 	public function getAltParam($conf, $longDesc = TRUE) {
 		$altText = isset($conf['altText.']) ? trim($this->stdWrap($conf['altText'], $conf['altText.'])) : trim($conf['altText']);
@@ -1652,7 +1548,6 @@ class ContentObjectRenderer {
 	 * @param string $name Input string
 	 * @return string the cleaned string
 	 * @see FORM()
-	 * @todo Define visibility
 	 */
 	public function cleanFormName($name) {
 		// Turn data[x][y] into data:x:y:
@@ -1669,7 +1564,6 @@ class ContentObjectRenderer {
 	 * @param boolean $addGlobal If set, will add the global config.ATagParams to the link
 	 * @return string String containing the parameters to the A tag (if non empty, with a leading space)
 	 * @see IMGTEXT(), filelink(), makelinks(), typolink()
-	 * @todo Define visibility
 	 */
 	public function getATagParams($conf, $addGlobal = 1) {
 		$aTagParams = '';
@@ -1708,7 +1602,6 @@ class ContentObjectRenderer {
 	 * @param string $URL URL of the website
 	 * @param string $TYPE
 	 * @return string The additional tag properties
-	 * @todo Define visibility
 	 */
 	public function extLinkATagParams($URL, $TYPE) {
 		$out = '';
@@ -3513,7 +3406,6 @@ class ContentObjectRenderer {
 	 * @return integer The number of rows found by the select (FALSE on error)
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function numRows($conf) {
 		$result = FALSE;
@@ -3536,7 +3428,6 @@ class ContentObjectRenderer {
 	 * @param string $listNum Index-number. You can place the word "last" in it and it will be substituted with the pointer to the last value. You can use math operators like "+-/*" (passed to calc())
 	 * @param string $char Either a string used to explode the content string or an integer value which will then be changed into a character, eg. "10" for a linebreak char.
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function listNum($content, $listNum, $char) {
 		$char = $char ?: ',';
@@ -3560,7 +3451,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties defining what to compare
 	 * @return boolean
 	 * @see HMENU(), CASEFUNC(), IMAGE(), COLUMN(), stdWrap(), _parseFunc()
-	 * @todo Define visibility
 	 */
 	public function checkIf($conf) {
 		if (!is_array($conf)) {
@@ -3635,7 +3525,6 @@ class ContentObjectRenderer {
 	 * @return string Comma list of files.
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function filelist($data) {
 		$data = trim($data);
@@ -3724,7 +3613,6 @@ class ContentObjectRenderer {
 	 * @return string The directory path if it existed as was valid to access.
 	 * @access private
 	 * @see filelist()
-	 * @todo Define visibility
 	 */
 	public function clean_directory($theDir) {
 		// proceeds if no '//', '..' or '\' is in the $theFile
@@ -3746,7 +3634,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties for the parser. See link.
 	 * @return string Return value.
 	 * @see stdWrap(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLparserConfig(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLcleaner()
-	 * @todo Define visibility
 	 */
 	public function HTMLparser_TSbridge($theValue, $conf) {
 		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
@@ -3761,7 +3648,6 @@ class ContentObjectRenderer {
 	 * @param string $wrap The wrap string, eg. "<strong></strong>" or more likely here '<a href="index.php?id={TSFE:id}"> | </a>' which will wrap the input string in a <a> tag linking to the current page.
 	 * @return string Output string wrapped in the wrapping value.
 	 * @see insertData(), stdWrap()
-	 * @todo Define visibility
 	 */
 	public function dataWrap($content, $wrap) {
 		return $this->wrap($content, $this->insertData($wrap));
@@ -3774,7 +3660,6 @@ class ContentObjectRenderer {
 	 * @param string $str Input value
 	 * @return string Processed input value
 	 * @see getData(), stdWrap(), dataWrap()
-	 * @todo Define visibility
 	 */
 	public function insertData($str) {
 		$inside = 0;
@@ -3805,7 +3690,6 @@ class ContentObjectRenderer {
 	 * @param string $content The content to wrap the comment around.
 	 * @return string Processed input value
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function prefixComment($str, $conf, $content) {
 		$parts = explode('|', $str);
@@ -3821,7 +3705,6 @@ class ContentObjectRenderer {
 	 * @return string The processed input value.
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function substring($content, $options) {
 		$options = GeneralUtility::intExplode(',', $options . ',');
@@ -3840,7 +3723,6 @@ class ContentObjectRenderer {
 	 * @return string The processed input value.
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function crop($content, $options) {
 		$options = explode('|', $options);
@@ -3880,7 +3762,6 @@ class ContentObjectRenderer {
 	 * @return string The processed input value.
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function cropHTML($content, $options) {
 		$options = explode('|', $options);
@@ -4019,7 +3900,6 @@ class ContentObjectRenderer {
 	 * @return string Return string
 	 * @author Thomas Bley (all from moregroupware cvs code / readmessage.inc.php, published under gpl by Thomas)
 	 * @author Kasper Skårhøj
-	 * @todo Define visibility
 	 */
 	public function removeBadHTML($text, $conf) {
 		// Copyright 2002-2003 Thomas Bley
@@ -4059,7 +3939,6 @@ class ContentObjectRenderer {
 	 * @return string The processed output value
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function textStyle($theValue, $conf) {
 		$conf['face.'][1] = 'Times New Roman';
@@ -4139,7 +4018,6 @@ class ContentObjectRenderer {
 	 * @return string The processed output value
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function tableStyle($theValue, $conf) {
 		$conf['color.'][240] = 'black';
@@ -4182,7 +4060,6 @@ class ContentObjectRenderer {
 	 * @param array $conf The TypoScript configuration properties
 	 * @return string The modified string
 	 * @todo Make it XHTML compatible. Will not present "/>" endings of tags right now. Further getting the tagname might fail if it is not separated by a normal space from the attributes.
-	 * @todo Define visibility
 	 */
 	public function addParams($content, $conf) {
 		// For XHTML compliance.
@@ -4229,7 +4106,6 @@ class ContentObjectRenderer {
 	 * @return string The link to the file possibly with icons, thumbnails, size in bytes shown etc.
 	 * @access private
 	 * @see stdWrap()
-	 * @todo Define visibility
 	 */
 	public function filelink($theValue, $conf) {
 		$conf['path'] = isset($conf['path.']) ? $this->stdWrap($conf['path'], $conf['path.']) : $conf['path'];
@@ -4361,7 +4237,6 @@ class ContentObjectRenderer {
 	 * @return string URL parameters like "&juSecure=1.....
 	 * @access private
 	 * @see filelink()
-	 * @todo Define visibility
 	 */
 	public function locDataJU($jumpUrl, $conf) {
 		$fI = pathinfo($jumpUrl);
@@ -4395,7 +4270,6 @@ class ContentObjectRenderer {
 	 * @param string $val The string to evaluate. Example: "3+4*10/5" will generate "35". Only integer numbers can be used.
 	 * @return integer The result (might be a float if you did a division of the numbers).
 	 * @see \TYPO3\CMS\Core\Utility\MathUtility::calculateWithPriorityToAdditionAndSubtraction()
-	 * @todo Define visibility
 	 */
 	public function calc($val) {
 		$parts = GeneralUtility::splitCalc($val, '+-*/');
@@ -4434,7 +4308,6 @@ class ContentObjectRenderer {
 	 * @param string $string The string with parts in (where each part is evaluated by ->calc())
 	 * @return array And array with evaluated values.
 	 * @see calc(), \TYPO3\CMS\Frontend\ContentObject\Menu\GraphicalMenuContentObject::makeGifs()
-	 * @todo Define visibility
 	 */
 	public function calcIntExplode($delim, $string) {
 		$temp = explode($delim, $string);
@@ -4454,7 +4327,6 @@ class ContentObjectRenderer {
 	 * @return string Compiled result
 	 * @access private
 	 * @see stdWrap(), t3lib_menu::procesItemStates()
-	 * @todo Define visibility
 	 */
 	public function splitObj($value, $conf) {
 		$conf['token'] = isset($conf['token.']) ? $this->stdWrap($conf['token'], $conf['token.']) : $conf['token'];
@@ -4627,7 +4499,6 @@ class ContentObjectRenderer {
 	 * @param float $content Value to process
 	 * @param array $conf TypoScript Configuration for numberFormat
 	 * @return string The formated number
-	 * @todo Define visibility
 	 */
 	public function numberFormat($content, $conf) {
 		$decimals = isset($conf['decimals.']) ? $this->stdWrap($conf['decimals'], $conf['decimals.']) : $conf['decimals'];
@@ -4655,7 +4526,6 @@ class ContentObjectRenderer {
 	 * @param string $ref Reference to get configuration from. Eg. "< lib.parseFunc" which means that the configuration of the object path "lib.parseFunc" will be retrieved and MERGED with what is in $conf!
 	 * @return string The processed value
 	 * @see _parseFunc()
-	 * @todo Define visibility
 	 */
 	public function parseFunc($theValue, $conf, $ref = '') {
 		// Fetch / merge reference, if any
@@ -4757,7 +4627,6 @@ class ContentObjectRenderer {
 	 * @return string The processed value
 	 * @access private
 	 * @see parseFunc()
-	 * @todo Define visibility
 	 */
 	public function _parseFunc($theValue, $conf) {
 		if (!empty($conf['if.']) && !$this->checkIf($conf['if.'])) {
@@ -4978,7 +4847,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript options
 	 * @return string The processed input value being returned; Splitted lines imploded by LF again.
 	 * @access private
-	 * @todo Define visibility
 	 */
 	public function encaps_lineSplit($theValue, $conf) {
 		$lParts = explode(LF, $theValue);
@@ -5082,7 +4950,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Configuration for makeLinks, see link
 	 * @return string The processed input string, being returned.
 	 * @see _parseFunc()
-	 * @todo Define visibility
 	 */
 	public function http_makelinks($data, $conf) {
 		$aTagParams = $this->getATagParams($conf);
@@ -5154,7 +5021,6 @@ class ContentObjectRenderer {
 	 * @param array $conf Configuration for makeLinks, see link
 	 * @return string The processed input string, being returned.
 	 * @see _parseFunc()
-	 * @todo Define visibility
 	 */
 	public function mailto_makelinks($data, $conf) {
 		// http-split
@@ -5277,6 +5143,7 @@ class ContentObjectRenderer {
 				$processingConfiguration['minHeight'] = isset($fileArray['minH.']) ? (int)$this->stdWrap($fileArray['minH'], $fileArray['minH.']) : (int)$fileArray['minH'];
 				$processingConfiguration['noScale'] = isset($fileArray['noScale.']) ? $this->stdWrap($fileArray['noScale'], $fileArray['noScale.']) : $fileArray['noScale'];
 				$processingConfiguration['additionalParameters'] = isset($fileArray['params.']) ? $this->stdWrap($fileArray['params'], $fileArray['params.']) : $fileArray['params'];
+				$processingConfiguration['frame'] = isset($fileArray['frame.']) ? (int)$this->stdWrap($fileArray['frame'], $fileArray['frame.']) : (int)$fileArray['frame'];
 				// Possibility to cancel/force profile extraction
 				// see $TYPO3_CONF_VARS['GFX']['im_stripProfileCommand']
 				if (isset($fileArray['stripProfile'])) {
@@ -5358,7 +5225,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $field The fieldname, eg. "title" or "navtitle // title" (in the latter case the value of $this->data[navtitle] is returned if not blank, otherwise $this->data[title] will be)
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function getFieldVal($field) {
 		if (!strstr($field, '//')) {
@@ -5380,7 +5246,6 @@ class ContentObjectRenderer {
 	 * @param NULL|array $fieldArray Alternative field array; If you set this to an array this variable will be used to look up values for the "field" key. Otherwise the current page record in $GLOBALS['TSFE']->page is used.
 	 * @return string The value fetched
 	 * @see getFieldVal()
-	 * @todo Define visibility
 	 */
 	public function getData($string, $fieldArray = NULL) {
 		if (!is_array($fieldArray)) {
@@ -5607,7 +5472,6 @@ class ContentObjectRenderer {
 	 * @return string The value from the field of the rootline.
 	 * @access private
 	 * @see getData()
-	 * @todo Define visibility
 	 */
 	public function rootLineValue($key, $field, $slideBack = 0, $altRootLine = '') {
 		$rootLine = is_array($altRootLine) ? $altRootLine : $GLOBALS['TSFE']->tmpl->rootLine;
@@ -5631,7 +5495,6 @@ class ContentObjectRenderer {
 	 * @param array $source Alternative array than $GLOBAL to get variables from.
 	 * @return mixed Whatever value. If none, then blank string.
 	 * @see getData()
-	 * @todo Define visibility
 	 */
 	public function getGlobal($keyString, $source = NULL) {
 		$keys = explode('|', $keyString);
@@ -5664,7 +5527,6 @@ class ContentObjectRenderer {
 	 * @return integer The processed integer key value.
 	 * @access private
 	 * @see getData()
-	 * @todo Define visibility
 	 */
 	public function getKey($key, $arr) {
 		$key = (int)$key;
@@ -5687,7 +5549,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TS-configuration array, see TSref for details
 	 * @return string String of translated values, separated by $delimiter. If no matches were found, the input value is simply returned.
 	 * @todo It would be nice it this function basically looked up any type of value, db-relations etc.
-	 * @todo Define visibility
 	 */
 	public function TCAlookup($inputValue, $conf) {
 		$table = $conf['table'];
@@ -5717,6 +5578,151 @@ class ContentObjectRenderer {
 	 * Link functions (typolink)
 	 *
 	 ***********************************************/
+
+	/**
+	 * called from the typoLink() function
+	 *
+	 * does the magic to split the full "typolink" string like "15,13 _blank myclass &more=1"
+	 * into separate parts
+	 *
+	 * @param string $linkText The string (text) to link
+	 * @param string $mixedLinkParameter destination data like "15,13 _blank myclass &more=1" used to create the link
+	 * @param array $configuration TypoScript configuration
+	 * @return array | string
+	 * @see typoLink()
+	 */
+	protected function resolveMixedLinkParameter($linkText, $mixedLinkParameter, &$configuration = array()) {
+		$linkParameter = NULL;
+
+		// Link parameter value = first part
+		$linkParameterParts = GeneralUtility::unQuoteFilenames($mixedLinkParameter, TRUE);
+
+		// Check for link-handler keyword:
+		list($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($linkParameterParts[0]), 2);
+		if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && (string)$linkHandlerValue !== '') {
+			$linkHandlerObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword]);
+			if (method_exists($linkHandlerObj, 'main')) {
+				return $linkHandlerObj->main($linkText, $configuration, $linkHandlerKeyword, $linkHandlerValue, $linkParameterParts, $this);
+			}
+		}
+
+		// Resolve FAL-api "file:UID-of-sys_file-record" and "file:combined-identifier"
+		if ($linkHandlerKeyword === 'file') {
+			try {
+				$fileOrFolderObject = $this->getResourceFactory()->retrieveFileOrFolderObject($linkHandlerValue);
+				// Link to a folder or file
+				if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\ResourceInterface) {
+					$linkParameter = $fileOrFolderObject->getPublicUrl();
+				} else {
+					$linkParameter = NULL;
+				}
+			} catch (\RuntimeException $e) {
+				// Element wasn't found
+				$linkParameter = NULL;
+			} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
+				// Resource was not found
+				return $linkText;
+			}
+		} else {
+			$linkParameter = trim($linkParameterParts[0]);
+		}
+
+		// Target value = second Part (overriding the default target)
+		$linkTarget = trim($linkParameterParts[1]);
+		// The '-' character means 'no target'. Necessary in order to
+		// specify a class as third parameter without setting the target!
+		if ($linkTarget == '-') {
+			$linkTarget = '';
+		}
+
+		// Link class
+		$linkClass = trim($linkParameterParts[2]);
+
+		// The '-' character means 'no class'. Necessary in order to specify a
+		// title as fourth parameter without setting the target or class!
+		if ($linkClass == '-') {
+			$linkClass = '';
+		}
+
+		// Title value
+		$forceTitle = trim($linkParameterParts[3]);
+		// The '-' character means 'no title'. Necessary in order to specify
+		// further parameters without setting the title!
+		if ($forceTitle == '-') {
+			$forceTitle = '';
+		}
+
+		// additional parameters that need to be set
+		if (isset($linkParameterParts[4]) && trim($linkParameterParts[4]) !== "") {
+			$forceParams = trim($linkParameterParts[4]);
+			// params value
+			$configuration['additionalParams'] .= $forceParams[0] == '&' ? $forceParams : '&' . $forceParams;
+		}
+
+		return array(
+			'href'   => $linkParameter,
+			'target' => $linkTarget,
+			'class'  => $linkClass,
+			'title'  => $forceTitle
+		);
+	}
+
+	/**
+	 * part of the typolink construction functionality, called by typoLink()
+	 *
+	 * tries to get the type of the link from the link parameter
+	 * could be
+	 *  - "mailto" an email address
+	 *  - "url" external URL
+	 *  - "file" a local file (checked AFTER getPublicUrl() is called)
+	 *  - "page" a page (integer or alias)
+	 *
+	 * @param string $linkParameter could be "fileadmin/myfile.jpg" or "info@typo3.org" or "13" or "http://www.typo3.org"
+	 * @return string the keyword
+	 * @see typoLink()
+	 */
+	protected function detectLinkTypeFromLinkParameter($linkParameter) {
+		// Parse URL:
+		$linkParts = parse_url($linkParameter);
+		// Detecting kind of link:
+		// If it's a mail address:
+		if (strpos($linkParameter, '@') > 0 && (!$linkParts['scheme'] || $linkParts['scheme'] == 'mailto')) {
+			return 'mailto';
+		}
+
+		$isLocalFile = 0;
+		$fileChar = intval(strpos($linkParameter, '/'));
+		$urlChar = intval(strpos($linkParameter, '.'));
+
+		// Firsts, test if $linkParameter is numeric and page with such id exists. If yes, do not attempt to link to file
+		if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($linkParameter) || count($GLOBALS['TSFE']->sys_page->getPage_noCheck($linkParameter)) == 0) {
+			// Detects if a file is found in site-root and if so it will be treated like a normal file.
+			list($rootFileDat) = explode('?', rawurldecode($linkParameter));
+			$containsSlash = (strpos($rootFileDat, '/') !== FALSE);
+			$rFD_fI = pathinfo($rootFileDat);
+			if (trim($rootFileDat) && !$containsSlash && (@is_file((PATH_site . $rootFileDat)) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
+				$isLocalFile = 1;
+			} elseif ($containsSlash) {
+				// Adding this so realurl directories are linked right (non-existing).
+				$isLocalFile = 2;
+			}
+		}
+
+		// url (external): If doubleSlash or if a '.' comes before a '/'.
+		if ($linkParts['scheme'] || $isLocalFile != 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
+			return 'url';
+
+		// file (internal)
+		} elseif ($containsSlash || $isLocalFile) {
+			return 'file';
+
+		// Integer or alias (alias is without slashes or periods or commas, that is
+		// 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
+		} else {
+			return 'page';
+		}
+	}
+
 	/**
 	 * Implements the "typolink" property of stdWrap (and others)
 	 * Basically the input string, $linktext, is (typically) wrapped in a <a>-tag linking to some page, email address, file or URL based on a parameter defined by the configuration array $conf.
@@ -5730,76 +5736,32 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript configuration (see link below)
 	 * @return string A link-wrapped string.
 	 * @see stdWrap(), \TYPO3\CMS\Frontend\Plugin\AbstractPlugin::pi_linkTP()
-	 * @todo Define visibility
 	 */
 	public function typoLink($linktxt, $conf) {
 		$LD = array();
 		$finalTagParts = array();
 		$finalTagParts['aTagParams'] = $this->getATagParams($conf);
-		$link_param = isset($conf['parameter.']) ? trim($this->stdWrap($conf['parameter'], $conf['parameter.'])) : trim($conf['parameter']);
-		$sectionMark = isset($conf['section.']) ? trim($this->stdWrap($conf['section'], $conf['section.'])) : trim($conf['section']);
-		$sectionMark = $sectionMark ? (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($sectionMark) ? '#c' : '#') . $sectionMark : '';
+		$linkParameter = isset($conf['parameter.']) ? trim($this->stdWrap($conf['parameter'], $conf['parameter.'])) : trim($conf['parameter']);
 		$initP = '?id=' . $GLOBALS['TSFE']->id . '&type=' . $GLOBALS['TSFE']->type;
 		$this->lastTypoLinkUrl = '';
 		$this->lastTypoLinkTarget = '';
-		if ($link_param) {
-			$enableLinksAcrossDomains = $GLOBALS['TSFE']->config['config']['typolinkEnableLinksAcrossDomains'];
-			$link_paramA = GeneralUtility::unQuoteFilenames($link_param, TRUE);
-			// Check for link-handler keyword:
-			list($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($link_paramA[0]), 2);
-			if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && (string)$linkHandlerValue !== '') {
-				$linkHandlerObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword]);
-				if (method_exists($linkHandlerObj, 'main')) {
-					return $linkHandlerObj->main($linktxt, $conf, $linkHandlerKeyword, $linkHandlerValue, $link_param, $this);
-				}
-			}
-			// Resolve FAL-api "file:UID-of-sys_file-record" and "file:combined-identifier"
-			if ($linkHandlerKeyword === 'file') {
-				try {
-					$fileOrFolderObject = $this->getResourceFactory()->retrieveFileOrFolderObject($linkHandlerValue);
-					// Link to a folder or file
-					if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\ResourceInterface) {
-						$link_paramA[0] = $fileOrFolderObject->getPublicUrl();
-					} else {
-						$link_paramA[0] = NULL;
-					}
-				} catch (\RuntimeException $e) {
-					// Element wasn't found
-					$link_paramA[0] = NULL;
-				} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
-					// Resource was not found
-					return $linktxt;
-				}
-			}
-			// Link parameter value
-			$link_param = trim($link_paramA[0]);
-			// Link class
-			$linkClass = trim($link_paramA[2]);
-			if ($linkClass == '-') {
-				// The '-' character means 'no class'. Necessary in order to specify a title as fourth parameter without setting the target or class!
-				$linkClass = '';
-			}
-			// Target value
-			$forceTarget = trim($link_paramA[1]);
-			if ($forceTarget == '-') {
-				// The '-' character means 'no target'. Necessary in order to specify a class as third parameter without setting the target!
-				$forceTarget = '';
-			}
-			// Title value
-			$forceTitle = trim($link_paramA[3]);
-			if ($forceTitle == '-') {
-				// The '-' character means 'no title'. Necessary in order to specify further parameters without setting the title!
-				$forceTitle = '';
-			}
-			if (isset($link_paramA[4]) && strlen(trim($link_paramA[4])) > 0) {
-				$forceParams = trim($link_paramA[4]);
-				// params value
-				$conf['additionalParams'] .= $forceParams[0] == '&' ? $forceParams : '&' . $forceParams;
-			}
+
+		$resolvedLinkParameters = $this->resolveMixedLinkParameter($linktxt, $linkParameter, $conf);
+		// check if the link handler hook has resolved the link completely already
+		if (!is_array($resolvedLinkParameters)) {
+			return $resolvedLinkParameters;
+		} else {
+			$linkParameter = $resolvedLinkParameters['href'];
+			$forceTarget = $resolvedLinkParameters['target'];
+			$linkClass = $resolvedLinkParameters['class'];
+			$forceTitle = $resolvedLinkParameters['title'];
+		}
+
+		if ($linkParameter) {
+
 			// Check, if the target is coded as a JS open window link:
 			$JSwindowParts = array();
 			$JSwindowParams = '';
-			$onClick = '';
 			if ($forceTarget && preg_match('/^([0-9]+)x([0-9]+)(:(.*)|.*)$/', $forceTarget, $JSwindowParts)) {
 				// Take all pre-configured and inserted parameters and compile parameter list, including width+height:
 				$JSwindow_tempParamsArr = GeneralUtility::trimExplode(',', strtolower($conf['JSwindow_params'] . ',' . $JSwindowParts[4]), TRUE);
@@ -5816,6 +5778,7 @@ class ContentObjectRenderer {
 				// Resetting the target since we will use onClick.
 				$forceTarget = '';
 			}
+
 			// Internal target:
 			if ($GLOBALS['TSFE']->dtdAllowsFrames) {
 				$target = isset($conf['target']) ? $conf['target'] : $GLOBALS['TSFE']->intTarget;
@@ -5825,39 +5788,26 @@ class ContentObjectRenderer {
 			if ($conf['target.']) {
 				$target = $this->stdWrap($target, $conf['target.']);
 			}
+
 			// Title tag
 			$title = $conf['title'];
 			if ($conf['title.']) {
 				$title = $this->stdWrap($title, $conf['title.']);
 			}
-			// Parse URL:
-			$pU = parse_url($link_param);
-			// Detecting kind of link:
-			// If it's a mail address:
-			if (strstr($link_param, '@') && (!$pU['scheme'] || $pU['scheme'] == 'mailto')) {
-				$link_param = preg_replace('/^mailto:/i', '', $link_param);
-				list($this->lastTypoLinkUrl, $linktxt) = $this->getMailTo($link_param, $linktxt, $initP);
-				$finalTagParts['url'] = $this->lastTypoLinkUrl;
-				$finalTagParts['TYPE'] = 'mailto';
-			} else {
-				$isLocalFile = 0;
-				$fileChar = (int)strpos($link_param, '/');
-				$urlChar = (int)strpos($link_param, '.');
-				// Firsts, test if $link_param is numeric and page with such id exists. If yes, do not attempt to link to file
-				if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($link_param) || count($GLOBALS['TSFE']->sys_page->getPage_noCheck($link_param)) == 0) {
-					// Detects if a file is found in site-root and if so it will be treated like a normal file.
-					list($rootFileDat) = explode('?', rawurldecode($link_param));
-					$containsSlash = strstr($rootFileDat, '/');
-					$rFD_fI = pathinfo($rootFileDat);
-					if (trim($rootFileDat) && !$containsSlash && (@is_file((PATH_site . $rootFileDat)) || GeneralUtility::inList('php,html,htm', strtolower($rFD_fI['extension'])))) {
-						$isLocalFile = 1;
-					} elseif ($containsSlash) {
-						// Adding this so realurl directories are linked right (non-existing).
-						$isLocalFile = 2;
-					}
-				}
-				if ($pU['scheme'] || $isLocalFile != 1 && $urlChar && (!$containsSlash || $urlChar < $fileChar)) {
-					// url (external): If doubleSlash or if a '.' comes before a '/'.
+
+
+			// Detecting kind of link
+			$linkType = $this->detectLinkTypeFromLinkParameter($linkParameter);
+			switch ($linkType) {
+				// If it's a mail address
+				case 'mailto':
+					$linkParameter = preg_replace('/^mailto:/i', '', $linkParameter);
+					list($this->lastTypoLinkUrl, $linktxt) = $this->getMailTo($linkParameter, $linktxt, $initP);
+					$finalTagParts['url'] = $this->lastTypoLinkUrl;
+				break;
+
+				// url (external): If doubleSlash or if a '.' comes before a '/'.
+				case 'url':
 					if ($GLOBALS['TSFE']->dtdAllowsFrames) {
 						$target = isset($conf['extTarget']) ? $conf['extTarget'] : $GLOBALS['TSFE']->extTarget;
 					} else {
@@ -5870,44 +5820,51 @@ class ContentObjectRenderer {
 						$target = $forceTarget;
 					}
 					if ($linktxt == '') {
-						$linktxt = $link_param;
+						$linktxt = $linkParameter;
 					}
-					if (!$pU['scheme']) {
+					// Parse URL:
+					$urlParts = parse_url($linkParameter);
+					if (!$urlParts['scheme']) {
 						$scheme = 'http://';
 					} else {
 						$scheme = '';
 					}
+
 					if ($GLOBALS['TSFE']->config['config']['jumpurl_enable']) {
 						$url = $GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP;
-						$jumpurl = $scheme . $link_param;
+						$jumpurl = $scheme . $linkParameter;
 						$juHash = GeneralUtility::hmac($jumpurl, 'jumpurl');
 						$this->lastTypoLinkUrl = $url . '&jumpurl=' . rawurlencode($jumpurl) . '&juHash=' . $juHash . $GLOBALS['TSFE']->getMethodUrlIdToken;
 					} else {
-						$this->lastTypoLinkUrl = $scheme . $link_param;
+						$this->lastTypoLinkUrl = $scheme . $linkParameter;
 					}
 					$this->lastTypoLinkTarget = $target;
 					$finalTagParts['url'] = $this->lastTypoLinkUrl;
 					$finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
-					$finalTagParts['TYPE'] = 'url';
-					$finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $finalTagParts['TYPE']);
-				} elseif ($containsSlash || $isLocalFile) {
-					// file (internal)
-					$splitLinkParam = explode('?', $link_param);
-					if (file_exists(rawurldecode($splitLinkParam[0])) || $isLocalFile) {
+					$finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $linkType);
+				break;
+
+				// file (internal)
+				case 'file':
+
+					$splitLinkParam = explode('?', $linkParameter);
+
+					// check if the file exists or if a / is contained (same check as in detectLinkType)
+					if (file_exists(rawurldecode($splitLinkParam[0])) || strpos($linkParameter, '/') !== FALSE) {
 						if ($linktxt == '') {
-							$linktxt = rawurldecode($link_param);
+							$linktxt = rawurldecode($linkParameter);
 						}
 						if ($GLOBALS['TSFE']->config['config']['jumpurl_enable'] || $conf['jumpurl']) {
-							$theFileEnc = str_replace('%2F', '/', rawurlencode(rawurldecode($link_param)));
-							$url = $GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP . '&jumpurl=' . rawurlencode($link_param);
+							$theFileEnc = str_replace('%2F', '/', rawurlencode(rawurldecode($linkParameter)));
+							$url = $GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP . '&jumpurl=' . rawurlencode($linkParameter);
 							if ($conf['jumpurl.']['secure']) {
 								$url .= $this->locDataJU($theFileEnc, $conf['jumpurl.']['secure.']);
 							} else {
-								$url .= '&juHash=' . GeneralUtility::hmac($link_param, 'jumpurl');
+								$url .= '&juHash=' . GeneralUtility::hmac($linkParameter, 'jumpurl');
 							}
 							$this->lastTypoLinkUrl =  $url . $GLOBALS['TSFE']->getMethodUrlIdToken;
 						} else {
-							$this->lastTypoLinkUrl = $GLOBALS['TSFE']->absRefPrefix . $link_param;
+							$this->lastTypoLinkUrl = $GLOBALS['TSFE']->absRefPrefix . $linkParameter;
 						}
 						$this->lastTypoLinkUrl = $this->forceAbsoluteUrl($this->lastTypoLinkUrl, $conf);
 						$target = isset($conf['fileTarget']) ? $conf['fileTarget'] : $GLOBALS['TSFE']->fileTarget;
@@ -5920,28 +5877,35 @@ class ContentObjectRenderer {
 						$this->lastTypoLinkTarget = $target;
 						$finalTagParts['url'] = $this->lastTypoLinkUrl;
 						$finalTagParts['targetParams'] = $target ? ' target="' . $target . '"' : '';
-						$finalTagParts['TYPE'] = 'file';
-						$finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $finalTagParts['TYPE']);
+						$finalTagParts['aTagParams'] .= $this->extLinkATagParams($finalTagParts['url'], $linkType);
 					} else {
 						$GLOBALS['TT']->setTSlogMessage('typolink(): File \'' . $splitLinkParam[0] . '\' did not exist, so \'' . $linktxt . '\' was not linked.', 1);
 						return $linktxt;
 					}
-				} else {
-					// Integer or alias (alias is without slashes or periods or commas, that is
-					// 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
+				break;
+
+				// Integer or alias (alias is without slashes or periods or commas, that is
+				// 'nospace,alphanum_x,lower,unique' according to definition in $GLOBALS['TCA']!)
+				case 'page':
+					$enableLinksAcrossDomains = $GLOBALS['TSFE']->config['config']['typolinkEnableLinksAcrossDomains'];
+
 					if ($conf['no_cache.']) {
 						$conf['no_cache'] = $this->stdWrap($conf['no_cache'], $conf['no_cache.']);
 					}
 					// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/parameters triplet
-					$pairParts = GeneralUtility::trimExplode(',', $link_param, TRUE);
-					$link_param = $pairParts[0];
-					$link_params_parts = explode('#', $link_param);
+					$pairParts = GeneralUtility::trimExplode(',', $linkParameter, TRUE);
+					$linkParameter = $pairParts[0];
+					$link_params_parts = explode('#', $linkParameter);
 					// Link-data del
-					$link_param = trim($link_params_parts[0]);
+					$linkParameter = trim($link_params_parts[0]);
 					// If no id or alias is given
-					if ($link_param === '') {
-						$link_param = $GLOBALS['TSFE']->id;
+					if ($linkParameter === '') {
+						$linkParameter = $GLOBALS['TSFE']->id;
 					}
+
+					$sectionMark = isset($conf['section.']) ? trim($this->stdWrap($conf['section'], $conf['section.'])) : trim($conf['section']);
+					$sectionMark = $sectionMark ? (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($sectionMark) ? '#c' : '#') . $sectionMark : '';
+
 					if ($link_params_parts[1] && !$sectionMark) {
 						$sectionMark = trim($link_params_parts[1]);
 						$sectionMark = (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($sectionMark) ? '#c' : '#') . $sectionMark;
@@ -5952,8 +5916,8 @@ class ContentObjectRenderer {
 						$conf['additionalParams'] .= isset($pairParts[2]) ? $pairParts[2] : '';
 					}
 					// Checking if the id-parameter is an alias.
-					if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($link_param)) {
-						$link_param = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($link_param);
+					if (!\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($linkParameter)) {
+						$linkParameter = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($linkParameter);
 					}
 					// Link to page even if access is missing?
 					if (strlen($conf['linkAccessRestrictedPages'])) {
@@ -5962,7 +5926,7 @@ class ContentObjectRenderer {
 						$disableGroupAccessCheck = $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? TRUE : FALSE;
 					}
 					// Looking up the page record to verify its existence:
-					$page = $GLOBALS['TSFE']->sys_page->getPage($link_param, $disableGroupAccessCheck);
+					$page = $GLOBALS['TSFE']->sys_page->getPage($linkParameter, $disableGroupAccessCheck);
 					if (count($page)) {
 						// MointPoints, look for closest MPvar:
 						$MPvarAcc = array();
@@ -6137,17 +6101,20 @@ class ContentObjectRenderer {
 						// Rendering the tag.
 						$finalTagParts['url'] = $this->lastTypoLinkUrl;
 						$finalTagParts['targetParams'] = $targetPart;
-						$finalTagParts['TYPE'] = 'page';
 					} else {
-						$GLOBALS['TT']->setTSlogMessage('typolink(): Page id \'' . $link_param . '\' was not found, so \'' . $linktxt . '\' was not linked.', 1);
+						$GLOBALS['TT']->setTSlogMessage('typolink(): Page id \'' . $linkParameter . '\' was not found, so \'' . $linktxt . '\' was not linked.', 1);
 						return $linktxt;
 					}
-				}
+				break;
 			}
+
+			$finalTagParts['TYPE'] = $linkType;
 			$this->lastTypoLinkLD = $LD;
+
 			if ($forceTitle) {
 				$title = $forceTitle;
 			}
+
 			if ($JSwindowParams) {
 				// Create TARGET-attribute only if the right doctype is used
 				if (!GeneralUtility::inList('xhtml_strict,xhtml_11,xhtml_2', $GLOBALS['TSFE']->xhtmlDoctype)) {
@@ -6156,31 +6123,35 @@ class ContentObjectRenderer {
 					$target = '';
 				}
 				$onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',' . GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
-				$res = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . $title . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
+				$finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . $title . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			} else {
-				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii' && $finalTagParts['TYPE'] === 'mailto') {
-					$res = '<a href="' . $finalTagParts['url'] . '"' . ($title ? ' title="' . $title . '"' : '') . $finalTagParts['targetParams'] . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
+				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii' && $linkType === 'mailto') {
+					$finalAnchorTag = '<a href="' . $finalTagParts['url'] . '"';
 				} else {
-					$res = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . ($title ? ' title="' . $title . '"' : '') . $finalTagParts['targetParams'] . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
+					$finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"';
 				}
+				$finalAnchorTag .= ($title ? ' title="' . $title . '"' : '') . $finalTagParts['targetParams'] . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			}
+
 			// Call user function:
 			if ($conf['userFunc']) {
-				$finalTagParts['TAG'] = $res;
-				$res = $this->callUserFunction($conf['userFunc'], $conf['userFunc.'], $finalTagParts);
+				$finalTagParts['TAG'] = $finalAnchorTag;
+				$finalAnchorTag = $this->callUserFunction($conf['userFunc'], $conf['userFunc.'], $finalTagParts);
 			}
+
 			// Hook: Call post processing function for link rendering:
 			if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc'])) {
 				$_params = array(
 					'conf' => &$conf,
 					'linktxt' => &$linktxt,
-					'finalTag' => &$res,
+					'finalTag' => &$finalAnchorTag,
 					'finalTagParts' => &$finalTagParts
 				);
 				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typoLink_PostProc'] as $_funcRef) {
 					GeneralUtility::callUserFunction($_funcRef, $_params, $this);
 				}
 			}
+
 			// If flag "returnLastTypoLinkUrl" set, then just return the latest URL made:
 			if ($conf['returnLast']) {
 				switch ($conf['returnLast']) {
@@ -6192,11 +6163,13 @@ class ContentObjectRenderer {
 						break;
 				}
 			}
+
 			$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
+
 			if ($conf['ATagBeforeWrap']) {
-				return $res . $this->wrap($linktxt, $wrap) . '</a>';
+				return $finalAnchorTag . $this->wrap($linktxt, $wrap) . '</a>';
 			} else {
-				return $this->wrap($res . $linktxt . '</a>', $wrap);
+				return $this->wrap($finalAnchorTag . $linktxt . '</a>', $wrap);
 			}
 		} else {
 			return $linktxt;
@@ -6219,6 +6192,7 @@ class ContentObjectRenderer {
 					'host' => $matches[3],
 					'path' => $matches[4]
 				);
+				$isUrlModified = FALSE;
 				// Set scheme and host if not yet part of the URL:
 				if (empty($urlParts['host'])) {
 					$urlParts['scheme'] = 'http';
@@ -6246,7 +6220,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties for "typolink
 	 * @return string The URL of the link-tag that typolink() would by itself return
 	 * @see typoLink()
-	 * @todo Define visibility
 	 */
 	public function typoLink_URL($conf) {
 		$this->typolink('|', $conf);
@@ -6265,7 +6238,6 @@ class ContentObjectRenderer {
 	 * @param string $target Specific target set, if any. (Default is using the current)
 	 * @return string The wrapped $label-text string
 	 * @see getTypoLink_URL()
-	 * @todo Define visibility
 	 */
 	public function getTypoLink($label, $params, $urlParameters = array(), $target = '') {
 		$conf = array();
@@ -6294,7 +6266,6 @@ class ContentObjectRenderer {
 	 * @param string $target Specific target set, if any. (Default is using the current)
 	 * @return string The URL
 	 * @see getTypoLink()
-	 * @todo Define visibility
 	 */
 	public function getTypoLink_URL($params, $urlParameters = array(), $target = '') {
 		$this->getTypoLink('', $params, $urlParameters, $target);
@@ -6307,7 +6278,6 @@ class ContentObjectRenderer {
 	 * @param array $conf "typolink" TypoScript properties
 	 * @return array An array with two values in key 0+1, each value being the start and close <a>-tag of the typolink properties being inputted in $conf
 	 * @see typolink()
-	 * @todo Define visibility
 	 */
 	public function typolinkWrap($conf) {
 		$k = md5(microtime());
@@ -6321,7 +6291,6 @@ class ContentObjectRenderer {
 	 * @param integer $id An alternative ID to the current id ($GLOBALS['TSFE']->id)
 	 * @return string The URL
 	 * @see getTypoLink_URL()
-	 * @todo Define visibility
 	 */
 	public function currentPageUrl($urlParameters = array(), $id = 0) {
 		return $this->getTypoLink_URL($id ? $id : $GLOBALS['TSFE']->id, $urlParameters, $GLOBALS['TSFE']->sPre);
@@ -6335,7 +6304,6 @@ class ContentObjectRenderer {
 	 * @param boolean $raw If TRUE, the MPvalue is returned raw. Normally it is encoded as &MP=... variable
 	 * @return string MP value, prefixed with &MP= (depending on $raw)
 	 * @see typolink()
-	 * @todo Define visibility
 	 */
 	public function getClosestMPvalueForPage($pageId, $raw = FALSE) {
 		// MountPoints:
@@ -6390,7 +6358,6 @@ class ContentObjectRenderer {
 	 * @param string $linktxt Link text, default will be the email address.
 	 * @param string $initP Initial link parameters, only used if Jumpurl functionality is enabled. Example: ?id=5&type=0
 	 * @return string Returns a numerical array with two elements: 1) $mailToUrl, string ready to be inserted into the href attribute of the <a> tag, b) $linktxt: The string between starting and ending <a> tag.
-	 * @todo Define visibility
 	 */
 	public function getMailTo($mailAddress, $linktxt, $initP = '?') {
 		if ((string)$linktxt === '') {
@@ -6485,7 +6452,6 @@ class ContentObjectRenderer {
 	 * @param string $char The char used to split the wrapping value, default is "|
 	 * @return string Wrapped input string
 	 * @see noTrimWrap()
-	 * @todo Define visibility
 	 */
 	public function wrap($content, $wrap, $char = '|') {
 		if ($wrap) {
@@ -6505,7 +6471,6 @@ class ContentObjectRenderer {
 	 * @param string $char The char used to split the wrapping value, default is "|"
 	 * @return string Wrapped input string, eg. " <strong> HELLO WORD </strong>
 	 * @see wrap()
-	 * @todo Define visibility
 	 */
 	public function noTrimWrap($content, $wrap, $char = '|') {
 		if ($wrap) {
@@ -6523,7 +6488,6 @@ class ContentObjectRenderer {
 	 * @param string $wrap A value like "10 | 20" where the first part denotes the space BEFORE and the second part denotes the space AFTER (in pixels)
 	 * @param array $conf Configuration from TypoScript
 	 * @return string Wrapped string
-	 * @todo Define visibility
 	 */
 	public function wrapSpace($content, $wrap, array $conf = NULL) {
 		if (trim($wrap)) {
@@ -6558,7 +6522,6 @@ class ContentObjectRenderer {
 	 * @param string $content The content string to pass the function
 	 * @return string The return content from the function call. Should probably be a string.
 	 * @see USER(), stdWrap(), typoLink(), _parseFunc()
-	 * @todo Define visibility
 	 */
 	public function callUserFunction($funcName, $conf, $content) {
 		// Split parts
@@ -6600,7 +6563,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $params Text which the parameters
 	 * @return array array with the parameters as key/value pairs
-	 * @todo Define visibility
 	 */
 	public function processParams($params) {
 		$paramArr = array();
@@ -6620,7 +6582,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $content String of keywords
 	 * @return string Cleaned up string, keywords will be separated by a comma only.
-	 * @todo Define visibility
 	 */
 	public function keywords($content) {
 		$listArr = preg_split('/[,;' . LF . ']/', $content);
@@ -6637,7 +6598,6 @@ class ContentObjectRenderer {
 	 * @param string $case The direction; either "upper" or "lower
 	 * @return string
 	 * @see HTMLcaseshift()
-	 * @todo Define visibility
 	 */
 	public function caseshift($theValue, $case) {
 		$case = strtolower($case);
@@ -6668,7 +6628,6 @@ class ContentObjectRenderer {
 	 * @param string $case The direction; either "upper" or "lower
 	 * @return string
 	 * @see caseshift()
-	 * @todo Define visibility
 	 */
 	public function HTMLcaseshift($theValue, $case) {
 		$inside = 0;
@@ -6696,7 +6655,6 @@ class ContentObjectRenderer {
 	 * @param integer $seconds Seconds to return age for. Example: "70" => "1 min", "3601" => "1 hrs
 	 * @param string $labels The labels of the individual units. Defaults to : ' min| hrs| days| yrs'
 	 * @return string The formatted string
-	 * @todo Define visibility
 	 */
 	public function calcAge($seconds, $labels) {
 		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($labels)) {
@@ -6792,7 +6750,6 @@ class ContentObjectRenderer {
 	 * @param string $url Input URL
 	 * @param string $params URL parameters
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function URLqMark($url, $params) {
 		if ($params && !strstr($url, '?')) {
@@ -6809,7 +6766,6 @@ class ContentObjectRenderer {
 	 * @param string $propList List of properties to clear both value/properties for. Eg. "myprop,another_property
 	 * @return array The TypoScript array
 	 * @see gifBuilderTextBox()
-	 * @todo Define visibility
 	 */
 	public function clearTSProperties($TSArr, $propList) {
 		$list = explode(',', $propList);
@@ -6829,7 +6785,6 @@ class ContentObjectRenderer {
 	 * @param string $prop The property name: If this value is a reference (eg. " < plugins.tx_something") then the reference will be retrieved and inserted at that position (into the properties only, not the value...) AND overlaid with the old properties if any.
 	 * @return array The modified TypoScript array
 	 * @see user_plaintext::typolist(),user_plaintext::typohead()
-	 * @todo Define visibility
 	 */
 	public function mergeTSRef($confArr, $prop) {
 		if ($confArr[$prop][0] === '<') {
@@ -6854,7 +6809,6 @@ class ContentObjectRenderer {
 	 * @return array The resulting array
 	 * @see mergeTSRef(), tx_tstemplatestyler_modfunc1::joinTSarrays()
 	 * @deprecated since 6.2, will be removed in two versions, use array_replace_recursive() instead
-	 * @todo Define visibility
 	 */
 	public function joinTSarrays($conf, $old_conf) {
 		GeneralUtility::logDeprecatedFunction();
@@ -6868,8 +6822,6 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties for this function
 	 * @param string $text The text string to write onto the GIFBUILDER file
 	 * @return array The modified $gifbuilderConf array
-	 * @see media/scripts/postit.inc
-	 * @todo Define visibility
 	 */
 	public function gifBuilderTextBox($gifbuilderConf, $conf, $text) {
 		$chars = (int)$conf['chars'] ?: 20;
@@ -6920,7 +6872,6 @@ class ContentObjectRenderer {
 	 * @return array array with lines.
 	 * @access private
 	 * @see gifBuilderTextBox()
-	 * @todo Define visibility
 	 */
 	public function linebreaks($string, $chars, $maxLines = 0) {
 		$lines = explode(LF, $string);
@@ -6952,7 +6903,6 @@ class ContentObjectRenderer {
 	 * @return string
 	 * @access private
 	 * @see user_feAdmin::displayCreateScreen()
-	 * @todo Define visibility
 	 */
 	public function getUpdateJS($dataArray, $formName, $arrPrefix, $fieldList) {
 		$JSPart = '';
@@ -7040,7 +6990,6 @@ class ContentObjectRenderer {
 	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetUpdate(), DBgetInsert(), user_feAdmin
-	 * @todo Define visibility
 	 */
 	public function DBgetDelete($table, $uid, $doExec = FALSE) {
 		if ((int)$uid) {
@@ -7080,7 +7029,6 @@ class ContentObjectRenderer {
 	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetInsert(), DBgetDelete(), user_feAdmin
-	 * @todo Define visibility
 	 */
 	public function DBgetUpdate($table, $uid, $dataArr, $fieldList, $doExec = FALSE) {
 		// uid can never be set
@@ -7120,7 +7068,6 @@ class ContentObjectRenderer {
 	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetUpdate(), DBgetDelete(), user_feAdmin
-	 * @todo Define visibility
 	 */
 	public function DBgetInsert($table, $pid, $dataArr, $fieldList, $doExec = FALSE) {
 		$extraList = 'pid';
@@ -7180,7 +7127,6 @@ class ContentObjectRenderer {
 	 * @param boolean $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
 	 * @return boolean
 	 * @see user_feAdmin
-	 * @todo Define visibility
 	 */
 	public function DBmayFEUserEdit($table, $row, $feUserRow, $allowedGroups = '', $feEditSelf = 0) {
 		$groupList = $allowedGroups ? implode(',', array_intersect(GeneralUtility::trimExplode(',', $feUserRow['usergroup'], TRUE), GeneralUtility::trimExplode(',', $allowedGroups, TRUE))) : $feUserRow['usergroup'];
@@ -7222,7 +7168,6 @@ class ContentObjectRenderer {
 	 * @param boolean $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
 	 * @return string The where clause part. ALWAYS returns a string. If no access at all, then " AND 1=0
 	 * @see DBmayFEUserEdit(), user_feAdmin::displayEditScreen()
-	 * @todo Define visibility
 	 */
 	public function DBmayFEUserEditSelect($table, $feUserRow, $allowedGroups = '', $feEditSelf = 0) {
 		// Returns where-definition that selects user-editable records.
@@ -7475,7 +7420,6 @@ class ContentObjectRenderer {
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
 	 * @return pointer		SQL result pointer
 	 * @see mm_query_uidList()
-	 * @todo Define visibility
 	 */
 	public function exec_mm_query($select, $local_table, $mm_table, $foreign_table, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
 		return $GLOBALS['TYPO3_DB']->exec_SELECTquery($select, $local_table . ',' . $mm_table . ($foreign_table ? ',' . $foreign_table : ''), $local_table . '.uid=' . $mm_table . '.uid_local' . ($foreign_table ? ' AND ' . $foreign_table . '.uid=' . $mm_table . '.uid_foreign' : '') . $whereClause, $groupBy, $orderBy, $limit);
@@ -7495,7 +7439,6 @@ class ContentObjectRenderer {
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
 	 * @return pointer		SQL result pointer
 	 * @see mm_query()
-	 * @todo Define visibility
 	 */
 	public function exec_mm_query_uidList($select, $local_table_uidlist, $mm_table, $foreign_table = '', $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
 		return $GLOBALS['TYPO3_DB']->exec_SELECTquery($select, $mm_table . ($foreign_table ? ',' . $foreign_table : ''), $mm_table . '.uid_local IN (' . $local_table_uidlist . ')' . ($foreign_table ? ' AND ' . $foreign_table . '.uid=' . $mm_table . '.uid_foreign' : '') . $whereClause, $groupBy, $orderBy, $limit);
@@ -7509,7 +7452,6 @@ class ContentObjectRenderer {
 	 * @param string $searchFieldList The fields to search in
 	 * @param string $searchTable The table name you search in (recommended for DBAL compliance. Will be prepended field names as well)
 	 * @return string The WHERE clause.
-	 * @todo Define visibility
 	 */
 	public function searchWhere($sw, $searchFieldList, $searchTable = '') {
 		global $TYPO3_DB;
@@ -7543,7 +7485,6 @@ class ContentObjectRenderer {
 	 * @param array $conf The TypoScript configuration properties
 	 * @return mixed A SQL result pointer
 	 * @see getQuery()
-	 * @todo Define visibility
 	 */
 	public function exec_getQuery($table, $conf) {
 		$queryParts = $this->getQuery($table, $conf, TRUE);
@@ -7560,7 +7501,6 @@ class ContentObjectRenderer {
 	 * @return mixed A SELECT query if $returnQueryArray is FALSE, otherwise the SELECT query in an array as parts.
 	 * @access private
 	 * @see CONTENT(), numRows()
-	 * @todo Define visibility
 	 */
 	public function getQuery($table, $conf, $returnQueryArray = FALSE) {
 		// Resolve stdWrap in these properties first
@@ -7709,7 +7649,6 @@ class ContentObjectRenderer {
 	 * @return mixed A WHERE clause based on the relevant parts of the TypoScript properties for a "select" function in TypoScript, see link. If $returnQueryArray is FALSE the where clause is returned as a string with WHERE, GROUP BY and ORDER BY parts, otherwise as an array with these parts.
 	 * @access private
 	 * @see getQuery()
-	 * @todo Define visibility
 	 */
 	public function getWhere($table, $conf, $returnQueryArray = FALSE) {
 		// Init:
@@ -7872,7 +7811,6 @@ class ContentObjectRenderer {
 	 * @return array Returns the array of remaining page UID numbers
 	 * @access private
 	 * @see getWhere(),checkPid()
-	 * @todo Define visibility
 	 */
 	public function checkPidArray($listArr) {
 		$outArr = array();
@@ -7897,7 +7835,6 @@ class ContentObjectRenderer {
 	 * @return boolean TRUE if OK
 	 * @access private
 	 * @see getWhere(), checkPidArray()
-	 * @todo Define visibility
 	 */
 	public function checkPid($uid) {
 		$uid = (int)$uid;
@@ -7917,7 +7854,6 @@ class ContentObjectRenderer {
 	 * @return array List of values to replace markers with
 	 * @access private
 	 * @see getQuery()
-	 * @todo Define visibility
 	 */
 	public function getQueryMarkers($table, $conf) {
 		// Parse markers and prepare their values
@@ -7994,7 +7930,6 @@ class ContentObjectRenderer {
 	 * @param string $currentRecord The "table:uid" of the record being shown. If empty string then $this->currentRecord is used. For new records (set by $conf['newRecordFromTable']) it's auto-generated to "[tablename]:NEW
 	 * @param array $dataArr Alternative data array to use. Default is $this->data
 	 * @return string The input content string with the editPanel appended. This function returns only an edit panel appended to the content string if a backend user is logged in (and has the correct permissions). Otherwise the content string is directly returned.
-	 * @todo Define visibility
 	 */
 	public function editPanel($content, $conf, $currentRecord = '', $dataArr = array()) {
 		if ($GLOBALS['TSFE']->beUserLogin && $GLOBALS['BE_USER']->frontendEdit instanceof \TYPO3\CMS\Core\FrontendEditing\FrontendEditingController) {
@@ -8021,7 +7956,6 @@ class ContentObjectRenderer {
 	 * @param array $dataArr Alternative data array to use. Default is $this->data
 	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to alt_doc.php
 	 * @return string The input content string, possibly with edit icons added (not necessarily in the end but just after the last string of normal content.
-	 * @todo Define visibility
 	 */
 	public function editIcons($content, $params, array $conf = array(), $currentRecord = '', $dataArr = array(), $addUrlParamStr = '') {
 		if ($GLOBALS['TSFE']->beUserLogin && $GLOBALS['BE_USER']->frontendEdit instanceof \TYPO3\CMS\Core\FrontendEditing\FrontendEditingController) {
@@ -8045,7 +7979,6 @@ class ContentObjectRenderer {
 	 * @return boolean
 	 * @access private
 	 * @see editPanelPreviewBorder()
-	 * @todo Define visibility
 	 */
 	public function isDisabled($table, $row) {
 		if ($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'] && $row[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']] || $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['fe_group'] && $GLOBALS['TSFE']->simUserGroup && $row[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['fe_group']] == $GLOBALS['TSFE']->simUserGroup || $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['starttime'] && $row[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['starttime']] > $GLOBALS['EXEC_TIME'] || $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['endtime'] && $row[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['endtime']] && $row[$GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['endtime']] < $GLOBALS['EXEC_TIME']) {

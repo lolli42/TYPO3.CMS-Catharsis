@@ -27,97 +27,55 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class TemplateService {
 
 	// Debugging, analysis:
-	// If set, the global tt-timeobject is used to log the performance.
 	/**
-	 * @todo Define visibility
+	 * option to enable logging, time-tracking (FE-only)
+	 * usually, this is only done when
+	 *  - in FE a BE_USER is logged-in
+	 *  - in BE when the BE_USER needs information about the template (TypoScript module)
+	 * @var bool
 	 */
+	protected $verbose = FALSE;
+
+	// If set, the global tt-timeobject is used to log the performance.
 	public $tt_track = 1;
 
 	// If set, the template is always rendered. Used from Admin Panel.
-	/**
-	 * @todo Define visibility
-	 */
 	public $forceTemplateParsing = 0;
 
 	// Backend Analysis modules settings:
 	// This array is passed on to matchObj by generateConfig(). If it holds elements, they are used for matching instead. See commment at the match-class. Used for backend modules only. Never frontend!
-	/**
-	 * @todo Define visibility
-	 */
 	public $matchAlternative = array();
 
 	// If set, the match-class matches everything! Used for backend modules only. Never frontend!
-	/**
-	 * @todo Define visibility
-	 */
 	public $matchAll = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $backend_info = 0;
 
-	// Set from the backend - used to set an absolute path (PATH_site) so that relative resources are properly found with getFileName()
-	/**
-	 * @todo Define visibility
-	 */
-	public $getFileName_backPath = '';
-
 	// Externally set breakpoints (used by Backend Modules)
-	/**
-	 * @todo Define visibility
-	 */
 	public $ext_constants_BRP = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $ext_config_BRP = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $ext_regLinenumbers = FALSE;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $ext_regComments = FALSE;
 
 	// Constants:
-	/**
-	 * @todo Define visibility
-	 */
 	public $tempPath = 'typo3temp/';
 
 	// Set Internally:
 	// This MUST be initialized by the init() function
-	/**
-	 * @todo Define visibility
-	 */
 	public $whereClause = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $debug = 0;
 
 	// This is the only paths (relative!!) that are allowed for resources in TypoScript. Should all be appended with '/'. You can extend these by the global array TYPO3_CONF_VARS. See init() function.
-	/**
-	 * @todo Define visibility
-	 */
 	public $allowedPaths = array();
 
 	// See init(); Set if preview of some kind is enabled.
-	/**
-	 * @todo Define visibility
-	 */
 	public $simulationHiddenOrTime = 0;
 
 	// Set, if the TypoScript template structure is loaded and OK, see ->start()
-	/**
-	 * @todo Define visibility
-	 */
 	public $loaded = 0;
 
 	/**
@@ -125,22 +83,13 @@ class TemplateService {
 	 */
 	public $setup = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $flatSetup = array();
 
 	// For fetching TypoScript code from template hierarchy before parsing it. Each array contains code field values from template records/files:
 	// Setup field
-	/**
-	 * @todo Define visibility
-	 */
 	public $config = array();
 
 	// Constant field
-	/**
-	 * @todo Define visibility
-	 */
 	public $constants = array();
 
 	/**
@@ -150,112 +99,62 @@ class TemplateService {
 	protected $templateIncludePaths = array();
 
 	// For Template Analyser in backend
-	/**
-	 * @todo Define visibility
-	 */
 	public $hierarchyInfo = array();
 
 	// For Template Analyser in backend (setup content only)
-	/**
-	 * @todo Define visibility
-	 */
 	public $hierarchyInfoToRoot = array();
 
 	// Next-level flag (see runThroughTemplates())
-	/**
-	 * @todo Define visibility
-	 */
 	public $nextLevel = 0;
 
 	// The Page UID of the root page
-	/**
-	 * @todo Define visibility
-	 */
 	public $rootId;
 
 	// The rootline from current page to the root page
-	/**
-	 * @todo Define visibility
-	 */
 	public $rootLine;
 
 	// Rootline all the way to the root. Set but runThroughTemplates
-	/**
-	 * @todo Define visibility
-	 */
 	public $absoluteRootLine;
 
 	// A pointer to the last entry in the rootline where a template was found.
-	/**
-	 * @todo Define visibility
-	 */
 	public $outermostRootlineIndexWithTemplate = 0;
 
 	// Array of arrays with title/uid of templates in hierarchy
-	/**
-	 * @todo Define visibility
-	 */
 	public $rowSum;
 
 	// The current site title field.
-	/**
-	 * @todo Define visibility
-	 */
 	public $sitetitle = '';
 
 	// Tracking all conditions found during parsing of TypoScript. Used for the "all" key in currentPageData
-	/**
-	 * @todo Define visibility
-	 */
 	public $sections;
 
 	// Tracking all matching conditions found
-	/**
-	 * @todo Define visibility
-	 */
 	public $sectionsMatch;
 
 	/**
 	 * Used by Backend only (Typoscript Template Analyzer)
 	 *
-	 * @todo Define visibility
 	 */
 	public $clearList_const = array();
 
 	/**
 	 * Used by Backend only (Typoscript Template Analyzer)
 	 *
-	 * @todo Define visibility
 	 */
 	public $clearList_setup = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $parserErrors = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $setup_constants = array();
 
 	// Other:
 	// Used by getFileName for caching of references to file resources
-	/**
-	 * @todo Define visibility
-	 */
 	public $fileCache = array();
 
 	// Keys are frame names and values are type-values, which must be used to refer correctly to the content of the frames.
-	/**
-	 * @todo Define visibility
-	 */
 	public $frames = array();
 
 	// Contains mapping of Page id numbers to MP variables.
-	/**
-	 * @todo Define visibility
-	 */
 	public $MPmap = '';
 
 	/**
@@ -310,12 +209,19 @@ class TemplateService {
 	}
 
 	/**
+	 * sets the verbose parameter
+	 * @param bool $verbose
+	 */
+	public function setVerbose($verbose) {
+		$this->verbose = (bool)$verbose;
+	}
+
+	/**
 	 * Initialize
 	 * MUST be called directly after creating a new template-object
 	 *
 	 * @return void
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::initTemplate()
-	 * @todo Define visibility
 	 */
 	public function init() {
 		// $this->whereClause is used only to select templates from sys_template.
@@ -331,7 +237,6 @@ class TemplateService {
 		$this->whereClause .= 'AND (starttime<=' . $GLOBALS['SIM_ACCESS_TIME'] . ') AND (endtime=0 OR endtime>' . $GLOBALS['SIM_ACCESS_TIME'] . ')';
 		// Sets the paths from where TypoScript resources are allowed to be used:
 		$this->allowedPaths = array(
-			'media/',
 			$GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
 			// fileadmin/ path
 			'uploads/',
@@ -375,7 +280,6 @@ class TemplateService {
 	 *
 	 * @param array $cc An array with three keys, "all", "rowSum" and "rootLine" - all coming from the "currentPageData" array
 	 * @return array The input array but with a new key added, "match" which contains the items from the "all" key which when passed to tslib_matchCondition returned TRUE.
-	 * @todo Define visibility
 	 */
 	public function matching($cc) {
 		if (is_array($cc['all'])) {
@@ -400,7 +304,6 @@ class TemplateService {
 	 * @param array $theRootLine The rootline of the current page (going ALL the way to tree root)
 	 * @return void
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getConfigArray()
-	 * @todo Define visibility
 	 */
 	public function start($theRootLine) {
 		if (is_array($theRootLine)) {
@@ -521,7 +424,6 @@ class TemplateService {
 	 * @param integer $start_template_uid Set specific template record UID to select; this is only for debugging/development/analysis use in backend modules like "Web > Template". For parsing TypoScript templates in the frontend it should be 0 (zero)
 	 * @return void
 	 * @see start()
-	 * @todo Define visibility
 	 */
 	public function runThroughTemplates($theRootLine, $start_template_uid = 0) {
 		$this->constants = array();
@@ -587,7 +489,6 @@ class TemplateService {
 	 * @param string $includePath Specifies the path from which the template was included (used with static_includes)
 	 * @return void
 	 * @see runThroughTemplates()
-	 * @todo Define visibility
 	 */
 	public function processTemplate($row, $idList, $pid, $templateID = '', $templateParent = '', $includePath = '') {
 		// Adding basic template record information to rowSum array
@@ -733,7 +634,6 @@ class TemplateService {
 	 * @param array $row A full TypoScript template record
 	 * @return void
 	 * @see processTemplate()
-	 * @todo Define visibility
 	 */
 	public function includeStaticTypoScriptSources($idList, $templateID, $pid, $row) {
 		// Static Template Records (static_template): include_static is a list of static templates to include
@@ -809,7 +709,6 @@ class TemplateService {
 	 * @return void
 	 * @access private
 	 * @see includeStaticTypoScriptSources()
-	 * @todo Define visibility
 	 */
 	public function addExtensionStatics($idList, $templateID, $pid, $row) {
 		$this->extensionStaticsProcessed = TRUE;
@@ -840,7 +739,6 @@ class TemplateService {
 	 * @return array Returns the input array where the values for keys "config" and "constants" may have been modified with prepended code.
 	 * @access private
 	 * @see addExtensionStatics(), includeStaticTypoScriptSources()
-	 * @todo Define visibility
 	 */
 	public function prependStaticExtra($subrow) {
 		// the identifier can be "43" if coming from "static template" extension or a path like "cssstyledcontent/static/"
@@ -861,7 +759,6 @@ class TemplateService {
 	 *
 	 * @param array $row Row to overlay (passed by reference)
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function versionOL(&$row) {
 		// Distinguish frontend and backend call:
@@ -888,7 +785,6 @@ class TemplateService {
 	 *
 	 * @return void
 	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser, start()
-	 * @todo Define visibility
 	 */
 	public function generateConfig() {
 		// Add default TS for all code types
@@ -947,19 +843,24 @@ class TemplateService {
 		if ($this->tt_track) {
 			$GLOBALS['TT']->pull();
 		}
+
 		// Searching for possible unsubstituted constants left (only for information)
-		if (strstr($all, '{$')) {
-			$theConstList = array();
-			$findConst = explode('{$', $all);
-			array_shift($findConst);
-			foreach ($findConst as $constVal) {
-				$constLen = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(strcspn($constVal, '}'), 0, 50);
-				$theConstList[] = '{$' . substr($constVal, 0, ($constLen + 1));
+		if ($this->verbose) {
+			if (strstr($all, '{$')) {
+				$theConstList = array();
+				$findConst = explode('{$', $all);
+				array_shift($findConst);
+				foreach ($findConst as $constVal) {
+					$constLen = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(strcspn($constVal, '}'), 0, 50);
+					$theConstList[] = '{$' . substr($constVal, 0, ($constLen + 1));
+				}
+				if ($this->tt_track) {
+					$GLOBALS['TT']->setTSlogMessage(implode(', ', $theConstList) . ': Constants may remain un-substituted!!', 2);
+				}
 			}
-			if ($this->tt_track) {
-				$GLOBALS['TT']->setTSlogMessage(implode(', ', $theConstList) . ': Constants may remain un-substituted!!', 2);
-			}
+
 		}
+
 		// Logging the textual size of the TypoScript Setup field text with all constants substituted:
 		if ($this->tt_track) {
 			$GLOBALS['TT']->setTSlogMessage('TypoScript template size as textfile: ' . strlen($all) . ' bytes');
@@ -1050,7 +951,6 @@ class TemplateService {
 	 * @param array $constArray Constants array, default input.
 	 * @return array Constants array, modified
 	 * @todo Apply caching to the parsed Page TSconfig. This is done in the other similar functions for both frontend and backend. However, since this functions works for BOTH frontend and backend we will have to either write our own local caching function or (more likely) detect if we are in FE or BE and use caching functions accordingly. Not having caching affects mostly the backend modules inside the "Template" module since the overhead in the frontend is only seen when TypoScript templates are parsed anyways (after which point they are cached anyways...)
-	 * @todo Define visibility
 	 */
 	public function mergeConstantsFromPageTSconfig($constArray) {
 		$TSdataArray = array();
@@ -1076,20 +976,16 @@ class TemplateService {
 	 *
 	 * @param array $setupArray TypoScript array
 	 * @param string $prefix Prefix to the object path. Used for recursive calls to this function.
-	 * @param boolean $resourceFlag If set, then the constant value will be resolved as a TypoScript "resource" data type. Also used internally during recursive calls so that all subproperties for properties named "file." will be resolved as resources.
 	 * @return void
 	 * @see generateConfig()
-	 * @todo Define visibility
 	 */
-	public function flattenSetup($setupArray, $prefix, $resourceFlag) {
+	public function flattenSetup($setupArray, $prefix) {
 		if (is_array($setupArray)) {
 			foreach ($setupArray as $key => $val) {
 				if ($prefix || substr($key, 0, 16) != 'TSConstantEditor') {
 					// We don't want 'TSConstantEditor' in the flattend setup on the first level (190201)
 					if (is_array($val)) {
-						$this->flattenSetup($val, $prefix . $key, $key == 'file.');
-					} elseif ($resourceFlag) {
-						$this->flatSetup[$prefix . $key] = $this->getFileName($val);
+						$this->flattenSetup($val, $prefix . $key);
 					} else {
 						$this->flatSetup[$prefix . $key] = $val;
 					}
@@ -1104,7 +1000,6 @@ class TemplateService {
 	 * @param string $all TypoScript code text string
 	 * @return string The processed string with all constants found in $this->flatSetup as key/value pairs substituted.
 	 * @see generateConfig(), flattenSetup()
-	 * @todo Define visibility
 	 */
 	public function substituteConstants($all) {
 		if ($this->tt_track) {
@@ -1128,7 +1023,6 @@ class TemplateService {
 	 * @param array $matches Regular expression matches
 	 * @return string Replacement
 	 * @see substituteConstants()
-	 * @todo Define visibility
 	 */
 	public function substituteConstantsCallBack($matches) {
 		// Replace {$CONST} if found in $this->flatSetup, else leave unchanged
@@ -1149,7 +1043,6 @@ class TemplateService {
 	 * @param integer $splitCount The number of items for which to generated individual TypoScript arrays
 	 * @return array The individualized TypoScript array.
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::IMGTEXT(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::procesItemStates()
-	 * @todo Define visibility
 	 */
 	public function splitConfArray($conf, $splitCount) {
 		// Initialize variables:
@@ -1211,18 +1104,16 @@ class TemplateService {
 	}
 
 	/**
-	 * Returns the reference to a 'resource' in TypoScript.
-	 * This could be from the filesystem if '/' is found in the value $fileFromSetup, else from the resource-list
+	 * Returns the reference used for the frontend inclusion, checks against allowed paths for inclusion.
 	 *
 	 * @param string $fileFromSetup TypoScript "resource" data type value.
-	 * @return string Resulting filename, if any.
-	 * @todo Define visibility
+	 * @return string Resulting filename, is either a full absolute URL or a relative path
 	 */
 	public function getFileName($fileFromSetup) {
 		$file = trim($fileFromSetup);
 		if (!$file) {
 			return;
-		} elseif (strstr($file, '../')) {
+		} elseif (strpos($file, '../') !== FALSE) {
 			if ($this->tt_track) {
 				$GLOBALS['TT']->setTSlogMessage('File path "' . $file . '" contained illegal string "../"!', 3);
 			}
@@ -1233,51 +1124,34 @@ class TemplateService {
 		if (isset($this->fileCache[$hash])) {
 			return $this->fileCache[$hash];
 		}
-		if (substr($file, 0, 4) === 'EXT:') {
-			$newFile = '';
-			list($extKey, $script) = explode('/', substr($file, 4), 2);
-			if ($extKey && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($extKey)) {
-				$extPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($extKey);
-				$newFile = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($extPath) . $script;
-			}
-			if (!@file_exists((PATH_site . $newFile))) {
-				if ($this->tt_track) {
-					$GLOBALS['TT']->setTSlogMessage('Extension media file "' . $newFile . '" was not found!', 3);
-				}
-				return;
-			} else {
-				$file = $newFile;
-			}
-		}
-		if (parse_url($file) !== FALSE) {
+
+		// if this is an URL, it can be returned directly
+		$urlScheme = parse_url($file, PHP_URL_SCHEME);
+		if ($urlScheme === 'https' || $urlScheme === 'http') {
 			return $file;
 		}
-		// Find
-		if (strpos($file, '/') !== FALSE) {
-			// If the file is in the media/ folder but it doesn't exist,
-			// it is assumed that it's in the tslib folder
-			if (GeneralUtility::isFirstPartOfStr($file, 'media/') && !file_exists(($this->getFileName_backPath . $file))) {
-				$file = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('cms') . 'tslib/' . $file;
+
+		// this call also resolves EXT:myext/ files
+		$file = GeneralUtility::getFileAbsFileName($file);
+		if (!$file) {
+			if ($this->tt_track) {
+				$GLOBALS['TT']->setTSlogMessage('File "' . $fileFromSetup . '" was not found!', 3);
 			}
-			if (file_exists($this->getFileName_backPath . $file)) {
-				$outFile = $file;
-				$fileInfo = GeneralUtility::split_fileref($outFile);
-				$OK = 0;
-				foreach ($this->allowedPaths as $val) {
-					if (substr($fileInfo['path'], 0, strlen($val)) == $val) {
-						$OK = 1;
-						break;
-					}
-				}
-				if ($OK) {
-					$this->fileCache[$hash] = $outFile;
-					return $outFile;
-				} elseif ($this->tt_track) {
-					$GLOBALS['TT']->setTSlogMessage('"' . $file . '" was not located in the allowed paths: (' . implode(',', $this->allowedPaths) . ')', 3);
-				}
-			} elseif ($this->tt_track) {
-				$GLOBALS['TT']->setTSlogMessage('"' . $this->getFileName_backPath . $file . '" is not a file (non-uploads/.. resource, did not exist).', 3);
+			return;
+		}
+
+		$file = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($file);
+
+		// Check if the found file is in the allowed paths
+		foreach ($this->allowedPaths as $val) {
+			if (GeneralUtility::isFirstPartOfStr($file, $val)) {
+				$this->fileCache[$hash] = $file;
+				return $file;
 			}
+		}
+
+		if ($this->tt_track) {
+			$GLOBALS['TT']->setTSlogMessage('"' . $file . '" was not located in the allowed paths: (' . implode(',', $this->allowedPaths) . ')', 3);
 		}
 	}
 
@@ -1289,7 +1163,6 @@ class TemplateService {
 	 * @param boolean $showTitleFirst If set, then "sitetitle" and $title is swapped
 	 * @return string The page title on the form "[sitetitle]: [input-title]". Not htmlspecialchar()'ed.
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), TSpagegen::renderContentWithHeader()
-	 * @todo Define visibility
 	 */
 	public function printTitle($pageTitle, $noTitle = FALSE, $showTitleFirst = FALSE) {
 		$siteTitle = trim($this->setup['sitetitle']);
@@ -1316,19 +1189,19 @@ class TemplateService {
 	}
 
 	/**
-	 * Reads the fileContent of $fName and returns it.
-	 * Similar to GeneralUtility::getUrl()
+	 * Reads the fileContent of $fileName and returns it.
+	 * Similar to GeneralUtility::getUrl() but with an additional check if the path is allowed
 	 *
-	 * @param string $fName Absolute filepath to record
-	 * @return string The content returned
+	 * @param string $fileName Absolute filepath to record
+	 * @return NULL|string The content returned
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::fileResource(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::MULTIMEDIA(), GeneralUtility::getUrl()
-	 * @todo Define visibility
 	 */
-	public function fileContent($fName) {
-		$incFile = $this->getFileName($fName);
-		if ($incFile) {
-			return @file_get_contents($incFile);
+	public function fileContent($fileName) {
+		$fileName = $this->getFileName($fileName);
+		if ($fileName) {
+			return GeneralUtility::getUrl($fileName);
 		}
+		return NULL;
 	}
 
 	/**
@@ -1339,7 +1212,6 @@ class TemplateService {
 	 * @return string Wrapped input string
 	 * @deprecated since TYPO3 CMS 6.3, remove later - use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
 	 * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject, \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap()
-	 * @todo Define visibility
 	 */
 	public function wrap($content, $wrap) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1357,7 +1229,6 @@ class TemplateService {
 	 * @param string $url Input string
 	 * @return string Output string, free of "?" in the end, if any such character.
 	 * @see linkData(), \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams()
-	 * @todo Define visibility
 	 */
 	public function removeQueryString($url) {
 		if (substr($url, -1) == '?') {
@@ -1394,7 +1265,6 @@ class TemplateService {
 	 *
 	 * @param string $list A list of UIDs for which the rootline-level should get returned
 	 * @return integer The level in the rootline. If more than one page was given the lowest level will get returned.
-	 * @todo Define visibility
 	 */
 	public function getRootlineLevel($list) {
 		$idx = 0;
@@ -1428,7 +1298,6 @@ class TemplateService {
 	 * @param string $targetDomain The target Doamin, if any was detected in typolink
 	 * @return array Contains keys like "totalURL", "url", "sectionIndex", "linkVars", "no_cache", "type", "target" of which "totalURL" is normally the value you would use while the other keys contains various parts that was used to construct "totalURL
 	 * @see \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typoLink(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::SEARCHRESULT(), TSpagegen::pagegenInit(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::link()
-	 * @todo Define visibility
 	 */
 	public function linkData($page, $oTarget, $no_cache, $script, $overrideArray = NULL, $addParams = '', $typeOverride = '', $targetDomain = '') {
 		$LD = array();
@@ -1520,7 +1389,6 @@ class TemplateService {
 	 * @return string
 	 * @see initMPmap_create()
 	 * @todo Implement some caching of the result between hits. (more than just the memory caching used here)
-	 * @todo Define visibility
 	 */
 	public function getFromMPmap($pageId = 0) {
 		// Create map if not found already:
@@ -1555,7 +1423,6 @@ class TemplateService {
 	 * @param integer $level Recursion brake. Incremented for each recursive call. 20 is the limit.
 	 * @return void
 	 * @see getFromMPvar()
-	 * @todo Define visibility
 	 */
 	public function initMPmap_create($id, $MP_array = array(), $level = 0) {
 		$id = (int)$id;

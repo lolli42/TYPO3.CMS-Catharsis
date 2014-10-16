@@ -670,6 +670,12 @@ ul.x-tab-strip-bottom{
 	border-color:#A2AAB8;
 }
 
+.x-form-field {
+	-webkit-box-sizing: content-box;
+	-moz-box-sizing: content-box;
+	box-sizing: content-box;
+}
+
 .x-form-text, textarea.x-form-field{
 	background-color:#fff;
 	background-image: none;
@@ -789,9 +795,6 @@ ul.x-tab-strip-bottom{
 .x-btn-over,
 .x-btn-icon.x-btn-over {
 	background-color: #bdbcbc;
-	background-image: url('../images/backgrounds/button-hover.png');
-	background-image: linear-gradient(center top, #f6f6f6 10%, #bdbcbc 90%);
-	border-color: #737f91;
 	color: #1e1e1e;
 }
 

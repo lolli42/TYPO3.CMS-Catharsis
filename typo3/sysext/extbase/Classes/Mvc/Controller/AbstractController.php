@@ -71,13 +71,6 @@ abstract class AbstractController implements ControllerInterface {
 	protected $response;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Property\Mapper
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
-	 * @inject
-	 */
-	protected $deprecatedPropertyMapper;
-
-	/**
 	 * @var \TYPO3\CMS\Extbase\Validation\ValidatorResolver
 	 * @inject
 	 */
@@ -89,16 +82,7 @@ abstract class AbstractController implements ControllerInterface {
 	protected $arguments;
 
 	/**
-	 * The results of the mapping of request arguments to controller arguments
-	 *
-	 * @var \TYPO3\CMS\Extbase\Property\MappingResults
-	 * @api
-	 * @deprecated since Extbase 1.4.0, will be removed two versions after Extbase 6.1
-	 */
-	protected $argumentsMappingResults;
-
-	/**
-	 * An array of supported request types.
+	 * An array of supported request types. By default only web requests are supported.
 	 * Modify or replace this array if your specific controller supports certain
 	 * (additional) request types.
 	 *
@@ -119,12 +103,6 @@ abstract class AbstractController implements ControllerInterface {
 	public function getControllerContext() {
 		return $this->controllerContext;
 	}
-
-	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer
-	 * @api
-	 */
-	protected $flashMessageContainer;
 
 	/**
 	 * @var ConfigurationManagerInterface
@@ -167,19 +145,6 @@ abstract class AbstractController implements ControllerInterface {
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 		$this->arguments = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments');
-	}
-
-	/**
-	 * This method is deprecated! For further information have a look at
-	 * the PhpDoc of class \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer
-	 *
-	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer $flashMessageContainer
-	 * @return void
-	 *
-	 * @deprecated since Extbase 6.1, will be removed 2 versions later
-	 */
-	public function injectFlashMessageContainer(\TYPO3\CMS\Extbase\Mvc\Controller\FlashMessageContainer $flashMessageContainer) {
-		$this->flashMessageContainer = $flashMessageContainer;
 	}
 
 	/**
@@ -265,12 +230,8 @@ abstract class AbstractController implements ControllerInterface {
 		if ($this->arguments !== NULL) {
 			$controllerContext->setArguments($this->arguments);
 		}
-		if ($this->argumentsMappingResults !== NULL) {
-			$controllerContext->setArgumentsMappingResults($this->argumentsMappingResults);
-		}
 		$controllerContext->setUriBuilder($this->uriBuilder);
 
-		$controllerContext->setFlashMessageContainer($this->flashMessageContainer);
 		return $controllerContext;
 	}
 
@@ -430,31 +391,14 @@ abstract class AbstractController implements ControllerInterface {
 	 * @return void
 	 */
 	protected function mapRequestArgumentsToControllerArguments() {
-		if ($this->configurationManager->isFeatureEnabled('rewrittenPropertyMapper')) {
-			/** @var \TYPO3\CMS\Extbase\Mvc\Controller\Argument $argument */
-			foreach ($this->arguments as $argument) {
-				$argumentName = $argument->getName();
-				if ($this->request->hasArgument($argumentName)) {
-					$argument->setValue($this->request->getArgument($argumentName));
-				} elseif ($argument->isRequired()) {
-					throw new \TYPO3\CMS\Extbase\Mvc\Controller\Exception\RequiredArgumentMissingException('Required argument "' . $argumentName . '" is not set.', 1298012500);
-				}
+		/** @var \TYPO3\CMS\Extbase\Mvc\Controller\Argument $argument */
+		foreach ($this->arguments as $argument) {
+			$argumentName = $argument->getName();
+			if ($this->request->hasArgument($argumentName)) {
+				$argument->setValue($this->request->getArgument($argumentName));
+			} elseif ($argument->isRequired()) {
+				throw new \TYPO3\CMS\Extbase\Mvc\Controller\Exception\RequiredArgumentMissingException('Required argument "' . $argumentName . '" is not set.', 1298012500);
 			}
-		} else {
-			// @deprecated since Extbase 1.4, will be removed two versions after Extbase 6.1
-			$optionalPropertyNames = array();
-			$allPropertyNames = $this->arguments->getArgumentNames();
-			foreach ($allPropertyNames as $propertyName) {
-				/** @var \TYPO3\CMS\Extbase\Mvc\Controller\Argument $argument */
-				$argument = $this->arguments[$propertyName];
-				if (!$argument->isRequired()) {
-					$optionalPropertyNames[] = $propertyName;
-				}
-			}
-			/** @var $validator ArgumentsValidator */
-			$validator = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ArgumentsValidator');
-			$this->deprecatedPropertyMapper->mapAndValidate($allPropertyNames, $this->request->getArguments(), $this->arguments, $optionalPropertyNames, $validator);
-			$this->argumentsMappingResults = $this->deprecatedPropertyMapper->getMappingResults();
 		}
 	}
 }

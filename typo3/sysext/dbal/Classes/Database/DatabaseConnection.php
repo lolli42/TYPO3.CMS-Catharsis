@@ -150,7 +150,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * SQL parser
 	 *
 	 * @var \TYPO3\CMS\Core\Database\SqlParser
-	 * @todo Define visibility
 	 */
 	public $SQLparser;
 
@@ -2862,10 +2861,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function admin_query($query) {
 		$parsedQuery = $this->SQLparser->parseSQL($query);
-		$ORIG_table = $parsedQuery['TABLE'];
 		if (!is_array($parsedQuery)) {
 			throw new \InvalidArgumentException('ERROR: Query could not be parsed: "' . htmlspecialchars($parsedQuery) . '". Query: "' . htmlspecialchars($query) . '"', 1310027793);
 		}
+		$ORIG_table = $parsedQuery['TABLE'];
 		// Process query based on type:
 		switch ($parsedQuery['type']) {
 			case 'CREATETABLE':

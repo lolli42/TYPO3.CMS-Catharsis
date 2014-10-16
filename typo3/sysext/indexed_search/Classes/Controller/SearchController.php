@@ -492,20 +492,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 				$cObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
 				$cObj->setCurrentVal($row['sys_language_uid']);
 				$output = $cObj->cObjGetSingle($this->settings['flagRendering'], $this->settings['flagRendering.']);
-			} else {
-				// ... otherwise, get flag from sys_language record:
-				$languageRow = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('flag, title', 'sys_language', 'uid=' . (int)$row['sys_language_uid'] . $GLOBALS['TSFE']->cObj->enableFields('sys_language'));
-				// Flag code:
-				$flag = $languageRow['flag'];
-				if ($flag) {
-					// FIXME not all flags from typo3/gfx/flags
-					// are available in media/flags/
-					$file = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(PATH_tslib) . 'media/flags/flag_' . $flag;
-					$imgInfo = @getimagesize((PATH_site . $file));
-					if (is_array($imgInfo)) {
-						$output = '<img src="' . $file . '" ' . $imgInfo[3] . ' title="' . htmlspecialchars($languageRow['title']) . '" alt="' . htmlspecialchars($languageRow['title']) . '" />';
-					}
-				}
 			}
 		}
 		return $output;
@@ -518,7 +504,6 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * @param string $alt Title attribute value in icon.
 	 * @param array $specRowConf TypoScript configuration specifically for search result.
 	 * @return string <img> tag for icon
-	 * @todo Define visibility
 	 */
 	public function makeItemTypeIcon($imageType, $alt, $specRowConf) {
 		// Build compound key if item type is 0, iconRendering is not used

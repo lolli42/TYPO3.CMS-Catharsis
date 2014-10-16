@@ -245,6 +245,7 @@ CREATE TABLE sys_filemounts (
   hidden tinyint(3) unsigned DEFAULT '0' NOT NULL,
   deleted tinyint(1) unsigned DEFAULT '0' NOT NULL,
   sorting int(11) unsigned DEFAULT '0' NOT NULL,
+  read_only tinyint(1) unsigned DEFAULT '0' NOT NULL,
   PRIMARY KEY (uid),
   KEY parent (pid)
 );
@@ -426,7 +427,7 @@ CREATE TABLE sys_file_reference (
 	title tinytext,
 	description text,
 	alternative tinytext,
-	link tinytext,
+	link varchar(1024) DEFAULT '' NOT NULL,
 	downloadname tinytext,
 
 	PRIMARY KEY (uid),

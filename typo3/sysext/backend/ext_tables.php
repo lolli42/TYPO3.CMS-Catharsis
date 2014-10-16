@@ -8,6 +8,30 @@ if (TYPO3_MODE === 'BE') {
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/RecordHistory/'
 	);
 
+	// Register file_edit
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_edit',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Edit/'
+	);
+
+	// Register file_newfolder
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_newfolder',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Newfolder/'
+	);
+
+	// Register file_rename
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_rename',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Rename/'
+	);
+
+	// Register file_rename
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_upload',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Upload/'
+	);
+
 	// Register edit wizard
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'wizard_edit',

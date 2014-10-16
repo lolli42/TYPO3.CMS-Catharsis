@@ -32,50 +32,30 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class SetupModuleController {
 
 	// Internal variables:
-	/**
-	 * @todo Define visibility
-	 */
 	public $MCONF = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	/**
 	 * document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $overrideConf;
 
 	/**
 	 * backend user object, set during simulate-user operation
 	 *
 	 * @var \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-	 * @todo Define visibility
 	 */
 	public $OLD_BE_USER;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $languageUpdate;
 
 	protected $pagetreeNeedsRefresh = FALSE;
@@ -104,6 +84,16 @@ class SetupModuleController {
 	 * @var \TYPO3\CMS\Core\FormProtection\BackendFormProtection
 	 */
 	protected $formProtection;
+
+	/**
+	 * @var string
+	 */
+	protected $simulateSelector = '';
+
+	/**
+	 * @var string
+	 */
+	protected $simUser = '';
 
 	/******************************
 	 *
@@ -256,7 +246,6 @@ class SetupModuleController {
 	 * Initializes the module for display of the settings form.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		$GLOBALS['LANG']->includeLLFile('EXT:setup/mod/locallang.xlf');
@@ -279,6 +268,7 @@ class SetupModuleController {
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:setup/Resources/Private/Templates/setup.html');
 		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="application/x-www-form-urlencoded">';
+		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Styles/styles.css');
 		$this->doc->tableLayout = array(
 			'defRow' => array(
 				'0' => array('<td class="td-label">', '</td>'),
@@ -310,7 +300,6 @@ class SetupModuleController {
 	 * Generate the main settings formular:
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		global $LANG;
@@ -364,8 +353,13 @@ class SetupModuleController {
 			}
 			$this->content .= $flashMessage->render();
 		}
+
+		// Render user switch
+		$this->content .= $this->renderSimulateUserSelectAndLabel();
+
 		// Render the menu items
 		$menuItems = $this->renderUserSetup();
+
 		$this->content .= $this->doc->getDynTabMenu($menuItems, 'user-setup', FALSE, FALSE, 1, FALSE, 1, $this->dividers2tabs);
 		$formToken = $this->formProtection->generateToken('BE user setup', 'edit');
 		$this->content .= $this->doc->section('', '<input type="hidden" name="simUser" value="' . $this->simUser . '" />
@@ -389,7 +383,6 @@ class SetupModuleController {
 	 * Prints the content / ends page
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -419,6 +412,7 @@ class SetupModuleController {
 	 * Render module
 	 *
 	 ******************************/
+
 	/**
 	 * renders the data for all tabs in the user setup and returns
 	 * everything that is needed with tabs and dyntab menu
@@ -646,7 +640,8 @@ class SetupModuleController {
 			$opt = array();
 			foreach ($users as $rr) {
 				if ($rr['uid'] != $GLOBALS['BE_USER']->user['uid']) {
-					$opt[] = '<option value="' . $rr['uid'] . '"' . ($this->simUser == $rr['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars(($rr['username'] . ' (' . $rr['realName'] . ')')) . '</option>';
+					$label = htmlspecialchars(($rr['username'] . ($rr['realName'] ? ' (' . $rr['realName'] . ')' : '')));
+					$opt[] = '<option value="' . $rr['uid'] . '"' . ($this->simUser == $rr['uid'] ? ' selected="selected"' : '') . '>' . $label . '</option>';
 				}
 			}
 			if (count($opt)) {
@@ -671,12 +666,21 @@ class SetupModuleController {
 	}
 
 	/**
-	 * Returns a select with simulate users
+	 * Render simulate user select and label
 	 *
-	 * @return string Complete select as HTML string
+	 * @return string
 	 */
-	public function renderSimulateUserSelect($params, $pObj) {
-		return $pObj->simulateSelector;
+	protected function renderSimulateUserSelectAndLabel() {
+		if ($this->simulateSelector === '') {
+			return '';
+		}
+
+		return '<p>' .
+			'<label for="field_simulate" style="margin-right: 20px;">' .
+			$GLOBALS['LANG']->sL('LLL:EXT:setup/mod/locallang.xlf:simulate') .
+			'</label>' .
+			$this->simulateSelector .
+			'</p>';
 	}
 
 	/**

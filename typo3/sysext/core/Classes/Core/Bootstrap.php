@@ -69,7 +69,7 @@ class Bootstrap {
 	 * @var string Application context
 	 */
 	protected function __construct($applicationContext) {
-		$this->requestId = uniqid();
+		$this->requestId = substr(md5(uniqid('', TRUE)), 0, 13);
 		$this->applicationContext = new ApplicationContext($applicationContext);
 	}
 
@@ -231,9 +231,6 @@ class Bootstrap {
 			->initializeL10nLocales()
 			->convertPageNotFoundHandlingToBoolean()
 			->registerGlobalDebugFunctions()
-			// SwiftMailerAdapter is
-			// @deprecated since 6.1, will be removed two versions later - will be removed together with \TYPO3\CMS\Core\Utility\MailUtility::mail()
-			->registerSwiftMailer()
 			->configureExceptionHandling()
 			->setMemoryLimit()
 			->defineTypo3RequestTypes();
@@ -563,18 +560,6 @@ class Bootstrap {
 	}
 
 	/**
-	 * Mail sending via Swift Mailer
-	 *
-	 * @return \TYPO3\CMS\Core\Core\Bootstrap
-	 * @deprecated since 6.1, will be removed two versions later - will be removed together with \TYPO3\CMS\Core\Utility\MailUtility::mail()
-	 */
-	protected function registerSwiftMailer() {
-		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/utility/class.t3lib_utility_mail.php']['substituteMailDelivery'][] =
-			'TYPO3\\CMS\\Core\\Mail\\SwiftMailerAdapter';
-		return $this;
-	}
-
-	/**
 	 * Configure and set up exception and error handling
 	 *
 	 * @return Bootstrap
@@ -834,7 +819,7 @@ class Bootstrap {
 			} else {
 				$sslPortSuffix = '';
 			}
-			if ($GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] == 3) {
+			if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 3) {
 				$requestStr = substr(Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT'), strlen(Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir));
 				if ($requestStr === 'index.php' && !Utility\GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 					list(, $url) = explode('://', Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 2);

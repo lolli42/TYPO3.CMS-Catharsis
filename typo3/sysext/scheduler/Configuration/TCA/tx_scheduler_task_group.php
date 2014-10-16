@@ -3,7 +3,7 @@ return array(
 	'ctrl' => array(
 		'label' => 'groupName',
 		'tstamp' => 'tstamp',
-		'title' => 'LLL:EXT:scheduler/locallang_tca.xlf:tx_scheduler_task_group',
+		'title' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang_tca.xlf:tx_scheduler_task_group',
 		'crdate' => 'crdate',
 		'cruser_id' => 'cruser_id',
 		'delete' => 'deleted',
@@ -21,7 +21,7 @@ return array(
 	),
 	'columns' => array(
 		'groupName' => array(
-			'label' => 'LLL:EXT:scheduler/locallang_tca.xlf:tx_scheduler_task_group.groupName',
+			'label' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang_tca.xlf:tx_scheduler_task_group.groupName',
 			'config' => array(
 				'type' => 'input',
 				'size' => '35',
@@ -31,7 +31,7 @@ return array(
 			)
 		),
 		'description' => array(
-			'label' => 'LLL:EXT:scheduler/locallang_tca.xlf:tx_scheduler_task_group.description',
+			'label' => 'LLL:EXT:scheduler/Resources/Private/Language/locallang_tca.xlf:tx_scheduler_task_group.description',
 			'config' => array(
 				'type' => 'text'
 			),
@@ -46,6 +46,6 @@ return array(
 		)
 	),
 	'types' => array(
-		'1' => array('showitem' => 'hidden;;;;1-1-1,groupName;;1;;3-3-3,description;;1;;3-3-3')
+		'1' => array('showitem' => 'hidden,groupName;;1,description;;1')
 	)
 );

@@ -61,7 +61,7 @@
 				<source>Collapse table</source>
 			</trans-unit>
 			<trans-unit id="labels.enterSearchString" xml:space="preserve">
-				<source>Search String:</source>
+				<source>Enter search term</source>
 			</trans-unit>
 			<trans-unit id="labels.enterSearchLevels" xml:space="preserve">
 				<source>This page|1 level down|2 levels down|3 levels down|4 levels down</source>
@@ -345,6 +345,30 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.noRecordFound" xml:space="preserve">
 				<source>No record found</source>
+			</trans-unit>
+			<trans-unit id="labels.title.searchIcon" xml:space="preserve">
+				<source>Toggle search toolbar</source>
+			</trans-unit>
+			<trans-unit id="labels.title.searchString" xml:space="preserve">
+				<source>Search term</source>
+			</trans-unit>
+			<trans-unit id="labels.title.limit" xml:space="preserve">
+				<source>Limit</source>
+			</trans-unit>
+			<trans-unit id="labels.title.search" xml:space="preserve">
+				<source>Search</source>
+			</trans-unit>
+			<trans-unit id="labels.title.search_levels" xml:space="preserve">
+				<source>Search levels</source>
+			</trans-unit>
+			<trans-unit id="labels.label.searchString" xml:space="preserve">
+				<source>Search term</source>
+			</trans-unit>
+			<trans-unit id="labels.label.limit" xml:space="preserve">
+				<source>Limit</source>
+			</trans-unit>
+			<trans-unit id="labels.label.search_levels" xml:space="preserve">
+				<source>Search levels</source>
 			</trans-unit>
 			<trans-unit id="alttext.suggestSearching" xml:space="preserve">
 				<source>Searching...</source>
@@ -877,6 +901,9 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="cm.expandBranch" xml:space="preserve">
 				<source>Expand Branch</source>
 			</trans-unit>
+			<trans-unit id="cm.more" xml:space="preserve">
+				<source>More options...</source>
+			</trans-unit>
 			<trans-unit id="tree.defaultPageTitle" xml:space="preserve">
 				<source>[Default Title]</source>
 			</trans-unit>
@@ -1061,6 +1088,9 @@ Check also the following points:\n
 			</trans-unit>
 			<trans-unit id="error.items_proc_func_error" xml:space="preserve">
 				<source>An error occurred trying to process items for field "%1$s" (%2$s).</source>
+			</trans-unit>
+			<trans-unit id="error.invalidEmail" xml:space="preserve">
+				<source>"%s" is not a valid e-mail address.</source>
 			</trans-unit>
 		</body>
 	</file>

@@ -25,21 +25,14 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
 	/**
-	 * @Internal
-	 * @todo Define visibility
+	 * @internal
 	 */
 	public $pageinfo;
-
-	/**
-	 * @todo Define visibility
-	 */
-	public $fileProcessor;
 
 	/**
 	 * Document Template Object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 

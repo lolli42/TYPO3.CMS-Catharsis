@@ -28,120 +28,67 @@ class RecordList {
 	// Page Id for which to make the listing
 	/**
 	 * @var integer
-	 * @todo Define visibility
 	 */
 	public $id;
 
 	// Pointer - for browsing list of records.
-	/**
-	 * @todo Define visibility
-	 */
 	public $pointer;
 
 	// Thumbnails or not
-	/**
-	 * @todo Define visibility
-	 */
 	public $imagemode;
 
 	// Which table to make extended listing for
-	/**
-	 * @todo Define visibility
-	 */
 	public $table;
 
 	// Search-fields
-	/**
-	 * @todo Define visibility
-	 */
 	public $search_field;
 
 	// Search-levels
-	/**
-	 * @todo Define visibility
-	 */
 	public $search_levels;
 
 	// Show-limit
-	/**
-	 * @todo Define visibility
-	 */
 	public $showLimit;
 
 	// Return URL
-	/**
-	 * @todo Define visibility
-	 */
 	public $returnUrl;
 
 	// Clear-cache flag - if set, clears page cache for current id.
-	/**
-	 * @todo Define visibility
-	 */
 	public $clear_cache;
 
 	// Command: Eg. "delete" or "setCB" (for TCEmain / clipboard operations)
-	/**
-	 * @todo Define visibility
-	 */
 	public $cmd;
 
 	// Table on which the cmd-action is performed.
-	/**
-	 * @todo Define visibility
-	 */
 	public $cmd_table;
 
 	// Internal, static:
 	// Page select perms clause
-	/**
-	 * @todo Define visibility
-	 */
 	public $perms_clause;
 
 	// Module TSconfig
-	/**
-	 * @todo Define visibility
-	 */
 	public $modTSconfig;
 
 	// Current ids page record
-	/**
-	 * @todo Define visibility
-	 */
 	public $pageinfo;
 
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	// Module configuration
-	/**
-	 * @todo Define visibility
-	 */
 	public $MCONF = array();
 
 	// Menu configuration
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
 	// Module settings (session variable)
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	// Internal, dynamic:
 	// Module output accumulation
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
 	/**
@@ -156,7 +103,6 @@ class RecordList {
 	 * Initializing the module
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		// Setting module configuration / page select clause
@@ -182,7 +128,6 @@ class RecordList {
 	 * Initialize function menu array
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function menuConfig() {
 		// MENU-ITEMS:
@@ -201,7 +146,6 @@ class RecordList {
 	 * Clears page cache for the current id, $this->id
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function clearCache() {
 		if ($this->clear_cache) {
@@ -216,7 +160,6 @@ class RecordList {
 	 * Main function, starting the rendering of the list.
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Start document template object:
@@ -226,6 +169,7 @@ class RecordList {
 		// Loading current page record and checking access:
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		$access = is_array($this->pageinfo) ? 1 : 0;
+
 		// Apply predefined values for hidden checkboxes
 		// Set predefined value for DisplayBigControlPanel:
 		if ($this->modTSconfig['properties']['enableDisplayBigControlPanel'] === 'activated') {
@@ -245,6 +189,7 @@ class RecordList {
 		} elseif ($this->modTSconfig['properties']['enableLocalizationView'] === 'deactivated') {
 			$this->MOD_SETTINGS['localization'] = FALSE;
 		}
+
 		// Initialize the dblist object:
 		/** @var $dblist \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList */
 		$dblist = GeneralUtility::makeInstance('TYPO3\\CMS\\Recordlist\\RecordList\\DatabaseRecordList');
@@ -401,23 +346,39 @@ class RecordList {
 					-->
 					<div id="typo3-listOptions">
 						<form action="" method="post">';
+
 			// Add "display bigControlPanel" checkbox:
 			if ($this->modTSconfig['properties']['enableDisplayBigControlPanel'] === 'selectable') {
-				$this->body .= BackendUtility::getFuncCheck($this->id, 'SET[bigControlPanel]', $this->MOD_SETTINGS['bigControlPanel'], '', $this->table ? '&table=' . $this->table : '', 'id="checkLargeControl"');
-				$this->body .= '<label for="checkLargeControl">' . BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('largeControl', TRUE)) . '</label><br />';
+				$this->body .= '<div class="checkbox">' .
+					'<label for="checkLargeControl">' .
+					BackendUtility::getFuncCheck($this->id, 'SET[bigControlPanel]', $this->MOD_SETTINGS['bigControlPanel'], '', $this->table ? '&table=' . $this->table : '', 'id="checkLargeControl"') .
+					BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('largeControl', TRUE)) .
+					'</label>' .
+					'</div>';
 			}
+
 			// Add "clipboard" checkbox:
 			if ($this->modTSconfig['properties']['enableClipBoard'] === 'selectable') {
 				if ($dblist->showClipboard) {
-					$this->body .= BackendUtility::getFuncCheck($this->id, 'SET[clipBoard]', $this->MOD_SETTINGS['clipBoard'], '', $this->table ? '&table=' . $this->table : '', 'id="checkShowClipBoard"');
-					$this->body .= '<label for="checkShowClipBoard">' . BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('showClipBoard', TRUE)) . '</label><br />';
+					$this->body .= '<div class="checkbox">' .
+						'<label for="checkShowClipBoard">' .
+						BackendUtility::getFuncCheck($this->id, 'SET[clipBoard]', $this->MOD_SETTINGS['clipBoard'], '', $this->table ? '&table=' . $this->table : '', 'id="checkShowClipBoard"') .
+						BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('showClipBoard', TRUE)) .
+						'</label>' .
+						'</div>';
 				}
 			}
+
 			// Add "localization view" checkbox:
 			if ($this->modTSconfig['properties']['enableLocalizationView'] === 'selectable') {
-				$this->body .= BackendUtility::getFuncCheck($this->id, 'SET[localization]', $this->MOD_SETTINGS['localization'], '', $this->table ? '&table=' . $this->table : '', 'id="checkLocalization"');
-				$this->body .= '<label for="checkLocalization">' . BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('localization', TRUE)) . '</label><br />';
+				$this->body .= '<div class="checkbox">' .
+					'<label for="checkLocalization">' .
+					BackendUtility::getFuncCheck($this->id, 'SET[localization]', $this->MOD_SETTINGS['localization'], '', $this->table ? '&table=' . $this->table : '', 'id="checkLocalization"') .
+					BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_options', $GLOBALS['LANG']->getLL('localization', TRUE)) .
+					'</label>' .
+					'</div>';
 			}
+
 			$this->body .= '
 						</form>
 					</div>';
@@ -425,11 +386,6 @@ class RecordList {
 		// Printing clipboard if enabled
 		if ($this->MOD_SETTINGS['clipBoard'] && $dblist->showClipboard && ($dblist->HTMLcode || $dblist->clipObj->hasElements())) {
 			$this->body .= '<div class="db_list-dashboard">' . $dblist->clipObj->printClipboard() . '</div>';
-		}
-		// Search box:
-		if (!$this->modTSconfig['properties']['disableSearchBox'] && ($dblist->HTMLcode || $dblist->searchString !== '')) {
-			$sectionTitle = BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_searchbox', $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE));
-			$this->body .= '<div class="db_list-searchbox">' . $this->doc->section($sectionTitle, $dblist->getSearchBox(), FALSE, TRUE, FALSE, TRUE) . '</div>';
 		}
 		// Additional footer content
 		$footerContentHook = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['recordlist/mod1/index.php']['drawFooterHook'];
@@ -444,8 +400,16 @@ class RecordList {
 		$markers = array(
 			'CSH' => $docHeaderButtons['csh'],
 			'CONTENT' => $this->body,
-			'EXTRACONTAINERCLASS' => $this->table ? 'singletable' : ''
+			'EXTRACONTAINERCLASS' => $this->table ? 'singletable' : '',
+			'BUTTONLIST_ADDITIONAL' => '',
+			'SEARCHBOX' => '',
+			'BUTTONLIST_ADDITIONAL' => ''
 		);
+		// searchbox toolbar
+		if (!$this->modTSconfig['properties']['disableSearchBox'] && ($dblist->HTMLcode || !empty($dblist->searchString))) {
+			$markers['SEARCHBOX'] = $dblist->getSearchBox();
+			$markers['BUTTONLIST_ADDITIONAL'] = '<a href="#" onclick="toggleSearchToolbox(); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon', TRUE) . '">'.\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-toolbar-menu-search').'</a>';
+		}
 		// Build the <body> for the module
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
 		// Renders the module page
@@ -456,7 +420,6 @@ class RecordList {
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;

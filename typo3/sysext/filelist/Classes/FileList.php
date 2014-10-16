@@ -29,98 +29,59 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	/**
 	 * Default Max items shown
 	 *
-	 * @todo Define visibility
 	 */
 	public $iLimit = 40;
 
 	/**
 	 * Boolean. Thumbnails on records containing files (pictures)
 	 *
-	 * @todo Define visibility
 	 */
 	public $thumbs = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $widthGif = '<img src="clear.gif" width="1" height="1" hspace="165" alt="" />';
 
 	/**
 	 * Max length of strings
 	 *
-	 * @todo Define visibility
 	 */
 	public $fixedL = 30;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $script = '';
 
 	/**
 	 * If TRUE click menus are generated on files and folders
 	 *
-	 * @todo Define visibility
 	 */
 	public $clickMenus = 1;
 
 	/**
 	 * The field to sort by
 	 *
-	 * @todo Define visibility
 	 */
 	public $sort = '';
 
 	/**
 	 * Reverse sorting flag
 	 *
-	 * @todo Define visibility
 	 */
 	public $sortRev = 1;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $firstElementNumber = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $clipBoard = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $bigControlPanel = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $JScode = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $HTMLcode = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $totalbytes = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $dirs = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $files = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $path = '';
 
 	/**
@@ -131,23 +92,13 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	/**
 	 * Counting the elements no matter what
 	 *
-	 * @todo Define visibility
 	 */
 	public $eCounter = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $dirCounter = 0;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $totalItems = '';
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $CBnames = array();
 
 	/**
@@ -159,7 +110,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * @param boolean $sortRev Sorting direction
 	 * @param boolean $bigControlPanel Show clipboard flag
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function start(\TYPO3\CMS\Core\Resource\Folder $folderObject, $pointer, $sort, $sortRev, $clipBoard = FALSE, $bigControlPanel = FALSE) {
 		$this->script = BackendUtility::getModuleUrl('file_list');
@@ -183,7 +133,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * Reading files and directories, counting elements and generating the list in ->HTMLcode
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function generateList() {
 		$this->HTMLcode .= $this->getTable('fileext,tstamp,size,rw,_REF_');
@@ -226,7 +175,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 				$otherMarkers['PAGE_ICON'] = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($otherMarkers['PAGE_ICON'], $folderObject->getCombinedIdentifier());
 			}
 			// Add paste button if clipboard is initialized
-			if ($this->clipObj instanceof \TYPO3\CMS\Backend\Clipboard\Clipboard) {
+			if ($this->clipObj instanceof \TYPO3\CMS\Backend\Clipboard\Clipboard && $folderObject->checkActionPermission('write')) {
 				$elFromTable = $this->clipObj->elFromTable('_FILE');
 				if (count($elFromTable)) {
 					$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
@@ -246,7 +195,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * @param string $cmd "cmd" value
 	 * @param string $warning Warning for JS confirm message
 	 * @return string Linked string
-	 * @todo Define visibility
 	 */
 	public function linkClipboardHeaderIcon($string, $table, $cmd, $warning = '') {
 		$onClickEvent = 'document.dblistForm.cmd.value=\'' . $cmd . '\';document.dblistForm.submit();';
@@ -261,7 +209,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param array $rowlist Array of files from path
 	 * @return string HTML-table
-	 * @todo Define visibility
 	 */
 	public function getTable($rowlist) {
 		// TODO use folder methods directly when they support filters
@@ -344,7 +291,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 					$cells = array();
 					$table = '_FILE';
 					$elFromTable = $this->clipObj->elFromTable($table);
-					if (count($elFromTable)) {
+					if (count($elFromTable) && $this->folderObject->checkActionPermission('write')) {
 						$cells[] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', 1) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
 					}
 					if ($this->clipObj->current != 'normal' && $iOut) {
@@ -410,7 +357,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * Gets the number of files and total size of a folder
 	 *
 	 * @return string
-	 * @todo Define visibility
 	 */
 	public function getFolderInfo() {
 		if ($this->counter == 1) {
@@ -426,7 +372,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder[] $folders Folders of \TYPO3\CMS\Core\Resource\Folder
 	 * @return string HTML table rows.
-	 * @todo Define visibility
 	 */
 	public function formatDirList(array $folders) {
 		$out = '';
@@ -514,7 +459,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * @param string $title String to be wrapped in links
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject Folder to work on
 	 * @return string HTML
-	 * @todo Define visibility
 	 */
 	public function linkWrapDir($title, \TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		$href = $this->backPath . $this->script . '&id=' . rawurlencode($folderObject->getCombinedIdentifier());
@@ -533,7 +477,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * @param string $code String to be wrapped in links
 	 * @param \TYPO3\CMS\Core\Resource\File $fileObject File to be linked
 	 * @return string HTML
-	 * @todo Define visibility
 	 */
 	public function linkWrapFile($code, \TYPO3\CMS\Core\Resource\File $fileObject) {
 		$fileUrl = $fileObject->getPublicUrl(TRUE);
@@ -550,7 +493,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * the URL would be invalid
 	 *
 	 * @return string URL
-	 * @todo Define visibility
 	 */
 	public function listURL() {
 		return GeneralUtility::linkThisScript(array(
@@ -587,7 +529,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\File[] $files File items
 	 * @return string HTML table rows.
-	 * @todo Define visibility
 	 */
 	public function formatFileList(array $files) {
 		$out = '';
@@ -629,7 +570,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 							$theData[$field] = strtoupper($ext);
 							break;
 						case 'tstamp':
-							$theData[$field] = BackendUtility::date($fileObject->getProperty('modification_date'));
+							$theData[$field] = BackendUtility::date($fileObject->getModificationTime());
 							break;
 						case '_CLIPBOARD_':
 							$temp = '';
@@ -661,7 +602,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 								}
 							}
 
-							if (!empty($systemLanguages)) {
+							if (!empty($systemLanguages) && $fileObject->isIndexed() && $fileObject->checkActionPermission('write')) {
 								$metaDataRecord = $fileObject->_getMetaData();
 								$translations = $this->getTranslationsForMetaData($metaDataRecord);
 								$languageCode = '';
@@ -735,7 +676,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param string $ext File extension
 	 * @return boolean
-	 * @todo Define visibility
 	 */
 	public function isImage($ext) {
 		return GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], strtolower($ext));
@@ -748,7 +688,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * @param string $folderIdentifier ID (path)
 	 * @param string $col Sorting column
 	 * @return string HTML
-	 * @todo Define visibility
 	 */
 	public function linkWrapSort($code, $folderIdentifier, $col) {
 		if ($this->sort === $col) {
@@ -768,9 +707,11 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\File|\TYPO3\CMS\Core\Resource\Folder $fileOrFolderObject Array with information about the file/directory for which to make the clipboard panel for the listing.
 	 * @return string HTML-table
-	 * @todo Define visibility
 	 */
 	public function makeClip($fileOrFolderObject) {
+		if (!$fileOrFolderObject->checkActionPermission('read')) {
+			return '';
+		}
 		$cells = array();
 		$fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
 		$md5 = GeneralUtility::shortmd5($fullIdentifier);
@@ -778,7 +719,12 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		if ($this->clipObj->current == 'normal') {
 			$isSel = $this->clipObj->isSelected('_FILE', $md5);
 			$cells[] = '<a href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 1, ($isSel == 'copy'))) . '">' . IconUtility::getSpriteIcon(('actions-edit-copy' . ($isSel == 'copy' ? '-release' : '')), array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.copy', TRUE))) . '</a>';
-			$cells[] = '<a href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 0, ($isSel == 'cut'))) . '">' . IconUtility::getSpriteIcon(('actions-edit-cut' . ($isSel == 'cut' ? '-release' : '')), array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut', TRUE))) . '</a>';
+			// we can only cut if file can be moved
+			if ($fileOrFolderObject->checkActionPermission('move')) {
+				$cells[] = '<a href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 0, ($isSel == 'cut'))) . '">' . IconUtility::getSpriteIcon(('actions-edit-cut' . ($isSel == 'cut' ? '-release' : '')), array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut', TRUE))) . '</a>';
+			} else {
+				$cells[] = IconUtility::getSpriteIcon('empty-empty');
+			}
 		} else {
 			// For numeric pads, add select checkboxes:
 			$n = '_FILE|' . $md5;
@@ -788,7 +734,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		}
 		// Display PASTE button, if directory:
 		$elFromTable = $this->clipObj->elFromTable('_FILE');
-		if (is_a($fileOrFolderObject, 'TYPO3\\CMS\\Core\\Resource\\Folder') && count($elFromTable)) {
+		if (is_a($fileOrFolderObject, 'TYPO3\\CMS\\Core\\Resource\\Folder') && count($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
 			$cells[] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $fullIdentifier)) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $fullIdentifier, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_pasteInto', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
 		}
 		// Compile items into a DIV-element:
@@ -804,7 +750,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\File|\TYPO3\CMS\Core\Resource\Folder $fileOrFolderObject Array with information about the file/directory for which to make the edit control section for the listing.
 	 * @return string HTML-table
-	 * @todo Define visibility
 	 */
 	public function makeEdit($fileOrFolderObject) {
 		$cells = array();
@@ -828,15 +773,17 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		}
 		// Edit file content (if editable)
 		if (is_a($fileOrFolderObject, 'TYPO3\\CMS\\Core\\Resource\\File') && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
-			$editOnClick = 'top.content.list_frame.location.href=top.TS.PATH_typo3+\'file_edit.php?target=' . rawurlencode($fullIdentifier) . '&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
-			$cells['edit'] = '<a href="#" onclick="' . $editOnClick . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
+			$url = BackendUtility::getModuleUrl('file_edit', array('target' => $fullIdentifier));
+			$editOnClick = 'top.content.list_frame.location.href=top.TS.PATH_typo3+' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
+			$cells['edit'] = '<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
 		} else {
 			$cells['edit'] = IconUtility::getSpriteIcon('empty-empty');
 		}
 		// rename the file
 		if ($fileOrFolderObject->checkActionPermission('rename')) {
-			$renameOnClick = 'top.content.list_frame.location.href = top.TS.PATH_typo3+\'file_rename.php?target=' . rawurlencode($fullIdentifier) . '&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
-			$cells['rename'] = '<a href="#" onclick="' . $renameOnClick . '"  title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . IconUtility::getSpriteIcon('actions-edit-rename') . '</a>';
+			$url = BackendUtility::getModuleUrl('file_rename', array('target' => $fullIdentifier));
+			$renameOnClick = 'top.content.list_frame.location.href = top.TS.PATH_typo3+' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
+			$cells['rename'] = '<a href="#" onclick="' . htmlspecialchars($renameOnClick) . '"  title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . IconUtility::getSpriteIcon('actions-edit-rename') . '</a>';
 		} else {
 			$cells['rename'] = IconUtility::getSpriteIcon('empty-empty');
 		}
@@ -899,7 +846,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\File|\TYPO3\CMS\Core\Resource\Folder $fileOrFolderObject Array with information about the file/directory for which to make the clipboard panel for the listing.
 	 * @return string HTML
-	 * @todo Define visibility
 	 */
 	public function makeRef($fileOrFolderObject) {
 		if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FolderInterface) {

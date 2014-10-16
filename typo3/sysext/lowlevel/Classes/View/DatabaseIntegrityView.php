@@ -24,37 +24,21 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  */
 class DatabaseIntegrityView {
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MCONF = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_MENU = array();
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $MOD_SETTINGS = array();
 
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
-	/**
-	 * @todo Define visibility
-	 */
 	public $menu;
 
 	protected $formName = 'queryform';
@@ -71,7 +55,6 @@ class DatabaseIntegrityView {
 	 * Initialization
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function init() {
 		global $LANG, $BACK_PATH;
@@ -98,7 +81,6 @@ class DatabaseIntegrityView {
 	 * Configure menu
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function menuConfig() {
 		global $LANG;
@@ -187,7 +169,6 @@ class DatabaseIntegrityView {
 	 * Main
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function main() {
 		// Content creation
@@ -227,7 +208,6 @@ class DatabaseIntegrityView {
 	 * Print content
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -294,7 +274,6 @@ class DatabaseIntegrityView {
 	 * Check and update reference index!
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function func_refindex() {
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('manageRefIndex', TRUE));
@@ -332,7 +311,6 @@ class DatabaseIntegrityView {
 	 * Search (Full / Advanced)
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function func_search() {
 		global $LANG;
@@ -348,11 +326,11 @@ class DatabaseIntegrityView {
 			$menu2 .= BackendUtility::getFuncMenu(0, 'SET[search_query_makeQuery]', $this->MOD_SETTINGS['search_query_makeQuery'], $this->MOD_MENU['search_query_makeQuery']) . '<br />';
 		}
 		if (!$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopCheckboxes'] && $this->MOD_SETTINGS['search'] == 'query') {
-			$menu2 .= BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_query_smallparts]', $this->MOD_SETTINGS['search_query_smallparts'], '', '', 'id="checkSearch_query_smallparts"') . '&nbsp;<label for="checkSearch_query_smallparts">' . $GLOBALS['LANG']->getLL('showSQL') . '</label><br />';
-			$menu2 .= BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_result_labels]', $this->MOD_SETTINGS['search_result_labels'], '', '', 'id="checkSearch_result_labels"') . '&nbsp;<label for="checkSearch_result_labels">' . $GLOBALS['LANG']->getLL('useFormattedStrings') . '</label><br />';
-			$menu2 .= BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[labels_noprefix]', $this->MOD_SETTINGS['labels_noprefix'], '', '', 'id="checkLabels_noprefix"') . '&nbsp;<label for="checkLabels_noprefix">' . $GLOBALS['LANG']->getLL('dontUseOrigValues') . '</label><br />';
-			$menu2 .= BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[options_sortlabel]', $this->MOD_SETTINGS['options_sortlabel'], '', '', 'id="checkOptions_sortlabel"') . '&nbsp;<label for="checkOptions_sortlabel">' . $GLOBALS['LANG']->getLL('sortOptions') . '</label><br />';
-			$menu2 .= BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[show_deleted]', $this->MOD_SETTINGS['show_deleted'], '', '', 'id="checkShow_deleted"') . '&nbsp;<label for="checkShow_deleted">' . $GLOBALS['LANG']->getLL('showDeleted') . '</label>';
+			$menu2 .= '<div class="checkbox"><label for="checkSearch_query_smallparts">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_query_smallparts]', $this->MOD_SETTINGS['search_query_smallparts'], '', '', 'id="checkSearch_query_smallparts"') . $GLOBALS['LANG']->getLL('showSQL') . '</label></div>';
+			$menu2 .= '<div class="checkbox"><label for="checkSearch_result_labels">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_result_labels]', $this->MOD_SETTINGS['search_result_labels'], '', '', 'id="checkSearch_result_labels"') . $GLOBALS['LANG']->getLL('useFormattedStrings') . '</label></div>';
+			$menu2 .= '<div class="checkbox"><label for="checkLabels_noprefix">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[labels_noprefix]', $this->MOD_SETTINGS['labels_noprefix'], '', '', 'id="checkLabels_noprefix"') . $GLOBALS['LANG']->getLL('dontUseOrigValues') . '</label></div>';
+			$menu2 .= '<div class="checkbox"><label for="checkOptions_sortlabel">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[options_sortlabel]', $this->MOD_SETTINGS['options_sortlabel'], '', '', 'id="checkOptions_sortlabel"') . $GLOBALS['LANG']->getLL('sortOptions') . '</label></div>';
+			$menu2 .= '<div class="checkbox"><label for="checkShow_deleted">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[show_deleted]', $this->MOD_SETTINGS['show_deleted'], '', '', 'id="checkShow_deleted"') . $GLOBALS['LANG']->getLL('showDeleted') . '</label></div>';
 		}
 		$this->content .= $this->doc->section('', $menu2) . $this->doc->spacer(10);
 		switch ($this->MOD_SETTINGS['search']) {
@@ -371,7 +349,6 @@ class DatabaseIntegrityView {
 	 * Records overview
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function func_records() {
 		/** @var $admin \TYPO3\CMS\Core\Integrity\DatabaseIntegrityCheck */
@@ -473,7 +450,6 @@ class DatabaseIntegrityView {
 	 * Show list references
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function func_relations() {
 		global $LANG, $BACK_PATH;

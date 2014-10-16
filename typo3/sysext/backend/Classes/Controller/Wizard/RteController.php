@@ -30,32 +30,31 @@ class RteController {
 	 * document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	// Content accumulation for the module.
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $content;
 
 	// Internal, static: GPvars
 	// Wizard parameters, coming from TCEforms linking to the wizard.
 	/**
-	 * @todo Define visibility
+	 * @var array
 	 */
 	public $P;
 
 	// If set, launch a new window with the current records pid.
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $popView;
 
 	// Set to the URL of this script including variables which is needed to re-display the form. See main()
 	/**
-	 * @todo Define visibility
+	 * @var string
 	 */
 	public $R_URI;
 
@@ -132,8 +131,6 @@ class RteController {
 			$tceforms->initDefaultBEMode();
 			// SPECIAL: Disables all wizards - we are NOT going to need them.
 			$tceforms->disableWizards = 1;
-			// SPECIAL: Setting background color of the RTE to ordinary background
-			$tceforms->colorScheme[0] = $this->doc->bgColor;
 			// Initialize style for RTE object:
 			// Getting reference to the RTE object used to render the field!
 			$RTEobj = BackendUtility::RTEgetObj();
@@ -192,7 +189,6 @@ class RteController {
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
-	 * @todo Define visibility
 	 */
 	public function printContent() {
 		$this->content .= $this->doc->endPage();
@@ -260,7 +256,6 @@ class RteController {
 	 * @param string $table Table name
 	 * @param integer $uid Record uid
 	 * @return boolean
-	 * @todo Define visibility
 	 * @todo: Refactor to remove duplicate code (see FormsController, TableController)
 	 */
 	public function checkEditAccess($table, $uid) {

@@ -571,10 +571,10 @@ class ExtensionManagementUtility {
 	 * The insertion position can be defined accordant before of after existing list items.
 	 *
 	 * Example:
-	 * + list: 'field_a, field_b;;;;2-2-2, field_c;;;;3-3-3'
-	 * + insertionList: 'field_d, field_e;;;4-4-4'
+	 * + list: 'field_a, field_b, field_c'
+	 * + insertionList: 'field_d, field_e'
 	 * + insertionPosition: 'after:field_b'
-	 * -> 'field_a, field_b;;;;2-2-2, field_d, field_e;;;4-4-4, field_c;;;;3-3-3'
+	 * -> 'field_a, field_b, field_d, field_e, field_c'
 	 *
 	 * $insertPosition may contain ; and - characters: after:--palette--;;title
 	 *
@@ -632,8 +632,8 @@ class ExtensionManagementUtility {
 	 * and returns a duplicate-free variant of that insertion list.
 	 *
 	 * Example:
-	 * + list: 'field_a, field_b;;;;2-2-2, field_c;;;;3-3-3'
-	 * + insertion: 'field_b, field_d, field_c;;;4-4-4'
+	 * + list: 'field_a, field_b, field_c'
+	 * + insertion: 'field_b, field_d, field_c'
 	 * -> new insertion: 'field_d'
 	 *
 	 * Duplicate values in $insertionList are removed.
@@ -1472,7 +1472,7 @@ tt_content.' . $key . $prefix . ' {
 	 */
 	static public function getExtensionIcon($extensionPath, $returnFullPath = FALSE) {
 		$icon = '';
-		$iconFileTypesToCheckFor = array('png', 'gif');
+		$iconFileTypesToCheckFor = array('png', 'svg', 'gif');
 		foreach ($iconFileTypesToCheckFor as $fileType) {
 			if (file_exists($extensionPath . 'ext_icon.' . $fileType)) {
 				$icon = 'ext_icon.' . $fileType;
@@ -1851,19 +1851,6 @@ tt_content.' . $key . $prefix . ' {
 	 */
 	static protected function getExtTablesCacheIdentifier() {
 		return 'ext_tables_' . sha1((TYPO3_version . PATH_site . 'extTables'));
-	}
-
-	/**
-	 * Returns TRUE if configuration files in typo3conf/ are writable
-	 *
-	 * @return boolean TRUE if at least one configuration file in typo3conf/ is writable
-	 * @internal
-	 * @deprecated since 6.1, will be removed in two versions
-	 */
-	static public function isLocalconfWritable() {
-		GeneralUtility::logDeprecatedFunction();
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')
-			->canWriteConfiguration();
 	}
 
 	/**

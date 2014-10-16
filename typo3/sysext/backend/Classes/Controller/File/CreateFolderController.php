@@ -25,9 +25,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class CreateFolderController {
 
 	// External, static:
-	/**
-	 * @todo Define visibility
-	 */
 	public $folderNumber = 10;
 
 	// Internal, static:
@@ -35,26 +32,16 @@ class CreateFolderController {
 	 * document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 * @todo Define visibility
 	 */
 	public $doc;
 
 	// Name of the filemount
-	/**
-	 * @todo Define visibility
-	 */
 	public $title;
 
 	// Internal, static (GPVar):
-	/**
-	 * @todo Define visibility
-	 */
 	public $number;
 
 	// Set with the target path inputted in &target
-	/**
-	 * @todo Define visibility
-	 */
 	public $target;
 
 	/**
@@ -65,16 +52,10 @@ class CreateFolderController {
 	protected $folderObject;
 
 	// Return URL of list module.
-	/**
-	 * @todo Define visibility
-	 */
 	public $returnUrl;
 
 	// Internal, dynamic:
 	// Accumulating content
-	/**
-	 * @todo Define visibility
-	 */
 	public $content;
 
 	/**
@@ -124,7 +105,7 @@ class CreateFolderController {
 			function reload(a) {	//
 				if (!changed || (changed && confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:mess.redraw')) . '))) {
 					var params = "&target="+encodeURIComponent(path)+"&number="+a+"&returnUrl=' . rawurlencode($this->returnUrl) . '";
-					window.location.href = "file_newfolder.php?"+params;
+					window.location.href = "' . BackendUtility::getModuleUrl('file_newfolder') . '"+params;
 				}
 			}
 			function backToList() {	//

@@ -1,0 +1,100 @@
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
+
+/** used in the admin tools => DB check **/
+.t3-overview-list dt {
+	padding: 0px 0px 2px 20px;
+
+	img {
+		vertical-align: middle;
+		margin-right: 5px;
+	}
+}
+
+.t3-overview-list dd {
+	margin: 2px 0 15px 20px;
+	padding-left: 22px;
+}
+
+table {
+	background: transparent;
+}
+
+/**
+ * Common style for tables
+ *
+ * <table class="t3-table>
+ *   <thead>
+ *     <tr>
+ *       <th>...</th>
+ *       <th>...</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr>
+ *       <td>
+ *         <span class="t3-icon t3-icon-treeline t3-icon-treeline-join t3-icon-join">&nbsp;</span>
+ *       </td>
+ *       <td>...</td>
+ *     </tr>
+ *   </tbody>
+ * </table>
+ */
+
+.table {
+
+	> thead,
+	> tbody {
+		tr {
+			th:first-child,
+			th:last-child,
+			td:first-child,
+			td:last-child {
+				padding-left: 12px;
+			}
+		}
+	}
+
+	> thead {
+		> tr {
+			> th,
+			> td {
+				border-bottom: 1px solid #666;
+			}
+		}
+	}
+
+	> tbody {
+		> tr {
+			> td {
+				background-color: @table-bg;
+			}
+		}
+		> tr:hover {
+			> td {
+				transition: background-color 100ms linear;
+
+				a {
+					text-decoration: underline;
+				}
+			}
+		}
+	}
+}
+
+// TYPO3 standard <table class="t3-table">
+table.t3-table {
+	.table;
+	.table-striped;
+	.table-hover;
+}

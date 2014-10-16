@@ -577,7 +577,7 @@ class IconUtility {
 	 * and the correct background-position to show the necessary icon.
 	 *
 	 * If no options or overlays are given, the icon will be cached in
-	 * $priteIconCache.
+	 * $spriteIconCache.
 	 *
 	 * @param string $iconName The name of the icon to fetch
 	 * @param array $options An associative array with additional options and attributes for the tag. by default, the key is the name of the attribute, and the value is the parameter string that is set. However, there are some additional special reserved keywords that can be used as keys: "html" (which is the HTML that will be inside the icon HTML tag), "tagName" (which is an alternative tagName than "span"), and "class" (additional class names that will be merged with the sprite icon CSS classes)
@@ -1053,13 +1053,35 @@ class IconUtility {
 	 * @return string The sprite html icon tag
 	 */
 	static protected function buildSpriteHtmlIconTag(array $tagAttributes, $innerHtml = NULL, $tagName = NULL) {
+		list($tagAttributes, $innerHtml, $tagName) = static::emitBuildSpriteHtmlIconTagSignal($tagAttributes, $innerHtml, $tagName);
+
 		$innerHtml = $innerHtml === NULL ? '&nbsp;' : $innerHtml;
 		$tagName = $tagName === NULL ? 'span' : $tagName;
 		$attributes = '';
 		foreach ($tagAttributes as $attribute => $value) {
 			$attributes .= ' ' . htmlspecialchars($attribute) . '="' . htmlspecialchars($value) . '"';
 		}
+
 		return '<' . $tagName . $attributes . '>' . $innerHtml . '</' . $tagName . '>';
+	}
+
+	/**
+	 * @param array $tagAttributes An associative array of additional tagAttributes for the HTML tag
+	 * @param string $innerHtml The content within the tag, NULL by default
+	 * @param string $tagName The name of the HTML element that should be used (span by default), NULL by default
+	 * @return array
+	 */
+	static protected function emitBuildSpriteHtmlIconTagSignal(array $tagAttributes, $innerHtml, $tagName) {
+		return static::getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Backend\\Utility\\IconUtility', 'buildSpriteHtmlIconTag', array($tagAttributes, $innerHtml, $tagName));
+	}
+
+	/**
+	 * Get the SignalSlot dispatcher
+	 *
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	static protected function getSignalSlotDispatcher() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
 	}
 
 }
