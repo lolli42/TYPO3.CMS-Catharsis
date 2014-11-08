@@ -129,7 +129,7 @@ class AbstractController {
 	 * a redirect is initialized (will load the same step step controller again) or
 	 * if in install tool, the login form is displayed.
 	 *
-	 * @param boolean $tokenOk
+	 * @param bool $tokenOk
 	 * @return void
 	 */
 	protected function handleSessionTokenCheck($tokenOk) {
@@ -344,7 +344,7 @@ class AbstractController {
 	 * First installation is in progress, if LocalConfiguration does not exist,
 	 * or if isInitialInstallationInProgress is not set or FALSE.
 	 *
-	 * @return boolean TRUE if installation is in progress
+	 * @return bool TRUE if installation is in progress
 	 */
 	protected function isInitialInstallationInProgress() {
 		/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
@@ -441,7 +441,7 @@ class AbstractController {
 	/**
 	 * Return TRUE if dbal and adodb extension is loaded.
 	 *
-	 * @return boolean TRUE if dbal and adodb is loaded
+	 * @return bool TRUE if dbal and adodb is loaded
 	 */
 	protected function isDbalEnabled() {
 		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('adodb')

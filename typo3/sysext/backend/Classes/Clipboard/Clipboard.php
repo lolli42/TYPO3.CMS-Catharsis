@@ -77,8 +77,9 @@ class Clipboard {
 	 */
 	public $lockToNormal = 0;
 
-	// If set, clipboard is displaying files.
 	/**
+	 * If set, clipboard is displaying files.
+	 *
 	 * @var int
 	 */
 	public $fileMode = 0;
@@ -214,14 +215,14 @@ class Clipboard {
 	 *
 	 * @param array $CBarr Element array from outside ("key" => "selected/deselected")
 	 * @param string $table The 'table which is allowed'. Must be set.
-	 * @param boolean $removeDeselected Can be set in order to remove entries which are marked for deselection.
+	 * @param bool $removeDeselected Can be set in order to remove entries which are marked for deselection.
 	 * @return array Processed input $CBarr
 	 */
 	public function cleanUpCBC($CBarr, $table, $removeDeselected = 0) {
 		if (is_array($CBarr)) {
 			foreach ($CBarr as $k => $v) {
 				$p = explode('|', $k);
-				if ((string) $p[0] != (string) $table || $removeDeselected && !$v) {
+				if ((string)$p[0] != (string)$table || $removeDeselected && !$v) {
 					unset($CBarr[$k]);
 				}
 			}
@@ -405,7 +406,7 @@ class Clipboard {
 	/**
 	 * Returns true if the clipboard contains elements
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasElements() {
 		foreach ($this->clipData as $data) {
@@ -506,9 +507,9 @@ class Clipboard {
 	 * Returns the select-url for database elements
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Uid of record
-	 * @param boolean $copy If set, copymode will be enabled
-	 * @param boolean $deselect If set, the link will deselect, otherwise select.
+	 * @param int $uid Uid of record
+	 * @param bool $copy If set, copymode will be enabled
+	 * @param bool $deselect If set, the link will deselect, otherwise select.
 	 * @param array $baseArray The base array of GET vars to be sent in addition. Notice that current GET vars WILL automatically be included.
 	 * @return string URL linking to the current script but with the CB array set to select the element with table/uid
 	 */
@@ -525,8 +526,8 @@ class Clipboard {
 	 * Returns the select-url for files
 	 *
 	 * @param string $path Filepath
-	 * @param boolean $copy If set, copymode will be enabled
-	 * @param boolean $deselect If set, the link will deselect, otherwise select.
+	 * @param bool $copy If set, copymode will be enabled
+	 * @param bool $deselect If set, the link will deselect, otherwise select.
 	 * @param array $baseArray The base array of GET vars to be sent in addition. Notice that current GET vars WILL automatically be included.
 	 * @return string URL linking to the current script but with the CB array set to select the path
 	 */
@@ -546,7 +547,7 @@ class Clipboard {
 	 *
 	 * @param string $table Tablename (_FILE for files)
 	 * @param mixed $uid "destination": can be positive or negative indicating how the paste is done (paste into / paste after)
-	 * @param boolean $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
+	 * @param bool $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
 	 * @param array|NULL $update Additional key/value pairs which should get set in the moved/copied record (via DataHandler)
 	 * @return string
 	 */
@@ -565,8 +566,8 @@ class Clipboard {
 	/**
 	 * deleteUrl for current pad
 	 *
-	 * @param boolean $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
-	 * @param boolean $file If set, then the URL will link to the tce_file.php script in the typo3/ dir.
+	 * @param bool $setRedirect If set, then the redirect URL will point back to the current script, but with CB reset.
+	 * @param bool $file If set, then the URL will link to the tce_file.php script in the typo3/ dir.
 	 * @return string
 	 */
 	public function deleteUrl($setRedirect = 1, $file = 0) {
@@ -779,11 +780,11 @@ class Clipboard {
 				if ($v) {
 					list($table, $uid) = explode('|', $k);
 					if ($table != '_FILE') {
-						if ((!$matchTable || (string) $table == (string) $matchTable) && $GLOBALS['TCA'][$table]) {
+						if ((!$matchTable || (string)$table == (string)$matchTable) && $GLOBALS['TCA'][$table]) {
 							$list[$k] = $pad == 'normal' ? $v : $uid;
 						}
 					} else {
-						if ((string) $table == (string) $matchTable) {
+						if ((string)$table == (string)$matchTable) {
 							$list[$k] = $v;
 						}
 					}
@@ -798,7 +799,7 @@ class Clipboard {
 	 * If the pad is "normal", the mode value is returned if the element existed. Thus you'll know if the item was copy or cut moded...
 	 *
 	 * @param string $table Table name, (_FILE for files...)
-	 * @param integer $uid Element uid (path for files)
+	 * @param int $uid Element uid (path for files)
 	 * @return string
 	 */
 	public function isSelected($table, $uid) {
@@ -812,7 +813,7 @@ class Clipboard {
 	 * Makes sense only for DB records - not files!
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Element uid
+	 * @param int $uid Element uid
 	 * @return array Element record with extra field _RECORD_TITLE set to the title of the record
 	 */
 	public function getSelectedRecord($table = '', $uid = '') {
@@ -831,7 +832,7 @@ class Clipboard {
 	/**
 	 * Reports if the current pad has elements (does not check file/DB type OR if file/DBrecord exists or not. Only counting array)
 	 *
-	 * @return boolean TRUE if elements exist.
+	 * @return bool TRUE if elements exist.
 	 */
 	public function isElements() {
 		return is_array($this->clipData[$this->current]['el']) && count($this->clipData[$this->current]['el']);

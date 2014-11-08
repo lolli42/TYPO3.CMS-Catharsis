@@ -123,10 +123,10 @@ class ConfigurationManager implements \TYPO3\CMS\Extbase\Configuration\Configura
 	 * Do not use it in your custom code!
 	 *
 	 * @param string $featureName
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isFeatureEnabled($featureName) {
 		$configuration = $this->getConfiguration(self::CONFIGURATION_TYPE_FRAMEWORK);
-		return (boolean) (isset($configuration['features'][$featureName]) && $configuration['features'][$featureName]);
+		return (bool)(isset($configuration['features'][$featureName]) && $configuration['features'][$featureName]);
 	}
 }

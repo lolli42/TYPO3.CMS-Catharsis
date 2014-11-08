@@ -76,7 +76,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $version = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $integerVersion = 0;
 
@@ -91,12 +91,12 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $description = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $state = 0;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $category = 0;
 
@@ -121,7 +121,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $authorEmail = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $currentVersion = FALSE;
 
@@ -131,12 +131,12 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $md5hash = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $reviewState;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $alldownloadcounter;
 
@@ -152,7 +152,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
 	/**
 	 * @internal
-	 * @var integer
+	 * @var int
 	 */
 	protected $position = 0;
 
@@ -187,7 +187,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @param integer $category
+	 * @param int $category
 	 * @return void
 	 */
 	public function setCategory($category) {
@@ -195,7 +195,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getCategory() {
 		return $this->category;
@@ -218,8 +218,8 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * Returns category index from a given string or a integer.
 	 * Fallback to 4 - 'misc' in case string is not found or integer ist out of range.
 	 *
-	 * @param string|integer $category Category string or integer
-	 * @return integer Valid category index
+	 * @param string|int $category Category string or integer
+	 * @return int Valid category index
 	 */
 	public function getCategoryIndexFromStringOrNumber($category) {
 		$categoryIndex = 4;
@@ -283,7 +283,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @param integer $state
+	 * @param int $state
 	 * @return void
 	 */
 	public function setState($state) {
@@ -291,7 +291,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getState() {
 		return $this->state;
@@ -390,7 +390,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @param boolean $currentVersion
+	 * @param bool $currentVersion
 	 * @return void
 	 */
 	public function setCurrentVersion($currentVersion) {
@@ -398,7 +398,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getCurrentVersion() {
 		return $this->currentVersion;
@@ -509,7 +509,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @param integer $integerVersion
+	 * @param int $integerVersion
 	 * @return void
 	 */
 	public function setIntegerVersion($integerVersion) {
@@ -517,14 +517,14 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getIntegerVersion() {
 		return $this->integerVersion;
 	}
 
 	/**
-	 * @param integer $reviewState
+	 * @param int $reviewState
 	 * @return void
 	 */
 	public function setReviewState($reviewState) {
@@ -532,14 +532,14 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getReviewState() {
 		return $this->reviewState;
 	}
 
 	/**
-	 * @param integer $position
+	 * @param int $position
 	 * @return void
 	 */
 	public function setPosition($position) {
@@ -547,21 +547,21 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getPosition() {
 		return $this->position;
 	}
 
 	/**
-	 * @param integer $alldownloadcounter
+	 * @param int $alldownloadcounter
 	 */
 	public function setAlldownloadcounter($alldownloadcounter) {
 		$this->alldownloadcounter = $alldownloadcounter;
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getAlldownloadcounter() {
 		return $this->alldownloadcounter;

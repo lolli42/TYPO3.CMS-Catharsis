@@ -56,14 +56,14 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 	/**
 	 * Fetches the next tree level
 	 *
-	 * @param integer $nodeId
+	 * @param int $nodeId
 	 * @param stdClass $nodeData
 	 * @return array
 	 */
 	public function getNextTreeLevel($nodeId, $nodeData) {
 		$this->initDataProvider();
 		/** @var $node \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode */
-		$node = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\Pagetree\\PagetreeNode', (array) $nodeData);
+		$node = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\Pagetree\\PagetreeNode', (array)$nodeData);
 		if ($nodeId === 'root') {
 			$nodeCollection = $this->dataProvider->getTreeMounts();
 		} else {
@@ -75,7 +75,7 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 	/**
 	 * Returns a tree that only contains elements that match the given search string
 	 *
-	 * @param integer $nodeId
+	 * @param int $nodeId
 	 * @param stdClass $nodeData
 	 * @param string $searchFilter
 	 * @return array
@@ -85,7 +85,7 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 			return array();
 		}
 		/** @var $node \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode */
-		$node = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\Pagetree\\PagetreeNode', (array) $nodeData);
+		$node = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\Pagetree\\PagetreeNode', (array)$nodeData);
 		$this->initDataProvider();
 		if ($nodeId === 'root') {
 			$nodeCollection = $this->dataProvider->getTreeMounts($searchFilter);

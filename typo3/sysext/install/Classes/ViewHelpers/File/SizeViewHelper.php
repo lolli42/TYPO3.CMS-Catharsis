@@ -33,9 +33,9 @@ class SizeViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 	/**
 	 * Get size from file
 	 *
-	 * @param boolean $format If true, file size will be formatted
+	 * @param bool $format If true, file size will be formatted
 	 * @throws \TYPO3\CMS\Install\ViewHelpers\Exception
-	 * @return integer File size
+	 * @return int File size
 	 */
 	public function render($format = TRUE) {
 		$absolutePathToFile = $this->renderChildren();

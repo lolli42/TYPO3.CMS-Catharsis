@@ -21,7 +21,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Sets the flag if the storage page should be respected for the query.
 	 *
-	 * @param boolean $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
+	 * @param bool $respectStoragePage If TRUE the storage page ID will be determined and the statement will be extended accordingly.
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
@@ -30,7 +30,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Returns the state, if the storage page should be respected for the query.
 	 *
-	 * @return boolean TRUE, if the storage page should be respected; otherwise FALSE.
+	 * @return bool TRUE, if the storage page should be respected; otherwise FALSE.
 	 */
 	public function getRespectStoragePage();
 
@@ -53,7 +53,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Sets the flag if a  and language overlay should be performed.
 	 *
-	 * @param boolean $respectSysLanguage TRUE if a  and language overlay should be performed.
+	 * @param bool $respectSysLanguage TRUE if a  and language overlay should be performed.
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
@@ -62,7 +62,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Returns the state, if a  and language overlay should be performed.
 	 *
-	 * @return boolean TRUE, if a  and language overlay should be performed; otherwise FALSE.
+	 * @return bool TRUE, if a  and language overlay should be performed; otherwise FALSE.
 	 */
 	public function getRespectSysLanguage();
 
@@ -91,14 +91,14 @@ interface QuerySettingsInterface {
 	public function getLanguageMode();
 
 	/**
-	 * @param integer $languageUid
+	 * @param int $languageUid
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setLanguageUid($languageUid);
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getLanguageUid();
 
@@ -107,7 +107,7 @@ interface QuerySettingsInterface {
 	 * If--in addition to this--enableFieldsToBeIgnored is set, only fields specified there are ignored. If FALSE, all
 	 * enable fields are taken into account, regardless of the enableFieldsToBeIgnored setting.
 	 *
-	 * @param boolean $ignoreEnableFields
+	 * @param bool $ignoreEnableFields
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @see setEnableFieldsToBeIgnored()
 	 * @api
@@ -120,7 +120,7 @@ interface QuerySettingsInterface {
 	 * If TRUE, all enable fields are ignored. If--in addition to this--enableFieldsToBeIgnored is set, only fields specified there are ignored.
 	 * If FALSE, all enable fields are taken into account, regardless of the enableFieldsToBeIgnored setting.
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see getEnableFieldsToBeIgnored()
 	 */
 	public function getIgnoreEnableFields();
@@ -149,7 +149,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Sets the flag if the query should return objects that are deleted.
 	 *
-	 * @param boolean $includeDeleted
+	 * @param bool $includeDeleted
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
@@ -158,14 +158,14 @@ interface QuerySettingsInterface {
 	/**
 	 * Returns if the query should return objects that are deleted.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getIncludeDeleted();
 
 	/**
 	 * Sets the state, if the QueryResult should be returned unmapped.
 	 *
-	 * @param boolean $returnRawQueryResult TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
+	 * @param bool $returnRawQueryResult TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
 	 * @return void
 	 * @deprecated since Extbase 6.2, will be removed two versions later
 	 */
@@ -174,7 +174,7 @@ interface QuerySettingsInterface {
 	/**
 	 * Returns the state, if the QueryResult should be returned unmapped.
 	 *
-	 * @return boolean TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
+	 * @return bool TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
 	 * @deprecated since Extbase 6.2, will be removed two versions later
 	 */
 	public function getReturnRawQueryResult();

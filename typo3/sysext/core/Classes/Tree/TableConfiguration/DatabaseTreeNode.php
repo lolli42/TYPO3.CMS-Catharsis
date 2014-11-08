@@ -21,22 +21,22 @@ namespace TYPO3\CMS\Core\Tree\TableConfiguration;
 class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $selectable;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $selected = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $expanded = TRUE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $hasChildren = FALSE;
 
@@ -58,7 +58,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Gets the expand state
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getExpanded() {
 		return $this->expanded;
@@ -67,7 +67,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Sets the selectable property
 	 *
-	 * @param boolean $selectable
+	 * @param bool $selectable
 	 * @return void
 	 */
 	public function setSelectable($selectable) {
@@ -77,7 +77,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Gets the selectable property
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getSelectable() {
 		return $this->selectable;
@@ -86,7 +86,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Sets the select state
 	 *
-	 * @param boolean $selected
+	 * @param bool $selected
 	 * @return void
 	 */
 	public function setSelected($selected) {
@@ -96,7 +96,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Gets the select state
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getSelected() {
 		return $this->selected;
@@ -105,7 +105,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Gets the hasChildren property
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasChildren() {
 		return $this->hasChildren;
@@ -114,11 +114,11 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	/**
 	 * Sets the hasChildren property
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setHasChildren($value) {
-		$this->hasChildren = (bool) $value;
+		$this->hasChildren = (bool)$value;
 	}
 
 	/**
@@ -130,7 +130,7 @@ class DatabaseTreeNode extends \TYPO3\CMS\Backend\Tree\TreeRepresentationNode {
 	 * 0 if its equal
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $other
-	 * @return integer see description above
+	 * @return int see description above
 	 */
 	public function compareTo($other) {
 		if ($this->equals($other)) {

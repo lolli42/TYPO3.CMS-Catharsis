@@ -27,7 +27,7 @@ class Clickmenu {
 	 * @param object $backRef Reference to parent
 	 * @param array $menuItems Menu items array to modify
 	 * @param string $table Table name
-	 * @param integer $uid Uid of the record
+	 * @param int $uid Uid of the record
 	 * @return array Menu item array, returned after modification
 	 * @todo Skinning for icons...
 	 */
@@ -73,8 +73,7 @@ class Clickmenu {
 	 * @return array Local lang array
 	 */
 	public function includeLL() {
-		global $LANG;
-		return $LANG->includeLLFile('EXT:impexp/app/locallang.xlf', FALSE);
+		return $GLOBALS['LANG']->includeLLFile('EXT:impexp/app/locallang.xlf', FALSE);
 	}
 
 }

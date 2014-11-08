@@ -507,7 +507,7 @@ class HelpModuleController {
 	 * Returns header HTML content
 	 *
 	 * @param string $str Header text
-	 * @param integer $type Header type (1, 0)
+	 * @param int $type Header type (1, 0)
 	 * @return string The HTML for the header.
 	 */
 	public function headerLine($str, $type = 0) {
@@ -541,7 +541,7 @@ class HelpModuleController {
 	 *
 	 * @param string $key CSH key / table name
 	 * @param string $field Sub key / field name
-	 * @param boolean $anchors If anchors is to be shown.
+	 * @param bool $anchors If anchors is to be shown.
 	 * @return string HTML content
 	 */
 	public function printItem($key, $field, $anchors = FALSE) {

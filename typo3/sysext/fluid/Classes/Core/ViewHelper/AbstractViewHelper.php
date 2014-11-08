@@ -21,7 +21,7 @@ abstract class AbstractViewHelper {
 	/**
 	 * TRUE if arguments have already been initialized
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	private $argumentsInitialized = FALSE;
 
@@ -108,7 +108,7 @@ abstract class AbstractViewHelper {
 	/**
 	 * With this flag, you can disable the escaping interceptor inside this ViewHelper.
 	 * THIS MIGHT CHANGE WITHOUT NOTICE, NO PUBLIC API!
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $escapingInterceptorEnabled = TRUE;
 
@@ -147,7 +147,7 @@ abstract class AbstractViewHelper {
 	 *
 	 * THIS METHOD MIGHT CHANGE WITHOUT NOTICE; NO PUBLIC API!
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isEscapingInterceptorEnabled() {
 		return $this->escapingInterceptorEnabled;
@@ -160,7 +160,7 @@ abstract class AbstractViewHelper {
 	 * @param string $name Name of the argument
 	 * @param string $type Type of the argument
 	 * @param string $description Description of the argument
-	 * @param boolean $required If TRUE, argument is required. Defaults to FALSE.
+	 * @param bool $required If TRUE, argument is required. Defaults to FALSE.
 	 * @param mixed $defaultValue Default value of argument
 	 * @return \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper $this, to allow chaining.
 	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
@@ -182,7 +182,7 @@ abstract class AbstractViewHelper {
 	 * @param string $name Name of the argument
 	 * @param string $type Type of the argument
 	 * @param string $description Description of the argument
-	 * @param boolean $required If TRUE, argument is required. Defaults to FALSE.
+	 * @param bool $required If TRUE, argument is required. Defaults to FALSE.
 	 * @param mixed $defaultValue Default value of argument
 	 * @return \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper $this, to allow chaining.
 	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
@@ -426,7 +426,7 @@ abstract class AbstractViewHelper {
 	 * Tests if the given $argumentName is set, and not NULL.
 	 *
 	 * @param string $argumentName
-	 * @return boolean TRUE if $argumentName is found, FALSE otherwise
+	 * @return bool TRUE if $argumentName is found, FALSE otherwise
 	 * @api
 	 */
 	protected function hasArgument($argumentName) {

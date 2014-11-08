@@ -38,7 +38,7 @@ abstract class AbstractElement {
 	/**
 	 * Internal Id of the element
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $elementId;
 
@@ -58,7 +58,7 @@ abstract class AbstractElement {
 	 * True if it accepts the parent name instead of its own
 	 * This is necessary for groups
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $acceptsParentName = FALSE;
 
@@ -150,7 +150,7 @@ abstract class AbstractElement {
 	/**
 	 * Constructor
 	 *
-	 * @param integer $elementId Internal Id of the element
+	 * @param int $elementId Internal Id of the element
 	 * @param array $arguments Configuration array
 	 */
 	public function __construct() {
@@ -167,7 +167,7 @@ abstract class AbstractElement {
 	/**
 	 * Set the internal ID of the element
 	 *
-	 * @param integer $elementId Internal Id of the element
+	 * @param int $elementId Internal Id of the element
 	 * @return void
 	 */
 	public function setElementId() {
@@ -222,7 +222,7 @@ abstract class AbstractElement {
 	/**
 	 * Check to see if this element accepts the parent name instead of its own
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function acceptsParentName() {
 		return $this->acceptsParentName;
@@ -263,7 +263,7 @@ abstract class AbstractElement {
 	/**
 	 * Check if element has attributes which are allowed
 	 *
-	 * @return boolean TRUE if there is a list of allowed attributes
+	 * @return bool TRUE if there is a list of allowed attributes
 	 */
 	public function hasAllowedAttributes() {
 		return empty($this->allowedAttributes) === FALSE;
@@ -272,7 +272,7 @@ abstract class AbstractElement {
 	/**
 	 * Check if element has additionals which are allowed
 	 *
-	 * @return boolean TRUE if there is a list of allowed additionals
+	 * @return bool TRUE if there is a list of allowed additionals
 	 */
 	public function hasAllowedAdditionals() {
 		return empty($this->allowedAdditional) === FALSE;
@@ -300,7 +300,7 @@ abstract class AbstractElement {
 	 * Returns TRUE if attribute is set
 	 *
 	 * @param string $key The name of the attribute
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasAttribute($key) {
 		return $this->attributes->hasAttribute($key);
@@ -362,7 +362,7 @@ abstract class AbstractElement {
 	 * @return void
 	 */
 	public function setLayout($layout = '') {
-		$this->layout = (string) $layout;
+		$this->layout = (string)$layout;
 	}
 
 	/**
@@ -381,7 +381,7 @@ abstract class AbstractElement {
 	 * @return void
 	 */
 	public function setValue($value = '') {
-		$this->value = (string) $value;
+		$this->value = (string)$value;
 	}
 
 	/**
@@ -400,7 +400,7 @@ abstract class AbstractElement {
 	 * @return void
 	 */
 	public function setData($data = '') {
-		$this->data = (string) $data;
+		$this->data = (string)$data;
 	}
 
 	/**
@@ -443,7 +443,7 @@ abstract class AbstractElement {
 	 * Check if additional exists
 	 *
 	 * @param string $key Name of the additional
-	 * @return boolean
+	 * @return bool
 	 */
 	public function additionalIsSet($key) {
 		return $this->additional->additionalIsSet($key);

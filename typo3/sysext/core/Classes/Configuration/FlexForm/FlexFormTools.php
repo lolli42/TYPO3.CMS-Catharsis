@@ -68,7 +68,7 @@ class FlexFormTools {
 	 * @param array $row The record data array
 	 * @param object $callBackObj Object (passed by reference) in which the call back function is located
 	 * @param string $callBackMethod_value Method name of call back function in object for values
-	 * @return boolean If TRUE, error happened (error string returned)
+	 * @return bool If TRUE, error happened (error string returned)
 	 */
 	public function traverseFlexFormXMLData($table, $field, $row, $callBackObj, $callBackMethod_value) {
 		if (!is_array($GLOBALS['TCA'][$table]) || !is_array($GLOBALS['TCA'][$table]['columns'][$field])) {
@@ -353,7 +353,7 @@ class FlexFormTools {
 	 * Convert FlexForm data array to XML
 	 *
 	 * @param array $array Array to output in <T3FlexForms> XML
-	 * @param boolean $addPrologue If set, the XML prologue is returned as well.
+	 * @param bool $addPrologue If set, the XML prologue is returned as well.
 	 * @return string XML content.
 	 */
 	public function flexArray2Xml($array, $addPrologue = FALSE) {

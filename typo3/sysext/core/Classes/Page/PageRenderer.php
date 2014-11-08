@@ -41,37 +41,37 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
 	const JQUERY_NAMESPACE_DEFAULT_NOCONFLICT = 'defaultNoConflict';
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $compressJavascript = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $compressCss = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $removeLineBreaksFromTemplate = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $concatenateFiles = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $concatenateJavascript = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $concatenateCss = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $moveJsFromHeaderToFooter = FALSE;
 
@@ -162,7 +162,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $baseUrl;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $renderXhtml = TRUE;
 
@@ -349,7 +349,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * if set, the requireJS library is included
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addRequireJs = FALSE;
 
@@ -360,12 +360,12 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $requireJsConfig = array();
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addPrototype = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addScriptaculous = FALSE;
 
@@ -375,12 +375,12 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $addScriptaculousModules = array('builder' => FALSE, 'effects' => FALSE, 'dragdrop' => FALSE, 'controls' => FALSE, 'slider' => FALSE);
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addExtJS = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addExtCore = FALSE;
 
@@ -390,37 +390,37 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $extJSadapter = 'ext/ext-base.js';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $extDirectCodeAdded = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $enableExtJsDebug = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $enableExtCoreDebug = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $enableJqueryDebug = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $extJStheme = TRUE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $extJScss = TRUE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $enableExtJSQuickTips = FALSE;
 
@@ -461,12 +461,12 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * SVG library
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addSvg = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $enableSvgDebug = FALSE;
 
@@ -540,7 +540,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Enables/disables rendering of XHTML code
 	 *
-	 * @param boolean $enable Enable XHTML
+	 * @param bool $enable Enable XHTML
 	 * @return void
 	 */
 	public function setRenderXhtml($enable) {
@@ -921,7 +921,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Returns rendering mode XHTML or HTML
 	 *
-	 * @return boolean TRUE if XHTML, FALSE if HTML
+	 * @return bool TRUE if XHTML, FALSE if HTML
 	 */
 	public function getRenderXhtml() {
 		return $this->renderXhtml;
@@ -993,7 +993,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets MoveJsFromHeaderToFooter
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getMoveJsFromHeaderToFooter() {
 		return $this->moveJsFromHeaderToFooter;
@@ -1002,7 +1002,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets compress of javascript
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getCompressJavascript() {
 		return $this->compressJavascript;
@@ -1011,7 +1011,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets compress of css
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getCompressCss() {
 		return $this->compressCss;
@@ -1020,7 +1020,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets concatenate of js and css files
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getConcatenateFiles() {
 		return $this->concatenateFiles;
@@ -1029,7 +1029,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets concatenate of js files
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getConcatenateJavascript() {
 		return $this->concatenateJavascript;
@@ -1038,7 +1038,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets concatenate of css files
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getConcatenateCss() {
 		return $this->concatenateCss;
@@ -1047,7 +1047,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets remove of empty lines from template
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getRemoveLineBreaksFromTemplate() {
 		return $this->removeLineBreaksFromTemplate;
@@ -1185,10 +1185,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $name Arbitrary identifier
 	 * @param string $file File name
 	 * @param string $type Content Type
-	 * @param boolean $compress Flag if library should be compressed
-	 * @param boolean $forceOnTop Flag if added library should be inserted at begin of this block
+	 * @param bool $compress Flag if library should be compressed
+	 * @param bool $forceOnTop Flag if added library should be inserted at begin of this block
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1216,10 +1216,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $name Arbitrary identifier
 	 * @param string $file File name
 	 * @param string $type Content Type
-	 * @param boolean $compress Flag if library should be compressed
-	 * @param boolean $forceOnTop Flag if added library should be inserted at begin of this block
+	 * @param bool $compress Flag if library should be compressed
+	 * @param bool $forceOnTop Flag if added library should be inserted at begin of this block
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1246,10 +1246,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $file File name
 	 * @param string $type Content Type
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1279,10 +1279,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $file File name
 	 * @param string $type Content Type
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1312,8 +1312,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $name
 	 * @param string $block
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @return void
 	 */
 	public function addJsInlineCode($name, $block, $compress = TRUE, $forceOnTop = FALSE) {
@@ -1332,8 +1332,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $name
 	 * @param string $block
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @return void
 	 */
 	public function addJsFooterInlineCode($name, $block, $compress = TRUE, $forceOnTop = FALSE) {
@@ -1351,7 +1351,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Adds Ext.onready code, which will be wrapped in Ext.onReady(function() {...});
 	 *
 	 * @param string $block Javascript code
-	 * @param boolean $forceOnTop Position of the javascript code (TRUE for putting it on top, default is FALSE = bottom)
+	 * @param bool $forceOnTop Position of the javascript code (TRUE for putting it on top, default is FALSE = bottom)
 	 * @return void
 	 */
 	public function addExtOnReadyCode($block, $forceOnTop = FALSE) {
@@ -1498,10 +1498,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $rel
 	 * @param string $media
 	 * @param string $title
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1528,10 +1528,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $rel
 	 * @param string $media
 	 * @param string $title
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @param string $allWrap
-	 * @param boolean $excludeFromConcatenation
+	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
 	 * @return void
 	 */
@@ -1556,8 +1556,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $name
 	 * @param string $block
-	 * @param boolean $compress
-	 * @param boolean $forceOnTop
+	 * @param bool $compress
+	 * @param bool $forceOnTop
 	 * @return void
 	 */
 	public function addCssInlineBlock($name, $block, $compress = FALSE, $forceOnTop = FALSE) {
@@ -1719,8 +1719,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * call this function if you need the extJS library
 	 *
-	 * @param boolean $css Flag, if set the ext-css will be loaded
-	 * @param boolean $theme Flag, if set the ext-theme "grey" will be loaded
+	 * @param bool $css Flag, if set the ext-css will be loaded
+	 * @param bool $theme Flag, if set the ext-theme "grey" will be loaded
 	 * @param string $adapter Choose alternative adapter, possible values: yui, prototype, jquery
 	 * @return void
 	 */
@@ -1840,7 +1840,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $fileRef Input is a file-reference (see GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xml' file containing a valid XML TYPO3 language structure.
 	 * @param string $selectionPrefix Prefix to select the correct labels (default: '')
 	 * @param string $stripFromSelectionName Sub-prefix to be removed from label names in the result (default: '')
-	 * @param integer $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
+	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
 	 * @return void
 	 */
 	public function addInlineLanguageLabelFile($fileRef, $selectionPrefix = '', $stripFromSelectionName = '', $errorMode = 0) {
@@ -1900,9 +1900,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				foreach ($parts as $part) {
 					$a = &$a[$part];
 				}
-				$a = array_merge((array) $a, $array);
+				$a = array_merge((array)$a, $array);
 			} else {
-				$this->inlineSettings[$namespace] = array_merge((array) $this->inlineSettings[$namespace], $array);
+				$this->inlineSettings[$namespace] = array_merge((array)$this->inlineSettings[$namespace], $array);
 			}
 		} else {
 			$this->inlineSettings = array_merge($this->inlineSettings, $array);
@@ -1927,7 +1927,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Render the section (Header or Footer)
 	 *
-	 * @param integer $part Section which should be rendered: self::PART_COMPLETE, self::PART_HEADER or self::PART_FOOTER
+	 * @param int $part Section which should be rendered: self::PART_COMPLETE, self::PART_HEADER or self::PART_FOOTER
 	 * @return string Content of rendered section
 	 */
 	public function render($part = self::PART_COMPLETE) {
@@ -2126,7 +2126,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Reads the template file and returns the requested part as string
 	 *
-	 * @param integer $part
+	 * @param int $part
 	 * @return string
 	 */
 	protected function getTemplateForPart($part) {
@@ -2554,7 +2554,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $fileRef
 	 * @param string $selectionPrefix
 	 * @param string $stripFromSelectionName
-	 * @param integer $errorMode
+	 * @param int $errorMode
 	 * @return void
 	 * @throws \RuntimeException
 	 */
@@ -2590,7 +2590,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Reads a locallang file.
 	 *
 	 * @param string $fileRef Reference to a relative filename to include.
-	 * @param integer $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
+	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
 	 * @return array Returns the $LOCAL_LANG array found in the file. If no array found, returns empty array.
 	 */
 	protected function readLLfile($fileRef, $errorMode = 0) {

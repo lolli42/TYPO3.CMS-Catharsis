@@ -97,14 +97,14 @@ interface TaskInterface {
 	 * Note: This does not indicate if the concrete ProcessedFile attached to this task has to be (re)processed.
 	 * This check is done in ProcessedFile::isOutdated(). TODO isOutdated()/needsReprocessing()?
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function fileNeedsProcessing();
 
 	/**
 	 * Returns TRUE if this task has been executed, no matter if the execution was successful.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isExecuted();
 
@@ -112,7 +112,7 @@ interface TaskInterface {
 	 * Mark this task as executed. This is used by the Processors in order to transfer the state of this task to
 	 * the file processing service.
 	 *
-	 * @param boolean $successful Set this to FALSE if executing the task failed
+	 * @param bool $successful Set this to FALSE if executing the task failed
 	 * @return void
 	 */
 	public function setExecuted($successful);
@@ -121,7 +121,7 @@ interface TaskInterface {
 	 * Returns TRUE if this task has been successfully executed. Only call this method if the task has been processed
 	 * at all.
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @throws \LogicException If the task has not been executed already
 	 */
 	public function isSuccessful();

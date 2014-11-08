@@ -142,7 +142,6 @@ class FormEngine {
 	 */
 	public $additionalPreviewLanguageData = array();
 
-	// EXTERNAL, static
 	/**
 	 * Set this to the 'backPath' pointing back to the typo3 admin directory
 	 * from the script where this form is displayed.
@@ -250,7 +249,7 @@ class FormEngine {
 	/**
 	 * Value that gets added for style="width: ...px" for textareas compared to input fields.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $form_additionalTextareaStyleWidth = 23;
 
@@ -334,7 +333,6 @@ class FormEngine {
 	 */
 	public $allowOverrideMatrix = array();
 
-	// INTERNAL, dynamic
 	/**
 	 * Set by readPerms()  (caching)
 	 *
@@ -446,7 +444,6 @@ class FormEngine {
 	 */
 	public $commentMessages = array();
 
-	// INTERNAL, templates
 	/**
 	 * Total wrapping for the table rows
 	 *
@@ -472,6 +469,7 @@ class FormEngine {
 	 * Wrapping template code for a section
 	 *
 	 * @var string
+	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $sectionWrap = '';
 
@@ -489,7 +487,6 @@ class FormEngine {
 	 */
 	public $palFieldTemplate = '';
 
-	// INTERNAL, working memory
 	/**
 	 * Set to the fields NOT to display, if any
 	 *
@@ -640,8 +637,8 @@ class FormEngine {
 	public $templateFile = '';
 
 	/**
-	 * @var integer
-	 * @var internal
+	 * @var int
+	 * @internal
 	 */
 	public $multiSelectFilterCount = 0;
 
@@ -758,7 +755,7 @@ class FormEngine {
 	 *
 	 * @param string $table The table name
 	 * @param array $row The record from the table for which to render a field.
-	 * @param integer $depth Depth level
+	 * @param int $depth Depth level
 	 * @param array $overruleTypesArray Overrule types array. Can be used to override the showitem etc. configuration for the TCA types of the table. Can contain all settings which are possible in the TCA 'types' section. See e.g. $TCA['tt_content']['types'].
 	 * @return string HTML output
 	 * @see getSoloField()
@@ -846,7 +843,6 @@ class FormEngine {
 								if ($cc > 0) {
 									$out_array[$out_sheet][$out_pointer] .= $this->getDivider();
 									if ($this->enableTabMenu && $dividers2tabs) {
-										$this->wrapBorder($out_array[$out_sheet], $out_pointer);
 										// Remove last tab entry from the dynNestedStack:
 										$out_sheet++;
 										// Remove the previous sheet from stack (if any):
@@ -889,8 +885,6 @@ class FormEngine {
 				$hookObj->getMainFields_postProcess($table, $row, $this);
 			}
 		}
-		// Wrapping a border around it all:
-		$this->wrapBorder($out_array[$out_sheet], $out_pointer);
 		// Rendering Main palettes, if any
 		$mParr = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['mainpalette']);
 		$i = 0;
@@ -904,7 +898,6 @@ class FormEngine {
 					$this->palettesCollapsed = $temp_palettesCollapsed;
 					$this->palettesRendered[$this->renderDepth][$table][$mP] = 1;
 				}
-				$this->wrapBorder($out_array[$out_sheet], $out_pointer);
 				$i++;
 				if ($this->renderDepth) {
 					$this->renderDepth--;
@@ -1039,9 +1032,9 @@ class FormEngine {
 	 * @param string $field The field name
 	 * @param array $row The record to edit from the database table.
 	 * @param string $altName Alternative field name label to show.
-	 * @param boolean $palette Set this if the field is on a palette (in top frame), otherwise not. (if set, field will render as a hidden field).
+	 * @param bool $palette Set this if the field is on a palette (in top frame), otherwise not. (if set, field will render as a hidden field).
 	 * @param string $extra The "extra" options from "Part 4" of the field configurations found in the "types" "showitem" list. Typically parsed by $this->getSpecConfFromString() in order to get the options as an associative array.
-	 * @param integer $pal The palette pointer.
+	 * @param int $pal The palette pointer.
 	 * @return mixed String (normal) or array (palettes)
 	 */
 	public function getSingleField($table, $field, $row, $altName = '', $palette = FALSE, $extra = '', $pal = 0) {
@@ -1353,7 +1346,7 @@ class FormEngine {
 	 * @param string $field Name of the field
 	 * @param array $row Accordant data
 	 * @param array $PA Parameters array with rendering instructions
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isDisabledNullValueField($table, $field, array $row, array $PA) {
 		$result = FALSE;
@@ -1547,7 +1540,7 @@ class FormEngine {
 	 * @param array $languages
 	 * @param string $elName
 	 * @param array $selectedLanguage
-	 * @param boolean $multi
+	 * @param bool $multi
 	 * @return string HTML for menu
 	 */
 	public function getSingleField_typeFlex_langMenu($languages, $elName, $selectedLanguage, $multi = TRUE) {
@@ -1665,24 +1658,32 @@ class FormEngine {
 				break;
 			case 'datetime':
 				// compatibility with "eval" (type "input")
-				$itemValue = date('H:i d-m-Y', $itemValue);
+				if ($itemValue !== '') {
+					$itemValue = date('H:i d-m-Y', (int)$itemValue);
+				}
 				break;
 			case 'time':
 				// compatibility with "eval" (type "input")
-				$itemValue = date('H:i', $itemValue);
+				if ($itemValue !== '') {
+					$itemValue = date('H:i', (int)$itemValue);
+				}
 				break;
 			case 'timesec':
 				// compatibility with "eval" (type "input")
-				$itemValue = date('H:i:s', $itemValue);
+				if ($itemValue !== '') {
+					$itemValue = date('H:i:s', (int)$itemValue);
+				}
 				break;
 			case 'year':
 				// compatibility with "eval" (type "input")
-				$itemValue = date('Y', $itemValue);
+				if ($itemValue !== '') {
+					$itemValue = date('Y', (int)$itemValue);
+				}
 				break;
 			case 'int':
 				$baseArr = array('dec' => 'd', 'hex' => 'x', 'HEX' => 'X', 'oct' => 'o', 'bin' => 'b');
 				$base = trim($config['format.']['base']);
-				$format = $baseArr[$base] ? $baseArr[$base] : 'd';
+				$format = $baseArr[$base] ?: 'd';
 				$itemValue = sprintf('%' . $format, $itemValue);
 				break;
 			case 'float':
@@ -1697,6 +1698,8 @@ class FormEngine {
 				$itemValue = md5($itemValue);
 				break;
 			case 'filesize':
+				// We need to cast to int here, otherwise empty values result in empty output,
+				// but we expect zero.
 				$value = GeneralUtility::formatSize((int)$itemValue);
 				if ($config['format.']['appendByteSize']) {
 					$value .= ' (' . $itemValue . ')';
@@ -1716,7 +1719,7 @@ class FormEngine {
 				}
 				break;
 			default:
-				// Do nothing
+				// Do nothing e.g. when $format === ''
 		}
 		return $itemValue;
 	}
@@ -1776,7 +1779,7 @@ class FormEngine {
 			$typeNum = $GLOBALS['TCA'][$table]['types']['0'] ? 0 : 1;
 		}
 		// Force to string. Necessary for eg '-1' to be recognized as a type value.
-		$typeNum = (string) $typeNum;
+		$typeNum = (string)$typeNum;
 		return $typeNum;
 	}
 
@@ -1974,7 +1977,7 @@ class FormEngine {
 	 * @param string $field Specify the field name.
 	 * @return array|NULL
 	 * @see getSpecConfFromString(), BackendUtility::getTCAtypes()
-	 * @deprecated since 6.3 - will be removed two versions later; unused in Core
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public function getSpecConfForField($table, $row, $field) {
 		GeneralUtility::logDeprecatedFunction();
@@ -2331,7 +2334,7 @@ class FormEngine {
 				$spriteIcon = IconUtility::getSpriteIcon('actions-insert-record', array(
 					'title' => htmlspecialchars($this->getLL('l_browse_' . ($mode == 'db' ? 'db' : 'file')))
 				));
-				$icons['R'][] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $spriteIcon . '</a>';
+				$icons['R'][] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '" class="btn btn-default">' . $spriteIcon . '</a>';
 			}
 			if (!$params['dontShowMoveIcons']) {
 				if ($sSize >= 5) {
@@ -2513,7 +2516,7 @@ class FormEngine {
 	 *
 	 * @param string $str The icon HTML to wrap
 	 * @param string $table Table name (eg. "pages" or "tt_content") OR the absolute path to the file
-	 * @param integer $uid The uid of the record OR if file, just blank value.
+	 * @param int $uid The uid of the record OR if file, just blank value.
 	 * @return string HTML
 	 */
 	public function getClickMenu($str, $table, $uid = 0) {
@@ -2535,7 +2538,7 @@ class FormEngine {
 	 * @param array $PA Additional configuration array. (passed by reference!)
 	 * @param string $itemName The field name
 	 * @param array $specConf Special configuration if available.
-	 * @param boolean $RTE Whether the RTE could have been loaded.
+	 * @param bool $RTE Whether the RTE could have been loaded.
 	 * @return string The new item value.
 	 */
 	public function renderWizards($itemKinds, $wizConf, $table, $row, $field, &$PA, $itemName, $specConf, $RTE = FALSE) {
@@ -2579,7 +2582,7 @@ class FormEngine {
 					} else {
 						$icon = $iTitle;
 					}
-					switch ((string) $wConf['type']) {
+					switch ((string)$wConf['type']) {
 						case 'userFunc':
 
 						case 'script':
@@ -2614,51 +2617,6 @@ class FormEngine {
 										$urlParameters = $wConf['module']['urlParameters'];
 									}
 									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters);
-								} elseif (isset($wConf['script'])) {
-									GeneralUtility::deprecationLog(
-										'The way registering a wizard in TCA has changed in 6.2. '
-										. 'Please set module[name]=module_name instead of using script=path/to/sctipt.php in your TCA. '
-										. 'The possibility to register wizards this way will be removed in 2 versions.'
-									);
-									if (substr($wConf['script'], 0, 4) === 'EXT:') {
-										$wScript = GeneralUtility::getFileAbsFileName($wConf['script']);
-										if ($wScript) {
-											$wScript = '../' . PathUtility::stripPathSitePrefix($wScript);
-										} else {
-											// Illeagal configuration, fail silently
-											break;
-										}
-									} else {
-										// Compatibility layer
-										// @deprecated since 6.2, will be removed 2 versions later
-										$parsedWizardUrl = parse_url($wConf['script']);
-										if (in_array($parsedWizardUrl['path'], array(
-													'wizard_add.php',
-													'wizard_colorpicker.php',
-													'wizard_edit.php',
-													'wizard_forms.php',
-													'wizard_list.php',
-													'wizard_rte.php',
-													'wizard_table.php',
-													'browse_links.php',
-													'sysext/cms/layout/wizard_backend_layout.php'
-												))
-										) {
-											$urlParameters = array();
-											if (isset($parsedWizardUrl['query'])) {
-												 parse_str($parsedWizardUrl['query'], $urlParameters);
-											}
-											$moduleName = str_replace(
-												array('.php', 'browse_links', 'sysext/cms/layout/wizard_backend_layout'),
-												array('', 'wizard_element_browser', 'wizard_backend_layout'),
-												$parsedWizardUrl['path']
-											);
-											$wScript = BackendUtility::getModuleUrl($moduleName, $urlParameters);
-											unset($moduleName, $urlParameters, $parsedWizardUrl);
-										} else {
-											$wScript = $wConf['script'];
-										}
-									}
 								} elseif (in_array($wConf['type'], array('script', 'colorbox', 'popup'), TRUE)) {
 									// Illegal configuration, fail silently
 									break;
@@ -2666,7 +2624,7 @@ class FormEngine {
 
 								$url = $this->backPath . $wScript . (strstr($wScript, '?') ? '' : '?');
 								// If "script" type, create the links around the icon:
-								if ((string) $wConf['type'] === 'script') {
+								if ((string)$wConf['type'] === 'script') {
 									$aUrl = $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
 									$outArr[] = '<a href="' . htmlspecialchars($aUrl) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
 								} else {
@@ -2676,7 +2634,7 @@ class FormEngine {
 									$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
 									$params['fieldChangeFunc'] = $fieldChangeFunc;
 									$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
-									switch ((string) $wConf['type']) {
+									switch ((string)$wConf['type']) {
 										case 'popup':
 										case 'colorbox':
 											// Current form value is passed as P[currentValue]!
@@ -2694,7 +2652,7 @@ class FormEngine {
 												. 'vHWin.focus();return false;';
 											// Setting "colorBoxLinks" - user LATER to wrap around the color box as well:
 											$colorBoxLinks = array('<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">', '</a>');
-											if ((string) $wConf['type'] == 'popup') {
+											if ((string)$wConf['type'] == 'popup') {
 												$outArr[] = $colorBoxLinks[0] . $icon . $colorBoxLinks[1];
 											}
 											break;
@@ -2764,7 +2722,7 @@ class FormEngine {
 							break;
 					}
 					// Color wizard colorbox:
-					if ((string) $wConf['type'] === 'colorbox') {
+					if ((string)$wConf['type'] === 'colorbox') {
 						$dim = GeneralUtility::intExplode('x', $wConf['dim']);
 						$dX = MathUtility::forceIntegerInRange($dim[0], 1, 200, 20);
 						$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
@@ -2953,7 +2911,7 @@ class FormEngine {
 	 * @param string $header The string to wrap in an A-tag
 	 * @param string $table The table name for which to open the palette.
 	 * @param array $row The palette pointer.
-	 * @param integer $palette The record array
+	 * @param int $palette The record array
 	 * @param mixed $retFunc Not used
 	 * @return array
 	 */
@@ -2970,8 +2928,8 @@ class FormEngine {
 	 * @param string $table The table name for which to open the palette.
 	 * @param string $row Palette ID
 	 * @param string $palette The record array
-	 * @param boolean $collapsed TRUE if collapsed
-	 * @return boolean Is collapsed
+	 * @param bool $collapsed TRUE if collapsed
+	 * @return bool Is collapsed
 	 */
 	public function wrapPaletteField($code, $table, $row, $palette, $collapsed) {
 		$display = $collapsed ? 'none' : 'block';
@@ -3022,8 +2980,8 @@ class FormEngine {
 	/**
 	 * Returns parameters to set the width for a <input>/<textarea>-element
 	 *
-	 * @param integer $size The abstract size value (1-48)
-	 * @param boolean $textarea If this is for a text area.
+	 * @param int $size The abstract size value (1-48)
+	 * @param bool $textarea If this is for a text area.
 	 * @return string Either a "style" attribute string or "cols"/"size" attribute string.
 	 */
 	public function formWidth($size = 48, $textarea = FALSE) {
@@ -3039,8 +2997,8 @@ class FormEngine {
 	/**
 	 * Returns parameters to set the width for a <input>/<textarea>-element
 	 *
-	 * @param integer $size The abstract size value (1-48)
-	 * @param boolean $textarea If set, calculates sizes for a text area.
+	 * @param int $size The abstract size value (1-48)
+	 * @param bool $textarea If set, calculates sizes for a text area.
 	 * @return array An array containing style, class, and width attributes.
 	 */
 	public function formWidthAsArray($size = 48, $textarea = FALSE) {
@@ -3089,7 +3047,7 @@ class FormEngine {
 	 * Get style CSS values for the current field type.
 	 *
 	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @param boolean $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
+	 * @param bool $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
 	 * @return string CSS attributes
 	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
@@ -3127,7 +3085,7 @@ class FormEngine {
 	 *
 	 * @param array $parts Parts for the tab menu, fed to template::getDynTabMenu()
 	 * @param string $idString ID string for the tab menu
-	 * @param integer $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled
+	 * @param int $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled
 	 * @return string HTML for the menu
 	 */
 	public function getDynTabMenu($parts, $idString, $dividersToTabsBehaviour = 1) {
@@ -3480,7 +3438,7 @@ class FormEngine {
 	 * @param array $fieldValue The 'columns' array for the field (from TCA)
 	 * @param array $TSconfig TSconfig for the table/row
 	 * @param string $field The fieldname
-	 * @param boolean $pFFlag If set, then we are fetching the 'neg_' foreign tables.
+	 * @param bool $pFFlag If set, then we are fetching the 'neg_' foreign tables.
 	 * @return array The $items array modified.
 	 * @see addSelectOptionsToItemArray(), BackendUtility::exec_foreign_table_where_query()
 	 */
@@ -3546,7 +3504,7 @@ class FormEngine {
 	 * Sets the design to the backend design.
 	 * Backend
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	public function setNewBEDesign() {
 		$template = GeneralUtility::getUrl(PATH_typo3 . $this->templateFile);
@@ -3557,7 +3515,6 @@ class FormEngine {
 		$this->paletteFieldTemplate = HtmlParser::getSubpart($template, '###PALETTEFIELDTEMPLATE###');
 		$this->palFieldTemplate = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE###');
 		$this->palFieldTemplateHeader = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE_HEADER###');
-		$this->sectionWrap = HtmlParser::getSubpart($template, '###SECTION_WRAP###');
 	}
 
 	/**
@@ -3705,10 +3662,12 @@ class FormEngine {
 	 * Wraps an element in the $out_array with the template row for a "section" ($this->sectionWrap)
 	 *
 	 * @param array $out_array The array with form elements stored in (passed by reference and changed!)
-	 * @param integer $out_pointer The pointer to the entry in the $out_array  (passed by reference and incremented!)
+	 * @param int $out_pointer The pointer to the entry in the $out_array  (passed by reference and incremented!)
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use anymore
 	 */
 	public function wrapBorder(&$out_array, &$out_pointer) {
+		GeneralUtility::logDeprecatedFunction();
 		if ($this->sectionWrap && $out_array[$out_pointer]) {
 			$tableAttribs = 'border="0" cellspacing="0" cellpadding="0" width="100%" class="table table-border"';
 			$out_array[$out_pointer] = str_replace('###CONTENT###', $out_array[$out_pointer], str_replace('###TABLE_ATTRIBS###', $tableAttribs, $this->sectionWrap));
@@ -3945,7 +3904,7 @@ class FormEngine {
 	 * ... and then include the result of this function after the form
 	 *
 	 * @param string $formname The identification of the form on the page.
-	 * @param boolean $update Just extend/update existing settings, e.g. for AJAX call
+	 * @param bool $update Just extend/update existing settings, e.g. for AJAX call
 	 * @return string A section with JavaScript - if $update is FALSE, embedded in <script></script>
 	 */
 	public function JSbottom($formname = 'forms[0]', $update = FALSE) {
@@ -4171,17 +4130,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Used to connect the db/file browser with this document and the formfields on it!
-	 *
-	 * @param string $formObj Form object reference (including "document.")
-	 * @return string JavaScript functions/code (NOT contained in a <script>-element)
-	 * @deprecated since TYPO3 6.2, remove two versions later. This is now done in an external file, see printNeededJSfunctions
-	 */
-	public function dbFileCon($formObj = 'document.forms[0]') {
-		GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
 	 * Prints necessary JavaScript for TCEforms (after the form HTML).
 	 * currently this is used to transform page-specific options in the TYPO3.Settings array for JS
 	 * so the JS module can access these values
@@ -4243,9 +4191,9 @@ class FormEngine {
 	 * Gets default record. Maybe not used anymore. FE-editor?
 	 *
 	 * @param string $table Database Tablename
-	 * @param integer $pid PID value (positive / negative)
+	 * @param int $pid PID value (positive / negative)
 	 * @return array|NULL "default" row.
-	 * @deprecated since 6.3 - will be removed two versions later; not used anymore in Core
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public function getDefaultRecord($table, $pid = 0) {
 		GeneralUtility::logDeprecatedFunction();
@@ -4354,8 +4302,8 @@ class FormEngine {
 	 * Returns TRUE, if the palette, $palette, is collapsed (not shown, but found in top-frame) for the table.
 	 *
 	 * @param string $table The table name
-	 * @param integer $palette The palette pointer/number
-	 * @return boolean
+	 * @param int $palette The palette pointer/number
+	 * @return bool
 	 */
 	public function isPalettesCollapsed($table, $palette) {
 		if (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) && $GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']) {
@@ -4392,7 +4340,7 @@ class FormEngine {
 	 * Returns TRUE if descriptions should be loaded always
 	 *
 	 * @param string $table Table for which to check
-	 * @return boolean
+	 * @return bool
 	 */
 	public function doLoadTableDescr($table) {
 		return $GLOBALS['TCA'][$table]['interface']['always_description'];
@@ -4401,8 +4349,8 @@ class FormEngine {
 	/**
 	 * Returns an array of available languages (to use for FlexForms)
 	 *
-	 * @param boolean $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
-	 * @param boolean $setDefault If set, an array entry for a default language is set.
+	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
+	 * @param bool $setDefault If set, an array entry for a default language is set.
 	 * @return array
 	 */
 	public function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
@@ -4592,8 +4540,8 @@ class FormEngine {
 	 * Get the dynNestedStack as associative array.
 	 * The result is e.g. ['tab','DTM-ABCD-1'], ['inline','data[13][table][uid][field]'], ['tab','DTM-DEFG-2'], ...
 	 *
-	 * @param boolean $json Return a JSON string instead of an array - default: FALSE
-	 * @param boolean $skipFirst Skip the first element in the dynNestedStack - default: FALSE
+	 * @param bool $json Return a JSON string instead of an array - default: FALSE
+	 * @param bool $skipFirst Skip the first element in the dynNestedStack - default: FALSE
 	 * @return mixed Returns an associative array by default. If $json is TRUE, it will be returned as JSON string.
 	 */
 	public function getDynNestedStack($json = FALSE, $skipFirst = FALSE) {
@@ -4634,7 +4582,7 @@ class FormEngine {
 	 * Sets the current situation of nested tabs and inline levels for a given element.
 	 *
 	 * @param string $itemName The element the nesting should be stored for
-	 * @param boolean $setLevel Set the reverse level lookup - default: TRUE
+	 * @param bool $setLevel Set the reverse level lookup - default: TRUE
 	 * @return void
 	 */
 	protected function registerNestedElement($itemName, $setLevel = TRUE) {

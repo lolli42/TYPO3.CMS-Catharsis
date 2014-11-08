@@ -28,7 +28,7 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 *
 	 * @param string $title Title, (must be ready for output, that means it must be htmlspecialchars()'ed).
 	 * @param array $v The record
-	 * @param boolean $ext_pArrPages (Ignore)
+	 * @param bool $ext_pArrPages (Ignore)
 	 * @return string Wrapping title string.
 	 */
 	public function wrapTitle($title, $v, $ext_pArrPages = '') {
@@ -84,9 +84,9 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	/**
 	 * Returns TRUE if a doktype can be linked.
 	 *
-	 * @param integer $doktype Doktype value to test
-	 * @param integer $uid uid to test.
-	 * @return boolean
+	 * @param int $doktype Doktype value to test
+	 * @param int $uid uid to test.
+	 * @return bool
 	 */
 	public function ext_isLinkable($doktype, $uid) {
 		if ($uid && $doktype < 199) {
@@ -99,7 +99,7 @@ class localPageTree extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
 	 * @return string Link-wrapped input string
 	 */
 	public function PM_ATagWrap($icon, $cmd, $bMark = '') {
@@ -139,9 +139,9 @@ class TBE_PageTree extends localPageTree {
 	/**
 	 * Returns TRUE if a doktype can be linked (which is always the case here).
 	 *
-	 * @param integer $doktype Doktype value to test
-	 * @param integer $uid uid to test.
-	 * @return boolean
+	 * @param int $doktype Doktype value to test
+	 * @param int $uid uid to test.
+	 * @return bool
 	 */
 	public function ext_isLinkable($doktype, $uid) {
 		return TRUE;
@@ -152,7 +152,7 @@ class TBE_PageTree extends localPageTree {
 	 *
 	 * @param string $title Title, ready for output.
 	 * @param array $v The record
-	 * @param boolean $ext_pArrPages If set, pages clicked will return immediately, otherwise reload page.
+	 * @param bool $ext_pArrPages If set, pages clicked will return immediately, otherwise reload page.
 	 * @return string Wrapping title string.
 	 */
 	public function wrapTitle($title, $v, $ext_pArrPages) {
@@ -209,7 +209,7 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 * Returns TRUE if the input "record" contains a folder which can be linked.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject Object with information about the folder element. Contains keys like title, uid, path, _title
-	 * @return boolean TRUE is returned if the path is found in the web-part of the server and is NOT a recycler or temp folder
+	 * @return bool TRUE is returned if the path is found in the web-part of the server and is NOT a recycler or temp folder
 	 */
 	public function ext_isLinkable(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		if (strstr($folderObject->getIdentifier(), '_recycler_') || strstr($folderObject->getIdentifier(), '_temp_')) {
@@ -224,7 +224,7 @@ class localFolderTree extends \TYPO3\CMS\Backend\Tree\View\FolderTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
 	 * @return string Link-wrapped input string
 	 * @access private
 	 */
@@ -258,7 +258,7 @@ class TBE_FolderTree extends localFolderTree {
 	 * Returns TRUE if the input "record" contains a folder which can be linked.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject object with information about the folder element. Contains keys like title, uid, path, _title
-	 * @return boolean TRUE is returned if the path is NOT a recycler or temp folder AND if ->ext_noTempRecyclerDirs is not set.
+	 * @return bool TRUE is returned if the path is NOT a recycler or temp folder AND if ->ext_noTempRecyclerDirs is not set.
 	 */
 	public function ext_isLinkable($folderObject) {
 		if ($this->ext_noTempRecyclerDirs && (substr($folderObject->getIdentifier(), -7) == '_temp_/' || substr($folderObject->getIdentifier(), -11) == '_recycler_/')) {

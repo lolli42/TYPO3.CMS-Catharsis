@@ -45,7 +45,7 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * Disable the escaping interceptor because otherwise the child nodes would be escaped before this view helper
 	 * can decode the text's entities.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $escapingInterceptorEnabled = FALSE;
 
@@ -94,7 +94,7 @@ class CObjectViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 		if (is_object($data)) {
 			$data = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getGettableProperties($data);
 		} elseif (is_string($data) || is_numeric($data)) {
-			$currentValue = (string) $data;
+			$currentValue = (string)$data;
 			$data = array($data);
 		}
 		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObject */

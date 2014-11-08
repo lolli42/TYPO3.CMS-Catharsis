@@ -57,7 +57,7 @@ interface RepositoryInterface {
 	/**
 	 * Returns the total number objects of this repository.
 	 *
-	 * @return integer The object count
+	 * @return int The object count
 	 * @api
 	 */
 	public function countAll();
@@ -74,7 +74,7 @@ interface RepositoryInterface {
 	/**
 	 * Finds an object matching the given identifier.
 	 *
-	 * @param integer $uid The identifier of the object to find
+	 * @param int $uid The identifier of the object to find
 	 * @return object The matching object if found, otherwise NULL
 	 * @api
 	 */

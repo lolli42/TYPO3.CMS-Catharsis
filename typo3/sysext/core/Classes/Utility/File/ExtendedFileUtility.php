@@ -15,8 +15,15 @@ namespace TYPO3\CMS\Core\Utility\File;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Contains functions for performing file operations like copying, pasting, uploading, moving,
@@ -46,7 +53,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility {
+class ExtendedFileUtility extends BasicFileUtility {
 
 	// External static variables:
 	// Notice; some of these are overridden in the start() method with values from $GLOBALS['TYPO3_CONF_VARS']['BE']
@@ -142,21 +149,9 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		}
 		$this->unzipPath = $unzipPath;
 		// Initialize Object Factory
-		$this->fileFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+		$this->fileFactory = ResourceFactory::getInstance();
 		// Initializing file processing commands:
 		$this->fileCmdMap = $fileCmds;
-	}
-
-	/**
-	 * Sets up permission to perform file/directory operations.
-	 * See below or the be_user-table for the significance of the various bits in $setup.
-	 *
-	 * @return void
-	 * @deprecated since 6.2 will be removed two versions later. Use ExtendedFileUtility::setActionPermissions() instead
-	 */
-	public function init_actionPerms() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->setActionPermissions();
 	}
 
 	/**
@@ -255,7 +250,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'])) {
 							foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_extfilefunc.php']['processData'] as $classRef) {
 								$hookObject = GeneralUtility::getUserObj($classRef);
-								if (!$hookObject instanceof \TYPO3\CMS\Core\Utility\File\ExtendedFileUtilityProcessDataHookInterface) {
+								if (!$hookObject instanceof ExtendedFileUtilityProcessDataHookInterface) {
 									throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Core\\Utility\\File\\ExtendedFileUtilityProcessDataHookInterface', 1279719168);
 								}
 								$hookObject->processData_postProcessAction($action, $cmdArr, $result[$action], $this);
@@ -269,18 +264,6 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	}
 
 	/**
-	 * Adds log error messages from the operations of this script instance to the FlashMessageQueue
-	 *
-	 * @param string $redirect Redirect URL (for creating link in message)
-	 * @return void
-	 * @deprecated since TYPO3 6.1, will be removed two versions later, use ->pushErrorMessagesToFlashMessageQueue directly instead
-	 */
-	public function printLogErrorMessages($redirect = '') {
-		GeneralUtility::logDeprecatedFunction();
-		$this->pushErrorMessagesToFlashMessageQueue();
-	}
-
-	/**
 	 * Adds all log error messages from the operations of this script instance to the FlashMessageQueue
 	 *
 	 * @return void
@@ -291,7 +274,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 				$msg,
 				'',
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
+				FlashMessage::ERROR,
 				TRUE
 			);
 			$this->addFlashMessage($flashMessage);
@@ -308,40 +291,9 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	}
 
 	/**
-	 * Goes back in the path and checks in each directory if a folder named $this->recyclerFN (usually '_recycler_') is present.
-	 * If a folder in the tree happens to be a _recycler_-folder (which means that we're deleting something inside a _recycler_-folder) this is ignored
-	 *
-	 * @param string $theFile Takes a valid Path ($theFile)
-	 * @return string Returns the path (without trailing slash) of the closest recycle-folder if found. Else FALSE.
-	 * @todo To be put in Storage with a better concept
-	 * @deprecated since TYPO3 6.0, use \TYPO3\CMS\Core\Resource\ResourceStorage method instead
-	 */
-	public function findRecycler($theFile) {
-		GeneralUtility::logDeprecatedFunction();
-		if (GeneralUtility::validPathStr($theFile)) {
-			$theFile = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($theFile);
-			$fI = GeneralUtility::split_fileref($theFile);
-			$c = 0;
-			// !!! Method has been put in the storage, can be saftely removed
-			$rDir = $fI['path'] . $this->recyclerFN;
-			while ($this->checkPathAgainstMounts($fI['path']) && $c < 20) {
-				if (@is_dir($rDir) && $this->recyclerFN != $fI['file']) {
-					return $rDir;
-				}
-				$theFile = $fI['path'];
-				$theFile = \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath($theFile);
-				$fI = GeneralUtility::split_fileref($theFile);
-				$c++;
-			}
-		}
-	}
-
-	/**
-	 * Logging file operations
-	 *
-	 * @param integer $action The action number. See the functions in the class for a hint. Eg. edit is '9', upload is '1' ...
-	 * @param integer $error The severity: 0 = message, 1 = error, 2 = System Error, 3 = security notice (admin)
-	 * @param integer $details_nr This number is unique for every combination of $type and $action. This is the error-message number, which can later be used to translate error messages.
+	 * @param int $action The action number. See the functions in the class for a hint. Eg. edit is '9', upload is '1' ...
+	 * @param int $error The severity: 0 = message, 1 = error, 2 = System Error, 3 = security notice (admin)
+	 * @param int $details_nr This number is unique for every combination of $type and $action. This is the error-message number, which can later be used to translate error messages.
 	 * @param string $details This is the default, raw error message in english
 	 * @param array $data Array with special information that may go into $details by "%s" marks / sprintf() when the log is shown
 	 * @return void
@@ -367,7 +319,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * Deleting files and folders (action=4)
 	 *
 	 * @param array $cmds $cmds['data'] is the file/folder to delete
-	 * @return boolean Returns TRUE upon success
+	 * @return bool Returns TRUE upon success
 	 */
 	public function func_delete($cmds) {
 		$result = FALSE;
@@ -391,13 +343,14 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 			if (count($refIndexRecords) > 0) {
 				$shortcutContent = array();
 				foreach ($refIndexRecords as $fileReferenceRow) {
+					$row = $fileReferenceRow;
 					if ($fileReferenceRow['tablename'] === 'sys_file_reference') {
 						$row = $this->transformFileReferenceToRecordReference($fileReferenceRow);
-						$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
-						$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
-						$onClick = 'Clickmenu.show("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
-						$shortcutContent[] = '<a href="#" oncontextmenu="this.click();return false;" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
 					}
+					$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
+					$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
+					$onClick = 'Clickmenu.show("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
+					$shortcutContent[] = '<a href="#" oncontextmenu="this.click();return false;" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
 				}
 
 				// render a message that the file could not be deleted
@@ -405,7 +358,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 					'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 					sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . '<br />' . implode('<br />', $shortcutContent),
 					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
-					\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
+					FlashMessage::WARNING,
 					TRUE
 				);
 				$this->addFlashMessage($flashMessage);
@@ -418,7 +371,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileDeleted'), $fileObject->getName()),
 						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileDeleted'),
-						\TYPO3\CMS\Core\Messaging\FlashMessage::OK,
+						FlashMessage::OK,
 						TRUE
 					);
 					$this->addFlashMessage($flashMessage);
@@ -441,7 +394,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderNotDeletedHasFiles'), $fileObject->getName()),
 						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderNotDeletedHasFiles'),
-						\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
+						FlashMessage::WARNING,
 						TRUE
 					);
 					$this->addFlashMessage($flashMessage);
@@ -453,7 +406,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderDeleted'), $fileObject->getName()),
 						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderDeleted'),
-						\TYPO3\CMS\Core\Messaging\FlashMessage::OK,
+						FlashMessage::OK,
 						TRUE
 					);
 					$this->addFlashMessage($flashMessage);
@@ -534,12 +487,12 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		/** @var $targetFolderObject \TYPO3\CMS\Core\Resource\Folder */
 		$targetFolderObject = $this->getFileObject($cmds['target']);
 		// Basic check
-		if (!$targetFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+		if (!$targetFolderObject instanceof Folder) {
 			$this->writelog(2, 2, 100, 'Destination "%s" was not a directory', array($cmds['target']));
 			return FALSE;
 		}
 		// If this is TRUE, we append _XX to the file name if
-		$appendSuffixOnConflict = (string) $cmds['altName'];
+		$appendSuffixOnConflict = (string)$cmds['altName'];
 		$resultObject = NULL;
 		// Copying the file
 		if ($sourceFileObject instanceof File) {
@@ -610,11 +563,11 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		$sourceFileObject = $this->getFileObject($cmds['data']);
 		$targetFolderObject = $this->getFileObject($cmds['target']);
 		// Basic check
-		if (!$targetFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+		if (!$targetFolderObject instanceof Folder) {
 			$this->writelog(3, 2, 100, 'Destination "%s" was not a directory', array($cmds['target']));
 			return FALSE;
 		}
-		$alternativeName = (string) $cmds['altName'];
+		$alternativeName = (string)$cmds['altName'];
 		$resultObject = NULL;
 		// Moving the file
 		if ($sourceFileObject instanceof File) {
@@ -739,7 +692,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 			return FALSE;
 		}
 		$targetFolderObject = $this->getFileObject($cmds['target']);
-		if (!$targetFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+		if (!$targetFolderObject instanceof Folder) {
 			$this->writelog(6, 2, 104, 'Destination "%s" was not a directory', array($cmds['target']));
 			return FALSE;
 		}
@@ -774,7 +727,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 			return FALSE;
 		}
 		$targetFolderObject = $this->getFileObject($cmds['target']);
-		if (!$targetFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+		if (!$targetFolderObject instanceof Folder) {
 			$this->writelog(8, 2, 104, 'Destination "%s" was not a directory', array($cmds['target']));
 			return FALSE;
 		}
@@ -803,7 +756,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * Editing textfiles or folders (action=9)
 	 *
 	 * @param array $cmds $cmds['data'] is the new content. $cmds['target'] is the target (file or dir)
-	 * @return boolean Returns TRUE on success
+	 * @return bool Returns TRUE on success
 	 */
 	public function func_edit($cmds) {
 		if (!$this->isInit) {
@@ -909,7 +862,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 				}
 				/** @var $fileObject File */
 				$fileObject = $targetFolderObject->addUploadedFile($fileInfo, $conflictMode);
-				$fileObject = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($targetFolderObject->getStorage()->getUid(), $fileObject->getIdentifier());
+				$fileObject = ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($targetFolderObject->getStorage()->getUid(), $fileObject->getIdentifier());
 				if ($conflictMode === 'replace') {
 					$this->getIndexer($fileObject->getStorage())->updateIndexEntry($fileObject);
 				}
@@ -941,7 +894,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * This is permitted only if the user has fullAccess or if the file resides
 	 *
 	 * @param array $cmds $cmds['data'] is the zip-file. $cmds['target'] is the target directory. If not set we'll default to the same directory as the file is in.
-	 * @return boolean Returns TRUE on success
+	 * @return bool Returns TRUE on success
 	 */
 	public function func_unzip($cmds) {
 		if (!$this->isInit || $this->dont_use_exec_commands) {
@@ -979,7 +932,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 		if ($this->checkPathAgainstMounts($theFile) && $this->checkPathAgainstMounts($theDest . '/')) {
 			// No way to do this under windows.
 			$cmd = $this->unzipPath . 'unzip -qq ' . escapeshellarg($theFile) . ' -d ' . escapeshellarg($theDest);
-			\TYPO3\CMS\Core\Utility\CommandUtility::exec($cmd);
+			CommandUtility::exec($cmd);
 			$this->writelog(7, 0, 1, 'Unzipping file "%s" in "%s"', array($theFile, $theDest));
 			return TRUE;
 		} else {
@@ -994,7 +947,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * @param \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage
 	 * @return void
 	 */
-	protected function addFlashMessage(\TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage) {
+	protected function addFlashMessage(FlashMessage $flashMessage) {
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
 		$flashMessageService = GeneralUtility::makeInstance(
 			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
@@ -1010,7 +963,7 @@ class ExtendedFileUtility extends \TYPO3\CMS\Core\Utility\File\BasicFileUtility 
 	 * @param \TYPO3\CMS\Core\Resource\ResourceStorage $storage
 	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
 	 */
-	protected function getIndexer(\TYPO3\CMS\Core\Resource\ResourceStorage $storage) {
+	protected function getIndexer(ResourceStorage $storage) {
 		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
 	}
 

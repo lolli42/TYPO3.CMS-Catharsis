@@ -30,7 +30,7 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	 * being updated to 500 to make sure it does not collide with a limit in any
 	 * other DBMS.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const CHUNK_SIZE = 500;
 
@@ -61,7 +61,7 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	/**
 	 * Count all extensions
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function countAll() {
 		$query = $this->createQuery();
@@ -174,8 +174,8 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	 * Find an extension between a certain version range ordered by version number
 	 *
 	 * @param string $extensionKey
-	 * @param integer $lowestVersion
-	 * @param integer $highestVersion
+	 * @param int $lowestVersion
+	 * @param int $highestVersion
 	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface
 	 */
 	public function findByVersionRangeAndExtensionKeyOrderedByVersion($extensionKey, $lowestVersion = 0, $highestVersion = 0) {
@@ -247,9 +247,9 @@ class ExtensionRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	 * Count extensions with a certain key between a given version range
 	 *
 	 * @param string $extensionKey
-	 * @param integer $lowestVersion
-	 * @param integer $highestVersion
-	 * @return integer
+	 * @param int $lowestVersion
+	 * @param int $highestVersion
+	 * @return int
 	 */
 	public function countByVersionRangeAndExtensionKey($extensionKey, $lowestVersion = 0, $highestVersion = 0) {
 		return $this->findByVersionRangeAndExtensionKeyOrderedByVersion($extensionKey, $lowestVersion, $highestVersion)->count();

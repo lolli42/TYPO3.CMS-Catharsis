@@ -133,11 +133,11 @@ class AbstractMenuContentObject {
 	 *
 	 * @param object $tmpl The $GLOBALS['TSFE']->tmpl object
 	 * @param object $sys_page The $GLOBALS['TSFE']->sys_page object
-	 * @param integer $id A starting point page id. This should probably be blank since the 'entryLevel' value will be used then.
+	 * @param int $id A starting point page id. This should probably be blank since the 'entryLevel' value will be used then.
 	 * @param array $conf The TypoScript configuration for the HMENU cObject
-	 * @param integer $menuNumber Menu number; 1,2,3. Should probably be '1'
+	 * @param int $menuNumber Menu number; 1,2,3. Should probably be '1'
 	 * @param string $objSuffix Submenu Object suffix. This offers submenus a way to use alternative configuration for specific positions in the menu; By default "1 = TMENU" would use "1." for the TMENU configuration, but if this string is set to eg. "a" then "1a." would be used for configuration instead (while "1 = " is still used for the overall object definition of "TMENU")
-	 * @return boolean Returns TRUE on success
+	 * @return bool Returns TRUE on success
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::HMENU()
 	 */
 	public function start(&$tmpl, &$sys_page, $id, $conf, $menuNumber, $objSuffix = '') {
@@ -865,8 +865,8 @@ class AbstractMenuContentObject {
 	 *
 	 * @param array $data Array of menu items
 	 * @param array $banUidArray Array of page uids which are to be excluded
-	 * @param boolean $spacer If set, then the page is a spacer.
-	 * @return boolean Returns TRUE if the page can be safely included.
+	 * @param bool $spacer If set, then the page is a spacer.
+	 * @return bool Returns TRUE if the page can be safely included.
 	 */
 	public function filterMenuPages(&$data, $banUidArray, $spacer) {
 		$includePage = TRUE;
@@ -933,7 +933,7 @@ class AbstractMenuContentObject {
 	 * Basically it will produce an individual array for each menu item based on the item states. BUT in addition the "optionSplit" syntax for the values is ALSO evaluated here so that all property-values are "option-splitted" and the output will thus be resolved.
 	 * Is called from the "generate" functions in the extension classes. The function is processor intensive due to the option split feature in particular. But since the generate function is not always called (since the ->result array may be cached, see makeMenu) it doesn't hurt so badly.
 	 *
-	 * @param integer $splitCount Number of menu items in the menu
+	 * @param int $splitCount Number of menu items in the menu
 	 * @return array An array with two keys: array($NOconf,$ROconf) - where $NOconf contains the resolved configuration for each item when NOT rolled-over and $ROconf contains the ditto for the mouseover state (if any)
 	 * @access private
 	 */
@@ -1182,9 +1182,9 @@ class AbstractMenuContentObject {
 	 * Creates the URL, target and onclick values for the menu item link. Returns them in an array as key/value pairs for <A>-tag attributes
 	 * This function doesn't care about the url, because if we let the url be redirected, it will be logged in the stat!!!
 	 *
-	 * @param integer $key Pointer to a key in the $this->menuArr array where the value for that key represents the menu item we are linking to (page record)
+	 * @param int $key Pointer to a key in the $this->menuArr array where the value for that key represents the menu item we are linking to (page record)
 	 * @param string $altTarget Alternative target
-	 * @param integer $typeOverride Alternative type
+	 * @param int $typeOverride Alternative type
 	 * @return array Returns an array with A-tag attributes as key/value pairs (HREF, TARGET and onClick)
 	 * @access private
 	 */
@@ -1224,17 +1224,21 @@ class AbstractMenuContentObject {
 			$LD['totalURL'] = $this->parent_cObj->typoLink_URL(array('parameter' => $this->menuArr[$key]['url']));
 			$LD['target'] = '';
 		}
+
 		// Override url if current page is a shortcut
+		$shortcut = NULL;
 		if ($this->menuArr[$key]['doktype'] == \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_SHORTCUT && $this->menuArr[$key]['shortcut_mode'] != \TYPO3\CMS\Frontend\Page\PageRepository::SHORTCUT_MODE_RANDOM_SUBPAGE) {
 
 			$menuItem = $this->determineOriginalShortcutPage($this->menuArr[$key]);
 
-			$shortcut = NULL;
 			try {
 				$shortcut = $GLOBALS['TSFE']->getPageShortcut(
 					$menuItem['shortcut'],
 					$menuItem['shortcut_mode'],
-					$menuItem['uid']
+					$menuItem['uid'],
+					20,
+					array(),
+					TRUE
 				);
 			} catch (\Exception $ex) {
 
@@ -1246,10 +1250,17 @@ class AbstractMenuContentObject {
 			$LD['totalURL'] = $this->parent_cObj->typoLink_URL(array(
 				'parameter' => $shortcut['uid'],
 				'additionalParams' => $this->mconf['addParams'] . $MP_params . $this->I['val']['additionalParams'] . $menuItem['_ADD_GETVARS'],
+				'linkAccessRestrictedPages' => $this->mconf['showAccessRestrictedPages'] && $this->mconf['showAccessRestrictedPages'] !== 'NONE'
 			));
 		}
+		if ($shortcut) {
+			$pageData = $shortcut;
+			$pageData['_SHORTCUT_PAGE_UID'] = $this->menuArr[$key]['uid'];
+		} else {
+			$pageData = $this->menuArr[$key];
+		}
 		// Manipulation in case of access restricted pages:
-		$this->changeLinksForAccessRestrictedPages($LD, $this->menuArr[$key], $mainTarget, $typeOverride);
+		$this->changeLinksForAccessRestrictedPages($LD, $pageData, $mainTarget, $typeOverride);
 		// Overriding URL / Target if set to do so:
 		if ($this->menuArr[$key]['_OVERRIDE_HREF']) {
 			$LD['totalURL'] = $this->menuArr[$key]['_OVERRIDE_HREF'];
@@ -1352,7 +1363,7 @@ class AbstractMenuContentObject {
 				),
 				array(
 					rawurlencode($LD['totalURL']),
-					$page['uid']
+					isset($page['_SHORTCUT_PAGE_UID']) ? $page['_SHORTCUT_PAGE_UID'] : $page['uid']
 				),
 				$this->mconf['showAccessRestrictedPages.']['addParams']
 			);
@@ -1363,7 +1374,7 @@ class AbstractMenuContentObject {
 	/**
 	 * Creates a submenu level to the current level - if configured for.
 	 *
-	 * @param integer $uid Page id of the current page for which a submenu MAY be produced (if conditions are met)
+	 * @param int $uid Page id of the current page for which a submenu MAY be produced (if conditions are met)
 	 * @param string $objSuffix Object prefix, see ->start()
 	 * @return string HTML content of the submenu
 	 * @access private
@@ -1417,9 +1428,9 @@ class AbstractMenuContentObject {
 	/**
 	 * Returns TRUE if the page with UID $uid is the NEXT page in root line (which means a submenu should be drawn)
 	 *
-	 * @param integer $uid Page uid to evaluate.
+	 * @param int $uid Page uid to evaluate.
 	 * @param string $MPvar MPvar for the current position of item.
-	 * @return boolean TRUE if page with $uid is active
+	 * @return bool TRUE if page with $uid is active
 	 * @access private
 	 * @see subMenu()
 	 */
@@ -1437,9 +1448,9 @@ class AbstractMenuContentObject {
 	/**
 	 * Returns TRUE if the page with UID $uid is active (in the current rootline)
 	 *
-	 * @param integer $uid Page uid to evaluate.
+	 * @param int $uid Page uid to evaluate.
 	 * @param string $MPvar MPvar for the current position of item.
-	 * @return boolean TRUE if page with $uid is active
+	 * @return bool TRUE if page with $uid is active
 	 * @access private
 	 */
 	public function isActive($uid, $MPvar = '') {
@@ -1456,9 +1467,9 @@ class AbstractMenuContentObject {
 	/**
 	 * Returns TRUE if the page with UID $uid is the CURRENT page (equals $GLOBALS['TSFE']->id)
 	 *
-	 * @param integer $uid Page uid to evaluate.
+	 * @param int $uid Page uid to evaluate.
 	 * @param string $MPvar MPvar for the current position of item.
-	 * @return boolean TRUE if page $uid = $GLOBALS['TSFE']->id
+	 * @return bool TRUE if page $uid = $GLOBALS['TSFE']->id
 	 * @access private
 	 */
 	public function isCurrent($uid, $MPvar = '') {
@@ -1472,8 +1483,8 @@ class AbstractMenuContentObject {
 	 * Returns TRUE if there is a submenu with items for the page id, $uid
 	 * Used by the item states "IFSUB", "ACTIFSUB" and "CURIFSUB" to check if there is a submenu
 	 *
-	 * @param integer $uid Page uid for which to search for a submenu
-	 * @return boolean Returns TRUE if there was a submenu with items found
+	 * @param int $uid Page uid for which to search for a submenu
+	 * @return bool Returns TRUE if there was a submenu with items found
 	 * @access private
 	 */
 	public function isSubMenu($uid) {
@@ -1521,8 +1532,8 @@ class AbstractMenuContentObject {
 	 * Used by procesItemStates() to evaluate if a menu item (identified by $key) is in a certain state.
 	 *
 	 * @param string $kind The item state to evaluate (SPC, IFSUB, ACT etc... but no xxxRO states of course)
-	 * @param integer $key Key pointing to menu item from ->menuArr
-	 * @return boolean True (integer!=0) if match, otherwise FALSE (=0, zero)
+	 * @param int $key Key pointing to menu item from ->menuArr
+	 * @return bool True (integer!=0) if match, otherwise FALSE (=0, zero)
 	 * @access private
 	 * @see procesItemStates()
 	 */
@@ -1632,7 +1643,7 @@ class AbstractMenuContentObject {
 	/**
 	 * Return MPvar string for entry $key in ->menuArr
 	 *
-	 * @param integer $key Pointer to element in ->menuArr
+	 * @param int $key Pointer to element in ->menuArr
 	 * @return string MP vars for element.
 	 * @see link()
 	 */
@@ -1682,7 +1693,7 @@ class AbstractMenuContentObject {
 	 *
 	 * @param array $page Page record (uid points where to link to)
 	 * @param string $oTarget Target frame/window
-	 * @param boolean $no_cache TRUE if caching should be disabled
+	 * @param bool $no_cache TRUE if caching should be disabled
 	 * @param string $script Alternative script name
 	 * @param array $overrideArray Array to override values in $page
 	 * @param string $addParams Parameters to add to URL
@@ -1710,6 +1721,7 @@ class AbstractMenuContentObject {
 		if ($page['sectionIndex_uid']) {
 			$conf['section'] = $page['sectionIndex_uid'];
 		}
+		$conf['linkAccessRestrictedPages'] = $this->mconf['showAccessRestrictedPages'] && $this->mconf['showAccessRestrictedPages'] !== 'NONE';
 		$this->parent_cObj->typoLink('|', $conf);
 		$LD = $this->parent_cObj->lastTypoLinkLD;
 		$LD['totalURL'] = $this->parent_cObj->lastTypoLinkUrl;
@@ -1723,7 +1735,7 @@ class AbstractMenuContentObject {
 	 * Used for menus with sectionIndex enabled
 	 *
 	 * @param string $altSortField Alternative sorting field
-	 * @param integer $pid The page id to search for sections
+	 * @param int $pid The page id to search for sections
 	 * @throws UnexpectedValueException if the query to fetch the content elements unexpectedly fails
 	 * @return array
 	 */

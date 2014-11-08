@@ -34,20 +34,33 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Constructs the module menu and gets the Singleton instance of the menu
 	 */
 	public function __construct() {
-		$this->moduleStorage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleStorage');
+		$this->moduleStorage = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleStorage');
 	}
 
 	/**
 	 * loads all module information in the module storage
 	 *
+	 * @param array $excludeGroupNames
 	 * @return \SplObjectStorage
 	 */
-	public function loadAllowedModules() {
+	public function loadAllowedModules(array $excludeGroupNames = array()) {
 		$rawData = $this->getRawModuleMenuData();
 
 		$this->convertRawModuleDataToModuleMenuObject($rawData);
 		$this->createMenuEntriesForTbeModulesExt();
-		return $this->moduleStorage->getEntries();
+
+		if (empty($excludeGroupNames)) {
+			return $this->moduleStorage->getEntries();
+		}
+
+		$modules = new \SplObjectStorage();
+		foreach ($this->moduleStorage->getEntries() as $moduleGroup) {
+			if (!in_array($moduleGroup->getName(), $excludeGroupNames, TRUE)) {
+				$modules->attach($moduleGroup);
+			}
+		}
+
+		return $modules;
 	}
 
 	/**

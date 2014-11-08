@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Core\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Category\CategoryRegistry;
+use TYPO3\CMS\Core\Package\PackageManager;
 
 /**
  * Extension Management functions
@@ -34,7 +36,7 @@ class ExtensionManagementUtility {
 	 * already read from cache
 	 *
 	 * @TODO : See if we can get rid of the 'load multiple times' scenario in fe
-	 * @var boolean
+	 * @var bool
 	 */
 	static protected $extTablesWasReadFromCacheOnce = FALSE;
 
@@ -50,7 +52,7 @@ class ExtensionManagementUtility {
 	 * @param \TYPO3\CMS\Core\Package\PackageManager $packageManager
 	 * @internal
 	 */
-	static public function setPackageManager(\TYPO3\CMS\Core\Package\PackageManager $packageManager) {
+	static public function setPackageManager(PackageManager $packageManager) {
 		static::$packageManager = $packageManager;
 	}
 
@@ -97,8 +99,8 @@ class ExtensionManagementUtility {
 	 * Returns TRUE if the extension with extension key $key is loaded.
 	 *
 	 * @param string $key Extension key to test
-	 * @param boolean $exitOnError If $exitOnError is TRUE and the extension is not loaded the function will die with an error message
-	 * @return boolean
+	 * @param bool $exitOnError If $exitOnError is TRUE and the extension is not loaded the function will die with an error message
+	 * @return bool
 	 * @throws \BadFunctionCallException
 	 */
 	static public function isLoaded($key, $exitOnError = FALSE) {
@@ -156,7 +158,7 @@ class ExtensionManagementUtility {
 	 * @return string
 	 */
 	static public function siteRelPath($key) {
-		return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(self::extPath($key));
+		return PathUtility::stripPathSitePrefix(self::extPath($key));
 	}
 
 	/**
@@ -174,7 +176,7 @@ class ExtensionManagementUtility {
 	 * Returns the real extension key like 'tt_news' from an extension prefix like 'tx_ttnews'.
 	 *
 	 * @param string $prefix The extension prefix (e.g. 'tx_ttnews')
-	 * @return mixed Real extension key (string) or FALSE (boolean) if something went wrong
+	 * @return mixed Real extension key (string)or FALSE (bool) if something went wrong
 	 */
 	static public function getExtensionKeyByPrefix($prefix) {
 		$result = FALSE;
@@ -242,7 +244,7 @@ class ExtensionManagementUtility {
 	 *
 	 * @param string $table The table name of a table already present in $GLOBALS['TCA'] with a columns section
 	 * @param array $columnArray The array with the additional columns (typical some fields an extension wants to add)
-	 * @param boolean $addTofeInterface DEPRECATED: Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.
+	 * @param bool $addTofeInterface DEPRECATED: Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.
 	 * @return void
 	 */
 	static public function addTCAcolumns($table, $columnArray, $addTofeInterface = FALSE) {
@@ -460,7 +462,7 @@ class ExtensionManagementUtility {
 		$GLOBALS['TCA'][$table]['columns'][$field]['config']['items'] = array_values($GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
 		if (strlen($relativePosition) > 0) {
 			// Insert at specified position
-			$matchedPosition = \TYPO3\CMS\Core\Utility\ArrayUtility::filterByValueRecursive($relativeToField, $GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
+			$matchedPosition = ArrayUtility::filterByValueRecursive($relativeToField, $GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
 			if (count($matchedPosition) > 0) {
 				$relativeItemKey = key($matchedPosition);
 				if ($relativePosition === 'replace') {
@@ -549,7 +551,7 @@ class ExtensionManagementUtility {
 				'localizeChildrenAtParentLocalization' => TRUE,
 			),
 		);
-		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($fileFieldTCAConfig, $customSettingOverride);
+		ArrayUtility::mergeRecursiveWithOverrule($fileFieldTCAConfig, $customSettingOverride);
 		return $fileFieldTCAConfig;
 	}
 
@@ -659,35 +661,6 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * Generates search needles that are used for inserting fields/items into an existing list.
-	 *
-	 * @see executePositionedStringInsertion
-	 * @param string $item The name of the field/item
-	 * @param array $itemDetails Additional details of the field/item like e.g. palette information
-	 * @return array The needled to be used for inserting content before or after existing fields/items
-	 * @deprecated since 6.2, will be removed two versions later. This method was only used by executePositionedStringInsertion().
-	 */
-	static protected function getInsertionNeedles($item, array $itemDetails) {
-		if (strpos($item, '--') !== FALSE) {
-			// If $item is a separator (--div--) or palette (--palette--) then it may have been appended by a unique number. This must be stripped away here.
-			$item = str_replace(array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), '', $item);
-		}
-		$needles = array(
-			'before' => array($item, 'before:' . $item),
-			'after' => array('after:' . $item),
-			'replace' => array('replace:' . $item)
-		);
-		if ($itemDetails['palette']) {
-			$palette = $item . ';;' . $itemDetails['palette'];
-			$needles['before'][] = $palette;
-			$needles['before'][] = 'before:' . $palette;
-			$needles['after'][] = 'after:' . $palette;
-			$needles['replace'][] = 'replace:' . $palette;
-		}
-		return $needles;
-	}
-
-	/**
 	 * Generates an array of fields/items with additional information such as e.g. the name of the palette.
 	 *
 	 * @param string $itemList List of fields/items to be splitted up
@@ -724,7 +697,7 @@ class ExtensionManagementUtility {
 	 *
 	 * @see explodeItemList
 	 * @param array $items The array of fields/items with optional additional information
-	 * @param boolean $useRawData Use raw data instead of building by using the details (default: FALSE)
+	 * @param bool $useRawData Use raw data instead of building by using the details (default: FALSE)
 	 * @return string The list of fields/items which gets used for $GLOBALS['TCA'][<table>]['types'][<type>]['showitem']
 	 */
 	static protected function generateItemList(array $items, $useRawData = FALSE) {
@@ -783,7 +756,7 @@ class ExtensionManagementUtility {
 		if ($mainModuleName === 'web') {
 			$defaultModuleConfiguration['navigationComponentId'] = 'typo3-pagetree';
 		}
-		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
+		ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
 		$moduleConfiguration = $defaultModuleConfiguration;
 		if (strlen($subModuleName) > 0) {
 			$moduleSignature = $mainModuleName . '_' . $subModuleName;
@@ -803,8 +776,8 @@ class ExtensionManagementUtility {
 	 * and it replaces old conf.php.
 	 *
 	 * The original function for is called
-	 * Tx_Extbase_Utility_Extension::configureModule, the refered function can
-	 * be deprecated now
+	 * typo3/sysext/extbase/Classes/Utility/ExtensionUtility.php::configureModule
+	 * the referred function can be deprecated now
 	 *
 	 * @param string $moduleSignature The module name
 	 * @param string $modulePath Absolute path to module (not used by Extbase currently)
@@ -950,18 +923,10 @@ class ExtensionManagementUtility {
 	 * @return void
 	 * @see \TYPO3\CMS\Backend\Module\BaseScriptClass::mergeExternalItems()
 	 */
-	static public function insertModuleFunction($modname, $className, $classPath, $title, $MM_key = 'function', $WS = '') {
-		if (!empty($classPath)) {
-			GeneralUtility::deprecationLog(
-				sprintf('insertModuleFunction(%s, %s, ...): Use auto-loading for the class and pass NULL as $classPath since 6.2.',
-					$modname,
-					$className
-				)
-			);
-		}
+	static public function insertModuleFunction($modname, $className, $classPath = NULL, $title, $MM_key = 'function', $WS = '') {
 		$GLOBALS['TBE_MODULES_EXT'][$modname]['MOD_MENU'][$MM_key][$className] = array(
 			'name' => $className,
-			'path' => $classPath,
+			'path' => NULL,
 			'title' => $title,
 			'ws' => $WS
 		);
@@ -1195,7 +1160,7 @@ class ExtensionManagementUtility {
 	 * @param string $serviceType Type of service
 	 * @param string $serviceKey Specific key of the service
 	 * @param array $serviceDetails Information about the service
-	 * @return boolean Service availability
+	 * @return bool Service availability
 	 */
 	static public function isServiceAvailable($serviceType, $serviceKey, $serviceDetails) {
 		// If the service depends on external programs - check if they exists
@@ -1203,7 +1168,7 @@ class ExtensionManagementUtility {
 			$executables = GeneralUtility::trimExplode(',', $serviceDetails['exec'], TRUE);
 			foreach ($executables as $executable) {
 				// If at least one executable file is not available, exit early returning FALSE
-				if (!\TYPO3\CMS\Core\Utility\CommandUtility::checkCommand($executable)) {
+				if (!CommandUtility::checkCommand($executable)) {
 					self::deactivateService($serviceType, $serviceKey);
 					return FALSE;
 				}
@@ -1320,7 +1285,7 @@ class ExtensionManagementUtility {
 	 * @param string $classFile The PHP-class filename relative to the extension root directory. If set to blank a default value is chosen according to convensions.
 	 * @param string $prefix Is used as a - yes, suffix - of the class name (fx. "_pi1")
 	 * @param string $type See description above
-	 * @param integer $cached If $cached is set as USER content object (cObject) is created - otherwise a USER_INT object is created.
+	 * @param int $cached If $cached is set as USER content object (cObject) is created - otherwise a USER_INT object is created.
 	 *
 	 * @return void
 	 */
@@ -1466,7 +1431,7 @@ tt_content.' . $key . $prefix . ' {
 	 * Find extension icon
 	 *
 	 * @param string $extensionPath Path to extension directory.
-	 * @param boolean $returnFullPath Return full path of file.
+	 * @param bool $returnFullPath Return full path of file.
 	 *
 	 * @return string
 	 */
@@ -1490,7 +1455,7 @@ tt_content.' . $key . $prefix . ' {
 	 * This is an internal method. It is only used during bootstrap and
 	 * extensions should not use it!
 	 *
-	 * @param boolean $allowCaching Whether or not to load / create concatenated cache file
+	 * @param bool $allowCaching Whether or not to load / create concatenated cache file
 	 * @return void
 	 * @access private
 	 */
@@ -1590,7 +1555,7 @@ tt_content.' . $key . $prefix . ' {
 	 * This is an internal method. It is only used during bootstrap and
 	 * extensions should not use it!
 	 *
-	 * @param boolean $allowCaching Whether or not to load / create concatenated cache file
+	 * @param bool $allowCaching Whether or not to load / create concatenated cache file
 	 * @return void
 	 * @access private
 	 */
@@ -1648,7 +1613,7 @@ tt_content.' . $key . $prefix . ' {
 		}
 
 		// Apply category stuff
-		\TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()->applyTcaForPreRegisteredTables();
+		CategoryRegistry::getInstance()->applyTcaForPreRegisteredTables();
 
 		// Execute override files from Configuration/TCA/Overrides
 		foreach ($activePackages as $package) {
@@ -1715,7 +1680,7 @@ tt_content.' . $key . $prefix . ' {
 	 * This is an internal method. It is only used during bootstrap and
 	 * extensions should not use it!
 	 *
-	 * @param boolean $allowCaching Whether to load / create concatenated cache file
+	 * @param bool $allowCaching Whether to load / create concatenated cache file
 	 * @return void
 	 * @access private
 	 */
@@ -1882,17 +1847,6 @@ tt_content.' . $key . $prefix . ' {
 	}
 
 	/**
-	 * Returns REQUIRED_EXTENSIONS constant set by package manager as array.
-	 *
-	 * @return array List of required extensions
-	 * @deprecated since 6,2, will be removed two versions later.
-	 */
-	static public function getRequiredExtensionListArray() {
-		GeneralUtility::logDeprecatedFunction();
-		return GeneralUtility::trimExplode(',', REQUIRED_EXTENSIONS);
-	}
-
-	/**
 	 * Loads given extension
 	 *
 	 * Warning: This method only works if the ugrade wizard to transform
@@ -1927,20 +1881,6 @@ tt_content.' . $key . $prefix . ' {
 	}
 
 	/**
-	 * Writes extension list and clear cache files.
-	 *
-	 * @TODO: This method should be protected, but with current em it is hard to do so,
-	 * @TODO: Find out if we may remove this already
-	 * @param array $newExtensionList Extension array to load, loader order is kept
-	 * @return void
-	 * @internal
-	 * @deprecated since 6.2, will be removed two versions later
-	 */
-	static public function writeNewExtensionList(array $newExtensionList) {
-		GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
 	 * Makes a table categorizable by adding value into the category registry.
 	 * FOR USE IN ext_localconf.php FILES or files in Configuration/TCA/Overrides/*.php Use the latter to benefit from TCA caching!
 	 *
@@ -1953,7 +1893,7 @@ tt_content.' . $key . $prefix . ' {
 	 */
 	static public function makeCategorizable($extensionKey, $tableName, $fieldName = 'categories', array $options = array()) {
 		// Update the category registry
-		$result = \TYPO3\CMS\Core\Category\CategoryRegistry::getInstance()->add($extensionKey, $tableName, $fieldName, $options);
+		$result = CategoryRegistry::getInstance()->add($extensionKey, $tableName, $fieldName, $options);
 		if ($result === FALSE) {
 			$message = '\TYPO3\CMS\Core\Category\CategoryRegistry: no category registered for table "%s". Key was already registered.';
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */

@@ -28,7 +28,7 @@ class SortedTreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollectio
 	 * Checks if a specific node is inside the collection
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @return boolean
+	 * @return bool
 	 */
 	public function contains(\TYPO3\CMS\Backend\Tree\TreeNode $node) {
 		return $this->offsetOf($node) !== -1;
@@ -48,9 +48,9 @@ class SortedTreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollectio
 	 * Binary search that returns the offset of a given node
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param integer $start
-	 * @param integer $end
-	 * @return integer
+	 * @param int $start
+	 * @param int $end
+	 * @return int
 	 */
 	protected function binarySearch(\TYPO3\CMS\Backend\Tree\TreeNode $node, $start, $end) {
 		if (!$start && $end - $start >= 2 || $end - $start > 2) {

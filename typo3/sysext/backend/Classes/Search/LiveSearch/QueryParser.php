@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Backend\Search\LiveSearch;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class for parsing query parameters in backend live search.
  *
@@ -35,10 +36,12 @@ class QueryParser {
 	 * @var string
 	 */
 	const COMMAND_KEY_INDICATOR = '#';
+
 	/**
 	 * @var string
 	 */
 	const COMMAND_SPLIT_INDICATOR = ':';
+
 	/**
 	 * Retrieve the validated command key
 	 *
@@ -81,7 +84,7 @@ class QueryParser {
 	 * Verify if an given query contains a page jump command.
 	 *
 	 * @param string $query A valid value looks like '#14'
-	 * @return integer
+	 * @return int
 	 */
 	public function getId($query) {
 		return str_replace(self::COMMAND_KEY_INDICATOR, '', $query);
@@ -91,7 +94,7 @@ class QueryParser {
 	 * Verify if a given query contains a page jump command.
 	 *
 	 * @param string $query A valid value looks like '#14'
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isValidPageJump($query) {
 		$isValid = FALSE;
@@ -105,7 +108,7 @@ class QueryParser {
 	 * Verify if an given query contains an registered command key.
 	 *
 	 * @param string $query
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isValidCommand($query) {
 		$isValid = FALSE;

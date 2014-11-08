@@ -200,7 +200,7 @@ class GraphicalFunctions {
 	/**
 	 * Preserve the alpha transparency layer of read PNG images
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $saveAlphaLayer = FALSE;
 
@@ -549,14 +549,14 @@ class GraphicalFunctions {
 	 *
 	 * @param resource $dstImg Destination image
 	 * @param resource $srcImg Source image
-	 * @param integer $dstX Destination x-coordinate
-	 * @param integer $dstY Destination y-coordinate
-	 * @param integer $srcX Source x-coordinate
-	 * @param integer $srcY Source y-coordinate
-	 * @param integer $dstWidth Destination width
-	 * @param integer $dstHeight Destination height
-	 * @param integer $srcWidth Source width
-	 * @param integer $srcHeight Source height
+	 * @param int $dstX Destination x-coordinate
+	 * @param int $dstY Destination y-coordinate
+	 * @param int $srcX Source x-coordinate
+	 * @param int $srcY Source y-coordinate
+	 * @param int $dstWidth Destination width
+	 * @param int $dstHeight Destination height
+	 * @param int $srcWidth Source width
+	 * @param int $srcHeight Source height
 	 * @return void
 	 * @access private
 	 * @see \TYPO3\CMS\Backend\Utility\IconUtility::imagecopyresized()
@@ -856,17 +856,17 @@ class GraphicalFunctions {
 	 * See
 	 *
 	 * @param pointer $im (See argument for PHP function imageTTFtext())
-	 * @param integer $fontSize (See argument for PHP function imageTTFtext())
-	 * @param integer $angle (See argument for PHP function imageTTFtext())
-	 * @param integer $x (See argument for PHP function imageTTFtext())
-	 * @param integer $y (See argument for PHP function imageTTFtext())
-	 * @param integer $Fcolor (See argument for PHP function imageTTFtext())
+	 * @param int $fontSize (See argument for PHP function imageTTFtext())
+	 * @param int $angle (See argument for PHP function imageTTFtext())
+	 * @param int $x (See argument for PHP function imageTTFtext())
+	 * @param int $y (See argument for PHP function imageTTFtext())
+	 * @param int $Fcolor (See argument for PHP function imageTTFtext())
 	 * @param string $fontFile (See argument for PHP function imageTTFtext())
 	 * @param string $text (See argument for PHP function imageTTFtext()). UTF-8 string, possibly with entities in.
-	 * @param integer $spacing The spacing of letters in pixels
-	 * @param integer $wordSpacing The spacing of words in pixels
+	 * @param int $spacing The spacing of letters in pixels
+	 * @param int $wordSpacing The spacing of words in pixels
 	 * @param array $splitRenderingConf Array
-	 * @param integer $sF Scale factor
+	 * @param int $sF Scale factor
 	 * @return void
 	 * @access private
 	 */
@@ -898,7 +898,7 @@ class GraphicalFunctions {
 	 * Function that finds the right fontsize that will render the textstring within a certain width
 	 *
 	 * @param array $conf The TypoScript properties of the TEXT GIFBUILDER object
-	 * @return integer The new fontSize
+	 * @return int The new fontSize
 	 * @access private
 	 * @see \TYPO3\CMS\Frontend\Imaging\GifBuilder::start()
 	 */
@@ -936,12 +936,12 @@ class GraphicalFunctions {
 	/**
 	 * Wrapper for ImageTTFBBox
 	 *
-	 * @param integer $fontSize (See argument for PHP function ImageTTFBBox())
-	 * @param integer $angle (See argument for PHP function ImageTTFBBox())
+	 * @param int $fontSize (See argument for PHP function ImageTTFBBox())
+	 * @param int $angle (See argument for PHP function ImageTTFBBox())
 	 * @param string $fontFile (See argument for PHP function ImageTTFBBox())
 	 * @param string $string (See argument for PHP function ImageTTFBBox())
 	 * @param array $splitRendering Split-rendering configuration
-	 * @param integer $sF Scale factor
+	 * @param int $sF Scale factor
 	 * @return array Information array.
 	 */
 	public function ImageTTFBBoxWrapper($fontSize, $angle, $fontFile, $string, $splitRendering, $sF = 1) {
@@ -984,15 +984,15 @@ class GraphicalFunctions {
 	 * Wrapper for ImageTTFText
 	 *
 	 * @param pointer $im (See argument for PHP function imageTTFtext())
-	 * @param integer $fontSize (See argument for PHP function imageTTFtext())
-	 * @param integer $angle (See argument for PHP function imageTTFtext())
-	 * @param integer $x (See argument for PHP function imageTTFtext())
-	 * @param integer $y (See argument for PHP function imageTTFtext())
-	 * @param integer $color (See argument for PHP function imageTTFtext())
+	 * @param int $fontSize (See argument for PHP function imageTTFtext())
+	 * @param int $angle (See argument for PHP function imageTTFtext())
+	 * @param int $x (See argument for PHP function imageTTFtext())
+	 * @param int $y (See argument for PHP function imageTTFtext())
+	 * @param int $color (See argument for PHP function imageTTFtext())
 	 * @param string $fontFile (See argument for PHP function imageTTFtext())
 	 * @param string $string (See argument for PHP function imageTTFtext()). UTF-8 string, possibly with entities in.
 	 * @param array $splitRendering Split-rendering configuration
-	 * @param integer $sF Scale factor
+	 * @param int $sF Scale factor
 	 * @return void
 	 */
 	public function ImageTTFTextWrapper($im, $fontSize, $angle, $x, $y, $color, $fontFile, $string, $splitRendering, $sF = 1) {
@@ -1034,7 +1034,7 @@ class GraphicalFunctions {
 	 *
 	 * @param string $string UTF-8 string
 	 * @param array $splitRendering Split-rendering configuration from GIFBUILDER TEXT object.
-	 * @param integer $fontSize Current fontsize
+	 * @param int $fontSize Current fontsize
 	 * @param string $fontFile Current font file
 	 * @return array Array with input string splitted according to configuration
 	 */
@@ -1054,7 +1054,7 @@ class GraphicalFunctions {
 			foreach ($sKeyArray as $key) {
 				$cfg = $splitRendering[$key . '.'];
 				// Process each type of split rendering keyword:
-				switch ((string) $splitRendering[$key]) {
+				switch ((string)$splitRendering[$key]) {
 					case 'highlightWord':
 						if (strlen($cfg['value'])) {
 							$newResult = array();
@@ -1170,7 +1170,7 @@ class GraphicalFunctions {
 	 * Calculates the spacing and wordSpacing values
 	 *
 	 * @param array $conf TypoScript array for the TEXT GIFBUILDER object
-	 * @param integer $scaleFactor TypoScript value from eg $conf['niceText.']['scaleFactor']
+	 * @param int $scaleFactor TypoScript value from eg $conf['niceText.']['scaleFactor']
 	 * @return array Array with two keys [0]/[1] being array($spacing,$wordSpacing)
 	 * @access private
 	 * @see calcBBox()
@@ -1188,7 +1188,7 @@ class GraphicalFunctions {
 	 * Calculates and returns the niceText.scaleFactor
 	 *
 	 * @param array $conf TypoScript array for the TEXT GIFBUILDER object
-	 * @return integer TypoScript value from eg $conf['niceText.']['scaleFactor']
+	 * @return int TypoScript value from eg $conf['niceText.']['scaleFactor']
 	 * @access private
 	 */
 	public function getTextScalFactor($conf) {
@@ -1205,16 +1205,16 @@ class GraphicalFunctions {
 	 * Renders a regular text and takes care of a possible line break automatically.
 	 *
 	 * @param pointer $im (See argument for PHP function imageTTFtext())
-	 * @param integer $fontSize (See argument for PHP function imageTTFtext())
-	 * @param integer $angle (See argument for PHP function imageTTFtext())
-	 * @param integer $x (See argument for PHP function imageTTFtext())
-	 * @param integer $y (See argument for PHP function imageTTFtext())
-	 * @param integer $color (See argument for PHP function imageTTFtext())
+	 * @param int $fontSize (See argument for PHP function imageTTFtext())
+	 * @param int $angle (See argument for PHP function imageTTFtext())
+	 * @param int $x (See argument for PHP function imageTTFtext())
+	 * @param int $y (See argument for PHP function imageTTFtext())
+	 * @param int $color (See argument for PHP function imageTTFtext())
 	 * @param string $fontFile (See argument for PHP function imageTTFtext())
 	 * @param string $string (See argument for PHP function imageTTFtext()). UTF-8 string, possibly with entities in.
 	 * @param array $splitRendering Split-rendering configuration
 	 * @param array $conf The configuration
-	 * @param integer $sF Scale factor
+	 * @param int $sF Scale factor
 	 * @return void
 	 */
 	protected function renderTTFText(&$im, $fontSize, $angle, $x, $y, $color, $fontFile, $string, $splitRendering, $conf, $sF = 1) {
@@ -1270,7 +1270,7 @@ class GraphicalFunctions {
 	 *
 	 * @param string $text
 	 * @param array $conf
-	 * @param integer
+	 * @param int
 	 */
 	protected function getRenderedTextWidth($text, $conf) {
 		$bounds = $this->ImageTTFBBoxWrapper($conf['fontSize'], $conf['angle'], $conf['fontFile'], $this->recodeString($text), $conf['splitRendering.']);
@@ -1289,7 +1289,7 @@ class GraphicalFunctions {
 	 *
 	 * @param array $conf TypoScript configuration for the currently rendered object
 	 * @param array $boundingBox The bounding box the the currently rendered object
-	 * @return integer The break space
+	 * @return int The break space
 	 */
 	protected function getBreakSpace($conf, array $boundingBox = NULL) {
 		if (!isset($boundingBox)) {
@@ -1343,8 +1343,8 @@ class GraphicalFunctions {
 	 *
 	 * access private
 	 *
-	 * @param integer $distance Distance
-	 * @param integer $iterations Iterations.
+	 * @param int $distance Distance
+	 * @param int $iterations Iterations.
 	 * @return array
 	 * @see makeOutline()
 	 */
@@ -1796,7 +1796,7 @@ class GraphicalFunctions {
 	/**
 	 * Apply auto-levels to input image pointer
 	 *
-	 * @param integer $im GDlib Image Pointer
+	 * @param int $im GDlib Image Pointer
 	 * @return void
 	 */
 	public function autolevels(&$im) {
@@ -1824,10 +1824,10 @@ class GraphicalFunctions {
 	/**
 	 * Apply output levels to input image pointer (decreasing contrast)
 	 *
-	 * @param integer $im GDlib Image Pointer
-	 * @param integer $low The "low" value (close to 0)
-	 * @param integer $high The "high" value (close to 255)
-	 * @param boolean $swap If swap, then low and high are swapped. (Useful for negated masks...)
+	 * @param int $im GDlib Image Pointer
+	 * @param int $low The "low" value (close to 0)
+	 * @param int $high The "high" value (close to 255)
+	 * @param bool $swap If swap, then low and high are swapped. (Useful for negated masks...)
 	 * @return void
 	 */
 	public function outputLevels(&$im, $low, $high, $swap = '') {
@@ -1854,13 +1854,12 @@ class GraphicalFunctions {
 	/**
 	 * Apply input levels to input image pointer (increasing contrast)
 	 *
-	 * @param integer $im GDlib Image Pointer
-	 * @param integer $low The "low" value (close to 0)
-	 * @param integer $high The "high" value (close to 255)
-	 * @param boolean $swap @deprecated since 6.2, unused and obsolete parameter, was used for older image magick versions
+	 * @param int $im GDlib Image Pointer
+	 * @param int $low The "low" value (close to 0)
+	 * @param int $high The "high" value (close to 255)
 	 * @return void
 	 */
-	public function inputLevels(&$im, $low, $high, $swap = '') {
+	public function inputLevels(&$im, $low, $high) {
 		if ($low < $high) {
 			$low = MathUtility::forceIntegerInRange($low, 0, 255);
 			$high = MathUtility::forceIntegerInRange($high, 0, 255);
@@ -1880,7 +1879,7 @@ class GraphicalFunctions {
 	 * Reduce colors in image using IM and create a palette based image if possible (<=256 colors)
 	 *
 	 * @param string $file Image file to reduce
-	 * @param integer $cols Number of colors to reduce the image to.
+	 * @param int $cols Number of colors to reduce the image to.
 	 * @return string Reduced file
 	 */
 	public function IMreduceColors($file, $cols) {
@@ -1926,7 +1925,7 @@ class GraphicalFunctions {
 	 * Returns the IM command for sharpening with ImageMagick 5 (when $this->V5_EFFECTS is set).
 	 * Uses $this->im5fx_sharpenSteps for translation of the factor to an actual command.
 	 *
-	 * @param integer $factor The sharpening factor, 0-100 (effectively in 10 steps)
+	 * @param int $factor The sharpening factor, 0-100 (effectively in 10 steps)
 	 * @return string The sharpening command, eg. " -sharpen 3x4
 	 * @see makeText(), IMparams(), v5_blur()
 	 */
@@ -1944,7 +1943,7 @@ class GraphicalFunctions {
 	 * Returns the IM command for blurring with ImageMagick 5 (when $this->V5_EFFECTS is set).
 	 * Uses $this->im5fx_blurSteps for translation of the factor to an actual command.
 	 *
-	 * @param integer $factor The blurring factor, 0-100 (effectively in 10 steps)
+	 * @param int $factor The blurring factor, 0-100 (effectively in 10 steps)
 	 * @return string The blurring command, eg. " -blur 3x4
 	 * @see makeText(), IMparams(), v5_sharpen()
 	 */
@@ -2053,7 +2052,7 @@ class GraphicalFunctions {
 	 * The function will look at $this->nativeCharset and if that is set, the input string is expected to be UTF-8 encoded, possibly with entities in it. Otherwise the string is supposed to be a single-byte charset which is just splitted by a for-loop.
 	 *
 	 * @param string $theText The text string to split
-	 * @param boolean $returnUnicodeNumber Return Unicode numbers instead of chars.
+	 * @param bool $returnUnicodeNumber Return Unicode numbers instead of chars.
 	 * @return array Numerical array with a char as each value.
 	 */
 	public function singleChars($theText, $returnUnicodeNumber = FALSE) {
@@ -2131,7 +2130,7 @@ class GraphicalFunctions {
 	 * @param string $params Additional ImageMagick parameters.
 	 * @param string $frame Refers to which frame-number to select in the image. '' or 0 will select the first frame, 1 will select the next and so on...
 	 * @param array $options An array with options passed to getImageScale (see this function).
-	 * @param boolean $mustCreate If set, then another image than the input imagefile MUST be returned. Otherwise you can risk that the input image is good enough regarding messures etc and is of course not rendered to a new, temporary file in typo3temp/. But this option will force it to.
+	 * @param bool $mustCreate If set, then another image than the input imagefile MUST be returned. Otherwise you can risk that the input image is good enough regarding messures etc and is of course not rendered to a new, temporary file in typo3temp/. But this option will force it to.
 	 * @return array [0]/[1] is w/h, [2] is file extension and [3] is the filename.
 	 * @see getImageScale(), typo3/show_item.php, fileList_ext::renderImage(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::getImgResource(), SC_tslib_showpic::show(), maskImageOntoImage(), copyImageOntoImage(), scale()
 	 */
@@ -2267,7 +2266,7 @@ class GraphicalFunctions {
 	 * file exists!
 	 *
 	 * @param array $identifyResult Result of the getImageDimensions function
-	 * @return boolean TRUE if operation was successful
+	 * @return bool TRUE if operation was successful
 	 */
 	public function cacheImageDimensions($identifyResult) {
 		// Create md5 hash of filemtime and filesize
@@ -2324,8 +2323,8 @@ class GraphicalFunctions {
 	 * Get numbers for scaling the image based on input
 	 *
 	 * @param array $info Current image information: Width, Height etc.
-	 * @param integer $w "required" width
-	 * @param integer $h "required" height
+	 * @param int $w "required" width
+	 * @param int $h "required" height
 	 * @param array $options Options: Keys are like "maxW", "maxH", "minW", "minH
 	 * @return array
 	 * @access private
@@ -2446,7 +2445,7 @@ class GraphicalFunctions {
 	 *
 	 * @param string $output Output imagefile
 	 * @param string $orig Original basis file
-	 * @return boolean Returns TRUE if the file is already being made; thus "TRUE" means "Don't render the image again
+	 * @return bool Returns TRUE if the file is already being made; thus "TRUE" means "Don't render the image again
 	 * @access private
 	 */
 	public function file_exists_typo3temp_file($output, $orig = '') {
@@ -2538,7 +2537,7 @@ class GraphicalFunctions {
 	 * @param string $input The relative (to PATH_site) image filepath, input file (read from)
 	 * @param string $output The relative (to PATH_site) image filepath, output filename (written to)
 	 * @param string $params ImageMagick parameters
-	 * @param integer $frame Optional, refers to which frame-number to select in the image. '' or 0
+	 * @param int $frame Optional, refers to which frame-number to select in the image. '' or 0
 	 * @return string The result of a call to PHP function "exec()
 	 */
 	public function imageMagickExec($input, $output, $params, $frame = 0) {
@@ -2567,8 +2566,8 @@ class GraphicalFunctions {
 	 * @param string $overlay The relative (to PATH_site) image filepath, overlay file (top)
 	 * @param string $mask The relative (to PATH_site) image filepath, the mask file (grayscale)
 	 * @param string $output The relative (to PATH_site) image filepath, output filename (written to)
-	 * @param boolean $handleNegation
-	 * @return 	void
+	 * @param bool $handleNegation
+	 * @return void
 	 */
 	public function combineExec($input, $overlay, $mask, $output, $handleNegation = FALSE) {
 		if (!$this->NO_IMAGE_MAGICK) {
@@ -2629,7 +2628,7 @@ class GraphicalFunctions {
 	 * Creates subdirectory in typo3temp/ if not already found.
 	 *
 	 * @param string $dirName Name of sub directory
-	 * @return boolean Result of \TYPO3\CMS\Core\Utility\GeneralUtility::mkdir(), TRUE if it went well.
+	 * @return bool Result of \TYPO3\CMS\Core\Utility\GeneralUtility::mkdir(), TRUE if it went well.
 	 */
 	public function createTempSubDir($dirName) {
 		// Checking if the this->tempPath is already prefixed with PATH_site and if not, prefix it with that constant.
@@ -2673,8 +2672,8 @@ class GraphicalFunctions {
 	 * For example: If the number of pixels exceeds $this->pixelLimitGif (normally 10000) then it will be a "jpg" string in return.
 	 *
 	 * @param string $type The file extension, lowercase.
-	 * @param integer $w The width of the output image.
-	 * @param integer $h The height of the output image.
+	 * @param int $w The width of the output image.
+	 * @param int $h The height of the output image.
 	 * @return string The filename, either "jpg" or "gif"/"png" (whatever $this->gifExtension is set to.)
 	 */
 	public function gif_or_jpg($type, $w, $h) {
@@ -2760,8 +2759,8 @@ class GraphicalFunctions {
 	 *
 	 * @param pointer $destImg The GDlib image resource pointer
 	 * @param string $theImage The filename to write to
-	 * @param integer $quality The image quality (for JPEGs)
-	 * @return boolean The output of either imageGif, imagePng or imageJpeg based on the filename to write
+	 * @param int $quality The image quality (for JPEGs)
+	 * @return bool The output of either imageGif, imagePng or imageJpeg based on the filename to write
 	 * @see maskImageOntoImage(), scale(), output()
 	 */
 	public function ImageWrite($destImg, $theImage, $quality = 0) {
@@ -2865,8 +2864,8 @@ class GraphicalFunctions {
 	 *
 	 * @param pointer $img Image resource
 	 * @param array $colArr Array containing RGB color arrays
-	 * @param boolean $closest
-	 * @return integer The index of the unified color
+	 * @param bool $closest
+	 * @return int The index of the unified color
 	 */
 	public function unifyColors(&$img, $colArr, $closest = FALSE) {
 		$retCol = -1;

@@ -41,7 +41,7 @@ class Status {
 	protected $message;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $severity;
 
@@ -55,12 +55,12 @@ class Status {
 	 * @param string $value Status value, eg. "Disabled"
 	 * @param string $message Optional message further describing the title/value combination
 	 * 			Example:, eg "The deprecation log is important and does foo, to disable it do bar"
-	 * @param integer $severity A severity level. Use one of the constants above!
+	 * @param int $severity A severity level. Use one of the constants above!
 	 */
 	public function __construct($title, $value, $message = '', $severity = self::OK) {
-		$this->title = (string) $title;
-		$this->value = (string) $value;
-		$this->message = (string) $message;
+		$this->title = (string)$title;
+		$this->value = (string)$value;
+		$this->message = (string)$message;
 		$this->severity = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($severity, self::NOTICE, self::ERROR, self::OK);
 	}
 
@@ -94,7 +94,7 @@ class Status {
 	/**
 	 * Gets the status' severity
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getSeverity() {
 		return $this->severity;

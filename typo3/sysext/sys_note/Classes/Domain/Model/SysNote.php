@@ -47,12 +47,12 @@ class SysNote extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $message;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $personal;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $category;
 
@@ -132,14 +132,14 @@ class SysNote extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return boolean $personal
+	 * @return bool $personal
 	 */
 	public function getPersonal() {
 		return $this->personal;
 	}
 
 	/**
-	 * @param boolean $personal
+	 * @param bool $personal
 	 * @return void
 	 */
 	public function setPersonal($personal) {
@@ -147,14 +147,14 @@ class SysNote extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer $category
+	 * @return int $category
 	 */
 	public function getCategory() {
 		return $this->category;
 	}
 
 	/**
-	 * @param integer $category
+	 * @param int $category
 	 * @return void
 	 */
 	public function setCategory($category) {

@@ -92,7 +92,7 @@ class Arguments extends \ArrayObject {
 	 * Returns whether the requested index exists
 	 *
 	 * @param mixed $offset Offset
-	 * @return boolean
+	 * @return bool
 	 */
 	public function offsetExists($offset) {
 		$translatedOffset = $this->translateToLongArgumentName($offset);
@@ -121,7 +121,7 @@ class Arguments extends \ArrayObject {
 	 *
 	 * @param string $name Name of the argument
 	 * @param string $dataType Name of one of the built-in data types
-	 * @param boolean $isRequired TRUE if this argument should be marked as required
+	 * @param bool $isRequired TRUE if this argument should be marked as required
 	 * @param mixed $defaultValue Default value of the argument. Only makes sense if $isRequired==FALSE
 	 * @return Argument The new argument
 	 */
@@ -166,7 +166,7 @@ class Arguments extends \ArrayObject {
 	 * Checks if an argument with the specified name exists
 	 *
 	 * @param string $argumentName Name of the argument to check for
-	 * @return boolean TRUE if such an argument exists, otherwise FALSE
+	 * @return bool TRUE if such an argument exists, otherwise FALSE
 	 * @see offsetExists()
 	 */
 	public function hasArgument($argumentName) {

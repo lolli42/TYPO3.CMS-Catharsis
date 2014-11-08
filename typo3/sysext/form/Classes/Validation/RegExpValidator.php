@@ -41,7 +41,7 @@ class RegExpValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see \TYPO3\CMS\Form\Validation\ValidatorInterface::isValid()
 	 */
 	public function isValid() {
@@ -61,7 +61,7 @@ class RegExpValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	 * @return object Rule object
 	 */
 	public function setRegularExpression($expression) {
-		$this->regularExpression = (string) $expression;
+		$this->regularExpression = (string)$expression;
 		return $this;
 	}
 

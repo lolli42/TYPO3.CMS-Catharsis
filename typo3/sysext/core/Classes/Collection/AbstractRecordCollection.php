@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Abstract implementation of a RecordCollection
  *
@@ -27,7 +28,7 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * @author Steffen Ritter <typo3@steffen-ritter.net>
  */
-abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\RecordCollectionInterface, \TYPO3\CMS\Core\Collection\PersistableCollectionInterface, \TYPO3\CMS\Core\Collection\SortableCollectionInterface {
+abstract class AbstractRecordCollection implements RecordCollectionInterface, PersistableCollectionInterface, SortableCollectionInterface {
 
 	/**
 	 * The table name collections are stored to
@@ -46,7 +47,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	/**
 	 * Uid of the storage
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $uid = 0;
 
@@ -74,7 +75,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	/**
 	 * The local storage
 	 *
-	 * @var SplDoublyLinkedList
+	 * @var \SplDoublyLinkedList
 	 */
 	protected $storage;
 
@@ -112,7 +113,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * Return the key of the current element
 	 *
 	 * @link http://php.net/manual/en/iterator.key.php
-	 * @return integer 0 on failure.
+	 * @return int 0 on failure.
 	 */
 	public function key() {
 		$currentRecord = $this->storage->current();
@@ -124,7 +125,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * Checks if current position is valid
 	 *
 	 * @link http://php.net/manual/en/iterator.valid.php
-	 * @return boolean The return value will be casted to boolean and then evaluated.
+	 * @return bool The return value will be casted to boolean and then evaluated.
 	 */
 	public function valid() {
 		return $this->storage->valid();
@@ -173,7 +174,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * Count elements of an object
 	 *
 	 * @link http://php.net/manual/en/countable.count.php
-	 * @return integer The custom count as an integer.
+	 * @return int The custom count as an integer.
 	 */
 	public function count() {
 		return $this->storage->count();
@@ -191,7 +192,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	/**
 	 * Getter for the UID
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getUid() {
 		return $this->uid;
@@ -266,8 +267,8 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * the item at $currentPosition will be moved to
 	 * $newPosition. Omiting $newPosition will move to top.
 	 *
-	 * @param integer $currentPosition
-	 * @param integer $newPosition
+	 * @param int $currentPosition
+	 * @param int $newPosition
 	 * @return void
 	 */
 	public function moveItemAt($currentPosition, $newPosition = 0) {
@@ -278,7 +279,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	/**
 	 * Returns the uid of the collection
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getIdentifier() {
 		return $this->uid;
@@ -287,7 +288,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	/**
 	 * Sets the identifier of the collection
 	 *
-	 * @param integer $id
+	 * @param int $id
 	 * @return void
 	 */
 	public function setIdentifier($id) {
@@ -301,12 +302,16 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * identifier (what ever static data is defined) is loaded.
 	 * Entries can be load on first access.
 	 *
-	 * @param integer $id Id of database record to be loaded
-	 * @param boolean $fillItems Populates the entries directly on load, might be bad for memory on large collections
+	 * @param int $id Id of database record to be loaded
+	 * @param bool $fillItems Populates the entries directly on load, might be bad for memory on large collections
 	 * @return \TYPO3\CMS\Core\Collection\CollectionInterface
 	 */
 	static public function load($id, $fillItems = FALSE) {
-		$collectionRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', static::$storageTableName, 'uid=' . (int)$id . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause(static::$storageTableName));
+		$collectionRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			'*',
+			static::$storageTableName,
+			'uid=' . (int)$id . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause(static::$storageTableName)
+		);
 		return self::create($collectionRecord, $fillItems);
 	}
 
@@ -315,7 +320,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * given database record to the new object.
 	 *
 	 * @param array $collectionRecord Database record
-	 * @param boolean $fillItems Populates the entries directly on load, might be bad for memory on large collections
+	 * @param bool $fillItems Populates the entries directly on load, might be bad for memory on large collections
 	 * @return \TYPO3\CMS\Core\Collection\CollectionInterface
 	 */
 	static public function create(array $collectionRecord, $fillItems = FALSE) {
@@ -366,7 +371,7 @@ abstract class AbstractRecordCollection implements \TYPO3\CMS\Core\Collection\Re
 	 * also allow to add table name, if it might be needed by TCEmain for
 	 * storing the relation
 	 *
-	 * @param boolean $includeTableName
+	 * @param bool $includeTableName
 	 * @return string
 	 */
 	protected function getItemUidList($includeTableName = TRUE) {

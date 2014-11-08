@@ -26,6 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList {
+
 	/**
 	 * Table name of the field pointing to this element browser
 	 *
@@ -76,7 +77,7 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 * Returns the title (based on $code) of a record (from table $table) with the proper link around (that is for "pages"-records a link to the level of that record...)
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid UID (not used here)
+	 * @param int $uid UID (not used here)
 	 * @param string $code Title string
 	 * @param array $row Records array (from table name)
 	 * @return string
@@ -101,7 +102,7 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 *
 	 * @param string $table String Table name
 	 * @param array $row Array Record
-	 * @return boolean True, if all conditions are fulfilled.
+	 * @return bool True, if all conditions are fulfilled.
 	 */
 	protected function isRowListingConditionFulfilled($table, $row) {
 		$returnValue = TRUE;
@@ -132,11 +133,10 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 * @param string $fieldName Field name
 	 */
 	public function setRelatingTableAndField($tableName, $fieldName) {
-		global $TCA;
 		// Check validity of the input data and load TCA
-		if (isset($TCA[$tableName])) {
+		if (isset($GLOBALS['TCA'][$tableName])) {
 			$this->relatingTable = $tableName;
-			if ($fieldName && isset($TCA[$tableName]['columns'][$fieldName])) {
+			if ($fieldName && isset($GLOBALS['TCA'][$tableName]['columns'][$fieldName])) {
 				$this->relatingField = $fieldName;
 			}
 		}

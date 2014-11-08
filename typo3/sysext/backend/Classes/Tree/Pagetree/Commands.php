@@ -28,17 +28,17 @@ use TYPO3\CMS\Core\Versioning\VersionState;
 class Commands {
 
 	/**
-	 * @var boolean|null
+	 * @var bool|null
 	 */
 	static protected $useNavTitle = NULL;
 
 	/**
-	 * @var boolean|null
+	 * @var bool|null
 	 */
 	static protected $addIdAsPrefix = NULL;
 
 	/**
-	 * @var boolean|null
+	 * @var bool|null
 	 */
 	static protected $addDomainName = NULL;
 
@@ -48,7 +48,7 @@ class Commands {
 	static protected $backgroundColors = NULL;
 
 	/**
-	 * @var integer|null
+	 * @var int|null
 	 */
 	static protected $titleLength = NULL;
 
@@ -89,7 +89,7 @@ class Commands {
 	 * Restore the page
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $node
-	 * @param integer $targetId
+	 * @param int $targetId
 	 * @return void
 	 */
 	static public function restoreNode(\TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $node, $targetId) {
@@ -122,8 +122,8 @@ class Commands {
 	 * Node: Use a negative target id to specify a sibling target else the parent is used
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $sourceNode
-	 * @param integer $targetId
-	 * @return integer
+	 * @param int $targetId
+	 * @return int
 	 */
 	static public function copyNode(\TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $sourceNode, $targetId) {
 		$cmd['pages'][$sourceNode->getId()]['copy'] = $targetId;
@@ -137,7 +137,7 @@ class Commands {
 	 * Node: Use a negative target id to specify a sibling target else the parent is used
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $sourceNode
-	 * @param integer $targetId
+	 * @param int $targetId
 	 * @return void
 	 */
 	static public function moveNode(\TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $sourceNode, $targetId) {
@@ -149,9 +149,9 @@ class Commands {
 	 * Creates a page of the given doktype and returns the id of the created page
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $parentNode
-	 * @param integer $targetId
-	 * @param integer $pageType
-	 * @return integer
+	 * @param int $targetId
+	 * @param int $pageType
+	 * @return int
 	 */
 	static public function createNode(\TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode $parentNode, $targetId, $pageType) {
 		$placeholder = 'NEW12345';
@@ -219,8 +219,8 @@ class Commands {
 	/**
 	 * Returns a node from the given node id
 	 *
-	 * @param integer $nodeId
-	 * @param boolean $unsetMovePointers
+	 * @param int $nodeId
+	 * @param bool $unsetMovePointers
 	 * @return \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode
 	 */
 	static public function getNode($nodeId, $unsetMovePointers = TRUE) {
@@ -231,7 +231,7 @@ class Commands {
 	/**
 	 * Returns the mount point path for a temporary mount or the given id
 	 *
-	 * @param integer $uid
+	 * @param int $uid
 	 * @return string
 	 */
 	static public function getMountPointPath($uid = -1) {
@@ -261,8 +261,8 @@ class Commands {
 	/**
 	 * Returns a node record from a given id
 	 *
-	 * @param integer $nodeId
-	 * @param boolean $unsetMovePointers
+	 * @param int $nodeId
+	 * @param bool $unsetMovePointers
 	 * @return array
 	 */
 	static public function getNodeRecord($nodeId, $unsetMovePointers = TRUE) {
@@ -273,7 +273,7 @@ class Commands {
 	/**
 	 * Returns the first configured domain name for a page
 	 *
-	 * @param integer $uid
+	 * @param int $uid
 	 * @return string
 	 */
 	static public function getDomainName($uid) {
@@ -286,7 +286,7 @@ class Commands {
 	 * Creates a node with the given record information
 	 *
 	 * @param array $record
-	 * @param integer $mountPoint
+	 * @param int $mountPoint
 	 * @return \TYPO3\CMS\Backend\Tree\Pagetree\PagetreeNode
 	 */
 	static public function getNewNode($record, $mountPoint = 0) {

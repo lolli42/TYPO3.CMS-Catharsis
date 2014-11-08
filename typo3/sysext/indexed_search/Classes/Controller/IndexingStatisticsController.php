@@ -32,7 +32,7 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	/**
 	 * Calls showStats to generate output.
 	 *
-	 * @return 	string		html table with results from showStats()
+	 * @return string html table with results from showStats()
 	 */
 	public function main() {
 		// Initializes the module. Done in this function because we may need to re-initialize if data is submitted!
@@ -49,7 +49,7 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	 * Generates html table containing the statistics.
 	 * Calls listSeveralStats 3 times, for all statistics, statistics of the last 30 days and statistics of the last 24 hours.
 	 *
-	 * @return 	string		html table with results
+	 * @return string html table with results
 	 */
 	public function showStats() {
 		$conf['words'] = 50;
@@ -81,13 +81,12 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	/**
 	 * Generates html table with title and several statistics
 	 *
-	 * @param 	string		title for statistic, like 'Last 30 days' or 'Last 24 hours'
-	 * @param 	string		add where for sql query
-	 * @param 	array		configuration: words = max words for results, bid = pageid
-	 * @return 	string		html table with results
+	 * @param string title for statistic, like 'Last 30 days' or 'Last 24 hours'
+	 * @param string add where for sql query
+	 * @param array configuration: words = max words for results, bid = pageid
+	 * @return string html table with results
 	 */
 	public function listSeveralStats($title, $addwhere, $conf) {
-		global $LANG;
 		$queryParts['SELECT'] = 'word, COUNT(*) AS c';
 		$queryParts['FROM'] = 'index_stat_word';
 		$queryParts['WHERE'] = sprintf('pageid= %d ' . $addwhere, $conf['bid']);
@@ -102,11 +101,11 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 		}
 		// exist several statistics for this page?
 		if ($count > 0) {
-			$this->note = $LANG->getLL('justthispage');
+			$this->note = $GLOBALS['LANG']->getLL('justthispage');
 		} else {
 			// Limit access to pages of the current site
 			$secureaddwhere = ' AND pageid IN (' . $this->extGetTreeList($conf['bid'], 100, 0, '1=1') . $conf['bid'] . ') ';
-			$this->note = $LANG->getLL('allpages');
+			$this->note = $GLOBALS['LANG']->getLL('allpages');
 			$queryParts['WHERE'] = '1=1 ' . $addwhere . $secureaddwhere;
 		}
 		// make real query
@@ -120,7 +119,7 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 			}
 		}
 		if ($i == 0) {
-			$table1 = '<tr class="bgColor4"><td callspan="3">' . $LANG->getLL('noresults') . '</td></tr>';
+			$table1 = '<tr class="bgColor4"><td callspan="3">' . $GLOBALS['LANG']->getLL('noresults') . '</td></tr>';
 		}
 		$table1 = '<table class="bgColor5" cellpadding="2" cellspacing="1"><tr class="tableheader"><td colspan="3">' . $title . '</td></tr>' . $table1 . '</table>';
 		return $note . $table1;
@@ -134,11 +133,11 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	 * Generates a list of Page-uid's from $id. List does not include $id itself
 	 * The only pages excluded from the list are deleted pages.
 	 *
-	 * @param 	integer		Start page id
-	 * @param 	integer		Depth to traverse down the page tree.
-	 * @param 	integer		$begin is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
-	 * @param 	string		Perms clause
-	 * @return 	string		Returns the list with a comma in the end (if any pages selected!)
+	 * @param int Start page id
+	 * @param int Depth to traverse down the page tree.
+	 * @param int $begin is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
+	 * @param string Perms clause
+	 * @return string Returns the list with a comma in the end (if any pages selected!)
 	 */
 	public function extGetTreeList($id, $depth, $begin = 0, $perms_clause) {
 		return GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\FrontendBackendUserAuthentication')->extGetTreeList($id, $depth, $begin, $perms_clause);
@@ -147,8 +146,8 @@ class IndexingStatisticsController extends \TYPO3\CMS\Backend\Module\AbstractFun
 	/**
 	 * Returns an object reference to the hook object if any
 	 *
-	 * @param 	string		Name of the function you want to call / hook key
-	 * @return 	object		Hook object, if any. Otherwise NULL.
+	 * @param string Name of the function you want to call / hook key
+	 * @return object Hook object, if any. Otherwise NULL.
 	 * @author Kasper Skårhøj
 	 */
 	public function hookRequest($functionName) {

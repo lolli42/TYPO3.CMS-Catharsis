@@ -45,14 +45,14 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	/**
 	 * Information, if the module is accessible for the current user or not
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isAccessibleForCurrentUser = FALSE;
 
 	/**
 	 * Depth for the recursive traversal of pages for the link validation
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $searchLevel;
 
@@ -352,7 +352,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	/**
 	 * Flushes the rendered content to the browser
 	 *
-	 * @param boolean $form
+	 * @param bool $form
 	 * @return string $content
 	 */
 	protected function flush($form = FALSE) {
@@ -699,10 +699,10 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	/**
 	 * Determines whether the current user is an admin
 	 *
-	 * @return boolean Whether the current user is admin
+	 * @return bool Whether the current user is admin
 	 */
 	protected function isCurrentUserAdmin() {
-		return (bool) $GLOBALS['BE_USER']->user['admin'];
+		return (bool)$GLOBALS['BE_USER']->user['admin'];
 	}
 
 }

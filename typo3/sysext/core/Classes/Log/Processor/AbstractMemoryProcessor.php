@@ -26,7 +26,7 @@ abstract class AbstractMemoryProcessor extends \TYPO3\CMS\Core\Log\Processor\Abs
 	 * If set, the real size of memory allocated from system is used.
 	 * Otherwise the memory used by emalloc() is used.
 	 *
-	 * @var boolean
+	 * @var bool
 	 * @see memory_get_usage()
 	 * @see memory_get_peak_usage()
 	 */
@@ -35,7 +35,7 @@ abstract class AbstractMemoryProcessor extends \TYPO3\CMS\Core\Log\Processor\Abs
 	/**
 	 * Whether the size is formatted, e.g. in megabytes
 	 *
-	 * @var boolean
+	 * @var bool
 	 * @see \TYPO3\CMS\Core\Utility\GeneralUtility::formatSize()
 	 */
 	protected $formatSize = TRUE;
@@ -43,17 +43,17 @@ abstract class AbstractMemoryProcessor extends \TYPO3\CMS\Core\Log\Processor\Abs
 	/**
 	 * Sets the allocated memory usage type
 	 *
-	 * @param boolean $realMemoryUsage Which allocated memory type to use
+	 * @param bool $realMemoryUsage Which allocated memory type to use
 	 * @return void
 	 */
 	public function setRealMemoryUsage($realMemoryUsage) {
-		$this->realMemoryUsage = (bool) $realMemoryUsage;
+		$this->realMemoryUsage = (bool)$realMemoryUsage;
 	}
 
 	/**
 	 * Returns the allocated memory usage type
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getRealMemoryUsage() {
 		return $this->realMemoryUsage;
@@ -62,17 +62,17 @@ abstract class AbstractMemoryProcessor extends \TYPO3\CMS\Core\Log\Processor\Abs
 	/**
 	 * Sets whether size should be formatted
 	 *
-	 * @param boolean $formatSize
+	 * @param bool $formatSize
 	 * @return void
 	 */
 	public function setFormatSize($formatSize) {
-		$this->formatSize = (bool) $formatSize;
+		$this->formatSize = (bool)$formatSize;
 	}
 
 	/**
 	 * Returns whether size should be formatted
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getFormatSize() {
 		return $this->formatSize;

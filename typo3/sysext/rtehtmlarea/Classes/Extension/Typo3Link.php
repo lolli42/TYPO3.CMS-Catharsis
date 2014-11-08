@@ -23,21 +23,41 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class Typo3Link extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 
+	/**
+	 * The key of the extension that is extending htmlArea RTE
+	 *
+	 * @var string
+	 */
 	protected $extensionKey = 'rtehtmlarea';
 
-	// The key of the extension that is extending htmlArea RTE
+	/**
+	 * The name of the plugin registered by the extension
+	 *
+	 * @var string
+	 */
 	protected $pluginName = 'TYPO3Link';
 
-	// The name of the plugin registered by the extension
+	/**
+	 * Path to this main locallang file of the extension relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToLocallangFile = '';
 
-	// Path to this main locallang file of the extension relative to the extension dir.
-	protected $relativePathToSkin = 'extensions/TYPO3Link/skin/htmlarea.css';
+	/**
+	 * Path to the skin file relative to the extension directory
+	 *
+	 * @var string
+	 */
+	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/typo3-link.css';
 
-	// Path to the skin (css) file relative to the extension dir.
+	/**
+	 * Reference to the invoking object
+	 *
+	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
+	 */
 	protected $htmlAreaRTE;
 
-	// Reference to the invoking object
 	protected $thisConfig;
 
 	// Reference to RTE PageTSConfig
@@ -63,8 +83,8 @@ class Typo3Link extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param 	integer		Relative id of the RTE editing area in the form
-	 * @return 	string		JS configuration for registered plugins, in this case, JS configuration of block elements
+	 * @param int Relative id of the RTE editing area in the form
+	 * @return string JS configuration for registered plugins, in this case, JS configuration of block elements
 	 */
 	public function buildJavascriptConfiguration($RTEcounter) {
 		$registerRTEinJavascriptString = '';
@@ -75,7 +95,7 @@ class Typo3Link extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . ' = new Object();';
 			}
 			$registerRTEinJavascriptString .= '
-			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.pathLinkModule = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('rtehtmlarea_wizard_element_browser'));
+			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.pathLinkModule = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('rtehtmlarea_wizard_browse_links')) . ';';
 			if ($this->htmlAreaRTE->is_FE()) {
 				$RTEProperties = $this->htmlAreaRTE->RTEsetup;
 			} else {
@@ -94,10 +114,9 @@ class Typo3Link extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return a JS array for special anchor classes
 	 *
-	 * @return 	string		classesAnchor array definition
+	 * @return string classesAnchor array definition
 	 */
 	public function buildJSClassesAnchorArray() {
-		global $LANG;
 		$JSClassesAnchorArray .= 'HTMLArea.classesAnchorSetup = [ ' . LF;
 		$classesAnchorIndex = 0;
 		foreach ($this->htmlAreaRTE->RTEsetup['properties']['classesAnchor.'] as $label => $conf) {
@@ -133,8 +152,8 @@ class Typo3Link extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return an updated array of toolbar enabled buttons
 	 *
-	 * @param 	array		$show: array of toolbar elements that will be enabled, unless modified here
-	 * @return 	array		toolbar button array, possibly updated
+	 * @param array $show: array of toolbar elements that will be enabled, unless modified here
+	 * @return array toolbar button array, possibly updated
 	 */
 	public function applyToolbarConstraints($show) {
 		// We will not allow unlink if link is not enabled

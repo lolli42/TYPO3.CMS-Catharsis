@@ -129,7 +129,7 @@ interface QueryInterface {
 	/**
 	 * Executes the query and returns the result.
 	 *
-	 * @param $returnRawQueryResult boolean avoids the object mapping by the persistence
+	 * @param bool $returnRawQueryResult avoids the object mapping by the persistence
 	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $returnRawQueryResult is TRUE
 	 * @api
 	 */
@@ -152,7 +152,7 @@ interface QueryInterface {
 	 * Sets the maximum size of the result set to limit. Returns $this to allow
 	 * for chaining (fluid interface).
 	 *
-	 * @param integer $limit
+	 * @param int $limit
 	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
@@ -162,7 +162,7 @@ interface QueryInterface {
 	 * Sets the start offset of the result set to offset. Returns $this to
 	 * allow for chaining (fluid interface).
 	 *
-	 * @param integer $offset
+	 * @param int $offset
 	 * @return \TYPO3\CMS\Extbase\Persistence\QueryInterface
 	 * @api
 	 */
@@ -218,7 +218,7 @@ interface QueryInterface {
 	 *
 	 * @param string $propertyName The name of the property to compare against
 	 * @param mixed $operand The value to compare with
-	 * @param boolean $caseSensitive Whether the equality test should be done case-sensitive for strings
+	 * @param bool $caseSensitive Whether the equality test should be done case-sensitive for strings
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface
 	 * @api
 	 */
@@ -231,7 +231,7 @@ interface QueryInterface {
 	 *
 	 * @param string $propertyName The name of the property to compare against
 	 * @param string $operand The value to compare with
-	 * @param boolean $caseSensitive Whether the matching should be done case-sensitive
+	 * @param bool $caseSensitive Whether the matching should be done case-sensitive
 	 * @return object
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException if used on a non-string property
 	 * @api
@@ -339,7 +339,7 @@ interface QueryInterface {
 	/**
 	 * Returns the query result count.
 	 *
-	 * @return integer The query result count
+	 * @return int The query result count
 	 * @api
 	 */
 	public function count();
@@ -359,7 +359,7 @@ interface QueryInterface {
 	/**
 	 * Returns the maximum size of the result set to limit.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getLimit();
@@ -367,7 +367,7 @@ interface QueryInterface {
 	/**
 	 * Returns the start offset of the result set.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getOffset();
@@ -385,7 +385,7 @@ interface QueryInterface {
 	 * It matches if the multivalued property contains no values or is NULL.
 	 *
 	 * @param string $propertyName The name of the multivalued property to compare against
-	 * @return boolean
+	 * @return bool
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Exception\InvalidQueryException if used on a single-valued property
 	 * @api
 	 */

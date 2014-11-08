@@ -23,14 +23,14 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 	/**
 	 * Default value whether the task deactivates itself after last run.
 	 *
-	 * @var boolean Whether the task is allowed to deactivate itself after processing all existing user records.
+	 * @var bool Whether the task is allowed to deactivate itself after processing all existing user records.
 	 */
 	protected $defaultCanDeactivateSelf = TRUE;
 
 	/**
 	 * Default value for the number of records to handle at each run.
 	 *
-	 * @var integer Number of records
+	 * @var int Number of records
 	 */
 	protected $defaultNumberOfRecords = 250;
 
@@ -61,7 +61,7 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 		$fieldName = 'tx_scheduler[scheduler_saltedpasswordsBulkUpdateCanDeactivateSelf]';
 		$fieldId = 'task_saltedpasswordsBulkUpdateCanDeactivateSelf';
 		$fieldValue = 'IsChecked';
-		$fieldChecked = (bool) $taskInfo['scheduler_saltedpasswordsBulkUpdateCanDeactivateSelf'];
+		$fieldChecked = (bool)$taskInfo['scheduler_saltedpasswordsBulkUpdateCanDeactivateSelf'];
 		$fieldHtml = '<input type="checkbox"' . ' name="' . $fieldName . '"' . ' id="' . $fieldId . '"' . ' value="' . $fieldValue . '"' . ($fieldChecked ? ' checked="checked"' : '') . ' />';
 		$additionalFields[$fieldId] = array(
 			'code' => $fieldHtml,
@@ -88,7 +88,7 @@ class BulkUpdateFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldPro
 	 *
 	 * @param array $submittedData Reference to the array containing the data submitted by the user
 	 * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject Reference to the calling object (Scheduler's BE module)
-	 * @return boolean TRUE if validation was ok (or selected class is not relevant), FALSE otherwise
+	 * @return bool TRUE if validation was ok (or selected class is not relevant), FALSE otherwise
 	 */
 	public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject) {
 		$result = TRUE;

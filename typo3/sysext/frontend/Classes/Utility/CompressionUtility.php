@@ -26,7 +26,7 @@ class CompressionUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * replace the Content-length HTTP header after compression if it was added
 	 * by TYPO3 before compression.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $contentLength = 0;
 
@@ -35,7 +35,7 @@ class CompressionUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * is enabled.
 	 *
 	 * @param string $outputBuffer Output buffer to compress
-	 * @param integer $mode One of PHP_OUTPUT_HANDLER_xxx constants
+	 * @param int $mode One of PHP_OUTPUT_HANDLER_xxx constants
 	 * @return string Compressed string
 	 * @see ob_start()
 	 * @see ob_gzhandler()

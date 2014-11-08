@@ -50,14 +50,14 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	/**
 	 * Decides if the writelog() function is called at login and logout.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $writeStdLog = FALSE;
 
 	/**
 	 * If the writelog() functions is called if a login-attempt has be tried without success.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $writeAttemptLog = FALSE;
 
@@ -71,7 +71,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	/**
 	 * General flag which is set if the adminpanel should be displayed at all.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $extAdmEnabled = FALSE;
 
@@ -139,7 +139,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	/**
 	 * Determines whether frontend editing is currently active.
 	 *
-	 * @return boolean Whether frontend editing is active
+	 * @return bool Whether frontend editing is active
 	 */
 	public function isFrontendEditingActive() {
 		return $this->extAdmEnabled
@@ -158,7 +158,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	/**
 	 * Determines whether the admin panel is enabled and visible.
 	 *
-	 * @return boolean Whether the admin panel is enabled and visible
+	 * @return bool Whether the admin panel is enabled and visible
 	 */
 	public function isAdminPanelVisible() {
 		return $this->extAdmEnabled && !$this->extAdminConfig['hide'] && $GLOBALS['TSFE']->config['config']['admPanel'];
@@ -173,7 +173,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	 * Implementing the access checks that the typo3/init.php script does before a user is ever logged in.
 	 * Used in the frontend.
 	 *
-	 * @return boolean Returns TRUE if access is OK
+	 * @return bool Returns TRUE if access is OK
 	 */
 	public function checkBackendAccessSettingsFromInitPhp() {
 		// Check Hardcoded lock on BE
@@ -209,7 +209,7 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	 * Used in index_ts.php
 	 *
 	 * @param array $pageRec The page record to evaluate for
-	 * @return boolean TRUE if read access
+	 * @return bool TRUE if read access
 	 */
 	public function extPageReadAccess($pageRec) {
 		return $this->isInWebMount($pageRec['uid']) && $this->doesUserHaveAccess($pageRec, 1);
@@ -224,9 +224,9 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	 * Generates a list of Page-uid's from $id. List does not include $id itself
 	 * The only pages excluded from the list are deleted pages.
 	 *
-	 * @param integer $id Start page id
-	 * @param integer $depth Depth to traverse down the page tree.
-	 * @param integer $begin Is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
+	 * @param int $id Start page id
+	 * @param int $depth Depth to traverse down the page tree.
+	 * @param int $begin Is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
 	 * @param string $perms_clause Perms clause
 	 * @return string Returns the list with a comma in the end (if any pages selected!)
 	 */
@@ -256,8 +256,8 @@ class FrontendBackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\B
 	/**
 	 * Returns the number of cached pages for a page id.
 	 *
-	 * @param integer $pageId The page id.
-	 * @return integer The number of pages for this page in the table "cache_pages
+	 * @param int $pageId The page id.
+	 * @return int The number of pages for this page in the table "cache_pages
 	 */
 	public function extGetNumberOfCachedPages($pageId) {
 		/** @var FrontendInterface $pageCache */

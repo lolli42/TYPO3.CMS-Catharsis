@@ -6,7 +6,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Base extension class which generates the folder tree.
  * Used directly by the RTE.
  *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
+ * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FolderTree extends \localFolderTree {
 
@@ -40,7 +40,7 @@ class FolderTree extends \localFolderTree {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $isExpand If expanded
+	 * @param bool $isExpand If expanded
 	 * @return string Link-wrapped input string
 	 * @access private
 	 */

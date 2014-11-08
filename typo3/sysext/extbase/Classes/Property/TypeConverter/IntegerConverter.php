@@ -38,18 +38,18 @@ class IntegerConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstrac
 	protected $targetType = 'integer';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $priority = 1;
 
 	/**
 	 * Actually convert from $source to $targetType, in fact a noop here.
 	 *
-	 * @param integer|string $source
+	 * @param int|string $source
 	 * @param string $targetType
 	 * @param array $convertedChildProperties
 	 * @param \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration
-	 * @return integer|\TYPO3\CMS\Extbase\Error\Error
+	 * @return int|\TYPO3\CMS\Extbase\Error\Error
 	 * @api
 	 */
 	public function convertFrom($source, $targetType, array $convertedChildProperties = array(), \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration = NULL) {

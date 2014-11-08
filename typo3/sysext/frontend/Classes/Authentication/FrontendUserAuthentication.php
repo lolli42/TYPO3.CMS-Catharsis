@@ -187,7 +187,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	/**
 	 * Determine whether a session cookie needs to be set (lifetime=0)
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @internal
 	 */
 	public function isSetSessionCookie() {
@@ -198,7 +198,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	/**
 	 * Determine whether a non-session cookie needs to be set (lifetime>0)
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @internal
 	 */
 	public function isRefreshTimeBasedCookie() {
@@ -258,7 +258,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * and which groups are also allowed in the current domain.
 	 * It also accumulates the TSconfig for the fe_user/fe_groups in ->TSdataArray
 	 *
-	 * @return integer Returns the number of usergroups for the frontend users (if the internal user record exists and the usergroup field contains a value)
+	 * @return int Returns the number of usergroups for the frontend users (if the internal user record exists and the usergroup field contains a value)
 	 */
 	public function fetchGroupData() {
 		$this->TSdataArray = array();
@@ -563,7 +563,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * If a change in the recs storage happens (which it probably does) the function setKey() is called in order to store the array again.
 	 *
 	 * @param array $recs The data array to merge into/override the current recs values. The $recs array is constructed as [table]][uid] = scalar-value (eg. string/integer).
-	 * @param integer $maxSizeOfSessionData The maximum size of stored session data. If zero, no limit is applied and even confirmation of cookie session is discarded.
+	 * @param int $maxSizeOfSessionData The maximum size of stored session data. If zero, no limit is applied and even confirmation of cookie session is discarded.
 	 * @return void
 	 */
 	public function record_registration($recs, $maxSizeOfSessionData = 0) {
@@ -598,8 +598,8 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 *
 	 * This calls the parent function but additionally tries to look up the session ID in the "fe_session_data" table.
 	 *
-	 * @param integer $id Claimed Session ID
-	 * @return boolean Returns TRUE if a corresponding session was found in the database
+	 * @param int $id Claimed Session ID
+	 * @return bool Returns TRUE if a corresponding session was found in the database
 	 */
 	public function isExistingSessionRecord($id) {
 		// Perform check in parent function

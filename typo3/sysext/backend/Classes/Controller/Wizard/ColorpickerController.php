@@ -26,65 +26,75 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class ColorpickerController {
 
-	// GET vars:
-	// Wizard parameters, coming from TCEforms linking to the wizard.
 	/**
+	 * Wizard parameters, coming from TCEforms linking to the wizard.
+	 *
 	 * @var array
 	 */
 	public $P;
 
-	// Value of the current color picked.
 	/**
+	 * Value of the current color picked.
+	 *
 	 * @var string
 	 */
 	public $colorValue;
 
-	// Serialized functions for changing the field... Necessary to call when the value is transferred to the TCEform since the form might need to do internal processing. Otherwise the value is simply not be saved.
 	/**
+	 * Serialized functions for changing the field...
+	 * Necessary to call when the value is transferred to the TCEform since the form might
+	 * need to do internal processing. Otherwise the value is simply not be saved.
+	 *
 	 * @var string
 	 */
 	public $fieldChangeFunc;
 
+	/**
+	 * @var string
+	 */
 	protected $fieldChangeFuncHash;
 
-	// Form name (from opener script)
 	/**
+	 * Form name (from opener script)
+	 *
 	 * @var string
 	 */
 	public $fieldName;
 
-	// Field name (from opener script)
 	/**
+	 * Field name (from opener script)
+	 *
 	 * @var string
 	 */
 	public $formName;
 
-	// ID of element in opener script for which to set color.
 	/**
+	 * ID of element in opener script for which to set color.
+	 *
 	 * @var string
 	 */
 	public $md5ID;
 
-	// Internal: If FALSE, a frameset is rendered, if TRUE the content of the picker script.
 	/**
+	 * Internal: If FALSE, a frameset is rendered, if TRUE the content of the picker script.
+	 *
 	 * @var int
 	 */
 	public $showPicker;
 
-	// Static:
 	/**
 	 * @var string
 	 */
 	public $HTMLcolorList = 'aqua,black,blue,fuchsia,gray,green,lime,maroon,navy,olive,purple,red,silver,teal,yellow,white';
 
-	// Internal:
 	/**
 	 * @var string
 	 */
 	public $pickerImage = '';
 
-	// Error message if image not found.
 	/**
+	 * Error message if image not found.
+	 *
 	 * @var string
 	 */
 	public $imageError = '';
@@ -96,7 +106,6 @@ class ColorpickerController {
 	 */
 	public $doc;
 
-	// Accumulated content.
 	/**
 	 * @var string
 	 */
@@ -115,7 +124,7 @@ class ColorpickerController {
 	/**
 	 * Initialises the Class
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	protected function init() {
 		// Setting GET vars (used in frameset script):
@@ -186,7 +195,7 @@ class ColorpickerController {
 	/**
 	 * Main Method, rendering either colorpicker or frameset depending on ->showPicker
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	public function main() {
 		// Show frameset by default:
@@ -381,8 +390,8 @@ class ColorpickerController {
 	 * This method handles the correct imageResource no matter what format
 	 *
 	 * @param pointer $im Valid ImageResource returned by \TYPO3\CMS\Core\Imaging\GraphicalFunctions::imageCreateFromFile
-	 * @param integer $x X-Coordinate of the pixel that should be checked
-	 * @param integer $y Y-Coordinate of the pixel that should be checked
+	 * @param int $x X-Coordinate of the pixel that should be checked
+	 * @param int $y Y-Coordinate of the pixel that should be checked
 	 * @return string HEX RGB value for color
 	 * @see colorImage()
 	 */
@@ -407,7 +416,7 @@ class ColorpickerController {
 	 * Determines whether submitted field change functions are valid
 	 * and are coming from the system and not from an external abuse.
 	 *
-	 * @return boolean Whether the submitted field change functions are valid
+	 * @return bool Whether the submitted field change functions are valid
 	 */
 	protected function areFieldChangeFunctionsValid() {
 		return $this->fieldChangeFunc && $this->fieldChangeFuncHash && $this->fieldChangeFuncHash === GeneralUtility::hmac($this->fieldChangeFunc);

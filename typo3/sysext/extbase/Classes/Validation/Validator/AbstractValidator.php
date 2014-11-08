@@ -27,7 +27,7 @@ abstract class AbstractValidator implements ValidatorInterface {
 	 * Note: A value is considered empty if it is NULL or an empty string!
 	 * By default all validators except for NotEmpty and the Composite Validators accept empty values
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $acceptsEmptyValues = TRUE;
 
@@ -113,7 +113,7 @@ abstract class AbstractValidator implements ValidatorInterface {
 	 * Creates a new validation error object and adds it to $this->results
 	 *
 	 * @param string $message The error message
-	 * @param integer $code The error code (a unix timestamp)
+	 * @param int $code The error code (a unix timestamp)
 	 * @param array $arguments Arguments to be replaced in message
 	 * @param string $title title of the error
 	 * @return void
@@ -133,7 +133,7 @@ abstract class AbstractValidator implements ValidatorInterface {
 
 	/**
 	 * @param mixed $value
-	 * @return boolean TRUE if the given $value is NULL or an empty string ('')
+	 * @return bool TRUE if the given $value is NULL or an empty string ('')
 	 */
 	final protected function isEmpty($value) {
 		return $value === NULL || $value === '';

@@ -90,7 +90,7 @@ class DatabaseConnection {
 	protected $databaseHost = '';
 
 	/**
-	 * @var integer Database port to connect to
+	 * @var int Database port to connect to
 	 */
 	protected $databasePort = 3306;
 
@@ -115,13 +115,13 @@ class DatabaseConnection {
 	protected $databaseUserPassword = '';
 
 	/**
-	 * @var boolean TRUE if database connection should be persistent
+	 * @var bool TRUE if database connection should be persistent
 	 * @see http://php.net/manual/de/mysqli.persistconns.php
 	 */
 	protected $persistentDatabaseConnection = FALSE;
 
 	/**
-	 * @var boolean TRUE if connection between client and sql server is compressed
+	 * @var bool TRUE if connection between client and sql server is compressed
 	 */
 	protected $connectionCompression = FALSE;
 
@@ -139,7 +139,7 @@ class DatabaseConnection {
 	protected $initializeCommandsAfterConnect = array();
 
 	/**
-	 * @var boolean TRUE if database connection is established
+	 * @var bool TRUE if database connection is established
 	 */
 	protected $isConnected = FALSE;
 
@@ -193,8 +193,8 @@ class DatabaseConnection {
 	 *
 	 * @param string $table Table name
 	 * @param array $fields_values Field values as key=>value pairs. Values will be escaped internally. Typically you would fill an array like "$insertFields" with 'fieldname'=>'value' and pass it to this function as argument.
-	 * @param boolean $no_quote_fields See fullQuoteArray()
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @param bool $no_quote_fields See fullQuoteArray()
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_INSERTquery($table, $fields_values, $no_quote_fields = FALSE) {
 		$res = $this->query($this->INSERTquery($table, $fields_values, $no_quote_fields));
@@ -214,8 +214,8 @@ class DatabaseConnection {
 	 * @param string $table Table name
 	 * @param array $fields Field names
 	 * @param array $rows Table rows. Each row should be an array with field values mapping to $fields
-	 * @param boolean $no_quote_fields See fullQuoteArray()
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @param bool $no_quote_fields See fullQuoteArray()
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_INSERTmultipleRows($table, array $fields, array $rows, $no_quote_fields = FALSE) {
 		$res = $this->query($this->INSERTmultipleRows($table, $fields, $rows, $no_quote_fields));
@@ -236,8 +236,8 @@ class DatabaseConnection {
 	 * @param string $table Database tablename
 	 * @param string $where WHERE clause, eg. "uid=1". NOTICE: You must escape values in this argument with $this->fullQuoteStr() yourself!
 	 * @param array $fields_values Field values as key=>value pairs. Values will be escaped internally. Typically you would fill an array like "$updateFields" with 'fieldname'=>'value' and pass it to this function as argument.
-	 * @param boolean $no_quote_fields See fullQuoteArray()
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @param bool $no_quote_fields See fullQuoteArray()
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_UPDATEquery($table, $where, $fields_values, $no_quote_fields = FALSE) {
 		$res = $this->query($this->UPDATEquery($table, $where, $fields_values, $no_quote_fields));
@@ -256,7 +256,7 @@ class DatabaseConnection {
 	 *
 	 * @param string $table Database tablename
 	 * @param string $where WHERE clause, eg. "uid=1". NOTICE: You must escape values in this argument with $this->fullQuoteStr() yourself!
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_DELETEquery($table, $where) {
 		$res = $this->query($this->DELETEquery($table, $where));
@@ -280,7 +280,7 @@ class DatabaseConnection {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '') {
 		$query = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
@@ -312,7 +312,7 @@ class DatabaseConnection {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 * @see exec_SELECTquery()
 	 */
 	public function exec_SELECT_mm_query($select, $local_table, $mm_table, $foreign_table, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
@@ -331,7 +331,7 @@ class DatabaseConnection {
 	 * Executes a select based on input query parts array
 	 *
 	 * @param array $queryParts Query parts array
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 * @see exec_SELECTquery()
 	 */
 	public function exec_SELECT_queryArray($queryParts) {
@@ -383,7 +383,7 @@ class DatabaseConnection {
 	 * @param string $where_clause Optional additional WHERE clauses put in the end of the query. NOTICE: You must escape values in this argument with $this->fullQuoteStr() yourself!
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
-	 * @param boolean $numIndex If set, the result will be fetched with sql_fetch_row, otherwise sql_fetch_assoc will be used.
+	 * @param bool $numIndex If set, the result will be fetched with sql_fetch_row, otherwise sql_fetch_assoc will be used.
 	 * @return array|FALSE|NULL Single row, FALSE on empty result, NULL on error
 	 */
 	public function exec_SELECTgetSingleRow($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $numIndex = FALSE) {
@@ -409,7 +409,7 @@ class DatabaseConnection {
 	 * @param string $field Name of the field to use in the COUNT() expression (e.g. '*')
 	 * @param string $table Name of the table to count rows for
 	 * @param string $where (optional) WHERE statement of the query
-	 * @return mixed Number of rows counter (integer) or FALSE if something went wrong (boolean)
+	 * @return mixed Number of rows counter (int) or FALSE if something went wrong (bool)
 	 */
 	public function exec_SELECTcountRows($field, $table, $where = '') {
 		$count = FALSE;
@@ -464,7 +464,7 @@ class DatabaseConnection {
 	 *
 	 * @param string $table See exec_INSERTquery()
 	 * @param array $fields_values See exec_INSERTquery()
-	 * @param boolean $no_quote_fields See fullQuoteArray()
+	 * @param bool $no_quote_fields See fullQuoteArray()
 	 * @return string|NULL Full SQL query for INSERT, NULL if $fields_values is empty
 	 */
 	public function INSERTquery($table, $fields_values, $no_quote_fields = FALSE) {
@@ -493,7 +493,7 @@ class DatabaseConnection {
 	 * @param string $table Table name
 	 * @param array $fields Field names
 	 * @param array $rows Table rows. Each row should be an array with field values mapping to $fields
-	 * @param boolean $no_quote_fields See fullQuoteArray()
+	 * @param bool $no_quote_fields See fullQuoteArray()
 	 * @return string|NULL Full SQL query for INSERT, NULL if $rows is empty
 	 */
 	public function INSERTmultipleRows($table, array $fields, array $rows, $no_quote_fields = FALSE) {
@@ -529,7 +529,7 @@ class DatabaseConnection {
 	 * @param string $table See exec_UPDATEquery()
 	 * @param string $where See exec_UPDATEquery()
 	 * @param array $fields_values See exec_UPDATEquery()
-	 * @param boolean $no_quote_fields
+	 * @param bool $no_quote_fields
 	 * @throws \InvalidArgumentException
 	 * @return string Full SQL query for UPDATE
 	 */
@@ -786,7 +786,7 @@ class DatabaseConnection {
 	 *
 	 * @param string $str Input string
 	 * @param string $table Table name for which to quote string. Just enter the table that the field-value is selected from (and any DBAL will look up which handler to use and then how to quote the string!).
-	 * @param boolean $allowNull Whether to allow NULL values
+	 * @param bool $allowNull Whether to allow NULL values
 	 * @return string Output string; Wrapped in single quotes and quotes in the string (" / ') and \ will be backslashed (or otherwise based on DBAL handler)
 	 * @see quoteStr()
 	 */
@@ -806,8 +806,8 @@ class DatabaseConnection {
 	 *
 	 * @param array $arr Array with values (either associative or non-associative array)
 	 * @param string $table Table name for which to quote
-	 * @param boolean|array $noQuote List/array of keys NOT to quote (eg. SQL functions) - ONLY for associative arrays
-	 * @param boolean $allowNull Whether to allow NULL values
+	 * @param bool|array $noQuote List/array of keys NOT to quote (eg. SQL functions) - ONLY for associative arrays
+	 * @param bool $allowNull Whether to allow NULL values
 	 * @return array The input array with the values quoted
 	 * @see cleanIntArray()
 	 */
@@ -977,7 +977,7 @@ class DatabaseConnection {
 	 * using exec_SELECTquery() and similar methods instead.
 	 *
 	 * @param string $query Query to execute
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function sql_query($query) {
 		$res = $this->query($query);
@@ -999,7 +999,7 @@ class DatabaseConnection {
 	/**
 	 * Returns the error number on the last query() execution
 	 *
-	 * @return integer MySQLi error number
+	 * @return int MySQLi error number
 	 */
 	public function sql_errno() {
 		return $this->link->errno;
@@ -1008,8 +1008,8 @@ class DatabaseConnection {
 	/**
 	 * Returns the number of selected rows.
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @return integer Number of resulting rows
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @return int Number of resulting rows
 	 */
 	public function sql_num_rows($res) {
 		if ($this->debug_check_recordset($res)) {
@@ -1023,7 +1023,7 @@ class DatabaseConnection {
 	 * Returns an associative array that corresponds to the fetched row, or FALSE if there are no more rows.
 	 * MySQLi fetch_assoc() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
 	 * @return array|boolean Associative array of result row.
 	 */
 	public function sql_fetch_assoc($res) {
@@ -1044,7 +1044,7 @@ class DatabaseConnection {
 	 * The array contains the values in numerical indices.
 	 * MySQLi fetch_row() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
 	 * @return array|boolean Array with result rows.
 	 */
 	public function sql_fetch_row($res) {
@@ -1064,8 +1064,8 @@ class DatabaseConnection {
 	 * Free result memory
 	 * free_result() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @return boolean Returns TRUE on success or FALSE on failure.
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
 	public function sql_free_result($res) {
 		if ($this->debug_check_recordset($res) && is_object($res)) {
@@ -1079,7 +1079,7 @@ class DatabaseConnection {
 	/**
 	 * Get the ID generated from the previous INSERT operation
 	 *
-	 * @return integer The uid of the last inserted record.
+	 * @return int The uid of the last inserted record.
 	 */
 	public function sql_insert_id() {
 		return $this->link->insert_id;
@@ -1088,7 +1088,7 @@ class DatabaseConnection {
 	/**
 	 * Returns the number of rows affected by the last INSERT, UPDATE or DELETE query
 	 *
-	 * @return integer Number of rows affected by last query
+	 * @return int Number of rows affected by last query
 	 */
 	public function sql_affected_rows() {
 		return $this->link->affected_rows;
@@ -1097,9 +1097,9 @@ class DatabaseConnection {
 	/**
 	 * Move internal result pointer
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @param integer $seek Seek result number.
-	 * @return boolean Returns TRUE on success or FALSE on failure.
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param int $seek Seek result number.
+	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
 	public function sql_data_seek($res, $seek) {
 		if ($this->debug_check_recordset($res)) {
@@ -1113,8 +1113,8 @@ class DatabaseConnection {
 	 * Get the type of the specified field in a result
 	 * mysql_field_type() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @param integer $pointer Field index.
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param int $pointer Field index.
 	 * @return string Returns the name of the specified field index, or FALSE on error
 	 */
 	public function sql_field_type($res, $pointer) {
@@ -1154,13 +1154,10 @@ class DatabaseConnection {
 	/**
 	 * Open a (persistent) connection to a MySQL server
 	 *
-	 * @param string $host Deprecated since 6.1, will be removed in two versions. Database host IP/domain[:port]
-	 * @param string $username Deprecated since 6.1, will be removed in two versions. Username to connect with.
-	 * @param string $password Deprecated since 6.1, will be removed in two versions. Password to connect with.
-	 * @return boolean|void
+	 * @return bool|void
 	 * @throws \RuntimeException
 	 */
-	public function sql_pconnect($host = NULL, $username = NULL, $password = NULL) {
+	public function sql_pconnect() {
 		if ($this->isConnected) {
 			return $this->link;
 		}
@@ -1170,10 +1167,6 @@ class DatabaseConnection {
 				'Database Error: PHP mysqli extension not loaded. This is a must have for TYPO3 CMS!',
 				1271492607
 			);
-		}
-
-		if ($host || $username || $password) {
-			$this->handleDeprecatedConnectArguments($host, $username, $password);
 		}
 
 		$host = $this->persistentDatabaseConnection
@@ -1218,7 +1211,7 @@ class DatabaseConnection {
 			$error_msg = $this->link->connect_error;
 			$this->link = NULL;
 			GeneralUtility::sysLog(
-				'Could not connect to MySQL server ' . $host . ' with user ' . $username . ': ' . $error_msg,
+				'Could not connect to MySQL server ' . $host . ' with user ' . $this->databaseUsername . ': ' . $error_msg,
 				'Core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
@@ -1251,27 +1244,17 @@ class DatabaseConnection {
 	/**
 	 * Select a SQL database
 	 *
-	 * @param string $TYPO3_db Deprecated since 6.1, will be removed in two versions. Database to connect to.
-	 * @return boolean Returns TRUE on success or FALSE on failure.
+	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
-	public function sql_select_db($TYPO3_db = NULL) {
+	public function sql_select_db() {
 		if (!$this->isConnected) {
 			$this->connectDB();
 		}
 
-		if ($TYPO3_db) {
-			GeneralUtility::deprecationLog(
-				'DatabaseConnection->sql_select_db() should be called without arguments.' .
-					' Use the setDatabaseName() before. Will be removed two versions after 6.1.'
-			);
-		} else {
-			$TYPO3_db = $this->databaseName;
-		}
-
-		$ret = $this->link->select_db($TYPO3_db);
+		$ret = $this->link->select_db($this->databaseName);
 		if (!$ret) {
 			GeneralUtility::sysLog(
-				'Could not select MySQL database ' . $TYPO3_db . ': ' . $this->sql_error(),
+				'Could not select MySQL database ' . $this->databaseName . ': ' . $this->sql_error(),
 				'Core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
@@ -1408,7 +1391,7 @@ class DatabaseConnection {
 	 * mysqli() wrapper function, used by the Install Tool and EM for all queries regarding management of the database!
 	 *
 	 * @param string $query Query to execute
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function admin_query($query) {
 		$res = $this->query($query);
@@ -1437,7 +1420,7 @@ class DatabaseConnection {
 	/**
 	 * Set database port
 	 *
-	 * @param integer $port
+	 * @param int $port
 	 */
 	public function setDatabasePort($port = 3306) {
 		$this->disconnectIfConnected();
@@ -1487,7 +1470,7 @@ class DatabaseConnection {
 	/**
 	 * Set persistent database connection
 	 *
-	 * @param boolean $persistentDatabaseConnection
+	 * @param bool $persistentDatabaseConnection
 	 * @see http://php.net/manual/de/mysqli.persistconns.php
 	 */
 	public function setPersistentDatabaseConnection($persistentDatabaseConnection) {
@@ -1532,30 +1515,22 @@ class DatabaseConnection {
 	/**
 	 * Connects to database for TYPO3 sites:
 	 *
-	 * @param string $host Deprecated since 6.1, will be removed in two versions Database. host IP/domain[:port]
-	 * @param string $username Deprecated since 6.1, will be removed in two versions. Username to connect with
-	 * @param string $password Deprecated since 6.1, will be removed in two versions. Password to connect with
-	 * @param string $db Deprecated since 6.1, will be removed in two versions. Database name to connect to
 	 * @throws \RuntimeException
 	 * @throws \UnexpectedValueException
 	 * @internal param string $user Username to connect with.
 	 * @return void
 	 */
-	public function connectDB($host = NULL, $username = NULL, $password = NULL, $db = NULL) {
+	public function connectDB() {
 		// Early return if connected already
 		if ($this->isConnected) {
 			return;
 		}
 
-		if (!$this->databaseName && !$db) {
+		if (!$this->databaseName) {
 			throw new \RuntimeException(
 				'TYPO3 Fatal Error: No database selected!',
 				1270853882
 			);
-		}
-
-		if ($host || $username || $password || $db) {
-			$this->handleDeprecatedConnectArguments($host, $username, $password, $db);
 		}
 
 		if ($this->sql_pconnect()) {
@@ -1600,7 +1575,7 @@ class DatabaseConnection {
 	/**
 	 * Checks if database is connected
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isConnected() {
 		// We think we're still connected
@@ -1717,39 +1692,6 @@ class DatabaseConnection {
 		$this->link = $handle;
 	}
 
-	/**
-	 * Handle deprecated arguments for sql_pconnect() and connectDB()
-	 *
-	 * @param string|null $host Database host[:port]
-	 * @param string|null $username Database user name
-	 * @param string|null $password User password
-	 * @param string|null $db Database
-	 */
-	protected function handleDeprecatedConnectArguments($host = NULL, $username = NULL, $password = NULL, $db = NULL) {
-		GeneralUtility::deprecationLog(
-			'DatabaseConnection->sql_pconnect() and DatabaseConnection->connectDB() should be ' .
-			'called without arguments. Use the setters instead.'
-		);
-		if ($host) {
-			if (strpos($host, ':') > 0) {
-				list($databaseHost, $databasePort) = explode(':', $host);
-				$this->setDatabaseHost($databaseHost);
-				$this->setDatabasePort($databasePort);
-			} else {
-				$this->setDatabaseHost($host);
-			}
-		}
-		if ($username) {
-			$this->setDatabaseUsername($username);
-		}
-		if ($password) {
-			$this->setDatabasePassword($password);
-		}
-		if ($db) {
-			$this->setDatabaseName($db);
-		}
-	}
-
 	/******************************
 	 *
 	 * Debugging
@@ -1783,8 +1725,8 @@ class DatabaseConnection {
 	/**
 	 * Checks if record set is valid and writes debugging information into devLog if not.
 	 *
-	 * @param boolean|\mysqli_result|object MySQLi result object / DBAL object
-	 * @return boolean TRUE if the  record set is valid, FALSE otherwise
+	 * @param bool|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool TRUE if the  record set is valid, FALSE otherwise
 	 */
 	public function debug_check_recordset($res) {
 		if ($res !== FALSE) {
@@ -1829,8 +1771,8 @@ class DatabaseConnection {
 	 *
 	 * @param string $query SQL query
 	 * @param string $from_table Table(s) from which to select. This is what comes right after "FROM ...". Required value.
-	 * @param integer $row_count Number of resulting rows
-	 * @return boolean TRUE if explain was run, FALSE otherwise
+	 * @param int $row_count Number of resulting rows
+	 * @return bool TRUE if explain was run, FALSE otherwise
 	 */
 	protected function explain($query, $from_table, $row_count) {
 		$debugAllowedForIp = GeneralUtility::cmpIP(

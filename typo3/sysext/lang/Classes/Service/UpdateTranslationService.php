@@ -69,7 +69,7 @@ class UpdateTranslationService {
 		if (is_string($locales)) {
 			$locales = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $locales);
 		}
-		$locales = array_flip((array) $locales);
+		$locales = array_flip((array)$locales);
 
 		foreach ($locales as $locale => $key) {
 			$state = static::TRANSLATION_INVALID;
@@ -94,7 +94,7 @@ class UpdateTranslationService {
 	 *
 	 * @param string $extensionKey The extension key
 	 * @param string $locale Locale to return
-	 * @return integer Translation state
+	 * @return int Translation state
 	 */
 	protected function getTranslationStateForExtension($extensionKey, $locale) {
 		if (empty($extensionKey) || empty($locale)) {
@@ -159,7 +159,7 @@ class UpdateTranslationService {
 	 *
 	 * @param string $extensionKey The extension key
 	 * @param string $locale Locale to update
-	 * @return integer Translation state
+	 * @return int Translation state
 	 */
 	protected function updateTranslationForExtension($extensionKey, $locale) {
 		if (empty($extensionKey) || empty($locale)) {

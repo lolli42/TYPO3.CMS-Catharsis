@@ -144,7 +144,7 @@ class ExtDirectApi {
 	 * Generates the API or reads it from cache
 	 *
 	 * @param array $filterNamespaces
-	 * @param boolean $checkGetParam
+	 * @param bool $checkGetParam
 	 * @return string $javascriptNamespaces
 	 */
 	protected function getExtDirectApi(array $filterNamespaces) {
@@ -185,7 +185,7 @@ class ExtDirectApi {
 	 *
 	 * @param string $namespace
 	 * @param array $filterNamespaces
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function findNamespace($namespace, array $filterNamespaces) {
 		if ($filterNamespaces === array('TYPO3')) {

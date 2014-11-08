@@ -111,7 +111,7 @@ class PageGenerator {
 		$GLOBALS['TSFE']->dtdAllowsFrames = FALSE;
 		if ($GLOBALS['TSFE']->config['config']['doctype']) {
 			if (in_array(
-				(string) $GLOBALS['TSFE']->config['config']['doctype'],
+				(string)$GLOBALS['TSFE']->config['config']['doctype'],
 				array('xhtml_trans', 'xhtml_frames', 'xhtml_basic', 'xhtml_2', 'html5'),
 				TRUE)
 			) {
@@ -127,7 +127,7 @@ class PageGenerator {
 		if ($GLOBALS['TSFE']->config['config']['xhtmlDoctype']) {
 			$GLOBALS['TSFE']->xhtmlDoctype = $GLOBALS['TSFE']->config['config']['xhtmlDoctype'];
 			// Checking XHTML-docytpe
-			switch ((string) $GLOBALS['TSFE']->config['config']['xhtmlDoctype']) {
+			switch ((string)$GLOBALS['TSFE']->config['config']['xhtmlDoctype']) {
 				case 'xhtml_trans':
 
 				case 'xhtml_strict':
@@ -194,6 +194,7 @@ class PageGenerator {
 	 * Processing JavaScript handlers
 	 *
 	 * @return array Array with a) a JavaScript section with event handlers and variables set and b) an array with attributes for the body tag.
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use JS directly
 	 */
 	static public function JSeventFunctions() {
 		$functions = array();
@@ -201,6 +202,7 @@ class PageGenerator {
 		$setBody = array();
 		foreach ($GLOBALS['TSFE']->JSeventFuncCalls as $event => $handlers) {
 			if (count($handlers)) {
+				GeneralUtility::deprecationLog('The usage of $GLOBALS[\'TSFE\']->JSeventFuncCalls is deprecated as of CMS 7. Use Javascript directly.');
 				$functions[] = '	function T3_' . $event . 'Wrapper(e) {	' . implode('   ', $handlers) . '	}';
 				$setEvents[] = '	document.' . $event . '=T3_' . $event . 'Wrapper;';
 				if ($event == 'onload') {
@@ -275,7 +277,7 @@ class PageGenerator {
 		$docTypeParts = array();
 		$xmlDocument = TRUE;
 		// Part 1: XML prologue
-		switch ((string) $GLOBALS['TSFE']->config['config']['xmlprologue']) {
+		switch ((string)$GLOBALS['TSFE']->config['config']['xmlprologue']) {
 			case 'none':
 				$xmlDocument = FALSE;
 				$GLOBALS['TSFE']->config['config']['xhtml_cleaning'] = 'none';
@@ -786,7 +788,7 @@ class PageGenerator {
 		$scriptJsCode = $JSef[0];
 
 		if ($GLOBALS['TSFE']->spamProtectEmailAddresses && $GLOBALS['TSFE']->spamProtectEmailAddresses !== 'ascii') {
-			$scriptJsCode .= '
+			$scriptJsCode = '
 			// decrypt helper function
 		function decryptCharcode(n,start,end,offset) {
 			n = n + offset;
@@ -1049,7 +1051,7 @@ class PageGenerator {
 	 *
 	 * @param string $haystack The string in which to find $needle
 	 * @param string $needle The string to find in $haystack
-	 * @return boolean Returns TRUE if $needle matches or is found in $haystack
+	 * @return bool Returns TRUE if $needle matches or is found in $haystack
 	 */
 	static public function isAllowedLinkVarValue($haystack, $needle) {
 		$OK = FALSE;

@@ -65,13 +65,25 @@ class DocumentTemplate {
 	 */
 	public $JScodeLibArray = array();
 
-	// Additional header code (eg. a JavaScript section) could be accommulated in this var. It will be directly outputted in the header.
+	/**
+	 * Additional header code (eg. a JavaScript section) could be accommulated in this var. It will be directly outputted in the header.
+	 *
+	 * @var string
+	 */
 	public $JScode = '';
 
-	// Additional header code for ExtJS. It will be included in document header and inserted in a Ext.onReady(function()
+	/**
+	 * Additional header code for ExtJS. It will be included in document header and inserted in a Ext.onReady(function()
+	 *
+	 * @var string
+	 */
 	public $extJScode = '';
 
-	// Similar to $JScode but for use as array with associative keys to prevent double inclusion of JS code. a <script> tag is automatically wrapped around.
+	/**
+	 * Similar to $JScode but for use as array with associative keys to prevent double inclusion of JS code. a <script> tag is automatically wrapped around.
+	 *
+	 * @var array
+	 */
 	public $JScodeArray = array('jumpToUrl' => '
 function jumpToUrl(URL) {
 	window.location.href = URL;
@@ -79,7 +91,11 @@ function jumpToUrl(URL) {
 }
 	');
 
-	// Additional 'page-end' code could be accumulated in this var. It will be outputted at the end of page before </body> and some other internal page-end code.
+	/**
+	 * Additional 'page-end' code could be accumulated in this var. It will be outputted at the end of page before </body> and some other internal page-end code.
+	 *
+	 * @var string
+	 */
 	public $postCode = '';
 
 	/**
@@ -88,20 +104,39 @@ function jumpToUrl(URL) {
 	 */
 	public $docType = '';
 
-	// HTML template with markers for module
+	/**
+	 * HTML template with markers for module
+	 *
+	 * @var string
+	 */
 	public $moduleTemplate = '';
 
-	// the base file (not overlaid by TBE_STYLES) for the current module, useful for hooks when finding out which modules is rendered currently
+	/**
+	 * The base file (not overlaid by TBE_STYLES) for the current module, useful for hooks when finding out which modules is rendered currently
+	 *
+	 * @var string
+	 */
 	protected $moduleTemplateFilename = '';
 
-	// Other vars you can change, but less frequently used:
-	// Script ID.
+	/**
+	 * Script ID
+	 *
+	 * @var string
+	 */
 	public $scriptID = '';
 
-	// Id which can be set for the body tag. Default value is based on script ID
+	/**
+	 * Id which can be set for the body tag. Default value is based on script ID
+	 *
+	 * @var string
+	 */
 	public $bodyTagId = '';
 
-	// You can add additional attributes to the body-tag through this variable.
+	/**
+	 * You can add additional attributes to the body-tag through this variable.
+	 *
+	 * @var string
+	 */
 	public $bodyTagAdditions = '';
 
 	/**
@@ -119,14 +154,23 @@ function jumpToUrl(URL) {
 	 */
 	public $inDocStylesArray = array();
 
-	// Compensation for large documents (used in \TYPO3\CMS\Backend\Form\FormEngine)
+	/**
+	 * Compensation for large documents (used in \TYPO3\CMS\Backend\Form\FormEngine)
+	 *
+	 * @var float
+	 */
 	public $form_largeComp = 1.33;
 
-	// If set, then a JavaScript section will be outputted in the bottom of page which will try and update the top.busy session expiry object.
+	/**
+	 * If set, then a JavaScript section will be outputted in the bottom of page which will try and update the top.busy session expiry object.
+	 *
+	 * @var int
+	 */
 	public $endJS = 1;
 
 	// TYPO3 Colorscheme.
 	// If you want to change this, please do so through a skin using the global var $GLOBALS['TBE_STYLES']
+
 	/**
 	 * Light background color
 	 *
@@ -213,7 +257,7 @@ function jumpToUrl(URL) {
 	/**
 	 * Whether to use the X-UA-Compatible meta tag
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $useCompatibilityTag = TRUE;
 
@@ -251,8 +295,7 @@ function jumpToUrl(URL) {
 	 *
 	 * @var array
 	 */
-	protected $jsFiles = array(
-	);
+	protected $jsFiles = array();
 
 	/**
 	 * JavaScript files loaded for every page in the Backend, but explicitly excluded from concatenation (useful for libraries etc.)
@@ -263,7 +306,6 @@ function jumpToUrl(URL) {
 		'modernizr' => 'contrib/modernizr/modernizr.min.js'
 	);
 
-	// DEV:
 	/**
 	 * Will output the parsetime of the scripts in milliseconds (for admin-users).
 	 * Set this to FALSE when releasing TYPO3. Only for dev.
@@ -330,7 +372,7 @@ function jumpToUrl(URL) {
 	/**
 	 * Whether flashmessages should be rendered or not
 	 *
-	 * @var boolean $showFlashMessages
+	 * @var bool $showFlashMessages
 	 */
 	public $showFlashMessages = TRUE;
 
@@ -341,13 +383,12 @@ function jumpToUrl(URL) {
 
 	/**
 	 * Constructor
-	 * Imports relevant parts from global $GLOBALS['TBE_STYLES'] (colorscheme)
 	 */
 	public function __construct() {
 		// Initializes the page rendering object:
 		$this->getPageRenderer();
 		// Setting default scriptID:
-		if (($temp_M = (string) GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
+		if (($temp_M = (string)GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
 			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M] . 'index.php');
 		} else {
 			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix(PATH_thisScript));
@@ -446,11 +487,11 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $str String to be wrapped in link, typ. image tag.
 	 * @param string $table Table name/File path. If the icon is for a database record, enter the tablename from $GLOBALS['TCA']. If a file then enter the absolute filepath
-	 * @param integer $uid If icon is for database record this is the UID for the record from $table
-	 * @param boolean $listFr Tells the top frame script that the link is coming from a "list" frame which means a frame from within the backend content frame.
+	 * @param int $uid If icon is for database record this is the UID for the record from $table
+	 * @param bool $listFr Tells the top frame script that the link is coming from a "list" frame which means a frame from within the backend content frame.
 	 * @param string $addParams Additional GET parameters for the link to alt_clickmenu.php
 	 * @param string $enDisItems Enable / Disable click menu items. Example: "+new,view" will display ONLY these two items (and any spacers in between), "new,view" will display all BUT these two items.
-	 * @param boolean $returnOnClick If set, will return only the onclick JavaScript, not the whole link.
+	 * @param bool $returnOnClick If set, will return only the onclick JavaScript, not the whole link.
 	 * @return string The link-wrapped input string.
 	 */
 	public function wrapClickMenuOnIcon($str, $table, $uid = 0, $listFr = TRUE, $addParams = '', $enDisItems = '', $returnOnClick = FALSE) {
@@ -465,7 +506,7 @@ function jumpToUrl(URL) {
 	 * $id must be a page-uid
 	 * If the BE_USER has access to Web>List then a link to that module is shown as well (with return-url)
 	 *
-	 * @param integer $id The page id
+	 * @param int $id The page id
 	 * @param string $backPath The current "BACK_PATH" (the back relative to the typo3/ directory)
 	 * @param string $addParams Additional parameters for the image tag(s)
 	 * @return string HTML string with linked icon(s)
@@ -497,18 +538,6 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * Returns TRUE if click-menu layers can be displayed for the current user/browser
-	 * Use this to test if click-menus (context sensitive menus) can and should be displayed in the backend.
-	 *
-	 * @return boolean
-	 * @deprecated since TYPO3 4.7, will be removed in TYPO3 6.1 - This function makes no sense anymore
-	 */
-	public function isCMlayers() {
-		GeneralUtility::logDeprecatedFunction();
-		return !$GLOBALS['BE_USER']->uc['disableCMlayers'] && !($GLOBALS['CLIENT']['SYSTEM'] == 'mac' && $GLOBALS['CLIENT']['BROWSER'] == 'Opera');
-	}
-
-	/**
 	 * Makes the header (icon+title) for a page (or other record). Used in most modules under Web>*
 	 * $table and $row must be a tablename/record from that table
 	 * $path will be shown as alt-text for the icon.
@@ -517,7 +546,7 @@ function jumpToUrl(URL) {
 	 * @param string $table Table name
 	 * @param array $row Record row
 	 * @param string $path Alt text
-	 * @param boolean $noViewPageIcon Set $noViewPageIcon TRUE if you don't want a magnifier-icon for viewing the page in the frontend
+	 * @param bool $noViewPageIcon Set $noViewPageIcon TRUE if you don't want a magnifier-icon for viewing the page in the frontend
 	 * @param array $tWrap is an array with indexes 0 and 1 each representing HTML-tags (start/end) which will wrap the title
 	 * @param bool $enableClickMenu If TRUE, render click menu code around icon image
 	 * @return string HTML content
@@ -565,23 +594,6 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * Like ->getHeader() but for files in the File>* main module/submodules
-	 * Returns the file-icon with the path of the file set in the alt/title attribute. Shows the file-name after the icon.
-	 *
-	 * @param string $title Title string, expected to be the filepath
-	 * @param string $path Alt text
-	 * @param string $iconfile The icon file (relative to TYPO3 dir)
-	 * @return string HTML content
-	 * @deprecated since 6.2 remove 2 version later use getResourceHeader() instead
-	 */
-	public function getFileheader($title, $path, $iconfile) {
-		GeneralUtility::logDeprecatedFunction();
-		$fileInfo = GeneralUtility::split_fileref($title);
-		$title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileInfo['path'], -35)) . '<strong>' . htmlspecialchars($fileInfo['file']) . '</strong>';
-		return '<span class="typo3-moduleHeader"><img' . IconUtility::skinImg($this->backPath, $iconfile, 'width="18" height="16"') . ' title="' . htmlspecialchars($path) . '" alt="" />' . $title . '</span>';
-	}
-
-	/**
 	 * Returns a linked shortcut-icon which will call the shortcut frame and set a shortcut there back to the calling page/module
 	 *
 	 * @param string $gvList Is the list of GET variables to store (if any)
@@ -622,7 +634,7 @@ function jumpToUrl(URL) {
 	 */
 	public function makeShortcutUrl($gvList, $setList) {
 		$GET = GeneralUtility::_GET();
-		$storeArray = array_merge(GeneralUtility::compileSelectedGetVarsFromArray($gvList, $GET), array('SET' => GeneralUtility::compileSelectedGetVarsFromArray($setList, (array) $GLOBALS['SOBE']->MOD_SETTINGS)));
+		$storeArray = array_merge(GeneralUtility::compileSelectedGetVarsFromArray($gvList, $GET), array('SET' => GeneralUtility::compileSelectedGetVarsFromArray($setList, (array)$GLOBALS['SOBE']->MOD_SETTINGS)));
 		$storeUrl = GeneralUtility::implodeArrayForUrl('', $storeArray);
 		return $storeUrl;
 	}
@@ -632,8 +644,8 @@ function jumpToUrl(URL) {
 	 * For client browsers with no CSS support the cols/size attribute is returned.
 	 * For CSS compliant browsers (recommended) a ' style="width: ...px;"' is returned.
 	 *
-	 * @param integer $size A relative number which multiplied with approx. 10 will lead to the width in pixels
-	 * @param boolean $textarea A flag you can set for textareas - DEPRECATED as there is no difference any more between the two
+	 * @param int $size A relative number which multiplied with approx. 10 will lead to the width in pixels
+	 * @param bool $textarea A flag you can set for textareas - DEPRECATED as there is no difference any more between the two
 	 * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
 	 * @return string Tag attributes for an <input> tag (regarding width)
 	 */
@@ -648,7 +660,7 @@ function jumpToUrl(URL) {
 	 * or
 	 * <textarea rows="10" wrap="virtual" '.$GLOBALS["TBE_TEMPLATE"]->formWidthText(48, "", "virtual").'>
 	 *
-	 * @param integer $size A relative number which multiplied with approx. 10 will lead to the width in pixels
+	 * @param int $size A relative number which multiplied with approx. 10 will lead to the width in pixels
 	 * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
 	 * @param string $wrap Pass on the wrap-attribute value you use in your <textarea>! This will be used to make sure that some browsers will detect wrapping alright.
 	 * @return string Tag attributes for an <input> tag (regarding width)
@@ -686,8 +698,8 @@ function jumpToUrl(URL) {
 	 * Returns a formatted string of $tstamp
 	 * Uses $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] and $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] to format date and time
 	 *
-	 * @param integer $tstamp UNIX timestamp, seconds since 1970
-	 * @param integer $type How much data to show: $type = 1: hhmm, $type = 10:	ddmmmyy
+	 * @param int $tstamp UNIX timestamp, seconds since 1970
+	 * @param int $type How much data to show: $type = 1: hhmm, $type = 10:	ddmmmyy
 	 * @return string Formatted timestamp
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the corresponding methods in BackendUtility
 	 */
@@ -721,11 +733,11 @@ function jumpToUrl(URL) {
 	/**
 	 * Defines whether to use the X-UA-Compatible meta tag.
 	 *
-	 * @param boolean $useCompatibilityTag Whether to use the tag
+	 * @param bool $useCompatibilityTag Whether to use the tag
 	 * @return void
 	 */
 	public function useCompatibilityTag($useCompatibilityTag = TRUE) {
-		$this->useCompatibilityTag = (bool) $useCompatibilityTag;
+		$this->useCompatibilityTag = (bool)$useCompatibilityTag;
 	}
 
 	/*****************************************
@@ -739,7 +751,7 @@ function jumpToUrl(URL) {
 	 * This includes the proper header with charset, title, meta tag and beginning body-tag.
 	 *
 	 * @param string $title HTML Page title for the header
-	 * @param boolean $includeCsh flag for including CSH
+	 * @param bool $includeCsh flag for including CSH
 	 * @return string Returns the whole header section of a HTML-document based on settings in internal variables (like styles, javascript code, charset, generator and docType)
 	 * @see endPage()
 	 */
@@ -887,7 +899,7 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $title page title
 	 * @param string $content page content
-	 * @param boolean $includeCsh flag for including csh code
+	 * @param bool $includeCsh flag for including csh code
 	 * @return string complete page
 	 */
 	public function render($title, $content, $includeCsh = TRUE) {
@@ -918,10 +930,10 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $label The header
 	 * @param string $text The HTML-content
-	 * @param boolean $nostrtoupper	A flag that will prevent the header from being converted to uppercase
-	 * @param boolean $sH Defines the type of header (if set, "<h3>" rather than the default "h4")
-	 * @param integer $type The number of an icon to show with the header (see the icon-function). -1,1,2,3
-	 * @param boolean $allowHTMLinHeader If set, HTML tags are allowed in $label (otherwise this value is by default htmlspecialchars()'ed)
+	 * @param bool $nostrtoupper	A flag that will prevent the header from being converted to uppercase
+	 * @param bool $sH Defines the type of header (if set, "<h3>" rather than the default "h4")
+	 * @param int $type The number of an icon to show with the header (see the icon-function). -1,1,2,3
+	 * @param bool $allowHTMLinHeader If set, HTML tags are allowed in $label (otherwise this value is by default htmlspecialchars()'ed)
 	 * @return string HTML content
 	 * @see icons(), sectionHeader()
 	 */
@@ -946,7 +958,7 @@ function jumpToUrl(URL) {
 	 * Inserts a divider image
 	 * Ends a section (if open) before inserting the image
 	 *
-	 * @param integer $dist The margin-top/-bottom of the <hr> ruler.
+	 * @param int $dist The margin-top/-bottom of the <hr> ruler.
 	 * @return string HTML content
 	 */
 	public function divider($dist) {
@@ -962,7 +974,7 @@ function jumpToUrl(URL) {
 	/**
 	 * Returns a blank <div>-section with a height
 	 *
-	 * @param integer $dist Padding-top for the div-section (should be margin-top but konqueror (3.1) doesn't like it :-(
+	 * @param int $dist Padding-top for the div-section (should be margin-top but konqueror (3.1) doesn't like it :-(
 	 * @return string HTML content
 	 */
 	public function spacer($dist) {
@@ -980,7 +992,7 @@ function jumpToUrl(URL) {
 	 * Begins a section if not already open.
 	 *
 	 * @param string $label The label between the <h3> or <h4> tags. (Allows HTML)
-	 * @param boolean $sH If set, <h3> is used, otherwise <h4>
+	 * @param bool $sH If set, <h3> is used, otherwise <h4>
 	 * @param string $addAttrib Additional attributes to h-tag, eg. ' class=""'
 	 * @return string HTML content
 	 */
@@ -1222,7 +1234,7 @@ function jumpToUrl(URL) {
 	 * 2:	Warning (Yellow triangle)
 	 * 3:	Fatal error (Red stop sign)
 	 *
-	 * @param integer $type See description
+	 * @param int $type See description
 	 * @param string $styleAttribValue Value for style attribute
 	 * @return string HTML image tag (if applicable)
 	 */
@@ -1297,7 +1309,7 @@ function jumpToUrl(URL) {
 	 * This is nice for identing JS code with PHP code on the same level.
 	 *
 	 * @param string $string Input string
-	 * @param boolean $linebreak Wrap script element in linebreaks? Default is TRUE.
+	 * @param bool $linebreak Wrap script element in linebreaks? Default is TRUE.
 	 * @return string Output string
 	 */
 	public function wrapScriptTags($string, $linebreak = TRUE) {
@@ -1445,9 +1457,7 @@ function jumpToUrl(URL) {
 	public function getContextMenuCode() {
 		$this->pageRenderer->loadPrototype();
 		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/clickmenu.js');
-		$this->JScodeArray['clickmenu'] = '
-			Clickmenu.clickURL = "' . $this->backPath . 'alt_clickmenu.php";
-			Clickmenu.ajax     = true;';
+		$this->pageRenderer->addInlineSetting('ClickMenu', 'ajaxURL', BackendUtility::getAjaxUrl('ContextMenu::load', array(), $this->backPath));
 	}
 
 	/**
@@ -1523,42 +1533,26 @@ function jumpToUrl(URL) {
 	 * @access private
 	 */
 	public function getTabMenuRaw($menuItems) {
-		$content = '';
-		if (is_array($menuItems)) {
-			$options = '';
-			$count = count($menuItems);
-			$widthLeft = 1;
-			$addToAct = 5;
-			$widthRight = max(1, floor(30 - pow($count, 1.72)));
-			$widthTabs = 100 - $widthRight - $widthLeft;
-			$widthNo = floor(($widthTabs - $addToAct) / $count);
-			$addToAct = max($addToAct, $widthTabs - $widthNo * $count);
-			$widthAct = $widthNo + $addToAct;
-			$widthRight = 100 - ($widthLeft + $count * $widthNo + $addToAct);
-			foreach ($menuItems as $id => $def) {
-				$isActive = $def['isActive'];
-				$class = $isActive ? 'tabact' : 'tab';
-				$width = $isActive ? $widthAct : $widthNo;
-				// @rene: Here you should probably wrap $label and $url in htmlspecialchars() in order to make sure its XHTML compatible! I did it for $url already since that is VERY likely to break.
-				$label = $def['label'];
-				$url = htmlspecialchars($def['url']);
-				$params = $def['addParams'];
-				$options .= '<td width="' . $width . '%" class="' . $class . '"><a href="' . $url . '" ' . $params . '>' . $label . '</a></td>';
-			}
-			if ($options) {
-				$content .= '
-				<!-- Tab menu -->
-				<table cellpadding="0" cellspacing="0" border="0" width="100%" id="typo3-tabmenu">
-					<tr>
-							<td width="' . $widthLeft . '%">&nbsp;</td>
-							' . $options . '
-						<td width="' . $widthRight . '%">&nbsp;</td>
-					</tr>
-				</table>
-				<div class="hr" style="margin:0px"></div>';
-			}
+		if (!is_array($menuItems)) {
+			return '';
 		}
-		return $content;
+
+		$options = '';
+		foreach ($menuItems as $id => $def) {
+			$class = $def['isActive'] ? 'active' : '';
+			$label = $def['label'];
+			$url = htmlspecialchars($def['url']);
+			$params = $def['addParams'];
+
+			$options .= '<li class="' . $class . '">' .
+				'<a href="' . $url . '" ' . $params . '>' . $label . '</a>' .
+				'</li>';
+		}
+
+		return '<ul class="nav nav-tabs" role="tablist">' .
+				$options .
+			'</ul>';
+
 	}
 
 	/**
@@ -1567,12 +1561,12 @@ function jumpToUrl(URL) {
 	 *
 	 * @param array $menuItems Numeric array where each entry is an array in itself with associative keys: "label" contains the label for the TAB, "content" contains the HTML content that goes into the div-layer of the tabs content. "description" contains description text to be shown in the layer. "linkTitle" is short text for the title attribute of the tab-menu link (mouse-over text of tab). "stateIcon" indicates a standard status icon (see ->icon(), values: -1, 1, 2, 3). "icon" is an image tag placed before the text.
 	 * @param string $identString Identification string. This should be unique for every instance of a dynamic menu!
-	 * @param integer $toggle If "1", then enabling one tab does not hide the others - they simply toggles each sheet on/off. This makes most sense together with the $foldout option. If "-1" then it acts normally where only one tab can be active at a time BUT you can click a tab and it will close so you have no active tabs.
-	 * @param boolean $foldout If set, the tabs are rendered as headers instead over each sheet. Effectively this means there is no tab menu, but rather a foldout/foldin menu. Make sure to set $toggle as well for this option.
-	 * @param boolean $noWrap Deprecated - delivered by CSS
-	 * @param boolean $fullWidth If set, the tabs will span the full width of their position
-	 * @param integer $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
-	 * @param integer $dividers2tabs If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled
+	 * @param int $toggle If "1", then enabling one tab does not hide the others - they simply toggles each sheet on/off. This makes most sense together with the $foldout option. If "-1" then it acts normally where only one tab can be active at a time BUT you can click a tab and it will close so you have no active tabs.
+	 * @param bool $foldout If set, the tabs are rendered as headers instead over each sheet. Effectively this means there is no tab menu, but rather a foldout/foldin menu. Make sure to set $toggle as well for this option.
+	 * @param bool $noWrap Deprecated - delivered by CSS
+	 * @param bool $fullWidth If set, the tabs will span the full width of their position
+	 * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
+	 * @param int $dividers2tabs If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled
 	 * @return string JavaScript section for the HTML header.
 	 */
 	public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = FALSE, $noWrap = TRUE, $fullWidth = FALSE, $defaultTabIndex = 1, $dividers2tabs = 2) {
@@ -1686,8 +1680,8 @@ function jumpToUrl(URL) {
 	 * Creates the version selector for the page id inputted.
 	 * Requires the core version management extension, "version" to be loaded.
 	 *
-	 * @param integer $id Page id to create selector for.
-	 * @param boolean $noAction If set, there will be no button for swapping page.
+	 * @param int $id Page id to create selector for.
+	 * @param bool $noAction If set, there will be no button for swapping page.
 	 * @return string
 	 */
 	public function getVersionSelector($id, $noAction = FALSE) {

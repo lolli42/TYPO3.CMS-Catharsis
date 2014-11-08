@@ -14,6 +14,9 @@ namespace TYPO3\CMS\Install\Updates;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Install\Controller\Action\Tool\UpgradeWizard;
+
 /**
  * Generic class that every update wizard class inherits from.
  * Used by the update wizard in the install tool.
@@ -39,7 +42,7 @@ abstract class AbstractUpdate {
 	/**
 	 * Parent object
 	 *
-	 * @var \TYPO3\CMS\Install\Installer
+	 * @var UpgradeWizard
 	 */
 	public $pObj;
 
@@ -54,7 +57,7 @@ abstract class AbstractUpdate {
 	 * Current TYPO3 version number, set from outside
 	 * Version number coming from \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger()
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	public $versionNumber;
 
@@ -105,7 +108,7 @@ abstract class AbstractUpdate {
 	 * layer that some update wizards don't have a second parameter
 	 * thus, it evaluates everything already
 	 *
-	 * @return boolean If the wizard should be shown at all on the overview page
+	 * @return bool If the wizard should be shown at all on the overview page
 	 * @see checkForUpdate()
 	 */
 	public function shouldRenderWizard() {
@@ -120,24 +123,24 @@ abstract class AbstractUpdate {
 	 * this feature is cool if you want to tell the user that the update wizard
 	 * is working fine, just as output (useful for the character set / utf8 wizard)
 	 *
-	 * @return boolean If the wizard should render the Next() button on the overview page
+	 * @return bool If the wizard should render the Next() button on the overview page
 	 * @see checkForUpdate()
 	 */
 	public function shouldRenderNextButton() {
 		$showUpdate = 0;
 		$explanation = '';
 		$result = $this->checkForUpdate($explanation, $showUpdate);
-		return $showUpdate != 2 || $result == TRUE;
+		return $showUpdate != 2 || $result;
 	}
 
 	/**
 	 * Check if given table exists
 	 *
 	 * @param string $table
-	 * @return boolean
+	 * @return bool
 	 */
 	public function checkIfTableExists($table) {
-		$databaseTables = $GLOBALS['TYPO3_DB']->admin_get_tables();
+		$databaseTables = $this->getDatabaseConnection()->admin_get_tables();
 		if (array_key_exists($table, $databaseTables)) {
 			return TRUE;
 		}
@@ -148,7 +151,7 @@ abstract class AbstractUpdate {
 	 * Checks whether updates are required.
 	 *
 	 * @param string &$description The description for the update
-	 * @return boolean Whether an update is required (TRUE) or not (FALSE)
+	 * @return bool Whether an update is required (TRUE) or not (FALSE)
 	 */
 	abstract public function checkForUpdate(&$description);
 
@@ -157,7 +160,7 @@ abstract class AbstractUpdate {
 	 *
 	 * @param array &$dbQueries Queries done in this update
 	 * @param mixed &$customMessages Custom messages
-	 * @return boolean Whether everything went smoothly or not
+	 * @return bool Whether everything went smoothly or not
 	 */
 	abstract public function performUpdate(array &$dbQueries, &$customMessages);
 
@@ -170,7 +173,7 @@ abstract class AbstractUpdate {
 	 */
 	protected function installExtensions(array $extensionKeys) {
 		/** @var $installUtility \TYPO3\CMS\Extensionmanager\Utility\InstallUtility */
-		$installUtility = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+		$installUtility = GeneralUtility::makeInstance(
 			'TYPO3\\CMS\\Extensionmanager\\Utility\\InstallUtility'
 		);
 		foreach ($extensionKeys as $extension) {
@@ -187,13 +190,14 @@ abstract class AbstractUpdate {
 	 * @return void
 	 */
 	protected function markWizardAsDone($confValue = 1) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')->setLocalConfigurationValueByPath('INSTALL/wizardDone/' . get_class($this), $confValue);
+		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')
+			->setLocalConfigurationValueByPath('INSTALL/wizardDone/' . get_class($this), $confValue);
 	}
 
 	/**
 	 * Checks if this wizard has been "done" before
 	 *
-	 * @return boolean TRUE if wizard has been done before, FALSE otherwise
+	 * @return bool TRUE if wizard has been done before, FALSE otherwise
 	 */
 	protected function isWizardDone() {
 		$wizardClassName = get_class($this);
@@ -205,6 +209,13 @@ abstract class AbstractUpdate {
 			$done = TRUE;
 		}
 		return $done;
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

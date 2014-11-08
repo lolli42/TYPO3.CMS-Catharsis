@@ -82,7 +82,7 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 	 *
 	 * @param array &$submittedData
 	 * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule
-	 * @return boolean
+	 * @return bool
 	 */
 	public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $schedulerModule) {
 		return TRUE;
@@ -93,11 +93,11 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 	 *
 	 * @param array $submittedData
 	 * @param \TYPO3\CMS\Scheduler\Task\AbstractTask $task
-	 * @return boolean
+	 * @return bool
 	 */
 	public function saveAdditionalFields(array $submittedData, \TYPO3\CMS\Scheduler\Task\AbstractTask $task) {
 		$task->setCommandIdentifier($submittedData['task_extbase']['action']);
-		$task->setArguments((array) $submittedData['task_extbase']['arguments']);
+		$task->setArguments((array)$submittedData['task_extbase']['arguments']);
 		return TRUE;
 	}
 
@@ -252,7 +252,7 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 		$argumentReflection = $this->reflectionService->getMethodParameters($command->getControllerClassName(), $command->getControllerCommandName() . 'Command');
 		$defaultValue = $argumentReflection[$argumentName]['defaultValue'];
 		if ($type === 'boolean') {
-			$defaultValue = (boolean) $defaultValue ? 1 : 0;
+			$defaultValue = (bool)$defaultValue ? 1 : 0;
 		}
 		return $defaultValue;
 	}
@@ -305,7 +305,7 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 		if ($type === 'boolean') {
 			// checkbox field for boolean values.
 			$html = '<input type="hidden" name="' . $fieldName . '" value="0" />';
-			$html .= '<input type="checkbox" name="' . $fieldName . '" value="1" ' . ((boolean) $currentValue ? ' checked="checked"' : '') . '/>';
+			$html .= '<input type="checkbox" name="' . $fieldName . '" value="1" ' . ((bool)$currentValue ? ' checked="checked"' : '') . '/>';
 		} else {
 			// regular string, also the default field type
 			$html = '<input type="text" name="' . $fieldName . '" value="' . htmlspecialchars($currentValue) . '" /> ';

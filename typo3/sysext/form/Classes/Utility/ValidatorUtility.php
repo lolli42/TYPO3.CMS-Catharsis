@@ -66,7 +66,7 @@ class ValidatorUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return \TYPO3\CMS\Form\Validation\AbstractValidator The rule object
 	 */
 	public function createRule($class, $arguments = array()) {
-		$class = strtolower((string) $class);
+		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\Validation\\' . ucfirst($class) . 'Validator';
 		$rule = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $arguments);
 		return $rule;
@@ -78,15 +78,15 @@ class ValidatorUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param object $rule Rule object
 	 * @param string $fieldName Field name the rule belongs to
-	 * @param boolean $breakOnError Break the rule chain when TRUE
+	 * @param bool $breakOnError Break the rule chain when TRUE
 	 * @return \TYPO3\CMS\Form\Utility\ValidatorUtility
 	 */
 	public function addRule($rule, $fieldName, $breakOnError = FALSE) {
 		$prefix = $this->getPrefix();
 		$this->rules[$prefix][] = array(
 			'instance' => (object) $rule,
-			'fieldName' => (string) $fieldName,
-			'breakOnError' => (bool) $breakOnError
+			'fieldName' => (string)$fieldName,
+			'breakOnError' => (bool)$breakOnError
 		);
 		if ($rule->messageMustBeDisplayed()) {
 			if (!isset($this->messages[$prefix][$fieldName])) {
@@ -106,7 +106,7 @@ class ValidatorUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * When a rule has breakOnError set and the rule does not validate,
 	 * the check for the remaining rules will stop and method returns FALSE
 	 *
-	 * @return boolean True if all rules validate
+	 * @return bool True if all rules validate
 	 */
 	public function isValid() {
 		$prefix = $this->getPrefix();
@@ -155,7 +155,7 @@ class ValidatorUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Returns TRUE when a form object has a message
 	 *
 	 * @param string $name Name of the form object
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasMessage($name) {
 		if (isset($this->messages[$this->getPrefix()][$name])) {
@@ -187,7 +187,7 @@ class ValidatorUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Returns TRUE when a form object has an error
 	 *
 	 * @param string $name Name of the form object
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasErrors($name) {
 		if (isset($this->errors[$this->getPrefix()][$name])) {

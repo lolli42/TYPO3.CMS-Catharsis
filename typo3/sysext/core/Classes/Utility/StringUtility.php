@@ -29,8 +29,8 @@ class StringUtility {
 	 * @param string $haystack Full string to check
 	 * @param string $needle Reference string which must be found as the "last part" of the full string
 	 * @throws \InvalidArgumentException
-	 * @return boolean TRUE if $needle was found to be equal to the last part of $str
-	 * @deprecated since 6.3 - will be removed two versions later, use beginsWith() instead
+	 * @return bool TRUE if $needle was found to be equal to the last part of $str
+	 * @deprecated since 7.0, use beginsWith() instead
 	 */
 	static public function isLastPartOfString($haystack, $needle) {
 		GeneralUtility::logDeprecatedFunction();
@@ -49,7 +49,7 @@ class StringUtility {
 		}
 		$stringLength = strlen($haystack);
 		$needleLength = strlen($needle);
-		return strrpos((string) $haystack, (string) $needle, 0) === $stringLength - $needleLength;
+		return strrpos((string)$haystack, (string)$needle, 0) === $stringLength - $needleLength;
 	}
 
 	/**
@@ -58,7 +58,7 @@ class StringUtility {
 	 * @param string $haystack Full string to check
 	 * @param string $needle Reference string which must be found as the "first part" of the full string
 	 * @throws \InvalidArgumentException
-	 * @return boolean TRUE if $needle was found to be equal to the first part of $haystack
+	 * @return bool TRUE if $needle was found to be equal to the first part of $haystack
 	 */
 	static public function beginsWith($haystack, $needle) {
 		// Sanitize $haystack and $needle
@@ -86,7 +86,7 @@ class StringUtility {
 	 * @param string $haystack Full string to check
 	 * @param string $needle Reference string which must be found as the "last part" of the full string
 	 * @throws \InvalidArgumentException
-	 * @return boolean TRUE if $needle was found to be equal to the last part of $haystack
+	 * @return bool TRUE if $needle was found to be equal to the last part of $haystack
 	 */
 	static public function endsWith($haystack, $needle) {
 		// Sanitize $haystack and $needle

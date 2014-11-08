@@ -101,7 +101,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * Initialize, setting element reference and record PID
 	 *
 	 * @param string $elRef Element reference, eg "tt_content:bodytext
-	 * @param integer $recPid PID of the record (page id)
+	 * @param int $recPid PID of the record (page id)
 	 * @return void
 	 */
 	public function init($elRef = '', $recPid = 0) {
@@ -189,7 +189,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	public function RTE_transform($value, $specConf, $direction = 'rte', $thisConfig = array()) {
 		// Init:
 		$this->tsConfig = $thisConfig;
-		$this->procOptions = (array) $thisConfig['proc.'];
+		$this->procOptions = (array)$thisConfig['proc.'];
 		$this->preserveTags = strtoupper(implode(',', GeneralUtility::trimExplode(',', $this->procOptions['preserveTags'])));
 		// dynamic configuration of blockElementList
 		if ($this->procOptions['blockElementList']) {
@@ -433,7 +433,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 								$attribArray['width'] = $magicImage->getProperty('width');
 								$attribArray['height'] = $magicImage->getProperty('height');
 								$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
-								$attribArray['data-htmlarea-file-table'] = 'sys_file';
 								$attribArray['src'] = $magicImage->getPublicUrl();
 							}
 						}
@@ -461,7 +460,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 									$fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
 									// TODO: if the retrieved file is a processed file, get the original file...
 									$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
-									$attribArray['data-htmlarea-file-table'] = 'sys_file';
 								}
 							} catch (Resource\Exception\ResourceDoesNotExistException $resourceDoesNotExistException) {
 								// Nothing to be done if file/folder not found
@@ -847,7 +845,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * Cleaning (->db) for standard content elements (ts)
 	 *
 	 * @param string $value Content input
-	 * @param boolean $css If TRUE, the transformation was "css_transform", otherwise "ts_transform
+	 * @param bool $css If TRUE, the transformation was "css_transform", otherwise "ts_transform
 	 * @return string Content output
 	 * @see TS_transform_rte()
 	 */
@@ -1010,7 +1008,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * Set (->rte) for standard content elements (ts)
 	 *
 	 * @param string Content input
-	 * @param boolean If TRUE, the transformation was "css_transform", otherwise "ts_transform
+	 * @param bool If TRUE, the transformation was "css_transform", otherwise "ts_transform
 	 * @return string Content output
 	 * @see TS_transform_db()
 	 */
@@ -1275,8 +1273,8 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * This function processes content to go into the database.
 	 *
 	 * @param string $value Value to process.
-	 * @param integer $count Recursion brake. Decremented on each recursion down to zero. Default is 5 (which equals the allowed nesting levels of p/div tags).
-	 * @param boolean $returnArray If TRUE, an array with the lines is returned, otherwise a string of the processed input value.
+	 * @param int $count Recursion brake. Decremented on each recursion down to zero. Default is 5 (which equals the allowed nesting levels of p/div tags).
+	 * @param bool $returnArray If TRUE, an array with the lines is returned, otherwise a string of the processed input value.
 	 * @return string Processed input value.
 	 * @see setDivTags()
 	 */
@@ -1500,17 +1498,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	}
 
 	/**
-	 * Return the storage folder of RTE image files.
-	 * Default is $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'] unless something else is configured in the types configuration for the RTE.
-	 * @deprecated since 6.2, will be removed in two versions
-	 * @return string
-	 */
-	public function rteImageStorageDir() {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->rte_p['imgpath'] ? $this->rte_p['imgpath'] : $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir'];
-	}
-
-	/**
 	 * Remove all tables from incoming code
 	 * The function is trying to to this is some more or less respectfull way. The approach is to resolve each table cells content and implode it all by <br /> chars. Thus at least the content is preserved in some way.
 	 *
@@ -1659,7 +1646,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * Converting <A>-tags to absolute URLs (+ setting rtekeep attribute)
 	 *
 	 * @param string $value Content input
-	 * @param boolean $dontSetRTEKEEP If TRUE, then the "rtekeep" attribute will not be set.
+	 * @param bool $dontSetRTEKEEP If TRUE, then the "rtekeep" attribute will not be set.
 	 * @return string Content output
 	 */
 	public function TS_AtagToAbs($value, $dontSetRTEKEEP = FALSE) {
@@ -1702,7 +1689,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	protected function applyPlainImageModeSettings($imageInfo, $attribArray) {
 		if ($this->procOptions['plainImageMode']) {
 			// Perform corrections to aspect ratio based on configuration
-			switch ((string) $this->procOptions['plainImageMode']) {
+			switch ((string)$this->procOptions['plainImageMode']) {
 				case 'lockDimensions':
 					$attribArray['width'] = $imageInfo[0];
 					$attribArray['height'] = $imageInfo[1];

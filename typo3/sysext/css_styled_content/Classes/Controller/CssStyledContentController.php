@@ -37,7 +37,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 *
 	 * @var string
 	 */
-	public $scriptRelPath = 'pi1/class.tx_cssstyledcontent_pi1.php';
+	public $scriptRelPath = 'Classes/Controller/CssStyledContentController.php';
 
 	/**
 	 * The extension key
@@ -369,7 +369,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * uses "1:1" column relations by default.
 	 *
 	 * @param array $conf TS configuration for img
-	 * @param integer $colCount number of columns
+	 * @param int $colCount number of columns
 	 * @return array
 	 */
 	protected function getImgColumnRelations($conf, $colCount) {
@@ -411,8 +411,8 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * Returns an array containing the image widths for an image row with $colCount columns.
 	 *
 	 * @param array $conf TS configuration of img
-	 * @param integer $colCount number of columns
-	 * @param integer $netW max usable width for images (without spaces and borders)
+	 * @param int $colCount number of columns
+	 * @param int $netW max usable width for images (without spaces and borders)
 	 * @return array
 	 */
 	protected function getImgColumnWidths($conf, $colCount, $netW) {
@@ -1155,8 +1155,8 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 *
 	 * @param array $links
 	 * @param string $fileName
-	 * @param boolean $useSpaces
-	 * @param boolean $cutFileExtension
+	 * @param bool $useSpaces
+	 * @param bool $cutFileExtension
 	 * @return array modified array with new link text
 	 */
 	protected function beautifyFileLink(array $links, $fileName, $useSpaces = FALSE, $cutFileExtension = FALSE) {
@@ -1176,7 +1176,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * Returns table attributes for uploads / tables.
 	 *
 	 * @param array $conf TypoScript configuration array
-	 * @param integer $type The "layout" type
+	 * @param int $type The "layout" type
 	 * @return array Array with attributes inside.
 	 */
 	public function getTableAttributes($conf, $type) {
@@ -1260,10 +1260,9 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * @return object Hook object, if any. Otherwise NULL.
 	 */
 	public function hookRequest($functionName) {
-		global $TYPO3_CONF_VARS;
 		// Hook: menuConfig_preProcessModMenu
-		if ($TYPO3_CONF_VARS['EXTCONF']['css_styled_content']['pi1_hooks'][$functionName]) {
-			$hookObj = GeneralUtility::getUserObj($TYPO3_CONF_VARS['EXTCONF']['css_styled_content']['pi1_hooks'][$functionName]);
+		if ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['css_styled_content']['pi1_hooks'][$functionName]) {
+			$hookObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['css_styled_content']['pi1_hooks'][$functionName]);
 			if (method_exists($hookObj, $functionName)) {
 				$hookObj->pObj = $this;
 				return $hookObj;

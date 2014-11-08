@@ -192,7 +192,7 @@ class Query implements QueryInterface {
 	/**
 	 * Executes the query against the database and returns the result
 	 *
-	 * @param $returnRawQueryResult boolean avoids the object mapping by the persistence
+	 * @param bool $returnRawQueryResult avoids the object mapping by the persistence
 	 * @return \TYPO3\CMS\Extbase\Persistence\QueryResultInterface|array The query result object or an array if $returnRawQueryResult is TRUE
 	 * @api
 	 */
@@ -239,7 +239,7 @@ class Query implements QueryInterface {
 	 * Sets the maximum size of the result set to limit. Returns $this to allow
 	 * for chaining (fluid interface)
 	 *
-	 * @param integer $limit
+	 * @param int $limit
 	 * @throws \InvalidArgumentException
 	 * @return QueryInterface
 	 * @api
@@ -267,7 +267,7 @@ class Query implements QueryInterface {
 	/**
 	 * Returns the maximum size of the result set to limit.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getLimit() {
@@ -278,7 +278,7 @@ class Query implements QueryInterface {
 	 * Sets the start offset of the result set to offset. Returns $this to
 	 * allow for chaining (fluid interface)
 	 *
-	 * @param integer $offset
+	 * @param int $offset
 	 * @throws \InvalidArgumentException
 	 * @return QueryInterface
 	 * @api
@@ -294,7 +294,7 @@ class Query implements QueryInterface {
 	/**
 	 * Returns the start offset of the result set.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getOffset() {
@@ -414,7 +414,7 @@ class Query implements QueryInterface {
 	 *
 	 * @param string $propertyName The name of the property to compare against
 	 * @param mixed $operand The value to compare with
-	 * @param boolean $caseSensitive Whether the equality test should be done case-sensitive
+	 * @param bool $caseSensitive Whether the equality test should be done case-sensitive
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface
 	 * @api
 	 */
@@ -440,7 +440,7 @@ class Query implements QueryInterface {
 	 *
 	 * @param string $propertyName The name of the property to compare against
 	 * @param mixed $operand The value to compare with
-	 * @param boolean $caseSensitive Whether the matching should be done case-sensitive
+	 * @param bool $caseSensitive Whether the matching should be done case-sensitive
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Qom\ComparisonInterface
 	 * @api
 	 */
@@ -546,7 +546,7 @@ class Query implements QueryInterface {
 	/**
 	 * Returns the query result count.
 	 *
-	 * @return integer The query result count
+	 * @return int The query result count
 	 * @api
 	 */
 	public function count() {

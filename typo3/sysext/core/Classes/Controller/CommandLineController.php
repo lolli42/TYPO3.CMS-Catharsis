@@ -91,7 +91,7 @@ class CommandLineController {
 	 * Return TRUE if option is found
 	 *
 	 * @param string $option Option string, eg. "-s
-	 * @return boolean TRUE if option found
+	 * @return bool TRUE if option found
 	 */
 	public function cli_isArg($option) {
 		return isset($this->cli_args[$option]);
@@ -101,8 +101,8 @@ class CommandLineController {
 	 * Return argument value
 	 *
 	 * @param string $option Option string, eg. "-s
-	 * @param integer $idx Value index, default is 0 (zero) = the first one...
-	 * @return boolean TRUE if option found
+	 * @param int $idx Value index, default is 0 (zero) = the first one...
+	 * @return bool TRUE if option found
 	 */
 	public function cli_argValue($option, $idx = 0) {
 		return is_array($this->cli_args[$option]) ? $this->cli_args[$option][$idx] : '';
@@ -205,7 +205,7 @@ class CommandLineController {
 	 * Asks for Yes/No from shell and returns TRUE if "y" or "yes" is found as input.
 	 *
 	 * @param string $msg String to ask before...
-	 * @return boolean TRUE if "y" or "yes" is the input (case insensitive)
+	 * @return bool TRUE if "y" or "yes" is the input (case insensitive)
 	 */
 	public function cli_keyboardInput_yes($msg = '') {
 		// ONLY makes sense to echo it out since we are awaiting keyboard input - that cannot be silenced
@@ -217,8 +217,8 @@ class CommandLineController {
 	 * Echos strings to shell, but respective silent-modes
 	 *
 	 * @param string $string The string
-	 * @param boolean $force If string should be written even if -s is set (-ss will subdue it!)
-	 * @return boolean Returns TRUE if string was outputted.
+	 * @param bool $force If string should be written even if -s is set (-ss will subdue it!)
+	 * @return bool Returns TRUE if string was outputted.
 	 */
 	public function cli_echo($string = '', $force = FALSE) {
 		if (isset($this->cli_args['-ss'])) {
@@ -279,7 +279,7 @@ class CommandLineController {
 	 * Indentation function for 75 char wide lines.
 	 *
 	 * @param string $str String to break and indent.
-	 * @param integer $indent Number of space chars to indent.
+	 * @param int $indent Number of space chars to indent.
 	 * @return string Result
 	 */
 	public function cli_indent($str, $indent) {

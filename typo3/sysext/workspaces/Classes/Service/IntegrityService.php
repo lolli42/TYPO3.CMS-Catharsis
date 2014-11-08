@@ -27,25 +27,25 @@ class IntegrityService {
 	/**
 	 * Succes status - everything is fine
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_Succes = 100;
 	/**
 	 * Info status - nothing is wrong, but a notice is shown
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_Info = 101;
 	/**
 	 * Warning status - user interaction might be required
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_Warning = 102;
 	/**
 	 * Error status - user interaction is required
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_Error = 103;
 	/**
@@ -198,7 +198,7 @@ class IntegrityService {
 	 * Gets the message of all issues.
 	 *
 	 * @param string $identifier Record identifier (table:id) for look-ups
-	 * @param boolean $asString Return results as string instead of array
+	 * @param bool $asString Return results as string instead of array
 	 * @return array|string
 	 */
 	public function getIssueMessages($identifier = NULL, $asString = FALSE) {
@@ -224,7 +224,7 @@ class IntegrityService {
 	 * Adds an issue.
 	 *
 	 * @param string $identifier Record identifier (table:id)
-	 * @param integer $status Status code (see constants)
+	 * @param int $status Status code (see constants)
 	 * @param string $message Message/description of the issue
 	 * @return void
 	 */

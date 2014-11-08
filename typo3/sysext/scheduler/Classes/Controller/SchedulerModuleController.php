@@ -179,7 +179,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			}
 		}
 		// Handle chosen action
-		switch ((string) $this->MOD_SETTINGS['function']) {
+		switch ((string)$this->MOD_SETTINGS['function']) {
 			case 'scheduler':
 				// Scheduler's main screen
 				$this->executeTasks();
@@ -241,7 +241,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 * It will differentiate between a non-existing user and an existing,
 	 * but disabled user (as per enable fields)
 	 *
-	 * @return integer -1 If user doesn't exist, 0 If user exist but not enabled, 1 If user exists and is enabled
+	 * @return int -1 If user doesn't exist, 0 If user exist but not enabled, 1 If user exists and is enabled
 	 */
 	protected function checkSchedulerUser() {
 		$schedulerUserStatus = -1;
@@ -651,7 +651,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$this->pageRenderer->addInlineSettingArray('', $typo3Settings);
 		// Define table layout for add/edit form
 		$tableLayout = array(
-			'table' => array('<table border="0" cellspacing="0" cellpadding="0" id="edit_form" class="typo3-usersettings">', '</table>')
+			'table' => array('<table border="0" cellspacing="0" cellpadding="0" id="edit_form">', '</table>')
 		);
 		// Define a style for hiding
 		// Some fields will be hidden when the task is not recurring
@@ -823,11 +823,10 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				}
 			}
 		}
-		// Render the add/edit task form
-		$content .= '<div style="float: left;"><div class="typo3-dyntabmenu-divs">';
+
 		$content .= $this->doc->table($table, $tableLayout);
-		$content .= '</div></div>';
 		$content .= '<div style="padding-top: 20px; clear: both;"></div>';
+
 		// Display information about server time usage
 		$content .= $this->displayServerTime();
 		return $content;
@@ -1126,11 +1125,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						$table[$tr][] = $schedulerRecord['uid'];
 						$table[$tr][] = $executionStatusOutput;
 						if ($schedulerRecord['description'] !== '') {
-							if (!empty($this->scheduler->extConf['listShowTaskDescriptionAsHover'])) {
-								$table[$tr][] = '<span title="' . htmlspecialchars($schedulerRecord['description']) . '">' . $name . '</span>';
-							} else {
-								$table[$tr][] = $name . '<br />' . nl2br(htmlspecialchars($schedulerRecord['description'])) . '<br />';
-							}
+							$table[$tr][] = '<span title="' . htmlspecialchars($schedulerRecord['description']) . '">' . $name . '</span>';
 						} else {
 							$table[$tr][] = $name;
 						}
@@ -1290,7 +1285,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	/**
 	 * Checks the submitted data and performs some pre-processing on it
 	 *
-	 * @return boolean TRUE if everything was ok, FALSE otherwise
+	 * @return bool TRUE if everything was ok, FALSE otherwise
 	 */
 	protected function preprocessData() {
 		$result = TRUE;
@@ -1383,7 +1378,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 * Otherwise an exception is thrown
 	 *
 	 * @param string $string String to check
-	 * @return integer Unix timestamp
+	 * @return int Unix timestamp
 	 * @throws \InvalidArgumentException
 	 */
 	public function checkDate($string) {
@@ -1419,7 +1414,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 * This method is used to add a message to the internal queue
 	 *
 	 * @param string $message The message itself
-	 * @param integer $severity Message level (according to FlashMessage class constants)
+	 * @param int $severity Message level (according to FlashMessage class constants)
 	 * @return void
 	 */
 	public function addMessage($message, $severity = FlashMessage::OK) {

@@ -118,7 +118,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	 * Creates an instance of the storage from given UID. The $recordData can
 	 * be supplied to increase performance.
 	 *
-	 * @param integer $uid The uid of the storage to instantiate.
+	 * @param int $uid The uid of the storage to instantiate.
 	 * @param array $recordData The record row from database.
 	 * @param string $fileIdentifier Identifier for a file. Used for auto-detection of a storage, but only if $uid === 0 (Local default storage) is used
 	 *
@@ -189,7 +189,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	 *
 	 * @param string $localPath
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	protected function findBestMatchingStorageByLocalPath(&$localPath) {
 		if ($this->localDriverStorageCache === NULL) {
@@ -256,7 +256,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	/**
 	 * Creates an instance of the collection from given UID. The $recordData can be supplied to increase performance.
 	 *
-	 * @param integer $uid The uid of the collection to instantiate.
+	 * @param int $uid The uid of the collection to instantiate.
 	 * @param array $recordData The record row from database.
 	 *
 	 * @throws \InvalidArgumentException
@@ -337,7 +337,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	 * Creates an instance of the file given UID. The $fileData can be supplied
 	 * to increase performance.
 	 *
-	 * @param integer $uid The uid of the file to instantiate.
+	 * @param int $uid The uid of the file to instantiate.
 	 * @param array $fileData The record row from database.
 	 *
 	 * @throws \InvalidArgumentException
@@ -395,7 +395,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	 *
 	 * @param int $storageUid
 	 * @param string $fileIdentifier
-	 * @return File|ProcessedFile
+	 * @return NULL|File|ProcessedFile
 	 */
 	public function getFileObjectByStorageAndIdentifier($storageUid, &$fileIdentifier) {
 		$storage = $this->getStorageObject($storageUid, array(), $fileIdentifier);
@@ -558,7 +558,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 	 * Creates an instance of a FileReference object. The $fileReferenceData can
 	 * be supplied to increase performance.
 	 *
-	 * @param integer $uid The uid of the file usage (sys_file_reference) to instantiate.
+	 * @param int $uid The uid of the file usage (sys_file_reference) to instantiate.
 	 * @param array $fileReferenceData The record row from database.
 	 * @param bool $raw Whether to get raw results without performing overlays
 	 *

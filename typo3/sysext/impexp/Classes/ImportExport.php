@@ -521,7 +521,7 @@ class ImportExport {
 	 * Option to enable having the files not included in the export file.
 	 * The files are saved to a temporary folder instead.
 	 *
-	 * @param boolean $saveFilesOutsideExportFile
+	 * @param bool $saveFilesOutsideExportFile
 	 * @see getTemporaryFilesPathForExport()
 	 */
 	public function setSaveFilesOutsideExportFile($saveFilesOutsideExportFile) {
@@ -612,7 +612,7 @@ class ImportExport {
 	 *
 	 * @param array $idH Page uid hierarchy
 	 * @param array $a Accumulation array of pages (internal, don't set from outside)
-	 * @param integer $pid PID value (internal)
+	 * @param int $pid PID value (internal)
 	 * @return array Array with uid-pid pairs for all pages in the page tree.
 	 * @see flatInversePageTree()
 	 */
@@ -666,7 +666,7 @@ class ImportExport {
 	 *
 	 * @param string $table Table name
 	 * @param array $row Record row.
-	 * @param integer $relationLevel (Internal) if the record is added as a relation, this is set to the "level" it was on.
+	 * @param int $relationLevel (Internal) if the record is added as a relation, this is set to the "level" it was on.
 	 * @return void
 	 */
 	public function export_addRecord($table, $row, $relationLevel = 0) {
@@ -761,7 +761,7 @@ class ImportExport {
 	 * In principle it should not allow to infinite recursivity, but you better set a limit...
 	 * Call this BEFORE the ext_addFilesFromRelations (so files from added relations are also included of course)
 	 *
-	 * @param integer $relationLevel Recursion level
+	 * @param int $relationLevel Recursion level
 	 * @return array overview of relations found and added: Keys [table]:[uid], values array with table and id
 	 * @see export_addFilesFromRelations()
 	 */
@@ -1430,7 +1430,7 @@ class ImportExport {
 	/**
 	 * Returns TRUE if the output should be compressed.
 	 *
-	 * @return boolean TRUE if compression is possible AND requested.
+	 * @return bool TRUE if compression is possible AND requested.
 	 */
 	public function doOutputCompress() {
 		return $this->compress && !$this->dontCompress;
@@ -1440,7 +1440,7 @@ class ImportExport {
 	 * Returns a content part for a filename being build.
 	 *
 	 * @param array $data Data to store in part
-	 * @param boolean $compress Compress file?
+	 * @param bool $compress Compress file?
 	 * @return string Content stream.
 	 */
 	public function addFilePart($data, $compress = FALSE) {
@@ -1489,7 +1489,7 @@ class ImportExport {
 	/**
 	 * Imports the internal data array to $pid.
 	 *
-	 * @param integer $pid Page ID in which to import the content
+	 * @param int $pid Page ID in which to import the content
 	 * @return void
 	 */
 	public function importData($pid) {
@@ -1832,7 +1832,7 @@ class ImportExport {
 	/**
 	 * Writing pagetree/pages to database:
 	 *
-	 * @param integer $pid PID in which to import. If the operation is an update operation, the root of the page tree inside will be moved to this PID unless it is the same as the root page from the import
+	 * @param int $pid PID in which to import. If the operation is an update operation, the root of the page tree inside will be moved to this PID unless it is the same as the root page from the import
 	 * @return void
 	 * @see writeRecords_records()
 	 */
@@ -1886,7 +1886,7 @@ class ImportExport {
 	 * Organize all updated pages in page tree so they are related like in the import file
 	 * Only used for updates and when $this->dat['header']['pagetree'] is an array.
 	 *
-	 * @param integer $pid Page id in which to import
+	 * @param int $pid Page id in which to import
 	 * @return void
 	 * @access private
 	 * @see writeRecords_pages(), writeRecords_records_order()
@@ -1926,7 +1926,7 @@ class ImportExport {
 	/**
 	 * Write all database records except pages (writtein in writeRecords_pages())
 	 *
-	 * @param integer $pid Page id in which to import
+	 * @param int $pid Page id in which to import
 	 * @return void
 	 * @see writeRecords_pages()
 	 */
@@ -1977,7 +1977,7 @@ class ImportExport {
 	 * Organize all updated record to their new positions.
 	 * Only used for updates
 	 *
-	 * @param integer $mainPid Main PID into which we import.
+	 * @param int $mainPid Main PID into which we import.
 	 * @return void
 	 * @access private
 	 * @see writeRecords_records(), writeRecords_pages_order()
@@ -2031,8 +2031,8 @@ class ImportExport {
 	 * That is done with setRelations() later
 	 *
 	 * @param string $table Table name (from import memory)
-	 * @param integer $uid Record UID (from import memory)
-	 * @param integer $pid Page id
+	 * @param int $uid Record UID (from import memory)
+	 * @param int $pid Page id
 	 * @return void
 	 * @see writeRecords()
 	 */
@@ -2092,7 +2092,7 @@ class ImportExport {
 			}
 			// Setting db/file blank:
 			foreach ($this->dat['records'][$table . ':' . $uid]['rels'] as $field => $config) {
-				switch ((string) $config['type']) {
+				switch ((string)$config['type']) {
 					case 'db':
 
 					case 'file':
@@ -2225,7 +2225,7 @@ class ImportExport {
 						if ($table === 'sys_file_reference' && $field === 'uid_local') {
 							continue;
 						}
-						switch ((string) $config['type']) {
+						switch ((string)$config['type']) {
 							case 'db':
 								if (is_array($config['itemArray']) && count($config['itemArray'])) {
 									$itemConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
@@ -2417,7 +2417,7 @@ class ImportExport {
 			$thisNewUid = BackendUtility::wsMapId($table, $this->import_mapId[$table][$uid]);
 			// Traverse relation fields of each record
 			foreach ($this->dat['records'][$table . ':' . $uid]['rels'] as $field => $config) {
-				switch ((string) $config['type']) {
+				switch ((string)$config['type']) {
 					case 'flex':
 						// Get XML content and set as default value (string, non-processed):
 						$updateData[$table][$thisNewUid][$field] = $this->dat['records'][$table . ':' . $uid]['data'][$field];
@@ -2630,7 +2630,7 @@ class ImportExport {
 			// Default is current token value:
 			$insertValue = $cfg['subst']['tokenValue'];
 			// Based on mode:
-			switch ((string) $this->softrefCfg[$tokenID]['mode']) {
+			switch ((string)$this->softrefCfg[$tokenID]['mode']) {
 				case 'exclude':
 					// Exclude is a simple passthrough of the value
 					break;
@@ -2640,7 +2640,7 @@ class ImportExport {
 					break;
 				default:
 					// Mapping IDs/creating files: Based on type, look up new value:
-					switch ((string) $cfg['subst']['type']) {
+					switch ((string)$cfg['subst']['type']) {
 						case 'file':
 							// Create / Overwrite file:
 							$insertValue = $this->processSoftReferences_saveFile($cfg['subst']['relFileName'], $cfg, $table, $uid);
@@ -2848,8 +2848,8 @@ class ImportExport {
 	 *
 	 * @param string $fileName Absolute filename inside PATH_site to write to
 	 * @param string $fileID File ID from import memory
-	 * @param boolean $bypassMountCheck Bypasses the checking against filemounts - only for RTE files!
-	 * @return boolean Returns TRUE if it went well. Notice that the content of the file is read again, and md5 from import memory is validated.
+	 * @param bool $bypassMountCheck Bypasses the checking against filemounts - only for RTE files!
+	 * @return bool Returns TRUE if it went well. Notice that the content of the file is read again, and md5 from import memory is validated.
 	 */
 	public function writeFileVerify($fileName, $fileID, $bypassMountCheck = FALSE) {
 		$fileProcObj = $this->getFileProcObj();
@@ -3034,7 +3034,7 @@ class ImportExport {
 	 * Returns TRUE if directory exists  and if it doesn't it will create directory and return TRUE if that succeeded.
 	 *
 	 * @param string $dirPrefix Directory to create. Having a trailing slash. Must be in fileadmin/. Relative to PATH_site
-	 * @return boolean TRUE, if directory exists (was created)
+	 * @return bool TRUE, if directory exists (was created)
 	 */
 	public function checkOrCreateDir($dirPrefix) {
 		// Split dir path and remove first directory (which should be "fileadmin")
@@ -3066,7 +3066,7 @@ class ImportExport {
 	 * If it doesn't it will try to find another relative filemount for the user and return an alternative path prefix for the file.
 	 *
 	 * @param string $dirPrefix Path relative to PATH_site
-	 * @param boolean $noAlternative If set, Do not look for alternative path! Just return FALSE
+	 * @param bool $noAlternative If set, Do not look for alternative path! Just return FALSE
 	 * @return string|bool If a path is available that will be returned, otherwise FALSE.
 	 */
 	public function verifyFolderAccess($dirPrefix, $noAlternative = FALSE) {
@@ -3102,8 +3102,8 @@ class ImportExport {
 	 * Loads the header section/all of the $filename into memory
 	 *
 	 * @param string $filename Filename, absolute
-	 * @param boolean $all If set, all information is loaded (header, records and files). Otherwise the default is to read only the header information
-	 * @return boolean TRUE if the operation went well
+	 * @param bool $all If set, all information is loaded (header, records and files). Otherwise the default is to read only the header information
+	 * @return bool TRUE if the operation went well
 	 */
 	public function loadFile($filename, $all = FALSE) {
 		if (!@is_file($filename)) {
@@ -3162,7 +3162,7 @@ class ImportExport {
 	 * Returns the next content part form the fileresource (t3d), $fd
 	 *
 	 * @param int $fd File pointer
-	 * @param boolean $unserialize If set, the returned content is unserialized into an array, otherwise you get the raw string
+	 * @param bool $unserialize If set, the returned content is unserialized into an array, otherwise you get the raw string
 	 * @param string $name For error messages this indicates the section of the problem.
 	 * @return string|NULL Data string or NULL in case of an error
 	 * @access private
@@ -3221,7 +3221,7 @@ class ImportExport {
 	 * Returns the next content part from the $filecontent
 	 *
 	 * @param string $filecontent File content string
-	 * @param integer $pointer File pointer (where to read from)
+	 * @param int $pointer File pointer (where to read from)
 	 * @param bool $unserialize If set, the returned content is unserialized into an array, otherwise you get the raw string
 	 * @param string $name For error messages this indicates the section of the problem.
 	 * @return string|NULL Data string
@@ -3259,10 +3259,10 @@ class ImportExport {
 	 * @return void
 	 */
 	public function loadInit() {
-		$this->relStaticTables = (array) $this->dat['header']['relStaticTables'];
-		$this->excludeMap = (array) $this->dat['header']['excludeMap'];
-		$this->softrefCfg = (array) $this->dat['header']['softrefCfg'];
-		$this->extensionDependencies = (array) $this->dat['header']['extensionDependencies'];
+		$this->relStaticTables = (array)$this->dat['header']['relStaticTables'];
+		$this->excludeMap = (array)$this->dat['header']['excludeMap'];
+		$this->softrefCfg = (array)$this->dat['header']['softrefCfg'];
+		$this->extensionDependencies = (array)$this->dat['header']['extensionDependencies'];
 		$this->fixCharsets();
 		if (
 			isset($this->dat['header']['meta']['TYPO3_version'])
@@ -3280,22 +3280,21 @@ class ImportExport {
 	 * @see loadInit()
 	 */
 	public function fixCharsets() {
-		global $LANG;
 		$importCharset = $this->dat['header']['charset'];
 		if ($importCharset) {
-			if ($importCharset !== $LANG->charSet) {
-				$this->error('CHARSET: Converting charset of input file (' . $importCharset . ') to the system charset (' . $LANG->charSet . ')');
+			if ($importCharset !== $GLOBALS['LANG']->charSet) {
+				$this->error('CHARSET: Converting charset of input file (' . $importCharset . ') to the system charset (' . $GLOBALS['LANG']->charSet . ')');
 				// Convert meta data:
 				if (is_array($this->dat['header']['meta'])) {
-					$LANG->csConvObj->convArray($this->dat['header']['meta'], $importCharset, $LANG->charSet);
+					$GLOBALS['LANG']->csConvObj->convArray($this->dat['header']['meta'], $importCharset, $GLOBALS['LANG']->charSet);
 				}
 				// Convert record headers:
 				if (is_array($this->dat['header']['records'])) {
-					$LANG->csConvObj->convArray($this->dat['header']['records'], $importCharset, $LANG->charSet);
+					$GLOBALS['LANG']->csConvObj->convArray($this->dat['header']['records'], $importCharset, $GLOBALS['LANG']->charSet);
 				}
 				// Convert records themselves:
 				if (is_array($this->dat['records'])) {
-					$LANG->csConvObj->convArray($this->dat['records'], $importCharset, $LANG->charSet);
+					$GLOBALS['LANG']->csConvObj->convArray($this->dat['records'], $importCharset, $GLOBALS['LANG']->charSet);
 				}
 			}
 		} else {
@@ -3313,7 +3312,6 @@ class ImportExport {
 	 * @return string HTML content
 	 */
 	public function displayContentOverview() {
-		global $LANG;
 		// Check extension dependencies:
 		if (is_array($this->dat['header']['extensionDependencies'])) {
 			foreach ($this->dat['header']['extensionDependencies'] as $extKey) {
@@ -3336,13 +3334,13 @@ class ImportExport {
 				$rows = array();
 				$rows[] = '
 				<tr class="bgColor5 tableheader">
-					<td>' . $LANG->getLL('impexpcore_displaycon_controls', TRUE) . '</td>
-					<td>' . $LANG->getLL('impexpcore_displaycon_title', TRUE) . '</td>
-					<td>' . $LANG->getLL('impexpcore_displaycon_size', TRUE) . '</td>
-					<td>' . $LANG->getLL('impexpcore_displaycon_message', TRUE) . '</td>
-					' . ($this->update ? '<td>' . $LANG->getLL('impexpcore_displaycon_updateMode', TRUE) . '</td>' : '') . '
-					' . ($this->update ? '<td>' . $LANG->getLL('impexpcore_displaycon_currentPath', TRUE) . '</td>' : '') . '
-					' . ($this->showDiff ? '<td>' . $LANG->getLL('impexpcore_displaycon_result', TRUE) . '</td>' : '') . '
+					<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_controls', TRUE) . '</td>
+					<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_title', TRUE) . '</td>
+					<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_size', TRUE) . '</td>
+					<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_message', TRUE) . '</td>
+					' . ($this->update ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_updateMode', TRUE) . '</td>' : '') . '
+					' . ($this->update ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_currentPath', TRUE) . '</td>' : '') . '
+					' . ($this->showDiff ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_result', TRUE) . '</td>' : '') . '
 				</tr>';
 				foreach ($lines as $r) {
 					$rows[] = '
@@ -3357,7 +3355,7 @@ class ImportExport {
 					</tr>';
 				}
 				$out = '
-					<strong>' . $LANG->getLL('impexpcore_displaycon_insidePagetree', TRUE) . '</strong>
+					<strong>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_insidePagetree', TRUE) . '</strong>
 					<br /><br />
 					<table border="0" cellpadding="0" cellspacing="1">' . implode('', $rows) . '</table>
 					<br /><br />';
@@ -3373,13 +3371,13 @@ class ImportExport {
 					$rows = array();
 					$rows[] = '
 					<tr class="bgColor5 tableheader">
-						<td>' . $LANG->getLL('impexpcore_displaycon_controls', TRUE) . '</td>
-						<td>' . $LANG->getLL('impexpcore_displaycon_title', TRUE) . '</td>
-						<td>' . $LANG->getLL('impexpcore_displaycon_size', TRUE) . '</td>
-						<td>' . $LANG->getLL('impexpcore_displaycon_message', TRUE) . '</td>
-						' . ($this->update ? '<td>' . $LANG->getLL('impexpcore_displaycon_updateMode', TRUE) . '</td>' : '') . '
-						' . ($this->update ? '<td>' . $LANG->getLL('impexpcore_displaycon_currentPath', TRUE) . '</td>' : '') . '
-						' . ($this->showDiff ? '<td>' . $LANG->getLL('impexpcore_displaycon_result', TRUE) . '</td>' : '') . '
+						<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_controls', TRUE) . '</td>
+						<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_title', TRUE) . '</td>
+						<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_size', TRUE) . '</td>
+						<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_message', TRUE) . '</td>
+						' . ($this->update ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_updateMode', TRUE) . '</td>' : '') . '
+						' . ($this->update ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_currentPath', TRUE) . '</td>' : '') . '
+						' . ($this->showDiff ? '<td>' . $GLOBALS['LANG']->getLL('impexpcore_displaycon_result', TRUE) . '</td>' : '') . '
 					</tr>';
 					foreach ($lines as $r) {
 						$rows[] = '<tr class="' . $r['class'] . '">
@@ -3393,7 +3391,7 @@ class ImportExport {
 						</tr>';
 					}
 					$out .= '
-						<strong>' . $LANG->getLL('impexpcore_singlereco_outsidePagetree', TRUE) . '</strong>
+						<strong>' . $GLOBALS['LANG']->getLL('impexpcore_singlereco_outsidePagetree', TRUE) . '</strong>
 						<br /><br />
 						<table border="0" cellpadding="0" cellspacing="1">' . implode('', $rows) . '</table>';
 				}
@@ -3484,14 +3482,13 @@ class ImportExport {
 	 * Add entries for a single record
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
+	 * @param int $uid Record uid
 	 * @param array $lines Output lines array (is passed by reference and modified)
 	 * @param string $preCode Pre-HTML code
-	 * @param boolean $checkImportInPidRecord If you want import validation, you can set this so it checks if the import can take place on the specified page.
+	 * @param bool $checkImportInPidRecord If you want import validation, you can set this so it checks if the import can take place on the specified page.
 	 * @return void
 	 */
 	public function singleRecordLines($table, $uid, &$lines, $preCode, $checkImportInPidRecord = FALSE) {
-		global $LANG;
 		// Get record:
 		$record = $this->dat['header']['records'][$table][$uid];
 		unset($this->remainHeader['records'][$table][$uid]);
@@ -3546,21 +3543,21 @@ class ImportExport {
 					$pInfo['updatePath'] = $recInf ? htmlspecialchars($this->getRecordPath($recInf['pid'])) : '<strong>NEW!</strong>';
 					// Mode selector:
 					$optValues = array();
-					$optValues[] = $recInf ? $LANG->getLL('impexpcore_singlereco_update') : $LANG->getLL('impexpcore_singlereco_insert');
+					$optValues[] = $recInf ? $GLOBALS['LANG']->getLL('impexpcore_singlereco_update') : $GLOBALS['LANG']->getLL('impexpcore_singlereco_insert');
 					if ($recInf) {
-						$optValues['as_new'] = $LANG->getLL('impexpcore_singlereco_importAsNew');
+						$optValues['as_new'] = $GLOBALS['LANG']->getLL('impexpcore_singlereco_importAsNew');
 					}
 					if ($recInf) {
 						if (!$this->global_ignore_pid) {
-							$optValues['ignore_pid'] = $LANG->getLL('impexpcore_singlereco_ignorePid');
+							$optValues['ignore_pid'] = $GLOBALS['LANG']->getLL('impexpcore_singlereco_ignorePid');
 						} else {
-							$optValues['respect_pid'] = $LANG->getLL('impexpcore_singlereco_respectPid');
+							$optValues['respect_pid'] = $GLOBALS['LANG']->getLL('impexpcore_singlereco_respectPid');
 						}
 					}
 					if (!$recInf && $GLOBALS['BE_USER']->isAdmin()) {
-						$optValues['force_uid'] = sprintf($LANG->getLL('impexpcore_singlereco_forceUidSAdmin'), $uid);
+						$optValues['force_uid'] = sprintf($GLOBALS['LANG']->getLL('impexpcore_singlereco_forceUidSAdmin'), $uid);
 					}
-					$optValues['exclude'] = $LANG->getLL('impexpcore_singlereco_exclude');
+					$optValues['exclude'] = $GLOBALS['LANG']->getLL('impexpcore_singlereco_exclude');
 					if ($table === 'sys_file') {
 						$pInfo['updateMode'] = '';
 					} else {
@@ -3580,7 +3577,7 @@ class ImportExport {
 					}
 				}
 			}
-			$pInfo['preCode'] = $preCode . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, (array) $this->dat['records'][($table . ':' . $uid)]['data'], array('title' => htmlspecialchars(($table . ':' . $uid))));
+			$pInfo['preCode'] = $preCode . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, (array)$this->dat['records'][($table . ':' . $uid)]['data'], array('title' => htmlspecialchars(($table . ':' . $uid))));
 			$pInfo['title'] = htmlspecialchars($record['title']);
 			// View page:
 			if ($table === 'pages') {
@@ -3612,12 +3609,12 @@ class ImportExport {
 				$pInfo['title'] = '<em>' . $info['field'] . ', "' . $info['spKey'] . '" </em>: <span title="' . htmlspecialchars($info['matchString']) . '">' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['matchString'], 60)) . '</span>';
 				if ($info['subst']['type']) {
 					if (strlen($info['subst']['title'])) {
-						$pInfo['title'] .= '<br/>' . $preCode_B . '<strong>' . $LANG->getLL('impexpcore_singlereco_title', TRUE) . '</strong> ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['subst']['title'], 60));
+						$pInfo['title'] .= '<br/>' . $preCode_B . '<strong>' . $GLOBALS['LANG']->getLL('impexpcore_singlereco_title', TRUE) . '</strong> ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['subst']['title'], 60));
 					}
 					if (strlen($info['subst']['description'])) {
-						$pInfo['title'] .= '<br/>' . $preCode_B . '<strong>' . $LANG->getLL('impexpcore_singlereco_descr', TRUE) . '</strong> ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['subst']['description'], 60));
+						$pInfo['title'] .= '<br/>' . $preCode_B . '<strong>' . $GLOBALS['LANG']->getLL('impexpcore_singlereco_descr', TRUE) . '</strong> ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['subst']['description'], 60));
 					}
-					$pInfo['title'] .= '<br/>' . $preCode_B . ($info['subst']['type'] == 'file' ? $LANG->getLL('impexpcore_singlereco_filename', TRUE) . ' <strong>' . $info['subst']['relFileName'] . '</strong>' : '') . ($info['subst']['type'] == 'string' ? $LANG->getLL('impexpcore_singlereco_value', TRUE) . ' <strong>' . $info['subst']['tokenValue'] . '</strong>' : '') . ($info['subst']['type'] == 'db' ? $LANG->getLL('impexpcore_softrefsel_record', TRUE) . ' <strong>' . $info['subst']['recordRef'] . '</strong>' : '');
+					$pInfo['title'] .= '<br/>' . $preCode_B . ($info['subst']['type'] == 'file' ? $GLOBALS['LANG']->getLL('impexpcore_singlereco_filename', TRUE) . ' <strong>' . $info['subst']['relFileName'] . '</strong>' : '') . ($info['subst']['type'] == 'string' ? $GLOBALS['LANG']->getLL('impexpcore_singlereco_value', TRUE) . ' <strong>' . $info['subst']['tokenValue'] . '</strong>' : '') . ($info['subst']['type'] == 'db' ? $GLOBALS['LANG']->getLL('impexpcore_softrefsel_record', TRUE) . ' <strong>' . $info['subst']['recordRef'] . '</strong>' : '');
 				}
 				$pInfo['ref'] = 'SOFTREF';
 				$pInfo['size'] = '';
@@ -3817,12 +3814,11 @@ class ImportExport {
 	 * Verifies that a table is allowed on a certain doktype of a page
 	 *
 	 * @param string $checkTable Table name to check
-	 * @param integer $doktype doktype value.
-	 * @return boolean TRUE if OK
+	 * @param int $doktype doktype value.
+	 * @return bool TRUE if OK
 	 */
 	public function checkDokType($checkTable, $doktype) {
-		global $PAGES_TYPES;
-		$allowedTableList = isset($PAGES_TYPES[$doktype]['allowedTables']) ? $PAGES_TYPES[$doktype]['allowedTables'] : $PAGES_TYPES['default']['allowedTables'];
+		$allowedTableList = isset($GLOBALS['PAGES_TYPES'][$doktype]['allowedTables']) ? $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'] : $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
 		$allowedArray = GeneralUtility::trimExplode(',', $allowedTableList, TRUE);
 		// If all tables or the table is listed as a allowed type, return TRUE
 		if (strstr($allowedTableList, '*') || in_array($checkTable, $allowedArray)) {
@@ -3838,10 +3834,9 @@ class ImportExport {
 	 * @return string HTML
 	 */
 	public function renderControls($r) {
-		global $LANG;
 		if ($this->mode === 'export') {
 			if ($r['type'] === 'record') {
-				return '<input type="checkbox" name="tx_impexp[exclude][' . $r['ref'] . ']" id="checkExclude' . $r['ref'] . '" value="1" /> <label for="checkExclude' . $r['ref'] . '">' . $LANG->getLL('impexpcore_singlereco_exclude', TRUE) . '</label>';
+				return '<input type="checkbox" name="tx_impexp[exclude][' . $r['ref'] . ']" id="checkExclude' . $r['ref'] . '" value="1" /> <label for="checkExclude' . $r['ref'] . '">' . $GLOBALS['LANG']->getLL('impexpcore_singlereco_exclude', TRUE) . '</label>';
 			} else {
 				return  $r['type'] == 'softref' ? $this->softrefSelector($r['_softRefInfo']) : '';
 			}
@@ -3867,7 +3862,6 @@ class ImportExport {
 	 * @return string Selector box HTML
 	 */
 	public function softrefSelector($cfg) {
-		global $LANG;
 		// Looking for file ID if any:
 		$fI = $cfg['file_ID'] ? $this->dat['header']['files'][$cfg['file_ID']] : array();
 		// Substitution scheme has to be around and RTE images MUST be exported.
@@ -3875,8 +3869,8 @@ class ImportExport {
 			// Create options:
 			$optValues = array();
 			$optValues[''] = '';
-			$optValues['editable'] = $LANG->getLL('impexpcore_softrefsel_editable');
-			$optValues['exclude'] = $LANG->getLL('impexpcore_softrefsel_exclude');
+			$optValues['editable'] = $GLOBALS['LANG']->getLL('impexpcore_softrefsel_editable');
+			$optValues['exclude'] = $GLOBALS['LANG']->getLL('impexpcore_softrefsel_exclude');
 			// Get current value:
 			$value = $this->softrefCfg[$cfg['subst']['tokenID']]['mode'];
 			// Render options selector:
@@ -3892,7 +3886,7 @@ class ImportExport {
 				// Description:
 				if (!strlen($cfg['subst']['description'])) {
 					$descriptionField .= '
-					' . $LANG->getLL('impexpcore_printerror_description', TRUE) . '<br/>
+					' . $GLOBALS['LANG']->getLL('impexpcore_printerror_description', TRUE) . '<br/>
 					<input type="text" name="tx_impexp[softrefCfg][' . $cfg['subst']['tokenID'] . '][description]" value="' . htmlspecialchars($this->softrefCfg[$cfg['subst']['tokenID']]['description']) . '" />';
 				} else {
 					$descriptionField .= '
@@ -3917,7 +3911,7 @@ class ImportExport {
 	 * Returns TRUE if the input table name is to be regarded as a static relation (that is, not exported etc).
 	 *
 	 * @param string $table Table name
-	 * @return boolean TRUE, if table is marked static
+	 * @return bool TRUE, if table is marked static
 	 */
 	public function isTableStatic($table) {
 		if (is_array($GLOBALS['TCA'][$table])) {
@@ -3930,7 +3924,7 @@ class ImportExport {
 	 * Returns TRUE if the input table name is to be included as relation
 	 *
 	 * @param string $table Table name
-	 * @return boolean TRUE, if table is marked static
+	 * @return bool TRUE, if table is marked static
 	 */
 	public function inclRelation($table) {
 		return is_array($GLOBALS['TCA'][$table])
@@ -3942,8 +3936,8 @@ class ImportExport {
 	 * Returns TRUE if the element should be excluded as static record.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid UID value
-	 * @return boolean TRUE, if table is marked static
+	 * @param int $uid UID value
+	 * @return bool TRUE, if table is marked static
 	 */
 	public function isExcluded($table, $uid) {
 		return (bool)$this->excludeMap[$table . ':' . $uid];
@@ -3953,7 +3947,7 @@ class ImportExport {
 	 * Returns TRUE if soft reference should be included in exported file.
 	 *
 	 * @param string $tokenID Token ID for soft reference
-	 * @return boolean TRUE if softreference media should be included
+	 * @return bool TRUE if softreference media should be included
 	 */
 	public function includeSoftref($tokenID) {
 		return $tokenID && !GeneralUtility::inList('exclude,editable', $this->softrefCfg[$tokenID]['mode']);
@@ -3962,8 +3956,8 @@ class ImportExport {
 	/**
 	 * Checking if a PID is in the webmounts of the user
 	 *
-	 * @param integer $pid Page ID to check
-	 * @return boolean TRUE if OK
+	 * @param int $pid Page ID to check
+	 * @return bool TRUE if OK
 	 */
 	public function checkPID($pid) {
 		if (!isset($this->checkPID_cache[$pid])) {
@@ -3976,8 +3970,8 @@ class ImportExport {
 	 * Checks if the position of an updated record is configured to be corrected. This can be disabled globally and changed for elements individually.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Uid or record
-	 * @return boolean TRUE if the position of the record should be updated to match the one in the import structure
+	 * @param int $uid Uid or record
+	 * @return bool TRUE if the position of the record should be updated to match the one in the import structure
 	 */
 	public function dontIgnorePid($table, $uid) {
 		return $this->import_mode[$table . ':' . $uid] !== 'ignore_pid' && (!$this->global_ignore_pid || $this->import_mode[$table . ':' . $uid] === 'respect_pid');
@@ -3987,7 +3981,7 @@ class ImportExport {
 	 * Checks if the record exists
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid UID of record
+	 * @param int $uid UID of record
 	 * @param string $fields Field list to select. Default is "uid,pid
 	 * @return array Result of \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord() which means the record if found, otherwise FALSE
 	 */
@@ -3998,13 +3992,13 @@ class ImportExport {
 	/**
 	 * Returns the page title path of a PID value. Results are cached internally
 	 *
-	 * @param integer $pid Record PID to check
+	 * @param int $pid Record PID to check
 	 * @return string The path for the input PID
 	 */
 	public function getRecordPath($pid) {
 		if (!isset($this->cache_getRecordPath[$pid])) {
 			$clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
-			$this->cache_getRecordPath[$pid] = (string) BackendUtility::getRecordPath($pid, $clause, 20);
+			$this->cache_getRecordPath[$pid] = (string)BackendUtility::getRecordPath($pid, $clause, 20);
 		}
 		return $this->cache_getRecordPath[$pid];
 	}
@@ -4040,11 +4034,10 @@ class ImportExport {
 	 * @param array $databaseRecord Database record, all fields (new values)
 	 * @param array $importRecord Import memorys record for the same table/uid, all fields (old values)
 	 * @param string $table The table name of the record
-	 * @param boolean $inverseDiff Inverse the diff view (switch red/green, needed for pre-update difference view)
+	 * @param bool $inverseDiff Inverse the diff view (switch red/green, needed for pre-update difference view)
 	 * @return string HTML
 	 */
 	public function compareRecords($databaseRecord, $importRecord, $table, $inverseDiff = FALSE) {
-		global $LANG;
 		// Initialize:
 		$output = array();
 		$t3lib_diff_Obj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\DiffUtility');

@@ -92,7 +92,7 @@ class Request implements RequestInterface {
 	protected $format = 'txt';
 
 	/**
-	 * @var boolean If this request has been changed and needs to be dispatched again
+	 * @var bool If this request has been changed and needs to be dispatched again
 	 */
 	protected $dispatched = FALSE;
 
@@ -113,7 +113,7 @@ class Request implements RequestInterface {
 	/**
 	 * Sets the dispatched flag
 	 *
-	 * @param boolean $flag If this request has been dispatched
+	 * @param bool $flag If this request has been dispatched
 	 *
 	 * @return void
 	 * @api
@@ -129,7 +129,7 @@ class Request implements RequestInterface {
 	 * The dispatcher will try to dispatch the request again if it has not been
 	 * addressed yet.
 	 *
-	 * @return boolean TRUE if this request has been disptached sucessfully
+	 * @return bool TRUE if this request has been disptached sucessfully
 	 * @api
 	 */
 	public function isDispatched() {
@@ -465,7 +465,7 @@ class Request implements RequestInterface {
 	 *
 	 * @param string $argumentName Name of the argument to check
 	 *
-	 * @return boolean TRUE if the argument is set, otherwise FALSE
+	 * @return bool TRUE if the argument is set, otherwise FALSE
 	 * @api
 	 */
 	public function hasArgument($argumentName) {

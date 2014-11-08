@@ -360,7 +360,7 @@ abstract class AbstractTreeView {
 	 * Adds a fieldname to the internal array ->fieldArray
 	 *
 	 * @param string $field Field name to
-	 * @param boolean $noCheck If set, the fieldname will be set no matter what. Otherwise the field name must either be found as key in $GLOBALS['TCA'][$table]['columns'] or in the list ->defaultList
+	 * @param bool $noCheck If set, the fieldname will be set no matter what. Otherwise the field name must either be found as key in $GLOBALS['TCA'][$table]['columns'] or in the list ->defaultList
 	 * @return void
 	 */
 	public function addField($field, $noCheck = 0) {
@@ -487,10 +487,10 @@ abstract class AbstractTreeView {
 	 * Generate the plus/minus icon for the browsable tree.
 	 *
 	 * @param array $row Record for the entry
-	 * @param integer $a The current entry number
-	 * @param integer $c The total number of entries. If equal to $a, a "bottom" element is returned.
-	 * @param integer $nextCount The number of sub-elements to the current element.
-	 * @param boolean $exp The element was expanded to render subelements if this flag is set.
+	 * @param int $a The current entry number
+	 * @param int $c The total number of entries. If equal to $a, a "bottom" element is returned.
+	 * @param int $nextCount The number of sub-elements to the current element.
+	 * @param bool $exp The element was expanded to render subelements if this flag is set.
 	 * @return string Image tag with the plus/minus icon.
 	 * @access private
 	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::PMicon()
@@ -512,7 +512,7 @@ abstract class AbstractTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
 	 * @return string Link-wrapped input string
 	 * @access private
 	 */
@@ -534,7 +534,7 @@ abstract class AbstractTreeView {
 	 *
 	 * @param string $title Title string
 	 * @param string $row Item record
-	 * @param integer $bank Bank pointer (which mount point number)
+	 * @param int $bank Bank pointer (which mount point number)
 	 * @return string
 	 * @access private
 	 */
@@ -591,8 +591,8 @@ abstract class AbstractTreeView {
 	 * data in $this->stored[][] and ->expandAll flag.
 	 * Extending parent function
 	 *
-	 * @param integer $id Record id/key
-	 * @return boolean
+	 * @param int $id Record id/key
+	 * @return bool
 	 * @access private
 	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::expandNext()
 	 */
@@ -679,7 +679,7 @@ abstract class AbstractTreeView {
 	 * Do NOT htmlspecialchar the string from this function - has already been done.
 	 *
 	 * @param array $row The input row array (where the key "title" is used for the title)
-	 * @param integer $titleLen Title length (30)
+	 * @param int $titleLen Title length (30)
 	 * @return string The title.
 	 */
 	public function getTitleStr($row, $titleLen = 30) {
@@ -710,7 +710,7 @@ abstract class AbstractTreeView {
 	 * Returns the id from the record (typ. uid)
 	 *
 	 * @param array $row Record array
-	 * @return integer The "uid" field value.
+	 * @return int The "uid" field value.
 	 */
 	public function getId($row) {
 		return $row['uid'];
@@ -734,12 +734,12 @@ abstract class AbstractTreeView {
 	/**
 	 * Fetches the data for the tree
 	 *
-	 * @param integer $uid item id for which to select subitems (parent id)
-	 * @param integer $depth Max depth (recursivity limit)
+	 * @param int $uid item id for which to select subitems (parent id)
+	 * @param int $depth Max depth (recursivity limit)
 	 * @param string $depthData HTML-code prefix for recursive calls.
 	 * @param string $blankLineCode ? (internal)
 	 * @param string $subCSSclass CSS class to use for <td> sub-elements
-	 * @return integer The count of items on the level
+	 * @return int The count of items on the level
 	 */
 	public function getTree($uid, $depth = 999, $depthData = '', $blankLineCode = '', $subCSSclass = '') {
 		// Buffer for id hierarchy is reset:
@@ -823,8 +823,8 @@ abstract class AbstractTreeView {
 	/**
 	 * Returns the number of records having the parent id, $uid
 	 *
-	 * @param integer $uid Id to count subitems for
-	 * @return integer
+	 * @param int $uid Id to count subitems for
+	 * @return int
 	 * @access private
 	 */
 	public function getCount($uid) {
@@ -839,7 +839,7 @@ abstract class AbstractTreeView {
 	/**
 	 * Returns root record for uid (<=0)
 	 *
-	 * @param integer $uid uid, <= 0 (normally, this does not matter)
+	 * @param int $uid uid, <= 0 (normally, this does not matter)
 	 * @return array Array with title/uid keys with values of $this->title/0 (zero)
 	 */
 	public function getRootRecord($uid) {
@@ -851,7 +851,7 @@ abstract class AbstractTreeView {
 	 * For tables: Looks up the record in the database.
 	 * For arrays: Returns the fake record for uid id.
 	 *
-	 * @param integer $uid UID to look up
+	 * @param int $uid UID to look up
 	 * @return array The record
 	 */
 	public function getRecord($uid) {
@@ -867,7 +867,7 @@ abstract class AbstractTreeView {
 	 * For tables: This will make a database query to select all children to "parent"
 	 * For arrays: This will return key to the ->dataLookup array
 	 *
-	 * @param integer $parentId parent item id
+	 * @param int $parentId parent item id
 	 * @param string $subCSSclass Class for sub-elements.
 	 * @return mixed Data handle (Tables: An sql-resource, arrays: A parentId integer. -1 is returned if there were NO subLevel.)
 	 * @access private
@@ -890,7 +890,7 @@ abstract class AbstractTreeView {
 	 * Getting the tree data: Counting elements in resource
 	 *
 	 * @param mixed $res Data handle
-	 * @return integer number of items
+	 * @return int number of items
 	 * @access private
 	 * @see getDataInit()
 	 */
@@ -968,8 +968,8 @@ abstract class AbstractTreeView {
 	 * All other fields are optional.
 	 *
 	 * @param array $dataArr The input array, see examples below in this script.
-	 * @param boolean $traverse Internal, for recursion.
-	 * @param integer $pid Internal, for recursion.
+	 * @param bool $traverse Internal, for recursion.
+	 * @param int $pid Internal, for recursion.
 	 * @return void
 	 */
 	public function setDataFromArray(&$dataArr, $traverse = FALSE, $pid = 0) {

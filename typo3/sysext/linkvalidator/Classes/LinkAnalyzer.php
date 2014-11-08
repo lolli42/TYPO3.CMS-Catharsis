@@ -105,7 +105,7 @@ class LinkAnalyzer {
 	 *
 	 * @param array $searchField List of fields in which to search for links
 	 * @param string $pid List of comma separated page uids in which to search for links
-	 * @return 	void
+	 * @return void
 	 */
 	public function init(array $searchField, $pid) {
 		$this->searchFields = $searchField;
@@ -116,7 +116,7 @@ class LinkAnalyzer {
 	 * Find all supported broken links and store them in tx_linkvalidator_link
 	 *
 	 * @param array $checkOptions List of hook object to activate
-	 * @param boolean $considerHidden Defines whether to look into hidden fields
+	 * @param bool $considerHidden Defines whether to look into hidden fields
 	 * @return void
 	 */
 	public function getLinkStatistics($checkOptions = array(), $considerHidden = FALSE) {
@@ -377,11 +377,11 @@ class LinkAnalyzer {
 	 * Generates a list of page uids from $id. List does not include $id itself.
 	 * The only pages excluded from the list are deleted pages.
 	 *
-	 * @param integer $id Start page id
-	 * @param integer $depth Depth to traverse down the page tree.
-	 * @param integer $begin is an optional integer that determines at which
+	 * @param int $id Start page id
+	 * @param int $depth Depth to traverse down the page tree.
+	 * @param int $begin is an optional integer that determines at which
 	 * @param string $permsClause Perms clause
-	 * @param boolean $considerHidden Whether to consider hidden pages or not
+	 * @param bool $considerHidden Whether to consider hidden pages or not
 	 * @return string Returns the list with a comma in the end (if any pages selected!)
 	 */
 	public function extGetTreeList($id, $depth, $begin = 0, $permsClause, $considerHidden = FALSE) {
@@ -412,7 +412,7 @@ class LinkAnalyzer {
 	 * Check if rootline contains a hidden page
 	 *
 	 * @param array $pageInfo Array with uid, title, hidden, extendToSubpages from pages table
-	 * @return boolean TRUE if rootline contains a hidden page, FALSE if not
+	 * @return bool TRUE if rootline contains a hidden page, FALSE if not
 	 */
 	public function getRootLineIsHidden(array $pageInfo) {
 		$hidden = FALSE;

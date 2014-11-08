@@ -31,7 +31,7 @@ class Language extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $language = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $selected = FALSE;
 
@@ -40,7 +40,7 @@ class Language extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 *
 	 * @param string $locale
 	 * @param string $language
-	 * @param boolean $selected
+	 * @param bool $selected
 	 */
 	public function __construct($locale = '', $language = '', $selected = FALSE) {
 		$this->setLocale($locale);
@@ -89,7 +89,7 @@ class Language extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Setter for the selected
 	 *
-	 * @param boolean $selected whether the language is available or not
+	 * @param bool $selected whether the language is available or not
 	 * @return void
 	 */
 	public function setSelected($selected) {
@@ -99,7 +99,7 @@ class Language extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for the selected
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getSelected() {
 		return $this->selected;

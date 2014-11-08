@@ -31,27 +31,27 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	protected $objects;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $currentPage = 1;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $numberOfPages = 1;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $offset = 0;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $itemsPerPage = 0;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $numberOfObjects = 0;
 
@@ -66,7 +66,7 @@ class PaginateController extends \TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetCont
 	}
 
 	/**
-	 * @param integer $currentPage
+	 * @param int $currentPage
 	 * @return void
 	 */
 	public function indexAction($currentPage = 1) {

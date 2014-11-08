@@ -55,17 +55,17 @@ class Locker {
 	protected $filePointer;
 
 	/**
-	 * @var boolean True if lock is acquired
+	 * @var bool True if lock is acquired
 	 */
 	protected $isAcquired = FALSE;
 
 	/**
-	 * @var integer Number of times a locked resource is tried to be acquired. Only used in manual locks method "simple".
+	 * @var int Number of times a locked resource is tried to be acquired. Only used in manual locks method "simple".
 	 */
 	protected $loops = 150;
 
 	/**
-	 * @var integer Milliseconds after lock acquire is retried. $loops * $step results in the maximum delay of a lock. Only used in manual lock method "simple".
+	 * @var int Milliseconds after lock acquire is retried. $loops * $step results in the maximum delay of a lock. Only used in manual lock method "simple".
 	 */
 	protected $step = 200;
 
@@ -75,7 +75,7 @@ class Locker {
 	protected $syslogFacility = 'cms';
 
 	/**
-	 * @var boolean True if locking should be logged
+	 * @var bool True if locking should be logged
 	 */
 	protected $isLoggingEnabled = TRUE;
 
@@ -165,7 +165,7 @@ class Locker {
 	 * It is important to know that the lock will be acquired in any case, even if the request was blocked first.
 	 * Therefore, the lock needs to be released in every situation.
 	 *
-	 * @return boolean Returns TRUE if lock could be acquired without waiting, FALSE otherwise.
+	 * @return bool Returns TRUE if lock could be acquired without waiting, FALSE otherwise.
 	 * @throws \RuntimeException
 	 * @deprecated since 6.2 - will be removed two versions later; use new API instead
 	 */
@@ -325,7 +325,7 @@ class Locker {
 	/**
 	 * Release the lock
 	 *
-	 * @return boolean Returns TRUE on success or FALSE on failure
+	 * @return bool Returns TRUE on success or FALSE on failure
 	 */
 	public function release() {
 		if (!$this->isAcquired) {
@@ -448,7 +448,7 @@ class Locker {
 	/**
 	 * Enable/ disable logging
 	 *
-	 * @param boolean $isLoggingEnabled
+	 * @param bool $isLoggingEnabled
 	 */
 	public function setEnableLogging($isLoggingEnabled) {
 		$this->isLoggingEnabled = $isLoggingEnabled;
@@ -459,7 +459,7 @@ class Locker {
 	 * Example: 25-02-08 17:58 - cms: Locking [simple::0aeafd2a67a6bb8b9543fb9ea25ecbe2]: Acquired
 	 *
 	 * @param string $message The message to be logged
-	 * @param integer $severity Severity - 0 is info (default), 1 is notice, 2 is warning, 3 is error, 4 is fatal error
+	 * @param int $severity Severity - 0 is info (default), 1 is notice, 2 is warning, 3 is error, 4 is fatal error
 	 * @return void
 	 */
 	public function sysLog($message, $severity = 0) {

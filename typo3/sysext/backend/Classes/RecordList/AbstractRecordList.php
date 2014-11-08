@@ -31,15 +31,16 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 abstract class AbstractRecordList {
 
-	// Used in this class:
-	// default Max items shown
 	/**
+	 * default Max items shown
+	 *
 	 * @var int
 	 */
 	public $iLimit = 10;
 
-	// OBSOLETE - NOT USED ANYMORE. leftMargin
 	/**
+	 * OBSOLETE - NOT USED ANYMORE. leftMargin
+	 *
 	 * @var int
 	 */
 	public $leftMargin = 0;
@@ -54,8 +55,9 @@ abstract class AbstractRecordList {
 	 */
 	public $no_noWrap = 0;
 
-	// If set this is <td> CSS-classname for odd columns in addElement. Used with db_layout / pages section
 	/**
+	 * If set this is <td> CSS-classname for odd columns in addElement. Used with db_layout / pages section
+	 *
 	 * @var string
 	 */
 	public $oddColumnsCssClass = '';
@@ -65,27 +67,31 @@ abstract class AbstractRecordList {
 	 */
 	public $backPath = '';
 
-	// Decides the columns shown. Filled with values that refers to the keys of the data-array. $this->fieldArray[0] is the title column.
 	/**
+	 * Decides the columns shown. Filled with values that refers to the keys of the data-array. $this->fieldArray[0] is the title column.
+	 *
 	 * @var array
 	 */
 	public $fieldArray = array();
 
-	// Keys are fieldnames and values are td-parameters to add in addElement(), please use $addElement_tdCSSClass for CSS-classes;
 	/**
+	 * Keys are fieldnames and values are td-parameters to add in addElement(), please use $addElement_tdCSSClass for CSS-classes;
+	 *
 	 * @var array
 	 */
 	public $addElement_tdParams = array();
 
-	// Keys are fieldnames and values are td-css-classes to add in addElement();
 	/**
+	 * Keys are fieldnames and values are td-css-classes to add in addElement();
+	 *
 	 * @var array
 	 */
 	public $addElement_tdCssClass = array();
 
-	// Not used in this class - but maybe extension classes...
-	// Max length of strings
 	/**
+	 * Not used in this class - but maybe extension classes...
+	 * Max length of strings
+	 *
 	 * @var int
 	 */
 	public $fixedL = 30;
@@ -97,26 +103,30 @@ abstract class AbstractRecordList {
 	 */
 	public $thisScript = '';
 
-	// Set to zero, if you don't want a left-margin with addElement function
 	/**
+	 * Set to zero, if you don't want a left-margin with addElement function
+	 *
 	 * @var int
 	 */
 	public $setLMargin = 1;
 
-	// Counter increased for each element. Used to index elements for the JavaScript-code that transfers to the clipboard
 	/**
+	 * Counter increased for each element. Used to index elements for the JavaScript-code that transfers to the clipboard
+	 *
 	 * @var int
 	 */
 	public $counter = 0;
 
-	// This could be set to the total number of items. Used by the fwd_rew_navigation...
 	/**
+	 * This could be set to the total number of items. Used by the fwd_rew_navigation...
+	 *
 	 * @var string
 	 */
 	public $totalItems = '';
 
-	// Internal (used in this class.)
 	/**
+	 * Internal (used in this class.)
+	 *
 	 * @var int
 	 */
 	public $firstElementNumber = 0;
@@ -126,20 +136,23 @@ abstract class AbstractRecordList {
 	 */
 	public $eCounter = 0;
 
-	// String with accumulated HTML content
 	/**
+	 * String with accumulated HTML content
+	 *
 	 * @var string
 	 */
 	public $HTMLcode = '';
 
-	// Contains page translation languages
 	/**
+	 * Contains page translation languages
+	 *
 	 * @var array
 	 */
 	public $pageOverlays = array();
 
-	// Contains sys language icons and titles
 	/**
+	 * Contains sys language icons and titles
+	 *
 	 * @var array
 	 */
 	public $languageIconTitles = array();
@@ -181,11 +194,11 @@ abstract class AbstractRecordList {
 	 * Returns a table-row with the content from the fields in the input data array.
 	 * OBS: $this->fieldArray MUST be set! (represents the list of fields to display)
 	 *
-	 * @param integer $h Is an integer >=0 and denotes how tall a element is. Set to '0' makes a halv line, -1 = full line, set to 1 makes a 'join' and above makes 'line'
+	 * @param int $h Is an integer >=0 and denotes how tall a element is. Set to '0' makes a halv line, -1 = full line, set to 1 makes a 'join' and above makes 'line'
 	 * @param string $icon Is the <img>+<a> of the record. If not supplied the first 'join'-icon will be a 'line' instead
 	 * @param array $data Is the dataarray, record with the fields. Notice: These fields are (currently) NOT htmlspecialchar'ed before being wrapped in <td>-tags
 	 * @param string $tdParams Is insert in the <td>-tags. Must carry a ' ' as first character
-	 * @param integer OBSOLETE - NOT USED ANYMORE. $lMargin is the leftMargin (integer)
+	 * @param int OBSOLETE - NOT USED ANYMORE. $lMargin is the leftMargin (int)
 	 * @param string $altLine Is the HTML <img>-tag for an alternative 'gfx/ol/line.gif'-icon (used in the top)
 	 * @return string HTML content for the table row
 	 */
@@ -271,16 +284,6 @@ abstract class AbstractRecordList {
 	}
 
 	/**
-	 * Finishes the list with the "stopper"-gif, adding the HTML code for that item to the internal ->HTMLcode string
-	 *
-	 * @return void
-	 * @deprecated since 6.2, will be removed 2 versions later - Function not needed anymore
-	 */
-	public function writeBottom() {
-		GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
 	 * Creates a forward/reverse button based on the status of ->eCounter, ->firstElementNumber, ->iLimit
 	 *
 	 * @param string $table Table name
@@ -313,7 +316,7 @@ abstract class AbstractRecordList {
 	 * Creates the button with link to either forward or reverse
 	 *
 	 * @param string $type Type: "fwd" or "rwd
-	 * @param integer $pointer Pointer
+	 * @param int $pointer Pointer
 	 * @param string $table Table name
 	 * @return string
 	 * @access private
@@ -396,8 +399,8 @@ abstract class AbstractRecordList {
 	/**
 	 * Return the icon for the language
 	 *
-	 * @param integer $sys_language_uid Sys language uid
-	 * @param boolean $addAsAdditionalText If set to true, only the flag is returned
+	 * @param int $sys_language_uid Sys language uid
+	 * @param bool $addAsAdditionalText If set to true, only the flag is returned
 	 * @return string Language icon
 	 */
 	public function languageFlag($sys_language_uid, $addAsAdditionalText = TRUE) {

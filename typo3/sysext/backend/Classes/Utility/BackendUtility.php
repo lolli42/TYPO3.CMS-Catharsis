@@ -14,17 +14,27 @@ namespace TYPO3\CMS\Backend\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Frontend\Page\PageRepository;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Standard functions available for the TYPO3 backend.
@@ -73,19 +83,17 @@ class BackendUtility {
 	 * $table must be found in $GLOBALS['TCA']
 	 *
 	 * @param string $table Table name present in $GLOBALS['TCA']
-	 * @param integer $uid UID of record
+	 * @param int $uid UID of record
 	 * @param string $fields List of fields to select
 	 * @param string $where Additional WHERE clause, eg. " AND blablabla = 0
-	 * @param boolean $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
+	 * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
 	 * @return array|NULL Returns the row if found, otherwise NULL
 	 */
 	static public function getRecord($table, $uid, $fields = '*', $where = '', $useDeleteClause = TRUE) {
 		// Ensure we have a valid uid (not 0 and not NEWxxxx) and a valid TCA
 		if ((int)$uid && !empty($GLOBALS['TCA'][$table])) {
-			/** @var DatabaseConnection $db */
-			$db = $GLOBALS['TYPO3_DB'];
 			$where = 'uid=' . (int)$uid . ($useDeleteClause ? self::deleteClause($table) : '') . $where;
-			$row = $db->exec_SELECTgetSingleRow($fields, $table, $where);
+			$row = static::getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, $where);
 			if ($row) {
 				return $row;
 			}
@@ -97,11 +105,11 @@ class BackendUtility {
 	 * Like getRecord(), but overlays workspace version if any.
 	 *
 	 * @param string $table Table name present in $GLOBALS['TCA']
-	 * @param integer $uid UID of record
+	 * @param int $uid UID of record
 	 * @param string $fields List of fields to select
 	 * @param string $where Additional WHERE clause, eg. " AND blablabla = 0
-	 * @param boolean $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
-	 * @param boolean $unsetMovePointers If TRUE the function does not return a "pointer" row for moved records in a workspace
+	 * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
+	 * @param bool $unsetMovePointers If TRUE the function does not return a "pointer" row for moved records in a workspace
 	 * @return array Returns the row if found, otherwise nothing
 	 */
 	static public function getRecordWSOL($table, $uid, $fields = '*', $where = '', $useDeleteClause = TRUE, $unsetMovePointers = FALSE) {
@@ -137,9 +145,10 @@ class BackendUtility {
 	 */
 	static public function getRecordRaw($table, $where = '', $fields = '*') {
 		$row = FALSE;
-		if (FALSE !== ($res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($fields, $table, $where, '', '', '1'))) {
-			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		$db = static::getDatabaseConnection();
+		if (FALSE !== ($res = $db->exec_SELECTquery($fields, $table, $where, '', '', '1'))) {
+			$row = $db->sql_fetch_assoc($res);
+			$db->sql_free_result($res);
 		}
 		return $row;
 	}
@@ -156,15 +165,16 @@ class BackendUtility {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @param boolean $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
+	 * @param bool $useDeleteClause Use the deleteClause to check if a record is deleted (default TRUE)
 	 * @return mixed Multidimensional array with selected records (if any is selected)
 	 */
 	static public function getRecordsByField($theTable, $theField, $theValue, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '', $useDeleteClause = TRUE) {
 		if (is_array($GLOBALS['TCA'][$theTable])) {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+			$db = static::getDatabaseConnection();
+			$res = $db->exec_SELECTquery(
 				'*',
 				$theTable,
-				$theField . '=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($theValue, $theTable) .
+				$theField . '=' . $db->fullQuoteStr($theValue, $theTable) .
 					($useDeleteClause ? self::deleteClause($theTable) . ' ' : '') .
 					self::versioningPlaceholderClause($theTable) . ' ' .
 					$whereClause,
@@ -173,14 +183,15 @@ class BackendUtility {
 				$limit
 			);
 			$rows = array();
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+			while ($row = $db->sql_fetch_assoc($res)) {
 				$rows[] = $row;
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$db->sql_free_result($res);
 			if (count($rows)) {
 				return $rows;
 			}
 		}
+		return NULL;
 	}
 
 	/**
@@ -196,7 +207,7 @@ class BackendUtility {
 	}
 
 	/**
-	 * Returns a list of pure integers based on $in_list being a list of records with table-names prepended.
+	 * Returns a list of pure ints based on $in_list being a list of records with table-names prepended.
 	 * Ex: $in_list = "pages_4,tt_content_12,45" would result in a return value of "4,45" if $tablename is "pages" and $default_tablename is 'pages' as well.
 	 *
 	 * @param string $in_list Input list
@@ -206,12 +217,12 @@ class BackendUtility {
 	 */
 	static public function getSQLselectableList($in_list, $tablename, $default_tablename) {
 		$list = array();
-		if ((string) trim($in_list) != '') {
+		if ((string)trim($in_list) != '') {
 			$tempItemArray = explode(',', trim($in_list));
 			foreach ($tempItemArray as $key => $val) {
 				$val = strrev($val);
 				$parts = explode('_', $val, 2);
-				if ((string) trim($parts[0]) != '') {
+				if ((string)trim($parts[0]) != '') {
 					$theID = (int)strrev($parts[0]);
 					$theTable = trim($parts[1]) ? strrev(trim($parts[1])) : $default_tablename;
 					if ($theTable == $tablename) {
@@ -230,10 +241,10 @@ class BackendUtility {
 	 * $GLOBALS["SIM_ACCESS_TIME"] is used for date.
 	 *
 	 * @param string $table The table from which to return enableFields WHERE clause. Table name must have a 'ctrl' section in $GLOBALS['TCA'].
-	 * @param boolean $inv Means that the query will select all records NOT VISIBLE records (inverted selection)
+	 * @param bool $inv Means that the query will select all records NOT VISIBLE records (inverted selection)
 	 * @return string WHERE clause part
 	 */
-	static public function BEenableFields($table, $inv = 0) {
+	static public function BEenableFields($table, $inv = FALSE) {
 		$ctrl = $GLOBALS['TCA'][$table]['ctrl'];
 		$query = array();
 		$invQuery = array();
@@ -264,8 +275,8 @@ class BackendUtility {
 	 * Fetches the localization for a given record.
 	 *
 	 * @param string $table Table name present in $GLOBALS['TCA']
-	 * @param integer $uid The uid of the record
-	 * @param integer $language The uid of the language record in sys_language
+	 * @param int $uid The uid of the record
+	 * @param int $language The uid of the language record in sys_language
 	 * @param string $andWhereClause Optional additional WHERE clause (default: '')
 	 * @return mixed Multidimensional array with selected records; if none exist, FALSE is returned
 	 */
@@ -288,9 +299,9 @@ class BackendUtility {
 	 * By default deleted pages are filtered.
 	 * This RootLine will follow the tree all the way to the root. This is opposite to another kind of root line known from the frontend where the rootline stops when a root-template is found.
 	 *
-	 * @param integer $uid Page id for which to create the root line.
+	 * @param int $uid Page id for which to create the root line.
 	 * @param string $clause Clause can be used to select other criteria. It would typically be where-clauses that stops the process if we meet a page, the user has no reading access to.
-	 * @param boolean $workspaceOL If TRUE, version overlay is applied. This must be requested specifically because it is usually only wanted when the rootline is used for visual output while for permission checking you want the raw thing!
+	 * @param bool $workspaceOL If TRUE, version overlay is applied. This must be requested specifically because it is usually only wanted when the rootline is used for visual output while for permission checking you want the raw thing!
 	 * @return array Root line array, all the way to the page tree root (or as far as $clause allows!)
 	 */
 	static public function BEgetRootLine($uid, $clause = '', $workspaceOL = FALSE) {
@@ -344,9 +355,9 @@ class BackendUtility {
 	/**
 	 * Gets the cached page record for the rootline
 	 *
-	 * @param integer $uid Page id for which to create the root line.
+	 * @param int $uid Page id for which to create the root line.
 	 * @param string $clause Clause can be used to select other criteria. It would typically be where-clauses that stops the process if we meet a page, the user has no reading access to.
-	 * @param boolean $workspaceOL If TRUE, version overlay is applied. This must be requested specifically because it is usually only wanted when the rootline is used for visual output while for permission checking you want the raw thing!
+	 * @param bool $workspaceOL If TRUE, version overlay is applied. This must be requested specifically because it is usually only wanted when the rootline is used for visual output while for permission checking you want the raw thing!
 	 * @return array Cached page record for the rootline
 	 * @see BEgetRootLine
 	 */
@@ -356,8 +367,9 @@ class BackendUtility {
 		if (is_array($getPageForRootline_cache[$ident])) {
 			$row = $getPageForRootline_cache[$ident];
 		} else {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('pid,uid,title,TSconfig,is_siteroot,storage_pid,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
-			$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+			$db = static::getDatabaseConnection();
+			$res = $db->exec_SELECTquery('pid,uid,title,TSconfig,is_siteroot,storage_pid,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
+			$row = $db->sql_fetch_assoc($res);
 			if ($row) {
 				$newLocation = FALSE;
 				if ($workspaceOL) {
@@ -373,7 +385,7 @@ class BackendUtility {
 					$getPageForRootline_cache[$ident] = $row;
 				}
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$db->sql_free_result($res);
 		}
 		return $row;
 	}
@@ -381,22 +393,23 @@ class BackendUtility {
 	/**
 	 * Opens the page tree to the specified page id
 	 *
-	 * @param integer $pid Page id.
-	 * @param boolean $clearExpansion If set, then other open branches are closed.
+	 * @param int $pid Page id.
+	 * @param bool $clearExpansion If set, then other open branches are closed.
 	 * @return void
 	 */
 	static public function openPageTree($pid, $clearExpansion) {
+		$beUser = static::getBackendUserAuthentication();
 		// Get current expansion data:
 		if ($clearExpansion) {
 			$expandedPages = array();
 		} else {
-			$expandedPages = unserialize($GLOBALS['BE_USER']->uc['browseTrees']['browsePages']);
+			$expandedPages = unserialize($beUser->uc['browseTrees']['browsePages']);
 		}
 		// Get rootline:
 		$rL = self::BEgetRootLine($pid);
 		// First, find out what mount index to use (if more than one DB mount exists):
 		$mountIndex = 0;
-		$mountKeys = array_flip($GLOBALS['BE_USER']->returnWebmounts());
+		$mountKeys = array_flip($beUser->returnWebmounts());
 		foreach ($rL as $rLDat) {
 			if (isset($mountKeys[$rLDat['uid']])) {
 				$mountIndex = $mountKeys[$rLDat['uid']];
@@ -408,8 +421,8 @@ class BackendUtility {
 			$expandedPages[$mountIndex][$rLDat['uid']] = 1;
 		}
 		// Write back:
-		$GLOBALS['BE_USER']->uc['browseTrees']['browsePages'] = serialize($expandedPages);
-		$GLOBALS['BE_USER']->writeUC();
+		$beUser->uc['browseTrees']['browsePages'] = serialize($expandedPages);
+		$beUser->writeUC();
 	}
 
 	/**
@@ -417,18 +430,17 @@ class BackendUtility {
 	 * Each part of the path will be limited to $titleLimit characters
 	 * Deleted pages are filtered out.
 	 *
-	 * @param integer $uid Page uid for which to create record path
+	 * @param int $uid Page uid for which to create record path
 	 * @param string $clause Clause is additional where clauses, eg.
-	 * @param integer $titleLimit Title limit
-	 * @param integer $fullTitleLimit Title limit of Full title (typ. set to 1000 or so)
+	 * @param int $titleLimit Title limit
+	 * @param int $fullTitleLimit Title limit of Full title (typ. set to 1000 or so)
 	 * @return mixed Path of record (string) OR array with short/long title if $fullTitleLimit is set.
 	 */
 	static public function getRecordPath($uid, $clause, $titleLimit, $fullTitleLimit = 0) {
 		if (!$titleLimit) {
 			$titleLimit = 1000;
 		}
-		$loopCheck = 100;
-		$output = ($fullOutput = '/');
+		$output = $fullOutput = '/';
 		$clause = trim($clause);
 		if ($clause !== '' && substr($clause, 0, 3) !== 'AND') {
 			$clause = 'AND ' . $clause;
@@ -463,8 +475,9 @@ class BackendUtility {
 		$tableNamesFromTca = array_keys($GLOBALS['TCA']);
 		// Fetch translations for table names
 		$tableToTranslation = array();
+		$lang = static::getLanguageService();
 		foreach ($tableNamesFromTca as $table) {
-			$tableToTranslation[$table] = $GLOBALS['LANG']->sl($GLOBALS['TCA'][$table]['ctrl']['title']);
+			$tableToTranslation[$table] = $lang->sl($GLOBALS['TCA'][$table]['ctrl']['title']);
 		}
 		// Sort by translations
 		asort($tableToTranslation);
@@ -480,7 +493,7 @@ class BackendUtility {
 				foreach ($fieldKeys as $field) {
 					if ($GLOBALS['TCA'][$table]['columns'][$field]['exclude']) {
 						// Get human readable names of fields
-						$translatedField = $GLOBALS['LANG']->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+						$translatedField = $lang->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
 						// Add entry
 						$excludeArrayTable[] = array($translatedTable . ': ' . $translatedField, $table . ':' . $field);
 					}
@@ -492,11 +505,11 @@ class BackendUtility {
 				// Prefix for field label, e.g. "Plugin Options:"
 				$labelPrefix = '';
 				if (!empty($GLOBALS['TCA'][$table]['columns'][$tableField]['label'])) {
-					$labelPrefix = $GLOBALS['LANG']->sl($GLOBALS['TCA'][$table]['columns'][$tableField]['label']);
+					$labelPrefix = $lang->sl($GLOBALS['TCA'][$table]['columns'][$tableField]['label']);
 				}
 				// Get all sheets and title
 				foreach ($flexForms as $extIdent => $extConf) {
-					$extTitle = $GLOBALS['LANG']->sl($extConf['title']);
+					$extTitle = $lang->sl($extConf['title']);
 					// Get all fields in sheet
 					foreach ($extConf['ds']['sheets'] as $sheetName => $sheet) {
 						if (empty($sheet['ROOT']['el']) || !is_array($sheet['ROOT']['el'])) {
@@ -507,7 +520,7 @@ class BackendUtility {
 							if (empty($field['TCEforms']['exclude'])) {
 								continue;
 							}
-							$fieldLabel = !empty($field['TCEforms']['label']) ? $GLOBALS['LANG']->sl($field['TCEforms']['label']) : $fieldName;
+							$fieldLabel = !empty($field['TCEforms']['label']) ? $lang->sl($field['TCEforms']['label']) : $fieldName;
 							$fieldIdent = $table . ':' . $tableField . ';' . $extIdent . ';' . $sheetName . ';' . $fieldName;
 							$excludeArrayTable[] = array(trim(($labelPrefix . ' ' . $extTitle), ': ') . ': ' . $fieldLabel, $fieldIdent);
 						}
@@ -532,9 +545,10 @@ class BackendUtility {
 	 */
 	static public function getExplicitAuthFieldValues() {
 		// Initialize:
+		$lang = static::getLanguageService();
 		$adLabel = array(
-			'ALLOW' => $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_core.xlf:labels.allow'),
-			'DENY' => $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_core.xlf:labels.deny')
+			'ALLOW' => $lang->sl('LLL:EXT:lang/locallang_core.xlf:labels.allow'),
+			'DENY' => $lang->sl('LLL:EXT:lang/locallang_core.xlf:labels.deny')
 		);
 		// All TCA keys:
 		$allowDenyOptions = array();
@@ -549,14 +563,16 @@ class BackendUtility {
 						// Check for items:
 						if (is_array($fCfg['items'])) {
 							// Get Human Readable names of fields and table:
-							$allowDenyOptions[$table . ':' . $field]['tableFieldLabel'] = $GLOBALS['LANG']->sl($GLOBALS['TCA'][$table]['ctrl']['title']) . ': ' . $GLOBALS['LANG']->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+							$allowDenyOptions[$table . ':' . $field]['tableFieldLabel'] =
+								$lang->sl($GLOBALS['TCA'][$table]['ctrl']['title']) . ': '
+								. $lang->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
 							// Check for items:
 							foreach ($fCfg['items'] as $iVal) {
 								// Values '' is not controlled by this setting.
 								if ((string)$iVal[1] !== '') {
 									// Find iMode
 									$iMode = '';
-									switch ((string) $fCfg['authMode']) {
+									switch ((string)$fCfg['authMode']) {
 										case 'explicitAllow':
 											$iMode = 'ALLOW';
 											break;
@@ -573,7 +589,7 @@ class BackendUtility {
 									}
 									// Set iMode
 									if ($iMode) {
-										$allowDenyOptions[$table . ':' . $field]['items'][$iVal[1]] = array($iMode, $GLOBALS['LANG']->sl($iVal[0]), $adLabel[$iMode]);
+										$allowDenyOptions[$table . ':' . $field]['items'][$iVal[1]] = array($iMode, $lang->sl($iVal[0]), $adLabel[$iMode]);
 									}
 								}
 							}
@@ -596,7 +612,9 @@ class BackendUtility {
 	 * @return array Array with languages (title, uid, flagIcon)
 	 */
 	static public function getSystemLanguages() {
-		$languages = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider')->getSystemLanguages();
+		/** @var TranslationConfigurationProvider $translationConfigurationProvider */
+		$translationConfigurationProvider = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+		$languages = $translationConfigurationProvider->getSystemLanguages();
 		$sysLanguages = array();
 		foreach ($languages as $language) {
 			if ($language['uid'] !== -1) {
@@ -629,7 +647,7 @@ class BackendUtility {
 	 * Determines whether a table is localizable and has the languageField and transOrigPointerField set in $GLOBALS['TCA'].
 	 *
 	 * @param string $table The table to check
-	 * @return boolean Whether a table is localizable
+	 * @return bool Whether a table is localizable
 	 */
 	static public function isTableLocalizable($table) {
 		$isLocalizable = FALSE;
@@ -651,15 +669,18 @@ class BackendUtility {
 	 */
 	static public function getInlineLocalizationMode($table, $fieldOrConfig) {
 		$localizationMode = FALSE;
-		if (is_array($fieldOrConfig) && count($fieldOrConfig)) {
+		$config = NULL;
+		if (is_array($fieldOrConfig) && !empty($fieldOrConfig)) {
 			$config = $fieldOrConfig;
 		} elseif (is_string($fieldOrConfig) && isset($GLOBALS['TCA'][$table]['columns'][$fieldOrConfig]['config'])) {
 			$config = $GLOBALS['TCA'][$table]['columns'][$fieldOrConfig]['config'];
 		}
-		if (is_array($config) && isset($config['type']) && $config['type'] == 'inline' && self::isTableLocalizable($table)) {
-			$localizationMode = isset($config['behaviour']['localizationMode']) && $config['behaviour']['localizationMode'] ? $config['behaviour']['localizationMode'] : 'select';
+		if (is_array($config) && isset($config['type']) && $config['type'] === 'inline' && self::isTableLocalizable($table)) {
+			$localizationMode = isset($config['behaviour']['localizationMode']) && $config['behaviour']['localizationMode']
+				? $config['behaviour']['localizationMode']
+				: 'select';
 			// The mode 'select' is not possible when child table is not localizable at all:
-			if ($localizationMode == 'select' && !self::isTableLocalizable($config['foreign_table'])) {
+			if ($localizationMode === 'select' && !self::isTableLocalizable($config['foreign_table'])) {
 				$localizationMode = FALSE;
 			}
 		}
@@ -671,22 +692,22 @@ class BackendUtility {
 	 * If $id is zero a pseudo root-page with "_thePath" set is returned IF the current BE_USER is admin.
 	 * In any case ->isInWebMount must return TRUE for the user (regardless of $perms_clause)
 	 *
-	 * @param integer $id Page uid for which to check read-access
-	 * @param string $perms_clause This is typically a value generated with $GLOBALS['BE_USER']->getPagePermsClause(1);
+	 * @param int $id Page uid for which to check read-access
+	 * @param string $perms_clause This is typically a value generated with static::getBackendUserAuthentication()->getPagePermsClause(1);
 	 * @return array Returns page record if OK, otherwise FALSE.
 	 */
 	static public function readPageAccess($id, $perms_clause) {
-		if ((string) $id != '') {
+		if ((string)$id !== '') {
 			$id = (int)$id;
 			if (!$id) {
-				if ($GLOBALS['BE_USER']->isAdmin()) {
+				if (static::getBackendUserAuthentication()->isAdmin()) {
 					$path = '/';
 					$pageinfo['_thePath'] = $path;
 					return $pageinfo;
 				}
 			} else {
 				$pageinfo = self::getRecord('pages', $id, '*', $perms_clause ? ' AND ' . $perms_clause : '');
-				if ($pageinfo['uid'] && $GLOBALS['BE_USER']->isInWebMount($id, $perms_clause)) {
+				if ($pageinfo['uid'] && static::getBackendUserAuthentication()->isInWebMount($id, $perms_clause)) {
 					self::workspaceOL('pages', $pageinfo);
 					if (is_array($pageinfo)) {
 						self::fixVersioningPid('pages', $pageinfo);
@@ -704,10 +725,10 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name (present in TCA)
 	 * @param array $rec Record from $table
-	 * @param boolean $useFieldNameAsKey If $useFieldNameAsKey is set, then the fieldname is associative keys in the return array, otherwise just numeric keys.
-	 * @return array
+	 * @param bool $useFieldNameAsKey If $useFieldNameAsKey is set, then the fieldname is associative keys in the return array, otherwise just numeric keys.
+	 * @return array|NULL
 	 */
-	static public function getTCAtypes($table, $rec, $useFieldNameAsKey = 0) {
+	static public function getTCAtypes($table, $rec, $useFieldNameAsKey = FALSE) {
 		if ($GLOBALS['TCA'][$table]) {
 			// Get type value:
 			$fieldValue = self::getTCAtypeValue($table, $rec);
@@ -738,6 +759,7 @@ class BackendUtility {
 			// Return array:
 			return $fieldList;
 		}
+		return NULL;
 	}
 
 	/**
@@ -753,6 +775,7 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name present in TCA
 	 * @param array $row Record from $table
+	 * @throws \RuntimeException
 	 * @return string Field value
 	 * @see getTCAtypes()
 	 */
@@ -798,7 +821,7 @@ class BackendUtility {
 			$typeNum = $GLOBALS['TCA'][$table]['types']['0'] ? 0 : 1;
 		}
 		// Force to string. Necessary for eg '-1' to be recognized as a type value.
-		$typeNum = (string) $typeNum;
+		$typeNum = (string)$typeNum;
 		return $typeNum;
 	}
 
@@ -877,8 +900,8 @@ class BackendUtility {
 	 * @param array $row Record data
 	 * @param string $table The table name
 	 * @param string $fieldName Optional fieldname passed to hook object
-	 * @param boolean $WSOL Boolean; If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
-	 * @param integer $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from TCEmain)
+	 * @param bool $WSOL If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
+	 * @param int $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from TCEmain)
 	 * @return mixed If array, the data structure was found and returned as an array. Otherwise (string) it is an error message.
 	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getSingleField_typeFlex()
 	 */
@@ -888,8 +911,6 @@ class BackendUtility {
 		$ds_array = $conf['ds'];
 		$ds_tableField = $conf['ds_tableField'];
 		$ds_searchParentField = $conf['ds_pointerField_searchParent'];
-		// Find source value:
-		$dataStructArray = '';
 		// If there is a data source array, that takes precedence
 		if (is_array($ds_array)) {
 			// If a pointer field is set, take the value from that field in the $row array and use as key.
@@ -910,11 +931,13 @@ class BackendUtility {
 					} elseif ($ds_array[$row[$pointerFields[0]]]) {
 						// Check if we have a DS for just the value of the first pointer field (mainly for backwards compatibility)
 						$srcPointer = $row[$pointerFields[0]];
+					} else {
+						$srcPointer = NULL;
 					}
 				} else {
 					$srcPointer = $row[$pointerFields[0]];
 				}
-				$srcPointer = isset($ds_array[$srcPointer]) ? $srcPointer : 'default';
+				$srcPointer = $srcPointer !== NULL && isset($ds_array[$srcPointer]) ? $srcPointer : 'default';
 			} else {
 				$srcPointer = 'default';
 			}
@@ -941,14 +964,15 @@ class BackendUtility {
 					self::workspaceOL($table, $rr);
 					self::fixVersioningPid($table, $rr, TRUE);
 				}
+				$db = static::getDatabaseConnection();
 				$uidAcc = array();
 				// Used to avoid looping, if any should happen.
 				$subFieldPointer = $conf['ds_pointerField_searchParent_subField'];
 				while (!$srcPointer) {
-					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid,' . $ds_pointerField . ',' . $ds_searchParentField . ($subFieldPointer ? ',' . $subFieldPointer : ''), $table, 'uid=' . (int)($newRecordPidValue ?: $rr[$ds_searchParentField]) . self::deleteClause($table));
+					$res = $db->exec_SELECTquery('uid,' . $ds_pointerField . ',' . $ds_searchParentField . ($subFieldPointer ? ',' . $subFieldPointer : ''), $table, 'uid=' . (int)($newRecordPidValue ?: $rr[$ds_searchParentField]) . self::deleteClause($table));
 					$newRecordPidValue = 0;
-					$rr = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-					$GLOBALS['TYPO3_DB']->sql_free_result($res);
+					$rr = $db->sql_fetch_assoc($res);
+					$db->sql_free_result($res);
 					// Break if no result from SQL db or if looping...
 					if (!is_array($rr) || isset($uidAcc[$rr['uid']])) {
 						break;
@@ -1101,10 +1125,12 @@ class BackendUtility {
 	 * @param string $hash 32 bit hash string (eg. a md5 hash of a serialized array identifying the data being stored)
 	 * @param mixed $data The data to store
 	 * @param string $ident $ident is just a textual identification in order to inform about the content!
-	 * @return 	void
+	 * @return void
 	 */
 	static public function storeHash($hash, $data, $ident) {
-		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), 0);
+		/** @var CacheManager $cacheManager */
+		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManager->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), 0);
 	}
 
 	/**
@@ -1114,12 +1140,13 @@ class BackendUtility {
 	 * IDENTICAL to the function by same name found in \TYPO3\CMS\Frontend\Page\PageRepository
 	 *
 	 * @param string $hash The hash-string which was used to store the data value
-	 * @param integer $expTime Variable is not used in the function
 	 * @return mixed The "data" from the cache
 	 */
-	static public function getHash($hash, $expTime = 0) {
+	static public function getHash($hash) {
+		/** @var CacheManager $cacheManager */
+		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheEntry = $cacheManager->getCache('cache_hash')->get($hash);
 		$hashContent = NULL;
-		$cacheEntry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash')->get($hash);
 		if ($cacheEntry) {
 			$hashContent = $cacheEntry;
 		}
@@ -1134,9 +1161,9 @@ class BackendUtility {
 	/**
 	 * Returns the Page TSconfig for page with id, $id
 	 *
-	 * @param $id integer Page uid for which to create Page TSconfig
-	 * @param $rootLine array If $rootLine is an array, that is used as rootline, otherwise rootline is just calculated
-	 * @param boolean $returnPartArray If $returnPartArray is set, then the array with accumulated Page TSconfig is returned non-parsed. Otherwise the output will be parsed by the TypoScript parser.
+	 * @param int $id Page uid for which to create Page TSconfig
+	 * @param array $rootLine If $rootLine is an array, that is used as rootline, otherwise rootline is just calculated
+	 * @param bool $returnPartArray If $returnPartArray is set, then the array with accumulated Page TSconfig is returned non-parsed. Otherwise the output will be parsed by the TypoScript parser.
 	 * @return array Page TSconfig
 	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
 	 */
@@ -1180,9 +1207,9 @@ class BackendUtility {
 				$TSconfig = $res['TSconfig'];
 			}
 			// Get User TSconfig overlay
-			$userTSconfig = $GLOBALS['BE_USER']->userTS['page.'];
+			$userTSconfig = static::getBackendUserAuthentication()->userTS['page.'];
 			if (is_array($userTSconfig)) {
-				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($TSconfig, $userTSconfig);
+				ArrayUtility::mergeRecursiveWithOverrule($TSconfig, $userTSconfig);
 			}
 
 			if ($useCacheForCurrentPageId) {
@@ -1268,8 +1295,9 @@ class BackendUtility {
 		$fieldsIndex[$titleField] = 1;
 
 		$result = array();
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, '1=1 ' . $where . self::deleteClause($table));
-		while ($record = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+		$db = static::getDatabaseConnection();
+		$res = $db->exec_SELECTquery('*', $table, '1=1 ' . $where . self::deleteClause($table));
+		while ($record = $db->sql_fetch_assoc($res)) {
 			// store the uid, because it might be unset if it's not among the requested $fields
 			$recordId = $record['uid'];
 			$record[$titleField] = self::getRecordTitle($table, $record);
@@ -1277,11 +1305,11 @@ class BackendUtility {
 			// include only the requested fields in the result
 			$result[$recordId] = array_intersect_key($record, $fieldsIndex);
 		}
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		$db->sql_free_result($res);
 
 		// sort records by $sortField. This is not done in the query because the title might have been overwritten by
 		// self::getRecordTitle();
-		return \TYPO3\CMS\Core\Utility\ArrayUtility::sortArraysByKey($result, $titleField);
+		return ArrayUtility::sortArraysByKey($result, $titleField);
 	}
 
 	/**
@@ -1292,9 +1320,10 @@ class BackendUtility {
 	 * @return 	array
 	 */
 	static public function getListGroupNames($fields = 'title, uid') {
+		$beUser = static::getBackendUserAuthentication();
 		$exQ = ' AND hide_in_lists=0';
-		if (!$GLOBALS['BE_USER']->isAdmin()) {
-			$exQ .= ' AND uid IN (' . ($GLOBALS['BE_USER']->user['usergroup_cached_list'] ?: 0) . ')';
+		if (!$beUser->isAdmin()) {
+			$exQ .= ' AND uid IN (' . ($beUser->user['usergroup_cached_list'] ?: 0) . ')';
 		}
 		return self::getGroupNames($fields, $exQ);
 	}
@@ -1306,15 +1335,15 @@ class BackendUtility {
 	 *
 	 * @param array $usernames User names
 	 * @param array $groupArray Group names
-	 * @param boolean $excludeBlindedFlag If $excludeBlindedFlag is set, then these records are unset from the array $usernames
+	 * @param bool $excludeBlindedFlag If $excludeBlindedFlag is set, then these records are unset from the array $usernames
 	 * @return array User names, blinded
 	 */
-	static public function blindUserNames($usernames, $groupArray, $excludeBlindedFlag = 0) {
+	static public function blindUserNames($usernames, $groupArray, $excludeBlindedFlag = FALSE) {
 		if (is_array($usernames) && is_array($groupArray)) {
 			foreach ($usernames as $uid => $row) {
 				$userN = $uid;
 				$set = 0;
-				if ($row['uid'] != $GLOBALS['BE_USER']->user['uid']) {
+				if ($row['uid'] != static::getBackendUserAuthentication()->user['uid']) {
 					foreach ($groupArray as $v) {
 						if ($v && GeneralUtility::inList($row['usergroup_cached_list'], $v)) {
 							$userN = $row['username'];
@@ -1339,10 +1368,10 @@ class BackendUtility {
 	 *
 	 * @param array $groups Group names
 	 * @param array $groupArray Group names (reference)
-	 * @param boolean $excludeBlindedFlag If $excludeBlindedFlag is set, then these records are unset from the array $usernames
+	 * @param bool $excludeBlindedFlag If $excludeBlindedFlag is set, then these records are unset from the array $usernames
 	 * @return array
 	 */
-	static public function blindGroupNames($groups, $groupArray, $excludeBlindedFlag = 0) {
+	static public function blindGroupNames($groups, $groupArray, $excludeBlindedFlag = FALSE) {
 		if (is_array($groups) && is_array($groupArray)) {
 			foreach ($groups as $uid => $row) {
 				$groupN = $uid;
@@ -1368,8 +1397,8 @@ class BackendUtility {
 	/**
 	 * Returns the difference in days between input $tstamp and $EXEC_TIME
 	 *
-	 * @param integer $tstamp Time stamp, seconds
-	 * @return integer
+	 * @param int $tstamp Time stamp, seconds
+	 * @return int
 	 */
 	static public function daysUntil($tstamp) {
 		$delta_t = $tstamp - $GLOBALS['EXEC_TIME'];
@@ -1379,7 +1408,7 @@ class BackendUtility {
 	/**
 	 * Returns $tstamp formatted as "ddmmyy" (According to $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'])
 	 *
-	 * @param integer $tstamp Time stamp, seconds
+	 * @param int $tstamp Time stamp, seconds
 	 * @return string Formatted time
 	 */
 	static public function date($tstamp) {
@@ -1389,7 +1418,7 @@ class BackendUtility {
 	/**
 	 * Returns $tstamp formatted as "ddmmyy hhmm" (According to $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] AND $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'])
 	 *
-	 * @param integer $value Time stamp, seconds
+	 * @param int $value Time stamp, seconds
 	 * @return string Formatted time
 	 */
 	static public function datetime($value) {
@@ -1400,8 +1429,8 @@ class BackendUtility {
 	 * Returns $value (in seconds) formatted as hh:mm:ss
 	 * For instance $value = 3600 + 60*2 + 3 should return "01:02:03"
 	 *
-	 * @param integer $value Time stamp, seconds
-	 * @param boolean $withSeconds Output hh:mm:ss. If FALSE: hh:mm
+	 * @param int $value Time stamp, seconds
+	 * @param bool $withSeconds Output hh:mm:ss. If FALSE: hh:mm
 	 * @return string Formatted time
 	 */
 	static public function time($value, $withSeconds = TRUE) {
@@ -1418,7 +1447,7 @@ class BackendUtility {
 	/**
 	 * Returns the "age" in minutes / hours / days / years of the number of $seconds inputted.
 	 *
-	 * @param integer $seconds Seconds could be the difference of a certain timestamp and time()
+	 * @param int $seconds Seconds could be the difference of a certain timestamp and time()
 	 * @param string $labels Labels should be something like ' min| hrs| days| yrs| min| hour| day| year'. This value is typically delivered by this function call: $GLOBALS["LANG"]->sL("LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears")
 	 * @return string Formatted time
 	 */
@@ -1446,13 +1475,18 @@ class BackendUtility {
 	 * Returns a formatted timestamp if $tstamp is set.
 	 * The date/datetime will be followed by the age in parenthesis.
 	 *
-	 * @param integer $tstamp Time stamp, seconds
-	 * @param integer $prefix 1/-1 depending on polarity of age.
+	 * @param int $tstamp Time stamp, seconds
+	 * @param int $prefix 1/-1 depending on polarity of age.
 	 * @param string $date $date=="date" will yield "dd:mm:yy" formatting, otherwise "dd:mm:yy hh:mm
 	 * @return string
 	 */
 	static public function dateTimeAge($tstamp, $prefix = 1, $date = '') {
-		return $tstamp ? ($date == 'date' ? self::date($tstamp) : self::datetime($tstamp)) . ' (' . self::calcAge($prefix * ($GLOBALS['EXEC_TIME'] - $tstamp), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')) . ')' : '';
+		if (!$tstamp) {
+			return '';
+		}
+		$label = static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears');
+		$age = ' (' . self::calcAge($prefix * ($GLOBALS['EXEC_TIME'] - $tstamp), $label) . ')';
+		return $date === 'date' ? self::date($tstamp) : self::datetime($tstamp) . $age;
 	}
 
 	/**
@@ -1475,7 +1509,7 @@ class BackendUtility {
 	 * @param string $fieldName Name of the field of the record
 	 * @param array $element Record data
 	 * @param NULL|int $workspaceId Workspace to fetch data for
-	 * @return NULL|array|\TYPO3\CMS\Core\Resource\FileReference[]
+	 * @return NULL|\TYPO3\CMS\Core\Resource\FileReference[]
 	 */
 	static public function resolveFileReferences($tableName, $fieldName, $element, $workspaceId = NULL) {
 		if (empty($GLOBALS['TCA'][$tableName]['columns'][$fieldName]['config'])) {
@@ -1514,22 +1548,20 @@ class BackendUtility {
 	 * @param string $table Table name for $row (present in TCA)
 	 * @param string $field Field is pointing to the list of image files
 	 * @param string $backPath Back path prefix for image tag src="" field
-	 * @param string $thumbScript Optional: $thumbScript - not used anymore since FAL
+	 * @param string $thumbScript UNUSED since FAL
 	 * @param string $uploaddir Optional: $uploaddir is the directory relative to PATH_site where the image files from the $field value is found (Is by default set to the entry in $GLOBALS['TCA'] for that field! so you don't have to!)
-	 * @param boolean $abs If set, uploaddir is NOT prepended with "../
+	 * @param int $abs UNUSED
 	 * @param string $tparams Optional: $tparams is additional attributes for the image tags
-	 * @param integer $size Optional: $size is [w]x[h] of the thumbnail. 56 is default.
-	 * @param boolean $linkInfoPopup Whether to wrap with a link opening the info popup
+	 * @param int|string $size Optional: $size is [w]x[h] of the thumbnail. 64 is default.
+	 * @param bool $linkInfoPopup Whether to wrap with a link opening the info popup
 	 * @return string Thumbnail image tag.
 	 */
 	static public function thumbCode($row, $table, $field, $backPath, $thumbScript = '', $uploaddir = NULL, $abs = 0, $tparams = '', $size = '', $linkInfoPopup = TRUE) {
 		// Check and parse the size parameter
+		$size = trim($size);
 		$sizeParts = array(64, 64);
-		if ($size = trim($size)) {
+		if ($size) {
 			$sizeParts = explode('x', $size . 'x' . $size);
-			if (!(int)$sizeParts[0]) {
-				$size = '';
-			}
 		}
 		$thumbData = '';
 		$fileReferences = static::resolveFileReferences($table, $field, $row);
@@ -1582,11 +1614,11 @@ class BackendUtility {
 							$thumbData .= $flashMessage->render();
 							continue;
 						}
-					} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $exception) {
+					} catch (ResourceDoesNotExistException $exception) {
 						/** @var FlashMessage $flashMessage */
 						$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
 							htmlspecialchars($exception->getMessage()),
-							$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing', TRUE),
+							static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing', TRUE),
 							FlashMessage::ERROR
 						);
 						$thumbData .= $flashMessage->render();
@@ -1628,13 +1660,14 @@ class BackendUtility {
 	 * @param string $thumbScript Must point to "thumbs.php" relative to the script position
 	 * @param string $theFile Must be the proper reference to the file that thumbs.php should show
 	 * @param string $tparams The additional attributes for the image tag
-	 * @param integer $size The size of the thumbnail send along to "thumbs.php
+	 * @param string $size The size of the thumbnail send along to thumbs.php
 	 * @return string Image tag
 	 */
 	static public function getThumbNail($thumbScript, $theFile, $tparams = '', $size = '') {
+		$size = trim($size);
 		$check = basename($theFile) . ':' . filemtime($theFile) . ':' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
 		$params = '&file=' . rawurlencode($theFile);
-		$params .= trim($size) ? '&size=' . trim($size) : '';
+		$params .= $size ? '&size=' . $size : '';
 		$params .= '&md5sum=' . md5($check);
 		$url = $thumbScript . '?' . $params;
 		$th = '<img src="' . htmlspecialchars($url) . '" title="' . trim(basename($theFile)) . '"' . ($tparams ? ' ' . $tparams : '') . ' alt="" />';
@@ -1646,14 +1679,15 @@ class BackendUtility {
 	 *
 	 * @param array $row Input must be a page row ($row) with the proper fields set (be sure - send the full range of fields for the table)
 	 * @param string $perms_clause This is used to get the record path of the shortcut page, if any (and doktype==4)
-	 * @param boolean $includeAttrib If $includeAttrib is set, then the 'title=""' attribute is wrapped about the return value, which is in any case htmlspecialchar()'ed already
+	 * @param bool $includeAttrib If $includeAttrib is set, then the 'title=""' attribute is wrapped about the return value, which is in any case htmlspecialchar()'ed already
 	 * @return string
 	 */
-	static public function titleAttribForPages($row, $perms_clause = '', $includeAttrib = 1) {
+	static public function titleAttribForPages($row, $perms_clause = '', $includeAttrib = TRUE) {
+		$lang = static::getLanguageService();
 		$parts = array();
 		$parts[] = 'id=' . $row['uid'];
 		if ($row['alias']) {
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['alias']['label']) . ' ' . $row['alias'];
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['alias']['label']) . ' ' . $row['alias'];
 		}
 		if ($row['pid'] < 0) {
 			$parts[] = 'v#1.' . $row['t3ver_id'];
@@ -1676,7 +1710,7 @@ class BackendUtility {
 				break;
 		}
 		if ($row['doktype'] == PageRepository::DOKTYPE_LINK) {
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['url']['label']) . ' ' . $row['url'];
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['url']['label']) . ' ' . $row['url'];
 		} elseif ($row['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 			if ($perms_clause) {
 				$label = self::getRecordPath((int)$row['shortcut'], $perms_clause, 20);
@@ -1686,9 +1720,9 @@ class BackendUtility {
 				$label = $lRec['title'] . ' (id=' . $row['shortcut'] . ')';
 			}
 			if ($row['shortcut_mode'] != PageRepository::SHORTCUT_MODE_NONE) {
-				$label .= ', ' . $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['shortcut_mode']['label']) . ' ' . $GLOBALS['LANG']->sL(self::getLabelFromItemlist('pages', 'shortcut_mode', $row['shortcut_mode']));
+				$label .= ', ' . $lang->sL($GLOBALS['TCA']['pages']['columns']['shortcut_mode']['label']) . ' ' . $lang->sL(self::getLabelFromItemlist('pages', 'shortcut_mode', $row['shortcut_mode']));
 			}
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['shortcut']['label']) . ' ' . $label;
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['shortcut']['label']) . ' ' . $label;
 		} elseif ($row['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT) {
 			if ($perms_clause) {
 				$label = self::getRecordPath((int)$row['mount_pid'], $perms_clause, 20);
@@ -1696,35 +1730,35 @@ class BackendUtility {
 				$lRec = self::getRecordWSOL('pages', (int)$row['mount_pid'], 'title');
 				$label = $lRec['title'] . ' (id=' . $row['mount_pid'] . ')';
 			}
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['mount_pid']['label']) . ' ' . $label;
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['mount_pid']['label']) . ' ' . $label;
 			if ($row['mount_pid_ol']) {
-				$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['mount_pid_ol']['label']);
+				$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['mount_pid_ol']['label']);
 			}
 		}
 		if ($row['nav_hide']) {
-			$parts[] = rtrim($GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['nav_hide']['label']), ':');
+			$parts[] = rtrim($lang->sL($GLOBALS['TCA']['pages']['columns']['nav_hide']['label']), ':');
 		}
 		if ($row['hidden']) {
-			$parts[] = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden');
+			$parts[] = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden');
 		}
 		if ($row['starttime']) {
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['starttime']['label']) . ' ' . self::dateTimeAge($row['starttime'], -1, 'date');
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['starttime']['label']) . ' ' . self::dateTimeAge($row['starttime'], -1, 'date');
 		}
 		if ($row['endtime']) {
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['endtime']['label']) . ' ' . self::dateTimeAge($row['endtime'], -1, 'date');
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['endtime']['label']) . ' ' . self::dateTimeAge($row['endtime'], -1, 'date');
 		}
 		if ($row['fe_group']) {
 			$fe_groups = array();
 			foreach (GeneralUtility::intExplode(',', $row['fe_group']) as $fe_group) {
 				if ($fe_group < 0) {
-					$fe_groups[] = $GLOBALS['LANG']->sL(self::getLabelFromItemlist('pages', 'fe_group', $fe_group));
+					$fe_groups[] = $lang->sL(self::getLabelFromItemlist('pages', 'fe_group', $fe_group));
 				} else {
 					$lRec = self::getRecordWSOL('fe_groups', $fe_group, 'title');
 					$fe_groups[] = $lRec['title'];
 				}
 			}
 			$label = implode(', ', $fe_groups);
-			$parts[] = $GLOBALS['LANG']->sL($GLOBALS['TCA']['pages']['columns']['fe_group']['label']) . ' ' . $label;
+			$parts[] = $lang->sL($GLOBALS['TCA']['pages']['columns']['fe_group']['label']) . ' ' . $label;
 		}
 		$out = htmlspecialchars(implode(' - ', $parts));
 		return $includeAttrib ? 'title="' . $out . '"' : $out;
@@ -1772,16 +1806,17 @@ class BackendUtility {
 				}
 			}
 			// Hidden
+			$lang = static::getLanguageService();
 			if ($ctrl['disabled']) {
-				$out .= $row[$ctrl['disabled']] ? ' - ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden') : '';
+				$out .= $row[$ctrl['disabled']] ? ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.hidden') : '';
 			}
 			if ($ctrl['starttime']) {
 				if ($row[$ctrl['starttime']] > $GLOBALS['EXEC_TIME']) {
-					$out .= ' - ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.starttime') . ':' . self::date($row[$ctrl['starttime']]) . ' (' . self::daysUntil($row[$ctrl['starttime']]) . ' ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
+					$out .= ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.starttime') . ':' . self::date($row[$ctrl['starttime']]) . ' (' . self::daysUntil($row[$ctrl['starttime']]) . ' ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
 				}
 			}
 			if ($row[$ctrl['endtime']]) {
-				$out .= ' - ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.endtime') . ': ' . self::date($row[$ctrl['endtime']]) . ' (' . self::daysUntil($row[$ctrl['endtime']]) . ' ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
+				$out .= ' - ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.endtime') . ': ' . self::date($row[$ctrl['endtime']]) . ' (' . self::daysUntil($row[$ctrl['endtime']]) . ' ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.days') . ')';
 			}
 		}
 		return htmlspecialchars($out);
@@ -1799,19 +1834,20 @@ class BackendUtility {
 		// Check, if there is an "items" array:
 		if (is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'][$col]) && is_array($GLOBALS['TCA'][$table]['columns'][$col]['config']['items'])) {
 			// Traverse the items-array...
-			foreach ($GLOBALS['TCA'][$table]['columns'][$col]['config']['items'] as $k => $v) {
+			foreach ($GLOBALS['TCA'][$table]['columns'][$col]['config']['items'] as $v) {
 				// ... and return the first found label where the value was equal to $key
 				if ((string)$v[1] === (string)$key) {
 					return $v[0];
 				}
 			}
 		}
+		return '';
 	}
 
 	/**
 	 * Return the label of a field by additionally checking TsConfig values
 	 *
-	 * @param integer $pageId Page id
+	 * @param int $pageId Page id
 	 * @param string $table Table name
 	 * @param string $column Field Name
 	 * @param string $key item value
@@ -1857,7 +1893,7 @@ class BackendUtility {
 						// Loop on all available items
 						// Keep matches and move on to next value
 						if ($aValue == $itemConfiguration[1]) {
-							$labels[] = $GLOBALS['LANG']->sL($itemConfiguration[0]);
+							$labels[] = static::getLanguageService()->sL($itemConfiguration[0]);
 							break;
 						}
 					}
@@ -1925,8 +1961,8 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name, present in TCA
 	 * @param array $row Row from table
-	 * @param boolean $prep If set, result is prepared for output: The output is cropped to a limited length (depending on BE_USER->uc['titleLen']) and if no value is found for the title, '<em>[No title]</em>' is returned (localized). Further, the output is htmlspecialchars()'ed
-	 * @param boolean $forceResult If set, the function always returns an output. If no value is found for the title, '[No title]' is returned (localized).
+	 * @param bool $prep If set, result is prepared for output: The output is cropped to a limited length (depending on BE_USER->uc['titleLen']) and if no value is found for the title, '<em>[No title]</em>' is returned (localized). Further, the output is htmlspecialchars()'ed
+	 * @param bool $forceResult If set, the function always returns an output. If no value is found for the title, '[No title]' is returned (localized).
 	 * @return string
 	 */
 	static public function getRecordTitle($table, $row, $prep = FALSE, $forceResult = TRUE) {
@@ -1981,6 +2017,7 @@ class BackendUtility {
 			}
 			return $t;
 		}
+		return '';
 	}
 
 	/**
@@ -1988,13 +2025,13 @@ class BackendUtility {
 	 * which offers a tooltip with the original title when moving mouse over it.
 	 *
 	 * @param string $title The title string to be cropped
-	 * @param integer $titleLength Crop title after this length - if not set, BE_USER->uc['titleLen'] is used
+	 * @param int $titleLength Crop title after this length - if not set, BE_USER->uc['titleLen'] is used
 	 * @return string The processed title string, wrapped in <span title="...">|</span> if cropped
 	 */
 	static public function getRecordTitlePrep($title, $titleLength = 0) {
 		// If $titleLength is not a valid positive integer, use BE_USER->uc['titleLen']:
 		if (!$titleLength || !MathUtility::canBeInterpretedAsInteger($titleLength) || $titleLength < 0) {
-			$titleLength = $GLOBALS['BE_USER']->uc['titleLen'];
+			$titleLength = static::getBackendUserAuthentication()->uc['titleLen'];
 		}
 		$titleOrig = htmlspecialchars($title);
 		$title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, $titleLength));
@@ -2008,11 +2045,11 @@ class BackendUtility {
 	/**
 	 * Get a localized [No title] string, wrapped in <em>|</em> if $prep is TRUE.
 	 *
-	 * @param boolean $prep Wrap result in <em>|</em>
+	 * @param bool $prep Wrap result in <em>|</em>
 	 * @return string Localized [No title] string
 	 */
 	static public function getNoRecordTitle($prep = FALSE) {
-		$noTitle = '[' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', TRUE) . ']';
+		$noTitle = '[' . static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', TRUE) . ']';
 		if ($prep) {
 			$noTitle = '<em>' . $noTitle . '</em>';
 		}
@@ -2028,72 +2065,73 @@ class BackendUtility {
 	 * @param string $table Table name, present in TCA
 	 * @param string $col Field name, present in TCA
 	 * @param string $value The value of that field from a selected record
-	 * @param integer $fixed_lgd_chars The max amount of characters the value may occupy
-	 * @param boolean $defaultPassthrough Flag means that values for columns that has no conversion will just be pass through directly (otherwise cropped to 200 chars or returned as "N/A")
-	 * @param boolean $noRecordLookup If set, no records will be looked up, UIDs are just shown.
-	 * @param integer $uid Uid of the current record
-	 * @param boolean $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
+	 * @param int $fixed_lgd_chars The max amount of characters the value may occupy
+	 * @param bool $defaultPassthrough Flag means that values for columns that has no conversion will just be pass through directly (otherwise cropped to 200 chars or returned as "N/A")
+	 * @param bool $noRecordLookup If set, no records will be looked up, UIDs are just shown.
+	 * @param int $uid Uid of the current record
+	 * @param bool $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
 	 * @return string
 	 */
-	static public function getProcessedValue($table, $col, $value, $fixed_lgd_chars = 0, $defaultPassthrough = 0, $noRecordLookup = FALSE, $uid = 0, $forceResult = TRUE) {
-		if ($col == 'uid') {
-			// No need to load TCA as uid is not in TCA-array
+	static public function getProcessedValue($table, $col, $value, $fixed_lgd_chars = 0, $defaultPassthrough = FALSE, $noRecordLookup = FALSE, $uid = 0, $forceResult = TRUE) {
+		if ($col === 'uid') {
+			// uid is not in TCA-array
 			return $value;
 		}
-		// Check if table and field is configured:
-		if (is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'][$col])) {
-			// Depending on the fields configuration, make a meaningful output value.
-			$theColConf = $GLOBALS['TCA'][$table]['columns'][$col]['config'];
-			/*****************
-			 *HOOK: pre-processing the human readable output from a record
-			 ****************/
-			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['preProcessValue'])) {
-				// Create NULL-reference
-				$null = NULL;
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['preProcessValue'] as $_funcRef) {
-					GeneralUtility::callUserFunction($_funcRef, $theColConf, $null);
-				}
+		// Check if table and field is configured
+		if (!is_array($GLOBALS['TCA'][$table]) || !is_array($GLOBALS['TCA'][$table]['columns'][$col])) {
+			return '';
+		}
+		// Depending on the fields configuration, make a meaningful output value.
+		$theColConf = $GLOBALS['TCA'][$table]['columns'][$col]['config'];
+		/*****************
+		 *HOOK: pre-processing the human readable output from a record
+		 ****************/
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['preProcessValue'])) {
+			// Create NULL-reference
+			$null = NULL;
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['preProcessValue'] as $_funcRef) {
+				GeneralUtility::callUserFunction($_funcRef, $theColConf, $null);
 			}
-			$l = '';
-			switch ((string) $theColConf['type']) {
-				case 'radio':
-					$l = self::getLabelFromItemlist($table, $col, $value);
-					$l = $GLOBALS['LANG']->sL($l);
-					break;
-				case 'inline':
-				case 'select':
-					if ($theColConf['MM']) {
-						if ($uid) {
-							// Display the title of MM related records in lists
-							if ($noRecordLookup) {
-								$MMfield = $theColConf['foreign_table'] . '.uid';
-							} else {
-								$MMfields = array($theColConf['foreign_table'] . '.' . $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label']);
-								foreach (GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label_alt'], TRUE) as $f) {
-									$MMfields[] = $theColConf['foreign_table'] . '.' . $f;
-								}
-								$MMfield = join(',', $MMfields);
+		}
+		$l = '';
+		$db = static::getDatabaseConnection();
+		$lang = static::getLanguageService();
+		switch ((string)$theColConf['type']) {
+			case 'radio':
+				$l = self::getLabelFromItemlist($table, $col, $value);
+				$l = $lang->sL($l);
+				break;
+			case 'inline':
+			case 'select':
+				if ($theColConf['MM']) {
+					if ($uid) {
+						// Display the title of MM related records in lists
+						if ($noRecordLookup) {
+							$MMfield = $theColConf['foreign_table'] . '.uid';
+						} else {
+							$MMfields = array($theColConf['foreign_table'] . '.' . $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label']);
+							foreach (GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label_alt'], TRUE) as $f) {
+								$MMfields[] = $theColConf['foreign_table'] . '.' . $f;
 							}
-							/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
-							$dbGroup = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
-							$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
-							$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
-							if (is_array($selectUids) && count($selectUids) > 0) {
-								$MMres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid, ' . $MMfield, $theColConf['foreign_table'], 'uid IN (' . implode(',', $selectUids) . ')' . self::deleteClause($theColConf['foreign_table']));
-								$mmlA = array();
-								while ($MMrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($MMres)) {
-									// Keep sorting of $selectUids
-									$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup ?
-										$MMrow['uid'] :
-										self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
-								}
-								$GLOBALS['TYPO3_DB']->sql_free_result($MMres);
-								if (!empty($mmlA)) {
-									ksort($mmlA);
-									$l = implode('; ', $mmlA);
-								} else {
-									$l = 'N/A';
-								}
+							$MMfield = join(',', $MMfields);
+						}
+						/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
+						$dbGroup = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+						$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
+						$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
+						if (is_array($selectUids) && count($selectUids) > 0) {
+							$MMres = $db->exec_SELECTquery('uid, ' . $MMfield, $theColConf['foreign_table'], 'uid IN (' . implode(',', $selectUids) . ')' . self::deleteClause($theColConf['foreign_table']));
+							$mmlA = array();
+							while ($MMrow = $db->sql_fetch_assoc($MMres)) {
+								// Keep sorting of $selectUids
+								$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup ?
+									$MMrow['uid'] :
+									self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+							}
+							$db->sql_free_result($MMres);
+							if (!empty($mmlA)) {
+								ksort($mmlA);
+								$l = implode('; ', $mmlA);
 							} else {
 								$l = 'N/A';
 							}
@@ -2101,158 +2139,160 @@ class BackendUtility {
 							$l = 'N/A';
 						}
 					} else {
-						$l = self::getLabelsFromItemsList($table, $col, $value);
-						if ($theColConf['foreign_table'] && !$l && $GLOBALS['TCA'][$theColConf['foreign_table']]) {
-							if ($noRecordLookup) {
-								$l = $value;
-							} else {
-								$rParts = array();
-								if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
-									$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid);
-									if (!empty($records)) {
-										foreach ($records as $record) {
-											$rParts[] = $record['uid'];
-										}
-									}
-								}
-								if (empty($rParts)) {
-									$rParts = GeneralUtility::trimExplode(',', $value, TRUE);
-								}
-								$lA = array();
-								foreach ($rParts as $rVal) {
-									$rVal = (int)$rVal;
-									if ($rVal > 0) {
-										$r = self::getRecordWSOL($theColConf['foreign_table'], $rVal);
-									} else {
-										$r = self::getRecordWSOL($theColConf['neg_foreign_table'], -$rVal);
-									}
-									if (is_array($r)) {
-										$lA[] = $GLOBALS['LANG']->sL(($rVal > 0 ? $theColConf['foreign_table_prefix'] : $theColConf['neg_foreign_table_prefix'])) . self::getRecordTitle(($rVal > 0 ? $theColConf['foreign_table'] : $theColConf['neg_foreign_table']), $r, FALSE, $forceResult);
-									} else {
-										$lA[] = $rVal ? '[' . $rVal . '!]' : '';
-									}
-								}
-								$l = implode(', ', $lA);
-							}
-						}
-						if (empty($l) && !empty($value)) {
-							// Use plain database value when label is empty
-							$l = $value;
-						}
-					}
-					break;
-				case 'group':
-					// resolve the titles for DB records
-					if ($theColConf['internal_type'] === 'db') {
-						$finalValues = array();
-						$relationTableName = $theColConf['allowed'];
-						$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
-
-						foreach ($explodedValues as $explodedValue) {
-
-							if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
-								$relationTableNameForField = $relationTableName;
-							} else {
-								list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
-							}
-
-							$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
-							$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
-						}
-
-						$l = implode(', ', $finalValues);
-					} else {
-						$l = implode(', ', GeneralUtility::trimExplode(',', $value, TRUE));
-					}
-					break;
-				case 'check':
-					if (!is_array($theColConf['items']) || count($theColConf['items']) == 1) {
-						$l = $value ? $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:yes') : $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:no');
-					} else {
-						$lA = array();
-						foreach ($theColConf['items'] as $key => $val) {
-							if ($value & pow(2, $key)) {
-								$lA[] = $GLOBALS['LANG']->sL($val[0]);
-							}
-						}
-						$l = implode(', ', $lA);
-					}
-					break;
-				case 'input':
-					// Hide value 0 for dates, but show it for everything else
-					if (isset($value)) {
-						if (GeneralUtility::inList($theColConf['eval'], 'date')) {
-							// Handle native date field
-							if (isset($theColConf['dbType']) && $theColConf['dbType'] === 'date') {
-								$dateTimeFormats = $GLOBALS['TYPO3_DB']->getDateTimeFormats($table);
-								$emptyValue = $dateTimeFormats['date']['empty'];
-								$value = $value !== $emptyValue ? strtotime($value) : 0;
-							}
-							if (!empty($value)) {
-								$l = self::date($value) . ' (' . ($GLOBALS['EXEC_TIME'] - $value > 0 ? '-' : '') . self::calcAge(abs(($GLOBALS['EXEC_TIME'] - $value)), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')) . ')';
-							}
-						} elseif (GeneralUtility::inList($theColConf['eval'], 'time')) {
-							if (!empty($value)) {
-								$l = self::time($value, FALSE);
-							}
-						} elseif (GeneralUtility::inList($theColConf['eval'], 'timesec')) {
-							if (!empty($value)) {
-								$l = self::time($value);
-							}
-						} elseif (GeneralUtility::inList($theColConf['eval'], 'datetime')) {
-							// Handle native date/time field
-							if (isset($theColConf['dbType']) && $theColConf['dbType'] === 'datetime') {
-								$dateTimeFormats = $GLOBALS['TYPO3_DB']->getDateTimeFormats($table);
-								$emptyValue = $dateTimeFormats['datetime']['empty'];
-								$value = $value !== $emptyValue ? strtotime($value) : 0;
-							}
-							if (!empty($value)) {
-								$l = self::datetime($value);
-							}
-						} else {
-							$l = $value;
-						}
-					}
-					break;
-				case 'flex':
-					$l = strip_tags($value);
-					break;
-				default:
-					if ($defaultPassthrough) {
-						$l = $value;
-					} elseif ($theColConf['MM']) {
 						$l = 'N/A';
-					} elseif ($value) {
-						$l = GeneralUtility::fixed_lgd_cs(strip_tags($value), 200);
 					}
-			}
-			// If this field is a password field, then hide the password by changing it to a random number of asterisk (*)
-			if (stristr($theColConf['eval'], 'password')) {
-				$l = '';
-				$randomNumber = rand(5, 12);
-				for ($i = 0; $i < $randomNumber; $i++) {
-					$l .= '*';
+				} else {
+					$l = self::getLabelsFromItemsList($table, $col, $value);
+					if ($theColConf['foreign_table'] && !$l && $GLOBALS['TCA'][$theColConf['foreign_table']]) {
+						if ($noRecordLookup) {
+							$l = $value;
+						} else {
+							$rParts = array();
+							if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
+								$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid);
+								if (!empty($records)) {
+									foreach ($records as $record) {
+										$rParts[] = $record['uid'];
+									}
+								}
+							}
+							if (empty($rParts)) {
+								$rParts = GeneralUtility::trimExplode(',', $value, TRUE);
+							}
+							$lA = array();
+							foreach ($rParts as $rVal) {
+								$rVal = (int)$rVal;
+								if ($rVal > 0) {
+									$r = self::getRecordWSOL($theColConf['foreign_table'], $rVal);
+								} else {
+									$r = self::getRecordWSOL($theColConf['neg_foreign_table'], -$rVal);
+								}
+								if (is_array($r)) {
+									$lA[] = $lang->sL(($rVal > 0 ? $theColConf['foreign_table_prefix'] : $theColConf['neg_foreign_table_prefix'])) . self::getRecordTitle(($rVal > 0 ? $theColConf['foreign_table'] : $theColConf['neg_foreign_table']), $r, FALSE, $forceResult);
+								} else {
+									$lA[] = $rVal ? '[' . $rVal . '!]' : '';
+								}
+							}
+							$l = implode(', ', $lA);
+						}
+					}
+					if (empty($l) && !empty($value)) {
+						// Use plain database value when label is empty
+						$l = $value;
+					}
 				}
-			}
-			/*****************
-			 *HOOK: post-processing the human readable output from a record
-			 ****************/
-			if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['postProcessValue'])) {
-				// Create NULL-reference
-				$null = NULL;
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['postProcessValue'] as $_funcRef) {
-					$params = array(
-						'value' => $l,
-						'colConf' => $theColConf
-					);
-					$l = GeneralUtility::callUserFunction($_funcRef, $params, $null);
+				break;
+			case 'group':
+				// resolve the titles for DB records
+				if ($theColConf['internal_type'] === 'db') {
+					$finalValues = array();
+					$relationTableName = $theColConf['allowed'];
+					$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
+
+					foreach ($explodedValues as $explodedValue) {
+
+						if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
+							$relationTableNameForField = $relationTableName;
+						} else {
+							list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
+						}
+
+						$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
+						$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
+					}
+
+					$l = implode(', ', $finalValues);
+				} else {
+					$l = implode(', ', GeneralUtility::trimExplode(',', $value, TRUE));
 				}
+				break;
+			case 'check':
+				if (!is_array($theColConf['items']) || count($theColConf['items']) == 1) {
+					$l = $value ? $lang->sL('LLL:EXT:lang/locallang_common.xlf:yes') : $lang->sL('LLL:EXT:lang/locallang_common.xlf:no');
+				} else {
+					$lA = array();
+					foreach ($theColConf['items'] as $key => $val) {
+						if ($value & pow(2, $key)) {
+							$lA[] = $lang->sL($val[0]);
+						}
+					}
+					$l = implode(', ', $lA);
+				}
+				break;
+			case 'input':
+				// Hide value 0 for dates, but show it for everything else
+				if (isset($value)) {
+					if (GeneralUtility::inList($theColConf['eval'], 'date')) {
+						// Handle native date field
+						if (isset($theColConf['dbType']) && $theColConf['dbType'] === 'date') {
+							$dateTimeFormats = $db->getDateTimeFormats($table);
+							$emptyValue = $dateTimeFormats['date']['empty'];
+							$value = $value !== $emptyValue ? strtotime($value) : 0;
+						}
+						if (!empty($value)) {
+							$l = self::date($value) . ' (' . ($GLOBALS['EXEC_TIME'] - $value > 0 ? '-' : '') . self::calcAge(abs(($GLOBALS['EXEC_TIME'] - $value)), $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')) . ')';
+						}
+					} elseif (GeneralUtility::inList($theColConf['eval'], 'time')) {
+						if (!empty($value)) {
+							$l = self::time($value, FALSE);
+						}
+					} elseif (GeneralUtility::inList($theColConf['eval'], 'timesec')) {
+						if (!empty($value)) {
+							$l = self::time($value);
+						}
+					} elseif (GeneralUtility::inList($theColConf['eval'], 'datetime')) {
+						// Handle native date/time field
+						if (isset($theColConf['dbType']) && $theColConf['dbType'] === 'datetime') {
+							$dateTimeFormats = $db->getDateTimeFormats($table);
+							$emptyValue = $dateTimeFormats['datetime']['empty'];
+							$value = $value !== $emptyValue ? strtotime($value) : 0;
+						}
+						if (!empty($value)) {
+							$l = self::datetime($value);
+						}
+					} else {
+						$l = $value;
+					}
+				}
+				break;
+			case 'flex':
+				$l = strip_tags($value);
+				break;
+			default:
+				if ($defaultPassthrough) {
+					$l = $value;
+				} elseif ($theColConf['MM']) {
+					$l = 'N/A';
+				} elseif ($value) {
+					$l = GeneralUtility::fixed_lgd_cs(strip_tags($value), 200);
+				}
+		}
+		// If this field is a password field, then hide the password by changing it to a random number of asterisk (*)
+		if (stristr($theColConf['eval'], 'password')) {
+			$l = '';
+			$randomNumber = rand(5, 12);
+			for ($i = 0; $i < $randomNumber; $i++) {
+				$l .= '*';
 			}
-			if ($fixed_lgd_chars) {
-				return GeneralUtility::fixed_lgd_cs($l, $fixed_lgd_chars);
-			} else {
-				return $l;
+		}
+		/*****************
+		 *HOOK: post-processing the human readable output from a record
+		 ****************/
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['postProcessValue'])) {
+			// Create NULL-reference
+			$null = NULL;
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['postProcessValue'] as $_funcRef) {
+				$params = array(
+					'value' => $l,
+					'colConf' => $theColConf
+				);
+				$l = GeneralUtility::callUserFunction($_funcRef, $params, $null);
 			}
+		}
+		if ($fixed_lgd_chars) {
+			return GeneralUtility::fixed_lgd_cs($l, $fixed_lgd_chars);
+		} else {
+			return $l;
 		}
 	}
 
@@ -2262,9 +2302,9 @@ class BackendUtility {
 	 * @param string $table Table name, present in TCA
 	 * @param string $fN Field name
 	 * @param string $fV Field value
-	 * @param integer $fixed_lgd_chars The max amount of characters the value may occupy
-	 * @param integer $uid Uid of the current record
-	 * @param boolean $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
+	 * @param int $fixed_lgd_chars The max amount of characters the value may occupy
+	 * @param int $uid Uid of the current record
+	 * @param bool $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
 	 * @return string
 	 * @see getProcessedValue()
 	 */
@@ -2359,8 +2399,8 @@ class BackendUtility {
 	 */
 	static public function makeConfigForm($configArray, $defaults, $dataPrefix) {
 		$params = $defaults;
+		$lines = array();
 		if (is_array($configArray)) {
-			$lines = array();
 			foreach ($configArray as $fname => $config) {
 				if (is_array($config)) {
 					$lines[$fname] = '<strong>' . htmlspecialchars($config[1]) . '</strong><br />';
@@ -2369,7 +2409,7 @@ class BackendUtility {
 						case 'string':
 
 						case 'short':
-							$formEl = '<input type="text" name="' . $dataPrefix . '[' . $fname . ']" value="' . $params[$fname] . '"' . $GLOBALS['TBE_TEMPLATE']->formWidth(($config[0] == 'short' ? 24 : 48)) . ' />';
+							$formEl = '<input type="text" name="' . $dataPrefix . '[' . $fname . ']" value="' . $params[$fname] . '"' . static::getDocumentTemplate()->formWidth(($config[0] == 'short' ? 24 : 48)) . ' />';
 							break;
 						case 'check':
 							$formEl = '<input type="hidden" name="' . $dataPrefix . '[' . $fname . ']" value="0" /><input type="checkbox" name="' . $dataPrefix . '[' . $fname . ']" value="1"' . ($params[$fname] ? ' checked="checked"' : '') . ' />';
@@ -2385,7 +2425,7 @@ class BackendUtility {
 							$formEl = '<select name="' . $dataPrefix . '[' . $fname . ']">' . implode('', $opt) . '</select>';
 							break;
 						default:
-							debug($config);
+							$formEl = '<strong>Should not happen. Bug in config.</strong>';
 					}
 					$lines[$fname] .= $formEl;
 					$lines[$fname] .= '<br /><br />';
@@ -2412,7 +2452,7 @@ class BackendUtility {
 	 *******************************************/
 	/**
 	 * Returns help-text icon if configured for.
-	 * TCA_DESCR must be loaded prior to this function and $GLOBALS['BE_USER'] must
+	 * TCA_DESCR must be loaded prior to this function and static::getBackendUserAuthentication() must
 	 * have 'edit_showFieldHelp' set to 'icon', otherwise nothing is returned
 	 *
 	 * Please note: since TYPO3 4.5 the UX team decided to not use CSH in its former way,
@@ -2422,14 +2462,18 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name
 	 * @param string $field Field name
-	 * @param string $BACK_PATH Back path
-	 * @param boolean $force Force display of icon no matter BE_USER setting for help
+	 * @param string $BACK_PATH UNUSED
+	 * @param bool $force Force display of icon no matter BE_USER setting for help
 	 * @return string HTML content for a help icon/text
 	 */
-	static public function helpTextIcon($table, $field, $BACK_PATH, $force = 0) {
-		if (is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field]) && (isset($GLOBALS['BE_USER']->uc['edit_showFieldHelp']) || $force)) {
+	static public function helpTextIcon($table, $field, $BACK_PATH = '', $force = FALSE) {
+		if (
+			is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])
+			&& (isset(static::getBackendUserAuthentication()->uc['edit_showFieldHelp']) || $force)
+		) {
 			return self::wrapInHelp($table, $field);
 		}
+		return '';
 	}
 
 	/**
@@ -2441,7 +2485,7 @@ class BackendUtility {
 	 */
 	static public function helpTextArray($table, $field) {
 		if (!isset($GLOBALS['TCA_DESCR'][$table]['columns'])) {
-			$GLOBALS['LANG']->loadSingleTableDescription($table);
+			static::getLanguageService()->loadSingleTableDescription($table);
 		}
 		$output = array(
 			'description' => NULL,
@@ -2547,16 +2591,14 @@ class BackendUtility {
 	 * @param string $field Field name (CSH locallang main key)
 	 * @param string $BACK_PATH Back path
 	 * @param string $wrap Wrap code for icon-mode, splitted by "|". Not used for full-text mode.
-	 * @param boolean $onlyIconMode If set, the full text will never be shown (only icon). Useful for places where it will break the page if the table with full text is shown.
-	 * @param string $styleAttrib Additional style-attribute content for wrapping table (full text mode only)
 	 * @return string HTML content for help text
 	 * @see helpTextIcon()
 	 */
-	static public function cshItem($table, $field, $BACK_PATH, $wrap = '', $onlyIconMode = FALSE, $styleAttrib = '') {
-		if (!$GLOBALS['BE_USER']->uc['edit_showFieldHelp']) {
+	static public function cshItem($table, $field, $BACK_PATH, $wrap = '') {
+		if (!static::getBackendUserAuthentication()->uc['edit_showFieldHelp']) {
 			return '';
 		}
-		$GLOBALS['LANG']->loadSingleTableDescription($table);
+		static::getLanguageService()->loadSingleTableDescription($table);
 		if (is_array($GLOBALS['TCA_DESCR'][$table])) {
 			// Creating CSH icon and short description:
 			$output = self::helpTextIcon($table, $field, $BACK_PATH);
@@ -2566,6 +2608,7 @@ class BackendUtility {
 			}
 			return $output;
 		}
+		return '';
 	}
 
 	/**
@@ -2580,8 +2623,11 @@ class BackendUtility {
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::issueCommand()
 	 */
 	static public function editOnClick($params, $backPath = '', $requestUri = '') {
-		$retUrl = 'returnUrl=' . ($requestUri == -1 ? '\'+T3_THIS_LOCATION+\'' : rawurlencode(($requestUri ? $requestUri : GeneralUtility::getIndpEnv('REQUEST_URI'))));
-		return 'window.location.href=\'' . $backPath . 'alt_doc.php?' . $retUrl . $params . '\'; return false;';
+		$returnUrl = $requestUri == -1
+			? '\'+T3_THIS_LOCATION+\''
+			: rawurlencode($requestUri ?: GeneralUtility::getIndpEnv('REQUEST_URI'));
+		$retUrlParam = 'returnUrl=' . $returnUrl;
+		return 'window.location.href=\'' . $backPath . 'alt_doc.php?' . $retUrlParam . $params . '\'; return false;';
 	}
 
 	/**
@@ -2589,16 +2635,16 @@ class BackendUtility {
 	 * It will detect the correct domain name if needed and provide the link with the right back path.
 	 * Also it will re-use any window already open.
 	 *
-	 * @param integer $pageUid Page UID
+	 * @param int $pageUid Page UID
 	 * @param string $backPath Must point back to TYPO3_mainDir (where the site is assumed to be one level above)
-	 * @param array $rootLine If root line is supplied the function will look for the first found domain record and use that URL instead (if found)
+	 * @param array|NULL $rootLine If root line is supplied the function will look for the first found domain record and use that URL instead (if found)
 	 * @param string $anchorSection Optional anchor to the URL
 	 * @param string $alternativeUrl An alternative URL that, if set, will ignore other parameters except $switchFocus: It will return the window.open command wrapped around this URL!
 	 * @param string $additionalGetVars Additional GET variables.
-	 * @param boolean $switchFocus If TRUE, then the preview window will gain the focus.
+	 * @param bool $switchFocus If TRUE, then the preview window will gain the focus.
 	 * @return string
 	 */
-	static public function viewOnClick($pageUid, $backPath = '', $rootLine = '', $anchorSection = '', $alternativeUrl = '', $additionalGetVars = '', $switchFocus = TRUE) {
+	static public function viewOnClick($pageUid, $backPath = '', $rootLine = NULL, $anchorSection = '', $alternativeUrl = '', $additionalGetVars = '', $switchFocus = TRUE) {
 		$viewScript = '/index.php?id=';
 		if ($alternativeUrl) {
 			$viewScript = $alternativeUrl;
@@ -2629,7 +2675,7 @@ class BackendUtility {
 	/**
 	 * Creates the view-on-click preview URL without any alternative URL.
 	 *
-	 * @param integer $pageUid Page UID
+	 * @param int $pageUid Page UID
 	 * @param array $rootLine If rootline is supplied, the function will look for the first found domain record and use that URL instead
 	 * @param string $anchorSection Optional anchor to the URL
 	 * @param string $additionalGetVars Additional GET variables.
@@ -2639,13 +2685,15 @@ class BackendUtility {
 	 */
 	static protected function createPreviewUrl($pageUid, $rootLine, $anchorSection, $additionalGetVars, $viewScript) {
 		// Look if a fixed preview language should be added:
-		$viewLanguageOrder = $GLOBALS['BE_USER']->getTSConfigVal('options.view.languageOrder');
+		$beUser = static::getBackendUserAuthentication();
+		$viewLanguageOrder = $beUser->getTSConfigVal('options.view.languageOrder');
 
 		if (strlen($viewLanguageOrder) > 0) {
 			$suffix = '';
 			// Find allowed languages (if none, all are allowed!)
-			if (!$GLOBALS['BE_USER']->user['admin'] && strlen($GLOBALS['BE_USER']->groupData['allowed_languages'])) {
-				$allowedLanguages = array_flip(explode(',', $GLOBALS['BE_USER']->groupData['allowed_languages']));
+			$allowedLanguages = NULL;
+			if (!$beUser->user['admin'] && strlen($beUser->groupData['allowed_languages'])) {
+				$allowedLanguages = array_flip(explode(',', $beUser->groupData['allowed_languages']));
 			}
 			// Traverse the view order, match first occurence:
 			$languageOrder = GeneralUtility::intExplode(',', $viewLanguageOrder);
@@ -2684,8 +2732,8 @@ class BackendUtility {
 	 * Builds the frontend view domain for a given page ID with a given root
 	 * line.
 	 *
-	 * @param integer $pageId The page ID to use, must be > 0
-	 * @param array $rootLine The root line structure to use
+	 * @param int $pageId The page ID to use, must be > 0
+	 * @param array|NULL $rootLine The root line structure to use
 	 * @return string The full domain including the protocol http:// or https://, but without the trailing '/'
 	 * @author Michael Klapper <michael.klapper@aoemedia.de>
 	 */
@@ -2699,12 +2747,12 @@ class BackendUtility {
 			$urlParts = parse_url($domain);
 			/** @var PageRepository $sysPage */
 			$sysPage = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
-			$page = (array) $sysPage->getPage($pageId);
+			$page = (array)$sysPage->getPage($pageId);
 			$protocol = 'http';
-			if ($page['url_scheme'] == \TYPO3\CMS\Core\Utility\HttpUtility::SCHEME_HTTPS || $page['url_scheme'] == 0 && GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+			if ($page['url_scheme'] == HttpUtility::SCHEME_HTTPS || $page['url_scheme'] == 0 && GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 				$protocol = 'https';
 			}
-			$previewDomainConfig = $GLOBALS['BE_USER']->getTSConfig('TCEMAIN.previewDomain', self::getPagesTSconfig($pageId));
+			$previewDomainConfig = static::getBackendUserAuthentication()->getTSConfig('TCEMAIN.previewDomain', self::getPagesTSconfig($pageId));
 			if ($previewDomainConfig['value']) {
 				$domainName = $previewDomainConfig['value'];
 			} else {
@@ -2734,17 +2782,18 @@ class BackendUtility {
 	 * Returns the merged User/Page TSconfig for page id, $id.
 	 * Please read details about module programming elsewhere!
 	 *
-	 * @param integer $id Page uid
+	 * @param int $id Page uid
 	 * @param string $TSref An object string which determines the path of the TSconfig to return.
 	 * @return array
 	 */
 	static public function getModTSconfig($id, $TSref) {
-		$pageTS_modOptions = $GLOBALS['BE_USER']->getTSConfig($TSref, static::getPagesTSconfig($id));
-		$BE_USER_modOptions = $GLOBALS['BE_USER']->getTSConfig($TSref);
+		$beUser = static::getBackendUserAuthentication();
+		$pageTS_modOptions = $beUser->getTSConfig($TSref, static::getPagesTSconfig($id));
+		$BE_USER_modOptions = $beUser->getTSConfig($TSref);
 		if (is_null($BE_USER_modOptions['value'])) {
 			unset($BE_USER_modOptions['value']);
 		}
-		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($pageTS_modOptions, $BE_USER_modOptions);
+		ArrayUtility::mergeRecursiveWithOverrule($pageTS_modOptions, $BE_USER_modOptions);
 		return $pageTS_modOptions;
 	}
 
@@ -2753,7 +2802,7 @@ class BackendUtility {
 	 * Requires the JS function jumpToUrl() to be available
 	 * See Inside TYPO3 for details about how to use / make Function menus
 	 *
-	 * @param mixed $id The "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
+	 * @param mixed $mainParams The "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
 	 * @param string $elementName The form elements name, probably something like "SET[...]
 	 * @param string $currentValue The value to be selected currently.
 	 * @param array	 $menuItems An array with the menu items for the selector box
@@ -2761,19 +2810,11 @@ class BackendUtility {
 	 * @param string $addParams Additional parameters to pass to the script.
 	 * @return string HTML code for selector box
 	 */
-	static public function getFuncMenu($mainParams, $elementName, $currentValue, $menuItems, $script = '', $addparams = '') {
+	static public function getFuncMenu($mainParams, $elementName, $currentValue, $menuItems, $script = '', $addParams = '') {
 		if (!is_array($menuItems) || count($menuItems) <= 1) {
 			return '';
 		}
-		if (!is_array($mainParams)) {
-			$mainParams = array('id' => $mainParams);
-		}
-		if (!$script) {
-			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
-		} else {
-			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
-			$scriptUrl = $script . '?' . $mainParams . $addparams;
-		}
+		$scriptUrl = self::buildScriptUrl($mainParams, $addParams, $script);
 		$options = array();
 		foreach ($menuItems as $value => $label) {
 			$options[] = '<option value="' . htmlspecialchars($value) . '"' . ((string)$currentValue === (string)$value ? ' selected="selected"' : '') . '>' . htmlspecialchars($label, ENT_COMPAT, 'UTF-8', FALSE) . '</option>';
@@ -2789,6 +2830,7 @@ class BackendUtility {
 				</select>
 						';
 		}
+		return '';
 	}
 
 	/**
@@ -2804,16 +2846,8 @@ class BackendUtility {
 	 * @return string HTML code for checkbox
 	 * @see getFuncMenu()
 	 */
-	static public function getFuncCheck($mainParams, $elementName, $currentValue, $script = '', $addparams = '', $tagParams = '') {
-		if (!is_array($mainParams)) {
-			$mainParams = array('id' => $mainParams);
-		}
-		if (!$script) {
-			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
-		} else {
-			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
-			$scriptUrl = $script . '?' . $mainParams . $addparams;
-		}
+	static public function getFuncCheck($mainParams, $elementName, $currentValue, $script = '', $addParams = '', $tagParams = '') {
+		$scriptUrl = self::buildScriptUrl($mainParams, $addParams, $script);
 		$onClick = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+(this.checked?1:0),this);';
 
 		return
@@ -2835,24 +2869,40 @@ class BackendUtility {
 	 * @param mixed $mainParams $id is the "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
 	 * @param string $elementName The form elements name, probably something like "SET[...]
 	 * @param string $currentValue The value to be selected currently.
-	 * @param integer $size Relative size of input field, max is 48
+	 * @param int $size Relative size of input field, max is 48
 	 * @param string $script The script to send the &id to, if empty it's automatically found
 	 * @param string $addParams Additional parameters to pass to the script.
 	 * @return string HTML code for input text field.
 	 * @see getFuncMenu()
 	 */
-	static public function getFuncInput($mainParams, $elementName, $currentValue, $size = 10, $script = '', $addparams = '') {
+	static public function getFuncInput($mainParams, $elementName, $currentValue, $size = 10, $script = '', $addParams = '') {
+		$scriptUrl = self::buildScriptUrl($mainParams, $addParams, $script);
+		$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+escape(this.value),this);';
+		return '<input type="text"' . static::getDocumentTemplate()->formWidth($size) . ' name="' . $elementName . '" value="' . htmlspecialchars($currentValue) . '" onchange="' . htmlspecialchars($onChange) . '" />';
+	}
+
+	/**
+	 * Builds the URL to the current script with given arguments
+	 *
+	 * @param mixed $mainParams $id is the "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
+	 * @param string $addParams Additional parameters to pass to the script.
+	 * @param string $script The script to send the &id to, if empty it's automatically found
+	 * @return string The completes script URL
+	 */
+	protected static function buildScriptUrl($mainParams, $addParams, $script = '') {
 		if (!is_array($mainParams)) {
 			$mainParams = array('id' => $mainParams);
 		}
 		if (!$script) {
-			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addparams;
-		} else {
-			$mainParams = GeneralUtility::implodeArrayForUrl('', $mainParams);
-			$scriptUrl = $script . '?' . $mainParams . $addparams;
+			$script = basename(PATH_thisScript);
 		}
-		$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+escape(this.value),this);';
-		return '<input type="text"' . $GLOBALS['TBE_TEMPLATE']->formWidth($size) . ' name="' . $elementName . '" value="' . htmlspecialchars($currentValue) . '" onchange="' . htmlspecialchars($onChange) . '" />';
+		if ($script === 'mod.php' && GeneralUtility::_GET('M')) {
+			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addParams;
+		} else {
+			$scriptUrl = $script . '?' . GeneralUtility::implodeArrayForUrl('', $mainParams) . $addParams;
+		}
+
+		return $scriptUrl;
 	}
 
 	/**
@@ -2866,7 +2916,7 @@ class BackendUtility {
 	 */
 	static public function unsetMenuItems($modTSconfig, $itemArray, $TSref) {
 		// Getting TS-config options for this module for the Backend User:
-		$conf = $GLOBALS['BE_USER']->getTSConfig($TSref, $modTSconfig);
+		$conf = static::getBackendUserAuthentication()->getTSConfig($TSref, $modTSconfig);
 		if (is_array($conf['properties'])) {
 			foreach ($conf['properties'] as $key => $val) {
 				if (!$val) {
@@ -2884,10 +2934,11 @@ class BackendUtility {
 	 * @param string $set Key to set the update signal. When setting, this value contains strings telling WHAT to set. At this point it seems that the value "updatePageTree" is the only one it makes sense to set. If empty, all update signals will be removed.
 	 * @param mixed $params Additional information for the update signal, used to only refresh a branch of the tree
 	 * @return void
-	 * @see 	BackendUtility::getUpdateSignalCode()
+	 * @see BackendUtility::getUpdateSignalCode()
 	 */
 	static public function setUpdateSignal($set = '', $params = '') {
-		$modData = $GLOBALS['BE_USER']->getModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', 'ses');
+		$beUser = static::getBackendUserAuthentication();
+		$modData = $beUser->getModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', 'ses');
 		if ($set) {
 			$modData[$set] = array(
 				'set' => $set,
@@ -2897,7 +2948,7 @@ class BackendUtility {
 			// clear the module data
 			$modData = array();
 		}
-		$GLOBALS['BE_USER']->pushModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', $modData);
+		$beUser->pushModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', $modData);
 	}
 
 	/**
@@ -2910,7 +2961,7 @@ class BackendUtility {
 	 */
 	static public function getUpdateSignalCode() {
 		$signals = array();
-		$modData = $GLOBALS['BE_USER']->getModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', 'ses');
+		$modData = static::getBackendUserAuthentication()->getModuleData('TYPO3\\CMS\\Backend\\Utility\\BackendUtility::getUpdateSignal', 'ses');
 		if (!count($modData)) {
 			return '';
 		}
@@ -2973,7 +3024,8 @@ class BackendUtility {
 	static public function getModuleData($MOD_MENU, $CHANGED_SETTINGS, $modName, $type = '', $dontValidateList = '', $setDefaultList = '') {
 		if ($modName && is_string($modName)) {
 			// Getting stored user-data from this module:
-			$settings = $GLOBALS['BE_USER']->getModuleData($modName, $type);
+			$beUser = static::getBackendUserAuthentication();
+			$settings = $beUser->getModuleData($modName, $type);
 			$changed = 0;
 			if (!is_array($settings)) {
 				$changed = 1;
@@ -3000,14 +3052,14 @@ class BackendUtility {
 					if (is_array($var) && (!$dontValidateList || !GeneralUtility::inList($dontValidateList, $key))) {
 						// If the setting is an array or not present in the menu-array, MOD_MENU, then the default value is inserted.
 						if (is_array($settings[$key]) || !isset($MOD_MENU[$key][$settings[$key]])) {
-							$settings[$key] = (string) key($var);
+							$settings[$key] = (string)key($var);
 							$changed = 1;
 						}
 					}
 					// Sets default values (only strings/checkboxes, not menus)
 					if ($setDefaultList && !is_array($var)) {
 						if (GeneralUtility::inList($setDefaultList, $key) && !isset($settings[$key])) {
-							$settings[$key] = (string) $var;
+							$settings[$key] = (string)$var;
 						}
 					}
 				}
@@ -3015,7 +3067,7 @@ class BackendUtility {
 				die('No menu!');
 			}
 			if ($changed) {
-				$GLOBALS['BE_USER']->pushModuleData($modName, $settings);
+				$beUser->pushModuleData($modName, $settings);
 			}
 			return $settings;
 		} else {
@@ -3028,8 +3080,8 @@ class BackendUtility {
 	 *
 	 * @param string $moduleName Name of the module
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
-	 * @param boolean/string $backPathOverride backpath that should be used instead of the global $BACK_PATH
-	 * @param boolean $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
+	 * @param bool|string $backPathOverride backpath that should be used instead of the global $BACK_PATH
+	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
 	 */
 	static public function getModuleUrl($moduleName, $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
@@ -3040,7 +3092,7 @@ class BackendUtility {
 		}
 		$urlParameters = array(
 			'M' => $moduleName,
-			'moduleToken' => \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
+			'moduleToken' => FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
 		) + $urlParameters;
 		$url = 'mod.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', TRUE, TRUE), '&');
 		if ($returnAbsoluteUrl) {
@@ -3059,7 +3111,7 @@ class BackendUtility {
 	 *
 	 * @param string $ajaxIdentifier Identifier of the AJAX callback
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
-	 * @param bool/string $backPathOverride Backpath that should be used instead of the global $BACK_PATH
+	 * @param bool $backPathOverride Backpath that should be used instead of the global $BACK_PATH
 	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
 	 * @internal
@@ -3074,7 +3126,7 @@ class BackendUtility {
 			'ajaxID' => $ajaxIdentifier
 		);
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxIdentifier]['csrfTokenCheck'])) {
-			$additionalUrlParameters['ajaxToken'] = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get()->generateToken('ajaxCall', $ajaxIdentifier);
+			$additionalUrlParameters['ajaxToken'] = FormProtectionFactory::get()->generateToken('ajaxCall', $ajaxIdentifier);
 		}
 		$url = 'ajax.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', ($additionalUrlParameters + $urlParameters), '', TRUE, TRUE), '&');
 		if ($returnAbsoluteUrl) {
@@ -3106,11 +3158,12 @@ class BackendUtility {
 	 *
 	 * @param string $formName Context of the token
 	 * @param string $tokenName The name of the token GET variable
+	 * @throws \InvalidArgumentException
 	 * @return string A URL GET variable including ampersand
 	 */
 	static public function getUrlToken($formName = 'securityToken', $tokenName = 'formToken') {
-		$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
-		return '&' . $tokenName . '=' . $formprotection->generateToken($formName);
+		$formProtection = FormProtectionFactory::get();
+		return '&' . $tokenName . '=' . $formProtection->generateToken($formName);
 	}
 
 	/*******************************************
@@ -3123,14 +3176,15 @@ class BackendUtility {
 	 * If $table and $uid is not set, then all locking for the current BE_USER is removed!
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
-	 * @param integer $pid Record pid
+	 * @param int $uid Record uid
+	 * @param int $pid Record pid
 	 * @return void
 	 * @internal
 	 */
 	static public function lockRecords($table = '', $uid = 0, $pid = 0) {
-		if (isset($GLOBALS['BE_USER']->user['uid'])) {
-			$user_id = (int)$GLOBALS['BE_USER']->user['uid'];
+		$beUser = static::getBackendUserAuthentication();
+		if (isset($beUser->user['uid'])) {
+			$user_id = (int)$beUser->user['uid'];
 			if ($table && $uid) {
 				$fields_values = array(
 					'userid' => $user_id,
@@ -3138,12 +3192,12 @@ class BackendUtility {
 					'tstamp' => $GLOBALS['EXEC_TIME'],
 					'record_table' => $table,
 					'record_uid' => $uid,
-					'username' => $GLOBALS['BE_USER']->user['username'],
+					'username' => $beUser->user['username'],
 					'record_pid' => $pid
 				);
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('sys_lockedrecords', $fields_values);
+				static::getDatabaseConnection()->exec_INSERTquery('sys_lockedrecords', $fields_values);
 			} else {
-				$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_lockedrecords', 'userid=' . (int)$user_id);
+				static::getDatabaseConnection()->exec_DELETEquery('sys_lockedrecords', 'userid=' . (int)$user_id);
 			}
 		}
 	}
@@ -3153,7 +3207,7 @@ class BackendUtility {
 	 * Notice: Locking is not strictly carried out since locking is abandoned when other backend scripts are activated - which means that a user CAN have a record "open" without having it locked. So this just serves as a warning that counts well in 90% of the cases, which should be sufficient.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
+	 * @param int $uid Record uid
 	 * @return array
 	 * @internal
 	 * @see class.db_layout.inc, alt_db_navframe.php, alt_doc.php, db_layout.php
@@ -3161,9 +3215,10 @@ class BackendUtility {
 	static public function isRecordLocked($table, $uid) {
 		if (!is_array($GLOBALS['LOCKED_RECORDS'])) {
 			$GLOBALS['LOCKED_RECORDS'] = array();
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_lockedrecords', 'sys_lockedrecords.userid<>' . (int)$GLOBALS['BE_USER']->user['uid'] . '
+			$db = static::getDatabaseConnection();
+			$res = $db->exec_SELECTquery('*', 'sys_lockedrecords', 'sys_lockedrecords.userid<>' . (int)static::getBackendUserAuthentication()->user['uid'] . '
 								AND sys_lockedrecords.tstamp > ' . ($GLOBALS['EXEC_TIME'] - 2 * 3600));
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+			while ($row = $db->sql_fetch_assoc($res)) {
 				// Get the type of the user that locked this record:
 				if ($row['userid']) {
 					$userTypeLabel = 'beUser';
@@ -3172,20 +3227,21 @@ class BackendUtility {
 				} else {
 					$userTypeLabel = 'user';
 				}
-				$userType = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . $userTypeLabel);
+				$lang = static::getLanguageService();
+				$userType = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . $userTypeLabel);
 				// Get the username (if available):
 				if ($row['username']) {
 					$userName = $row['username'];
 				} else {
-					$userName = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.unknownUser');
+					$userName = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.unknownUser');
 				}
 				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']] = $row;
-				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
+				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
 				if ($row['record_pid'] && !isset($GLOBALS['LOCKED_RECORDS'][($row['record_table'] . ':' . $row['record_pid'])])) {
-					$GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
+					$GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
 				}
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$db->sql_free_result($res);
 		}
 		return $GLOBALS['LOCKED_RECORDS'][$table . ':' . $uid];
 	}
@@ -3205,7 +3261,8 @@ class BackendUtility {
 		$rootLevel = $GLOBALS['TCA'][$foreign_table]['ctrl']['rootLevel'];
 		$fTWHERE = $fieldValue['config'][$prefix . 'foreign_table_where'];
 		$fTWHERE = static::replaceMarkersInWhereClause($fTWHERE, $foreign_table, $field, $TSconfig);
-		$wgolParts = $GLOBALS['TYPO3_DB']->splitGroupOrderLimit($fTWHERE);
+		$db = static::getDatabaseConnection();
+		$wgolParts = $db->splitGroupOrderLimit($fTWHERE);
 		// rootLevel = -1 means that elements can be on the rootlevel OR on any page (pid!=-1)
 		// rootLevel = 0 means that elements are not allowed on root level
 		// rootLevel = 1 means that elements are only on the root level (pid=0)
@@ -3220,7 +3277,7 @@ class BackendUtility {
 				'LIMIT' => $wgolParts['LIMIT']
 			);
 		} else {
-			$pageClause = $GLOBALS['BE_USER']->getPagePermsClause(1);
+			$pageClause = static::getBackendUserAuthentication()->getPagePermsClause(1);
 			if ($foreign_table != 'pages') {
 				$queryParts = array(
 					'SELECT' => self::getCommonSelectFields($foreign_table, $foreign_table . '.'),
@@ -3243,7 +3300,7 @@ class BackendUtility {
 				);
 			}
 		}
-		return $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryParts);
+		return $db->exec_SELECT_queryArray($queryParts);
 	}
 
 	/**
@@ -3266,15 +3323,16 @@ class BackendUtility {
 	 * @return string
 	 */
 	static public function replaceMarkersInWhereClause($whereClause, $table, $field = '', $tsConfig = array()) {
+		$db = static::getDatabaseConnection();
 		if (strstr($whereClause, '###REC_FIELD_')) {
 			$whereClauseParts = explode('###REC_FIELD_', $whereClause);
 			foreach ($whereClauseParts as $key => $value) {
 				if ($key) {
 					$whereClauseSubarts = explode('###', $value, 2);
 					if (substr($whereClauseParts[0], -1) === '\'' && $whereClauseSubarts[1][0] === '\'') {
-						$whereClauseParts[$key] = $GLOBALS['TYPO3_DB']->quoteStr($tsConfig['_THIS_ROW'][$whereClauseSubarts[0]], $table) . $whereClauseSubarts[1];
+						$whereClauseParts[$key] = $db->quoteStr($tsConfig['_THIS_ROW'][$whereClauseSubarts[0]], $table) . $whereClauseSubarts[1];
 					} else {
-						$whereClauseParts[$key] = $GLOBALS['TYPO3_DB']->fullQuoteStr($tsConfig['_THIS_ROW'][$whereClauseSubarts[0]], $table) . $whereClauseSubarts[1];
+						$whereClauseParts[$key] = $db->fullQuoteStr($tsConfig['_THIS_ROW'][$whereClauseSubarts[0]], $table) . $whereClauseSubarts[1];
 					}
 				}
 			}
@@ -3298,8 +3356,8 @@ class BackendUtility {
 				(int)$tsConfig['_STORAGE_PID'],
 				(int)$tsConfig['_SITEROOT'],
 				(int)$tsConfig[$field]['PAGE_TSCONFIG_ID'],
-				$GLOBALS['TYPO3_DB']->cleanIntList($tsConfig[$field]['PAGE_TSCONFIG_IDLIST']),
-				$GLOBALS['TYPO3_DB']->quoteStr($tsConfig[$field]['PAGE_TSCONFIG_STR'], $table)
+				$db->cleanIntList($tsConfig[$field]['PAGE_TSCONFIG_IDLIST']),
+				$db->quoteStr($tsConfig[$field]['PAGE_TSCONFIG_STR'], $table)
 			),
 			$whereClause
 		);
@@ -3320,7 +3378,7 @@ class BackendUtility {
 		// Get main config for the table
 		list($TScID, $cPid) = self::getTSCpid($table, $row['uid'], $row['pid']);
 		if ($TScID >= 0) {
-			$tempConf = $GLOBALS['BE_USER']->getTSConfig('TCEFORM.' . $table, self::getPagesTSconfig($TScID));
+			$tempConf = static::getBackendUserAuthentication()->getTSConfig('TCEFORM.' . $table, self::getPagesTSconfig($TScID));
 			if (is_array($tempConf['properties'])) {
 				foreach ($tempConf['properties'] as $key => $val) {
 					if (is_array($val)) {
@@ -3328,7 +3386,7 @@ class BackendUtility {
 						$res[$fieldN] = $val;
 						unset($res[$fieldN]['types.']);
 						if ((string)$typeVal !== '' && is_array($val['types.'][$typeVal . '.'])) {
-							\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($res[$fieldN], $val['types.'][$typeVal . '.']);
+							ArrayUtility::mergeRecursiveWithOverrule($res[$fieldN], $val['types.'][$typeVal . '.']);
 						}
 					}
 				}
@@ -3358,9 +3416,9 @@ class BackendUtility {
 	 * Therefore, you should always use BackendUtility::fixVersioningPid($table,$row); on the data you input before calling this function!
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
-	 * @param integer $pid Record pid, could be negative then pointing to a record from same table whose pid to find and return.
-	 * @return integer
+	 * @param int $uid Record uid
+	 * @param int $pid Record pid, could be negative then pointing to a record from same table whose pid to find and return
+	 * @return int
 	 * @internal
 	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::copyRecord(), getTSCpid()
 	 */
@@ -3376,6 +3434,7 @@ class BackendUtility {
 		} else {
 			// Try to fetch the record pid from uid. If the uid is 'NEW...' then this will of course return nothing
 			$rr = self::getRecord($table, $uid);
+			$thePidValue = NULL;
 			if (is_array($rr)) {
 				// First check if the pid is -1 which means it is a workspaced element. Get the "real" record:
 				if ($rr['pid'] == '-1') {
@@ -3397,12 +3456,12 @@ class BackendUtility {
 	}
 
 	/**
-	 * Return $uid if $table is pages and $uid is integer - otherwise the $pid
+	 * Return $uid if $table is pages and $uid is int - otherwise the $pid
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
-	 * @param integer $pid Record pid
-	 * @return integer
+	 * @param int $uid Record uid
+	 * @param int $pid Record pid
+	 * @return int
 	 * @internal
 	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getTSCpid()
 	 */
@@ -3415,9 +3474,9 @@ class BackendUtility {
 	 * Returns the REAL pid of the record, if possible. If both $uid and $pid is strings, then pid=-1 is returned as an error indication.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
-	 * @param integer $pid Record pid
-	 * @return array Array of two integers; first is the REAL PID of a record and if its a new record negative values are resolved to the true PID, second value is the PID value for TSconfig (uid if table is pages, otherwise the pid)
+	 * @param int $uid Record uid
+	 * @param int $pid Record pid
+	 * @return array Array of two ints; first is the REAL PID of a record and if its a new record negative values are resolved to the true PID, second value is the PID value for TSconfig (uid if table is pages, otherwise the pid)
 	 * @internal
 	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::setHistory(), \TYPO3\CMS\Core\DataHandling\DataHandler::process_datamap()
 	 */
@@ -3460,12 +3519,14 @@ class BackendUtility {
 		$path = trim(preg_replace('/\\/[^\\/]*$/', '', $path));
 		// Stuff
 		$domain .= $path;
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('sys_domain.*', 'pages,sys_domain', '
+		$db = static::getDatabaseConnection();
+		$res = $db->exec_SELECTquery('sys_domain.*', 'pages,sys_domain', '
 			pages.uid=sys_domain.pid
 			AND sys_domain.hidden=0
-			AND (sys_domain.domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($domain, 'sys_domain') . ' OR sys_domain.domainName=' . $GLOBALS['TYPO3_DB']->fullQuoteStr(($domain . '/'), 'sys_domain') . ')' . self::deleteClause('pages'), '', '', '1');
-		$result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			AND (sys_domain.domainName=' . $db->fullQuoteStr($domain, 'sys_domain') . ' OR sys_domain.domainName='
+			. $db->fullQuoteStr(($domain . '/'), 'sys_domain') . ')' . self::deleteClause('pages'), '', '', '1');
+		$result = $db->sql_fetch_assoc($res);
+		$db->sql_free_result($res);
 		return $result;
 	}
 
@@ -3484,10 +3545,10 @@ class BackendUtility {
 		$thisFieldConf = $RTEprop['config.'][$table . '.'][$field . '.'];
 		if (is_array($thisFieldConf)) {
 			unset($thisFieldConf['types.']);
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $thisFieldConf);
+			ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $thisFieldConf);
 		}
 		if ($type && is_array($RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.'])) {
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.']);
+			ArrayUtility::mergeRecursiveWithOverrule($thisConfig, $RTEprop['config.'][$table . '.'][$field . '.']['types.'][$type . '.']);
 		}
 		return $thisConfig;
 	}
@@ -3585,7 +3646,7 @@ class BackendUtility {
 	 * Returns TRUE if $modName is set and is found as a main- or submodule in $TBE_MODULES array
 	 *
 	 * @param string $modName Module name
-	 * @return boolean
+	 * @return bool
 	 */
 	static public function isModuleSetInTBE_MODULES($modName) {
 		$loaded = array();
@@ -3605,25 +3666,26 @@ class BackendUtility {
 	 * Counting references to a record/file
 	 *
 	 * @param string $table Table name (or "_FILE" if its a file)
-	 * @param string $ref Reference: If table, then integer-uid, if _FILE, then file reference (relative to PATH_site)
+	 * @param string $ref Reference: If table, then int-uid, if _FILE, then file reference (relative to PATH_site)
 	 * @param string $msg Message with %s, eg. "There were %s records pointing to this file!
-	 * @param string $count Reference count
-	 * @return string Output string (or integer count value if no msg string specified)
+	 * @param string|NULL $count Reference count
+	 * @return string Output string (or int count value if no msg string specified)
 	 */
 	static public function referenceCount($table, $ref, $msg = '', $count = NULL) {
 		if ($count === NULL) {
+			$db = static::getDatabaseConnection();
 			// Look up the path:
 			if ($table == '_FILE') {
 				if (GeneralUtility::isFirstPartOfStr($ref, PATH_site)) {
-					$ref = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($ref);
-					$condition = 'ref_string=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($ref, 'sys_refindex');
+					$ref = PathUtility::stripPathSitePrefix($ref);
+					$condition = 'ref_string=' . $db->fullQuoteStr($ref, 'sys_refindex');
 				} else {
 					return '';
 				}
 			} else {
 				$condition = 'ref_uid=' . (int)$ref;
 			}
-			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', 'sys_refindex', 'ref_table=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($table, 'sys_refindex') . ' AND ' . $condition . ' AND deleted=0');
+			$count = $db->exec_SELECTcountRows('*', 'sys_refindex', 'ref_table=' . $db->fullQuoteStr($table, 'sys_refindex') . ' AND ' . $condition . ' AND deleted=0');
 		}
 		return $count ? ($msg ? sprintf($msg, $count) : $count) : '';
 	}
@@ -3634,15 +3696,16 @@ class BackendUtility {
 	 * @param string $table Table name
 	 * @param string $ref Reference: the record's uid
 	 * @param string $msg Message with %s, eg. "This record has %s translation(s) which will be deleted, too!
-	 * @return string Output string (or integer count value if no msg string specified)
+	 * @return string Output string (or int count value if no msg string specified)
 	 */
 	static public function translationCount($table, $ref, $msg = '') {
+		$count = NULL;
 		if (empty($GLOBALS['TCA'][$table]['ctrl']['transForeignTable']) && $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] && !$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']) {
 			$where = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . '=' . (int)$ref . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['languageField'] . '<>0';
 			if (!empty($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
 				$where .= ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['delete'] . '=0';
 			}
-			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', $table, $where);
+			$count = static::getDatabaseConnection()->exec_SELECTcountRows('*', $table, $where);
 		}
 		return $count ? ($msg ? sprintf($msg, $count) : $count) : '';
 	}
@@ -3656,12 +3719,12 @@ class BackendUtility {
 	 * Select all versions of a record, ordered by version id (DESC)
 	 *
 	 * @param string $table Table name to select from
-	 * @param integer $uid Record uid for which to find versions.
+	 * @param int $uid Record uid for which to find versions.
 	 * @param string $fields Field list to select
-	 * @param integer $workspace Workspace ID, if zero all versions regardless of workspace is found.
-	 * @param boolean $includeDeletedRecords If set, deleted-flagged versions are included! (Only for clean-up script!)
+	 * @param int $workspace Workspace ID, if zero all versions regardless of workspace is found.
+	 * @param bool $includeDeletedRecords If set, deleted-flagged versions are included! (Only for clean-up script!)
 	 * @param array $row The current record
-	 * @return array Array of versions of table/uid
+	 * @return array|NULL Array of versions of table/uid
 	 */
 	static public function selectVersionsOfRecord($table, $uid, $fields = '*', $workspace = 0, $includeDeletedRecords = FALSE, $row = NULL) {
 		$realPid = 0;
@@ -3683,7 +3746,7 @@ class BackendUtility {
 				}
 			}
 			// Select all offline versions of record:
-			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			$rows = static::getDatabaseConnection()->exec_SELECTgetRows(
 				$fields,
 				$table,
 				'pid=-1 AND uid<>' . (int)$uid . ' AND t3ver_oid=' . (int)$uid
@@ -3702,45 +3765,54 @@ class BackendUtility {
 			}
 			return $outputRows;
 		}
+		return NULL;
 	}
 
 	/**
 	 * Find page-tree PID for versionized record
-	 * Will look if the "pid" value of the input record is -1 and if the table supports versioning - if so, it will translate the -1 PID into the PID of the original record
+	 * Will look if the "pid" value of the input record is -1 and if the table supports versioning - if so,
+	 * it will translate the -1 PID into the PID of the original record
 	 * Used whenever you are tracking something back, like making the root line.
 	 * Will only translate if the workspace of the input record matches that of the current user (unless flag set)
 	 * Principle; Record offline! => Find online?
 	 *
+	 * If the record had its pid corrected to the online versions pid, then "_ORIG_pid" is set
+	 * to the original pid value (-1 of course). The field "_ORIG_pid" is used by various other functions
+	 * to detect if a record was in fact in a versionized branch.
+	 *
 	 * @param string $table Table name
 	 * @param array $rr Record array passed by reference. As minimum, "pid" and "uid" fields must exist! "t3ver_oid" and "t3ver_wsid" is nice and will save you a DB query.
-	 * @param boolean $ignoreWorkspaceMatch Ignore workspace match
-	 * @return void (Passed by ref). If the record had its pid corrected to the online versions pid, then "_ORIG_pid" is set to the original pid value (-1 of course). The field "_ORIG_pid" is used by various other functions to detect if a record was in fact in a versionized branch.
+	 * @param bool $ignoreWorkspaceMatch Ignore workspace match
+	 * @return void
 	 * @see PageRepository::fixVersioningPid()
 	 */
 	static public function fixVersioningPid($table, &$rr, $ignoreWorkspaceMatch = FALSE) {
-		if (ExtensionManagementUtility::isLoaded('version')) {
-			// Check that the input record is an offline version from a table that supports versioning:
-			if (is_array($rr) && $rr['pid'] == -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-				// Check values for t3ver_oid and t3ver_wsid:
-				if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
-					// If "t3ver_oid" is already a field, just set this:
-					$oid = $rr['t3ver_oid'];
-					$wsid = $rr['t3ver_wsid'];
-				} else {
-					// Otherwise we have to expect "uid" to be in the record and look up based on this:
-					$newPidRec = self::getRecord($table, $rr['uid'], 't3ver_oid,t3ver_wsid');
-					if (is_array($newPidRec)) {
-						$oid = $newPidRec['t3ver_oid'];
-						$wsid = $newPidRec['t3ver_wsid'];
-					}
+		if (!ExtensionManagementUtility::isLoaded('version')) {
+			return;
+		}
+		// Check that the input record is an offline version from a table that supports versioning:
+		if (is_array($rr) && $rr['pid'] == -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+			// Check values for t3ver_oid and t3ver_wsid:
+			if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
+				// If "t3ver_oid" is already a field, just set this:
+				$oid = $rr['t3ver_oid'];
+				$wsid = $rr['t3ver_wsid'];
+			} else {
+				$oid = 0;
+				$wsid = 0;
+				// Otherwise we have to expect "uid" to be in the record and look up based on this:
+				$newPidRec = self::getRecord($table, $rr['uid'], 't3ver_oid,t3ver_wsid');
+				if (is_array($newPidRec)) {
+					$oid = $newPidRec['t3ver_oid'];
+					$wsid = $newPidRec['t3ver_wsid'];
 				}
-				// If ID of current online version is found, look up the PID value of that:
-				if ($oid && ($ignoreWorkspaceMatch || (int)$wsid === (int)$GLOBALS['BE_USER']->workspace)) {
-					$oidRec = self::getRecord($table, $oid, 'pid');
-					if (is_array($oidRec)) {
-						$rr['_ORIG_pid'] = $rr['pid'];
-						$rr['pid'] = $oidRec['pid'];
-					}
+			}
+			// If ID of current online version is found, look up the PID value of that:
+			if ($oid && ($ignoreWorkspaceMatch || (int)$wsid === (int)static::getBackendUserAuthentication()->workspace)) {
+				$oidRec = self::getRecord($table, $oid, 'pid');
+				if (is_array($oidRec)) {
+					$rr['_ORIG_pid'] = $rr['pid'];
+					$rr['pid'] = $oidRec['pid'];
 				}
 			}
 		}
@@ -3758,70 +3830,74 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name
 	 * @param array $row Record array passed by reference. As minimum, the "uid" and  "pid" fields must exist! Fake fields cannot exist since the fields in the array is used as field names in the SQL look up. It would be nice to have fields like "t3ver_state" and "t3ver_mode_id" as well to avoid a new lookup inside movePlhOL().
-	 * @param integer $wsid Workspace ID, if not specified will use $GLOBALS['BE_USER']->workspace
-	 * @param boolean $unsetMovePointers If TRUE the function does not return a "pointer" row for moved records in a workspace
-	 * @return void (Passed by ref).
+	 * @param int $wsid Workspace ID, if not specified will use static::getBackendUserAuthentication()->workspace
+	 * @param bool $unsetMovePointers If TRUE the function does not return a "pointer" row for moved records in a workspace
+	 * @return void
 	 * @see fixVersioningPid()
 	 */
 	static public function workspaceOL($table, &$row, $wsid = -99, $unsetMovePointers = FALSE) {
-		if (ExtensionManagementUtility::isLoaded('version')) {
-			// If this is FALSE the placeholder is shown raw in the backend.
-			// I don't know if this move can be useful for users to toggle. Technically it can help debugging.
-			$previewMovePlaceholders = TRUE;
-			// Initialize workspace ID
-			if ($wsid == -99) {
-				$wsid = $GLOBALS['BE_USER']->workspace;
+		if (!ExtensionManagementUtility::isLoaded('version')) {
+			return;
+		}
+		// If this is FALSE the placeholder is shown raw in the backend.
+		// I don't know if this move can be useful for users to toggle. Technically it can help debugging.
+		$previewMovePlaceholders = TRUE;
+		// Initialize workspace ID
+		if ($wsid == -99) {
+			$wsid = static::getBackendUserAuthentication()->workspace;
+		}
+		// Check if workspace is different from zero and record is set:
+		if ($wsid !== 0 && is_array($row)) {
+			// Check if input record is a move-placeholder and if so, find the pointed-to live record:
+			$movePldSwap = NULL;
+			$orig_uid = 0;
+			$orig_pid = 0;
+			if ($previewMovePlaceholders) {
+				$orig_uid = $row['uid'];
+				$orig_pid = $row['pid'];
+				$movePldSwap = self::movePlhOL($table, $row);
 			}
-			// Check if workspace is different from zero and record is set:
-			if ($wsid !== 0 && is_array($row)) {
-				// Check if input record is a move-placeholder and if so, find the pointed-to live record:
-				if ($previewMovePlaceholders) {
-					$orig_uid = $row['uid'];
-					$orig_pid = $row['pid'];
-					$movePldSwap = self::movePlhOL($table, $row);
-				}
-				$wsAlt = self::getWorkspaceVersionOfRecord($wsid, $table, $row['uid'], implode(',', array_keys($row)));
-				// If version was found, swap the default record with that one.
-				if (is_array($wsAlt)) {
-					// Check if this is in move-state:
-					if ($previewMovePlaceholders && !$movePldSwap && ($table == 'pages' || (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) && $unsetMovePointers) {
-						// Only for WS ver 2... (moving)
-						// If t3ver_state is not found, then find it... (but we like best if it is here...)
-						if (!isset($wsAlt['t3ver_state'])) {
-							$stateRec = self::getRecord($table, $wsAlt['uid'], 't3ver_state');
-							$versionState = VersionState::cast($stateRec['t3ver_state']);
-						} else {
-							$versionState = VersionState::cast($wsAlt['t3ver_state']);
-						}
-						if ($versionState->equals(VersionState::MOVE_POINTER)) {
-							// TODO: Same problem as frontend in versionOL(). See TODO point there.
-							$row = FALSE;
-							return;
-						}
+			$wsAlt = self::getWorkspaceVersionOfRecord($wsid, $table, $row['uid'], implode(',', array_keys($row)));
+			// If version was found, swap the default record with that one.
+			if (is_array($wsAlt)) {
+				// Check if this is in move-state:
+				if ($previewMovePlaceholders && !$movePldSwap && ($table == 'pages' || (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) && $unsetMovePointers) {
+					// Only for WS ver 2... (moving)
+					// If t3ver_state is not found, then find it... (but we like best if it is here...)
+					if (!isset($wsAlt['t3ver_state'])) {
+						$stateRec = self::getRecord($table, $wsAlt['uid'], 't3ver_state');
+						$versionState = VersionState::cast($stateRec['t3ver_state']);
+					} else {
+						$versionState = VersionState::cast($wsAlt['t3ver_state']);
 					}
-					// Always correct PID from -1 to what it should be
-					if (isset($wsAlt['pid'])) {
-						// Keep the old (-1) - indicates it was a version.
-						$wsAlt['_ORIG_pid'] = $wsAlt['pid'];
-						// Set in the online versions PID.
-						$wsAlt['pid'] = $row['pid'];
+					if ($versionState->equals(VersionState::MOVE_POINTER)) {
+						// TODO: Same problem as frontend in versionOL(). See TODO point there.
+						$row = FALSE;
+						return;
 					}
-					// For versions of single elements or page+content, swap UID and PID
-					$wsAlt['_ORIG_uid'] = $wsAlt['uid'];
-					$wsAlt['uid'] = $row['uid'];
-					// Backend css class:
-					$wsAlt['_CSSCLASS'] = 'ver-element';
-					// Changing input record to the workspace version alternative:
-					$row = $wsAlt;
 				}
-				// If the original record was a move placeholder, the uid and pid of that is preserved here:
-				if ($movePldSwap) {
-					$row['_MOVE_PLH'] = TRUE;
-					$row['_MOVE_PLH_uid'] = $orig_uid;
-					$row['_MOVE_PLH_pid'] = $orig_pid;
-					// For display; To make the icon right for the placeholder vs. the original
-					$row['t3ver_state'] = (string)new VersionState(VersionState::MOVE_PLACEHOLDER);
+				// Always correct PID from -1 to what it should be
+				if (isset($wsAlt['pid'])) {
+					// Keep the old (-1) - indicates it was a version.
+					$wsAlt['_ORIG_pid'] = $wsAlt['pid'];
+					// Set in the online versions PID.
+					$wsAlt['pid'] = $row['pid'];
 				}
+				// For versions of single elements or page+content, swap UID and PID
+				$wsAlt['_ORIG_uid'] = $wsAlt['uid'];
+				$wsAlt['uid'] = $row['uid'];
+				// Backend css class:
+				$wsAlt['_CSSCLASS'] = 'ver-element';
+				// Changing input record to the workspace version alternative:
+				$row = $wsAlt;
+			}
+			// If the original record was a move placeholder, the uid and pid of that is preserved here:
+			if ($movePldSwap) {
+				$row['_MOVE_PLH'] = TRUE;
+				$row['_MOVE_PLH_uid'] = $orig_uid;
+				$row['_MOVE_PLH_pid'] = $orig_pid;
+				// For display; To make the icon right for the placeholder vs. the original
+				$row['t3ver_state'] = (string)new VersionState(VersionState::MOVE_PLACEHOLDER);
 			}
 		}
 	}
@@ -3832,7 +3908,7 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name
 	 * @param array $row Row (passed by reference) - must be online record!
-	 * @return boolean TRUE if overlay is made.
+	 * @return bool TRUE if overlay is made.
 	 * @see PageRepository::movePlhOl()
 	 */
 	static public function movePlhOL($table, &$row) {
@@ -3861,9 +3937,9 @@ class BackendUtility {
 	/**
 	 * Select the workspace version of a record, if exists
 	 *
-	 * @param integer $workspace Workspace ID
+	 * @param int $workspace Workspace ID
 	 * @param string $table Table name to select from
-	 * @param integer $uid Record uid for which to find workspace version.
+	 * @param int $uid Record uid for which to find workspace version.
 	 * @param string $fields Field list to select
 	 * @return array If found, return record, otherwise FALSE
 	 */
@@ -3871,7 +3947,7 @@ class BackendUtility {
 		if (ExtensionManagementUtility::isLoaded('version')) {
 			if ($workspace !== 0 && $GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
 				// Select workspace version of record:
-				$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow($fields, $table, 'pid=-1 AND ' . 't3ver_oid=' . (int)$uid . ' AND ' . 't3ver_wsid=' . (int)$workspace . self::deleteClause($table));
+				$row = static::getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid=-1 AND ' . 't3ver_oid=' . (int)$uid . ' AND ' . 't3ver_wsid=' . (int)$workspace . self::deleteClause($table));
 				if (is_array($row)) {
 					return $row;
 				}
@@ -3884,23 +3960,24 @@ class BackendUtility {
 	 * Returns live version of record
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record UID of draft, offline version
+	 * @param int $uid Record UID of draft, offline version
 	 * @param string $fields Field list, default is *
-	 * @return array If found, the record, otherwise nothing.
+	 * @return array|NULL If found, the record, otherwise NULL
 	 */
 	static public function getLiveVersionOfRecord($table, $uid, $fields = '*') {
 		$liveVersionId = self::getLiveVersionIdOfRecord($table, $uid);
 		if (is_null($liveVersionId) === FALSE) {
 			return self::getRecord($table, $liveVersionId, $fields);
 		}
+		return NULL;
 	}
 
 	/**
 	 * Gets the id of the live version of a record.
 	 *
 	 * @param string $table Name of the table
-	 * @param integer $uid Uid of the offline/draft record
-	 * @return integer The id of the live version of the record (or NULL if nothing was found)
+	 * @param int $uid Uid of the offline/draft record
+	 * @return int The id of the live version of the record (or NULL if nothing was found)
 	 */
 	static public function getLiveVersionIdOfRecord($table, $uid) {
 		$liveVersionId = NULL;
@@ -3922,23 +3999,24 @@ class BackendUtility {
 	 */
 	static public function versioningPlaceholderClause($table) {
 		if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
-			$currentWorkspace = (int)$GLOBALS['BE_USER']->workspace;
+			$currentWorkspace = (int)static::getBackendUserAuthentication()->workspace;
 			return ' AND (' . $table . '.t3ver_state <= ' . new VersionState(VersionState::DEFAULT_STATE) . ' OR ' . $table . '.t3ver_wsid = ' . $currentWorkspace . ')';
 		}
+		return '';
 	}
 
 	/**
 	 * Get additional where clause to select records of a specific workspace (includes live as well).
 	 *
 	 * @param string $table Table name
-	 * @param integer $workspaceId Workspace ID
+	 * @param int $workspaceId Workspace ID
 	 * @return string Workspace where clause
 	 */
 	static public function getWorkspaceWhereClause($table, $workspaceId = NULL) {
 		$whereClause = '';
 		if (self::isTableWorkspaceEnabled($table)) {
 			if (is_null($workspaceId)) {
-				$workspaceId = $GLOBALS['BE_USER']->workspace;
+				$workspaceId = static::getBackendUserAuthentication()->workspace;
 			}
 			$workspaceId = (int)$workspaceId;
 			$pidOperator = $workspaceId === 0 ? '!=' : '=';
@@ -3950,34 +4028,35 @@ class BackendUtility {
 	/**
 	 * Count number of versions on a page
 	 *
-	 * @param integer $workspace Workspace ID
-	 * @param integer $pageId Page ID
+	 * @param int $workspace Workspace ID
+	 * @param int $pageId Page ID
 	 * @return array Overview of records
 	 */
 	static public function countVersionsOfRecordsOnPage($workspace, $pageId) {
+		if ((int)$workspace === 0) {
+			return array();
+		}
 		$output = array();
-		if ($workspace != 0) {
-			foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
-				if ($tableName != 'pages' && $cfg['ctrl']['versioningWS']) {
-					$joinStatement = 'A.t3ver_oid=B.uid';
-					// Consider records that are moved to a different page
-					if (self::isTableMovePlaceholderAware($tableName)) {
-						$movePointer = new VersionState(VersionState::MOVE_POINTER);
-						$joinStatement = '(A.t3ver_oid=B.uid AND A.t3ver_state<>' . $movePointer
-							. ' OR A.t3ver_oid=B.t3ver_move_id AND A.t3ver_state=' . $movePointer . ')';
-					}
-					// Select all records from this table in the database from the workspace
-					// This joins the online version with the offline version as tables A and B
-					$output[$tableName] = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-						'B.uid as live_uid, A.uid as offline_uid',
-						$tableName . ' A,' . $tableName . ' B',
-						'A.pid=-1' . ' AND B.pid=' . (int)$pageId
-							. ' AND A.t3ver_wsid=' . (int)$workspace . ' AND ' . $joinStatement
-							. self::deleteClause($tableName, 'A') . self::deleteClause($tableName, 'B')
-					);
-					if (!is_array($output[$tableName]) || !count($output[$tableName])) {
-						unset($output[$tableName]);
-					}
+		foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
+			if ($tableName != 'pages' && $cfg['ctrl']['versioningWS']) {
+				$joinStatement = 'A.t3ver_oid=B.uid';
+				// Consider records that are moved to a different page
+				if (self::isTableMovePlaceholderAware($tableName)) {
+					$movePointer = new VersionState(VersionState::MOVE_POINTER);
+					$joinStatement = '(A.t3ver_oid=B.uid AND A.t3ver_state<>' . $movePointer
+						. ' OR A.t3ver_oid=B.t3ver_move_id AND A.t3ver_state=' . $movePointer . ')';
+				}
+				// Select all records from this table in the database from the workspace
+				// This joins the online version with the offline version as tables A and B
+				$output[$tableName] = static::getDatabaseConnection()->exec_SELECTgetRows(
+					'B.uid as live_uid, A.uid as offline_uid',
+					$tableName . ' A,' . $tableName . ' B',
+					'A.pid=-1' . ' AND B.pid=' . (int)$pageId
+						. ' AND A.t3ver_wsid=' . (int)$workspace . ' AND ' . $joinStatement
+						. self::deleteClause($tableName, 'A') . self::deleteClause($tableName, 'B')
+				);
+				if (!is_array($output[$tableName]) || !count($output[$tableName])) {
+					unset($output[$tableName]);
 				}
 			}
 		}
@@ -3988,30 +4067,27 @@ class BackendUtility {
 	 * Performs mapping of new uids to new versions UID in case of import inside a workspace.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid (of live record placeholder)
-	 * @return integer Uid of offline version if any, otherwise live uid.
+	 * @param int $uid Record uid (of live record placeholder)
+	 * @return int Uid of offline version if any, otherwise live uid.
 	 */
 	static public function wsMapId($table, $uid) {
-		if ($wsRec = self::getWorkspaceVersionOfRecord($GLOBALS['BE_USER']->workspace, $table, $uid, 'uid')) {
-			return $wsRec['uid'];
-		} else {
-			return $uid;
-		}
+		$wsRec = self::getWorkspaceVersionOfRecord(static::getBackendUserAuthentication()->workspace, $table, $uid, 'uid');
+		return is_array($wsRec) ? $wsRec['uid'] : $uid;
 	}
 
 	/**
 	 * Returns move placeholder of online (live) version
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record UID of online version
+	 * @param int $uid Record UID of online version
 	 * @param string $fields Field list, default is *
 	 * @return array If found, the record, otherwise nothing.
 	 */
 	static public function getMovePlaceholder($table, $uid, $fields = '*') {
-		$workspace = $GLOBALS['BE_USER']->workspace;
+		$workspace = static::getBackendUserAuthentication()->workspace;
 		if ($workspace !== 0 && $GLOBALS['TCA'][$table] && (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) {
 			// Select workspace version of record:
-			$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			$row = static::getDatabaseConnection()->exec_SELECTgetSingleRow(
 				$fields,
 				$table,
 				'pid<>-1 AND t3ver_state=' . new VersionState(VersionState::MOVE_PLACEHOLDER) . ' AND t3ver_move_id='
@@ -4037,7 +4113,7 @@ class BackendUtility {
 	 * According to the GPL license an interactive application must show such a notice on start-up ('If the program is interactive, make it output a short notice... ' - see GPL.txt)
 	 * Therefore preventing this notice from being properly shown is a violation of the license, regardless of whether you remove it or use a stylesheet to obstruct the display.
 	 *
-	 * @param boolean Display the version number within the copyright notice?
+	 * @param bool $showVersionNumber Display the version number within the copyright notice?
 	 * @return string Text/Image (HTML) for copyright notice.
 	 */
 	static public function TYPO3_copyRightNotice($showVersionNumber = TRUE) {
@@ -4045,44 +4121,32 @@ class BackendUtility {
 		$loginCopyrightWarrantyProvider = strip_tags(trim($GLOBALS['TYPO3_CONF_VARS']['SYS']['loginCopyrightWarrantyProvider']));
 		$loginCopyrightWarrantyURL = strip_tags(trim($GLOBALS['TYPO3_CONF_VARS']['SYS']['loginCopyrightWarrantyURL']));
 
+		$lang = static::getLanguageService();
 		$versionNumber = $showVersionNumber ?
-				' ' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:version.short') . ' ' .
+				' ' . $lang->sL('LLL:EXT:lang/locallang_login.xlf:version.short') . ' ' .
 				htmlspecialchars(TYPO3_version) : '';
 
 		if (strlen($loginCopyrightWarrantyProvider) >= 2 && strlen($loginCopyrightWarrantyURL) >= 10) {
-			$warrantyNote = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:warranty.by'), htmlspecialchars($loginCopyrightWarrantyProvider), '<a href="' . htmlspecialchars($loginCopyrightWarrantyURL) . '" target="_blank">', '</a>');
+			$warrantyNote = sprintf($lang->sL('LLL:EXT:lang/locallang_login.xlf:warranty.by'), htmlspecialchars($loginCopyrightWarrantyProvider), '<a href="' . htmlspecialchars($loginCopyrightWarrantyURL) . '" target="_blank">', '</a>');
 		} else {
-			$warrantyNote = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:no.warranty'), '<a href="' . TYPO3_URL_LICENSE . '" target="_blank">', '</a>');
+			$warrantyNote = sprintf($lang->sL('LLL:EXT:lang/locallang_login.xlf:no.warranty'), '<a href="' . TYPO3_URL_LICENSE . '" target="_blank">', '</a>');
 		}
 		$cNotice = '<a href="' . TYPO3_URL_GENERAL . '" target="_blank">' .
-				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:typo3.cms') . $versionNumber . '</a>. ' .
-				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:copyright') . ' &copy; ' . htmlspecialchars(TYPO3_copyright_year) . ' Kasper Sk&aring;rh&oslash;j. ' .
-				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:extension.copyright') . ' ' .
-				sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:details.link'), ('<a href="' . TYPO3_URL_GENERAL . '" target="_blank">' . TYPO3_URL_GENERAL . '</a>')) . ' ' .
+				$lang->sL('LLL:EXT:lang/locallang_login.xlf:typo3.cms') . $versionNumber . '</a>. ' .
+				$lang->sL('LLL:EXT:lang/locallang_login.xlf:copyright') . ' &copy; ' . htmlspecialchars(TYPO3_copyright_year) . ' Kasper Sk&aring;rh&oslash;j. ' .
+				$lang->sL('LLL:EXT:lang/locallang_login.xlf:extension.copyright') . ' ' .
+				sprintf($lang->sL('LLL:EXT:lang/locallang_login.xlf:details.link'), ('<a href="' . TYPO3_URL_GENERAL . '" target="_blank">' . TYPO3_URL_GENERAL . '</a>')) . ' ' .
 				strip_tags($warrantyNote, '<a>') . ' ' .
-				sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:free.software'), ('<a href="' . TYPO3_URL_LICENSE . '" target="_blank">'), '</a> ') .
-				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_login.xlf:keep.notice');
+				sprintf($lang->sL('LLL:EXT:lang/locallang_login.xlf:free.software'), ('<a href="' . TYPO3_URL_LICENSE . '" target="_blank">'), '</a> ') .
+				$lang->sL('LLL:EXT:lang/locallang_login.xlf:keep.notice');
 		return $cNotice;
-	}
-
-	/**
-	 * Display some warning messages if this installation is obviously insecure!!
-	 * These warnings are only displayed to admin users
-	 *
-	 * @return string Rendered messages as HTML
-	 * @deprecated since 6.2 and is removed two versions later. This was transferred to ext:aboutmodules, do not use any longer!
-	 * @see \TYPO3\CMS\Aboutmodules\Controller\ModulesController
-	 */
-	static public function displayWarningMessages() {
-		GeneralUtility::logDeprecatedFunction();
-		return '';
 	}
 
 	/**
 	 * Returns "web" if the $path (absolute) is within the DOCUMENT ROOT - and thereby qualifies as a "web" folder.
 	 *
 	 * @param string $path Path to evaluate
-	 * @return boolean
+	 * @return bool
 	 */
 	static public function getPathType_web_nonweb($path) {
 		return GeneralUtility::isFirstPartOfStr($path, GeneralUtility::getIndpEnv('TYPO3_DOCUMENT_ROOT')) ? 'web' : '';
@@ -4091,19 +4155,21 @@ class BackendUtility {
 	/**
 	 * Creates ADMCMD parameters for the "viewpage" extension / "cms" frontend
 	 *
-	 * @param array $pageinfo Page record
+	 * @param array $pageInfo Page record
 	 * @return string Query-parameters
 	 * @internal
 	 */
-	static public function ADMCMD_previewCmds($pageinfo) {
-		if ($pageinfo['fe_group'] > 0) {
-			$simUser = '&ADMCMD_simUser=' . $pageinfo['fe_group'];
+	static public function ADMCMD_previewCmds($pageInfo) {
+		$simUser = '';
+		$simTime = '';
+		if ($pageInfo['fe_group'] > 0) {
+			$simUser = '&ADMCMD_simUser=' . $pageInfo['fe_group'];
 		}
-		if ($pageinfo['starttime'] > $GLOBALS['EXEC_TIME']) {
-			$simTime = '&ADMCMD_simTime=' . $pageinfo['starttime'];
+		if ($pageInfo['starttime'] > $GLOBALS['EXEC_TIME']) {
+			$simTime = '&ADMCMD_simTime=' . $pageInfo['starttime'];
 		}
-		if ($pageinfo['endtime'] < $GLOBALS['EXEC_TIME'] && $pageinfo['endtime'] != 0) {
-			$simTime = '&ADMCMD_simTime=' . ($pageinfo['endtime'] - 1);
+		if ($pageInfo['endtime'] < $GLOBALS['EXEC_TIME'] && $pageInfo['endtime'] != 0) {
+			$simTime = '&ADMCMD_simTime=' . ($pageInfo['endtime'] - 1);
 		}
 		return $simUser . $simTime;
 	}
@@ -4137,7 +4203,7 @@ class BackendUtility {
 	 */
 	static public function getBackendScript($interface = '') {
 		if (!$interface) {
-			$interface = $GLOBALS['BE_USER']->uc['interfaceSetup'];
+			$interface = static::getBackendUserAuthentication()->uc['interfaceSetup'];
 		}
 		switch ($interface) {
 			case 'frontend':
@@ -4193,7 +4259,7 @@ class BackendUtility {
 	 * in a valid user's web-mount.
 	 *
 	 * @param string $table Name of the table
-	 * @return boolean
+	 * @return bool
 	 */
 	static public function isWebMountRestrictionIgnored($table) {
 		return !empty($GLOBALS['TCA'][$table]['ctrl']['security']['ignoreWebMountRestriction']);
@@ -4205,7 +4271,7 @@ class BackendUtility {
 	 * only can be accessed by admin users.
 	 *
 	 * @param string $table Name of the table
-	 * @return boolean
+	 * @return bool
 	 */
 	static public function isRootLevelRestrictionIgnored($table) {
 		return !empty($GLOBALS['TCA'][$table]['ctrl']['security']['ignoreRootLevelRestriction']);
@@ -4226,11 +4292,39 @@ class BackendUtility {
 	 * @param array $TSdataArray Current TSconfig data array - Can be modified by slots!
 	 * @param int $id Page ID we are handling
 	 * @param array $rootLine Rootline array of page
-	 * @param boolean $returnPartArray Whether TSdata should be parsed by TS parser or returned as plain text
+	 * @param bool $returnPartArray Whether TSdata should be parsed by TS parser or returned as plain text
 	 * @return array Modified Data array
 	 */
 	static protected function emitGetPagesTSconfigPreIncludeSignal(array $TSdataArray, $id, array $rootLine, $returnPartArray) {
 		$signalArguments = static::getSignalSlotDispatcher()->dispatch(__CLASS__, 'getPagesTSconfigPreInclude', array($TSdataArray, $id, $rootLine, $returnPartArray));
 		return $signalArguments[0];
+	}
+
+	/**
+	 * @return DatabaseConnection
+	 */
+	static protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	static protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * @return BackendUserAuthentication
+	 */
+	static protected function getBackendUserAuthentication() {
+		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * @return DocumentTemplate
+	 */
+	static protected function getDocumentTemplate() {
+		return $GLOBALS['TBE_TEMPLATE'];
 	}
 }

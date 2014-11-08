@@ -77,7 +77,7 @@ class NullTimeTracker {
 	 * does nothing
 	 *
 	 * @param string $content The message string
-	 * @param integer $num Message type: 0: information, 1: message, 2: warning, 3: error
+	 * @param int $num Message type: 0: information, 1: message, 2: warning, 3: error
 	 * @return void
 	 */
 	public function setTSlogMessage($content, $num = 0) {
@@ -121,7 +121,7 @@ class NullTimeTracker {
 	 * Gets a microtime value as milliseconds value.
 	 *
 	 * @param float $microtime The microtime value - if not set the current time is used
-	 * @return integer The microtime value as milliseconds value
+	 * @return int The microtime value as milliseconds value
 	 */
 	public function getMilliseconds($microtime = NULL) {
 

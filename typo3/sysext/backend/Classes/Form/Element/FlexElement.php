@@ -212,9 +212,9 @@ class FlexElement extends AbstractFormElement {
 	 * @param array $row The particular record from $table in which the field $field is found
 	 * @param array $PA Array of standard information for rendering of a form field in TCEforms, see other rendering functions too
 	 * @param string $formPrefix Form field prefix, eg. "[data][sDEF][lDEF][...][...]
-	 * @param integer $level Indicates nesting level for the function call
+	 * @param int $level Indicates nesting level for the function call
 	 * @param string $idPrefix Prefix for ID-values
-	 * @param boolean $toggleClosed Defines whether the next flexform level is open or closed. Comes from _TOGGLE pseudo field in FlexForm xml.
+	 * @param bool $toggleClosed Defines whether the next flexform level is open or closed. Comes from _TOGGLE pseudo field in FlexForm xml.
 	 * @return string HTMl code for form.
 	 */
 	public function getSingleField_typeFlex_draw($dataStruct, $editData, $table, $field, $row, &$PA, $formPrefix = '', $level = 0, $idPrefix = 'ID', $toggleClosed = FALSE) {
@@ -312,14 +312,6 @@ class FlexElement extends AbstractFormElement {
 								$title = '';
 								if (isset($nCfg['title'])) {
 									$title = $this->formEngine->sL($nCfg['title']);
-								} elseif (isset($nCfg['tx_templavoila']['title'])) {
-									/* @deprecated since 4.7 will be removed two versions after 6.2 */
-									GeneralUtility::deprecationLog(
-										'Flexform data for table ' . $table . ', field ' . $field
-										. 'contains the <tx_templavoila><title>... construct deprecated since TYPO3 4.7. '
-										. 'The <tx_templavoila> element has to be removed now. Support will be removed two versions after 6.2.'
-									);
-									$title = $this->formEngine->sL($nCfg['tx_templavoila']['title']);
 								}
 								$newElementsLinks[] = '<a href="#" onclick="' . htmlspecialchars($onClickInsert) . '">'
 									. IconUtility::getSpriteIcon('actions-document-new')

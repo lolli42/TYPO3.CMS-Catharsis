@@ -37,7 +37,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	 * we just make every entry volatile and treat a high number as "unlimited"
 	 *
 	 * @see http://code.google.com/p/redis/wiki/ExpireCommand
-	 * @var integer Faked unlimited lifetime
+	 * @var int Faked unlimited lifetime
 	 */
 	const FAKED_UNLIMITED_LIFETIME = 31536000;
 	/**
@@ -68,7 +68,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Indicates whether the server is connected
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $connected = FALSE;
 
@@ -82,14 +82,14 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Port of the Redis server, defaults to 6379
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $port = 6379;
 
 	/**
 	 * Number of selected database, defaults to 0
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $database = 0;
 
@@ -103,14 +103,14 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Indicates whether data is compressed or not (requires php zlib)
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $compression = FALSE;
 
 	/**
 	 * -1 to 9, indicates zlib compression level: -1 = default level 6, 0 = no compression, 9 maximum compression
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $compressionLevel = -1;
 
@@ -171,7 +171,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Setter for server port
 	 *
-	 * @param integer $port Port
+	 * @param int $port Port
 	 * @return void
 	 * @api
 	 */
@@ -182,7 +182,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Setter for database number
 	 *
-	 * @param integer $database Database
+	 * @param int $database Database
 	 * @return void
 	 * @throws \InvalidArgumentException if database number is not valid
 	 * @api
@@ -211,7 +211,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	/**
 	 * Enable data compression
 	 *
-	 * @param boolean $compression TRUE to enable compression
+	 * @param bool $compression TRUE to enable compression
 	 * @return void
 	 * @throws \InvalidArgumentException if compression parameter is not of type boolean
 	 * @api
@@ -228,7 +228,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	 * If compression is enabled and this is not set,
 	 * gzcompress default level will be used.
 	 *
-	 * @param integer $compressionLevel -1 to 9: Compression level
+	 * @param int $compressionLevel -1 to 9: Compression level
 	 * @return void
 	 * @throws \InvalidArgumentException if compressionLevel parameter is not within allowed bounds
 	 * @api
@@ -253,7 +253,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	 * @param string $entryIdentifier Identifier for this specific cache entry
 	 * @param string $data Data to be stored
 	 * @param array $tags Tags to associate with this cache entry
-	 * @param integer $lifetime Lifetime of this cache entry in seconds. If NULL is specified, default lifetime is used. "0" means unlimited lifetime.
+	 * @param int $lifetime Lifetime of this cache entry in seconds. If NULL is specified, default lifetime is used. "0" means unlimited lifetime.
 	 * @return void
 	 * @throws \InvalidArgumentException if identifier is not valid
 	 * @throws \TYPO3\CMS\Core\Cache\Exception\InvalidDataException if data is not a string
@@ -331,7 +331,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	 * Scales O(1) with number of cache entries
 	 *
 	 * @param string $entryIdentifier Identifier specifying the cache entry
-	 * @return boolean TRUE if such an entry exists, FALSE if not
+	 * @return bool TRUE if such an entry exists, FALSE if not
 	 * @throws \InvalidArgumentException if identifier is not a string
 	 * @api
 	 */
@@ -349,7 +349,7 @@ class RedisBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impleme
 	 * Scales O(n) with number of tags
 	 *
 	 * @param string $entryIdentifier Specifies the cache entry to remove
-	 * @return boolean TRUE if (at least) an entry could be removed or FALSE if no entry was found
+	 * @return bool TRUE if (at least) an entry could be removed or FALSE if no entry was found
 	 * @throws \InvalidArgumentException if identifier is not a string
 	 * @api
 	 */

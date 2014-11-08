@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class Cache {
 
 	/**
-	 * @var boolean TRUE if caching framework was fully initialized
+	 * @var bool TRUE if caching framework was fully initialized
 	 */
 	static protected $isCachingFrameworkInitialized = FALSE;
 
@@ -61,7 +61,7 @@ class Cache {
 	 * Determines whether the caching framework is initialized.
 	 * The caching framework could be disabled for the core but used by an extension.
 	 *
-	 * @return boolean True if caching framework is initialized
+	 * @return bool True if caching framework is initialized
 	 */
 	static public function isCachingFrameworkInitialized() {
 		return self::$isCachingFrameworkInitialized;

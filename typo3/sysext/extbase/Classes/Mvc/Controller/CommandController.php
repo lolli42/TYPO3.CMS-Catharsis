@@ -84,7 +84,7 @@ class CommandController implements CommandControllerInterface {
 	 * Checks if the current request type is supported by the controller.
 	 *
 	 * @param \TYPO3\CMS\Extbase\Mvc\RequestInterface $request The current request
-	 * @return boolean TRUE if this request type is supported, otherwise FALSE
+	 * @return bool TRUE if this request type is supported, otherwise FALSE
 	 */
 	public function canProcessRequest(\TYPO3\CMS\Extbase\Mvc\RequestInterface $request) {
 		return $request instanceof \TYPO3\CMS\Extbase\Mvc\Cli\Request;
@@ -215,7 +215,7 @@ class CommandController implements CommandControllerInterface {
 		if (is_string($commandResult) && strlen($commandResult) > 0) {
 			$this->response->appendContent($commandResult);
 		} elseif (is_object($commandResult) && method_exists($commandResult, '__toString')) {
-			$this->response->appendContent((string) $commandResult);
+			$this->response->appendContent((string)$commandResult);
 		}
 	}
 
@@ -277,7 +277,7 @@ class CommandController implements CommandControllerInterface {
 	 * Exits the CLI through the dispatcher
 	 * An exit status code can be specified @see http://www.php.net/exit
 	 *
-	 * @param integer $exitCode Exit code to return on exit
+	 * @param int $exitCode Exit code to return on exit
 	 * @throws \TYPO3\CMS\Extbase\Mvc\Exception\StopActionException
 	 * @return void
 	 */
@@ -290,7 +290,7 @@ class CommandController implements CommandControllerInterface {
 	 * Sends the response and exits the CLI without any further code execution
 	 * Should be used for commands that flush code caches.
 	 *
-	 * @param integer $exitCode Exit code to return on exit
+	 * @param int $exitCode Exit code to return on exit
 	 * @return void
 	 */
 	protected function sendAndExit($exitCode = 0) {

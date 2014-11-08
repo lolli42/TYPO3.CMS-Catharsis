@@ -37,7 +37,7 @@ class ElementEntity {
 	protected $table;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $id;
 
@@ -67,7 +67,7 @@ class ElementEntity {
 	protected $parents;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $traversingParents = FALSE;
 
@@ -85,7 +85,7 @@ class ElementEntity {
 	 * Creates this object.
 	 *
 	 * @param string $table
-	 * @param integer $id
+	 * @param int $id
 	 * @param array $data (optional)
 	 * @param \TYPO3\CMS\Version\Dependency\DependencyResolver $dependency
 	 */
@@ -123,7 +123,7 @@ class ElementEntity {
 	/**
 	 * Gets the id.
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getId() {
 		return $this->id;
@@ -263,7 +263,7 @@ class ElementEntity {
 	/**
 	 * Determines whether there are child or parent references.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasReferences() {
 		return count($this->getChildren()) > 0 || count($this->getParents()) > 0;
@@ -317,7 +317,7 @@ class ElementEntity {
 	 * Converts the object for string representation.
 	 *
 	 * @param string $table
-	 * @param integer $id
+	 * @param int $id
 	 * @return string
 	 */
 	static public function getIdentifier($table, $id) {

@@ -62,7 +62,7 @@ class ArrayUtility {
 			if ($value === $needle) {
 				($resultArray[$key] = $value);
 			} elseif (is_array($value)) {
-				($subArrayMatches = \TYPO3\CMS\Core\Utility\ArrayUtility::filterByValueRecursive($needle, $value));
+				($subArrayMatches = static::filterByValueRecursive($needle, $value));
 				if (count($subArrayMatches) > 0) {
 					($resultArray[$key] = $subArrayMatches);
 				}
@@ -90,7 +90,7 @@ class ArrayUtility {
 	 * @param array $array Given array
 	 * @param string $path Path to test, 'foo/bar/foobar'
 	 * @param string $delimiter Delimeter for path, default /
-	 * @return boolean TRUE if path exists in array
+	 * @return bool TRUE if path exists in array
 	 */
 	static public function isValidPath(array $array, $path, $delimiter = '/') {
 		$isValid = TRUE;
@@ -295,7 +295,7 @@ class ArrayUtility {
 	 * See unit tests for detailed examples
 	 *
 	 * @param array $array Array to export
-	 * @param integer $level Internal level used for recursion, do *not* set from outside!
+	 * @param int $level Internal level used for recursion, do *not* set from outside!
 	 * @return string String representation of array
 	 * @throws \RuntimeException
 	 */
@@ -470,7 +470,7 @@ class ArrayUtility {
 	 *  array(0 => 'Zero', 1 => 'One')
 	 *
 	 * @param array $array Input array
-	 * @param integer $level Internal level used for recursion, do *not* set from outside!
+	 * @param int $level Internal level used for recursion, do *not* set from outside!
 	 * @return array
 	 */
 	static public function renumberKeysToAvoidLeapsIfKeysAreAllNumeric(array $array = array(), $level = 0) {
@@ -510,9 +510,9 @@ class ArrayUtility {
 	 *
 	 * @param array $original Original array. It will be *modified* by this method and contains the result afterwards!
 	 * @param array $overrule Overrule array, overruling the original array
-	 * @param boolean $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
-	 * @param boolean $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
-	 * @param boolean $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
+	 * @param bool $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
+	 * @param bool $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
+	 * @param bool $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
 	 * @return void
 	 */
 	static public function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {

@@ -112,7 +112,6 @@ class Check {
 		$statusArray[] = $this->checkGdLibJpgSupport();
 		$statusArray[] = $this->checkGdLibPngSupport();
 		$statusArray[] = $this->checkGdLibFreeTypeSupport();
-		$statusArray[] = $this->checkPhpMagicQuotes();
 		$statusArray[] = $this->checkRegisterGlobals();
 		$statusArray[] = $this->checkLibXmlBug();
 		$statusArray[] = $this->isTrueTypeFontDpiStandard();
@@ -1299,29 +1298,6 @@ class Check {
 	}
 
 	/**
-	 * Check php magic quotes
-	 *
-	 * @return Status\StatusInterface
-	 */
-	protected function checkPhpMagicQuotes() {
-		$magicQuotesGpc = get_magic_quotes_gpc();
-		if ($magicQuotesGpc) {
-			$status = new Status\WarningStatus();
-			$status->setTitle('PHP magic quotes on');
-			$status->setMessage(
-				'magic_quotes_gpc=' . $magicQuotesGpc . LF .
-				'Setting magic_quotes_gpc is deprecated since PHP 5.3.' .
-				' You are advised to disable it until it is completely removed:' . LF .
-				'magic_quotes_gpc=Off'
-			);
-		} else {
-			$status = new Status\OkStatus();
-			$status->setTitle('PHP magic quotes off');
-		}
-		return $status;
-	}
-
-	/**
 	 * Check register globals
 	 *
 	 * @return Status\StatusInterface
@@ -1384,7 +1360,7 @@ class Check {
 	 * Validate a given IP address.
 	 *
 	 * @param string $ip IP address to be tested
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isValidIp($ip) {
 		return filter_var($ip, FILTER_VALIDATE_IP) !== FALSE;
@@ -1393,7 +1369,7 @@ class Check {
 	/**
 	 * Test if this instance runs on windows OS
 	 *
-	 * @return boolean TRUE if operating system is windows
+	 * @return bool TRUE if operating system is windows
 	 */
 	protected function isWindowsOs() {
 		$windowsOs = FALSE;
@@ -1406,7 +1382,7 @@ class Check {
 	/**
 	 * Helper method to find out if suhosin extension is loaded
 	 *
-	 * @return boolean TRUE if suhosin PHP extension is loaded
+	 * @return bool TRUE if suhosin PHP extension is loaded
 	 */
 	protected function isSuhosinLoadedAndActive() {
 		$suhosinLoaded = FALSE;
@@ -1447,7 +1423,7 @@ class Check {
 	 * Helper method to get the bytes value from a measurement string like "100k".
 	 *
 	 * @param string $measurement The measurement (e.g. "100k")
-	 * @return integer The bytes value (e.g. 102400)
+	 * @return int The bytes value (e.g. 102400)
 	 */
 	protected function getBytesFromSizeMeasurement($measurement) {
 		$bytes = doubleval($measurement);

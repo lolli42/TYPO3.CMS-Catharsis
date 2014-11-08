@@ -24,14 +24,14 @@ class Content {
 	/**
 	 * The uid
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $uid = 0;
 
 	/**
 	 * The page id
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $pageId = 0;
 
@@ -45,7 +45,7 @@ class Content {
 	/**
 	 * Sets the uid
 	 *
-	 * @param integer $uid The uid
+	 * @param int $uid The uid
 	 * @return void
 	 */
 	public function setUid($uid) {
@@ -55,7 +55,7 @@ class Content {
 	/**
 	 * Returns the uid
 	 *
-	 * @return integer The uid
+	 * @return int The uid
 	 */
 	public function getUid() {
 		return $this->uid;
@@ -64,7 +64,7 @@ class Content {
 	/**
 	 * Sets the page id
 	 *
-	 * @param integer $pageId The page id
+	 * @param int $pageId The page id
 	 * @return void
 	 */
 	public function setPageId($pageId) {
@@ -74,7 +74,7 @@ class Content {
 	/**
 	 * Returns the page id
 	 *
-	 * @return integer The page id
+	 * @return int The page id
 	 */
 	public function getPageId() {
 		return $this->pageId;
@@ -87,7 +87,7 @@ class Content {
 	 * @return void
 	 */
 	public function setTyposcript(array $typoscript) {
-		$this->typoscript = (array) $typoscript;
+		$this->typoscript = (array)$typoscript;
 	}
 
 	/**

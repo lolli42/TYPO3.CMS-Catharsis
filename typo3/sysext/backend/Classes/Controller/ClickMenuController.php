@@ -24,24 +24,35 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class ClickMenuController {
 
-	// Internal, static: GPvar:
-	// Back path.
+	/**
+	 * @var string
+	 */
 	public $backPath;
 
-	// Definition of which item the click menu should be made for.
-	public $item;
-
-	// Defines the name of the document object for which to reload the URL.
+	/**
+	 * Defines the name of the document object for which to reload the URL.
+	 *
+	 * @var int
+	 */
 	public $reloadListFrame;
 
-	// Internal:
-	// Content accumulation
+	/**
+	 * Content accumulation
+	 *
+	 * @var string
+	 */
 	public $content = '';
 
-	// Template object
+	/**
+	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
+	 */
 	public $doc;
 
-	// Internal array of classes for extending the clickmenu
+	/**
+	 * Internal array of classes for extending the clickmenu
+	 *
+	 * @var array
+	 */
 	public $extClassArray = array();
 
 	/**
@@ -62,7 +73,6 @@ class ClickMenuController {
 	protected function init() {
 		// Setting GPvars:
 		$this->backPath = GeneralUtility::_GP('backPath');
-		$this->item = GeneralUtility::_GP('item');
 		$this->reloadListFrame = GeneralUtility::_GP('reloadListFrame');
 		// Setting pseudo module name
 		$this->MCONF['name'] = 'xMOD_alt_clickmenu.php';
@@ -77,10 +87,9 @@ class ClickMenuController {
 		$this->extClassArray = $GLOBALS['TBE_MODULES_EXT']['xMOD_alt_clickmenu']['extendCMclasses'];
 
 		// Initialize template object
-		if (!$this->ajax) {
-			$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
-			$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		}
+		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc->backPath = $GLOBALS['BACK_PATH'];
+
 		// Setting mode for display and background image in the top frame
 
 		// Setting clickmenu timeout
@@ -139,7 +148,6 @@ class ClickMenuController {
 	 * @return void
 	 */
 	public function main() {
-		$this->ajax = GeneralUtility::_GP('ajax') ? TRUE : FALSE;
 		// Initialize Clipboard object:
 		$clipObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
 		$clipObj->initializeClipboard();
@@ -157,10 +165,6 @@ class ClickMenuController {
 		$clickMenu->clipObj = $clipObj;
 		$clickMenu->extClassArray = $this->extClassArray;
 		$clickMenu->backPath = $this->backPath;
-		// Start page
-		if (!$this->ajax) {
-			$this->content .= $this->doc->startPage('Context Sensitive Menu');
-		}
 		// Set content of the clickmenu with the incoming var, "item"
 		$this->content .= $clickMenu->init();
 	}
@@ -171,14 +175,43 @@ class ClickMenuController {
 	 * @return void
 	 */
 	public function printContent() {
-		if (!$this->ajax) {
-			$this->content .= $this->doc->endPage();
-			$this->content = $this->doc->insertStylesAndJS($this->content);
-			echo $this->content;
-		} else {
-			header('Content-Type: text/xml');
-			echo '<?xml version="1.0"?>' . LF . '<t3ajax>' . $this->content . '</t3ajax>';
-		}
+		header('Content-Type: text/xml');
+		echo '<?xml version="1.0"?>' . LF . '<t3ajax>' . $this->content . '</t3ajax>';
+	}
+
+	/**
+	 * this is an intermediate clickmenu handler
+	 *
+	 * @param array $parameters
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler
+	 */
+	public function printContentForAjaxRequest($parameters, \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler) {
+
+		$this->init();
+		$clipObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
+		$clipObj->initializeClipboard();
+		// This locks the clipboard to the Normal for this request.
+		$clipObj->lockToNormal();
+		// Update clipboard if some actions are sent.
+		$CB = GeneralUtility::_GET('CB');
+		$clipObj->setCmd($CB);
+		$clipObj->cleanCurrent();
+		// Saves
+		$clipObj->endClipboard();
+		// Create clickmenu object
+		$clickMenu = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\ClickMenu\\ClickMenu');
+		// Set internal vars in clickmenu object:
+		$clickMenu->clipObj = $clipObj;
+		$clickMenu->extClassArray = $this->extClassArray;
+		$clickMenu->backPath = $this->backPath;
+
+		// Set content of the clickmenu with the incoming var, "item"
+		$this->content = $clickMenu->init();
+
+		// send the data
+		$content = '<?xml version="1.0"?><t3ajax>' . $this->content . '</t3ajax>';
+		$ajaxRequestHandler->addContent('ClickMenu', $content);
+		$ajaxRequestHandler->setContentFormat('xml');
 	}
 
 }

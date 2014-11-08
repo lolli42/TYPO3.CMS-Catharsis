@@ -139,12 +139,12 @@ abstract class Enumeration implements TypeInterface {
 	 * Check if the value on this enum is a valid value for the enum
 	 *
 	 * @param mixed $value
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isValid($value) {
-		$value = (string) $value;
+		$value = (string)$value;
 		foreach (static::$enumConstants[get_class($this)] as $constantValue) {
-			if ($value === (string) $constantValue) {
+			if ($value === (string)$constantValue) {
 				return TRUE;
 			}
 		}
@@ -156,7 +156,7 @@ abstract class Enumeration implements TypeInterface {
 	 * Defaults to constants you define in your subclass
 	 * override to provide custom functionality
 	 *
-	 * @param boolean $include_default
+	 * @param bool $include_default
 	 * @return array
 	 */
 	static public function getConstants($include_default = FALSE) {
@@ -185,7 +185,7 @@ abstract class Enumeration implements TypeInterface {
 	 * Compare if the value of the current object value equals the given value
 	 *
 	 * @param mixed $value default
-	 * @return boolean
+	 * @return bool
 	 */
 	public function equals($value) {
 		$value = static::cast($value);

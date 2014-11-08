@@ -21,7 +21,7 @@ class TemplateCompiler implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $templateCache;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $variableCounter = 0;
 
@@ -40,7 +40,7 @@ class TemplateCompiler implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @param string $identifier
-	 * @return boolean
+	 * @return bool
 	 */
 	public function has($identifier) {
 		$identifier = $this->sanitizeIdentifier($identifier);

@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Extbase\Reflection;
  */
 
 use TYPO3\CMS\Core\Utility\ClassNamingUtility;
+use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
 
 /**
  * A backport of the FLOW3 reflection service for aquiring reflection based information.
@@ -33,7 +34,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Whether this service has been initialized.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $initialized = FALSE;
 
@@ -45,7 +46,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Whether class alterations should be detected on each initialization.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $detectClassChanges = FALSE;
 
@@ -115,7 +116,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @see reflectClass()
 	 * @see getMethodReflection()
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $dataCacheNeedsUpdate = FALSE;
 
@@ -173,7 +174,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Returns whether the Reflection Service is initialized.
 	 *
-	 * @return boolean true if the Reflection Service is initialized, otherwise false
+	 * @return bool true if the Reflection Service is initialized, otherwise false
 	 */
 	public function isInitialized() {
 		return $this->initialized;
@@ -189,6 +190,39 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 			$this->saveToCache();
 		}
 		$this->initialized = FALSE;
+	}
+
+	/**
+	 * Returns all tags and their values the specified class is tagged with
+	 *
+	 * @param string $className Name of the class
+	 * @return array An array of tags and their values or an empty array if no tags were found
+	 */
+	public function getClassTagsValues($className) {
+		if (!isset($this->reflectedClassNames[$className])) {
+			$this->reflectClass($className);
+		}
+		if (!isset($this->classTagsValues[$className])) {
+			return array();
+		}
+		return isset($this->classTagsValues[$className]) ? $this->classTagsValues[$className] : array();
+	}
+
+	/**
+	 * Returns the values of the specified class tag
+	 *
+	 * @param string $className Name of the class containing the property
+	 * @param string $tag Tag to return the values of
+	 * @return array An array of values or an empty array if the tag was not found
+	 */
+	public function getClassTagValues($className, $tag) {
+		if (!isset($this->reflectedClassNames[$className])) {
+			$this->reflectClass($className);
+		}
+		if (!isset($this->classTagsValues[$className])) {
+			return array();
+		}
+		return isset($this->classTagsValues[$className][$tag]) ? $this->classTagsValues[$className][$tag] : array();
 	}
 
 	/**
@@ -224,8 +258,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $className Name of the class containing the method
 	 * @param string $methodName Name of the method
-	 * @return boolean
-	 * @api
+	 * @return bool
 	 */
 	public function hasMethod($className, $methodName) {
 		try {
@@ -303,7 +336,6 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $propertyName Name of the tagged property
 	 * @param string $tag Tag to return the values of
 	 * @return array An array of values or an empty array if the tag was not found
-	 * @api
 	 */
 	public function getPropertyTagValues($className, $propertyName, $tag) {
 		if (!isset($this->reflectedClassNames[$className])) {
@@ -320,8 +352,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * reflection information is available.
 	 *
 	 * @param string $className Name of the class
-	 * @return boolean If the class is reflected by this service
-	 * @api
+	 * @return bool If the class is reflected by this service
 	 */
 	public function isClassReflected($className) {
 		return isset($this->reflectedClassNames[$className]);
@@ -332,8 +363,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $className Name of the class
 	 * @param string $tag Tag to check for
-	 * @return boolean TRUE if the class is tagged with $tag, otherwise FALSE
-	 * @api
+	 * @return bool TRUE if the class is tagged with $tag, otherwise FALSE
 	 */
 	public function isClassTaggedWith($className, $tag) {
 		if ($this->initialized === FALSE) {
@@ -354,8 +384,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $className Name of the class
 	 * @param string $propertyName Name of the property
 	 * @param string $tag Tag to check for
-	 * @return boolean TRUE if the class property is tagged with $tag, otherwise FALSE
-	 * @api
+	 * @return bool TRUE if the class property is tagged with $tag, otherwise FALSE
 	 */
 	public function isPropertyTaggedWith($className, $propertyName, $tag) {
 		if (!isset($this->reflectedClassNames[$className])) {
@@ -451,7 +480,7 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Converts the given parameter reflection into an information array
 	 *
 	 * @param ParameterReflection $parameter The parameter to reflect
-	 * @param integer $parameterPosition
+	 * @param int $parameterPosition
 	 * @param MethodReflection|NULL $method
 	 * @return array Parameter information array
 	 */
@@ -475,7 +504,14 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 			if (isset($methodTagsAndValues['param']) && isset($methodTagsAndValues['param'][$parameterPosition])) {
 				$explodedParameters = explode(' ', $methodTagsAndValues['param'][$parameterPosition]);
 				if (count($explodedParameters) >= 2) {
-					$parameterInformation['type'] = $explodedParameters[0];
+					if (TypeHandlingUtility::isSimpleType($explodedParameters[0])) {
+						// ensure that short names of simple types are resolved correctly to the long form
+						// this is important for all kinds of type checks later on
+						$typeInfo = TypeHandlingUtility::parseType($explodedParameters[0]);
+						$parameterInformation['type'] = $typeInfo['type'];
+					} else {
+						$parameterInformation['type'] = $explodedParameters[0];
+					}
 				}
 			}
 		}

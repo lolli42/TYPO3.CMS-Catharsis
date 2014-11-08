@@ -49,7 +49,7 @@ class ParsingState implements \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterfa
 	protected $layoutNameNode;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $compilable = TRUE;
 
@@ -114,7 +114,7 @@ class ParsingState implements \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterfa
 	/**
 	 * Count the size of the node stack
 	 *
-	 * @return integer Number of elements on the node stack (i.e. number of currently open Fluid tags)
+	 * @return int Number of elements on the node stack (i.e. number of currently open Fluid tags)
 	 */
 	public function countNodeStack() {
 		return count($this->nodeStack);
@@ -149,7 +149,7 @@ class ParsingState implements \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterfa
 	 * Returns TRUE if the current template has a template defined via <f:layout name="..." />
 	 *
 	 * @see getLayoutName()
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasLayout() {
 		return $this->layoutNameNode !== NULL;
@@ -176,21 +176,21 @@ class ParsingState implements \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterfa
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isCompilable() {
 		return $this->compilable;
 	}
 
 	/**
-	 * @param boolean $compilable
+	 * @param bool $compilable
 	 */
 	public function setCompilable($compilable) {
 		$this->compilable = $compilable;
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isCompiled() {
 		return FALSE;

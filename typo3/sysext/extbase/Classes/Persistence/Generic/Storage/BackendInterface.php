@@ -23,8 +23,8 @@ interface BackendInterface {
 	 *
 	 * @param string $tableName The database table name
 	 * @param array $fieldValues The fieldValues to insert
-	 * @param boolean $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
-	 * @return integer the UID of the inserted row
+	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
+	 * @return int the UID of the inserted row
 	 */
 	public function addRow($tableName, array $fieldValues, $isRelation = FALSE);
 
@@ -33,7 +33,7 @@ interface BackendInterface {
 	 *
 	 * @param string $tableName The database table name
 	 * @param array $fieldValues The fieldValues to update
-	 * @param boolean $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
+	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
 	 * @return mixed|void
 	 */
 	public function updateRow($tableName, array $fieldValues, $isRelation = FALSE);
@@ -43,7 +43,7 @@ interface BackendInterface {
 	 *
 	 * @param string $tableName The database relation table name
 	 * @param array $fieldValues The fieldValues to be updated
-	 * @return boolean
+	 * @return bool
 	 */
 	public function updateRelationTableRow($tableName, array $fieldValues);
 
@@ -52,7 +52,7 @@ interface BackendInterface {
 	 *
 	 * @param string $tableName The database table name
 	 * @param array $where An array of where array('fieldname' => value). This array will be transformed to a WHERE clause
-	 * @param boolean $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
+	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
 	 * @return mixed|void
 	 */
 	public function removeRow($tableName, array $where, $isRelation = FALSE);
@@ -71,7 +71,7 @@ interface BackendInterface {
 	 * Returns the number of items matching the query.
 	 *
 	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getObjectCountByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query);

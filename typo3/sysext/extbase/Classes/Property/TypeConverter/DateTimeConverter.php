@@ -86,7 +86,7 @@ class DateTimeConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstra
 	protected $targetType = 'DateTime';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $priority = 1;
 
@@ -95,7 +95,7 @@ class DateTimeConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstra
 	 *
 	 * @param string $source
 	 * @param string $targetType
-	 * @return boolean
+	 * @return bool
 	 */
 	public function canConvertFrom($source, $targetType) {
 		if (!is_callable(array($targetType, 'createFromFormat'))) {
@@ -113,7 +113,7 @@ class DateTimeConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstra
 	/**
 	 * Converts $source to a \DateTime using the configured dateFormat
 	 *
-	 * @param string|integer|array $source the string to be converted to a \DateTime object
+	 * @param string|int|array $source the string to be converted to a \DateTime object
 	 * @param string $targetType must be "DateTime"
 	 * @param array $convertedChildProperties not used currently
 	 * @param \TYPO3\CMS\Extbase\Property\PropertyMappingConfigurationInterface $configuration
@@ -172,7 +172,7 @@ class DateTimeConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstra
 	 * Returns whether date information (day, month, year) are present as keys in $source.
 	 *
 	 * @param array $source
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isDatePartKeysProvided(array $source) {
 		return isset($source['day']) && ctype_digit($source['day'])

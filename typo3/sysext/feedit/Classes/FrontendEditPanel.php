@@ -46,7 +46,7 @@ class FrontendEditPanel {
 	 * @param array $dataArr Alternative data array to use. Default is $this->data
 	 * @param string $table
 	 * @param string $allow
-	 * @param integer $newUID
+	 * @param int $newUID
 	 * @param array $hiddenFields
 	 * @return string The input content string with the editPanel appended. This function returns only an edit panel appended to the content string if a backend user is logged in (and has the correct permissions). Otherwise the content string is directly returned.
 	 */
@@ -165,7 +165,7 @@ class FrontendEditPanel {
 	 * @param array $dataArr Alternative data array to use. Default is $this->data
 	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to alt_doc.php
 	 * @param string $table
-	 * @param integer $editUid
+	 * @param int $editUid
 	 * @param string $fieldList
 	 * @return string The input content string, possibly with edit icons added (not necessarily in the end but just after the last string of normal content.
 	 */
@@ -241,7 +241,7 @@ class FrontendEditPanel {
 	 * @param string $string The string to wrap in a link, typ. and image used as button in the edit panel.
 	 * @param string $url The URL of the link. Should be absolute if supposed to work with <base> path set.
 	 * @return string A <a> tag wrapped string.
-	 * @see    editPanelLinkWrap()
+	 * @see editPanelLinkWrap()
 	 */
 	protected function editPanelLinkWrap_doWrap($string, $url) {
 		$onclick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url . '&returnUrl=close.html') . ',\'FEquickEditWindow\',\'width=690,height=500,status=0,menubar=0,scrollbars=1,resizable=1\');vHWin.focus();return false;';
@@ -253,7 +253,7 @@ class FrontendEditPanel {
 	 *
 	 * @param string $table The table name
 	 * @param array $row The data record
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isDisabled($table, array $row) {
 		$status = FALSE;

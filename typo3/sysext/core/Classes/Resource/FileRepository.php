@@ -45,35 +45,6 @@ class FileRepository extends AbstractRepository {
 	protected $table = 'sys_file';
 
 	/**
-	 * @var Service\IndexerService
-	 */
-	protected $indexerService = NULL;
-
-	/**
-	 * @param int $uid
-	 * @return File
-	 * @deprecated since TYPO3 6.2 CMS, will be removed 2 versions later
-	 */
-	public function findByUid($uid) {
-		GeneralUtility::logDeprecatedFunction();
-		return ResourceFactory::getInstance()->getFileObject($uid);
-	}
-
-
-	/**
-	 * Internal function to retrieve the indexer service,
-	 * if it does not exist, an instance will be created
-	 *
-	 * @return Service\IndexerService
-	 */
-	protected function getIndexerService() {
-		if ($this->indexerService === NULL) {
-			$this->indexerService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\IndexerService');
-		}
-		return $this->indexerService;
-	}
-
-	/**
 	 * Creates an object managed by this repository.
 	 *
 	 * @param array $databaseRow
@@ -84,82 +55,11 @@ class FileRepository extends AbstractRepository {
 	}
 
 	/**
-	 * Index a file object given as parameter
-	 *
-	 * @param File $fileObject
-	 * @return array The indexed file data
-	 * @deprecated since TYPO3 6.2, will be removed two versions later - indexing should be handled transparently, not only upon request
-	 */
-	public function addToIndex(File $fileObject) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getIndexerService()->indexFile($fileObject, FALSE);
-	}
-
-	/**
-	 * Checks the index status of a file and returns FALSE if the file is not
-	 * indexed, the uid otherwise.
-	 *
-	 * @param File $fileObject
-	 * @return boolean|integer
-	 * @deprecated since TYPO3 6.2, will be removed two versions later - use FileIndexRepository::isIndexed
-	 */
-	public function getFileIndexStatus(File $fileObject) {
-		GeneralUtility::logDeprecatedFunction();
-		$storageUid = $fileObject->getStorage()->getUid();
-		$identifier = $fileObject->getIdentifier();
-		$row = $this->getFileIndexRepository()->findOneByStorageUidAndIdentifier($storageUid, $identifier);
-		return is_array($row) ? $row['uid'] : FALSE;
-	}
-
-	/**
-	 * Returns an index record of a file, or FALSE if the file is not indexed.
-	 *
-	 * @param File $fileObject
-	 * @return bool|array
-	 * @deprecated since TYPO3 6.2, will be removed two versions later - use FileIndexRepository instead
-	 */
-	public function getFileIndexRecord(File $fileObject) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getFileIndexRepository()->findOneByFileObject($fileObject);
-	}
-
-	/**
-	 * Returns the index-data of all files within that folder
-	 *
-	 * @param Folder $folder
-	 * @return array
-	 * @deprecated since 6.2 - will be removed 2 versions later
-	 */
-	public function getFileIndexRecordsForFolder(Folder $folder) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getFileIndexRepository()->findByFolder($folder);
-	}
-
-	/**
-	 * Returns all files with the corresponding SHA-1 hash. This is queried
-	 * against the database, so only indexed files will be found
-	 *
-	 * @param string $hash A SHA1 hash of a file
-	 * @return array
-	 * @deprecated since TYPO3 6.2, will be removed two versions later - use FileIndexRepository::findByContentHash
-	 */
-	public function findBySha1Hash($hash) {
-		GeneralUtility::logDeprecatedFunction();
-		$resultRows = $this->getFileIndexRepository()->findByContentHash($hash);
-
-		$objects = array();
-		foreach ($resultRows as $row) {
-			$objects[] = $this->createDomainObject($row);
-		}
-		return $objects;
-	}
-
-	/**
 	 * Find FileReference objects by relation to other records
 	 *
-	 * @param integer $tableName Table name of the related record
-	 * @param integer $fieldName Field name of the related record
-	 * @param integer $uid The UID of the related record (needs to be the localized uid, as translated IRRE elements relate to them)
+	 * @param int $tableName Table name of the related record
+	 * @param int $fieldName Field name of the related record
+	 * @param int $uid The UID of the related record (needs to be the localized uid, as translated IRRE elements relate to them)
 	 * @return array An array of objects, empty if no objects found
 	 * @throws \InvalidArgumentException
 	 * @api
@@ -216,7 +116,7 @@ class FileRepository extends AbstractRepository {
 	/**
 	 * Find FileReference objects by uid
 	 *
-	 * @param integer $uid The UID of the sys_file_reference record
+	 * @param int $uid The UID of the sys_file_reference record
 	 * @return FileReference|boolean
 	 * @throws \InvalidArgumentException
 	 * @api
@@ -231,31 +131,6 @@ class FileRepository extends AbstractRepository {
 			$fileReferenceObject = FALSE;
 		}
 		return $fileReferenceObject;
-	}
-
-	/**
-	 * Updates an existing file object in the database
-	 *
-	 * @param AbstractFile $modifiedObject
-	 * @return void
-	 * @deprecated since TYPO3 6.2 LTS, will be removed two versions later - use FileIndexRepository::update
-	 */
-	public function update($modifiedObject) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($modifiedObject instanceof File) {
-			$this->getFileIndexRepository()->update($modifiedObject);
-		}
-	}
-
-	/**
-	 * Creates a FileReference object
-	 *
-	 * @param array $databaseRow
-	 * @return FileReference
-	 * @deprecated Use $this->factory->getFileReferenceObject() directly
-	 */
-	protected function createFileReferenceObject(array $databaseRow) {
-		return $this->factory->getFileReferenceObject($databaseRow['uid'], $databaseRow);
 	}
 
 	/**

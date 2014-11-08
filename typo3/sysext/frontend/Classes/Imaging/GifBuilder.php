@@ -568,7 +568,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 				$conf['text'] = substr($conf['text'], 0, $tlen);
 			}
 		}
-		if ((string) $conf['text'] != '') {
+		if ((string)$conf['text'] != '') {
 			// Char range map thingie:
 			$fontBaseName = basename($conf['fontFile']);
 			if (is_array($this->charRangeMap[$fontBaseName])) {
@@ -725,7 +725,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 	 * Calculates the value concerning the dimensions of objects.
 	 *
 	 * @param string $string The string to be calculated (e.g. "[20.h]+13")
-	 * @return integer The calculated value (e.g. "23")
+	 * @return int The calculated value (e.g. "23")
 	 * @see calcOffset()
 	 */
 	protected function calculateValue($string) {
@@ -789,7 +789,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 	 * Calculates the maximum of a set of values defined like "[10.h],[20.h],1000"
 	 *
 	 * @param string $string The string to be used to calculate the maximum (e.g. "[10.h],[20.h],1000")
-	 * @return integer The maxium value of the given comma separated and calculated values
+	 * @return int The maxium value of the given comma separated and calculated values
 	 */
 	protected function calculateMaximum($string) {
 		$parts = GeneralUtility::trimExplode(',', $this->calcOffset($string), TRUE);

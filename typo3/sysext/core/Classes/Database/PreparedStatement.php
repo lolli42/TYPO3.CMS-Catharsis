@@ -35,31 +35,31 @@ class PreparedStatement {
 	/**
 	 * Represents the SQL NULL data type.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PARAM_NULL = 0;
 	/**
 	 * Represents the SQL INTEGER data type.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PARAM_INT = 1;
 	/**
 	 * Represents the SQL CHAR, VARCHAR, or other string data type.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PARAM_STR = 2;
 	/**
 	 * Represents a boolean data type.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PARAM_BOOL = 3;
 	/**
 	 * Automatically detects underlying type
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PARAM_AUTOTYPE = 4;
 	/**
@@ -68,14 +68,14 @@ class PreparedStatement {
 	 * contains multiple columns with the same name, \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_ASSOC
 	 * returns only a single value per column name.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const FETCH_ASSOC = 2;
 	/**
 	 * Specifies that the fetch method shall return each row as an array indexed by
 	 * column number as returned in the corresponding result set, starting at column 0.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const FETCH_NUM = 3;
 	/**
@@ -109,7 +109,7 @@ class PreparedStatement {
 	/**
 	 * Default fetch mode.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $defaultFetchMode = self::FETCH_ASSOC;
 
@@ -217,7 +217,7 @@ class PreparedStatement {
 	 *
 	 * @param mixed $parameter Parameter identifier. For a prepared statement using named placeholders, this will be a parameter name of the form :name. For a prepared statement using question mark placeholders, this will be the 1-indexed position of the parameter.
 	 * @param mixed $value The value to bind to the parameter.
-	 * @param integer $data_type Explicit data type for the parameter using the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants. If not given, the PHP type of the value will be used instead (int, string, boolean).
+	 * @param int $data_type Explicit data type for the parameter using the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants. If not given, the PHP type of the value will be used instead (int, string, boolean).
 	 * @return \TYPO3\CMS\Core\Database\PreparedStatement The current prepared statement to allow method chaining
 	 * @api
 	 */
@@ -275,7 +275,7 @@ class PreparedStatement {
 	 * </code>
 	 *
 	 * @param array $input_parameters An array of values with as many elements as there are bound parameters in the SQL statement being executed. The PHP type of each array value will be used to decide which PARAM_* type to use (int, string, boolean, NULL), so make sure your variables are properly casted, if needed.
-	 * @return boolean Returns TRUE on success or FALSE on failure.
+	 * @return bool Returns TRUE on success or FALSE on failure.
 	 * @throws \InvalidArgumentException
 	 * @api
 	 */
@@ -392,7 +392,7 @@ class PreparedStatement {
 	/**
 	 * Fetches a row from a result set associated with a \TYPO3\CMS\Core\Database\PreparedStatement object.
 	 *
-	 * @param integer $fetch_style Controls how the next row will be returned to the caller. This value must be one of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants. If omitted, default fetch mode for this prepared query will be used.
+	 * @param int $fetch_style Controls how the next row will be returned to the caller. This value must be one of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants. If omitted, default fetch mode for this prepared query will be used.
 	 * @return array Array of rows or FALSE if there are no more rows.
 	 * @api
 	 */
@@ -443,8 +443,8 @@ class PreparedStatement {
 	/**
 	 * Moves internal result pointer.
 	 *
-	 * @param integer $rowNumber Where to place the result pointer (0 = start)
-	 * @return boolean Returns TRUE on success or FALSE on failure.
+	 * @param int $rowNumber Where to place the result pointer (0 = start)
+	 * @return bool Returns TRUE on success or FALSE on failure.
 	 * @api
 	 */
 	public function seek($rowNumber) {
@@ -459,7 +459,7 @@ class PreparedStatement {
 	/**
 	 * Returns an array containing all of the result set rows.
 	 *
-	 * @param integer $fetch_style Controls the contents of the returned array as documented in {@link \TYPO3\CMS\Core\Database\PreparedStatement::fetch()}.
+	 * @param int $fetch_style Controls the contents of the returned array as documented in {@link \TYPO3\CMS\Core\Database\PreparedStatement::fetch()}.
 	 * @return array Array of rows.
 	 * @api
 	 */
@@ -485,7 +485,7 @@ class PreparedStatement {
 	/**
 	 * Returns the number of rows affected by the last SQL statement.
 	 *
-	 * @return integer The number of rows.
+	 * @return int The number of rows.
 	 * @api
 	 */
 	public function rowCount() {
@@ -495,7 +495,7 @@ class PreparedStatement {
 	/**
 	 * Returns the error number on the last execute() call.
 	 *
-	 * @return integer Driver specific error code.
+	 * @return int Driver specific error code.
 	 * @api
 	 */
 	public function errorCode() {
@@ -522,7 +522,7 @@ class PreparedStatement {
 	/**
 	 * Sets the default fetch mode for this prepared query.
 	 *
-	 * @param integer $mode One of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants
+	 * @param int $mode One of the \TYPO3\CMS\Core\Database\PreparedStatement::FETCH_* constants
 	 * @return void
 	 * @api
 	 */
@@ -542,7 +542,7 @@ class PreparedStatement {
 	 * Guesses the type of a given value.
 	 *
 	 * @param mixed $value
-	 * @return integer One of the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants
+	 * @return int One of the \TYPO3\CMS\Core\Database\PreparedStatement::PARAM_* constants
 	 */
 	protected function guessValueType($value) {
 		if (is_bool($value)) {
@@ -561,7 +561,7 @@ class PreparedStatement {
 	 * Returns TRUE if named placeholers are used in a query.
 	 *
 	 * @param string $query
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function hasNamedPlaceholders($query) {
 		$matches = preg_match('/(?<![\\w:]):[\\w]+\\b/', $query);

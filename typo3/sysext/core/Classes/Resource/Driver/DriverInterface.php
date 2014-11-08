@@ -30,7 +30,7 @@ interface DriverInterface {
 	/**
 	 * Sets the storage uid the driver belongs to
 	 *
-	 * @param integer $storageUid
+	 * @param int $storageUid
 	 * @return void
 	 */
 	public function setStorageUid($storageUid);
@@ -46,7 +46,7 @@ interface DriverInterface {
 	/**
 	 * Returns the capabilities of this driver.
 	 *
-	 * @return integer
+	 * @return int
 	 * @see Storage::CAPABILITY_* constants
 	 */
 	public function getCapabilities();
@@ -56,17 +56,17 @@ interface DriverInterface {
 	 * configuration into the actual capabilities of the driver
 	 * and returns the result.
 	 *
-	 * @param integer $capabilities
+	 * @param int $capabilities
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function mergeConfigurationCapabilities($capabilities);
 
 	/**
 	 * Returns TRUE if this driver has the given capability.
 	 *
-	 * @param integer $capability A capability, as defined in a CAPABILITY_* constant
-	 * @return boolean
+	 * @param int $capability A capability, as defined in a CAPABILITY_* constant
+	 * @return bool
 	 */
 	public function hasCapability($capability);
 
@@ -77,7 +77,7 @@ interface DriverInterface {
 	 * therefore always reflect the file system and not try to change its
 	 * behaviour
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isCaseSensitiveFileSystem();
 
@@ -140,7 +140,7 @@ interface DriverInterface {
 	 *
 	 * @param string $newFolderName
 	 * @param string $parentFolderIdentifier
-	 * @param boolean $recursive
+	 * @param bool $recursive
 	 * @return string the Identifier of the new folder
 	 */
 	public function createFolder($newFolderName, $parentFolderIdentifier = '', $recursive = FALSE);
@@ -158,8 +158,8 @@ interface DriverInterface {
 	 * Removes a folder in filesystem.
 	 *
 	 * @param string $folderIdentifier
-	 * @param boolean $deleteRecursively
-	 * @return boolean
+	 * @param bool $deleteRecursively
+	 * @return bool
 	 */
 	public function deleteFolder($folderIdentifier, $deleteRecursively = FALSE);
 
@@ -168,7 +168,7 @@ interface DriverInterface {
 	 *
 	 * @param string $fileIdentifier
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function fileExists($fileIdentifier);
 
@@ -177,7 +177,7 @@ interface DriverInterface {
 	 *
 	 * @param string $folderIdentifier
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function folderExists($folderIdentifier);
 
@@ -185,7 +185,7 @@ interface DriverInterface {
 	 * Checks if a folder contains files and (if supported) other folders.
 	 *
 	 * @param string $folderIdentifier
-	 * @return boolean TRUE if there are no files and folders within $folder
+	 * @return bool TRUE if there are no files and folders within $folder
 	 */
 	public function isFolderEmpty($folderIdentifier);
 
@@ -198,7 +198,7 @@ interface DriverInterface {
 	 * @param string $localFilePath (within PATH_site)
 	 * @param string $targetFolderIdentifier
 	 * @param string $newFileName optional, if not given original name is used
-	 * @param boolean $removeOriginal if set the original file will be removed
+	 * @param bool $removeOriginal if set the original file will be removed
 	 *                                after successful operation
 	 * @return string the identifier of the new file
 	 */
@@ -239,7 +239,7 @@ interface DriverInterface {
 	 *
 	 * @param string $fileIdentifier
 	 * @param string $localFilePath
-	 * @return boolean TRUE if the operation succeeded
+	 * @return bool TRUE if the operation succeeded
 	 */
 	public function replaceFile($fileIdentifier, $localFilePath);
 
@@ -249,7 +249,7 @@ interface DriverInterface {
 	 * this has to be taken care of in the upper layers (e.g. the Storage)!
 	 *
 	 * @param string $fileIdentifier
-	 * @return boolean TRUE if deleting the file succeeded
+	 * @return bool TRUE if deleting the file succeeded
 	 */
 	public function deleteFile($fileIdentifier);
 
@@ -295,7 +295,7 @@ interface DriverInterface {
 	 * @param string $targetFolderIdentifier
 	 * @param string $newFolderName
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function copyFolderWithinStorage($sourceFolderIdentifier, $targetFolderIdentifier, $newFolderName);
 
@@ -315,7 +315,7 @@ interface DriverInterface {
 	 *
 	 * @param string $fileIdentifier
 	 * @param string $contents
-	 * @return integer The number of bytes written to the file
+	 * @return int The number of bytes written to the file
 	 */
 	public function setFileContents($fileIdentifier, $contents);
 
@@ -324,7 +324,7 @@ interface DriverInterface {
 	 *
 	 * @param string $fileName
 	 * @param string $folderIdentifier
-	 * @return boolean
+	 * @return bool
 	 */
 	public function fileExistsInFolder($fileName, $folderIdentifier);
 
@@ -333,7 +333,7 @@ interface DriverInterface {
 	 *
 	 * @param string $folderName
 	 * @param string $folderIdentifier
-	 * @return boolean
+	 * @return bool
 	 */
 	public function folderExistsInFolder($folderName, $folderIdentifier);
 
@@ -380,7 +380,7 @@ interface DriverInterface {
 	 *
 	 * @param string $folderIdentifier
 	 * @param string $identifier identifier to be checked against $folderIdentifier
-	 * @return boolean TRUE if $content is within or matches $folderIdentifier
+	 * @return bool TRUE if $content is within or matches $folderIdentifier
 	 */
 	public function isWithin($folderIdentifier, $identifier);
 
@@ -406,9 +406,9 @@ interface DriverInterface {
 	 * Returns a list of files inside the specified path
 	 *
 	 * @param string $folderIdentifier
-	 * @param integer $start
-	 * @param integer $numberOfItems
-	 * @param boolean $recursive
+	 * @param int $start
+	 * @param int $numberOfItems
+	 * @param bool $recursive
 	 * @param array $filenameFilterCallbacks callbacks for filtering the items
 	 *
 	 * @return array of FileIdentifiers
@@ -419,9 +419,9 @@ interface DriverInterface {
 	 * Returns a list of folders inside the specified path
 	 *
 	 * @param string $folderIdentifier
-	 * @param integer $start
-	 * @param integer $numberOfItems
-	 * @param boolean $recursive
+	 * @param int $start
+	 * @param int $numberOfItems
+	 * @param bool $recursive
 	 * @param array $folderNameFilterCallbacks callbacks for filtering the items
 	 *
 	 * @return array of Folder Identifier

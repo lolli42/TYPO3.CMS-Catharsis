@@ -13,6 +13,9 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Microdata Schema extension for htmlArea RTE
  *
@@ -20,21 +23,41 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 class MicroDataSchema extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 
-	// The key of the TYPO3 extension that is extending htmlArea RTE
+	/**
+	 * The key of the extension that is extending htmlArea RTE
+	 *
+	 * @var string
+	 */
 	protected $extensionKey = 'rtehtmlarea';
 
-	// The name of the plugin registered by the extension
+	/**
+	 * The name of the plugin registered by the extension
+	 *
+	 * @var string
+	 */
 	protected $pluginName = 'MicrodataSchema';
 
-	// Path to this main locallang file of the extension relative to the extension dir.
+	/**
+	 * Path to this main locallang file of the extension relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToLocallangFile = 'extensions/MicrodataSchema/locallang.xlf';
 
-	// Path to the skin (css) file relative to the extension dir
-	protected $relativePathToSkin = 'extensions/MicrodataSchema/skin/htmlarea.css';
+	/**
+	 * Path to the skin file relative to the extension directory
+	 *
+	 * @var string
+	 */
+	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/microdata-schema.css';
 
+	/**
+	 * Reference to the invoking object
+	 *
+	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
+	 */
 	protected $htmlAreaRTE;
 
-	// Reference to the invoking object
 	protected $thisConfig;
 
 	// Reference to RTE PageTSConfig
@@ -53,8 +76,8 @@ class MicroDataSchema extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param 	integer		Relative id of the RTE editing area in the form
-	 * @return 	string		JS configuration for registered plugins
+	 * @param int Relative id of the RTE editing area in the form
+	 * @return string JS configuration for registered plugins
 	 */
 	public function buildJavascriptConfiguration($RTEcounter) {
 		$registerRTEinJavascriptString = '';
@@ -65,13 +88,14 @@ class MicroDataSchema extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 		// Parse configured schemas
 		if (is_array($this->thisConfig['schema.']) && is_array($this->thisConfig['schema.']['sources.'])) {
 			foreach ($this->thisConfig['schema.']['sources.'] as $source) {
-				$fileName = $this->htmlAreaRTE->getFullFileName($source);
-				$absolutePath = $fileName ? \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath(PATH_site . ($this->htmlAreaRTE->is_FE() || $this->htmlAreaRTE->isFrontendEditActive() ? '' : TYPO3_mainDir) . $fileName) : '';
+				$fileName = trim($source);
+				$absolutePath = GeneralUtility::getFileAbsFileName($fileName);
 				// Fallback to default schema file if configured file does not exists or is of zero size
 				if (!$fileName || !file_exists($absolutePath) || !filesize($absolutePath)) {
-					$fileName = $this->htmlAreaRTE->getFullFileName('EXT:' . $this->ID . '/extensions/MicrodataSchema/res/schemaOrgAll.rdf');
+					$fileName = 'EXT:' . $this->extensionKey . '/Resources/Public/Rdf/MicrodataSchema/SchemaOrgAll.rdf';
 				}
-				$rdf = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($fileName);
+				$fileName = $this->htmlAreaRTE->getFullFileName($fileName);
+				$rdf = GeneralUtility::getUrl($fileName);
 				if ($rdf) {
 					$this->parseSchema($rdf, $schema);
 				}

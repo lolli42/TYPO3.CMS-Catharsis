@@ -40,7 +40,7 @@ class ArgumentDefinition {
 	/**
 	 * Is argument required?
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $required = FALSE;
 
@@ -54,7 +54,7 @@ class ArgumentDefinition {
 	/**
 	 * TRUE if it is a method parameter
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isMethodParameter = FALSE;
 
@@ -64,9 +64,9 @@ class ArgumentDefinition {
 	 * @param string $name Name of argument
 	 * @param string $type Type of argument
 	 * @param string $description Description of argument
-	 * @param boolean $required TRUE if argument is required
+	 * @param bool $required TRUE if argument is required
 	 * @param mixed $defaultValue Default value
-	 * @param boolean $isMethodParameter TRUE if this argument is a method parameter
+	 * @param bool $isMethodParameter TRUE if this argument is a method parameter
 	 */
 	public function __construct($name, $type, $description, $required, $defaultValue = NULL, $isMethodParameter = FALSE) {
 		$this->name = $name;
@@ -107,7 +107,7 @@ class ArgumentDefinition {
 	/**
 	 * Get the optionality of the argument
 	 *
-	 * @return boolean TRUE if argument is optional
+	 * @return bool TRUE if argument is optional
 	 */
 	public function isRequired() {
 		return $this->required;
@@ -125,7 +125,7 @@ class ArgumentDefinition {
 	/**
 	 * TRUE if it is a method parameter
 	 *
-	 * @return boolean TRUE if it's a method parameter
+	 * @return bool TRUE if it's a method parameter
 	 */
 	public function isMethodParameter() {
 		return $this->isMethodParameter;

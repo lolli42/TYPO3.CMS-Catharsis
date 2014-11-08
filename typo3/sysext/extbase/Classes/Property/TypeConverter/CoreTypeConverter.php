@@ -42,14 +42,14 @@ class CoreTypeConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\Abstra
 	protected $targetType = 'TYPO3\\CMS\\Core\\Type\\TypeInterface';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $priority = 1;
 
 	/**
 	 * @param mixed $source
 	 * @param string $targetType
-	 * @return boolean
+	 * @return bool
 	 */
 	public function canConvertFrom($source, $targetType) {
 		return TypeHandlingUtility::isCoreType($targetType);

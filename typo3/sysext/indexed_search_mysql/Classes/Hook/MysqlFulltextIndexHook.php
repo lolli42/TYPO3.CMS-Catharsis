@@ -16,7 +16,7 @@ namespace TYPO3\CMS\IndexedSearchMysql\Hook;
 /**
  * Class that hooks into Indexed Search and replaces standard SQL queries with MySQL fulltext index queries.
  *
- * @author 	Michael Stucki <michael@typo3.org>
+ * @author Michael Stucki <michael@typo3.org>
  */
 class MysqlFulltextIndexHook {
 
@@ -34,8 +34,8 @@ class MysqlFulltextIndexHook {
 	 * Gets a SQL result pointer to traverse for the search records.
 	 *
 	 * @param array $searchWordsArray Search words
-	 * @param integer $freeIndexUid Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @param int $freeIndexUid Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function getResultRows_SQLpointer($searchWordsArray, $freeIndexUid = -1) {
 		// Build the search string, detect which fulltext index to use, and decide whether boolean search is needed or not
@@ -67,7 +67,7 @@ class MysqlFulltextIndexHook {
 		// This holds the result if the search is natural (doesn't contain any boolean operators)
 		$booleanSearchString = '';
 		// This holds the result if the search is boolen (contains +/-/| operators)
-		$searchType = (string) $this->pObj->piVars['type'];
+		$searchType = (string)$this->pObj->piVars['type'];
 		// Traverse searchwords and prefix them with corresponding operator
 		foreach ($searchWordArray as $searchWordData) {
 			// Making the query for a single search word based on the search-type
@@ -135,8 +135,8 @@ class MysqlFulltextIndexHook {
 	 * Execute final query, based on phash integer list. The main point is sorting the result in the right order.
 	 *
 	 * @param array $searchData Array with search string, boolean indicator, and fulltext index reference
-	 * @param integer $freeIndexUid Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @param int $freeIndexUid Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	protected function execFinalQuery_fulltext($searchData, $freeIndexUid = -1) {
 		// Setting up methods of filtering results based on page types, access, etc.

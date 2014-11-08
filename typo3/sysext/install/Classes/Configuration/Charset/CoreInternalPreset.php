@@ -27,7 +27,7 @@ class CoreInternalPreset extends Configuration\AbstractPreset {
 	protected $name = 'CoreInternal';
 
 	/**
-	 * @var integer Priority of preset
+	 * @var int Priority of preset
 	 */
 	protected $priority = 20;
 
@@ -42,7 +42,7 @@ class CoreInternalPreset extends Configuration\AbstractPreset {
 	/**
 	 * Internal core handling is always available
 	 *
-	 * @return boolean TRUE
+	 * @return bool TRUE
 	 */
 	public function isAvailable() {
 		return TRUE;

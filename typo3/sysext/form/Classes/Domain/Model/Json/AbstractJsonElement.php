@@ -47,7 +47,7 @@ class AbstractJsonElement {
 	 *
 	 * Some elements like select handle their own child elements
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $childElementsAllowed = TRUE;
 
@@ -82,7 +82,7 @@ class AbstractJsonElement {
 	/**
 	 * Check if child elements are allowed within this element
 	 *
-	 * @return boolean TRUE if allowed
+	 * @return bool TRUE if allowed
 	 */
 	public function childElementsAllowed() {
 		return $this->childElementsAllowed;

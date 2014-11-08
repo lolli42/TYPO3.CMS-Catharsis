@@ -34,7 +34,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 	/**
 	 * Indicator for t3editor, whether data is stored
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $tce_processed = FALSE;
 
@@ -72,9 +72,9 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 	 * $GLOBALS['tmpl'] and looks for the first (visible) template
 	 * record. If $template_uid was given and greater than zero, this record will be checked.
 	 *
-	 * @param integer $pageId The uid of the current page
-	 * @param integer $template_uid: The uid of the template record to be rendered (only if more than one template on the current page)
-	 * @return boolean Returns TRUE if a template record was found, otherwise FALSE
+	 * @param int $pageId The uid of the current page
+	 * @param int $template_uid: The uid of the template record to be rendered (only if more than one template on the current page)
+	 * @return bool Returns TRUE if a template record was found, otherwise FALSE
 	 */
 	public function initialize_editor($pageId, $template_uid = 0) {
 		// Initializes the module. Done in this function because we may need to re-initialize if data is submitted!

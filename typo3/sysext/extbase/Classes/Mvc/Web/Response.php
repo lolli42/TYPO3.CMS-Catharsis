@@ -41,7 +41,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response {
 	/**
 	 * The HTTP status code
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $statusCode;
 
@@ -121,7 +121,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response {
 	/**
 	 * Sets the HTTP status code and (optionally) a customized message.
 	 *
-	 * @param integer $code The status code
+	 * @param int $code The status code
 	 * @param string $message If specified, this message is sent instead of the standard message
 	 * @throws \InvalidArgumentException if the specified status code is not valid
 	 * @return void
@@ -153,7 +153,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response {
 	 *
 	 * @param string $name Name of the header, for example "Location", "Content-Description" etc.
 	 * @param mixed $value The value of the given header
-	 * @param boolean $replaceExistingHeader If a header with the same name should be replaced. Default is TRUE.
+	 * @param bool $replaceExistingHeader If a header with the same name should be replaced. Default is TRUE.
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 * @api

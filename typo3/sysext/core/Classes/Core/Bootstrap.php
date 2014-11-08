@@ -63,6 +63,16 @@ class Bootstrap {
 	protected $installToolPath;
 
 	/**
+	 * @var string The currently active exception handling class. It is set after LocalConfiguration is included and might be changed after ex_localconf.php are loaded.
+	 */
+	protected $activeExceptionHandlerClassName;
+
+	/**
+	 * @var string The currently active error handling class. It is set after LocalConfiguration is included and might be changed after ex_localconf.php are loaded.
+	 */
+	protected $activeErrorHandlerClassName;
+
+	/**
 	 * Disable direct creation of this object.
 	 * Set unique requestId and the application context
 	 *
@@ -206,7 +216,7 @@ class Bootstrap {
 	 * Includes LocalConfiguration.php and sets several
 	 * global settings depending on configuration.
 	 *
-	 * @param boolean $allowCaching Whether to allow caching - affects cache_core (autoloader)
+	 * @param bool $allowCaching Whether to allow caching - affects cache_core (autoloader)
 	 * @param string $packageManagerClassName Define an alternative package manager implementation (usually for the installer)
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
@@ -232,6 +242,7 @@ class Bootstrap {
 			->convertPageNotFoundHandlingToBoolean()
 			->registerGlobalDebugFunctions()
 			->configureExceptionHandling()
+			->initializeExceptionHandling()
 			->setMemoryLimit()
 			->defineTypo3RequestTypes();
 		return $this;
@@ -246,7 +257,7 @@ class Bootstrap {
 	public function initializeClassLoader() {
 		$classLoader = new ClassLoader($this->applicationContext);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassLoader', $classLoader);
-		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array) include __DIR__ . '/../../ext_autoload.php');
+		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array)include __DIR__ . '/../../ext_autoload.php');
 		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassAliasMap', $classAliasMap);
@@ -322,7 +333,7 @@ class Bootstrap {
 	/**
 	 * Load ext_localconf of extensions
 	 *
-	 * @param boolean $allowCaching
+	 * @param bool $allowCaching
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -452,9 +463,6 @@ class Bootstrap {
 	 */
 	public function initializeCachingFramework() {
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager', \TYPO3\CMS\Core\Cache\Cache::initializeCachingFramework());
-		// @deprecated since 6.2 will be removed in two versions
-		$GLOBALS['typo3CacheManager'] = new \TYPO3\CMS\Core\Compatibility\GlobalObjectDeprecationDecorator('TYPO3\\CMS\\Core\\Cache\\CacheManager');
-		$GLOBALS['typo3CacheFactory'] = new \TYPO3\CMS\Core\Compatibility\GlobalObjectDeprecationDecorator('TYPO3\\CMS\\Core\\Cache\\CacheFactory');
 		return $this;
 	}
 
@@ -625,7 +633,7 @@ class Bootstrap {
 	 * The ext_localconf.php files in extensions are meant to make changes
 	 * to the global $TYPO3_CONF_VARS configuration array.
 	 *
-	 * @param boolean $allowCaching
+	 * @param bool $allowCaching
 	 * @return Bootstrap
 	 */
 	protected function loadAdditionalConfigurationFromExtensions($allowCaching = TRUE) {
@@ -635,20 +643,34 @@ class Bootstrap {
 
 	/**
 	 * Initialize exception handling
+	 * This method is called twice. First when LocalConfiguration has been loaded
+	 * and a second time after extension ext_loclconf.php have been included to allow extensions
+	 * to change the exception and error handler configuration.
 	 *
 	 * @return Bootstrap
 	 */
 	protected function initializeExceptionHandling() {
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'])) {
 			if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'])) {
-				// Register an error handler for the given errorHandlerErrors
-				$errorHandler = Utility\GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandlerErrors']);
-				// Set errors which will be converted in an exception
-				$errorHandler->setExceptionalErrors($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors']);
+				if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'] !== $this->activeErrorHandlerClassName) {
+					$this->activeErrorHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'];
+					// Register an error handler for the given errorHandlerErrors
+					$errorHandler = Utility\GeneralUtility::makeInstance($this->activeErrorHandlerClassName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandlerErrors']);
+					// Set errors which will be converted in an exception
+					$errorHandler->setExceptionalErrors($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors']);
+				}
+			} elseif (!empty($this->activeErrorHandlerClassName)) {
+				// Restore error handler in case extensions have unset the configuration in ext_localconf.php
+				restore_error_handler();
 			}
-			// Instantiate the exception handler once to make sure object is registered
-			// @TODO: Figure out if this is really needed
-			Utility\GeneralUtility::makeInstance($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler']);
+			if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] !== $this->activeExceptionHandlerClassName) {
+				$this->activeExceptionHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'];
+				// Registering the exception handler is done in the constructor
+				Utility\GeneralUtility::makeInstance($this->activeExceptionHandlerClassName);
+			}
+		} elseif (!empty($this->activeExceptionHandlerClassName)) {
+			// Restore exception handler in case extensions have unset the configuration in ext_localconf.php
+			restore_exception_handler();
 		}
 		return $this;
 	}
@@ -876,7 +898,7 @@ class Bootstrap {
 	 * Executes ext_tables.php files of loaded extensions or the
 	 * according cache file if exists.
 	 *
-	 * @param boolean $allowCaching True, if reading compiled ext_tables file from cache is allowed
+	 * @param bool $allowCaching True, if reading compiled ext_tables file from cache is allowed
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */

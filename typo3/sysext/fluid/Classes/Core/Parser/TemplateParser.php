@@ -420,7 +420,7 @@ class TemplateParser {
 	 * Build object tree from the split template
 	 *
 	 * @param array $splitTemplate The split template, so that every tag with a namespace declaration is already a separate array element.
-	 * @param integer $context one of the CONTEXT_* constants, defining whether we are inside or outside of ViewHelper arguments currently.
+	 * @param int $context one of the CONTEXT_* constants, defining whether we are inside or outside of ViewHelper arguments currently.
 	 * @return \TYPO3\CMS\Fluid\Core\Parser\ParsingState
 	 * @throws \TYPO3\CMS\Fluid\Core\Parser\Exception
 	 */
@@ -459,7 +459,7 @@ class TemplateParser {
 	 * @param string $namespaceIdentifier Namespace identifier - being looked up in $this->namespaces
 	 * @param string $methodIdentifier Method identifier
 	 * @param string $arguments Arguments string, not yet parsed
-	 * @param boolean $selfclosing true, if the tag is a self-closing tag.
+	 * @param bool $selfclosing true, if the tag is a self-closing tag.
 	 * @return void
 	 */
 	protected function openingViewHelperTagHandler(\TYPO3\CMS\Fluid\Core\Parser\ParsingState $state, $namespaceIdentifier, $methodIdentifier, $arguments, $selfclosing) {
@@ -680,7 +680,7 @@ class TemplateParser {
 	 * Call all interceptors registered for a given interception point.
 	 *
 	 * @param \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\NodeInterface $node The syntax tree node which can be modified by the interceptors.
-	 * @param integer $interceptionPoint the interception point. One of the \TYPO3\CMS\Fluid\Core\Parser\InterceptorInterface::INTERCEPT_* constants.
+	 * @param int $interceptionPoint the interception point. One of the \TYPO3\CMS\Fluid\Core\Parser\InterceptorInterface::INTERCEPT_* constants.
 	 * @param \TYPO3\CMS\Fluid\Core\Parser\ParsingState $state the parsing state
 	 * @return void
 	 */
@@ -710,7 +710,7 @@ class TemplateParser {
 	protected function postProcessArgumentsForObjectAccessor(array $arguments) {
 		foreach ($arguments as $argumentName => $argumentValue) {
 			if (!($argumentValue instanceof \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode)) {
-				$arguments[$argumentName] = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\TextNode', (string) $argumentValue);
+				$arguments[$argumentName] = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\TextNode', (string)$argumentValue);
 			}
 		}
 		return $arguments;
@@ -802,7 +802,7 @@ class TemplateParser {
 	 *
 	 * @param \TYPO3\CMS\Fluid\Core\Parser\ParsingState $state Current parsing state
 	 * @param string $text Text to process
-	 * @param integer $context one of the CONTEXT_* constants, defining whether we are inside or outside of ViewHelper arguments currently.
+	 * @param int $context one of the CONTEXT_* constants, defining whether we are inside or outside of ViewHelper arguments currently.
 	 * @return void
 	 */
 	protected function textAndShorthandSyntaxHandler(\TYPO3\CMS\Fluid\Core\Parser\ParsingState $state, $text, $context) {

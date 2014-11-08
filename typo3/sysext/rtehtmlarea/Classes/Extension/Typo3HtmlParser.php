@@ -13,6 +13,10 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * TYPO3 HTML Parser extension for htmlArea RTE
  *
@@ -20,21 +24,41 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 class Typo3HtmlParser extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 
+	/**
+	 * The key of the extension that is extending htmlArea RTE
+	 *
+	 * @var string
+	 */
 	protected $extensionKey = 'rtehtmlarea';
 
-	// The key of the extension that is extending htmlArea RTE
+	/**
+	 * The name of the plugin registered by the extension
+	 *
+	 * @var string
+	 */
 	protected $pluginName = 'TYPO3HtmlParser';
 
-	// The name of the plugin registered by the extension
+	/**
+	 * Path to this main locallang file of the extension relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToLocallangFile = '';
 
-	// Path to this main locallang file of the extension relative to the extension dir.
+	/**
+	 * Path to the skin file relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToSkin = '';
 
-	// Path to the skin (css) file relative to the extension dir
+	/**
+	 * Reference to the invoking object
+	 *
+	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
+	 */
 	protected $htmlAreaRTE;
 
-	// Reference to the invoking object
 	protected $thisConfig;
 
 	// Reference to RTE PageTSConfig
@@ -57,8 +81,8 @@ class Typo3HtmlParser extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param 	integer		Relative id of the RTE editing area in the form
-	 * @return 	string		JS configuration for registered plugins, in this case, JS configuration of block elements
+	 * @param int Relative id of the RTE editing area in the form
+	 * @return string JS configuration for registered plugins, in this case, JS configuration of block elements
 	 */
 	public function buildJavascriptConfiguration($RTEcounter) {
 		$registerRTEinJavascriptString = '';
@@ -69,8 +93,8 @@ class Typo3HtmlParser extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . ' = new Object();';
 			}
 			$registerRTEinJavascriptString .= '
-			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.pathParseHtmlModule = "' .
-				\TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('rtehtmlarea_wizard_parse_html') . '";
+			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.pathParseHtmlModule = ' .
+				GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('rtehtmlarea_wizard_parse_html')) . ';
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.hotKey = "' . ($this->thisConfig['enableWordClean.']['hotKey'] ?: '0') . '";';
 		}
 		return $registerRTEinJavascriptString;
@@ -80,11 +104,11 @@ class Typo3HtmlParser extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	 * Return an updated array of toolbar enabled buttons
 	 * Force inclusion of hidden button cleanword
 	 *
-	 * @param 	array		$show: array of toolbar elements that will be enabled, unless modified here
-	 * @return 	array		toolbar button array, possibly updated
+	 * @param array $show: array of toolbar elements that will be enabled, unless modified here
+	 * @return array toolbar button array, possibly updated
 	 */
 	public function applyToolbarConstraints($show) {
-		return array_unique(array_merge($show, \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $this->pluginButtons)));
+		return array_unique(array_merge($show, GeneralUtility::trimExplode(',', $this->pluginButtons)));
 	}
 
 }

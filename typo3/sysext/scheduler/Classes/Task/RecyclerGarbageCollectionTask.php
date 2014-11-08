@@ -43,7 +43,7 @@ class RecyclerGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTa
 	/**
 	 * Cleanup recycled files, called by scheduler.
 	 *
-	 * @return boolean TRUE if task run was successful
+	 * @return bool TRUE if task run was successful
 	 * @throws \BadMethodCallException
 	 */
 	public function execute() {
@@ -68,8 +68,8 @@ class RecyclerGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTa
 	 *
 	 * @throws \RuntimeException If folders are not found or files can not be deleted
 	 * @param string $directory Path to the directory
-	 * @param integer $timestamp Timestamp of the last file modification
-	 * @return boolean TRUE if success
+	 * @param int $timestamp Timestamp of the last file modification
+	 * @return bool TRUE if success
 	 */
 	protected function cleanupRecycledFiles($directory, $timestamp) {
 		$directory = \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($directory);

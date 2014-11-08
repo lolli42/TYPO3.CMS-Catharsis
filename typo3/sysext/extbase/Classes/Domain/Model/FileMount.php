@@ -43,7 +43,7 @@ class FileMount extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * If the value is true the path is an absolute one, otherwise the path is relative
 	 * the fileadmin.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isAbsolutePath = FALSE;
 
@@ -95,7 +95,7 @@ class FileMount extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for the is absolute path of the file mount.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getIsAbsolutePath() {
 		return $this->isAbsolutePath;
@@ -104,7 +104,7 @@ class FileMount extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Setter for is absolute path of the file mount.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setIsAbsolutePath($value) {

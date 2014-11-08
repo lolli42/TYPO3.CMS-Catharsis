@@ -45,16 +45,16 @@ class PathUtility {
 		$targetPath = rtrim(GeneralUtility::fixWindowsFilePath($targetPath), '/');
 		if ($sourcePath !== $targetPath) {
 			$commonPrefix = self::getCommonPrefix(array($sourcePath, $targetPath));
-			if ($commonPrefix !== NULL && \TYPO3\CMS\Core\Utility\GeneralUtility::isAllowedAbsPath($commonPrefix)) {
+			if ($commonPrefix !== NULL && GeneralUtility::isAllowedAbsPath($commonPrefix)) {
 				$commonPrefixLength = strlen($commonPrefix);
 				$resolvedSourcePath = '';
 				$resolvedTargetPath = '';
 				$sourcePathSteps = 0;
 				if (strlen($sourcePath) > $commonPrefixLength) {
-					$resolvedSourcePath = (string) substr($sourcePath, $commonPrefixLength);
+					$resolvedSourcePath = (string)substr($sourcePath, $commonPrefixLength);
 				}
 				if (strlen($targetPath) > $commonPrefixLength) {
-					$resolvedTargetPath = (string) substr($targetPath, $commonPrefixLength);
+					$resolvedTargetPath = (string)substr($targetPath, $commonPrefixLength);
 				}
 				if ($resolvedSourcePath !== '') {
 					$sourcePathSteps = count(explode('/', $resolvedSourcePath));
@@ -167,7 +167,7 @@ class PathUtility {
 	 *
 	 *
 	 * @param string $path
-	 * @param integer $options
+	 * @param int $options
 	 *
 	 * @return string|array
 	 *
@@ -184,7 +184,7 @@ class PathUtility {
 	 * Checks if the $path is absolute or relative (detecting either '/' or 'x:/' as first part of string) and returns TRUE if so.
 	 *
 	 * @param string $path File path to evaluate
-	 * @return boolean
+	 * @return bool
 	 */
 	static public function isAbsolutePath($path) {
 		// On Windows also a path starting with a drive letter is absolute: X:/

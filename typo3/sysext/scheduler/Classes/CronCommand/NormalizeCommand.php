@@ -113,11 +113,11 @@ class NormalizeCommand {
 	 * Normalize month field.
 	 *
 	 * @param string $expression Month field expression
-	 * @param boolean $isMonthField TRUE if month field is handled, FALSE for weekday field
+	 * @param bool $isMonthField TRUE if month field is handled, FALSE for weekday field
 	 * @return string Normalized expression
 	 */
 	static protected function normalizeMonthAndWeekdayField($expression, $isMonthField = TRUE) {
-		if ((string) $expression === '*') {
+		if ((string)$expression === '*') {
 			$fieldValues = '*';
 		} else {
 			// Fragment expression by , / and - and substitute three letter code of month and weekday to numbers
@@ -132,7 +132,7 @@ class NormalizeCommand {
 						$rightBound = self::normalizeMonthAndWeekday($rightBound, $isMonthField);
 						$left = $leftBound . '-' . $rightBound;
 					} else {
-						if ((string) $left !== '*') {
+						if ((string)$left !== '*') {
 							$left = self::normalizeMonthAndWeekday($left, $isMonthField);
 						}
 					}
@@ -156,12 +156,12 @@ class NormalizeCommand {
 	 *
 	 * @throws \InvalidArgumentException If field is invalid or out of bounds
 	 * @param string $expression Expression
-	 * @param integer $lowerBound Lower limit of result list
-	 * @param integer $upperBound Upper limit of result list
+	 * @param int $lowerBound Lower limit of result list
+	 * @param int $upperBound Upper limit of result list
 	 * @return string Normalized expression
 	 */
 	static protected function normalizeIntegerField($expression, $lowerBound = 0, $upperBound = 59) {
-		if ((string) $expression === '*') {
+		if ((string)$expression === '*') {
 			$fieldValues = '*';
 		} else {
 			$listOfCommaValues = explode(',', $expression);
@@ -169,7 +169,7 @@ class NormalizeCommand {
 			foreach ($listOfCommaValues as $listElement) {
 				if (strpos($listElement, '/') !== FALSE) {
 					list($left, $right) = explode('/', $listElement);
-					if ((string) $left === '*') {
+					if ((string)$left === '*') {
 						$leftList = self::convertRangeToListOfValues($lowerBound . '-' . $upperBound);
 					} else {
 						$leftList = self::convertRangeToListOfValues($left);
@@ -188,7 +188,7 @@ class NormalizeCommand {
 		if (strlen($fieldValues) === 0) {
 			throw new \InvalidArgumentException('Unable to convert integer field to list of values: Result list empty.', 1291422012);
 		}
-		if ((string) $fieldValues !== '*') {
+		if ((string)$fieldValues !== '*') {
 			$fieldList = explode(',', $fieldValues);
 			sort($fieldList);
 			$fieldList = array_unique($fieldList);
@@ -200,7 +200,7 @@ class NormalizeCommand {
 			}
 			$fieldValues = implode(',', $fieldList);
 		}
-		return (string) $fieldValues;
+		return (string)$fieldValues;
 	}
 
 	/**
@@ -239,7 +239,7 @@ class NormalizeCommand {
 		} else {
 			throw new \InvalidArgumentException('Unable to convert range to list of values.', 1291234986);
 		}
-		return (string) $resultList;
+		return (string)$resultList;
 	}
 
 	/**
@@ -297,12 +297,12 @@ class NormalizeCommand {
 	 * Dispatcher method for normalizeMonth and normalizeWeekday
 	 *
 	 * @param string $expression Month or weekday to be normalized
-	 * @param boolean $isMonth TRUE if a month is handled, FALSE for weekday
+	 * @param bool $isMonth TRUE if a month is handled, FALSE for weekday
 	 * @return string normalized month or weekday
 	 */
 	static protected function normalizeMonthAndWeekday($expression, $isMonth = TRUE) {
 		$expression = $isMonth ? self::normalizeMonth($expression) : self::normalizeWeekday($expression);
-		return (string) $expression;
+		return (string)$expression;
 	}
 
 	/**
@@ -311,7 +311,7 @@ class NormalizeCommand {
 	 *
 	 * @throws \InvalidArgumentException If month string can not be converted to integer
 	 * @param string $month Month representation
-	 * @return integer month integer representation between 1 and 12
+	 * @return int month integer representation between 1 and 12
 	 */
 	static protected function normalizeMonth($month) {
 		$timestamp = strtotime('2010-' . $month . '-01');
@@ -328,12 +328,12 @@ class NormalizeCommand {
 	 *
 	 * @throws \InvalidArgumentException If weekday string can not be converted
 	 * @param string $weekday Weekday representation
-	 * @return integer weekday integer representation between 1 and 7
+	 * @return int weekday integer representation between 1 and 7
 	 */
 	static protected function normalizeWeekday($weekday) {
 		$normalizedWeekday = FALSE;
 		// 0 (sunday) -> 7
-		if ((string) $weekday === '0') {
+		if ((string)$weekday === '0') {
 			$weekday = 7;
 		}
 		if ($weekday >= 1 && $weekday <= 7) {

@@ -330,7 +330,7 @@ class ElementBrowser {
 	 */
 	public function initConfiguration() {
 		// Rich Text Editor specific configuration:
-		if ((string) $this->mode === 'rte') {
+		if ((string)$this->mode === 'rte') {
 			$this->thisConfig = $this->getRTEConfig();
 		}
 	}
@@ -796,7 +796,7 @@ class ElementBrowser {
 	 */
 	public function processSessionData($data) {
 		$store = FALSE;
-		switch ((string) $this->mode) {
+		switch ((string)$this->mode) {
 			case 'db':
 				if (isset($this->expandPage)) {
 					$data['expandPage'] = $this->expandPage;
@@ -1889,7 +1889,7 @@ class ElementBrowser {
 	 *
 	 * @param Folder $folder The folder path to expand
 	 * @param string $extensionList List of fileextensions to show
-	 * @param boolean $noThumbs Whether to show thumbnails or not. If set, no thumbnails are shown.
+	 * @param bool $noThumbs Whether to show thumbnails or not. If set, no thumbnails are shown.
 	 * @return string HTML output
 	 */
 	public function TBE_expandFolder(Folder $folder, $extensionList = '', $noThumbs = FALSE) {
@@ -1906,7 +1906,7 @@ class ElementBrowser {
 	 *
 	 * @param File[] $files List of files
 	 * @param Folder $folder If set a header with a folder icon and folder name are shown
-	 * @param boolean $noThumbs Whether to show thumbnails or not. If set, no thumbnails are shown.
+	 * @param bool $noThumbs Whether to show thumbnails or not. If set, no thumbnails are shown.
 	 * @return string HTML output
 	 */
 	protected function fileList(array $files, Folder $folder = NULL, $noThumbs = FALSE) {
@@ -2247,30 +2247,6 @@ class ElementBrowser {
 	 * Miscellaneous functions
 	 *
 	 ******************************************************************/
-	/**
-	 * Verifies that a path is a web-folder:
-	 *
-	 * @param string $folder Absolute filepath
-	 * @return boolean If the input path is found in PATH_site then it returns TRUE.
-	 * @deprecated since 6.2 - will be removed two versions later without replacement
-	 */
-	public function isWebFolder($folder) {
-		GeneralUtility::logDeprecatedFunction();
-		$folder = rtrim($folder, '/') . '/';
-		return GeneralUtility::isFirstPartOfStr($folder, PATH_site) ? TRUE : FALSE;
-	}
-
-	/**
-	 * Checks, if a path is within the mountpoints of the backend user
-	 *
-	 * @param string $folder Absolute filepath
-	 * @return boolean If the input path is found in the backend users filemounts, then return TRUE.
-	 * @deprecated since 6.2 - will be removed two versions later without replacement
-	 */
-	public function checkFolder($folder) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->fileProcessor->checkPathAgainstMounts(rtrim($folder, '/') . '/') ? TRUE : FALSE;
-	}
 
 	/**
 	 * Prints a 'header' where string is in a tablecell
@@ -2574,7 +2550,7 @@ class ElementBrowser {
 	/**
 	 * Get the HTML data required for a bulk selection of files of the TYPO3 Element Browser.
 	 *
-	 * @param integer $filesCount Number of files currently displayed
+	 * @param int $filesCount Number of files currently displayed
 	 * @return string HTML data required for a bulk selection of files - if $filesCount is 0, nothing is returned
 	 */
 	public function getBulkSelector($filesCount) {
@@ -2616,8 +2592,8 @@ class ElementBrowser {
 	 * Determines whether submitted field change functions are valid
 	 * and are coming from the system and not from an external abuse.
 	 *
-	 * @param boolean $handleFlexformSections Whether to handle flexform sections differently
-	 * @return boolean Whether the submitted field change functions are valid
+	 * @param bool $handleFlexformSections Whether to handle flexform sections differently
+	 * @return bool Whether the submitted field change functions are valid
 	 */
 	protected function areFieldChangeFunctionsValid($handleFlexformSections = FALSE) {
 		$result = FALSE;

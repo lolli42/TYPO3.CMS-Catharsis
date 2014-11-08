@@ -128,7 +128,7 @@ class QueryView {
 	 * [Describe function...]
 	 *
 	 * @param array $storeQueryConfigs
-	 * @param integer $index
+	 * @param int $index
 	 * @return array
 	 */
 	public function addToStoreQueryConfigs($storeQueryConfigs, $index) {
@@ -143,8 +143,8 @@ class QueryView {
 	/**
 	 * [Describe function...]
 	 *
-	 * @param integer $uid
-	 * @return integer
+	 * @param int $uid
+	 * @return int
 	 */
 	public function saveQueryInAction($uid) {
 		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('sys_action')) {
@@ -186,7 +186,7 @@ class QueryView {
 	 * [Describe function...]
 	 *
 	 * @param array $storeQueryConfigs
-	 * @param integer $storeIndex
+	 * @param int $storeIndex
 	 * @param array $writeArray
 	 * @return array
 	 */
@@ -520,7 +520,7 @@ class QueryView {
 		$out .= '<td nowrap>';
 		if (!$row['deleted']) {
 			$out .= '<a href="#" onClick="top.launchView(\'' . $table . '\',' . $row['uid'] . ',\'' . $GLOBALS['BACK_PATH'] . '\');return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-information') . '</a>';
-			$out .= '<a href="#" onClick="' . BackendUtility::editOnClick($params, $GLOBALS['BACK_PATH'], (GeneralUtility::getIndpEnv('REQUEST_URI') . GeneralUtility::implodeArrayForUrl('SET', (array) GeneralUtility::_POST('SET')))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+			$out .= '<a href="#" onClick="' . BackendUtility::editOnClick($params, $GLOBALS['BACK_PATH'], (GeneralUtility::getIndpEnv('REQUEST_URI') . GeneralUtility::implodeArrayForUrl('SET', (array)GeneralUtility::_POST('SET')))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 		} else {
 			$out .= '<a href="' . GeneralUtility::linkThisUrl(($GLOBALS['BACK_PATH'] . 'tce_db.php'), array(
 				('cmd[' . $table . '][' . $row['uid'] . '][undelete]') => '1',
@@ -673,9 +673,9 @@ class QueryView {
 	/**
 	 * [Describe function...]
 	 *
-	 * @param integer $id
-	 * @param integer $depth
-	 * @param integer $begin
+	 * @param int $id
+	 * @param int $depth
+	 * @param int $begin
 	 * @param string $perms_clause
 	 * @return string
 	 */

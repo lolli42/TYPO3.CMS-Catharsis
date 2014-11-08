@@ -11,98 +11,73 @@
  * The TYPO3 project - inspiring people to share!
  */
 
-#typo3-messages {
-	margin-bottom: 10px;
-}
-
-.typo3-message {
-	.alert;
-
-	background-position: 10px 12px;
-	background-repeat: no-repeat;
-	padding: 12px 12px 12px 36px;
-
-	.message-header {
-		font-weight: bold;
-		margin-bottom: floor(@line-height-computed / 2);
-	}
-
-	ul,
-	ol {
-		padding-left: 16px;
-	}
-
-	.message-header {
-		display: block;
-	}
-
-	.t3-icon-actions-message-close {
-		cursor: pointer;
-		float: right;
-	}
-
-	li {
-		margin-bottom: 10px;
-		list-style: disc;
-	}
+.alert {
+	border-top: 0;
+	border-right: 0;
+	border-bottom: 0;
+	border-left-width: 6px;
 
 	a {
 		text-decoration: underline;
+	}
 
+	.alert-body {
+		p:last-child {
+			margin-bottom: 0;
+		}
 	}
 }
 
-
-.message-notice {
-	// Nothing to inherit from Bootstrap - there is no alert-notice
-
-	color: #777;
-	background-color: #f6f7fa;
-	background-image: url('../../../../icons/gfx/notice.png');
-	border-color: #c2cbcf;
+.alert-notice {
+	color: @state-notice-text;
+	background-color: @state-notice-bg;
+	border-color: @state-notice-border;
 
 	a {
-		color: #777;
+		color: darken(@state-notice-text, 5%);
+
+		&:hover {
+			color: darken(@state-notice-text, 10%);
+		}
 	}
 }
 
-.message-information {
-	.alert-info;
-
-	background-image: url('../../../../icons/gfx/information.png');
-
+.alert-success {
 	a {
-		color: #4c73a1;
+		color: darken(@brand-success, 10%);
+
+		&:hover {
+			color: darken(@brand-success, 15%);
+		}
 	}
 }
 
-.message-ok {
-	.alert-success;
-
-	background-image: url('../../../../icons/gfx/ok.png');
-
+.alert-info {
 	a {
-		color: #3b7826;
+		color: darken(@brand-info, 5%);
+
+		&:hover {
+			color: darken(@brand-info, 10%);
+		}
 	}
 }
 
-.message-warning {
-	.alert-warning;
-
-	background-image: url("../../../../icons/gfx/warning.png");
-
+.alert-warning {
 	a {
-		color: #9e7d4a;
+		color: @brand-warning;
+
+		&:hover {
+			color: darken(@brand-warning, 5%)
+		}
 	}
 }
 
-.message-error {
-	.alert-danger;
-
-	background-image: url('../../../../icons/gfx/error.png');
-
+.alert-danger {
 	a {
-		color: #aa0225;
+		color: @brand-danger;
+
+		&:hover {
+			color: darken(@brand-danger, 10%);
+		}
 	}
 }
-

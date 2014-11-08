@@ -13,15 +13,20 @@ namespace TYPO3\CMS\Reports\Report\Status;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Reports\ExtendedStatusProviderInterface;
+use TYPO3\CMS\Reports\ReportInterface;
+use TYPO3\CMS\Reports\StatusProviderInterface;
+
 /**
  * The status report
  *
  * @author Ingo Renner <ingo@typo3.org>
  */
-class Status implements \TYPO3\CMS\Reports\ReportInterface {
+class Status implements ReportInterface {
 
 	/**
-	 * @var array
+	 * @var StatusProviderInterface[][]
 	 */
 	protected $statusProviders = array();
 
@@ -59,7 +64,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 			$this->statusProviders[$key] = array();
 			foreach ($statusProvidersList as $statusProvider) {
 				$statusProviderInstance = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($statusProvider);
-				if ($statusProviderInstance instanceof \TYPO3\CMS\Reports\StatusProviderInterface) {
+				if ($statusProviderInstance instanceof StatusProviderInterface) {
 					$this->statusProviders[$key][] = $statusProviderInstance;
 				}
 			}
@@ -69,7 +74,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	/**
 	 * Runs through all status providers and returns all statuses collected.
 	 *
-	 * @return array An array of \TYPO3\CMS\Reports\Status objects
+	 * @return \TYPO3\CMS\Reports\Status[]
 	 */
 	public function getSystemStatus() {
 		$status = array();
@@ -84,10 +89,29 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	}
 
 	/**
+	 * Runs through all status providers and returns all statuses collected, which are detailed.
+	 *
+	 * @return \TYPO3\CMS\Reports\Status[]
+	 */
+	public function getDetailedSystemStatus() {
+		$status = array();
+		foreach ($this->statusProviders as $statusProviderId => $statusProviderList) {
+			$status[$statusProviderId] = array();
+			foreach ($statusProviderList as $statusProvider) {
+				if ($statusProvider instanceof ExtendedStatusProviderInterface) {
+					$statuses = $statusProvider->getDetailedStatus();
+					$status[$statusProviderId] = array_merge($status[$statusProviderId], $statuses);
+				}
+			}
+		}
+		return $status;
+	}
+
+	/**
 	 * Determines the highest severity from the given statuses.
 	 *
 	 * @param array $statusCollection An array of \TYPO3\CMS\Reports\Status objects.
-	 * @return integer The highest severity found from the statuses.
+	 * @return int The highest severity found from the statuses.
 	 */
 	public function getHighestSeverity(array $statusCollection) {
 		$highestSeverity = \TYPO3\CMS\Reports\Status::NOTICE;
@@ -116,28 +140,37 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 		// TODO refactor into separate methods, status list and single status
 		$content = '';
 		$template = '
-		<div class="typo3-message message-###CLASS###">
-			<div class="header-container">
-				<div class="message-header message-left">###HEADER###</div>
-				<div class="message-header message-right">###STATUS###</div>
-			</div>
-			<div class="message-body">###CONTENT###</div>
-		</div>';
+		<table class="t3-table">
+			<thead>
+				<tr>
+					<th colspan="2" class="default">###HEADER###</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td class="###CLASS### col-sm-2">###STATUS###</td>
+					<td class="###CLASS### col-sm-10">###CONTENT###</td>
+				</tr>
+			</tbody>
+		</table>';
 		$statuses = $this->sortStatusProviders($statusCollection);
 		foreach ($statuses as $provider => $providerStatus) {
+			$headerIcon = '';
 			$providerState = $this->sortStatuses($providerStatus);
 			$id = str_replace(' ', '-', $provider);
 			$classes = array(
 				\TYPO3\CMS\Reports\Status::NOTICE => 'notice',
-				\TYPO3\CMS\Reports\Status::INFO => 'information',
-				\TYPO3\CMS\Reports\Status::OK => 'ok',
+				\TYPO3\CMS\Reports\Status::INFO => 'info',
+				\TYPO3\CMS\Reports\Status::OK => 'success',
 				\TYPO3\CMS\Reports\Status::WARNING => 'warning',
-				\TYPO3\CMS\Reports\Status::ERROR => 'error'
+				\TYPO3\CMS\Reports\Status::ERROR => 'danger'
 			);
+			$icon[\TYPO3\CMS\Reports\Status::NOTICE] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-notification');
+			$icon[\TYPO3\CMS\Reports\Status::INFO] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-information');
+			$icon[\TYPO3\CMS\Reports\Status::OK] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-ok');
 			$icon[\TYPO3\CMS\Reports\Status::WARNING] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-warning');
 			$icon[\TYPO3\CMS\Reports\Status::ERROR] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-error');
 			$messages = '';
-			$headerIcon = '';
 			$sectionSeverity = 0;
 			/** @var $status \TYPO3\CMS\Reports\Status */
 			foreach ($providerState as $status) {
@@ -206,6 +239,7 @@ class Status implements \TYPO3\CMS\Reports\ReportInterface {
 	protected function sortStatuses(array $statusCollection) {
 		$statuses = array();
 		$sortTitle = array();
+		$header = NULL;
 		/** @var $status \TYPO3\CMS\Reports\Status */
 		foreach ($statusCollection as $status) {
 			if ($status->getTitle() === 'TYPO3') {

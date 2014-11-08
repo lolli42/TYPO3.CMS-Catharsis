@@ -22,9 +22,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Creates a searchform for indexed search. Indexing must be enabled
  * for this to make sense.
  *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author 	Christian Jul Jensen <christian@typo3.com>
- * @author 	Benjamin Mack <benni@typo3.org>
+ * @author Kasper Skårhøj <kasperYYYY@typo3.com>
+ * @author Christian Jul Jensen <christian@typo3.com>
+ * @author Benjamin Mack <benni@typo3.org>
  */
 class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
 
@@ -200,7 +200,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 *
 	 * @param array $searchWords Search words array (for display of text describing what was searched for)
 	 * @param array $resultData Array with result rows, count, first row.
-	 * @param integer $freeIndexUid Pointing to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
+	 * @param int $freeIndexUid Pointing to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
 	 * @return array
 	 */
 	protected function getDisplayResults($searchWords, $resultData, $freeIndexUid = -1) {
@@ -235,7 +235,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * Takes the "group" var into account: Makes a "section" or "flat" display.
 	 *
 	 * @param array $resultRows Result rows
-	 * @param integer $freeIndexUid Pointing to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
+	 * @param int $freeIndexUid Pointing to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
 	 * @return string HTML
 	 */
 	protected function compileResultRows($resultRows, $freeIndexUid = -1) {
@@ -318,7 +318,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * This prints a single result row, including a recursive call for subrows.
 	 *
 	 * @param array $row Search result row
-	 * @param integer $headerOnly 1=Display only header (for sub-rows!), 2=nothing at all
+	 * @param int $headerOnly 1=Display only header (for sub-rows!), 2=nothing at all
 	 * @return string HTML code
 	 */
 	protected function compileSingleResultRow($row, $headerOnly = 0) {
@@ -443,7 +443,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * @todo can this be a ViewHelper?
 	 */
 	protected function makeRating($row) {
-		switch ((string) $this->searchData['sortOrder']) {
+		switch ((string)$this->searchData['sortOrder']) {
 			case 'rank_count':
 				return $row['order_val'] . ' ' . \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('result.ratingMatches', 'indexed_search');
 				break;
@@ -485,7 +485,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	protected function makeLanguageIndication($row) {
 		$output = '&nbsp;';
 		// If search result is a TYPO3 page:
-		if ((string) $row['item_type'] === '0') {
+		if ((string)$row['item_type'] === '0') {
 			// If TypoScript is used to render the flag:
 			if (is_array($this->settings['flagRendering.'])) {
 				/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $cObj */
@@ -546,8 +546,8 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * Returns the resume for the search-result.
 	 *
 	 * @param array $row Search result row
-	 * @param boolean $noMarkup If noMarkup is FALSE, then the index_fulltext table is used to select the content of the page, split it with regex to display the search words in the text.
-	 * @param integer $length String length
+	 * @param bool $noMarkup If noMarkup is FALSE, then the index_fulltext table is used to select the content of the page, split it with regex to display the search words in the text.
+	 * @param int $length String length
 	 * @return string HTML string
 	 * @todo overwork this
 	 */
@@ -646,11 +646,11 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	/**
 	 * Write statistics information to database for the search operation
 	 *
-	 * @param 	array		search params
-	 * @param 	array		Search Word array
-	 * @param 	integer		Number of hits
-	 * @param 	integer		Milliseconds the search took
-	 * @return 	void
+	 * @param array search params
+	 * @param array Search Word array
+	 * @param int Number of hits
+	 * @param int Milliseconds the search took
+	 * @return void
 	 */
 	protected function writeSearchStat($searchParams, $searchWords, $count, $pt) {
 		$insertFields = array(
@@ -695,7 +695,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 *
 	 * $defOp is the default operator. 1=OR, 0=AND
 	 *
-	 * @param boolean $defaultOperator If TRUE, the default operator will be OR, not AND
+	 * @param bool $defaultOperator If TRUE, the default operator will be OR, not AND
 	 * @return array Search words if any found
 	 */
 	protected function getSearchWords($defaultOperator) {
@@ -1115,7 +1115,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	/**
 	 * Links the $linkText to page $pageUid
 	 *
-	 * @param integer $pageUid Page id
+	 * @param int $pageUid Page id
 	 * @param string $linkText Title String to link
 	 * @param array $row Result row
 	 * @param array $markUpSwParams Additional parameters for marking up seach words
@@ -1124,7 +1124,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 */
 	protected function linkPage($pageUid, $linkText, $row = array(), $markUpSwParams = array()) {
 		// Parameters for link
-		$urlParameters = (array) unserialize($row['cHashParams']);
+		$urlParameters = (array)unserialize($row['cHashParams']);
 		// Add &type and &MP variable:
 		if ($row['data_page_mp']) {
 			$urlParameters['MP'] = $row['data_page_mp'];
@@ -1163,7 +1163,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	/**
 	 * Return the menu of pages used for the selector.
 	 *
-	 * @param integer $pageUid Page ID for which to return menu
+	 * @param int $pageUid Page ID for which to return menu
 	 * @return array Menu items (for making the section selector box)
 	 */
 	protected function getMenuOfPages($pageUid) {
@@ -1183,7 +1183,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	/**
 	 * Returns the path to the page $id
 	 *
-	 * @param integer $id Page ID
+	 * @param int $id Page ID
 	 * @param string MP variable content
 	 * @return string Path
 	 */
@@ -1225,7 +1225,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	/**
 	 * Gets the first sys_domain record for the page, $id
 	 *
-	 * @param integer $id Page id
+	 * @param int $id Page id
 	 * @return string Domain name
 	 */
 	protected function getFirstSysDomainRecordForPage($id) {
@@ -1275,7 +1275,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * Returns if an item type is a multipage item type
 	 *
 	 * @param string $item_type Item type
-	 * @return boolean TRUE if multipage capable
+	 * @return bool TRUE if multipage capable
 	 */
 	protected function multiplePagesType($item_type) {
 		return is_object($this->externalParsers[$item_type]) && $this->externalParsers[$item_type]->isMultiplePageExtension($item_type);

@@ -24,7 +24,7 @@ class AlphanumericFilter implements \TYPO3\CMS\Form\Filter\FilterInterface {
 	/**
 	 * Allow whitespace
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $allowWhiteSpace;
 
@@ -40,11 +40,11 @@ class AlphanumericFilter implements \TYPO3\CMS\Form\Filter\FilterInterface {
 	/**
 	 * Allow white space in the submitted value
 	 *
-	 * @param boolean $allowWhiteSpace True if allowed
+	 * @param bool $allowWhiteSpace True if allowed
 	 * @return void
 	 */
 	public function setAllowWhiteSpace($allowWhiteSpace = TRUE) {
-		$this->allowWhiteSpace = (bool) $allowWhiteSpace;
+		$this->allowWhiteSpace = (bool)$allowWhiteSpace;
 	}
 
 	/**
@@ -58,7 +58,7 @@ class AlphanumericFilter implements \TYPO3\CMS\Form\Filter\FilterInterface {
 	public function filter($value) {
 		$whiteSpace = $this->allowWhiteSpace ? '\\s' : '';
 		$pattern = '/[^\pL\d' . $whiteSpace . ']/u';
-		return preg_replace($pattern, '', (string) $value);
+		return preg_replace($pattern, '', (string)$value);
 	}
 
 }

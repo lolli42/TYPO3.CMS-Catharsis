@@ -45,7 +45,7 @@ class LogRecord implements \ArrayAccess {
 	/**
 	 * Severity level
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $level = \TYPO3\CMS\Core\Log\LogLevel::INFO;
 
@@ -92,7 +92,7 @@ class LogRecord implements \ArrayAccess {
 	 * Constructor.
 	 *
 	 * @param string $component Affected component
-	 * @param integer $level Severity level (see \TYPO3\CMS\Core\Log\Level)
+	 * @param int $level Severity level (see \TYPO3\CMS\Core\Log\Level)
 	 * @param string $message Log message
 	 * @param array $data Additional data
 	 */
@@ -148,7 +148,7 @@ class LogRecord implements \ArrayAccess {
 	/**
 	 * Sets the severity level
 	 *
-	 * @param integer $level Severity level
+	 * @param int $level Severity level
 	 * @return \TYPO3\CMS\Core\Log\LogRecord
 	 * @throws \RangeException if the given log level is invalid
 	 * @see \TYPO3\CMS\Core\Log\Level
@@ -163,7 +163,7 @@ class LogRecord implements \ArrayAccess {
 	 * Returns the severity level
 	 *
 	 * @see \TYPO3\CMS\Core\Log\Level
-	 * @return integer Severity level
+	 * @return int Severity level
 	 */
 	public function getLevel() {
 		return $this->level;
@@ -275,7 +275,7 @@ class LogRecord implements \ArrayAccess {
 	 * Checks whether an offset exists, required by ArrayAccess interface
 	 *
 	 * @param mixed $offset
-	 * @return boolean
+	 * @return bool
 	 */
 	public function offsetExists($offset) {
 		$offsetExists = FALSE;

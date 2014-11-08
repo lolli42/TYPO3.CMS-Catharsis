@@ -21,8 +21,7 @@
  * AJAX result in a layer next to the mouse cursor
  */
 var Clickmenu = {
-	clickURL: 'alt_clickmenu.php',
-	ajax: true, // \TYPO3\CMS\Backend\Template\DocumentTemplate::isCMLayers
+	clickURL: TYPO3.settings.ClickMenu.ajaxURL,
 	mousePos: { X: null, Y: null },
 	delayClickMenuHide: false,
 
@@ -55,31 +54,29 @@ var Clickmenu = {
 	 * @return	nothing
 	 */
 	callURL: function(params) {
-		if (this.ajax && Ajax.getTransport()) { // run with AJAX
-			params += '&ajax=1';
-			var call = new Ajax.Request(this.clickURL, {
-				method: 'get',
-				parameters: params,
-				onComplete: function(xhr) {
-					var response = xhr.responseXML;
+		params += '&ajax=1';
+		var call = new Ajax.Request(this.clickURL, {
+			method: 'get',
+			parameters: params,
+			onComplete: function(xhr) {
+				var response = xhr.responseXML;
 
-					if (!response.getElementsByTagName('data')[0]) {
-						var res = params.match(/&reloadListFrame=(0|1|2)(&|$)/);
-						var reloadListFrame = parseInt(res[1], 0);
-						if (reloadListFrame) {
-							var doc = reloadListFrame != 2 ? top.content.list_frame : top.content;
-							doc.location.reload(true);
-						}
-						return;
+				if (!response.getElementsByTagName('data')[0]) {
+					var res = params.match(/&reloadListFrame=(0|1|2)(&|$)/);
+					var reloadListFrame = parseInt(res[1], 0);
+					if (reloadListFrame) {
+						var doc = reloadListFrame != 2 ? top.content.list_frame : top.content;
+						doc.location.reload(true);
 					}
-					var menu  = response.getElementsByTagName('data')[0].getElementsByTagName('clickmenu')[0];
-					var data  = menu.getElementsByTagName('htmltable')[0].firstChild.data;
-					var level = menu.getElementsByTagName('cmlevel')[0].firstChild.data;
-					this.populateData(data, level);
+					return;
+				}
+				var menu  = response.getElementsByTagName('data')[0].getElementsByTagName('clickmenu')[0];
+				var data  = menu.getElementsByTagName('htmltable')[0].firstChild.data;
+				var level = menu.getElementsByTagName('cmlevel')[0].firstChild.data;
+				this.populateData(data, level);
 
-				}.bind(this)
-			});
-		}
+			}.bind(this)
+		});
 	},
 
 
@@ -217,16 +214,16 @@ var Clickmenu = {
 		var code = '<div id="contentMenu0" style="display: block;"></div><div id="contentMenu1" style="display: block;"></div>';
 		var insert = new Insertion.Bottom(document.getElementsByTagName('body')[0], code);
 	}
-}
+};
 
 // register mouse movement inside the document
 Event.observe(document, 'mousemove', Clickmenu.calcMousePosEvent.bindAsEventListener(Clickmenu), true);
 
 
-// @deprecated: Deprecated functions since 4.2, here for compatibility, remove in 4.4+
-// ## BEGIN ##
-
-// Still used in Core: typo3/alt_clickmenu.php::linkItem()
+/**
+ * @param url
+ * @deprecated since 4.2, Used in Core: \TYPO3\CMS\Backend\ClickMenu\ClickMenu::linkItem()
+ */
 function showClickmenu_raw(url) {
 	var parts = url.split('?');
 	if (parts.length === 2) {
@@ -235,23 +232,5 @@ function showClickmenu_raw(url) {
 	} else {
 		Clickmenu.callURL(url);
 	}
-}
-function showClickmenu_noajax(url) {
-	Clickmenu.ajax = false; showClickmenu_raw(url);
-}
-function setLayerObj(tableData, cmLevel) {
-	Clickmenu.populateData(tableData, cmLevel);
-}
-function hideEmpty() {
-	Clickmenu.hideAll();
-	return false;
-}
-function hideSpecific(level) {
-	if (level === 0 || level === 1) {
-		Clickmenu.hide('contentMenu'+level);
-	}
-}
-function showHideSelectorBoxes(action) {
-	toggleSelectorBoxes(action);
 }
 // ## END ##

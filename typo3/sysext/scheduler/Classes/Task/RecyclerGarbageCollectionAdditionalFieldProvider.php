@@ -27,7 +27,7 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 	/**
 	 * Default period in days to remove a recycled file
 	 *
-	 * @var integer Default number of days
+	 * @var int Default number of days
 	 */
 	protected $defaultNumberOfDays = 30;
 
@@ -66,7 +66,7 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 	 *
 	 * @param array $submittedData Reference to the array containing the data submitted by the user
 	 * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject Reference to the calling object (Scheduler's BE module)
-	 * @return boolean TRUE if validation was ok (or selected class is not relevant), FALSE otherwise
+	 * @return bool TRUE if validation was ok (or selected class is not relevant), FALSE otherwise
 	 */
 	public function validateAdditionalFields(array &$submittedData, \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject) {
 		$result = TRUE;

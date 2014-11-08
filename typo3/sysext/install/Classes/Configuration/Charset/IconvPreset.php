@@ -27,7 +27,7 @@ class IconvPreset extends Configuration\AbstractPreset {
 	protected $name = 'Iconv';
 
 	/**
-	 * @var integer Priority of preset
+	 * @var int Priority of preset
 	 */
 	protected $priority = 80;
 
@@ -42,7 +42,7 @@ class IconvPreset extends Configuration\AbstractPreset {
 	/**
 	 * Check if iconv PHP module is loaded
 	 *
-	 * @return boolean TRUE if iconv PHP module is loaded
+	 * @return bool TRUE if iconv PHP module is loaded
 	 */
 	public function isAvailable() {
 		$result = FALSE;

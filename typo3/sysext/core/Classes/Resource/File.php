@@ -35,7 +35,7 @@ class File extends AbstractFile {
 	/**
 	 * Set to TRUE while this file is being indexed - used to prevent some endless loops
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $indexingInProgress = FALSE;
 
@@ -46,11 +46,6 @@ class File extends AbstractFile {
 	 * @var array
 	 */
 	protected $updatedProperties = array();
-
-	/**
-	 * @var \TYPO3\CMS\Core\Resource\Service\IndexerService
-	 */
-	protected $indexerService = NULL;
 
 	/**
 	 * Constructor for a file object. Should normally not be used directly, use
@@ -96,7 +91,7 @@ class File extends AbstractFile {
 	 * can be retrieved by "getProperty"
 	 *
 	 * @param string $key
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasProperty($key) {
 		if (!parent::hasProperty($key)) {
@@ -175,7 +170,7 @@ class File extends AbstractFile {
 	/**
 	 * Returns TRUE if this file is indexed
 	 *
-	 * @return boolean|NULL
+	 * @return bool|NULL
 	 */
 	public function isIndexed() {
 		return TRUE;
@@ -272,7 +267,7 @@ class File extends AbstractFile {
 	 * Check if a file operation (= action) is allowed for this file
 	 *
 	 * @param 	string	$action, can be read, write, delete
-	 * @return boolean
+	 * @return bool
 	 */
 	public function checkActionPermission($action) {
 		return $this->getStorage()->checkFileActionPermission($action, $this);
@@ -342,14 +337,14 @@ class File extends AbstractFile {
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isMissing() {
-		return (bool) $this->getProperty('missing');
+		return (bool)$this->getProperty('missing');
 	}
 
 	/**
-	 * @param boolean $missing
+	 * @param bool $missing
 	 */
 	public function setMissing($missing) {
 		$this->updateProperties(array('missing' => $missing ? 1 : 0));
@@ -389,24 +384,11 @@ class File extends AbstractFile {
 	}
 
 	/**
-	 * Internal function to retrieve the indexer service,
-	 * if it does not exist, an instance will be created
-	 *
-	 * @return Index\Indexer
-	 */
-	protected function getIndexerService() {
-		if ($this->indexerService === NULL) {
-			$this->indexerService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $this->storage);
-		}
-		return $this->indexerService;
-	}
-
-	/**
-	 * @param boolean $indexingState
+	 * @return void
 	 * @internal Only for usage in Indexer
 	 */
 	public function setIndexingInProgess($indexingState) {
-		$this->indexingInProgress = (boolean)$indexingState;
+		$this->indexingInProgress = (bool)$indexingState;
 	}
 
 	/**

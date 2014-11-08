@@ -25,37 +25,62 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class BackendController {
 
+	/**
+	 * @var string
+	 */
 	protected $content;
 
+	/**
+	 * @var string
+	 */
 	protected $css;
 
+	/**
+	 * @var array
+	 */
 	protected $cssFiles;
 
+	/**
+	 * @var string
+	 */
 	protected $js;
 
+	/**
+	 * @var array
+	 */
 	protected $jsFiles;
 
-	protected $jsFilesAfterInline;
-
+	/**
+	 * @var array
+	 */
 	protected $toolbarItems;
 
-	// intentionally private as nobody should modify defaults
+	/**
+	 * @var int Intentionally private as nobody should modify defaults
+	 */
 	private $menuWidthDefault = 190;
 
+	/**
+	 * @var int
+	 */
 	protected $menuWidth;
 
+	/**
+	 * @var bool
+	 */
 	protected $debug;
 
 	/**
-	 * Object for loading backend modules
-	 *
-	 * @var \TYPO3\CMS\Backend\Module\ModuleLoader
+	 * @var \TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository
+	 */
+	protected $backendModuleRepository;
+
+	/**
+	 * @var \TYPO3\CMS\Backend\Module\ModuleLoader Object for loading backend modules
 	 */
 	protected $moduleLoader;
 
 	/**
-	 * Pagerenderer
-	 *
 	 * @var \TYPO3\CMS\Core\Page\PageRenderer
 	 */
 	protected $pageRenderer;
@@ -71,6 +96,8 @@ class BackendController {
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->backendModuleRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Domain\\Repository\\Module\\BackendModuleRepository');
+
 		// Set debug flag for BE development only
 		$this->debug = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1;
 		// Initializes the backend modules structure for use later.
@@ -159,11 +186,20 @@ class BackendController {
 
 		// Create backend scaffolding
 		$backendScaffolding = '
-		<div id="typo3-top-container" class="x-hide-display">
-			<div id="typo3-logo">' . $logo->render() . '</div>
-			<div id="typo3-top" class="typo3-top-toolbar">' . $this->renderToolbar() . '</div>
-		</div>
-		' . $this->generateModuleMenu();
+			<div class="navbar navbar-inverse x-hide-display" role="navigation" id="typo3-top-container">
+				<div class="container-fluid">
+					<div class="navbar-header" id="typo3-logo">' .
+						$logo->render() .
+					'</div>
+					<div id="typo3-top">
+						<ul class="nav navbar-nav navbar-right typo3-top-toolbar" id="typo3-toolbar">' .
+							$this->renderToolbar() .
+						'</ul>
+					</div>
+				</div>
+			</div>' .
+			$this->generateModuleMenu();
+
 		/******************************************************
 		 * Now put the complete backend document together
 		 ******************************************************/
@@ -276,9 +312,9 @@ class BackendController {
 			unset($this->toolbarItems['liveSearch']);
 			$this->toolbarItems['liveSearch'] = $search;
 		}
-		$toolbar = '<ul id="typo3-toolbar">';
-		$toolbar .= '<li>' . $this->getLoggedInUserLabel() . '</li>';
-		$toolbar .= '<li class="separator"><div id="logout-button" class="toolbar-item no-separator">' . $this->renderLogoutButton() . '</div></li>';
+		$toolbar = $this->getLoggedInUserLabel();
+		$toolbar .= '<li class="toolbar-item" id="logout-button">' . $this->renderLogoutButton() . '</li>';
+
 		$i = 0;
 		$numberOfToolbarItems = count($this->toolbarItems);
 		foreach ($this->toolbarItems as $key => $toolbarItem) {
@@ -296,10 +332,10 @@ class BackendController {
 				if ($additionalAttributes !== '') {
 					$additionalAttributes = ' ' . $additionalAttributes;
 				}
-				$toolbar .= '<li' . $additionalAttributes . '>' . $menu . '</li>';
+				$toolbar .= '<li' . $additionalAttributes . ' role="menu">' . $menu . '</li>';
 			}
 		}
-		return $toolbar . '</ul>';
+		return $toolbar;
 	}
 
 	/**
@@ -308,24 +344,31 @@ class BackendController {
 	 * @return string Html code snippet displaying the currently logged in user
 	 */
 	protected function getLoggedInUserLabel() {
-		$css = 'toolbar-item';
+		$css = '';
 		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-user-' . ($GLOBALS['BE_USER']->isAdmin() ? 'admin' : 'backend'));
 		$realName = $GLOBALS['BE_USER']->user['realName'];
 		$username = $GLOBALS['BE_USER']->user['username'];
 		$label = $realName ?: $username;
 		$title = $username;
+
 		// Link to user setup if it's loaded and user has access
 		$link = '';
 		if (ExtensionManagementUtility::isLoaded('setup') && $GLOBALS['BE_USER']->check('modules', 'user_setup')) {
 			$link = '<a href="#" onclick="top.goToModule(\'user_setup\'); this.blur(); return false;">';
+		} else {
+			$link = '<a name="username">';
 		}
+
 		// Superuser mode
 		if ($GLOBALS['BE_USER']->user['ses_backuserid']) {
 			$css .= ' su-user';
 			$title = $GLOBALS['LANG']->getLL('switchtouser') . ': ' . $username;
 			$label = $GLOBALS['LANG']->getLL('switchtousershort') . ' ' . ($realName ? $realName . ' (' . $username . ')' : $username);
 		}
-		return '<div id="username" class="' . $css . '">' . $link . $icon . '<span title="' . htmlspecialchars($title) . '">' . htmlspecialchars($label) . '</span>' . ($link ? '</a>' : '') . '</div>';
+
+		return '<li id="username" class="' . $css . '">' .
+			$link . $icon . '<span title="' . htmlspecialchars($title) . '">' . htmlspecialchars($label) . '</span></a>' .
+		'</li>';
 	}
 
 	/**
@@ -634,7 +677,7 @@ class BackendController {
 	 * Adds a javscript file to the backend after it has been checked that it exists
 	 *
 	 * @param string $javascriptFile Javascript file reference
-	 * @return boolean TRUE if the javascript file was successfully added, FALSE otherwise
+	 * @return bool TRUE if the javascript file was successfully added, FALSE otherwise
 	 */
 	public function addJavascriptFile($javascriptFile) {
 		$jsFileAdded = FALSE;
@@ -664,7 +707,7 @@ class BackendController {
 	 *
 	 * @param string $cssFileName The css file's name with out the .css ending
 	 * @param string $cssFile Css file reference
-	 * @return boolean TRUE if the css file was added, FALSE otherwise
+	 * @return bool TRUE if the css file was added, FALSE otherwise
 	 */
 	public function addCssFile($cssFileName, $cssFile) {
 		$cssFileAdded = FALSE;
@@ -738,9 +781,7 @@ class BackendController {
 	 * @return string
 	 */
 	protected function generateModuleMenu() {
-		/** @var $moduleRepository \TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository */
-		$moduleRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Domain\\Repository\\Module\\BackendModuleRepository');
-		$moduleStorage = $moduleRepository->loadAllowedModules();
+		$moduleStorage = $this->backendModuleRepository->loadAllowedModules();
 
 		/** @var $view \TYPO3\CMS\Fluid\View\StandaloneView */
 		$view = GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');

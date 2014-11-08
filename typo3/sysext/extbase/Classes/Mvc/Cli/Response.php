@@ -21,14 +21,14 @@ namespace TYPO3\CMS\Extbase\Mvc\Cli;
 class Response extends \TYPO3\CMS\Extbase\Mvc\Response {
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	private $exitCode = 0;
 
 	/**
 	 * Sets the numerical exit code which should be returned when exiting this application.
 	 *
-	 * @param integer $exitCode
+	 * @param int $exitCode
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 * @api
@@ -43,7 +43,7 @@ class Response extends \TYPO3\CMS\Extbase\Mvc\Response {
 	/**
 	 * Rets the numerical exit code which should be returned when exiting this application.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getExitCode() {

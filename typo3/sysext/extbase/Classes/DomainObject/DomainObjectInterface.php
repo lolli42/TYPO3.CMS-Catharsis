@@ -26,14 +26,14 @@ interface DomainObjectInterface {
 	/**
 	 * Getter for uid.
 	 *
-	 * @return integer The uid or NULL if none set yet.
+	 * @return int The uid or NULL if none set yet.
 	 */
 	public function getUid();
 
 	/**
 	 * Setter for the pid.
 	 *
-	 * @param integer $pid
+	 * @param int $pid
 	 * @return void
 	 */
 	public function setPid($pid);
@@ -41,14 +41,14 @@ interface DomainObjectInterface {
 	/**
 	 * Getter for the pid.
 	 *
-	 * @return integer The pid or NULL if none set yet.
+	 * @return int The pid or NULL if none set yet.
 	 */
 	public function getPid();
 
 	/**
 	 * Returns TRUE if the object is new (the uid was not set, yet). Only for internal use
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function _isNew();
 

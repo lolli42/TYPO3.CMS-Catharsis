@@ -5,12 +5,12 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Object\Container\Fixtures;
 class SimpleTypeConstructorArgument {
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	public $foo;
 
 	/**
-	 * @param boolean $foo
+	 * @param bool $foo
 	 */
 	public function __construct($foo = FALSE) {
 		$this->foo = $foo;

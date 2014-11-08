@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Interface for collection class being persistable
  *
@@ -24,6 +25,7 @@ namespace TYPO3\CMS\Core\Collection;
  * @author Steffen Ritter <typo3steffen-ritter.net>
  */
 interface PersistableCollectionInterface {
+
 	/**
 	 * Get the identifier of the collection
 	 *
@@ -31,14 +33,14 @@ interface PersistableCollectionInterface {
 	 * session stored, registry stored or other collections might
 	 * use a string as well
 	 *
-	 * @return integer|string
+	 * @return int|string
 	 */
 	public function getIdentifier();
 
 	/**
 	 * Sets the identifier of the collection
 	 *
-	 * @param integer|string $id
+	 * @param int|string $id
 	 * @return void
 	 */
 	public function setIdentifier($id);
@@ -50,8 +52,8 @@ interface PersistableCollectionInterface {
 	 * identifier (what ever static data is defined) is loaded.
 	 * Entries can be load on first access.
 	 *
-	 * @param integer|string $id
-	 * @param boolean $fillItems Populates the entries directly on load, might be bad for memory on large collections
+	 * @param int|string $id
+	 * @param bool $fillItems Populates the entries directly on load, might be bad for memory on large collections
 	 * @return \TYPO3\CMS\Core\Collection\CollectionInterface
 	 */
 	static public function load($id, $fillItems = FALSE);

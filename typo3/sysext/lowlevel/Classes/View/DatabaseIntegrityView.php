@@ -57,11 +57,10 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function init() {
-		global $LANG, $BACK_PATH;
 		$this->MCONF = $GLOBALS['MCONF'];
 		$this->menuConfig();
 		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
-		$this->doc->backPath = $BACK_PATH;
+		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:lowlevel/Resources/Private/Templates/dbint.html');
 		$this->doc->form = '<form action="" method="post" name="' . $this->formName . '">';
 		$this->doc->table_TABLE = '<table class="t3-table">
@@ -83,7 +82,6 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function menuConfig() {
-		global $LANG;
 		// MENU-ITEMS:
 		// If array, then it's a selector box menu
 		// If empty string it's just a variable, that'll be saved.
@@ -254,7 +252,7 @@ class DatabaseIntegrityView {
 			$functionUrl = BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=' . $modFunc;
 			$title = $GLOBALS['LANG']->getLL($modFunc);
 			$description = $GLOBALS['LANG']->getLL($modFunc . '_description');
-			$icon = '<img src="' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'MOD:system_dbint/db.gif', '', 1) . '" width="16" height="16" title="' . $title . '" alt="' . $title . '" />';
+			$icon = '<img src="sysext/lowlevel/Resources/Public/Icons/module-dbint.gif" width="16" height="16" title="' . $title . '" alt="' . $title . '" />';
 			$content .= '
 				<dt><a href="' . htmlspecialchars($functionUrl) . '">' . $icon . $title . '</a></dt>
 				<dd>' . $description . '</dd>
@@ -300,7 +298,7 @@ class DatabaseIntegrityView {
 
 		$content .= '<h3>' . $GLOBALS['LANG']->getLL('checkScript_update_description') . '</h3>';
 		$content .= '<p><code>php ' . PATH_typo3 . 'cli_dispatch.phpsh lowlevel_refindex -e</code></p>';
-		$content .= '<div class="typo3-message message-information"><div class="message-body">' . $GLOBALS['LANG']->getLL('checkScript_information') . '</div></div>';
+		$content .= '<div class="alert alert-info"><div class="message-body">' . $GLOBALS['LANG']->getLL('checkScript_information') . '</div></div>';
 
 		$content .= '<p>' . $GLOBALS['LANG']->getLL('checkScript_moreDetails') . '<br />';
 		$content .= '<a href="' . $GLOBALS['BACK_PATH'] . 'sysext/lowlevel/HOWTO_clean_up_TYPO3_installations.txt" target="_new">' . PATH_typo3 . 'sysext/lowlevel/HOWTO_clean_up_TYPO3_installations.txt</a></p>';
@@ -313,7 +311,6 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function func_search() {
-		global $LANG;
 		$fullsearch = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\QueryView');
 		$fullsearch->setFormName($this->formName);
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('search'));
@@ -396,7 +393,7 @@ class DatabaseIntegrityView {
 		$admin->lostRecords($id_list);
 		if ($admin->fixLostRecord(GeneralUtility::_GET('fixLostRecords_table'), GeneralUtility::_GET('fixLostRecords_uid'))) {
 			$admin = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Integrity\\DatabaseIntegrityCheck');
-			$admin->backPath = $BACK_PATH;
+			$admin->backPath = $GLOBALS['BACK_PATH'];
 			$admin->genTree(0, '');
 			$id_list = '-1,0,' . implode(',', array_keys($admin->page_idArray));
 			$id_list = rtrim($id_list, ',');
@@ -434,9 +431,9 @@ class DatabaseIntegrityView {
 				if (is_array($admin->lRecords[$t])) {
 					foreach ($admin->lRecords[$t] as $data) {
 						if (!GeneralUtility::inList($admin->lostPagesList, $data[pid])) {
-							$lr .= '<nobr><strong><a href="' . htmlspecialchars((BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=records&fixLostRecords_table=' . $t . '&fixLostRecords_uid=' . $data['uid'])) . '"><img src="' . $BACK_PATH . 'gfx/required_h.gif" width="10" hspace="3" height="10" border="0" align="top" title="' . $GLOBALS['LANG']->getLL('fixLostRecord') . '"></a>uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</strong></nobr><br>';
+							$lr .= '<nobr><strong><a href="' . htmlspecialchars((BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=records&fixLostRecords_table=' . $t . '&fixLostRecords_uid=' . $data['uid'])) . '"><img src="' . $GLOBALS['BACK_PATH'] . 'gfx/required_h.gif" width="10" hspace="3" height="10" border="0" align="top" title="' . $GLOBALS['LANG']->getLL('fixLostRecord') . '"></a>uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</strong></nobr><br>';
 						} else {
-							$lr .= '<nobr><img src="' . $BACK_PATH . 'clear.gif" width="16" height="1" border="0"><font color="Gray">uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</font></nobr><br>';
+							$lr .= '<nobr><img src="' . $GLOBALS['BACK_PATH'] . 'clear.gif" width="16" height="1" border="0"><font color="Gray">uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</font></nobr><br>';
 						}
 					}
 				}
@@ -452,11 +449,10 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function func_relations() {
-		global $LANG, $BACK_PATH;
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('relations'));
 		$admin = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Integrity\\DatabaseIntegrityCheck');
 		$admin->genTree_makeHTML = 0;
-		$admin->backPath = $BACK_PATH;
+		$admin->backPath = $GLOBALS['BACK_PATH'];
 		$fkey_arrays = $admin->getGroupFields('');
 		$admin->selectNonEmptyRecordsWithFkeys($fkey_arrays);
 		$fileTest = $admin->testFileRefs();
@@ -495,29 +491,4 @@ class DatabaseIntegrityView {
 		$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('select_db'), $admin->testDBRefs($admin->checkSelectDBRefs), TRUE, TRUE);
 		$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('group_db'), $admin->testDBRefs($admin->checkGroupDBRefs), TRUE, TRUE);
 	}
-
-	/**
-	 * Searching for files with a specific pattern
-	 *
-	 * @deprecated since 6.2 will be removed two versions later
-	 * @return void
-	 */
-	public function func_filesearch() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-	}
-
-	/**
-	 * Searching for filename pattern recursively in the specified dir.
-	 *
-	 * @param string $basedir Base directory
-	 * @param string $pattern Match pattern
-	 * @param array $matching_files Array of matching files, passed by reference
-	 * @param integer $depth Depth to recurse
-	 * @deprecated since 6.2 will be removed two versions later
-	 * @return array Array with various information about the search result
-	 */
-	public function findFile($basedir, $pattern, &$matching_files, $depth) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-	}
-
 }

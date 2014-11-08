@@ -37,7 +37,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $icon = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $version = '';
 
@@ -134,7 +134,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Setter for the version
 	 *
-	 * @param integer $version Needs to have a valid version format like 1003007
+	 * @param int $version Needs to have a valid version format like 1003007
 	 * @return void
 	 */
 	public function setVersion($version) {
@@ -155,7 +155,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for the version
 	 *
-	 * @return integer interpretion of the extension version
+	 * @return int interpretion of the extension version
 	 */
 	public function getVersion() {
 		return $this->version;
@@ -168,7 +168,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @return void
 	 */
 	public function setUpdateResult($updateResult) {
-		$this->updateResult = (array) $updateResult;
+		$this->updateResult = (array)$updateResult;
 	}
 
 	/**

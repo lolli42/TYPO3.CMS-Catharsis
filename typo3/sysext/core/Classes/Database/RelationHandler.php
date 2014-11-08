@@ -31,7 +31,7 @@ class RelationHandler {
 	/**
 	 * $fetchAllFields if false getFromDB() fetches only uid, pid, thumbnail and label fields (as defined in TCA)
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $fetchAllFields = FALSE;
 
@@ -70,7 +70,7 @@ class RelationHandler {
 	/**
 	 * Deleted-column is added to additionalWhere... if this is set...
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $checkIfDeleted = TRUE;
 
@@ -97,7 +97,7 @@ class RelationHandler {
 	 * If TRUE, uid_local and uid_foreign are switched, and the current table
 	 * is inserted as tablename - this means you display a foreign relation "from the opposite side"
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $MM_is_foreign = FALSE;
 
@@ -140,7 +140,7 @@ class RelationHandler {
 	 * If a record should be undeleted
 	 * (so do not use the $useDeleteClause on \TYPO3\CMS\Backend\Utility\BackendUtility)
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $undeleteRecord;
 
@@ -155,7 +155,7 @@ class RelationHandler {
 	/**
 	 * This is set to TRUE if the MM table has a UID field.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $MM_hasUidField;
 
@@ -181,7 +181,7 @@ class RelationHandler {
 	protected $MM_oppositeUsage;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $updateReferenceIndex = TRUE;
 
@@ -248,7 +248,7 @@ class RelationHandler {
 	 * @param string $itemlist List of group/select items
 	 * @param string $tablelist Comma list of tables, first table takes priority if no table is set for an entry in the list.
 	 * @param string $MMtable Name of a MM table.
-	 * @param integer $MMuid Local UID for MM lookup
+	 * @param int $MMuid Local UID for MM lookup
 	 * @param string $currentTable Current table name
 	 * @param array $conf TCA configuration for current field
 	 * @return void
@@ -256,7 +256,7 @@ class RelationHandler {
 	public function start($itemlist, $tablelist, $MMtable = '', $MMuid = 0, $currentTable = '', $conf = array()) {
 		$conf = (array)$conf;
 		// SECTION: MM reverse relations
-		$this->MM_is_foreign = (boolean)$conf['MM_opposite_field'];
+		$this->MM_is_foreign = (bool)$conf['MM_opposite_field'];
 		$this->MM_oppositeField = $conf['MM_opposite_field'];
 		$this->MM_table_where = $conf['MM_table_where'];
 		$this->MM_hasUidField = $conf['MM_hasUidField'];
@@ -339,20 +339,20 @@ class RelationHandler {
 	/**
 	 * Sets $fetchAllFields
 	 *
-	 * @param boolean $allFields enables fetching of all fields in getFromDB()
+	 * @param bool $allFields enables fetching of all fields in getFromDB()
 	 */
 	public function setFetchAllFields($allFields) {
-		$this->fetchAllFields = (boolean)$allFields;
+		$this->fetchAllFields = (bool)$allFields;
 	}
 
 	/**
 	 * Sets whether the reference index shall be updated.
 	 *
-	 * @param boolean $updateReferenceIndex Whether the reference index shall be updated
+	 * @param bool $updateReferenceIndex Whether the reference index shall be updated
 	 * @return void
 	 */
 	public function setUpdateReferenceIndex($updateReferenceIndex) {
-		$this->updateReferenceIndex = (boolean)$updateReferenceIndex;
+		$this->updateReferenceIndex = (bool)$updateReferenceIndex;
 	}
 
 	/**
@@ -377,7 +377,7 @@ class RelationHandler {
 	 * @return void
 	 */
 	public function readList($itemlist, array $configuration) {
-		if ((string) trim($itemlist) != '') {
+		if ((string)trim($itemlist) != '') {
 			$tempItemArray = GeneralUtility::trimExplode(',', $itemlist);
 			// Changed to trimExplode 31/3 04; HMENU special type "list" didn't work
 			// if there were spaces in the list... I suppose this is better overall...
@@ -397,7 +397,7 @@ class RelationHandler {
 						? strrev(trim($parts[1]))
 						: ($this->secondTable && $theID < 0 ? $this->secondTable : $this->firstTable);
 					// If the ID is not blank and the table name is among the names in the inputted tableList
-					if (((string) $theID != '' && $theID) && $theTable && isset($this->tableArray[$theTable])) {
+					if (((string)$theID != '' && $theID) && $theTable && isset($this->tableArray[$theTable])) {
 						// Get ID as the right value:
 						$theID = $this->secondTable ? abs((int)$theID) : (int)$theID;
 						// Register ID/table name in internal arrays:
@@ -486,7 +486,7 @@ class RelationHandler {
 	 * You can call this function after start if you supply no list to start()
 	 *
 	 * @param string $tableName MM Tablename
-	 * @param integer $uid Local UID
+	 * @param int $uid Local UID
 	 * @return void
 	 */
 	public function readMM($tableName, $uid) {
@@ -547,8 +547,8 @@ class RelationHandler {
 	 * Writes the internal itemArray to MM table:
 	 *
 	 * @param string $MM_tableName MM table name
-	 * @param integer $uid Local UID
-	 * @param boolean $prependTableName If set, then table names will always be written.
+	 * @param int $uid Local UID
+	 * @param bool $prependTableName If set, then table names will always be written.
 	 * @return void
 	 */
 	public function writeMM($MM_tableName, $uid, $prependTableName = FALSE) {
@@ -698,9 +698,9 @@ class RelationHandler {
 	 * Does NOT update the reference index for you, must be called subsequently to do that!
 	 *
 	 * @param string $MM_tableName MM table name
-	 * @param integer $uid Local, current UID
-	 * @param integer $newUid Local, new UID
-	 * @param boolean $prependTableName If set, then table names will always be written.
+	 * @param int $uid Local, current UID
+	 * @param int $newUid Local, new UID
+	 * @param bool $prependTableName If set, then table names will always be written.
 	 * @return void
 	 */
 	public function remapMM($MM_tableName, $uid, $newUid, $prependTableName = FALSE) {
@@ -738,7 +738,7 @@ class RelationHandler {
 	 * Reads items from a foreign_table, that has a foreign_field (uid of the parent record) and
 	 * stores the parts in the internal array itemArray and tableArray.
 	 *
-	 * @param integer $uid The uid of the parent record (this value is also on the foreign_table in the foreign_field)
+	 * @param int $uid The uid of the parent record (this value is also on the foreign_table in the foreign_field)
 	 * @param array $conf TCA configuration for current field
 	 * @return void
 	 */
@@ -824,9 +824,9 @@ class RelationHandler {
 	 * Write the sorting values to a foreign_table, that has a foreign_field (uid of the parent record)
 	 *
 	 * @param array $conf TCA configuration for current field
-	 * @param integer $parentUid The uid of the parent record
-	 * @param integer $updateToUid If this is larger than zero it will be used as foreign UID instead of the given $parentUid (on Copy)
-	 * @param boolean $skipSorting Do not update the sorting columns, this could happen for imported values
+	 * @param int $parentUid The uid of the parent record
+	 * @param int $updateToUid If this is larger than zero it will be used as foreign UID instead of the given $parentUid (on Copy)
+	 * @param bool $skipSorting Do not update the sorting columns, this could happen for imported values
 	 * @return void
 	 */
 	public function writeForeignField($conf, $parentUid, $updateToUid = 0, $skipSorting = FALSE) {
@@ -934,7 +934,7 @@ class RelationHandler {
 	/**
 	 * After initialization you can extract an array of the elements from the object. Use this function for that.
 	 *
-	 * @param boolean $prependTableName If set, then table names will ALWAYS be prepended (unless its a _NO_TABLE value)
+	 * @param bool $prependTableName If set, then table names will ALWAYS be prepended (unless its a _NO_TABLE value)
 	 * @return array A numeric array.
 	 */
 	public function getValueArray($prependTableName = FALSE) {
@@ -1047,7 +1047,7 @@ class RelationHandler {
 	/**
 	 * Counts the items in $this->itemArray and puts this value in an array by default.
 	 *
-	 * @param boolean $returnAsArray Whether to put the count value in an array
+	 * @param bool $returnAsArray Whether to put the count value in an array
 	 * @return mixed The plain count as integer or the same inside an array
 	 */
 	public function countItems($returnAsArray = TRUE) {
@@ -1064,7 +1064,7 @@ class RelationHandler {
 	 * (copied from TCEmain)
 	 *
 	 * @param string $table Table name
-	 * @param integer $id Record UID
+	 * @param int $id Record UID
 	 * @return array Information concerning modifications delivered by \TYPO3\CMS\Core\Database\ReferenceIndex::updateRefIndexTable()
 	 */
 	public function updateRefIndex($table, $id) {
@@ -1254,7 +1254,7 @@ class RelationHandler {
 	 * @param string $parentUid The uid of the parent record
 	 * @param array $parentConf The TCA configuration of the parent field embedding the child records
 	 * @param array $childRec The record row of the child record
-	 * @return boolean Returns TRUE if looking from the symmetric ("other") side to the relation.
+	 * @return bool Returns TRUE if looking from the symmetric ("other") side to the relation.
 	 */
 	static public function isOnSymmetricSide($parentUid, $parentConf, $childRec) {
 		return MathUtility::canBeInterpretedAsInteger($childRec['uid'])

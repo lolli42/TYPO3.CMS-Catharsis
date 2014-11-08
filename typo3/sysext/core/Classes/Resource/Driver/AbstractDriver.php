@@ -29,7 +29,7 @@ abstract class AbstractDriver implements DriverInterface {
 	 * The capabilities of this driver. See Storage::CAPABILITY_* constants for possible values. This value should be set
 	 * in the constructor of derived classes.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $capabilities = 0;
 
@@ -37,7 +37,7 @@ abstract class AbstractDriver implements DriverInterface {
 	/**
 	 * The storage uid the driver was instantiated for
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $storageUid;
 
@@ -71,7 +71,7 @@ abstract class AbstractDriver implements DriverInterface {
 	 * drivers if they have different file naming rules.
 	 *
 	 * @param string $fileName
-	 * @return boolean TRUE if file name is valid
+	 * @return bool TRUE if file name is valid
 	 */
 	protected function isValidFilename($fileName) {
 		if (strpos($fileName, '/') !== FALSE) {
@@ -86,7 +86,7 @@ abstract class AbstractDriver implements DriverInterface {
 	/**
 	 * Sets the storage uid the driver belongs to
 	 *
-	 * @param integer $storageUid
+	 * @param int $storageUid
 	 * @return void
 	 */
 	public function setStorageUid($storageUid) {
@@ -96,7 +96,7 @@ abstract class AbstractDriver implements DriverInterface {
 	/**
 	 * Returns the capabilities of this driver.
 	 *
-	 * @return integer
+	 * @return int
 	 * @see Storage::CAPABILITY_* constants
 	 */
 	public function getCapabilities() {
@@ -106,8 +106,8 @@ abstract class AbstractDriver implements DriverInterface {
 	/**
 	 * Returns TRUE if this driver has the given capability.
 	 *
-	 * @param integer $capability A capability, as defined in a CAPABILITY_* constant
-	 * @return boolean
+	 * @param int $capability A capability, as defined in a CAPABILITY_* constant
+	 * @return bool
 	 */
 	public function hasCapability($capability) {
 		return $this->capabilities & $capability == $capability;
@@ -159,7 +159,7 @@ abstract class AbstractDriver implements DriverInterface {
 	 * therefore always reflect the file system and not try to change its
 	 * behaviour
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isCaseSensitiveFileSystem() {
 		if (isset($this->configuration['caseSensitive'])) {

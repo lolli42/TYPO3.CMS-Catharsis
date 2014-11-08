@@ -481,7 +481,7 @@ class TemplateView extends AbstractTemplateView {
 	 * Checks whether a template can be resolved for the current request context.
 	 *
 	 * @param ControllerContext $controllerContext Controller context which is available inside the view
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function canRender(ControllerContext $controllerContext) {
@@ -525,8 +525,8 @@ class TemplateView extends AbstractTemplateView {
 	 * replaced by the current request format, and once with ."@format" stripped off.
 	 *
 	 * @param string $pattern Pattern to be resolved
-	 * @param boolean $bubbleControllerAndSubpackage if TRUE, then we successively split off parts from "@controller" and "@subpackage" until both are empty.
-	 * @param boolean $formatIsOptional if TRUE, then half of the resulting strings will have ."@format" stripped off, and the other half will have it.
+	 * @param bool $bubbleControllerAndSubpackage if TRUE, then we successively split off parts from "@controller" and "@subpackage" until both are empty.
+	 * @param bool $formatIsOptional if TRUE, then half of the resulting strings will have ."@format" stripped off, and the other half will have it.
 	 * @return array unix style paths
 	 */
 	protected function expandGenericPathPattern($pattern, $bubbleControllerAndSubpackage, $formatIsOptional) {

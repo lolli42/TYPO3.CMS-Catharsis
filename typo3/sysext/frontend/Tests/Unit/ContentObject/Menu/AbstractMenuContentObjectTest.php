@@ -140,7 +140,7 @@ class AbstractMenuContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider sectionIndexFiltersDataProvider
-	 * @param integer $expectedAmount
+	 * @param int $expectedAmount
 	 * @param array $dataRow
 	 */
 	public function sectionIndexFilters($expectedAmount, array $dataRow) {
@@ -243,7 +243,7 @@ class AbstractMenuContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider ifsubHasToCheckExcludeUidListDataProvider
 	 * @param array $menuItems
 	 * @param string $excludeUidList
-	 * @param boolean $expectedResult
+	 * @param bool $expectedResult
 	 */
 	public function ifsubHasToCheckExcludeUidList($menuItems, $excludeUidList, $expectedResult) {
 		$menu = array();

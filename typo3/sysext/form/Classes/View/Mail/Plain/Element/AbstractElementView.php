@@ -27,7 +27,7 @@ abstract class AbstractElementView {
 	protected $model;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $spaces;
 
@@ -35,7 +35,7 @@ abstract class AbstractElementView {
 	 * Constructor
 	 *
 	 * @param \TYPO3\CMS\Form\Domain\Model\Element\AbstractElement $model
-	 * @param integer $spaces
+	 * @param int $spaces
 	 */
 	public function __construct(\TYPO3\CMS\Form\Domain\Model\Element\AbstractElement $model, $spaces) {
 		$this->model = $model;

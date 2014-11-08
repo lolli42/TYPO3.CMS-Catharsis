@@ -43,7 +43,7 @@ abstract class AbstractElementView {
 	 * True if element needs no element wrap
 	 * like <li>element</li>
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $noWrap = FALSE;
 
@@ -64,8 +64,8 @@ abstract class AbstractElementView {
 	 *
 	 * @param \DOMDocument $dom
 	 * @param \DOMNode $reference Current XML structure
-	 * @param boolean $emptyElement
-	 * @return boolean
+	 * @param bool $emptyElement
+	 * @return bool
 	 */
 	protected function parseXML(\DOMDocument $dom, \DOMNode $reference, $emptyElement = FALSE) {
 		$node = $reference->firstChild;
@@ -163,11 +163,11 @@ abstract class AbstractElementView {
 	 * Get the content for the current object as DOMDocument
 	 *
 	 * @param string $type Type of element for layout
-	 * @param boolean $returnFirstChild If TRUE, the first child will be returned instead of the DOMDocument
+	 * @param bool $returnFirstChild If TRUE, the first child will be returned instead of the DOMDocument
 	 * @return mixed \DOMDocument|\DOMNode XML part of the view object
 	 */
 	public function render($type = 'element', $returnFirstChild = TRUE) {
-		$useLayout = $this->getLayout((string) $type);
+		$useLayout = $this->getLayout((string)$type);
 		$dom = new \DOMDocument('1.0', 'utf-8');
 		$dom->formatOutput = TRUE;
 		$dom->preserveWhiteSpace = FALSE;
@@ -251,7 +251,7 @@ abstract class AbstractElementView {
 	 * @return void
 	 */
 	public function setAttribute(\DOMElement $domElement, $key) {
-		$attribute = $this->model->getAttributeValue((string) $key);
+		$attribute = $this->model->getAttributeValue((string)$key);
 		if (!empty($attribute)) {
 			$domElement->setAttribute($key, $attribute);
 		}
@@ -267,7 +267,7 @@ abstract class AbstractElementView {
 	 * @return unknown_type
 	 */
 	public function setAttributeWithValueofOtherAttribute(\DOMElement $domElement, $key, $other) {
-		$attribute = $this->model->getAttributeValue((string) $other);
+		$attribute = $this->model->getAttributeValue((string)$other);
 		if (!empty($attribute)) {
 			$domElement->setAttribute($key, $attribute);
 		}
@@ -280,7 +280,7 @@ abstract class AbstractElementView {
 	 * @return object
 	 */
 	protected function createAdditional($class) {
-		$class = strtolower((string) $class);
+		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\View\\Confirmation\\Additional\\' . ucfirst($class) . 'AdditionalElementView';
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $this->model);
 	}
@@ -350,7 +350,7 @@ abstract class AbstractElementView {
 	 * if TRUE the element does not need a element wrap
 	 * like <li>element</li>
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function noWrap() {
 		return $this->noWrap;

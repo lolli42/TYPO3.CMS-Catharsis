@@ -20,21 +20,41 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 class Language extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 
+	/**
+	 * The key of the extension that is extending htmlArea RTE
+	 *
+	 * @var string
+	 */
 	protected $extensionKey = 'rtehtmlarea';
 
-	// The key of the extension that is extending htmlArea RTE
+	/**
+	 * The name of the plugin registered by the extension
+	 *
+	 * @var string
+	 */
 	protected $pluginName = 'Language';
 
-	// The name of the plugin registered by the extension
+	/**
+	 * Path to this main locallang file of the extension relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToLocallangFile = 'extensions/Language/locallang.xlf';
 
-	// Path to this main locallang file of the extension relative to the extension dir.
-	protected $relativePathToSkin = 'extensions/Language/skin/htmlarea.css';
+	/**
+	 * Path to the skin file relative to the extension directory
+	 *
+	 * @var string
+	 */
+	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/language.css';
 
-	// Path to the skin (css) file relative to the extension dir.
+	/**
+	 * Reference to the invoking object
+	 *
+	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
+	 */
 	protected $htmlAreaRTE;
 
-	// Reference to the invoking object
 	protected $thisConfig;
 
 	// Reference to RTE PageTSConfig
@@ -63,8 +83,8 @@ class Language extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param 	integer		Relative id of the RTE editing area in the form
-	 * @return string		JS configuration for registered plugins
+	 * @param int Relative id of the RTE editing area in the form
+	 * @return string JS configuration for registered plugins
 	 */
 	public function buildJavascriptConfiguration($RTEcounter) {
 		$button = 'language';
@@ -96,7 +116,7 @@ class Language extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	 * and where the value are the name of the language in the current language
 	 * Note: we exclude sacred and constructed languages
 	 *
-	 * @return 	array		An array of names of languages
+	 * @return array An array of names of languages
 	 */
 	public function getLanguages() {
 		$nameArray = array();
@@ -116,8 +136,8 @@ class Language extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 				$where .= ' AND ' . $table . '.lg_iso_2 IN (' . $languageList . ')';
 			}
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($table . '.lg_iso_2,' . $table . '.lg_country_iso_2,' . $labelFields, $table, $where . ' AND lg_constructed = 0 ' . ($this->htmlAreaRTE->is_FE() ? $GLOBALS['TSFE']->sys_page->enableFields($table) : \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($table) . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($table)));
-			$prefixLabelWithCode = (boolean)$this->thisConfig['buttons.']['language.']['prefixLabelWithCode'];
-			$postfixLabelWithCode = (boolean)$this->thisConfig['buttons.']['language.']['postfixLabelWithCode'];
+			$prefixLabelWithCode = (bool)$this->thisConfig['buttons.']['language.']['prefixLabelWithCode'];
+			$postfixLabelWithCode = (bool)$this->thisConfig['buttons.']['language.']['postfixLabelWithCode'];
 			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				$code = strtolower($row['lg_iso_2']) . ($row['lg_country_iso_2'] ? '-' . strtoupper($row['lg_country_iso_2']) : '');
 				foreach ($titleFields as $titleField) {
@@ -136,8 +156,8 @@ class Language extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return an updated array of toolbar enabled buttons
 	 *
-	 * @param 	array		$show: array of toolbar elements that will be enabled, unless modified here
-	 * @return 	array		toolbar button array, possibly updated
+	 * @param array $show: array of toolbar elements that will be enabled, unless modified here
+	 * @return array toolbar button array, possibly updated
 	 */
 	public function applyToolbarConstraints($show) {
 		if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {

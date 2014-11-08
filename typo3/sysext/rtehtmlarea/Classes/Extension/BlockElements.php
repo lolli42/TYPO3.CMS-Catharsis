@@ -20,21 +20,41 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 
+	/**
+	 * The key of the extension that is extending htmlArea RTE
+	 *
+	 * @var string
+	 */
 	protected $extensionKey = 'rtehtmlarea';
 
-	// The key of the extension that is extending htmlArea RTE
+	/**
+	 * The name of the plugin registered by the extension
+	 *
+	 * @var string
+	 */
 	protected $pluginName = 'BlockElements';
 
-	// The name of the plugin registered by the extension
+	/**
+	 * Path to this main locallang file of the extension relative to the extension directory
+	 *
+	 * @var string
+	 */
 	protected $relativePathToLocallangFile = 'extensions/BlockElements/locallang.xlf';
 
-	// Path to this main locallang file of the extension relative to the extension dir.
-	protected $relativePathToSkin = 'extensions/BlockElements/skin/htmlarea.css';
+	/**
+	 * Path to the skin file relative to the extension directory
+	 *
+	 * @var string
+	 */
+	protected $relativePathToSkin = 'Resources/Public/Css/Skin/Plugins/block-elements.css';
 
-	// Path to the skin (css) file relative to the extension dir
+	/**
+	 * Reference to the invoking object
+	 *
+	 * @var \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase
+	 */
 	protected $htmlAreaRTE;
 
-	// Reference to the invoking object
 	protected $thisConfig;
 
 	// Reference to RTE PageTSConfig
@@ -88,11 +108,10 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param 	integer		Relative id of the RTE editing area in the form
-	 * @return 	string		JS configuration for registered plugins, in this case, JS configuration of block elements
+	 * @param int Relative id of the RTE editing area in the form
+	 * @return string JS configuration for registered plugins, in this case, JS configuration of block elements
 	 */
 	public function buildJavascriptConfiguration($RTEcounter) {
-		global $TSFE, $LANG;
 		$registerRTEinJavascriptString = '';
 		if (in_array('formatblock', $this->toolbar)) {
 			if (!is_array($this->thisConfig['buttons.']) || !is_array($this->thisConfig['buttons.']['formatblock.'])) {
@@ -155,9 +174,9 @@ class BlockElements extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 			}
 			foreach ($blockElementsOrder as $item) {
 				if ($this->htmlAreaRTE->is_FE()) {
-					$blockElementsOptions[$item] = $TSFE->getLLL($this->defaultBlockElements[$item], $this->LOCAL_LANG);
+					$blockElementsOptions[$item] = $GLOBALS['TSFE']->getLLL($this->defaultBlockElements[$item], $this->LOCAL_LANG);
 				} else {
-					$blockElementsOptions[$item] = $LANG->getLL($this->defaultBlockElements[$item]);
+					$blockElementsOptions[$item] = $GLOBALS['LANG']->getLL($this->defaultBlockElements[$item]);
 				}
 				// Getting custom labels
 				if (is_array($labels[$item . '.']) && $labels[$item . '.']['label']) {

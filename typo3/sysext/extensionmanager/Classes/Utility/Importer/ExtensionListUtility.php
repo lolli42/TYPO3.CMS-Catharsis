@@ -38,7 +38,7 @@ class ExtensionListUtility implements \SplObserver {
 	/**
 	 * Keeps number of processed version records.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $sumRecords = 0;
 
@@ -89,7 +89,7 @@ class ExtensionListUtility implements \SplObserver {
 	 *
 	 * The UID is necessary for inserting records.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $repositoryUid = 1;
 
@@ -134,8 +134,8 @@ class ExtensionListUtility implements \SplObserver {
 	 * Method initializes parsing of extension.xml.gz file.
 	 *
 	 * @param string $localExtensionListFile absolute path to extension list xml.gz
-	 * @param integer $repositoryUid UID of repository when inserting records into DB
-	 * @return integer total number of imported extension versions
+	 * @param int $repositoryUid UID of repository when inserting records into DB
+	 * @return int total number of imported extension versions
 	 */
 	public function import($localExtensionListFile, $repositoryUid = NULL) {
 		if (!is_null($repositoryUid) && is_int($repositoryUid)) {

@@ -23,7 +23,7 @@ abstract class AbstractHandler {
 	/**
 	 * Gets the current workspace ID.
 	 *
-	 * @return integer The current workspace ID
+	 * @return int The current workspace ID
 	 */
 	protected function getCurrentWorkspace() {
 		return $this->getWorkspaceService()->getCurrentWorkspace();
@@ -33,8 +33,8 @@ abstract class AbstractHandler {
 	 * Gets an error response to be shown in the grid component.
 	 *
 	 * @param string $errorLabel Name of the label in the locallang.xlf file
-	 * @param integer $errorCode The error code to be used
-	 * @param boolean $successFlagValue Value of the success flag to be delivered back (might be FALSE in most cases)
+	 * @param int $errorCode The error code to be used
+	 * @param bool $successFlagValue Value of the success flag to be delivered back (might be FALSE in most cases)
 	 * @return array
 	 */
 	protected function getErrorResponse($errorLabel, $errorCode = 0, $successFlagValue = FALSE) {
@@ -63,7 +63,7 @@ abstract class AbstractHandler {
 	 * interpreted as integer value.
 	 *
 	 * @param stdClass $parameters
-	 * @return integer|NULL
+	 * @return int|NULL
 	 */
 	protected function validateLanguageParameter(\stdClass $parameters) {
 		$language = NULL;
@@ -85,7 +85,7 @@ abstract class AbstractHandler {
 	protected function getAffectedElements(\stdClass $parameters) {
 		$affectedElements = array();
 		if ($parameters->type === 'selection') {
-			foreach ((array) $parameters->selection as $element) {
+			foreach ((array)$parameters->selection as $element) {
 				$affectedElements[] = \TYPO3\CMS\Workspaces\Domain\Model\CombinedRecord::create($element->table, $element->liveId, $element->versionId);
 			}
 		} elseif ($parameters->type === 'all') {

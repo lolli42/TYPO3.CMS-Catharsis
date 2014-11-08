@@ -47,7 +47,7 @@ class Request extends \TYPO3\CMS\Extbase\Mvc\Request {
 	protected $baseUri;
 
 	/**
-	 * @var boolean TRUE if the current request is cached, false otherwise.
+	 * @var bool TRUE if the current request is cached, false otherwise.
 	 */
 	protected $isCached = FALSE;
 
@@ -134,17 +134,17 @@ class Request extends \TYPO3\CMS\Extbase\Mvc\Request {
 	/**
 	 * Set if the current request is cached.
 	 *
-	 * @param boolean $isCached
+	 * @param bool $isCached
 	 */
 	public function setIsCached($isCached) {
-		$this->isCached = (boolean) $isCached;
+		$this->isCached = (bool)$isCached;
 	}
 
 	/**
 	 * Return whether the current request is a cached request or not.
 	 *
 	 * @api (v4 only)
-	 * @return boolean the caching status.
+	 * @return bool the caching status.
 	 */
 	public function isCached() {
 		return $this->isCached;

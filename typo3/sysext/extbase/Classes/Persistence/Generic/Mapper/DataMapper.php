@@ -258,7 +258,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Creates a DateTime from an unix timestamp or date/datetime value.
 	 * If the input is empty, NULL is returned.
 	 *
-	 * @param integer|string $value Unix timestamp or date/datetime value
+	 * @param int|string $value Unix timestamp or date/datetime value
 	 * @param NULL|string $storageFormat Storage format for native date/datetime fields
 	 * @return \DateTime
 	 */
@@ -283,7 +283,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param DomainObjectInterface $parentObject The object instance this proxy is part of
 	 * @param string $propertyName The name of the proxied property in it's parent
 	 * @param mixed $fieldValue The raw field value.
-	 * @param boolean $enableLazyLoading A flag indication if the related objects should be lazy loaded
+	 * @param bool $enableLazyLoading A flag indication if the related objects should be lazy loaded
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage|Persistence\QueryResultInterface The result
 	 */
 	public function fetchRelated(DomainObjectInterface $parentObject, $propertyName, $fieldValue = '', $enableLazyLoading = TRUE) {
@@ -455,7 +455,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param DomainObjectInterface $parentObject
 	 * @param string $propertyName
-	 * @return boolean TRUE if the property is mapped
+	 * @return bool TRUE if the property is mapped
 	 */
 	protected function propertyMapsByForeignKey(DomainObjectInterface $parentObject, $propertyName) {
 		$columnMap = $this->getDataMap(get_class($parentObject))->getColumnMap($propertyName);
@@ -509,7 +509,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param DomainObjectInterface $parentObject The object instance this proxy is part of
 	 * @param string $propertyName The name of the proxied property in it's parent
 	 * @param mixed $fieldValue The raw field value.
-	 * @return integer
+	 * @return int
 	 */
 	public function countRelated(DomainObjectInterface $parentObject, $propertyName, $fieldValue = '') {
 		$query = $this->getPreparedQuery($parentObject, $propertyName, $fieldValue);
@@ -522,7 +522,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $className The property name
 	 * @param string $propertyName The property name
-	 * @return boolean TRUE if the property is persistable (configured in $TCA)
+	 * @return bool TRUE if the property is persistable (configured in $TCA)
 	 */
 	public function isPersistableProperty($className, $propertyName) {
 		$dataMap = $this->getDataMap($className);

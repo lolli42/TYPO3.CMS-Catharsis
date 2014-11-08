@@ -24,7 +24,7 @@ class AlphanumericValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 	/**
 	 * Allow white space in the submitted value
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $allowWhiteSpace;
 
@@ -41,7 +41,7 @@ class AlphanumericValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see \TYPO3\CMS\Form\Validation\ValidatorInterface::isValid()
 	 */
 	public function isValid() {
@@ -62,14 +62,14 @@ class AlphanumericValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 	/**
 	 * Set TRUE if white space is allowed in submitted value
 	 *
-	 * @param boolean $allowWhiteSpace TRUE if white space allowed
+	 * @param bool $allowWhiteSpace TRUE if white space allowed
 	 * @return object Rule object
 	 */
 	public function setAllowWhiteSpace($allowWhiteSpace) {
 		if ($allowWhiteSpace === NULL) {
 			$this->allowWhiteSpace = FALSE;
 		} else {
-			$this->allowWhiteSpace = (bool) $allowWhiteSpace;
+			$this->allowWhiteSpace = (bool)$allowWhiteSpace;
 		}
 		return $this;
 	}

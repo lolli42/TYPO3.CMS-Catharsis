@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Interface for collection class being sortable
  *
@@ -24,8 +25,8 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * @author Steffen Ritter <typo3steffen-ritter.net>
  */
-interface SortableCollectionInterface
-{
+interface SortableCollectionInterface {
+
 	/**
 	 * Sorts collection via given callBackFunction
 	 *
@@ -44,8 +45,8 @@ interface SortableCollectionInterface
 	 * The item at $currentPosition will be moved to
 	 * $newPosition. Omiting $newPosition will move to top.
 	 *
-	 * @param integer $currentPosition
-	 * @param integer $newPosition
+	 * @param int $currentPosition
+	 * @param int $newPosition
 	 * @return void
 	 */
 	public function moveItemAt($currentPosition, $newPosition = 0);

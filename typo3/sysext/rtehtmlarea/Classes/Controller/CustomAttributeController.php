@@ -54,9 +54,9 @@ class CustomAttributeController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugi
 	/**
 	 * Rendering the "data-htmlarea-clickenlarge" custom attribute, called from TypoScript
 	 *
-	 * @param 	string		Content input. Not used, ignore.
-	 * @param 	array		TypoScript configuration
-	 * @return 	string		HTML output.
+	 * @param string Content input. Not used, ignore.
+	 * @param array TypoScript configuration
+	 * @return string HTML output.
 	 * @access private
 	 */
 	public function render_clickenlarge($content, $conf) {
@@ -66,7 +66,6 @@ class CustomAttributeController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugi
 			$clickenlarge = isset($this->cObj->parameters['clickenlarge']) ? $this->cObj->parameters['clickenlarge'] : 0;
 		}
 		$fileFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
-		$fileTable = $this->cObj->parameters['data-htmlarea-file-table'];
 		$fileUid = $this->cObj->parameters['data-htmlarea-file-uid'];
 		if ($fileUid) {
 			$fileObject = $fileFactory->getFileObject($fileUid);

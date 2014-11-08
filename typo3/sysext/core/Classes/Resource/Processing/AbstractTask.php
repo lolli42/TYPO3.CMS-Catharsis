@@ -57,12 +57,12 @@ abstract class AbstractTask implements TaskInterface {
 	protected $name;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $executed = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $successful;
 
@@ -179,14 +179,14 @@ abstract class AbstractTask implements TaskInterface {
 	 * are given, within the boundaries and don't conflict with each other.
 	 *
 	 * @param array $configuration
-	 * @return boolean
+	 * @return bool
 	 */
 	abstract protected function isValidConfiguration(array $configuration);
 
 	/**
 	 * Returns TRUE if this task has been executed, no matter if the execution was successful.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isExecuted() {
 		return $this->executed;
@@ -196,7 +196,7 @@ abstract class AbstractTask implements TaskInterface {
 	 * Set this task executed. This is used by the Processors in order to transfer the state of this task to
 	 * the file processing service.
 	 *
-	 * @param boolean $successful Set this to FALSE if executing the task failed
+	 * @param bool $successful Set this to FALSE if executing the task failed
 	 * @return void
 	 */
 	public function setExecuted($successful) {
@@ -207,7 +207,7 @@ abstract class AbstractTask implements TaskInterface {
 	/**
 	 * Returns TRUE if this task has been successfully executed. Only call this method if the task has been processed
 	 * at all.
-	 * @return boolean
+	 * @return bool
 	 * @throws \LogicException If the task has not been executed already
 	 */
 	public function isSuccessful() {

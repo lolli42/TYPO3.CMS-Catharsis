@@ -40,7 +40,7 @@ class DependencyResolver {
 	protected $eventCallbacks = array();
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $outerMostParentsRequireReferences = FALSE;
 
@@ -55,7 +55,7 @@ class DependencyResolver {
 	 * @param int $workspace
 	 */
 	public function setWorkspace($workspace) {
-		$this->workspace = (int) $workspace;
+		$this->workspace = (int)$workspace;
 	}
 
 	/**
@@ -99,11 +99,11 @@ class DependencyResolver {
 	/**
 	 * Sets the condition that outermost parents required at least one child or parent reference.
 	 *
-	 * @param boolean $outerMostParentsRequireReferences
+	 * @param bool $outerMostParentsRequireReferences
 	 * @return \TYPO3\CMS\Version\Dependency\DependencyResolver
 	 */
 	public function setOuterMostParentsRequireReferences($outerMostParentsRequireReferences) {
-		$this->outerMostParentsRequireReferences = (bool) $outerMostParentsRequireReferences;
+		$this->outerMostParentsRequireReferences = (bool)$outerMostParentsRequireReferences;
 		return $this;
 	}
 
@@ -111,7 +111,7 @@ class DependencyResolver {
 	 * Adds an element to be checked for dependent references.
 	 *
 	 * @param string $table
-	 * @param integer $id
+	 * @param int $id
 	 * @param array $data
 	 * @return \TYPO3\CMS\Version\Dependency\ElementEntity
 	 */

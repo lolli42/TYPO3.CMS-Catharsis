@@ -33,7 +33,7 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 
 	/**
 	 * stores the current page ID
-	 * @var integer
+	 * @var int
 	 */
 	protected $currentPageId;
 
@@ -116,7 +116,7 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 	 * Returns the page uid of the current page.
 	 * If no page is selected, we'll return the uid of the first root page.
 	 *
-	 * @return integer current page id. If no page is selected current root page id is returned
+	 * @return int current page id. If no page is selected current root page id is returned
 	 */
 	protected function getCurrentPageId() {
 		if ($this->currentPageId !== NULL) {
@@ -203,7 +203,7 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 	 * Returns a comma separated list of storagePid that are below a certain storage pid.
 	 *
 	 * @param string $storagePid Storage PID to start at; multiple PIDs possible as comma-separated list
-	 * @param integer $recursionDepth Maximum number of levels to search, 0 to disable recursive lookup
+	 * @param int $recursionDepth Maximum number of levels to search, 0 to disable recursive lookup
 	 * @return string storage PIDs
 	 */
 	protected function getRecursiveStoragePids($storagePid, $recursionDepth = 0) {

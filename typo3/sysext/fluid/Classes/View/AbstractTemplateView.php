@@ -195,7 +195,7 @@ abstract class AbstractTemplateView implements \TYPO3\CMS\Extbase\Mvc\View\ViewI
 	 *
 	 * @param string $sectionName Name of section to render
 	 * @param array $variables The variables to use
-	 * @param boolean $ignoreUnknown Ignore an unknown section and just return an empty string
+	 * @param bool $ignoreUnknown Ignore an unknown section and just return an empty string
 	 * @return string rendered template for the section
 	 * @throws \TYPO3\CMS\Fluid\View\Exception\InvalidSectionException
 	 */
@@ -358,7 +358,7 @@ abstract class AbstractTemplateView implements \TYPO3\CMS\Extbase\Mvc\View\ViewI
 	/**
 	 * Start a new nested rendering. Pushes the given information onto the $renderingStack.
 	 *
-	 * @param integer $type one of the RENDERING_* constants
+	 * @param int $type one of the RENDERING_* constants
 	 * @param \TYPO3\CMS\Fluid\Core\Parser\ParsedTemplateInterface $parsedTemplate
 	 * @param \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext
 	 * @return void
@@ -380,7 +380,7 @@ abstract class AbstractTemplateView implements \TYPO3\CMS\Extbase\Mvc\View\ViewI
 	/**
 	 * Get the current rendering type.
 	 *
-	 * @return integer one of RENDERING_* constants
+	 * @return int one of RENDERING_* constants
 	 */
 	protected function getCurrentRenderingType() {
 		$currentRendering = end($this->renderingStack);
@@ -414,7 +414,7 @@ abstract class AbstractTemplateView implements \TYPO3\CMS\Extbase\Mvc\View\ViewI
 	 * contexts. Override this method if that is not the case.
 	 *
 	 * @param \TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext $controllerContext Controller context which is available inside the view
-	 * @return boolean TRUE if the view has something useful to display, otherwise FALSE
+	 * @return bool TRUE if the view has something useful to display, otherwise FALSE
 	 * @api
 	 */
 	public function canRender(\TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext $controllerContext) {

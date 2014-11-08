@@ -95,8 +95,8 @@ class ReferenceIndex {
 	 * NOTICE: Currently, references updated for a deleted-flagged record will not include those from within flexform fields in some cases where the data structure is defined by another record since the resolving process ignores deleted records! This will also result in bad cleaning up in tcemain I think... Anyway, thats the story of flexforms; as long as the DS can change, lots of references can get lost in no time.
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid UID of record
-	 * @param boolean $testOnly If set, nothing will be written to the index but the result value will still report statistics on what is added, deleted and kept. Can be used for mere analysis.
+	 * @param int $uid UID of record
+	 * @param bool $testOnly If set, nothing will be written to the index but the result value will still report statistics on what is added, deleted and kept. Can be used for mere analysis.
 	 * @return array Array with statistics about how many index records were added, deleted and not altered plus the complete reference set for the record.
 	 */
 	public function updateRefIndexTable($table, $uid, $testOnly = FALSE) {
@@ -156,7 +156,7 @@ class ReferenceIndex {
 	 * If the result is used to update the sys_refindex table then ->WSOL must NOT be TRUE (no workspace overlay anywhere!)
 	 *
 	 * @param string $table Table name from $GLOBALS['TCA']
-	 * @param integer $uid Record UID
+	 * @param int $uid Record UID
 	 * @return array Index Rows
 	 */
 	public function generateRefIndexData($table, $uid) {
@@ -175,7 +175,7 @@ class ReferenceIndex {
 				$this->relations = array();
 				foreach ($dbrels as $fieldname => $dat) {
 					// Based on type,
-					switch ((string) $dat['type']) {
+					switch ((string)$dat['type']) {
 						case 'db':
 							$this->createEntryData_dbRels($table, $uid, $fieldname, '', $deleted, $dat['itemArray']);
 							break;
@@ -227,14 +227,14 @@ class ReferenceIndex {
 	 * The "hash" field is a fingerprint value across this table.
 	 *
 	 * @param string $table Tablename of source record (where reference is located)
-	 * @param integer $uid UID of source record (where reference is located)
+	 * @param int $uid UID of source record (where reference is located)
 	 * @param string $field Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform structure where reference is located in [field]
-	 * @param integer $deleted Whether record is deleted-flagged or not
+	 * @param int $deleted Whether record is deleted-flagged or not
 	 * @param string $ref_table For database references; the tablename the reference points to. Special keyword "_FILE" indicates that "ref_string" is a file reference either absolute or relative to PATH_site. Special keyword "_STRING" indicates some special usage (typ. softreference) where "ref_string" is used for the value.
-	 * @param integer $ref_uid For database references; The UID of the record (zero "ref_table" is "_FILE" or "_STRING")
+	 * @param int $ref_uid For database references; The UID of the record (zero "ref_table" is "_FILE" or "_STRING")
 	 * @param string $ref_string For "_FILE" or "_STRING" references: The filepath (relative to PATH_site or absolute) or other string.
-	 * @param integer $sort The sorting order of references if many (the "group" or "select" TCA types). -1 if no sorting order is specified.
+	 * @param int $sort The sorting order of references if many (the "group" or "select" TCA types). -1 if no sorting order is specified.
 	 * @param string $softref_key If the reference is a soft reference, this is the soft reference parser key. Otherwise empty.
 	 * @param string $softref_id Soft reference ID for key. Might be useful for replace operations.
 	 * @return array Array record to insert into table.
@@ -260,10 +260,10 @@ class ReferenceIndex {
 	 * Enter database references to ->relations array
 	 *
 	 * @param string $table Tablename of source record (where reference is located)
-	 * @param integer $uid UID of source record (where reference is located)
+	 * @param int $uid UID of source record (where reference is located)
 	 * @param string $fieldname Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform structure where reference is located in [field]
-	 * @param integer $deleted Whether record is deleted-flagged or not
+	 * @param int $deleted Whether record is deleted-flagged or not
 	 * @param array $items Data array with databaes relations (table/id)
 	 * @return void
 	 */
@@ -277,12 +277,12 @@ class ReferenceIndex {
 	 * Enter file references to ->relations array
 	 *
 	 * @param string $table Tablename of source record (where reference is located)
-	 * @param integer $uid UID of source record (where reference is located)
+	 * @param int $uid UID of source record (where reference is located)
 	 * @param string $fieldname Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform structure where reference is located in [field]
-	 * @param integer $deleted Whether record is deleted-flagged or not
+	 * @param int $deleted Whether record is deleted-flagged or not
 	 * @param array $items Data array with file relations
-	 * @return 	void
+	 * @return void
 	 */
 	public function createEntryData_fileRels($table, $uid, $fieldname, $flexpointer, $deleted, $items) {
 		foreach ($items as $sort => $i) {
@@ -298,10 +298,10 @@ class ReferenceIndex {
 	 * Enter softref references to ->relations array
 	 *
 	 * @param string $table Tablename of source record (where reference is located)
-	 * @param integer $uid UID of source record (where reference is located)
+	 * @param int $uid UID of source record (where reference is located)
 	 * @param string $fieldname Fieldname of source record (where reference is located)
 	 * @param string $flexpointer Pointer to location inside flexform struc
-	 * @param integer $deleted
+	 * @param int $deleted
 	 * @param array $keys Data array with soft reference keys
 	 * @return void
 	 */
@@ -311,7 +311,7 @@ class ReferenceIndex {
 				if (is_array($elements)) {
 					foreach ($elements as $subKey => $el) {
 						if (is_array($el['subst'])) {
-							switch ((string) $el['subst']['type']) {
+							switch ((string)$el['subst']['type']) {
 								case 'db':
 									list($tableName, $recordId) = explode(':', $el['subst']['recordRef']);
 									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
@@ -514,7 +514,7 @@ class ReferenceIndex {
 	 *
 	 * @param string $value Field value
 	 * @param array $conf Field configuration array of type "TCA/columns
-	 * @param integer $uid Field uid
+	 * @param int $uid Field uid
 	 * @return bool|array If field type is OK it will return an array with the files inside. Else FALSE
 	 */
 	public function getRelations_procFiles($value, $conf, $uid) {
@@ -574,7 +574,7 @@ class ReferenceIndex {
 	 *
 	 * @param string $value Field value
 	 * @param array $conf Field configuration array of type "TCA/columns
-	 * @param integer $uid Field uid
+	 * @param int $uid Field uid
 	 * @param string $table Table name
 	 * @param string $field Field name
 	 * @return array If field type is OK it will return an array with the database relations. Else FALSE
@@ -635,8 +635,8 @@ class ReferenceIndex {
 	 *
 	 * @param string $hash 32-byte hash string identifying the record from sys_refindex which you wish to change the value for
 	 * @param mixed $newValue Value you wish to set for reference. If NULL, the reference is removed (unless a soft-reference in which case it can only be set to a blank string). If you wish to set a database reference, use the format "[table]:[uid]". Any other case, the input value is set as-is
-	 * @param boolean $returnDataArray Return $dataArray only, do not submit it to database.
-	 * @param boolean $bypassWorkspaceAdminCheck If set, it will bypass check for workspace-zero and admin user
+	 * @param bool $returnDataArray Return $dataArray only, do not submit it to database.
+	 * @param bool $bypassWorkspaceAdminCheck If set, it will bypass check for workspace-zero and admin user
 	 * @return string If a return string, that carries an error message, otherwise FALSE (=OK) (except if $returnDataArray is set!)
 	 */
 	public function setReferenceValue($hash, $newValue, $returnDataArray = FALSE, $bypassWorkspaceAdminCheck = FALSE) {
@@ -655,7 +655,7 @@ class ReferenceIndex {
 							// Initialize data array that is to be sent to TCEmain afterwards:
 							$dataArray = array();
 							// Based on type,
-							switch ((string) $dat['type']) {
+							switch ((string)$dat['type']) {
 								case 'db':
 									$error = $this->setReferenceValue_dbRels($refRec, $dat['itemArray'], $newValue, $dataArray);
 									if ($error) {
@@ -855,7 +855,7 @@ class ReferenceIndex {
 	 * Returns TRUE if the TCA/columns field type is a DB reference field
 	 *
 	 * @param array $conf Config array for TCA/columns field
-	 * @return boolean TRUE if DB reference field (group/db or select with foreign-table)
+	 * @return bool TRUE if DB reference field (group/db or select with foreign-table)
 	 */
 	public function isReferenceField($conf) {
 		return (
@@ -893,8 +893,8 @@ class ReferenceIndex {
 	/**
 	 * Updating Index (External API)
 	 *
-	 * @param boolean $testOnly If set, only a test
-	 * @param boolean $cli_echo If set, output CLI status
+	 * @param bool $testOnly If set, only a test
+	 * @param bool $cli_echo If set, output CLI status
 	 * @return array Header and body status content
 	 */
 	public function updateIndex($testOnly, $cli_echo = FALSE) {

@@ -27,7 +27,7 @@ class MbstringPreset extends Configuration\AbstractPreset {
 	protected $name = 'Mbstring';
 
 	/**
-	 * @var integer Priority of preset
+	 * @var int Priority of preset
 	 */
 	protected $priority = 90;
 
@@ -42,7 +42,7 @@ class MbstringPreset extends Configuration\AbstractPreset {
 	/**
 	 * Check if mbstring PHP module is loaded
 	 *
-	 * @return boolean TRUE if mbstring PHP module is loaded
+	 * @return bool TRUE if mbstring PHP module is loaded
 	 */
 	public function isAvailable() {
 		$result = FALSE;

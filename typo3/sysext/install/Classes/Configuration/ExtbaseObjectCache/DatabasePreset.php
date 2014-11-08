@@ -27,7 +27,7 @@ class DatabasePreset extends Configuration\AbstractPreset {
 	protected $name = 'Database';
 
 	/**
-	 * @var integer Priority of preset
+	 * @var int Priority of preset
 	 */
 	protected $priority = 50;
 
@@ -48,7 +48,7 @@ class DatabasePreset extends Configuration\AbstractPreset {
 	/**
 	 * Database preset is always available
 	 *
-	 * @return boolean TRUE
+	 * @return bool TRUE
 	 */
 	public function isAvailable() {
 		return TRUE;

@@ -57,7 +57,7 @@ class InaccessibleFolder extends Folder {
 	 * WARNING: Access to the folder may be restricted by further means, e.g. some
 	 * web-based authentication. You have to take care of this yourself.
 	 *
-	 * @param boolean $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
+	 * @param bool $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
 	 * @return string
 	 */
 	public function getPublicUrl($relativeToCurrentScript = FALSE) {
@@ -70,10 +70,10 @@ class InaccessibleFolder extends Folder {
 	 *
 	 * For performance reasons the returned items can also be limited to a given range
 	 *
-	 * @param integer $start The item to start at
-	 * @param integer $numberOfItems The number of items to return
-	 * @param integer $filterMode The filter mode to use for the file list.
-	 * @param boolean $recursive
+	 * @param int $start The item to start at
+	 * @param int $numberOfItems The number of items to return
+	 * @param int $filterMode The filter mode to use for the file list.
+	 * @param bool $recursive
 	 * @return \TYPO3\CMS\Core\Resource\File[]
 	 */
 	public function getFiles($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, $recursive = FALSE) {
@@ -85,9 +85,9 @@ class InaccessibleFolder extends Folder {
 	 * the given pattern
 	 *
 	 * @param array $filterMethods
-	 * @param boolean $recursive
+	 * @param bool $recursive
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getFileCount(array $filterMethods = array(), $recursive = FALSE) {
 		$this->throwInaccessibleException();
@@ -108,9 +108,9 @@ class InaccessibleFolder extends Folder {
 	/**
 	 * Returns a list of subfolders
 	 *
-	 * @param integer $start The item to start at
-	 * @param integer $numberOfItems The number of items to return
-	 * @param integer $filterMode The filter mode to use for the file list.
+	 * @param int $start The item to start at
+	 * @param int $numberOfItems The number of items to return
+	 * @param int $filterMode The filter mode to use for the file list.
 	 * @return Folder[]
 	 */
 	public function getSubfolders($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS) {
@@ -154,8 +154,8 @@ class InaccessibleFolder extends Folder {
 	/**
 	 * Deletes this folder from its storage. This also means that this object becomes useless.
 	 *
-	 * @param boolean $deleteRecursively
-	 * @return boolean TRUE if deletion succeeded
+	 * @param bool $deleteRecursively
+	 * @return bool TRUE if deletion succeeded
 	 */
 	public function delete($deleteRecursively = TRUE) {
 		$this->throwInaccessibleException();
@@ -209,7 +209,7 @@ class InaccessibleFolder extends Folder {
 	 * Checks if a file exists in this folder
 	 *
 	 * @param string $name
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasFile($name) {
 		$this->throwInaccessibleException();
@@ -219,7 +219,7 @@ class InaccessibleFolder extends Folder {
 	 * Checks if a folder exists in this folder.
 	 *
 	 * @param string $name
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasFolder($name) {
 		$this->throwInaccessibleException();

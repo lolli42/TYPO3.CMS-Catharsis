@@ -46,19 +46,19 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	public $extKey = 'felogin';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	public $pi_checkCHash = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	public $pi_USER_INT_obj = TRUE;
 
 	/**
 	 * Is user logged in?
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $userIsLoggedIn;
 
@@ -86,7 +86,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	/**
 	 * Flag for disable the redirect
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $noRedirect = FALSE;
 
@@ -816,7 +816,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 *
 	 * @param string $label Linktext
 	 * @param array $piVars Link vars
-	 * @param boolean $returnUrl TRUE: returns only url  FALSE (default) returns the link)
+	 * @param bool $returnUrl TRUE: returns only url  FALSE (default) returns the link)
 	 * @return string Link or url
 	 */
 	protected function getPageLink($label, $piVars, $returnUrl = FALSE) {
@@ -874,7 +874,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * Is used by forgot password - function with md5 option.
 	 *
 	 * @author Bernhard Kraft
-	 * @param integer $len Length of new password
+	 * @param int $len Length of new password
 	 * @return string New password
 	 */
 	protected function generatePassword($len) {
@@ -894,7 +894,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * Returns the header / message value from flexform if present, else from locallang.xlf
 	 *
 	 * @param string $label label name
-	 * @param string $stdWrapArray TS stdWrap array
+	 * @param array $stdWrapArray TS stdWrap array
 	 * @return string label text
 	 */
 	protected function getDisplayText($label, $stdWrapArray = array()) {
@@ -953,7 +953,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * and belongs to the current TYPO3 installation.
 	 *
 	 * @param string $url URL to be checked
-	 * @return boolean Whether the URL belongs to the current TYPO3 installation
+	 * @return bool Whether the URL belongs to the current TYPO3 installation
 	 */
 	protected function isInCurrentDomain($url) {
 		return GeneralUtility::isOnCurrentHost($url) && GeneralUtility::isFirstPartOfStr($url, GeneralUtility::getIndpEnv('TYPO3_SITE_URL'));
@@ -964,7 +964,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * in the sys_domain database table.
 	 *
 	 * @param string $url Absolute URL which needs to be checked
-	 * @return boolean Whether the URL is considered to be local
+	 * @return bool Whether the URL is considered to be local
 	 */
 	protected function isInLocalDomain($url) {
 		$result = FALSE;
@@ -995,7 +995,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 * current TYPO3 installation.
 	 *
 	 * @param string $url URL which needs to be checked
-	 * @return boolean Whether the URL is considered to be relative
+	 * @return bool Whether the URL is considered to be relative
 	 */
 	protected function isRelativeUrl($url) {
 		$parsedUrl = @parse_url($url);

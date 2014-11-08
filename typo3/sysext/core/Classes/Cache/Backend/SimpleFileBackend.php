@@ -53,7 +53,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	protected $cacheEntryIdentifiers = array();
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $frozen = FALSE;
 
@@ -61,7 +61,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * If the extension "igbinary" is installed, use it for increased performance.
 	 * Caching the result of extension_loaded() here is faster than calling extension_loaded() multiple times.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $useIgBinary = FALSE;
 
@@ -217,7 +217,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * @param string $entryIdentifier An identifier for this specific cache entry
 	 * @param string $data The data to be stored
 	 * @param array $tags Tags to associate with this cache entry
-	 * @param integer $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited lifetime.
+	 * @param int $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited lifetime.
 	 * @return void
 	 * @throws \TYPO3\CMS\Core\Cache\Exception if the directory does not exist or is not writable or exceeds the maximum allowed path length, or if no cache frontend has been set.
 	 * @throws \TYPO3\CMS\Core\Cache\Exception\InvalidDataException if the data to bes stored is not a string.
@@ -270,7 +270,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * Checks if a cache entry with the specified identifier exists.
 	 *
 	 * @param string $entryIdentifier
-	 * @return boolean TRUE if such an entry exists, FALSE if not
+	 * @return bool TRUE if such an entry exists, FALSE if not
 	 * @throws \InvalidArgumentException
 	 * @api
 	 */
@@ -286,7 +286,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * Usually this only affects one entry.
 	 *
 	 * @param string $entryIdentifier Specifies the cache entry to remove
-	 * @return boolean TRUE if (at least) an entry could be removed or FALSE if no entry was found
+	 * @return bool TRUE if (at least) an entry could be removed or FALSE if no entry was found
 	 * @throws \InvalidArgumentException
 	 * @api
 	 */
@@ -320,7 +320,7 @@ class SimpleFileBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend im
 	 * lifetime has exceeded.
 	 *
 	 * @param string $cacheEntryPathAndFilename
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	protected function isCacheFileExpired($cacheEntryPathAndFilename) {

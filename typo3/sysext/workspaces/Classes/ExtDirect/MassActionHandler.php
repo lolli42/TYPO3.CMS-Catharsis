@@ -120,10 +120,10 @@ class MassActionHandler extends AbstractHandler {
 	/**
 	 * Initializes the command map to be used for publishing.
 	 *
-	 * @param integer $workspace
-	 * @param boolean $swap
-	 * @param integer $language
-	 * @return integer
+	 * @param int $workspace
+	 * @param bool $swap
+	 * @param int $language
+	 * @return int
 	 */
 	protected function initPublishData($workspace, $swap, $language = NULL) {
 		// workspace might be -98 a.k.a "All Workspaces but that's save here
@@ -143,9 +143,9 @@ class MassActionHandler extends AbstractHandler {
 	/**
 	 * Initializes the command map to be used for flushing.
 	 *
-	 * @param integer $workspace
-	 * @param integer $language
-	 * @return integer
+	 * @param int $workspace
+	 * @param int $language
+	 * @return int
 	 */
 	protected function initFlushData($workspace, $language = NULL) {
 		// workspace might be -98 a.k.a "All Workspaces but that's save here
@@ -165,8 +165,8 @@ class MassActionHandler extends AbstractHandler {
 	/**
 	 * Processes the data.
 	 *
-	 * @param integer $workspace
-	 * @return integer
+	 * @param int $workspace
+	 * @return int
 	 */
 	protected function processData($workspace) {
 		$processData = $GLOBALS['BE_USER']->getSessionData('workspaceMassAction');

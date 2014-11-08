@@ -64,7 +64,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 		);
 
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['BackendLayoutDataProvider'])) {
-			$dataProviders = (array) $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['BackendLayoutDataProvider'];
+			$dataProviders = (array)$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['BackendLayoutDataProvider'];
 			foreach ($dataProviders as $identifier => $className) {
 				$dataProviderCollection->add($identifier, $className);
 			}
@@ -96,7 +96,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function addBackendLayoutItems(array $parameters) {
 		$pageId = $this->determinePageId($parameters['table'], $parameters['row']);
-		$pageTsConfig = (array) BackendUtility::getPagesTSconfig($pageId);
+		$pageTsConfig = (array)BackendUtility::getPagesTSconfig($pageId);
 		$identifiersToBeExcluded = $this->getIdentifiersToBeExcluded($pageTsConfig);
 
 		$dataProviderContext = $this->createDataProviderContext()
@@ -164,13 +164,13 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Returns the backend layout which should be used for this page.
 	 *
-	 * @param integer $pageId
-	 * @return boolean|string Identifier of the backend layout to be used, or FALSE if none
+	 * @param int $pageId
+	 * @return bool|string Identifier of the backend layout to be used, or FALSE if none
 	 */
 	public function getSelectedCombinedIdentifier($pageId) {
 		if (!isset($this->selectedCombinedIdentifier[$pageId])) {
 			$page = $this->getPage($pageId);
-			$this->selectedCombinedIdentifier[$pageId] = (string) $page['backend_layout'];
+			$this->selectedCombinedIdentifier[$pageId] = (string)$page['backend_layout'];
 
 			if ($this->selectedCombinedIdentifier[$pageId] === '-1') {
 				// If it is set to "none" - don't use any
@@ -183,7 +183,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 				array_shift($rootLine);
 				array_pop($rootLine);
 				foreach ($rootLine as $rootLinePage) {
-					$this->selectedCombinedIdentifier[$pageId] = (string) $rootLinePage['backend_layout_next_level'];
+					$this->selectedCombinedIdentifier[$pageId] = (string)$rootLinePage['backend_layout_next_level'];
 					if ($this->selectedCombinedIdentifier[$pageId] === '-1') {
 						// If layout for "next level" is set to "none" - don't use any and stop searching
 						$this->selectedCombinedIdentifier[$pageId] = FALSE;
@@ -238,7 +238,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Adds items to a colpos list
 	 *
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @param array $items
 	 * @return array
 	 */
@@ -253,7 +253,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets the list of available columns for a given page id
 	 *
-	 * @param integer $id
+	 * @param int $id
 	 * @return array $tcaItems
 	 */
 	public function getColPosListItemsParsed($id) {
@@ -279,7 +279,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets the selected backend layout
 	 *
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @return array|NULL $backendLayout
 	 */
 	public function getSelectedBackendLayout($pageId) {
@@ -376,7 +376,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets a page record.
 	 *
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @return NULL|array
 	 */
 	protected function getPage($pageId) {
@@ -392,7 +392,7 @@ class BackendLayoutView implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets the page root-line.
 	 *
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @return array
 	 */
 	protected function getRootLine($pageId) {

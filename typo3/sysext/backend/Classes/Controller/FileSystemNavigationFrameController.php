@@ -76,7 +76,7 @@ class FileSystemNavigationFrameController {
 	/**
 	 * Initialiation of the script class
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	protected function init() {
 		// Setting backPath
@@ -85,8 +85,8 @@ class FileSystemNavigationFrameController {
 		$this->currentSubScript = GeneralUtility::_GP('currentSubScript');
 		$this->cMR = GeneralUtility::_GP('cMR');
 
-		$scopeData = (string) GeneralUtility::_GP('scopeData');
-		$scopeHash = (string) GeneralUtility::_GP('scopeHash');
+		$scopeData = (string)GeneralUtility::_GP('scopeData');
+		$scopeHash = (string)GeneralUtility::_GP('scopeHash');
 
 		if (!empty($scopeData) && GeneralUtility::hmac($scopeData) === $scopeHash) {
 			$this->scopeData = unserialize($scopeData);

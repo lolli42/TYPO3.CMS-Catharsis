@@ -106,7 +106,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		// Input data grabbed:
 		$inData = GeneralUtility::_GP('tx_impexp');
 		$this->checkUpload();
-		switch ((string) $inData['action']) {
+		switch ((string)$inData['action']) {
 			case 'export':
 				// Finally: If upload went well, set the new file as the thumbnail in the $inData array:
 				if (!empty($this->uploadedFiles[0])) {
@@ -161,7 +161,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		}
 		// Input data grabbed:
 		$inData = GeneralUtility::_GP('tx_impexp');
-		if ((string) $inData['action'] == 'import') {
+		if ((string)$inData['action'] == 'import') {
 			if ($this->id && is_array($this->pageinfo) || $this->getBackendUser()->user['admin'] && !$this->id) {
 				if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
 					// View
@@ -214,9 +214,9 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$this->export->init(0, 'export');
 		$this->export->setCharset($this->lang->charSet);
 		$this->export->maxFileSize = $inData['maxFileSize'] * 1024;
-		$this->export->excludeMap = (array) $inData['exclude'];
-		$this->export->softrefCfg = (array) $inData['softrefCfg'];
-		$this->export->extensionDependencies = (array) $inData['extension_dep'];
+		$this->export->excludeMap = (array)$inData['exclude'];
+		$this->export->softrefCfg = (array)$inData['softrefCfg'];
+		$this->export->extensionDependencies = (array)$inData['extension_dep'];
 		$this->export->showStaticRelations = $inData['showStaticRelations'];
 		$this->export->includeExtFileResources = !$inData['excludeHTMLfileResources'];
 		// Static tables:
@@ -339,7 +339,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
 		// If the download button is clicked, return file
 		if ($inData['download_export'] || $inData['save_export']) {
-			switch ((string) $inData['filetype']) {
+			switch ((string)$inData['filetype']) {
 				case 'xml':
 					$out = $this->export->compileMemoryToFileContent('xml');
 					$fExt = '.xml';
@@ -374,7 +374,6 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					$temporaryFileName = GeneralUtility::tempnam('export');
 					file_put_contents($temporaryFileName, $out);
 					$file = $saveFolder->addFile($temporaryFileName, $dlFile, 'replace');
-					$file = $this->getIndexerService()->indexFile($file);
 					if ($saveFilesOutsideExportFile) {
 						$filesFolderName = $dlFile . '.files';
 						$filesFolder = $saveFolder->createFolder($filesFolderName);
@@ -451,9 +450,9 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	/**
 	 * Adds records to the export object for a specific page id.
 	 *
-	 * @param integer $k Page id for which to select records to add
+	 * @param int $k Page id for which to select records to add
 	 * @param array $tables Array of table names to select from
-	 * @param integer $maxNumber Max amount of records to select
+	 * @param int $maxNumber Max amount of records to select
 	 * @return void
 	 */
 	public function addRecordsForPid($k, $tables, $maxNumber) {
@@ -478,8 +477,8 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * Selects records from table / pid
 	 *
 	 * @param string $table Table to select from
-	 * @param integer $pid Page ID to select from
-	 * @param integer $limit Max number of records to select
+	 * @param int $pid Page ID to select from
+	 * @param int $limit Max number of records to select
 	 * @return \mysqli_result|object Database resource
 	 */
 	public function exec_listQueryPid($table, $pid, $limit) {
@@ -1214,11 +1213,11 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					if (isset($presetData['merge'])) {
 						// Merge records in:
 						if (is_array($inData_temp['record'])) {
-							$inData['record'] = array_merge((array) $inData['record'], $inData_temp['record']);
+							$inData['record'] = array_merge((array)$inData['record'], $inData_temp['record']);
 						}
 						// Merge lists in:
 						if (is_array($inData_temp['list'])) {
-							$inData['list'] = array_merge((array) $inData['list'], $inData_temp['list']);
+							$inData['list'] = array_merge((array)$inData['list'], $inData_temp['list']);
 						}
 					} else {
 						$msg = 'Preset #' . $preset['uid'] . ' loaded!';
@@ -1242,7 +1241,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	/**
 	 * Get single preset record
 	 *
-	 * @param integer $uid Preset record
+	 * @param int $uid Preset record
 	 * @return array Preset record, if any (otherwise FALSE)
 	 */
 	public function getPreset($uid) {
@@ -1252,30 +1251,6 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	/****************************
 	 * Helper functions
 	 ****************************/
-
-	/**
-	 * Gets the default folder path for temporary uploads,
-	 * e.g. 'fileadmin/user_uploads/_temp_/importexport/'
-	 *
-	 * @return boolean|string Path or FALSE otherwise
-	 * @deprecated since TYPO3 CMS 6.2, will be removed two versions later - use getDefaultImportExportFolder() instead
-	 */
-	public function userTempFolder() {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getDefaultImportExportFolder()->getPublicUrl();
-	}
-
-	/**
-	 * Gets the default folder path for temporary uploads,
-	 * e.g. 'fileadmin/user_uploads/_temp_/importexport/'
-	 *
-	 * @return string Absolute path to folder where export files can be saved.
-	 * @deprecated since TYPO3 CMS 6.2, will be removed two versions later - use getDefaultImportExportFolder() instead
-	 */
-	public function userSaveFolder() {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getDefaultImportExportFolder()->getPublicUrl();
-	}
 
 	/**
 	 * Returns a \TYPO3\CMS\Core\Resource\Folder object for saving export files
@@ -1528,17 +1503,5 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
 		return $file;
 	}
-
-	/**
-	 * Internal function to retrieve the indexer service,
-	 * if it does not exist, an instance will be created
-	 *
-	 * @throws \InvalidArgumentException
-	 * @return \TYPO3\CMS\Core\Resource\Service\IndexerService
-	 */
-	protected function getIndexerService() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Service\\IndexerService');
-	}
-
 
 }

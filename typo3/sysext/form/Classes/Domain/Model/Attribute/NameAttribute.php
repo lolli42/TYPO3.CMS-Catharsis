@@ -31,7 +31,7 @@ class NameAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\AbstractAttri
 	/**
 	 * TRUE if value is expected without prefix
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $returnValueWithoutPrefix = FALSE;
 
@@ -41,7 +41,7 @@ class NameAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\AbstractAttri
 	 * @return string
 	 */
 	public function getValueWithoutPrefix() {
-		$value = (string) $this->value;
+		$value = (string)$this->value;
 		// Change spaces into hyphens
 		$value = preg_replace('/\\s/', '-', $value);
 		// Remove non-word characters
@@ -85,7 +85,7 @@ class NameAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\AbstractAttri
 	 * @return \TYPO3\CMS\Form\Domain\Model\Attribute\NameAttribute
 	 */
 	public function setAddition($addition) {
-		$this->addition = (string) $addition;
+		$this->addition = (string)$addition;
 		return $this;
 	}
 
@@ -93,11 +93,11 @@ class NameAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\AbstractAttri
 	 * TRUE if element is not allowed to use a prefix
 	 * This is the case with the <form> tag
 	 *
-	 * @param boolean $parameter
+	 * @param bool $parameter
 	 * @return void
 	 */
 	public function setReturnValueWithoutPrefix($parameter) {
-		$this->returnValueWithoutPrefix = (bool) $parameter;
+		$this->returnValueWithoutPrefix = (bool)$parameter;
 	}
 
 }

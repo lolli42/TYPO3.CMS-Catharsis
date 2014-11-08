@@ -75,7 +75,7 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 	 *              + position: insert position of the categories field
 	 *              + label: backend label of the categories field
 	 *              + fieldConfiguration: TCA field config array to override defaults
-	 * @return boolean
+	 * @return bool
 	 * @throws \InvalidArgumentException
 	 * @throws \RuntimeException
 	 */
@@ -104,17 +104,6 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 
 		return $didRegister;
-	}
-
-	/**
-	 * Gets the registered category configurations.
-	 *
-	 * @deprecated since 6.2 will be removed two versions later - Use ->isRegistered to get information about registered category fields.
-	 * @return array
-	 */
-	public function get() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
-		return $this->registry;
 	}
 
 	/**
@@ -172,7 +161,7 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $tableName Name of the table to be looked up
 	 * @param string $fieldName Name of the field to be looked up
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isRegistered($tableName, $fieldName = 'categories') {
 		return isset($this->registry[$tableName][$fieldName]);
@@ -209,13 +198,6 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 		}
 		return $sql;
-	}
-
-	/**
-	 * @deprecated Since 6.2.2. This method was never intended to be called by extensions. Is is now deprecated and will be removed without substitution after two versions.
-	 */
-	public function applyTca() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**

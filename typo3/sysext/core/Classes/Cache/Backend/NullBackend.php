@@ -30,7 +30,7 @@ class NullBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implemen
 	 * @param string $entryIdentifier ignored
 	 * @param string $data ignored
 	 * @param array $tags ignored
-	 * @param integer $lifetime ignored
+	 * @param int $lifetime ignored
 	 * @return void
 	 * @api
 	 */
@@ -41,7 +41,7 @@ class NullBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implemen
 	/**
 	 * Acts as if it would enable data compression
 	 *
-	 * @param boolean $compression ignored
+	 * @param bool $compression ignored
 	 * @return void
 	 */
 	public function setCompression($compression) {
@@ -52,7 +52,7 @@ class NullBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implemen
 	 * Returns False
 	 *
 	 * @param string $entryIdentifier ignored
-	 * @return boolean FALSE
+	 * @return bool FALSE
 	 * @api
 	 */
 	public function get($entryIdentifier) {
@@ -63,7 +63,7 @@ class NullBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implemen
 	 * Returns False
 	 *
 	 * @param string $entryIdentifier ignored
-	 * @return boolean FALSE
+	 * @return bool FALSE
 	 * @api
 	 */
 	public function has($entryIdentifier) {
@@ -74,7 +74,7 @@ class NullBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implemen
 	 * Does nothing
 	 *
 	 * @param string $entryIdentifier ignored
-	 * @return boolean FALSE
+	 * @return bool FALSE
 	 * @api
 	 */
 	public function remove($entryIdentifier) {

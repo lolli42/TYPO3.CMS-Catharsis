@@ -414,6 +414,7 @@ class TypoScriptFrontendController {
 	 * applications on a page can set handlers for onload, onmouseover and onmouseup
 	 *
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $JSeventFuncCalls = array(
 		'onmousemove' => array(),
@@ -483,16 +484,6 @@ class TypoScriptFrontendController {
 	 * @var string
 	 */
 	public $absRefPrefix = '';
-
-	/**
-	 * Absolute Reference prefix force flag. This is set, if the type and id is
-	 * retrieve from PATH_INFO and thus we NEED to prefix urls with at least '/'
-	 * UNUSED in Core
-	 *
-	 * @var bool
-	 * @deprecated since 6.2; will be removed two versions later
-	 */
-	public $absRefPrefix_force = FALSE;
 
 	/**
 	 * Factor for form-field widths compensation
@@ -848,7 +839,7 @@ class TypoScriptFrontendController {
 	 *
 	 * @param array $TYPO3_CONF_VARS The global $TYPO3_CONF_VARS array. Will be set internally in ->TYPO3_CONF_VARS
 	 * @param mixed $id The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id')
-	 * @param integer $type The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('type')
+	 * @param int $type The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('type')
 	 * @param bool|string $no_cache The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('no_cache'), evaluated to 1/0
 	 * @param string $cHash The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('cHash')
 	 * @param string $jumpurl The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('jumpurl')
@@ -873,7 +864,7 @@ class TypoScriptFrontendController {
 		}
 		$this->cHash = $cHash;
 		$this->jumpurl = $jumpurl;
-		$this->MP = $this->TYPO3_CONF_VARS['FE']['enable_mount_pids'] ? (string) $MP : '';
+		$this->MP = $this->TYPO3_CONF_VARS['FE']['enable_mount_pids'] ? (string)$MP : '';
 		$this->RDCT = $RDCT;
 		$this->clientInfo = GeneralUtility::clientInfo();
 		$this->uniqueString = md5(microtime());
@@ -1086,7 +1077,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Checking if a user is logged in or a group constellation different from "0,-1"
 	 *
-	 * @return boolean TRUE if either a login user is found (array fe_user->user) OR if the gr_list is set to something else than '0,-1' (could be done even without a user being logged in!)
+	 * @return bool TRUE if either a login user is found (array fe_user->user) OR if the gr_list is set to something else than '0,-1' (could be done even without a user being logged in!)
 	 */
 	public function isUserOrGroupSet() {
 		return is_array($this->fe_user->user) || $this->gr_list !== '0,-1';
@@ -1130,7 +1121,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Checks if a backend user is logged in
 	 *
-	 * @return boolean whether a backend user is logged in
+	 * @return bool whether a backend user is logged in
 	 */
 	public function isBackendUserLoggedIn() {
 		return (bool)$this->beUserLogin;
@@ -1327,7 +1318,7 @@ class TypoScriptFrontendController {
 	 * Checks if the page is hidden in the active workspace.
 	 * If it is hidden, preview flags will be set.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function determineIdIsHiddenPage() {
 		$field = \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->id) ? 'uid' : 'alias';
@@ -1581,18 +1572,19 @@ class TypoScriptFrontendController {
 	/**
 	 * Get page shortcut; Finds the records pointed to by input value $SC (the shortcut value)
 	 *
-	 * @param integer $SC The value of the "shortcut" field from the pages record
-	 * @param integer $mode The shortcut mode: 1 will select first subpage, 2 a random subpage, 3 the parent page; default is the page pointed to by $SC
-	 * @param integer $thisUid The current page UID of the page which is a shortcut
-	 * @param integer $itera Safety feature which makes sure that the function is calling itself recursively max 20 times (since this function can find shortcuts to other shortcuts to other shortcuts...)
+	 * @param int $SC The value of the "shortcut" field from the pages record
+	 * @param int $mode The shortcut mode: 1 will select first subpage, 2 a random subpage, 3 the parent page; default is the page pointed to by $SC
+	 * @param int $thisUid The current page UID of the page which is a shortcut
+	 * @param int $itera Safety feature which makes sure that the function is calling itself recursively max 20 times (since this function can find shortcuts to other shortcuts to other shortcuts...)
 	 * @param array $pageLog An array filled with previous page uids tested by the function - new page uids are evaluated against this to avoid going in circles.
+	 * @param bool $disableGroupCheck If true, the group check is disabled when fetching the target page (needed e.g. for menu generation)
 	 * @throws \RuntimeException
 	 * @throws PageNotFoundException
 	 * @return mixed Returns the page record of the page that the shortcut pointed to.
 	 * @access private
 	 * @see getPageAndRootline()
 	 */
-	public function getPageShortcut($SC, $mode, $thisUid, $itera = 20, $pageLog = array()) {
+	public function getPageShortcut($SC, $mode, $thisUid, $itera = 20, $pageLog = array(), $disableGroupCheck = FALSE) {
 		$idArray = GeneralUtility::intExplode(',', $SC);
 		// Find $page record depending on shortcut mode:
 		switch ($mode) {
@@ -1619,15 +1611,15 @@ class TypoScriptFrontendController {
 				}
 				break;
 			case PageRepository::SHORTCUT_MODE_PARENT_PAGE:
-				$parent = $this->sys_page->getPage($thisUid);
-				$page = $this->sys_page->getPage($parent['pid']);
+				$parent = $this->sys_page->getPage($thisUid, $disableGroupCheck);
+				$page = $this->sys_page->getPage($parent['pid'], $disableGroupCheck);
 				if (count($page) == 0) {
 					$message = 'This page (ID ' . $thisUid . ') is of type "Shortcut" and configured to redirect to its parent page. ' . 'However, the parent page is not accessible.';
 					throw new PageNotFoundException($message, 1301648358);
 				}
 				break;
 			default:
-				$page = $this->sys_page->getPage($idArray[0]);
+				$page = $this->sys_page->getPage($idArray[0], $disableGroupCheck);
 				if (count($page) == 0) {
 					$message = 'This page (ID ' . $thisUid . ') is of type "Shortcut" and configured to redirect to a page, which is not accessible (ID ' . $idArray[0] . ').';
 					throw new PageNotFoundException($message, 1301648404);
@@ -1637,7 +1629,7 @@ class TypoScriptFrontendController {
 		if ($page['doktype'] == PageRepository::DOKTYPE_SHORTCUT) {
 			if (!in_array($page['uid'], $pageLog) && $itera > 0) {
 				$pageLog[] = $page['uid'];
-				$page = $this->getPageShortcut($page['shortcut'], $page['shortcut_mode'], $page['uid'], $itera - 1, $pageLog);
+				$page = $this->getPageShortcut($page['shortcut'], $page['shortcut_mode'], $page['uid'], $itera - 1, $pageLog, $disableGroupCheck);
 			} else {
 				$pageLog[] = $page['uid'];
 				$message = 'Page shortcuts were looping in uids ' . implode(',', $pageLog) . '...!';
@@ -1652,7 +1644,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Checks the current rootline for defined sections.
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @access private
 	 */
 	public function checkRootlineForIncludeSection() {
@@ -1694,8 +1686,8 @@ class TypoScriptFrontendController {
 	 * Takes notice of the ->showHiddenPage flag and uses SIM_ACCESS_TIME for start/endtime evaluation
 	 *
 	 * @param array $row The page record to evaluate (needs fields: hidden, starttime, endtime, fe_group)
-	 * @param boolean $bypassGroupCheck Bypass group-check
-	 * @return boolean TRUE, if record is viewable.
+	 * @param bool $bypassGroupCheck Bypass group-check
+	 * @return bool TRUE, if record is viewable.
 	 * @see TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer::getTreeList(), checkPagerecordForIncludeSection()
 	 */
 	public function checkEnableFields($row, $bypassGroupCheck = FALSE) {
@@ -1719,7 +1711,7 @@ class TypoScriptFrontendController {
 	 *
 	 * @param array $row The page record to evaluate (needs field: fe_group)
 	 * @param mixed $groupList List of group id's (comma list or array). Default is $this->gr_list
-	 * @return boolean TRUE, if group access is granted.
+	 * @return bool TRUE, if group access is granted.
 	 * @access private
 	 */
 	public function checkPageGroupAccess($row, $groupList = NULL) {
@@ -1737,7 +1729,7 @@ class TypoScriptFrontendController {
 	 * Checks page record for include section
 	 *
 	 * @param array $row The page record to evaluate (needs fields: extendToSubpages + hidden, starttime, endtime, fe_group)
-	 * @return boolean Returns TRUE if either extendToSubpages is not checked or if the enableFields does not disable the page record.
+	 * @return bool Returns TRUE if either extendToSubpages is not checked or if the enableFields does not disable the page record.
 	 * @access private
 	 * @see checkEnableFields(), TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer::getTreeList(), checkRootlineForIncludeSection()
 	 */
@@ -1748,7 +1740,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Checks if logins are allowed in the current branch of the page tree. Traverses the full root line and returns TRUE if logins are OK, otherwise FALSE (and then the login user must be unset!)
 	 *
-	 * @return boolean returns TRUE if logins are OK, otherwise FALSE (and then the login user must be unset!)
+	 * @return bool returns TRUE if logins are OK, otherwise FALSE (and then the login user must be unset!)
 	 */
 	public function checkIfLoginAllowedInBranch() {
 		// Initialize:
@@ -1824,7 +1816,7 @@ class TypoScriptFrontendController {
 	 * Gets ->page and ->rootline information based on ->id. ->id may change during this operation.
 	 * If not inside domain, then default to first page in domain.
 	 *
-	 * @param integer $domainStartPage Page uid of the page where the found domain record is (pid of the domain record)
+	 * @param int $domainStartPage Page uid of the page where the found domain record is (pid of the domain record)
 	 * @return void
 	 * @access private
 	 */
@@ -1863,8 +1855,8 @@ class TypoScriptFrontendController {
 	/**
 	 * Looking up a domain record based on HTTP_HOST
 	 *
-	 * @param boolean $recursive If set, it looks "recursively" meaning that a domain like "123.456.typo3.com" would find a domain record like "typo3.com" if "123.456.typo3.com" or "456.typo3.com" did not exist.
-	 * @return integer Returns the page id of the page where the domain record was found.
+	 * @param bool $recursive If set, it looks "recursively" meaning that a domain like "123.456.typo3.com" would find a domain record like "typo3.com" if "123.456.typo3.com" or "456.typo3.com" did not exist.
+	 * @return int Returns the page id of the page where the domain record was found.
 	 * @access private
 	 */
 	public function findDomainRecord($recursive = FALSE) {
@@ -1914,7 +1906,7 @@ class TypoScriptFrontendController {
 	 * Checks whether the pageUnavailableHandler should be used. To be used, pageUnavailable_handling must be set
 	 * and devIPMask must not match the current visitor's IP address.
 	 *
-	 * @return boolean TRUE/FALSE whether the pageUnavailable_handler should be used.
+	 * @return bool TRUE/FALSE whether the pageUnavailable_handler should be used.
 	 */
 	public function checkPageUnavailableHandler() {
 		if (
@@ -2328,7 +2320,7 @@ class TypoScriptFrontendController {
 	 * Will not be called if re-generation of page happens by other reasons (for instance that the page is not in cache yet!)
 	 * Also, a backend user MUST be logged in for the shift-reload to be detected due to DoS-attack-security reasons.
 	 *
-	 * @return boolean If shift-reload in client browser has been clicked, disable getting cached page (and regenerate it).
+	 * @return bool If shift-reload in client browser has been clicked, disable getting cached page (and regenerate it).
 	 */
 	public function headerNoCache() {
 		$disableAcquireCacheData = FALSE;
@@ -2380,15 +2372,15 @@ class TypoScriptFrontendController {
 	 * ->MP (Mount Points) and cHash array
 	 * Used to get and later store the cached data.
 	 *
-	 * @param boolean $createLockHashBase Whether to create the lock hash, which doesn't contain the "this->all" (the template information)
+	 * @param bool $createLockHashBase Whether to create the lock hash, which doesn't contain the "this->all" (the template information)
 	 * @return string the serialized hash base
 	 */
 	protected function createHashBase($createLockHashBase = FALSE) {
 		$hashParameters = array(
 			'id' => (int)$this->id,
 			'type' => (int)$this->type,
-			'gr_list' => (string) $this->gr_list,
-			'MP' => (string) $this->MP,
+			'gr_list' => (string)$this->gr_list,
+			'MP' => (string)$this->MP,
 			'cHash' => $this->cHash_array,
 			'domainStartPage' => $this->domainStartPage
 		);
@@ -2552,7 +2544,7 @@ class TypoScriptFrontendController {
 					if (GeneralUtility::hideIfNotTranslated($this->page['l18n_cfg'])) {
 						$this->pageNotFoundAndExit('Page is not available in the requested language.');
 					} else {
-						switch ((string) $this->sys_language_mode) {
+						switch ((string)$this->sys_language_mode) {
 							case 'strict':
 								$this->pageNotFoundAndExit('Page is not available in the requested language (strict).');
 								break;
@@ -2854,16 +2846,16 @@ class TypoScriptFrontendController {
 	public function jumpUrl() {
 		if ($this->jumpurl) {
 			if (GeneralUtility::_GP('juSecure')) {
-				$locationData = (string) GeneralUtility::_GP('locationData');
+				$locationData = (string)GeneralUtility::_GP('locationData');
 				// Need a type cast here because mimeType is optional!
-				$mimeType = (string) GeneralUtility::_GP('mimeType');
+				$mimeType = (string)GeneralUtility::_GP('mimeType');
 				$hArr = array(
 					$this->jumpurl,
 					$locationData,
 					$mimeType
 				);
 				$calcJuHash = GeneralUtility::hmac(serialize($hArr));
-				$juHash = (string) GeneralUtility::_GP('juHash');
+				$juHash = (string)GeneralUtility::_GP('juHash');
 				if ($juHash === $calcJuHash) {
 					if ($this->locDataCheck($locationData)) {
 						// 211002 - goes with cObj->filelink() rawurlencode() of filenames so spaces can be allowed.
@@ -2962,7 +2954,7 @@ class TypoScriptFrontendController {
 	 */
 	public function calculateLinkVars() {
 		$this->linkVars = '';
-		$linkVars = GeneralUtility::trimExplode(',', (string) $this->config['config']['linkVars']);
+		$linkVars = GeneralUtility::trimExplode(',', (string)$this->config['config']['linkVars']);
 		if (empty($linkVars)) {
 			return;
 		}
@@ -3053,7 +3045,7 @@ class TypoScriptFrontendController {
 	 * Returns TRUE if the page should be generated
 	 * That is if jumpurl is not set and the cacheContentFlag is not set.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isGeneratePage() {
 		return !$this->cacheContentFlag && !$this->jumpurl;
@@ -3153,7 +3145,7 @@ class TypoScriptFrontendController {
 	 *
 	 * @param string $content The content to store in the HTML field of the cache table
 	 * @param mixed $data The additional cache_data array, fx. $this->config
-	 * @param integer $expirationTstamp Expiration timestamp
+	 * @param int $expirationTstamp Expiration timestamp
 	 * @return void
 	 * @see realPageCacheContent(), tempPageCacheContent()
 	 */
@@ -3222,7 +3214,7 @@ class TypoScriptFrontendController {
 	 *
 	 * @param \TYPO3\CMS\Core\Locking\Locker $lockObj Reference to a locking object
 	 * @param string $key String to identify the lock in the system
-	 * @return boolean Returns TRUE if the lock could be obtained, FALSE otherwise (= process had to wait for existing lock to be released)
+	 * @return bool Returns TRUE if the lock could be obtained, FALSE otherwise (= process had to wait for existing lock to be released)
 	 * @see releasePageGenerationLock()
 	 */
 	public function acquirePageGenerationLock(&$lockObj, $key) {
@@ -3256,7 +3248,7 @@ class TypoScriptFrontendController {
 	 * Release the page generation lock
 	 *
 	 * @param \TYPO3\CMS\Core\Locking\Locker $lockObj Reference to a locking object
-	 * @return boolean Returns TRUE on success, FALSE otherwise
+	 * @return bool Returns TRUE on success, FALSE otherwise
 	 * @see acquirePageGenerationLock()
 	 */
 	public function releasePageGenerationLock(&$lockObj) {
@@ -3565,7 +3557,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Determines if there are any INTincScripts to include
 	 *
-	 * @return boolean Returns TRUE if scripts are found (and not jumpurl)
+	 * @return bool Returns TRUE if scripts are found (and not jumpurl)
 	 */
 	public function isINTincScript() {
 		return is_array($this->config['INTincScript']) && !$this->jumpurl;
@@ -3598,7 +3590,7 @@ class TypoScriptFrontendController {
 	 * Determines if content should be outputted.
 	 * Outputting content is done only if jumpUrl is NOT set.
 	 *
-	 * @return boolean Returns TRUE if $this->jumpurl is not set.
+	 * @return bool Returns TRUE if $this->jumpurl is not set.
 	 */
 	public function isOutputting() {
 		// Initialize by status of jumpUrl:
@@ -3736,7 +3728,7 @@ class TypoScriptFrontendController {
 	 * There can be no USER_INT objects on the page ("isINTincScript()") because they implicitly indicate dynamic content
 	 * There can be no logged in user because user sessions are based on a cookie and thereby does not offer client caching a chance to know if the user is logged in. Actually, there will be a reverse problem here; If a page will somehow change when a user is logged in he may not see it correctly if the non-login version sent a cache-header! So do NOT use cache headers in page sections where user logins change the page content. (unless using such as realurl to apply a prefix in case of login sections)
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isStaticCacheble() {
 		$doCache = !$this->no_cache && !$this->isINTincScript() && !$this->isUserOrGroupSet();
@@ -3887,10 +3879,10 @@ class TypoScriptFrontendController {
 	 * Encryption (or decryption) of a single character.
 	 * Within the given range the character is shifted with the supplied offset.
 	 *
-	 * @param integer $n Ordinal of input character
-	 * @param integer $start Start of range
-	 * @param integer $end End of range
-	 * @param integer $offset Offset
+	 * @param int $n Ordinal of input character
+	 * @param int $start Start of range
+	 * @param int $end End of range
+	 * @param int $offset Offset
 	 * @return string encoded/decoded version of character
 	 */
 	public function encryptCharcode($n, $start, $end, $offset) {
@@ -3907,7 +3899,7 @@ class TypoScriptFrontendController {
 	 * Encryption of email addresses for <A>-tags See the spam protection setup in TS 'config.'
 	 *
 	 * @param string $string Input string to en/decode: "mailto:blabla@bla.com
-	 * @param boolean $back If set, the process is reversed, effectively decoding, not encoding.
+	 * @param bool $back If set, the process is reversed, effectively decoding, not encoding.
 	 * @return string encoded/decoded version of $string
 	 */
 	public function encryptEmail($string, $back = FALSE) {
@@ -3946,7 +3938,7 @@ class TypoScriptFrontendController {
 	 * Encryption is mainly to avoid spam-bots to pick up information.
 	 *
 	 * @param string $string Input string to en/decode
-	 * @param boolean $decode If set, string is decoded, not encoded.
+	 * @param bool $decode If set, string is decoded, not encoded.
 	 * @return string encoded/decoded version of $string
 	 */
 	public function codeString($string, $decode = FALSE) {
@@ -3996,7 +3988,7 @@ class TypoScriptFrontendController {
 	 * Checks if a PHPfile may be included.
 	 *
 	 * @param string $incFile Relative path to php file
-	 * @return boolean Returns TRUE if $GLOBALS['TYPO3_CONF_VARS']['FE']['noPHPscriptInclude'] is not set OR if the file requested for inclusion is found in one of the allowed paths.
+	 * @return bool Returns TRUE if $GLOBALS['TYPO3_CONF_VARS']['FE']['noPHPscriptInclude'] is not set OR if the file requested for inclusion is found in one of the allowed paths.
 	 * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::includeMakeMenu()
 	 */
 	public function checkFileInclude($incFile) {
@@ -4033,7 +4025,6 @@ class TypoScriptFrontendController {
 			'"' . TYPO3_mainDir . 'ext/',
 			'"' . TYPO3_mainDir . 'sysext/',
 			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
-			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
 		);
 		$replace = array(
 			'"' . $this->absRefPrefix . 'typo3temp/',
@@ -4042,7 +4033,6 @@ class TypoScriptFrontendController {
 			'"' . $this->absRefPrefix . TYPO3_mainDir . 'ext/',
 			'"' . $this->absRefPrefix . TYPO3_mainDir . 'sysext/',
 			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
-			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
 		);
 		// Process additional directories
 		$directories = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['additionalAbsRefPrefixDirectories'], TRUE);
@@ -4078,7 +4068,6 @@ class TypoScriptFrontendController {
 	 * Logs access to deprecated TypoScript objects and properties.
 	 *
 	 * Dumps message to the TypoScript message log (admin panel) and the TYPO3 deprecation log.
-	 * Note: The second parameter was introduced in TYPO3 4.5 and is not available in older versions
 	 *
 	 * @param string $typoScriptProperty Deprecated object or property
 	 * @param string $explanation Message or additional information
@@ -4099,45 +4088,6 @@ class TypoScriptFrontendController {
 	 */
 	public function updateMD5paramsRecord($hash) {
 		$GLOBALS['TYPO3_DB']->exec_UPDATEquery('cache_md5params', 'md5hash=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($hash, 'cache_md5params'), array('tstamp' => $GLOBALS['EXEC_TIME']));
-	}
-
-	/**
-	 * Pass the content through tidy - a little program that cleans up HTML-code.
-	 * Requires $this->TYPO3_CONF_VARS['FE']['tidy'] to be TRUE and $this->TYPO3_CONF_VARS['FE']['tidy_path'] to
-	 * contain the filename/path of tidy including clean-up arguments for tidy. See default value in
-	 * TYPO3_CONF_VARS in ext:core/Configuration/DefaultConfiguration.php
-	 *
-	 * @param string $content The page content to clean up. Will be written to a temporary file which "tidy" is then asked to clean up. File content is read back and returned.
-	 * @return string Returns the
-	 * @deprecated tidy and its options were deprecated with TYPO3 CMS 6.2, this function will be removed two versions later. If you need tidy, use the extension "tidy" from TER.
-	 */
-	public function tidyHTML($content) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($this->TYPO3_CONF_VARS['FE']['tidy'] && $this->TYPO3_CONF_VARS['FE']['tidy_path']) {
-			$oldContent = $content;
-			// Create temporary name
-			$fname = GeneralUtility::tempnam('typo3_tidydoc_');
-			// Delete if exists, just to be safe.
-			@unlink($fname);
-			// Open for writing
-			$fp = fopen($fname, 'wb');
-			// Put $content
-			fputs($fp, $content);
-			// Close
-			@fclose($fp);
-			// run the $content through 'tidy', which formats the HTML to nice code.
-			exec($this->TYPO3_CONF_VARS['FE']['tidy_path'] . ' ' . $fname, $output);
-			// Delete the tempfile again
-			@unlink($fname);
-			$content = implode(LF, $output);
-			if (!trim($content)) {
-				// Restore old content due empty return value.
-				$content = $oldContent;
-				$GLOBALS['TT']->setTSlogMessage('"tidy" returned an empty value!', 2);
-			}
-			$GLOBALS['TT']->setTSlogMessage('"tidy" content length: ' . strlen($content), 0);
-		}
-		return $content;
 	}
 
 	/**
@@ -4163,7 +4113,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Returns TRUE if workspace preview is enabled
 	 *
-	 * @return boolean Returns TRUE if workspace preview is enabled
+	 * @return bool Returns TRUE if workspace preview is enabled
 	 */
 	public function doWorkspacePreview() {
 		return $this->workspacePreview !== 0;
@@ -4172,7 +4122,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Returns the name of the workspace
 	 *
-	 * @param boolean $returnTitle If set, returns title of current workspace being previewed
+	 * @param bool $returnTitle If set, returns title of current workspace being previewed
 	 * @return mixed If $returnTitle is set, returns string (title), otherwise workspace integer for which workspace is being preview. False if none.
 	 */
 	public function whichWorkspace($returnTitle = FALSE) {
@@ -4200,6 +4150,7 @@ class TypoScriptFrontendController {
 	 *
 	 * @param array $libraries The libraries to be included.
 	 * @return void
+	 * @todo deprecate this method
 	 */
 	public function includeLibraries(array $libraries) {
 		global $TYPO3_CONF_VARS;
@@ -4338,7 +4289,7 @@ class TypoScriptFrontendController {
 	 * Sets the cache-flag to 1. Could be called from user-included php-files in order to ensure that a page is not cached.
 	 *
 	 * @param string $reason An optional reason to be written to the syslog.
-	 * @param boolean $internal Whether the call is done from core itself (should only be used by core).
+	 * @param bool $internal Whether the call is done from core itself (should only be used by core).
 	 * @return void
 	 */
 	public function set_no_cache($reason = '', $internal = FALSE) {
@@ -4387,7 +4338,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Sets the cache-timeout in seconds
 	 *
-	 * @param integer $seconds Cache-timeout in seconds
+	 * @param int $seconds Cache-timeout in seconds
 	 * @return void
 	 */
 	public function set_cache_timeout_default($seconds) {
@@ -4397,7 +4348,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Get the cache timeout for the current page.
 	 *
-	 * @return integer The cache timeout for the current page.
+	 * @return int The cache timeout for the current page.
 	 */
 	public function get_cache_timeout() {
 		/** @var $runtimeCache \TYPO3\CMS\Core\Cache\Frontend\AbstractFrontend */
@@ -4626,7 +4577,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Calculates page cache timeout according to the records with starttime/endtime on the page.
 	 *
-	 * @return integer Page cache timeout or PHP_INT_MAX if cannot be determined
+	 * @return int Page cache timeout or PHP_INT_MAX if cannot be determined
 	 */
 	protected function calculatePageCacheTimeout() {
 		$result = PHP_INT_MAX;
@@ -4674,9 +4625,9 @@ class TypoScriptFrontendController {
 	 * Find the minimum starttime or endtime value in the table and pid that is greater than the current time.
 	 *
 	 * @param string $tableDef Table definition (format tablename:pid)
-	 * @param integer $now "Now" time value
+	 * @param int $now "Now" time value
 	 * @throws \InvalidArgumentException
-	 * @return integer Value of the next start/stop time or PHP_INT_MAX if not found
+	 * @return int Value of the next start/stop time or PHP_INT_MAX if not found
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::calculatePageCacheTimeout()
 	 */
 	protected function getFirstTimeValueForRecord($tableDef, $now) {

@@ -49,7 +49,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Helper method to test for an existing internet connection.
 	 * Some tests are skipped if there is no working uplink.
 	 *
-	 * @return boolean $isConnected
+	 * @return bool $isConnected
 	 */
 	public function isConnected() {
 		$isConnected = FALSE;
@@ -3588,7 +3588,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * Data provider for ImageMagick shell commands
 	 *
-	 * @see 	explodeAndUnquoteImageMagickCommands
+	 * @see explodeAndUnquoteImageMagickCommands
 	 */
 	public function imageMagickCommandsDataProvider() {
 		return array(
@@ -4424,7 +4424,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider generateRandomBytesReturnsExpectedAmountOfBytesDataProvider
-	 * @param integer $numberOfBytes Number of Bytes to generate
+	 * @param int $numberOfBytes Number of Bytes to generate
 	 */
 	public function generateRandomBytesReturnsExpectedAmountOfBytes($numberOfBytes) {
 		$this->assertEquals(strlen(Utility\GeneralUtility::generateRandomBytes($numberOfBytes)), $numberOfBytes);
@@ -4453,7 +4453,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider generateRandomBytesReturnsDifferentBytesDuringDifferentCallsDataProvider
-	 * @param integer $numberOfBytes  Number of Bytes to generate
+	 * @param int $numberOfBytes  Number of Bytes to generate
 	 */
 	public function generateRandomBytesReturnsDifferentBytesDuringDifferentCalls($numberOfBytes) {
 		$results = array();
@@ -4472,35 +4472,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			array(128),
 			array(4096)
 		);
-	}
-
-	/**
-	 * @test
-	 */
-	public function arrayMergeRecursiveOverruleDoesConsiderUnsetValues() {
-		$array1 = array(
-			'first' => array(
-				'second' => 'second',
-				'third' => 'third'
-			),
-			'fifth' => array()
-		);
-		$array2 = array(
-			'first' => array(
-				'second' => 'overrule',
-				'third' => '__UNSET',
-				'fourth' => 'overrile'
-			),
-			'fifth' => '__UNSET'
-		);
-		$expected = array(
-			'first' => array(
-				'second' => 'overrule',
-				'fourth' => 'overrile'
-			)
-		);
-		$result = Utility\GeneralUtility::array_merge_recursive_overrule($array1, $array2);
-		$this->assertEquals($expected, $result);
 	}
 
 	///////////////////////////////////////////////////

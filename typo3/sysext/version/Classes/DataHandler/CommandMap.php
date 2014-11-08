@@ -69,7 +69,7 @@ class CommandMap {
 	protected $workspacesChangeStageMode;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $workspacesConsiderReferences;
 
@@ -188,7 +188,7 @@ class CommandMap {
 	 * @return \TYPO3\CMS\Version\DataHandler\CommandMap
 	 */
 	public function setWorkspacesSwapMode($workspacesSwapMode) {
-		$this->workspacesSwapMode = (string) $workspacesSwapMode;
+		$this->workspacesSwapMode = (string)$workspacesSwapMode;
 		return $this;
 	}
 
@@ -200,7 +200,7 @@ class CommandMap {
 	 * @return \TYPO3\CMS\Version\DataHandler\CommandMap
 	 */
 	public function setWorkspacesChangeStageMode($workspacesChangeStageMode) {
-		$this->workspacesChangeStageMode = (string) $workspacesChangeStageMode;
+		$this->workspacesChangeStageMode = (string)$workspacesChangeStageMode;
 		return $this;
 	}
 
@@ -208,11 +208,11 @@ class CommandMap {
 	 * Sets the workspace behaviour to automatically consider references
 	 * (see options.workspaces.considerReferences)
 	 *
-	 * @param boolean $workspacesConsiderReferences
+	 * @param bool $workspacesConsiderReferences
 	 * @return \TYPO3\CMS\Version\DataHandler\CommandMap
 	 */
 	public function setWorkspacesConsiderReferences($workspacesConsiderReferences) {
-		$this->workspacesConsiderReferences = (bool) $workspacesConsiderReferences;
+		$this->workspacesConsiderReferences = (bool)$workspacesConsiderReferences;
 		return $this;
 	}
 
@@ -287,7 +287,7 @@ class CommandMap {
 	 * Applies workspaces behaviour for swapping/publishing and takes care of the swapMode.
 	 *
 	 * @param string $table
-	 * @param integer $liveId
+	 * @param int $liveId
 	 * @param array $properties
 	 * @return void
 	 */
@@ -314,7 +314,7 @@ class CommandMap {
 	 *
 	 * @param \TYPO3\CMS\Version\Dependency\DependencyResolver $dependency
 	 * @param string $table
-	 * @param integer $liveId
+	 * @param int $liveId
 	 * @param array $properties
 	 * @return void
 	 */
@@ -604,7 +604,7 @@ class CommandMap {
 	 * Callback to get the liveId of an dependent element.
 	 *
 	 * @param ElementEntity $element
-	 * @return integer
+	 * @return int
 	 */
 	protected function getElementLiveIdCallback(ElementEntity $element) {
 		return $element->getDataValue('liveId');
@@ -614,7 +614,7 @@ class CommandMap {
 	 * Callback to get the real id of an dependent element.
 	 *
 	 * @param ElementEntity $element
-	 * @return integer
+	 * @return int
 	 */
 	protected function getElementIdCallback(ElementEntity $element) {
 		return $element->getId();

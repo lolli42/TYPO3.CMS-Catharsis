@@ -65,7 +65,7 @@ class CleanerCommand extends \TYPO3\CMS\Core\Controller\CommandLineController {
 	public function __construct() {
 		// Running parent class constructor
 		parent::__construct();
-		$this->cleanerModules = (array) $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['lowlevel']['cleanerModules'];
+		$this->cleanerModules = (array)$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['lowlevel']['cleanerModules'];
 		// Adding options to help archive:
 		$this->cli_options[] = array('-r', 'Execute this tool, otherwise help is shown');
 		$this->cli_options[] = array('-v level', 'Verbosity level 0-3', 'The value of level can be:
@@ -117,7 +117,7 @@ This will show you missing files in the TYPO3 system and only report back if err
 			die;
 		}
 		// Print help
-		$analysisType = (string) $this->cli_args['_DEFAULT'][1];
+		$analysisType = (string)$this->cli_args['_DEFAULT'][1];
 		if (!$analysisType) {
 			$this->cli_validateArgs();
 			$this->cli_help();
@@ -159,7 +159,7 @@ NOW Running --AUTOFIX on result. OK?' . ($this->cli_isArg('--dryrun') ? ' (--dry
 	/**
 	 * Checks reference index
 	 *
-	 * @return boolean TRUE if reference index was OK (either OK, updated or ignored)
+	 * @return bool TRUE if reference index was OK (either OK, updated or ignored)
 	 */
 	public function cli_referenceIndexCheck() {
 		// Reference index option:
@@ -278,9 +278,9 @@ NOW Running --AUTOFIX on result. OK?' . ($this->cli_isArg('--dryrun') ? ' (--dry
 	 * Traverses the FULL/part of page tree, mainly to register ALL validly connected records (to find orphans) but also to register deleted records, versions etc.
 	 * Output (in $this->recStats) can be useful for multiple purposes.
 	 *
-	 * @param integer $rootID Root page id from where to start traversal. Use "0" (zero) to have full page tree (necessary when spotting orphans, otherwise you can run it on parts only)
-	 * @param integer $depth Depth to traverse. zero is do not traverse at all. 1 = 1 sublevel, 1000= 1000 sublevels (all...)
-	 * @param boolean $echoLevel If >0, will echo information about the traversal process.
+	 * @param int $rootID Root page id from where to start traversal. Use "0" (zero) to have full page tree (necessary when spotting orphans, otherwise you can run it on parts only)
+	 * @param int $depth Depth to traverse. zero is do not traverse at all. 1 = 1 sublevel, 1000= 1000 sublevels (all...)
+	 * @param bool $echoLevel If >0, will echo information about the traversal process.
 	 * @param string $callBack Call back function (from this class or subclass)
 	 * @return void
 	 */
@@ -349,12 +349,12 @@ NOW Running --AUTOFIX on result. OK?' . ($this->cli_isArg('--dryrun') ? ' (--dry
 	/**
 	 * Recursive traversal of page tree:
 	 *
-	 * @param integer $rootID Page root id (must be online, valid page record - or zero for page tree root)
-	 * @param integer $depth Depth
-	 * @param integer $echoLevel Echo Level
+	 * @param int $rootID Page root id (must be online, valid page record - or zero for page tree root)
+	 * @param int $depth Depth
+	 * @param int $echoLevel Echo Level
 	 * @param string $callBack Call back function (from this class or subclass)
 	 * @param string $versionSwapmode DON'T set from outside, internal. (indicates we are inside a version of a page) - will be "SWAPMODE:-1" or empty
-	 * @param integer $rootIsVersion DON'T set from outside, internal. (1: Indicates that rootID is a version of a page, 2: ...that it is even a version of a version (which triggers a warning!)
+	 * @param int $rootIsVersion DON'T set from outside, internal. (1: Indicates that rootID is a version of a page, 2: ...that it is even a version of a version (which triggers a warning!)
 	 * @param string $accumulatedPath Internal string that accumulates the path
 	 * @return void
 	 * @access private

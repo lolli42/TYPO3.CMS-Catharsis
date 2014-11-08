@@ -216,7 +216,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Wrapper method for directory existance check
 	 *
 	 * @param string $directory
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function directoryExists($directory) {
 		return is_dir($directory);
@@ -230,7 +230,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function getAbsolutePathsToConfiguredDirectories(array $extension) {
 		$requestedDirectories = array();
-		$requestUploadFolder = isset($extension['uploadfolder']) ? (boolean)$extension['uploadfolder'] : FALSE;
+		$requestUploadFolder = isset($extension['uploadfolder']) ? (bool)$extension['uploadfolder'] : FALSE;
 		if ($requestUploadFolder) {
 			$requestedDirectories[] = $this->getAbsolutePath($this->getPathToUploadFolder($extension));
 		}
@@ -294,7 +294,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Is the given path a valid path for extension installation
 	 *
 	 * @param string $path the absolute (!) path in question
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isValidExtensionPath($path) {
 		$allowedPaths = Extension::returnAllowedInstallPaths();

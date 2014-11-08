@@ -25,7 +25,7 @@ class IntrospectionProcessor extends \TYPO3\CMS\Core\Log\Processor\AbstractProce
 	 * Add the full backtrace to the log entry or
 	 * just the last entry of the backtrace
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $appendFullBackTrace = FALSE;
 
@@ -57,18 +57,18 @@ class IntrospectionProcessor extends \TYPO3\CMS\Core\Log\Processor\AbstractProce
 	 * @return \TYPO3\CMS\Core\Log\Writer\AbstractWriter
 	 */
 	public function setShiftBackTraceLevel($shiftBackTraceLevel) {
-		$this->shiftBackTraceLevel = (int) $shiftBackTraceLevel;
+		$this->shiftBackTraceLevel = (int)$shiftBackTraceLevel;
 		return $this;
 	}
 
 	/**
 	 * Set if the full backtrace should be added to the log or just the last item
 	 *
-	 * @param boolean $appendFullBackTrace If the full backtrace should be added
+	 * @param bool $appendFullBackTrace If the full backtrace should be added
 	 * @return \TYPO3\CMS\Core\Log\Writer\AbstractWriter
 	 */
 	public function setAppendFullBackTrace($appendFullBackTrace) {
-		$this->appendFullBackTrace = (bool) $appendFullBackTrace;
+		$this->appendFullBackTrace = (bool)$appendFullBackTrace;
 		return $this;
 	}
 

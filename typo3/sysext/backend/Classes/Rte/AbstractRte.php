@@ -25,16 +25,16 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class AbstractRte {
 
-	// Internal, dynamic:
-	// Error messages regarding non-availability is collected here.
 	/**
+	 * Error messages regarding non-availability is collected here.
+	 *
 	 * @var array
 	 */
 	public $errorLog = array();
 
-	// Internal, static:
-	// Set this to the extension key of the RTE so it can identify itself.
 	/**
+	 * Set this to the extension key of the RTE so it can identify itself.
+	 *
 	 * @var string
 	 */
 	public $ID = '';
@@ -50,7 +50,7 @@ class AbstractRte {
 	 * Returns TRUE if the RTE is available. Here you check if the browser requirements are met.
 	 * If there are reasons why the RTE cannot be displayed you simply enter them as text in ->errorLog
 	 *
-	 * @return boolean TRUE if this RTE object offers an RTE in the current browser environment
+	 * @return bool TRUE if this RTE object offers an RTE in the current browser environment
 	 */
 	public function isAvailable() {
 		return TRUE;
@@ -69,7 +69,7 @@ class AbstractRte {
 	 * @param array $thisConfig Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
 	 * @param string $RTEtypeVal Record "type" field value.
 	 * @param string $RTErelPath Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
-	 * @param integer $thePidValue PID value of record (true parent page id)
+	 * @param int $thePidValue PID value of record (true parent page id)
 	 * @return string HTML code for RTE!
 	 */
 	public function drawRTE(&$pObj, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue) {
@@ -97,7 +97,7 @@ class AbstractRte {
 	 * @param array $specConf "special" configuration - what is found at position 4 in the types configuration of a field from record, parsed into an array.
 	 * @param array $thisConfig Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
 	 * @param string $RTErelPath Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
-	 * @param integer $pid PID value of record (true parent page id)
+	 * @param int $pid PID value of record (true parent page id)
 	 * @return string Transformed content
 	 */
 	public function transformContent($dirRTE, $value, $table, $field, $row, $specConf, $thisConfig, $RTErelPath, $pid) {

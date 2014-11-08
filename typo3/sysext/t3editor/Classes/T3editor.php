@@ -42,14 +42,14 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Counts the editors on the current page
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $editorCounter = 0;
 
 	/**
 	 * Flag to enable the t3editor
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $_isEnabled = TRUE;
 
@@ -141,7 +141,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * @return boolean TRUE if the t3editor is enabled
+	 * @return bool TRUE if the t3editor is enabled
 	 */
 	public function isEnabled() {
 		return $this->_isEnabled;
@@ -323,7 +323,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function getJavaScriptLabelsFromLocallang($selectionPrefix = 'js.', $stripFromSelectionName = '') {
 		$extraction = array();
-		$labels = array_merge((array) $GLOBALS['LOCAL_LANG']['default'], (array) $GLOBALS['LOCAL_LANG'][$GLOBALS['LANG']->lang]);
+		$labels = array_merge((array)$GLOBALS['LOCAL_LANG']['default'], (array)$GLOBALS['LOCAL_LANG'][$GLOBALS['LANG']->lang]);
 		// Regular expression to strip the selection prefix and possibly something from the label name:
 		$labelPattern = '#^' . preg_quote($selectionPrefix, '#') . '(' . preg_quote($stripFromSelectionName, '#') . ')?#';
 		// Iterate throuh all locallang lables:

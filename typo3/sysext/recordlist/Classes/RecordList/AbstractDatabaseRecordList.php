@@ -166,12 +166,12 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	/**
 	 * Initializes the list generation
 	 *
-	 * @param integer $id Page id for which the list is rendered. Must be >= 0
+	 * @param int $id Page id for which the list is rendered. Must be >= 0
 	 * @param string $table Tablename - if extended mode where only one table is listed at a time.
-	 * @param integer $pointer Browsing pointer.
+	 * @param int $pointer Browsing pointer.
 	 * @param string $search Search word, if any
-	 * @param integer $levels Number of levels to search down the page tree
-	 * @param integer $showLimit Limit of records to be listed.
+	 * @param int $levels Number of levels to search down the page tree
+	 * @param int $showLimit Limit of records to be listed.
 	 * @return void
 	 */
 	public function start($id, $table, $pointer, $search = '', $levels = '', $showLimit = 0) {
@@ -322,7 +322,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	/**
 	 * Creates the search box
 	 *
-	 * @param boolean $formFields If TRUE, the search box is wrapped in its own form-tags
+	 * @param bool $formFields If TRUE, the search box is wrapped in its own form-tags
 	 * @return string HTML for the search box
 	 */
 	public function getSearchBox($formFields = 1) {
@@ -394,7 +394,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	 * Returns the SQL-query array to select the records from a table $table with pid = $id
 	 *
 	 * @param string $table Table name
-	 * @param integer $id Page id (NOT USED! $this->pidSelect is used instead)
+	 * @param int $id Page id (NOT USED! $this->pidSelect is used instead)
 	 * @param string $addWhere Additional part for where clause
 	 * @param string $fieldList Field list to select, * for all (for "SELECT [fieldlist] FROM ...")
 	 * @return array Returns query array
@@ -467,7 +467,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	 * fields in input table.
 	 *
 	 * @param string $table Table, in which the fields are being searched.
-	 * @param integer $currentPid Page id for the possible search limit. -1 only if called from an old XCLASS.
+	 * @param int $currentPid Page id for the possible search limit. -1 only if called from an old XCLASS.
 	 * @return string Returns part of WHERE-clause for searching, if applicable.
 	 */
 	public function makeSearchString($table, $currentPid = -1) {
@@ -583,7 +583,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	 * Returns the title (based on $code) of a record (from table $table) with the proper link around (that is for 'pages'-records a link to the level of that record...)
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Item uid
+	 * @param int $uid Item uid
 	 * @param string $code Item title (not htmlspecialchars()'ed yet)
 	 * @param array $row Item row
 	 * @return string The item title. Ready for HTML output (is htmlspecialchars()'ed)
@@ -600,7 +600,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 				$code = '<span title="' . htmlspecialchars($origCode, ENT_QUOTES, 'UTF-8', FALSE) . '">' . $code . '</span>';
 			}
 		}
-		switch ((string) $this->clickTitleMode) {
+		switch ((string)$this->clickTitleMode) {
 			case 'edit':
 				// If the listed table is 'pages' we have to request the permission settings for each page:
 				if ($table == 'pages') {
@@ -724,8 +724,8 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	 * Makes the list of fields to select for a table
 	 *
 	 * @param string $table Table name
-	 * @param boolean $dontCheckUser If set, users access to the field (non-exclude-fields) is NOT checked.
-	 * @param boolean $addDateFields If set, also adds crdate and tstamp fields (note: they will also be added if user is admin or dontCheckUser is set)
+	 * @param bool $dontCheckUser If set, users access to the field (non-exclude-fields) is NOT checked.
+	 * @param bool $addDateFields If set, also adds crdate and tstamp fields (note: they will also be added if user is admin or dontCheckUser is set)
 	 * @return array Array, where values are fieldnames to include in query
 	 */
 	public function makeFieldList($table, $dontCheckUser = 0, $addDateFields = 0) {
@@ -775,33 +775,10 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 	}
 
 	/**
-	 * Creates an instance of \TYPO3\CMS\Backend\Tree\View\PageTreeView which will select a page
-	 * tree to $depth and return the object. In that object we will find the ids of the tree.
-	 *
-	 * @param integer $id Page id.
-	 * @param integer $depth Depth to go down.
-	 * @param string $perms_clause Select clause
-	 * @return \TYPO3\CMS\Backend\Tree\View\PageTreeView instance with created list of ids.
-	 * @deprecated Deprecated since 6.2, will be removed 2 versions later
-	 */
-	public function getTreeObject($id, $depth, $perms_clause) {
-		GeneralUtility::logDeprecatedFunction();
-		$tree = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
-		$tree->init('AND ' . $perms_clause);
-		$tree->makeHTML = 0;
-		$tree->fieldArray = array('uid', 'php_tree_stop');
-		if ($depth) {
-			$tree->getTree($id, $depth, '');
-		}
-		$tree->ids[] = $id;
-		return $tree;
-	}
-
-	/**
 	 * Get all allowed mount pages to be searched in.
 	 *
-	 * @param integer $id Page id
-	 * @param integer $depth Depth to go down
+	 * @param int $id Page id
+	 * @param int $depth Depth to go down
 	 * @param string $perms_clause select clause
 	 * @return array
 	 */

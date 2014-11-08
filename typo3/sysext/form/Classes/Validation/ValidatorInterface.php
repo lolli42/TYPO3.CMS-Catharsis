@@ -39,7 +39,7 @@ interface ValidatorInterface {
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isValid();
 
@@ -76,7 +76,7 @@ interface ValidatorInterface {
 	/**
 	 * Set if message needs to be displayed
 	 *
-	 * @param boolean $show TRUE is display
+	 * @param bool $show TRUE is display
 	 * @return object The rule object
 	 */
 	public function setShowMessage($show);
@@ -84,7 +84,7 @@ interface ValidatorInterface {
 	/**
 	 * Returns TRUE when message needs to be displayed
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function messageMustBeDisplayed();
 

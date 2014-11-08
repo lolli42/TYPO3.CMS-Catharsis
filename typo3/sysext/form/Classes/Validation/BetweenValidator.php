@@ -39,7 +39,7 @@ class BetweenValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator impl
 	/**
 	 * If TRUE, minimum and maximum values are included in comparison
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $inclusive;
 
@@ -56,7 +56,7 @@ class BetweenValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator impl
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see \TYPO3\CMS\Form\Validation\ValidatorInterface::isValid()
 	 */
 	public function isValid() {
@@ -100,14 +100,14 @@ class BetweenValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator impl
 	/**
 	 * Set boolean to make minimum and maximum value inclusive in comparison
 	 *
-	 * @param boolean $inclusive True is inclusive
+	 * @param bool $inclusive True is inclusive
 	 * @return object Rule object
 	 */
 	public function setInclusive($inclusive) {
 		if ($inclusive === NULL) {
 			$this->inclusive = FALSE;
 		} else {
-			$this->inclusive = (bool) $inclusive;
+			$this->inclusive = (bool)$inclusive;
 		}
 		return $this;
 	}

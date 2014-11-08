@@ -28,7 +28,7 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 	 *
 	 * @param string Database table name
 	 * @param string Field name for which processing occurs
-	 * @param integer UID of the record
+	 * @param int UID of the record
 	 * @param string The content/value of the field
 	 * @param string The softlink parser key. This is only interesting if more than one parser is grouped in the same class. That is the case with this parser.
 	 * @param array Parameters of the softlink parser. Basically this is the content inside optional []-brackets after the softref keys. Parameters are exploded by ";
@@ -52,9 +52,9 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 	 * Finding image tags with data-htmlarea-file-uid attribute in the content.
 	 * All images that have an data-htmlarea-file-uid attribute will be returned with an info text
 	 *
-	 * @param 	string		The input content to analyse
-	 * @param 	array		Parameters set for the softref parser key in TCA/columns
-	 * @return 	array		Result array on positive matches, see description above. Otherwise FALSE
+	 * @param string The input content to analyse
+	 * @param array Parameters set for the softref parser key in TCA/columns
+	 * @return array Result array on positive matches, see description above. Otherwise FALSE
 	 */
 	public function findRef_rtehtmlarea_images($content, $spParams) {
 		$retVal = FALSE;
@@ -68,7 +68,6 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 				// Get FAL uid reference
 				$attribs = $htmlParser->get_tag_attributes($v);
 				$fileUid = $attribs[0]['data-htmlarea-file-uid'];
-				$fileTable = $attribs[0]['data-htmlarea-file-table'];
 				// If there is a file uid, continue. Otherwise ignore this img tag.
 				if ($fileUid) {
 					// Initialize the element entry with info text here
@@ -79,7 +78,7 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 					$imgTags[$k] = str_replace('data-htmlarea-file-uid="' . $fileUid . '"', 'data-htmlarea-file-uid="{softref:' . $tokenID . '}"', $imgTags[$k]);
 					$elements[$k]['subst'] = array(
 						'type' => 'db',
-						'recordRef' => ($fileTable ?: 'sys_file') . ':' . $fileUid,
+						'recordRef' => 'sys_file:' . $fileUid,
 						'tokenID' => $tokenID,
 						'tokenValue' => $fileUid
 					);

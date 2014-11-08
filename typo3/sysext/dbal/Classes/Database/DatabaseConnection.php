@@ -19,9 +19,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * TYPO3 database abstraction layer
  *
- * @author 	Kasper Skårhøj <kasper@typo3.com>
- * @author 	Karsten Dambekalns <k.dambekalns@fishfarm.de>
- * @author 	Xavier Perseguers <xavier@typo3.org>
+ * @author Kasper Skårhøj <kasper@typo3.com>
+ * @author Karsten Dambekalns <k.dambekalns@fishfarm.de>
+ * @author Xavier Perseguers <xavier@typo3.org>
  */
 class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 
@@ -144,7 +144,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * @var string
 	 */
-	protected $cacheIdentifier = 't3lib_db_fieldInfo';
+	protected $cacheIdentifier = 'DatabaseConnection_fieldInfo';
 
 	/**
 	 * SQL parser
@@ -250,7 +250,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @return void
 	 */
 	public function clearCachedFieldInfo() {
-		$this->getFieldInfoCache()->flushByTag('t3lib_db');
+		$this->getFieldInfoCache()->flushByTag('DatabaseConnection');
 	}
 
 	/**
@@ -271,7 +271,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			$this->analyzeCachingTables();
 			$this->analyzeExtensionTables();
 			$completeFieldInformation = $this->getCompleteFieldInformation();
-			$phpCodeCache->set($this->cacheIdentifier, $this->getCacheableString($completeFieldInformation), array('t3lib_db'));
+			$phpCodeCache->set($this->cacheIdentifier, $this->getCacheableString($completeFieldInformation), array('DatabaseConnection'));
 		}
 	}
 
@@ -608,7 +608,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @param string $where WHERE clause, eg. "uid=1". NOTICE: You must escape values in this argument with $this->fullQuoteStr() yourself!
 	 * @param array $fields_values Field values as key=>value pairs. Values will be escaped internally. Typically you would fill an array like "$updateFields" with 'fieldname'=>'value' and pass it to this function as argument.
 	 * @param bool $no_quote_fields See fullQuoteArray()
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_UPDATEquery($table, $where, $fields_values, $no_quote_fields = FALSE) {
 		$pt = $this->debug ? GeneralUtility::milliseconds() : 0;
@@ -628,7 +628,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		// Select API
 		$this->lastHandlerKey = $this->handler_getFromTableList($table);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		$sqlResult = NULL;
 		switch ($hType) {
 			case 'native':
@@ -691,7 +691,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 *
 	 * @param string $table Database tablename
 	 * @param string $where WHERE clause, eg. "uid=1". NOTICE: You must escape values in this argument with $this->fullQuoteStr() yourself!
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_DELETEquery($table, $where) {
 		$pt = $this->debug ? GeneralUtility::milliseconds() : 0;
@@ -709,7 +709,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		// Select API
 		$this->lastHandlerKey = $this->handler_getFromTableList($table);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		$sqlResult = NULL;
 		switch ($hType) {
 			case 'native':
@@ -751,7 +751,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '') {
 		$pt = $this->debug ? GeneralUtility::milliseconds() : 0;
@@ -772,7 +772,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			$fromTable = $from_table;
 		}
 		$this->lastHandlerKey = $this->handler_getFromTableList($fromTable);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		$sqlResult = NULL;
 		switch ($hType) {
 			case 'native':
@@ -861,7 +861,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		// Select API
 		$this->lastHandlerKey = $this->handler_getFromTableList($table);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		$sqlResult = NULL;
 		switch ($hType) {
 			case 'native':
@@ -1056,7 +1056,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @return string|array Full SQL query for INSERT (unless $rows does not contain any elements in which case it will be FALSE)
 	 */
 	public function INSERTmultipleRows($table, array $fields, array $rows, $no_quote_fields = FALSE) {
-		if ((string) $this->handlerCfg[$this->lastHandlerKey]['type'] === 'native') {
+		if ((string)$this->handlerCfg[$this->lastHandlerKey]['type'] === 'native') {
 			return parent::INSERTmultipleRows($table, $fields, $rows, $no_quote_fields);
 		}
 		$result = array();
@@ -1196,7 +1196,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '') {
 		$this->lastHandlerKey = $this->handler_getFromTableList($from_table);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		if ($hType === 'adodb' && $this->runningADOdbDriver('postgres')) {
 			// Possibly rewrite the LIMIT to be PostgreSQL-compatible
 			$splitLimit = GeneralUtility::intExplode(',', $limit);
@@ -1408,7 +1408,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			'parameters' => array()
 		);
 		$this->lastHandlerKey = $this->handler_getFromTableList($from_table);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		if ($hType === 'adodb' && $this->runningADOdbDriver('postgres')) {
 			// Possibly rewrite the LIMIT to be PostgreSQL-compatible
 			$splitLimit = GeneralUtility::intExplode(',', $limit);
@@ -1461,7 +1461,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		$limit = $components['LIMIT'];
 		$precompiledParts = array();
 		$this->lastHandlerKey = $this->handler_getFromTableList($components['ORIG_tableName']);
-		$hType = (string) $this->handlerCfg[$this->lastHandlerKey]['type'];
+		$hType = (string)$this->handlerCfg[$this->lastHandlerKey]['type'];
 		$precompiledParts['handler'] = $hType;
 		$precompiledParts['ORIG_tableName'] = $components['ORIG_tableName'];
 		switch ($hType) {
@@ -1493,7 +1493,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 *
 	 * @param string $query The query to execute
 	 * @param array $queryComponents The components of the query to execute
-	 * @return boolean|\mysqli_statement|\TYPO3\CMS\Dbal\Database\AdodbPreparedStatement
+	 * @return bool|\mysqli_statement|\TYPO3\CMS\Dbal\Database\AdodbPreparedStatement
 	 * @throws \RuntimeException
 	 * @internal This method may only be called by \TYPO3\CMS\Core\Database\PreparedStatement
 	 */
@@ -1825,7 +1825,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Quotes field names in a SQL ORDER BY clause according to DB rules
 	 *
-	 * @param 	array		$orderBy The parsed ORDER BY clause to quote
+	 * @param array $orderBy The parsed ORDER BY clause to quote
 	 * @return 	array
 	 * @see quoteOrderBy()
 	 */
@@ -1938,7 +1938,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function MetaType($type, $table, $maxLength = -1) {
 		$this->lastHandlerKey = $this->handler_getFromTableList($table);
 		$str = '';
-		switch ((string) $this->handlerCfg[$this->lastHandlerKey]['type']) {
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
 			case 'native':
 				$str = $type;
 				break;
@@ -2099,7 +2099,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Returns the error number on the last query() execution
 	 *
-	 * @return integer MySQLi error number
+	 * @return int MySQLi error number
 	 */
 	public function sql_errno() {
 		$output = 0;
@@ -2120,8 +2120,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Returns the number of selected rows.
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @return integer Number of resulting rows
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @return int Number of resulting rows
 	 */
 	public function sql_num_rows($res) {
 		if ($res === FALSE) {
@@ -2147,7 +2147,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Returns an associative array that corresponds to the fetched row, or FALSE if there are no more rows.
 	 * MySQLi fetch_assoc() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
 	 * @return array|boolean Associative array of result row.
 	 */
 	public function sql_fetch_assoc($res) {
@@ -2216,7 +2216,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * The array contains the values in numerical indices.
 	 * MySQLi fetch_row() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
 	 * @return array|boolean Array with result rows.
 	 */
 	public function sql_fetch_row($res) {
@@ -2270,7 +2270,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Free result memory
 	 * free_result() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
 	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
 	public function sql_free_result($res) {
@@ -2318,7 +2318,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Get the ID generated from the previous INSERT operation
 	 *
-	 * @return integer The uid of the last inserted record.
+	 * @return int The uid of the last inserted record.
 	 */
 	public function sql_insert_id() {
 		$output = 0;
@@ -2339,7 +2339,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Returns the number of rows affected by the last INSERT, UPDATE or DELETE query
 	 *
-	 * @return integer Number of rows affected by last query
+	 * @return int Number of rows affected by last query
 	 */
 	public function sql_affected_rows() {
 		$output = 0;
@@ -2360,8 +2360,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Move internal result pointer
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @param integer $seek Seek result number.
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param int $seek Seek result number.
 	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
 	public function sql_data_seek($res, $seek) {
@@ -2386,7 +2386,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * If the first parameter is a string, it is used as table name for the lookup.
 	 *
 	 * @param string $table MySQL result pointer (of SELECT query) / DBAL object / table name
-	 * @param integer $field Field index. In case of ADOdb a string (field name!)
+	 * @param int $field Field index. In case of ADOdb a string (field name!)
 	 * @return string Returns the type of the specified field index
 	 */
 	public function sql_field_metatype($table, $field) {
@@ -2408,8 +2408,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Get the type of the specified field in a result
 	 * mysql_field_type() wrapper function
 	 *
-	 * @param boolean|\mysqli_result|object $res MySQLi result object / DBAL object
-	 * @param integer $pointer Field index.
+	 * @param bool|\mysqli_result|object $res MySQLi result object / DBAL object
+	 * @param int $pointer Field index.
 	 * @return string Returns the name of the specified field index, or FALSE on error
 	 */
 	public function sql_field_type($res, $pointer) {
@@ -2466,7 +2466,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * using exec_SELECTquery() and similar methods instead.
 	 *
 	 * @param string $query Query to execute
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function sql_query($query) {
 		$globalConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['dbal']);
@@ -2505,39 +2505,26 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Open a (persistent) connection to a MySQL server
 	 *
-	 * @param string $host Deprecated since 6.1, will be removed in two versions. Database host IP/domain[:port]
-	 * @param string $username Deprecated since 6.1, will be removed in two versions. Username to connect with.
-	 * @param string $password Deprecated since 6.1, will be removed in two versions. Password to connect with.
-	 * @return boolean|void
-	 * @throws \RuntimeException
+	 * @return bool|void
 	 */
-	public function sql_pconnect($host = NULL, $username = NULL, $password = NULL) {
-		if ($host || $username || $password) {
-			$this->handleDeprecatedConnectArguments($host, $username, $password);
-		}
-
-		// Initializing and output value:
-		$sqlResult = $this->handler_init('_DEFAULT');
-		return $sqlResult;
+	public function sql_pconnect() {
+		return $this->handler_init('_DEFAULT');
 	}
 
 	/**
 	 * Select a SQL database
 	 *
-	 * @param string $TYPO3_db Deprecated since 6.1, will be removed in two versions. Database to connect to.
 	 * @return bool Returns TRUE on success or FALSE on failure.
 	 */
-	public function sql_select_db($TYPO3_db = NULL) {
-		if (!$TYPO3_db) {
-			$TYPO3_db = $this->handlerCfg[$this->lastHandlerKey]['config']['database'];
-		}
+	public function sql_select_db() {
+		$databaseName = $this->handlerCfg[$this->lastHandlerKey]['config']['database'];
 		$ret = TRUE;
 		if ((string)$this->handlerCfg[$this->lastHandlerKey]['type'] === 'native') {
-			$ret = $this->handlerInstance[$this->lastHandlerKey]['link']->select_db($TYPO3_db);
+			$ret = $this->handlerInstance[$this->lastHandlerKey]['link']->select_db($databaseName);
 		}
 		if (!$ret) {
 			GeneralUtility::sysLog(
-				'Could not select MySQL database ' . $TYPO3_db . ': ' . $this->sql_error(),
+				'Could not select MySQL database ' . $databaseName . ': ' . $this->sql_error(),
 				'Core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
@@ -2567,11 +2554,14 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			case 'native':
 				/** @var \mysqli_result $db_list */
 				$db_list = $this->query("SELECT SCHEMA_NAME FROM information_schema.SCHEMATA");
+				$oldDb = $this->handlerCfg[$this->lastHandlerKey]['config']['database'];
 				while ($row = $db_list->fetch_object()) {
-					if ($this->sql_select_db($row->SCHEMA_NAME)) {
+					$this->handlerCfg[$this->lastHandlerKey]['config']['database'] = $row->SCHEMA_NAME;
+					if ($this->sql_select_db()) {
 						$dbArr[] = $row->SCHEMA_NAME;
 					}
 				}
+				$this->handlerCfg[$this->lastHandlerKey]['config']['database'] = $oldDb;
 				$db_list->free();
 				break;
 			case 'adodb':
@@ -2682,7 +2672,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		// Find columns
 		$this->lastHandlerKey = $this->handler_getFromTableList($tableName);
-		switch ((string) $this->handlerCfg[$this->lastHandlerKey]['type']) {
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
 			case 'native':
 				/** @var \mysqli_result $columns_res */
 				$columns_res = $this->query('SHOW columns FROM ' . $tableName);
@@ -2747,7 +2737,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		}
 		// Find columns
 		$this->lastHandlerKey = $this->handler_getFromTableList($tableName);
-		switch ((string) $this->handlerCfg[$this->lastHandlerKey]['type']) {
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
 			case 'native':
 				/** @var \mysqli_result $keyRes */
 				$keyRes = $this->query('SHOW keys FROM ' . $tableName);
@@ -2857,7 +2847,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 *
 	 * @param string $query Query to execute
 	 * @throws \InvalidArgumentException
-	 * @return boolean|\mysqli_result|object MySQLi result object / DBAL object
+	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function admin_query($query) {
 		$parsedQuery = $this->SQLparser->parseSQL($query);
@@ -3115,7 +3105,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function isConnected() {
 		$result = FALSE;
-		switch ((string) $this->handlerCfg[$this->lastHandlerKey]['type']) {
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
 			case 'native':
 				$result = isset($this->handlerCfg[$this->lastHandlerKey]['link']);
 				break;
@@ -3131,7 +3121,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * Checks whether the DBAL is currently inside an operation running on the "native" DB handler (i.e. MySQL)
 	 *
-	 * @return bool	TRUE if running on "native" DB handler (i.e. MySQL)
+	 * @return bool TRUE if running on "native" DB handler (i.e. MySQL)
 	 */
 	public function runningNative() {
 		return (string)$this->handlerCfg[$this->lastHandlerKey]['type'] === 'native';
@@ -3141,7 +3131,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Checks whether the ADOdb handler is running with a driver that contains the argument
 	 *
 	 * @param string $driver Driver name, matched with strstr().
-	 * @return bool	True if running with the given driver
+	 * @return bool True if running with the given driver
 	 */
 	public function runningADOdbDriver($driver) {
 		return strpos($this->handlerCfg[$this->lastHandlerKey]['config']['driver'], $driver) !== FALSE;
@@ -3752,10 +3742,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Inserts row in the log table
 	 *
 	 * @param string $query The current query
-	 * @param integer $ms Execution time of query in milliseconds
+	 * @param int $ms Execution time of query in milliseconds
 	 * @param array $data Data to be stored serialized.
 	 * @param string $join Join string if there IS a join.
-	 * @param integer $errorFlag Error status.
+	 * @param int $errorFlag Error status.
 	 * @param string $script The script calling the logging
 	 * @return void
 	 */

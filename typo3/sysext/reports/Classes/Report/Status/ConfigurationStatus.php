@@ -26,14 +26,14 @@ class ConfigurationStatus implements \TYPO3\CMS\Reports\StatusProviderInterface 
 	/**
 	 * 10MB
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $deprecationLogFileSizeWarningThreshold = 10485760;
 
 	/**
 	 * 100MB
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $deprecationLogFileSizeErrorThreshold = 104857600;
 
@@ -89,7 +89,7 @@ class ConfigurationStatus implements \TYPO3\CMS\Reports\StatusProviderInterface 
 	/**
 	 * Checks whether memcached is configured, if that's the case we assume it's also used.
 	 *
-	 * @return boolean TRUE if memcached is used, FALSE otherwise.
+	 * @return bool TRUE if memcached is used, FALSE otherwise.
 	 */
 	protected function isMemcachedUsed() {
 		$memcachedUsed = FALSE;

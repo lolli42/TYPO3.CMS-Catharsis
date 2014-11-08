@@ -27,7 +27,7 @@ class RecordList {
 	// Internal, GPvars:
 	// Page Id for which to make the listing
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	public $id;
 
@@ -206,7 +206,6 @@ class RecordList {
 		$dblist->hideTables = $this->modTSconfig['properties']['hideTables'];
 		$dblist->hideTranslations = $this->modTSconfig['properties']['hideTranslations'];
 		$dblist->tableTSconfigOverTCA = $this->modTSconfig['properties']['table.'];
-		$dblist->alternateBgColors = $this->modTSconfig['properties']['alternateBgColors'] ? 1 : 0;
 		$dblist->allowedNewTables = GeneralUtility::trimExplode(',', $this->modTSconfig['properties']['allowedNewTables'], TRUE);
 		$dblist->deniedNewTables = GeneralUtility::trimExplode(',', $this->modTSconfig['properties']['deniedNewTables'], TRUE);
 		$dblist->newWizards = $this->modTSconfig['properties']['newWizards'] ? 1 : 0;
@@ -228,7 +227,7 @@ class RecordList {
 			// CBH is all the fields selected for the clipboard, CBC is the checkbox fields which were checked.
 			// By merging we get a full array of checked/unchecked elements
 			// This is set to the 'el' array of the CB after being parsed so only the table in question is registered.
-			$CB['el'] = $dblist->clipObj->cleanUpCBC(array_merge((array) GeneralUtility::_POST('CBH'), (array) GeneralUtility::_POST('CBC')), $this->cmd_table);
+			$CB['el'] = $dblist->clipObj->cleanUpCBC(array_merge((array)GeneralUtility::_POST('CBH'), (array)GeneralUtility::_POST('CBC')), $this->cmd_table);
 		}
 		if (!$this->MOD_SETTINGS['clipBoard']) {
 			// If the clipboard is NOT shown, set the pad to 'normal'.

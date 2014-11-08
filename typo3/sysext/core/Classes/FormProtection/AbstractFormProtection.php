@@ -91,11 +91,11 @@ abstract class AbstractFormProtection {
 	 * @param string $formName
 	 * @param string $action
 	 * @param string $formInstanceName
-	 * @return boolean
+	 * @return bool
 	 */
 	public function validateToken($tokenId, $formName, $action = '', $formInstanceName = '') {
-		$validTokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac(((string) $formName . (string) $action) . (string) $formInstanceName . $this->getSessionToken());
-		if ((string) $tokenId === $validTokenId) {
+		$validTokenId = \TYPO3\CMS\Core\Utility\GeneralUtility::hmac(((string)$formName . (string)$action) . (string)$formInstanceName . $this->getSessionToken());
+		if ((string)$tokenId === $validTokenId) {
 			$isValid = TRUE;
 		} else {
 			$isValid = FALSE;

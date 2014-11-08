@@ -13,6 +13,9 @@ namespace TYPO3\CMS\Core\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * Implements the repository for record collections.
  *
@@ -20,7 +23,11 @@ namespace TYPO3\CMS\Core\Collection;
  */
 class RecordCollectionRepository {
 
+	/**
+	 * @var string
+	 */
 	const TYPE_Static = 'static';
+
 	/**
 	 * Name of the table the collection records are stored to
 	 *
@@ -41,12 +48,16 @@ class RecordCollectionRepository {
 	/**
 	 * Finds a record collection by uid.
 	 *
-	 * @param integer $uid The uid to be looked up
+	 * @param int $uid The uid to be looked up
 	 * @return NULL|\TYPO3\CMS\Core\Collection\AbstractRecordCollection
 	 */
 	public function findByUid($uid) {
 		$result = NULL;
-		$data = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('*', $this->table, 'uid=' . (int)$uid . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($this->table));
+		$data = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+			'*',
+			$this->table,
+			'uid=' . (int)$uid . BackendUtility::deleteClause($this->table)
+		);
 		if (is_array($data)) {
 			$result = $this->createDomainObject($data);
 		}
@@ -106,7 +117,7 @@ class RecordCollectionRepository {
 	/**
 	 * Deletes a record collection by uid.
 	 *
-	 * @param integer $uid uid to be deleted
+	 * @param int $uid uid to be deleted
 	 * @return void
 	 */
 	public function deleteByUid($uid) {
@@ -121,12 +132,16 @@ class RecordCollectionRepository {
 	 */
 	protected function queryMultipleRecords(array $conditions = array()) {
 		$result = NULL;
-		if (count($conditions) > 0) {
+		if (!empty($conditions)) {
 			$conditionsWhereClause = implode(' AND ', $conditions);
 		} else {
 			$conditionsWhereClause = '1=1';
 		}
-		$data = $this->getDatabaseConnection()->exec_SELECTgetRows('*', $this->table, $conditionsWhereClause . \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($this->table));
+		$data = $this->getDatabaseConnection()->exec_SELECTgetRows(
+			'*',
+			$this->table,
+			$conditionsWhereClause . BackendUtility::deleteClause($this->table)
+		);
 		if ($data !== NULL) {
 			$result = $this->createMultipleDomainObjects($data);
 		}
@@ -138,11 +153,12 @@ class RecordCollectionRepository {
 	 *
 	 * @param array $record Database record to be reconstituted
 	 * @return \TYPO3\CMS\Core\Collection\AbstractRecordCollection
+	 * @throws \RuntimeException
 	 */
 	protected function createDomainObject(array $record) {
 		switch ($record['type']) {
 			case self::TYPE_Static:
-				$collection = \TYPO3\CMS\Core\Collection\StaticRecordCollection::create($record);
+				$collection = StaticRecordCollection::create($record);
 				break;
 			default:
 				throw new \RuntimeException('Unknown record collection type "' . $record['type'], 1328646798);

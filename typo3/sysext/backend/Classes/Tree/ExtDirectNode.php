@@ -37,28 +37,28 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Indicator if the node is expanded
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $expanded = FALSE;
 
 	/**
 	 * Indicator if the node can be expanded
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $expandable = FALSE;
 
 	/**
 	 * Indicator if the node is draggable
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $draggable = TRUE;
 
 	/**
 	 * Indicator if the node is allowed as a drop target
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isDropTarget = TRUE;
 
@@ -121,14 +121,14 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Indicator if the copy mode is activated
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $t3InCopyMode = FALSE;
 
 	/**
 	 * Indicator if the cut mode is activated
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $t3InCutMode = FALSE;
 
@@ -149,14 +149,14 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Indicator if the label is editable
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $labelIsEditable = TRUE;
 
 	/**
 	 * Indicator if the node can have children's
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $allowChildren = TRUE;
 
@@ -182,7 +182,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the leaf node indicator
 	 *
-	 * @param boolean $isLeaf
+	 * @param bool $isLeaf
 	 * @return void
 	 */
 	public function setLeaf($isLeaf) {
@@ -192,7 +192,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns if the node is a leaf node
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isLeafNode() {
 		return $this->leaf;
@@ -201,7 +201,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the expandable indicator
 	 *
-	 * @param boolean $expandable
+	 * @param bool $expandable
 	 * @return void
 	 */
 	public function setExpandable($expandable) {
@@ -211,7 +211,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the expandable indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isExpandable() {
 		return $this->expandable;
@@ -220,7 +220,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the expanded indicator
 	 *
-	 * @param boolean $expanded
+	 * @param bool $expanded
 	 * @return void
 	 */
 	public function setExpanded($expanded) {
@@ -230,7 +230,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the expanded indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isExpanded() {
 		if ($this->isLeafNode()) {
@@ -242,7 +242,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the draggable indicator
 	 *
-	 * @param boolean $draggable
+	 * @param bool $draggable
 	 * @return void
 	 */
 	public function setDraggable($draggable) {
@@ -252,7 +252,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the draggable indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isDraggable() {
 		return $this->draggable;
@@ -261,7 +261,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the indicator if the node can be a drop target
 	 *
-	 * @param boolean $isDropTarget
+	 * @param bool $isDropTarget
 	 * @return void
 	 */
 	public function setIsDropTarget($isDropTarget) {
@@ -271,7 +271,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the indicator if the node is a drop target
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isDropTarget() {
 		return $this->isDropTarget;
@@ -333,7 +333,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the paste copy indicator
 	 *
-	 * @param boolean $inCopyMode
+	 * @param bool $inCopyMode
 	 * @return void
 	 */
 	public function setInCopyMode($inCopyMode) {
@@ -343,7 +343,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the copy mode indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isInCopyMode() {
 		return $this->t3InCopyMode;
@@ -352,7 +352,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the paste cut indicator
 	 *
-	 * @param boolean $inCutMode
+	 * @param bool $inCutMode
 	 * @return void
 	 */
 	public function setInCutMode($inCutMode) {
@@ -362,7 +362,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the cut mode indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isInCutMode() {
 		return $this->t3InCutMode;
@@ -446,7 +446,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the indicator if the label is editable
 	 *
-	 * @param boolean $labelIsEditable
+	 * @param bool $labelIsEditable
 	 * @return void
 	 */
 	public function setLabelIsEditable($labelIsEditable) {
@@ -456,7 +456,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the editable label indicator
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isLabelEditable() {
 		return $this->labelIsEditable;
@@ -469,7 +469,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	 * @return void
 	 */
 	public function setRecord($record) {
-		$this->record = (array) $record;
+		$this->record = (array)$record;
 	}
 
 	/**
@@ -488,7 +488,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	 * @return void
 	 */
 	public function setContextInfo($contextInfo) {
-		$this->contextInfo = (array) $contextInfo;
+		$this->contextInfo = (array)$contextInfo;
 	}
 
 	/**
@@ -497,7 +497,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	 * @return array
 	 */
 	public function getContextInfo() {
-		return (array) $this->contextInfo;
+		return (array)$this->contextInfo;
 	}
 
 	/**
@@ -516,7 +516,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Sets the indicator if the node can have child nodes
 	 *
-	 * @param boolean $allowChildren
+	 * @param bool $allowChildren
 	 * @return void
 	 */
 	public function setAllowChildren($allowChildren) {
@@ -526,7 +526,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Checks if the node can have child nodes
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function canHaveChildren() {
 		return $this->allowChildren;
@@ -535,7 +535,7 @@ class ExtDirectNode extends \TYPO3\CMS\Backend\Tree\TreeNode {
 	/**
 	 * Returns the node in an array representation that can be used for serialization
 	 *
-	 * @param boolean $addChildNodes
+	 * @param bool $addChildNodes
 	 * @return array
 	 */
 	public function toArray($addChildNodes = TRUE) {

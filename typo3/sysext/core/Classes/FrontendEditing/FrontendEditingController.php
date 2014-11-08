@@ -146,7 +146,7 @@ class FrontendEditingController {
 	/**
 	 * Returns TRUE if an edit-action is sent from the Admin Panel
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see index_ts.php
 	 */
 	public function isEditAction() {
@@ -154,7 +154,7 @@ class FrontendEditingController {
 			if ($this->TSFE_EDIT['cancel']) {
 				unset($this->TSFE_EDIT['cmd']);
 			} else {
-				$cmd = (string) $this->TSFE_EDIT['cmd'];
+				$cmd = (string)$this->TSFE_EDIT['cmd'];
 				if (($cmd != 'edit' || is_array($this->TSFE_EDIT['data']) && ($this->TSFE_EDIT['doSave'] || $this->TSFE_EDIT['update'] || $this->TSFE_EDIT['update_close'])) && $cmd != 'new') {
 					// $cmd can be a command like "hide" or "move". If $cmd is "edit" or "new" it's an indication to show the formfields. But if data is sent with update-flag then $cmd = edit is accepted because edit may be sent because of .keepGoing flag.
 					return TRUE;
@@ -168,12 +168,12 @@ class FrontendEditingController {
 	 * Returns TRUE if an edit form is shown on the page.
 	 * Used from index_ts.php where a TRUE return-value will result in classes etc. being included.
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see index_ts.php
 	 */
 	public function isEditFormShown() {
 		if (is_array($this->TSFE_EDIT)) {
-			$cmd = (string) $this->TSFE_EDIT['cmd'];
+			$cmd = (string)$this->TSFE_EDIT['cmd'];
 			if ($cmd == 'edit' || $cmd == 'new') {
 				return TRUE;
 			}
@@ -219,7 +219,7 @@ class FrontendEditingController {
 	 * Hides a specific record.
 	 *
 	 * @param string $table The table name for the record to hide.
-	 * @param integer $uid The UID for the record to hide.
+	 * @param int $uid The UID for the record to hide.
 	 * @return void
 	 */
 	public function doHide($table, $uid) {
@@ -237,7 +237,7 @@ class FrontendEditingController {
 	 * Unhides (shows) a specific record.
 	 *
 	 * @param string $table The table name for the record to unhide.
-	 * @param integer $uid The UID for the record to unhide.
+	 * @param int $uid The UID for the record to unhide.
 	 * @return void
 	 */
 	public function doUnhide($table, $uid) {
@@ -255,7 +255,7 @@ class FrontendEditingController {
 	 * Moves a record up.
 	 *
 	 * @param string $table The table name for the record to move.
-	 * @param integer $uid The UID for the record to hide.
+	 * @param int $uid The UID for the record to hide.
 	 * @return void
 	 */
 	public function doUp($table, $uid) {
@@ -266,7 +266,7 @@ class FrontendEditingController {
 	 * Moves a record down.
 	 *
 	 * @param string $table The table name for the record to move.
-	 * @param integer $uid The UID for the record to move.
+	 * @param int $uid The UID for the record to move.
 	 * @return void
 	 */
 	public function doDown($table, $uid) {
@@ -277,7 +277,7 @@ class FrontendEditingController {
 	 * Moves a record after a given element. Used for drag.
 	 *
 	 * @param string $table The table name for the record to move.
-	 * @param integer $uid The UID for the record to move.
+	 * @param int $uid The UID for the record to move.
 	 * @return void
 	 */
 	public function doMoveAfter($table, $uid) {
@@ -289,9 +289,9 @@ class FrontendEditingController {
 	 * Moves a record
 	 *
 	 * @param string $table The table name for the record to move.
-	 * @param integer $uid The UID for the record to move.
+	 * @param int $uid The UID for the record to move.
 	 * @param string $direction The direction to move, either 'up' or 'down'.
-	 * @param integer $afterUID The UID of record to move after. This is specified for dragging only.
+	 * @param int $afterUID The UID of record to move after. This is specified for dragging only.
 	 * @return void
 	 */
 	protected function move($table, $uid, $direction = '', $afterUID = 0) {
@@ -354,7 +354,7 @@ class FrontendEditingController {
 	 * Deletes a specific record.
 	 *
 	 * @param string $table The table name for the record to delete.
-	 * @param integer $uid The UID for the record to delete.
+	 * @param int $uid The UID for the record to delete.
 	 * @return void
 	 */
 	public function doDelete($table, $uid) {
@@ -370,7 +370,7 @@ class FrontendEditingController {
 	 * Saves a record based on its data array.
 	 *
 	 * @param string $table The table name for the record to save.
-	 * @param integer $uid The UID for the record to save.
+	 * @param int $uid The UID for the record to save.
 	 * @return void
 	 */
 	public function doSave($table, $uid) {
@@ -392,7 +392,7 @@ class FrontendEditingController {
 	 * Saves a record based on its data array and closes it.
 	 *
 	 * @param string $table The table name for the record to save.
-	 * @param integer $uid The UID for the record to save.
+	 * @param int $uid The UID for the record to save.
 	 * @return void
 	 * @note 	This method is only a wrapper for doSave() but is needed so
 	 */
@@ -405,7 +405,7 @@ class FrontendEditingController {
 	 * element rendering will take care of everything.
 	 *
 	 * @param string $table The table name for the record to close.
-	 * @param integer $uid The UID for the record to close.
+	 * @param int $uid The UID for the record to close.
 	 * @return void
 	 */
 	public function doClose($table, $uid) {
@@ -418,7 +418,7 @@ class FrontendEditingController {
 	 *
 	 * @param string $table The name of the table.
 	 * @param array $currentRecord The record.
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function allowedToEditLanguage($table, array $currentRecord) {
 		// If no access right to record languages, return immediately
@@ -445,8 +445,8 @@ class FrontendEditingController {
 	 * @param string $table The name of the table.
 	 * @param array $dataArray The data array.
 	 * @param array $conf The configuration array for the edit panel.
-	 * @param boolean $checkEditAccessInternals Boolean indicating whether recordEditAccessInternals should not be checked. Defaults
-	 * @return boolean
+	 * @param bool $checkEditAccessInternals Boolean indicating whether recordEditAccessInternals should not be checked. Defaults
+	 * @return bool
 	 */
 	protected function allowedToEdit($table, array $dataArray, array $conf, $checkEditAccessInternals = TRUE) {
 		// Unless permissions specifically allow it, editing is not allowed.
@@ -492,7 +492,7 @@ class FrontendEditingController {
 	 *
 	 * @param string $table The name of the table.
 	 * @param array $conf The configuration array.
-	 * @param integer $pid The PID where editing will occur.
+	 * @param int $pid The PID where editing will occur.
 	 * @param string $allow Comma-separated list of actions that are allowed in general.
 	 * @return array
 	 */

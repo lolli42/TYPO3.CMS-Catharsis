@@ -24,14 +24,14 @@ class ElementCounter implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Counter
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $elementCounter = 1;
 
 	/**
 	 * Raise the element counter by one
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getElementId() {
 		$elementId = $this->elementCounter;

@@ -109,7 +109,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class FormsController {
 
-	// Internal, dynamic:
 	/**
 	 * document template object
 	 *
@@ -117,42 +116,46 @@ class FormsController {
 	 */
 	public $doc;
 
-	// Content accumulation for the module.
 	/**
+	 * Content accumulation for the module.
+	 *
 	 * @var string
 	 */
 	public $content;
 
-	// Used to numerate attachments automatically.
 	/**
+	 * Used to numerate attachments automatically.
+	 *
 	 * @var int
 	 */
 	public $attachmentCounter = 0;
 
-	// Internal, static:
-	// If set, the string version of the content is interpreted/written as XML instead of
-	// the original linebased kind. This variable still needs binding to the wizard parameters
-	// - but support is ready!
 	/**
+	 * If set, the string version of the content is interpreted/written as XML instead of
+	 * the original linebased kind. This variable still needs binding to the wizard parameters
+	 * - but support is ready!
+	 *
 	 * @var int
 	 */
 	public $xmlStorage = 0;
 
-	// Internal, static: GPvars
-	// Wizard parameters, coming from TCEforms linking to the wizard.
 	/**
+	 * Wizard parameters, coming from TCEforms linking to the wizard.
+	 *
 	 * @var array
 	 */
 	public $P;
 
-	// The array which is constantly submitted by the multidimensional form of this wizard.
 	/**
+	 * The array which is constantly submitted by the multidimensional form of this wizard.
+	 *
 	 * @var array
 	 */
 	public $FORMCFG;
 
-	// Indicates if the form is of a dedicated type, like "formtype_mail" (for tt_content element "Form")
 	/**
+	 * Indicates if the form is of a dedicated type, like "formtype_mail" (for tt_content element "Form")
+	 *
 	 * @var string
 	 */
 	public $special;
@@ -412,7 +415,7 @@ class FormsController {
 						$temp_cells[$GLOBALS['LANG']->getLL('forms_fieldName')] = '<input type="text"' . $this->doc->formWidth(10) . ' name="FORMCFG[c][' . ($k + 1) * 2 . '][fieldname]" value="' . htmlspecialchars($confData['fieldname']) . '" title="' . $GLOBALS['LANG']->getLL('forms_fieldName', TRUE) . '" />';
 					}
 					// Field configuration depending on the fields type:
-					switch ((string) $confData['type']) {
+					switch ((string)$confData['type']) {
 						case 'textarea':
 							$temp_cells[$GLOBALS['LANG']->getLL('forms_cols')] = '<input type="text"' . $this->doc->formWidth(5) . ' name="FORMCFG[c][' . ($k + 1) * 2 . '][cols]" value="' . htmlspecialchars($confData['cols']) . '" title="' . $GLOBALS['LANG']->getLL('forms_cols', TRUE) . '" />';
 							$temp_cells[$GLOBALS['LANG']->getLL('forms_rows')] = '<input type="text"' . $this->doc->formWidth(5) . ' name="FORMCFG[c][' . ($k + 1) * 2 . '][rows]" value="' . htmlspecialchars($confData['rows']) . '" title="' . $GLOBALS['LANG']->getLL('forms_rows', TRUE) . '" />';
@@ -434,7 +437,7 @@ class FormsController {
 							break;
 					}
 					// Field configuration depending on the fields type:
-					switch ((string) $confData['type']) {
+					switch ((string)$confData['type']) {
 						case 'textarea':
 
 						case 'input':
@@ -648,7 +651,7 @@ class FormsController {
 					$thisLine[1] = ($vv['required'] ? '*' : '') . str_replace(',', '', (($vv['fieldname'] ? $vv['fieldname'] . '=' : '') . $vv['type']));
 					// Default:
 					$tArr = array('', '', '', '', '', '');
-					switch ((string) $vv['type']) {
+					switch ((string)$vv['type']) {
 						case 'textarea':
 							if ((int)$vv['cols']) {
 								$tArr[0] = (int)$vv['cols'];
@@ -772,7 +775,7 @@ class FormsController {
 					} else {
 						$confData['fieldname'] = str_replace(' ', '_', trim($typeParts[0]));
 					}
-					switch ((string) $confData['type']) {
+					switch ((string)$confData['type']) {
 						case 'select':
 						case 'radio':
 							$confData['default'] = implode(LF, GeneralUtility::trimExplode(',', $parts[2]));
@@ -781,7 +784,7 @@ class FormsController {
 							$confData['default'] = trim($parts[2]);
 					}
 					// Field configuration depending on the fields type:
-					switch ((string) $confData['type']) {
+					switch ((string)$confData['type']) {
 						case 'textarea':
 							$confData['cols'] = $fParts[1];
 							$confData['rows'] = $fParts[2];
@@ -869,8 +872,8 @@ class FormsController {
 	 * Checks access for element
 	 *
 	 * @param string $table Table name
-	 * @param integer $uid Record uid
-	 * @return boolean
+	 * @param int $uid Record uid
+	 * @return bool
 	 * @todo: Refactor to remove duplicate code (see TableController, RteController)
 	 */
 	protected function checkEditAccess($table, $uid) {

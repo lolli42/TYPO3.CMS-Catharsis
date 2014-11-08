@@ -30,56 +30,113 @@ class LoginController {
 
 	const SIGNAL_RenderLoginForm = 'renderLoginForm';
 
-	// Internal, GPvars:
-	// GPvar: redirect_url; The URL to redirect to after login.
+	/**
+	 * The URL to redirect to after login.
+	 *
+	 * @var string
+	 */
 	public $redirect_url;
 
-	// GPvar: Defines which interface to load (from interface selector)
+	/**
+	 * Defines which interface to load (from interface selector)
+	 *
+	 * @var string
+	 */
 	public $GPinterface;
 
-	// GPvar: preset username
+	/**
+	 * preset username
+	 *
+	 * @var string
+	 */
 	public $u;
 
-	// GPvar: preset password
+	/**
+	 * preset password
+	 *
+	 * @var string
+	 */
 	public $p;
 
 	/**
 	 * OpenID URL submitted by form
+	 *
+	 * @var string
 	 */
 	protected $openIdUrl;
 
-	// GPvar: If "L" is "OUT", then any logged in used is logged out. If redirect_url is given, we redirect to it
+	/**
+	 * If "L" is "OUT", then any logged in used is logged out. If redirect_url is given, we redirect to it
+	 *
+	 * @var string
+	 */
 	public $L;
 
-	// Login-refresh boolean; The backend will call this script with this value set when the login is close to being expired and the form needs to be redrawn.
+	/**
+	 * Login-refresh boolean; The backend will call this script
+	 * with this value set when the login is close to being expired
+	 * and the form needs to be redrawn.
+	 *
+	 * @var bool
+	 */
 	public $loginRefresh;
 
-	// Value of forms submit button for login.
+	/**
+	 * Value of forms submit button for login.
+	 *
+	 * @var string
+	 */
 	public $commandLI;
 
-	// Internal, static:
-	// Set to the redirect URL of the form (may be redirect_url or "backend.php")
+	/**
+	 * Set to the redirect URL of the form (may be redirect_url or "backend.php")
+	 *
+	 * @var string
+	 */
 	public $redirectToURL;
 
-	// Internal, dynamic:
-	// Content accumulation
+	/**
+	 * Content accumulation
+	 *
+	 * @var string
+	 */
 	public $content;
 
-	// A selector box for selecting value for "interface" may be rendered into this variable
+	/**
+	 * A selector box for selecting value for "interface" may be rendered into this variable
+	 *
+	 * @var string
+	 */
 	public $interfaceSelector;
 
-	// A selector box for selecting value for "interface" may be rendered into this variable
-	// this will have an onchange action which will redirect the user to the selected interface right away
+	/**
+	 * A selector box for selecting value for "interface" may be rendered into this variable
+	 * this will have an onchange action which will redirect the user to the selected interface right away
+	 *
+	 * @var string
+	 */
 	public $interfaceSelector_jump;
 
-	// A hidden field, if the interface is not set.
+	/**
+	 * A hidden field, if the interface is not set.
+	 *
+	 * @var string
+	 */
 	public $interfaceSelector_hidden;
 
-	// Additional hidden fields to be placed at the login form
+	/**
+	 * Additional hidden fields to be placed at the login form
+	 *
+	 * @var string
+	 */
 	public $addFields_hidden = '';
 
-	// sets the level of security. *'normal' = clear-text. 'challenged' = hashed
-	// password/username from form in $formfield_uident. 'superchallenged' = hashed password hashed again with username.
+	/**
+	 * Sets the level of security. *'normal' = clear-text. 'challenged' = hashed
+	 * password/username from form in $formfield_uident. 'superchallenged' = hashed password hashed again with username.
+	 *
+	 * @var string
+	 */
 	public $loginSecurityLevel = 'superchallenged';
 
 	/**
@@ -133,10 +190,7 @@ class LoginController {
 		// Do a logout if the command is set
 		if ($this->L == 'OUT' && is_object($GLOBALS['BE_USER'])) {
 			$GLOBALS['BE_USER']->logoff();
-			if ($this->redirect_url) {
-				HttpUtility::redirect($this->redirect_url);
-			}
-			die;
+			HttpUtility::redirect($this->redirect_url);
 		}
 	}
 
@@ -151,6 +205,7 @@ class LoginController {
 		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 		$pageRenderer = $GLOBALS['TBE_TEMPLATE']->getPageRenderer();
 		$pageRenderer->loadJquery();
+
 		// support placeholders for IE9 and lower
 		$clientInfo = GeneralUtility::clientInfo();
 		if ($clientInfo['BROWSER'] == 'msie' && $clientInfo['VERSION'] <= 9) {
@@ -269,10 +324,11 @@ class LoginController {
 	 */
 	public function wrapLoginForm($content) {
 		$mainContent = HtmlParser::getSubpart($GLOBALS['TBE_TEMPLATE']->moduleTemplate, '###PAGE###');
+
 		if ($GLOBALS['TBE_STYLES']['logo_login']) {
 			$logo = '<img src="' . htmlspecialchars(($GLOBALS['BACK_PATH'] . $GLOBALS['TBE_STYLES']['logo_login'])) . '" alt="" class="t3-login-logo" />';
 		} else {
-			$logo = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/typo3logo.gif', 'width="123" height="34"') . ' alt="" class="t3-login-logo" />';
+			$logo = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/typo3-transparent@2x.png', 'width="140" height="39"') . ' alt="" class="t3-login-logo t3-default-logo" />';
 		}
 
 		$additionalCssClasses = array();
@@ -338,7 +394,7 @@ class LoginController {
 					$this->redirectToURL = 'index.php?commandLI=setCookie';
 				}
 			}
-			if ($redirectToURL = (string) $GLOBALS['BE_USER']->getTSConfigVal('auth.BE.redirectToURL')) {
+			if ($redirectToURL = (string)$GLOBALS['BE_USER']->getTSConfigVal('auth.BE.redirectToURL')) {
 				$this->redirectToURL = $redirectToURL;
 				$this->GPinterface = '';
 			}
@@ -348,8 +404,6 @@ class LoginController {
 			// Based on specific setting of interface we set the redirect script:
 			switch ($this->GPinterface) {
 				case 'backend':
-
-				case 'backend_old':
 					$this->redirectToURL = 'backend.php';
 					break;
 				case 'frontend':
@@ -398,14 +452,14 @@ class LoginController {
 			// Only if more than one interface is defined will we show the selector:
 			if (count($parts) > 1) {
 				// Initialize:
-				$labels = array();
-				$labels['backend'] = $GLOBALS['LANG']->getLL('interface.backend');
-				$labels['backend_old'] = $GLOBALS['LANG']->getLL('interface.backend_old');
-				$labels['frontend'] = $GLOBALS['LANG']->getLL('interface.frontend');
-				$jumpScript = array();
-				$jumpScript['backend'] = 'backend.php';
-				$jumpScript['backend_old'] = 'backend.php';
-				$jumpScript['frontend'] = '../';
+				$labels = array(
+					'backend' => $GLOBALS['LANG']->getLL('interface.backend'),
+					'frontend' => $GLOBALS['LANG']->getLL('interface.frontend')
+				);
+				$jumpScript = array(
+					'backend' => 'backend.php',
+					'frontend' => '../'
+				);
 				// Traverse the interface keys:
 				foreach ($parts as $valueStr) {
 					$this->interfaceSelector .= '
@@ -414,10 +468,10 @@ class LoginController {
 							<option value="' . htmlspecialchars($jumpScript[$valueStr]) . '">' . htmlspecialchars($labels[$valueStr]) . '</option>';
 				}
 				$this->interfaceSelector = '
-						<select id="t3-interfaceselector" name="interface" class="c-interfaceselector" tabindex="3">' . $this->interfaceSelector . '
+						<select id="t3-interfaceselector" name="interface" class="form-control t3-interfaces input-lg" tabindex="3">' . $this->interfaceSelector . '
 						</select>';
 				$this->interfaceSelector_jump = '
-						<select id="t3-interfaceselector" name="interface" class="c-interfaceselector" tabindex="3" onchange="window.location.href=this.options[this.selectedIndex].value;">' . $this->interfaceSelector_jump . '
+						<select id="t3-interfaceselector" name="interface" class="form-control t3-interfaces input-lg" tabindex="3" onchange="window.location.href=this.options[this.selectedIndex].value;">' . $this->interfaceSelector_jump . '
 						</select>';
 			} elseif (!$this->redirect_url) {
 				// If there is only ONE interface value set and no redirect_url is present:
@@ -430,7 +484,7 @@ class LoginController {
 	 * Returns the login box image, whether the default or an image from the rotation folder.
 	 *
 	 * @return string HTML image tag.
-	 * @deprecated since 6.3, see Deprecation-60559-MakeLoginBoxImage.rst
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, see Deprecation-60559-MakeLoginBoxImage.rst
 	 */
 	public function makeLoginBoxImage() {
 		GeneralUtility::logDeprecatedFunction();
@@ -460,9 +514,9 @@ class LoginController {
 			$count = 1;
 			foreach ($systemNews as $newsItemData) {
 				$additionalClass = '';
-				if ($count == 1) {
+				if ($count === 1) {
 					$additionalClass = ' first-item';
-				} elseif ($count == count($systemNews)) {
+				} elseif ($count === count($systemNews)) {
 					$additionalClass = ' last-item';
 				}
 				$newsItemContent = $htmlParser->TS_transform_rte($htmlParser->TS_links_rte($newsItemData['content']));
@@ -511,7 +565,7 @@ class LoginController {
 		$output = '';
 		// The form defaults to 'no login'. This prevents plain
 		// text logins to the Backend. The 'sv' extension changes the form to
-		// use superchallenged method and rsaauth extension makes rsa authetication.
+		// use superchallenged method and rsaauth extension makes rsa authentication.
 		$form = '<form action="index.php" method="post" name="loginform" ' . 'onsubmit="alert(\'No authentication methods available. Please, contact your TYPO3 administrator.\');return false">';
 		// Call hooks. If they do not return anything, we fail to login
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/index.php']['loginFormHook'])) {
@@ -524,7 +578,11 @@ class LoginController {
 				}
 			}
 		}
-		$output .= $form . '<input type="hidden" name="login_status" value="login" />' . '<input type="hidden" id="t3-field-userident" name="userident" value="" />' . '<input type="hidden" name="redirect_url" value="' . htmlspecialchars($this->redirectToURL) . '" />' . '<input type="hidden" name="loginRefresh" value="' . htmlspecialchars($this->loginRefresh) . '" />' . $this->interfaceSelector_hidden . $this->addFields_hidden;
+		$output .= $form . '<input type="hidden" name="login_status" value="login" />' .
+			'<input type="hidden" id="t3-field-userident" name="userident" value="" />' .
+			'<input type="hidden" name="redirect_url" value="' . htmlspecialchars($this->redirectToURL) . '" />' .
+			'<input type="hidden" name="loginRefresh" value="' . htmlspecialchars($this->loginRefresh) . '" />' .
+			$this->interfaceSelector_hidden . $this->addFields_hidden;
 		return $output;
 	}
 
@@ -532,7 +590,7 @@ class LoginController {
 	 * Creates JavaScript for the login form
 	 *
 	 * @return string JavaScript code
-	 * @deprecated since TYPO3 6.3, not in use anymore
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public function getJScode() {
 		GeneralUtility::logDeprecatedFunction();
@@ -541,7 +599,7 @@ class LoginController {
 	/**
 	 * Checks if login credentials are currently submitted
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isLoginInProgress() {
 		$username = GeneralUtility::_GP('username');

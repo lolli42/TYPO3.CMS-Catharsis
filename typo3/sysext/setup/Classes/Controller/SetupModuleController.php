@@ -18,35 +18,40 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Module: User configuration
- *
- * This module lets users viev and change their individual settings
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
  * Script class for the Setup module
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SetupModuleController {
 
-	// Internal variables:
+	/**
+	 * @var array
+	 */
 	public $MCONF = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_MENU = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_SETTINGS = array();
 
 	/**
-	 * document template object
-	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 */
 	public $doc;
 
+	/**
+	 * @var string
+	 */
 	public $content;
 
+	/**
+	 * @var array
+	 */
 	public $overrideConf;
 
 	/**
@@ -56,26 +61,59 @@ class SetupModuleController {
 	 */
 	public $OLD_BE_USER;
 
+	/**
+	 * @var bool
+	 */
 	public $languageUpdate;
 
+	/**
+	 * @var bool
+	 */
 	protected $pagetreeNeedsRefresh = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $isAdmin;
 
+	/**
+	 * @var int
+	 */
 	protected $dividers2tabs;
 
+	/**
+	 * @var array
+	 */
 	protected $tsFieldConf;
 
+	/**
+	 * @var bool
+	 */
 	protected $saveData = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $passwordIsUpdated = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $passwordIsSubmitted = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $setupIsUpdated = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $tempDataIsCleared = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	protected $settingsAreResetToDefault = FALSE;
 
 	/**
@@ -95,11 +133,6 @@ class SetupModuleController {
 	 */
 	protected $simUser = '';
 
-	/******************************
-	 *
-	 * Saving data
-	 *
-	 ******************************/
 	/**
 	 * Instantiate the form protection before a simulated user is initialized.
 	 */
@@ -130,7 +163,7 @@ class SetupModuleController {
 		$beUserId = $GLOBALS['BE_USER']->user['uid'];
 		$storeRec = array();
 		$fieldList = $this->getFieldsFromShowItem();
-		if (is_array($d) && $this->formProtection->validateToken((string) GeneralUtility::_POST('formToken'), 'BE user setup', 'edit')) {
+		if (is_array($d) && $this->formProtection->validateToken((string)GeneralUtility::_POST('formToken'), 'BE user setup', 'edit')) {
 			// UC hashed before applying changes
 			$save_before = md5(serialize($GLOBALS['BE_USER']->uc));
 			// PUT SETTINGS into the ->uc array:
@@ -160,7 +193,7 @@ class SetupModuleController {
 						continue;
 					}
 					if ($config['table']) {
-						if ($config['table'] == 'be_users' && !in_array($field, array('password', 'password2', 'email', 'realName', 'admin'))) {
+						if ($config['table'] === 'be_users' && !in_array($field, array('password', 'password2', 'email', 'realName', 'admin'))) {
 							if (!isset($config['access']) || $this->checkAccess($config) && $GLOBALS['BE_USER']->user[$field] !== $d['be_users'][$field]) {
 								if ($config['type'] === 'check') {
 									$fieldValue = isset($d['be_users'][$field]) ? 1 : 0;
@@ -172,7 +205,7 @@ class SetupModuleController {
 							}
 						}
 					}
-					if ($config['type'] == 'check') {
+					if ($config['type'] === 'check') {
 						$GLOBALS['BE_USER']->uc[$field] = isset($d[$field]) ? 1 : 0;
 					} else {
 						$GLOBALS['BE_USER']->uc[$field] = htmlspecialchars($d[$field]);
@@ -269,14 +302,6 @@ class SetupModuleController {
 		$this->doc->setModuleTemplate('EXT:setup/Resources/Private/Templates/setup.html');
 		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="application/x-www-form-urlencoded">';
 		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Styles/styles.css');
-		$this->doc->tableLayout = array(
-			'defRow' => array(
-				'0' => array('<td class="td-label">', '</td>'),
-				'defCol' => array('<td valign="top">', '</td>')
-			)
-		);
-		$this->doc->table_TR = '<tr>';
-		$this->doc->table_TABLE = '<table border="0" cellspacing="1" cellpadding="2" class="typo3-usersettings">';
 		$this->doc->JScode .= $this->getJavaScript();
 	}
 
@@ -297,12 +322,11 @@ class SetupModuleController {
 	}
 
 	/**
-	 * Generate the main settings formular:
+	 * Generate the main settings form:
 	 *
 	 * @return void
 	 */
 	public function main() {
-		global $LANG;
 		if ($this->languageUpdate) {
 			$this->doc->JScodeArray['languageUpdate'] .= '
 				if (top.refreshMenu) {
@@ -323,33 +347,33 @@ class SetupModuleController {
 		$this->loadModules = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
 		$this->loadModules->observeWorkspaces = TRUE;
 		$this->loadModules->load($GLOBALS['TBE_MODULES']);
-		$this->content .= $this->doc->header($LANG->getLL('UserSettings'));
+		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('UserSettings'));
 		// Show if setup was saved
 		if ($this->setupIsUpdated && !$this->tempDataIsCleared && !$this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('setupWasUpdated'), $LANG->getLL('UserSettings'));
+			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('setupWasUpdated'), $GLOBALS['LANG']->getLL('UserSettings'));
 			$this->content .= $flashMessage->render();
 		}
 		// Show if temporary data was cleared
 		if ($this->tempDataIsCleared) {
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('tempDataClearedFlashMessage'), $LANG->getLL('tempDataCleared'));
+			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('tempDataClearedFlashMessage'), $GLOBALS['LANG']->getLL('tempDataCleared'));
 			$this->content .= $flashMessage->render();
 		}
 		// Show if temporary data was cleared
 		if ($this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('settingsAreReset'), $LANG->getLL('resetConfiguration'));
+			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('settingsAreReset'), $GLOBALS['LANG']->getLL('resetConfiguration'));
 			$this->content .= $flashMessage->render();
 		}
 		// Notice
 		if ($this->setupIsUpdated || $this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('activateChanges'), '', \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
+			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('activateChanges'), '', \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
 			$this->content .= $flashMessage->render();
 		}
 		// If password is updated, output whether it failed or was OK.
 		if ($this->passwordIsSubmitted) {
 			if ($this->passwordIsUpdated) {
-				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('newPassword_ok'), $LANG->getLL('newPassword'));
+				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('newPassword_ok'), $GLOBALS['LANG']->getLL('newPassword'));
 			} else {
-				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $LANG->getLL('newPassword_failed'), $LANG->getLL('newPassword'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('newPassword_failed'), $GLOBALS['LANG']->getLL('newPassword'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			}
 			$this->content .= $flashMessage->render();
 		}
@@ -359,7 +383,6 @@ class SetupModuleController {
 
 		// Render the menu items
 		$menuItems = $this->renderUserSetup();
-
 		$this->content .= $this->doc->getDynTabMenu($menuItems, 'user-setup', FALSE, FALSE, 1, FALSE, 1, $this->dividers2tabs);
 		$formToken = $this->formProtection->generateToken('BE user setup', 'edit');
 		$this->content .= $this->doc->section('', '<input type="hidden" name="simUser" value="' . $this->simUser . '" />
@@ -376,7 +399,7 @@ class SetupModuleController {
 		// Build the <body> for the module
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
 		// Renders the module page
-		$this->content = $this->doc->render($LANG->getLL('UserSettings'), $this->content);
+		$this->content = $this->doc->render($GLOBALS['LANG']->getLL('UserSettings'), $this->content);
 	}
 
 	/**
@@ -429,8 +452,8 @@ class SetupModuleController {
 		$tabLabel = '';
 		foreach ($fieldArray as $fieldName) {
 			$more = '';
-			if (substr($fieldName, 0, 8) == '--div--;') {
-				if ($firstTabLabel == '') {
+			if (substr($fieldName, 0, 8) === '--div--;') {
+				if ($firstTabLabel === '') {
 					// First tab
 					$tabLabel = $this->getLabel(substr($fieldName, 8), '', FALSE);
 					$firstTabLabel = $tabLabel;
@@ -438,7 +461,7 @@ class SetupModuleController {
 					if ($this->dividers2tabs) {
 						$result[] = array(
 							'label' => $tabLabel,
-							'content' => count($code) ? $this->doc->table($code) : ''
+							'content' => count($code) ? implode(LF, $code) : ''
 						);
 						$tabLabel = $this->getLabel(substr($fieldName, 8), '', FALSE);
 						$i = 0;
@@ -448,6 +471,7 @@ class SetupModuleController {
 				continue;
 			}
 			$config = $GLOBALS['TYPO3_USER_SETTINGS']['columns'][$fieldName];
+
 			// Field my be disabled in setup.fields
 			if (isset($this->tsFieldConf[$fieldName . '.']['disabled']) && $this->tsFieldConf[$fieldName . '.']['disabled'] == 1) {
 				continue;
@@ -458,8 +482,9 @@ class SetupModuleController {
 			$label = $this->getLabel($config['label'], $fieldName);
 			$label = $this->getCSH($config['csh'] ?: $fieldName, $label);
 			$type = $config['type'];
-			$eval = $config['eval'];
 			$class = $config['class'];
+			$class .= ' form-control';
+
 			$style = $config['style'];
 			if ($class) {
 				$more .= ' class="' . $class . '"';
@@ -470,75 +495,92 @@ class SetupModuleController {
 			if (isset($this->overrideConf[$fieldName])) {
 				$more .= ' disabled="disabled"';
 			}
-			$value = $config['table'] == 'be_users' ? $GLOBALS['BE_USER']->user[$fieldName] : $GLOBALS['BE_USER']->uc[$fieldName];
+			$value = $config['table'] === 'be_users' ? $GLOBALS['BE_USER']->user[$fieldName] : $GLOBALS['BE_USER']->uc[$fieldName];
 			if (!$value && isset($config['default'])) {
 				$value = $config['default'];
 			}
 			$dataAdd = '';
-			if ($config['table'] == 'be_users') {
+			if ($config['table'] === 'be_users') {
 				$dataAdd = '[be_users]';
 			}
+
 			switch ($type) {
-			case 'text':
-			case 'password':
-				$noAutocomplete = '';
-				if ($type === 'password') {
-					$value = '';
-					$noAutocomplete = 'autocomplete="off" ';
-				}
-				$html = '<input id="field_' . $fieldName . '"
-							type="' . $type . '"
-							name="data' . $dataAdd . '[' . $fieldName . ']" ' . $noAutocomplete . 'value="' . htmlspecialchars($value) . '" ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . $more . ' />';
-				break;
-			case 'check':
-				if (!$class) {
-					$more .= ' class="check"';
-				}
-				$html = '<input id="field_' . $fieldName . '"
-									type="checkbox"
-									name="data' . $dataAdd . '[' . $fieldName . ']"' . ($value ? ' checked="checked"' : '') . $more . ' />';
-				break;
-			case 'select':
-				if (!$class) {
-					$more .= ' class="select"';
-				}
-				if ($config['itemsProcFunc']) {
-					$html = GeneralUtility::callUserFunction($config['itemsProcFunc'], $config, $this, '');
-				} else {
-					$html = '<select ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . ' id="field_' . $fieldName . '" name="data' . $dataAdd . '[' . $fieldName . ']"' . $more . '>' . LF;
-					foreach ($config['items'] as $key => $optionLabel) {
-						$html .= '<option value="' . $key . '"' . ($value == $key ? ' selected="selected"' : '') . '>' . $this->getLabel($optionLabel, '', FALSE) . '</option>' . LF;
+				case 'text':
+				case 'email':
+				case 'password': {
+					$noAutocomplete = '';
+					if ($type === 'password') {
+						$value = '';
+						$noAutocomplete = 'autocomplete="off" ';
 					}
-					$html .= '</select>';
+					$html = '<input id="field_' . $fieldName . '"
+						type="' . $type . '"
+						name="data' . $dataAdd . '[' . $fieldName . ']" ' .
+						$noAutocomplete .
+						'value="' . htmlspecialchars($value) . '" ' .
+						$more .
+						' />';
+					break;
 				}
-				break;
-			case 'user':
-				$html = GeneralUtility::callUserFunction($config['userFunc'], $config, $this, '');
-				break;
-			case 'button':
-				if ($config['onClick']) {
-					$onClick = $config['onClick'];
-					if ($config['onClickLabels']) {
-						foreach ($config['onClickLabels'] as $key => $labelclick) {
-							$config['onClickLabels'][$key] = $this->getLabel($labelclick, '', FALSE);
+				case 'check': {
+					$html = '<input id="field_' . $fieldName . '"
+						type="checkbox"
+						name="data' . $dataAdd . '[' . $fieldName . ']"' .
+						($value ? ' checked="checked"' : '') .
+						$more .
+						' />';
+					break;
+				}
+				case 'select': {
+					if ($config['itemsProcFunc']) {
+						$html = GeneralUtility::callUserFunction($config['itemsProcFunc'], $config, $this, '');
+					} else {
+						$html = '<select id="field_' . $fieldName . '"
+							name="data' . $dataAdd . '[' . $fieldName . ']"' .
+							$more . '>' . LF;
+						foreach ($config['items'] as $key => $optionLabel) {
+							$html .= '<option value="' . $key . '"' . ($value == $key ? ' selected="selected"' : '') . '>' . $this->getLabel($optionLabel, '', FALSE) . '</option>' . LF;
 						}
-						$onClick = vsprintf($onClick, $config['onClickLabels']);
+						$html .= '</select>';
 					}
-					$html = '<input ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . ' type="button" value="' . $this->getLabel($config['buttonlabel'], '', FALSE) . '" onclick="' . $onClick . '" />';
+					break;
 				}
-				break;
-			default:
-				$html = '';
+				case 'user': {
+					$html = GeneralUtility::callUserFunction($config['userFunc'], $config, $this, '');
+					break;
+				}
+				case 'button': {
+					if ($config['onClick']) {
+						$onClick = $config['onClick'];
+						if ($config['onClickLabels']) {
+							foreach ($config['onClickLabels'] as $key => $labelclick) {
+								$config['onClickLabels'][$key] = $this->getLabel($labelclick, '', FALSE);
+							}
+							$onClick = vsprintf($onClick, $config['onClickLabels']);
+						}
+						$html = '<br><input type="button"
+							value="' . $this->getLabel($config['buttonlabel'], '', FALSE) . '"
+							onclick="' . $onClick . '" />';
+					}
+					break;
+				}
+				default:
+					$html = '';
 			}
-			$code[$i][1] = $label;
-			$code[$i++][2] = $html;
+
+			$code[] = '<div class="form-group">' .
+				$label .
+				$html .
+				'</div>';
 		}
+
 		if ($this->dividers2tabs == 0) {
 			$tabLabel = $firstTabLabel;
 		}
+
 		$result[] = array(
 			'label' => $tabLabel,
-			'content' => count($code) ? $this->doc->table($code) : ''
+			'content' => count($code) ? implode(LF, $code) : ''
 		);
 		return $result;
 	}
@@ -588,7 +630,7 @@ class SetupModuleController {
 		}
 		ksort($languageOptions);
 		$languageCode = '
-				<select ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . ' id="field_lang" name="data[lang]" class="select">' . implode('', $languageOptions) . '
+				<select id="field_lang" name="data[lang]" class="form-control">' . implode('', $languageOptions) . '
 				</select>';
 		if ($GLOBALS['BE_USER']->uc['lang'] && !@is_dir((PATH_typo3conf . 'l10n/' . $GLOBALS['BE_USER']->uc['lang']))) {
 			$languageUnavailableWarning = 'The selected language "' . $GLOBALS['LANG']->getLL(('lang_' . $GLOBALS['BE_USER']->uc['lang']), TRUE) . '" is not available before the language pack is installed.<br />' . ($GLOBALS['BE_USER']->isAdmin() ? 'You can use the Extension Manager to easily download and install new language packs.' : 'Please ask your system administrator to do this.');
@@ -619,7 +661,7 @@ class SetupModuleController {
 				}
 			}
 		}
-		return '<select ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . 'id="field_startModule" name="data[startModule]" class="select">' . $startModuleSelect . '</select>';
+		return '<select id="field_startModule" name="data[startModule]" class="form-control">' . $startModuleSelect . '</select>';
 	}
 
 	/**
@@ -645,7 +687,7 @@ class SetupModuleController {
 				}
 			}
 			if (count($opt)) {
-				$this->simulateSelector = '<select ' . $GLOBALS['TBE_TEMPLATE']->formWidth(20) . ' id="field_simulate" name="simulateUser" onchange="window.location.href=\'' . BackendUtility::getModuleUrl('user_setup') . '&simUser=\'+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
+				$this->simulateSelector = '<select id="field_simulate" name="simulateUser" onchange="window.location.href=\'' . BackendUtility::getModuleUrl('user_setup') . '&simUser=\'+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
 			}
 		}
 		// This can only be set if the previous code was executed.
@@ -687,7 +729,7 @@ class SetupModuleController {
 	 * Returns access check (currently only "admin" is supported)
 	 *
 	 * @param array $config Configuration of the field, access mode is defined in key 'access'
-	 * @return boolean Whether it is allowed to modify the given field
+	 * @return bool Whether it is allowed to modify the given field
 	 */
 	protected function checkAccess(array $config) {
 		$access = $config['access'];
@@ -699,6 +741,8 @@ class SetupModuleController {
 		} elseif ($access == 'admin') {
 			return $this->isAdmin;
 		}
+
+		return FALSE;
 	}
 
 	/**
@@ -706,12 +750,12 @@ class SetupModuleController {
 	 *
 	 * @param string $str Locallang key
 	 * @param string $key Alternative override-config key
-	 * @param boolean $addLabelTag Defines whether the string should be wrapped in a <label> tag.
+	 * @param bool $addLabelTag Defines whether the string should be wrapped in a <label> tag.
 	 * @param string $altLabelTagId Alternative id for use in "for" attribute of <label> tag. By default the $str key is used prepended with "field_".
 	 * @return string HTML output.
 	 */
 	protected function getLabel($str, $key = '', $addLabelTag = TRUE, $altLabelTagId = '') {
-		if (substr($str, 0, 4) == 'LLL:') {
+		if (substr($str, 0, 4) === 'LLL:') {
 			$out = $GLOBALS['LANG']->sL($str);
 		} else {
 			$out = htmlspecialchars($str);

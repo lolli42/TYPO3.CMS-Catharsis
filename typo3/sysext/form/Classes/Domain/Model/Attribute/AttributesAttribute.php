@@ -31,7 +31,7 @@ class AttributesAttribute {
 	/**
 	 * Internal Id of the element
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $elementId;
 
@@ -45,7 +45,7 @@ class AttributesAttribute {
 	/**
 	 * Constructor
 	 *
-	 * @param integer $elementId The ID of the element
+	 * @param int $elementId The ID of the element
 	 * @return void
 	 */
 	public function __construct($elementId) {
@@ -63,7 +63,7 @@ class AttributesAttribute {
 	 * @return tx_form_Domain_Model_Attributes
 	 */
 	public function addAttribute($class, $value) {
-		$class = strtolower((string) $class);
+		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\Domain\\Model\\Attribute\\' . ucfirst($class) . 'Attribute';
 		$this->attributes[$class] = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $value, $this->elementId);
 		return $this;
@@ -114,7 +114,7 @@ class AttributesAttribute {
 	 * Returns TRUE if attribute is set
 	 *
 	 * @param string $key The name of the attribute
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasAttribute($key) {
 		return isset($this->attributes[$key]);

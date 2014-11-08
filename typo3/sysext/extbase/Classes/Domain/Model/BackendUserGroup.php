@@ -78,7 +78,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $allowedLanguages = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $workspacePermission = FALSE;
 
@@ -88,7 +88,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $databaseMounts = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $fileOperationPermissions = 0;
 
@@ -98,7 +98,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $lockToDomain = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $hideInList = FALSE;
 
@@ -337,7 +337,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Setter for workspace permission
 	 *
-	 * @param boolean $workspacePermission
+	 * @param bool $workspacePermission
 	 * @return void
 	 */
 	public function setWorkspacePermissions($workspacePermission) {
@@ -347,7 +347,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for workspace permission
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getWorkspacePermission() {
 		return $this->workspacePermission;
@@ -375,7 +375,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for file operation permissions
 	 *
-	 * @param integer $fileOperationPermissions
+	 * @param int $fileOperationPermissions
 	 * @return void
 	 */
 	public function setFileOperationPermissions($fileOperationPermissions) {
@@ -385,7 +385,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for file operation permissions
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getFileOperationPermissions() {
 		return $this->fileOperationPermissions;
@@ -395,7 +395,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * Check if file operations like upload, copy, move, delete, rename, new and
 	 * edit files is allowed.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isFileOperationAllowed() {
 		return $this->isPermissionSet(self::FILE_OPPERATIONS);
@@ -404,7 +404,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set the the bit for file operations are allowed.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setFileOperationAllowed($value) {
@@ -414,7 +414,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Check if it is allowed to unzip files.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isFileUnzipAllowed() {
 		return $this->isPermissionSet(self::FILE_UNZIP);
@@ -423,7 +423,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set the the bit for unzip files are allowed.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setFileUnzipAllowed($value) {
@@ -433,7 +433,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Check if folder operations like move, delete, rename, and new are allowed.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isDirectoryOperationAllowed() {
 		return $this->isPermissionSet(self::DIRECTORY_OPPERATIONS);
@@ -442,7 +442,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set the the bit for directory operations are allowed.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setDirectoryOperationAllowed($value) {
@@ -452,7 +452,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Check if it is allowed to copy folders.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isDirectoryCopyAllowed() {
 		return $this->isPermissionSet(self::DIRECTORY_COPY);
@@ -461,7 +461,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set the the bit for copy directories.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setDirectoryCopyAllowed($value) {
@@ -471,7 +471,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Check if it is allowed to remove folders recursively.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isDirectoryRemoveRecursivelyAllowed() {
 		return $this->isPermissionSet(self::DIRECTORY_REMOVE_RECURSIVELY);
@@ -480,7 +480,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set the the bit for remove directories recursively.
 	 *
-	 * @param boolean $value
+	 * @param bool $value
 	 * @return void
 	 */
 	public function setDirectoryRemoveRecursivelyAllowed($value) {
@@ -509,7 +509,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Setter for hide in list
 	 *
-	 * @param boolean $hideInList
+	 * @param bool $hideInList
 	 * @return void
 	 */
 	public function setHideInList($hideInList) {
@@ -519,7 +519,7 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Getter for hide in list
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getHideInList() {
 		return $this->hideInList;
@@ -546,8 +546,8 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Helper method for checking the permissions bitwise.
 	 *
-	 * @param integer $permission
-	 * @return boolean
+	 * @param int $permission
+	 * @return bool
 	 */
 	protected function isPermissionSet($permission) {
 		return ($this->fileOperationPermissions & $permission) == $permission;
@@ -556,8 +556,8 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Helper method for settung permissions bitwise.
 	 *
-	 * @param integer $permission
-	 * @param boolean $value
+	 * @param int $permission
+	 * @param bool $value
 	 * @return void
 	 */
 	protected function setPermission($permission, $value) {

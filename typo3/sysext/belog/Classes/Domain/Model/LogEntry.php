@@ -26,7 +26,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Storage page ID of the log entry
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $pid = 0;
 
@@ -37,21 +37,21 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * have found now is to resolve the username (if it exists) in a
 	 * view helper and just use the uid of the be user here.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $backendUserUid = 0;
 
 	/**
 	 * Action ID of the action that happened, for example 3 was a file action
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $action = 0;
 
 	/**
 	 * UID of the record the event happened to
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $recordUid = 0;
 
@@ -65,14 +65,14 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * PID of the record the event happened to
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $recordPid = 0;
 
 	/**
 	 * Error code
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $error = 0;
 
@@ -86,21 +86,21 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Timestamp when the log entry was written
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $tstamp = 0;
 
 	/**
 	 * Type code
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $type = 0;
 
 	/**
 	 * Details number
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $detailsNumber = 0;
 
@@ -121,14 +121,14 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Event PID
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $eventPid = 0;
 
 	/**
 	 * This is only the UID and not the full workspace object for the same reason as in $beUserUid.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $workspaceUid = 0;
 
@@ -142,7 +142,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set pid
 	 *
-	 * @param integer $pid
+	 * @param int $pid
 	 * @return void
 	 */
 	public function setPid($pid) {
@@ -152,7 +152,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get pid
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getPid() {
 		return $this->pid;
@@ -161,7 +161,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set backend user uid
 	 *
-	 * @param integer $beUserUid
+	 * @param int $beUserUid
 	 * @return void
 	 */
 	public function setBackendUserUid($beUserUid) {
@@ -171,7 +171,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get backend user id
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getBackendUserUid() {
 		return $this->backendUserUid;
@@ -180,7 +180,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set action
 	 *
-	 * @param integer $action
+	 * @param int $action
 	 * @return void
 	 */
 	public function setAction($action) {
@@ -190,7 +190,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get action
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getAction() {
 		return (int)$this->action;
@@ -199,7 +199,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set record uid
 	 *
-	 * @param integer $recordUid
+	 * @param int $recordUid
 	 * @return void
 	 */
 	public function setRecordUid($recordUid) {
@@ -209,7 +209,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get record uid
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getRecordUid() {
 		return (int)$this->recordUid;
@@ -237,7 +237,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set record pid
 	 *
-	 * @param integer $recordPid
+	 * @param int $recordPid
 	 * @return void
 	 */
 	public function setRecordPid($recordPid) {
@@ -247,7 +247,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get record pid
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getRecordPid() {
 		return (int)$this->recordPid;
@@ -256,7 +256,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set error
 	 *
-	 * @param integer $error
+	 * @param int $error
 	 * @return void
 	 */
 	public function setError($error) {
@@ -266,7 +266,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get error
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getError() {
 		return (int)$this->error;
@@ -294,7 +294,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set tstamp
 	 *
-	 * @param integer $tstamp
+	 * @param int $tstamp
 	 * @return void
 	 */
 	public function setTstamp($tstamp) {
@@ -304,7 +304,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get tstamp
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getTstamp() {
 		return (int)$this->tstamp;
@@ -313,7 +313,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set type
 	 *
-	 * @param integer $type
+	 * @param int $type
 	 * @return void
 	 */
 	public function setType($type) {
@@ -323,7 +323,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get type
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getType() {
 		return (int)$this->type;
@@ -332,7 +332,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set details number
 	 *
-	 * @param integer $detailsNumber
+	 * @param int $detailsNumber
 	 * @return void
 	 */
 	public function setDetailsNumber($detailsNumber) {
@@ -342,7 +342,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get details number
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getDetailsNumber() {
 		return (int)$this->detailsNumber;
@@ -396,7 +396,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set event pid
 	 *
-	 * @param integer $eventPid
+	 * @param int $eventPid
 	 * @return void
 	 */
 	public function setEventPid($eventPid) {
@@ -406,7 +406,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get event pid
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getEventPid() {
 		return (int)$this->eventPid;
@@ -415,7 +415,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Set workspace uid
 	 *
-	 * @param integer $workspaceUid
+	 * @param int $workspaceUid
 	 * @return void
 	 */
 	public function setWorkspaceUid($workspaceUid) {
@@ -425,7 +425,7 @@ class LogEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Get workspace
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getWorkspaceUid() {
 		return (int)$this->workspaceUid;

@@ -25,7 +25,7 @@ class UserDomainClass {
 	/**
 	 * Constructor.
 	 *
-	 * @param integer $id
+	 * @param int $id
 	 * @param string $firstName
 	 * @param string $lastName
 	 */
@@ -38,7 +38,7 @@ class UserDomainClass {
 	/**
 	 * Return the ID
 	 *
-	 * @return integer ID
+	 * @return int ID
 	 */
 	public function getId() {
 		return $this->id;

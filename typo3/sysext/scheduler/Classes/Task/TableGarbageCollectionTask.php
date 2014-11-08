@@ -28,12 +28,12 @@ namespace TYPO3\CMS\Scheduler\Task;
 class TableGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 
 	/**
-	 * @var boolean True if all tables should be cleaned up
+	 * @var bool True if all tables should be cleaned up
 	 */
 	public $allTables = FALSE;
 
 	/**
-	 * @var integer Number of days
+	 * @var int Number of days
 	 */
 	public $numberOfDays = 180;
 
@@ -46,7 +46,7 @@ class TableGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask 
 	 * Execute garbage collection, called by scheduler.
 	 *
 	 * @throws \RuntimeException If configured table was not cleaned up
-	 * @return boolean TRUE if task run was successful
+	 * @return bool TRUE if task run was successful
 	 */
 	public function execute() {
 		$tableConfigurations = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks']['TYPO3\\CMS\\Scheduler\\Task\\TableGarbageCollectionTask']['options']['tables'];
@@ -69,7 +69,7 @@ class TableGarbageCollectionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask 
 	 * @throws \RuntimeException If table configuration is broken
 	 * @param string $table The table to handle
 	 * @param array $configuration Clean up configuration
-	 * @return boolean TRUE if cleanup was successful
+	 * @return bool TRUE if cleanup was successful
 	 */
 	protected function handleTable($table, array $configuration) {
 		if (!empty($configuration['expireField'])) {

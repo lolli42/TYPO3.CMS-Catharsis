@@ -58,7 +58,7 @@ class Request implements \TYPO3\CMS\Core\SingletonInterface {
 		if (empty($prefix)) {
 			$prefix = 'tx_form';
 		}
-		$prefix = preg_replace('/\\s/', '_', (string) $prefix);
+		$prefix = preg_replace('/\\s/', '_', (string)$prefix);
 		$this->prefix = preg_replace('/[^a-zA-Z0-9_\\-]/', '', $prefix);
 	}
 
@@ -84,7 +84,7 @@ class Request implements \TYPO3\CMS\Core\SingletonInterface {
 			'get',
 			'session'
 		);
-		$method = strtolower((string) $method);
+		$method = strtolower((string)$method);
 		if ($GLOBALS['TSFE']->loginUser) {
 			$this->sessionData = $GLOBALS['TSFE']->fe_user->getKey('user', $this->prefix);
 		} else {
@@ -133,7 +133,7 @@ class Request implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Check to see if a property is set
 	 *
 	 * @param string $key Parameter to look for
-	 * @return boolean
+	 * @return bool
 	 */
 	public function has($key) {
 		switch (TRUE) {
@@ -151,7 +151,7 @@ class Request implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Check to see if there is a request
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasRequest() {
 		switch (TRUE) {

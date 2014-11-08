@@ -23,7 +23,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
 class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implements \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface {
 
 	/**
-	 * @var integer Timestamp of 2038-01-01)
+	 * @var int Timestamp of 2038-01-01)
 	 */
 	const FAKED_UNLIMITED_EXPIRE = 2145909600;
 	/**
@@ -37,12 +37,12 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	protected $tagsTable;
 
 	/**
-	 * @var boolean Indicates whether data is compressed or not (requires php zlib)
+	 * @var bool Indicates whether data is compressed or not (requires php zlib)
 	 */
 	protected $compression = FALSE;
 
 	/**
-	 * @var integer -1 to 9, indicates zlib compression level: -1 = default level 6, 0 = no compression, 9 maximum compression
+	 * @var int -1 to 9, indicates zlib compression level: -1 = default level 6, 0 = no compression, 9 maximum compression
 	 */
 	protected $compressionLevel = -1;
 
@@ -57,7 +57,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	protected $expiresField;
 
 	/**
-	 * @var integer Maximum lifetime to stay with expire field below FAKED_UNLIMITED_LIFETIME
+	 * @var int Maximum lifetime to stay with expire field below FAKED_UNLIMITED_LIFETIME
 	 */
 	protected $maximumLifetime;
 
@@ -116,7 +116,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	 * @param string $entryIdentifier An identifier for this specific cache entry
 	 * @param string $data The data to be stored
 	 * @param array $tags Tags to associate with this cache entry
-	 * @param integer $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited liftime.
+	 * @param int $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited liftime.
 	 * @return void
 	 * @throws \TYPO3\CMS\Core\Cache\Exception if no cache frontend has been set.
 	 * @throws \TYPO3\CMS\Core\Cache\Exception\InvalidDataException if the data to be stored is not a string.
@@ -187,7 +187,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	 * Checks if a cache entry with the specified identifier exists.
 	 *
 	 * @param string $entryIdentifier Specifies the identifier to check for existence
-	 * @return boolean TRUE if such an entry exists, FALSE if not
+	 * @return bool TRUE if such an entry exists, FALSE if not
 	 */
 	public function has($entryIdentifier) {
 		$this->throwExceptionIfFrontendDoesNotExist();
@@ -208,7 +208,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	 * Usually this only affects one entry.
 	 *
 	 * @param string $entryIdentifier Specifies the cache entry to remove
-	 * @return boolean TRUE if (at least) an entry could be removed or FALSE if no entry was found
+	 * @return bool TRUE if (at least) an entry could be removed or FALSE if no entry was found
 	 */
 	public function remove($entryIdentifier) {
 		$this->throwExceptionIfFrontendDoesNotExist();
@@ -316,7 +316,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	/**
 	 * Enable data compression
 	 *
-	 * @param boolean $compression TRUE to enable compression
+	 * @param bool $compression TRUE to enable compression
 	 */
 	public function setCompression($compression) {
 		$this->compression = $compression;
@@ -327,7 +327,7 @@ class Typo3DatabaseBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend
 	 * If compression is enabled and this is not set,
 	 * gzcompress default level will be used
 	 *
-	 * @param integer -1 to 9: Compression level
+	 * @param int -1 to 9: Compression level
 	 */
 	public function setCompressionLevel($compressionLevel) {
 		if ($compressionLevel >= -1 && $compressionLevel <= 9) {

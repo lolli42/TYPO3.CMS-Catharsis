@@ -25,7 +25,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class PageTreeNavigationController {
 
-	// Internal:
 	/**
 	 * @var string
 	 */
@@ -55,7 +54,6 @@ class PageTreeNavigationController {
 	 */
 	public $backPath;
 
-	// Internal, static: GPvar:
 	/**
 	 * @var string
 	 */
@@ -75,7 +73,7 @@ class PageTreeNavigationController {
 
 	/**
 	 * @var string
-	 * @deprecated since version 7; unused
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $template;
 
@@ -99,7 +97,7 @@ class PageTreeNavigationController {
 	/**
 	 * Initialization of the class
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	protected function init() {
 		// Setting backPath
@@ -187,7 +185,7 @@ class PageTreeNavigationController {
 	/**
 	 * Main function, rendering the browsable page tree
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	public function main() {
 		// Produce browse-tree:
@@ -320,7 +318,7 @@ class PageTreeNavigationController {
 	/**
 	 * Setting temporary page id as DB mount
 	 *
-	 * @param integer $pageId The page id to set as DB mount
+	 * @param int $pageId The page id to set as DB mount
 	 * @return void
 	 */
 	public function settingTemporaryMountPoint($pageId) {

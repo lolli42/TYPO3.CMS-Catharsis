@@ -116,7 +116,7 @@ abstract class AbstractService {
 	 *
 	 * @param string $optionName Name of the config option
 	 * @param mixed $defaultValue Default configuration if no special config is available
-	 * @param boolean $includeDefaultConfig If set the 'default' config will be returned if no special config for this service is available (default: TRUE)
+	 * @param bool $includeDefaultConfig If set the 'default' config will be returned if no special config for this service is available (default: TRUE)
 	 * @return mixed Configuration value for the service
 	 */
 	public function getServiceOption($optionName, $defaultValue = '', $includeDefaultConfig = TRUE) {
@@ -142,8 +142,8 @@ abstract class AbstractService {
 	 * Logs debug messages to \TYPO3\CMS\Core\Utility\GeneralUtility::devLog()
 	 *
 	 * @param string $msg Debug message
-	 * @param integer $severity Severity: 0 is info, 1 is notice, 2 is warning, 3 is fatal error, -1 is "OK" message
-	 * @param array|boolean $dataVar dditional data you want to pass to the logger.
+	 * @param int $severity Severity: 0 is info, 1 is notice, 2 is warning, 3 is fatal error, -1 is "OK" message
+	 * @param array|bool $dataVar dditional data you want to pass to the logger.
 	 * @return void
 	 */
 	public function devLog($msg, $severity = 0, $dataVar = FALSE) {
@@ -155,7 +155,7 @@ abstract class AbstractService {
 	/**
 	 * Puts an error on the error stack. Calling without parameter adds a general error.
 	 *
-	 * @param integer $errNum Error number (see T3_ERR_SV_* constants)
+	 * @param int $errNum Error number (see T3_ERR_SV_* constants)
 	 * @param string $errMsg Error message
 	 * @return void
 	 */
@@ -178,7 +178,7 @@ abstract class AbstractService {
 	/**
 	 * Returns the last error number from the error stack.
 	 *
-	 * @return integer|boolean Error number (or TRUE if no error)
+	 * @return int|bool Error number (or TRUE if no error)
 	 */
 	public function getLastError() {
 		// Means all is ok - no error
@@ -246,7 +246,7 @@ abstract class AbstractService {
 	 * check the availability of external programs
 	 *
 	 * @param string $progList Comma list of programs 'perl,python,pdftotext'
-	 * @return boolean Return FALSE if one program was not found
+	 * @return bool Return FALSE if one program was not found
 	 */
 	public function checkExec($progList) {
 		$ret = TRUE;
@@ -299,7 +299,7 @@ abstract class AbstractService {
 	 * Read content from a file a file.
 	 *
 	 * @param string $absFile File name to read from.
-	 * @param integer $length Maximum length to read. If empty the whole file will be read.
+	 * @param int $length Maximum length to read. If empty the whole file will be read.
 	 * @return string|boolean $content or FALSE
 	 */
 	public function readFile($absFile, $length = 0) {
@@ -371,7 +371,7 @@ abstract class AbstractService {
 	/**
 	 * Delete registered temporary files.
 	 *
-	 * @return 	void
+	 * @return void
 	 */
 	public function unlinkTempFiles() {
 		foreach ($this->tempFiles as $absFile) {
@@ -491,7 +491,7 @@ abstract class AbstractService {
 	 * The class have to do a strict check if the service is available.
 	 * example: check if the perl interpreter is available which is needed to run an extern perl script.
 	 *
-	 * @return boolean TRUE if the service is available
+	 * @return bool TRUE if the service is available
 	 */
 	public function init() {
 		// look in makeInstanceService()

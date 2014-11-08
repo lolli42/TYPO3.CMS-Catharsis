@@ -37,7 +37,7 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
  * </output>
  *
  * <code title="Full">
- * <f:be.tableList tableName="fe_users" fieldList="{0: 'name', 1: 'email'}" storagePid="1" levels="2" filter='foo' recordsPerPage="10" sortField="name" sortDescending="true" readOnly="true" enableClickMenu="false" clickTitleMode="info" alternateBackgroundColors="true" />
+ * <f:be.tableList tableName="fe_users" fieldList="{0: 'name', 1: 'email'}" storagePid="1" levels="2" filter='foo' recordsPerPage="10" sortField="name" sortDescending="true" readOnly="true" enableClickMenu="false" clickTitleMode="info" />
  * </code>
  * <output>
  * List of "Website user" records with a text property of "foo" stored on PID 1 and two levels down.
@@ -58,20 +58,26 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 	 *
 	 * @param string $tableName name of the database table
 	 * @param array $fieldList list of fields to be displayed. If empty, only the title column (configured in $TCA[$tableName]['ctrl']['title']) is shown
-	 * @param integer $storagePid by default, records are fetched from the storage PID configured in persistence.storagePid. With this argument, the storage PID can be overwritten
-	 * @param integer $levels corresponds to the level selector of the TYPO3 list module. By default only records from the current storagePid are fetched
+	 * @param int $storagePid by default, records are fetched from the storage PID configured in persistence.storagePid. With this argument, the storage PID can be overwritten
+	 * @param int $levels corresponds to the level selector of the TYPO3 list module. By default only records from the current storagePid are fetched
 	 * @param string $filter corresponds to the "Search String" textbox of the TYPO3 list module. If not empty, only records matching the string will be fetched
-	 * @param integer $recordsPerPage amount of records to be displayed at once. Defaults to $TCA[$tableName]['interface']['maxSingleDBListItems'] or (if that's not set) to 100
+	 * @param int $recordsPerPage amount of records to be displayed at once. Defaults to $TCA[$tableName]['interface']['maxSingleDBListItems'] or (if that's not set) to 100
 	 * @param string $sortField table field to sort the results by
-	 * @param boolean $sortDescending if TRUE records will be sorted in descending order
-	 * @param boolean $readOnly if TRUE, the edit icons won't be shown. Otherwise edit icons will be shown, if the current BE user has edit rights for the specified table!
-	 * @param boolean $enableClickMenu enables context menu
+	 * @param bool $sortDescending if TRUE records will be sorted in descending order
+	 * @param bool $readOnly if TRUE, the edit icons won't be shown. Otherwise edit icons will be shown, if the current BE user has edit rights for the specified table!
+	 * @param bool $enableClickMenu enables context menu
 	 * @param string $clickTitleMode one of "edit", "show" (only pages, tt_content), "info
-	 * @param boolean $alternateBackgroundColors if set, rows will have alternate background colors
+	 * @param bool $alternateBackgroundColors Deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 * @return string the rendered record list
 	 * @see localRecordList
 	 */
 	public function render($tableName, array $fieldList = array(), $storagePid = NULL, $levels = 0, $filter = '', $recordsPerPage = 0, $sortField = '', $sortDescending = FALSE, $readOnly = FALSE, $enableClickMenu = TRUE, $clickTitleMode = NULL, $alternateBackgroundColors = FALSE) {
+		if ($alternateBackgroundColors) {
+			\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+				'The option alternateBackgroundColors has no effect anymore and can be removed without problems. The parameter will be removed in TYPO3 CMS 8.'
+			);
+		}
+
 		$pageinfo = \TYPO3\CMS\Backend\Utility\BackendUtility::readPageAccess(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id'), $GLOBALS['BE_USER']->getPagePermsClause(1));
 		/** @var $dblist \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList */
 		$dblist = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Recordlist\\RecordList\\DatabaseRecordList');
@@ -83,7 +89,6 @@ class TableListViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 		$dblist->showClipboard = FALSE;
 		$dblist->disableSingleTableView = TRUE;
 		$dblist->clickTitleMode = $clickTitleMode;
-		$dblist->alternateBgColors = $alternateBackgroundColors;
 		$dblist->clickMenuEnabled = $enableClickMenu;
 		if ($storagePid === NULL) {
 			$frameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);

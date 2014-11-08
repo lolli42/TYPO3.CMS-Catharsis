@@ -26,7 +26,7 @@ class LogLevel {
 	 * You'd likely not be able to reach the system. You better have an SLA in
 	 * place when this happens.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const EMERGENCY = 0;
 	/**
@@ -34,7 +34,7 @@ class LogLevel {
 	 *
 	 * Example: Entire website down, database unavailable, etc.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const ALERT = 1;
 	/**
@@ -42,7 +42,7 @@ class LogLevel {
 	 *
 	 * Example: unexpected exception.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const CRITICAL = 2;
 	/**
@@ -50,7 +50,7 @@ class LogLevel {
 	 *
 	 * Example: Runtime error.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const ERROR = 3;
 	/**
@@ -59,7 +59,7 @@ class LogLevel {
 	 * Examples: Use of deprecated APIs, undesirable things that are not
 	 * necessarily wrong.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const WARNING = 4;
 	/**
@@ -67,7 +67,7 @@ class LogLevel {
 	 *
 	 * Example: things you should have a look at, nothing to worry about though.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const NOTICE = 5;
 	/**
@@ -75,7 +75,7 @@ class LogLevel {
 	 *
 	 * Examples: User logs in, SQL logs.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const INFO = 6;
 	/**
@@ -83,7 +83,7 @@ class LogLevel {
 	 *
 	 * Example: Detailed status information.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const DEBUG = 7;
 	/**
@@ -105,7 +105,7 @@ class LogLevel {
 	/**
 	 * Resolves the name of a log level.
 	 *
-	 * @param integer $level Log level.
+	 * @param int $level Log level.
 	 * @return string Log level name.
 	 */
 	static public function getName($level) {
@@ -117,8 +117,8 @@ class LogLevel {
 	 * Checks a level for validity,
 	 * whether it is an integer and in the range of 0-7.
 	 *
-	 * @param integer $level log level to validate
-	 * @return boolean TRUE if the given log level is valid, FALSE otherwise
+	 * @param int $level log level to validate
+	 * @return bool TRUE if the given log level is valid, FALSE otherwise
 	 */
 	static public function isValidLevel($level) {
 		return \TYPO3\CMS\Core\Utility\MathUtility::isIntegerInRange($level, self::EMERGENCY, self::DEBUG);
@@ -127,7 +127,7 @@ class LogLevel {
 	/**
 	 * Validates a log level.
 	 *
-	 * @param integer $level log level to validate
+	 * @param int $level log level to validate
 	 * @return void
 	 * @throws \Psr\Log\InvalidArgumentException if the given log level is invalid
 	 */
@@ -141,7 +141,7 @@ class LogLevel {
 	 * Normalizes level by converting it from string to integer
 	 *
 	 * @param string $level
-	 * @return integer|string
+	 * @return int|string
 	 */
 	static public function normalizeLevel($level) {
 		if (is_string($level) && defined(__CLASS__ . '::' . strtoupper($level))) {

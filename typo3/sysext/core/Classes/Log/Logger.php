@@ -36,7 +36,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Minimum log level, anything below this level will be ignored.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $minimumLogLevel = \TYPO3\CMS\Core\Log\LogLevel::EMERGENCY;
 
@@ -67,7 +67,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Sets the minimum log level for which log records are written.
 	 *
-	 * @param integer $level Minimum log level
+	 * @param int $level Minimum log level
 	 * @return \TYPO3\CMS\Core\Log\Logger $this
 	 */
 	protected function setMinimumLogLevel($level) {
@@ -79,7 +79,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Gets the minimum log level for which log records are written.
 	 *
-	 * @return integer Minimum log level
+	 * @return int Minimum log level
 	 */
 	protected function getMinimumLogLevel() {
 		return $this->minimumLogLevel;
@@ -97,7 +97,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Adds a writer to this logger
 	 *
-	 * @param integer $minimumLevel
+	 * @param int $minimumLevel
 	 * @param \TYPO3\CMS\Core\Log\Writer\WriterInterface $writer Writer object
 	 * @return \TYPO3\CMS\Core\Log\Logger $this
 	 */
@@ -129,7 +129,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Adds a processor to the logger.
 	 *
-	 * @param integer $minimumLevel
+	 * @param int $minimumLevel
 	 * @param \TYPO3\CMS\Core\Log\Processor\ProcessorInterface $processor The processor to add.
 	 * @return void
 	 */
@@ -160,7 +160,7 @@ class Logger implements \Psr\Log\LoggerInterface {
 	/**
 	 * Adds a log record.
 	 *
-	 * @param integer|string $level Log level. Value according to \TYPO3\CMS\Core\Log\LogLevel. Alternatively accepts a string.
+	 * @param int|string $level Log level. Value according to \TYPO3\CMS\Core\Log\LogLevel. Alternatively accepts a string.
 	 * @param string $message Log message.
 	 * @param array $data Additional data to log
 	 * @return mixed

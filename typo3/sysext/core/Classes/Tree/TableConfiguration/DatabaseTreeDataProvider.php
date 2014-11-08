@@ -46,7 +46,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	protected $tableWhere = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $lookupMode = self::MODE_CHILDREN;
 
@@ -56,7 +56,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	protected $lookupField = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $rootUid = 0;
 
@@ -149,7 +149,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	/**
 	 * Sets the lookup mode
 	 *
-	 * @param integer $lookupMode
+	 * @param int $lookupMode
 	 * @return void
 	 */
 	public function setLookupMode($lookupMode) {
@@ -159,7 +159,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	/**
 	 * Gets the lookup mode
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getLookupMode() {
 		return $this->lookupMode;
@@ -187,7 +187,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	/**
 	 * Sets the root uid
 	 *
-	 * @param integer $rootUid
+	 * @param int $rootUid
 	 * @return void
 	 */
 	public function setRootUid($rootUid) {
@@ -197,7 +197,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	/**
 	 * Gets the root uid
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function getRootUid() {
 		return $this->rootUid;
@@ -227,7 +227,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $basicNode
 	 * @param NULL|\TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeNode $parent
-	 * @param integer $level
+	 * @param int $level
 	 * @return \TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeNode Node object
 	 */
 	protected function buildRepresentationForNode(\TYPO3\CMS\Backend\Tree\TreeNode $basicNode, \TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeNode $parent = NULL, $level = 0) {
@@ -292,7 +292,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 * Gets node children
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param integer $level
+	 * @param int $level
 	 * @return NULL|\TYPO3\CMS\Backend\Tree\TreeNodeCollection
 	 */
 	protected function getChildrenOf(\TYPO3\CMS\Backend\Tree\TreeNode $node, $level) {
@@ -356,7 +356,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 */
 	protected function getChildrenUidsFromParentRelation(array $row) {
 		$uid = $row['uid'];
-		switch ((string) $this->columnConfiguration['type']) {
+		switch ((string)$this->columnConfiguration['type']) {
 			case 'inline':
 
 			case 'select':
@@ -389,7 +389,7 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 		$relatedUids = array();
 		$uid = $row['uid'];
 		$value = $row[$this->getLookupField()];
-		switch ((string) $this->columnConfiguration['type']) {
+		switch ((string)$this->columnConfiguration['type']) {
 			case 'inline':
 
 			case 'select':
@@ -417,8 +417,8 @@ class DatabaseTreeDataProvider extends \TYPO3\CMS\Core\Tree\TableConfiguration\A
 	 * Queries the table for an field which might contain a list.
 	 *
 	 * @param string $fieldName the name of the field to be queried
-	 * @param integer $queryId the uid to search for
-	 * @return integer[] all uids found
+	 * @param int $queryId the uid to search for
+	 * @return int[] all uids found
 	 */
 	protected function listFieldQuery($fieldName, $queryId) {
 		$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $this->getTableName(), $GLOBALS['TYPO3_DB']->listQuery($fieldName, (int)$queryId, $this->getTableName()) . ((int)$queryId == 0 ? ' OR ' . $fieldName . ' = \'\'' : ''));

@@ -87,7 +87,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * Default is FALSE so that resources are accessible for
 	 * front end rendering or admins.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $evaluatePermissions = FALSE;
 
@@ -127,12 +127,12 @@ class ResourceStorage implements ResourceStorageInterface {
 	/**
 	 * whether this storage is online or offline in this request
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isOnline = NULL;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isDefault = FALSE;
 
@@ -219,34 +219,6 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function getDriver() {
 		return $this->driver;
-	}
-
-	/**
-	 * Deprecated function, don't use it. Will be removed in some later revision.
-	 *
-	 * @param string $identifier
-	 *
-	 * @throws \BadMethodCallException
-	 */
-	public function getFolderByIdentifier($identifier) {
-		throw new \BadMethodCallException(
-			'Function TYPO3\\CMS\\Core\\Resource\\ResourceStorage::getFolderByIdentifier() has been renamed to just getFolder(). Please fix the method call.',
-			1333754514
-		);
-	}
-
-	/**
-	 * Deprecated function, don't use it. Will be removed in some later revision.
-	 *
-	 * @param string $identifier
-	 *
-	 * @throws \BadMethodCallException
-	 */
-	public function getFileByIdentifier($identifier) {
-		throw new \BadMethodCallException(
-			'Function TYPO3\\CMS\\Core\\Resource\\ResourceStorage::getFileByIdentifier() has been renamed to just getFileInfoByIdentifier(). ' . 'Please fix the method call.',
-			1333754533
-		);
 	}
 
 	/**
@@ -498,7 +470,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * Sets whether the permissions to access or write
 	 * into this storage should be checked or not.
 	 *
-	 * @param boolean $evaluatePermissions
+	 * @param bool $evaluatePermissions
 	 */
 	public function setEvaluatePermissions($evaluatePermissions) {
 		$this->evaluatePermissions = (bool)$evaluatePermissions;
@@ -742,7 +714,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * Assures delete permission for given folder.
 	 *
 	 * @param Folder $folder If a folder is given, mountpoints are checked. If not only user folder delete permissions are checked.
-	 * @param boolean $checkDeleteRecursively
+	 * @param bool $checkDeleteRecursively
 	 * @return void
 	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 * @throws Exception\InsufficientFolderWritePermissionsException
@@ -1163,7 +1135,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * some web-based authentication. You have to take care of this yourself.
 	 *
 	 * @param ResourceInterface $resourceObject The file or folder object
-	 * @param boolean $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
+	 * @param bool $relativeToCurrentScript Determines whether the URL returned should be relative to the current script, in case it is relative at all (only for the LocalDriver)
 	 * @return string
 	 */
 	public function getPublicUrl(ResourceInterface $resourceObject, $relativeToCurrentScript = FALSE) {
@@ -1228,7 +1200,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * Copies a file from the storage for local processing.
 	 *
 	 * @param FileInterface $fileObject
-	 * @param boolean $writable
+	 * @param bool $writable
 	 * @return string Path to local file (either original or copied to some temporary local location)
 	 */
 	public function getFileForLocalProcessing(FileInterface $fileObject, $writable = TRUE) {
@@ -1326,24 +1298,6 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
-	 * Returns a list of files in a given path, filtered by some custom filter methods.
-	 *
-	 * @see getUnfilteredFileList(), getFileListWithDefaultFilters()
-	 * @param string $path The path to list
-	 * @param int $start The position to start the listing; if not set or 0, start from the beginning
-	 * @param int $numberOfItems The number of items to list; if not set, return all items
-	 * @param bool $useFilters If FALSE, the list is returned without any filtering; otherwise, the filters defined for this storage are used.
-	 * @param bool $loadIndexRecords If set to TRUE, the index records for all files are loaded from the database. This can greatly improve performance of this method, especially with a lot of files.
-	 * @param bool $recursive
-	 * @return array Information about the files found.
-	 * @deprecated since 6.2, will be removed two versions later
-	 */
-	public function getFileList($path, $start = 0, $numberOfItems = 0, $useFilters = TRUE, $loadIndexRecords = TRUE, $recursive = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getFilesInFolder($this->getFolder($path), $start, $numberOfItems, $useFilters, $recursive);
-	}
-
-	/**
 	 * @param Folder $folder
 	 * @param int $start
 	 * @param int $maxNumberOfItems
@@ -1371,11 +1325,13 @@ class ResourceStorage implements ResourceStorageInterface {
 			} else {
 				$fileObject = $this->getFileFactory()->getFileObjectByStorageAndIdentifier($this->getUid(), $identifier);
 			}
-			$key = $fileObject->getName();
-			while (isset($items[$key])) {
-				$key .= 'z';
+			if ($fileObject instanceof FileInterface) {
+				$key = $fileObject->getName();
+				while (isset($items[$key])) {
+					$key .= 'z';
+				}
+				$items[$key] = $fileObject;
 			}
-			$items[$key] = $fileObject;
 		}
 		uksort($items, 'strnatcasecmp');
 
@@ -1921,23 +1877,6 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
-	 * Returns a list of folders in a given path.
-	 *
-	 * @param string $path The path to list
-	 * @param int $start The position to start the listing; if not set or 0, start from the beginning
-	 * @param int $numberOfItems The number of items to list; if not set, return all items
-	 * @param bool $useFilters If FALSE, the list is returned without any filtering; otherwise, the filters defined for this storage are used.
-	 * @return array Information about the folders found.
-	 * @deprecated since TYPO3 6.2, will be removed to versions later
-	 */
-	public function getFolderList($path, $start = 0, $numberOfItems = 0, $useFilters = TRUE) {
-		GeneralUtility::logDeprecatedFunction();
-		// Permissions are checked in $this->fetchFolderListFromDriver()
-		$filters = $useFilters === TRUE ? $this->fileAndFolderNameFilters : array();
-		return $this->fetchFolderListFromDriver($path, $start, $numberOfItems, $filters);
-	}
-
-	/**
 	 * @param Folder $folder
 	 * @param int $start
 	 * @param int $maxNumberOfItems
@@ -1959,33 +1898,6 @@ class ResourceStorage implements ResourceStorageInterface {
 			$folders[$folderIdentifier] = $this->getFolder($folderIdentifier, TRUE);
 		}
 		return $folders;
-	}
-
-	/**
-	 * @param $path
-	 * @param int $start
-	 * @param int $numberOfItems
-	 * @param array $folderFilterCallbacks
-	 * @param bool $recursive
-	 * @return array
-	 * @deprecated since 6.2, will be removed 2 versions later
-	 */
-	public function fetchFolderListFromDriver($path, $start = 0, $numberOfItems = 0, array $folderFilterCallbacks = array(), $recursive = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		// This also checks for access to that path and throws exceptions accordingly
-		$parentFolder = $this->getFolder($path);
-		if ($parentFolder === NULL) {
-			return array();
-		}
-		$folders = $this->getFoldersInFolder($parentFolder, $start, $numberOfItems, count($folderFilterCallbacks) > 0, $recursive);
-		$folderInfo = array();
-		foreach ($folders as $folder) {
-			$folderInfo[$folder->getIdentifier()] = array(
-				'name' => $folder->getName(),
-				'identifier' => $folder->getIdentifier()
-			);
-		}
-		return $folderInfo;
 	}
 
 	/**

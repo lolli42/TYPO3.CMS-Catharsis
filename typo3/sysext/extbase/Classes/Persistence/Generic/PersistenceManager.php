@@ -84,7 +84,7 @@ class PersistenceManager implements \TYPO3\CMS\Extbase\Persistence\PersistenceMa
 	 * Returns the number of records matching the query.
 	 *
 	 * @param QueryInterface $query
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getObjectCountByQuery(QueryInterface $query) {
@@ -124,7 +124,7 @@ class PersistenceManager implements \TYPO3\CMS\Extbase\Persistence\PersistenceMa
 	 *
 	 * @param mixed $identifier
 	 * @param string $objectType
-	 * @param boolean $useLazyLoading Set to TRUE if you want to use lazy loading for this object
+	 * @param bool $useLazyLoading Set to TRUE if you want to use lazy loading for this object
 	 * @return object The object for the identifier if it is known, or NULL
 	 * @api
 	 */
@@ -255,7 +255,7 @@ class PersistenceManager implements \TYPO3\CMS\Extbase\Persistence\PersistenceMa
 	 * Checks if the given object has ever been persisted.
 	 *
 	 * @param object $object The object to check
-	 * @return boolean TRUE if the object is new, FALSE if the object exists in the persistence session
+	 * @return bool TRUE if the object is new, FALSE if the object exists in the persistence session
 	 * @api
 	 */
 	public function isNewObject($object) {

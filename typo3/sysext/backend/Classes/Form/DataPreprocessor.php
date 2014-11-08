@@ -25,52 +25,60 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  */
 class DataPreprocessor {
 
-	// External, static:
-	// If set, the records requested are locked.
 	/**
+	 * If set, the records requested are locked.
+	 *
 	 * @var int
 	 */
 	public $lockRecords = 0;
 
-	// Is set externally if RTE is disabled.
 	/**
+	 * Is set externally if RTE is disabled.
+	 *
 	 * @var int
 	 */
 	public $disableRTE = 0;
 
-	// If the pid in the command is 'prev' then $prevPageID is used as pid for the record. This is used to attach new records to other previous records eg. new pages.
 	/**
+	 * If the pid in the command is 'prev' then $prevPageID is used as pid for the record.
+	 * This is used to attach new records to other previous records eg. new pages.
+	 *
 	 * @var string
 	 */
 	public $prevPageID = '';
 
-	// Can be set with an array of default values for tables. First key is table name, second level keys are field names. Originally this was a GLOBAL array used internally.
 	/**
+	 * Can be set with an array of default values for tables. First key is table name,
+	 * second level keys are field names. Originally this was a GLOBAL array used internally.
+	 *
 	 * @var array
 	 */
 	public $defVals = array();
 
-	// If set, the processed data is overlaid the raw record.
 	/**
+	 * If set, the processed data is overlaid the raw record.
+	 *
 	 * @var bool
 	 */
 	public $addRawData = FALSE;
 
-	// Internal, dynamic
-	// Used to register, which items are already loaded!!
 	/**
+	 * Used to register, which items are already loaded!!
+	 *
 	 * @var array
 	 */
 	public $regTableItems = array();
 
-	// This stores the record data of the loaded records
 	/**
+	 * This stores the record data of the loaded records
+	 *
 	 * @var array
 	 */
 	public $regTableItems_data = array();
 
-	// Contains loadModules object, if used. (for reuse internally)
 	/**
+	 * Contains loadModules object, if used. (for reuse internally)
+	 *
 	 * @var string
 	 */
 	public $loadModules = '';
@@ -96,7 +104,7 @@ class DataPreprocessor {
 			$idList = $this->prevPageID;
 		}
 		if ($GLOBALS['TCA'][$table]) {
-			// For each ID value (integer) we
+			// For each ID value (int) we
 			$ids = GeneralUtility::trimExplode(',', $idList, TRUE);
 			foreach ($ids as $id) {
 				// If ID is not blank:
@@ -181,8 +189,8 @@ class DataPreprocessor {
 	 * The resulting, processed row is stored in $this->regTableItems_data[$uniqueItemRef], where $uniqueItemRef is "[tablename]_[id-value]"
 	 *
 	 * @param string $table The table name
-	 * @param string $id The uid value of the record (integer). Can also be a string (NEW-something) if the record is a NEW record.
-	 * @param integer $pid The pid integer. For existing records this is of course the row's "pid" field. For new records it can be either a page id (positive) or a pointer to another record from the SAME table (negative) after which the record should be inserted (or on same page)
+	 * @param string $id The uid value of the record (int). Can also be a string (NEW-something) if the record is a NEW record.
+	 * @param int $pid The pid integer. For existing records this is of course the row's "pid" field. For new records it can be either a page id (positive) or a pointer to another record from the SAME table (negative) after which the record should be inserted (or on same page)
 	 * @param array $row The row of the current record. If NEW record, then it may be loaded with default values (by eg. fetchRecord()).
 	 * @return void
 	 * @see fetchRecord()
@@ -223,11 +231,11 @@ class DataPreprocessor {
 	 * The resulting, processed row will be returned.
 	 *
 	 * @param string $table The table name
-	 * @param string $id The uid value of the record (integer). Can also be a string (NEW-something) if the record is a NEW record.
-	 * @param integer $pid The pid integer. For existing records this is of course the row's "pid" field. For new records it can be either a page id (positive) or a pointer to another record from the SAME table (negative) after which the record should be inserted (or on same page)
+	 * @param string $id The uid value of the record (int). Can also be a string (NEW-something) if the record is a NEW record.
+	 * @param int $pid The pid integer. For existing records this is of course the row's "pid" field. For new records it can be either a page id (positive) or a pointer to another record from the SAME table (negative) after which the record should be inserted (or on same page)
 	 * @param array $row The row of the current record. If NEW record, then it may be loaded with default values (by eg. fetchRecord()).
 	 * @param array $TSconfig Tsconfig array
-	 * @param integer $tscPID PAGE TSconfig pid
+	 * @param int $tscPID PAGE TSconfig pid
 	 * @return array Processed record data
 	 * @see renderRecord()
 	 */
@@ -458,9 +466,9 @@ class DataPreprocessor {
 	 *
 	 * @param array $totalRecordContent The array of values which has been processed according to their type (eg. "group" or "select")
 	 * @param array $types_fieldConfig The "types" configuration for the current display of fields.
-	 * @param integer $tscPID PAGE TSconfig PID
+	 * @param int $tscPID PAGE TSconfig PID
 	 * @param string $table Table name
-	 * @param integer $pid PID value
+	 * @param int $pid PID value
 	 * @return array The processed version of $totalRecordContent
 	 * @access private
 	 */
@@ -877,8 +885,8 @@ class DataPreprocessor {
 	 * Sets the lock for a record from table/id, IF $this->lockRecords is set!
 	 *
 	 * @param string $table The table name
-	 * @param integer $id The id of the record
-	 * @param integer $pid The pid of the record
+	 * @param int $id The id of the record
+	 * @param int $pid The pid of the record
 	 * @return void
 	 */
 	public function lockRecord($table, $id, $pid = 0) {
@@ -891,7 +899,7 @@ class DataPreprocessor {
 	 * Dummy function, can be used to "register" records. Used by eg. the "show_item" script.
 	 *
 	 * @param string $table Table name
-	 * @param integer $id Record id
+	 * @param int $id Record id
 	 * @param string $field Field name
 	 * @param string $content Field content.
 	 * @return void

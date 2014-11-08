@@ -60,7 +60,7 @@ class LanguageService {
 	/**
 	 * If TRUE, will show the key/location of labels in the backend.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	public $debugKey = FALSE;
 
@@ -111,8 +111,7 @@ class LanguageService {
 	/**
 	 * Initializes the backend language.
 	 * This is for example done in \TYPO3\CMS\Backend\Template\DocumentTemplate with lines like these:
-	 * require (PATH_typo3 . 'sysext/lang/lang.php');
-	 * $LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('language');
+	 * $LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Lang\\LanguageService');
 	 * $LANG->init($GLOBALS['BE_USER']->uc['lang']);
 	 *
 	 * @throws \RuntimeException
@@ -193,26 +192,6 @@ class LanguageService {
 	}
 
 	/**
-	 * Converts the input string to a JavaScript function returning the same string, but charset-safe.
-	 * Used for confirm and alert boxes where we must make sure that any string content
-	 * does not break the script AND want to make sure the charset is preserved.
-	 * Originally I used the JS function unescape() in combination with PHP function
-	 * rawurlencode() in order to pass strings in a safe way. This could still be done
-	 * for iso-8859-1 charsets but now I have applied the same method here for all charsets.
-	 *
-	 * @param string $str Input string, encoded with UTF-8
-	 * @return string Output string, a JavaScript function: "String.fromCharCode(......)
-	 * @depreacted since 6.2 - will be removed two versions later; use GeneralUtility::quoteJSvalue() instead
-	 */
-	public function JScharCode($str) {
-		GeneralUtility::logDeprecatedFunction();
-
-		// Convert the UTF-8 string into a array of char numbers:
-		$nArr = $this->csConvObj->utf8_to_numberarray($str);
-		return 'String.fromCharCode(' . implode(',', $nArr) . ')';
-	}
-
-	/**
 	 * Debugs localization key.
 	 *
 	 * @param string $value value to debug
@@ -227,7 +206,7 @@ class LanguageService {
 	 * Mostly used from modules with only one LOCAL_LANG file loaded into the global space.
 	 *
 	 * @param string $index Label key
-	 * @param boolean $hsc If set, the return value is htmlspecialchar'ed
+	 * @param bool $hsc If set, the return value is htmlspecialchar'ed
 	 * @return string
 	 */
 	public function getLL($index, $hsc = FALSE) {
@@ -249,7 +228,7 @@ class LanguageService {
 	 *
 	 * @param string $index Label key
 	 * @param array $localLanguage $LOCAL_LANG array to get label key from
-	 * @param boolean $hsc If set, the return value is htmlspecialchar'ed
+	 * @param bool $hsc If set, the return value is htmlspecialchar'ed
 	 * @return string
 	 */
 	public function getLLL($index, $localLanguage, $hsc = FALSE) {
@@ -278,7 +257,7 @@ class LanguageService {
 	 * Refer to 'Inside TYPO3' for more details
 	 *
 	 * @param string $input Label key/reference
-	 * @param boolean $hsc If set, the return value is htmlspecialchar'ed
+	 * @param bool $hsc If set, the return value is htmlspecialchar'ed
 	 * @return string
 	 */
 	public function sL($input, $hsc = FALSE) {
@@ -388,8 +367,8 @@ class LanguageService {
 	 * Read language labels will be merged with $LOCAL_LANG (if $setGlobal = TRUE).
 	 *
 	 * @param string $fileRef $fileRef is a file-reference
-	 * @param boolean $setGlobal Setting in global variable $LOCAL_LANG (or returning the variable)
-	 * @param boolean $mergeLocalOntoDefault
+	 * @param bool $setGlobal Setting in global variable $LOCAL_LANG (or returning the variable)
+	 * @param bool $mergeLocalOntoDefault
 	 * @return mixed if $setGlobal===TRUE, LL-files set $LOCAL_LANG in global scope, or array is returned from function
 	 */
 	public function includeLLFile($fileRef, $setGlobal = TRUE, $mergeLocalOntoDefault = FALSE) {
@@ -406,7 +385,7 @@ class LanguageService {
 			}
 				// Localized addition?
 			$lFileRef = $this->localizedFileRef($fileRef);
-			if ($lFileRef && (string) $globalLanguage[$this->lang] === 'EXT') {
+			if ($lFileRef && (string)$globalLanguage[$this->lang] === 'EXT') {
 				$localLanguage = $this->readLLfile($lFileRef);
 				ArrayUtility::mergeRecursiveWithOverrule($globalLanguage, $localLanguage);
 			}
@@ -474,7 +453,7 @@ class LanguageService {
 	 *
 	 * @param string $index
 	 * @param string $value
-	 * @param boolean $overrideDefault Overrides default language
+	 * @param bool $overrideDefault Overrides default language
 	 * @return void
 	 */
 	public function overrideLL($index, $value, $overrideDefault = TRUE) {

@@ -468,7 +468,7 @@ class FunctionalTestCaseBootstrapUtility {
 			);
 		}
 		$database->setDatabaseName($this->databaseName);
-		$database->sql_select_db($this->databaseName);
+		$database->sql_select_db();
 	}
 
 	/**
@@ -491,7 +491,7 @@ class FunctionalTestCaseBootstrapUtility {
 		}
 		$this->databaseName = $GLOBALS['TYPO3_CONF_VARS']['DB']['database'];
 		$database->setDatabaseName($this->databaseName);
-		$database->sql_select_db($this->databaseName);
+		$database->sql_select_db();
 		foreach ($database->admin_get_tables() as $table) {
 			$database->admin_query('TRUNCATE ' . $table['Name'] . ';');
 		}
@@ -575,8 +575,8 @@ class FunctionalTestCaseBootstrapUtility {
 	 * Wrapper function for rmdir, allowing recursive deletion of folders and files
 	 *
 	 * @param string $path Absolute path to folder, see PHP rmdir() function. Removes trailing slash internally.
-	 * @param boolean $removeNonEmpty Allow deletion of non-empty directories
-	 * @return boolean TRUE if @rmdir went well!
+	 * @param bool $removeNonEmpty Allow deletion of non-empty directories
+	 * @return bool TRUE if @rmdir went well!
 	 */
 	protected function rmdir($path, $removeNonEmpty = FALSE) {
 		$OK = FALSE;
@@ -620,7 +620,7 @@ class FunctionalTestCaseBootstrapUtility {
 	 *
 	 * @param string $file Filepath to write to
 	 * @param string $content Content to write
-	 * @return boolean TRUE if the file was successfully opened and written to.
+	 * @return bool TRUE if the file was successfully opened and written to.
 	 */
 	protected function writeFile($file, $content) {
 		if ($fd = fopen($file, 'wb')) {
@@ -643,7 +643,7 @@ class FunctionalTestCaseBootstrapUtility {
 	 * See unit tests for detailed examples
 	 *
 	 * @param array $array Array to export
-	 * @param integer $level Internal level used for recursion, do *not* set from outside!
+	 * @param int $level Internal level used for recursion, do *not* set from outside!
 	 * @return string String representation of array
 	 * @throws \RuntimeException
 	 */
@@ -712,9 +712,9 @@ class FunctionalTestCaseBootstrapUtility {
 	 *
 	 * @param array $original Original array. It will be *modified* by this method and contains the result afterwards!
 	 * @param array $overrule Overrule array, overruling the original array
-	 * @param boolean $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
-	 * @param boolean $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
-	 * @param boolean $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
+	 * @param bool $addKeys If set to FALSE, keys that are NOT found in $original will not be set. Thus only existing value can/will be overruled from overrule array.
+	 * @param bool $includeEmptyValues If set, values from $overrule will overrule if they are empty or zero.
+	 * @param bool $enableUnsetFeature If set, special values "__UNSET" can be used in the overrule array in order to unset array keys in the original array.
 	 * @return void
 	 */
 	protected function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {

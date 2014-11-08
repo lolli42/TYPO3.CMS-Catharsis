@@ -79,7 +79,7 @@ class PreviewController extends AbstractController {
 	 * The preview itself consists of three frames, so there are
 	 * only the frames-urls we've to generate here
 	 *
-	 * @param integer $previewWS
+	 * @param int $previewWS
 	 * @return void
 	 */
 	public function indexAction($previewWS = NULL) {
@@ -164,7 +164,7 @@ class PreviewController extends AbstractController {
 	 * Evaluate the activate state based on given $stageArray.
 	 *
 	 * @param array $stageArray
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isInvalidStage($stageArray) {
 		return !(is_array($stageArray) && count($stageArray) > 0);

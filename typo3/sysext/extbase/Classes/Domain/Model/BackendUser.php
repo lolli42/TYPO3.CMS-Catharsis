@@ -27,12 +27,12 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $userName = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isAdministrator = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isDisabled = FALSE;
 
@@ -62,7 +62,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $lastLoginDateAndTime;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $ipLockIsDisabled = FALSE;
 
@@ -88,7 +88,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Checks whether this user is an administrator.
 	 *
-	 * @return boolean whether this user is an administrator
+	 * @return bool whether this user is an administrator
 	 */
 	public function getIsAdministrator() {
 		return $this->isAdministrator;
@@ -97,7 +97,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Sets whether this user should be an administrator.
 	 *
-	 * @param boolean $isAdministrator whether this user should be an administrator
+	 * @param bool $isAdministrator whether this user should be an administrator
 	 * @return void
 	 */
 	public function setIsAdministrator($isAdministrator) {
@@ -107,7 +107,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Checks whether this user is disabled.
 	 *
-	 * @return boolean whether this user is disabled
+	 * @return bool whether this user is disabled
 	 */
 	public function getIsDisabled() {
 		return $this->isDisabled;
@@ -116,7 +116,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Sets whether this user is disabled.
 	 *
-	 * @param boolean $isDisabled whether this user is disabled
+	 * @param bool $isDisabled whether this user is disabled
 	 * @return void
 	 */
 	public function setIsDisabled($isDisabled) {
@@ -203,7 +203,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 *
 	 * This function takes the "disabled" flag, the start date/time and the end date/time into account.
 	 *
-	 * @return boolean whether this user is currently activated
+	 * @return bool whether this user is currently activated
 	 */
 	public function isActivated() {
 		return !$this->getIsDisabled() && $this->isActivatedViaStartDateAndTime() && $this->isActivatedViaEndDateAndTime();
@@ -212,7 +212,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Checks whether this user is activated as far as the start date and time is concerned.
 	 *
-	 * @return boolean whether this user is activated as far as the start date and time is concerned
+	 * @return bool whether this user is activated as far as the start date and time is concerned
 	 */
 	protected function isActivatedViaStartDateAndTime() {
 		if ($this->getStartDateAndTime() === NULL) {
@@ -225,7 +225,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Checks whether this user is activated as far as the end date and time is concerned.
 	 *
-	 * @return boolean whether this user is activated as far as the end date and time is concerned
+	 * @return bool whether this user is activated as far as the end date and time is concerned
 	 */
 	protected function isActivatedViaEndDateAndTime() {
 		if ($this->getEndDateAndTime() === NULL) {
@@ -238,7 +238,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Sets whether the IP lock for this user is disabled.
 	 *
-	 * @param boolean $disableIpLock whether the IP lock for this user is disabled
+	 * @param bool $disableIpLock whether the IP lock for this user is disabled
 	 * @return void
 	 */
 	public function setIpLockIsDisabled($disableIpLock) {
@@ -248,7 +248,7 @@ class BackendUser extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	/**
 	 * Checks whether the IP lock for this user is disabled.
 	 *
-	 * @return boolean whether the IP lock for this user is disabled
+	 * @return bool whether the IP lock for this user is disabled
 	 */
 	public function getIpLockIsDisabled() {
 		return $this->ipLockIsDisabled;

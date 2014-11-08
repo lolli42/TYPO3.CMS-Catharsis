@@ -27,7 +27,7 @@ class GraphicsMagickPreset extends AbstractImagePreset implements Configuration\
 	protected $name = 'GraphicsMagick';
 
 	/**
-	 * @var integer Priority of preset
+	 * @var int Priority of preset
 	 */
 	protected $priority = 80;
 
@@ -60,7 +60,7 @@ class GraphicsMagickPreset extends AbstractImagePreset implements Configuration\
 	 * Search for GraphicsMagick executables in given paths.
 	 *
 	 * @param array $searchPaths List of pathes to search for
-	 * @return boolean TRUE if graphics magick was found in path
+	 * @return bool TRUE if graphics magick was found in path
 	 */
 	protected function findGraphicsMagickInPaths(array $searchPaths) {
 		$result = FALSE;

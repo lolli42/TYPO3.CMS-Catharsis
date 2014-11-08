@@ -50,13 +50,13 @@ class DefaultDataProvider implements DataProviderInterface {
 	 * Gets a backend layout by (regular) identifier.
 	 *
 	 * @param string $identifier
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @return NULL|BackendLayout
 	 */
 	public function getBackendLayout($identifier, $pageId) {
 		$backendLayout = NULL;
 
-		if ((string) $identifier === 'default') {
+		if ((string)$identifier === 'default') {
 			return $this->createDefaultBackendLayout();
 		}
 
@@ -120,7 +120,7 @@ class DefaultDataProvider implements DataProviderInterface {
 	 *
 	 * @param string $fieldName the name of the field the layouts are provided for (either backend_layout or backend_layout_next_level)
 	 * @param array $pageTsConfig PageTSconfig of the given page
-	 * @param integer $pageUid the ID of the page wea re getting the layouts for
+	 * @param int $pageUid the ID of the page wea re getting the layouts for
 	 * @return array $layouts A collection of layout data of the registered provider
 	 */
 	protected function getLayoutData($fieldName, array $pageTsConfig, $pageUid) {
@@ -151,7 +151,7 @@ class DefaultDataProvider implements DataProviderInterface {
 	 * Returns the storage PID from TCEFORM.
 	 *
 	 * @param array $pageTsConfig
-	 * @return integer
+	 * @return int
 	 */
 	protected function getStoragePid(array $pageTsConfig) {
 		$storagePid = 0;

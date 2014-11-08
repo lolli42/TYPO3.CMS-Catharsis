@@ -37,7 +37,7 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	protected $testExtensionsToLoad = array('typo3/sysext/core/Tests/Functional/Fixtures/Extensions/irre_tutorial');
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	private $expectedLogEntries = 0;
 
@@ -76,7 +76,7 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	/**
 	 * Sets the number of expected log entries.
 	 *
-	 * @param integer $count
+	 * @param int $count
 	 * @return void
 	 */
 	protected function setExpectedLogEntries($count) {
@@ -109,9 +109,9 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	}
 
 	/**
-	 * Simulates executing commands by using t3lib_TCEmain.
+	 * Simulates executing commands by using DataHandler.
 	 *
-	 * @param  array $elements The cmdmap to be delivered to DataHandler
+	 * @param array $elements The cmdmap to be delivered to DataHandler
 	 * @return \TYPO3\CMS\Core\DataHandling\DataHandler
 	 */
 	protected function simulateCommandByStructure(array $elements) {
@@ -152,7 +152,7 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	}
 
 	/**
-	 * @param  array $itemArray
+	 * @param array $itemArray
 	 * @return array
 	 */
 	protected function getElementsByItemArray(array $itemArray) {
@@ -303,7 +303,7 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	 * Asserts reference index elements.
 	 *
 	 * @param array $assertions
-	 * @param boolean $expected
+	 * @param bool $expected
 	 */
 	protected function assertReferenceIndex(array $assertions, $expected = TRUE) {
 		$references = $this->getAllRecords('sys_refindex', 'hash');
@@ -331,11 +331,11 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 
 	/**
 	 * @param string $parentTableName
-	 * @param integer $parentId
+	 * @param int $parentId
 	 * @param string $parentFieldName
 	 * @param array $assertions
 	 * @param string $mmTable
-	 * @param boolean $expected
+	 * @param bool $expected
 	 * @return void
 	 */
 	protected function assertChildren($parentTableName, $parentId, $parentFieldName, array $assertions, $mmTable = '', $expected = TRUE) {
@@ -371,15 +371,15 @@ abstract class AbstractTestCase extends \TYPO3\CMS\Core\Tests\FunctionalTestCase
 	}
 
 	/**
-	 * @param  array $assertion
-	 * @param  array $elements
-	 * @return boolean
+	 * @param array $assertion
+	 * @param array $elements
+	 * @return bool
 	 */
 	protected function executeAssertionOnElements(array $assertion, array $elements) {
 		if (!empty($assertion['tableName'])) {
 			$tableName = $assertion['tableName'];
 			unset($assertion['tableName']);
-			$elements = (array) $elements[$tableName];
+			$elements = (array)$elements[$tableName];
 		}
 
 		foreach ($elements as $element) {

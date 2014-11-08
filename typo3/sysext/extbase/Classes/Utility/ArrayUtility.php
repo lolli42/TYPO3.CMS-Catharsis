@@ -45,7 +45,7 @@ class ArrayUtility {
 	 *
 	 * @param string $delimiter Delimiter string to explode with
 	 * @param string $string The string to explode
-	 * @param boolean $onlyNonEmptyValues If set, all empty values (='') will NOT be set in output
+	 * @param bool $onlyNonEmptyValues If set, all empty values (='') will NOT be set in output
 	 * @return array Exploded values
 	 * @api
 	 */
@@ -67,8 +67,8 @@ class ArrayUtility {
 	 *
 	 * @param array $firstArray First array
 	 * @param array $secondArray Second array, overruling the first array
-	 * @param boolean $dontAddNewKeys If set, keys that are NOT found in $firstArray (first array) will not be set. Thus only existing value can/will be overruled from second array.
-	 * @param boolean $emptyValuesOverride If set (which is the default), values from $secondArray will overrule if they are empty (according to PHP's empty() function)
+	 * @param bool $dontAddNewKeys If set, keys that are NOT found in $firstArray (first array) will not be set. Thus only existing value can/will be overruled from second array.
+	 * @param bool $emptyValuesOverride If set (which is the default), values from $secondArray will overrule if they are empty (according to PHP's empty() function)
 	 * @return array Resulting array where $secondArray values has overruled $firstArray values
 	 * @api
 	 */
@@ -123,7 +123,7 @@ class ArrayUtility {
 	 * Returns TRUE if the given array contains elements of varying types
 	 *
 	 * @param array $array
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	static public function containsMultipleTypes(array $array) {
@@ -244,8 +244,8 @@ class ArrayUtility {
 	 * Sorts multidimensional arrays by recursively calling ksort on its elements.
 	 *
 	 * @param array &$array the array to sort
-	 * @param integer $sortFlags may be used to modify the sorting behavior using these values (see http://www.php.net/manual/en/function.sort.php)
-	 * @return boolean TRUE on success, FALSE on failure
+	 * @param int $sortFlags may be used to modify the sorting behavior using these values (see http://www.php.net/manual/en/function.sort.php)
+	 * @return bool TRUE on success, FALSE on failure
 	 * @see asort()
 	 * @api
 	 */
@@ -272,7 +272,7 @@ class ArrayUtility {
 			throw new \InvalidArgumentException('convertObjectToArray expects either array or object as input, ' . gettype($subject) . ' given.', 1287059709);
 		}
 		if (is_object($subject)) {
-			$subject = (array) $subject;
+			$subject = (array)$subject;
 		}
 		foreach ($subject as $key => $value) {
 			if (is_array($value) || is_object($value)) {

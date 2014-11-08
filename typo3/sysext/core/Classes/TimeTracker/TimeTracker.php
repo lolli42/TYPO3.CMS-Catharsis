@@ -174,7 +174,7 @@ class TimeTracker {
 	 * Logs the TypoScript entry
 	 *
 	 * @param string $content The message string
-	 * @param integer $num Message type: 0: information, 1: message, 2: warning, 3: error
+	 * @param int $num Message type: 0: information, 1: message, 2: warning, 3: error
 	 * @return void
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::CONTENT()
 	 */
@@ -230,7 +230,7 @@ class TimeTracker {
 	 * Gets a microtime value as milliseconds value.
 	 *
 	 * @param float $microtime The microtime value - if not set the current time is used
-	 * @return integer The microtime value as milliseconds value
+	 * @return int The microtime value as milliseconds value
 	 */
 	public function getMilliseconds($microtime = NULL) {
 		if (!isset($microtime)) {
@@ -243,7 +243,7 @@ class TimeTracker {
 	 * Gets the difference between a given microtime value and the starting time as milliseconds.
 	 *
 	 * @param float $microtime The microtime value - if not set the current time is used
-	 * @return integer The difference between a given microtime value and starting time as milliseconds
+	 * @return int The difference between a given microtime value and starting time as milliseconds
 	 */
 	public function getDifferenceToStarttime($microtime = NULL) {
 		return $this->getMilliseconds($microtime) - $this->starttime;
@@ -392,7 +392,7 @@ class TimeTracker {
 	 * @param array $arr Array which is modified with content. Reference
 	 * @param string $content Current content string for the level
 	 * @param string $depthData Prefixed icons for new PM icons
-	 * @param boolean $first Set this for the first call from outside.
+	 * @param bool $first Set this for the first call from outside.
 	 * @param string $vKey Seems to be the previous tsStackLog key
 	 * @return string Returns the $content string generated/modified. Also the $arr array is modified!
 	 */
@@ -478,7 +478,7 @@ class TimeTracker {
 	 * Helper function for internal data manipulation
 	 *
 	 * @param array $arr Array (passed by reference) and modified
-	 * @param integer $pointer Pointer value
+	 * @param int $pointer Pointer value
 	 * @param string $uniqueId Unique ID string
 	 * @return void
 	 * @access private

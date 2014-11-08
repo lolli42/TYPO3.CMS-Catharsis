@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Steffen Ritter <info@steffen-ritter.net>
  */
-abstract class AbstractSpriteHandler implements \TYPO3\CMS\Backend\Sprite\SpriteIconGeneratorInterface {
+abstract class AbstractSpriteHandler implements SpriteIconGeneratorInterface {
 
 	/**
 	 * all "registered" icons available through sprite API will cumulated here
@@ -71,7 +71,7 @@ abstract class AbstractSpriteHandler implements \TYPO3\CMS\Backend\Sprite\Sprite
 		// Saves which CSS Files are currently "allowed to be in place"
 		$allowedCssFilesinTempDir = array(basename($this->cssTcaFile));
 		// Process every registeres file
-		foreach ((array) $GLOBALS['TBE_STYLES']['spritemanager']['cssFiles'] as $file) {
+		foreach ((array)$GLOBALS['TBE_STYLES']['spritemanager']['cssFiles'] as $file) {
 			$fileName = basename($file);
 			// File should be present
 			$allowedCssFilesinTempDir[] = $fileName;

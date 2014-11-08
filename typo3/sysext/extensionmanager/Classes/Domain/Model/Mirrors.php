@@ -34,7 +34,7 @@ class Mirrors extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 *
 	 * Is array index.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $currentMirror;
 
@@ -42,14 +42,14 @@ class Mirrors extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * Keeps information if a mirror should
 	 * be randomly selected.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isRandomSelection = TRUE;
 
 	/**
 	 * Method selects one specific mirror to be used.
 	 *
-	 * @param integer $mirrorId number (>=1) of mirror or NULL for random selection
+	 * @param int $mirrorId number (>=1) of mirror or NULL for random selection
 	 * @return void
 	 * @see $currentMirror
 	 */
@@ -99,7 +99,7 @@ class Mirrors extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 *
 	 * @access public
 	 * @return array multidimensional array with mirrors and their properties
-	 * @see 	 $mirrors, setMirrors()
+	 * @see $mirrors, setMirrors()
 	 */
 	public function getMirrors() {
 		return $this->mirrors;

@@ -120,7 +120,7 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 	 * @param string $tableName The database table name
 	 * @param array $fieldValues The row to be inserted
 	 * @param bool $isRelation TRUE if we are currently inserting into a relation table, FALSE by default
-	 * @return integer The uid of the inserted row
+	 * @return int The uid of the inserted row
 	 */
 	public function addRow($tableName, array $fieldValues, $isRelation = FALSE) {
 		if (isset($fieldValues['uid'])) {
@@ -431,7 +431,7 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 	 *
 	 * @param QueryInterface $query
 	 * @throws Exception\BadConstraintException
-	 * @return integer The number of matching tuples
+	 * @return int The number of matching tuples
 	 */
 	public function getObjectCountByQuery(QueryInterface $query) {
 		if ($query->getConstraint() instanceof Qom\Statement) {
@@ -705,7 +705,7 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 	 * @param Qom\SourceInterface $source The source (selector od join)
 	 * @param array $rows
 	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings The TYPO3 CMS specific query settings
-	 * @param null|integer $workspaceUid
+	 * @param null|int $workspaceUid
 	 * @return array
 	 */
 	protected function doLanguageAndWorkspaceOverlay(Qom\SourceInterface $source, array $rows, \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface $querySettings, $workspaceUid = NULL) {
@@ -824,10 +824,10 @@ class Typo3DbBackend implements BackendInterface, \TYPO3\CMS\Core\SingletonInter
 	 * If the record lies on a page, then we clear the cache of this page.
 	 * If the record has no PID column, we clear the cache of the current page as best-effort.
 	 *
-	 * Much of this functionality is taken from t3lib_tcemain::clear_cache() which unfortunately only works with logged-in BE user.
+	 * Much of this functionality is taken from DataHandler::clear_cache() which unfortunately only works with logged-in BE user.
 	 *
 	 * @param string $tableName Table name of the record
-	 * @param integer $uid UID of the record
+	 * @param int $uid UID of the record
 	 * @return void
 	 */
 	protected function clearPageCache($tableName, $uid) {

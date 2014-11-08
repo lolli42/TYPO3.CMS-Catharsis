@@ -46,7 +46,7 @@ class ElementInformationController {
 	protected $permsClause;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	public $access = FALSE;
 
@@ -133,7 +133,7 @@ class ElementInformationController {
 
 		// Check permissions and uid value:
 		if ($this->uid && $GLOBALS['BE_USER']->check('tables_select', $this->table)) {
-			if ((string) $this->table == 'pages') {
+			if ((string)$this->table == 'pages') {
 				$this->pageinfo = BackendUtility::readPageAccess($this->uid, $this->perms_clause);
 				$this->access = is_array($this->pageinfo) ? 1 : 0;
 				$this->row = $this->pageinfo;
@@ -241,38 +241,52 @@ class ElementInformationController {
 		if (!$this->fileObject) {
 			return;
 		}
-		$imageTag = '';
+
+		$previewTag = '';
 		$downloadLink = '';
 
 		// check if file is marked as missing
 		if ($this->fileObject->isMissing()) {
 			$flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($this->fileObject);
-			$imageTag .= $flashMessage->render();
+			$previewTag .= $flashMessage->render();
 
 		} else {
 
+			/** @var \TYPO3\CMS\Core\Resource\Rendering\RendererRegistry $rendererRegistry */
+			$rendererRegistry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Rendering\\RendererRegistry');
+			$fileRenderer = $rendererRegistry->getRenderer($this->fileObject);
 			$fileExtension = $this->fileObject->getExtension();
-			$thumbUrl = '';
-			if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileExtension)) {
+			$url = $this->fileObject->getPublicUrl(TRUE);
+
+			// Check if there is a FileRenderer
+			if ($fileRenderer !== NULL) {
+				$previewTag = $fileRenderer->render(
+					$this->fileObject,
+					'590m',
+					'400m',
+					array(),
+					TRUE
+				);
+
+			// else check if we can create an Image preview
+			} elseif (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileExtension)) {
 				$thumbUrl = $this->fileObject->process(
 					ProcessedFile::CONTEXT_IMAGEPREVIEW,
 					array(
-						'width' => '400m',
+						'width' => '590m',
 						'height' => '400m'
 					)
 				)->getPublicUrl(TRUE);
-			}
 
-			// Create thumbnail image?
-			if ($thumbUrl) {
-				$imageTag .= '<img src="' . $thumbUrl . '" ' .
+				// Create thumbnail image?
+				if ($thumbUrl) {
+					$previewTag .= '<img src="' . $thumbUrl . '" ' .
 						'alt="' . htmlspecialchars(trim($this->fileObject->getName())) . '" ' .
 						'title="' . htmlspecialchars(trim($this->fileObject->getName())) . '" />';
+				}
 			}
 
-			// Display download link?
-			$url = $this->fileObject->getPublicUrl(TRUE);
-
+			// Download
 			if ($url) {
 				$downloadLink .= '<a href="' . htmlspecialchars($url) . '" target="_blank" class="t3-button">' .
 						IconUtility::getSpriteIcon('actions-edit-download') . ' ' .
@@ -281,7 +295,7 @@ class ElementInformationController {
 			}
 		}
 
-		return ($imageTag ? '<p>' . $imageTag . '</p>' : '') .
+		return ($previewTag ? '<p>' . $previewTag . '</p>' : '') .
 				($downloadLink ? '<p>' . $downloadLink . '</p>' : '');
 	}
 
@@ -466,7 +480,7 @@ class ElementInformationController {
 	 * Returns the rendered record actions
 	 *
 	 * @param string $table
-	 * @param integer $uid
+	 * @param int $uid
 	 * @return string
 	 */
 	protected function getRecordActions($table, $uid) {

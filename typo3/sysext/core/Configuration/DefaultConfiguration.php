@@ -77,27 +77,27 @@ return array(
 		'curlUse' => FALSE,						// Boolean: If set, try to use cURL to fetch external URLs
 		'curlProxyNTLM' => FALSE,					// Boolean: Proxy NTLM authentication support.
 		/**
-		 * @deprecated Deprecated since 4.6 - will be removed in 6.2.
+		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlProxyServer' => '',				// String: Proxyserver as http://proxy:port/. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		/**
-		 * @deprecated Deprecated since 4.6 - will be removed in 6.2.
+		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlProxyTunnel' => FALSE,				// Boolean: If set, use a tunneled connection through the proxy (useful for websense etc.). Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		/**
-		 * @deprecated Deprecated since 4.6 - will be removed in 6.2.
+		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlProxyUserPass' => '',				// String: Proxyserver authentication user:pass. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		/**
-		 * @deprecated Deprecated since 4.6 - will be removed in 6.2.
+		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlTimeout' => 0,						// Integer: Timeout value for cURL requests in seconds. 0 means to wait indefinitely. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
 		'form_enctype' => 'multipart/form-data',// String: This is the default form encoding type for most forms in TYPO3. It allows for file uploads to be in the form. However if file-upload is disabled for your PHP version even ordinary data sent with this encryption will not get to the server. So if you have file_upload disabled, you will have to change this to eg. 'application/x-www-form-urlencoded'
 		'textfile_ext' => 'txt,ts,html,htm,css,tmpl,js,sql,xml,csv,xlf',		// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
 		'binPath' => '',						// String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
 		'binSetup' => '',						// String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
-		't3lib_cs_convMethod' => '',			// String (values: "iconv", "recode", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset conversion functions in t3lib_cs. Will speed up charset conversion radically.
-		't3lib_cs_utils' => '',					// String (values: "iconv", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset processing functions in t3lib_cs. Will speed up charset functions radically.
+		't3lib_cs_convMethod' => '',			// String (values: "iconv", "recode", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset conversion functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset conversion radically.
+		't3lib_cs_utils' => '',					// String (values: "iconv", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset processing functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset functions radically.
 		'no_pconnect' => TRUE,					// Boolean: If TRUE, "connect" is used to connect to the database. If FALSE, a persistent connection using "pconnect" will be established!
 		'dbClientCompress' => FALSE,			// Boolean: if TRUE, data exchange between TYPO3 and database server will be compressed. This may improve performance if (1) database serever is on the different server and (2) network connection speed to database server is 100mbps or less. CPU usage will be higher if this option is used but database operations will be executed faster due to much less (up to 3 times) database network traffic. This option has no effect if MySQL server is localhost.
 		'setDBinit' => '',						// String (textarea): These commands are executed after the database connection was established. Hint: The previous default "SET NAMES utf8;" is not required any more and will be removed automatically if set!
@@ -698,6 +698,10 @@ return array(
 				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Template\\DocumentTemplate->renderFlashMessages',
 				'csrfTokenCheck' => TRUE
 			),
+			'ContextMenu::load' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Controller\\ClickMenuController->printContentForAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
 		),
 		'HTTP' => array(
 			'Response' => array(
@@ -831,11 +835,6 @@ return array(
 			// Global soft reference parsers
 			'cliKeys' => array()
 		),
-		't3lib/class.t3lib_tsfebeuserauth.php' => array(
-			'frontendEditingController' => array(
-				'default' => 'typo3/sysext/core/Classes/FrontendEditing/FrontendEditingController.php:t3lib_frontendedit'
-			)
-		)
 	),
 	'EXTCONF' => array(
 		// Here you may add manually set configuration options for your extensions. Eg. $TYPO3_CONF_VARS['EXTCONF']['my_extension_key']['my_option'] = 'my_value';

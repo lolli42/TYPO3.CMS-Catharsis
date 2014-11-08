@@ -155,9 +155,9 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends \TYPO3\CMS
 	/**
 	 * Initialize editor
 	 *
-	 * @param integer $pageId
-	 * @param integer $template_uid
-	 * @return integer
+	 * @param int $pageId
+	 * @param int $template_uid
+	 * @return int
 	 */
 	public function initialize_editor($pageId, $template_uid = 0) {
 		// Initializes the module. Done in this function because we may need to re-initialize if data is submitted!
@@ -186,7 +186,6 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends \TYPO3\CMS
 	 * @return string
 	 */
 	public function main() {
-		global $BACK_PATH;
 		global $tmpl, $tplRow, $theConstants;
 		$POST = GeneralUtility::_POST();
 		// Checking for more than one template an if, set a menu...
@@ -397,28 +396,19 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends \TYPO3\CMS
 				$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', implode($errMsg, '<br />'), $GLOBALS['LANG']->getLL('errorsWarnings'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 				$theOutput .= $flashMessage->render();
 			}
+
 			if (isset($this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType][$theKey])) {
-				$remove = '<th><a href="' . htmlspecialchars(($aHref . '&addKey[' . $theKey . ']=0&SET[ts_browser_toplevel_' . $bType . ']=0')) . '">' . $GLOBALS['LANG']->getLL('removeKey') . '</a></th>';
+				$remove = '<a href="' . htmlspecialchars(($aHref . '&addKey[' . $theKey . ']=0&SET[ts_browser_toplevel_' . $bType . ']=0')) . '">' . $GLOBALS['LANG']->getLL('removeKey') . '</a>';
 			} else {
 				$remove = '';
 			}
+
 			$label = $theKey ? $theKey : ($bType == 'setup' ? $GLOBALS['LANG']->csConvObj->conv_case($GLOBALS['LANG']->charSet, $GLOBALS['LANG']->getLL('setupRoot'), 'toUpper') : $GLOBALS['LANG']->csConvObj->conv_case($GLOBALS['LANG']->charSet, $GLOBALS['LANG']->getLL('constantRoot'), 'toUpper'));
-			$theOutput .= $this->pObj->doc->spacer(15);
 			$theOutput .= $this->pObj->doc->sectionEnd();
-			$theOutput .= '<table class="t3-table" id="typo3-objectBrowser">
-	<thead>
-		<tr>
-			<th>' . $label . '</th>' .
-			$remove .
-		'</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>' . $tree . '</td>' .
-			($remove ? '<td></td>' : '') . '
-		</tr>
-	</tbody>
-</table>';
+
+			$theOutput .= '<h2>' . $label . ' ' . $remove . '</h2>';
+			$theOutput .= '<div class="text-nowrap">' . $tree  .  '</div>';
+
 			// second row options
 			$menu = '<div class="tsob-menu-row2">';
 			$menu .= '<div class="checkbox"><label for="checkTs_browser_showComments">' . BackendUtility::getFuncCheck($this->pObj->id, 'SET[ts_browser_showComments]', $this->pObj->MOD_SETTINGS['ts_browser_showComments'], '', '', 'id="checkTs_browser_showComments"');

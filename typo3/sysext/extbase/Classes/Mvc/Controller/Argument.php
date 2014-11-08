@@ -58,7 +58,7 @@ class Argument {
 	/**
 	 * TRUE if this argument is required
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isRequired = FALSE;
 
@@ -158,19 +158,19 @@ class Argument {
 	/**
 	 * Marks this argument to be required
 	 *
-	 * @param boolean $required TRUE if this argument should be required
+	 * @param bool $required TRUE if this argument should be required
 	 * @return \TYPO3\CMS\Extbase\Mvc\Controller\Argument $this
 	 * @api
 	 */
 	public function setRequired($required) {
-		$this->isRequired = (boolean) $required;
+		$this->isRequired = (bool)$required;
 		return $this;
 	}
 
 	/**
 	 * Returns TRUE if this argument is required
 	 *
-	 * @return boolean TRUE if this argument is required
+	 * @return bool TRUE if this argument is required
 	 * @api
 	 */
 	public function isRequired() {
@@ -272,7 +272,7 @@ class Argument {
 	}
 
 	/**
-	 * @return boolean TRUE if the argument is valid, FALSE otherwise
+	 * @return bool TRUE if the argument is valid, FALSE otherwise
 	 * @api
 	 */
 	public function isValid() {
@@ -294,6 +294,6 @@ class Argument {
 	 * @api
 	 */
 	public function __toString() {
-		return (string) $this->value;
+		return (string)$this->value;
 	}
 }

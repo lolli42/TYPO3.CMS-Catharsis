@@ -24,7 +24,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * RSA public exponent (3 or 0x10001)
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $exponent = 0;
 
@@ -38,14 +38,14 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * The public key modulus
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $publicKeyModulus = 0;
 
 	/**
 	 * Checks if this key pair already has been provided with all data.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isReady() {
 		return $this->hasExponent() && $this->hasPrivateKey() && $this->hasPublicKeyModulus();
@@ -54,7 +54,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Retrieves the exponent.
 	 *
-	 * @return integer the exponent
+	 * @return int the exponent
 	 */
 	public function getExponent() {
 		return $this->exponent;
@@ -65,7 +65,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * Note: This method must not be called more than one time.
 	 *
-	 * @param integer $exponent the new exponent
+	 * @param int $exponent the new exponent
 	 *
 	 * @return void
 	 *
@@ -82,7 +82,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Checks whether an exponent already has been set.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function hasExponent() {
 		return $this->getExponent() !== 0;
@@ -119,7 +119,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Checks whether a private key already has been set.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function hasPrivateKey() {
 		return $this->getPrivateKey() !== '';
@@ -128,7 +128,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Retrieves the public key modulus
 	 *
-	 * @return integer the public key modulus
+	 * @return int the public key modulus
 	 */
 	public function getPublicKeyModulus() {
 		return $this->publicKeyModulus;
@@ -139,7 +139,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * Note: This method must not be called more than one time.
 	 *
-	 * @param integer $publicKeyModulus the new public key modulus
+	 * @param int $publicKeyModulus the new public key modulus
 	 *
 	 * @return void
 	 *
@@ -156,7 +156,7 @@ class Keypair implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Checks whether a public key modulus already has been set.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function hasPublicKeyModulus() {
 		return $this->getPublicKeyModulus() !== 0;

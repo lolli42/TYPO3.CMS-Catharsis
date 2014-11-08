@@ -67,7 +67,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$this->doc->postCode = $this->doc->wrapScriptTags('if (top.fsMod) { top.fsMod.recentIds["web"] = 0; }');
 
 		// Render content depending on the mode
-		$mode = (string) $this->MOD_SETTINGS['mode'];
+		$mode = (string)$this->MOD_SETTINGS['mode'];
 		if ($mode == 'information') {
 			$this->renderInformationContent();
 		} else {
@@ -98,7 +98,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 */
 	protected function renderModuleContent() {
 		$title = ($content = ($actionContent = ''));
-		$chosenTask = (string) $this->MOD_SETTINGS['function'];
+		$chosenTask = (string)$this->MOD_SETTINGS['function'];
 		// Render the taskcenter task as default
 		if (empty($chosenTask) || $chosenTask == 'index') {
 			$chosenTask = 'taskcenter.tasks';
@@ -174,7 +174,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * description
 	 *
 	 * @param array $items List of items to be displayed in the definition list.
-	 * @param boolean $mainMenu Set it to TRUE to render the main menu
+	 * @param bool $mainMenu Set it to TRUE to render the main menu
 	 * @return string Fefinition list
 	 */
 	public function renderListMenu($items, $mainMenu = FALSE) {
@@ -231,7 +231,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					$additionalClass .= ' last-item';
 				}
 				// Active menu item
-				$active = (string) $this->MOD_SETTINGS['function'] == $item['uid'] ? ' active-task' : '';
+				$active = (string)$this->MOD_SETTINGS['function'] == $item['uid'] ? ' active-task' : '';
 				// Main menu: Render additional syntax to sort tasks
 				if ($mainMenu) {
 					$dragIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/move.gif', 'width="16" height="16" hspace="2"') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE) . '" alt="" />';
@@ -329,7 +329,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 *
 	 * @param string $extKey Extension key
 	 * @param string $taskClass Name of the task
-	 * @return boolean Access to the task allowed or not
+	 * @return bool Access to the task allowed or not
 	 */
 	protected function checkAccess($extKey, $taskClass) {
 		// Check if task is blinded with TsConfig (taskcenter.<extkey>.<taskName>
@@ -352,7 +352,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * Returns HTML code to dislay an url in an iframe at the right side of the taskcenter
 	 *
 	 * @param string $url Url to display
-	 * @param integer $max
+	 * @param int $max
 	 * @return string Code that inserts the iframe (HTML)
 	 */
 	public function urlInIframe($url, $max = 0) {

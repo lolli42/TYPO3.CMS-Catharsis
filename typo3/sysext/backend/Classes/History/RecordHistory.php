@@ -21,51 +21,48 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Class for the record history display script (show_rechis.php)
  *
- * XHTML Compliant
- *
- * @author Sebastian Kurfürst <sebastian@garbage-group.de>
- */
-/**
- * Class for the record history display script (show_rechis.php)
- *
  * @author Sebastian Kurfürst <sebastian@garbage-group.de>
  */
 class RecordHistory {
 
-	// External, static:
-	// Maximum number of sys_history steps to show.
 	/**
+	 * Maximum number of sys_history steps to show.
+	 *
 	 * @var int
 	 */
 	public $maxSteps = 20;
 
-	// display diff or not (0-no diff, 1-inline)
 	/**
+	 * Display diff or not (0-no diff, 1-inline)
+	 *
 	 * @var int
 	 */
 	public $showDiff = 1;
 
-	// on a pages table - show sub elements as well.
 	/**
+	 * On a pages table - show sub elements as well.
+	 *
 	 * @var int
 	 */
 	public $showSubElements = 1;
 
-	// show inserts and deletes as well
 	/**
+	 * Show inserts and deletes as well
+	 *
 	 * @var int
 	 */
 	public $showInsertDelete = 1;
 
-	// Internal, GPvars
-	// Element reference, syntax [tablename]:[uid]
 	/**
+	 * Element reference, syntax [tablename]:[uid]
+	 *
 	 * @var string
 	 */
 	public $element;
 
-	// syslog ID which is not shown anymore
 	/**
+	 * syslog ID which is not shown anymore
+	 *
 	 * @var int
 	 */
 	public $lastSyslogId;
@@ -75,7 +72,6 @@ class RecordHistory {
 	 */
 	public $returnUrl;
 
-	// Internal
 	/**
 	 * @var array
 	 */
@@ -160,7 +156,7 @@ class RecordHistory {
 	/**
 	 * Toggles highlight state of record
 	 *
-	 * @param integer $uid Uid of sys_history entry
+	 * @param int $uid Uid of sys_history entry
 	 * @return void
 	 */
 	public function toggleHighlight($uid) {
@@ -514,7 +510,7 @@ class RecordHistory {
 	 *
 	 * @param array $entry sys_history entry record.
 	 * @param string $table The table name
-	 * @param integer $rollbackUid If set to UID of record, display rollback links
+	 * @param int $rollbackUid If set to UID of record, display rollback links
 	 * @return string HTML table
 	 * @access private
 	 */
@@ -615,7 +611,7 @@ class RecordHistory {
 	/**
 	 * Creates change log including sub-elements, filling $this->changeLog
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	public function createChangeLog() {
 		$elParts = explode(':', $this->element);
@@ -652,7 +648,7 @@ class RecordHistory {
 	 * Gets history and delete/insert data from sys_log and sys_history
 	 *
 	 * @param string $table DB table name
-	 * @param integer $uid UID of record
+	 * @param int $uid UID of record
 	 * @return array history data of the record
 	 */
 	public function getHistoryData($table, $uid) {
@@ -748,7 +744,7 @@ class RecordHistory {
 	 *
 	 * @param string $key Parameter which is set to rollbackFields
 	 * @param string $alt Optional, alternative label and title tag of image
-	 * @param integer $type Optional, type of rollback: 0 - ALL; 1 - element; 2 - field
+	 * @param int $type Optional, type of rollback: 0 - ALL; 1 - element; 2 - field
 	 * @return string HTML output
 	 */
 	public function createRollbackLink($key, $alt = '', $type = 0) {
@@ -800,8 +796,8 @@ class RecordHistory {
 	 * Convert input element reference to workspace version if any.
 	 *
 	 * @param string $table Table of input element
-	 * @param integer $uid UID of record
-	 * @return integer converted UID of record
+	 * @param int $uid UID of record
+	 * @return int converted UID of record
 	 */
 	public function resolveElement($table, $uid) {
 		if (isset($GLOBALS['TCA'][$table])) {
@@ -831,8 +827,8 @@ class RecordHistory {
 	 * Determines whether user has access to a page.
 	 *
 	 * @param string $table
-	 * @param integer $uid
-	 * @return boolean
+	 * @param int $uid
+	 * @return bool
 	 */
 	protected function hasPageAccess($table, $uid) {
 		$uid = (int)$uid;
@@ -857,7 +853,7 @@ class RecordHistory {
 	 * Determines whether user has access to a table.
 	 *
 	 * @param string $table
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function hasTableAccess($table) {
 		return $this->getBackendUser()->check('tables_select', $table);
@@ -867,7 +863,7 @@ class RecordHistory {
 	 * Gets a database record.
 	 *
 	 * @param string $table
-	 * @param integer $uid
+	 * @param int $uid
 	 * @return array|NULL
 	 */
 	protected function getRecord($table, $uid) {

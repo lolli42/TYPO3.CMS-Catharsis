@@ -64,7 +64,7 @@ class UriBuilder {
 	protected $section = '';
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $createAbsoluteUri = FALSE;
 
@@ -74,7 +74,7 @@ class UriBuilder {
 	protected $absoluteUriScheme = NULL;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $addQueryString = FALSE;
 
@@ -89,27 +89,27 @@ class UriBuilder {
 	protected $argumentsToBeExcludedFromQueryString = array();
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $linkAccessRestrictedPages = FALSE;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $targetPageUid = NULL;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $targetPageType = 0;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $noCache = FALSE;
 
 	/**
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $useCacheHash = TRUE;
 
@@ -221,7 +221,7 @@ class UriBuilder {
 	/**
 	 * If set, the URI is prepended with the current base URI. Defaults to FALSE.
 	 *
-	 * @param boolean $createAbsoluteUri
+	 * @param bool $createAbsoluteUri
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
@@ -231,7 +231,7 @@ class UriBuilder {
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function getCreateAbsoluteUri() {
@@ -259,18 +259,18 @@ class UriBuilder {
 	/**
 	 * If set, the current query parameters will be merged with $this->arguments. Defaults to FALSE.
 	 *
-	 * @param boolean $addQueryString
+	 * @param bool $addQueryString
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 * @see TSref/typolink.addQueryString
 	 */
 	public function setAddQueryString($addQueryString) {
-		$this->addQueryString = (boolean) $addQueryString;
+		$this->addQueryString = (bool)$addQueryString;
 		return $this;
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function getAddQueryString() {
@@ -329,7 +329,7 @@ class UriBuilder {
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 */
 	public function setArgumentPrefix($argumentPrefix) {
-		$this->argumentPrefix = (string) $argumentPrefix;
+		$this->argumentPrefix = (string)$argumentPrefix;
 		return $this;
 	}
 
@@ -343,17 +343,17 @@ class UriBuilder {
 	/**
 	 * If set, URIs for pages without access permissions will be created
 	 *
-	 * @param boolean $linkAccessRestrictedPages
+	 * @param bool $linkAccessRestrictedPages
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
 	public function setLinkAccessRestrictedPages($linkAccessRestrictedPages) {
-		$this->linkAccessRestrictedPages = (boolean) $linkAccessRestrictedPages;
+		$this->linkAccessRestrictedPages = (bool)$linkAccessRestrictedPages;
 		return $this;
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function getLinkAccessRestrictedPages() {
@@ -363,7 +363,7 @@ class UriBuilder {
 	/**
 	 * Uid of the target page
 	 *
-	 * @param integer $targetPageUid
+	 * @param int $targetPageUid
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
@@ -375,7 +375,7 @@ class UriBuilder {
 	/**
 	 * returns $this->targetPageUid.
 	 *
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getTargetPageUid() {
@@ -385,7 +385,7 @@ class UriBuilder {
 	/**
 	 * Sets the page type of the target URI. Defaults to 0
 	 *
-	 * @param integer $targetPageType
+	 * @param int $targetPageType
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
@@ -395,7 +395,7 @@ class UriBuilder {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getTargetPageType() {
 		return $this->targetPageType;
@@ -405,17 +405,17 @@ class UriBuilder {
 	 * by default FALSE; if TRUE, &no_cache=1 will be appended to the URI
 	 * This overrules the useCacheHash setting
 	 *
-	 * @param boolean $noCache
+	 * @param bool $noCache
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
 	public function setNoCache($noCache) {
-		$this->noCache = (boolean) $noCache;
+		$this->noCache = (bool)$noCache;
 		return $this;
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function getNoCache() {
@@ -426,17 +426,17 @@ class UriBuilder {
 	 * by default TRUE; if FALSE, no cHash parameter will be appended to the URI
 	 * If noCache is set, this setting will be ignored.
 	 *
-	 * @param boolean $useCacheHash
+	 * @param bool $useCacheHash
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 * @api
 	 */
 	public function setUseCacheHash($useCacheHash) {
-		$this->useCacheHash = (boolean) $useCacheHash;
+		$this->useCacheHash = (bool)$useCacheHash;
 		return $this;
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 * @api
 	 */
 	public function getUseCacheHash() {

@@ -48,7 +48,7 @@ abstract class AbstractElementView {
 	 * True if element needs no element wrap
 	 * like <li>element</li>
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $noWrap = FALSE;
 
@@ -68,7 +68,7 @@ abstract class AbstractElementView {
 	 * Determines whether the model is expected in this object.
 	 *
 	 * @param \TYPO3\CMS\Form\Domain\Model\Element\AbstractElement $model
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function isValidModel(\TYPO3\CMS\Form\Domain\Model\Element\AbstractElement $model) {
 		return is_a($model, $this->getExpectedModelName($model));
@@ -209,11 +209,11 @@ abstract class AbstractElementView {
 	 * Get the content for the current object as DOMDocument
 	 *
 	 * @param string $type Type of element for layout
-	 * @param boolean $returnFirstChild If TRUE, the first child will be returned instead of the DOMDocument
+	 * @param bool $returnFirstChild If TRUE, the first child will be returned instead of the DOMDocument
 	 * @return mixed \DOMDocument|\DOMNode XML part of the view object
 	 */
 	public function render($type = 'element', $returnFirstChild = TRUE) {
-		$useLayout = $this->getLayout((string) $type);
+		$useLayout = $this->getLayout((string)$type);
 		$dom = new \DOMDocument('1.0', 'utf-8');
 		$dom->formatOutput = TRUE;
 		$dom->preserveWhiteSpace = FALSE;
@@ -303,7 +303,7 @@ abstract class AbstractElementView {
 	 * @return void
 	 */
 	public function setAttribute(\DOMElement $domElement, $key) {
-		$value = htmlspecialchars($this->model->getAttributeValue((string) $key), ENT_QUOTES);
+		$value = htmlspecialchars($this->model->getAttributeValue((string)$key), ENT_QUOTES);
 		if (!empty($value)) {
 			$domElement->setAttribute($key, $value);
 		}
@@ -319,7 +319,7 @@ abstract class AbstractElementView {
 	 * @return unknown_type
 	 */
 	public function setAttributeWithValueofOtherAttribute(\DOMElement $domElement, $key, $other) {
-		$value = htmlspecialchars($this->model->getAttributeValue((string) $other), ENT_QUOTES);
+		$value = htmlspecialchars($this->model->getAttributeValue((string)$other), ENT_QUOTES);
 		if (!empty($value)) {
 			$domElement->setAttribute($key, $value);
 		}
@@ -332,7 +332,7 @@ abstract class AbstractElementView {
 	 * @return object
 	 */
 	protected function createAdditional($class) {
-		$class = strtolower((string) $class);
+		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\View\\Form\\Additional\\' . ucfirst($class) . 'AdditionalElementView';
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $this->model);
 	}
@@ -353,7 +353,7 @@ abstract class AbstractElementView {
 	 * like <option>content</option>
 	 * or <textarea>content</textarea>
 	 *
-	 * @param boolean $encodeSpecialCharacters Whether to encode the data
+	 * @param bool $encodeSpecialCharacters Whether to encode the data
 	 * @return string
 	 */
 	public function getElementData($encodeSpecialCharacters = TRUE) {
@@ -406,7 +406,7 @@ abstract class AbstractElementView {
 	 * if TRUE the element does not need a element wrap
 	 * like <li>element</li>
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function noWrap() {
 		return $this->noWrap;

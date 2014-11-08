@@ -22,21 +22,21 @@ class FileStorageExtractionTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	/**
 	 * Storage Uid
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	public $storageUid = -1;
 
 	/**
 	 * FileCount
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	public $maxFileCount = 100;
 
 	/**
 	 * Function execute from the Scheduler
 	 *
-	 * @return boolean TRUE on successful execution, FALSE on error
+	 * @return bool TRUE on successful execution, FALSE on error
 	 */
 	public function execute() {
 		$success = FALSE;

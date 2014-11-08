@@ -22,31 +22,31 @@ namespace TYPO3\CMS\Beuser\Domain\Model;
 class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const ALL = 0;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const USERTYPE_ADMINONLY = 1;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const USERTYPE_USERONLY = 2;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_ACTIVE = 1;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const STATUS_INACTIVE = 2;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const LOGIN_SOME = 1;
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const LOGIN_NONE = 2;
 	/**
@@ -55,17 +55,17 @@ class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $userName = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $userType = self::ALL;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $status = self::ALL;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $logins = 0;
 
@@ -90,7 +90,7 @@ class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @param integer $userType
+	 * @param int $userType
 	 * @return void
 	 */
 	public function setUserType($userType) {
@@ -98,14 +98,14 @@ class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getUserType() {
 		return $this->userType;
 	}
 
 	/**
-	 * @param integer $status
+	 * @param int $status
 	 * @return void
 	 */
 	public function setStatus($status) {
@@ -113,14 +113,14 @@ class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getStatus() {
 		return $this->status;
 	}
 
 	/**
-	 * @param integer $logins
+	 * @param int $logins
 	 * @return void
 	 */
 	public function setLogins($logins) {
@@ -128,7 +128,7 @@ class Demand extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getLogins() {
 		return $this->logins;

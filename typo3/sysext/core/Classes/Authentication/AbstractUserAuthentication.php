@@ -266,15 +266,6 @@ abstract class AbstractUserAuthentication {
 	public $id;
 
 	/**
-	 * Will contain the session_id gotten from cookie or GET method.
-	 * This is used in statistics as a reliable cookie (one which is known to come from $_COOKIE)
-	 * @var string
-	 * @internal
-	 * @deprecated since TYPO3 CMS 6.2, remove two versions later, use $this->isCookieSet() instead
-	 */
-	public $cookieId;
-
-	/**
 	 * Indicates if an authentication was started but failed
 	 * @var bool
 	 */
@@ -492,9 +483,9 @@ abstract class AbstractUserAuthentication {
 			// If the cookie lifetime is set, use it:
 			$cookieExpire = $isRefreshTimeBasedCookie ? $GLOBALS['EXEC_TIME'] + $this->lifetime : 0;
 			// Use the secure option when the current request is served by a secure connection:
-			$cookieSecure = (bool) $settings['cookieSecure'] && GeneralUtility::getIndpEnv('TYPO3_SSL');
+			$cookieSecure = (bool)$settings['cookieSecure'] && GeneralUtility::getIndpEnv('TYPO3_SSL');
 			// Deliver cookies only via HTTP and prevent possible XSS by JavaScript:
-			$cookieHttpOnly = (bool) $settings['cookieHttpOnly'];
+			$cookieHttpOnly = (bool)$settings['cookieHttpOnly'];
 			// Do not set cookie if cookieSecure is set to "1" (force HTTPS) and no secure channel is used:
 			if ((int)$settings['cookieSecure'] !== 1 || GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 				setcookie($this->name, $this->id, $cookieExpire, $cookiePath, $cookieDomain, $cookieSecure, $cookieHttpOnly);
@@ -573,7 +564,7 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Determine whether a session cookie needs to be set (lifetime=0)
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @internal
 	 */
 	public function isSetSessionCookie() {
@@ -583,7 +574,7 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Determine whether a non-session cookie needs to be set (lifetime>0)
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @internal
 	 */
 	public function isRefreshTimeBasedCookie() {
@@ -864,7 +855,7 @@ abstract class AbstractUserAuthentication {
 		);
 		// Re-create session entry
 		$insertFields = $this->getNewSessionRecord($tempuser);
-		$inserted = (boolean) $this->db->exec_INSERTquery($this->session_table, $insertFields);
+		$inserted = (bool)$this->db->exec_INSERTquery($this->session_table, $insertFields);
 		if (!$inserted) {
 			$message = 'Session data could not be written to DB. Error: ' . $this->db->sql_error();
 			GeneralUtility::sysLog($message, 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
@@ -905,7 +896,7 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Read the user session from db.
 	 *
-	 * @param boolean $skipSessionUpdate
+	 * @param bool $skipSessionUpdate
 	 * @return array User session data
 	 */
 	public function fetchUserSession($skipSessionUpdate = FALSE) {
@@ -1002,8 +993,8 @@ abstract class AbstractUserAuthentication {
 	 * Determine whether there's an according session record to a given session_id
 	 * in the database. Don't care if session record is still valid or not.
 	 *
-	 * @param integer $id Claimed Session ID
-	 * @return boolean Returns TRUE if a corresponding session was found in the database
+	 * @param int $id Claimed Session ID
+	 * @return bool Returns TRUE if a corresponding session was found in the database
 	 */
 	public function isExistingSessionRecord($id) {
 		$statement = $this->db->prepare_SELECTquery('COUNT(*)', $this->session_table, 'ses_id = :ses_id');
@@ -1016,9 +1007,8 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Returns whether this request is going to set a cookie
 	 * or a cookie was already found in the system
-	 * replaces the old functionality for "$this->cookieId"
 	 *
-	 * @return boolean Returns TRUE if a cookie is set
+	 * @return bool Returns TRUE if a cookie is set
 	 */
 	public function isCookieSet() {
 		return $this->cookieWasSetOnCurrentRequest || $this->getCookie($this->name);
@@ -1128,7 +1118,7 @@ abstract class AbstractUserAuthentication {
 	 * Returns the IP address to lock to.
 	 * The IP address may be partial based on $parts.
 	 *
-	 * @param integer $parts 1-4: Indicates how many parts of the IP address to return. 4 means all, 1 means only first number.
+	 * @param int $parts 1-4: Indicates how many parts of the IP address to return. 4 means all, 1 means only first number.
 	 * @return string (Partial) IP address for REMOTE_ADDR
 	 * @access private
 	 */
@@ -1170,7 +1160,7 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Creates hash integer to lock user to. Depends on configured keywords
 	 *
-	 * @return integer Hash integer
+	 * @return int Hash integer
 	 * @access private
 	 */
 	protected function hashLockClause_getHashInt() {
@@ -1399,7 +1389,7 @@ abstract class AbstractUserAuthentication {
 	 * @param array $user User data array
 	 * @param array $loginData Login data array
 	 * @param string $passwordCompareStrategy Alternative passwordCompareStrategy. Used when authentication services wants to override the default.
-	 * @return boolean TRUE if login data matched
+	 * @return bool TRUE if login data matched
 	 */
 	public function compareUident($user, $loginData, $passwordCompareStrategy = '') {
 		$OK = FALSE;
@@ -1445,15 +1435,15 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * DUMMY: Writes to log database table (in some extension classes)
 	 *
-	 * @param integer $type denotes which module that has submitted the entry. This is the current list:  1=tce_db; 2=tce_file; 3=system (eg. sys_history save); 4=modules; 254=Personal settings changed; 255=login / out action: 1=login, 2=logout, 3=failed login (+ errorcode 3), 4=failure_warning_email sent
-	 * @param integer $action denotes which specific operation that wrote the entry (eg. 'delete', 'upload', 'update' and so on...). Specific for each $type. Also used to trigger update of the interface. (see the log-module for the meaning of each number !!)
-	 * @param integer $error flag. 0 = message, 1 = error (user problem), 2 = System Error (which should not happen), 3 = security notice (admin)
-	 * @param integer $details_nr The message number. Specific for each $type and $action. in the future this will make it possible to translate errormessages to other languages
+	 * @param int $type denotes which module that has submitted the entry. This is the current list:  1=tce_db; 2=tce_file; 3=system (eg. sys_history save); 4=modules; 254=Personal settings changed; 255=login / out action: 1=login, 2=logout, 3=failed login (+ errorcode 3), 4=failure_warning_email sent
+	 * @param int $action denotes which specific operation that wrote the entry (eg. 'delete', 'upload', 'update' and so on...). Specific for each $type. Also used to trigger update of the interface. (see the log-module for the meaning of each number !!)
+	 * @param int $error flag. 0 = message, 1 = error (user problem), 2 = System Error (which should not happen), 3 = security notice (admin)
+	 * @param int $details_nr The message number. Specific for each $type and $action. in the future this will make it possible to translate errormessages to other languages
 	 * @param string $details Default text that follows the message
 	 * @param array $data Data that follows the log. Might be used to carry special information. If an array the first 5 entries (0-4) will be sprintf'ed the details-text...
 	 * @param string $tablename Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
-	 * @param integer $recuid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
-	 * @param integer $recpid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
+	 * @param int $recuid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
+	 * @param int $recpid Special field used by tce_main.php. These ($tablename, $recuid, $recpid) holds the reference to the record which the log-entry is about. (Was used in attic status.php to update the interface.)
 	 * @return void
 	 */
 	public function writelog($type, $action, $error, $details_nr, $details, $data, $tablename, $recuid, $recpid) {
@@ -1464,8 +1454,8 @@ abstract class AbstractUserAuthentication {
 	 * DUMMY: Check login failures (in some extension classes)
 	 *
 	 * @param string $email Email address
-	 * @param integer $secondsBack Number of sections back in time to check. This is a kind of limit for how many failures an hour for instance
-	 * @param integer $maxFailures Max allowed failures before a warning mail is sent
+	 * @param int $secondsBack Number of sections back in time to check. This is a kind of limit for how many failures an hour for instance
+	 * @param int $maxFailures Max allowed failures before a warning mail is sent
 	 * @return void
 	 * @ignore
 	 */
@@ -1481,7 +1471,7 @@ abstract class AbstractUserAuthentication {
 	 * a session id and the fields from the session table of course.
 	 * Will check the users for disabled, start/endtime, etc. ($this->user_where_clause())
 	 *
-	 * @param integer $uid The UID of the backend user to set in ->user
+	 * @param int $uid The UID of the backend user to set in ->user
 	 * @return void
 	 * @internal
 	 * @see SC_mod_tools_be_user_index::compareUsers(), SC_mod_user_setup_index::simulateUser(), freesite_admin::startCreate()
@@ -1505,7 +1495,7 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Fetching raw user record with uid=$uid
 	 *
-	 * @param integer $uid The UID of the backend user to set in ->user
+	 * @param int $uid The UID of the backend user to set in ->user
 	 * @return array user record or FALSE
 	 * @internal
 	 */

@@ -31,14 +31,6 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 	// *********
 
 	/**
-	 * If TRUE, table rows in the list will alternate in background colors (and have
-	 * background colors at all!)
-	 *
-	 * @var bool
-	 */
-	public $alternateBgColors = FALSE;
-
-	/**
 	 * Used to indicate which tables (values in the array) that can have a
 	 * create-new-record link. If the array is empty, all tables are allowed.
 	 *
@@ -520,10 +512,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				$theData[$titleCol] = $this->linkWrapTable($table, '<span class="c-table">' . $tableTitle . '</span> (' . $this->totalItems . ') ' . $icon);
 			}
 			if ($listOnlyInSingleTableMode) {
-				$out .= '
-					<tr>
-						<td class="t3-row-header" style="width:95%;">' . BackendUtility::wrapInHelp($table, '', $theData[$titleCol]) . '</td>
-					</tr>';
+				$out .= '<h2>' . BackendUtility::wrapInHelp($table, '', $theData[$titleCol]) . '</h2>';
 			} else {
 				// Render collapse button if in multi table mode
 				$collapseIcon = '';
@@ -537,7 +526,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 						: IconUtility::getSpriteIcon('actions-view-list-collapse', array('class' => 'collapseIcon'));
 					$collapseIcon = '<a href="' . $href . '" title="' . $title . '">' . $icon . '</a>';
 				}
-				$out .= $this->addElement(1, $collapseIcon, $theData, ' class="t3-row-header"', '');
+				$out .= '<h2>' . $theData[$titleCol] . $collapseIcon . '</h2>';
 			}
 			// Render table rows only if in multi table view and not collapsed or if in
 			// single table view
@@ -653,7 +642,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			<!--
 				DB listing of elements:	"' . htmlspecialchars($table) . '"
 			-->
-				<table border="0" cellpadding="0" cellspacing="0" class="typo3-dblist' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
+				<table class="t3-table typo3-dblist' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
 					' . $out . '
 				</table>';
 			// Output csv if...
@@ -709,12 +698,9 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			if ($cc == $this->totalRowCount || $cc == $this->iLimit) {
 				$rowSpecial .= ' lastcol';
 			}
-			// Background color, if any:
-			if ($this->alternateBgColors) {
-				$row_bgColor = $cc % 2 ? ' class="db_list_normal' . $rowSpecial . '"' : ' class="db_list_alt' . $rowSpecial . '"';
-			} else {
-				$row_bgColor = ' class="db_list_normal' . $rowSpecial . '"';
-			}
+
+			$row_bgColor = ' class="db_list_normal' . $rowSpecial . '"';
+
 			// Overriding with versions background color if any:
 			$row_bgColor = $row['_CSSCLASS'] ? ' class="' . $row['_CSSCLASS'] . '"' : $row_bgColor;
 			// Incr. counter.
@@ -859,7 +845,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		foreach ($this->fieldArray as $fCol) {
 			// Calculate users permissions to edit records in the table:
 			$permsEdit = $this->calcPerms & ($table == 'pages' ? 2 : 16);
-			switch ((string) $fCol) {
+			switch ((string)$fCol) {
 				case '_PATH_':
 					// Path
 					$theData[$fCol] = '<i>[' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels._PATH_', TRUE) . ']</i>';
@@ -1045,7 +1031,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			}
 		}
 		// Create and return header table row:
-		return $this->addelement(1, $icon, $theData, ' class="c-headLine"', '');
+		return '<thead>' . $this->addelement(1, $icon, $theData) . '</thead>';
 	}
 
 	/**
@@ -1438,7 +1424,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		// For the "Normal" pad:
 		if ($this->clipObj->current == 'normal') {
 			// Show copy/cut icons:
-			$isSel = (string) $this->clipObj->isSelected($table, $row['uid']);
+			$isSel = (string)$this->clipObj->isSelected($table, $row['uid']);
 			if ($isL10nOverlay) {
 				$cells['copy'] = $this->spaceIcon;
 				$cells['cut'] = $this->spaceIcon;

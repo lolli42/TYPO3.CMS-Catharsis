@@ -43,7 +43,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Indicates, whether the AJAX call was successful,
 	 * i.e. the requested page has been found
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $ajaxStatus = FALSE;
 
@@ -68,10 +68,10 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Generate the plus/minus icon for the browsable tree.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject Entry folder object
-	 * @param integer $subFolderCounter The current entry number
-	 * @param integer $totalSubFolders The total number of entries. If equal to $a, a "bottom" element is returned.
-	 * @param integer $nextCount The number of sub-elements to the current element.
-	 * @param boolean $isExpanded The element was expanded to render subelements if this flag is set.
+	 * @param int $subFolderCounter The current entry number
+	 * @param int $totalSubFolders The total number of entries. If equal to $a, a "bottom" element is returned.
+	 * @param int $nextCount The number of sub-elements to the current element.
+	 * @param bool $isExpanded The element was expanded to render subelements if this flag is set.
 	 * @return string Image tag with the plus/minus icon.
 	 * @internal
 	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::PMicon()
@@ -92,7 +92,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param boolean $isExpand Whether to be expanded
+	 * @param bool $isExpand Whether to be expanded
 	 * @return string Link-wrapped input string
 	 * @internal
 	 */
@@ -150,7 +150,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 *
 	 * @param string $title Title string
 	 * @param \TYPO3\CMS\Core\Resource\Folder	$folderObject the folder record
-	 * @param integer $bank Bank pointer (which mount point number)
+	 * @param int $bank Bank pointer (which mount point number)
 	 * @return string
 	 * @internal
 	 */
@@ -169,7 +169,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Returns the id from the record - for folders, this is an md5 hash.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject The folder object
-	 * @return integer The "uid" field value.
+	 * @return int The "uid" field value.
 	 */
 	public function getId(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		return GeneralUtility::md5Int($folderObject->getCombinedIdentifier());
@@ -190,7 +190,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * '_title' is used for setting an alternative title for folders.
 	 *
 	 * @param array $row The input row array (where the key "_title" is used for the title)
-	 * @param integer $titleLen Title length (30)
+	 * @param int $titleLen Title length (30)
 	 * @return string The title
 	 */
 	public function getTitleStr($row, $titleLen = 30) {
@@ -318,9 +318,9 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Fetches the data for the tree
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject the folderobject
-	 * @param integer $depth Max depth (recursivity limit)
+	 * @param int $depth Max depth (recursivity limit)
 	 * @param string $type HTML-code prefix for recursive calls.
-	 * @return integer The count of items on the level
+	 * @return int The count of items on the level
 	 * @see getBrowsableTree()
 	 */
 	public function getFolderTree(\TYPO3\CMS\Core\Resource\Folder $folderObject, $depth = 999, $type = '') {
@@ -502,7 +502,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Counts the number of directories in a file path.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject File path.
-	 * @return integer
+	 * @return int
 	 */
 	public function getNumberOfSubfolders(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		$subFolders = $folderObject->getSubfolders();
@@ -512,7 +512,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	/**
 	 * Get stored tree structure AND updating it if needed according to incoming PM GET var.
 	 *
-	 * @return 	void
+	 * @return void
 	 * @access private
 	 */
 	public function initializePositionSaving() {
@@ -543,7 +543,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\ResourceStorage $storageObject
 	 * @param \TYPO3\CMS\Core\Resource\Folder $startingPointFolder
-	 * @return integer
+	 * @return int
 	 */
 	protected function getShortHashNumberForStorage(\TYPO3\CMS\Core\Resource\ResourceStorage $storageObject = NULL, \TYPO3\CMS\Core\Resource\Folder $startingPointFolder = NULL) {
 		if (!$this->storageHashNumbers) {
@@ -610,7 +610,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * Generates the "PM" string to sent to expand/collapse items
 	 *
 	 * @param string $mountKey The mount key / storage UID
-	 * @param boolean $doExpand Whether to expand/collapse
+	 * @param bool $doExpand Whether to expand/collapse
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject The folder object
 	 * @param string $treeName The name of the tree
 	 * @return string
@@ -628,7 +628,7 @@ class FolderTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	/**
 	 * Gets the AJAX status.
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getAjaxStatus() {
 		return $this->ajaxStatus;

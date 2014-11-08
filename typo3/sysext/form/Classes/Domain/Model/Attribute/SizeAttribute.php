@@ -29,9 +29,9 @@ class SizeAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\AbstractAttri
 	 * This attribute tells the user agent the initial width of the control.
 	 * The width is given in pixels except when type attribute
 	 * has the value "text" or "password".
-	 * In that case, its value refers to the (integer) number of characters.
+	 * In that case, its value refers to the (int) number of characters.
 	 *
-	 * @return integer Attribute value
+	 * @return int Attribute value
 	 */
 	public function getValue() {
 		$value = (int)$this->value;

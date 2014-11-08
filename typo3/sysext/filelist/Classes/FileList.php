@@ -105,10 +105,10 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * Initialization of class
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject The folder to work on
-	 * @param integer $pointer Pointer
-	 * @param boolean $sort Sorting column
-	 * @param boolean $sortRev Sorting direction
-	 * @param boolean $bigControlPanel Show clipboard flag
+	 * @param int $pointer Pointer
+	 * @param bool $sort Sorting column
+	 * @param bool $sortRev Sorting direction
+	 * @param bool $bigControlPanel Show clipboard flag
 	 * @return void
 	 */
 	public function start(\TYPO3\CMS\Core\Resource\Folder $folderObject, $pointer, $sort, $sortRev, $clipBoard = FALSE, $bigControlPanel = FALSE) {
@@ -502,29 +502,6 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	}
 
 	/**
-	 * Returns some data specific for the directories...
-	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject File information array
-	 * @return array (title, icon, path)
-	 * @deprecated since 6.2 - will be removed two versions later without replacement
-	 */
-	public function dirData(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
-		GeneralUtility::logDeprecatedFunction();
-
-		$title = htmlspecialchars($folderObject->getName());
-		$icon = 'apps-filetree-folder-default';
-		$role = $folderObject->getRole();
-		if ($role === FolderInterface::ROLE_TEMPORARY) {
-			$title = '<strong>' . $GLOBALS['LANG']->getLL('temp', TRUE) . '</strong>';
-			$icon = 'apps-filetree-folder-temp';
-		} elseif ($role === FolderInterface::ROLE_RECYCLER) {
-			$icon = 'apps-filetree-folder-recycler';
-			$title = '<strong>' . $GLOBALS['LANG']->getLL('recycler', TRUE) . '</strong>';
-		}
-		return array($title, $icon, $folderObject->getIdentifier());
-	}
-
-	/**
 	 * This returns tablerows for the files in the array $items['sorting'].
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\File[] $files File items
@@ -675,7 +652,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 * Returns TRUE if $ext is an image-extension according to $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']
 	 *
 	 * @param string $ext File extension
-	 * @return boolean
+	 * @return bool
 	 */
 	public function isImage($ext) {
 		return GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], strtolower($ext));
@@ -804,7 +781,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 			if ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
 				$referenceCountText = BackendUtility::referenceCount('_FILE', $identifier, ' (There are %s reference(s) to this folder!)');
 			} else {
-				$referenceCountText = BackendUtility::referenceCount('sys_file', $identifier, ' (There are %s reference(s) to this file!)');
+				$referenceCountText = BackendUtility::referenceCount('sys_file', $fileOrFolderObject->getUid(), ' (There are %s reference(s) to this file!)');
 			}
 
 			if ($GLOBALS['BE_USER']->jsConfirmation(4)) {

@@ -31,30 +31,34 @@ class LiveSearch {
 	 * @var string
 	 */
 	const PAGE_JUMP_TABLE = 'pages';
+
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const RECURSIVE_PAGE_LEVEL = 99;
+
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const GROUP_TITLE_MAX_LENGTH = 15;
+
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	const RECORD_TITLE_MAX_LENGTH = 28;
+
 	/**
 	 * @var string
 	 */
 	private $queryString = '';
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	private $startCount = 0;
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	private $limitCount = 5;
 
@@ -124,7 +128,7 @@ class LiveSearch {
 	/**
 	 * Retrieve the page record from given $id.
 	 *
-	 * @param integer $id
+	 * @param int $id
 	 * @return array
 	 */
 	protected function findPageById($id) {
@@ -264,7 +268,7 @@ class LiveSearch {
 	 * which offers a tooltip with the original title when moving mouse over it.
 	 *
 	 * @param string $title The title string to be cropped
-	 * @param integer $titleLength Crop title after this length - if not set, BE_USER->uc['titleLen'] is used
+	 * @param int $titleLength Crop title after this length - if not set, BE_USER->uc['titleLen'] is used
 	 * @return string The processed title string, wrapped in <span title="...">|</span> if cropped
 	 */
 	public function getRecordTitlePrep($title, $titleLength = 0) {
@@ -391,7 +395,7 @@ class LiveSearch {
 	/**
 	 * Setter for limit value.
 	 *
-	 * @param integer $limitCount
+	 * @param int $limitCount
 	 * @return void
 	 */
 	public function setLimitCount($limitCount) {
@@ -404,7 +408,7 @@ class LiveSearch {
 	/**
 	 * Setter for start count value.
 	 *
-	 * @param integer $startCount
+	 * @param int $startCount
 	 * @return void
 	 */
 	public function setStartCount($startCount) {
@@ -426,8 +430,8 @@ class LiveSearch {
 	 * Creates an instance of \TYPO3\CMS\Backend\Tree\View\PageTreeView which will select a
 	 * page tree to $depth and return the object. In that object we will find the ids of the tree.
 	 *
-	 * @param integer $id Page id.
-	 * @param integer $depth Depth to go down.
+	 * @param int $id Page id.
+	 * @param int $depth Depth to go down.
 	 * @return string Comma separated list of uids
 	 */
 	protected function getAvailablePageIds($id, $depth) {

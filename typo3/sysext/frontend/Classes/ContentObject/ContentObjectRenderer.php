@@ -16,7 +16,10 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
+use TYPO3\CMS\Frontend\ContentObject\Exception\ContentRenderingException;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 use TYPO3\CMS\Frontend\Imaging\GifBuilder;
+use TYPO3\CMS\Frontend\ContentObject\Exception\ExceptionHandlerInterface;
 
 /**
  * This class contains all main TypoScript features.
@@ -472,9 +475,14 @@ class ContentObjectRenderer {
 	protected $stopRendering = array();
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $stdWrapRecursionLevel = 0;
+
+	/**
+	 * @var TypoScriptFrontendController
+	 */
+	protected $typoScriptFrontendController;
 
 	/**
 	 * Indicates that object type is USER.
@@ -488,6 +496,14 @@ class ContentObjectRenderer {
 	 * @see ContentObjectRender::$userObjectType
 	 */
 	const OBJECTTYPE_USER = 2;
+
+	/**
+	 * @param TypoScriptFrontendController $typoScriptFrontendController
+	 */
+	public function __construct(TypoScriptFrontendController $typoScriptFrontendController = NULL) {
+		$this->typoScriptFrontendController = $typoScriptFrontendController ?: $GLOBALS['TSFE'];
+	}
+
 	/**
 	 * Class constructor.
 	 * Well, it has to be called manually since it is not a real constructor function.
@@ -498,22 +514,21 @@ class ContentObjectRenderer {
 	 * @return void
 	 */
 	public function start($data, $table = '') {
-		global $TYPO3_CONF_VARS;
-		if ($TYPO3_CONF_VARS['FE']['activateContentAdapter'] && is_array($data) && !empty($data) && !empty($table)) {
+		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['activateContentAdapter'] && is_array($data) && !empty($data) && !empty($table)) {
 			\TYPO3\CMS\Core\Resource\Service\FrontendContentAdapterService::modifyDBRow($data, $table);
 		}
 		$this->data = $data;
 		$this->table = $table;
 		$this->currentRecord = $table ? $table . ':' . $this->data['uid'] : '';
 		$this->parameters = array();
-		if (is_array($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'])) {
-			foreach ($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'] as $classArr) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClass'] as $classArr) {
 				$this->cObjHookObjectsRegistry[$classArr[0]] = $classArr[1];
 			}
 		}
 		$this->stdWrapHookObjects = array();
-		if (is_array($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap'])) {
-			foreach ($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap'] as $classData) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap'] as $classData) {
 				$hookObject = GeneralUtility::getUserObj($classData);
 				if (!$hookObject instanceof \TYPO3\CMS\Frontend\ContentObject\ContentObjectStdWrapHookInterface) {
 					throw new \UnexpectedValueException($classData . ' must implement interface TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectStdWrapHookInterface', 1195043965);
@@ -521,8 +536,8 @@ class ContentObjectRenderer {
 				$this->stdWrapHookObjects[] = $hookObject;
 			}
 		}
-		if (is_array($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['postInit'])) {
-			foreach ($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['postInit'] as $classData) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['postInit'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['postInit'] as $classData) {
 				$postInitializationProcessor = GeneralUtility::getUserObj($classData);
 				if (!$postInitializationProcessor instanceof \TYPO3\CMS\Frontend\ContentObject\ContentObjectPostInitHookInterface) {
 					throw new \UnexpectedValueException($classData . ' must implement interface TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectPostInitHookInterface', 1274563549);
@@ -641,7 +656,6 @@ class ContentObjectRenderer {
 	 * @throws \UnexpectedValueException
 	 */
 	public function cObjGetSingle($name, $conf, $TSkey = '__') {
-		global $TYPO3_CONF_VARS;
 		$content = '';
 		// Checking that the function is not called eternally. This is done by interrupting at a depth of 100
 		$GLOBALS['TSFE']->cObjectDepthCounter--;
@@ -678,17 +692,17 @@ class ContentObjectRenderer {
 				if (!$hooked) {
 					$contentObject = $this->getContentObject($name);
 					if ($contentObject) {
-						$content .= $contentObject->render($conf);
+						$content .= $this->render($contentObject, $conf);
 					} else {
 						// Call hook functions for extra processing
-						if ($name && is_array($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClassDefault'])) {
-							foreach ($TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClassDefault'] as $classData) {
+						if ($name && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClassDefault'])) {
+							foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['cObjTypeAndClassDefault'] as $classData) {
 								$hookObject = GeneralUtility::getUserObj($classData);
 								if (!$hookObject instanceof \TYPO3\CMS\Frontend\ContentObject\ContentObjectGetSingleHookInterface) {
 									throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectGetSingleHookInterface', 1195043731);
 								}
 								/** @var $hookObject \TYPO3\CMS\Frontend\ContentObject\ContentObjectGetSingleHookInterface */
-								$content .= $hookObject->getSingleContentObject($name, (array) $conf, $TSkey, $this);
+								$content .= $hookObject->getSingleContentObject($name, (array)$conf, $TSkey, $this);
 							}
 						} else {
 							// Log error in AdminPanel
@@ -728,13 +742,108 @@ class ContentObjectRenderer {
 	 ********************************************/
 
 	/**
+	 * Renders a content object by taking exception handling into consideration
+	 *
+	 * @param AbstractContentObject $contentObject Content object instance
+	 * @param array $configuration Array of TypoScript properties
+	 *
+	 * @throws ContentRenderingException
+	 * @throws \Exception
+	 * @return string
+	 */
+	public function render(AbstractContentObject $contentObject, $configuration = array()) {
+		$content = '';
+		try {
+			$content .= $contentObject->render($configuration);
+		} catch (ContentRenderingException $exception) {
+			// Content rendering Exceptions indicate a critical problem which should not be
+			// caught e.g. when something went wrong with Exception handling itself
+			throw $exception;
+		} catch (\Exception $exception) {
+			$exceptionHandler = $this->createExceptionHandler($configuration);
+			if ($exceptionHandler === NULL) {
+				throw $exception;
+			} else {
+				$content = $exceptionHandler->handle($exception, $contentObject, $configuration);
+			}
+		}
+		return $content;
+	}
+
+	/**
+	 * Creates the content object exception handler from local content object configuration
+	 * or, from global configuration if not explicitly disabled in local configuration
+	 *
+	 * @param array $configuration
+	 * @return NULL|ExceptionHandlerInterface
+	 * @throws ContentRenderingException
+	 */
+	protected function createExceptionHandler($configuration = array()) {
+		$exceptionHandler = NULL;
+		$exceptionHandlerClassName = $this->determineExceptionHandlerClassName($configuration);
+		if (!empty($exceptionHandlerClassName)) {
+			$exceptionHandler = GeneralUtility::makeInstance($exceptionHandlerClassName, $this->mergeExceptionHandlerConfiguration($configuration));
+			if (!$exceptionHandler instanceof ExceptionHandlerInterface) {
+				throw new ContentRenderingException('An exception handler was configured but the class does not exist or does not implement the ExceptionHandlerInterface', 1403653369, $exception);
+			}
+		}
+
+		return $exceptionHandler;
+	}
+
+	/**
+	 * Determine exception handler class name from global and content object configuration
+	 *
+	 * @param array $configuration
+	 * @return string|NULL
+	 */
+	protected function determineExceptionHandlerClassName($configuration) {
+		$exceptionHandlerClassName = NULL;
+		if (!isset($this->typoScriptFrontendController->config['config']['contentObjectExceptionHandler'])) {
+			if (GeneralUtility::getApplicationContext()->isProduction()) {
+				$exceptionHandlerClassName = '1';
+			}
+		} else {
+			$exceptionHandlerClassName = $this->typoScriptFrontendController->config['config']['contentObjectExceptionHandler'];
+		}
+
+		if (isset($configuration['exceptionHandler'])) {
+			$exceptionHandlerClassName = $configuration['exceptionHandler'];
+		}
+
+		if ($exceptionHandlerClassName === '1') {
+			$exceptionHandlerClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\Exception\\ProductionExceptionHandler';
+		}
+
+		return $exceptionHandlerClassName;
+	}
+
+	/**
+	 * Merges global exception handler configuration with the one from the content object
+	 * and returns the merged exception handler configuration
+	 *
+	 * @param array $configuration
+	 * @return array
+	 */
+	protected function mergeExceptionHandlerConfiguration($configuration) {
+		$exceptionHandlerConfiguration = array();
+		if (!empty($this->typoScriptFrontendController->config['config']['contentObjectExceptionHandler.'])) {
+			$exceptionHandlerConfiguration = $this->typoScriptFrontendController->config['config']['contentObjectExceptionHandler.'];
+		}
+		if (!empty($configuration['exceptionHandler.'])) {
+			$exceptionHandlerConfiguration = array_replace_recursive($exceptionHandlerConfiguration, $configuration['exceptionHandler.']);
+		}
+
+		return $exceptionHandlerConfiguration;
+	}
+	/**
 	 * Rendering the cObject, FLOWPLAYER
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string Output
 	 */
 	public function FLOWPLAYER($conf) {
-		return $this->getContentObject('FLOWPLAYER')->render($conf);
+		return $this->render($this->getContentObject('FLOWPLAYER'), $conf);
 	}
 
 	/**
@@ -744,7 +853,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function TEXT($conf) {
-		return $this->getContentObject('TEXT')->render($conf);
+		return $this->render($this->getContentObject('TEXT'), $conf);
 	}
 
 	/**
@@ -754,7 +863,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function CLEARGIF($conf) {
-		return $this->getContentObject('CLEARGIF')->render($conf);
+		return $this->render($this->getContentObject('CLEARGIF'), $conf);
 	}
 
 	/**
@@ -766,9 +875,9 @@ class ContentObjectRenderer {
 	 */
 	public function COBJ_ARRAY($conf, $ext = '') {
 		if ($ext === 'INT') {
-			return $this->getContentObject('COA_INT')->render($conf);
+			return $this->render($this->getContentObject('COA_INT'), $conf);
 		} else {
-			return $this->getContentObject('COA')->render($conf);
+			return $this->render($this->getContentObject('COA'), $conf);
 		}
 	}
 
@@ -781,9 +890,9 @@ class ContentObjectRenderer {
 	 */
 	public function USER($conf, $ext = '') {
 		if ($ext === 'INT') {
-			return $this->getContentObject('USER_INT')->render($conf);
+			return $this->render($this->getContentObject('USER_INT'), $conf);
 		} else {
-			return $this->getContentObject('USER')->render($conf);
+			return $this->render($this->getContentObject('USER'), $conf);
 		}
 	}
 
@@ -829,7 +938,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function FILE($conf) {
-		return $this->getContentObject('FILE')->render($conf);
+		return $this->render($this->getContentObject('FILE'), $conf);
 	}
 
 	/**
@@ -839,7 +948,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function FILES($conf) {
-		return $this->getContentObject('FILES')->render($conf);
+		return $this->render($this->getContentObject('FILES'), $conf);
 	}
 
 	/**
@@ -850,7 +959,7 @@ class ContentObjectRenderer {
 	 * @see cImage()
 	 */
 	public function IMAGE($conf) {
-		return $this->getContentObject('IMAGE')->render($conf);
+		return $this->render($this->getContentObject('IMAGE'), $conf);
 	}
 
 	/**
@@ -861,7 +970,7 @@ class ContentObjectRenderer {
 	 * @see getImgResource()
 	 */
 	public function IMG_RESOURCE($conf) {
-		return $this->getContentObject('IMG_RESOURCE')->render($conf);
+		return $this->render($this->getContentObject('IMG_RESOURCE'), $conf);
 	}
 
 	/**
@@ -871,7 +980,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function IMGTEXT($conf) {
-		return $this->getContentObject('IMGTEXT')->render($conf);
+		return $this->render($this->getContentObject('IMGTEXT'), $conf);
 	}
 
 	/**
@@ -881,7 +990,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function CONTENT($conf) {
-		return $this->getContentObject('CONTENT')->render($conf);
+		return $this->render($this->getContentObject('CONTENT'), $conf);
 	}
 
 	/**
@@ -891,7 +1000,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function RECORDS($conf) {
-		return $this->getContentObject('RECORDS')->render($conf);
+		return $this->render($this->getContentObject('RECORDS'), $conf);
 	}
 
 	/**
@@ -901,7 +1010,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function HMENU($conf) {
-		return $this->getContentObject('HMENU')->render($conf);
+		return $this->render($this->getContentObject('HMENU'), $conf);
 	}
 
 	/**
@@ -911,7 +1020,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function CTABLE($conf) {
-		return $this->getContentObject('CTABLE')->render($conf);
+		return $this->render($this->getContentObject('CTABLE'), $conf);
 	}
 
 	/**
@@ -921,7 +1030,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function OTABLE($conf) {
-		return $this->getContentObject('OTABLE')->render($conf);
+		return $this->render($this->getContentObject('OTABLE'), $conf);
 	}
 
 	/**
@@ -931,7 +1040,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function COLUMNS($conf) {
-		return $this->getContentObject('COLUMNS')->render($conf);
+		return $this->render($this->getContentObject('COLUMNS'), $conf);
 	}
 
 	/**
@@ -941,7 +1050,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function HRULER($conf) {
-		return $this->getContentObject('HRULER')->render($conf);
+		return $this->render($this->getContentObject('HRULER'), $conf);
 	}
 
 	/**
@@ -951,7 +1060,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function CASEFUNC($conf) {
-		return $this->getContentObject('CASE')->render($conf);
+		return $this->render($this->getContentObject('CASE'), $conf);
 	}
 
 	/**
@@ -964,9 +1073,9 @@ class ContentObjectRenderer {
 	 */
 	public function LOAD_REGISTER($conf, $name) {
 		if ($name === 'RESTORE_REGISTER') {
-			return $this->getContentObject('RESTORE_REGISTER')->render();
+			return $this->render($this->getContentObject('RESTORE_REGISTER'), $conf);
 		} else {
-			return $this->getContentObject('LOAD_REGISTER')->render($conf);
+			return $this->render($this->getContentObject('LOAD_REGISTER'), $conf);
 		}
 	}
 
@@ -978,7 +1087,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function FORM($conf, $formData = '') {
-		return $this->getContentObject('FORM')->render($conf, $formData);
+		return $this->render($this->getContentObject('FORM'), $conf);
 	}
 
 	/**
@@ -988,7 +1097,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function SEARCHRESULT($conf) {
-		return $this->getContentObject('SEARCHRESULT')->render($conf);
+		return $this->render($this->getContentObject('SEARCHRESULT'), $conf);
 	}
 
 	/**
@@ -999,7 +1108,7 @@ class ContentObjectRenderer {
 	 * @see substituteMarkerArrayCached()
 	 */
 	public function TEMPLATE($conf) {
-		return $this->getContentObject('TEMPLATE')->render($conf);
+		return $this->render($this->getContentObject('TEMPLATE'), $conf);
 	}
 
 	/**
@@ -1011,7 +1120,7 @@ class ContentObjectRenderer {
 	 * @author Benjamin Mack <benni@typo3.org>
 	 */
 	protected function FLUIDTEMPLATE(array $conf) {
-		return $this->getContentObject('FLUIDTEMPLATE')->render($conf);
+		return $this->render($this->getContentObject('FLUIDTEMPLATE'), $conf);
 	}
 
 	/**
@@ -1021,7 +1130,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function MULTIMEDIA($conf) {
-		return $this->getContentObject('MULTIMEDIA')->render($conf);
+		return $this->render($this->getContentObject('MULTIMEDIA'), $conf);
 	}
 
 	/**
@@ -1031,7 +1140,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function MEDIA($conf) {
-		return $this->getContentObject('MEDIA')->render($conf);
+		return $this->render($this->getContentObject('MEDIA'), $conf);
 	}
 
 	/**
@@ -1041,7 +1150,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function SWFOBJECT($conf) {
-		return $this->getContentObject('SWFOBJECT')->render($conf);
+		return $this->render($this->getContentObject('SWFOBJECT'), $conf);
 	}
 
 	/**
@@ -1051,7 +1160,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function QTOBJECT($conf) {
-		return $this->getContentObject('QTOBJECT')->render($conf);
+		return $this->render($this->getContentObject('QTOBJECT'), $conf);
 	}
 
 	/**
@@ -1061,7 +1170,7 @@ class ContentObjectRenderer {
 	 * @return string Output
 	 */
 	public function SVG($conf) {
-		return $this->getContentObject('SVG')->render($conf);
+		return $this->render($this->getContentObject('SVG'), $conf);
 	}
 
 	/************************************
@@ -1074,7 +1183,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string|array $flexData Flexform data
 	 * @param array $conf Array to write the data into, by reference
-	 * @param boolean $recursive Is set if called recursive. Don't call function with this parameter, it's used inside the function only
+	 * @param bool $recursive Is set if called recursive. Don't call function with this parameter, it's used inside the function only
 	 * @return void
 	 */
 	public function readFlexformIntoConf($flexData, &$conf, $recursive = FALSE) {
@@ -1147,7 +1256,7 @@ class ContentObjectRenderer {
 	 * Returns a default value for a form field in the FORM cObject.
 	 * Page CANNOT be cached because that would include the inserted value for the current user.
 	 *
-	 * @param boolean $noValueInsert If noValueInsert OR if the no_cache flag for this page is NOT set, the original default value is returned.
+	 * @param bool $noValueInsert If noValueInsert OR if the no_cache flag for this page is NOT set, the original default value is returned.
 	 * @param string $fieldName The POST var name to get default value for
 	 * @param string $defaultVal The current default value
 	 * @return string The default value, either from INPUT var or the current default, based on whether caching is enabled or not.
@@ -1332,7 +1441,7 @@ class ContentObjectRenderer {
 									1380007853
 								);
 							}
-							$oneSourceCollection = $hookObject->getOneSourceCollection((array) $sourceRenderConfiguration, (array) $sourceConfiguration, $oneSourceCollection, $this);
+							$oneSourceCollection = $hookObject->getOneSourceCollection((array)$sourceRenderConfiguration, (array)$sourceConfiguration, $oneSourceCollection, $this);
 						}
 					}
 
@@ -1477,7 +1586,7 @@ class ContentObjectRenderer {
 	 * The SYS_LASTCHANGED timestamp can be used by various caching/indexing applications to determine if the page has new content.
 	 * Therefore you should call this function with the last-changed timestamp of any element you display.
 	 *
-	 * @param integer $tstamp Unix timestamp (number of seconds since 1970)
+	 * @param int $tstamp Unix timestamp (number of seconds since 1970)
 	 * @return void
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::setSysLastChanged()
 	 */
@@ -1512,7 +1621,7 @@ class ContentObjectRenderer {
 	 * From the $conf array it implements the properties "altText", "titleText" and "longdescURL"
 	 *
 	 * @param array $conf TypoScript configuration properties
-	 * @param boolean $longDesc If set, the longdesc attribute will be generated - must only be used for img elements!
+	 * @param bool $longDesc If set, the longdesc attribute will be generated - must only be used for img elements!
 	 * @return string Parameter string containing alt and title parameters (if any)
 	 * @see IMGTEXT(), FILE(), FORM(), cImage(), filelink()
 	 */
@@ -1561,7 +1670,7 @@ class ContentObjectRenderer {
 	 * Uses the ATagParams property.
 	 *
 	 * @param array $conf TypoScript configuration properties
-	 * @param boolean $addGlobal If set, will add the global config.ATagParams to the link
+	 * @param bool $addGlobal If set, will add the global config.ATagParams to the link
 	 * @return string String containing the parameters to the A tag (if non empty, with a leading space)
 	 * @see IMGTEXT(), filelink(), makelinks(), typolink()
 	 */
@@ -1650,7 +1759,7 @@ class ContentObjectRenderer {
 	 * @param string $content The content stream, typically HTML template content.
 	 * @param string $marker The marker string, typically on the form "###[the marker string]###
 	 * @param mixed $subpartContent The content to insert instead of the subpart found. If a string, then just plain substitution happens (includes removing the HTML comments of the subpart if found). If $subpartContent happens to be an array, it's [0] and [1] elements are wrapped around the EXISTING content of the subpart (fetched by getSubpart()) thereby not removing the original content.
-	 * @param boolean $recursive If $recursive is set, the function calls itself with the content set to the remaining part of the content after the second marker. This means that proceding subparts are ALSO substituted!
+	 * @param bool $recursive If $recursive is set, the function calls itself with the content set to the remaining part of the content after the second marker. This means that proceding subparts are ALSO substituted!
 	 * @return string The processed HTML content string.
 	 */
 	public function substituteSubpart($content, $marker, $subpartContent, $recursive = 1) {
@@ -1816,8 +1925,8 @@ class ContentObjectRenderer {
 	 * @param string $content The content stream, typically HTML template content.
 	 * @param array $markContentArray The array of key/value pairs being marker/content values used in the substitution. For each element in this array the function will substitute a marker in the content stream with the content.
 	 * @param string $wrap A wrap value - [part 1] | [part 2] - for the markers before substitution
-	 * @param boolean $uppercase If set, all marker string substitution is done with upper-case markers.
-	 * @param boolean $deleteUnused If set, all unused marker are deleted.
+	 * @param bool $uppercase If set, all marker string substitution is done with upper-case markers.
+	 * @param bool $deleteUnused If set, all unused marker are deleted.
 	 * @return string The processed output stream
 	 * @see substituteMarker(), substituteMarkerInObject(), TEMPLATE()
 	 */
@@ -1850,8 +1959,8 @@ class ContentObjectRenderer {
 	 * @param string $content
 	 * @param array $markersAndSubparts
 	 * @param string $wrap
-	 * @param boolean $uppercase
-	 * @param boolean $deleteUnused
+	 * @param bool $uppercase
+	 * @param bool $deleteUnused
 	 * @return string
 	 */
 	public function substituteMarkerAndSubpartArrayRecursive($content, array $markersAndSubparts, $wrap = '', $uppercase = FALSE, $deleteUnused = FALSE) {
@@ -1865,9 +1974,9 @@ class ContentObjectRenderer {
 	 * @param array $markContentArray Array with key/values being marker-strings/substitution values.
 	 * @param array $row An array with keys found in the $fieldList (typically a record) which values should be moved to the $markContentArray
 	 * @param string $fieldList A list of fields from the $row array to add to the $markContentArray array. If empty all fields from $row will be added (unless they are integers)
-	 * @param boolean $nl2br If set, all values added to $markContentArray will be nl2br()'ed
+	 * @param bool $nl2br If set, all values added to $markContentArray will be nl2br()'ed
 	 * @param string $prefix Prefix string to the fieldname before it is added as a key in the $markContentArray. Notice that the keys added to the $markContentArray always start and end with "###
-	 * @param boolean $HSC If set, all values are passed through htmlspecialchars() - RECOMMENDED to avoid most obvious XSS and maintain XHTML compliance.
+	 * @param bool $HSC If set, all values are passed through htmlspecialchars() - RECOMMENDED to avoid most obvious XSS and maintain XHTML compliance.
 	 * @return array The modified $markContentArray
 	 */
 	public function fillInMarkerArray(array $markContentArray, array $row, $fieldList = '', $nl2br = TRUE, $prefix = 'FIELD_', $HSC = FALSE) {
@@ -2401,7 +2510,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_required($content = '', $conf = array()) {
-		if ((string) $content === '') {
+		if ((string)$content === '') {
 			$content = '';
 			$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
 		}
@@ -3403,7 +3512,7 @@ class ContentObjectRenderer {
 	 * Implements the stdWrap "numRows" property
 	 *
 	 * @param array $conf TypoScript properties for the property (see link to "numRows")
-	 * @return integer The number of rows found by the select (FALSE on error)
+	 * @return int The number of rows found by the select (FALSE on error)
 	 * @access private
 	 * @see stdWrap()
 	 */
@@ -3449,7 +3558,7 @@ class ContentObjectRenderer {
 	 * Implements the "if" function in TYPO3 TypoScript
 	 *
 	 * @param array $conf TypoScript properties defining what to compare
-	 * @return boolean
+	 * @return bool
 	 * @see HMENU(), CASEFUNC(), IMAGE(), COLUMN(), stdWrap(), _parseFunc()
 	 */
 	public function checkIf($conf) {
@@ -4268,7 +4377,7 @@ class ContentObjectRenderer {
 	 * Performs basic mathematical evaluation of the input string. Does NOT take parathesis and operator precedence into account! (for that, see \TYPO3\CMS\Core\Utility\MathUtility::calculateWithPriorityToAdditionAndSubtraction())
 	 *
 	 * @param string $val The string to evaluate. Example: "3+4*10/5" will generate "35". Only integer numbers can be used.
-	 * @return integer The result (might be a float if you did a division of the numbers).
+	 * @return int The result (might be a float if you did a division of the numbers).
 	 * @see \TYPO3\CMS\Core\Utility\MathUtility::calculateWithPriorityToAdditionAndSubtraction()
 	 */
 	public function calc($val) {
@@ -4277,7 +4386,7 @@ class ContentObjectRenderer {
 		foreach ($parts as $part) {
 			$theVal = $part[1];
 			$sign = $part[0];
-			if ((string) (int)$theVal === (string) $theVal) {
+			if ((string)(int)$theVal === (string)$theVal) {
 				$theVal = (int)$theVal;
 			} else {
 				$theVal = 0;
@@ -4901,11 +5010,11 @@ class ContentObjectRenderer {
 				if (is_array($conf['addAttributes.'][$uTagName . '.'])) {
 					foreach ($conf['addAttributes.'][$uTagName . '.'] as $kk => $vv) {
 						if (!is_array($vv)) {
-							if ((string) $conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'blank') {
+							if ((string)$conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'blank') {
 								if ((string)$attrib[$kk] === '') {
 									$attrib[$kk] = $vv;
 								}
-							} elseif ((string) $conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'exists') {
+							} elseif ((string)$conf['addAttributes.'][($uTagName . '.')][($kk . '.')]['setOnly'] == 'exists') {
 								if (!isset($attrib[$kk])) {
 									$attrib[$kk] = $vv;
 								}
@@ -5082,7 +5191,7 @@ class ContentObjectRenderer {
 	 */
 	public function getImgResource($file, $fileArray) {
 		if (!is_array($fileArray)) {
-			$fileArray = (array) $fileArray;
+			$fileArray = (array)$fileArray;
 		}
 		$imageResource = NULL;
 		if ($file === 'GIFBUILDER') {
@@ -5145,7 +5254,7 @@ class ContentObjectRenderer {
 				$processingConfiguration['additionalParameters'] = isset($fileArray['params.']) ? $this->stdWrap($fileArray['params'], $fileArray['params.']) : $fileArray['params'];
 				$processingConfiguration['frame'] = isset($fileArray['frame.']) ? (int)$this->stdWrap($fileArray['frame'], $fileArray['frame.']) : (int)$fileArray['frame'];
 				// Possibility to cancel/force profile extraction
-				// see $TYPO3_CONF_VARS['GFX']['im_stripProfileCommand']
+				// see $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_stripProfileCommand']
 				if (isset($fileArray['stripProfile'])) {
 					$processingConfiguration['stripProfile'] = $fileArray['stripProfile'];
 				}
@@ -5209,7 +5318,7 @@ class ContentObjectRenderer {
 		if (isset($imageResource)) {
 			/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectGetImageResourceHookInterface $hookObject */
 			foreach ($this->getGetImgResourceHookObjects() as $hookObject) {
-				$imageResource = $hookObject->getImgResourcePostProcess($file, (array) $fileArray, $imageResource, $this);
+				$imageResource = $hookObject->getImgResourcePostProcess($file, (array)$fileArray, $imageResource, $this);
 			}
 		}
 		return $imageResource;
@@ -5467,7 +5576,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $key Which level in the root line
 	 * @param string $field The field in the rootline record to return (a field from the pages table)
-	 * @param boolean $slideBack If set, then we will traverse through the rootline from outer level towards the root level until the value found is TRUE
+	 * @param bool $slideBack If set, then we will traverse through the rootline from outer level towards the root level until the value found is TRUE
 	 * @param mixed $altRootLine If you supply an array for this it will be used as an alternative root line array
 	 * @return string The value from the field of the rootline.
 	 * @access private
@@ -5522,9 +5631,9 @@ class ContentObjectRenderer {
 	 * Processing of key values pointing to entries in $arr; Here negative values are converted to positive keys pointer to an entry in the array but from behind (based on the negative value).
 	 * Example: entrylevel = -1 means that entryLevel ends up pointing at the outermost-level, -2 means the level before the outermost...
 	 *
-	 * @param integer $key The integer to transform
+	 * @param int $key The integer to transform
 	 * @param array $arr array in which the key should be found.
-	 * @return integer The processed integer key value.
+	 * @return int The processed integer key value.
 	 * @access private
 	 * @see getData()
 	 */
@@ -6288,7 +6397,7 @@ class ContentObjectRenderer {
 	 * Returns the current page URL
 	 *
 	 * @param array|string $urlParameters As an array key/value pairs represent URL parameters to set. Values NOT URL-encoded yet, keys should be URL-encoded if needed. As a string the parameter is expected to be URL-encoded already.
-	 * @param integer $id An alternative ID to the current id ($GLOBALS['TSFE']->id)
+	 * @param int $id An alternative ID to the current id ($GLOBALS['TSFE']->id)
 	 * @return string The URL
 	 * @see getTypoLink_URL()
 	 */
@@ -6300,8 +6409,8 @@ class ContentObjectRenderer {
 	 * Returns the &MP variable value for a page id.
 	 * The function will do its best to find a MP value that will keep the page id inside the current Mount Point rootline if any.
 	 *
-	 * @param integer $pageId page id
-	 * @param boolean $raw If TRUE, the MPvalue is returned raw. Normally it is encoded as &MP=... variable
+	 * @param int $pageId page id
+	 * @param bool $raw If TRUE, the MPvalue is returned raw. Normally it is encoded as &MP=... variable
 	 * @return string MP value, prefixed with &MP= (depending on $raw)
 	 * @see typolink()
 	 */
@@ -6398,11 +6507,11 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $conf Configuration
 	 * @param array $overruleQueryArguments Multidimensional key/value pairs that overrule incoming query arguments
-	 * @param boolean $forceOverruleArguments If set, key/value pairs not in the query but the overrule array will be set
+	 * @param bool $forceOverruleArguments If set, key/value pairs not in the query but the overrule array will be set
 	 * @return string The URL query part (starting with a &)
 	 */
 	public function getQueryArguments($conf, $overruleQueryArguments = array(), $forceOverruleArguments = FALSE) {
-		switch ((string) $conf['method']) {
+		switch ((string)$conf['method']) {
 			case 'GET':
 				$currentQueryArray = GeneralUtility::_GET();
 				break;
@@ -6652,7 +6761,7 @@ class ContentObjectRenderer {
 	/**
 	 * Returns the 'age' of the tstamp $seconds
 	 *
-	 * @param integer $seconds Seconds to return age for. Example: "70" => "1 min", "3601" => "1 hrs
+	 * @param int $seconds Seconds to return age for. Example: "70" => "1 min", "3601" => "1 hrs
 	 * @param string $labels The labels of the individual units. Defaults to : ' min| hrs| days| yrs'
 	 * @return string The formatted string
 	 */
@@ -6693,7 +6802,7 @@ class ContentObjectRenderer {
 	 * @param string $senderAddress "From" email address
 	 * @param string $senderName Optional "From" name
 	 * @param string $replyTo Optional "Reply-To" header email address.
-	 * @return boolean Returns TRUE if sent
+	 * @return bool Returns TRUE if sent
 	 */
 	public function sendNotifyEmail($message, $recipients, $cc, $senderAddress, $senderName = '', $replyTo = '') {
 		$result = FALSE;
@@ -6802,20 +6911,6 @@ class ContentObjectRenderer {
 	}
 
 	/**
-	 * Merges two TypoScript propery array, overlaing the $old_conf onto the $conf array
-	 *
-	 * @param array $conf TypoScript property array, the "base
-	 * @param array $old_conf TypoScript property array, the "overlay
-	 * @return array The resulting array
-	 * @see mergeTSRef(), tx_tstemplatestyler_modfunc1::joinTSarrays()
-	 * @deprecated since 6.2, will be removed in two versions, use array_replace_recursive() instead
-	 */
-	public function joinTSarrays($conf, $old_conf) {
-		GeneralUtility::logDeprecatedFunction();
-		return array_replace_recursive($conf, $old_conf);
-	}
-
-	/**
 	 * This function creates a number of TEXT-objects in a Gifbuilder configuration in order to create a text-field like thing.
 	 *
 	 * @param array $gifbuilderConf TypoScript properties for Gifbuilder - TEXT GIFBUILDER objects are added to this array and returned.
@@ -6867,8 +6962,8 @@ class ContentObjectRenderer {
 	 * Splits a text string into lines and returns an array with these lines but a max number of lines.
 	 *
 	 * @param string $string The string to break
-	 * @param integer $chars Max number of characters per line.
-	 * @param integer $maxLines Max number of lines in all.
+	 * @param int $chars Max number of characters per line.
+	 * @param int $maxLines Max number of lines in all.
 	 * @return array array with lines.
 	 * @access private
 	 * @see gifBuilderTextBox()
@@ -6932,7 +7027,7 @@ class ContentObjectRenderer {
 	 * Includes resources if the config property 'includeLibs' is set.
 	 *
 	 * @param array $config TypoScript configuration
-	 * @return boolean Whether a configuration for including libs was found and processed
+	 * @return bool Whether a configuration for including libs was found and processed
 	 */
 	public function includeLibs(array $config) {
 		$librariesIncluded = FALSE;
@@ -6959,7 +7054,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $className The name of the PHP class to be checked
 	 * @param array $config TypoScript configuration (naturally of a USER or COA cObject)
-	 * @return boolean Whether the class is available
+	 * @return bool Whether the class is available
 	 * @link http://forge.typo3.org/issues/19510
 	 * @TODO This method was introduced in TYPO3 4.3 and can be removed if the autoload was integrated
 	 */
@@ -6986,8 +7081,8 @@ class ContentObjectRenderer {
 	 * If the $GLOBALS['TCA'] config for the table tells us to NOT "physically" delete the record but rather set the "deleted" field to "1" then an UPDATE query is returned doing just that. Otherwise it truely is a DELETE query.
 	 *
 	 * @param string $table The table name, should be in $GLOBALS['TCA']
-	 * @param integer $uid The UID of the record from $table which we are going to delete
-	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
+	 * @param int $uid The UID of the record from $table which we are going to delete
+	 * @param bool $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetUpdate(), DBgetInsert(), user_feAdmin
 	 */
@@ -7023,10 +7118,10 @@ class ContentObjectRenderer {
 	 * NOTICE: From TYPO3 3.6.0 this function ALWAYS adds slashes to values inserted in the query.
 	 *
 	 * @param string $table The table name, should be in $GLOBALS['TCA']
-	 * @param integer $uid The UID of the record from $table which we are going to update
+	 * @param int $uid The UID of the record from $table which we are going to update
 	 * @param array $dataArr The data array where key/value pairs are fieldnames/values for the record to update.
 	 * @param string $fieldList Comma list of fieldnames which are allowed to be updated. Only values from the data record for fields in this list will be updated!!
-	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
+	 * @param bool $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetInsert(), DBgetDelete(), user_feAdmin
 	 */
@@ -7062,10 +7157,10 @@ class ContentObjectRenderer {
 	 * NOTICE: From TYPO3 3.6.0 this function ALWAYS adds slashes to values inserted in the query.
 	 *
 	 * @param string $table The table name, should be in $GLOBALS['TCA']
-	 * @param integer $pid The PID value for the record to insert
+	 * @param int $pid The PID value for the record to insert
 	 * @param array $dataArr The data array where key/value pairs are fieldnames/values for the record to insert
 	 * @param string $fieldList Comma list of fieldnames which are allowed to be inserted. Only values from the data record for fields in this list will be inserted!!
-	 * @param boolean $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
+	 * @param bool $doExec If set, the query is executed. IT'S HIGHLY RECOMMENDED TO USE THIS FLAG to execute the query directly!!!
 	 * @return string The query, ready to execute unless $doExec was TRUE in which case the return value is FALSE.
 	 * @see DBgetUpdate(), DBgetDelete(), user_feAdmin
 	 */
@@ -7124,8 +7219,8 @@ class ContentObjectRenderer {
 	 * @param array $row The record data array for the record in question
 	 * @param array $feUserRow The array of the fe_user which is evaluated, typ. $GLOBALS['TSFE']->fe_user->user
 	 * @param string $allowedGroups Commalist of the only fe_groups uids which may edit the record. If not set, then the usergroup field of the fe_user is used.
-	 * @param boolean $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
-	 * @return boolean
+	 * @param bool $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
+	 * @return bool
 	 * @see user_feAdmin
 	 */
 	public function DBmayFEUserEdit($table, $row, $feUserRow, $allowedGroups = '', $feEditSelf = 0) {
@@ -7133,7 +7228,7 @@ class ContentObjectRenderer {
 		$ok = 0;
 		// Points to the field that allows further editing from frontend if not set. If set the record is locked.
 		if (!$GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock'] || !$row[$GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock']]) {
-			// Points to the field (integer) that holds the fe_users-id of the creator fe_user
+			// Points to the field (int) that holds the fe_users-id of the creator fe_user
 			if ($GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']) {
 				$rowFEUser = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']];
 				if ($rowFEUser && $rowFEUser == $feUserRow['uid']) {
@@ -7144,7 +7239,7 @@ class ContentObjectRenderer {
 			if ($feEditSelf && $table == 'fe_users' && (int)$feUserRow['uid'] === (int)$row['uid']) {
 				$ok = 1;
 			}
-			// Points to the field (integer) that holds the fe_group-id of the creator fe_user's first group
+			// Points to the field (int) that holds the fe_group-id of the creator fe_user's first group
 			if ($GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']) {
 				$rowFEUser = (int)$row[$GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']];
 				if ($rowFEUser) {
@@ -7165,7 +7260,7 @@ class ContentObjectRenderer {
 	 * @param string $table The table name
 	 * @param array $feUserRow The array of the fe_user which is evaluated, typ. $GLOBALS['TSFE']->fe_user->user
 	 * @param string $allowedGroups Commalist of the only fe_groups uids which may edit the record. If not set, then the usergroup field of the fe_user is used.
-	 * @param boolean $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
+	 * @param bool $feEditSelf TRUE, if the fe_user may edit his own fe_user record.
 	 * @return string The where clause part. ALWAYS returns a string. If no access at all, then " AND 1=0
 	 * @see DBmayFEUserEdit(), user_feAdmin::displayEditScreen()
 	 */
@@ -7173,11 +7268,11 @@ class ContentObjectRenderer {
 		// Returns where-definition that selects user-editable records.
 		$groupList = $allowedGroups ? implode(',', array_intersect(GeneralUtility::trimExplode(',', $feUserRow['usergroup'], TRUE), GeneralUtility::trimExplode(',', $allowedGroups, TRUE))) : $feUserRow['usergroup'];
 		$OR_arr = array();
-		// Points to the field (integer) that holds the fe_users-id of the creator fe_user
+		// Points to the field (int) that holds the fe_users-id of the creator fe_user
 		if ($GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id']) {
 			$OR_arr[] = $GLOBALS['TCA'][$table]['ctrl']['fe_cruser_id'] . '=' . $feUserRow['uid'];
 		}
-		// Points to the field (integer) that holds the fe_group-id of the creator fe_user's first group
+		// Points to the field (int) that holds the fe_group-id of the creator fe_user's first group
 		if ($GLOBALS['TCA'][$table]['ctrl']['fe_crgroup_id']) {
 			$values = GeneralUtility::intExplode(',', $groupList);
 			foreach ($values as $theGroupUid) {
@@ -7211,7 +7306,7 @@ class ContentObjectRenderer {
 	 * This means this function will work in conjunction with the preview facilities of the frontend engine/Admin Panel.
 	 *
 	 * @param string $table The table for which to get the where clause
-	 * @param boolean $show_hidden If set, then you want NOT to filter out hidden records. Otherwise hidden record are filtered based on the current preview settings.
+	 * @param bool $show_hidden If set, then you want NOT to filter out hidden records. Otherwise hidden record are filtered based on the current preview settings.
 	 * @param array $ignore_array Array you can pass where keys can be "disabled", "starttime", "endtime", "fe_group" (keys from "enablefields" in TCA) and if set they will make sure that part of the clause is not added. Thus disables the specific part of the clause. For previewing etc.
 	 * @return string The part of the where clause on the form " AND [fieldname]=0 AND ...". Eg. " AND hidden=0 AND starttime < 123345567
 	 */
@@ -7235,14 +7330,14 @@ class ContentObjectRenderer {
 	 * Mount Pages are also descended but notice that these ID numbers are not
 	 * useful for links unless the correct MPvar is set.
 	 *
-	 * @param integer $id The id of the start page from which point in the page tree to descend. IF NEGATIVE the id itself is included in the end of the list (only if $begin is 0) AND the output does NOT contain a last comma. Recommended since it will resolve the input ID for mount pages correctly and also check if the start ID actually exists!
-	 * @param integer $depth The number of levels to descend. If you want to descend infinitely, just set this to 100 or so. Should be at least "1" since zero will just make the function return (no decend...)
-	 * @param integer $begin Is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
-	 * @param boolean $dontCheckEnableFields See function description
+	 * @param int $id The id of the start page from which point in the page tree to descend. IF NEGATIVE the id itself is included in the end of the list (only if $begin is 0) AND the output does NOT contain a last comma. Recommended since it will resolve the input ID for mount pages correctly and also check if the start ID actually exists!
+	 * @param int $depth The number of levels to descend. If you want to descend infinitely, just set this to 100 or so. Should be at least "1" since zero will just make the function return (no decend...)
+	 * @param int $begin Is an optional integer that determines at which level in the tree to start collecting uid's. Zero means 'start right away', 1 = 'next level and out'
+	 * @param bool $dontCheckEnableFields See function description
 	 * @param string $addSelectFields Additional fields to select. Syntax: ",[fieldname],[fieldname],...
 	 * @param string $moreWhereClauses Additional where clauses. Syntax: " AND [fieldname]=[value] AND ...
 	 * @param array $prevId_array array of IDs from previous recursions. In order to prevent infinite loops with mount pages.
-	 * @param integer $recursionLevel Internal: Zero for the first recursion, incremented for each recursive call.
+	 * @param int $recursionLevel Internal: Zero for the first recursion, incremented for each recursive call.
 	 * @return string Returns the list of ids as a comma separated string
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkEnableFields(), \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::checkPagerecordForIncludeSection()
 	 */
@@ -7454,7 +7549,6 @@ class ContentObjectRenderer {
 	 * @return string The WHERE clause.
 	 */
 	public function searchWhere($sw, $searchFieldList, $searchTable = '') {
-		global $TYPO3_DB;
 		$prefixTableName = $searchTable ? $searchTable . '.' : '';
 		$where = '';
 		if ($sw) {
@@ -7464,7 +7558,7 @@ class ContentObjectRenderer {
 				$val = trim($val);
 				$where_p = array();
 				if (strlen($val) >= 2) {
-					$val = $TYPO3_DB->escapeStrForLike($TYPO3_DB->quoteStr($val, $searchTable), $searchTable);
+					$val = $GLOBALS['TYPO3_DB']->escapeStrForLike($GLOBALS['TYPO3_DB']->quoteStr($val, $searchTable), $searchTable);
 					foreach ($searchFields as $field) {
 						$where_p[] = $prefixTableName . $field . ' LIKE \'%' . $val . '%\'';
 					}
@@ -7497,7 +7591,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $table See ->exec_getQuery()
 	 * @param array $conf See ->exec_getQuery()
-	 * @param boolean $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
+	 * @param bool $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
 	 * @return mixed A SELECT query if $returnQueryArray is FALSE, otherwise the SELECT query in an array as parts.
 	 * @access private
 	 * @see CONTENT(), numRows()
@@ -7645,7 +7739,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $table The table name
 	 * @param array $conf The TypoScript configuration properties
-	 * @param boolean $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
+	 * @param bool $returnQueryArray If set, the function will return the query not as a string but array with the various parts. RECOMMENDED!
 	 * @return mixed A WHERE clause based on the relevant parts of the TypoScript properties for a "select" function in TypoScript, see link. If $returnQueryArray is FALSE the where clause is returned as a string with WHERE, GROUP BY and ORDER BY parts, otherwise as an array with these parts.
 	 * @access private
 	 * @see getQuery()
@@ -7831,8 +7925,8 @@ class ContentObjectRenderer {
 	/**
 	 * Checks if a page UID is available due to enableFields() AND the list of bad doktype numbers ($this->checkPid_badDoktypeList)
 	 *
-	 * @param integer $uid Page UID to test
-	 * @return boolean TRUE if OK
+	 * @param int $uid Page UID to test
+	 * @return bool TRUE if OK
 	 * @access private
 	 * @see getWhere(), checkPidArray()
 	 */
@@ -7840,7 +7934,7 @@ class ContentObjectRenderer {
 		$uid = (int)$uid;
 		if (!isset($this->checkPid_cache[$uid])) {
 			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('uid', 'pages', 'uid=' . $uid . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
-			$this->checkPid_cache[$uid] = (bool) $count;
+			$this->checkPid_cache[$uid] = (bool)$count;
 		}
 		return $this->checkPid_cache[$uid];
 	}
@@ -7976,7 +8070,7 @@ class ContentObjectRenderer {
 	 *
 	 * @param string $table The table name
 	 * @param array $row The data record
-	 * @return boolean
+	 * @return bool
 	 * @access private
 	 * @see editPanelPreviewBorder()
 	 */

@@ -494,7 +494,7 @@ class InlineElement {
 	 * @param string $foreign_table The foreign_table we create a header for
 	 * @param array $rec The current record of that foreign_table
 	 * @param array $config content of $PA['fieldConf']['config']
-	 * @param boolean $isVirtualRecord
+	 * @param bool $isVirtualRecord
 	 * @return string The HTML code of the header
 	 */
 	public function renderForeignRecordHeader($parentUid, $foreign_table, $rec, $config, $isVirtualRecord = FALSE) {
@@ -1276,7 +1276,7 @@ class InlineElement {
 	 * Handle AJAX calls to localize all records of a parent, localize a single record or to synchronize with the original language parent.
 	 *
 	 * @param string $domObjectId The calling object in hierarchy, that requested a new record.
-	 * @param mixed $type Defines the type 'localize' or 'synchronize' (string) or a single uid to be localized (integer)
+	 * @param mixed $type Defines the type 'localize' or 'synchronize' (string) or a single uid to be localized (int)
 	 * @return array An array to be used for JSON
 	 */
 	protected function synchronizeLocalizeRecords($domObjectId, $type) {
@@ -1418,7 +1418,7 @@ class InlineElement {
 		$top = $this->getStructureLevel(0);
 		// Only do some action if the top record and the current record were saved before
 		if (MathUtility::canBeInterpretedAsInteger($top['uid'])) {
-			$inlineView = (array) unserialize($GLOBALS['BE_USER']->uc['inlineView']);
+			$inlineView = (array)unserialize($GLOBALS['BE_USER']->uc['inlineView']);
 			$inlineViewCurrent = &$inlineView[$top['table']][$top['uid']];
 			$expandUids = GeneralUtility::trimExplode(',', $expand);
 			$collapseUids = GeneralUtility::trimExplode(',', $collapse);
@@ -1535,7 +1535,7 @@ class InlineElement {
 	/**
 	 * Gets the related records of the embedding item, this could be 1:n, m:n.
 	 *
-	 * @param integer $pid The pid of the parent record
+	 * @param int $pid The pid of the parent record
 	 * @param string $table The table name of the record
 	 * @param string $itemList The list of related child records
 	 * @return array The records related to the parent item
@@ -1677,7 +1677,7 @@ class InlineElement {
 	 *
 	 * @param array $records All inline records on this level
 	 * @param array $conf The TCA field configuration of the inline field to be rendered
-	 * @param boolean $splitValue For usage with group/db, values come like "tx_table_123|Title%20abc", but we need "tx_table" and "123
+	 * @param bool $splitValue For usage with group/db, values come like "tx_table_123|Title%20abc", but we need "tx_table" and "123
 	 * @return array The uids, that have been used already and should be used unique
 	 */
 	public function getUniqueIds($records, $conf = array(), $splitValue = FALSE) {
@@ -1708,8 +1708,8 @@ class InlineElement {
 	 * The pid to be used can be defined by a Page TSconfig.
 	 *
 	 * @param string $table The table name
-	 * @param integer $parentPid The pid of the parent record
-	 * @return integer The corrected pid to be used for a new record
+	 * @param int $parentPid The pid of the parent record
+	 * @return int The corrected pid to be used for a new record
 	 */
 	protected function getNewRecordPid($table, $parentPid = NULL) {
 		$newRecordPid = $this->inlineFirstPid;
@@ -1727,7 +1727,7 @@ class InlineElement {
 	 * \TYPO3\CMS\Backend\Form\DataPreprocessor is used for "upgrading" the
 	 * values, especially the relations.
 	 *
-	 * @param integer $pid The pid of the page the record should be stored (only relevant for NEW records)
+	 * @param int $pid The pid of the page the record should be stored (only relevant for NEW records)
 	 * @param string $table The table to fetch data from (= foreign_table)
 	 * @param string $uid The uid of the record to fetch, or the pid if a new record should be created
 	 * @param string $cmd The command to perform, empty or 'new'
@@ -1759,7 +1759,7 @@ class InlineElement {
 	/**
 	 * Wrapper. Calls getRecord in case of a new record should be created.
 	 *
-	 * @param integer $pid The pid of the page the record should be stored (only relevant for NEW records)
+	 * @param int $pid The pid of the page the record should be stored (only relevant for NEW records)
 	 * @param string $table The table to fetch data from (= foreign_table)
 	 * @return array A record row from the database post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor
 	 */
@@ -1887,7 +1887,7 @@ class InlineElement {
 	 * If the $level value is negative, this function works top-down,
 	 * if the $level value is positive, this function works bottom-up.
 	 *
-	 * @param integer $level Which level to return
+	 * @param int $level Which level to return
 	 * @return array The item of the stack at the requested level
 	 */
 	public function getStructureLevel($level) {
@@ -1903,8 +1903,8 @@ class InlineElement {
 	/**
 	 * Calculates structure level.
 	 *
-	 * @param integer $level Which level to return
-	 * @return boolean|integer
+	 * @param int $level Which level to return
+	 * @return bool|int
 	 */
 	protected function calculateStructureLevel($level) {
 		$result = FALSE;
@@ -1924,7 +1924,7 @@ class InlineElement {
 	 * Get the identifiers of a given depth of level, from the top of the stack to the bottom.
 	 * An identifier looks like "<table>-<uid>-<field>".
 	 *
-	 * @param integer $structureDepth How much levels to output, beginning from the top of the stack
+	 * @param int $structureDepth How much levels to output, beginning from the top of the stack
 	 * @return string The path of identifiers
 	 */
 	public function getStructurePath($structureDepth = -1) {
@@ -1948,7 +1948,7 @@ class InlineElement {
 	 * - 'unstable': Containting partly filled data (e.g. only table and possibly field)
 	 *
 	 * @param string $domObjectId The DOM object-id
-	 * @param boolean $loadConfig Load the TCA configuration for that level (default: TRUE)
+	 * @param bool $loadConfig Load the TCA configuration for that level (default: TRUE)
 	 * @return void
 	 */
 	public function parseStructureString($string, $loadConfig = TRUE) {
@@ -2012,7 +2012,7 @@ class InlineElement {
 	 * @param string $table The table name of the record
 	 * @param string $field The field name which this element is supposed to edit
 	 * @param array $row The record data array of the parent
-	 * @return boolean If critical configuration errors were found, FALSE is returned
+	 * @return bool If critical configuration errors were found, FALSE is returned
 	 */
 	public function checkConfiguration(&$config) {
 		$foreign_table = $config['foreign_table'];
@@ -2055,7 +2055,7 @@ class InlineElement {
 	 * @param string $cmd The command that sould be performed ('new' or 'edit')
 	 * @param string $table The table to check access for
 	 * @param string $theUid The record uid of the table
-	 * @return boolean Returns TRUE is the user has access, or FALSE if not
+	 * @return bool Returns TRUE is the user has access, or FALSE if not
 	 */
 	public function checkAccess($cmd, $table, $theUid) {
 		// Checking if the user has permissions? (Only working as a precaution, because the final permission check is always down in TCE. But it's good to notify the user on beforehand...)
@@ -2124,7 +2124,7 @@ class InlineElement {
 	 * A boolean value is return depending on how the comparison was successful.
 	 *
 	 * @param array $compare Keys and values to compare to the ['config'] part of the top level of the stack
-	 * @return boolean Whether the comparison was successful
+	 * @return bool Whether the comparison was successful
 	 * @see arrayCompareComplex
 	 */
 	public function compareStructureConfiguration($compare) {
@@ -2181,7 +2181,7 @@ class InlineElement {
 	 *
 	 * @param string $table The table to check
 	 * @param string $field The field on this table to check
-	 * @return boolean Is inline child and field is responsible for the label
+	 * @return bool Is inline child and field is responsible for the label
 	 */
 	public function isInlineChildAndLabelField($table, $field) {
 		$level = $this->getStructureLevel(-1);
@@ -2197,7 +2197,7 @@ class InlineElement {
 	 * Get the depth of the stable structure stack.
 	 * (count($this->inlineStructure['stable'])
 	 *
-	 * @return integer The depth of the structure stack
+	 * @return int The depth of the structure stack
 	 */
 	public function getStructureDepth() {
 		return count($this->inlineStructure['stable']);
@@ -2233,7 +2233,7 @@ class InlineElement {
 	 * @param array $subjectArray The array to search in
 	 * @param array $searchArray The array with keys and values to search for
 	 * @param string $type Use '%AND' or '%OR' for comparison
-	 * @return boolean The result of the comparison
+	 * @return bool The result of the comparison
 	 */
 	public function arrayCompareComplex($subjectArray, $searchArray, $type = '') {
 		$localMatches = 0;
@@ -2289,7 +2289,7 @@ class InlineElement {
 	 * Checks whether an object is an associative array.
 	 *
 	 * @param mixed $object The object to be checked
-	 * @return boolean Returns TRUE, if the object is an associative array
+	 * @return bool Returns TRUE, if the object is an associative array
 	 */
 	public function isAssociativeArray($object) {
 		return is_array($object) && count($object) && array_keys($object) !== range(0, sizeof($object) - 1) ? TRUE : FALSE;
@@ -2394,7 +2394,7 @@ class InlineElement {
 	 * @param string $field The field name
 	 * @param array $row The record row from the database
 	 * @param array $config TCA configuration of the field
-	 * @return boolean Determines whether the field should be skipped.
+	 * @return bool Determines whether the field should be skipped.
 	 */
 	public function skipField($table, $field, $row, $config) {
 		$skipThisField = FALSE;
@@ -2442,8 +2442,8 @@ class InlineElement {
 	 * Checks if a uid of a child table is in the inline view settings.
 	 *
 	 * @param string $table Name of the child table
-	 * @param integer $uid uid of the the child record
-	 * @return boolean TRUE=expand, FALSE=collapse
+	 * @param int $uid uid of the the child record
+	 * @return bool TRUE=expand, FALSE=collapse
 	 */
 	public function getExpandedCollapsedState($table, $uid) {
 		if (isset($this->inlineView[$table]) && is_array($this->inlineView[$table])) {
@@ -2461,9 +2461,9 @@ class InlineElement {
 	 * @param \TYPO3\CMS\Core\DataHandling\DataHandler $tce Instance of TCEmain that saved data before
 	 * @return void
 	 */
-	public function updateInlineView(&$uc, $tce) {
+	static public function updateInlineView(&$uc, $tce) {
 		if (isset($uc['inlineView']) && is_array($uc['inlineView'])) {
-			$inlineView = (array) unserialize($GLOBALS['BE_USER']->uc['inlineView']);
+			$inlineView = (array)unserialize($GLOBALS['BE_USER']->uc['inlineView']);
 			foreach ($uc['inlineView'] as $topTable => $topRecords) {
 				foreach ($topRecords as $topUid => $childElements) {
 					foreach ($childElements as $childTable => $childRecords) {
@@ -2497,7 +2497,7 @@ class InlineElement {
 	/**
 	 * Returns the the margin in pixels, that is used for each new inline level.
 	 *
-	 * @return integer A pixel value for the margin of each new inline level.
+	 * @return int A pixel value for the margin of each new inline level.
 	 */
 	public function getLevelMargin() {
 		$margin = ($this->inlineStyles['margin-right'] + 1) * 2;

@@ -31,7 +31,7 @@ class InArrayValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	/**
 	 * Search strict
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $strict;
 
@@ -48,7 +48,7 @@ class InArrayValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	/**
 	 * Returns TRUE if submitted value validates according to rule
 	 *
-	 * @return boolean
+	 * @return bool
 	 * @see \TYPO3\CMS\Form\Validation\ValidatorInterface::isValid()
 	 */
 	public function isValid() {
@@ -68,18 +68,18 @@ class InArrayValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	 * @return object Rule object
 	 */
 	public function setArray($array) {
-		$this->array = (array) $array;
+		$this->array = (array)$array;
 		return $this;
 	}
 
 	/**
 	 * Set the strict mode for the search
 	 *
-	 * @param boolean $strict True if strict
+	 * @param bool $strict True if strict
 	 * @return object Rule object
 	 */
 	public function setStrict($strict) {
-		$this->strict = (bool) $strict;
+		$this->strict = (bool)$strict;
 		return $this;
 	}
 

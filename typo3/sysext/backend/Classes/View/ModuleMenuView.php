@@ -31,15 +31,24 @@ class ModuleMenuView {
 	 */
 	protected $moduleLoader;
 
+	/**
+	 * @var string
+	 */
 	protected $backPath;
 
+	/**
+	 * @var bool
+	 */
 	protected $linkModules;
 
+	/**
+	 * @var array
+	 */
 	protected $loadedModules;
 
 	/**
 	 * Constructor, initializes several variables
-	 * @deprecated since TYPO3 CMS 6.3, not in use, as everything can be done via the ModuleMenuRepository directly
+	 * @deprecated since TYPO3 CMS 7, not in use, as everything can be done via the ModuleMenuRepository directly
 	 */
 	public function __construct() {
 		GeneralUtility::logDeprecatedFunction();
@@ -357,7 +366,7 @@ class ModuleMenuView {
 	/**
 	 * turns linking of modules on or off
 	 *
-	 * @param boolean $linkModules Status for linking modules with a-tags, set to FALSE to turn lining off
+	 * @param bool $linkModules Status for linking modules with a-tags, set to FALSE to turn lining off
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 */

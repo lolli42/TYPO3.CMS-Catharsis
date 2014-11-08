@@ -27,7 +27,7 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 *
 	 * @param array $loginData Credentials that are submitted and potentially modified by other services
 	 * @param string $passwordTransmissionStrategy Keyword of how the password has been hashed or encrypted before submission
-	 * @return boolean
+	 * @return bool
 	 */
 	public function processLoginData(array &$loginData, $passwordTransmissionStrategy) {
 		$isProcessed = TRUE;
@@ -50,8 +50,8 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 				$isProcessed = FALSE;
 		}
 		if (!empty($loginData['uident_text'])) {
-			$loginData['uident_challenged'] = (string) md5(($loginData['uname'] . ':' . $loginData['uident_text'] . ':' . $loginData['chalvalue']));
-			$loginData['uident_superchallenged'] = (string) md5(($loginData['uname'] . ':' . md5($loginData['uident_text']) . ':' . $loginData['chalvalue']));
+			$loginData['uident_challenged'] = (string)md5(($loginData['uname'] . ':' . $loginData['uident_text'] . ':' . $loginData['chalvalue']));
+			$loginData['uident_superchallenged'] = (string)md5(($loginData['uname'] . ':' . md5($loginData['uident_text']) . ':' . $loginData['chalvalue']));
 			$isProcessed = TRUE;
 		}
 		return $isProcessed;
@@ -90,8 +90,7 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 * Authenticate a user (Check various conditions for the user that might invalidate its authentication, eg. password match, domain, IP, etc.)
 	 *
 	 * @param array $user Data of user.
-	 *
-	 * @return integer >= 200: User authenticated successfully.
+	 * @return int >= 200: User authenticated successfully.
 	 *                         No more checking is needed by other auth services.
 	 *                 >= 100: User not authenticated; this service is not responsible.
 	 *                         Other auth services will be asked.
@@ -136,7 +135,6 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 	 * @return mixed Groups array, keys = uid which must be unique
 	 */
 	public function getGroups($user, $knownGroups) {
-		global $TYPO3_CONF_VARS;
 		$groupDataArr = array();
 		if ($this->mode == 'getGroupsFE') {
 			$groups = array();
@@ -146,8 +144,8 @@ class AuthenticationService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 				$this->getSubGroups($groupList, '', $groups);
 			}
 			// ADD group-numbers if the IPmask matches.
-			if (is_array($TYPO3_CONF_VARS['FE']['IPmaskMountGroups'])) {
-				foreach ($TYPO3_CONF_VARS['FE']['IPmaskMountGroups'] as $IPel) {
+			if (is_array($GLOBALS['TYPO3_CONF_VARS']['FE']['IPmaskMountGroups'])) {
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['FE']['IPmaskMountGroups'] as $IPel) {
 					if ($this->authInfo['REMOTE_ADDR'] && $IPel[0] && \TYPO3\CMS\Core\Utility\GeneralUtility::cmpIP($this->authInfo['REMOTE_ADDR'], $IPel[0])) {
 						$groups[] = (int)$IPel[1];
 					}

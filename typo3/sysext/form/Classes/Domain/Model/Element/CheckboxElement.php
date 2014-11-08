@@ -56,7 +56,7 @@ class CheckboxElement extends \TYPO3\CMS\Form\Domain\Model\Element\AbstractEleme
 	 * True if it accepts the parent name instead of its own
 	 * This is necessary for groups
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $acceptsParentName = TRUE;
 
@@ -71,7 +71,7 @@ class CheckboxElement extends \TYPO3\CMS\Form\Domain\Model\Element\AbstractEleme
 	 */
 	public function checkFilterAndSetIncomingDataFromRequest() {
 		if ($this->value === '') {
-			$this->value = (string) $this->getElementId();
+			$this->value = (string)$this->getElementId();
 			$this->setAttribute('value', $this->value);
 		}
 		if ($this->requestHandler->has($this->getName())) {

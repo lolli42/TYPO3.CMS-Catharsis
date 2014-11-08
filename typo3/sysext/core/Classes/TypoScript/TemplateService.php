@@ -164,14 +164,14 @@ class TemplateService {
 	 * has been processed or the $processExtensionStatics
 	 * property has been set to TRUE.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $extensionStaticsProcessed = FALSE;
 
 	/**
 	 * Trigger value, to ensure that extension statics are processed.
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $processExtensionStatics = FALSE;
 
@@ -180,7 +180,7 @@ class TemplateService {
 	 * This prevents double inclusion of the same TypoScript code.
 	 *
 	 * @see addDefaultTypoScript()
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $isDefaultTypoScriptAdded = FALSE;
 
@@ -190,22 +190,22 @@ class TemplateService {
 	 * This prevents double processing of INCLUDES.
 	 *
 	 * @see processIncludes()
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $processIncludesHasBeenRun = FALSE;
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function getProcessExtensionStatics() {
 		return $this->processExtensionStatics;
 	}
 
 	/**
-	 * @param boolean $processExtensionStatics
+	 * @param bool $processExtensionStatics
 	 */
 	public function setProcessExtensionStatics($processExtensionStatics) {
-		$this->processExtensionStatics = (bool) $processExtensionStatics;
+		$this->processExtensionStatics = (bool)$processExtensionStatics;
 	}
 
 	/**
@@ -285,7 +285,7 @@ class TemplateService {
 		if (is_array($cc['all'])) {
 			/** @var $matchObj \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher */
 			$matchObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
-			$matchObj->setRootline((array) $cc['rootLine']);
+			$matchObj->setRootline((array)$cc['rootLine']);
 			foreach ($cc['all'] as $key => $pre) {
 				if ($matchObj->match($pre)) {
 					$sectionsMatch[$key] = $pre;
@@ -421,7 +421,7 @@ class TemplateService {
 	 * Also creates $this->rootLine which is a root line stopping at the root template (contrary to $GLOBALS['TSFE']->rootLine which goes all the way to the root of the tree
 	 *
 	 * @param array $theRootLine The rootline of the current page (going ALL the way to tree root)
-	 * @param integer $start_template_uid Set specific template record UID to select; this is only for debugging/development/analysis use in backend modules like "Web > Template". For parsing TypoScript templates in the frontend it should be 0 (zero)
+	 * @param int $start_template_uid Set specific template record UID to select; this is only for debugging/development/analysis use in backend modules like "Web > Template". For parsing TypoScript templates in the frontend it should be 0 (zero)
 	 * @return void
 	 * @see start()
 	 */
@@ -805,7 +805,7 @@ class TemplateService {
 		/** @var $matchObj \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher */
 		$matchObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
 		$matchObj->setSimulateMatchConditions($this->matchAlternative);
-		$matchObj->setSimulateMatchResult((bool) $this->matchAll);
+		$matchObj->setSimulateMatchResult((bool)$this->matchAll);
 		// Traverse constants text fields and parse them
 		foreach ($this->constants as $str) {
 			$constants->parse($str, $matchObj);
@@ -1040,7 +1040,7 @@ class TemplateService {
 	 * The concept is known as "optionSplit" and is rather advanced to handle but quite powerful, in particular for creating menus in TYPO3.
 	 *
 	 * @param array $conf A TypoScript array
-	 * @param integer $splitCount The number of items for which to generated individual TypoScript arrays
+	 * @param int $splitCount The number of items for which to generated individual TypoScript arrays
 	 * @return array The individualized TypoScript array.
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::IMGTEXT(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::procesItemStates()
 	 */
@@ -1127,7 +1127,7 @@ class TemplateService {
 
 		// if this is an URL, it can be returned directly
 		$urlScheme = parse_url($file, PHP_URL_SCHEME);
-		if ($urlScheme === 'https' || $urlScheme === 'http') {
+		if ($urlScheme === 'https' || $urlScheme === 'http' || is_file(PATH_site . $file)) {
 			return $file;
 		}
 
@@ -1159,8 +1159,8 @@ class TemplateService {
 	 * Compiles the content for the page <title> tag.
 	 *
 	 * @param string $pageTitle The input title string, typically the "title" field of a page's record.
-	 * @param boolean $noTitle If set, then only the site title is outputted (from $this->setup['sitetitle'])
-	 * @param boolean $showTitleFirst If set, then "sitetitle" and $title is swapped
+	 * @param bool $noTitle If set, then only the site title is outputted (from $this->setup['sitetitle'])
+	 * @param bool $showTitleFirst If set, then "sitetitle" and $title is swapped
 	 * @return string The page title on the form "[sitetitle]: [input-title]". Not htmlspecialchar()'ed.
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), TSpagegen::renderContentWithHeader()
 	 */
@@ -1210,7 +1210,7 @@ class TemplateService {
 	 * @param string $content The content to wrap
 	 * @param string $wrap The wrap value, eg. "<strong> | </strong>
 	 * @return string Wrapped input string
-	 * @deprecated since TYPO3 CMS 6.3, remove later - use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
+	 * @deprecated since TYPO3 CMS 7.0 - use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
 	 * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject, \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap()
 	 */
 	public function wrap($content, $wrap) {
@@ -1243,7 +1243,7 @@ class TemplateService {
 	 * Call it like \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList()
 	 *
 	 * @param array $setupArr TypoScript array with numerical array in
-	 * @param boolean $acceptOnlyProperties If set, then a value is not required - the properties alone will be enough.
+	 * @param bool $acceptOnlyProperties If set, then a value is not required - the properties alone will be enough.
 	 * @return array An array with all integer properties listed in numeric order.
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::cObjGet(), \TYPO3\CMS\Frontend\Imaging\GifBuilder, \TYPO3\CMS\Frontend\ContentObject\Menu\ImageMenuContentObject::makeImageMap()
 	 */
@@ -1264,7 +1264,7 @@ class TemplateService {
 	 * Returns the level of the given page in the rootline - Multiple pages can be given by separating the UIDs by comma.
 	 *
 	 * @param string $list A list of UIDs for which the rootline-level should get returned
-	 * @return integer The level in the rootline. If more than one page was given the lowest level will get returned.
+	 * @return int The level in the rootline. If more than one page was given the lowest level will get returned.
 	 */
 	public function getRootlineLevel($list) {
 		$idx = 0;
@@ -1290,7 +1290,7 @@ class TemplateService {
 	 *
 	 * @param array $page The page record of the page to which we are creating a link. Needed due to fields like uid, alias, target, no_cache, title and sectionIndex_uid.
 	 * @param string $oTarget Default target string to use IF not $page['target'] is set.
-	 * @param boolean $no_cache If set, then the "&no_cache=1" parameter is included in the URL.
+	 * @param bool $no_cache If set, then the "&no_cache=1" parameter is included in the URL.
 	 * @param string $script Alternative script name if you don't want to use $GLOBALS['TSFE']->config['mainScript'] (normally set to "index.php")
 	 * @param array $overrideArray Array with overriding values for the $page array.
 	 * @param string $addParams Additional URL parameters to set in the URL. Syntax is "&foo=bar&foo2=bar2" etc. Also used internally to add parameters if needed.
@@ -1385,7 +1385,7 @@ class TemplateService {
 	 * Initializes the automatically created MPmap coming from the "config.MP_mapRootPoints" setting
 	 * Can be called many times with overhead only the first time since then the map is generated and cached in memory.
 	 *
-	 * @param integer $pageId Page id to return MPvar value for.
+	 * @param int $pageId Page id to return MPvar value for.
 	 * @return string
 	 * @see initMPmap_create()
 	 * @todo Implement some caching of the result between hits. (more than just the memory caching used here)
@@ -1418,9 +1418,9 @@ class TemplateService {
 	/**
 	 * Creating MPmap for a certain ID root point.
 	 *
-	 * @param integer $id Root id from which to start map creation.
+	 * @param int $id Root id from which to start map creation.
 	 * @param array $MP_array MP_array passed from root page.
-	 * @param integer $level Recursion brake. Incremented for each recursive call. 20 is the limit.
+	 * @param int $level Recursion brake. Incremented for each recursive call. 20 is the limit.
 	 * @return void
 	 * @see getFromMPvar()
 	 */

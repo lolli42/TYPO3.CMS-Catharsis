@@ -43,7 +43,7 @@ abstract class AbstractMessage {
 	/**
 	 * The message's severity
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $severity = self::OK;
 
@@ -63,7 +63,7 @@ abstract class AbstractMessage {
 	 * @return void
 	 */
 	public function setTitle($title) {
-		$this->title = (string) $title;
+		$this->title = (string)$title;
 	}
 
 	/**
@@ -82,13 +82,13 @@ abstract class AbstractMessage {
 	 * @return void
 	 */
 	public function setMessage($message) {
-		$this->message = (string) $message;
+		$this->message = (string)$message;
 	}
 
 	/**
 	 * Gets the message' severity.
 	 *
-	 * @return integer The message' severity, must be one of AbstractMessage::INFO or similar contstants
+	 * @return int The message' severity, must be one of AbstractMessage::INFO or similar contstants
 	 */
 	public function getSeverity() {
 		return $this->severity;
@@ -97,7 +97,7 @@ abstract class AbstractMessage {
 	/**
 	 * Sets the message' severity
 	 *
-	 * @param integer $severity The severity, must be one of AbstractMessage::INFO or similar constants
+	 * @param int $severity The severity, must be one of AbstractMessage::INFO or similar constants
 	 * @return void
 	 */
 	public function setSeverity($severity = self::OK) {

@@ -130,15 +130,15 @@ class DiffUtility {
 	 */
 	public function getDiff($str1, $str2) {
 		// Create file 1 and write string
-		$file1 = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam('diff1_');
-		\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($file1, $str1);
+		$file1 = GeneralUtility::tempnam('diff1_');
+		GeneralUtility::writeFile($file1, $str1);
 		// Create file 2 and write string
-		$file2 = \TYPO3\CMS\Core\Utility\GeneralUtility::tempnam('diff2_');
-		\TYPO3\CMS\Core\Utility\GeneralUtility::writeFile($file2, $str2);
+		$file2 = GeneralUtility::tempnam('diff2_');
+		GeneralUtility::writeFile($file2, $str2);
 		// Perform diff.
 		$cmd = $GLOBALS['TYPO3_CONF_VARS']['BE']['diff_path'] . ' ' . $this->diffOptions . ' ' . $file1 . ' ' . $file2;
 		$res = array();
-		\TYPO3\CMS\Core\Utility\CommandUtility::exec($cmd, $res);
+		CommandUtility::exec($cmd, $res);
 		unlink($file1);
 		unlink($file2);
 		return $res;
@@ -148,13 +148,13 @@ class DiffUtility {
 	 * Will bring down the length of strings to < 150 chars if they were longer than 200 chars. This done by preserving the 70 first and last chars and concatenate those strings with "..." and a number indicating the string length
 	 *
 	 * @param string $clearBuffer The input string.
-	 * @param boolean $last If set, it indicates that the string should just end with ... (thus no "complete" ending)
+	 * @param bool $last If set, it indicates that the string should just end with ... (thus no "complete" ending)
 	 * @return string Processed string.
 	 * @access private
 	 */
 	public function addClearBuffer($clearBuffer, $last = 0) {
 		if (strlen($clearBuffer) > 200) {
-			$clearBuffer = ($this->clearBufferIdx ? \TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($clearBuffer, 70) : '') . '[' . strlen($clearBuffer) . ']' . (!$last ? \TYPO3\CMS\Core\Utility\GeneralUtility::fixed_lgd_cs($clearBuffer, -70) : '');
+			$clearBuffer = ($this->clearBufferIdx ? GeneralUtility::fixed_lgd_cs($clearBuffer, 70) : '') . '[' . strlen($clearBuffer) . ']' . (!$last ? GeneralUtility::fixed_lgd_cs($clearBuffer, -70) : '');
 		}
 		$this->clearBufferIdx++;
 		return $clearBuffer;
@@ -169,10 +169,10 @@ class DiffUtility {
 	 * @access private
 	 */
 	public function explodeStringIntoWords($str) {
-		$strArr = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $str);
+		$strArr = GeneralUtility::trimExplode(LF, $str);
 		$outArray = array();
 		foreach ($strArr as $lineOfWords) {
-			$allWords = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $lineOfWords, TRUE);
+			$allWords = GeneralUtility::trimExplode(' ', $lineOfWords, TRUE);
 			$outArray[] = $allWords;
 			$outArray[] = array('');
 			$outArray[] = array('');
@@ -184,7 +184,7 @@ class DiffUtility {
 	 * Adds a space character before and after HTML tags (more precisely any found < or >)
 	 *
 	 * @param string $str String to process
-	 * @param boolean $rev If set, the < > searched for will be &lt; and &gt;
+	 * @param bool $rev If set, the < > searched for will be &lt; and &gt;
 	 * @return string Processed string
 	 * @access private
 	 */

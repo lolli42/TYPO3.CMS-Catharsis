@@ -53,7 +53,7 @@ class DebugUtility {
 		}
 		$debug = self::convertVariableToString($var);
 		if ($header) {
-			$debug = sprintf(self::DEBUG_TABLE_TEMPLATE, htmlspecialchars((string) $header), $debug);
+			$debug = sprintf(self::DEBUG_TABLE_TEMPLATE, htmlspecialchars((string)$header), $debug);
 		}
 		if (TYPO3_MODE === 'BE' && !(TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI)) {
 			$tabHeader = $header ?: 'Debug';
@@ -89,7 +89,7 @@ class DebugUtility {
 					});
 				})();
 			';
-			echo \TYPO3\CMS\Core\Utility\GeneralUtility::wrapJS($script);
+			echo GeneralUtility::wrapJS($script);
 		} else {
 			echo $debug;
 		}
@@ -108,8 +108,8 @@ class DebugUtility {
 			$string = '<strong>|Object:<pre>';
 			$string .= print_r($variable, TRUE);
 			$string .= '</pre>|</strong>';
-		} elseif ((string) $variable !== '') {
-			$string = '<strong>|' . htmlspecialchars((string) $variable) . '|</strong>';
+		} elseif ((string)$variable !== '') {
+			$string = '<strong>|' . htmlspecialchars((string)$variable) . '|</strong>';
 		} else {
 			$string = '<strong>| debug |</strong>';
 		}
@@ -161,7 +161,7 @@ class DebugUtility {
 				}
 			})();
 		';
-		echo \TYPO3\CMS\Core\Utility\GeneralUtility::wrapJS($script);
+		echo GeneralUtility::wrapJS($script);
 	}
 
 	/**
@@ -178,7 +178,7 @@ class DebugUtility {
 			$pathFragment = $dat['class'] . $dat['type'] . $dat['function'];
 			// add the path of the included file
 			if (in_array($dat['function'], array('require', 'include', 'require_once', 'include_once'))) {
-				$pathFragment .= '(' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($dat['args'][0]) . '),' . \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($dat['file']);
+				$pathFragment .= '(' . PathUtility::stripPathSitePrefix($dat['args'][0]) . '),' . PathUtility::stripPathSitePrefix($dat['file']);
 			}
 			$path[] = $pathFragment . '#' . $dat['line'];
 		}
@@ -190,7 +190,7 @@ class DebugUtility {
 	 *
 	 * @param mixed $rows Array of arrays with similar keys
 	 * @param string $header Table header
-	 * @param boolean $returnHTML If TRUE, will return content instead of echo'ing out.
+	 * @param bool $returnHTML If TRUE, will return content instead of echo'ing out.
 	 * @return void Outputs to browser.
 	 */
 	static public function debugRows($rows, $header = '', $returnHTML = FALSE) {
@@ -240,7 +240,7 @@ class DebugUtility {
 	 * Returns a string with a list of ascii-values for the first $characters characters in $string
 	 *
 	 * @param string $string String to show ASCII value for
-	 * @param integer $characters Number of characters to show
+	 * @param int $characters Number of characters to show
 	 * @return string The string with ASCII values in separated by a space char.
 	 */
 	static public function ordinalValue($string, $characters = 100) {
@@ -271,14 +271,14 @@ class DebugUtility {
 			} else {
 				foreach ($array_in as $key => $val) {
 					$result .= '<tr>
-						<td valign="top"><font face="Verdana,Arial" size="1">' . htmlspecialchars((string) $key) . '</font></td>
+						<td valign="top"><font face="Verdana,Arial" size="1">' . htmlspecialchars((string)$key) . '</font></td>
 						<td>';
 					if (is_array($val)) {
 						$result .= self::viewArray($val);
 					} elseif (is_object($val)) {
 						$string = '';
 						if (method_exists($val, '__toString')) {
-							$string .= get_class($val) . ': ' . (string) $val;
+							$string .= get_class($val) . ': ' . (string)$val;
 						} else {
 							$string .= print_r($val, TRUE);
 						}
@@ -287,7 +287,7 @@ class DebugUtility {
 						if (gettype($val) == 'object') {
 							$string = 'Unknown object';
 						} else {
-							$string = (string) $val;
+							$string = (string)$val;
 						}
 						$result .= '<font face="Verdana,Arial" size="1" color="red">' . nl2br(htmlspecialchars($string)) . '<br /></font>';
 					}
@@ -299,7 +299,7 @@ class DebugUtility {
 		} else {
 			$result = '<table border="1" cellpadding="1" cellspacing="0" bgcolor="white">
 				<tr>
-					<td><font face="Verdana,Arial" size="1" color="red">' . nl2br(htmlspecialchars((string) $array_in)) . '<br /></font></td>
+					<td><font face="Verdana,Arial" size="1" color="red">' . nl2br(htmlspecialchars((string)$array_in)) . '<br /></font></td>
 				</tr>
 			</table>';
 		}

@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  * (fetched via BE_USERS->getFileStorages()), as all functions should be
  * found there (in a cleaner manner).
  *
- * @author 	Kasper Skårhøj <kasperYYYY@typo3.com>
+ * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BasicFileUtility {
 	/**
@@ -128,9 +128,9 @@ class BasicFileUtility {
 	 * Example:
 	 * $basicff->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 	 *
-	 * @param 	array		Not in use anymore
-	 * @param 	array		Array with information about allowed and denied file extensions. Typically passed: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']
-	 * @return 	void
+	 * @param array Not in use anymore
+	 * @param array Array with information about allowed and denied file extensions. Typically passed: $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']
+	 * @return void
 	 * @see typo3/init.php
 	 */
 	public function init($mounts, $f_ext) {
@@ -146,47 +146,11 @@ class BasicFileUtility {
 	}
 
 	/**
-	 * Returns an array with a whole lot of fileinformation.
-	 * Information includes:
-	 * - path			: path part of give file
-	 * - file			: filename
-	 * - filebody		: filename without extension
-	 * - fileext		: lowercase extension
-	 * - realFileext	: extension
-	 * - tstamp			: timestamp of modification
-	 * - size			: file size
-	 * - type			: file type (block/char/dir/fifo/file/link)
-	 * - owner			: user ID of owner of file
-	 * - perms			: numerical representation of file permissions
-	 * - writable		: is file writeable by web user (FALSE = yes; TRUE = no) *)
-	 * - readable		: is file readable by web user (FALSE = yes; TRUE = no) *)
-	 *
-	 * ) logic is reversed because of handling by functions in TYPO3\CMS\Filelist\FileList
-	 *
-	 * @param 	string		Filepath to existing file. Should probably be absolute. Filefunctions are performed on this value.
-	 * @return 	array		Information about the file in the filepath
-	 * @deprecated since TYPO3 6.0. Please use corresponding TYPO3\\CMS\\Core\\Resource\\ResourceStorage (fetched via BE_USERS->getFileStorages())
-	 */
-	public function getTotalFileInfo($wholePath) {
-		GeneralUtility::logDeprecatedFunction();
-		$theuser = getmyuid();
-		$info = GeneralUtility::split_fileref($wholePath);
-		$info['tstamp'] = @filemtime($wholePath);
-		$info['size'] = @filesize($wholePath);
-		$info['type'] = @filetype($wholePath);
-		$info['owner'] = @fileowner($wholePath);
-		$info['perms'] = @fileperms($wholePath);
-		$info['writable'] = !@is_writable($wholePath);
-		$info['readable'] = !@is_readable($wholePath);
-		return $info;
-	}
-
-	/**
 	 * Checks if a $iconkey (fileextension) is allowed according to $this->f_ext.
 	 *
-	 * @param 	string		The extension to check, eg. "php" or "html" etc.
-	 * @param 	string		Either "webspage" or "ftpspace" - points to a key in $this->f_ext
-	 * @return 	boolean		TRUE if file extension is allowed.
+	 * @param string The extension to check, eg. "php" or "html" etc.
+	 * @param string Either "webspage" or "ftpspace" - points to a key in $this->f_ext
+	 * @return bool TRUE if file extension is allowed.
 	 * @todo Deprecate, but still in use by checkIfAllowed()
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
@@ -221,15 +185,15 @@ class BasicFileUtility {
 	/**
 	 * Returns TRUE if you can operate of ANY file ('*') in the space $theDest is in ('webspace' / 'ftpspace')
 	 *
-	 * @param 	string		Absolute path
-	 * @return 	boolean
+	 * @param string Absolute path
+	 * @return bool
 	 * @todo Deprecate: but still in use by through func_unzip in ExtendedFileUtility
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
 	public function checkIfFullAccess($theDest) {
 		$type = $this->is_webpath($theDest) ? 'webspace' : 'ftpspace';
 		if (isset($this->f_ext[$type])) {
-			if ((string) $this->f_ext[$type]['deny'] == '' || $this->f_ext[$type]['allow'] == '*') {
+			if ((string)$this->f_ext[$type]['deny'] == '' || $this->f_ext[$type]['allow'] == '*') {
 				return TRUE;
 			}
 		}
@@ -239,8 +203,8 @@ class BasicFileUtility {
 	 * Checks if $this->webPath (should be TYPO3_DOCUMENT_ROOT) is in the first part of $path
 	 * Returns TRUE also if $this->init is not set or if $path is empty...
 	 *
-	 * @param 	string		Absolute path to check
-	 * @return 	boolean
+	 * @param string Absolute path to check
+	 * @return bool
 	 * @todo Deprecate, but still in use by DataHandler
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
@@ -259,10 +223,10 @@ class BasicFileUtility {
 	 * If the filename is given, check it against the TYPO3_CONF_VARS[BE][fileDenyPattern] +
 	 * Checks if the $ext fileextension is allowed in the path $theDest (this is based on whether $theDest is below the $this->webPath)
 	 *
-	 * @param 	string		File extension, eg. "php" or "html
-	 * @param 	string		Absolute path for which to test
-	 * @param 	string		Filename to check against TYPO3_CONF_VARS[BE][fileDenyPattern]
-	 * @return 	boolean		TRUE if extension/filename is allowed
+	 * @param string File extension, eg. "php" or "html
+	 * @param string Absolute path for which to test
+	 * @param string Filename to check against TYPO3_CONF_VARS[BE][fileDenyPattern]
+	 * @return bool TRUE if extension/filename is allowed
 	 * @todo Deprecate, but still in use by DataHandler
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
@@ -271,23 +235,10 @@ class BasicFileUtility {
 	}
 
 	/**
-	 * Returns TRUE if the input filename string is shorter than $this->maxInputNameLen.
-	 *
-	 * @param 	string		Filename, eg "somefile.html
-	 * @return 	boolean
-	 * @deprecated since TYPO3 6.0. Please use corresponding TYPO3\\CMS\\Core\\Resource\\ResourceStorage (fetched via BE_USERS->getFileStorages())
-	 */
-	public function checkFileNameLen($fileName) {
-		// @todo: should go into the LocalDriver in a protected way (not important to the outside world)
-		GeneralUtility::logDeprecatedFunction();
-		return strlen($fileName) <= $this->maxInputNameLen;
-	}
-
-	/**
 	 * Cleans $theDir for slashes in the end of the string and returns the new path, if it exists on the server.
 	 *
-	 * @param 	string		Directory path to check
-	 * @return 	string		Returns the cleaned up directory name if OK, otherwise FALSE.
+	 * @param string Directory path to check
+	 * @return string Returns the cleaned up directory name if OK, otherwise FALSE.
 	 * @todo Deprecate: but still in use by getUniqueName (used by DataHandler)
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
@@ -303,28 +254,14 @@ class BasicFileUtility {
 	}
 
 	/**
-	 * Wrapper for \TYPO3\CMS\Core\Utility\GeneralUtility::validPathStr()
-	 *
-	 * @param 	string		Filepath to evaluate
-	 * @return 	boolean		TRUE, if no '//', '..' or '\' is in the $theFile
-	 * @see 	\TYPO3\CMS\Core\Utility\GeneralUtility::validPathStr()
-	 * @deprecated since TYPO3 6.0. Use GeneralUtility::validPathStr() instead
-	 */
-	public function isPathValid($theFile) {
-		// @todo: should go into the LocalDriver in a protected way (not important to the outside world)
-		GeneralUtility::logDeprecatedFunction();
-		return GeneralUtility::validPathStr($theFile);
-	}
-
-	/**
 	 * Returns the destination path/filename of a unique filename/foldername in that path.
 	 * If $theFile exists in $theDest (directory) the file have numbers appended up to $this->maxNumber. Hereafter a unique string will be appended.
 	 * This function is used by fx. TCEmain when files are attached to records and needs to be uniquely named in the uploads/* folders
 	 *
-	 * @param 	string		The input filename to check
-	 * @param 	string		The directory for which to return a unique filename for $theFile. $theDest MUST be a valid directory. Should be absolute.
-	 * @param 	boolean		If set the filename is returned with the path prepended without checking whether it already existed!
-	 * @return 	string		The destination absolute filepath (not just the name!) of a unique filename/foldername in that path.
+	 * @param string The input filename to check
+	 * @param string The directory for which to return a unique filename for $theFile. $theDest MUST be a valid directory. Should be absolute.
+	 * @param bool If set the filename is returned with the path prepended without checking whether it already existed!
+	 * @return string The destination absolute filepath (not just the name!) of a unique filename/foldername in that path.
 	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue()
 	 * @todo Deprecate, but still in use by the Core (DataHandler...)
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
@@ -376,8 +313,8 @@ class BasicFileUtility {
 	 * Checks if $thePath is a path under one of the paths in $this->mounts
 	 * See comment in the header of this class.
 	 *
-	 * @param 	string		$thePath MUST HAVE a trailing '/' in order to match correctly with the mounts
-	 * @return 	string		The key to the first mount found, otherwise nothing is returned.
+	 * @param string $thePath MUST HAVE a trailing '/' in order to match correctly with the mounts
+	 * @return string The key to the first mount found, otherwise nothing is returned.
 	 * @see init()
 	 * @todo: deprecate this function, now done in the Storage object. But still in use by impexp and ElementBrowser
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
@@ -395,7 +332,7 @@ class BasicFileUtility {
 	/**
 	 * Find first web folder (relative to PATH_site.'fileadmin') in filemounts array
 	 *
-	 * @return 	string		The key to the first mount inside PATH_site."fileadmin" found, otherwise nothing is returned.
+	 * @return string The key to the first mount inside PATH_site."fileadmin" found, otherwise nothing is returned.
 	 * @todo: deprecate this function. But still in use by impexp
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */
@@ -410,80 +347,16 @@ class BasicFileUtility {
 		}
 	}
 
-	/**
-	 * Removes filemount part of a path, thus blinding the position.
-	 * Takes a path, $thePath, and removes the part of the path which equals the filemount.
-	 *
-	 * @param 	string		$thePath is a path which MUST be found within one of the internally set filemounts, $this->mounts
-	 * @return 	string		The processed input path
-	 * @deprecated since TYPO3 6.0. No replacement
-	 */
-	public function blindPath($thePath) {
-		// @todo: where and when to use this function?
-		GeneralUtility::logDeprecatedFunction();
-		$k = $this->checkPathAgainstMounts($thePath);
-		if ($k) {
-			$name = '';
-			$name .= '[' . $this->mounts[$k]['name'] . ']: ';
-			$name .= substr($thePath, strlen($this->mounts[$k]['path']));
-			return $name;
-		}
-	}
-
-	/**
-	 * Find temporary folder
-	 * Finds the first $this->tempFN ('_temp_' usually) -folder in the internal array of filemounts, $this->mounts
-	 *
-	 * @return 	string		Returns the path if found, otherwise nothing if error.
-	 * @deprecated since TYPO3 6.0. No replacement
-	 */
-	public function findTempFolder() {
-		// @todo: where and when to use this function?
-		GeneralUtility::logDeprecatedFunction();
-		if ($this->tempFN && is_array($this->mounts)) {
-			foreach ($this->mounts as $k => $val) {
-				$tDir = $val['path'] . $this->tempFN;
-				if (@is_dir($tDir)) {
-					return $tDir;
-				}
-			}
-		}
-	}
-
 	/*********************
 	 *
 	 * Cleaning functions
 	 *
 	 *********************/
 	/**
-	 * Removes all dots, slashes and spaces after a path
-	 *
-	 * @param string $theDir Input string
-	 * @return string Output string
-	 * @deprecated since TYPO3 6.1, will be removed in two versions, use \TYPO3\CMS\Core\Utility\PathUtility::getCanonicalPath() instead
-	 */
-	public function cleanDirectoryName($theDir) {
-		GeneralUtility::logDeprecatedFunction();
-		return PathUtility::getCanonicalPath($theDir);
-	}
-
-	/**
-	 * Converts any double slashes (//) to a single slash (/)
-	 *
-	 * @param 	string		Input value
-	 * @return 	string		Returns the converted string
-	 * @deprecated since TYPO3 6.0, no replacement
-	 */
-	public function rmDoubleSlash($string) {
-		GeneralUtility::logDeprecatedFunction();
-		return str_replace('//', '/', $string);
-	}
-
-	/**
 	 * Returns a string which has a slash '/' appended if it doesn't already have that slash
 	 *
-	 * @param 	string		Input string
-	 * @return 	string		Output string with a slash in the end (if not already there)
+	 * @param string Input string
+	 * @return string Output string with a slash in the end (if not already there)
 	 * @todo Deprecate, but still in use by is_webpath, used by DataHandler
 	 * @deprecated but still in use in the Core. Don't use in your extensions!
 	 */

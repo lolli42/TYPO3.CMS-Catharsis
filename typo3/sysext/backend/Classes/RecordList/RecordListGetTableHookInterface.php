@@ -13,18 +13,18 @@ namespace TYPO3\CMS\Backend\RecordList;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * interface for classes which hook into localRecordList and do additional getTable processing
  *
  * @author Ingo Renner <ingo@typo3.org>
  */
-interface RecordListGetTableHookInterface
-{
+interface RecordListGetTableHookInterface {
 	/**
 	 * modifies the DB list query
 	 *
 	 * @param string $table The current database table
-	 * @param integer $pageId The record's page ID
+	 * @param int $pageId The record's page ID
 	 * @param string $additionalWhereClause An additional WHERE clause
 	 * @param string $selectedFieldsList Comma separated list of selected fields
 	 * @param \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList $parentObject Parent localRecordList object

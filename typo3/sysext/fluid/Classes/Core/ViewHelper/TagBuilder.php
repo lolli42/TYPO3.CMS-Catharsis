@@ -43,7 +43,7 @@ class TagBuilder {
 	 * Specifies whether this tag needs a closing tag.
 	 * E.g. <textarea> cant be self-closing even if its empty
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $forceClosingTag = FALSE;
 
@@ -104,7 +104,7 @@ class TagBuilder {
 	/**
 	 * Returns TRUE if tag contains content, otherwise FALSE
 	 *
-	 * @return boolean TRUE if tag contains text, otherwise FALSE
+	 * @return bool TRUE if tag contains text, otherwise FALSE
 	 * @api
 	 */
 	public function hasContent() {
@@ -118,7 +118,7 @@ class TagBuilder {
 	 * Set this to TRUE to force a closing tag
 	 * E.g. <textarea> cant be self-closing even if its empty
 	 *
-	 * @param boolean $forceClosingTag
+	 * @param bool $forceClosingTag
 	 * @api
 	 */
 	public function forceClosingTag($forceClosingTag) {
@@ -129,7 +129,7 @@ class TagBuilder {
 	 * Returns TRUE if the tag has an attribute with the given name
 	 *
 	 * @param string $attributeName name of the attribute
-	 * @return boolean TRUE if the tag has an attribute with the given name, otherwise FALSE
+	 * @return bool TRUE if the tag has an attribute with the given name, otherwise FALSE
 	 * @api
 	 */
 	public function hasAttribute($attributeName) {
@@ -165,7 +165,7 @@ class TagBuilder {
 	 *
 	 * @param string $attributeName name of the attribute to be added to the tag
 	 * @param string $attributeValue attribute value
-	 * @param boolean $escapeSpecialCharacters apply htmlspecialchars to attribute value
+	 * @param bool $escapeSpecialCharacters apply htmlspecialchars to attribute value
 	 * @return void
 	 * @api
 	 */
@@ -180,7 +180,7 @@ class TagBuilder {
 	 * Adds attributes to the $attributes-collection
 	 *
 	 * @param array $attributes collection of attributes to add. key = attribute name, value = attribute value
-	 * @param boolean $escapeSpecialCharacters apply htmlspecialchars to attribute values#
+	 * @param bool $escapeSpecialCharacters apply htmlspecialchars to attribute values#
 	 * @return void
 	 * @api
 	 */

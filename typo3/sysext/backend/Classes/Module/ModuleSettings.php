@@ -104,8 +104,9 @@ class ModuleSettings {
 	 */
 	public $formName = 'storeControl';
 
-	// Write messages into the devlog?
 	/**
+	 * Write messages into the devlog?
+	 *
 	 * @var int
 	 */
 	public $writeDevLog = 0;
@@ -249,7 +250,7 @@ class ModuleSettings {
 		}
 		$storageArr = array(
 			'title' => $data['title'],
-			'desc' => (string) $data['desc'],
+			'desc' => (string)$data['desc'],
 			'data' => $storageData,
 			'user' => NULL,
 			'tstamp' => $GLOBALS['EXEC_TIME']
@@ -352,7 +353,7 @@ class ModuleSettings {
 	 * Returns the storage control box
 	 *
 	 * @param string $showElements List of elemetns which should be shown: load,remove,save
-	 * @param boolean $useOwnForm If set the box is wrapped with own form tag
+	 * @param bool $useOwnForm If set the box is wrapped with own form tag
 	 * @return string HTML code
 	 */
 	public function getStoreControl($showElements = 'load,remove,save', $useOwnForm = TRUE) {

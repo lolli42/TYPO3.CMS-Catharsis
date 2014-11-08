@@ -323,8 +323,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	/**
 	 * Delete a BE user and redirect to the action by its id
 	 *
-	 * @param integer $userId Id of the BE user
-	 * @param integer $actionId Id of the action
+	 * @param int $userId Id of the BE user
+	 * @param int $actionId Id of the action
 	 * @return void
 	 */
 	protected function deleteUser($userId, $actionId) {
@@ -340,7 +340,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	/**
 	 * Check if a BE user is created by the current user
 	 *
-	 * @param integer $id Id of the BE user
+	 * @param int $id Id of the BE user
 	 * @param array $action sys_action record.
 	 * @return mixed The record of the BE user if found, otherwise FALSE
 	 */
@@ -357,7 +357,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 * Render all users who are created by the current BE user including a link to edit the record
 	 *
 	 * @param array $action sys_action record.
-	 * @param integer $selectedUser Id of a selected user
+	 * @param int $selectedUser Id of a selected user
 	 * @return string html list of users
 	 */
 	protected function getCreatedUsers($action, $selectedUser) {
@@ -388,8 +388,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 *
 	 * @param string $username Username
 	 * @param string $realName Real name of the user
-	 * @param integer $sysActionUid Id of the sys_action record
-	 * @param integer $userId Id of the user
+	 * @param int $sysActionUid Id of the sys_action record
+	 * @param int $userId Id of the user
 	 * @return string html link
 	 */
 	protected function action_linkUserName($username, $realName, $sysActionUid, $userId) {
@@ -413,7 +413,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 *
 	 * @param array $record Current action record
 	 * @param array $vars POST vars
-	 * @return integer Id of the new/updated user
+	 * @return int Id of the new/updated user
 	 */
 	protected function saveNewBackendUser($record, $vars) {
 		// Check if the db mount is a page the current user is allowed to.);
@@ -544,8 +544,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	/**
 	 * Check if a page is inside the rootline the current user can see
 	 *
-	 * @param integer $pageId Id of the the page to be checked
-	 * @return boolean Access to the page
+	 * @param int $pageId Id of the the page to be checked
+	 * @return bool Access to the page
 	 */
 	protected function checkRootline($pageId) {
 		$access = FALSE;
@@ -567,15 +567,13 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	protected function JScode() {
 		$this->t3lib_TCEforms = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FormEngine');
 		$this->t3lib_TCEforms->backPath = $GLOBALS['BACK_PATH'];
-		$js = $this->t3lib_TCEforms->dbFileCon();
-		$this->taskObject->doc->JScodeArray[] = $js;
-		return $js;
+		$this->t3lib_TCEforms->printNeededJSFunctions();
 	}
 
 	/**
 	 * Create a user directory if defined
 	 *
-	 * @param integer $uid Id of the user record
+	 * @param int $uid Id of the user record
 	 * @return void
 	 */
 	protected function action_createDir($uid) {

@@ -146,7 +146,7 @@ class SpellCheckingController {
 	/**
 	 * Main class of Spell Checker plugin for Typo3 CMS
 	 *
-	 * @return 	string		content produced by the plugin
+	 * @return string content produced by the plugin
 	 */
 	public function main() {
 		$this->csConvObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
@@ -289,7 +289,7 @@ class SpellCheckingController {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="' . substr($this->dictionary, 0, 2) . '" lang="' . substr($this->dictionary, 0, 2) . '">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=' . $this->parserCharset . '" />
-<link rel="stylesheet" type="text/css" media="all" href="' . (TYPO3_MODE == 'BE' ? '../' : '') . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath($this->extKey) . '/htmlarea/plugins/SpellChecker/spell-check-style.css" />
+<link rel="stylesheet" type="text/css" media="all" href="' . (TYPO3_MODE == 'BE' ? '../' : '') . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath($this->extKey) . '/Resources/Public/Css/Skin/Plugins/spell-checker-iframe.css" />
 <script type="text/javascript">
 /*<![CDATA[*/
 <!--

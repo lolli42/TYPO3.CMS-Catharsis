@@ -29,9 +29,9 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends \TYPO3\CM
 	/**
 	 * Initialize editor
 	 *
-	 * @param integer $pageId
-	 * @param integer $template_uid
-	 * @return integer
+	 * @param int $pageId
+	 * @param int $template_uid
+	 * @return int
 	 */
 	public function initialize_editor($pageId, $template_uid = 0) {
 		// Initializes the module. Done in this function because we may need to re-initialize if data is submitted!
@@ -83,7 +83,6 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends \TYPO3\CM
 	 * @return string
 	 */
 	public function main() {
-		global $TYPO3_CONF_VARS;
 		global $tmpl, $tplRow, $theConstants;
 		$GLOBALS['LANG']->includeLLFile('EXT:tstemplate/Resources/Private/Language/locallang_ceditor.xlf');
 		$theOutput = '';

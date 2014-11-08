@@ -156,7 +156,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Returns the number of records matching the query.
 	 *
 	 * @param \TYPO3\CMS\Extbase\Persistence\QueryInterface $query
-	 * @return integer
+	 * @return int
 	 * @api
 	 */
 	public function getObjectCountByQuery(\TYPO3\CMS\Extbase\Persistence\QueryInterface $query) {
@@ -240,7 +240,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Checks if the given object has ever been persisted.
 	 *
 	 * @param object $object The object to check
-	 * @return boolean TRUE if the object is new, FALSE if the object exists in the repository
+	 * @return bool TRUE if the object is new, FALSE if the object exists in the repository
 	 */
 	public function isNewObject($object) {
 		return $this->getIdentifierByObject($object) === NULL;
@@ -401,7 +401,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Checks, if the property value is lazy loaded and was not initialized
 	 *
 	 * @param mixed $propertyValue The property value
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function propertyValueIsLazyLoaded($propertyValue) {
 		if ($propertyValue instanceof \TYPO3\CMS\Extbase\Persistence\Generic\LazyLoadingProxy) {
@@ -507,7 +507,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject
 	 * @param string $parentPropertyName
-	 * @param integer $sortingPosition
+	 * @param int $sortingPosition
 	 * @return void
 	 */
 	protected function attachObjectToParentObject(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $parentPropertyName, $sortingPosition = 0) {
@@ -526,7 +526,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\AbstractEntity $parentObject
 	 * @param string $parentPropertyName
-	 * @param integer $sortingPosition
+	 * @param int $sortingPosition
 	 * @return void
 	 */
 	protected function updateRelationOfObjectToParentObject(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, \TYPO3\CMS\Extbase\DomainObject\AbstractEntity $parentObject, $parentPropertyName, $sortingPosition = 0) {
@@ -545,7 +545,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\AbstractEntity $parentObject
 	 * @param string $parentPropertyName
-	 * @param integer $sortingPosition
+	 * @param int $sortingPosition
 	 * @throws \TYPO3\CMS\Extbase\Persistence\Exception\IllegalRelationTypeException
 	 * @return void
 	 */
@@ -687,8 +687,8 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object The related object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject The parent object
 	 * @param string $propertyName The name of the parent object's property where the related objects are stored in
-	 * @param integer $sortingPosition Defaults to NULL
-	 * @return integer The uid of the inserted row
+	 * @param int $sortingPosition Defaults to NULL
+	 * @return int The uid of the inserted row
 	 */
 	protected function insertRelationInRelationtable(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $propertyName, $sortingPosition = NULL) {
 		$dataMap = $this->dataMapper->getDataMap(get_class($parentObject));
@@ -720,7 +720,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object The related object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject The parent object
 	 * @param string $propertyName The name of the parent object's property where the related objects are stored in
-	 * @param integer $sortingPosition Defaults to NULL
+	 * @param int $sortingPosition Defaults to NULL
 	 * @return bool TRUE if update was successfully
 	 */
 	protected function updateRelationInRelationTable(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $propertyName, $sortingPosition = 0) {
@@ -770,7 +770,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $relatedObject The related object
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject The parent object
 	 * @param string $parentPropertyName The name of the parent object's property where the related objects are stored in
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function deleteRelationFromRelationtable(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $relatedObject, \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $parentObject, $parentPropertyName) {
 		$dataMap = $this->dataMapper->getDataMap(get_class($parentObject));
@@ -847,7 +847,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 *
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object The object to be updated
 	 * @param array $row Row to be stored
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function updateObject(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, array $row) {
 		$dataMap = $this->dataMapper->getDataMap(get_class($object));
@@ -943,7 +943,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * Deletes an object
 	 *
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object The object to be removed from the storage
-	 * @param boolean $markAsDeleted Whether to just flag the row deleted (default) or really delete it
+	 * @param bool $markAsDeleted Whether to just flag the row deleted (default) or really delete it
 	 * @return void
 	 */
 	protected function removeEntity(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object, $markAsDeleted = TRUE) {
@@ -1014,7 +1014,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 	 * - If there is no such TypoScript configuration, it uses the first value of The "storagePid" taken for reading records.
 	 *
 	 * @param \TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object
-	 * @return integer the storage Page ID where the object should be stored
+	 * @return int the storage Page ID where the object should be stored
 	 */
 	protected function determineStoragePageIdForNewRecord(\TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface $object = NULL) {
 		$frameworkConfiguration = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);

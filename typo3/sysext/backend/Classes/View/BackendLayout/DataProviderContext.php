@@ -22,7 +22,7 @@ namespace TYPO3\CMS\Backend\View\BackendLayout;
 class DataProviderContext implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
-	 * @var integer
+	 * @var int
 	 */
 	protected $pageId;
 
@@ -47,14 +47,14 @@ class DataProviderContext implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $pageTsConfig;
 
 	/**
-	 * @return integer
+	 * @return int
 	 */
 	public function getPageId() {
 		return $this->pageId;
 	}
 
 	/**
-	 * @param integer $pageId
+	 * @param int $pageId
 	 * @return DataProviderContext
 	 */
 	public function setPageId($pageId) {

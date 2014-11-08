@@ -36,7 +36,7 @@ interface BackendInterface
 	 * @param string $entryIdentifier An identifier for this specific cache entry
 	 * @param string $data The data to be stored
 	 * @param array $tags Tags to associate with this cache entry. If the backend does not support tags, this option can be ignored.
-	 * @param integer $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited lifetime.
+	 * @param int $lifetime Lifetime of this cache entry in seconds. If NULL is specified, the default lifetime is used. "0" means unlimited lifetime.
 	 * @return void
 	 * @throws \TYPO3\CMS\Core\Cache\Exception if no cache frontend has been set.
 	 * @throws \TYPO3\CMS\Core\Cache\Exception\InvalidDataException if the data is not a string
@@ -57,7 +57,7 @@ interface BackendInterface
 	 * Checks if a cache entry with the specified identifier exists.
 	 *
 	 * @param string $entryIdentifier An identifier specifying the cache entry
-	 * @return boolean TRUE if such an entry exists, FALSE if not
+	 * @return bool TRUE if such an entry exists, FALSE if not
 	 * @api
 	 */
 	public function has($entryIdentifier);
@@ -68,7 +68,7 @@ interface BackendInterface
 	 * old entries for the identifier still exist, they are removed as well.
 	 *
 	 * @param string $entryIdentifier Specifies the cache entry to remove
-	 * @return boolean TRUE if (at least) an entry could be removed or FALSE if no entry was found
+	 * @return bool TRUE if (at least) an entry could be removed or FALSE if no entry was found
 	 * @api
 	 */
 	public function remove($entryIdentifier);

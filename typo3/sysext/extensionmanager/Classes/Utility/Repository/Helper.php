@@ -29,19 +29,19 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Type of problem: extension file not existing in file system.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PROBLEM_EXTENSION_FILE_NOT_EXISTING = 1;
 	/**
 	 * Type of problem: wrong hash indicates outdated extension file.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PROBLEM_EXTENSION_HASH_CHANGED = 2;
 	/**
 	 * Type of problem: no version records in database.
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	const PROBLEM_NO_VERSIONS_IN_DATABASE = 4;
 	/**
@@ -212,7 +212,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * server.
 	 *
 	 * @access public
-	 * @param boolean $forcedUpdateFromRemote if boolean TRUE, mirror configuration will always retrieved from remote server
+	 * @param bool $forcedUpdateFromRemote if boolean TRUE, mirror configuration will always retrieved from remote server
 	 * @return \TYPO3\CMS\Extensionmanager\Domain\Model\Mirrors instance of repository mirrors class
 	 */
 	public function getMirrors($forcedUpdateFromRemote = TRUE) {
@@ -235,7 +235,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @access public
 	 * @see Tx_Extensionmanager_Utility_Repository_Helper::PROBLEM_NO_VERSIONS_IN_DATABASE,
 	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
-	 * @return integer "0" if everything is perfect, otherwise bitmask with problems
+	 * @return int "0" if everything is perfect, otherwise bitmask with problems
 	 */
 	public function isExtListUpdateNecessary() {
 		$updateNecessity = 0;
@@ -262,7 +262,7 @@ class Helper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Method updates TYPO3 database with up-to-date
 	 * extension version records.
 	 *
-	 * @return boolean TRUE if the extension list was successfully update, FALSE if no update necessary
+	 * @return bool TRUE if the extension list was successfully update, FALSE if no update necessary
 	 * @see isExtListUpdateNecessary()
 	 */
 	public function updateExtList() {

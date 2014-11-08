@@ -25,27 +25,30 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class NewContentElementController {
 
-	// Internal, static (from GPvars):
-	// Page id
 	/**
+	 * Page id
+	 *
 	 * @var int
 	 */
 	public $id;
 
-	// Sys language
 	/**
+	 * Sys language
+	 *
 	 * @var int
 	 */
 	public $sys_language = 0;
 
-	// Return URL.
 	/**
+	 * Return URL.
+	 *
 	 * @var string
 	 */
 	public $R_URI = '';
 
-	// If set, the content is destined for a specific column.
 	/**
+	 * If set, the content is destined for a specific column.
+	 *
 	 * @var int|null
 	 */
 	public $colPos;
@@ -55,9 +58,9 @@ class NewContentElementController {
 	 */
 	public $uid_pid;
 
-	// Internal, static:
-	// Module TSconfig.
 	/**
+	 * Module TSconfig.
+	 *
 	 * @var array
 	 */
 	public $modTSconfig = array();
@@ -69,27 +72,30 @@ class NewContentElementController {
 	 */
 	public $doc;
 
-	// Internal, dynamic:
-	// Includes a list of files to include between init() and main() - see init()
 	/**
+	 * Includes a list of files to include between init() and main() - see init()
+	 *
 	 * @var array
 	 */
 	public $include_once = array();
 
-	// Used to accumulate the content of the module.
 	/**
+	 * Used to accumulate the content of the module.
+	 *
 	 * @var string
 	 */
 	public $content;
 
-	// Access boolean.
 	/**
+	 * Access boolean.
+	 *
 	 * @var bool
 	 */
 	public $access;
 
-	// config of the wizard
 	/**
+	 * config of the wizard
+	 *
 	 * @var array
 	 */
 	public $config;
@@ -256,11 +262,12 @@ class NewContentElementController {
 				$this->content .= $this->doc->spacer(20);
 				// Select position
 				$code = $GLOBALS['LANG']->getLL('sel2', 1) . '<br /><br />';
+
 				// Load SHARED page-TSconfig settings and retrieve column list from there, if applicable:
-				$modTSconfig_SHARED = BackendUtility::getModTSconfig($this->id, 'mod.SHARED');
-				$colPosList = trim($modTSconfig_SHARED['properties']['colPos_list']) !== '' ? trim($modTSconfig_SHARED['properties']['colPos_list']) : '1,0,2,3';
-				$colPosList = implode(',', array_unique(GeneralUtility::intExplode(',', $colPosList)));
+				$colPosArray = GeneralUtility::callUserFunction('TYPO3\\CMS\\Backend\\View\\BackendLayoutView->getColPosListItemsParsed', $this->id, $this);
+				$colPosIds = array_column($colPosArray, 1);
 				// Removing duplicates, if any
+				$colPosList = implode(',', array_unique(array_map('intval', $colPosIds)));
 				// Finally, add the content of the column selector to the content:
 				$code .= $posMap->printContentElementColumns($this->id, 0, $colPosList, 1, $this->R_URI);
 				$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('2_selectPosition'), $code, 0, 1);
@@ -346,7 +353,7 @@ class NewContentElementController {
 				$showAll = $wizardGroup['show'] === '*';
 				$groupItems = array();
 				if (is_array($appendWizards[$groupKey . '.']['elements.'])) {
-					$wizardElements = array_merge((array) $wizardGroup['elements.'], $appendWizards[$groupKey . '.']['elements.']);
+					$wizardElements = array_merge((array)$wizardGroup['elements.'], $appendWizards[$groupKey . '.']['elements.']);
 				} else {
 					$wizardElements = $wizardGroup['elements.'];
 				}

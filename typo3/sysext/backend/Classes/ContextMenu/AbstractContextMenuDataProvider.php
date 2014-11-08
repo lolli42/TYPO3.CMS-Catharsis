@@ -83,7 +83,7 @@ abstract class AbstractContextMenuDataProvider {
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
 	 * @param string $displayCondition
-	 * @return boolean
+	 * @return bool
 	 */
 	protected function evaluateDisplayCondition(\TYPO3\CMS\Backend\Tree\TreeNode $node, $displayCondition) {
 		if ($displayCondition === '') {
@@ -145,7 +145,7 @@ abstract class AbstractContextMenuDataProvider {
 	 *
 	 * @param array $actions
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
-	 * @param integer $level
+	 * @param int $level
 	 * @return \TYPO3\CMS\Backend\ContextMenu\ContextMenuActionCollection
 	 */
 	protected function getNextContextMenuLevel(array $actions, \TYPO3\CMS\Backend\Tree\TreeNode $node, $level = 0) {

@@ -59,7 +59,7 @@ abstract class AbstractConditionMatcher {
 	/**
 	 * Sets the id of the page to evaluate conditions for.
 	 *
-	 * @param integer $pageId Id of the page (must be positive)
+	 * @param int $pageId Id of the page (must be positive)
 	 * @return void
 	 */
 	public function setPageId($pageId) {
@@ -71,7 +71,7 @@ abstract class AbstractConditionMatcher {
 	/**
 	 * Gets the id of the page to evaluate conditions for.
 	 *
-	 * @return integer Id of the page
+	 * @return int Id of the page
 	 */
 	public function getPageId() {
 		return $this->pageId;
@@ -101,7 +101,7 @@ abstract class AbstractConditionMatcher {
 	/**
 	 * Sets whether to simulate the behaviour and match all conditions.
 	 *
-	 * @param boolean $simulateMatchResult Whether to simulate positive matches
+	 * @param bool $simulateMatchResult Whether to simulate positive matches
 	 * @return void
 	 */
 	public function setSimulateMatchResult($simulateMatchResult) {
@@ -143,7 +143,7 @@ abstract class AbstractConditionMatcher {
 	 * Matches a TypoScript condition expression.
 	 *
 	 * @param string $expression The expression to match
-	 * @return boolean Whether the expression matched
+	 * @return bool Whether the expression matched
 	 */
 	public function match($expression) {
 		// Return directly if result should be simulated:
@@ -196,7 +196,7 @@ abstract class AbstractConditionMatcher {
 	protected function evaluateConditionCommon($key, $value) {
 		if (GeneralUtility::inList('browser,version,system,useragent', strtolower($key))) {
 			GeneralUtility::deprecationLog(
-				'Usage of client related conditions (browser, version, system, useragent) is deprecated since 6.3.'
+				'Usage of client related conditions (browser, version, system, useragent) is deprecated since 7.0.'
 			);
 			$browserInfo = $this->getBrowserInfo(GeneralUtility::getIndpEnv('HTTP_USER_AGENT'));
 		}
@@ -310,10 +310,10 @@ abstract class AbstractConditionMatcher {
 					$value = trim($GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask']);
 				}
 
-				return (bool) GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $value);
+				return (bool)GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $value);
 				break;
 			case 'hostname':
-				return (bool) GeneralUtility::cmpFQDN(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $value);
+				return (bool)GeneralUtility::cmpFQDN(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $value);
 				break;
 			case 'hour':
 
@@ -482,7 +482,7 @@ abstract class AbstractConditionMatcher {
 			$splitAgain = explode('|', $vars[1], 2);
 			$k = trim($splitAgain[0]);
 			if ($k) {
-				switch ((string) trim($vars[0])) {
+				switch ((string)trim($vars[0])) {
 					case 'GP':
 						$value = GeneralUtility::_GP($k);
 						break;
@@ -516,7 +516,7 @@ abstract class AbstractConditionMatcher {
 	 *
 	 * @param string $test The value to compare with on the form [operator][number]. Eg. "< 123
 	 * @param float $leftValue The value on the left side
-	 * @return boolean If $value is "50" and $test is "< 123" then it will return TRUE.
+	 * @return bool If $value is "50" and $test is "< 123" then it will return TRUE.
 	 */
 	protected function compareNumber($test, $leftValue) {
 		if (preg_match('/^(!?=+|<=?|>=?)\\s*([^\\s]*)\\s*$/', $test, $matches)) {
@@ -571,7 +571,7 @@ abstract class AbstractConditionMatcher {
 	 *
 	 * @param string $haystack The string in which to find $needle.
 	 * @param string $needle The string to find in $haystack
-	 * @return boolean Returns TRUE if $needle matches or is found in (according to wildcards) in $haystack. Eg. if $haystack is "Netscape 6.5" and $needle is "Net*" or "Net*ape" then it returns TRUE.
+	 * @return bool Returns TRUE if $needle matches or is found in (according to wildcards) in $haystack. Eg. if $haystack is "Netscape 6.5" and $needle is "Net*" or "Net*ape" then it returns TRUE.
 	 */
 	protected function searchStringWildcard($haystack, $needle) {
 		$result = FALSE;
@@ -649,7 +649,7 @@ abstract class AbstractConditionMatcher {
 	 * Evaluates a TypoScript condition given as input, eg. "[browser=net][...(other conditions)...]"
 	 *
 	 * @param string $string The condition to match against its criterias.
-	 * @return boolean Whether the condition matched
+	 * @return bool Whether the condition matched
 	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::parse()
 	 */
 	abstract protected function evaluateCondition($string);
@@ -678,7 +678,7 @@ abstract class AbstractConditionMatcher {
 	/**
 	 * Determines the current page Id.
 	 *
-	 * @return integer The current page Id
+	 * @return int The current page Id
 	 */
 	abstract protected function determinePageId();
 
@@ -699,14 +699,14 @@ abstract class AbstractConditionMatcher {
 	/**
 	 * Gets the id of the current user.
 	 *
-	 * @return integer The id of the current user
+	 * @return int The id of the current user
 	 */
 	abstract protected function getUserId();
 
 	/**
 	 * Determines if a user is logged in.
 	 *
-	 * @return boolean Determines if a user is logged in
+	 * @return bool Determines if a user is logged in
 	 */
 	abstract protected function isUserLoggedIn();
 

@@ -59,9 +59,9 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 	 *
 	 * @param array $row The record.
 	 * @param string $vv Column position value.
-	 * @param integer $moveUid Move uid
-	 * @param integer $pid PID value.
-	 * @param integer $sys_lang System language
+	 * @param int $moveUid Move uid
+	 * @param int $pid PID value.
+	 * @param int $sys_lang System language
 	 * @return string
 	 */
 	public function onClickInsertRecord($row, $vv, $moveUid, $pid, $sys_lang = 0) {
@@ -72,11 +72,6 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 
 }
 
-/*
- * @deprecated since 6.0, the classname SC_db_new_content_el and this file is obsolete
- * and will be removed with 6.2. The class was renamed and is now located at:
- * typo3/sysext/backend/Classes/Controller/ContentElement/NewContentElementController.php
- */
 require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/Controller/ContentElement/NewContentElementController.php';
 // Make instance:
 $SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\ContentElement\\NewContentElementController');

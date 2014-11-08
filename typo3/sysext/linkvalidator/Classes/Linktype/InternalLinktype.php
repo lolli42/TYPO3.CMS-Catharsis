@@ -52,14 +52,14 @@ class InternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	/**
 	 * Result of the check, if the current page uid is valid or not
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $responsePage = TRUE;
 
 	/**
 	 * Result of the check, if the current content uid is valid or not
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $responseContent = TRUE;
 
@@ -69,7 +69,7 @@ class InternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	 * @param string $url Url to check as page-id or page-id#anchor (if anchor is present)
 	 * @param array $softRefEntry: The soft reference entry which builds the context of that url
 	 * @param \TYPO3\CMS\Linkvalidator\LinkAnalyzer $reference Parent instance
-	 * @return boolean TRUE on success or FALSE on error
+	 * @return bool TRUE on success or FALSE on error
 	 */
 	public function checkLink($url, $softRefEntry, $reference) {
 		$anchor = '';
@@ -113,7 +113,7 @@ class InternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	 * Checks a given page uid for validity
 	 *
 	 * @param string $page Page uid to check
-	 * @return boolean TRUE on success or FALSE on error
+	 * @return bool TRUE on success or FALSE on error
 	 */
 	protected function checkPage($page) {
 		$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid, title, deleted, hidden, starttime, endtime', 'pages', 'uid = ' . (int)$page);
@@ -143,7 +143,7 @@ class InternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 	 *
 	 * @param string $page Uid of the page to which the link is pointing
 	 * @param string $anchor Uid of the content element to check
-	 * @return boolean TRUE on success or FALSE on error
+	 * @return bool TRUE on success or FALSE on error
 	 */
 	protected function checkContent($page, $anchor) {
 		// Get page ID on which the content element in fact is located

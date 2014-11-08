@@ -2516,9 +2516,10 @@ contentCSS
 
    Property
          contentCSS
+         contentCSS.[id-string]
    
    Data type
-         resource
+         resource(s)
    
    Description
          The CSS file that contains the style definitions that should be
@@ -2531,6 +2532,13 @@ contentCSS
          
          For example, this default could be overridden with:
          fileadmin/styles/my\_contentCSS.css
+         
+         Multiple files may be specified by using contentCSS.[id-string].
+         For example: 
+         contentCSS {
+         	file1 = fileadmin/myStylesheet1.css
+         	file2 = fileadmin/myStylesheet2.css
+         }
 
 
 
@@ -2569,13 +2577,46 @@ enableWordClean
          enableWordClean
    
    Data type
+         boolean
+   
+   Description
+         Specifies that text pasted from external sources, presumably from
+         Microsoft Word, should be "cleaned" or not.
+         
+         Default: 0
+         
+         Note:If no HTMLparser configuration is specified, a limited default
+         cleaning operation will be performed. If a HTMLparser specification is
+         specified, parsing will be performed on the server at the time of the
+         paste operation.
+         
+         Note: Additional cleanup may be performed by the user when the
+         removeformat button is enabled.
+         
+         Note: Cleaning on paste cannot be performed in Opera.
+         
+         Note: The same cleaning operation is performed with hotkey CTRL+0,
+         including in Opera.
+
+
+
+.. _enablewordclean_HTMLparser:
+
+enableWordClean.HTMLparser
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container:: table-row
+
+   Property
+         enableWordClean.HTMLparser
+   
+   Data type
          boolean/
          
          ->HTMLparser
    
    Description
-         Specifies that text pasted from external sources, presumably from
-         Microsoft Word, should be "cleaned" or not.
+         HTMLparser specification use by the enableWordClean feature.
          
          Default: 0
          
@@ -2589,14 +2630,6 @@ enableWordClean
          operation. If they are removed, the cursor position will not be
          restored in non-IE browsers after the paste operation, and the cursor
          will then be positionned at the start of the text.
-         
-         Note: Additional cleanup may be performed by the user when the
-         removeformat button is enabled.
-         
-         Note: Cleaning on paste cannot be performed in Opera.
-         
-         Note: The same cleaning operation is performed with hotkey CTRL+0,
-         including in Opera.
 
 
 
@@ -3867,29 +3900,6 @@ buttons.cellproperties.properties.borderStyle.removeItems
          inset, outset
          
          Default: void
-
-
-
-.. _buttons-paste-mozillaallowclipboardurl:
-
-buttons.paste.mozillaAllowClipboardUrl
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. container:: table-row
-
-   Property
-         buttons.paste.mozillaAllowClipboardUrl
-   
-   Data type
-         url
-   
-   Description
-         The full absolute url of the AllowClipboard Helper extension for
-         Mozilla/Firefox. The browser extension is used to allow the RTE to
-         access the clipboard. The url is used to install the extension when
-         required.
-         
-         Default: http://typo3.org/fileadmin/allowclipboardhelper-0.6.xpi
 
 
 

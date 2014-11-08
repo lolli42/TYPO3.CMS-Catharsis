@@ -85,20 +85,19 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 	/**
 	 * Draws the RTE as an iframe
 	 *
-	 * @param 	object		Reference to parent object, which is an instance of the TCEforms.
-	 * @param 	string		The table name
-	 * @param 	string		The field name
-	 * @param 	array		The current row from which field is being rendered
-	 * @param 	array		Array of standard content for rendering form fields from TCEforms. See TCEforms for details on this. Includes for instance the value and the form field name, java script actions and more.
-	 * @param 	array		"special" configuration - what is found at position 4 in the types configuration of a field from record, parsed into an array.
-	 * @param 	array		Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
-	 * @param 	string		Record "type" field value.
-	 * @param 	string		Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
-	 * @param 	integer		PID value of record (true parent page id)
-	 * @return 	string		HTML code for RTE!
+	 * @param object Reference to parent object, which is an instance of the TCEforms.
+	 * @param string The table name
+	 * @param string The field name
+	 * @param array The current row from which field is being rendered
+	 * @param array Array of standard content for rendering form fields from TCEforms. See TCEforms for details on this. Includes for instance the value and the form field name, java script actions and more.
+	 * @param array "special" configuration - what is found at position 4 in the types configuration of a field from record, parsed into an array.
+	 * @param array Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
+	 * @param string Record "type" field value.
+	 * @param string Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
+	 * @param int PID value of record (true parent page id)
+	 * @return string HTML code for RTE!
 	 */
 	public function drawRTE(&$parentObject, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue) {
-		global $TSFE, $TYPO3_CONF_VARS, $TYPO3_DB;
 		$this->TCEform = $parentObject;
 		$this->client = $this->clientInfo();
 		$this->typoVersion = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
@@ -122,7 +121,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		$this->typeVal = $RTEtypeVal;
 		// TCA "type" value for record
 		// RTE configuration
-		$pageTSConfig = $TSFE->getPagesTSconfig();
+		$pageTSConfig = $GLOBALS['TSFE']->getPagesTSconfig();
 		if (is_array($pageTSConfig) && is_array($pageTSConfig['RTE.'])) {
 			$this->RTEsetup = $pageTSConfig['RTE.'];
 		}
@@ -147,51 +146,35 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		 * =======================================
 		 */
 		// Language
-		$TSFE->initLLvars();
-		$this->language = $TSFE->lang;
+		$GLOBALS['TSFE']->initLLvars();
+		$this->language = $GLOBALS['TSFE']->lang;
 		$this->LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile('EXT:' . $this->ID . '/locallang.xml', $this->language);
-		if ($this->language == 'default' || !$this->language) {
+		if ($this->language === 'default' || !$this->language) {
 			$this->language = 'en';
 		}
+		$this->contentISOLanguage = $GLOBALS['TSFE']->sys_language_isocode ?: 'en';
 		$this->contentLanguageUid = max($row['sys_language_uid'], 0);
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {
-			if ($this->contentLanguageUid) {
-				$tableA = 'sys_language';
-				$tableB = 'static_languages';
-				$languagesUidsList = $this->contentLanguageUid;
-				$selectFields = $tableA . '.uid,' . $tableB . '.lg_iso_2,' . $tableB . '.lg_country_iso_2,' . $tableB . '.lg_typo3';
-				$tableAB = $tableA . ' LEFT JOIN ' . $tableB . ' ON ' . $tableA . '.static_lang_isocode=' . $tableB . '.uid';
-				$whereClause = $tableA . '.uid IN (' . $languagesUidsList . ') ';
-				$whereClause .= \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($tableA);
-				$whereClause .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableA);
-				$res = $TYPO3_DB->exec_SELECTquery($selectFields, $tableAB, $whereClause);
-				while ($languageRow = $TYPO3_DB->sql_fetch_assoc($res)) {
-					$this->contentISOLanguage = strtolower(trim($languageRow['lg_iso_2']) . (trim($languageRow['lg_country_iso_2']) ? '_' . trim($languageRow['lg_country_iso_2']) : ''));
-					$this->contentTypo3Language = strtolower(trim($languageRow['lg_typo3']));
-				}
-			} else {
-				$this->contentISOLanguage = $GLOBALS['TSFE']->sys_language_isocode ?: 'en';
-				$selectFields = 'lg_iso_2, lg_typo3';
-				$tableAB = 'static_languages';
-				$whereClause = 'lg_iso_2 = ' . $TYPO3_DB->fullQuoteStr(strtoupper($this->contentISOLanguage), $tableAB);
-				$res = $TYPO3_DB->exec_SELECTquery($selectFields, $tableAB, $whereClause);
-				while ($languageRow = $TYPO3_DB->sql_fetch_assoc($res)) {
-					$this->contentTypo3Language = strtolower(trim($languageRow['lg_typo3']));
-				}
+		if ($this->contentLanguageUid && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {
+			$tableA = 'sys_language';
+			$tableB = 'static_languages';
+			$selectFields = $tableA . '.uid,' . $tableB . '.lg_iso_2,' . $tableB . '.lg_country_iso_2';
+			$tableAB = $tableA . ' LEFT JOIN ' . $tableB . ' ON ' . $tableA . '.static_lang_isocode=' . $tableB . '.uid';
+			$whereClause = $tableA . '.uid = ' . intval($this->contentLanguageUid);
+			$whereClause .= \TYPO3\CMS\Backend\Utility\BackendUtility::BEenableFields($tableA);
+			$whereClause .= \TYPO3\CMS\Backend\Utility\BackendUtility::deleteClause($tableA);
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($selectFields, $tableAB, $whereClause);
+			while ($languageRow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+				$this->contentISOLanguage = strtolower(trim($languageRow['lg_iso_2']) . (trim($languageRow['lg_country_iso_2']) ? '_' . trim($languageRow['lg_country_iso_2']) : ''));
 			}
 		}
-		$this->contentISOLanguage = $this->contentISOLanguage ?: ($GLOBALS['TSFE']->sys_language_isocode ?: 'en');
-		$this->contentTypo3Language = $this->contentTypo3Language ?: $GLOBALS['TSFE']->lang;
-		if ($this->contentTypo3Language == 'default') {
-			$this->contentTypo3Language = 'en';
-		}
+		$this->contentTypo3Language = $this->contentISOLanguage;
 		// Character set
-		$this->charset = $TSFE->renderCharset;
-		$this->OutputCharset = $TSFE->metaCharset ?: $TSFE->renderCharset;
+		$this->charset = $GLOBALS['TSFE']->renderCharset;
+		$this->OutputCharset = $GLOBALS['TSFE']->metaCharset ?: $GLOBALS['TSFE']->renderCharset;
 		// Set the charset of the content
-		$this->contentCharset = $TSFE->csConvObj->charSetArray[$this->contentTypo3Language];
+		$this->contentCharset = $GLOBALS['TSFE']->csConvObj->charSetArray[$this->contentTypo3Language];
 		$this->contentCharset = $this->contentCharset ?: 'utf-8';
-		$this->contentCharset = trim($TSFE->config['config']['metaCharset']) ?: $this->contentCharset;
+		$this->contentCharset = trim($GLOBALS['TSFE']->config['config']['metaCharset']) ?: $this->contentCharset;
 		/* =======================================
 		 * TOOLBAR CONFIGURATION
 		 * =======================================
@@ -260,7 +243,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		}
 		// draw the textarea
 		$item = $this->triggerField($PA['itemFormElName']) . '
-			<div id="pleasewait' . $textAreaId . '" class="pleasewait" style="display: block;" >' . $TSFE->csConvObj->conv($TSFE->getLLL('Please wait', $this->LOCAL_LANG), $this->charset, $TSFE->renderCharset) . '</div>
+			<div id="pleasewait' . $textAreaId . '" class="pleasewait" style="display: block;" >' . $GLOBALS['TSFE']->csConvObj->conv($GLOBALS['TSFE']->getLLL('Please wait', $this->LOCAL_LANG), $this->charset, $GLOBALS['TSFE']->renderCharset) . '</div>
 			<div id="editorWrap' . $textAreaId . '" class="editorWrap" style="visibility: hidden; ' . htmlspecialchars($this->RTEWrapStyle) . '">
 			<textarea id="RTEarea' . $textAreaId . '" name="' . htmlspecialchars($PA['itemFormElName']) . '" rows="0" cols="0" style="' . htmlspecialchars($this->RTEdivStyle) . '">' . \TYPO3\CMS\Core\Utility\GeneralUtility::formatForTextarea($value) . '</textarea>
 			</div>' . LF;
@@ -270,11 +253,11 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 	/**
 	 * Add style sheet file to document header
 	 *
-	 * @param 	string		$key: some key identifying the style sheet
-	 * @param 	string		$href: uri to the style sheet file
-	 * @param 	string		$title: value for the title attribute of the link element
-	 * @param 	string		$relation: value for the rel attribute of the link element
-	 * @return 	void
+	 * @param string $key: some key identifying the style sheet
+	 * @param string $href: uri to the style sheet file
+	 * @param string $title: value for the title attribute of the link element
+	 * @param string $relation: value for the rel attribute of the link element
+	 * @return void
 	 */
 	protected function addStyleSheet($key, $href, $title = '', $relation = 'stylesheet') {
 		$this->pageRenderer->addCssFile($href, $relation, 'screen', $title);
@@ -284,10 +267,10 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 	 * Return the JS-Code for copy the HTML-Code from the editor in the hidden input field.
 	 * This is for submit function from the form.
 	 *
-	 * @param 	integer		$RTEcounter: The index number of the RTE editing area.
-	 * @param 	string		$form: the name of the form
-	 * @param 	string		$textareaId: the id of the textarea
-	 * @return 	string		the JS-Code
+	 * @param int $RTEcounter: The index number of the RTE editing area.
+	 * @param string $form: the name of the form
+	 * @param string $textareaId: the id of the textarea
+	 * @return string the JS-Code
 	 */
 	public function setSaveRTE($RTEcounter, $form, $textareaId) {
 		return '
@@ -317,8 +300,8 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 	/**
 	 * Wrap input string in CDATA enclosure
 	 *
-	 * @param 	string		$string: input to be wrapped
-	 * @return 	string		wrapped string
+	 * @param string $string: input to be wrapped
+	 * @return string wrapped string
 	 */
 	public function wrapCDATA($string) {
 		return implode(LF, array(

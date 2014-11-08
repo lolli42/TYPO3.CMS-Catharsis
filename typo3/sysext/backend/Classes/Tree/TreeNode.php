@@ -93,7 +93,7 @@ class TreeNode implements \TYPO3\CMS\Backend\Tree\ComparableNodeInterface, \Seri
 	/**
 	 * Returns TRUE if the node has child nodes attached
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasChildNodes() {
 		if ($this->childNodes !== NULL) {
@@ -144,7 +144,7 @@ class TreeNode implements \TYPO3\CMS\Backend\Tree\ComparableNodeInterface, \Seri
 	 * Compares a node if it's identical to another node by the id property.
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $other
-	 * @return boolean
+	 * @return bool
 	 */
 	public function equals(\TYPO3\CMS\Backend\Tree\TreeNode $other) {
 		return $this->id == $other->getId();
@@ -159,7 +159,7 @@ class TreeNode implements \TYPO3\CMS\Backend\Tree\ComparableNodeInterface, \Seri
 	 * 0 if its equal
 	 *
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $other
-	 * @return integer See description above
+	 * @return int See description above
 	 */
 	public function compareTo($other) {
 		if ($this->equals($other)) {
@@ -171,7 +171,7 @@ class TreeNode implements \TYPO3\CMS\Backend\Tree\ComparableNodeInterface, \Seri
 	/**
 	 * Returns the node in an array representation that can be used for serialization
 	 *
-	 * @param boolean $addChildNodes
+	 * @param bool $addChildNodes
 	 * @return array
 	 */
 	public function toArray($addChildNodes = TRUE) {

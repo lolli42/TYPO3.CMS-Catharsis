@@ -39,14 +39,14 @@ class ClassSchema {
 	/**
 	 * Model type of the class this schema is referring to
 	 *
-	 * @var integer
+	 * @var int
 	 */
 	protected $modelType = self::MODELTYPE_ENTITY;
 
 	/**
 	 * Whether a repository exists for the class this schema is referring to
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected $aggregateRoot = FALSE;
 
@@ -94,7 +94,7 @@ class ClassSchema {
 	 *
 	 * @param string $name Name of the property
 	 * @param string $type Type of the property
-	 * @param boolean $lazy Whether the property should be lazy-loaded when reconstituting
+	 * @param bool $lazy Whether the property should be lazy-loaded when reconstituting
 	 * @param string $cascade Strategy to cascade the object graph.
 	 * @return void
 	 */
@@ -131,7 +131,7 @@ class ClassSchema {
 	/**
 	 * Sets the model type of the class this schema is referring to.
 	 *
-	 * @param integer $modelType The model type, one of the MODELTYPE_* constants.
+	 * @param int $modelType The model type, one of the MODELTYPE_* constants.
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 */
@@ -145,7 +145,7 @@ class ClassSchema {
 	/**
 	 * Returns the model type of the class this schema is referring to.
 	 *
-	 * @return integer The model type, one of the MODELTYPE_* constants.
+	 * @return int The model type, one of the MODELTYPE_* constants.
 	 */
 	public function getModelType() {
 		return $this->modelType;
@@ -155,7 +155,7 @@ class ClassSchema {
 	 * Marks the class if it is root of an aggregate and therefore accessible
 	 * through a repository - or not.
 	 *
-	 * @param boolean $isRoot TRUE if it is the root of an aggregate
+	 * @param bool $isRoot TRUE if it is the root of an aggregate
 	 * @return void
 	 */
 	public function setAggregateRoot($isRoot) {
@@ -166,7 +166,7 @@ class ClassSchema {
 	 * Whether the class is an aggregate root and therefore accessible through
 	 * a repository.
 	 *
-	 * @return boolean TRUE if it is managed
+	 * @return bool TRUE if it is managed
 	 */
 	public function isAggregateRoot() {
 		return $this->aggregateRoot;
@@ -176,7 +176,7 @@ class ClassSchema {
 	 * If the class schema has a certain property.
 	 *
 	 * @param string $propertyName Name of the property
-	 * @return boolean
+	 * @return bool
 	 */
 	public function hasProperty($propertyName) {
 		return array_key_exists($propertyName, $this->properties);

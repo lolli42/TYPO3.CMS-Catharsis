@@ -201,7 +201,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider normalizeMonthAndWeekdayFieldValidDataProvider
 	 * @param string $expression Cron command partial expression for month and weekday fields
-	 * @param boolean $isMonthField Flag to designate month field or not
+	 * @param bool $isMonthField Flag to designate month field or not
 	 * @param string $expected Expected result (normalized months or weekdays)
 	 */
 	public function normalizeMonthAndWeekdayFieldReturnsNormalizedListForValidExpression($expression, $isMonthField, $expected) {
@@ -229,7 +229,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider normalizeMonthAndWeekdayFieldInvalidDataProvider
 	 * @expectedException \InvalidArgumentException
 	 * @param string $expression Cron command partial expression for month and weekday fields (invalid)
-	 * @param boolean $isMonthField Flag to designate month field or not
+	 * @param bool $isMonthField Flag to designate month field or not
 	 */
 	public function normalizeMonthAndWeekdayFieldThrowsExceptionForInvalidExpression($expression, $isMonthField) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();
@@ -292,8 +292,8 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider normalizeIntegerFieldInvalidDataProvider
 	 * @expectedException \InvalidArgumentException
 	 * @param string $expression Cron command partial integer expression (invalid)
-	 * @param integer $lowerBound Lower limit
-	 * @param integer $upperBound Upper limit
+	 * @param int $lowerBound Lower limit
+	 * @param int $upperBound Upper limit
 	 */
 	public function normalizeIntegerFieldThrowsExceptionForInvalidExpressions($expression, $lowerBound, $upperBound) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();
@@ -502,7 +502,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider validMonthNamesDataProvider
 	 * @param string $monthName Month name
-	 * @param integer $expectedInteger Number of the month
+	 * @param int $expectedInteger Number of the month
 	 */
 	public function normalizeMonthConvertsName($monthName, $expectedInteger) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();
@@ -514,7 +514,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider validMonthNamesDataProvider
 	 * @param string $monthName Month name
-	 * @param integer $expectedInteger Number of the month (not used)
+	 * @param int $expectedInteger Number of the month (not used)
 	 */
 	public function normalizeMonthReturnsInteger($monthName, $expectedInteger) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();
@@ -598,7 +598,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider validWeekdayDataProvider
 	 * @param string $weekday Weekday expression
-	 * @param integer $expectedInteger Number of weekday
+	 * @param int $expectedInteger Number of weekday
 	 */
 	public function normalizeWeekdayConvertsName($weekday, $expectedInteger) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();
@@ -610,7 +610,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider validWeekdayDataProvider
 	 * @param string $weekday Weekday expression
-	 * @param integer $expectedInteger Number of weekday (not used)
+	 * @param int $expectedInteger Number of weekday (not used)
 	 */
 	public function normalizeWeekdayReturnsInteger($weekday, $expectedInteger) {
 		$accessibleProxyClassName = $this->getAccessibleProxy();

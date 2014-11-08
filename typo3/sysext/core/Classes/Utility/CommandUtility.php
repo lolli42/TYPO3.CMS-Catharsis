@@ -49,7 +49,7 @@ class CommandUtility {
 	/**
 	 * Tells if object is already initialized
 	 *
-	 * @var boolean
+	 * @var bool
 	 */
 	protected static $initialized = FALSE;
 
@@ -78,7 +78,7 @@ class CommandUtility {
 	 * @static
 	 * @param string $command
 	 * @param NULL|array $output
-	 * @param integer $returnValue
+	 * @param int $returnValue
 	 * @return NULL|array
 	 */
 	static public function exec($command, &$output = NULL, &$returnValue = 0) {
@@ -101,7 +101,7 @@ class CommandUtility {
 		if (!$path) {
 			$path = $gfxConf['im_path'];
 		}
-		$path = \TYPO3\CMS\Core\Utility\GeneralUtility::fixWindowsFilePath($path);
+		$path = GeneralUtility::fixWindowsFilePath($path);
 		$im_version = strtolower($gfxConf['im_version_5']);
 		// This is only used internally, has no effect outside
 		if ($command === 'combine') {
@@ -132,7 +132,7 @@ class CommandUtility {
 		// Because of some weird incompatibilities between ImageMagick 4 and 6 (plus GraphicsMagick),
 		// it is needed to change the parameters order under some preconditions
 		if ($command == 'composite' && $switchCompositeParameters) {
-			$paramsArr = \TYPO3\CMS\Core\Utility\GeneralUtility::unQuoteFilenames($parameters);
+			$paramsArr = GeneralUtility::unQuoteFilenames($parameters);
 			// The mask image has been specified => swap the parameters
 			if (count($paramsArr) > 5) {
 				$tmp = $paramsArr[count($paramsArr) - 3];
@@ -149,7 +149,7 @@ class CommandUtility {
 	 *
 	 * @param string $cmd The command that should be executed. eg: "convert"
 	 * @param string $handler Executer for the command. eg: "perl"
-	 * @return boolean FALSE if cmd is not found, or -1 if the handler is not found
+	 * @return bool FALSE if cmd is not found, or -1 if the handler is not found
 	 */
 	public static function checkCommand($cmd, $handler = '') {
 		if (!self::init()) {
@@ -259,7 +259,7 @@ class CommandUtility {
 	/**
 	 * Returns an array of search paths
 	 *
-	 * @param boolean $addInvalid If set the array contains invalid path too. Then the key is the path and the value is empty
+	 * @param bool $addInvalid If set the array contains invalid path too. Then the key is the path and the value is empty
 	 * @return array Array of search paths (empty if exec is disabled)
 	 */
 	public static function getPaths($addInvalid = FALSE) {
@@ -282,7 +282,7 @@ class CommandUtility {
 	/**
 	 * Initializes this class
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
 	protected static function init() {
 		if ($GLOBALS['TYPO3_CONF_VARS']['BE']['disable_exec_function']) {
