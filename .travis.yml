@@ -22,8 +22,8 @@ notifications:
     on_failure: change
 
 before_script:
-  - if [ -e ~/.phpenv/versions/$(phpenv version-name) ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
-  - if [ -e ~/.phpenv/versions/$(phpenv version-name) ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - sudo apt-get install parallel
   - composer self-update
   - composer install
