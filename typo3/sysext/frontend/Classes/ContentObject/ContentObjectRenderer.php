@@ -34,6 +34,9 @@ use TYPO3\CMS\Frontend\ContentObject\Exception\ExceptionHandlerInterface;
  */
 class ContentObjectRenderer {
 
+	/**
+	 * @var array
+	 */
 	public $align = array(
 		'center',
 		'right',
@@ -262,6 +265,7 @@ class ContentObjectRenderer {
 	/**
 	 * Holds ImageMagick parameters and extensions used for compression
 	 *
+	 * @var array
 	 * @see IMGTEXT()
 	 */
 	public $image_compression = array(
@@ -358,6 +362,7 @@ class ContentObjectRenderer {
 	/**
 	 * ImageMagick parameters for image effects
 	 *
+	 * @var array
 	 * @see IMGTEXT()
 	 */
 	public $image_effects = array(
@@ -378,78 +383,154 @@ class ContentObjectRenderer {
 	 * If the instance of this class is used to render records from the database those records are found in this array.
 	 * The function stdWrap has TypoScript properties that fetch field-data from this array.
 	 *
+	 * @var array
 	 * @see init()
 	 */
 	public $data = array();
 
+	/**
+	 * @var string
+	 */
 	protected $table = '';
 
-	// Used for backup...
+	/**
+	 * Used for backup...
+	 *
+	 * @var array
+	 */
 	public $oldData = array();
 
-	// If this is set with an array before stdWrap, it's used instead of $this->data in the data-property in stdWrap
+	/**
+	 * If this is set with an array before stdWrap, it's used instead of $this->data in the data-property in stdWrap
+	 *
+	 * @var string
+	 */
 	public $alternativeData = '';
 
-	// Used by the parseFunc function and is loaded with tag-parameters when parsing tags.
+	/**
+	 * Used by the parseFunc function and is loaded with tag-parameters when parsing tags.
+	 *
+	 * @var array
+	 */
 	public $parameters = array();
 
+	/**
+	 * @var string
+	 */
 	public $currentValKey = 'currentValue_kidjls9dksoje';
 
-	// This is set to the [table]:[uid] of the record delivered in the $data-array, if the cObjects CONTENT or RECORD is in operation.
-	// Note that $GLOBALS['TSFE']->currentRecord is set to an equal value but always indicating the latest record rendered.
+	/**
+	 * This is set to the [table]:[uid] of the record delivered in the $data-array, if the cObjects CONTENT or RECORD is in operation.
+	 * Note that $GLOBALS['TSFE']->currentRecord is set to an equal value but always indicating the latest record rendered.
+	 *
+	 * @var string
+	 */
 	public $currentRecord = '';
 
-	// Set in cObj->RECORDS and cObj->CONTENT to the current number of records selected in a query.
+	/**
+	 * Set in cObj->RECORDS and cObj->CONTENT to the current number of records selected in a query.
+	 *
+	 * @var int
+	 */
 	public $currentRecordTotal = 0;
 
-	// Incremented in cObj->RECORDS and cObj->CONTENT before each record rendering.
+	/**
+	 * Incremented in cObj->RECORDS and cObj->CONTENT before each record rendering.
+	 *
+	 * @var int
+	 */
 	public $currentRecordNumber = 0;
 
-	// Incremented in parent cObj->RECORDS and cObj->CONTENT before each record rendering.
+	/**
+	 * Incremented in parent cObj->RECORDS and cObj->CONTENT before each record rendering.
+	 *
+	 * @var int
+	 */
 	public $parentRecordNumber = 0;
 
-	// If the ContentObjectRender was started from CONTENT, RECORD or SEARCHRESULT cObject's this array has two keys, 'data' and 'currentRecord' which indicates the record and data for the parent cObj.
+	/**
+	 * If the ContentObjectRender was started from CONTENT, RECORD or SEARCHRESULT cObject's this array has two keys, 'data' and 'currentRecord' which indicates the record and data for the parent cObj.
+	 *
+	 * @var array
+	 */
 	public $parentRecord = array();
 
-	// This may be set as a reference to the calling object of eg. cObjGetSingle. Anyway, just use it as you like. It's used in productsLib.inc for example.
-	public $regObj;
-
-	// internal
-	// Is set to 1 if the instance of this cObj is executed from a *_INT plugin (see pagegen, bottom of document)
+	/**
+	 * Is set to 1 if the instance of this cObj is executed from a *_INT plugin (see pagegen, bottom of document)
+	 *
+	 * @var bool
+	 */
 	public $INT_include = 0;
 
-	// This is used by checkPid, that checks if pages are accessible. The $checkPid_cache['page_uid'] is set TRUE or FALSE upon this check featuring a caching function for the next request.
+	/**
+	 * This is used by checkPid, that checks if pages are accessible. The $checkPid_cache['page_uid'] is set TRUE or FALSE upon this check featuring a caching function for the next request.
+	 *
+	 * @var array
+	 */
 	public $checkPid_cache = array();
 
+	/**
+	 * @var string
+	 */
 	public $checkPid_badDoktypeList = '255';
 
-	// This will be set by typoLink() to the url of the most recent link created.
+	/**
+	 * This will be set by typoLink() to the url of the most recent link created.
+	 *
+	 * @var string
+	 */
 	public $lastTypoLinkUrl = '';
 
-	// DO. link target.
+	/**
+	 * DO. link target.
+	 *
+	 * @var string
+	 */
 	public $lastTypoLinkTarget = '';
 
+	/**
+	 * @var array
+	 */
 	public $lastTypoLinkLD = array();
 
-	// Caching substituteMarkerArrayCached function
+	/**
+	 * Caching substituteMarkerArrayCached function
+	 *
+	 * @var array
+	 */
 	public $substMarkerCache = array();
 
-	// array that registers rendered content elements (or any table) to make sure they are not rendered recursively!
+	/**
+	 * array that registers rendered content elements (or any table) to make sure they are not rendered recursively!
+	 *
+	 * @var array
+	 */
 	public $recordRegister = array();
 
-	// Containing hooks for userdefined cObjects
 	/**
 	 * Additionally registered content object types and class names
+	 *
 	 * @var array
 	 */
 	protected $cObjHookObjectsRegistry = array();
 
+	/**
+	 * @var array
+	 */
 	public $cObjHookObjectsArr = array();
 
-	// Containing hook objects for stdWrap
+	/**
+	 * Containing hook objects for stdWrap
+	 *
+	 * @var array
+	 */
 	protected $stdWrapHookObjects = array();
 
-	// Containing hook objects for getImgResource
+	/**
+	 * Containing hook objects for getImgResource
+	 *
+	 * @var array
+	 */
 	protected $getImgResourceHookObjects;
 
 	/**
@@ -667,7 +748,7 @@ class ContentObjectRenderer {
 			// Checking if the COBJ is a reference to another object. (eg. name of 'blabla.blabla = < styles.something')
 			if ($name[0] === '<') {
 				$key = trim(substr($name, 1));
-				$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+				$cF = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 				// $name and $conf is loaded with the referenced values.
 				$confOverride = is_array($conf) ? $conf : array();
 				list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
@@ -2163,7 +2244,7 @@ class ContentObjectRenderer {
 	public function stdWrap_cacheRead($content = '', $conf = array()) {
 		if (!empty($conf['cache.']['key'])) {
 			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash');
+			$cacheFrontend = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_hash');
 			if ($cacheFrontend && $cacheFrontend->has($conf['cache.']['key'])) {
 				$content = $cacheFrontend->get($conf['cache.']['key']);
 				$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
@@ -3309,7 +3390,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_offsetWrap($content = '', $conf = array()) {
-		$controlTable = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\OffsetTableContentObject');
+		$controlTable = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\OffsetTableContentObject::class);
 		if ($conf['offsetWrap.']['tableParams'] || $conf['offsetWrap.']['tableParams.']) {
 			$controlTable->tableParams = isset($conf['offsetWrap.']['tableParams.']) ? $this->stdWrap($conf['offsetWrap.']['tableParams'], $conf['offsetWrap.']['tableParams.']) : $conf['offsetWrap.']['tableParams'];
 		}
@@ -3415,7 +3496,7 @@ class ContentObjectRenderer {
 	public function stdWrap_cacheStore($content = '', $conf = array()) {
 		if (!empty($conf['cache.']['key'])) {
 			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash');
+			$cacheFrontend = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_hash');
 			if ($cacheFrontend) {
 				$tags = !empty($conf['cache.']['tags']) ? GeneralUtility::trimExplode(',', $conf['cache.']['tags']) : array();
 				if (strtolower($conf['cache.']['lifetime']) == 'unlimited') {
@@ -3745,7 +3826,7 @@ class ContentObjectRenderer {
 	 * @see stdWrap(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLparserConfig(), \TYPO3\CMS\Core\Html\HtmlParser::HTMLcleaner()
 	 */
 	public function HTMLparser_TSbridge($theValue, $conf) {
-		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
 		$htmlParserCfg = $htmlParser->HTMLparserConfig($conf);
 		return $htmlParser->HTMLcleaner($theValue, $htmlParserCfg[0], $htmlParserCfg[1], $htmlParserCfg[2], $htmlParserCfg[3]);
 	}
@@ -4649,7 +4730,7 @@ class ContentObjectRenderer {
 		// Process:
 		if ((string)$conf['externalBlocks'] !== '') {
 			$tags = strtolower(implode(',', GeneralUtility::trimExplode(',', $conf['externalBlocks'])));
-			$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+			$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
 			$parts = $htmlParser->splitIntoBlock($tags, $theValue);
 			foreach ($parts as $k => $v) {
 				if ($k % 2) {
@@ -5196,7 +5277,7 @@ class ContentObjectRenderer {
 		$imageResource = NULL;
 		if ($file === 'GIFBUILDER') {
 			/** @var GifBuilder $gifCreator */
-			$gifCreator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
+			$gifCreator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Imaging\GifBuilder::class);
 			$gifCreator->init();
 			$theImage = '';
 			if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib']) {
@@ -5236,7 +5317,7 @@ class ContentObjectRenderer {
 					}
 				} catch (\TYPO3\CMS\Core\Resource\Exception $exception) {
 					/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-					$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
+					$logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
 					$logger->warning('The image "' . $file . '" could not be found and won\'t be included in frontend output');
 					return NULL;
 				}
@@ -5304,7 +5385,7 @@ class ContentObjectRenderer {
 		if (!isset($imageResource)) {
 			$theImage = $GLOBALS['TSFE']->tmpl->getFileName($file);
 			if ($theImage) {
-				$gifCreator = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
+				$gifCreator = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Imaging\GifBuilder::class);
 				/** @var $gifCreator GifBuilder */
 				$gifCreator->init();
 				$info = $gifCreator->imageMagickConvert($theImage, 'WEB');
@@ -5512,14 +5593,14 @@ class ContentObjectRenderer {
 				$fileObject = $this->getCurrentFile();
 			} elseif (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($fileUidOrCurrentKeyword)) {
 				/** @var \TYPO3\CMS\Core\Resource\ResourceFactory $fileFactory */
-				$fileFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+				$fileFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
 				$fileObject = $fileFactory->getFileObject($fileUidOrCurrentKeyword);
 			} else {
 				$fileObject = NULL;
 			}
 		} catch (\TYPO3\CMS\Core\Resource\Exception $exception) {
 			/** @var \TYPO3\CMS\Core\Log\Logger $logger */
-			$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
+			$logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
 			$logger->warning('The file "' . $fileUidOrCurrentKeyword . '" could not be found and won\'t be included in frontend output');
 			$fileObject = NULL;
 		}
@@ -6070,7 +6151,7 @@ class ContentObjectRenderer {
 							$params = $GLOBALS['TSFE']->linkVars . $addQueryParams;
 							if (trim($params, '& ') != '') {
 								/** @var $cacheHash \TYPO3\CMS\Frontend\Page\CacheHashCalculator */
-								$cacheHash = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\CacheHashCalculator');
+								$cacheHash = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
 								$cHash = $cacheHash->generateForParameters($params);
 								$addQueryParams .= $cHash ? '&cHash=' . $cHash : '';
 							}
@@ -6807,7 +6888,7 @@ class ContentObjectRenderer {
 	public function sendNotifyEmail($message, $recipients, $cc, $senderAddress, $senderName = '', $replyTo = '') {
 		$result = FALSE;
 		/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-		$mail = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+		$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 		$senderName = trim($senderName);
 		$senderAddress = trim($senderAddress);
 		if ($senderName !== '' && $senderAddress !== '') {
@@ -6838,7 +6919,7 @@ class ContentObjectRenderer {
 			$parsedCc = \TYPO3\CMS\Core\Utility\MailUtility::parseAddresses($cc);
 			if (count($parsedCc) > 0) {
 				/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-				$mail = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+				$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 				if (count($parsedReplyTo) > 0) {
 					$mail->setReplyTo($parsedReplyTo);
 				}
@@ -6898,7 +6979,7 @@ class ContentObjectRenderer {
 	public function mergeTSRef($confArr, $prop) {
 		if ($confArr[$prop][0] === '<') {
 			$key = trim(substr($confArr[$prop], 1));
-			$cF = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+			$cF = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 			// $name and $conf is loaded with the referenced values.
 			$old_conf = $confArr[$prop . '.'];
 			list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
@@ -6985,42 +7066,6 @@ class ContentObjectRenderer {
 			$c++;
 		}
 		return $lineArr;
-	}
-
-	/**
-	 * Returns a JavaScript <script> section with some function calls to JavaScript functions from "typo3/js/jsfunc.updateform.js" (which is also included by setting a reference in $GLOBALS['TSFE']->additionalHeaderData['JSincludeFormupdate'])
-	 * The JavaScript codes simply transfers content into form fields of a form which is probably used for editing information by frontend users. Used by fe_adminLib.inc.
-	 *
-	 * @param array $dataArray Data array which values to load into the form fields from $formName (only field names found in $fieldList)
-	 * @param string $formName The form name
-	 * @param string $arrPrefix A prefix for the data array
-	 * @param string $fieldList The list of fields which are loaded
-	 * @return string
-	 * @access private
-	 * @see user_feAdmin::displayCreateScreen()
-	 */
-	public function getUpdateJS($dataArray, $formName, $arrPrefix, $fieldList) {
-		$JSPart = '';
-		$updateValues = GeneralUtility::trimExplode(',', $fieldList);
-		foreach ($updateValues as $fKey) {
-			$value = $dataArray[$fKey];
-			if (is_array($value)) {
-				foreach ($value as $Nvalue) {
-					$JSPart .= '
-	updateForm(\'' . $formName . '\',\'' . $arrPrefix . '[' . $fKey . '][]\',' . GeneralUtility::quoteJSvalue($Nvalue, TRUE) . ');';
-				}
-			} else {
-				$JSPart .= '
-	updateForm(\'' . $formName . '\',\'' . $arrPrefix . '[' . $fKey . ']\',' . GeneralUtility::quoteJSvalue($value, TRUE) . ');';
-			}
-		}
-		$JSPart = '<script type="text/javascript">
-	/*<![CDATA[*/ ' . $JSPart . '
-	/*]]>*/
-</script>
-';
-		$GLOBALS['TSFE']->additionalHeaderData['JSincludeFormupdate'] = '<script type="text/javascript" src="' . GeneralUtility::createVersionNumberedFilename(($GLOBALS['TSFE']->absRefPrefix . 'typo3/js/jsfunc.updateform.js')) . '"></script>';
-		return $JSPart;
 	}
 
 	/**

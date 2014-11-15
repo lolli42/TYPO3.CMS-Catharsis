@@ -46,11 +46,12 @@ abstract class AbstractAttribute {
 	 * Constructor
 	 *
 	 * @param string $value Attribute value
-	 * @return void
+	 * @param int $elementId
+	 * @return AbstractAttribute
 	 */
 	public function __construct($value, $elementId) {
 		/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer localCobj */
-		$this->localCobj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$this->localCobj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$this->setValue($value);
 		$this->elementId = (int)$elementId;
 	}

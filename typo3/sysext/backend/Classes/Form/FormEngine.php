@@ -669,11 +669,11 @@ class FormEngine {
 		);
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement::') !== 0) {
-			$this->inline = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement');
+			$this->inline = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InlineElement::class);
 		}
 		// Create instance of \TYPO3\CMS\Backend\Form\Element\SuggestElement only if this a non-Suggest-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], 'TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement::') !== 0) {
-			$this->suggest = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement');
+			$this->suggest = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SuggestElement::class);
 		}
 		// Prepare user defined objects (if any) for hooks which extend this function:
 		$this->hookObjectsMainFields = array();
@@ -782,8 +782,6 @@ class FormEngine {
 		$tabIdentString = '';
 		$tabIdentStringMD5 = '';
 		if ($GLOBALS['TCA'][$table]) {
-			// Get dividers2tabs setting from TCA of the current table:
-			$dividers2tabs = &$GLOBALS['TCA'][$table]['ctrl']['dividers2tabs'];
 			// Load the description content for the table.
 			if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
 				$this->getLanguageService()->loadSingleTableDescription($table);
@@ -807,7 +805,7 @@ class FormEngine {
 					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
 					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
 					// If TCEforms will render a tab menu in the next step, push the name to the tab stack:
-					if (strstr($itemList, '--div--') !== FALSE && $this->enableTabMenu && $dividers2tabs) {
+					if (strstr($itemList, '--div--') !== FALSE && $this->enableTabMenu) {
 						$tabIdentString = 'TCEforms:' . $table . ':' . $row['uid'];
 						$tabIdentStringMD5 = $this->getDocumentTemplate()->getDynTabMenuId($tabIdentString);
 						// Remember that were currently working on the general tab:
@@ -841,8 +839,7 @@ class FormEngine {
 								$out_array[$out_sheet][$out_pointer] .= $sField;
 							} elseif ($theField == '--div--') {
 								if ($cc > 0) {
-									$out_array[$out_sheet][$out_pointer] .= $this->getDivider();
-									if ($this->enableTabMenu && $dividers2tabs) {
+									if ($this->enableTabMenu) {
 										// Remove last tab entry from the dynNestedStack:
 										$out_sheet++;
 										// Remove the previous sheet from stack (if any):
@@ -924,8 +921,7 @@ class FormEngine {
 			if (count($parts) > 1) {
 				// Unset the current level of tab menus:
 				$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-				$dividersToTabsBehaviour = isset($GLOBALS['TCA'][$table]['ctrl']['dividers2tabs']) ? $GLOBALS['TCA'][$table]['ctrl']['dividers2tabs'] : 1;
-				$output = $this->getDynTabMenu($parts, $tabIdentString, $dividersToTabsBehaviour);
+				$output = $this->getDynTabMenu($parts, $tabIdentString);
 			} else {
 				// If there is only one tab/part there is no need to wrap it into the dynTab code
 				$output = isset($parts[0]) ? trim($parts[0]['content']) : '';
@@ -971,8 +967,6 @@ class FormEngine {
 				// Don't sent palette pointer - there are no options anyways for a field-list.
 				$sField = $this->getSingleField($table, $theField, $row, $parts[1], 0, $parts[3], 0);
 				$out .= $sField;
-			} elseif ($theField == '--div--') {
-				$out .= $this->getDivider();
 			}
 			if ($palFields) {
 				$out .= $this->getPaletteFields($table, $row, '', '', implode(',', GeneralUtility::trimExplode('|', $palFields, TRUE)));
@@ -1061,7 +1055,7 @@ class FormEngine {
 		$displayConditionResult = TRUE;
 		if (is_array($PA['fieldConf']) && $PA['fieldConf']['displayCond'] && is_array($row)) {
 			/** @var $elementConditionMatcher \TYPO3\CMS\Backend\Form\ElementConditionMatcher */
-			$elementConditionMatcher = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\ElementConditionMatcher');
+			$elementConditionMatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\ElementConditionMatcher::class);
 			$displayConditionResult = $elementConditionMatcher->match($PA['fieldConf']['displayCond'], $row);
 		}
 		// Check if this field is configured and editable (according to excludefields + other configuration)
@@ -1302,7 +1296,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeInput($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\InputElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InputElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1375,7 +1369,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeText($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\TextElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1392,7 +1386,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\CheckboxElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1409,7 +1403,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\RadioElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1427,7 +1421,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\SelectElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1444,7 +1438,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\GroupElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1461,7 +1455,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeNone($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\NoneElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1530,7 +1524,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\FlexElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1596,7 +1590,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\UnknownElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1612,7 +1606,7 @@ class FormEngine {
 	 */
 	public function getSingleField_typeUser($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\UserElement', $this)
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
 			->render($table, $field, $row, $PA);
 	}
 
@@ -2083,7 +2077,7 @@ class FormEngine {
 			$prLang = $this->getAdditionalPreviewLanguages();
 			foreach ($prLang as $prL) {
 				/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
-				$t8Tools = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+				$t8Tools = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
 				$tInfo = $t8Tools->translationInfo($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']], $prL['uid']);
 				if (is_array($tInfo['translations']) && is_array($tInfo['translations'][$prL['uid']])) {
 					$this->additionalPreviewLanguageData[$table . ':' . $rec['uid']][$prL['uid']] = BackendUtility::getRecordWSOL($table, (int)$tInfo['translations'][$prL['uid']]['uid']);
@@ -2177,7 +2171,7 @@ class FormEngine {
 			if (isset($dLVal['old'][$field])) {
 				if ((string)$dLVal['old'][$field] !== (string)$dLVal['new'][$field]) {
 					// Create diff-result:
-					$t3lib_diff_Obj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\DiffUtility');
+					$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
 					$diffres = $t3lib_diff_Obj->makeDiffDisplay(
 						BackendUtility::getProcessedValue($table, $field, $dLVal['old'][$field], 0, 1),
 						BackendUtility::getProcessedValue($table, $field, $dLVal['new'][$field], 0, 1)
@@ -2205,7 +2199,7 @@ class FormEngine {
 			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
 		) {
 			// Create diff-result:
-			$t3lib_diff_Obj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\DiffUtility');
+			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
 			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
 			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
 				. htmlspecialchars($this->getLL('l_changeInOrig')) . ':</div>' . $diffres . '</div>';
@@ -2297,7 +2291,7 @@ class FormEngine {
 		if (!$selector) {
 			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
 			$selector = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE)) . '" '
-				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '"' . $this->insertDefStyle('group', 'tceforms-multiselect'))
+				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" ' . $this->insertDefStyle('group', 'tceforms-multiselect'))
 				. ($isMultiple ? ' multiple="multiple"' : '')
 				. ' name="' . $fName . '_list" ' . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
 				. '</select>';
@@ -2521,8 +2515,7 @@ class FormEngine {
 	 */
 	public function getClickMenu($str, $table, $uid = 0) {
 		if ($this->enableClickMenu) {
-			$onClick = $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view', TRUE);
-			return '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $str . '</a>';
+			return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
 		}
 		return '';
 	}
@@ -2616,13 +2609,12 @@ class FormEngine {
 									if (isset($wConf['module']['urlParameters']) && is_array($wConf['module']['urlParameters'])) {
 										$urlParameters = $wConf['module']['urlParameters'];
 									}
-									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters);
+									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters, $this->backPath);
 								} elseif (in_array($wConf['type'], array('script', 'colorbox', 'popup'), TRUE)) {
 									// Illegal configuration, fail silently
 									break;
 								}
-
-								$url = $this->backPath . $wScript . (strstr($wScript, '?') ? '' : '?');
+								$url = ($wScript ?: $this->backPath) . (strstr($wScript, '?') ? '' : '?');
 								// If "script" type, create the links around the icon:
 								if ((string)$wConf['type'] === 'script') {
 									$aUrl = $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
@@ -2672,7 +2664,7 @@ class FormEngine {
 											$params['iTitle'] = $iTitle;
 											$params['wConf'] = $wConf;
 											$params['row'] = $row;
-											$wizard = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\ValueSlider');
+											$wizard = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\ValueSlider::class);
 											$outArr[] = call_user_func_array(array(&$wizard, 'renderWizard'), array(&$params, &$this));
 											break;
 									}
@@ -3085,14 +3077,18 @@ class FormEngine {
 	 *
 	 * @param array $parts Parts for the tab menu, fed to template::getDynTabMenu()
 	 * @param string $idString ID string for the tab menu
-	 * @param int $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled
+	 * @param int $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled, deprecated, and not in use anymore since TYPO3 CMS 7
 	 * @return string HTML for the menu
 	 */
-	public function getDynTabMenu($parts, $idString, $dividersToTabsBehaviour = 1) {
+	public function getDynTabMenu($parts, $idString, $dividersToTabsBehaviour = -1) {
+		// if the third (obsolete) parameter is used, throw a deprecation warning
+		if ($dividersToTabsBehaviour !== -1) {
+			GeneralUtility::deprecationLog('The parameter $dividersToTabsBehaviour in FormEngine::getDynTabMenu is deprecated. Please remove this option from your code');
+		}
 		$docTemplate = $this->getDocumentTemplate();
 		if (is_object($docTemplate)) {
 			$docTemplate->backPath = $this->backPath;
-			return $docTemplate->getDynTabMenu($parts, $idString, 0, FALSE, 1, FALSE, 1, $dividersToTabsBehaviour);
+			return $docTemplate->getDynTabMenu($parts, $idString, 0, FALSE, 1, FALSE, 1);
 		} else {
 			$output = '';
 			foreach ($parts as $singlePad) {
@@ -3178,15 +3174,14 @@ class FormEngine {
 			);
 			/** @var $flashMessage FlashMessage */
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				htmlspecialchars($message),
 				'',
 				FlashMessage::ERROR,
 				TRUE
 			);
-			$class = 'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService';
 			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance($class);
+			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
 			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 			$defaultFlashMessageQueue->enqueue($flashMessage);
 		}
@@ -3380,7 +3375,7 @@ class FormEngine {
 				case 'modListGroup':
 
 				case 'modListUser':
-					$loadModules = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
+					$loadModules = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
 					$loadModules->load($GLOBALS['TBE_MODULES']);
 					$modList = $fieldValue['config']['special'] == 'modListUser' ? $loadModules->modListUser : $loadModules->modListGroup;
 					if (is_array($modList)) {
@@ -3457,9 +3452,9 @@ class FormEngine {
 			$msg .= $this->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
 			$msgTitle = $this->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
 			/** @var $flashMessage FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $msg, $msgTitle, FlashMessage::ERROR, TRUE);
+			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, TRUE);
 			/** @var $flashMessageService FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 			/** @var $defaultFlashMessageQueue FlashMessageQueue */
 			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 			$defaultFlashMessageQueue->enqueue($flashMessage);
@@ -3714,8 +3709,10 @@ class FormEngine {
 	 * Currently not implemented and returns only blank value.
 	 *
 	 * @return string Empty string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getDivider() {
+		GeneralUtility::logDeprecatedFunction();
 		return '';
 	}
 
@@ -3997,72 +3994,10 @@ class FormEngine {
 					$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_selectboxfilter.js');
 				}
 			}
-			// Toggle icons:
-			$toggleIcon_open = IconUtility::getSpriteIcon('actions-move-down', array('title' => 'Open'));
-			$toggleIcon_close = IconUtility::getSpriteIcon('actions-move-right', array('title' => 'Close'));
 			$out .= '
 			function getOuterHTML(idTagPrefix) {	// Function getting the outerHTML of an element with id
 				var str=($(idTagPrefix).inspect()+$(idTagPrefix).innerHTML+"</"+$(idTagPrefix).tagName.toLowerCase()+">");
 				return str;
-			}
-			function flexFormToggle(id) {	// Toggling flexform elements on/off:
-				Element.toggle(""+id+"-content");
-
-				if (Element.visible(id+"-content")) {
-					$(id+"-toggle").update(\'' . $toggleIcon_open . '\');
-					$(id+"-toggleClosed").value = 0;
-				} else {
-					$(id+"-toggle").update(\'' . $toggleIcon_close . '\');
-					$(id+"-toggleClosed").value = 1;
-				}
-
-				var previewContent = "";
-				var children = $(id+"-content").getElementsByTagName("input");
-				for (var i = 0, length = children.length; i < length; i++) {
-					if (children[i].type=="text" && children[i].value)	previewContent+= (previewContent?" / ":"")+children[i].value;
-				}
-				if (previewContent.length>80) {
-					previewContent = previewContent.substring(0,67)+"...";
-				}
-				$(id+"-preview").update(previewContent);
-			}
-			function flexFormToggleSubs(id) {	// Toggling sub flexform elements on/off:
-				var descendants = $(id).immediateDescendants();
-				var isOpen=0;
-				var isClosed=0;
-					// Traverse and find how many are open or closed:
-				for (var i = 0, length = descendants.length; i < length; i++) {
-					if (descendants[i].id) {
-						if (Element.visible(descendants[i].id+"-content"))	{isOpen++;} else {isClosed++;}
-					}
-				}
-
-					// Traverse and toggle
-				for (var i = 0, length = descendants.length; i < length; i++) {
-					if (descendants[i].id) {
-						if (isOpen!=0 && isClosed!=0) {
-							if (Element.visible(descendants[i].id+"-content"))	{flexFormToggle(descendants[i].id);}
-						} else {
-							flexFormToggle(descendants[i].id);
-						}
-					}
-				}
-			}
-			function flexFormSortable(id) {	// Create sortables for flexform sections
-				Position.includeScrollOffsets = true;
- 				Sortable.create(id, {tag:\'div\',constraint: false, onChange:function(){
-					setActionStatus(id);
-				} });
-			}
-			function setActionStatus(id) {	// Updates the "action"-status for a section. This is used to move and delete elements.
-				var descendants = $(id).immediateDescendants();
-
-					// Traverse and find how many are open or closed:
-				for (var i = 0, length = descendants.length; i < length; i++) {
-					if (descendants[i].id) {
-						$(descendants[i].id+"-action").value = descendants[i].visible() ? i : "DELETE";
-					}
-				}
 			}
 
 			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg($this->backPath, 'gfx/required_h.gif', '', 1) . '";
@@ -4397,7 +4332,7 @@ class FormEngine {
 			BackendUtility::fixVersioningPid($table, $row);
 			list($tscPID) = $this->getTSCpid($table, $row['uid'], $row['pid']);
 			/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
-			$t8Tools = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+			$t8Tools = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
 			$this->cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID, $this->backPath);
 		}
 		// Convert sys_language_uid to sys_language_uid if input was in fact a string (ISO code expected then)
@@ -4635,7 +4570,7 @@ class FormEngine {
 		if (substr($value, 0, 6) === '__row|') {
 			/** @var \TYPO3\CMS\Backend\Form\FormDataTraverser $traverser */
 			$traverseFields = GeneralUtility::trimExplode('|', substr($value, 6));
-			$traverser = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\FormDataTraverser', $this);
+			$traverser = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\FormDataTraverser::class, $this);
 			$value = $traverser->getTraversedFieldValue($traverseFields, $table, $row);
 		}
 

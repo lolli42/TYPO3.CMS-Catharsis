@@ -174,7 +174,7 @@ abstract class AbstractUpdate {
 	protected function installExtensions(array $extensionKeys) {
 		/** @var $installUtility \TYPO3\CMS\Extensionmanager\Utility\InstallUtility */
 		$installUtility = GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Extensionmanager\\Utility\\InstallUtility'
+			\TYPO3\CMS\Extensionmanager\Utility\InstallUtility::class
 		);
 		foreach ($extensionKeys as $extension) {
 			$installUtility->install($extension);
@@ -190,7 +190,7 @@ abstract class AbstractUpdate {
 	 * @return void
 	 */
 	protected function markWizardAsDone($confValue = 1) {
-		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager')
+		GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class)
 			->setLocalConfigurationValueByPath('INSTALL/wizardDone/' . get_class($this), $confValue);
 	}
 

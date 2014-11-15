@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class to handle monitoring actions.
  *
@@ -31,7 +32,7 @@ class MonitorUtility {
 		if (is_double($memoryLimit) && $memoryLimit != 0) {
 			if ($peakUsage / $memoryLimit >= 0.9) {
 				/** @var $registry \TYPO3\CMS\Core\Registry */
-				$registry = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+				$registry = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Registry::class);
 				$data = array(
 					'used' => $peakUsage,
 					'tstamp' => $GLOBALS['EXEC_TIME'],

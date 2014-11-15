@@ -68,15 +68,15 @@ class ExternalLinktype extends \TYPO3\CMS\Linkvalidator\Linktype\AbstractLinktyp
 			'strict_redirects' => TRUE
 		);
 		/** @var $request \TYPO3\CMS\Core\Http\HttpRequest|\HTTP_Request2 */
-		$request = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Http\\HttpRequest', $url, 'HEAD', $config);
+		$request = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\HttpRequest::class, $url, 'HEAD', $config);
 		// Observe cookies
 		$request->setCookieJar(TRUE);
 		try {
 			/** @var $response \HTTP_Request2_Response */
 			$response = $request->send();
-			// HEAD was not allowed, now trying GET
 			$status = isset($response) ? $response->getStatus() : 0;
-			if ($status === 405 || $status === 403) {
+			// HEAD was not allowed or threw an error, now trying GET
+			if ($status >= 400) {
 				$request->setMethod('GET');
 				$request->setHeader('Range', 'bytes = 0 - 4048');
 				/** @var $response \HTTP_Request2_Response */

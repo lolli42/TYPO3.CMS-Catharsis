@@ -183,7 +183,7 @@ class FormsController {
 		// Setting options:
 		$this->xmlStorage = $this->P['params']['xmlOutput'];
 		// Document template object:
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/wizard_forms.html');
 		// Setting form tag:
@@ -238,9 +238,9 @@ class FormsController {
 		);
 		if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
 			// CSH
-			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz', $GLOBALS['BACK_PATH'], '');
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz');
 			// CSH Buttons
-			$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_buttons', $GLOBALS['BACK_PATH'], '');
+			$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_buttons');
 			// Close
 			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '\')); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
 			// Save
@@ -310,7 +310,7 @@ class FormsController {
 			// If a save button has been pressed, then save the new field content:
 			if ($_POST['savedok_x'] || $_POST['saveandclosedok_x']) {
 				// Make TCEmain object:
-				$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+				$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 				$tce->stripslashes_values = 0;
 				// Put content into the data array:
 				$data = array();
@@ -503,7 +503,7 @@ class FormsController {
 			$tRows[] = '
 				<tr>
 					<td colspan="2" class="bgColor2">&nbsp;</td>
-					<td colspan="2" class="bgColor2"><strong>' . $GLOBALS['LANG']->getLL('forms_special_eform', TRUE) . ':</strong>' . BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_formmail_info', $GLOBALS['BACK_PATH'], '') . '</td>
+					<td colspan="2" class="bgColor2"><strong>' . $GLOBALS['LANG']->getLL('forms_special_eform', TRUE) . ':</strong>' . BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_formmail_info') . '</td>
 				</tr>';
 			// "FORM type":
 			$tRows[] = '

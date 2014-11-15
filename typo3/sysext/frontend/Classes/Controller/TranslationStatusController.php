@@ -63,14 +63,14 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 			$h_func .= BackendUtility::getFuncMenu($this->pObj->id, 'SET[lang]', $this->pObj->MOD_SETTINGS['lang'], $this->pObj->MOD_MENU['lang']);
 			$theOutput .= $h_func;
 			// Add CSH:
-			$theOutput .= BackendUtility::cshItem('_MOD_web_info', 'lang', $GLOBALS['BACK_PATH'], '|<br />');
+			$theOutput .= BackendUtility::cshItem('_MOD_web_info', 'lang', NULL, '|<br />');
 			// Showing the tree:
 			// Initialize starting point of page tree:
 			$treeStartingPoint = (int)$this->pObj->id;
 			$treeStartingRecord = BackendUtility::getRecordWSOL('pages', $treeStartingPoint);
 			$depth = $this->pObj->MOD_SETTINGS['depth'];
 			// Initialize tree object:
-			$tree = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+			$tree = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 			$tree->init('AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
 			$tree->addField('l18n_cfg');
 			// Creating top icon; the current page

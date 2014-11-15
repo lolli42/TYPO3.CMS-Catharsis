@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Log;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Global LogManager that keeps track of global logging information.
  *
@@ -28,10 +29,12 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 	 * @var string
 	 */
 	const CONFIGURATION_TYPE_WRITER = 'writer';
+
 	/**
 	 * @var string
 	 */
 	const CONFIGURATION_TYPE_PROCESSOR = 'processor';
+
 	/**
 	 * Loggers to retrieve them for repeated use.
 	 *
@@ -50,7 +53,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->rootLogger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\Logger', '');
+		$this->rootLogger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\Logger::class, '');
 		$this->loggers[''] = $this->rootLogger;
 	}
 
@@ -66,7 +69,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 	/**
 	 * Gets a logger instance for the given name.
 	 *
-	 * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger('main.sub.subsub');
+	 * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger('main.sub.subsub');
 	 *
 	 * $name can also be submitted as a underscore-separated string, which will
 	 * be converted to dots. This is useful to call this method with __CLASS__
@@ -86,7 +89,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 		} else {
 			// Lazy instantiation
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */
-			$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\Logger', $name);
+			$logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\Logger::class, $name);
 			$this->loggers[$name] = $logger;
 			$this->setWritersForLogger($logger);
 			$this->setProcessorsForLogger($logger);
@@ -120,7 +123,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 	 * @return void
 	 * @throws \RangeException
 	 */
-	protected function setWritersForLogger(\TYPO3\CMS\Core\Log\Logger $logger) {
+	protected function setWritersForLogger(Logger $logger) {
 		$configuration = $this->getConfigurationForLogger(self::CONFIGURATION_TYPE_WRITER, $logger->getName());
 		foreach ($configuration as $severityLevel => $writer) {
 			foreach ($writer as $logWriterClassName => $logWriterOptions) {
@@ -143,7 +146,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 	 * @return void
 	 * @throws \RangeException
 	 */
-	protected function setProcessorsForLogger(\TYPO3\CMS\Core\Log\Logger $logger) {
+	protected function setProcessorsForLogger(Logger $logger) {
 		$configuration = $this->getConfigurationForLogger(self::CONFIGURATION_TYPE_PROCESSOR, $logger->getName());
 		foreach ($configuration as $severityLevel => $processor) {
 			foreach ($processor as $logProcessorClassName => $logProcessorOptions) {
@@ -187,7 +190,7 @@ class LogManager implements \TYPO3\CMS\Core\SingletonInterface, LogManagerInterf
 		// Validate the config
 		foreach ($result as $level => $unused) {
 			try {
-				\TYPO3\CMS\Core\Log\LogLevel::validateLevel($level);
+				LogLevel::validateLevel($level);
 			} catch (\RangeException $e) {
 				throw new \RangeException('The given severity level "' . htmlspecialchars($level) . '" for ' . $configurationKey . ' of logger "' . $loggerName . '" is not valid.', 1326406447);
 			}

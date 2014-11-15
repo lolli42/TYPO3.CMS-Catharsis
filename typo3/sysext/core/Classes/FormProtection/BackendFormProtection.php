@@ -66,13 +66,15 @@ namespace TYPO3\CMS\Core\FormProtection;
  * }
  * </pre>
  */
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
+
 /**
  * Backend form protection
  *
  * @author Oliver Klee <typo3-coding@oliverklee.de>
  * @author Helmut Hummel <helmut.hummel@typo3.org>
  */
-class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormProtection {
+class BackendFormProtection extends AbstractFormProtection {
 
 	/**
 	 * Keeps the instance of the user which existed during creation
@@ -92,6 +94,8 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 
 	/**
 	 * Only allow construction if we have a backend session
+	 *
+	 * @throws \TYPO3\CMS\Core\Error\Exception
 	 */
 	public function __construct() {
 		if (!$this->isAuthorizedBackendSession()) {
@@ -107,17 +111,17 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	 * @return void
 	 */
 	protected function createValidationErrorMessage() {
+		/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
 		$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+			\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 			$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:error.formProtection.tokenInvalid'),
 			'',
 			\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
 			!$this->isAjaxRequest()
 		);
-		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
-		);
+		/** @var $flashMessageService FlashMessageService */
+		$flashMessageService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(FlashMessageService::class);
+
 		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 		$defaultFlashMessageQueue->enqueue($flashMessage);
@@ -200,7 +204,7 @@ class BackendFormProtection extends \TYPO3\CMS\Core\FormProtection\AbstractFormP
 	 */
 	protected function getRegistry() {
 		if (!$this->registry instanceof \TYPO3\CMS\Core\Registry) {
-			$this->registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+			$this->registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Registry::class);
 		}
 		return $this->registry;
 	}

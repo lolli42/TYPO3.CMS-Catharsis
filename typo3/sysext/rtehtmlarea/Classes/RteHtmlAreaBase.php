@@ -407,14 +407,14 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 				$this->contentISOLanguage = strtolower($languageCodeParts[0]) . ($languageCodeParts[1] ? '_' . strtoupper($languageCodeParts[1]) : '');
 				// Find the configured language in the list of localization locales
 				/** @var $locales \TYPO3\CMS\Core\Localization\Locales */
-				$locales = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Localization\\Locales');
+				$locales = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\Locales::class);
 				// If not found, default to 'en'
 				if (!in_array($this->contentISOLanguage, $locales->getLocales())) {
 					$this->contentISOLanguage = 'en';
 				}
 			}
 			// Create content laguage service
-			$this->contentLanguageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Lang\\LanguageService');
+			$this->contentLanguageService = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
 			$this->contentTypo3Language = $this->contentISOLanguage === 'en' ? 'default' : $this->contentISOLanguage;
 			$this->contentLanguageService->init($this->contentTypo3Language);
 			/* =======================================
@@ -657,7 +657,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			bar, left, center, right, justifyfull,
 			bar, orderedlist, unorderedlist, definitionlist, definitionitem, outdent, indent,  bar, lefttoright, righttoleft, language, showlanguagemarks,
 			bar, textcolor, bgcolor, textindicator,
-			bar, editelement, showmicrodata, emoticon, insertcharacter, insertsofthyphen, link, unlink, image, table,' . ($this->thisConfig['hideTableOperationsInToolbar'] && is_array($this->thisConfig['buttons.']) && is_array($this->thisConfig['buttons.']['toggleborders.']) && $this->thisConfig['buttons.']['toggleborders.']['keepInToolbar'] ? ' toggleborders,' : '') . ' user, acronym, bar, findreplace, spellcheck,
+			bar, editelement, showmicrodata, emoticon, insertcharacter, insertsofthyphen, link, unlink, image, table,' . ($this->thisConfig['hideTableOperationsInToolbar'] && is_array($this->thisConfig['buttons.']) && is_array($this->thisConfig['buttons.']['toggleborders.']) && $this->thisConfig['buttons.']['toggleborders.']['keepInToolbar'] ? ' toggleborders,' : '') . ' user, abbreviation, bar, findreplace, spellcheck,
 			bar, chMode, inserttag, removeformat, bar, copy, cut, paste, pastetoggle, pastebehaviour, bar, undo, redo, bar, showhelp, about, linebreak,
 			' . ($this->thisConfig['hideTableOperationsInToolbar'] ? '' : 'bar, toggleborders,') . ' bar, tableproperties, tablerestyle, bar, rowproperties, rowinsertabove, rowinsertunder, rowdelete, rowsplit, bar,
 			columnproperties, columninsertbefore, columninsertafter, columndelete, columnsplit, bar,

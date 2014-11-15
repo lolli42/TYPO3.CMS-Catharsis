@@ -165,6 +165,7 @@ function jumpToUrl(URL) {
 	 * If set, then a JavaScript section will be outputted in the bottom of page which will try and update the top.busy session expiry object.
 	 *
 	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $endJS = 1;
 
@@ -437,7 +438,7 @@ function jumpToUrl(URL) {
 	 */
 	public function getPageRenderer() {
 		if (!isset($this->pageRenderer)) {
-			$this->pageRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Page\\PageRenderer');
+			$this->pageRenderer = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Page\PageRenderer::class);
 			$this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
 			$this->pageRenderer->addCssLibrary($GLOBALS['BACK_PATH'] . 'contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 			$this->pageRenderer->enableConcatenateFiles();
@@ -489,15 +490,26 @@ function jumpToUrl(URL) {
 	 * @param string $table Table name/File path. If the icon is for a database record, enter the tablename from $GLOBALS['TCA']. If a file then enter the absolute filepath
 	 * @param int $uid If icon is for database record this is the UID for the record from $table
 	 * @param bool $listFr Tells the top frame script that the link is coming from a "list" frame which means a frame from within the backend content frame.
-	 * @param string $addParams Additional GET parameters for the link to alt_clickmenu.php
+	 * @param string $addParams Additional GET parameters for the link to the ClickMenu AJAX request
 	 * @param string $enDisItems Enable / Disable click menu items. Example: "+new,view" will display ONLY these two items (and any spacers in between), "new,view" will display all BUT these two items.
-	 * @param bool $returnOnClick If set, will return only the onclick JavaScript, not the whole link.
+	 * @param bool $returnTagParameters If set, will return only the onclick JavaScript, not the whole link.
 	 * @return string The link-wrapped input string.
 	 */
-	public function wrapClickMenuOnIcon($str, $table, $uid = 0, $listFr = TRUE, $addParams = '', $enDisItems = '', $returnOnClick = FALSE) {
-		$backPath = rawurlencode($this->backPath) . '|' . GeneralUtility::shortMD5(($this->backPath . '|' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']));
-		$onClick = 'Clickmenu.show("' . $table . '","' . ($uid !== 0 ? $uid : '') . '","' . strval($listFr) . '","' . str_replace('+', '%2B', $enDisItems) . '","' . str_replace('&', '&amp;', addcslashes($backPath, '"')) . '","' . str_replace('&', '&amp;', addcslashes($addParams, '"')) . '");return false;';
-		return $returnOnClick ? $onClick : '<a href="#" onclick="' . htmlspecialchars($onClick) . '" oncontextmenu="this.click();return false;">' . $str . '</a>';
+	public function wrapClickMenuOnIcon($content, $table, $uid = 0, $listFr = TRUE, $addParams = '', $enDisItems = '', $returnTagParameters = FALSE) {
+		$tagParameters = array(
+			'class'           => 't3-js-clickmenutrigger',
+			'data-table'      => $table,
+			'data-uid'        => (int)$uid !== 0 ? (int)$uid : '',
+			'data-listframe'  => $listFr,
+			'data-iteminfo'   => str_replace('+', '%2B', $enDisItems),
+			'data-parameters' => $addParams,
+		);
+
+		if ($returnTagParameters) {
+			return $tagParameters;
+		} else {
+			return '<a href="#" ' . GeneralUtility::implodeAttributes($tagParameters) . '>' . $content . '</a>';
+		}
 	}
 
 	/**
@@ -603,7 +615,6 @@ function jumpToUrl(URL) {
 	 * @return string HTML content
 	 */
 	public function makeShortcutIcon($gvList, $setList, $modName, $motherModName = '') {
-		$backPath = $this->backPath;
 		$storeUrl = $this->makeShortcutUrl($gvList, $setList);
 		$pathInfo = parse_url(GeneralUtility::getIndpEnv('REQUEST_URI'));
 		// Add the module identifier automatically if typo3/mod.php is used:
@@ -617,9 +628,9 @@ function jumpToUrl(URL) {
 		} else {
 			$mMN = '';
 		}
-		$onClick = 'top.ShortcutManager.createShortcut(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark')) . ', ' . '\'' . $backPath . '\', ' . '\'' . rawurlencode($modName) . '\', ' . '\'' . rawurlencode(($pathInfo['path'] . '?' . $storeUrl)) . $mMN . '\'' . ');return false;';
-		$sIcon = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
-		return $sIcon;
+		$confirmationText = GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark'));
+		$onClick = 'top.TYPO3.ShortcutMenu.createShortcut(\'' . rawurlencode($modName) . '\', ' . '\'' . rawurlencode(($pathInfo['path'] . '?' . $storeUrl)) . $mMN . '\', ' . $confirmationText . ');return false;';
+		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
 	}
 
 	/**
@@ -841,6 +852,14 @@ function jumpToUrl(URL) {
 		if ($this->extJScode) {
 			$this->pageRenderer->addExtOnReadyCode($this->extJScode);
 		}
+
+		// Load jquery and twbs JS libraries on every backend request
+		$this->pageRenderer->loadJquery();
+		// Note: please do not reference "twbs" outside of the TYPO3 Core (not in your own extensions)
+		// as this is preliminary as long as twbs does not support AMD modules
+		// this logic will be changed once twbs 4 is included
+		$this->pageRenderer->addJsFile($this->backPath . 'contrib/twbs/bootstrap.min.js');
+
 		// hook for additional headerData
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'])) {
 			$preHeaderRenderHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'];
@@ -873,7 +892,7 @@ function jumpToUrl(URL) {
 	 * @see startPage()
 	 */
 	public function endPage() {
-		$str = $this->sectionEnd() . $this->postCode . $this->endPageJS() . $this->wrapScriptTags(BackendUtility::getUpdateSignalCode()) . $this->parseTime() . ($this->form ? '
+		$str = $this->sectionEnd() . $this->postCode . $this->wrapScriptTags(BackendUtility::getUpdateSignalCode()) . $this->parseTime() . ($this->form ? '
 </form>' : '');
 		// If something is in buffer like debug, put it to end of page
 		if (ob_get_contents()) {
@@ -1058,13 +1077,10 @@ function jumpToUrl(URL) {
 	 * Further a JavaScript section is outputted which will update the top.busy session-expiry object (unless $this->endJS is set to FALSE)
 	 *
 	 * @return string HTML content (<script> tag section)
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, nothing there to output anymore
 	 */
 	public function endPageJS() {
-		return $this->endJS ? $this->wrapScriptTags('
-		if (top.busy && top.busy.loginRefreshed) {
-			top.busy.loginRefreshed();
-		}
-') : '';
+		return '';
 	}
 
 	/**
@@ -1455,9 +1471,8 @@ function jumpToUrl(URL) {
 	 * @return void
 	 */
 	public function getContextMenuCode() {
-		$this->pageRenderer->loadPrototype();
-		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/clickmenu.js');
-		$this->pageRenderer->addInlineSetting('ClickMenu', 'ajaxURL', BackendUtility::getAjaxUrl('ContextMenu::load', array(), $this->backPath));
+		$this->pageRenderer->loadJquery();
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ClickMenu');
 	}
 
 	/**
@@ -1468,13 +1483,12 @@ function jumpToUrl(URL) {
 	 * @return void
 	 */
 	public function getDragDropCode($table) {
+		$this->getContextMenuCode();
 		$this->pageRenderer->loadPrototype();
-		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/common.js');
 		$this->loadJavascriptLib('js/tree.js');
 		// Setting prefs for drag & drop
 		$this->JScodeArray['dragdrop'] = '
-			DragDrop.changeURL = "' . $this->backPath . 'alt_clickmenu.php";
-			DragDrop.backPath  = "' . GeneralUtility::shortMD5(('' . '|' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'])) . '";
+			DragDrop.backPath  = "' . GeneralUtility::shortMD5('|' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']) . '";
 			DragDrop.table     = "' . $table . '";
 		';
 	}
@@ -1566,10 +1580,10 @@ function jumpToUrl(URL) {
 	 * @param bool $noWrap Deprecated - delivered by CSS
 	 * @param bool $fullWidth If set, the tabs will span the full width of their position
 	 * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
-	 * @param int $dividers2tabs If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled
+	 * @param int $tabBehaviour If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled
 	 * @return string JavaScript section for the HTML header.
 	 */
-	public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = FALSE, $noWrap = TRUE, $fullWidth = FALSE, $defaultTabIndex = 1, $dividers2tabs = 2) {
+	public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = FALSE, $noWrap = TRUE, $fullWidth = FALSE, $defaultTabIndex = 1, $tabBehaviour = 1) {
 		// Load the static code, if not already done with the function below
 		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tabmenu.js');
 		$content = '';
@@ -1601,7 +1615,7 @@ function jumpToUrl(URL) {
 				}
 				$isEmpty = trim($def['content']) === '' && trim($def['icon']) === '';
 				// "Removes" empty tabs
-				if ($isEmpty && $dividers2tabs == 1) {
+				if ($isEmpty && $tabBehaviour == 1) {
 					continue;
 				}
 				$requiredIcon = '<img name="' . $id . '-' . $index . '-REQ" src="' . $GLOBALS['BACK_PATH'] . 'gfx/clear.gif" class="t3-TCEforms-reqTabImg" alt="" />';
@@ -1689,7 +1703,7 @@ function jumpToUrl(URL) {
 				ExtensionManagementUtility::isLoaded('version') &&
 				!ExtensionManagementUtility::isLoaded('workspaces')
 		) {
-			$versionGuiObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Version\\View\\VersionView');
+			$versionGuiObj = GeneralUtility::makeInstance(\TYPO3\CMS\Version\View\VersionView::class);
 			return $versionGuiObj->getVersionSelector($id, $noAction);
 		}
 	}
@@ -1794,7 +1808,7 @@ function jumpToUrl(URL) {
 	 */
 	public function getFlashMessages() {
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 		$flashMessages = $defaultFlashMessageQueue->renderFlashMessages();
@@ -1940,7 +1954,7 @@ function jumpToUrl(URL) {
 		$collapsedStyle = ($collapsedClass = '');
 		if ($hasSave) {
 			/** @var $settings \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider */
-			$settings = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\User\\ExtDirect\\BackendUserSettingsDataProvider');
+			$settings = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class);
 			$value = $settings->get($saveStatePointer . '.' . $id);
 			if ($value) {
 				$collapsedStyle = ' style="display: none"';

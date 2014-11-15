@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Category\CategoryRegistry;
 use TYPO3\CMS\Core\Package\PackageManager;
 
@@ -26,6 +27,9 @@ use TYPO3\CMS\Core\Package\PackageManager;
  */
 class ExtensionManagementUtility {
 
+	/**
+	 * @var array
+	 */
 	static protected $extensionKeyMap;
 
 	/**
@@ -68,7 +72,7 @@ class ExtensionManagementUtility {
 	 */
 	static protected function getCacheManager() {
 		if (static::$cacheManager === NULL) {
-			static::$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+			static::$cacheManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
 		}
 		return static::$cacheManager;
 	}
@@ -85,7 +89,7 @@ class ExtensionManagementUtility {
 	 */
 	static protected function getSignalSlotDispatcher() {
 		if (static::$signalSlotDispatcher === NULL) {
-			static::$signalSlotDispatcher = GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+			static::$signalSlotDispatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 		}
 		return static::$signalSlotDispatcher;
 	}
@@ -253,7 +257,7 @@ class ExtensionManagementUtility {
 			$GLOBALS['TCA'][$table]['columns'] = array_merge($GLOBALS['TCA'][$table]['columns'], $columnArray);
 			if ($addTofeInterface) {
 				GeneralUtility::deprecationLog(
-					'Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:statictemplates.'
+					'Usage of feInterface is no longer part of the TYPO3 CMS Core. Please check EXT:' . $GLOBALS['_EXTKEY'] . '.'
 				);
 			}
 		}
@@ -1897,7 +1901,7 @@ tt_content.' . $key . $prefix . ' {
 		if ($result === FALSE) {
 			$message = '\TYPO3\CMS\Core\Category\CategoryRegistry: no category registered for table "%s". Key was already registered.';
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */
-			$logger = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Log\\LogManager')->getLogger(__CLASS__);
+			$logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
 			$logger->warning(
 				sprintf($message, $tableName)
 			);

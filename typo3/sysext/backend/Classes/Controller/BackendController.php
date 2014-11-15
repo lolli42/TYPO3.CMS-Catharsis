@@ -38,7 +38,7 @@ class BackendController {
 	/**
 	 * @var array
 	 */
-	protected $cssFiles;
+	protected $cssFiles = array();
 
 	/**
 	 * @var string
@@ -53,7 +53,7 @@ class BackendController {
 	/**
 	 * @var array
 	 */
-	protected $toolbarItems;
+	protected $toolbarItems = array();
 
 	/**
 	 * @var int Intentionally private as nobody should modify defaults
@@ -96,15 +96,14 @@ class BackendController {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->backendModuleRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Domain\\Repository\\Module\\BackendModuleRepository');
+		$this->backendModuleRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository::class);
 
 		// Set debug flag for BE development only
 		$this->debug = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1;
 		// Initializes the backend modules structure for use later.
-		$this->moduleLoader = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Module\\ModuleLoader');
+		$this->moduleLoader = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
 		$this->moduleLoader->load($GLOBALS['TBE_MODULES']);
 		$this->pageRenderer = $GLOBALS['TBE_TEMPLATE']->getPageRenderer();
-		$this->pageRenderer->loadScriptaculous('builder,effects,controls,dragdrop');
 		$this->pageRenderer->loadExtJS();
 		$this->pageRenderer->loadJquery(NULL, NULL, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_DEFAULT_NOCONFLICT);
 		$this->pageRenderer->enableExtJSQuickTips();
@@ -113,11 +112,9 @@ class BackendController {
 		// Add default BE javascript
 		$this->js = '';
 		$this->jsFiles = array(
-			'common' => 'sysext/backend/Resources/Public/JavaScript/common.js',
 			'locallang' => $this->getLocalLangFileName(),
 			'modernizr' => 'contrib/modernizr/modernizr.min.js',
 			'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
-			'toolbarmanager' => 'sysext/backend/Resources/Public/JavaScript/toolbarmanager.js',
 			'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
 			'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
 			'flashmessages' => 'sysext/backend/Resources/Public/JavaScript/flashmessages.js',
@@ -138,10 +135,12 @@ class BackendController {
 		}
 		// Add default BE css
 		$this->pageRenderer->addCssLibrary('contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
+
+		// load the toolbar items
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/UserMenu');
+
 		$this->css = '';
-		$this->cssFiles = array();
-		$this->toolbarItems = array();
-		$this->initializeCoreToolbarItems();
+		$this->initializeToolbarItems();
 		$this->menuWidth = $this->menuWidthDefault;
 		if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) && (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] != (int)$this->menuWidth) {
 			$this->menuWidth = (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
@@ -150,27 +149,38 @@ class BackendController {
 	}
 
 	/**
-	 * Initializes the core toolbar items
+	 * Initialize toolbar item objects
 	 *
+	 * @throws \RuntimeException
 	 * @return void
 	 */
-	protected function initializeCoreToolbarItems() {
-		$coreToolbarItems = array(
-			'shortcuts' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem',
-			'clearCacheActions' => 'TYPO3\\CMS\\Backend\\Toolbar\\ClearCacheToolbarItem',
-			'liveSearch' => 'TYPO3\\CMS\\Backend\\Toolbar\\LiveSearchToolbarItem'
-		);
-		foreach ($coreToolbarItems as $toolbarItemName => $toolbarItemClassName) {
-			$toolbarItem = GeneralUtility::makeInstance($toolbarItemClassName, $this);
-			if (!$toolbarItem instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookInterface) {
-				throw new \UnexpectedValueException('$toolbarItem "' . $toolbarItemName . '" must implement interface TYPO3\\CMS\\Backend\\Toolbar\\ToolbarItemHookInterface', 1195126772);
+	protected function initializeToolbarItems() {
+		$toolbarItemInstances = array();
+		$classNameRegistry = $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'];
+		foreach ($classNameRegistry as $className) {
+			$toolbarItemInstance = GeneralUtility::makeInstance($className, $this);
+			if (!$toolbarItemInstance instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface) {
+				throw new \RuntimeException(
+					'class ' . $className . ' is registered as toolbar item but does not implement'
+						. '\TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface',
+					1415958218
+				);
 			}
-			if ($toolbarItem->checkAccess()) {
-				$this->toolbarItems[$toolbarItemName] = $toolbarItem;
-			} else {
-				unset($toolbarItem);
+			$index = (int)$toolbarItemInstance->getIndex();
+			if ($index < 0 || $index > 100) {
+				throw new \RuntimeException(
+					'getIndex() must return an integer between 0 and 100',
+					1415968498
+				);
 			}
+			while(array_key_exists($index, $toolbarItemInstances)) {
+				$index++;
+			}
+			// Find next free position in
+			$toolbarItemInstances[$index] = $toolbarItemInstance;
 		}
+		ksort($toolbarItemInstances);
+		$this->toolbarItems = $toolbarItemInstances;
 	}
 
 	/**
@@ -182,7 +192,7 @@ class BackendController {
 		$this->executeHook('renderPreProcess');
 
 		// Prepare the scaffolding, at this point extension may still add javascript and css
-		$logo = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\View\\LogoView');
+		$logo = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\View\LogoView::class);
 
 		// Create backend scaffolding
 		$backendScaffolding = '
@@ -306,69 +316,26 @@ class BackendController {
 	 * @return string top toolbar elements as HTML
 	 */
 	protected function renderToolbar() {
-		// Move search to last position
-		if (array_key_exists('liveSearch', $this->toolbarItems)) {
-			$search = $this->toolbarItems['liveSearch'];
-			unset($this->toolbarItems['liveSearch']);
-			$this->toolbarItems['liveSearch'] = $search;
-		}
-		$toolbar = $this->getLoggedInUserLabel();
-		$toolbar .= '<li class="toolbar-item" id="logout-button">' . $this->renderLogoutButton() . '</li>';
-
-		$i = 0;
-		$numberOfToolbarItems = count($this->toolbarItems);
-		foreach ($this->toolbarItems as $key => $toolbarItem) {
-			$i++;
+		$toolbar = '';
+		foreach ($this->toolbarItems as $toolbarItem) {
 			$menu = $toolbarItem->render();
 			if ($menu) {
-				$additionalAttributes = trim($toolbarItem->getAdditionalAttributes());
-				if ($numberOfToolbarItems > 1 && $i == $numberOfToolbarItems - 1) {
-					if (strpos($additionalAttributes, 'class="') !== FALSE) {
-						$additionalAttributes = str_replace('class="', 'class="separator ', $additionalAttributes);
-					} else {
-						$additionalAttributes .= ' class="separator"';
+				// @TODO: Should throw as soon as "loading by convention" is implemented
+				if ($toolbarItem instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface) {
+					$classes = $toolbarItem->getExtraClasses();
+					if ($toolbarItem->hasDropdown()) {
+						$classes[] = 'dropdown';
 					}
+
+					$class = implode(' ', $classes);
+					if ($class !== '') {
+						$class = ' class="' . $class . '"';
+					}
+					$toolbar .= '<li' . $class . ' id="' . $toolbarItem->getIdAttribute() . '"' . $toolbarItem->getAdditionalAttributes() . '>' . $menu . '</li>';
 				}
-				if ($additionalAttributes !== '') {
-					$additionalAttributes = ' ' . $additionalAttributes;
-				}
-				$toolbar .= '<li' . $additionalAttributes . ' role="menu">' . $menu . '</li>';
 			}
 		}
 		return $toolbar;
-	}
-
-	/**
-	 * Gets the label of the BE user currently logged in
-	 *
-	 * @return string Html code snippet displaying the currently logged in user
-	 */
-	protected function getLoggedInUserLabel() {
-		$css = '';
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-user-' . ($GLOBALS['BE_USER']->isAdmin() ? 'admin' : 'backend'));
-		$realName = $GLOBALS['BE_USER']->user['realName'];
-		$username = $GLOBALS['BE_USER']->user['username'];
-		$label = $realName ?: $username;
-		$title = $username;
-
-		// Link to user setup if it's loaded and user has access
-		$link = '';
-		if (ExtensionManagementUtility::isLoaded('setup') && $GLOBALS['BE_USER']->check('modules', 'user_setup')) {
-			$link = '<a href="#" onclick="top.goToModule(\'user_setup\'); this.blur(); return false;">';
-		} else {
-			$link = '<a name="username">';
-		}
-
-		// Superuser mode
-		if ($GLOBALS['BE_USER']->user['ses_backuserid']) {
-			$css .= ' su-user';
-			$title = $GLOBALS['LANG']->getLL('switchtouser') . ': ' . $username;
-			$label = $GLOBALS['LANG']->getLL('switchtousershort') . ' ' . ($realName ? $realName . ' (' . $username . ')' : $username);
-		}
-
-		return '<li id="username" class="' . $css . '">' .
-			$link . $icon . '<span title="' . htmlspecialchars($title) . '">' . htmlspecialchars($label) . '</span></a>' .
-		'</li>';
 	}
 
 	/**
@@ -517,7 +484,7 @@ class BackendController {
 			'securityLevel' => $this->loginSecurityLevel,
 			'TYPO3_mainDir' => TYPO3_mainDir,
 			'pageModule' => $pageModule,
-			'inWorkspace' => $GLOBALS['BE_USER']->workspace !== 0 ? 1 : 0,
+			'inWorkspace' => $GLOBALS['BE_USER']->workspace !== 0,
 			'workspaceFrontendPreviewEnabled' => $GLOBALS['BE_USER']->user['workspace_preview'] ? 1 : 0,
 			'veriCode' => $GLOBALS['BE_USER']->veriCode(),
 			'denyFileTypes' => PHP_EXTENSIONS_DEFAULT,
@@ -725,17 +692,10 @@ class BackendController {
 	 * @param string $toolbarItemClassName Toolbar item class name, f.e. tx_toolbarExtension_coolItem
 	 * @return void
 	 * @throws \UnexpectedValueException
+	 * @deprecated since CMS 7, will be removed with CMS 8. Toolbar items are registered in $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'] now.
 	 */
 	public function addToolbarItem($toolbarItemName, $toolbarItemClassName) {
-		$toolbarItem = GeneralUtility::makeInstance($toolbarItemClassName, $this);
-		if (!$toolbarItem instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemHookInterface) {
-			throw new \UnexpectedValueException('$toolbarItem "' . $toolbarItemName . '" must implement interface TYPO3\\CMS\\Backend\\Toolbar\\ToolbarItemHookInterface', 1195125501);
-		}
-		if ($toolbarItem->checkAccess()) {
-			$this->toolbarItems[$toolbarItemName] = $toolbarItem;
-		} else {
-			unset($toolbarItem);
-		}
+		GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**
@@ -760,31 +720,17 @@ class BackendController {
 	}
 
 	/**
-	 * renders the logout button form
-	 *
-	 * @return string Html code snippet displaying the logout button
-	 */
-	protected function renderLogoutButton() {
-		// show logout or "exit" (from switch user mode) label
-		$buttonLabel = 'LLL:EXT:lang/locallang_core.xlf:' . ($GLOBALS['BE_USER']->user['ses_backuserid'] ? 'buttons.exit' : 'buttons.logout');
-		$buttonForm = '
-		<form action="logout.php" target="_top">
-			<input type="submit" id="logout-submit-button" value="' . $GLOBALS['LANG']->sL($buttonLabel, TRUE) . '" />
-		</form>';
-		return $buttonForm;
-	}
-
-	/**
 	 * loads all modules from the repository
 	 * and renders it with a template
 	 *
 	 * @return string
 	 */
 	protected function generateModuleMenu() {
-		$moduleStorage = $this->backendModuleRepository->loadAllowedModules();
+		// get all modules except the user modules for the side menu
+		$moduleStorage = $this->backendModuleRepository->loadAllowedModules(array('user', 'help'));
 
 		/** @var $view \TYPO3\CMS\Fluid\View\StandaloneView */
-		$view = GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 		$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/ModuleMenu/Main.html'));
 		$view->assign('modules', $moduleStorage);
 		return $view->render();

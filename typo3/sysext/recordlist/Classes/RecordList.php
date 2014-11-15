@@ -24,51 +24,102 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  */
 class RecordList {
 
-	// Internal, GPvars:
-	// Page Id for which to make the listing
 	/**
+	 * Page Id for which to make the listing
+	 *
 	 * @var int
 	 */
 	public $id;
 
-	// Pointer - for browsing list of records.
+	/**
+	 * Pointer - for browsing list of records.
+	 *
+	 * @var int
+	 */
 	public $pointer;
 
-	// Thumbnails or not
+	/**
+	 * Thumbnails or not
+	 *
+	 * @var string
+	 */
 	public $imagemode;
 
-	// Which table to make extended listing for
+	/**
+	 * Which table to make extended listing for
+	 *
+	 * @var string
+	 */
 	public $table;
 
-	// Search-fields
+	/**
+	 * Search-fields
+	 *
+	 * @var string
+	 */
 	public $search_field;
 
-	// Search-levels
+	/**
+	 * Search-levels
+	 *
+	 * @var int
+	 */
 	public $search_levels;
 
-	// Show-limit
+	/**
+	 * Show-limit
+	 *
+	 * @var int
+	 */
 	public $showLimit;
 
-	// Return URL
+	/**
+	 * Return URL
+	 *
+	 * @var string
+	 */
 	public $returnUrl;
 
-	// Clear-cache flag - if set, clears page cache for current id.
+	/**
+	 * Clear-cache flag - if set, clears page cache for current id.
+	 *
+	 * @var bool
+	 */
 	public $clear_cache;
 
-	// Command: Eg. "delete" or "setCB" (for TCEmain / clipboard operations)
+	/**
+	 * Command: Eg. "delete" or "setCB" (for TCEmain / clipboard operations)
+	 *
+	 * @var string
+	 */
 	public $cmd;
 
-	// Table on which the cmd-action is performed.
+	/**
+	 * Table on which the cmd-action is performed.
+	 *
+	 * @var string
+	 */
 	public $cmd_table;
 
-	// Internal, static:
-	// Page select perms clause
+	/**
+	 * Page select perms clause
+	 *
+	 * @var int
+	 */
 	public $perms_clause;
 
-	// Module TSconfig
+	/**
+	 * Module TSconfig
+	 *
+	 * @var array
+	 */
 	public $modTSconfig;
 
-	// Current ids page record
+	/**
+	 * Current ids page record
+	 *
+	 * @var array
+	 */
 	public $pageinfo;
 
 	/**
@@ -78,17 +129,32 @@ class RecordList {
 	 */
 	public $doc;
 
-	// Module configuration
+	/**
+	 * Module configuration
+	 *
+	 * @var array
+	 */
 	public $MCONF = array();
 
-	// Menu configuration
+	/**
+	 * Menu configuration
+	 *
+	 * @var array
+	 */
 	public $MOD_MENU = array();
 
-	// Module settings (session variable)
+	/**
+	 * Module settings (session variable)
+	 *
+	 * @var array
+	 */
 	public $MOD_SETTINGS = array();
 
-	// Internal, dynamic:
-	// Module output accumulation
+	/**
+	 * Module output accumulation
+	 *
+	 * @var string
+	 */
 	public $content;
 
 	/**
@@ -149,7 +215,7 @@ class RecordList {
 	 */
 	public function clearCache() {
 		if ($this->clear_cache) {
-			$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+			$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 			$tce->stripslashes_values = 0;
 			$tce->start(array(), array());
 			$tce->clear_cacheCmd($this->id);
@@ -163,7 +229,7 @@ class RecordList {
 	 */
 	public function main() {
 		// Start document template object:
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:recordlist/Resources/Private/Templates/db_list.html');
 		// Loading current page record and checking access:
@@ -192,7 +258,7 @@ class RecordList {
 
 		// Initialize the dblist object:
 		/** @var $dblist \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList */
-		$dblist = GeneralUtility::makeInstance('TYPO3\\CMS\\Recordlist\\RecordList\\DatabaseRecordList');
+		$dblist = GeneralUtility::makeInstance(\TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList::class);
 		$dblist->backPath = $GLOBALS['BACK_PATH'];
 		$dblist->script = BackendUtility::getModuleUrl('web_list', array(), '');
 		$dblist->calcPerms = $GLOBALS['BE_USER']->calcPerms($this->pageinfo);
@@ -217,7 +283,7 @@ class RecordList {
 		$dblist->clickTitleMode = $clickTitleMode === '' ? 'edit' : $clickTitleMode;
 		// Clipboard is initialized:
 		// Start clipboard
-		$dblist->clipObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
+		$dblist->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
 		// Initialize - reads the clipboard content from the user session
 		$dblist->clipObj->initializeClipboard();
 		// Clipboard actions are handled:
@@ -254,7 +320,7 @@ class RecordList {
 						$iKParts = explode('|', $iK);
 						$cmd[$iKParts[0]][$iKParts[1]]['delete'] = 1;
 					}
-					$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+					$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 					$tce->stripslashes_values = 0;
 					$tce->start(array(), $cmd);
 					$tce->process_cmdmap();

@@ -1040,7 +1040,7 @@ class DataHandler {
 											$id = $WSversion['uid'];
 											$recordAccess = TRUE;
 										} elseif ($this->BE_USER->workspaceAllowAutoCreation($table, $id, $theRealPid)) {
-											$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+											$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 											/** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
 											$tce->stripslashes_values = 0;
 											// Setting up command for creating a new version of the record:
@@ -1430,7 +1430,7 @@ class DataHandler {
 				if (is_array($eFile)) {
 					$mixedRec = array_merge($currentRecord, $fieldArray);
 					$SW_fileContent = GeneralUtility::getUrl($eFile['editFile']);
-					$parseHTML = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
+					$parseHTML = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\RteHtmlParser::class);
 					/** @var $parseHTML \TYPO3\CMS\Core\Html\RteHtmlParser */
 					$parseHTML->init('', '');
 					$eFileMarker = $eFile['markerField'] && trim($mixedRec[$eFile['markerField']]) ? trim($mixedRec[$eFile['markerField']]) : '###TYPO3_STATICFILE_EDIT###';
@@ -1868,7 +1868,7 @@ class DataHandler {
 			}
 			// Creating fileFunc object.
 			if (!$this->fileFunc) {
-				$this->fileFunc = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\BasicFileUtility');
+				$this->fileFunc = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\File\BasicFileUtility::class);
 				$this->include_filefunctions = 1;
 			}
 			// Setting permitted extensions.
@@ -2170,7 +2170,8 @@ class DataHandler {
 				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($currentValueArray, $arrValue);
 				$xmlValue = $this->checkValue_flexArray2Xml($currentValueArray, TRUE);
 			}
-			// Action commands (sorting order and removals of elements)
+			// Action commands (sorting order and removals of elements) for flexform sections,
+			// see FormEngine for the use of this GP parameter
 			$actionCMDs = GeneralUtility::_GP('_ACTION_FLEX_FORMdata');
 			if (is_array($actionCMDs[$table][$id][$field]['data'])) {
 				$arrValue = GeneralUtility::xml2array($xmlValue);
@@ -2197,18 +2198,19 @@ class DataHandler {
 	 */
 	public function checkValue_flexArray2Xml($array, $addPrologue = FALSE) {
 		/** @var $flexObj \TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools */
-		$flexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+		$flexObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools::class);
 		return $flexObj->flexArray2Xml($array, $addPrologue);
 	}
 
 	/**
 	 * Actions for flex form element (move, delete)
+	 * allows to remove and move flexform sections
 	 *
 	 * @param array &$valueArrayToRemoveFrom by reference
 	 * @param array $deleteCMDS
 	 * @return void
 	 */
-	public function _ACTION_FLEX_FORMdata(&$valueArray, $actionCMDs) {
+	protected function _ACTION_FLEX_FORMdata(&$valueArray, $actionCMDs) {
 		if (is_array($valueArray) && is_array($actionCMDs)) {
 			foreach ($actionCMDs as $key => $value) {
 				if ($key == '_ACTION') {
@@ -2541,14 +2543,14 @@ class DataHandler {
 
 		$set = FALSE;
 		/** @var FlashMessage $message */
-		$message = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+		$message = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 			sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:error.invalidEmail'), $value),
 			'', // header is optional
 			FlashMessage::ERROR,
 			TRUE // whether message should be stored in session
 		);
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 		$flashMessageService->getMessageQueueByIdentifier()->enqueue($message);
 	}
 
@@ -3513,7 +3515,7 @@ class DataHandler {
 	public function copyRecord_fixRTEmagicImages($table, $theNewSQLID) {
 		// Creating fileFunc object.
 		if (!$this->fileFunc) {
-			$this->fileFunc = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\BasicFileUtility');
+			$this->fileFunc = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\File\BasicFileUtility::class);
 			$this->include_filefunctions = 1;
 		}
 		// Select all RTEmagic files in the reference table from the table/ID
@@ -3549,7 +3551,7 @@ class DataHandler {
 								$this->RTEmagic_copyIndex[$rec['tablename']][$rec['recuid']][$rec['field']][$rec['ref_string']] = \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($copyDestName);
 								// Check and update the record using \TYPO3\CMS\Core\Database\ReferenceIndex
 								if (@is_file($copyDestName)) {
-									$sysRefObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+									$sysRefObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ReferenceIndex::class);
 									$error = $sysRefObj->setReferenceValue($rec['hash'], \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($copyDestName), FALSE, TRUE);
 									if ($error) {
 										echo $this->newlog('TYPO3\\CMS\\Core\\Database\\ReferenceIndex::setReferenceValue(): ' . $error, 1);
@@ -4131,7 +4133,7 @@ class DataHandler {
 						$this->registerDBList[$table][$id][$field] = $value;
 						// Remove child records (if synchronization requested it):
 						if (is_array($removeArray) && count($removeArray)) {
-							$tce = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+							$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 							$tce->stripslashes_values = FALSE;
 							$tce->start(array(), $removeArray);
 							$tce->process_cmdmap();
@@ -4294,7 +4296,7 @@ class DataHandler {
 							$conf = $cfg['config'];
 							switch ($conf['type']) {
 								case 'flex':
-									$flexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools');
+									$flexObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools::class);
 									$flexObj->traverseFlexFormXMLData($table, $fieldName, BackendUtility::getRecordRaw($table, 'uid=' . (int)$uid), $this, 'deleteRecord_flexFormCallBack');
 									break;
 							}
@@ -4367,7 +4369,7 @@ class DataHandler {
 	 */
 	public function deleteRecord_flexFormCallBack($dsArr, $dataValue, $PA, $structurePath, $pObj) {
 		// Use reference index object to find files in fields:
-		$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+		$refIndexObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ReferenceIndex::class);
 		$files = $refIndexObj->getRelations_procFiles($dataValue, $dsArr['TCEforms']['config'], $PA['uid']);
 		// Traverse files and delete them:
 		if (is_array($files)) {
@@ -4465,7 +4467,7 @@ class DataHandler {
 						)
 					)
 				);
-				$dataHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+				$dataHandler = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 				$dataHandler->stripslashes_values = FALSE;
 				$dataHandler->neverHideAtCopy = TRUE;
 				$dataHandler->start(array(), $command);
@@ -4890,7 +4892,7 @@ class DataHandler {
 	 * @return DataHandler
 	 */
 	protected function getLocalTCE($stripslashesValues = FALSE, $dontProcessTransformations = TRUE) {
-		$copyTCE = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler');
+		$copyTCE = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 		$copyTCE->stripslashes_values = $stripslashesValues;
 		$copyTCE->copyTree = $this->copyTree;
 		// Copy forth the cached TSconfig
@@ -6005,7 +6007,7 @@ class DataHandler {
 	 */
 	public function updateRefIndex($table, $id) {
 		/** @var $refIndexObj \TYPO3\CMS\Core\Database\ReferenceIndex */
-		$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+		$refIndexObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ReferenceIndex::class);
 		if (BackendUtility::isTableWorkspaceEnabled($table)) {
 			$refIndexObj->setWorkspaceId($this->BE_USER->workspace);
 		}
@@ -7129,9 +7131,9 @@ class DataHandler {
 		while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res_log)) {
 			$log_data = unserialize($row['log_data']);
 			$msg = $row['error'] . ': ' . sprintf($row['details'], $log_data[0], $log_data[1], $log_data[2], $log_data[3], $log_data[4]);
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', htmlspecialchars($msg), '', FlashMessage::ERROR, TRUE);
+			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, htmlspecialchars($msg), '', FlashMessage::ERROR, TRUE);
 			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 			/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 			$defaultFlashMessageQueue->enqueue($flashMessage);
@@ -7412,7 +7414,7 @@ class DataHandler {
 	 * @return \TYPO3\CMS\Core\Database\RelationHandler
 	 */
 	protected function createRelationHandlerInstance() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 	}
 
 	/**
@@ -7421,6 +7423,6 @@ class DataHandler {
 	 * @return \TYPO3\CMS\Core\Cache\CacheManager
 	 */
 	protected function getCacheManager() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
 	}
 }

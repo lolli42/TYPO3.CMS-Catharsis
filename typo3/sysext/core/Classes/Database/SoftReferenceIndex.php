@@ -25,9 +25,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * which are default for most TYPO3 installations. Soft References can also be userdefined.
  * The Soft Reference parsers are used by the system to find these references and process them accordingly in import/export actions and copy operations.
  *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- */
-/**
  * Example of usage
  * Soft References:
  * if ($conf['softref'] && strlen($value))	{	// Check if a TCA configured field has softreferences defined (see TYPO3 Core API document)
@@ -72,13 +69,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class SoftReferenceIndex {
 
-	// External configuration
 	/**
 	 * @var string
 	 */
 	public $fileAdminDir = '';
 
-	// Internal:
 	/**
 	 * @var string
 	 */
@@ -177,7 +172,7 @@ class SoftReferenceIndex {
 	 */
 	public function findRef_images($content, $spParams) {
 		// Start HTML parser and split content by image tag:
-		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
 		$splitContent = $htmlParser->splitTags('img', $content);
 		$elements = array();
 		// Traverse splitted parts:
@@ -274,7 +269,7 @@ class SoftReferenceIndex {
 	 */
 	public function findRef_typolink_tag($content, $spParams) {
 		// Parse string for special TYPO3 <link> tag:
-		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
 		$linkTags = $htmlParser->splitTags('link', $content);
 		// Traverse result:
 		$elements = array();
@@ -306,7 +301,7 @@ class SoftReferenceIndex {
 	public function findRef_TStemplate($content, $spParams) {
 		$elements = array();
 		// First, try to find images and links:
-		$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\HtmlParser');
+		$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\HtmlParser::class);
 		$splitContent = $htmlParser->splitTags('img,a,form', $content);
 		// Traverse splitted parts:
 		foreach ($splitContent as $k => $v) {
@@ -826,7 +821,7 @@ class SoftReferenceIndex {
 	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 */
 	protected function getSignalSlotDispatcher() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\Dispatcher');
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 	}
 
 	/**

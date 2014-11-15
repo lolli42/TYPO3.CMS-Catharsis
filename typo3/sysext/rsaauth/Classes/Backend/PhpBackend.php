@@ -21,7 +21,7 @@ namespace TYPO3\CMS\Rsaauth\Backend;
  *
  * @author Dmitry Dulepov <dmitry@typo3.org>
  */
-class PhpBackend extends \TYPO3\CMS\Rsaauth\Backend\AbstractBackend {
+class PhpBackend extends AbstractBackend {
 	/**
 	 * Creates a new key pair for the encryption or gets the existing key pair (if one already has been generated).
 	 *
@@ -32,7 +32,7 @@ class PhpBackend extends \TYPO3\CMS\Rsaauth\Backend\AbstractBackend {
 	 */
 	public function createNewKeyPair() {
 		/** @var $keyPair \TYPO3\CMS\Rsaauth\Keypair */
-		$keyPair = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Rsaauth\\Keypair');
+		$keyPair = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Rsaauth\Keypair::class);
 		if ($keyPair->isReady()) {
 			return $keyPair;
 		}

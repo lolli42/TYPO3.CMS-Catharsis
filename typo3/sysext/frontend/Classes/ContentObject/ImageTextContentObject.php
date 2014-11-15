@@ -13,13 +13,14 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Contains IMAGE class object.
  *
  * @author Xavier Perseguers <typo3@perseguers.ch>
  * @author Steffen Kamper <steffen@typo3.org>
  */
-class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
+class ImageTextContentObject extends AbstractContentObject {
 
 	/**
 	 * Rendering the cObject, IMAGE
@@ -154,7 +155,7 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 			$equalHeight = isset($conf['equalH.']) ? (int)$this->cObj->stdWrap($conf['equalH'], $conf['equalH.']) : (int)$conf['equalH'];
 			// Initiate gifbuilder object in order to get dimensions AND calculate the imageWidth's
 			if ($equalHeight) {
-				$gifCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
+				$gifCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Imaging\GifBuilder::class);
 				$gifCreator->init();
 				$relations = array();
 				$relations_cols = array();

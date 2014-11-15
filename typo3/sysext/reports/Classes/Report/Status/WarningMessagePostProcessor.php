@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Reports\Report\Status;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Post processes the warning messages found in about modules.
  *
@@ -30,7 +31,7 @@ class WarningMessagePostProcessor {
 	 */
 	public function displayWarningMessages_postProcess(array &$warningMessages) {
 		// Get highest severity
-		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Registry');
+		$registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Registry::class);
 		$highestSeverity = $registry->get('tx_reports', 'status.highestSeverity', NULL);
 		if (!is_null($highestSeverity)) {
 			if ($highestSeverity > \TYPO3\CMS\Reports\Status::OK) {

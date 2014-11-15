@@ -837,7 +837,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	 * @param string $tableName Is the tablename to check: If "pages" table then edit,new,delete and editcontent permissions can be checked. Other tables will be checked for "editcontent" only (and $type will be ignored)
 	 * @param string $actionType For $tableName='pages' this can be 'edit' (2), 'new' (8 or 16), 'delete' (4), 'editcontent' (16). For all other tables this is ignored. (16 is used)
 	 * @return bool
-	 * @access public (used by typo3/alt_clickmenu.php)
+	 * @access public (used by ClickMenuController)
 	 */
 	public function isPSet($compiledPermissions, $tableName, $actionType = '') {
 		if ($this->isAdmin()) {
@@ -1310,7 +1310,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 			$this->userTS_text = implode(LF . '[GLOBAL]' . LF, $this->TSdataArray);
 			if (!$this->userTS_dontGetCached) {
 				// Perform TS-Config parsing with condition matching
-				$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TsConfigParser');
+				$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TsConfigParser::class);
 				$res = $parseObj->parseTSconfig($this->userTS_text, 'userTS');
 				if ($res) {
 					$this->userTS = $res['TSconfig'];
@@ -1323,7 +1323,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 				if (is_array($cachedContent) && !$this->userTS_dontGetCached) {
 					$this->userTS = $cachedContent;
 				} else {
-					$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+					$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 					$parseObj->parse($this->userTS_text);
 					$this->userTS = $parseObj->setup;
 					BackendUtility::storeHash($hash, $this->userTS, 'BE_USER_TSconfig');
@@ -1479,7 +1479,7 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 	protected function initializeFileStorages() {
 		$this->fileStorages = array();
 		/** @var $storageRepository \TYPO3\CMS\Core\Resource\StorageRepository */
-		$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
+		$storageRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\StorageRepository::class);
 		// Admin users have all file storages visible, without any filters
 		if ($this->isAdmin()) {
 			$storageObjects = $storageRepository->findAll();
@@ -2198,7 +2198,7 @@ This is a dump of the failures:
 				}
 				$from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
 				/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-				$mail = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+				$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 				$mail->setTo($email)->setFrom($from)->setSubject($subject)->setBody($email_body);
 				$mail->send();
 				// Logout written to log
@@ -2418,7 +2418,7 @@ This is a dump of the failures:
 				if ($warn) {
 					$from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
 					/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-					$mail = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+					$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 					$mail->setTo($GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'])->setFrom($from)->setSubject($prefix . ' ' . $subject)->setBody($msg);
 					$mail->send();
 				}
@@ -2427,7 +2427,7 @@ This is a dump of the failures:
 			if ($this->uc['emailMeAtLogin'] && strstr($this->user['email'], '@')) {
 				$from = \TYPO3\CMS\Core\Utility\MailUtility::getSystemFrom();
 				/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-				$mail = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+				$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 				$mail->setTo($this->user['email'])->setFrom($from)->setSubject($subject)->setBody($msg);
 				$mail->send();
 			}

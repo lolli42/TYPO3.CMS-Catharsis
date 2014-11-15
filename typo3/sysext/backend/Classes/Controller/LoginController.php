@@ -420,12 +420,8 @@ class LoginController {
 				$formProtection->setSessionTokenFromRegistry();
 				$formProtection->persistSessionToken();
 				$GLOBALS['TBE_TEMPLATE']->JScode .= $GLOBALS['TBE_TEMPLATE']->wrapScriptTags('
-					if (parent.opener && (parent.opener.busy || parent.opener.TYPO3.loginRefresh)) {
-						if (parent.opener.TYPO3.loginRefresh) {
-							parent.opener.TYPO3.loginRefresh.startTimer();
-						} else {
-							parent.opener.busy.loginRefreshed();
-						}
+					if (parent.opener && parent.opener.TYPO3 && parent.opener.TYPO3.loginRefresh) {
+						parent.opener.TYPO3.loginRefresh.startTimer();
 						parent.close();
 					}
 				');
@@ -504,7 +500,7 @@ class LoginController {
 		// Traverse news array IF there are records in it:
 		if (is_array($systemNews) && count($systemNews) && !GeneralUtility::_GP('loginRefresh')) {
 			/** @var $htmlParser \TYPO3\CMS\Core\Html\RteHtmlParser */
-			$htmlParser = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Html\\RteHtmlParser');
+			$htmlParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\RteHtmlParser::class);
 			$htmlParser->procOptions['dontHSC_rte'] = TRUE;
 
 			// Get the main news template, and replace the subpart after looped through
@@ -635,7 +631,7 @@ class LoginController {
 	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
 	 */
 	protected function getObjectManager() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
 	}
 
 }

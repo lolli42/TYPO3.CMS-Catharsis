@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Openid;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -22,6 +23,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @author Christian Weiske <cweiske@cweiske.de>
  */
 class Wizard extends OpenidService {
+
 	/**
 	 * OpenID of the user after authentication
 	 *
@@ -72,16 +74,16 @@ class Wizard extends OpenidService {
 
 			// When sendOpenIDRequest() returns, there was an error
 			$flashMessageService = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
+				\TYPO3\CMS\Core\Messaging\FlashMessageService::class
 			);
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				sprintf(
 					$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:error.setup'),
 					htmlspecialchars($openIDIdentifier)
 				),
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:title.error'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				FlashMessage::ERROR
 			);
 			$flashMessageService->getMessageQueueByIdentifier()->enqueue($flashMessage);
 		}
@@ -119,48 +121,46 @@ class Wizard extends OpenidService {
 	 */
 	protected function handleResponse() {
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
-		);
+		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 
 		if (!$this->openIDResponse instanceof \Auth_OpenID_ConsumerResponse) {
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:error.no-response'),
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:title.error'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				FlashMessage::ERROR
 			);
 		} elseif ($this->openIDResponse->status == Auth_OpenID_SUCCESS) {
 			// all fine
 			$this->claimedId = $this->getSignedParameter('openid_claimed_id');
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				sprintf(
 					$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:youropenid'),
 					htmlspecialchars($this->claimedId)
 				),
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:title.success'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::OK
+				FlashMessage::OK
 			);
 		} elseif ($this->openIDResponse->status == Auth_OpenID_CANCEL) {
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:error.cancelled'),
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:title.error'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				FlashMessage::ERROR
 			);
 		} else {
 			// another failure. show error message and form again
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				sprintf(
 					$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:error.general'),
 					htmlspecialchars($this->openIDResponse->status),
 					htmlspecialchars($this->openIDResponse->message)
 				),
 				$GLOBALS['LANG']->sL('LLL:EXT:openid/Resources/Private/Language/Wizard.xlf:title.error'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				FlashMessage::ERROR
 			);
 		}
 
@@ -174,17 +174,16 @@ class Wizard extends OpenidService {
 	 */
 	protected function renderHtml() {
 		// use FLUID standalone view for wizard content
-		$view = GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 		$view->setTemplatePathAndFilename(
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('openid') .
 			'Resources/Private/Templates/Wizard/Content.html'
 		);
 
 		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
-		);
+		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+
 		$messages = array();
 		foreach ($defaultFlashMessageQueue->getAllMessagesAndFlush() as $message) {
 			$messages[] = $message->render();

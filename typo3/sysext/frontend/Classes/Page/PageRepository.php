@@ -55,8 +55,6 @@ class PageRepository {
 	 */
 	public $sys_language_uid = 0;
 
-	// Versioning preview related
-
 	/**
 	 * If TRUE, versioning preview of other record versions is allowed. THIS MUST
 	 * ONLY BE SET IF the page is not cached and truely previewed by a backend
@@ -78,8 +76,6 @@ class PageRepository {
 	 */
 	public $workspaceCache = array();
 
-	// Internal, dynamic
-
 	/**
 	 * Error string set by getRootLine()
 	 *
@@ -93,8 +89,6 @@ class PageRepository {
 	 * @var int
 	 */
 	public $error_getRootLine_failPid = 0;
-
-	// Internal caching
 
 	/**
 	 * @var array
@@ -610,7 +604,7 @@ class PageRepository {
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageAndRootline()
 	 */
 	public function getRootLine($uid, $MP = '', $ignoreMPerrors = FALSE) {
-		$rootline = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\RootlineUtility', $uid, $MP, $this);
+		$rootline = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\RootlineUtility::class, $uid, $MP, $this);
 		try {
 			return $rootline->get();
 		} catch (\RuntimeException $ex) {
@@ -852,7 +846,7 @@ class PageRepository {
 	 */
 	static public function getHash($hash, $expTime = 0) {
 		$hashContent = NULL;
-		$contentHashCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash');
+		$contentHashCache = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_hash');
 		$cacheEntry = $contentHashCache->get($hash);
 		if ($cacheEntry) {
 			$hashContent = $cacheEntry;
@@ -875,7 +869,7 @@ class PageRepository {
 	 * @see tslib_TStemplate::start(), getHash()
 	 */
 	static public function storeHash($hash, $data, $ident, $lifetime = 0) {
-		GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), (int)$lifetime);
+		GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), (int)$lifetime);
 	}
 
 	/**
@@ -1322,7 +1316,7 @@ class PageRepository {
 	 */
 	public function getFileReferences($tableName, $fieldName, array $element) {
 		/** @var $fileRepository \TYPO3\CMS\Core\Resource\FileRepository */
-		$fileRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\FileRepository');
+		$fileRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\FileRepository::class);
 		$currentId = !empty($element['uid']) ? $element['uid'] : 0;
 
 		// Fetch the references of the default element

@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Core\Utility\File;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -55,16 +56,18 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  */
 class ExtendedFileUtility extends BasicFileUtility {
 
-	// External static variables:
-	// Notice; some of these are overridden in the start() method with values from $GLOBALS['TYPO3_CONF_VARS']['BE']
-	// Path to unzip-program (with trailing '/')
 	/**
+	 * External static variables:
+	 * Notice; some of these are overridden in the start() method with values from $GLOBALS['TYPO3_CONF_VARS']['BE']
+	 * Path to unzip-program (with trailing '/')
+	 *
 	 * @var string
 	 */
 	public $unzipPath = '';
 
-	// If set, the uploaded files will overwrite existing files.
 	/**
+	 * If set, the uploaded files will overwrite existing files.
+	 *
 	 * @var bool
 	 */
 	public $dontCheckForUnique = 0;
@@ -97,15 +100,16 @@ class ExtendedFileUtility extends BasicFileUtility {
 		'recursivedeleteFolder' => FALSE
 	);
 
-	// This is regarded to be the recycler folder
 	/**
+	 * This is regarded to be the recycler folder
+	 *
 	 * @var string
 	 */
 	public $recyclerFN = '_recycler_';
 
-	// Internal, dynamic
-	// Will contain map between upload ID and the final filename
 	/**
+	 * Will contain map between upload ID and the final filename
+	 *
 	 * @var array
 	 */
 	public $internalUploadMap = array();
@@ -133,7 +137,6 @@ class ExtendedFileUtility extends BasicFileUtility {
 	 * @var \TYPO3\CMS\Core\Resource\ResourceFactory
 	 */
 	protected $fileFactory;
-
 
 	/**
 	 * Initialization of the class
@@ -271,7 +274,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 	public function pushErrorMessagesToFlashMessageQueue() {
 		foreach ($this->getErrorMessages() as $msg) {
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				$msg,
 				'',
 				FlashMessage::ERROR,
@@ -349,8 +352,8 @@ class ExtendedFileUtility extends BasicFileUtility {
 					}
 					$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
 					$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
-					$onClick = 'Clickmenu.show("' . $row['tablename'] . '", "' . $row['recuid'] . '", "1", "+info,history,edit", "|", "");return false;';
-					$shortcutContent[] = '<a href="#" oncontextmenu="this.click();return false;" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>' . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
+					$icon = '<a href="#" class="t3-js-clickmenutrigger" data-table="' . $row['tablename'] . '" data-uid="' . $row['recuid'] . '" data-listframe="1" data-iteminfo="%2Binfo,history,edit">' . $icon . '</a>';
+					$shortcutContent[] = $icon . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
 				}
 
 				// render a message that the file could not be deleted
@@ -948,10 +951,9 @@ class ExtendedFileUtility extends BasicFileUtility {
 	 * @return void
 	 */
 	protected function addFlashMessage(FlashMessage $flashMessage) {
-		/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-		$flashMessageService = GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessageService'
-		);
+		/** @var $flashMessageService FlashMessageService */
+		$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+
 		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 		$defaultFlashMessageQueue->enqueue($flashMessage);
@@ -964,7 +966,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 	 * @return \TYPO3\CMS\Core\Resource\Index\Indexer
 	 */
 	protected function getIndexer(ResourceStorage $storage) {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\Index\\Indexer', $storage);
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Index\Indexer::class, $storage);
 	}
 
 	/**

@@ -23,7 +23,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * @author Steffen Ritter <info@steffen-ritter.net>
  * @author Benjamin Mack <benni@typo3.org>
  */
-class FluidTemplateContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
+class FluidTemplateContentObject extends AbstractContentObject {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\View\StandaloneView
@@ -33,7 +33,7 @@ class FluidTemplateContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstr
 	/**
 	 * Constructor
 	 */
-	public function __construct(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObjectRenderer) {
+	public function __construct(ContentObjectRenderer $contentObjectRenderer) {
 		parent::__construct($contentObjectRenderer);
 	}
 
@@ -97,7 +97,7 @@ class FluidTemplateContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstr
 	 * @return void
 	 */
 	protected function initializeStandaloneViewInstance() {
-		$this->view = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$this->view = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 	}
 
 	/**
@@ -228,7 +228,7 @@ class FluidTemplateContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstr
 	protected function assignSettings(array $conf) {
 		if (array_key_exists('settings.', $conf)) {
 			/** @var $typoScriptService \TYPO3\CMS\Extbase\Service\TypoScriptService */
-			$typoScriptService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Service\\TypoScriptService');
+			$typoScriptService = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Service\TypoScriptService::class);
 			$settings = $typoScriptService->convertTypoScriptArrayToPlainArray($conf['settings.']);
 			$this->view->assign('settings', $settings);
 		}

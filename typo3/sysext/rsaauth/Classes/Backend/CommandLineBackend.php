@@ -23,7 +23,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * @author Dmitry Dulepov <dmitry@typo3.org>
  */
-class CommandLineBackend extends \TYPO3\CMS\Rsaauth\Backend\AbstractBackend {
+class CommandLineBackend extends AbstractBackend {
+
 	/**
 	 * @var int
 	 */
@@ -69,7 +70,7 @@ class CommandLineBackend extends \TYPO3\CMS\Rsaauth\Backend\AbstractBackend {
 	 */
 	public function createNewKeyPair() {
 		/** @var $keyPair \TYPO3\CMS\Rsaauth\Keypair */
-		$keyPair = GeneralUtility::makeInstance('TYPO3\\CMS\\Rsaauth\\Keypair');
+		$keyPair = GeneralUtility::makeInstance(\TYPO3\CMS\Rsaauth\Keypair::class);
 		if ($keyPair->isReady()) {
 			return $keyPair;
 		}

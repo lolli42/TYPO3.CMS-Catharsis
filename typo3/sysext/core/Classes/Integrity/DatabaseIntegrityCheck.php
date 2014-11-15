@@ -22,7 +22,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  * Depends on: Depends on \TYPO3\CMS\Core\Database\RelationHandler
  *
  * @todo Need to really extend this class when the tcemain library has been updated and the whole API is better defined. There are some known bugs in this library. Further it would be nice with a facility to not only analyze but also clean up!
- * @see SC_mod_tools_dbint_index::func_relations(), SC_mod_tools_dbint_index::func_records()
+ * @see \TYPO3\CMS\Lowlevel\View\DatabaseIntegrityView::func_relations(), \TYPO3\CMS\Lowlevel\View\DatabaseIntegrityView::func_records()
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class DatabaseIntegrityCheck {
@@ -52,7 +52,6 @@ class DatabaseIntegrityCheck {
 	 */
 	public $genTree_makeHTML = 0;
 
-	// Internal
 	/**
 	 * @var array Will hold id/rec pairs from genTree()
 	 */
@@ -73,7 +72,6 @@ class DatabaseIntegrityCheck {
 	 */
 	public $backPath = '';
 
-	// Internal
 	/**
 	 * @var array
 	 */
@@ -428,7 +426,7 @@ class DatabaseIntegrityCheck {
 										if ($fieldConf['MM']) {
 											$tempArr = array();
 											/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
-											$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+											$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 											$dbAnalysis->start('', 'files', $fieldConf['MM'], $row['uid']);
 											foreach ($dbAnalysis->itemArray as $somekey => $someval) {
 												if ($someval['id']) {
@@ -447,7 +445,7 @@ class DatabaseIntegrityCheck {
 									}
 									if ($fieldConf['internal_type'] == 'db') {
 										/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
-										$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+										$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 										$dbAnalysis->start($row[$field], $fieldConf['allowed'], $fieldConf['MM'], $row['uid'], $table, $fieldConf);
 										foreach ($dbAnalysis->itemArray as $tempArr) {
 											$this->checkGroupDBRefs[$tempArr['table']][$tempArr['id']] += 1;
@@ -456,7 +454,7 @@ class DatabaseIntegrityCheck {
 								}
 								if ($fieldConf['type'] == 'select' && $fieldConf['foreign_table']) {
 									/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
-									$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+									$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 									$dbAnalysis->start($row[$field], $fieldConf['foreign_table'], $fieldConf['MM'], $row['uid'], $table, $fieldConf);
 									foreach ($dbAnalysis->itemArray as $tempArr) {
 										if ($tempArr['id'] > 0) {
@@ -602,7 +600,7 @@ class DatabaseIntegrityCheck {
 				$fieldConf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 				$allowedTables = $fieldConf['type'] == 'group' ? $fieldConf['allowed'] : $fieldConf['foreign_table'];
 				/** @var $dbAnalysis \TYPO3\CMS\Core\Database\RelationHandler */
-				$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+				$dbAnalysis = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 				$dbAnalysis->start($row[$field], $allowedTables, $fieldConf['MM'], $row['uid'], $table, $fieldConf);
 				foreach ($dbAnalysis->itemArray as $tempArr) {
 					if ($tempArr['table'] == $searchTable && $tempArr['id'] == $id) {

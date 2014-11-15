@@ -19,7 +19,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject {
+class ImageMenuContentObject extends AbstractMenuContentObject {
 
 	/**
 	 * Calls procesItemStates() so that the common configuration for the menu items are resolved into individual configuration per item.
@@ -54,7 +54,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 			$conf = array();
 		}
 		if (is_array($this->mconf['main.'])) {
-			$gifCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Imaging\\GifBuilder');
+			$gifCreator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Imaging\GifBuilder::class);
 			$gifCreator->init();
 			$itemsConf = $conf;
 			$conf = $this->mconf['main.'];
@@ -100,7 +100,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 										$theValArr['imgMap.']['target'] = $LD['target'];
 									}
 									if (is_array($theValArr['imgMap.']['altText.'])) {
-										$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+										$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 										$cObj->start($cObjData, 'pages');
 										if (isset($theValArr['imgMap.']['altText.'])) {
 											$theValArr['imgMap.']['altText'] = $cObj->stdWrap($theValArr['imgMap.']['altText'], $theValArr['imgMap.']['altText.']);
@@ -108,7 +108,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 										unset($theValArr['imgMap.']['altText.']);
 									}
 									if (is_array($theValArr['imgMap.']['titleText.'])) {
-										$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+										$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 										$cObj->start($cObjData, 'pages');
 										if (isset($theValArr['imgMap.']['titleText.'])) {
 											$theValArr['imgMap.']['titleText'] = $cObj->stdWrap($theValArr['imgMap.']['titleText'], $theValArr['imgMap.']['titleText.']);
@@ -145,7 +145,7 @@ class ImageMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abst
 								$setObjFlag = 1;
 								if ($theValArr['if.']) {
 									/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $cObj */
-									$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+									$cObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 									$cObj->start($cObjData, 'pages');
 									if (!empty($theValArr['if.']) && !$cObj->checkIf($theValArr['if.'])) {
 										$setObjFlag = 0;

@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Linkvalidator\Report;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -208,7 +209,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			$this->updateListHtml = '<input type="submit" name="updateLinkList" id="updateLinkList" value="' . $GLOBALS['LANG']->getLL('label_update') . '"/>';
 		}
 		$this->refreshListHtml = '<input type="submit" name="refreshLinkList" id="refreshLinkList" value="' . $GLOBALS['LANG']->getLL('label_refresh') . '"/>';
-		$this->processor = GeneralUtility::makeInstance('TYPO3\\CMS\\Linkvalidator\\LinkAnalyzer');
+		$this->processor = GeneralUtility::makeInstance(\TYPO3\CMS\Linkvalidator\LinkAnalyzer::class);
 		$this->updateBrokenLinks();
 		$brokenLinkOverView = $this->processor->getLinkCounts($this->pObj->id);
 		$this->checkOptHtml = $this->getCheckOptions($brokenLinkOverView);
@@ -279,7 +280,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 				$this->hookObjectsArr[$linkType] = GeneralUtility::getUserObj($classRef);
 			}
 		}
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('linkvalidator') . 'Resources/Private/Templates/mod_template.html');
 		$this->relativePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('linkvalidator');
@@ -338,12 +339,12 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			$this->content = $this->renderBrokenLinksTable();
 		} else {
 			// If no access or if ID == zero
-			/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
+			/** @var FlashMessage $message */
 			$message = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				FlashMessage::class,
 				$GLOBALS['LANG']->getLL('no.access'),
 				$GLOBALS['LANG']->getLL('no.access.title'),
-				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+				FlashMessage::ERROR
 			);
 			$this->content .= $message->render();
 		}
@@ -453,12 +454,12 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	 */
 	protected function getNoBrokenLinkMessage(array $brokenLinksMarker) {
 		$brokenLinksMarker['LIST_HEADER'] = $this->doc->sectionHeader($GLOBALS['LANG']->getLL('list.header'));
-		/** @var $message \TYPO3\CMS\Core\Messaging\FlashMessage */
+		/** @var $message FlashMessage */
 		$message = GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+			FlashMessage::class,
 			$GLOBALS['LANG']->getLL('list.no.broken.links'),
 			$GLOBALS['LANG']->getLL('list.no.broken.links.title'),
-			\TYPO3\CMS\Core\Messaging\FlashMessage::OK
+			FlashMessage::OK
 		);
 		$brokenLinksMarker['NO_BROKEN_LINKS'] = $message->render();
 		return $brokenLinksMarker;
@@ -636,7 +637,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	 */
 	protected function getDocHeaderButtons() {
 		$buttons = array(
-			'csh' => BackendUtility::cshItem('_MOD_web_func', '', $GLOBALS['BACK_PATH']),
+			'csh' => BackendUtility::cshItem('_MOD_web_func', ''),
 			'shortcut' => $this->getShortcutButton(),
 			'save' => ''
 		);

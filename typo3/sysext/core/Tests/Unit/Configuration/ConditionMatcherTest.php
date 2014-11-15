@@ -31,7 +31,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $conditionMatcher;
 
 	public function setUp() {
-		$this->conditionMatcher = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
+		$this->conditionMatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching\ConditionMatcher::class);
 	}
 
 	/**
@@ -120,6 +120,14 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function testUserFuncWithQuotesInside() {
 		$this->assertTrue($this->conditionMatcher->match('[userFunc = user_testQuotes("1 \" 2") ]'));
+	}
+
+	/**
+	 * @test
+	 * @return void
+	 */
+	public function testUserFuncWithClassMethodCall() {
+		$this->assertTrue($this->conditionMatcher->match('[userFunc = ConditionMatcherUserFunctions::isTrue(1)]'));
 	}
 
 }

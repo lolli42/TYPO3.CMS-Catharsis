@@ -378,7 +378,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			// Start table:
 			$this->oddColumnsCssClass = '';
 			// CSH:
-			$out = BackendUtility::cshItem($this->descrTable, ('func_' . $pKey), $GLOBALS['BACK_PATH']) . '
+			$out = BackendUtility::cshItem($this->descrTable, ('func_' . $pKey)) . '
 				<table class="t3-table typo3-page-pages">' .
 					'<thead>' .
 						$this->addelement(1, '', $theData) .
@@ -651,7 +651,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					$out .= $grid . '</table></div>';
 				}
 				// CSH:
-				$out .= BackendUtility::cshItem($this->descrTable, 'columns_multi', $GLOBALS['BACK_PATH']);
+				$out .= BackendUtility::cshItem($this->descrTable, 'columns_multi');
 			}
 			// If language mode, then make another presentation:
 			// Notice that THIS presentation will override the value of $out!
@@ -739,7 +739,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						</table>
 					</div>';
 				// CSH:
-				$out .= BackendUtility::cshItem($this->descrTable, 'language_list', $GLOBALS['BACK_PATH']);
+				$out .= BackendUtility::cshItem($this->descrTable, 'language_list');
 			}
 		} else {
 			// SINGLE column mode (columns shown beneath each other):
@@ -844,7 +844,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						' . $out . '
 					</table>';
 				// CSH:
-				$out .= BackendUtility::cshItem($this->descrTable, 'columns_single', $GLOBALS['BACK_PATH']);
+				$out .= BackendUtility::cshItem($this->descrTable, 'columns_single');
 			} else {
 				$out = '<br/><br/>' . $this->getPageLayoutController()->doc->icons(1)
 					. 'Sorry, you cannot view a single language in this localization mode (Default Language Binding is enabled)<br/><br/>';
@@ -902,7 +902,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					<tr>
 						<td>' . implode('</td>
 						<td>', $bArray) . '</td>
-						<td>' . BackendUtility::cshItem($this->descrTable, 'button_panel', $GLOBALS['BACK_PATH']) . '</td>
+						<td>' . BackendUtility::cshItem($this->descrTable, 'button_panel') . '</td>
 					</tr>
 				</table>
 				<br />
@@ -1524,9 +1524,9 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$shortcutRecord = BackendUtility::getRecord($tableName, $split[1]);
 							if (is_array($shortcutRecord)) {
 								$icon = IconUtility::getSpriteIconForRecord($tableName, $shortcutRecord);
-								$onClick = $this->getPageLayoutController()->doc->wrapClickMenuOnIcon($icon, $tableName,
-									$shortcutRecord['uid'], 1, '', '+copy,info,edit,view', TRUE);
-								$shortcutContent[] = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $icon . '</a>'
+								$icon = $this->getPageLayoutController()->doc->wrapClickMenuOnIcon($icon, $tableName,
+									$shortcutRecord['uid'], 1, '', '+copy,info,edit,view');
+								$shortcutContent[] = $icon
 									. htmlspecialchars(BackendUtility::getRecordTitle($tableName, $shortcutRecord));
 							}
 						}
@@ -1556,7 +1556,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						} else {
 							$message = sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue'), $row['list_type']);
 							$out .= GeneralUtility::makeInstance(
-								'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+								FlashMessage::class,
 								htmlspecialchars($message),
 								'',
 								FlashMessage::WARNING
@@ -1596,7 +1596,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$row['CType']
 						);
 						$out .= GeneralUtility::makeInstance(
-							'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+							FlashMessage::class,
 							htmlspecialchars($message),
 							'',
 							FlashMessage::WARNING
@@ -1844,7 +1844,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 */
 	protected function initializeClipboard() {
 		// Start clipboard
-		$this->clipboard = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
+		$this->clipboard = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
 
 		// Initialize - reads the clipboard content from the user session
 		$this->clipboard->initializeClipboard();
@@ -2175,9 +2175,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @return BackendLayoutView
 	 */
 	protected function getBackendLayoutView() {
-		return GeneralUtility::makeInstance(
-			'TYPO3\\CMS\\Backend\\View\\BackendLayoutView'
-		);
+		return GeneralUtility::makeInstance(BackendLayoutView::class);
 	}
 
 	/**

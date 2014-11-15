@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Lowlevel\View;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
@@ -24,6 +25,7 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ConfigurationView {
+
 	/**
 	 * @var \TYPO3\CMS\Fluid\View\StandaloneView
 	 */
@@ -34,10 +36,19 @@ class ConfigurationView {
 	 */
 	protected $flashMessageQueue;
 
+	/**
+	 * @var array
+	 */
 	public $MCONF = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_MENU = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_SETTINGS = array();
 
 	/**
@@ -47,8 +58,14 @@ class ConfigurationView {
 	 */
 	public $doc;
 
+	/**
+	 * @var array
+	 */
 	public $include_once = array();
 
+	/**
+	 * @var string
+	 */
 	public $content;
 
 	/**
@@ -56,7 +73,7 @@ class ConfigurationView {
 	 */
 	public function __construct() {
 		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], 1);
-		$this->view = GeneralUtility::makeInstance('TYPO3\\CMS\\Fluid\\View\\StandaloneView');
+		$this->view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 		$this->view->getRequest()->setControllerExtensionName('lowlevel');
 	}
 
@@ -68,10 +85,11 @@ class ConfigurationView {
 	public function init() {
 		$this->MCONF = $GLOBALS['MCONF'];
 		$this->menuConfig();
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:lowlevel/Resources/Private/Templates/config.html');
 		$this->doc->form = '<form action="" method="post">';
+		$this->doc->addStyleSheet('module', 'sysext/lowlevel/Resources/Public/Styles/styles.css');
 	}
 
 	/**
@@ -110,7 +128,8 @@ class ConfigurationView {
 	 * @return void
 	 */
 	public function main() {
-		$arrayBrowser = GeneralUtility::makeInstance('TYPO3\\CMS\\Lowlevel\\Utility\\ArrayBrowser');
+		/** @var \TYPO3\CMS\Lowlevel\Utility\ArrayBrowser $arrayBrowser */
+		$arrayBrowser = GeneralUtility::makeInstance(\TYPO3\CMS\Lowlevel\Utility\ArrayBrowser::class);
 		$label = $this->MOD_MENU['function'][$this->MOD_SETTINGS['function']];
 		$search_field = GeneralUtility::_GP('search_field');
 
@@ -119,7 +138,6 @@ class ConfigurationView {
 		$this->view->assign('label', $label);
 		$this->view->assign('search_field', $search_field);
 		$this->view->assign('checkbox_checkRegexsearch', BackendUtility::getFuncCheck(0, 'SET[regexsearch]', $this->MOD_SETTINGS['regexsearch'], '', '', 'id="checkRegexsearch"'));
-		$this->view->assign('checkbox_checkFixedLgd', BackendUtility::getFuncCheck(0, 'SET[fixedLgd]', $this->MOD_SETTINGS['fixedLgd'], '', '', 'id="checkFixedLgd"'));
 
 		switch ($this->MOD_SETTINGS['function']) {
 			case 0:
@@ -224,7 +242,7 @@ class ConfigurationView {
 				if ($success) {
 					// show flash message
 					$flashMessage = GeneralUtility::makeInstance(
-						'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+						FlashMessage::class,
 						'',
 						sprintf(
 							LocalizationUtility::translate('writeMessage', 'lowlevel'),
@@ -232,15 +250,15 @@ class ConfigurationView {
 							'<br />',
 							'<strong>' . nl2br(htmlspecialchars($changedLine)) . '</strong>'
 						),
-						\TYPO3\CMS\Core\Messaging\FlashMessage::OK
+						FlashMessage::OK
 					);
 				} else {
 					// Error: show flash message
 					$flashMessage = GeneralUtility::makeInstance(
-						'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+						FlashMessage::class,
 						'',
 						sprintf(LocalizationUtility::translate('writeMessageFailed', 'lowlevel'), TYPO3_extTableDef_script),
-						\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
+						FlashMessage::ERROR
 					);
 				}
 				$this->getFlashMessageQueue()->enqueue($flashMessage);
@@ -313,7 +331,7 @@ class ConfigurationView {
 	protected function getFlashMessageQueue() {
 		if (!$this->flashMessageQueue instanceof \TYPO3\CMS\Core\Messaging\FlashMessageQueue) {
 			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 			$this->flashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 		}
 

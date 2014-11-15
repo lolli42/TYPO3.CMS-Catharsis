@@ -107,7 +107,7 @@ class MoveElementController {
 		// Select-pages where clause for read-access:
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// Starting the document template object:
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/move_el.html');
 		$this->doc->JScode = '';
@@ -144,7 +144,7 @@ class MoveElementController {
 				$pageinfo = BackendUtility::readPageAccess($this->page_id, $this->perms_clause);
 				if (is_array($pageinfo) && $GLOBALS['BE_USER']->isInWebMount($pageinfo['pid'], $this->perms_clause)) {
 					// Initialize the position map:
-					$posMap = GeneralUtility::makeInstance('ext_posMap_pages');
+					$posMap = GeneralUtility::makeInstance(\ext_posMap_pages::class);
 					$posMap->moveOrCopy = $this->makeCopy ? 'copy' : 'move';
 					// Print a "go-up" link IF there is a real parent page (and if the user has read-access to that page).
 					if ($pageinfo['pid']) {
@@ -173,7 +173,7 @@ class MoveElementController {
 				$pageinfo = BackendUtility::readPageAccess($this->page_id, $this->perms_clause);
 				if (is_array($pageinfo) && $GLOBALS['BE_USER']->isInWebMount($pageinfo['pid'], $this->perms_clause)) {
 					// Initialize the position map:
-					$posMap = GeneralUtility::makeInstance('ext_posMap_tt_content');
+					$posMap = GeneralUtility::makeInstance(\ext_posMap_tt_content::class);
 					$posMap->moveOrCopy = $this->makeCopy ? 'copy' : 'move';
 					$posMap->cur_sys_language = $this->sys_language;
 					// Headerline for the parent page: Icon, record title:
@@ -246,9 +246,9 @@ class MoveElementController {
 		);
 		if ($this->page_id) {
 			if ((string)$this->table == 'pages') {
-				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_pages', $GLOBALS['BACK_PATH'], '', TRUE);
+				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_pages');
 			} elseif ((string)$this->table == 'tt_content') {
-				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_cs', $GLOBALS['BACK_PATH'], '', TRUE);
+				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_cs');
 			}
 			if ($this->R_URI) {
 				$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $GLOBALS['LANG']->getLL('goBack', TRUE) . '">' . IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';

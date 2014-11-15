@@ -13,13 +13,14 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Contains HMENU class object.
  *
  * @author Xavier Perseguers <typo3@perseguers.ch>
  * @author Steffen Kamper <steffen@typo3.org>
  */
-class HierarchicalMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
+class HierarchicalMenuContentObject extends AbstractContentObject {
 
 	/**
 	 * Rendering the cObject, HMENU
@@ -36,7 +37,7 @@ class HierarchicalMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Ab
 		$menuType = $conf[1];
 		try {
 			/** @var $menuObjectFactory \TYPO3\CMS\Frontend\ContentObject\Menu\MenuContentObjectFactory */
-			$menuObjectFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\Menu\\MenuContentObjectFactory');
+			$menuObjectFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\Menu\MenuContentObjectFactory::class);
 			$menu = $menuObjectFactory->getMenuObjectByType($menuType);
 			$GLOBALS['TSFE']->register['count_HMENU']++;
 			$GLOBALS['TSFE']->register['count_HMENU_MENUOBJ'] = 0;

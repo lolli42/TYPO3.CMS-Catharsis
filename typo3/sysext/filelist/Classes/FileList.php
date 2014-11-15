@@ -29,59 +29,98 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	/**
 	 * Default Max items shown
 	 *
+	 * @var int
 	 */
 	public $iLimit = 40;
 
 	/**
-	 * Boolean. Thumbnails on records containing files (pictures)
+	 * Thumbnails on records containing files (pictures)
 	 *
+	 * @var bool
 	 */
-	public $thumbs = 0;
+	public $thumbs = FALSE;
 
+	/**
+	 * @var string
+	 */
 	public $widthGif = '<img src="clear.gif" width="1" height="1" hspace="165" alt="" />';
 
 	/**
 	 * Max length of strings
 	 *
+	 * @var int
 	 */
 	public $fixedL = 30;
 
+	/**
+	 * @var string
+	 */
 	public $script = '';
 
 	/**
 	 * If TRUE click menus are generated on files and folders
 	 *
+	 * @var bool
 	 */
 	public $clickMenus = 1;
 
 	/**
 	 * The field to sort by
 	 *
+	 * @var string
 	 */
 	public $sort = '';
 
 	/**
 	 * Reverse sorting flag
 	 *
+	 * @var bool
 	 */
 	public $sortRev = 1;
 
+	/**
+	 * @var int
+	 */
 	public $firstElementNumber = 0;
 
+	/**
+	 * @var bool
+	 */
 	public $clipBoard = 0;
 
+	/**
+	 * @var bool
+	 */
 	public $bigControlPanel = 0;
 
+	/**
+	 * @var string
+	 */
 	public $JScode = '';
 
+	/**
+	 * @var string
+	 */
 	public $HTMLcode = '';
 
+	/**
+	 * @var int
+	 */
 	public $totalbytes = 0;
 
+	/**
+	 * @var array
+	 */
 	public $dirs = array();
 
+	/**
+	 * @var array
+	 */
 	public $files = array();
 
+	/**
+	 * @var string
+	 */
 	public $path = '';
 
 	/**
@@ -92,13 +131,23 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	/**
 	 * Counting the elements no matter what
 	 *
+	 * @var int
 	 */
 	public $eCounter = 0;
 
+	/**
+	 * @var int
+	 */
 	public $dirCounter = 0;
 
+	/**
+	 * @var string
+	 */
 	public $totalItems = '';
 
+	/**
+	 * @var array
+	 */
 	public $CBnames = array();
 
 	/**
@@ -322,7 +371,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 
 		} else {
 			/** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('storageNotBrowsableMessage'), $GLOBALS['LANG']->getLL('storageNotBrowsableTitle'), \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
+			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('storageNotBrowsableMessage'), $GLOBALS['LANG']->getLL('storageNotBrowsableTitle'), \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
 			$out = $flashMessage->render();
 		}
 		return $out;
@@ -510,7 +559,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	public function formatFileList(array $files) {
 		$out = '';
 		// first two keys are "0" (default) and "-1" (multiple), after that comes the "other languages"
-		$allSystemLanguages = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider')->getSystemLanguages();
+		$allSystemLanguages = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class)->getSystemLanguages();
 		$systemLanguages = array_filter($allSystemLanguages, function($languageRecord) {
 			if ($languageRecord['uid'] === -1 || $languageRecord['uid'] === 0 || !$GLOBALS['BE_USER']->checkLanguageAccess($languageRecord['uid'])) {
 				return FALSE;

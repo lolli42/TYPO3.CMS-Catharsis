@@ -11,6 +11,35 @@
  * The TYPO3 project - inspiring people to share!
  */
 
+
+/**
+ * common storage and global object, could later hold more information about the current user etc.
+ */
+var TYPO3 = TYPO3 || {};
+TYPO3 = Ext.apply(TYPO3, {
+	// store instances that only should be running once
+	_instances: {},
+	getInstance: function(className) {
+		return TYPO3._instances[className] || false;
+	},
+	addInstance: function(className, instance) {
+		TYPO3._instances[className] = instance;
+		return instance;
+	},
+
+	helpers: {
+		// creates an array by splitting a string into parts, taking a delimiter
+		split: function(str, delim) {
+			var res = [];
+			while (str.indexOf(delim) > 0) {
+				res.push(str.substr(0, str.indexOf(delim)));
+				str = str.substr(str.indexOf(delim) + delim.length);
+			}
+			return res;
+		}
+	}
+});
+
 /**
  * general backend javascript functions
  */
@@ -45,13 +74,15 @@ var ShortcutManager = {
 
 	/**
 	 * central entry point to create a shortcut, delegates the call to correct endpoint
+	 * kept for backwards compatibility, use top.TYPO3.ShortcutMenu.createShortcut directly
+	 * in the future
 	 */
 	createShortcut: function(confirmQuestion, backPath, moduleName, url) {
-		if(confirm(confirmQuestion)) {
-			if (typeof TYPO3BackendShortcutMenu !== undefined) {
-					// backend.php
-				TYPO3BackendShortcutMenu.createShortcut('', moduleName, url);
-			}
+		if (console) {
+			console.debug('ShortcutManager.createShortcut is deprecated since TYPO3 CMS 7, use TYPO3.ShortcutMenu directly.');
+		}
+		if (TYPO3.ShortcutMenu !== undefined) {
+			TYPO3.ShortcutMenu.createShortcut(moduleName, url, confirmQuestion);
 		}
 	}
 }

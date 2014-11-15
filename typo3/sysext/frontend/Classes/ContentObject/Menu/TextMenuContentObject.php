@@ -19,7 +19,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject {
+class TextMenuContentObject extends AbstractMenuContentObject {
 
 	/**
 	 * Calls procesItemStates() so that the common configuration for the menu items are resolved into individual configuration per item.
@@ -50,7 +50,7 @@ class TextMenuContentObject extends \TYPO3\CMS\Frontend\ContentObject\Menu\Abstr
 	public function writeMenu() {
 		if (is_array($this->result) && count($this->result)) {
 			// Create new \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer for our use
-			$this->WMcObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+			$this->WMcObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 			$this->WMresult = '';
 			$this->INPfixMD5 = substr(md5(microtime() . 'tmenu'), 0, 4);
 			$this->WMmenuItems = count($this->result);

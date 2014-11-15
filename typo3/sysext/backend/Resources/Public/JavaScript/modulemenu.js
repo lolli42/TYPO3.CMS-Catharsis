@@ -183,8 +183,8 @@ TYPO3.ModuleMenu.App = {
 	},
 
 	highlightModuleMenuItem: function(module, mainModule) {
-		jQuery('#typo3-menu').find('.highlighted').removeClass('highlighted');
-		jQuery('#' + module).addClass('highlighted');
+		jQuery('.t3-menuitem-submodule.active').removeClass('active');
+		jQuery('#' + module).addClass('active');
 	},
 
 	relativeUrl: function(url) {
@@ -195,6 +195,9 @@ TYPO3.ModuleMenu.App = {
 	refreshMenu: function() {
 		jQuery.ajax(TYPO3.settings.ajaxUrls['ModuleMenu::reload']).done(function(result) {
 			jQuery('#typo3-menu').replaceWith(result.menu);
+			if (top.currentModuleLoaded) {
+				TYPO3.ModuleMenu.App.highlightModuleMenuItem(top.currentModuleLoaded);
+			}
 		});
 	},
 

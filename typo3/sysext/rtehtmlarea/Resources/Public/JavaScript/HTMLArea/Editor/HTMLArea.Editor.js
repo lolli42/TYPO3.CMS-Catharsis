@@ -206,20 +206,55 @@ HTMLArea.Editor = Ext.extend(Ext.util.Observable, {
 		this.relayEvents(this.htmlArea, ['HTMLAreaEventFrameworkReady']);
 		this.on('HTMLAreaEventFrameworkReady', this.onFrameworkReady, this, {single: true});
 	},
-	/*
+	/**
 	 * Initialize the editor
 	 */
 	onFrameworkReady: function () {
-			// Initialize editor mode
+		// Initialize editor mode
 		this.setMode('wysiwyg');
-			// Create the selection object
+		// Create the selection object
 		this.getSelection();
-			// Create the bookmark object
+		// Create the bookmark object
 		this.getBookMark();
-			// Create the DOM node object
+		// Create the DOM node object
 		this.getDomNode();
-			// Initiate events listening
+		// Initiate events listening
 		this.initEventsListening();
+		// Load the classes configuration
+		this.getClassesConfiguration();
+	},
+	
+	/**
+	 * Get the classes configuration
+	 * This is required before plugins are generated
+	 *
+	 * @return	void
+	 */
+	getClassesConfiguration: function () {
+		if (this.config.classesUrl && typeof HTMLArea.classesLabels === 'undefined') {
+			this.ajax.getJavascriptFile(this.config.classesUrl, function (options, success, response) {
+				if (success) {
+					try {
+						if (typeof HTMLArea.classesLabels === 'undefined') {
+							eval(response.responseText);
+						}
+					} catch(e) {
+						this.appendToLog('HTMLArea.Editor', 'getClassesConfiguration', 'Error evaluating contents of Javascript file: ' + this.config.classesUrl, 'error');
+					}
+				}
+				this.initializeEditor();
+			}, this);
+		} else {
+			this.initializeEditor();
+		}
+	},
+
+	/**
+	 * Complete editor initialization
+	 *
+	 * @return	void
+	 */
+	initializeEditor: function () {
 			// Generate plugins
 		this.generatePlugins();
 			// Make the editor visible
@@ -242,6 +277,7 @@ HTMLArea.Editor = Ext.extend(Ext.util.Observable, {
 		this.fireEvent('HTMLAreaEventEditorReady');
 		this.appendToLog('HTMLArea.Editor', 'onFrameworkReady', 'Editor ready.', 'info');
 	},
+
 	/*
 	 * Set editor mode
 	 *
@@ -340,45 +376,8 @@ HTMLArea.Editor = Ext.extend(Ext.util.Observable, {
 				break;
 		}
 	},
-	/*
-	 * Get the node given its position in the document tree.
-	 * Adapted from FCKeditor
-	 * See HTMLArea.DOM.Node::getPositionWithinTree
-	 *
-	 * @param	array		position: the position of the node in the document tree
-	 * @param	boolean		normalized: if true, a normalized position is given
-	 *
-	 * @return	objet		the node
-	 */
-	getNodeByPosition: function (position, normalized) {
-		var current = this.document.documentElement;
-		var i, j, n, m;
-		for (i = 0, n = position.length; current && i < n; i++) {
-			var target = position[i];
-			if (normalized) {
-				var currentIndex = -1;
-				for (j = 0, m = current.childNodes.length; j < m; j++) {
-					var candidate = current.childNodes[j];
-					if (
-						candidate.nodeType == HTMLArea.DOM.TEXT_NODE
-						&& candidate.previousSibling
-						&& candidate.previousSibling.nodeType == HTMLArea.DOM.TEXT_NODE
-					) {
-						continue;
-					}
-					currentIndex++;
-					if (currentIndex == target) {
-						current = candidate;
-						break;
-					}
-				}
-			} else {
-				current = current.childNodes[target];
-			}
-		}
-		return current ? current : null;
-	},
-	/*
+
+	/**
 	 * Instantiate the specified plugin and register it with the editor
 	 *
 	 * @param	string		plugin: the name of the plugin

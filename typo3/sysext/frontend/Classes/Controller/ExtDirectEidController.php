@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * eID controller for ExtDirect
  *
@@ -37,7 +38,7 @@ class ExtDirectEidController {
 		\TYPO3\CMS\Frontend\Utility\EidUtility::initLanguage();
 		$ajaxID = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('action');
 		$ajaxScript = $GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']['ExtDirect::' . $ajaxID]['callbackMethod'];
-		$this->ajaxObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Http\\AjaxRequestHandler', 'ExtDirect::' . $ajaxID);
+		$this->ajaxObject = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Http\AjaxRequestHandler::class, 'ExtDirect::' . $ajaxID);
 		$parameters = array();
 		\TYPO3\CMS\Core\Utility\GeneralUtility::callUserFunction($ajaxScript, $parameters, $this->ajaxObject, FALSE, TRUE);
 	}

@@ -656,7 +656,7 @@ var inline = {
 	},
 
 	createDragAndDropSorting: function (objectId) {
-		require(['jquery', 'jquery-ui/jquery-ui-1.10.4.custom.min'], function ($) {
+		require(['jquery', 'jquery-ui/sortable'], function ($) {
 			var $sortingContainer = $('#' + inline.escapeObjectId(objectId));
 
 			if ($sortingContainer.hasClass('ui-sortable')) {
@@ -667,7 +667,7 @@ var inline = {
 			$sortingContainer.addClass('t3-form-field-container-wrap');
 			$sortingContainer.sortable(
 				{
-					containment: 'body',
+					containment: 'parent',
 					handle: '.sortableHandle',
 					zIndex: '4000',
 					axis: 'y',
@@ -681,7 +681,7 @@ var inline = {
 	},
 
 	destroyDragAndDropSorting: function (objectId) {
-		require(['jquery', 'jquery-ui/jquery-ui-1.10.4.custom.min'], function ($) {
+		require(['jquery', 'jquery-ui/sortable'], function ($) {
 			var $sortingContainer = $('#' + inline.escapeObjectId(objectId));
 			if (!$sortingContainer.hasClass('ui-sortable')) {
 				return;

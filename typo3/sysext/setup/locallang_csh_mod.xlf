@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.0">
-	<file source-language="en" datatype="plaintext" original="messages" date="2011-10-17T20:22:37Z" product-name="setup">
+<xliff version="1.0" xmlns:t3="http://typo3.org/schemas/xliff">
+	<file t3:id="1415814989" source-language="en" datatype="plaintext" original="messages" date="2011-10-17T20:22:37Z" product-name="setup">
 		<header/>
 		<body>
 			<trans-unit id=".alttitle" xml:space="preserve">
@@ -155,7 +155,7 @@ The default module is "About Modules".</source>
 				<source>If set, the Rich Text Editor in TYPO3 will be enabled for you. Normally you wouldn't want to disable this option.</source>
 			</trans-unit>
 			<trans-unit id="option_edit_RTE.details" xml:space="preserve">
-				<source>A Rich Text Editor (RTE) means that a text editing field has buttons for making selected text bold, italic etc. Whether a RTE is available also depends on factors like the browser you are using and which extensions are installed. Finally RTEs are applied to only a few record fields. The most wellknown example would be the Text field of a Content Element.</source>
+				<source>A Rich Text Editor (RTE) means that a text editing field has buttons for making selected text bold, italic etc. Whether a RTE is available also depends on factors like the browser you are using and which extensions are installed. Finally RTEs are applied to only a few record fields. The most well known example would be the Text field of a Content Element.</source>
 			</trans-unit>
 			<trans-unit id="_option_edit_RTE.image" xml:space="preserve">
 				<source>EXT:setup/cshimages/rte.png</source>

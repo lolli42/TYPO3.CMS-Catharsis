@@ -25,6 +25,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
 	/**
+	 * @var array
 	 * @internal
 	 */
 	public $pageinfo;
@@ -60,7 +61,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			'FUNC_MENU' => '',
 			'CONTENT' => ''
 		);
-		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:func/Resources/Private/Templates/func.html');
 		// Main
@@ -88,7 +89,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		} else {
 			// If no access or if ID == zero
 			$flashMessage = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 				$GLOBALS['LANG']->getLL('clickAPage_content'),
 				$GLOBALS['LANG']->getLL('title'),
 				\TYPO3\CMS\Core\Messaging\FlashMessage::INFO
@@ -126,7 +127,7 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			'shortcut' => ''
 		);
 		// CSH
-		$buttons['csh'] = BackendUtility::cshItem('_MOD_web_func', '', $GLOBALS['BACK_PATH'], '', TRUE);
+		$buttons['csh'] = BackendUtility::cshItem('_MOD_web_func', '');
 		if ($this->id && is_array($this->pageinfo)) {
 			// View page
 			$buttons['view'] = '<a href="#" '

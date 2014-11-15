@@ -204,11 +204,11 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		$localCalcPerms = $GLOBALS['BE_USER']->calcPerms($this->pageRow);
 		// CSH
 		if ((string)$this->id === '') {
-			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module_noId', $GLOBALS['BACK_PATH'], '', TRUE);
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module_noId');
 		} elseif (!$this->id) {
-			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module_root', $GLOBALS['BACK_PATH'], '', TRUE);
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module_root');
 		} else {
-			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module', $GLOBALS['BACK_PATH'], '', TRUE);
+			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'list_module');
 		}
 		if (isset($this->id)) {
 			// View Exclude doktypes 254,255 Configuration:
@@ -409,14 +409,14 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			$message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:missingTcaColumnsMessage', TRUE), $table, $table);
 			$messageTitle = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:missingTcaColumnsMessageTitle', TRUE);
 			$flashMessage = GeneralUtility::makeInstance(
-				'TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+				\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 				$message,
 				$messageTitle,
 				\TYPO3\CMS\Core\Messaging\FlashMessage::WARNING,
 				TRUE
 			);
 			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 			/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 			$defaultFlashMessageQueue->enqueue($flashMessage);

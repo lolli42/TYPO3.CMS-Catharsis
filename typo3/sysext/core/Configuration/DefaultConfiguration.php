@@ -48,10 +48,9 @@ return array(
 		// System related concerning both frontend and backend.
 		'lang' => array(
 			'format' => array(
-				'priority' => 'xlf,xml,php'
+				'priority' => 'xlf,xml'
 			),
 			'parser' => array(
-				'php' => 'TYPO3\\CMS\\Core\\Localization\\Parser\\LocallangArrayParser',
 				'xml' => 'TYPO3\\CMS\\Core\\Localization\\Parser\\LocallangXmlParser',
 				'xlf' => 'TYPO3\\CMS\\Core\\Localization\\Parser\\XliffParser'
 			)
@@ -635,8 +634,8 @@ return array(
 				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement->processAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
-			'ShortcutMenu::getGroups' => array(
-				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->getAjaxShortcutGroups',
+			'ShortcutMenu::getShortcutEditForm' => array(
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->getAjaxShortcutEditForm',
 				'csrfTokenCheck' => TRUE
 			),
 			'ShortcutMenu::saveShortcut' => array(
@@ -644,7 +643,7 @@ return array(
 				'csrfTokenCheck' => TRUE
 			),
 			'ShortcutMenu::render' => array(
-				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->renderAjax',
+				'callbackMethod' => 'TYPO3\\CMS\\Backend\\Toolbar\\ShortcutToolbarItem->renderAjaxMenu',
 				'csrfTokenCheck' => TRUE
 			),
 			'ShortcutMenu::delete' => array(
@@ -703,6 +702,7 @@ return array(
 				'csrfTokenCheck' => TRUE
 			),
 		),
+		'toolbarItems' => array(), // Array: Registered toolbar items classes
 		'HTTP' => array(
 			'Response' => array(
 				'Headers' => array('clickJackingProtection' => 'X-Frame-Options: SAMEORIGIN')

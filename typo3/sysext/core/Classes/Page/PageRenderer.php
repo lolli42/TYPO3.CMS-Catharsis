@@ -40,6 +40,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const JQUERY_NAMESPACE_NONE = 'none';
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
 	const JQUERY_NAMESPACE_DEFAULT_NOCONFLICT = 'defaultNoConflict';
+
 	/**
 	 * @var bool
 	 */
@@ -483,8 +484,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function __construct($templateFile = '', $backPath = NULL) {
 		$this->reset();
-		$this->csConvObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
-		$this->locales = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Localization\\Locales');
+		$this->csConvObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
+		$this->locales = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\Locales::class);
 		if (strlen($templateFile)) {
 			$this->templateFile = $templateFile;
 		}
@@ -1398,7 +1399,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$token = $formprotection->generateToken('extDirect');
 		}
 		/** @var $extDirect \TYPO3\CMS\Core\ExtDirect\ExtDirectApi */
-		$extDirect = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\ExtDirect\\ExtDirectApi');
+		$extDirect = GeneralUtility::makeInstance(\TYPO3\CMS\Core\ExtDirect\ExtDirectApi::class);
 		$api = $extDirect->getApiPhp($filterNamespaces);
 		if ($api) {
 			$this->addJsInlineCode('TYPO3ExtDirectAPI', $api, FALSE);
@@ -1614,8 +1615,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		if (count($this->requireJsConfig) === 0) {
 			// first, load all paths for the namespaces, and configure contrib libs.
 			$this->requireJsConfig['paths'] = array(
-				'jquery-ui' => 'contrib/jqueryui',
-				'jquery' => 'contrib/jquery'
+				'jquery-ui' => 'contrib/jquery-ui',
+				'jquery' => 'contrib/jquery',
+				'twbs' => 'contrib/twbs/bootstrap.min',
 			);
 			// get all extensions that are loaded
 			$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
@@ -1645,7 +1647,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * To add another path mapping deliver the following configuration:
 	 * 		'paths' => array(
-     *			'EXTERN/JQUERY-UI/1.10.3' => 'contrib/jqueryui/jquery-ui-1.10.4.custom.min',
+     *			'EXTERN/mybootstrapjs' => 'contrib/twbs/bootstrap.min',
 	 *      ),
 	 *
 	 * @author Daniel Siepmann <daniel.siepmann@typo3.org>
@@ -2767,7 +2769,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function getCompressor() {
 		if ($this->compressor === NULL) {
-			$this->compressor = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceCompressor');
+			$this->compressor = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\ResourceCompressor::class);
 		}
 		return $this->compressor;
 	}

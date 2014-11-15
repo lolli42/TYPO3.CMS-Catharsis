@@ -59,27 +59,31 @@ class DatabaseConnection {
 	 */
 	const OR_Constraint = 'OR';
 
-	// Set "TRUE" or "1" if you want database errors outputted. Set to "2" if you also want successful database actions outputted.
 	/**
-	 * @var bool
+	 * Set "TRUE" or "1" if you want database errors outputted. Set to "2" if you also want successful database actions outputted.
+	 *
+	 * @var bool|int
 	 */
 	public $debugOutput = FALSE;
 
-	// Internally: Set to last built query (not necessarily executed...)
 	/**
+	 * Internally: Set to last built query (not necessarily executed...)
+	 *
 	 * @var string
 	 */
 	public $debug_lastBuiltQuery = '';
 
-	// Set "TRUE" if you want the last built query to be stored in $debug_lastBuiltQuery independent of $this->debugOutput
 	/**
+	 * Set "TRUE" if you want the last built query to be stored in $debug_lastBuiltQuery independent of $this->debugOutput
+	 *
 	 * @var bool
 	 */
 	public $store_lastBuiltQuery = FALSE;
 
-	// Set this to 1 to get queries explained (devIPmask must match). Set the value to 2 to the same but disregarding the devIPmask.
-	// There is an alternative option to enable explain output in the admin panel under "TypoScript", which will produce much nicer output, but only works in FE.
 	/**
+	 * Set this to 1 to get queries explained (devIPmask must match). Set the value to 2 to the same but disregarding the devIPmask.
+	 * There is an alternative option to enable explain output in the admin panel under "TypoScript", which will produce much nicer output, but only works in FE.
+	 *
 	 * @var bool
 	 */
 	public $explainOutput = 0;
@@ -148,8 +152,9 @@ class DatabaseConnection {
 	 */
 	protected $link = NULL;
 
-	// Default character set, applies unless character set or collation are explicitly set
 	/**
+	 * Default character set, applies unless character set or collation are explicitly set
+	 *
 	 * @var string
 	 */
 	public $default_charset = 'utf8';
@@ -163,7 +168,6 @@ class DatabaseConnection {
 	 * @var array<PreProcessQueryHookInterface>
 	 */
 	protected $postProcessHookObjects = array();
-
 
 	/**
 	 * Initialize the database connection
@@ -731,7 +735,7 @@ class DatabaseConnection {
 	public function prepare_SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '', array $input_parameters = array()) {
 		$query = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
 		/** @var $preparedStatement \TYPO3\CMS\Core\Database\PreparedStatement */
-		$preparedStatement = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\PreparedStatement', $query, $from_table, array());
+		$preparedStatement = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\PreparedStatement::class, $query, $from_table, array());
 		// Bind values to parameters
 		foreach ($input_parameters as $key => $value) {
 			$preparedStatement->bindValue($key, $value, PreparedStatement::PARAM_AUTOTYPE);

@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoader;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -377,7 +378,7 @@ class GeneralUtility {
 			return $GLOBALS['TSFE']->csConvObj->crop($charSet, $string, $chars, $appendString);
 		} else {
 			// This case should not happen
-			$csConvObj = self::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
+			$csConvObj = self::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
 			return $csConvObj->crop('utf-8', $string, $chars, $appendString);
 		}
 	}
@@ -3978,7 +3979,7 @@ Connection: close
 	 */
 	static public function readLLfile($fileRef, $langKey, $charset = '', $errorMode = 0) {
 		/** @var $languageFactory \TYPO3\CMS\Core\Localization\LocalizationFactory */
-		$languageFactory = self::makeInstance('TYPO3\\CMS\\Core\\Localization\\LocalizationFactory');
+		$languageFactory = self::makeInstance(\TYPO3\CMS\Core\Localization\LocalizationFactory::class);
 		return $languageFactory->getParsedData($fileRef, $langKey, $charset, $errorMode);
 	}
 
@@ -4252,7 +4253,7 @@ Connection: close
 	 * Eg. "$obj = new myclass;" should be "$obj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance("myclass")" instead!
 	 *
 	 * You can also pass arguments for a constructor:
-	 * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('myClass', $arg1, $arg2, ..., $argN)
+	 * \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\myClass::class, $arg1, $arg2, ..., $argN)
 	 *
 	 * You may want to use \TYPO3\CMS\Extbase\Object\ObjectManager::get() if you
 	 * want TYPO3 to take care about injecting dependencies of the class to be
@@ -4619,8 +4620,10 @@ Connection: close
 	 * @param string $string Content to encode
 	 * @param int $maxlen Length of the lines, default is 76
 	 * @return string The QP encoded string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
 	 */
 	static public function quoted_printable($string, $maxlen = 76) {
+		static::logDeprecatedFunction();
 		// Make sure the string contains only Unix line breaks
 		// Replace Windows breaks (\r\n)
 		$string = str_replace(CRLF, LF, $string);
@@ -4677,8 +4680,10 @@ Connection: close
 	 * @param string $enc Encoding type: "base64" or "quoted-printable". Default value is "quoted-printable".
 	 * @param string $charset Charset used for encoding
 	 * @return string The encoded string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
 	 */
 	static public function encodeHeader($line, $enc = 'quoted-printable', $charset = 'utf-8') {
+		static::logDeprecatedFunction();
 		// Avoid problems if "###" is found in $line (would conflict with the placeholder which is used below)
 		if (strpos($line, '###') !== FALSE) {
 			return $line;
@@ -4731,8 +4736,10 @@ Connection: close
 	 * @param string $index_script_url URL of index script (see makeRedirectUrl())
 	 * @return string Processed message content
 	 * @see makeRedirectUrl()
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
 	 */
 	static public function substUrlsInPlainText($message, $urlmode = '76', $index_script_url = '') {
+		static::logDeprecatedFunction();
 		switch ((string)$urlmode) {
 			case '':
 				$lengthLimit = FALSE;
@@ -4761,7 +4768,7 @@ Connection: close
 	}
 
 	/**
-	 * Sub-function for substUrlsInPlainText() above.
+	 * Create a shortened "redirect" URL with specified length from an incoming URL
 	 *
 	 * @param string $inUrl Input URL
 	 * @param int $l URL string length limit
@@ -4895,7 +4902,7 @@ Connection: close
 					$from = MailUtility::getSystemFrom();
 				}
 				/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
-				$mail = self::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+				$mail = self::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 				$mail->setTo($to)->setFrom($from)->setSubject('Warning - error in TYPO3 installation')->setBody('Host: ' . $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['systemLogHost'] . LF . 'Extension: ' . $extKey . LF . 'Severity: ' . $severity . LF . LF . $msg);
 				$mail->send();
 			} elseif ($type == 'error_log') {

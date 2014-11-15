@@ -24,10 +24,19 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
  */
 class DatabaseIntegrityView {
 
+	/**
+	 * @var array
+	 */
 	public $MCONF = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_MENU = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_SETTINGS = array();
 
 	/**
@@ -37,10 +46,14 @@ class DatabaseIntegrityView {
 	 */
 	public $doc;
 
+	/**
+	 * @var string
+	 */
 	public $content;
 
-	public $menu;
-
+	/**
+	 * @var string
+	 */
 	protected $formName = 'queryform';
 
 	/**
@@ -59,7 +72,7 @@ class DatabaseIntegrityView {
 	public function init() {
 		$this->MCONF = $GLOBALS['MCONF'];
 		$this->menuConfig();
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:lowlevel/Resources/Private/Templates/dbint.html');
 		$this->doc->form = '<form action="" method="post" name="' . $this->formName . '">';
@@ -169,10 +182,6 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function main() {
-		// Content creation
-		if (!$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopMenu']) {
-			$this->menu = BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']);
-		}
 		switch ($this->MOD_SETTINGS['function']) {
 			case 'search':
 				$this->func_search();
@@ -234,10 +243,7 @@ class DatabaseIntegrityView {
 	 * @return string HTML of the function menu
 	 */
 	protected function getFuncMenu() {
-		if (!$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopMenu']) {
-			$funcMenu = BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']);
-		}
-		return $funcMenu;
+		return BackendUtility::getFuncMenu(0, 'SET[function]', $this->MOD_SETTINGS['function'], $this->MOD_MENU['function']);
 	}
 
 	/**
@@ -278,7 +284,7 @@ class DatabaseIntegrityView {
 		if (GeneralUtility::_GP('_update') || GeneralUtility::_GP('_check')) {
 			$testOnly = GeneralUtility::_GP('_check') ? TRUE : FALSE;
 			// Call the functionality
-			$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
+			$refIndexObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ReferenceIndex::class);
 			list($headerContent, $bodyContent) = $refIndexObj->updateIndex($testOnly);
 			// Output content:
 			$this->content .= $this->doc->section('', str_replace(LF, '<br/>', $bodyContent), FALSE, TRUE);
@@ -311,18 +317,13 @@ class DatabaseIntegrityView {
 	 * @return void
 	 */
 	public function func_search() {
-		$fullsearch = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\QueryView');
+		$fullsearch = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\QueryView::class);
 		$fullsearch->setFormName($this->formName);
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('search'));
 		$this->content .= $this->doc->spacer(5);
-		$menu2 = '';
-		if (!$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopMenu']) {
-			$menu2 = BackendUtility::getFuncMenu(0, 'SET[search]', $this->MOD_SETTINGS['search'], $this->MOD_MENU['search']);
-		}
-		if ($this->MOD_SETTINGS['search'] == 'query' && !$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopMenu']) {
+		$menu2 = BackendUtility::getFuncMenu(0, 'SET[search]', $this->MOD_SETTINGS['search'], $this->MOD_MENU['search']);
+		if ($this->MOD_SETTINGS['search'] == 'query') {
 			$menu2 .= BackendUtility::getFuncMenu(0, 'SET[search_query_makeQuery]', $this->MOD_SETTINGS['search_query_makeQuery'], $this->MOD_MENU['search_query_makeQuery']) . '<br />';
-		}
-		if (!$GLOBALS['BE_USER']->userTS['mod.']['dbint.']['disableTopCheckboxes'] && $this->MOD_SETTINGS['search'] == 'query') {
 			$menu2 .= '<div class="checkbox"><label for="checkSearch_query_smallparts">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_query_smallparts]', $this->MOD_SETTINGS['search_query_smallparts'], '', '', 'id="checkSearch_query_smallparts"') . $GLOBALS['LANG']->getLL('showSQL') . '</label></div>';
 			$menu2 .= '<div class="checkbox"><label for="checkSearch_result_labels">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_result_labels]', $this->MOD_SETTINGS['search_result_labels'], '', '', 'id="checkSearch_result_labels"') . $GLOBALS['LANG']->getLL('useFormattedStrings') . '</label></div>';
 			$menu2 .= '<div class="checkbox"><label for="checkLabels_noprefix">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[labels_noprefix]', $this->MOD_SETTINGS['labels_noprefix'], '', '', 'id="checkLabels_noprefix"') . $GLOBALS['LANG']->getLL('dontUseOrigValues') . '</label></div>';
@@ -349,7 +350,7 @@ class DatabaseIntegrityView {
 	 */
 	public function func_records() {
 		/** @var $admin \TYPO3\CMS\Core\Integrity\DatabaseIntegrityCheck */
-		$admin = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Integrity\\DatabaseIntegrityCheck');
+		$admin = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Integrity\DatabaseIntegrityCheck::class);
 		$admin->genTree_makeHTML = 0;
 		$admin->backPath = $GLOBALS['BACK_PATH'];
 		$admin->genTree(0, '');
@@ -392,7 +393,7 @@ class DatabaseIntegrityView {
 		$id_list = rtrim($id_list, ',');
 		$admin->lostRecords($id_list);
 		if ($admin->fixLostRecord(GeneralUtility::_GET('fixLostRecords_table'), GeneralUtility::_GET('fixLostRecords_uid'))) {
-			$admin = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Integrity\\DatabaseIntegrityCheck');
+			$admin = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Integrity\DatabaseIntegrityCheck::class);
 			$admin->backPath = $GLOBALS['BACK_PATH'];
 			$admin->genTree(0, '');
 			$id_list = '-1,0,' . implode(',', array_keys($admin->page_idArray));
@@ -450,7 +451,7 @@ class DatabaseIntegrityView {
 	 */
 	public function func_relations() {
 		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('relations'));
-		$admin = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Integrity\\DatabaseIntegrityCheck');
+		$admin = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Integrity\DatabaseIntegrityCheck::class);
 		$admin->genTree_makeHTML = 0;
 		$admin->backPath = $GLOBALS['BACK_PATH'];
 		$fkey_arrays = $admin->getGroupFields('');

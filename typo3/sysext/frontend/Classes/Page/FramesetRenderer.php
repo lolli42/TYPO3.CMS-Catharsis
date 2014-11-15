@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Page;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Rendering of framesets
  *
@@ -43,7 +44,7 @@ class FramesetRenderer {
 							$content .= '<frame' . $this->frameParams($conf, $typeNum) . ' />' . LF;
 							break;
 						case 'FRAMESET':
-							$frameset = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\FramesetRenderer');
+							$frameset = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\FramesetRenderer::class);
 							$content .= $frameset->make($conf) . LF;
 							break;
 					}

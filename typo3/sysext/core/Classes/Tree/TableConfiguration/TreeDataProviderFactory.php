@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Tree\TableConfiguration;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Builds a \TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider
  * object based on some TCA configuration
@@ -47,7 +48,7 @@ class TreeDataProviderFactory {
 		if ($tcaConfiguration['internal_type'] === 'db') {
 			$unselectableUids = array();
 			if ($dataProvider === NULL) {
-				$dataProvider = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\DatabaseTreeDataProvider');
+				$dataProvider = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider::class);
 			}
 			if (isset($tcaConfiguration['foreign_table'])) {
 				$tableName = $tcaConfiguration['foreign_table'];
@@ -82,10 +83,10 @@ class TreeDataProviderFactory {
 				$dataProvider->setNonSelectableLevelList('');
 			}
 			if (isset($treeConfiguration['childrenField'])) {
-				$dataProvider->setLookupMode(\TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider::MODE_CHILDREN);
+				$dataProvider->setLookupMode(DatabaseTreeDataProvider::MODE_CHILDREN);
 				$dataProvider->setLookupField($treeConfiguration['childrenField']);
 			} elseif (isset($treeConfiguration['parentField'])) {
-				$dataProvider->setLookupMode(\TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider::MODE_PARENT);
+				$dataProvider->setLookupMode(DatabaseTreeDataProvider::MODE_PARENT);
 				$dataProvider->setLookupField($treeConfiguration['parentField']);
 			} else {
 				throw new \InvalidArgumentException('TCA Tree configuration is invalid: neither "childrenField" nor "parentField" is set', 1288215889);

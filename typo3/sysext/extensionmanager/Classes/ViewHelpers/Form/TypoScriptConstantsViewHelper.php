@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Extensionmanager\ViewHelpers\Form;
  * View Helper for rendering Extension Manager Configuration Form
  *
  * @author Susanne Moog <typo3@susannemoog.de>
+ * @internal
  */
 class TypoScriptConstantsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper {
 
@@ -289,7 +290,7 @@ class TypoScriptConstantsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\Abs
 	 */
 	public function getDocInstance() {
 		if (!isset($GLOBALS['SOBE']->doc)) {
-			$GLOBALS['SOBE']->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+			$GLOBALS['SOBE']->doc = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 			$GLOBALS['SOBE']->doc->backPath = $GLOBALS['BACK_PATH'];
 		}
 		return $GLOBALS['SOBE']->doc;

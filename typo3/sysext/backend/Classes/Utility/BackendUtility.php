@@ -613,7 +613,7 @@ class BackendUtility {
 	 */
 	static public function getSystemLanguages() {
 		/** @var TranslationConfigurationProvider $translationConfigurationProvider */
-		$translationConfigurationProvider = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TranslationConfigurationProvider');
+		$translationConfigurationProvider = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
 		$languages = $translationConfigurationProvider->getSystemLanguages();
 		$sysLanguages = array();
 		foreach ($languages as $language) {
@@ -1129,7 +1129,7 @@ class BackendUtility {
 	 */
 	static public function storeHash($hash, $data, $ident) {
 		/** @var CacheManager $cacheManager */
-		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
 		$cacheManager->getCache('cache_hash')->set($hash, $data, array('ident_' . $ident), 0);
 	}
 
@@ -1144,7 +1144,7 @@ class BackendUtility {
 	 */
 	static public function getHash($hash) {
 		/** @var CacheManager $cacheManager */
-		$cacheManager = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
+		$cacheManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
 		$cacheEntry = $cacheManager->getCache('cache_hash')->get($hash);
 		$hashContent = NULL;
 		if ($cacheEntry) {
@@ -1201,7 +1201,7 @@ class BackendUtility {
 			// Parsing the page TS-Config
 			$pageTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
 			/* @var $parseObj \TYPO3\CMS\Backend\Configuration\TsConfigParser */
-			$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Configuration\\TsConfigParser');
+			$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TsConfigParser::class);
 			$res = $parseObj->parseTSconfig($pageTS, 'PAGES', $id, $rootLine);
 			if ($res) {
 				$TSconfig = $res['TSconfig'];
@@ -1523,7 +1523,7 @@ class BackendUtility {
 
 		$fileReferences = array();
 		/** @var $relationHandler \TYPO3\CMS\Core\Database\RelationHandler */
-		$relationHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+		$relationHandler = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 		if ($workspaceId !== NULL) {
 			$relationHandler->setWorkspaceId($workspaceId);
 		}
@@ -1616,7 +1616,7 @@ class BackendUtility {
 						}
 					} catch (ResourceDoesNotExistException $exception) {
 						/** @var FlashMessage $flashMessage */
-						$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+						$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 							htmlspecialchars($exception->getMessage()),
 							static::getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.file_missing', TRUE),
 							FlashMessage::ERROR
@@ -2116,7 +2116,7 @@ class BackendUtility {
 							$MMfield = join(',', $MMfields);
 						}
 						/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
-						$dbGroup = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+						$dbGroup = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
 						$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
 						$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
 						if (is_array($selectUids) && count($selectUids) > 0) {
@@ -2465,8 +2465,10 @@ class BackendUtility {
 	 * @param string $BACK_PATH UNUSED
 	 * @param bool $force Force display of icon no matter BE_USER setting for help
 	 * @return string HTML content for a help icon/text
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use cshItem() instead
 	 */
 	static public function helpTextIcon($table, $field, $BACK_PATH = '', $force = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
 		if (
 			is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])
 			&& (isset(static::getBackendUserAuthentication()->uc['edit_showFieldHelp']) || $force)
@@ -2516,7 +2518,7 @@ class BackendUtility {
 	 * @param string $table Table name
 	 * @param string $field Field name
 	 * @return string HTML content for help text
-	 * @see wrapInHelp()
+	 * @see cshItem()
 	 */
 	static public function helpText($table, $field) {
 		$helpTextArray = self::helpTextArray($table, $field);
@@ -2589,19 +2591,17 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name ('_MOD_'+module name)
 	 * @param string $field Field name (CSH locallang main key)
-	 * @param string $BACK_PATH Back path
+	 * @param string $BACK_PATH Back path, not needed anymore, don't use
 	 * @param string $wrap Wrap code for icon-mode, splitted by "|". Not used for full-text mode.
 	 * @return string HTML content for help text
 	 * @see helpTextIcon()
 	 */
-	static public function cshItem($table, $field, $BACK_PATH, $wrap = '') {
-		if (!static::getBackendUserAuthentication()->uc['edit_showFieldHelp']) {
-			return '';
-		}
+	static public function cshItem($table, $field, $BACK_PATH = NULL, $wrap = '') {
 		static::getLanguageService()->loadSingleTableDescription($table);
-		if (is_array($GLOBALS['TCA_DESCR'][$table])) {
-			// Creating CSH icon and short description:
-			$output = self::helpTextIcon($table, $field, $BACK_PATH);
+		if (is_array($GLOBALS['TCA_DESCR'][$table])
+			&& is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])) {
+			// Creating short description
+			$output = self::wrapInHelp($table, $field);
 			if ($output && $wrap) {
 				$wrParts = explode('|', $wrap);
 				$output = $wrParts[0] . $output . $wrParts[1];
@@ -2715,7 +2715,7 @@ class BackendUtility {
 		}
 
 		// Check a mount point needs to be previewed
-		$sys_page = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
+		$sys_page = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
 		$sys_page->init(FALSE);
 		$mountPointInfo = $sys_page->getMountPointInfo($pageUid);
 
@@ -2746,7 +2746,7 @@ class BackendUtility {
 		if (count($rootLine) > 0) {
 			$urlParts = parse_url($domain);
 			/** @var PageRepository $sysPage */
-			$sysPage = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Page\\PageRepository');
+			$sysPage = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
 			$page = (array)$sysPage->getPage($pageId);
 			$protocol = 'http';
 			if ($page['url_scheme'] == HttpUtility::SCHEME_HTTPS || $page['url_scheme'] == 0 && GeneralUtility::getIndpEnv('TYPO3_SSL')) {
@@ -4283,7 +4283,7 @@ class BackendUtility {
 	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
 	 */
 	static protected function getSignalSlotDispatcher() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 	}
 
 	/**

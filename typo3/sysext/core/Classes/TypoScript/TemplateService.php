@@ -26,7 +26,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class TemplateService {
 
-	// Debugging, analysis:
 	/**
 	 * option to enable logging, time-tracking (FE-only)
 	 * usually, this is only done when
@@ -36,99 +35,210 @@ class TemplateService {
 	 */
 	protected $verbose = FALSE;
 
-	// If set, the global tt-timeobject is used to log the performance.
-	public $tt_track = 1;
+	/**
+	 * If set, the global tt-timeobject is used to log the performance.
+	 *
+	 * @var bool
+	 */
+	public $tt_track = TRUE;
 
-	// If set, the template is always rendered. Used from Admin Panel.
-	public $forceTemplateParsing = 0;
+	/**
+	 * If set, the template is always rendered. Used from Admin Panel.
+	 *
+	 * @var bool
+	 */
+	public $forceTemplateParsing = FALSE;
 
-	// Backend Analysis modules settings:
-	// This array is passed on to matchObj by generateConfig(). If it holds elements, they are used for matching instead. See commment at the match-class. Used for backend modules only. Never frontend!
+	/**
+	 * This array is passed on to matchObj by generateConfig().
+	 * If it holds elements, they are used for matching instead. See commment at the match-class.
+	 * Used for backend modules only. Never frontend!
+	 *
+	 * @var array
+	 */
 	public $matchAlternative = array();
 
-	// If set, the match-class matches everything! Used for backend modules only. Never frontend!
-	public $matchAll = 0;
+	/**
+	 * If set, the match-class matches everything! Used for backend modules only. Never frontend!
+	 *
+	 * @var bool
+	 */
+	public $matchAll = FALSE;
 
-	public $backend_info = 0;
+	/**
+	 * @var bool
+	 */
+	public $backend_info = FALSE;
 
-	// Externally set breakpoints (used by Backend Modules)
+	/**
+	 * Externally set breakpoints (used by Backend Modules)
+	 *
+	 * @var int
+	 */
 	public $ext_constants_BRP = 0;
 
+	/**
+	 * @var int
+	 */
 	public $ext_config_BRP = 0;
 
+	/**
+	 * @var bool
+	 */
 	public $ext_regLinenumbers = FALSE;
 
+	/**
+	 * @var bool
+	 */
 	public $ext_regComments = FALSE;
 
-	// Constants:
+	/**
+	 * @var string
+	 */
 	public $tempPath = 'typo3temp/';
 
-	// Set Internally:
-	// This MUST be initialized by the init() function
+	/**
+	 * This MUST be initialized by the init() function
+	 *
+	 * @var string
+	 */
 	public $whereClause = '';
 
-	public $debug = 0;
+	/**
+	 * @var bool
+	 */
+	public $debug = FALSE;
 
-	// This is the only paths (relative!!) that are allowed for resources in TypoScript. Should all be appended with '/'. You can extend these by the global array TYPO3_CONF_VARS. See init() function.
+	/**
+	 * This is the only paths (relative!!) that are allowed for resources in TypoScript.
+	 * Should all be appended with '/'. You can extend these by the global array TYPO3_CONF_VARS. See init() function.
+	 *
+	 * @var array
+	 */
 	public $allowedPaths = array();
 
-	// See init(); Set if preview of some kind is enabled.
+	/**
+	 * See init(); Set if preview of some kind is enabled.
+	 *
+	 * @var int
+	 */
 	public $simulationHiddenOrTime = 0;
 
-	// Set, if the TypoScript template structure is loaded and OK, see ->start()
-	public $loaded = 0;
+	/**
+	 * Set, if the TypoScript template structure is loaded and OK, see ->start()
+	 *
+	 * @var bool
+	 */
+	public $loaded = FALSE;
 
 	/**
 	 * @var array Contains TypoScript setup part after parsing
 	 */
 	public $setup = array();
 
+	/**
+	 * @var array
+	 */
 	public $flatSetup = array();
 
-	// For fetching TypoScript code from template hierarchy before parsing it. Each array contains code field values from template records/files:
-	// Setup field
+	/**
+	 * For fetching TypoScript code from template hierarchy before parsing it.
+	 * Each array contains code field values from template records/files:
+	 * Setup field
+	 *
+	 * @var array
+	 */
 	public $config = array();
 
-	// Constant field
+	/**
+	 * Constant field
+	 *
+	 * @var array
+	 */
 	public $constants = array();
 
 	/**
 	 * Holds the include paths of the templates (empty if from database)
+	 *
 	 * @var array
 	 */
 	protected $templateIncludePaths = array();
 
-	// For Template Analyser in backend
+	/**
+	 * For Template Analyser in backend
+	 *
+	 * @var array
+	 */
 	public $hierarchyInfo = array();
 
-	// For Template Analyser in backend (setup content only)
+	/**
+	 * For Template Analyser in backend (setup content only)
+	 *
+	 * @var array
+	 */
 	public $hierarchyInfoToRoot = array();
 
-	// Next-level flag (see runThroughTemplates())
+	/**
+	 * Next-level flag (see runThroughTemplates())
+	 *
+	 * @var int
+	 */
 	public $nextLevel = 0;
 
-	// The Page UID of the root page
+	/**
+	 * The Page UID of the root page
+	 *
+	 * @var int
+	 */
 	public $rootId;
 
-	// The rootline from current page to the root page
+	/**
+	 * The rootline from current page to the root page
+	 *
+	 * @var array
+	 */
 	public $rootLine;
 
-	// Rootline all the way to the root. Set but runThroughTemplates
+	/**
+	 * Rootline all the way to the root. Set but runThroughTemplates
+	 *
+	 * @var array
+	 */
 	public $absoluteRootLine;
 
-	// A pointer to the last entry in the rootline where a template was found.
+	/**
+	 * A pointer to the last entry in the rootline where a template was found.
+	 *
+	 * @var int
+	 */
 	public $outermostRootlineIndexWithTemplate = 0;
 
-	// Array of arrays with title/uid of templates in hierarchy
+	/**
+	 * Array of arrays with title/uid of templates in hierarchy
+	 *
+	 * @var array
+	 */
 	public $rowSum;
 
-	// The current site title field.
+	/**
+	 * The current site title field.
+	 *
+	 * @var string
+	 */
 	public $sitetitle = '';
 
-	// Tracking all conditions found during parsing of TypoScript. Used for the "all" key in currentPageData
+	/**
+	 * Tracking all conditions found during parsing of TypoScript. Used for the "all" key in currentPageData
+	 *
+	 * @var string
+	 */
 	public $sections;
 
-	// Tracking all matching conditions found
+	/**
+	 * Tracking all matching conditions found
+	 *
+	 * @var array
+	 */
 	public $sectionsMatch;
 
 	/**
@@ -140,21 +250,39 @@ class TemplateService {
 	/**
 	 * Used by Backend only (Typoscript Template Analyzer)
 	 *
+	 * @var array
 	 */
 	public $clearList_setup = array();
 
+	/**
+	 * @var array
+	 */
 	public $parserErrors = array();
 
+	/**
+	 * @var array
+	 */
 	public $setup_constants = array();
 
-	// Other:
-	// Used by getFileName for caching of references to file resources
+	/**
+	 * Used by getFileName for caching of references to file resources
+	 *
+	 * @var array
+	 */
 	public $fileCache = array();
 
-	// Keys are frame names and values are type-values, which must be used to refer correctly to the content of the frames.
+	/**
+	 * Keys are frame names and values are type-values, which must be used to refer correctly to the content of the frames.
+	 *
+	 * @var array
+	 */
 	public $frames = array();
 
-	// Contains mapping of Page id numbers to MP variables.
+	/**
+	 * Contains mapping of Page id numbers to MP variables.
+	 *
+	 * @var string
+	 */
 	public $MPmap = '';
 
 	/**
@@ -272,7 +400,7 @@ class TemplateService {
 	 * @return array Returns the unmatched array $currentPageData if found cached in "cache_pagesection". Otherwise FALSE is returned which means that the array must be generated and stored in the cache
 	 */
 	public function getCurrentPageData() {
-		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pagesection')->get((int)$GLOBALS['TSFE']->id . '_' . GeneralUtility::md5int($GLOBALS['TSFE']->MP));
+		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_pagesection')->get((int)$GLOBALS['TSFE']->id . '_' . GeneralUtility::md5int($GLOBALS['TSFE']->MP));
 	}
 
 	/**
@@ -284,7 +412,7 @@ class TemplateService {
 	public function matching($cc) {
 		if (is_array($cc['all'])) {
 			/** @var $matchObj \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher */
-			$matchObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
+			$matchObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher::class);
 			$matchObj->setRootline((array)$cc['rootLine']);
 			foreach ($cc['all'] as $key => $pre) {
 				if ($matchObj->match($pre)) {
@@ -397,7 +525,7 @@ class TemplateService {
 				// Only save the data if we're not simulating by hidden/starttime/endtime
 				$mpvarHash = GeneralUtility::md5int($GLOBALS['TSFE']->MP);
 				/** @var $pageSectionCache \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface */
-				$pageSectionCache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_pagesection');
+				$pageSectionCache = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_pagesection');
 				$pageSectionCache->set((int)$GLOBALS['TSFE']->id . '_' . $mpvarHash, $cc, array(
 					'pageId_' . (int)$GLOBALS['TSFE']->id,
 					'mpvarHash_' . $mpvarHash
@@ -405,7 +533,7 @@ class TemplateService {
 			}
 			// If everything OK.
 			if ($this->rootId && $this->rootLine && $this->setup) {
-				$this->loaded = 1;
+				$this->loaded = TRUE;
 			}
 		}
 	}
@@ -799,11 +927,11 @@ class TemplateService {
 		// ****************************
 		// Initialize parser and match-condition classes:
 		/** @var $constants \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */
-		$constants = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+		$constants = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 		$constants->breakPointLN = (int)$this->ext_constants_BRP;
 		$constants->setup = $this->mergeConstantsFromPageTSconfig(array());
 		/** @var $matchObj \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher */
-		$matchObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\Configuration\\TypoScript\\ConditionMatching\\ConditionMatcher');
+		$matchObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher::class);
 		$matchObj->setSimulateMatchConditions($this->matchAlternative);
 		$matchObj->setSimulateMatchResult((bool)$this->matchAll);
 		// Traverse constants text fields and parse them
@@ -820,7 +948,7 @@ class TemplateService {
 		// ***********************************************
 		// Initialize parser and match-condition classes:
 		/** @var $config \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */
-		$config = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+		$config = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 		$config->breakPointLN = (int)$this->ext_config_BRP;
 		$config->regLinenumbers = $this->ext_regLinenumbers;
 		$config->regComments = $this->ext_regComments;
@@ -963,7 +1091,7 @@ class TemplateService {
 		$TSdataArray = \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines_array($TSdataArray);
 		$userTS = implode(LF . '[GLOBAL]' . LF, $TSdataArray);
 		/** @var $parseObj \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser */
-		$parseObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\Parser\\TypoScriptParser');
+		$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 		$parseObj->parse($userTS);
 		if (is_array($parseObj->setup['TSFE.']['constants.'])) {
 			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($constArray, $parseObj->setup['TSFE.']['constants.']);
@@ -1351,14 +1479,10 @@ class TemplateService {
 		// noCache
 		$LD['no_cache'] = trim($page['no_cache']) || $no_cache ? '&no_cache=1' : '';
 		// linkVars
-		if ($GLOBALS['TSFE']->config['config']['uniqueLinkVars']) {
-			if ($addParams) {
-				$LD['linkVars'] = GeneralUtility::implodeArrayForUrl('', GeneralUtility::explodeUrl2Array($GLOBALS['TSFE']->linkVars . $addParams), '', FALSE, TRUE);
-			} else {
-				$LD['linkVars'] = $GLOBALS['TSFE']->linkVars;
-			}
+		if ($addParams) {
+			$LD['linkVars'] = GeneralUtility::implodeArrayForUrl('', GeneralUtility::explodeUrl2Array($GLOBALS['TSFE']->linkVars . $addParams), '', FALSE, TRUE);
 		} else {
-			$LD['linkVars'] = $GLOBALS['TSFE']->linkVars . $addParams;
+			$LD['linkVars'] = $GLOBALS['TSFE']->linkVars;
 		}
 		// Add absRefPrefix if exists.
 		$LD['url'] = $GLOBALS['TSFE']->absRefPrefix . $LD['url'];

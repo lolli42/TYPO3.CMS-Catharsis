@@ -13,13 +13,17 @@ namespace TYPO3\CMS\Core\Localization\Parser;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Parser for PHP locallang array.
  *
  * @author Dominique Feyer <dfeyer@reelpeek.net>
  * @author Dmitry Dulepov <dmitry.dulepov@gmail.com>
+ *
+ * @deprecated since TYPO3 CMS 7, the class + file will be removed in CMS 8. Please use XLF files for
+ * translation handling. Also note that the extension "extdeveval" has a converter from PHP and XML to XLF.
  */
-class LocallangArrayParser implements \TYPO3\CMS\Core\Localization\Parser\LocalizationParserInterface {
+class LocallangArrayParser implements LocalizationParserInterface {
 
 	/**
 	 * @var string
@@ -49,9 +53,11 @@ class LocallangArrayParser implements \TYPO3\CMS\Core\Localization\Parser\Locali
 	/**
 	 * Initializes the parser.
 	 *
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use xlf format for parsing translations
 	 * @return void
 	 */
 	public function __construct() {
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
 		$this->createCsConvObject();
 	}
 
@@ -108,7 +114,7 @@ class LocallangArrayParser implements \TYPO3\CMS\Core\Localization\Parser\Locali
 		} elseif (is_object($GLOBALS['TSFE'])) {
 			$this->csConvObj = $GLOBALS['TSFE']->csConvObj;
 		} else {
-			$this->csConvObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Charset\\CharsetConverter');
+			$this->csConvObj = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
 		}
 	}
 

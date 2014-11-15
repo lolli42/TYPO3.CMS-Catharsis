@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Localization;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Provides a language parser factory.
  *
@@ -48,7 +49,7 @@ class LocalizationFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function initialize() {
-		$this->store = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Localization\\LanguageStore');
+		$this->store = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageStore::class);
 		$this->initializeCache();
 	}
 
@@ -58,7 +59,7 @@ class LocalizationFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	protected function initializeCache() {
-		$this->cacheInstance = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('l10n');
+		$this->cacheInstance = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('l10n');
 	}
 
 	/**

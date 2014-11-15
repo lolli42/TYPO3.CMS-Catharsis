@@ -170,7 +170,7 @@ class PermissionModuleController {
 		// Page select clause:
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// Initializing document template object:
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:perm/Resources/Private/Templates/perm.html');
 		$this->doc->form = '<form action="' . $GLOBALS['BACK_PATH'] . 'tce_db.php" method="post" name="editform">';
@@ -246,7 +246,7 @@ class PermissionModuleController {
 			}
 
 			$docHeaderButtons = $this->getButtons();
-			$markers['CSH'] = $this->docHeaderButtons['csh'];
+			$markers['CSH'] = '';
 			$markers['FUNC_MENU'] = BackendUtility::getFuncMenu($this->id, 'SET[mode]', $this->MOD_SETTINGS['mode'], $this->MOD_MENU['mode']);
 			$markers['CONTENT'] = $this->content;
 
@@ -277,12 +277,9 @@ class PermissionModuleController {
 	 */
 	protected function getButtons() {
 		$buttons = array(
-			'csh' => '',
 			'view' => '',
 			'shortcut' => ''
 		);
-		// CSH
-		$buttons['csh'] = BackendUtility::cshItem('_MOD_web_info', '', $GLOBALS['BACK_PATH'], '', TRUE);
 		// View page
 		$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewonclick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		// Shortcut
@@ -306,9 +303,9 @@ class PermissionModuleController {
 	public function doEdit() {
 		if ($GLOBALS['BE_USER']->workspace != 0) {
 			// Adding section with the permission setting matrix:
-			$flashMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage', $GLOBALS['LANG']->getLL('WorkspaceWarningText'), $GLOBALS['LANG']->getLL('WorkspaceWarning'), \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING);
+			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('WorkspaceWarningText'), $GLOBALS['LANG']->getLL('WorkspaceWarning'), \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING);
 			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessageService');
+			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 			/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 			$defaultFlashMessageQueue->enqueue($flashMessage);
@@ -410,15 +407,15 @@ class PermissionModuleController {
 			<input type="hidden" name="data[pages][' . $this->id . '][perms_group]" value="' . $this->pageinfo['perms_group'] . '" />
 			<input type="hidden" name="data[pages][' . $this->id . '][perms_everybody]" value="' . $this->pageinfo['perms_everybody'] . '" />
 			' . $this->getRecursiveSelect($this->id, $this->perms_clause) . '
-			<input type="submit" name="submit" value="' . $GLOBALS['LANG']->getLL('Save', TRUE) . '" />' . '<input type="submit" value="' . $GLOBALS['LANG']->getLL('Abort', TRUE) . '" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue((BackendUtility::getModuleUrl('web_perm') . '&id=' . $this->id), TRUE) . '); return false;')) . '" />
-			<input type="hidden" name="redirect" value="' . htmlspecialchars((BackendUtility::getModuleUrl('web_perm') . '&mode=' . $this->MOD_SETTINGS['mode'] . '&depth=' . $this->MOD_SETTINGS['depth'] . '&id=' . (int)$this->return_id . '&lastEdited=' . $this->id)) . '" />
+			<input type="submit" name="submit" value="' . $GLOBALS['LANG']->getLL('Save', TRUE) . '" />' . '<input type="submit" value="' . $GLOBALS['LANG']->getLL('Abort', TRUE) . '" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue((BackendUtility::getModuleUrl('system_perm') . '&id=' . $this->id), TRUE) . '); return false;')) . '" />
+			<input type="hidden" name="redirect" value="' . htmlspecialchars((BackendUtility::getModuleUrl('system_perm') . '&mode=' . $this->MOD_SETTINGS['mode'] . '&depth=' . $this->MOD_SETTINGS['depth'] . '&id=' . (int)$this->return_id . '&lastEdited=' . $this->id)) . '" />
 			' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction');
 
 		// Adding section with the permission setting matrix:
 		$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('permissions'), $code, TRUE);
 
 		// CSH for permissions setting
-		$this->content .= BackendUtility::cshItem('xMOD_csh_corebe', 'perm_module_setting', $GLOBALS['BACK_PATH'], '<br /><br />');
+		$this->content .= BackendUtility::cshItem('xMOD_csh_corebe', 'perm_module_setting', NULL, '<br /><br />');
 
 		// Adding help text:
 		if ($GLOBALS['BE_USER']->uc['helpText']) {
@@ -461,7 +458,7 @@ class PermissionModuleController {
 		$this->content .= $this->doc->section('', $code);
 
 		/** @var \TYPO3\CMS\Backend\Tree\View\PageTreeView */
-		$tree = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+		$tree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 		$tree->init('AND ' . $this->perms_clause);
 		$tree->addField('perms_user', 1);
 		$tree->addField('perms_group', 1);
@@ -534,7 +531,7 @@ class PermissionModuleController {
 
 			// "Edit permissions" -icon
 			if ($editPermsAllowed && $pageId) {
-				$aHref = BackendUtility::getModuleUrl('web_perm') . '&mode=' . $this->MOD_SETTINGS['mode'] . '&depth=' . $this->MOD_SETTINGS['depth'] . '&id=' . ($data['row']['_ORIG_uid'] ? $data['row']['_ORIG_uid'] : $pageId) . '&return_id=' . $this->id . '&edit=1';
+				$aHref = BackendUtility::getModuleUrl('system_perm') . '&mode=' . $this->MOD_SETTINGS['mode'] . '&depth=' . $this->MOD_SETTINGS['depth'] . '&id=' . ($data['row']['_ORIG_uid'] ? $data['row']['_ORIG_uid'] : $pageId) . '&return_id=' . $this->id . '&edit=1';
 				$cells[] = '<td' . $bgCol . '><a href="' . htmlspecialchars($aHref) . '" title="' . $GLOBALS['LANG']->getLL('ch_permissions', TRUE) . '">' .
 						IconUtility::getSpriteIcon('actions-document-open') . '</a></td>';
 			} else {
@@ -559,7 +556,7 @@ class PermissionModuleController {
 		$this->content .= $this->doc->section('', $code);
 
 		// CSH for permissions setting
-		$this->content .= BackendUtility::cshItem('xMOD_csh_corebe', 'perm_module', $GLOBALS['BACK_PATH'], '<br />|');
+		$this->content .= BackendUtility::cshItem('xMOD_csh_corebe', 'perm_module', NULL, '<br />|');
 
 		// Creating legend table:
 		$legendText = '<strong>' . $GLOBALS['LANG']->getLL('1', TRUE) . '</strong>: ' . $GLOBALS['LANG']->getLL('1_t', TRUE);
@@ -611,7 +608,7 @@ class PermissionModuleController {
 	 */
 	public function getRecursiveSelect($id, $perms_clause) {
 		// Initialize tree object:
-		$tree = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Tree\\View\\PageTreeView');
+		$tree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 		$tree->init('AND ' . $perms_clause);
 		$tree->addField('perms_userid', 1);
 		$tree->makeHTML = 0;

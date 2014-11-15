@@ -27,16 +27,24 @@ class FileListController {
 	/**
 	 * Module configuration
 	 *
+	 * @var array
 	 */
 	public $MCONF = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_MENU = array();
 
+	/**
+	 * @var array
+	 */
 	public $MOD_SETTINGS = array();
 
 	/**
 	 * Accumulated HTML output
 	 *
+	 * @var string
 	 */
 	public $content;
 
@@ -50,6 +58,7 @@ class FileListController {
 	/**
 	 * "id" -> the path to list.
 	 *
+	 * @var string
 	 */
 	public $id;
 
@@ -66,23 +75,32 @@ class FileListController {
 	/**
 	 * Pointer to listing
 	 *
+	 * @var int
 	 */
 	public $pointer;
 
 	/**
 	 * "Table"
 	 *
+	 * @var string
 	 */
 	public $table;
 
 	/**
 	 * Thumbnail mode.
 	 *
+	 * @var string
 	 */
 	public $imagemode;
 
+	/**
+	 * @var string
+	 */
 	public $cmd;
 
+	/**
+	 * @var bool
+	 */
 	public $overwriteExistingFiles;
 
 	/**
@@ -120,7 +138,7 @@ class FileListController {
 		try {
 			if ($combinedIdentifier) {
 				/** @var $fileFactory \TYPO3\CMS\Core\Resource\ResourceFactory */
-				$fileFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\ResourceFactory');
+				$fileFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\ResourceFactory::class);
 				$storage = $fileFactory->getStorageObjectFromCombinedIdentifier($combinedIdentifier);
 				$identifier = substr($combinedIdentifier, strpos($combinedIdentifier, ':') + 1);
 				if (!$storage->hasFolder($identifier)) {
@@ -156,7 +174,7 @@ class FileListController {
 			} else {
 				$this->folderObject = NULL;
 			}
-			$this->errorMessage = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+			$this->errorMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 				sprintf($GLOBALS['LANG']->getLL('folderNotFoundMessage', TRUE),
 						htmlspecialchars($this->id)
 				),
@@ -200,7 +218,7 @@ class FileListController {
 	 */
 	public function main() {
 		// Initialize the template object
-		$this->doc = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\DocumentTemplate');
+		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:filelist/Resources/Private/Templates/file_list.html');
 
@@ -214,7 +232,7 @@ class FileListController {
 		if ($this->folderObject) {
 
 			// Create filelisting object
-			$this->filelist = GeneralUtility::makeInstance('TYPO3\\CMS\\Filelist\\FileList');
+			$this->filelist = GeneralUtility::makeInstance(\TYPO3\CMS\Filelist\FileList::class);
 			$this->filelist->backPath = $GLOBALS['BACK_PATH'];
 			// Apply predefined values for hidden checkboxes
 			// Set predefined value for DisplayBigControlPanel:
@@ -241,7 +259,7 @@ class FileListController {
 			}
 			$this->filelist->thumbs = $this->MOD_SETTINGS['displayThumbs'];
 			// Create clipboard object and initialize that
-			$this->filelist->clipObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Clipboard\\Clipboard');
+			$this->filelist->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
 			$this->filelist->clipObj->fileMode = 1;
 			$this->filelist->clipObj->initializeClipboard();
 			$CB = GeneralUtility::_GET('CB');
@@ -265,7 +283,7 @@ class FileListController {
 						$FILE['delete'][] = array('data' => $v);
 					}
 					// Init file processing object for deleting and pass the cmd array.
-					$fileProcessor = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Utility\\File\\ExtendedFileUtility');
+					$fileProcessor = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::class);
 					$fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 					$fileProcessor->setActionPermissions();
 					$fileProcessor->dontCheckForUnique = $this->overwriteExistingFiles ? 1 : 0;
@@ -356,7 +374,7 @@ class FileListController {
 				// Set clipboard:
 				if ($this->MOD_SETTINGS['clipBoard']) {
 					$pageContent .= $this->filelist->clipObj->printClipboard();
-					$pageContent .= BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_clipboard', $GLOBALS['BACK_PATH']);
+					$pageContent .= BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_clipboard');
 				}
 			}
 			$markerArray = array(
@@ -429,7 +447,7 @@ class FileListController {
 			$buttons['shortcut'] = $this->doc->makeShortcutIcon('pointer,id,target,table', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name']);
 		}
 		// FileList Module CSH:
-		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_module', $GLOBALS['BACK_PATH'], '', TRUE);
+		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_module');
 		// Upload button (only if upload to this directory is allowed)
 		if ($this->folderObject && $this->folderObject->getStorage()->checkUserActionPermission('add', 'File') && $this->folderObject->checkActionPermission('write')) {
 			$buttons['upload'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH']

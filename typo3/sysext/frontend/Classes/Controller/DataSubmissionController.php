@@ -23,29 +23,66 @@ use TYPO3\CMS\Core\Utility;
  */
 class DataSubmissionController {
 
+	/**
+	 * @var string
+	 */
 	protected $reserved_names = 'recipient,recipient_copy,auto_respond_msg,auto_respond_checksum,redirect,subject,attachment,from_email,from_name,replyto_email,replyto_name,organisation,priority,html_enabled,quoted_printable,submit_x,submit_y';
 
-	// Collection of suspicious header data, used for logging
+	/**
+	 * Collection of suspicious header data, used for logging
+	 *
+	 * @var array
+	 */
 	protected $dirtyHeaders = array();
 
+	/**
+	 * @var string
+	 */
 	protected $characterSet;
 
+	/**
+	 * @var string
+	 */
 	protected $subject;
 
+	/**
+	 * @var string
+	 */
 	protected $fromName;
 
+	/**
+	 * @var string
+	 */
 	protected $replyToName;
 
+	/**
+	 * @var string
+	 */
 	protected $organisation;
 
+	/**
+	 * @var string
+	 */
 	protected $fromAddress;
 
+	/**
+	 * @var string
+	 */
 	protected $replyToAddress;
 
+	/**
+	 * @var int
+	 */
 	protected $priority;
 
+	/**
+	 * @var string
+	 */
 	protected $autoRespondMessage;
 
+	/**
+	 * @var string
+	 */
 	protected $encoding = 'quoted-printable';
 
 	/**
@@ -53,8 +90,14 @@ class DataSubmissionController {
 	 */
 	protected $mailMessage;
 
+	/**
+	 * @var string
+	 */
 	protected $recipient;
 
+	/**
+	 * @var string
+	 */
 	protected $plainContent = '';
 
 	/**
@@ -85,7 +128,7 @@ class DataSubmissionController {
 	 * @return void
 	 */
 	public function start($valueList, $base64 = FALSE) {
-		$this->mailMessage = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+		$this->mailMessage = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 		if ($GLOBALS['TSFE']->config['config']['formMailCharset']) {
 			// Respect formMailCharset if it was set
 			$this->characterSet = $GLOBALS['TSFE']->csConvObj->parse_charset($GLOBALS['TSFE']->config['config']['formMailCharset']);
@@ -223,7 +266,7 @@ class DataSubmissionController {
 	 */
 	protected function parseAddresses($rawAddresses = '') {
 		/** @var $addressParser \TYPO3\CMS\Core\Mail\Rfc822AddressesParser */
-		$addressParser = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\Rfc822AddressesParser', $rawAddresses);
+		$addressParser = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\Rfc822AddressesParser::class, $rawAddresses);
 		$addresses = $addressParser->parseAddressList();
 		$addressList = array();
 		foreach ($addresses as $address) {
@@ -259,7 +302,7 @@ class DataSubmissionController {
 				$theParts[1]
 			);
 			/** @var $autoRespondMail \TYPO3\CMS\Core\Mail\MailMessage */
-			$autoRespondMail = Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Mail\\MailMessage');
+			$autoRespondMail = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 			$autoRespondMail->setTo($this->fromAddress)->setSubject($theParts[0])->setFrom($this->recipient)->setBody($theParts[1]);
 			$autoRespondMail->send();
 		}

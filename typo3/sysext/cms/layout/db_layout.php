@@ -27,8 +27,6 @@ $LANG->includeLLFile('EXT:cms/layout/locallang.xlf');
 $BE_USER->modAccess($MCONF, 1);
 // Will open up records locked by current user. It's assumed that the locking should end if this script is hit.
 \TYPO3\CMS\Backend\Utility\BackendUtility::lockRecords();
-// Exits if 'cms' extension is not loaded:
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('cms', 1);
 /**
  * Local extension of position map class
  *
@@ -109,7 +107,7 @@ class ext_posMap extends \TYPO3\CMS\Backend\Tree\View\PagePositionMap {
 
 require_once \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/Controller/PageLayoutController.php';
 // Make instance:
-$SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Controller\\PageLayoutController');
+$SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\PageLayoutController::class);
 $SOBE->init();
 // Include files?
 foreach ($SOBE->include_once as $INC_FILE) {
