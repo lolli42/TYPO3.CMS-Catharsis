@@ -101,7 +101,7 @@ class DatabaseIntegrityView {
 		// Values NOT in this array will not be saved in the settings-array for the module.
 		$this->MOD_MENU = array(
 			'function' => array(
-				0 => $GLOBALS['LANG']->getLL('menu', TRUE),
+				0 => $GLOBALS['LANG']->getLL('menuTitle', TRUE),
 				'records' => $GLOBALS['LANG']->getLL('recordStatistics', TRUE),
 				'relations' => $GLOBALS['LANG']->getLL('databaseRelations', TRUE),
 				'search' => $GLOBALS['LANG']->getLL('fullSearch', TRUE),
@@ -258,7 +258,7 @@ class DatabaseIntegrityView {
 			$functionUrl = BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=' . $modFunc;
 			$title = $GLOBALS['LANG']->getLL($modFunc);
 			$description = $GLOBALS['LANG']->getLL($modFunc . '_description');
-			$icon = '<img src="sysext/lowlevel/Resources/Public/Icons/module-dbint.gif" width="16" height="16" title="' . $title . '" alt="' . $title . '" />';
+			$icon = '<img src="sysext/lowlevel/Resources/Public/Icons/module-dbint.png" width="16" height="16" title="' . $title . '" alt="' . $title . '" />';
 			$content .= '
 				<dt><a href="' . htmlspecialchars($functionUrl) . '">' . $icon . $title . '</a></dt>
 				<dd>' . $description . '</dd>

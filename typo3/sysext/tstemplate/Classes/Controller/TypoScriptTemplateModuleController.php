@@ -191,7 +191,7 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 			}
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 
-			$table = '<table class="t3-table" id="ts-overview">' .
+			$table = '<div class="table-fit"><table class="t3-table" id="ts-overview">' .
 					'<thead>' .
 					'<tr>' .
 					'<th>' . $GLOBALS['LANG']->getLL('pageName') . '</th>' .
@@ -201,7 +201,7 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 					'</tr>' .
 					'</thead>' .
 					'<tbody>' . implode('', $this->renderList($pArray)) . '</tbody>' .
-					'</table>';
+					'</table></div>';
 
 			$this->content = $this->doc->header($GLOBALS['LANG']->getLL('moduleTitle'));
 			$this->content .= $this->doc->section('', '<p class="lead">' . $GLOBALS['LANG']->getLL('overview') . '</p>' . $table);
@@ -248,8 +248,13 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			if ($this->extClassConf['name'] == 'TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController') {
 				// NEW button
-				$buttons['new'] = '<input type="image" class="c-inputButton" name="createExtension" value="New"' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/new_el.gif', '') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.pagetitle', TRUE) . '" />';
-				if (!empty($this->e) && !GeneralUtility::_POST('abort') && !GeneralUtility::_POST('saveclose')) {
+				$urlParameters = array(
+					'id' => $this->id,
+					'template' => 'all',
+					'createExtension' => 'new'
+				);
+				$buttons['new'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_ts', $urlParameters)) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.pagetitle', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-new') . '</a>';
+				if (!empty($this->e) && !GeneralUtility::_POST('saveclose')) {
 					// no NEW-button while edit
 					$buttons['new'] = '';
 					// SAVE button
@@ -261,9 +266,8 @@ class TypoScriptTemplateModuleController extends \TYPO3\CMS\Backend\Module\BaseS
 						'html' => '<input type="image" class="c-inputButton" name="saveclose" src="clear.gif" ' . 'title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" ' . 'value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" ' . '/>'
 					));
 					// CLOSE button
-					$buttons['close'] = IconUtility::getSpriteIcon('actions-document-close', array(
-						'html' => '<input type="image" class="c-inputButton" name="abort" src="clear.gif" ' . 'title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" ' . 'value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" ' . '/>'
-					));
+					$url = BackendUtility::getModuleUrl('web_ts', array('id' => $this->id));
+					$buttons['close'] = '<a href="' . htmlspecialchars($url) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' .  IconUtility::getSpriteIcon('actions-document-close') .'</a>';
 				}
 			} elseif ($this->extClassConf['name'] == 'TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateConstantEditorModuleFunctionController' && count($this->MOD_MENU['constant_editor_cat'])) {
 				// SAVE button

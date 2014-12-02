@@ -960,18 +960,28 @@ class GeneralUtility {
 		$labelArr = explode('|', $labels);
 		// Find size:
 		if ($sizeInBytes > 900) {
+			// TODO find out which locale is used for current BE user to cover the BE case as well
+			$locale = is_object($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
+			$oldLocale = setlocale(LC_NUMERIC, 0);
+			if ($locale) {
+				setlocale(LC_NUMERIC, $locale);
+			}
+			$localeInfo = localeconv();
+			if ($locale) {
+				setlocale(LC_NUMERIC, $oldLocale);
+			}
 			// GB
 			if ($sizeInBytes > 900000000) {
 				$val = $sizeInBytes / (1024 * 1024 * 1024);
-				return number_format($val, ($val < 20 ? 1 : 0), '.', '') . $labelArr[3];
+				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[3];
 			} elseif ($sizeInBytes > 900000) {
 				// MB
 				$val = $sizeInBytes / (1024 * 1024);
-				return number_format($val, ($val < 20 ? 1 : 0), '.', '') . $labelArr[2];
+				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[2];
 			} else {
 				// KB
 				$val = $sizeInBytes / 1024;
-				return number_format($val, ($val < 20 ? 1 : 0), '.', '') . $labelArr[1];
+				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[1];
 			}
 		} else {
 			// Bytes
@@ -2051,7 +2061,7 @@ class GeneralUtility {
 	 * However using MSIE to read the XML output didn't always go well: One reason could be that the character encoding is not observed in the PHP data. The other reason may be if the tag-names are invalid in the eyes of MSIE. Also using the namespace feature will make MSIE break parsing. There might be more reasons...
 	 *
 	 * @param array $array The input PHP array with any kind of data; text, binary, integers. Not objects though.
-	 * @param string $NSprefix tag-prefix, eg. a namespace prefix like "T3:
+	 * @param string $NSprefix tag-prefix, eg. a namespace prefix like "T3:"
 	 * @param int $level Current recursion level. Don't change, stay at zero!
 	 * @param string $docTag Alternative document tag. Default is "phparray".
 	 * @param int $spaceInd If greater than zero, then the number of spaces corresponding to this number is used for indenting, if less than zero - no indentation, if zero - a single TAB is used
@@ -2168,7 +2178,7 @@ class GeneralUtility {
 	 * This is a wrapper for xml2arrayProcess that adds a two-level cache
 	 *
 	 * @param string $string XML content to convert into an array
-	 * @param string $NSprefix The tag-prefix resolve, eg. a namespace like "T3:
+	 * @param string $NSprefix The tag-prefix resolve, eg. a namespace like "T3:"
 	 * @param bool $reportDocTag If set, the document tag will be set in the key "_DOCUMENT_TAG" of the output array
 	 * @return mixed If the parsing had errors, a string with the error message is returned. Otherwise an array with the content.
 	 * @see array2xml(),xml2arrayProcess()
@@ -2197,7 +2207,7 @@ class GeneralUtility {
 	 * This is the reverse function of array2xml()
 	 *
 	 * @param string $string XML content to convert into an array
-	 * @param string $NSprefix The tag-prefix resolve, eg. a namespace like "T3:
+	 * @param string $NSprefix The tag-prefix resolve, eg. a namespace like "T3:"
 	 * @param bool $reportDocTag If set, the document tag will be set in the key "_DOCUMENT_TAG" of the output array
 	 * @return mixed If the parsing had errors, a string with the error message is returned. Otherwise an array with the content.
 	 * @see array2xml()
@@ -2373,7 +2383,7 @@ class GeneralUtility {
 				} catch (\Exception $e) {
 					$errorMessage = 'Error minifying java script: ' . $e->getMessage();
 					$error .= $errorMessage;
-					static::devLog($errorMessage, 'TYPO3\\CMS\\Core\\Utility\\GeneralUtility', 2, array(
+					static::devLog($errorMessage, \TYPO3\CMS\Core\Utility\GeneralUtility::class, 2, array(
 						'JavaScript' => $script,
 						'Stack trace' => $e->getTrace(),
 						'hook' => $hookMethod
@@ -2418,14 +2428,17 @@ class GeneralUtility {
 				}
 				return FALSE;
 			}
+
+			$followLocationSucceeded = @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+
 			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_HEADER, $includeHeader ? 1 : 0);
+			curl_setopt($ch, CURLOPT_HEADER, !$followLocationSucceeded || $includeHeader ? 1 : 0);
 			curl_setopt($ch, CURLOPT_NOBODY, $includeHeader == 2 ? 1 : 0);
 			curl_setopt($ch, CURLOPT_HTTPGET, $includeHeader == 2 ? 'HEAD' : 'GET');
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($ch, CURLOPT_FAILONERROR, 1);
 			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, max(0, (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['curlTimeout']));
-			$followLocation = @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+
 			if (is_array($requestHeaders)) {
 				curl_setopt($ch, CURLOPT_HTTPHEADER, $requestHeaders);
 			}
@@ -2443,21 +2456,42 @@ class GeneralUtility {
 				}
 			}
 			$content = curl_exec($ch);
+			$curlInfo = curl_getinfo($ch);
+
+			if (!$followLocationSucceeded) {
+				// Check if we need to do redirects
+				if ($curlInfo['http_code'] >= 300 && $curlInfo['http_code'] < 400) {
+					$locationUrl = $curlInfo['redirect_url'];
+					if (!$locationUrl) {
+						// Some curllib versions do not return redirect_url. Examine headers.
+						$locationUrl = self::getRedirectUrlFromHttpHeaders($content);
+					}
+					if ($locationUrl) {
+						$content = self::getUrl($locationUrl, $includeHeader, $requestHeaders, $report);
+						$followLocationSucceeded = TRUE;
+					} else {
+						// Failure: we got a redirection status code but not the URL to redirect to.
+						$content = FALSE;
+					}
+				}
+				if ($content && !$includeHeader) {
+					$content = self::stripHttpHeaders($content);
+				}
+			}
+
 			if (isset($report)) {
-				if ($content === FALSE) {
+				if (!$followLocationSucceeded && $curlInfo['http_code'] >= 300 && $curlInfo['http_code'] < 400) {
+					$report['http_code'] = $curlInfo['http_code'];
+					$report['content_type'] = $curlInfo['content_type'];
+					$report['error'] = CURLE_GOT_NOTHING;
+					$report['message'] = 'Expected "Location" header but got nothing.';
+				} elseif ($content === FALSE) {
 					$report['error'] = curl_errno($ch);
 					$report['message'] = curl_error($ch);
-				} else {
-					$curlInfo = curl_getinfo($ch);
-					// We hit a redirection but we couldn't follow it
-					if (!$followLocation && $curlInfo['status'] >= 300 && $curlInfo['status'] < 400) {
-						$report['error'] = -1;
-						$report['message'] = 'Couldn\'t follow location redirect (PHP configuration option open_basedir is in effect).';
-					} elseif ($includeHeader) {
-						// Set only for $includeHeader to work exactly like PHP variant
-						$report['http_code'] = $curlInfo['http_code'];
-						$report['content_type'] = $curlInfo['content_type'];
-					}
+				} elseif ($includeHeader) {
+					// Set only for $includeHeader to work exactly like PHP variant
+					$report['http_code'] = $curlInfo['http_code'];
+					$report['content_type'] = $curlInfo['content_type'];
 				}
 			}
 			curl_close($ch);
@@ -2553,6 +2587,45 @@ Connection: close
 				$report['error'] = -1;
 				$report['message'] = 'Couldn\'t get URL: ' . implode(LF, $http_response_header);
 			}
+		}
+		return $content;
+	}
+
+	/**
+	 * Parses HTTP headers and returns the content of the "Location" header
+	 * or the empty string if no such header found.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	static protected function getRedirectUrlFromHttpHeaders($content) {
+		$result = '';
+		$headers = explode("\r\n", $content);
+		foreach ($headers as $header) {
+			if ($header == '') {
+				break;
+			}
+			if (preg_match('/^\s*Location\s*:/i', $header)) {
+				list(, $result) = self::trimExplode(':', $header, FALSE, 2);
+				if ($result) {
+					$result = self::locationHeaderUrl($result);
+				}
+				break;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Strips HTTP headers from the content.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	static protected function stripHttpHeaders($content) {
+		$headersEndPos = strpos($content, "\r\n\r\n");
+		if ($headersEndPos) {
+			$content = substr($content, $headersEndPos + 4);
 		}
 		return $content;
 	}
@@ -4170,7 +4243,7 @@ Connection: close
 					if ($errorMode == 2) {
 						throw new \InvalidArgumentException($errorMsg, 1294585865);
 					} elseif (!$errorMode) {
-						debug($errorMsg, 'TYPO3\\CMS\\Core\\Utility\\GeneralUtility::callUserFunction');
+						debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
 					}
 				}
 			} else {
@@ -4178,7 +4251,7 @@ Connection: close
 				if ($errorMode == 2) {
 					throw new \InvalidArgumentException($errorMsg, 1294585866);
 				} elseif (!$errorMode) {
-					debug($errorMsg, 'TYPO3\\CMS\\Core\\Utility\\GeneralUtility::callUserFunction');
+					debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
 				}
 			}
 		} else {
@@ -4190,7 +4263,7 @@ Connection: close
 				if ($errorMode == 2) {
 					throw new \InvalidArgumentException($errorMsg, 1294585867);
 				} elseif (!$errorMode) {
-					debug($errorMsg, 'TYPO3\\CMS\\Core\\Utility\\GeneralUtility::callUserFunction');
+					debug($errorMsg, \TYPO3\CMS\Core\Utility\GeneralUtility::class . '::callUserFunction');
 				}
 			}
 		}
@@ -4958,7 +5031,7 @@ Connection: close
 		$date = date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] . ': ');
 		if (in_array('file', $log) !== FALSE) {
 			// In case lock is acquired before autoloader was defined:
-			if (class_exists('TYPO3\\CMS\\Core\\Locking\\Locker') === FALSE) {
+			if (class_exists(\TYPO3\CMS\Core\Locking\Locker::class) === FALSE) {
 				require_once ExtensionManagementUtility::extPath('core') . 'Classes/Locking/Locker.php';
 			}
 			// Write a longer message to the deprecation log

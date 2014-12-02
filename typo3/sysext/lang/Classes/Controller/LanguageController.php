@@ -73,15 +73,17 @@ class LanguageController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 	 */
 	public function indexAction(\TYPO3\CMS\Lang\Domain\Model\LanguageSelectionForm $languageSelectionForm = NULL, $extensions = NULL) {
 		if ($languageSelectionForm === NULL) {
-			$languageSelectionForm = $this->objectManager->get('TYPO3\\CMS\\Lang\\Domain\\Model\\LanguageSelectionForm');
+			$languageSelectionForm = $this->objectManager->get(\TYPO3\CMS\Lang\Domain\Model\LanguageSelectionForm::class);
 			$languageSelectionForm->setLanguages($this->languageRepository->findAll());
 			$languageSelectionForm->setSelectedLanguages($this->languageRepository->findSelected());
 		}
 
-		if (empty($extensions)) {
+		$hasSelectedLanguages = !empty($languageSelectionForm->getSelectedLanguages());
+		if ($hasSelectedLanguages && empty($extensions)) {
 			$extensions = $this->extensionRepository->findAll();
 		}
 
+		$this->view->assign('hasSelectedLanguages', $hasSelectedLanguages);
 		$this->view->assign('languageSelectionForm', $languageSelectionForm);
 		$this->view->assign('extensions', $extensions);
 	}

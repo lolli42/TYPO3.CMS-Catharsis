@@ -364,7 +364,6 @@ class TypoScriptFrontendController {
 	 * Keys in use:
 	 *
 	 * JSFormValidate: <script type="text/javascript" src="'.$GLOBALS["TSFE"]->absRefPrefix.'typo3/sysext/frontend/Resources/Public/JavaScript/jsfunc.validateform.js"></script>
-	 * JSincludeFormupdate:	<script type="text/javascript" src="typo3/js/jsfunc.updateform.js"></script>
 	 * JSMenuCode, JSMenuCode_menu: JavaScript for the JavaScript menu
 	 * JSCode: reserved
 	 *
@@ -2424,14 +2423,13 @@ class TypoScriptFrontendController {
 						$this->config['config']['typolinkCheckRootline'] = TRUE;
 					}
 					// Set default values for removeDefaultJS and inlineStyle2TempFile so CSS and JS are externalized if compatversion is higher than 4.0
-					if (GeneralUtility::compat_version('4.0')) {
-						if (!isset($this->config['config']['removeDefaultJS'])) {
-							$this->config['config']['removeDefaultJS'] = 'external';
-						}
-						if (!isset($this->config['config']['inlineStyle2TempFile'])) {
-							$this->config['config']['inlineStyle2TempFile'] = 1;
-						}
+					if (!isset($this->config['config']['removeDefaultJS'])) {
+						$this->config['config']['removeDefaultJS'] = 'external';
 					}
+					if (!isset($this->config['config']['inlineStyle2TempFile'])) {
+						$this->config['config']['inlineStyle2TempFile'] = 1;
+					}
+
 					if (!isset($this->config['config']['compressJs'])) {
 						$this->config['config']['compressJs'] = 0;
 					}
@@ -2614,11 +2612,7 @@ class TypoScriptFrontendController {
 			// Do we set all except LC_NUMERIC
 			$locale = setlocale(LC_COLLATE, $this->config['config']['locale_all']);
 			if ($locale) {
-				// PHP fatals with uppercase I characters in method names with turkish locale LC_CTYPE
-				// @see http://bugs.php.net/bug.php?id=35050
-				if (substr($this->config['config']['locale_all'], 0, 2) != 'tr') {
-					setlocale(LC_CTYPE, $this->config['config']['locale_all']);
-				}
+				setlocale(LC_CTYPE, $this->config['config']['locale_all']);
 				setlocale(LC_MONETARY, $this->config['config']['locale_all']);
 				setlocale(LC_TIME, $this->config['config']['locale_all']);
 				$this->localeCharset = $this->csConvObj->get_locale_charset($this->config['config']['locale_all']);
@@ -3001,7 +2995,7 @@ class TypoScriptFrontendController {
 	 */
 	protected function redirectToCurrentPage() {
 		$this->calculateLinkVars();
-		// instantiate tslib_content to generate the correct target URL
+		// Instantiate \TYPO3\CMS\Frontend\ContentObject to generate the correct target URL
 		/** @var $cObj \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer */
 		$cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$parameter = $this->page['uid'];
@@ -4653,7 +4647,7 @@ class TypoScriptFrontendController {
 			$result = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
 				'uid, pid, domainName, forced',
 				'sys_domain',
-				'redirectTo=\'\' ' . $GLOBALS['TSFE']->sys_page->enableFields('sys_domain'),
+				'redirectTo=\'\' ' . $GLOBALS['TSFE']->sys_page->enableFields('sys_domain', 0),
 				'',
 				'sorting ASC'
 			);

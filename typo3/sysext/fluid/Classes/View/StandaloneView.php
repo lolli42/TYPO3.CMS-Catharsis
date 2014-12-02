@@ -71,27 +71,27 @@ class StandaloneView extends AbstractTemplateView {
 	public function __construct(ContentObjectRenderer $contentObject = NULL) {
 		$this->objectManager = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
 		/** @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager */
-		$configurationManager = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		$configurationManager = $this->objectManager->get(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
 		if ($contentObject === NULL) {
 			/** @var ContentObjectRenderer $contentObject */
 			$contentObject = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		}
 		$configurationManager->setContentObject($contentObject);
-		$this->templateParser = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Parser\\TemplateParser');
-		$this->setRenderingContext($this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Rendering\\RenderingContext'));
+		$this->templateParser = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Parser\TemplateParser::class);
+		$this->setRenderingContext($this->objectManager->get(\TYPO3\CMS\Fluid\Core\Rendering\RenderingContext::class));
 		/** @var \TYPO3\CMS\Extbase\Mvc\Web\Request $request */
-		$request = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request');
+		$request = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Web\Request::class);
 		$request->setRequestURI(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'));
 		$request->setBaseURI(GeneralUtility::getIndpEnv('TYPO3_SITE_URL'));
 		/** @var \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder $uriBuilder */
-		$uriBuilder = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder');
+		$uriBuilder = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder::class);
 		$uriBuilder->setRequest($request);
 		/** @var \TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext $controllerContext */
-		$controllerContext = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext');
+		$controllerContext = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext::class);
 		$controllerContext->setRequest($request);
 		$controllerContext->setUriBuilder($uriBuilder);
 		$this->setControllerContext($controllerContext);
-		$this->templateCompiler = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Compiler\\TemplateCompiler');
+		$this->templateCompiler = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Compiler\TemplateCompiler::class);
 		// singleton
 		$this->templateCompiler->setTemplateCache(GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('fluid_template'));
 	}
@@ -375,13 +375,17 @@ class StandaloneView extends AbstractTemplateView {
 	 * @throws InvalidTemplateResourceException
 	 */
 	protected function getLayoutPathAndFilename($layoutName = 'Default') {
-		$layoutName = ucfirst($layoutName);
+		$upperCasedLayoutName = ucfirst($layoutName);
 		$possibleLayoutPaths = array();
 		$paths = ArrayUtility::sortArrayWithIntegerKeys($this->getLayoutRootPaths());
 		$paths = array_reverse($paths, TRUE);
 		foreach ($paths as $layoutRootPath) {
-			$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $layoutName . '.' . $this->getRequest()->getFormat());
-			$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $layoutName);
+			$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $upperCasedLayoutName . '.' . $this->getRequest()->getFormat());
+			$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $upperCasedLayoutName);
+			if ($upperCasedLayoutName !== $layoutName) {
+				$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $layoutName . '.' . $this->getRequest()->getFormat());
+				$possibleLayoutPaths[] = GeneralUtility::fixWindowsFilePath($layoutRootPath . '/' . $layoutName);
+			}
 		}
 		foreach ($possibleLayoutPaths as $layoutPathAndFilename) {
 			if ($this->testFileExistence($layoutPathAndFilename)) {
@@ -441,13 +445,17 @@ class StandaloneView extends AbstractTemplateView {
 	 * @throws InvalidTemplateResourceException
 	 */
 	protected function getPartialPathAndFilename($partialName) {
-		$partialName = ucfirst($partialName);
+		$upperCasedPartialName = ucfirst($partialName);
 		$paths = ArrayUtility::sortArrayWithIntegerKeys($this->getPartialRootPaths());
 		$paths = array_reverse($paths, TRUE);
 		$possiblePartialPaths = array();
 		foreach ($paths as $partialRootPath) {
-			$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $partialName . '.' . $this->getRequest()->getFormat());
-			$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $partialName);
+			$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $upperCasedPartialName . '.' . $this->getRequest()->getFormat());
+			$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $upperCasedPartialName);
+			if ($upperCasedPartialName !== $partialName) {
+				$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $partialName . '.' . $this->getRequest()->getFormat());
+				$possiblePartialPaths[] = GeneralUtility::fixWindowsFilePath($partialRootPath . '/' . $partialName);
+			}
 		}
 		foreach ($possiblePartialPaths as $partialPathAndFilename) {
 			if ($this->testFileExistence($partialPathAndFilename)) {

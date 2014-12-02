@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
+use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
  * Test case
@@ -40,23 +42,23 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $mockMvcPropertyMappingConfigurationService;
 
 	public function setUp() {
-		$this->actionController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController');
+		$this->actionController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class);
 	}
 
 	/**
 	 * @test
 	 */
 	public function processRequestSticksToSpecifiedSequence() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Request', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Web\Request::class, array(), array(), '', FALSE);
 		$mockRequest->expects($this->once())->method('setDispatched')->with(TRUE);
-		$mockUriBuilder = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder');
+		$mockUriBuilder = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder::class);
 		$mockUriBuilder->expects($this->once())->method('setRequest')->with($mockRequest);
-		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface');
-		$mockObjectManager->expects($this->once())->method('get')->with('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Routing\\UriBuilder')->will($this->returnValue($mockUriBuilder));
-		$mockResponse = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Response', array(), array(), '', FALSE);
-		$configurationService = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\MvcPropertyMappingConfigurationService');
+		$mockObjectManager = $this->getMock(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface::class);
+		$mockObjectManager->expects($this->once())->method('get')->with(\TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder::class)->will($this->returnValue($mockUriBuilder));
+		$mockResponse = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Web\Response::class, array(), array(), '', FALSE);
+		$configurationService = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Controller\MvcPropertyMappingConfigurationService::class);
 		/** @var \TYPO3\CMS\Extbase\Mvc\Controller\ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface */
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array(
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array(
 			'initializeFooAction',
 			'initializeAction',
 			'resolveActionMethodName',
@@ -95,13 +97,13 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function resolveViewUsesFluidTemplateViewIfTemplateIsAvailable() {
 		$mockSession = $this->getMock('Tx_Extbase_Session_SessionInterface');
-		$mockControllerContext = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext', array(), array(), '', FALSE);
-		$mockFluidTemplateView = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface');
+		$mockControllerContext = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext::class, array(), array(), '', FALSE);
+		$mockFluidTemplateView = $this->getMock(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface::class);
 		$mockFluidTemplateView->expects($this->once())->method('setControllerContext')->with($mockControllerContext);
 		$mockFluidTemplateView->expects($this->once())->method('canRender')->with($mockControllerContext)->will($this->returnValue(TRUE));
-		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface', array(), array(), '', FALSE);
-		$mockObjectManager->expects($this->at(0))->method('get')->with('TYPO3\\CMS\\Fluid\\View\\TemplateView')->will($this->returnValue($mockFluidTemplateView));
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('buildControllerContext', 'resolveViewObjectName', 'setViewConfiguration'), array(), '', FALSE);
+		$mockObjectManager = $this->getMock(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface::class, array(), array(), '', FALSE);
+		$mockObjectManager->expects($this->at(0))->method('get')->with(\TYPO3\CMS\Fluid\View\TemplateView::class)->will($this->returnValue($mockFluidTemplateView));
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('buildControllerContext', 'resolveViewObjectName', 'setViewConfiguration'), array(), '', FALSE);
 		$mockController->expects($this->once())->method('resolveViewObjectName')->will($this->returnValue(FALSE));
 		$mockController->_set('session', $mockSession);
 		$mockController->_set('objectManager', $mockObjectManager);
@@ -114,14 +116,14 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Bastian Waidelich <bastian@typo3.org>
 	 */
 	public function resolveViewObjectNameUsesViewObjectNamePatternToResolveViewObjectName() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
 		$mockRequest->expects($this->once())->method('getControllerVendorName')->will($this->returnValue('MyVendor'));
 		$mockRequest->expects($this->once())->method('getControllerExtensionName')->will($this->returnValue('MyPackage'));
 		$mockRequest->expects($this->once())->method('getControllerName')->will($this->returnValue('MyController'));
 		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('MyAction'));
 		$mockRequest->expects($this->atLeastOnce())->method('getFormat')->will($this->returnValue('MyFormat'));
-		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface', array(), array(), '', FALSE);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
+		$mockObjectManager = $this->getMock(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface::class, array(), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('dummy'), array(), '', FALSE);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('objectManager', $mockObjectManager);
 		$mockController->_set('namespacesViewObjectNamePattern', 'RandomViewObject@vendor\@extension\View\@controller\@action@format');
@@ -131,40 +133,17 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function resolveViewObjectNameUsesDeprecatedViewObjectNamePatternForExtensionsWithoutVendor() {
-		eval('class Tx_MyPackage_View_MyController_MyActionMyFormat {}');
-
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
-		$mockRequest->expects($this->once())->method('getControllerExtensionName')->will($this->returnValue('MyPackage'));
-		$mockRequest->expects($this->once())->method('getControllerName')->will($this->returnValue('MyController'));
-		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('MyAction'));
-		$mockRequest->expects($this->once())->method('getControllerVendorName')->will($this->returnValue(NULL));
-		$mockRequest->expects($this->atLeastOnce())->method('getFormat')->will($this->returnValue('MyFormat'));
-		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface', array(), array(), '', FALSE);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
-		$mockController->_set('request', $mockRequest);
-		$mockController->_set('objectManager', $mockObjectManager);
-
-		$this->assertEquals(
-			'Tx_MyPackage_View_MyController_MyActionMyFormat',
-			$mockController->_call('resolveViewObjectName')
-		);
-	}
-
-	/**
-	 * @test
-	 */
 	public function resolveViewObjectNameUsesNamespacedViewObjectNamePatternForExtensionsWithVendor() {
 		eval('namespace MyVendor\MyPackage\View\MyController; class MyActionMyFormat {}');
 
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
 		$mockRequest->expects($this->once())->method('getControllerExtensionName')->will($this->returnValue('MyPackage'));
 		$mockRequest->expects($this->once())->method('getControllerName')->will($this->returnValue('MyController'));
 		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('MyAction'));
 		$mockRequest->expects($this->once())->method('getControllerVendorName')->will($this->returnValue('MyVendor'));
 		$mockRequest->expects($this->atLeastOnce())->method('getFormat')->will($this->returnValue('MyFormat'));
-		$mockObjectManager = $this->getMock('TYPO3\\CMS\\Extbase\\Object\\ObjectManagerInterface', array(), array(), '', FALSE);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
+		$mockObjectManager = $this->getMock(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface::class, array(), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('dummy'), array(), '', FALSE);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_set('objectManager', $mockObjectManager);
 
@@ -179,10 +158,10 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function resolveActionMethodNameReturnsTheCurrentActionMethodNameFromTheRequest() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
 		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('fooBar'));
 		/** @var \TYPO3\CMS\Extbase\Mvc\Controller\ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface */
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooBarAction'), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('fooBarAction'), array(), '', FALSE);
 		$mockController->_set('request', $mockRequest);
 		$this->assertEquals('fooBarAction', $mockController->_call('resolveActionMethodName'));
 	}
@@ -193,10 +172,10 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function resolveActionMethodNameThrowsAnExceptionIfTheActionDefinedInTheRequestDoesNotExist() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
 		$mockRequest->expects($this->once())->method('getControllerActionName')->will($this->returnValue('fooBar'));
 		/** @var \TYPO3\CMS\Extbase\Mvc\Controller\ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface */
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('otherBarAction'), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('otherBarAction'), array(), '', FALSE);
 		$mockController->_set('request', $mockRequest);
 		$mockController->_call('resolveActionMethodName');
 	}
@@ -206,12 +185,12 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function initializeActionMethodArgumentsRegistersArgumentsFoundInTheSignatureOfTheCurrentActionMethod() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
-		$mockArguments = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments', array('addNewArgument', 'removeAll'));
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
+		$mockArguments = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Controller\Arguments::class, array('addNewArgument', 'removeAll'));
 		$mockArguments->expects($this->at(0))->method('addNewArgument')->with('stringArgument', 'string', TRUE);
 		$mockArguments->expects($this->at(1))->method('addNewArgument')->with('integerArgument', 'integer', TRUE);
 		$mockArguments->expects($this->at(2))->method('addNewArgument')->with('objectArgument', 'F3_Foo_Bar', TRUE);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction', 'evaluateDontValidateAnnotations'), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('fooAction', 'evaluateDontValidateAnnotations'), array(), '', FALSE);
 		$methodParameters = array(
 			'stringArgument' => array(
 				'position' => 0,
@@ -238,7 +217,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'type' => 'F3_Foo_Bar'
 			)
 		);
-		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
+		$mockReflectionService = $this->getMock(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class, array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
 		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
@@ -252,12 +231,12 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function initializeActionMethodArgumentsRegistersOptionalArgumentsAsSuch() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
-		$mockArguments = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments', array(), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
+		$mockArguments = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Controller\Arguments::class, array(), array(), '', FALSE);
 		$mockArguments->expects($this->at(0))->method('addNewArgument')->with('arg1', 'string', TRUE);
 		$mockArguments->expects($this->at(1))->method('addNewArgument')->with('arg2', 'array', FALSE, array(21));
 		$mockArguments->expects($this->at(2))->method('addNewArgument')->with('arg3', 'string', FALSE, 42);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction', 'evaluateDontValidateAnnotations'), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('fooAction', 'evaluateDontValidateAnnotations'), array(), '', FALSE);
 		$methodParameters = array(
 			'arg1' => array(
 				'position' => 0,
@@ -285,7 +264,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'type' => 'string'
 			)
 		);
-		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
+		$mockReflectionService = $this->getMock(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class, array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
 		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
@@ -300,9 +279,9 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentTypeException
 	 */
 	public function initializeActionMethodArgumentsThrowsExceptionIfDataTypeWasNotSpecified() {
-		$mockRequest = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request', array(), array(), '', FALSE);
-		$mockArguments = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\Arguments', array(), array(), '', FALSE);
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('fooAction'), array(), '', FALSE);
+		$mockRequest = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class, array(), array(), '', FALSE);
+		$mockArguments = $this->getMock(\TYPO3\CMS\Extbase\Mvc\Controller\Arguments::class, array(), array(), '', FALSE);
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('fooAction'), array(), '', FALSE);
 		$methodParameters = array(
 			'arg1' => array(
 				'position' => 0,
@@ -312,7 +291,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'allowsNull' => FALSE
 			)
 		);
-		$mockReflectionService = $this->getMock('TYPO3\\CMS\\Extbase\\Reflection\\ReflectionService', array(), array(), '', FALSE);
+		$mockReflectionService = $this->getMock(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class, array(), array(), '', FALSE);
 		$mockReflectionService->expects($this->once())->method('getMethodParameters')->with(get_class($mockController), 'fooAction')->will($this->returnValue($methodParameters));
 		$mockController->_set('reflectionService', $mockReflectionService);
 		$mockController->_set('request', $mockRequest);
@@ -328,12 +307,14 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param array $expected
 	 */
 	public function setViewConfigurationResolvesTemplateRootPathsForTemplateRootPath($configuration, $expected) {
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
-		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		/** @var ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $mockController */
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('dummy'), array(), '', FALSE);
+		/** @var ConfigurationManagerInterface|\PHPUnit_Framework_MockObject_MockObject $mockConfigurationManager */
+		$mockConfigurationManager = $this->getMock(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
 		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
 		$mockController->injectConfigurationManager($mockConfigurationManager);
-		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
-		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setTemplateRootPaths'));
+		$mockController->_set('request', $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class), array('getControllerExtensionKey'));
+		$view = $this->getMock(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface::class, array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setTemplateRootPaths'));
 		$view->expects($this->once())->method('setTemplateRootPaths')->with($expected);
 		$mockController->_call('setViewConfiguration', $view);
 	}
@@ -343,15 +324,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function templateRootPathDataProvider() {
 		return array(
-			'old behaviour only' => array(
-				array(
-					'view' => array(
-						'templateRootPath' => 'some path'
-					)
-				),
-				array('some path')
-			),
-			'new behaviour only with text keys' => array(
+			'text keys' => array(
 				array(
 					'view' => array(
 						'templateRootPaths' => array(
@@ -365,7 +338,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'default' => 'some path'
 				)
 			),
-			'new behaviour only with numerical keys' => array(
+			'numerical keys' => array(
 				array(
 					'view' => array(
 						'templateRootPaths' => array(
@@ -381,7 +354,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'new behaviour only with mixed keys' => array(
+			'mixed keys' => array(
 				array(
 					'view' => array(
 						'templateRootPaths' => array(
@@ -397,60 +370,6 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'old and new behaviour mixed with text keys' => array(
-				array(
-					'view' => array(
-						'templateRootPaths' => array(
-							'default' => 'some path',
-							'specific' => 'intermediate specific path',
-							'very_specific' => 'some other path'
-						),
-						'templateRootPath' => 'old path'
-					)
-				),
-				array(
-					'very_specific' => 'some other path',
-					'specific' => 'intermediate specific path',
-					'default' => 'some path',
-					'0' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with numerical keys' => array(
-				array(
-					'view' => array(
-						'templateRootPaths' => array(
-							'10' => 'some path',
-							'20' => 'intermediate specific path',
-							'30' => 'some other path'
-						),
-						'templateRootPath' => 'old path'
-					)
-				),
-				array(
-					'30' => 'some other path',
-					'20' => 'intermediate specific path',
-					'10' => 'some path',
-					'31' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with mixed keys' => array(
-				array(
-					'view' => array(
-						'templateRootPaths' => array(
-							'10' => 'some path',
-							'very_specific' => 'some other path',
-							'15' => 'intermediate specific path'
-						),
-						'templateRootPath' => 'old path'
-					)
-				),
-				array(
-					'15' => 'intermediate specific path',
-					'very_specific' => 'some other path',
-					'10' => 'some path',
-					'16' => 'old path'
-				)
-			)
 		);
 	}
 
@@ -462,12 +381,14 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param array $expected
 	 */
 	public function setViewConfigurationResolvesLayoutRootPathsForLayoutRootPath($configuration, $expected) {
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
-		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		/** @var ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $mockController */
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('dummy'), array(), '', FALSE);
+		/** @var ConfigurationManagerInterface|\PHPUnit_Framework_MockObject_MockObject $mockConfigurationManager */
+		$mockConfigurationManager = $this->getMock(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
 		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
 		$mockController->injectConfigurationManager($mockConfigurationManager);
-		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
-		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setlayoutRootPaths'));
+		$mockController->_set('request', $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class), array('getControllerExtensionKey'));
+		$view = $this->getMock(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface::class, array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setlayoutRootPaths'));
 		$view->expects($this->once())->method('setlayoutRootPaths')->with($expected);
 		$mockController->_call('setViewConfiguration', $view);
 	}
@@ -477,15 +398,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function layoutRootPathDataProvider() {
 		return array(
-			'old behaviour only' => array(
-				array(
-					'view' => array(
-						'layoutRootPath' => 'some path'
-					)
-				),
-				array('some path')
-			),
-			'new behaviour only with text keys' => array(
+			'text keys' => array(
 				array(
 					'view' => array(
 						'layoutRootPaths' => array(
@@ -499,7 +412,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'default' => 'some path'
 				)
 			),
-			'new behaviour only with numerical keys' => array(
+			'numerical keys' => array(
 				array(
 					'view' => array(
 						'layoutRootPaths' => array(
@@ -515,7 +428,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'new behaviour only with mixed keys' => array(
+			'mixed keys' => array(
 				array(
 					'view' => array(
 						'layoutRootPaths' => array(
@@ -531,60 +444,6 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'old and new behaviour mixed with text keys' => array(
-				array(
-					'view' => array(
-						'layoutRootPaths' => array(
-							'default' => 'some path',
-							'specific' => 'intermediate specific path',
-							'very_specific' => 'some other path'
-						),
-						'layoutRootPath' => 'old path'
-					)
-				),
-				array(
-					'very_specific' => 'some other path',
-					'specific' => 'intermediate specific path',
-					'default' => 'some path',
-					'0' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with numerical keys' => array(
-				array(
-					'view' => array(
-						'layoutRootPaths' => array(
-							'10' => 'some path',
-							'20' => 'intermediate specific path',
-							'30' => 'some other path'
-						),
-						'layoutRootPath' => 'old path'
-					)
-				),
-				array(
-					'30' => 'some other path',
-					'20' => 'intermediate specific path',
-					'10' => 'some path',
-					'31' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with mixed keys' => array(
-				array(
-					'view' => array(
-						'layoutRootPaths' => array(
-							'10' => 'some path',
-							'very_specific' => 'some other path',
-							'15' => 'intermediate specific path'
-						),
-						'layoutRootPath' => 'old path'
-					)
-				),
-				array(
-					'15' => 'intermediate specific path',
-					'very_specific' => 'some other path',
-					'10' => 'some path',
-					'16' => 'old path'
-				)
-			)
 		);
 	}
 
@@ -596,12 +455,14 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param array $expected
 	 */
 	public function setViewConfigurationResolvesPartialRootPathsForPartialRootPath($configuration, $expected) {
-		$mockController = $this->getAccessibleMock('TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ActionController', array('dummy'), array(), '', FALSE);
-		$mockConfigurationManager = $this->getMock('TYPO3\\CMS\\Extbase\\Configuration\\ConfigurationManagerInterface');
+		/** @var ActionController|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $mockController */
+		$mockController = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Mvc\Controller\ActionController::class, array('dummy'), array(), '', FALSE);
+		/** @var ConfigurationManagerInterface|\PHPUnit_Framework_MockObject_MockObject $mockConfigurationManager */
+		$mockConfigurationManager = $this->getMock(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::class);
 		$mockConfigurationManager->expects($this->any())->method('getConfiguration')->will($this->returnValue($configuration));
 		$mockController->injectConfigurationManager($mockConfigurationManager);
-		$mockController->_set('request', $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\Request'), array('getControllerExtensionKey'));
-		$view = $this->getMock('TYPO3\\CMS\\Extbase\\Mvc\\View\\ViewInterface', array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setpartialRootPaths'));
+		$mockController->_set('request', $this->getMock(\TYPO3\CMS\Extbase\Mvc\Request::class), array('getControllerExtensionKey'));
+		$view = $this->getMock(\TYPO3\CMS\Extbase\Mvc\View\ViewInterface::class, array('setControllerContext', 'assign', 'assignMultiple', 'canRender', 'render', 'initializeView', 'setpartialRootPaths'));
 		$view->expects($this->once())->method('setpartialRootPaths')->with($expected);
 		$mockController->_call('setViewConfiguration', $view);
 	}
@@ -611,15 +472,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function partialRootPathDataProvider() {
 		return array(
-			'old behaviour only' => array(
-				array(
-					'view' => array(
-						'partialRootPath' => 'some path'
-					)
-				),
-				array('some path')
-			),
-			'new behaviour only with text keys' => array(
+			'text keys' => array(
 				array(
 					'view' => array(
 						'partialRootPaths' => array(
@@ -633,7 +486,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'default' => 'some path'
 				)
 			),
-			'new behaviour only with numerical keys' => array(
+			'numerical keys' => array(
 				array(
 					'view' => array(
 						'partialRootPaths' => array(
@@ -649,7 +502,7 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'new behaviour only with mixed keys' => array(
+			'mixed keys' => array(
 				array(
 					'view' => array(
 						'partialRootPaths' => array(
@@ -665,60 +518,6 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'10' => 'some path'
 				)
 			),
-			'old and new behaviour mixed with text keys' => array(
-				array(
-					'view' => array(
-						'partialRootPath' => 'old path',
-						'partialRootPaths' => array(
-							'default' => 'some path',
-							'specific' => 'intermediate specific path',
-							'very_specific' => 'some other path'
-						)
-					)
-				),
-				array(
-					'very_specific' => 'some other path',
-					'specific' => 'intermediate specific path',
-					'default' => 'some path',
-					'0' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with numerical keys' => array(
-				array(
-					'view' => array(
-						'partialRootPaths' => array(
-							'10' => 'some path',
-							'20' => 'intermediate specific path',
-							'30' => 'some other path'
-						),
-						'partialRootPath' => 'old path'
-					)
-				),
-				array(
-					'30' => 'some other path',
-					'20' => 'intermediate specific path',
-					'10' => 'some path',
-					'31' => 'old path'
-				)
-			),
-			'old and new behaviour mixed with mixed keys' => array(
-				array(
-					'view' => array(
-						'partialRootPaths' => array(
-							'10' => 'some path',
-							'very_specific' => 'some other path',
-							'15' => 'intermediate specific path'
-						),
-						'partialRootPath' => 'old path'
-					)
-				),
-				array(
-					'15' => 'intermediate specific path',
-					'very_specific' => 'some other path',
-					'10' => 'some path',
-					'16' => 'old path'
-				)
-			)
 		);
 	}
 }

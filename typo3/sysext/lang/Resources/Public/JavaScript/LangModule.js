@@ -26,20 +26,16 @@ var languageModule = {
 	 * @var object
 	 */
 	tableSetup: {
-		iDisplayLength: 1000,
-		bPaginate: false,
-		bSearch: false,
-		bInfo: false,
-		bFilter: false,
-		sScrollY: '96px',
-		aoColumnDefs: [{
-			bSortable: false,
-			aTargets: ['notSortable']
-		}],
-		"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-			// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-			return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-		}
+		'pageLength': 1000,
+		'paging': false,
+		'info': false,
+		'searching': false,
+		'scrollY': '96px',
+		'columnDefs': [{
+			'searchable': false,
+			'orderable': false,
+			'targets': ['notSortable']
+		}]
 	},
 
 	/**
@@ -60,7 +56,7 @@ var languageModule = {
 	initialize: function() {
 			// Initialize dataTable for selection and translation list
 		languageModule.tableSetup.sScrollY = languageModule.calculateTableHeight();
-		jQuery('.selectionList, .translationList').dataTable(languageModule.tableSetup);
+		jQuery('.selectionList, .translationList').DataTable(languageModule.tableSetup);
 
 			// Prevent "jumping" style of the tables while generating
 		jQuery('.languageSelectionListContainer').css('visibility', 'visible');
@@ -260,8 +256,8 @@ var languageModule = {
 		if (typeof label !== 'string' || label === '') {
 			return;
 		}
-		TYPO3.Flashmessage.display(
-			TYPO3.Severity.error,
+		top.TYPO3.Flashmessage.display(
+			top.TYPO3.Severity.error,
 			TYPO3.l10n.localize('flashmessage.error'),
 			TYPO3.l10n.localize(label),
 			5
@@ -278,8 +274,8 @@ var languageModule = {
 		if (typeof label !== 'string' || label === '') {
 			return;
 		}
-		TYPO3.Flashmessage.display(
-			TYPO3.Severity.information,
+		top.TYPO3.Flashmessage.display(
+			top.TYPO3.Severity.info,
 			TYPO3.l10n.localize('flashmessage.information'),
 			TYPO3.l10n.localize(label),
 			3
@@ -296,8 +292,8 @@ var languageModule = {
 		if (typeof label !== 'string' || label === '') {
 			return;
 		}
-		TYPO3.Flashmessage.display(
-			TYPO3.Severity.ok,
+		top.TYPO3.Flashmessage.display(
+			top.TYPO3.Severity.ok,
 			TYPO3.l10n.localize('flashmessage.success'),
 			TYPO3.l10n.localize(label),
 			3

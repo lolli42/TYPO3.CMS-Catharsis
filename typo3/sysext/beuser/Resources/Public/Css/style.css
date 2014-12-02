@@ -2,7 +2,7 @@
  * @group: Structure
  */
 
-#compareUsers { margin-bottom: 10px; }
+#compareUsers { margin-bottom: 10px; list-style-type: none; padding-left: 0.1em; }
 
 div.collapsibleSection { background-color: #ededed; border-top: 1px solid #cdcdcd; border-bottom: 1px solid #cdcdcd; padding: 12px; margin-bottom: 24px; }
 	#typo3-docbody div.collapsibleSection form { margin-bottom: 0; }
@@ -17,9 +17,6 @@ div.collapsibleSection { background-color: #ededed; border-top: 1px solid #cdcdc
  * @group: Form
  */
 
-form label { float: left; height: 20px; line-height: 20px; margin-right: 10px; width: 90px; }
-form div { clear: both; margin-bottom: 5px; }
-
 	form .field-row,
 	form .button-row { clear: both; margin-bottom: 10px; }
 	form .indent { margin-left: 100px; }
@@ -27,22 +24,59 @@ form div { clear: both; margin-bottom: 5px; }
 /**
  * @end
  */
+.legend .pull-left {
+    margin-right: 0.5em;
+}
 
-/**
- * @group: Paginate
- */
+.legend td {
+    overflow:hidden;
+}
 
-.f3-widget-paginator { display: block; float: left; margin: 0 0 10px; }
+.legend span.t3-icon {
+    margin-right: 0;
+}
 
-	.f3-widget-paginator li { font-weight: bold; display: block; float: left; width: 30px; text-align: center; margin: 0 2px 2px; }
+.number {
+	border: 1px solid #000000;
+	border-radius: 2px;
+	width: 16px;
+	height: 16px;
+	display: inline-block;
+	text-align: center;
+	margin-right: 5px;
+	margin-left: 10px;
+	line-height: 14px;
+	font-weight: bold;
+}
 
-	.f3-widget-paginator li.current { border: 1px solid black; padding: 2px; }
-
-	.f3-widget-paginator li.next,
-	.f3-widget-paginator li.previous { width: auto; }
-
-	.f3-widget-paginator a { font-weight: normal; display: block; border: 1px solid black; padding: 2px; }
-
-/**
- * @end
- */
+.edge span {
+	width: 1px;
+	height: 10px;
+	background: #000000;
+	display: block;
+	margin-top: 8px;
+	margin-left: 6px;
+}
+.edge span span {
+	width: 10px;
+	height: 1px;
+	background: #000000;
+	display: block;
+	margin-left: 1px;
+}
+.hr span {
+	width: 20px;
+	height: 1px;
+	background: #000000;
+	display: block;
+	margin-top: -1px;
+	margin-left: -4px;
+}
+.vr span {
+	width: 1px;
+	height: 20px;
+	background: #000000;
+	margin-top: -2px;
+	margin-left: 6px;
+	display: block;
+}

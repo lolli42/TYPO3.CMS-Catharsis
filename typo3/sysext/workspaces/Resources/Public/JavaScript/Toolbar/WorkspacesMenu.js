@@ -18,7 +18,7 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 
 	var WorkspacesMenu = {
 		options: {
-			containerSelector: '#workspace-selector-menu',
+			containerSelector: '#typo3-cms-workspaces-backend-toolbaritems-workspaceselectortoolbaritem',
 			menuItemSelector: '.dropdown-menu li a.tx-workspaces-switchlink',
 			activeMenuItemSelector: '.dropdown-menu .selected',
 			toolbarItemSelector: '.dropdown-toggle',
@@ -70,16 +70,18 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 					fsMod.recentIds['web'] = response.pageId;
 					var url = TYPO3.Backend.ContentContainer.getUrl();
 					url += (url.indexOf('?') == -1 ? '?' : '&') + '&id=' + response.pageId;
-					TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
+					if (TYPO3.Backend.NavigationContainer.PageTree) {
+						TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
+					}
 					TYPO3.Backend.ContentContainer.setUrl(url);
 
 				// when in web module reload, otherwise send the user to the web module
 				} else if (currentModuleLoaded.indexOf('web_') === 0) {
-					TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
+					if (TYPO3.Backend.NavigationContainer.PageTree) {
+						TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
+					}
 					TYPO3.ModuleMenu.App.reloadFrames();
-
 				} else if (TYPO3.configuration.pageModule) {
-					TYPO3.Backend.NavigationContainer.PageTree.refreshTree();
 					TYPO3.ModuleMenu.App.showModule(TYPO3.configuration.pageModule);
 				}
 
@@ -102,7 +104,7 @@ define('TYPO3/CMS/Workspaces/Toolbar/WorkspacesMenu', ['jquery'], function($) {
 		WorkspacesMenu.updateBackendContext(title);
 
 		// first remove all checks, then set the check in front of the selected workspace
-		var stateActiveClass = 't3-icon t3-icon-status t3-icon-status-status t3-icon-status-checked';
+		var stateActiveClass = 't3-icon fa fa-check';
 		var stateInactiveClass = 't3-icon t3-icon-empty t3-icon-empty-empty t3-icon-empty';
 
 		// remove "selected" class and checkmark

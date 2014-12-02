@@ -437,7 +437,7 @@ class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvide
 	 * @return void
 	 */
 	protected function emitPostProcessTreeDataSignal() {
-		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfiguration\\DatabaseTreeDataProvider',
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Tree\TableConfiguration\TableConfiguration\DatabaseTreeDataProvider::class,
 			self::SIGNAL_PostProcessTreeData,
 			array($this, $this->treeData)
 		);
@@ -450,7 +450,7 @@ class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvide
 	 */
 	protected function getSignalSlotDispatcher() {
 		if (!isset($this->signalSlotDispatcher)) {
-			$this->signalSlotDispatcher = $this->getObjectManager()->get('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+			$this->signalSlotDispatcher = $this->getObjectManager()->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 		}
 		return $this->signalSlotDispatcher;
 	}

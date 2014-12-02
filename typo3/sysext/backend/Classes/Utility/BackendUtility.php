@@ -2070,7 +2070,7 @@ class BackendUtility {
 	 * @param bool $noRecordLookup If set, no records will be looked up, UIDs are just shown.
 	 * @param int $uid Uid of the current record
 	 * @param bool $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
-	 * @return string
+	 * @return string|NULL
 	 */
 	static public function getProcessedValue($table, $col, $value, $fixed_lgd_chars = 0, $defaultPassthrough = FALSE, $noRecordLookup = FALSE, $uid = 0, $forceResult = TRUE) {
 		if ($col === 'uid') {
@@ -2079,7 +2079,7 @@ class BackendUtility {
 		}
 		// Check if table and field is configured
 		if (!is_array($GLOBALS['TCA'][$table]) || !is_array($GLOBALS['TCA'][$table]['columns'][$col])) {
-			return '';
+			return NULL;
 		}
 		// Depending on the fields configuration, make a meaningful output value.
 		$theColConf = $GLOBALS['TCA'][$table]['columns'][$col]['config'];
@@ -2562,7 +2562,10 @@ class BackendUtility {
 			$helpText = self::helpText($table, $field);
 		}
 		// If there's a help text or some overload information, proceed with preparing an output
-		if (!empty($helpText) || $hasHelpTextOverload) {
+		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
+		// the extension. The core provides a API for adding help, and rendering help, but the rendering
+		// should be up to the extension itself
+		if ((!empty($helpText) || $hasHelpTextOverload) && ExtensionManagementUtility::isLoaded('cshmanual')) {
 			// If no text was given, just use the regular help icon
 			if ($text == '') {
 				$text = IconUtility::getSpriteIcon('actions-system-help-open');

@@ -21,11 +21,10 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 			class: 't3-icon fa fa-circle-o-notch fa-spin'
 		}),
 		options: {
-			containerSelector: '#shortcut-menu',
+			containerSelector: '#typo3-cms-backend-backend-toolbaritems-shortcuttoolbaritem',
 			toolbarIconSelector: '.dropdown-toggle span.t3-icon',
 			toolbarMenuSelector: '.dropdown-menu',
 			shortcutItemSelector: '.dropdown-menu .shortcut',
-			shortcutLabelSelector: '.shortcut-label',
 			shortcutDeleteSelector: '.shortcut-delete',
 			shortcutEditSelector: '.shortcut-edit',
 			shortcutFormTitleSelector: 'input[name="shortcut-title"]',
@@ -39,7 +38,6 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 	 * build the in-place-editor for a shortcut
 	 */
 	ShortcutMenu.editShortcut = function($shortcutRecord) {
-		$shortcutRecord.find(ShortcutMenu.options.shortcutEditSelector).hide();
 		// load the form
 		$.ajax({
 			url: TYPO3.settings.ajaxUrls['ShortcutMenu::getShortcutEditForm'],
@@ -49,7 +47,7 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 			},
 			cache: false
 		}).done(function(data) {
-			$shortcutRecord.find(ShortcutMenu.options.shortcutLabelSelector).html(data);
+			$shortcutRecord.html(data);
 		});
 	};
 

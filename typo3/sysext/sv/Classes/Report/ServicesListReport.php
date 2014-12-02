@@ -30,9 +30,9 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	protected $reportsModule;
 
 	/**
-	 * Constructor for class tx_sv_reports_ServicesList
+	 * Constructor
 	 *
-	 * @param tx_reports_Module $reportsModule Back-reference to the calling reports module
+	 * @param \TYPO3\CMS\Reports\Controller\ReportController $reportsModule Back-reference to the calling reports module
 	 */
 	public function __construct(\TYPO3\CMS\Reports\Controller\ReportController $reportsModule) {
 		$this->reportsModule = $reportsModule;
@@ -59,7 +59,7 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	 */
 	protected function renderHelp() {
 		$help = '<p class="lead">' . $GLOBALS['LANG']->getLL('report_explanation') . '</p>';
-		$help .= '<p class="help">' . $GLOBALS['LANG']->getLL('externals_explanation') . '</p><br />';
+		$help .= '<p class="help">' . $GLOBALS['LANG']->getLL('externals_explanation') . '</p>';
 		return $help;
 	}
 
@@ -161,7 +161,7 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	 */
 	protected function renderExecutablesSearchPathList() {
 		$searchPaths = \TYPO3\CMS\Core\Utility\CommandUtility::getPaths(TRUE);
-		$content = '<h3 class="divider">' . $GLOBALS['LANG']->getLL('search_paths') . '</h3>';
+		$content = '<h3>' . $GLOBALS['LANG']->getLL('search_paths') . '</h3>';
 		if (count($searchPaths) == 0) {
 			$content .= '<p>' . $GLOBALS['LANG']->getLL('no_search_paths') . '</p>';
 		} else {

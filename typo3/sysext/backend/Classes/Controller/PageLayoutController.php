@@ -448,8 +448,6 @@ class PageLayoutController {
 			$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 			$this->doc->backPath = $GLOBALS['BACK_PATH'];
 			$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_layout.html');
-			// JavaScript:
-			$this->doc->JScode = '<script type="text/javascript" ' . 'src="' . GeneralUtility::createVersionNumberedFilename(($GLOBALS['BACK_PATH'] . 'js/jsfunc.updateform.js')) . '">' . '</script>';
 
 			// override the default jumpToUrl
 			$this->doc->JScodeArray['jumpToUrl'] = '
@@ -511,9 +509,9 @@ class PageLayoutController {
 						} else {
 							document.getElementById(idBase+"-"+index+"-DIV").style.display = "block";
 							if(DTM_origClass=="") {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").nodeValue = "tabact";
+								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").nodeValue = "active";
 							} else {
-								DTM_origClass = "tabact";
+								DTM_origClass = "active";
 							}
 							top.DTM_currentTabs[idBase] = index;
 						}
@@ -533,9 +531,9 @@ class PageLayoutController {
 						} else {
 							document.getElementById(idBase+"-"+index+"-DIV").style.display = "block";
 							if(isInit) {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").nodeValue = "tabact";
+								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").nodeValue = "active";
 							} else {
-								DTM_origClass = "tabact";
+								DTM_origClass = "active";
 							}
 							top.DTM_currentTabs[idBase+"-"+index] = 1;
 						}
@@ -580,14 +578,15 @@ class PageLayoutController {
 			$this->activeColPosList = implode(',', $this->activeColPosList);
 			$this->colPosList = implode(',', $this->colPosList);
 
-			// Page title
-			$body = $this->doc->header($this->getLocalizedPageTitle());
+			$body = '';
 			$body .= $this->getHeaderFlashMessagesForCurrentPid();
 			// Render the primary module content:
 			if ($this->MOD_SETTINGS['function'] == 0) {
 				// QuickEdit
 				$body .= $this->renderQuickEdit();
 			} else {
+				// Page title
+				$body .= $this->doc->header($this->getLocalizedPageTitle());
 				// All other listings
 				$body .= $this->renderListContent();
 			}
@@ -609,8 +608,10 @@ class PageLayoutController {
 			$this->doc->JScode = $this->doc->wrapScriptTags('
 				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
 			');
+
+			$body = $this->doc->header($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
 			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('clickAPage_content'), $GLOBALS['LANG']->getLL('clickAPage_header'), FlashMessage::INFO);
-			$body = $flashMessage->render();
+			$body .= $flashMessage->render();
 			// Setting up the buttons and markers for docheader
 			$docHeaderButtons = array(
 				'view' => '',
@@ -801,6 +802,7 @@ class PageLayoutController {
 				$tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
 				$tceforms->disableRTE = $this->MOD_SETTINGS['disableRTE'];
 				$tceforms->enableClickMenu = TRUE;
+				$tceforms->enableTabMenu = TRUE;
 				// Clipboard is initialized:
 				// Start clipboard
 				$tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
@@ -845,7 +847,7 @@ class PageLayoutController {
 		$h_func_b = '<div class="checkbox">' .
 			'<label for="checkTt_content_showHidden">' .
 			BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') .
-			(!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE', TRUE)) : $GLOBALS['LANG']->getLL('hiddenCE', TRUE) . ' (' . $q_count . ')') .
+			(!$q_count ? ('<span class="text-muted">' . $GLOBALS['LANG']->getLL('hiddenCE', TRUE) . '</span>') : $GLOBALS['LANG']->getLL('hiddenCE', TRUE) . ' (' . $q_count . ')') .
 			'</label>' .
 			'</div>';
 
@@ -944,7 +946,7 @@ class PageLayoutController {
 				$h_func_b = '<div class="checkbox">' .
 					'<label for="checkTt_content_showHidden">' .
 					BackendUtility::getFuncCheck($this->id, 'SET[tt_content_showHidden]', $this->MOD_SETTINGS['tt_content_showHidden'], 'db_layout.php', '', 'id="checkTt_content_showHidden"') .
-					(!$q_count ? $GLOBALS['TBE_TEMPLATE']->dfw($GLOBALS['LANG']->getLL('hiddenCE')) : $GLOBALS['LANG']->getLL('hiddenCE') . ' (' . $q_count . ')') .
+					(!$q_count ? ('<span class="text-muted">' . $GLOBALS['LANG']->getLL('hiddenCE') . '</span>') : $GLOBALS['LANG']->getLL('hiddenCE') . ' (' . $q_count . ')') .
 					'</label>' .
 					'</div>';
 

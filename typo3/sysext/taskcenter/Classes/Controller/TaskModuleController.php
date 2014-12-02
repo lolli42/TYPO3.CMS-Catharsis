@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Taskcenter\Controller;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -40,10 +41,10 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		parent::init();
 		// Initialize document
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('taskcenter') . 'res/mod_template.html');
+		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('taskcenter') . 'Resources/Private/Templates/mod_template.html');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->getPageRenderer()->loadJquery();
-		$this->doc->addStyleSheet('tx_taskcenter', '../' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('taskcenter') . 'res/mod_styles.css');
+		$this->doc->addStyleSheet('tx_taskcenter', '../' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('taskcenter') . 'Resources/Public/Styles/styles.css');
 	}
 
 	/**
@@ -158,10 +159,10 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @return string formatted title and description
 	 */
 	public function description($title, $description = '') {
+		$content = '<h1>' . nl2br(htmlspecialchars($title)) . '</h1>';
 		if (!empty($description)) {
-			$description = '<p class="description">' . nl2br(htmlspecialchars($description)) . '</p><br />';
+			$content .= '<p class="description">' . nl2br(htmlspecialchars($description)) . '</p>';
 		}
-		$content = $this->doc->section($title, $description, FALSE, TRUE);
 		return $content;
 	}
 
@@ -237,7 +238,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$active = (string)$this->MOD_SETTINGS['function'] == $item['uid'] ? ' active-task' : '';
 				// Main menu: Render additional syntax to sort tasks
 				if ($mainMenu) {
-					$dragIcon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/move.gif', 'width="16" height="16" hspace="2"') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE) . '" alt="" />';
+					$dragIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-move', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
 					$section = '<div class="down">&nbsp;</div>
 								<div class="drag">' . $dragIcon . '</div>';
 					$backgroundClass = 't3-row-header ';
@@ -383,7 +384,9 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	protected function openInNewWindow() {
 		$url = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
 		$onClick = 'devlogWin=window.open(\'' . $url . '\',\'taskcenter\',\'width=790,status=0,menubar=1,resizable=1,location=0,scrollbars=1,toolbar=0\');return false;';
-		$content = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/open_in_new_window.gif', 'width="19" height="14"') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.openInNewWindow', TRUE) . '" class="absmiddle" alt="" />' . '</a>';
+		$content = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' .
+			IconUtility::getSpriteIcon('actions-window-open', array('title' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.openInNewWindow', TRUE))) .
+		'</a>';
 		return $content;
 	}
 

@@ -78,7 +78,7 @@ abstract class AbstractWidgetViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper
 	 */
 	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
-		$this->widgetContext = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetContext');
+		$this->widgetContext = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Widget\WidgetContext::class);
 	}
 
 	/**
@@ -122,7 +122,7 @@ abstract class AbstractWidgetViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper
 	 * @return void
 	 */
 	public function setChildNodes(array $childNodes) {
-		$rootNode = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Parser\\SyntaxTree\\RootNode');
+		$rootNode = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RootNode::class);
 		foreach ($childNodes as $childNode) {
 			$rootNode->addChildNode($childNode);
 		}
@@ -153,10 +153,10 @@ abstract class AbstractWidgetViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper
 			}
 			throw new \TYPO3\CMS\Fluid\Core\Widget\Exception\MissingControllerException('initiateSubRequest() can not be called if there is no controller inside $this->controller. Make sure to add a corresponding injectController method to your WidgetViewHelper class "' . get_class($this) . '".', 1284401632);
 		}
-		$subRequest = $this->objectManager->get('TYPO3\\CMS\\Fluid\\Core\\Widget\\WidgetRequest');
+		$subRequest = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Widget\WidgetRequest::class);
 		$subRequest->setWidgetContext($this->widgetContext);
 		$this->passArgumentsToSubRequest($subRequest);
-		$subResponse = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Mvc\\Web\\Response');
+		$subResponse = $this->objectManager->get(\TYPO3\CMS\Extbase\Mvc\Web\Response::class);
 		$this->controller->processRequest($subRequest, $subResponse);
 		return $subResponse;
 	}
@@ -188,13 +188,13 @@ abstract class AbstractWidgetViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper
 	 * @todo clean up, and make it somehow more routing compatible.
 	 */
 	private function initializeWidgetIdentifier() {
-		if (!$this->viewHelperVariableContainer->exists('TYPO3\\CMS\\Fluid\\Core\\Widget\\AbstractWidgetViewHelper', 'nextWidgetNumber')) {
+		if (!$this->viewHelperVariableContainer->exists(\TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetViewHelper::class, 'nextWidgetNumber')) {
 			$widgetCounter = 0;
 		} else {
-			$widgetCounter = $this->viewHelperVariableContainer->get('TYPO3\\CMS\\Fluid\\Core\\Widget\\AbstractWidgetViewHelper', 'nextWidgetNumber');
+			$widgetCounter = $this->viewHelperVariableContainer->get(\TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetViewHelper::class, 'nextWidgetNumber');
 		}
 		$widgetIdentifier = '@widget_' . $widgetCounter;
-		$this->viewHelperVariableContainer->addOrUpdate('TYPO3\\CMS\\Fluid\\Core\\Widget\\AbstractWidgetViewHelper', 'nextWidgetNumber', $widgetCounter + 1);
+		$this->viewHelperVariableContainer->addOrUpdate(\TYPO3\CMS\Fluid\Core\Widget\AbstractWidgetViewHelper::class, 'nextWidgetNumber', $widgetCounter + 1);
 		$this->widgetContext->setWidgetIdentifier($widgetIdentifier);
 	}
 }

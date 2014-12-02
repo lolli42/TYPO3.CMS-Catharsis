@@ -244,6 +244,7 @@ function jumpToUrl(URL) {
 	 * Background image of page (relative to PATH_typo3)
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use a stylesheet instead
 	 */
 	public $backGroundImage = '';
 
@@ -427,7 +428,7 @@ function jumpToUrl(URL) {
 		}
 		// Background image
 		if ($GLOBALS['TBE_STYLES']['background']) {
-			$this->backGroundImage = $GLOBALS['TBE_STYLES']['background'];
+			GeneralUtility::deprecationLog('Usage of $TBE_STYLES["background"] is deprecated. Please use stylesheets directly.');
 		}
 	}
 
@@ -514,23 +515,22 @@ function jumpToUrl(URL) {
 
 	/**
 	 * Makes link to page $id in frontend (view page)
-	 * Returns an magnifier-glass icon which links to the frontend index.php document for viewing the page with id $id
+	 * Returns an icon which links to the frontend index.php document for viewing the page with id $id
 	 * $id must be a page-uid
 	 * If the BE_USER has access to Web>List then a link to that module is shown as well (with return-url)
 	 *
 	 * @param int $id The page id
 	 * @param string $backPath The current "BACK_PATH" (the back relative to the typo3/ directory)
-	 * @param string $addParams Additional parameters for the image tag(s)
 	 * @return string HTML string with linked icon(s)
 	 */
-	public function viewPageIcon($id, $backPath, $addParams = 'hspace="3"') {
+	public function viewPageIcon($id, $backPath) {
 		// If access to Web>List for user, then link to that module.
 		$str = BackendUtility::getListViewLink(array(
 			'id' => $id,
 			'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 		), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList'));
 		// Make link to view page
-		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, $backPath, BackendUtility::BEgetRootLine($id))) . '">' . '<img' . IconUtility::skinImg($backPath, 'gfx/zoom.gif', 'width="12" height="12"') . ' title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '"' . ($addParams ? ' ' . trim($addParams) : '') . ' hspace="3" alt="" />' . '</a>';
+		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, $backPath, BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		return $str;
 	}
 
@@ -568,7 +568,7 @@ function jumpToUrl(URL) {
 		if (is_array($row) && $row['uid']) {
 			$iconImgTag = IconUtility::getSpriteIconForRecord($table, $row, array('title' => htmlspecialchars($path)));
 			$title = strip_tags(BackendUtility::getRecordTitle($table, $row));
-			$viewPage = $noViewPageIcon ? '' : $this->viewPageIcon($row['uid'], $this->backPath, '');
+			$viewPage = $noViewPageIcon ? '' : $this->viewPageIcon($row['uid'], $this->backPath);
 			if ($table == 'pages') {
 				$path .= ' - ' . BackendUtility::titleAttribForPages($row, '', 0);
 			}
@@ -800,7 +800,10 @@ function jumpToUrl(URL) {
 			$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/tab.js');
 		}
 		// Include the JS for the Context Sensitive Help
-		if ($includeCsh) {
+		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
+		// the extension. The core provides a API for adding help, and rendering help, but the rendering
+		// should be up to the extension itself
+		if ($includeCsh && ExtensionManagementUtility::isLoaded('cshmanual')) {
 			$this->loadCshJavascript();
 		}
 
@@ -1080,6 +1083,7 @@ function jumpToUrl(URL) {
 	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, nothing there to output anymore
 	 */
 	public function endPageJS() {
+		GeneralUtility::logDeprecatedFunction();
 		return '';
 	}
 
@@ -1099,10 +1103,6 @@ function jumpToUrl(URL) {
 	 * @return string HTML style section/link tags
 	 */
 	public function docStyle() {
-		// Request background image:
-		if ($this->backGroundImage) {
-			$this->inDocStylesArray[] = ' BODY { background-image: url(' . $this->backPath . $this->backGroundImage . '); }';
-		}
 		// Implode it all:
 		$inDocStyles = implode(LF, $this->inDocStylesArray);
 
@@ -1115,7 +1115,11 @@ function jumpToUrl(URL) {
 		if ($this->styleSheetFile2) {
 			$this->pageRenderer->addCssFile($this->backPath . $this->styleSheetFile2);
 		}
-		$this->pageRenderer->addCssInlineBlock('inDocStyles', $inDocStyles . LF . '/*###POSTCSSMARKER###*/');
+
+		if ($inDocStyles !== '') {
+			$this->pageRenderer->addCssInlineBlock('inDocStyles', $inDocStyles . LF . '/*###POSTCSSMARKER###*/');
+		}
+
 		if ($this->styleSheetFile_post) {
 			$this->pageRenderer->addCssFile($this->backPath . $this->styleSheetFile_post);
 		}
@@ -1293,9 +1297,11 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $string Input string
 	 * @return string Output string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use proper HTML directly
 	 */
 	public function dfw($string) {
-		return '<span class="typo3-dimmed">' . $string . '</span>';
+		GeneralUtility::logDeprecatedFunction();
+		return '<span class="text-muted">' . $string . '</span>';
 	}
 
 	/**
@@ -1303,9 +1309,11 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $string Input string
 	 * @return string Output string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use proper HTML directly
 	 */
 	public function rfw($string) {
-		return '<span class="typo3-red">' . $string . '</span>';
+		GeneralUtility::logDeprecatedFunction();
+		return '<span class="text-danger">' . $string . '</span>';
 	}
 
 	/**
@@ -1580,10 +1588,13 @@ function jumpToUrl(URL) {
 	 * @param bool $noWrap Deprecated - delivered by CSS
 	 * @param bool $fullWidth If set, the tabs will span the full width of their position
 	 * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
-	 * @param int $tabBehaviour If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled
+	 * @param int $tabBehaviour If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled. setting this option to '2' is deprecated since TYPO3 CMS 7, and will be removed iwth CMS 8
 	 * @return string JavaScript section for the HTML header.
 	 */
 	public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = FALSE, $noWrap = TRUE, $fullWidth = FALSE, $defaultTabIndex = 1, $tabBehaviour = 1) {
+		if ($tabBehaviour === 2) {
+			GeneralUtility::deprecationLog('DocumentTemplate::getDynTabMenu parameter $tabBehavior (=2) with showing empty disabled since TYPO3 CMS 7, and will not be supported anymore with CMS 8');
+		}
 		// Load the static code, if not already done with the function below
 		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tabmenu.js');
 		$content = '';
@@ -1948,8 +1959,10 @@ function jumpToUrl(URL) {
 	 * @param string $id
 	 * @param string $saveStatePointer
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use HTML bootstrap classes, localStorage etc.
 	 */
 	public function collapseableSection($title, $html, $id, $saveStatePointer = '') {
+		GeneralUtility::logDeprecatedFunction();
 		$hasSave = $saveStatePointer ? TRUE : FALSE;
 		$collapsedStyle = ($collapsedClass = '');
 		if ($hasSave) {

@@ -137,14 +137,14 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function setCacheIsSettingIdentifierPrefixWithCacheIdentifier() {
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $cacheMock */
-		$cacheMock = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\FrontendInterface', array(), array(), '', FALSE);
+		$cacheMock = $this->getMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class, array(), array(), '', FALSE);
 		$cacheMock->expects($this->any())->method('getIdentifier')->will($this->returnValue(
 			'testidentifier'
 		));
 
 		/** @var $backendMock \PHPUnit_Framework_MockObject_MockObject|ApcBackend */
 		$backendMock = $this->getMock(
-			'TYPO3\\CMS\\Core\\Cache\\Backend\\ApcBackend',
+			\TYPO3\CMS\Core\Cache\Backend\ApcBackend::class,
 			array('setIdentifierPrefix','getCurrentUserData','getPathSite'),
 			array('testcontext')
 		);
@@ -186,9 +186,6 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function flushByTagRemovesCacheEntriesWithSpecifiedTag() {
-		if (version_compare(phpversion(), '5.4.0', '<')) {
-			$this->markTestSkipped('This test is not reliable with PHP version below 5.4.0');
-		}
 		$backend = $this->setUpBackend();
 		$data = 'some data' . microtime();
 		$backend->set('BackendAPCTest1', $data, array('UnitTestTag%test', 'UnitTestTag%boring'));
@@ -220,13 +217,13 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function flushRemovesOnlyOwnEntries() {
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $thisCache */
-		$thisCache = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\FrontendInterface', array(), array(), '', FALSE);
+		$thisCache = $this->getMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class, array(), array(), '', FALSE);
 		$thisCache->expects($this->any())->method('getIdentifier')->will($this->returnValue('thisCache'));
 		$thisBackend = new ApcBackend('Testing');
 		$thisBackend->setCache($thisCache);
 
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $thatCache */
-		$thatCache = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\FrontendInterface', array(), array(), '', FALSE);
+		$thatCache = $this->getMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class, array(), array(), '', FALSE);
 		$thatCache->expects($this->any())->method('getIdentifier')->will($this->returnValue('thatCache'));
 		$thatBackend = new ApcBackend('Testing');
 		$thatBackend->setCache($thatCache);
@@ -280,7 +277,7 @@ class ApcBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected function setUpBackend($accessible = FALSE) {
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $cache */
-		$cache = $this->getMock('TYPO3\\CMS\\Core\\Cache\\Frontend\\FrontendInterface', array(), array(), '', FALSE);
+		$cache = $this->getMock(\TYPO3\CMS\Core\Cache\Frontend\FrontendInterface::class, array(), array(), '', FALSE);
 		if ($accessible) {
 			$accessibleClassName = $this->buildAccessibleProxy('\\TYPO3\\CMS\\Core\\Cache\\Backend\\ApcBackend');
 			$backend = new $accessibleClassName('Testing');

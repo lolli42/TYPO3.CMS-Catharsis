@@ -126,10 +126,6 @@
 	color: $excludeFromUpdates;
 }
 
-.typo3-extension-list td.icons {
-	width: 140px;
-}
-
 #typo3-extension-configuration-forms .info {
 	color: #666;
 	font-weight: normal;
@@ -150,6 +146,15 @@
 .typo3-extension-manager .outdated {
 	color: #0c08ff;
 }
+
+.typo3-extension-manager form#extensionUploadForm {
+	margin-bottom: 0;
+
+	div.control-group:last-child {
+		margin-bottom: 0;
+	}
+}
+
 
 .typo3-extension-list .inactive {
 	color: rgb(170, 170, 170);

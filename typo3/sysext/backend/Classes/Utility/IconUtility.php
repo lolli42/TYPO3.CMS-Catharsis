@@ -1003,7 +1003,7 @@ class IconUtility {
 	 * is usually called by the methods that are responsible for fetching the names
 	 * out of the file name, or the record type
 	 *
-	 * @param string $name Iconname like 'actions-document-new'
+	 * @param string $iconName Iconname like 'actions-document-new'
 	 * @return string A list of all CSS classes needed for the HTML tag
 	 */
 	static public function getSpriteIconClasses($iconName) {
@@ -1017,6 +1017,7 @@ class IconUtility {
 			// Will be something like "t3-icon-document-new"
 			$cssClasses .= ' ' . ($baseCssClass . '-' . substr($iconName, (strlen($parts[0]) + 1)));
 		}
+		static::emitBuildSpriteIconClassesSignal($iconName, $cssClasses);
 		return $cssClasses;
 	}
 
@@ -1033,7 +1034,7 @@ class IconUtility {
 	static protected function buildSpriteHtmlIconTag(array $tagAttributes, $innerHtml = NULL, $tagName = NULL) {
 		list($tagAttributes, $innerHtml, $tagName) = static::emitBuildSpriteHtmlIconTagSignal($tagAttributes, $innerHtml, $tagName);
 
-		$innerHtml = $innerHtml === NULL ? '&nbsp;' : $innerHtml;
+		$innerHtml = $innerHtml === NULL ? ' ' : $innerHtml;
 		$tagName = $tagName === NULL ? 'span' : $tagName;
 		$attributes = '';
 		foreach ($tagAttributes as $attribute => $value) {
@@ -1051,6 +1052,17 @@ class IconUtility {
 	 */
 	static protected function emitBuildSpriteHtmlIconTagSignal(array $tagAttributes, $innerHtml, $tagName) {
 		return static::getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Backend\\Utility\\IconUtility', 'buildSpriteHtmlIconTag', array($tagAttributes, $innerHtml, $tagName));
+	}
+
+	/**
+	 * Emits a signal right after the CSS classes are built. This is useful if somebody only
+	 * fetches the CSS classes via IconUtility and not the whole sprite span tag.
+	 *
+	 * @param string $iconName The name of the icon
+	 * @param string $cssClasses the CSS classes to be used as a string
+	 */
+	static protected function emitBuildSpriteIconClassesSignal($iconName, &$cssClasses) {
+		static::getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Backend\\Utility\\IconUtility', 'buildSpriteIconClasses', array($iconName, &$cssClasses));
 	}
 
 	/**

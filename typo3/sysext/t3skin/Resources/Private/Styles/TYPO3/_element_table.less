@@ -26,10 +26,6 @@
 	padding-left: 22px;
 }
 
-table {
-	background: transparent;
-}
-
 /**
  * Common style for tables
  *
@@ -51,52 +47,156 @@ table {
  * </table>
  */
 
+// Revert Bootstrap @table-bg in order to allow ExtJS and dataTable <table>
+table {
+	background: transparent;
+}
+
+/**
+ * Default table styling
+ **/
+.t3-table,
 .table {
+	background-color: @table-bg;
+	margin-bottom: 1.5em;
+	border: 1px solid @table-border-color;
+
+	* {
+		box-sizing: border-box;
+	}
 
 	> thead,
-	> tbody {
-		tr {
-			th:first-child,
-			th:last-child,
-			td:first-child,
-			td:last-child {
-				padding-left: 12px;
+	> tbody,
+	> tfoot {
+		> tr {
+			> th {
+				white-space: nowrap;
+				vertical-align: middle;
+			}
+			> td {
+				vertical-align: middle;
 			}
 		}
 	}
 
-	> thead {
-		> tr {
-			> th,
-			> td {
-				border-bottom: 1px solid #666;
+	> thead > tr {
+		background-color: darken(@table-bg, 5%);
+
+		th,
+		td {
+			border-bottom: 1px solid @table-border-color;
+			i {
+				font-weight: normal;
 			}
 		}
 	}
 
-	> tbody {
-		> tr {
-			> td {
-				background-color: @table-bg;
-			}
-		}
-		> tr:hover {
-			> td {
-				transition: background-color 100ms linear;
+	.btn {
+		.btn-sm();
+		color: #333;
+		background-color: darken(@table-bg-accent, 10%);
+		border-color: darken(@table-bg-accent, 20%);
+		margin-top: -2px;
+		margin-bottom: -2px;
 
-				a {
-					text-decoration: underline;
-				}
+		&:hover {
+			border-color: darken(@table-bg-accent, 30%);
+			background-color: darken(@table-bg-accent, 20%);
+		}
+		.t3-icon {
+			margin: 0;
+		}
+		&.btn-danger {
+			.btn-danger();
+		}
+		&.btn-success {
+			.btn-success();
+		}
+		&.btn-warning {
+			.btn-warning();
+		}
+		&.btn-info {
+			.btn-info();
+		}
+		&.btn-default {
+			.btn-default();
+		}
+		&.btn-primary {
+			.btn-primary();
+		}
+	}
+
+	.btn-group {
+		font-size: 0;
+
+		.btn {
+			font-size: 12px;
+			float: none;
+		}
+	}
+
+	.btn-checkbox-holder {
+		position: relative;
+		display: inline-block;
+
+		.btn-checkbox {
+			position: absolute;
+			top: 0;
+			height: 100%;
+			width: 100%;
+			opacity: 0;
+			z-index: 10;
+		}
+		input[type=checkbox] + .btn {
+			.t3-icon:before {
+				content: "\f096";
 			}
 		}
+		input[type=checkbox]:checked + .btn {
+			.btn-primary();
+			.t3-icon:before {
+				content: "\f00c";
+			}
+		}
+	}
+
+	.btn-group {
+		.btn + .btn-checkbox-holder {
+			margin-left: -1px;
+			border-top-left-radius: 0;
+			border-bottom-left-radius: 0;
+		}
+	}
+
+	.pagination {
+		margin: 0;
+	}
+
+	.col-icon {
+		.t3-icon {
+			margin: 0;
+		}
+		text-align: center;
+	}
+
+	.col-title {
+		width: 95%;
+	}
+
+	.col-control,
+	.col-clipboard {
+		white-space: nowrap;
+		text-align: right;
 	}
 }
 
-// TYPO3 standard <table class="t3-table">
-table.t3-table {
-	.table;
-	.table-striped;
-	.table-hover;
+/**
+ * Copy table stylings from bootstrap
+ **/
+.t3-table {
+	.table();
+	.table-striped();
+	.table-hover();
 
 	// .active
 	> thead > tr,
@@ -109,10 +209,9 @@ table.t3-table {
 			background-color: @table-bg-active;
 		}
 	}
-
 	> tbody > tr {
-		> td.active:hover,
-		> th.active:hover,
+	> td.active:hover,
+	> th.active:hover,
 		&.active:hover > td,
 		&:hover > .active,
 		&.active:hover > th {
@@ -131,7 +230,6 @@ table.t3-table {
 			background-color: @state-success-bg;
 		}
 	}
-
 	> tbody > tr {
 		> td.success:hover,
 		> th.success:hover,
@@ -153,7 +251,6 @@ table.t3-table {
 			background-color: @state-info-bg;
 		}
 	}
-
 	> tbody > tr {
 		> td.info:hover,
 		> th.info:hover,
@@ -175,7 +272,6 @@ table.t3-table {
 			background-color: @state-warning-bg;
 		}
 	}
-
 	> tbody > tr {
 		> td.warning:hover,
 		> th.warning:hover,
@@ -207,5 +303,32 @@ table.t3-table {
 			background-color: darken(@state-danger-bg, 5%);
 		}
 	}
+}
 
+/**
+ * Fits the table in the viewport and makes overflow possible
+ **/
+.table-fit {
+	width: 100%;
+	margin-bottom: 1.5em;
+	overflow-x: auto;
+	overflow-y: hidden;
+	-webkit-overflow-scrolling: touch;
+	-ms-overflow-style: -ms-autohiding-scrollbar;
+	border: 1px solid #ddd;
+
+	> .table,
+	> .t3-table {
+		margin-top: 0;
+		margin-bottom: 0;
+		border: 0;
+
+		> thead,
+		> tbody,
+		> tfoot {
+			> tr > td {
+				white-space: nowrap;
+			}
+		}
+	}
 }

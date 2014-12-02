@@ -2,64 +2,51 @@
 (function ($) {
 
 	$(document).ready(function() {
-		$('#terTable').dataTable({
-			"bJQueryUI":true,
-			"bLengthChange": false,
-			'iDisplayLength': 15,
-			"bStateSave": false,
-			"bInfo": false,
-			"bPaginate": false,
-			"bFilter": false,
-			"bSort": false,
-			"fnDrawCallback": bindDownload,
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			}
+		$('#terTable').DataTable({
+			'jQueryUI': true,
+			'lengthChange': false,
+			'pageLength': 15,
+			'stateSave': false,
+			'info': false,
+			'paging': false,
+			'searching': false,
+			'ordering': false,
+			'drawCallback': bindDownload
 		});
 
-		$('#terVersionTable').dataTable({
-			"bJQueryUI":true,
-			"bLengthChange":false,
-			'iDisplayLength':15,
-			"bStateSave":false,
-			"bInfo":false,
-			"bPaginate":false,
-			"bFilter":false,
-			"fnDrawCallback":bindDownload,
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			},
-			"aaSorting": [
+		$('#terVersionTable').DataTable({
+			'jQueryUI': true,
+			'lengthChange': false,
+			'pageLength': 15,
+			'stateSave': false,
+			'info': false,
+			'paging': false,
+			'searching': false,
+			'drawCallback': bindDownload,
+			'order': [
 				[2, 'asc']
 			],
-			'aoColumns': [
-				{ 'bSortable': false },
+			'columns': [
+				{ 'orderable': false },
 				null,
-				{ 'sType': 'version' },
+				{ 'type': 'version' },
 				null,
 				null,
 				null
 			]
 		});
 
-		$('#terSearchTable').dataTable({
-			"bPaginate": false,
-			"bJQueryUI":true,
-			"bLengthChange": false,
-			'iDisplayLength': 15,
-			"bStateSave": false,
-			"bFilter": false,
-			"oLanguage": {
-				"sSearch": "Filter results:"
+		$('#terSearchTable').DataTable({
+			'paging': false,
+			'jQueryUI': true,
+			'lengthChange': false,
+			'stateSave': false,
+			'searching': false,
+			'language': {
+				'search': 'Filter results:'
 			},
-			"bSort": false,
-			"fnDrawCallback": bindDownload,
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			}
+			'ordering': false,
+			'drawCallback': bindDownload
 		});
 
 		bindDownload();
@@ -67,7 +54,7 @@
 	});
 
 	function bindDownload() {
-		var installButtons = $('.downloadFromTer form.download input[type=submit]');
+		var installButtons = $('.downloadFromTer form.download button[type=submit]');
 		installButtons.off('click');
 		installButtons.on('click', function(event) {
 			event.preventDefault();
@@ -93,7 +80,7 @@
 		} else {
 			if(data.hasErrors) {
 				$('.typo3-extension-manager').unmask();
-				TYPO3.Flashmessage.display(TYPO3.Severity.error, data.title, data.message, 15);
+				top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, data.title, data.message, 15);
 			} else {
 				var button = 'yes';
 				var dialog = [];
@@ -135,7 +122,7 @@
 							});
 							successMessage += '</ul>';
 						});
-						TYPO3.Flashmessage.display(TYPO3.Severity.information, TYPO3.l10n.localize('extensionList.dependenciesResolveFlashMessage.title').replace(/\{0\}/g, data.extension), successMessage, 15);
+						top.TYPO3.Flashmessage.display(top.TYPO3.Severity.info, TYPO3.l10n.localize('extensionList.dependenciesResolveFlashMessage.title').replace(/\{0\}/g, data.extension), successMessage, 15);
 					}
 				}
 			});

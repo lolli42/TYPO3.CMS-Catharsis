@@ -24,41 +24,33 @@ TYPO3.DocumentationApplication = {
 	},
 	// Initializes the list view
 	documentationListView: function(getVars) {
-		this.datatable = jQuery('#typo3-documentation-list').dataTable({
-			'bPaginate': false,
-			'bJQueryUI': true,
-			'bLengthChange': false,
-			'iDisplayLength': 15,
-			'bStateSave': true,
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			}
+		this.datatable = jQuery('#typo3-documentation-list').DataTable({
+			'paging': false,
+			'jQueryUI': true,
+			'lengthChange': false,
+			'pageLength': 15,
+			'stateSave': true
 		});
 
 		// restore filter
 		if (this.datatable.length && getVars['search']) {
-			this.datatable.fnFilter(getVars['search']);
+			this.datatable.search(getVars['search']);
 		}
 	},
 	// Initializes the download view
 	documentationDownloadView: function(getVars) {
-		this.datatable = jQuery('#typo3-documentation-download').dataTable({
-			'bPaginate': false,
-			'bJQueryUI': true,
-			'bLengthChange': false,
-			'iDisplayLength': 15,
-			'bStateSave': true,
-			'aaSorting': [[ 1, 'asc' ]],
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			}
+		this.datatable = jQuery('#typo3-documentation-download').DataTable({
+			'paging': false,
+			'jQueryUI': true,
+			'lengthChange': false,
+			'pageLength': 15,
+			'stateSave': true,
+			'order': [[ 1, 'asc' ]]
 		});
 
 		// restore filter
 		if (this.datatable.length && getVars['search']) {
-			this.datatable.fnFilter(getVars['search']);
+			this.datatable.search(getVars['search']);
 		}
 	}
 };
@@ -73,7 +65,7 @@ TYPO3.DocumentationApplication = {
 		// Make the data table filter react to the clearing of the filter field
 		$('.dataTables_wrapper .dataTables_filter input').clearable({
 			onClear: function() {
-				TYPO3.DocumentationApplication.datatable.fnFilter('');
+				TYPO3.DocumentationApplication.datatable.search('');
 			}
 		});
 	});

@@ -425,7 +425,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 */
 	protected function renderTaskProgressBar($progress) {
 		$progressText = $GLOBALS['LANG']->getLL('status.progress') . ':&nbsp;' . $progress . '%';
-		return '<div class="progress"> <div class="bar" style="width: ' . $progress . '%;">' . $progressText . '</div> </div>';
+		return '<div class="progress">'
+			. '<div class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' . $progress . '" aria-valuemin="0" aria-valuemax="100" style="width: ' . $progress . '%;">' . $progressText . '</div>'
+			. '</div>';
 	}
 
 	/**
@@ -637,7 +639,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$table[] = '<div id="task_disable_row" class="form-group">' .
 						BackendUtility::wrapInHelp($this->cshKey, 'task_disable', $label) .
 						'<input type="hidden" name="tx_scheduler[disable]" value="0" />
-						<input class="form-control" type="checkbox" name="tx_scheduler[disable]" value="1" id="task_disable"' . ($taskInfo['disable'] == 1 ? ' checked="checked"' : '') . ' />
+						<input class="checkbox" type="checkbox" name="tx_scheduler[disable]" value="1" id="task_disable"' . ($taskInfo['disable'] == 1 ? ' checked="checked"' : '') . ' />
 					</div>';
 
 		// Task class selector
@@ -741,7 +743,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$table[] = '<div id="task_multiple_row" class="form-group">' .
 						BackendUtility::wrapInHelp($this->cshKey, 'task_multiple', $label) .
 						'<input type="hidden"   name="tx_scheduler[multiple]" value="0" />
-						<input class="form-control" type="checkbox" name="tx_scheduler[multiple]" value="1" id="task_multiple"' . ($taskInfo['multiple'] == 1 ? ' checked="checked"' : '') . ' />
+						<input class="checkbox" type="checkbox" name="tx_scheduler[multiple]" value="1" id="task_multiple"' . ($taskInfo['multiple'] == 1 ? ' checked="checked"' : '') . ' />
 					</div>';
 
 		// Description
@@ -951,14 +953,14 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
 					if ($this->scheduler->isValidTaskObject($task)) {
 						// The task object is valid
-						$name = htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')');
+						$name = '<div class="title">' . htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')') . '</div>';
 						$additionalInformation = $task->getAdditionalInformation();
 						if ($task instanceof \TYPO3\CMS\Scheduler\ProgressProviderInterface) {
 							$progress = round(floatval($task->getProgress()), 2);
-							$name .= '<br />' . $this->renderTaskProgressBar($progress);
+							$name .= $this->renderTaskProgressBar($progress);
 						}
 						if (!empty($additionalInformation)) {
-							$name .= '<br />[' . htmlspecialchars($additionalInformation) . ']';
+							$name .= '<div class="additional-information">[' . htmlspecialchars($additionalInformation) . ']</div>';
 						}
 						// Check if task currently has a running execution
 						if (!empty($schedulerRecord['serialized_executions'])) {

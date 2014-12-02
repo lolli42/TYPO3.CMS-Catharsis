@@ -203,7 +203,6 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		}');
 		// Add JS
 		$this->pageRenderer->addJsFile($this->doc->backPath . 'js/extjs/ux/Ext.ux.FitToParent.js');
-		$this->pageRenderer->addJsFile($this->doc->backPath . 'sysext/backend/Resources/Public/JavaScript/flashmessages.js');
 		$this->pageRenderer->addJsFile($this->doc->backPath . 'sysext/backend/Resources/Public/JavaScript/iframepanel.js');
 		if ($this->modTS['showCheckLinkTab'] == 1) {
 			$this->updateListHtml = '<input type="submit" name="updateLinkList" id="updateLinkList" value="' . $GLOBALS['LANG']->getLL('label_update') . '"/>';
@@ -215,7 +214,15 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$this->checkOptHtml = $this->getCheckOptions($brokenLinkOverView);
 		$this->checkOptHtmlCheck = $this->getCheckOptions($brokenLinkOverView, 'check');
 		$this->createTabs();
-		return '<div id="linkvalidator-modfuncreport"></div>';
+
+		$content = '';
+		if ($this->pObj->id) {
+			$pageRecord = BackendUtility::getRecord('pages', $this->pObj->id);
+			$content = '<h1>' . htmlspecialchars(BackendUtility::getRecordTitle('pages', $pageRecord)) . '</h1>';
+		}
+
+		$content .= '<div id="linkvalidator-modfuncreport"></div>';
+		return $content;
 	}
 
 	/**
@@ -320,7 +327,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			if ($this->pObj->pageinfo['hidden'] == 0 || $this->modTS['checkhidden'] == 1) {
 				$pageList .= $this->pObj->id;
 			}
-			$this->processor->init($searchFields, $pageList);
+			$this->processor->init($searchFields, $pageList, $this->modTS);
 			// Check if button press
 			$update = GeneralUtility::_GP('updateLinkList');
 			if (!empty($update)) {

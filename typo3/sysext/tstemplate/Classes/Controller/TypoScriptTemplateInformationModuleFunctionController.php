@@ -55,22 +55,24 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 	public function tableRow($label, $data, $field, $id) {
 		$lang = $this->getLanguageService();
 		$ret = '<tr><td>';
+		$startAnchor = '';
 		if ($field === 'config' || $field === 'constants') {
 			$urlParameters = array(
 				'id' => $this->pObj->id
 			);
 			$aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-			$ret .= '<a href="' . htmlspecialchars(($aHref . '&e[' . $field . ']=1')) . '">';
+			$startAnchor = '<a href="' . htmlspecialchars(($aHref . '&e[' . $field . ']=1')) . '">';
 		} else {
 			$params = '&columnsOnly=' . $field . '&createExtension=0' . '&edit[sys_template][' . $id . ']=edit';
 			$editOnClick = BackendUtility::editOnClick($params, $GLOBALS['BACK_PATH'], '');
-			$ret .= '<a href="#" onclick="' . $editOnClick . '">';
+			$startAnchor = '<a href="#" onclick="' . $editOnClick . '">';
 		}
-		$ret .= IconUtility::getSpriteIcon(
-				'actions-document-open',
-				array('title' => $lang->sL('LLL:EXT:lang/locallang_common.xlf:editField', TRUE))
-			) . '<strong>' . $label . '</strong></a>';
-		$ret .= '</td><td width="80%">' . $data . '&nbsp;</td></tr>';
+		$icon = IconUtility::getSpriteIcon(
+			'actions-document-open',
+			array('title' => $lang->sL('LLL:EXT:lang/locallang_common.xlf:editField', TRUE))
+		);
+		$ret .= $startAnchor . '<strong>' . $label . '</strong></a>';
+		$ret .= '</td><td width="80%">' . $data . '</td><td>' . $startAnchor . '<span class="btn">' . $icon . '</span></a></td></tr>';
 		return $ret;
 	}
 
@@ -226,7 +228,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 					}
 				}
 			}
-			$content = IconUtility::getSpriteIconForRecord('sys_template', $tplRow, array('class' => 't3-js-clickmenutrigger', 'data-table' => 'sys_template', 'data-uid' => $tplRow['uid'], 'data-listframe' => 1)) . '<strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
+			$content = '<a href="#" class="t3-js-clickmenutrigger" data-table="sys_template" data-uid="' . $tplRow['uid'] . '" data-listframe="1">' . IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . '</a><strong>' . htmlspecialchars($tplRow['title']) . '</strong>' . htmlspecialchars((trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : ''));
 			$theOutput .= $this->pObj->doc->section($lang->getLL('templateInformation'), $content, 0, 1);
 			if ($manyTemplatesMenu) {
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);
@@ -234,7 +236,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 			$theOutput .= $this->pObj->doc->spacer(10);
 			$numberOfRows = 35;
 			// If abort pressed, nothing should be edited:
-			if ($POST['abort'] || MathUtility::canBeInterpretedAsInteger($POST['abort_x']) && MathUtility::canBeInterpretedAsInteger($POST['abort_y']) || $POST['saveclose'] || MathUtility::canBeInterpretedAsInteger($POST['saveclose_x']) && MathUtility::canBeInterpretedAsInteger($POST['saveclose_y'])) {
+			if ($POST['saveclose'] || MathUtility::canBeInterpretedAsInteger($POST['saveclose_x']) && MathUtility::canBeInterpretedAsInteger($POST['saveclose_y'])) {
 				unset($e);
 			}
 			if (isset($e['constants'])) {
@@ -265,7 +267,7 @@ class TypoScriptTemplateInformationModuleFunctionController extends AbstractFunc
 			$outCode .= $this->tableRow($lang->getLL('description'), nl2br(htmlspecialchars($tplRow['description'])), 'description', $tplRow['uid']);
 			$outCode .= $this->tableRow($lang->getLL('constants'), sprintf($lang->getLL('editToView'), trim($tplRow['constants']) ? count(explode(LF, $tplRow['constants'])) : 0), 'constants', $tplRow['uid']);
 			$outCode .= $this->tableRow($lang->getLL('setup'), sprintf($lang->getLL('editToView'), trim($tplRow['config']) ? count(explode(LF, $tplRow['config'])) : 0), 'config', $tplRow['uid']);
-			$outCode = '<table class="t3-table">' . $outCode . '</table>';
+			$outCode = '<div class="table-fit"><table class="t3-table">' . $outCode . '</table></div>';
 
 			// Edit all icon:
 			$editOnClick = BackendUtility::editOnClick(rawurlencode('&createExtension=0') . '&amp;edit[sys_template][' . $tplRow['uid'] . ']=edit', $GLOBALS['BACK_PATH'], '');

@@ -105,7 +105,8 @@ class BackendController {
 		$this->moduleLoader->load($GLOBALS['TBE_MODULES']);
 		$this->pageRenderer = $GLOBALS['TBE_TEMPLATE']->getPageRenderer();
 		$this->pageRenderer->loadExtJS();
-		$this->pageRenderer->loadJquery(NULL, NULL, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_DEFAULT_NOCONFLICT);
+		// included for the module menu JavaScript, please note that this is subject to change
+		$this->pageRenderer->loadJquery();
 		$this->pageRenderer->enableExtJSQuickTips();
 		$this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', FALSE);
 		$this->pageRenderer->addExtDirectCode();
@@ -117,7 +118,6 @@ class BackendController {
 			'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
 			'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
 			'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
-			'flashmessages' => 'sysext/backend/Resources/Public/JavaScript/flashmessages.js',
 			'tabclosemenu' => 'js/extjs/ux/ext.ux.tabclosemenu.js',
 			'notifications' => 'sysext/backend/Resources/Public/JavaScript/notifications.js',
 			'backend' => 'sysext/backend/Resources/Public/JavaScript/backend.js',
@@ -126,7 +126,6 @@ class BackendController {
 			'viewport' => 'js/extjs/viewport.js',
 			'iframepanel' => 'sysext/backend/Resources/Public/JavaScript/iframepanel.js',
 			'backendcontentiframe' => 'js/extjs/backendcontentiframe.js',
-			'modulepanel' => 'js/extjs/modulepanel.js',
 			'viewportConfiguration' => 'js/extjs/viewportConfiguration.js',
 			'util' => 'sysext/backend/Resources/Public/JavaScript/util.js'
 		);
@@ -136,15 +135,11 @@ class BackendController {
 		// Add default BE css
 		$this->pageRenderer->addCssLibrary('contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 
-		// load the toolbar items
-		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/UserMenu');
-
+		// load FlashMessages functionality
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FlashMessages');
 		$this->css = '';
 		$this->initializeToolbarItems();
-		$this->menuWidth = $this->menuWidthDefault;
-		if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) && (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] != (int)$this->menuWidth) {
-			$this->menuWidth = (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
-		}
+		$this->menuWidth = isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) ? (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] : $this->menuWidthDefault;
 		$this->executeHook('constructPostProcess');
 	}
 
@@ -158,7 +153,7 @@ class BackendController {
 		$toolbarItemInstances = array();
 		$classNameRegistry = $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'];
 		foreach ($classNameRegistry as $className) {
-			$toolbarItemInstance = GeneralUtility::makeInstance($className, $this);
+			$toolbarItemInstance = GeneralUtility::makeInstance($className);
 			if (!$toolbarItemInstance instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface) {
 				throw new \RuntimeException(
 					'class ' . $className . ' is registered as toolbar item but does not implement'
@@ -173,10 +168,10 @@ class BackendController {
 					1415968498
 				);
 			}
+			// Find next free position in array
 			while(array_key_exists($index, $toolbarItemInstances)) {
 				$index++;
 			}
-			// Find next free position in
 			$toolbarItemInstances[$index] = $toolbarItemInstance;
 		}
 		ksort($toolbarItemInstances);
@@ -192,23 +187,11 @@ class BackendController {
 		$this->executeHook('renderPreProcess');
 
 		// Prepare the scaffolding, at this point extension may still add javascript and css
-		$logo = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\View\LogoView::class);
-
-		// Create backend scaffolding
-		$backendScaffolding = '
-			<div class="navbar navbar-inverse x-hide-display" role="navigation" id="typo3-top-container">
-				<div class="container-fluid">
-					<div class="navbar-header" id="typo3-logo">' .
-						$logo->render() .
-					'</div>
-					<div id="typo3-top">
-						<ul class="nav navbar-nav navbar-right typo3-top-toolbar" id="typo3-toolbar">' .
-							$this->renderToolbar() .
-						'</ul>
-					</div>
-				</div>
-			</div>' .
-			$this->generateModuleMenu();
+		$view = $this->getFluidTemplateObject('EXT:backend/Resources/Private/Templates/Backend/Main.html');
+		// @todo: kick logo view class and move all logic to Fluid
+		$view->assign('logo', GeneralUtility::makeInstance(\TYPO3\CMS\Backend\View\LogoView::class)->render());
+		$view->assign('moduleMenu', $this->generateModuleMenu());
+		$view->assign('toolbar', $this->renderToolbar());
 
 		/******************************************************
 		 * Now put the complete backend document together
@@ -254,9 +237,8 @@ class BackendController {
 		$this->pageRenderer->addExtOnReadyCode($extOnReadyCode);
 		// Set document title:
 		$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ? $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . ' [TYPO3 CMS ' . TYPO3_version . ']' : 'TYPO3 CMS ' . TYPO3_version;
-		$this->content = $backendScaffolding;
 		// Renders the module page
-		$this->content = $GLOBALS['TBE_TEMPLATE']->render($title, $this->content);
+		$this->content = $GLOBALS['TBE_TEMPLATE']->render($title, $view->render());
 		$hookConfiguration = array('content' => &$this->content);
 		$this->executeHook('renderPostProcess', $hookConfiguration);
 		echo $this->content;
@@ -316,26 +298,54 @@ class BackendController {
 	 * @return string top toolbar elements as HTML
 	 */
 	protected function renderToolbar() {
-		$toolbar = '';
+		$toolbar = array();
 		foreach ($this->toolbarItems as $toolbarItem) {
-			$menu = $toolbarItem->render();
-			if ($menu) {
-				// @TODO: Should throw as soon as "loading by convention" is implemented
-				if ($toolbarItem instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface) {
-					$classes = $toolbarItem->getExtraClasses();
-					if ($toolbarItem->hasDropdown()) {
-						$classes[] = 'dropdown';
-					}
+			/** @var \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface $toolbarItem */
+			if ($toolbarItem->checkAccess()) {
+				$hasDropDown = (bool)$toolbarItem->hasDropDown();
+				$additionalAttributes = (array)$toolbarItem->getAdditionalAttributes();
 
-					$class = implode(' ', $classes);
-					if ($class !== '') {
-						$class = ' class="' . $class . '"';
-					}
-					$toolbar .= '<li' . $class . ' id="' . $toolbarItem->getIdAttribute() . '"' . $toolbarItem->getAdditionalAttributes() . '>' . $menu . '</li>';
+				$liAttributes = array();
+
+				// Merge class: Add dropdown class if hasDropDown, add classes from additonal attributes
+				$classes = array();
+				if ($hasDropDown) {
+					$classes[] = 'dropdown';
 				}
+				if (isset($additionalAttributes['class'])) {
+					$classes[] = $additionalAttributes['class'];
+					unset($additionalAttributes['class']);
+				}
+				$liAttributes[] = 'class="' . implode(' ', $classes) . '"';
+
+				// Add further attributes
+				foreach($additionalAttributes as $name => $value) {
+					$liAttributes[] = $name . '="' . $value . '"';
+				}
+
+				// Create a unique id from class name
+				$className = get_class($toolbarItem);
+				$className = GeneralUtility::underscoredToLowerCamelCase($className);
+				$className = GeneralUtility::camelCaseToLowerCaseUnderscored($className);
+				$className = str_replace(array('_', '\\'), '-', $className);
+				$liAttributes[] = 'id="' . $className . '"';
+
+				$toolbar[] = '<li ' . implode(' ', $liAttributes) . '>';
+
+				if ($hasDropDown) {
+					$toolbar[] = '<a href="#" class="dropdown-toggle" data-toggle="dropdown">';
+					$toolbar[] = $toolbarItem->getItem();
+					$toolbar[] = '</a>';
+					$toolbar[] = '<div class="dropdown-menu" role="menu">';
+					$toolbar[] = $toolbarItem->getDropDown();
+					$toolbar[] = '</div>';
+				} else {
+					$toolbar[] = $toolbarItem->getItem();
+				}
+				$toolbar[] = '</li>';
 			}
 		}
-		return $toolbar;
+		return implode(LF, $toolbar);
 	}
 
 	/**
@@ -464,10 +474,6 @@ class BackendController {
 		$pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
 		if (!$GLOBALS['BE_USER']->check('modules', $pageModule)) {
 			$pageModule = '';
-		}
-		$menuFrameName = 'menu';
-		if ($GLOBALS['BE_USER']->uc['noMenuMode'] === 'icons') {
-			$menuFrameName = 'topmenuFrame';
 		}
 		// Determine security level from conf vars and default to super challenged
 		if ($GLOBALS['TYPO3_CONF_VARS']['BE']['loginSecurityLevel']) {
@@ -729,9 +735,7 @@ class BackendController {
 		// get all modules except the user modules for the side menu
 		$moduleStorage = $this->backendModuleRepository->loadAllowedModules(array('user', 'help'));
 
-		/** @var $view \TYPO3\CMS\Fluid\View\StandaloneView */
-		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
-		$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:backend/Resources/Private/Templates/ModuleMenu/Main.html'));
+		$view = $this->getFluidTemplateObject('EXT:backend/Resources/Private/Templates/ModuleMenu/Main.html');
 		$view->assign('modules', $moduleStorage);
 		return $view->render();
 	}
@@ -747,5 +751,19 @@ class BackendController {
 		$content = $this->generateModuleMenu();
 		$ajaxRequestHandler->addContent('menu', $content);
 		$ajaxRequestHandler->setContentFormat('json');
+	}
+
+	/**
+	 * returns a new standalone view, shorthand function
+	 *
+	 * @param string $templatePathAndFileName optional the path to set the template path and filename
+	 * @return \TYPO3\CMS\Fluid\View\StandaloneView
+	 */
+	protected function getFluidTemplateObject($templatePathAndFileName = NULL) {
+		$view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
+		if ($templatePathAndFileName) {
+			$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
+		}
+		return $view;
 	}
 }

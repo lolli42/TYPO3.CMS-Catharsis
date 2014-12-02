@@ -22,9 +22,9 @@ define('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu', ['jquery'], function($) {
 			'class': 't3-icon fa fa-circle-o-notch spinner fa-spin'
 		}),
 		options: {
-			containerSelector: '#tx-opendocs-menu',
+			containerSelector: '#typo3-cms-opendocs-backend-toolbaritems-opendocstoolbaritem',
 			hashDataAttributeName: 'opendocsidentifier',
-			closeSelector: '.close',
+			closeSelector: '.dropdown-list-link-close',
 			menuContainerSelector: '.dropdown-menu',
 			menuItemSelector: '.dropdown-menu li a',
 			toolbarIconSelector: '.dropdown-toggle span.t3-icon',

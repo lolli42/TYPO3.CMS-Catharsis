@@ -112,7 +112,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 		}
 		/** @var \TYPO3\CMS\Core\Resource\Driver\LocalDriver $driver */
 		$mockedDriverMethods[] = 'isPathValid';
-		$driver = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Resource\\Driver\\LocalDriver', $mockedDriverMethods, array($driverConfiguration));
+		$driver = $this->getAccessibleMock(\TYPO3\CMS\Core\Resource\Driver\LocalDriver::class, $mockedDriverMethods, array($driverConfiguration));
 		$driver->expects($this->any())
 			->method('isPathValid')
 			->will(
@@ -176,7 +176,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 	 */
 	public function determineBaseUrlUrlEncodesUriParts() {
 		/** @var \TYPO3\CMS\Core\Resource\Driver\LocalDriver|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $driver */
-		$driver = $this->getAccessibleMock('TYPO3\\CMS\\Core\\Resource\\Driver\\LocalDriver', array('hasCapability'), array(), '', FALSE);
+		$driver = $this->getAccessibleMock(\TYPO3\CMS\Core\Resource\Driver\LocalDriver::class, array('hasCapability'), array(), '', FALSE);
 		$driver->expects($this->once())
 			->method('hasCapability')
 			->with(\TYPO3\CMS\Core\Resource\ResourceStorage::CAPABILITY_PUBLIC)
@@ -480,9 +480,6 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 	 * @see http://phpmagazin.de/vfsStream-1.1.0-nutzt-PHP-5.4-M%C3%B6glichkeiten-064406.html
 	 */
 	public function newFilesCanBeCreated() {
-		if (version_compare(PHP_VERSION, '5.4.0', '<')) {
-			$this->markTestSkipped('touch() does not work with vfsStream in PHP 5.3 and below.');
-		}
 		$fixture = $this->createDriverFixture();
 		$fixture->createFile('testfile.txt', '/');
 		$this->assertTrue($fixture->fileExists('/testfile.txt'));
@@ -493,9 +490,6 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 	 * @see http://phpmagazin.de/vfsStream-1.1.0-nutzt-PHP-5.4-M%C3%B6glichkeiten-064406.html
 	 */
 	public function createdFilesAreEmpty() {
-		if (version_compare(PHP_VERSION, '5.4.0', '<')) {
-			$this->markTestSkipped('touch() does not work with vfsStream in PHP 5.3 and below.');
-		}
 		$fixture = $this->createDriverFixture();
 		$fixture->createFile('testfile.txt', '/');
 		$this->assertTrue($fixture->fileExists('/testfile.txt'));
@@ -673,7 +667,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 		);
 		$filterCallbacks = array(
 			array(
-				'TYPO3\CMS\Core\Tests\Unit\Resource\Driver\Fixtures\LocalDriverFilenameFilter',
+				\TYPO3\CMS\Core\Tests\Unit\Resource\Driver\Fixtures\LocalDriverFilenameFilter::class,
 				'filterFilename',
 			),
 		);
@@ -742,7 +736,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 		$fixture = $this->createDriverFixture();
 		$filterCallbacks = array(
 			array(
-				'TYPO3\CMS\Core\Tests\Unit\Resource\Driver\Fixtures\LocalDriverFilenameFilter',
+				\TYPO3\CMS\Core\Tests\Unit\Resource\Driver\Fixtures\LocalDriverFilenameFilter::class,
 				'filterFilename',
 			),
 		);
@@ -1072,7 +1066,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 	 * @test
 	 */
 	public function renamingFilesFailsIfTargetFileExists() {
-		$this->setExpectedException('TYPO3\\CMS\\Core\\Resource\\Exception\\ExistingTargetFileNameException', '', 1320291063);
+		$this->setExpectedException(\TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException::class, '', 1320291063);
 		$this->addToMount(array(
 			'targetFolder' => array('file' => '', 'newFile' => '')
 		));

@@ -69,15 +69,6 @@ input[type="checkbox"] {
 Buttons
 - - - - - - - - - - - - - - - - - - - - - */
 
-.btn {
-	text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
-	padding: ceil(@padding-base-vertical / 2) ceil(@padding-base-horizontal * 2);
-}
-
-.btn:hover {
-	transition: background-color 0.1s ease;
-}
-
 /* Deprecated HTML5 definitions */
 .t3-button,
 button,
@@ -112,4 +103,23 @@ span.typo3-moduleHeader img {
 
 a.typo3-goBack {
 	font-weight: bold;
+}
+
+/* - - - - - - - - - - - - - - - - - - - - -
+   Styles for the "clearable" jquery plugin.
+- - - - - - - - - - - - - - - - - - - - - */
+
+.t3-clearable-wrapper {
+	position: relative;
+	display: inline-block;
+}
+
+.t3-clearable {
+	padding-right: 15px;
+}
+
+.t3-clearable-wrapper .t3-input-clearer {
+	position: absolute;
+	right: 5px;
+	top: 5px;
 }

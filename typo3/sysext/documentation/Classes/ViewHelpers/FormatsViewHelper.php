@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Documentation\ViewHelpers;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Backend\Utility\IconUtility;
 
 /**
  * ViewHelper to display all download links for a document
@@ -30,8 +31,15 @@ class FormatsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 	 * @return string
 	 */
 	public function render(\TYPO3\CMS\Documentation\Domain\Model\DocumentTranslation $documentTranslation) {
-		$output = '';
-		foreach ($documentTranslation->getFormats() as $format) {
+		$icons = array(
+			'html' => '<a class="btn disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>',
+			'pdf' => '<a class="btn disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>',
+			'sxw' => '<a class="btn disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>'
+		);
+		$formats = $documentTranslation->getFormats();
+
+		foreach ($formats as $format) {
+			$output = '';
 			/** @var \TYPO3\CMS\Documentation\Domain\Model\DocumentFormat $format */
 			$output .= '<a ';
 
@@ -39,13 +47,13 @@ class FormatsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 			$extension = substr($uri, strrpos($uri, '.') + 1);
 			if (strlen($extension) < 5) {
 				// This is direct link to a file
-				$output .= 'href="' . $uri . '"';
+				$output .= 'href="' . $uri . '" class="btn"';
 			} else {
 				$extension = $format->getFormat();
 				if ($extension === 'json') {
 					$extension = 'js';
 				}
-				$output .= 'href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(\'' . $uri . '\')"';
+				$output .= 'href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(\'' . $uri . '\')" class="btn"';
 			}
 
 			$xliff = 'LLL:EXT:documentation/Resources/Private/Language/locallang.xlf';
@@ -56,8 +64,13 @@ class FormatsViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 			$output .= ' title="' . htmlspecialchars($title) . '">';
 			$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile($extension);
 			$output .= $spriteIconHtml . '</a>' . LF;
+			$keyFormat = $format->getFormat();
+			if ($keyFormat === 'json') {
+				// It should take over the place of sxw which will then never be used
+				$keyFormat = 'sxw';
+			}
+			$icons[$keyFormat] = $output;
 		}
-		return $output;
+		return implode('', array_values($icons));
 	}
-
 }

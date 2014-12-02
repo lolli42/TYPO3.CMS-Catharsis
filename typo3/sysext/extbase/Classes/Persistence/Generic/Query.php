@@ -197,10 +197,10 @@ class Query implements QueryInterface {
 	 * @api
 	 */
 	public function execute($returnRawQueryResult = FALSE) {
-		if ($returnRawQueryResult === TRUE || $this->getQuerySettings()->getReturnRawQueryResult() === TRUE) {
+		if ($returnRawQueryResult) {
 			return $this->persistenceManager->getObjectDataByQuery($this);
 		} else {
-			return $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\QueryResultInterface', $this);
+			return $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\QueryResultInterface::class, $this);
 		}
 	}
 
@@ -531,9 +531,9 @@ class Query implements QueryInterface {
 	 */
 	public function __wakeup() {
 		$this->objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
-		$this->persistenceManager = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\PersistenceManagerInterface');
-		$this->dataMapper = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Mapper\\DataMapper');
-		$this->qomFactory = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Qom\\QueryObjectModelFactory');
+		$this->persistenceManager = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface::class);
+		$this->dataMapper = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper::class);
+		$this->qomFactory = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory::class);
 	}
 
 	/**

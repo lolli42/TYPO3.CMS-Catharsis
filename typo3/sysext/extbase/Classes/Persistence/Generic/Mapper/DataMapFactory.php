@@ -105,7 +105,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$classHierarchy = array_merge(array($className), class_parents($className));
 			foreach ($classHierarchy as $currentClassName) {
-				if (in_array($currentClassName, array('TYPO3\\CMS\\Extbase\\DomainObject\\AbstractEntity', 'TYPO3\\CMS\\Extbase\\DomainObject\\AbstractValueObject'))) {
+				if (in_array($currentClassName, array(\TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class, \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject::class))) {
 					break;
 				}
 				$currentClassSettings = $frameworkConfiguration['persistence']['classes'][$currentClassName];
@@ -117,7 +117,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 		}
 		/** @var $dataMap \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap */
-		$dataMap = $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Mapper\\DataMap', $className, $tableName, $recordType, $subclasses);
+		$dataMap = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap::class, $className, $tableName, $recordType, $subclasses);
 		$dataMap = $this->addMetaDataColumnNames($dataMap, $tableName);
 		// $classPropertyNames = $this->reflectionService->getClassPropertyNames($className);
 		$tcaColumnsDefinition = $this->getColumnsDefinition($tableName);
@@ -410,6 +410,6 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return ColumnMap
 	 */
 	protected function createColumnMap($columnName, $propertyName) {
-		return $this->objectManager->get('TYPO3\\CMS\\Extbase\\Persistence\\Generic\\Mapper\\ColumnMap', $columnName, $propertyName);
+		return $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::class, $columnName, $propertyName);
 	}
 }

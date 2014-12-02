@@ -11,7 +11,7 @@
 
 		$('.dataTables_wrapper .dataTables_filter input').clearable({
 			onClear: function() {
-				datatable.fnFilter('');
+				datatable.search('').draw();
 			}
 		});
 
@@ -44,25 +44,21 @@
 	}
 
 	function manageExtensionListing() {
-		datatable = $('#typo3-extension-list').dataTable({
-			"bPaginate": false,
-			"bJQueryUI":true,
-			"bLengthChange":false,
-			'iDisplayLength':15,
-			"oLanguage": {"sSearch": TYPO3.l10n.localize('extensionList.search')},
-			"bStateSave":true,
-			"fnDrawCallback": bindActions,
-			"fnCookieCallback": function (sNameFile, oData, sExpires, sPath) {
-				// append mod.php to cookiePath to avoid sending cookie-data to images etc. without reason
-				return sNameFile + "=" + encodeURIComponent($.fn.dataTableExt.oApi._fnJsonString(oData)) + "; expires=" + sExpires +"; path=" + sPath + "mod.php";
-			},
-			'aoColumns': [
+		datatable = $('#typo3-extension-list').DataTable({
+			'paging': false,
+			'jQueryUI': true,
+			'lengthChange': false,
+			'pageLength': 15,
+			'language': {'search': TYPO3.l10n.localize('extensionList.search')},
+			'stateSave': true,
+			'drawCallback': bindActions,
+			'columns': [
 				null,
 				null,
 				null,
 				null,
-				{ 'sType': 'version' },
-				{ 'bSortable': false },
+				{ 'type': 'version' },
+				{ 'orderable': false },
 				null
 			]
 		});
@@ -71,7 +67,7 @@
 
 		// restore filter
 		if(datatable.length && getVars['search']) {
-			datatable.fnFilter(getVars['search']);
+			datatable.search(getVars['search']).draw();
 		}
 	}
 
@@ -184,15 +180,15 @@
 						dataType: 'json',
 						success: function(data) {
 							if (data.hasErrors) {
-								TYPO3.Flashmessage.display(
-									TYPO3.Severity.error,
+								top.TYPO3.Flashmessage.display(
+									top.TYPO3.Severity.error,
 									TYPO3.l10n.localize('downloadExtension.updateExtension.error'),
 									data.errorMessage,
 									15
 								);
 							} else {
-								TYPO3.Flashmessage.display(
-									TYPO3.Severity.information,
+								top.TYPO3.Flashmessage.display(
+									top.TYPO3.Severity.info,
 									TYPO3.l10n.localize('extensionList.updateFlashMessage.title'),
 									TYPO3.l10n.localize('extensionList.updateFlashMessage.message').replace(/\{0\}/g, data.extension),
 									15
@@ -204,8 +200,8 @@
 							// Create an error message with diagnosis info.
 							var errorMessage = textStatus + '(' + errorThrown + '): ' + jqXHR.responseText;
 
-							TYPO3.Flashmessage.display(
-								TYPO3.Severity.error,
+							top.TYPO3.Flashmessage.display(
+								top.TYPO3.Severity.error,
 								TYPO3.l10n.localize('downloadExtension.updateExtension.error'),
 								errorMessage,
 								15

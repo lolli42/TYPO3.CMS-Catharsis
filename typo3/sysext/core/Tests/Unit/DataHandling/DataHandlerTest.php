@@ -14,6 +14,11 @@ namespace TYPO3\CMS\Core\Tests\Unit\DataHandler;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
+
 /**
  * Test case
  *
@@ -28,25 +33,32 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $singletonInstances = array();
 
 	/**
-	 * @var \TYPO3\CMS\Core\DataHandling\DataHandler
+	 * @var DataHandler
 	 */
 	protected $subject;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Authentication\BackendUserAuthentication a mock logged-in back-end user
+	 * @var BackendUserAuthentication a mock logged-in back-end user
 	 */
 	protected $backEndUser;
 
+	/**
+	 * Set up the tests
+	 */
 	public function setUp() {
 		$GLOBALS['TCA'] = array();
-		$this->singletonInstances = \TYPO3\CMS\Core\Utility\GeneralUtility::getSingletonInstances();
-		$this->backEndUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
-		$this->subject = new \TYPO3\CMS\Core\DataHandling\DataHandler();
+		$this->singletonInstances = GeneralUtility::getSingletonInstances();
+		$this->backEndUser = $this->getMock(BackendUserAuthentication::class);
+		$GLOBALS['TYPO3_DB'] = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
+		$this->subject = new DataHandler();
 		$this->subject->start(array(), '', $this->backEndUser);
 	}
 
+	/**
+	 * Tear down the tests
+	 */
 	public function tearDown() {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
+		GeneralUtility::resetSingletonInstances($this->singletonInstances);
 		parent::tearDown();
 	}
 
@@ -57,7 +69,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function fixtureCanBeCreated() {
-		$this->assertTrue($this->subject instanceof \TYPO3\CMS\Core\DataHandling\DataHandler);
+		$this->assertTrue($this->subject instanceof DataHandler);
 	}
 
 	//////////////////////////////////////////
@@ -164,9 +176,10 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider inputValuesStringsDataProvider
+	 * @param string $value
+	 * @param int $expectedReturnValue
 	 */
 	public function inputValueCheckRecognizesStringValuesAsIntegerValuesCorrectly($value, $expectedReturnValue) {
-		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array(), array(), '', FALSE);
 		$tcaFieldConf = array(
 			'input' => array(),
 			'eval' => 'int',
@@ -187,7 +200,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Tests whether a wrong interface on the 'checkModifyAccessList' hook throws an exception.
 	 *
 	 * @test
-	 * @expectedException UnexpectedValueException
+	 * @expectedException \UnexpectedValueException
 	 */
 	public function doesCheckModifyAccessListThrowExceptionOnWrongHookInterface() {
 		$hookClass = uniqid('tx_coretest');
@@ -203,7 +216,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function doesCheckModifyAccessListHookGetsCalled() {
 		$hookClass = uniqid('tx_coretest');
-		$hookMock = $this->getMock('TYPO3\\CMS\\Core\\DataHandling\\DataHandlerCheckModifyAccessListHookInterface', array('checkModifyAccessList'), array(), $hookClass);
+		$hookMock = $this->getMock(\TYPO3\CMS\Core\DataHandling\DataHandlerCheckModifyAccessListHookInterface::class, array('checkModifyAccessList'), array(), $hookClass);
 		$hookMock->expects($this->once())->method('checkModifyAccessList');
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'][] = $hookClass;
 		$GLOBALS['T3_VAR']['getUserObj'][$hookClass] = $hookMock;
@@ -233,11 +246,12 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function processDatamapForFrozenNonZeroWorkspaceReturnsFalse() {
-		$fixture = $this->getMock('TYPO3\\CMS\\Core\\DataHandling\\DataHandler', array('newlog'));
+		/** @var DataHandler $subject */
+		$subject = $this->getMock(DataHandler::class, array('newlog'));
 		$this->backEndUser->workspace = 1;
 		$this->backEndUser->workspaceRec = array('freeze' => TRUE);
-		$fixture->BE_USER = $this->backEndUser;
-		$this->assertFalse($fixture->process_datamap());
+		$subject->BE_USER = $this->backEndUser;
+		$this->assertFalse($subject->process_datamap());
 	}
 
 	/**
@@ -248,19 +262,18 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		// @TODO: Can be removed if unit test boostrap is fixed to not load LocalConfiguration anymore
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'] = array();
 
-		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection');
-
 		$GLOBALS['TCA'] = array(
 			'pages' => array(
 				'columns' => array(),
 			),
 		);
 
-		/** @var $subject \TYPO3\CMS\Core\DataHandling\DataHandler|\TYPO3\CMS\Core\Tests\UnitTestCase */
+		/** @var $subject DataHandler|\PHPUnit_Framework_MockObject_MockObject */
 		$subject = $this->getMock(
-			'TYPO3\\CMS\\Core\\DataHandling\\DataHandler',
+			DataHandler::class,
 			array('newlog', 'checkModifyAccessList', 'tableReadOnly', 'checkRecordUpdateAccess')
 		);
+
 		$subject->bypassWorkspaceRestrictions = FALSE;
 		$subject->datamap = array(
 			'pages' => array(
@@ -272,14 +285,16 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject->expects($this->once())->method('checkModifyAccessList')->with('pages')->will($this->returnValue(TRUE));
 		$subject->expects($this->once())->method('tableReadOnly')->with('pages')->will($this->returnValue(FALSE));
 		$subject->expects($this->once())->method('checkRecordUpdateAccess')->will($this->returnValue(TRUE));
-		$backEndUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+
+		/** @var BackendUserAuthentication|\PHPUnit_Framework_MockObject_MockObject $backEndUser */
+		$backEndUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$backEndUser->workspace = 1;
 		$backEndUser->workspaceRec = array('freeze' => FALSE);
 		$backEndUser->expects($this->once())->method('workspaceAllowAutoCreation')->will($this->returnValue(TRUE));
 		$backEndUser->expects($this->once())->method('workspaceCannotEditRecord')->will($this->returnValue(TRUE));
 		$backEndUser->expects($this->once())->method('recordEditAccessInternals')->with('pages', 1)->will($this->returnValue(TRUE));
 		$subject->BE_USER = $backEndUser;
-		$createdTceMain = $this->getMock('TYPO3\\CMS\\Core\\DataHandling\\DataHandler', array());
+		$createdTceMain = $this->getMock(DataHandler::class, array());
 		$createdTceMain->expects($this->once())->method('start')->with(array(), array(
 			'pages' => array(
 				1 => array(
@@ -293,7 +308,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		));
 		$createdTceMain->expects($this->never())->method('process_datamap');
 		$createdTceMain->expects($this->once())->method('process_cmdmap');
-		\TYPO3\CMS\Core\Utility\GeneralUtility::addInstance('TYPO3\\CMS\\Core\\DataHandling\\DataHandler', $createdTceMain);
+		GeneralUtility::addInstance(DataHandler::class, $createdTceMain);
 		$subject->process_datamap();
 	}
 
@@ -301,7 +316,6 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function doesCheckFlexFormValueHookGetsCalled() {
-		$GLOBALS['TYPO3_DB'] = $this->getMock('TYPO3\\CMS\\Core\\Database\\DatabaseConnection', array(), array(), '', FALSE);
 		$hookClass = uniqid('tx_coretest');
 		$hookMock = $this->getMock($hookClass, array('checkFlexFormValue_beforeMerge'));
 		$hookMock->expects($this->once())->method('checkFlexFormValue_beforeMerge');
@@ -317,7 +331,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logCallsWriteLogOfBackendUserIfLoggingIsEnabled() {
-		$backendUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$backendUser->expects($this->once())->method('writelog');
 		$this->subject->enableLogging = TRUE;
 		$this->subject->BE_USER = $backendUser;
@@ -328,7 +342,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logDoesNotCallWriteLogOfBackendUserIfLoggingIsDisabled() {
-		$backendUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$backendUser->expects($this->never())->method('writelog');
 		$this->subject->enableLogging = FALSE;
 		$this->subject->BE_USER = $backendUser;
@@ -339,7 +353,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logAddsEntryToLocalErrorLogArray() {
-		$backendUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$this->subject->BE_USER = $backendUser;
 		$this->subject->enableLogging = TRUE;
 		$this->subject->errorLog = array();
@@ -352,7 +366,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logFormatsDetailMessageWithAdditionalDataInLocalErrorArray() {
-		$backendUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$this->subject->BE_USER = $backendUser;
 		$this->subject->enableLogging = TRUE;
 		$this->subject->errorLog = array();
@@ -570,12 +584,13 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getPlaceholderTitleForTableLabelReturnsLabelThatsMatchesLabelFieldConditions($expected, $eval) {
 		$table = 'phpunit_dummy';
 
+		/** @var DataHandler|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $subject */
 		$subject = $this->getAccessibleMock(
-			'TYPO3\\CMS\\Core\\DataHandling\\DataHandler',
+			DataHandler::class,
 			array('dummy')
 		);
 
-		$backendUser = $this->getMock('TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication');
+		$backendUser = $this->getMock(BackendUserAuthentication::class);
 		$subject->BE_USER = $backendUser;
 		$subject->BE_USER->workspace = 1;
 
@@ -630,13 +645,13 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 
 		/** @var \TYPO3\CMS\Core\Database\RelationHandler $mockRelationHandler */
-		$mockRelationHandler = $this->getMock('TYPO3\\CMS\\Core\\Database\\RelationHandler', array(), array(), '', FALSE);
+		$mockRelationHandler = $this->getMock(\TYPO3\CMS\Core\Database\RelationHandler::class, array(), array(), '', FALSE);
 		$mockRelationHandler->itemArray = array(
 			'1' => array('table' => uniqid('bar_'), 'id' => 67)
 		);
 
-		/** @var \TYPO3\CMS\Core\DataHandling\DataHandler $mockDataHandler */
-		$mockDataHandler = $this->getAccessibleMock('TYPO3\\CMS\\Core\\DataHandling\\DataHandler', array('getInlineFieldType', 'deleteAction', 'createRelationHandlerInstance'), array(), '', FALSE);
+		/** @var DataHandler|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $mockDataHandler */
+		$mockDataHandler = $this->getAccessibleMock(DataHandler::class, array('getInlineFieldType', 'deleteAction', 'createRelationHandlerInstance'), array(), '', FALSE);
 		$mockDataHandler->expects($this->once())->method('getInlineFieldType')->will($this->returnValue('field'));
 		$mockDataHandler->expects($this->once())->method('createRelationHandlerInstance')->will($this->returnValue($mockRelationHandler));
 		$mockDataHandler->expects($this->never())->method('deleteAction');

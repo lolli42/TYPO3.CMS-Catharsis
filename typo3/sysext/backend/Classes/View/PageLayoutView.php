@@ -305,13 +305,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			// Getting select-depth:
 			$depth = (int)$this->getPageLayoutController()->MOD_SETTINGS['pages_levels'];
-			// Half line is drawn
-			$theData = array();
-			$theData['subject'] = $this->widthGif;
-			$out .= $this->addelement(0, '', $theData);
 			// Overriding a few things:
 			$this->no_noWrap = 0;
-			$this->oddColumnsCssClass = 'bgColor3-20';
 			// Items
 			$this->eCounter = $this->firstElementNumber;
 			// Creating elements:
@@ -375,20 +370,19 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						}
 				}
 			}
-			// Start table:
-			$this->oddColumnsCssClass = '';
 			// CSH:
 			$out = BackendUtility::cshItem($this->descrTable, ('func_' . $pKey)) . '
-				<table class="t3-table typo3-page-pages">' .
-					'<thead>' .
-						$this->addelement(1, '', $theData) .
-					'</thead>' .
-					'<tbody>' .
-						$out .
-					'</tbody>' .
-				'</table>';
+				<div class="table-fit">
+					<table class="t3-table typo3-page-pages">' .
+						'<thead>' .
+							$this->addelement(1, '', $theData) .
+						'</thead>' .
+						'<tbody>' .
+							$out .
+						'</tbody>' .
+					'</table>
+				</div>';
 		}
-		$this->oddColumnsCssClass = '';
 		return $out;
 	}
 
@@ -999,7 +993,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					} else {
 						$Nrow['__editIconLink__'] = $this->noEditIcon();
 					}
-					$out .= $this->addelement(1, '', $Nrow, 'class="db_list_normal"');
+					$out .= $this->addelement(1, '', $Nrow);
 				}
 				$this->eCounter++;
 			}
@@ -1073,7 +1067,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			// Wrap in dimmed-span tags if record is "disabled"
 			if ($this->isDisabled($table, $row)) {
-				$out[$fieldName] = $this->getDocumentTemplate()->dfw($out[$fieldName]);
+				$out[$fieldName] = '<span class="text-muted">' . $out[$fieldName] . '</span>';
 			}
 		}
 		return $out;
@@ -1615,7 +1609,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		}
 		// Return values:
 		if ($this->isDisabled('tt_content', $row)) {
-			return $this->getDocumentTemplate()->dfw($out);
+			return '<span class="text-muted">' . $out . '</span>';
 		} else {
 			return $out;
 		}

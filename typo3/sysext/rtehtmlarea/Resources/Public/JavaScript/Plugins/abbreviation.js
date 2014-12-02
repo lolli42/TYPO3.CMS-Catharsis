@@ -283,29 +283,6 @@ HTMLArea.Abbreviation = Ext.extend(HTMLArea.Plugin, {
 		var languageObject = this.getPluginInstance('Language');
 		if (this.getButton('Language')) {
 			var selectedLanguage = typeof element === 'object' && element !== null ? languageObject.getLanguageAttribute(element) : 'none';
-			function initLanguageStore (store) {
-				if (selectedLanguage !== 'none') {
-					store.removeAt(0);
-					store.insert(0, new store.recordType({
-						text: languageObject.localize('Remove language mark'),
-						value: 'none'
-					}));
-				}
-				this.getButton('Language').setValue('none');
-			}
-			var languageStore = new Ext.data.JsonStore({
-				autoDestroy:  true,
-				autoLoad: true,
-				root: 'options',
-				fields: [ { name: 'text'}, { name: 'value'} ],
-				url: this.getDropDownConfiguration('Language').dataUrl,
-				listeners: {
-					load: {
-						fn: initLanguageStore,
-						scope: this
-					}
-				}
-			});
 			itemsConfig.push(Ext.apply({
 				xtype: 'combo',
 				fieldLabel: this.getHelpTip('language', 'Language'),
@@ -313,13 +290,31 @@ HTMLArea.Abbreviation = Ext.extend(HTMLArea.Plugin, {
 				valueField: 'value',
 				displayField: 'text',
 				tpl: '<tpl for="."><div ext:qtip="{value}" style="text-align:left;font-size:11px;" class="x-combo-list-item">{text}</div></tpl>',
-				store: languageStore,
+				store: new Ext.data.JsonStore({
+					autoDestroy:  true,
+					root: 'options',
+					fields: [ { name: 'text'}, { name: 'value'} ],
+					url: this.getDropDownConfiguration('Language').dataUrl,
+					listeners: {
+						load: {
+							fn: function (store) {
+								if (selectedLanguage !== 'none') {
+									store.removeAt(0);
+									store.insert(0, new store.recordType({
+										text: languageObject.localize('Remove language mark'),
+										value: 'none'
+									}));
+								}
+							}
+						}
+					}
+				}),
 				width: 200,
 				value: selectedLanguage,
 				listeners: {
-					render: {
+					beforerender: {
 						fn: function (combo) {
-								// Load the language dropdown
+							// Ensure the store is loaded
 							combo.getStore().load({
 								callback: function () { combo.setValue(selectedLanguage); }
 							});
@@ -486,13 +481,15 @@ HTMLArea.Abbreviation = Ext.extend(HTMLArea.Plugin, {
 		var tab = this.dialog.findByType('tabpanel')[0].getActiveTab();
 		var type = tab.getItemId();
 		var languageSelector = tab.find('itemId', 'language');
-		var language = languageSelector.length > 0 ? languageSelector[0].getValue() : '';
-		var term = tab.find('itemId', 'termSelector')[0].getValue();
+		var language = languageSelector && languageSelector.length > 0 ? languageSelector[0].getValue() : '';
+		var termSelector = tab.find('itemId', 'termSelector');
+		var term = termSelector && termSelector.length > 0 ? termSelector[0].getValue() : '';
+		var abbrSelector = tab.find('itemId', 'abbrSelector');
 		if (!this.params.abbr) {
 			var abbr = this.editor.document.createElement(type);
 			abbr.title = tab.find('itemId', 'useTerm')[0].getValue();
-			if (term == abbr.title) {
-				abbr.innerHTML = tab.find('itemId', 'abbrSelector')[0].getValue();
+			if (term == abbr.title && abbrSelector && abbrSelector.length > 0) {
+				abbr.innerHTML = abbrSelector[0].getValue();
 			} else {
 				abbr.innerHTML = this.params.text;
 			}
@@ -513,8 +510,8 @@ HTMLArea.Abbreviation = Ext.extend(HTMLArea.Plugin, {
 			if (language) {
 				this.getPluginInstance('Language').setLanguageAttributes(abbr, language);
 			}
-			if (term == abbr.title) {
-				abbr.innerHTML = tab.find('itemId', 'abbrSelector')[0].getValue();
+			if (term == abbr.title && abbrSelector && abbrSelector.length > 0) {
+				abbr.innerHTML = abbrSelector[0].getValue();
 			}
 		}
 		this.close();

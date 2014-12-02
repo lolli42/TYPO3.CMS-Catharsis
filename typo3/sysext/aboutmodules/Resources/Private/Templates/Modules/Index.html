@@ -12,23 +12,23 @@
 	{warningMessages -> f:format.raw()}
 
 	<f:for each="{modules}" as="mainModule">
-		<tr>
-			<td colspan="3">
-				<h2>
-					{mainModule.label}
-				</h2>
-			</td>
-		</tr>
+        <h2>{mainModule.label}</h2>
 
 		<f:for each="{mainModule.subModules}" as="subModule" iteration="subModuleIterator">
-			<div class="media">
+			<div class="media clearfix">
 				<a
 					href="#"
 					onclick="top.goToModule('{mainModule.name}_{subModule.name}'); return false;"
 					title="{subModule.shortDescription}"
 					class="pull-left"
 				>
-					<f:image src="{subModule.icon}" alt="{subModule.label}" class="t3-app-icon media-object"/>
+					<span class="typo3-app-icon">
+						<span>
+							<span>
+								<img src="../{subModule.icon}" alt="{subModule.label}" class="media-object" />
+							</span>
+						</span>
+					</span>
 				</a>
 
 				<div class="media-body">

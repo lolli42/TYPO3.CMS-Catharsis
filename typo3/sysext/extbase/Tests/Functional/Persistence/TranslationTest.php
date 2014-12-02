@@ -61,7 +61,7 @@ class TranslationTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->importDataSet(ORIGINAL_ROOT . 'typo3/sysext/extbase/Tests/Functional/Persistence/Fixtures/translated-posts.xml');
 
 		$this->objectManager = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
-		$this->postRepository = $this->objectManager->get('ExtbaseTeam\\BlogExample\\Domain\\Repository\\PostRepository');
+		$this->postRepository = $this->objectManager->get(\ExtbaseTeam\BlogExample\Domain\Repository\PostRepository::class);
 
 		$this->setUpBasicFrontendEnvironment();
 	}
@@ -70,15 +70,15 @@ class TranslationTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * Minimal frontent environment to satisfy Extbase Typo3DbBackend
 	 */
 	protected function setUpBasicFrontendEnvironment() {
-		$environmentServiceMock = $this->getMock('TYPO3\\CMS\\Extbase\\Service\\EnvironmentService');
+		$environmentServiceMock = $this->getMock(\TYPO3\CMS\Extbase\Service\EnvironmentService::class);
 		$environmentServiceMock
 			->expects($this->any())
 			->method('isEnvironmentInFrontendMode')
 			->willReturn(TRUE);
-		GeneralUtility::setSingletonInstance('TYPO3\\CMS\\Extbase\\Service\\EnvironmentService', $environmentServiceMock);
+		GeneralUtility::setSingletonInstance(\TYPO3\CMS\Extbase\Service\EnvironmentService::class, $environmentServiceMock);
 
 		$pageRepositoryFixture = new PageRepository();
-		$frontendControllerMock = $this->getMock('TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController', array(), array(), '', FALSE);
+		$frontendControllerMock = $this->getMock(\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class, array(), array(), '', FALSE);
 		$frontendControllerMock->sys_page = $pageRepositoryFixture;
 		$GLOBALS['TSFE'] = $frontendControllerMock;
 	}

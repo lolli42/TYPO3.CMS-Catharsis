@@ -582,7 +582,7 @@ class TemplateService {
 			if ($a == $c - 1 && $start_template_uid) {
 				$addC = ' AND uid=' . (int)$start_template_uid;
 			}
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . (int)$this->absoluteRootLine[$a]['uid'] . $addC . ' ' . $this->whereClause, '', 'sorting', 1);
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'pid=' . (int)$this->absoluteRootLine[$a]['uid'] . $addC . ' ' . $this->whereClause, '', 'root DESC, sorting', 1);
 			if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				$this->versionOL($row);
 				if (is_array($row)) {
@@ -643,41 +643,21 @@ class TemplateService {
 		// Include "Based On" sys_templates:
 		// 'basedOn' is a list of templates to include
 		if (trim($row['basedOn'])) {
-			// Manually you can put this value in the field and then the based_on ID will be taken from the $_GET var defined by '=....'.
-			// Example: If $row['basedOn'] is 'EXTERNAL_BASED_ON_TEMPLATE_ID=based_on_uid', then the global var, based_on_uid - given by the URL like '&based_on_uid=999' - is included instead!
-			// This feature allows us a hack to test/demonstrate various included templates on the same set of content bearing pages. Used by the "freesite" extension.
-			$basedOn_hackFeature = explode('=', $row['basedOn']);
-			if ($basedOn_hackFeature[0] == 'EXTERNAL_BASED_ON_TEMPLATE_ID' && $basedOn_hackFeature[1]) {
-				$id = (int)GeneralUtility::_GET($basedOn_hackFeature[1]);
-				// If $id is not allready included ...
-				if ($id && !GeneralUtility::inList($idList, ('sys_' . $id))) {
-					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_template', 'uid=' . $id . ' ' . $this->whereClause);
-					// there was a template, then we fetch that
-					if ($subrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-						$this->versionOL($subrow);
-						if (is_array($subrow)) {
-							$this->processTemplate($subrow, $idList . ',sys_' . $id, $pid, 'sys_' . $id, $templateID);
-						}
-					}
-					$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			// Normal Operation, which is to include the "based-on" sys_templates,
+			// if they are not already included, and maintaining the sorting of the templates
+			$basedOnIds = GeneralUtility::intExplode(',', $row['basedOn']);
+			// skip template if it's already included
+			foreach ($basedOnIds as $key => $basedOnId) {
+				if (GeneralUtility::inList($idList, 'sys_' . $basedOnId)) {
+					unset($basedOnIds[$key]);
 				}
-			} else {
-				// Normal Operation, which is to include the "based-on" sys_templates,
-				// if they are not already included, and maintaining the sorting of the templates
-				$basedOnIds = GeneralUtility::intExplode(',', $row['basedOn']);
-				// skip template if it's already included
-				foreach ($basedOnIds as $key => $basedOnId) {
-					if (GeneralUtility::inList($idList, 'sys_' . $basedOnId)) {
-						unset($basedOnIds[$key]);
-					}
-				}
-				$subTemplates = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_template', 'uid IN (' . implode(',', $basedOnIds) . ') ' . $this->whereClause, '', '', '', 'uid');
-				// Traversing list again to ensure the sorting of the templates
-				foreach ($basedOnIds as $id) {
-					if (is_array($subTemplates[$id])) {
-						$this->versionOL($subTemplates[$id]);
-						$this->processTemplate($subTemplates[$id], $idList . ',sys_' . $id, $pid, 'sys_' . $id, $templateID);
-					}
+			}
+			$subTemplates = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_template', 'uid IN (' . implode(',', $basedOnIds) . ') ' . $this->whereClause, '', '', '', 'uid');
+			// Traversing list again to ensure the sorting of the templates
+			foreach ($basedOnIds as $id) {
+				if (is_array($subTemplates[$id])) {
+					$this->versionOL($subTemplates[$id]);
+					$this->processTemplate($subTemplates[$id], $idList . ',sys_' . $id, $pid, 'sys_' . $id, $templateID);
 				}
 			}
 		}
@@ -1290,7 +1270,7 @@ class TemplateService {
 	 * @param bool $noTitle If set, then only the site title is outputted (from $this->setup['sitetitle'])
 	 * @param bool $showTitleFirst If set, then "sitetitle" and $title is swapped
 	 * @return string The page title on the form "[sitetitle]: [input-title]". Not htmlspecialchar()'ed.
-	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), TSpagegen::renderContentWithHeader()
+	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), \TYPO3\CMS\Frontend\Page\PageGenerator::renderContentWithHeader()
 	 */
 	public function printTitle($pageTitle, $noTitle = FALSE, $showTitleFirst = FALSE) {
 		$siteTitle = trim($this->setup['sitetitle']);
@@ -1425,7 +1405,7 @@ class TemplateService {
 	 * @param string $typeOverride If you set this value to something else than a blank string, then the typeNumber used in the link will be forced to this value. Normally the typeNum is based on the target set OR on $GLOBALS['TSFE']->config['config']['forceTypeValue'] if found.
 	 * @param string $targetDomain The target Doamin, if any was detected in typolink
 	 * @return array Contains keys like "totalURL", "url", "sectionIndex", "linkVars", "no_cache", "type", "target" of which "totalURL" is normally the value you would use while the other keys contains various parts that was used to construct "totalURL
-	 * @see \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typoLink(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::SEARCHRESULT(), TSpagegen::pagegenInit(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::link()
+	 * @see \TYPO3\CMS\Frontend\Page\FramesetRenderer::frameParams(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typoLink(), \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::SEARCHRESULT(), \TYPO3\CMS\Frontend\Page\PageGenerator::pagegenInit(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::link()
 	 */
 	public function linkData($page, $oTarget, $no_cache, $script, $overrideArray = NULL, $addParams = '', $typeOverride = '', $targetDomain = '') {
 		$LD = array();

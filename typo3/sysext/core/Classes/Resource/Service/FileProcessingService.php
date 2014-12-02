@@ -137,7 +137,7 @@ class FileProcessingService {
 	protected function getSignalSlotDispatcher() {
 		if (!isset($this->signalSlotDispatcher)) {
 			$this->signalSlotDispatcher = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class)
-				->get('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+				->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 		}
 		return $this->signalSlotDispatcher;
 	}
@@ -151,7 +151,7 @@ class FileProcessingService {
 	 * @param array $configuration
 	 */
 	protected function emitPreFileProcessSignal(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
-		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PreFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\ResourceStorage::class, self::SIGNAL_PreFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
 	}
 
 	/**
@@ -163,6 +163,6 @@ class FileProcessingService {
 	 * @param array $configuration
 	 */
 	protected function emitPostFileProcessSignal(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
-		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Resource\\ResourceStorage', self::SIGNAL_PostFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\ResourceStorage::class, self::SIGNAL_PostFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
 	}
 }

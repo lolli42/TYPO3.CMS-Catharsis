@@ -15,19 +15,16 @@ namespace TYPO3\CMS\Opendocs\Backend\ToolbarItems;
  */
 
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Adding a list of all open documents of a user to the backend.php
+ * Alist of all open documents
  *
  * @author Benjamin Mack <benni@typo3.org>
  * @author Ingo Renner <ingo@typo3.org>
  */
 class OpendocsToolbarItem implements ToolbarItemInterface {
-
-	/**
-	 * @var \TYPO3\CMS\Backend\Controller\BackendController
-	 */
-	protected $backendReference;
 
 	/**
 	 * @var array
@@ -40,19 +37,13 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	protected $recentDocs;
 
 	/**
-	 * @var string
+	 * Constructor
 	 */
-	protected $EXTKEY = 'opendocs';
-
-	/**
-	 * Constructor, loads the documents from the user control
-	 *
-	 * @param \TYPO3\CMS\Backend\Controller\BackendController TYPO3 backend object reference
-	 */
-	public function __construct(\TYPO3\CMS\Backend\Controller\BackendController &$backendReference = NULL) {
-		$GLOBALS['LANG']->includeLLFile('EXT:opendocs/locallang_opendocs.xlf');
-		$this->backendReference = $backendReference;
+	public function __construct() {
+		$this->getLanguageService()->includeLLFile('EXT:opendocs/locallang_opendocs.xlf');
 		$this->loadDocsFromUserSession();
+		$pageRenderer = $this->getPageRenderer();
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu');
 	}
 
 	/**
@@ -61,7 +52,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	 * @return bool TRUE if user has access, FALSE if not
 	 */
 	public function checkAccess() {
-		$conf = $GLOBALS['BE_USER']->getTSConfig('backendToolbarItem.tx_opendocs.disabled');
+		$conf = $this->getBackendUser()->getTSConfig('backendToolbarItem.tx_opendocs.disabled');
 		return $conf['value'] != 1;
 	}
 
@@ -71,56 +62,49 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	 * @return void
 	 */
 	public function loadDocsFromUserSession() {
-		list($this->openDocs, ) = $GLOBALS['BE_USER']->getModuleData('alt_doc.php', 'ses');
-		$this->recentDocs = $GLOBALS['BE_USER']->getModuleData('opendocs::recent');
+		$backendUser = $this->getBackendUser();
+		list($this->openDocs, ) = $backendUser->getModuleData('alt_doc.php', 'ses');
+		$this->recentDocs = $backendUser->getModuleData('opendocs::recent');
 	}
 
 	/**
-	 * Renders the toolbar item and the initial menu
+	 * Render toolbar icon
 	 *
-	 * @return string The toolbar item including the initial menu content as HTML
+	 * @return string HTML
 	 */
-	public function render() {
-		$this->addJavascriptToBackend();
-		$this->addCssToBackend();
+	public function getItem() {
 		$numDocs = count($this->openDocs);
+		$title = $this->getLanguageService()->getLL('toolbaritem', TRUE);
+
 		$opendocsMenu = array();
-		$title = $GLOBALS['LANG']->getLL('toolbaritem', TRUE);
-
-		// Toolbar item icon
-		$opendocsMenu[] = '<a href="#" class="dropdown-toggle" data-toggle="dropdown">';
-		$opendocsMenu[] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-toolbar-menu-opendocs', array('title' => $title));
+		$opendocsMenu[] = IconUtility::getSpriteIcon('apps-toolbar-menu-opendocs', array('title' => $title));
 		$opendocsMenu[] = '<span class="badge" id="tx-opendocs-counter">' . $numDocs . '</span>';
-		$opendocsMenu[] = '</a>';
 
-		// Toolbar item menu and initial content
-		$opendocsMenu[] = '<ul class="dropdown-menu" role="menu">';
-		$opendocsMenu[] = $this->renderMenu();
-		$opendocsMenu[] = '</ul>';
 		return implode(LF, $opendocsMenu);
 	}
 
 	/**
-	 * renders the pure contents of the menu
+	 * Render drop down
 	 *
-	 * @return string The menu's content
+	 * @return string HTML
 	 */
-	public function renderMenu() {
+	public function getDropDown() {
+		$languageService = $this->getLanguageService();
 		$openDocuments = $this->openDocs;
 		$recentDocuments = $this->recentDocs;
 		$entries = array();
-		$content = '';
 		if (count($openDocuments)) {
-			$entries[] = '<li class="dropdown-header">' . $GLOBALS['LANG']->getLL('open_docs', TRUE) . '</li>';
+			$entries[] = '<li class="dropdown-header">' . $languageService->getLL('open_docs', TRUE) . '</li>';
 			$i = 0;
 			foreach ($openDocuments as $md5sum => $openDocument) {
 				$i++;
 				$entries[] = $this->renderMenuEntry($openDocument, $md5sum, FALSE, $i == 1);
 			}
+			$entries[] = '<li class="divider"></li>';
 		}
 		// If there are "recent documents" in the list, add them
 		if (count($recentDocuments)) {
-			$entries[] = '<li class="dropdown-header">' . $GLOBALS['LANG']->getLL('recent_docs', TRUE) . '</li>';
+			$entries[] = '<li class="dropdown-header">' . $languageService->getLL('recent_docs', TRUE) . '</li>';
 			$i = 0;
 			foreach ($recentDocuments as $md5sum => $recentDocument) {
 				$i++;
@@ -128,9 +112,9 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 			}
 		}
 		if (count($entries)) {
-			$content = implode('', $entries);
+			$content = '<ul class="dropdown-list">' . implode('', $entries) . '</ul>';
 		} else {
-			$content = '<li class="noOpenDocs">' . $GLOBALS['LANG']->getLL('no_docs', TRUE) . '</li>';
+			$content = '<p>' . $languageService->getLL('no_docs', TRUE) . '</p>';
 		}
 		return $content;
 	}
@@ -138,9 +122,13 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	/**
 	 * Returns the recent documents list as an array
 	 *
+	 * @param array $document
+	 * @param string $md5sum
+	 * @param bool $isRecentDoc
+	 * @param bool $isFirstDoc
 	 * @return array All recent documents as list-items
 	 */
-	public function renderMenuEntry($document, $md5sum, $isRecentDoc = FALSE, $isFirstDoc = FALSE) {
+	protected function renderMenuEntry($document, $md5sum, $isRecentDoc = FALSE, $isFirstDoc = FALSE) {
 		$table = $document[3]['table'];
 		$uid = $document[3]['uid'];
 		$record = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL($table, $uid);
@@ -155,58 +143,32 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 		if ($document[3]['table'] !== 'pages') {
 			$pageId = (int)$document[3]['pid'];
 		}
-		$firstRow = '';
-		if ($isFirstDoc) {
-			$firstRow = ' first-row';
-		}
+		$onClickCode = 'jump(' . GeneralUtility::quoteJSvalue($link) . ', \'web_list\', \'web\', ' . $pageId . '); TYPO3.OpendocsMenu.toggleMenu(); return false;';
 		if (!$isRecentDoc) {
-			$title = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE);
+			$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE);
 			// Open document
 			$closeIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-close');
 			$entry = '
-				<li class="opendoc' . $firstRow . '">
-					<div class="linkWrap">
-						<a href="#" class="opendocLink" onclick="jump(unescape(\'' . htmlspecialchars($link) . '\'), \'web_list\', \'web\', ' . $pageId . ');TYPO3.OpendocsMenu.toggleMenu(); return false;" target="content">' . $icon . $label . '</a>
-						<a href="#" class="close" data-opendocsidentifier="' . $md5sum . '">' . $closeIcon . '</a>
-					</div>
+				<li class="opendoc">
+					<a href="#" class="dropdown-list-link dropdown-link-list-add-close" onclick="' . htmlspecialchars($onClickCode) . '" target="content">' . $icon . ' ' . $label . '</a>
+					<a href="#" class="dropdown-list-link-close" data-opendocsidentifier="' . $md5sum . '" title="' . $title . '">' . $closeIcon . '</a>
 				</li>';
 		} else {
 			// Recently used document
 			$entry = '
-				<li class="recentdoc' . $firstRow . '">
-					<a href="#" onclick="jump(unescape(\'' . htmlspecialchars($link) . '\'), \'web_list\', \'web\', ' . $pageId . '); TYPO3.OpendocsMenu.toggleMenu(); return false;" target="content">' . $icon . $label . '</a>
+				<li>
+					<a href="#" class="dropdown-list-link" onclick="' . htmlspecialchars($onClickCode) . '" target="content">' . $icon . ' ' . $label . '</a>
 				</li>';
 		}
 		return $entry;
 	}
 
 	/**
-	 * Returns additional attributes for the list item in the toolbar
-	 *
-	 * This should not contain the "class" or "id" attribute.
-	 * Use the methods for setting these attributes
+	 * No additional attributes
 	 *
 	 * @return string List item HTML attibutes
 	 */
 	public function getAdditionalAttributes() {
-		return '';
-	}
-
-	/**
-	 * Return attribute id name
-	 *
-	 * @return string The name of the ID attribute
-	 */
-	public function getIdAttribute() {
-		return 'tx-opendocs-menu';
-	}
-
-	/**
-	 * Returns extra classes
-	 *
-	 * @return array
-	 */
-	public function getExtraClasses() {
 		return array();
 	}
 
@@ -219,26 +181,6 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 		return TRUE;
 	}
 
-	/**
-	 * Adds the necessary javascript to the backend
-	 *
-	 * @return void
-	 */
-	protected function addJavascriptToBackend() {
-		$this->backendReference->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Opendocs/Toolbar/OpendocsMenu');
-	}
-
-	/**
-	 * Adds the necessary CSS to the backend
-	 *
-	 * @return void
-	 */
-	protected function addCssToBackend() {
-		$this->backendReference->addCssFile(
-			'opendocs',
-				\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($this->EXTKEY) . '/Resources/Public/Css/opendocs.css'
-		);
-	}
 
 	/*******************
 	 ***    HOOKS    ***
@@ -269,7 +211,8 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return string List item HTML attributes
 	 */
-	public function closeDocument($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
+	public function closeDocument($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj = NULL) {
+		$backendUser = $this->getBackendUser();
 		$md5sum = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('md5sum');
 		if ($md5sum && isset($this->openDocs[$md5sum])) {
 			// Add the document to be closed to the recent documents
@@ -280,9 +223,9 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 			}
 			// Remove it from the list of the open documents, and store the status
 			unset($this->openDocs[$md5sum]);
-			list(, $docDat) = $GLOBALS['BE_USER']->getModuleData('alt_doc.php', 'ses');
-			$GLOBALS['BE_USER']->pushModuleData('alt_doc.php', array($this->openDocs, $docDat));
-			$GLOBALS['BE_USER']->pushModuleData('opendocs::recent', $this->recentDocs);
+			list(, $docDat) = $backendUser->getModuleData('alt_doc.php', 'ses');
+			$backendUser->pushModuleData('alt_doc.php', array($this->openDocs, $docDat));
+			$backendUser->pushModuleData('opendocs::recent', $this->recentDocs);
 		}
 		$this->renderAjax($params, $ajaxObj);
 	}
@@ -294,9 +237,8 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj Object of type AjaxRequestHandler
 	 * @return void
 	 */
-	public function renderAjax($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj = NULL) {
-		$menuContent = $this->renderMenu();
-		$ajaxObj->addContent('opendocsMenu', $menuContent);
+	public function renderAjax($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj = NULL) {
+		$ajaxObj->addContent('opendocsMenu', $this->getDropDown());
 	}
 
 	/**
@@ -306,6 +248,44 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	 */
 	public function getIndex() {
 		return 30;
+	}
+
+	/**
+	 * Returns the current BE user.
+	 *
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * Returns current PageRenderer
+	 *
+	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 */
+	protected function getPageRenderer() {
+		/** @var  \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
+		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
+		return $documentTemplate->getPageRenderer();
+	}
+
+	/**
+	 * Returns LanguageService
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * Return DatabaseConnection
+	 *
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

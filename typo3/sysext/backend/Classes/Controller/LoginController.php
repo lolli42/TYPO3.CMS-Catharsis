@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 
@@ -240,6 +241,7 @@ class LoginController {
 				';
 			$loginForm = $this->makeLogoutForm();
 		}
+
 		// Starting page:
 		$this->content .= $GLOBALS['TBE_TEMPLATE']->startPage('TYPO3 CMS Login: ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'], FALSE);
 		// Add login form:
@@ -371,7 +373,13 @@ class LoginController {
 			'SITENAME' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'])
 		);
 		$markers = $this->emitRenderLoginFormSignal($markers);
-		return HtmlParser::substituteMarkerArray($mainContent, $markers, '###|###');
+		$mainContent = HtmlParser::substituteMarkerArray($mainContent, $markers, '###|###');
+
+		// OPENID_LOADED
+		if (!ExtensionManagementUtility::isLoaded('openid')) {
+			$mainContent = HtmlParser::substituteSubpart($mainContent, 'OPENID_LOADED', '');
+		}
+		return $mainContent;
 	}
 
 	/**
@@ -620,7 +628,7 @@ class LoginController {
 	 */
 	protected function getSignalSlotDispatcher() {
 		if (!isset($this->signalSlotDispatcher)) {
-			$this->signalSlotDispatcher = $this->getObjectManager()->get('TYPO3\\CMS\\Extbase\\SignalSlot\\Dispatcher');
+			$this->signalSlotDispatcher = $this->getObjectManager()->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
 		}
 		return $this->signalSlotDispatcher;
 	}

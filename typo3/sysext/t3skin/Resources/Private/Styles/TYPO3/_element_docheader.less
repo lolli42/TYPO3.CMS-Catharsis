@@ -33,11 +33,15 @@ DocHeader
 	}
 
 	.left {
+		float: left;
 
 		/** Extra margin 6px added to it-icon margin, doubled spacing = 12px */
 		.buttongroup {
 			.pull-left;
 			margin-right: 6px;
+			.c-inputButton {
+				color: inherit;
+			}
 		}
 
 		select {
@@ -104,7 +108,6 @@ DocHeader
 /* Collapsed tree frame is not invisible, but 5px wide.
    If no tree frame is in use, an empty container is shown instead */
 
-#typo3-module-menu-xsplit,
 #typo3-navigationContainer-xsplit,
 #typo3-navigationContainer-xcollapsed,
 #typo3-navigationDummy {

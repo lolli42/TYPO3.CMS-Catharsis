@@ -18,47 +18,60 @@ TCEforms
 // Special handling of Tabs within FormEngine
 .typo3-TCEforms {
 
+	// Move dyntab inner padding into fieldset for horizontal HR
 	div.typo3-dyntabmenu-divs {
-		// Override .tab inner padding: for section border
 		padding: 0;
 	}
 
-	.table {
-		margin-bottom: 0;
+	.c-tablayer {
+		div,
+		td {
+			vertical-align: top;
+		}
 
-		> tbody {
-			> tr {
-				> td {
-					background: none;
+		> table {
+			margin-bottom: 0;
 
+			> tbody {
+				> tr {
+					> td {
+						padding: 0 @line-height-computed 0 @line-height-computed;
+						background: none;
 
+						&.palette-header {
+							border-top: 1px solid @nav-tabs-border-color;
+							padding: ceil(@line-height-computed * 1.5) @line-height-computed floor(@line-height-computed * 0.25) @line-height-computed;
 
-					&.palette-header {
-						border-top: 1px solid @gray-light;
+							h3 {
+								margin-top: 0;
+							}
+						}
 
-						h3 {
-							// Padding and margin are created by table <td>
-							margin-top: @padding-large-vertical;
-							margin-bottom: 0;
+						.t3-form-palette-fieldset {
+							.t3-form-palette-field-container {
+								display: inline-block;
+								padding-right: 25px;
+								padding-bottom: @line-height-computed;
+							}
+						}
+
+					}
+
+					&:first-child {
+						> td {
+							padding-top: @line-height-computed;
+
+							&.palette-header {
+								border-top: none;
+							}
 						}
 					}
 
-					.t3-form-palette-fieldset {
-						margin-bottom: @padding-large-vertical;
-
-						.t3-form-palette-field-container {
-							margin-bottom: @padding-base-vertical;
+					&:last-child {
+						> td {
+							padding-bottom: @line-height-computed;
 						}
 					}
-
-
-					table.t3-form-field-group-file {
-						td {
-							// Padding coming from outer wrap
-							padding-left: 0;
-						}
-					}
-
 				}
 			}
 		}
@@ -142,10 +155,6 @@ img.t3-TCEforms-contentchangedPaletteImg {
 	padding-bottom: 20px;
 }
 
-td.palette-header {
-	padding-left: 10px;
-}
-
 .typo3-TCEforms .bgColor2,
 .typo3-TCEforms tr.bgColor2 td {
 	padding-bottom: 5px;
@@ -199,6 +208,7 @@ select option.c-divider {
 
 .typo3-TCEforms table.typo3-TCEforms-select-checkbox tr td.c-labelCell img {
 	margin-right: 5px;
+	width: 16px;
 }
 
 .typo3-TCEforms table.typo3-TCEforms-select-checkbox td.c-descr {
@@ -238,7 +248,7 @@ div.typo3-TCEforms div.c-tablayer table > tbody > tr > td > table.wrapperTable >
 }
 
 .typo3-TCEforms td.icons {
-	padding: 2px;
+	padding: 0 2px 2px 2px;
 }
 
 .typo3-TCEforms td.thumbnails {
@@ -307,13 +317,6 @@ div.typo3-TCEforms div.c-tablayer table > tbody > tr > td > table.wrapperTable >
 	margin: 4px 2px 4px 1px;
 }
 
-.t3-form-palette-field-container {
-	display: inline-block;
-	vertical-align: top;
-	padding-right: 25px;
-	margin-bottom: 0.5em;
-}
-
 .t3-form-palette-field-container .t3-form-palette-field-label,
 .t3-form-palette-field-container .t3-form-palette-field {
 	display: block;
@@ -342,9 +345,9 @@ div.typo3-TCEforms div.c-tablayer table > tbody > tr > td > table.wrapperTable >
 /* - - - - - - - - - - - - - - - - - - - - -
 TCEforms suggest
 - - - - - - - - - - - - - - - - - - - - - */
+
 div.typo3-TCEforms-suggest-position-right {
 	margin-left: 10px;
-	margin-top: 5px;
 }
 
 div.typo3-TCEforms-suggest label {
@@ -661,15 +664,6 @@ table#typo3-altdoc-header input,
 	border: 0;
 }
 
-.t3-tceforms-input-wrapper,
-.t3-tceforms-input-wrapper-hover,
-.t3-tceforms-input-wrapper-datetime,
-.t3-tceforms-input-wrapper-datetime-hover {
-	display: block;
-	float: left;
-	position: relative;
-}
-
 .t3-tceforms-widget-null-wrapper {
 	display: inline-block;
 	float: right;
@@ -682,46 +676,10 @@ table#typo3-altdoc-header input,
 	margin-left: 2px;
 	margin-top: 42%;
 }
-
-
-.t3-tceforms-input-wrapper .t3-tceforms-input-clearer,
-.t3-tceforms-input-wrapper-hover .t3-tceforms-input-clearer {
-	position: absolute;
-	right: 10px;
-	top: 5px;
-	z-index: 1000;
-	cursor: pointer;
-}
-
-.t3-tceforms-input-wrapper-datetime .t3-tceforms-input-clearer,
-.t3-tceforms-input-wrapper-datetime-hover .t3-tceforms-input-clearer {
-	position: absolute;
-	right: 27px;
-	top: 5px;
-	z-index: 1000;
-	cursor: pointer;
-}
-.t3-tceforms-input-wrapper-datetime .t3-icon-edit-pick-date,
-.t3-tceforms-input-wrapper-datetime-hover .t3-icon-edit-pick-date {
+.t3-tceforms-input-wrapper-datetime .t3-icon-edit-pick-date {
 	top: -4px;
 }
-.t3-tceforms-input-wrapper .tceforms-textfield,
-.t3-tceforms-input-wrapper-hover .tceforms-textfield,
-.t3-tceforms-input-wrapper .tceforms-datetimefield,
-.t3-tceforms-input-wrapper-hover .tceforms-datetimefield,
-.t3-tceforms-input-wrapper-datetime .tceforms-textfield,
-.t3-tceforms-input-wrapper-datetime-hover .tceforms-textfield,
-.t3-tceforms-input-wrapper-datetime .tceforms-datetimefield,
-.t3-tceforms-input-wrapper-datetime-hover .tceforms-datetimefield {
-	position: relative;
-	z-index: 2000;
-	padding-right: 30px!important;
-}
 
-.t3-tceforms-input-wrapper-hover .t3-tceforms-input-clearer,
-.t3-tceforms-input-wrapper-datetime-hover .t3-tceforms-input-clearer {
-	z-index: 3700;
-}
 
 .typo3-TCEforms table#typo3-altdoc-header input:hover,
 .c-inputButton:hover {
@@ -815,12 +773,6 @@ select option.c-divider {
 
 .typo3-TCEforms .typo3-TCEforms-checkboxArray td {
 	padding-right: 5px;
-}
-
-
-.typo3-TCEforms .typo3-dyntabmenu-divs table {
-	border: none;
-	border-bottom: 1px solid #c0c0c0;
 }
 
 input.typo3-TCEforms-suggest-search {
@@ -999,6 +951,7 @@ TCEforms Sections
 /* - - - - - - - - - - - - - - - - - - - - -
 TCEforms Tree
 - - - - - - - - - - - - - - - - - - - - - */
+
 .t3-form-field-item .x-tree input.x-tree-node-cb {
 	height: auto;
 	margin: 0 0 0 1px;
