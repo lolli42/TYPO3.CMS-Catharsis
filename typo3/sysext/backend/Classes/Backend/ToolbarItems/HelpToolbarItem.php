@@ -16,86 +16,94 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
-use TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository;
-use TYPO3\CMS\Backend\Domain\Model\Module\BackendModule;
 
 /**
- * Help toolbar item
+ * Help toobar item
  */
 class HelpToolbarItem implements ToolbarItemInterface {
 
 	/**
-	 * @var \SplObjectStorage<BackendModule>
-	 */
-	protected $helpModuleMenu = NULL;
-
-	/**
 	 * Constructor
+	 *
+	 * @param \TYPO3\CMS\Backend\Controller\BackendController $backendReference TYPO3 backend object reference
+	 * @throws \UnexpectedValueException
 	 */
-	public function __construct() {
-		/** @var BackendModuleRepository $backendModuleRepository */
-		$backendModuleRepository = GeneralUtility::makeInstance(BackendModuleRepository::class);
-		/** @var \TYPO3\CMS\Backend\Domain\Model\Module\BackendModule $userModuleMenu */
-		$helpModuleMenu = $backendModuleRepository->findByModuleName('help');
-		if ($helpModuleMenu && $helpModuleMenu->getChildren()->count() > 0) {
-			$this->helpModuleMenu = $helpModuleMenu;
-		}
+	public function __construct(\TYPO3\CMS\Backend\Controller\BackendController &$backendReference = NULL) {
 	}
 
 	/**
-	 * Users see this if a module is available
+	 * Checks whether the user has access to this toolbar item
 	 *
-	 * @return bool TRUE
+	 * @return bool TRUE if user has access, FALSE if not
 	 */
 	public function checkAccess() {
-		$result = $this->helpModuleMenu ? TRUE : FALSE;
-		return $result;
+		return TRUE;
 	}
 
 	/**
-	 * Render help icon
+	 * Creates the selector for workspaces
 	 *
 	 * @return string Help
 	 */
-	public function getItem() {
-		return '<span class="fa fa-fw fa-question-circle"></span>';
-	}
+	public function render() {
+		/** @var \TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository $backendModuleRepository */
+		$backendModuleRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository::class);
+		/** @var \TYPO3\CMS\Backend\Domain\Model\Module\BackendModule $userModuleMenu */
+		$helpModuleMenu = $backendModuleRepository->findByModuleName('help');
 
-	/**
-	 * Render drop down
-	 *
-	 * @return string
-	 */
-	public function getDropDown() {
+		if ($helpModuleMenu === FALSE || $helpModuleMenu->getChildren()->count() < 1) {
+			return '';
+		}
+
 		$dropdown = array();
-		$dropdown[] = '<ul>';
-		foreach ($this->helpModuleMenu->getChildren() as $module) {
-			/** @var BackendModule $module */
+
+		$dropdown[] = '<a href="#" class="dropdown-toggle" data-toggle="dropdown">';
+		$dropdown[] = '<span class="fa fa-fw fa-question-circle"></span>';
+		$dropdown[] = '</a>';
+
+		$dropdown[] = '<ul class="dropdown-menu">';
+		foreach ($helpModuleMenu->getChildren() as $module) {
 			$moduleIcon = $module->getIcon();
-			$dropdown[] ='<li'
-				. ' id="' . $module->getName() . '"'
-				. ' class="t3-menuitem-submodule submodule mod-' . $module->getName() . '" '
-				. ' data-modulename="' . $module->getName() . '"'
-				. ' data-navigationcomponentid="' . $module->getNavigationComponentId() . '"'
-				. ' data-navigationframescript="' . $module->getNavigationFrameScript() . '"'
-				. ' data-navigationframescriptparameters="' . $module->getNavigationFrameScriptParameters() . '"'
-				. '>';
-			$dropdown[] = '<a title="' .$module->getDescription() . '" href="' . $module->getLink() . '" class="modlink">';
-			$dropdown[] = '<span class="submodule-icon">' . ($moduleIcon['html'] ?: $moduleIcon['html']) . '</span>';
-			$dropdown[] = '<span class="submodule-label">' . $module->getTitle() . '</span>';
-			$dropdown[] = '</a>';
-			$dropdown[] = '</li>';
+			$dropdown[] = '
+				<li id="' . $module->getName() . '" class="t3-menuitem-submodule submodule mod-' . $module->getName() . '" data-modulename="' . $module->getName() . '" data-navigationcomponentid="' . $module->getNavigationComponentId() . '" data-navigationframescript="' . $module->getNavigationFrameScript() . '" data-navigationframescriptparameters="' . $module->getNavigationFrameScriptParameters() . '">
+					<a title="' .$module->getDescription() . '" href="' . $module->getLink() . '" class="modlink">
+						<span class="submodule-icon">' . ($moduleIcon['html'] ?: $moduleIcon['html']) . '</span>
+						<span class="submodule-label">' . $module->getTitle() . '</span>
+					</a>
+				</li>';
 		}
 		$dropdown[] = '</ul>';
+
 		return implode(LF, $dropdown);
 	}
 
 	/**
-	 * No additional attributes needed.
+	 * Returns additional attributes for the list item in the toolbar
+	 *
+	 * This should not contain the "class" or "id" attribute.
+	 * Use the methods for setting these attributes
+	 *
+	 * @return string List item HTML attibutes
+	 */
+	public function getAdditionalAttributes() {
+		return '';
+	}
+
+	/**
+	 * Return attribute id name
+	 *
+	 * @return string The name of the ID attribute
+	 */
+	public function getIdAttribute() {
+		return 'topbar-help-menu';
+	}
+
+	/**
+	 * Returns extra classes
 	 *
 	 * @return array
 	 */
-	public function getAdditionalAttributes() {
+	public function getExtraClasses() {
 		return array();
 	}
 

@@ -18,11 +18,11 @@ define('TYPO3/CMS/Backend/Toolbar/ClearCacheMenu', ['jquery'], function($) {
 
 	var ClearCacheMenu = {
 		$spinnerElement: $('<span>', {
-			'class': 't3-icon fa fa-circle-o-notch fa-spin'
+			'class': 't3-icon fa fa-circle-o-notch spinner fa-spin'
 		}),
 		options: {
-			containerSelector: '#typo3-cms-backend-backend-toolbaritems-clearcachetoolbaritem',
-			menuItemSelector: '.dropdown-menu a',
+			containerSelector: '#clear-cache-actions-menu',
+			menuItemSelector: '.dropdown-menu li a',
 			toolbarIconSelector: '.dropdown-toggle span.t3-icon'
 		}
 	};
@@ -32,7 +32,7 @@ define('TYPO3/CMS/Backend/Toolbar/ClearCacheMenu', ['jquery'], function($) {
 	 * the clear cache call
 	 */
 	ClearCacheMenu.initializeEvents = function() {
-		$(ClearCacheMenu.options.containerSelector).on('click', ClearCacheMenu.options.menuItemSelector, function(evt) {
+		$(ClearCacheMenu.options.menuItemSelector, ClearCacheMenu.options.containerSelector).on('click', function(evt) {
 			evt.preventDefault();
 			var ajaxUrl = $(this).attr('href');
 			if (ajaxUrl) {

@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
  */
 
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
-use TYPO3\CMS\Backend\Module\ModuleLoader;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Adds backend live search to the toolbar
@@ -27,10 +25,17 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class LiveSearchToolbarItem implements ToolbarItemInterface {
 
 	/**
-	 * Constructor
+	 * @var \TYPO3\CMS\Backend\Controller\BackendController
 	 */
-	public function __construct() {
-		$this->getPageRenderer()->addJsFile('sysext/backend/Resources/Public/JavaScript/livesearch.js');
+	protected $backendReference;
+
+	/**
+	 * Constructor
+	 *
+	 * @param \TYPO3\CMS\Backend\Controller\BackendController $backendReference TYPO3 backend object reference
+	 */
+	public function __construct(\TYPO3\CMS\Backend\Controller\BackendController &$backendReference = NULL) {
+		$this->backendReference = $backendReference;
 	}
 
 	/**
@@ -41,7 +46,7 @@ class LiveSearchToolbarItem implements ToolbarItemInterface {
 	public function checkAccess() {
 		$access = FALSE;
 		// Loads the backend modules available for the logged in user.
-		$loadModules = GeneralUtility::makeInstance(ModuleLoader::class);
+		$loadModules = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
 		$loadModules->observeWorkspaces = TRUE;
 		$loadModules->load($GLOBALS['TBE_MODULES']);
 		// Live search is heavily dependent on the list module and only available when that module is.
@@ -52,11 +57,13 @@ class LiveSearchToolbarItem implements ToolbarItemInterface {
 	}
 
 	/**
-	 * Render search field
+	 * Creates the selector for workspaces
 	 *
-	 * @return string Live search form HTML
+	 * @return string Workspace selector as HTML select
 	 */
-	public function getItem() {
+	public function render() {
+		$this->backendReference->addJavascriptFile('sysext/backend/Resources/Public/JavaScript/livesearch.js');
+
 		return '
 			<form class="navbar-form" role="search">
 				<div class="live-search-wrapper">
@@ -69,11 +76,32 @@ class LiveSearchToolbarItem implements ToolbarItemInterface {
 	}
 
 	/**
-	 * This item needs to additional attributes
+	 * Returns additional attributes for the list item in the toolbar
+	 *
+	 * This should not contain the "class" or "id" attribute.
+	 * Use the methods for setting these attributes
+	 *
+	 * @return string List item HTML attibutes
+	 */
+	public function getAdditionalAttributes() {
+		return '';
+	}
+
+	/**
+	 * Return attribute id name
+	 *
+	 * @return string The name of the ID attribute
+	 */
+	public function getIdAttribute() {
+		return 'livesearch-menu';
+	}
+
+	/**
+	 * Returns extra classes
 	 *
 	 * @return array
 	 */
-	public function getAdditionalAttributes() {
+	public function getExtraClasses() {
 		return array();
 	}
 
@@ -87,32 +115,12 @@ class LiveSearchToolbarItem implements ToolbarItemInterface {
 	}
 
 	/**
-	 * No drop down here
-	 *
-	 * @return string
-	 */
-	public function getDropDown() {
-		return '';
-	}
-
-	/**
 	 * Position relative to others, live search should be very right
 	 *
 	 * @return int
 	 */
 	public function getIndex() {
 		return 90;
-	}
-
-	/**
-	 * Returns current PageRenderer
-	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
-	 */
-	protected function getPageRenderer() {
-		/** @var  \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
-		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
-		return $documentTemplate->getPageRenderer();
 	}
 
 }
