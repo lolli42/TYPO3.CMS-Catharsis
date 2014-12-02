@@ -16,16 +16,20 @@ This default configuration establishes default settings in Page
 TSconfig for RTE content transformation.
 
 For documentation of RTE tranformations, see:
-:ref:`RTE tranformations <t3api:transformations>`
+`http://docs.typo3.org/typo3cms/CoreApiReference/Rte/Transformations/Index.html
+<http://docs.typo3.org/typo3cms/CoreApiReference/Rte/Transformations/Index.html>`_
 
 For documentation of Page TSconfig configuration of RTE processing, see:
-:ref:`RTE tranformations Page TSconfig <t3api:transformations-tsconfig>`
+`http://docs.typo3.org/typo3cms/CoreApiReference/Rte/Transformations/Tsconfig/Index.html
+<http://docs.typo3.org/typo3cms/CoreApiReference/Rte/Transformations/Tsconfig/Index.html>`_
 
 For documentation of the HTMLparser, see:
-:ref:`TypoScript HTMLparser <t3tsref:htmlparser>`
+`http://docs.typo3.org/typo3cms/TyposcriptReference/Functions/Htmlparser/Index.html
+<http://docs.typo3.org/typo3cms/TyposcriptReference/Functions/Htmlparser/Index.html>`_
 
 For documentation of RTE settings in TCA, see:
-:ref:`Special Configuration Options <t3tca:special-configuration-options>`
+`http://docs.typo3.org/typo3cms/TCAReference/AdditionalFeatures/SpecialConfigurationOptions/Index.html
+<http://docs.typo3.org/typo3cms/TCAReference/AdditionalFeatures/SpecialConfigurationOptions/Index.html>`_
 
 
 .. _default-configuration-page-tsconfig:
