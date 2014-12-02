@@ -12,7 +12,13 @@
 	{warningMessages -> f:format.raw()}
 
 	<f:for each="{modules}" as="mainModule">
-        <h2>{mainModule.label}</h2>
+		<tr>
+			<td colspan="3">
+				<h2>
+					{mainModule.label}
+				</h2>
+			</td>
+		</tr>
 
 		<f:for each="{mainModule.subModules}" as="subModule" iteration="subModuleIterator">
 			<div class="media">
