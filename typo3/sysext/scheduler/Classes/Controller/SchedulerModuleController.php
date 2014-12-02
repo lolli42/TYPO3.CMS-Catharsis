@@ -425,9 +425,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 */
 	protected function renderTaskProgressBar($progress) {
 		$progressText = $GLOBALS['LANG']->getLL('status.progress') . ':&nbsp;' . $progress . '%';
-		return '<div class="progress">'
-			. '<div class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' . $progress . '" aria-valuemin="0" aria-valuemax="100" style="width: ' . $progress . '%;">' . $progressText . '</div>'
-			. '</div>';
+		return '<div class="progress"> <div class="bar" style="width: ' . $progress . '%;">' . $progressText . '</div> </div>';
 	}
 
 	/**
@@ -953,14 +951,14 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
 					if ($this->scheduler->isValidTaskObject($task)) {
 						// The task object is valid
-						$name = '<div class="title">' . htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')') . '</div>';
+						$name = htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')');
 						$additionalInformation = $task->getAdditionalInformation();
 						if ($task instanceof \TYPO3\CMS\Scheduler\ProgressProviderInterface) {
 							$progress = round(floatval($task->getProgress()), 2);
-							$name .= $this->renderTaskProgressBar($progress);
+							$name .= '<br />' . $this->renderTaskProgressBar($progress);
 						}
 						if (!empty($additionalInformation)) {
-							$name .= '<div class="additional-information">[' . htmlspecialchars($additionalInformation) . ']</div>';
+							$name .= '<br />[' . htmlspecialchars($additionalInformation) . ']';
 						}
 						// Check if task currently has a running execution
 						if (!empty($schedulerRecord['serialized_executions'])) {
