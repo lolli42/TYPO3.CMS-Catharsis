@@ -2736,23 +2736,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					)
 				)
 			),
-			'Relative path old-style' => array(
-				'http://localhost/fileadmin/dummy.txt',
-				'/fileadmin/dummy.txt',
-				array(
-					'forceAbsoluteUrl' => '1',
-				)
-			),
-			'Relative path' => array(
-				'http://localhost/fileadmin/dummy.txt',
-				'fileadmin/dummy.txt',
-				array(
-					'forceAbsoluteUrl' => '1',
-				)
-			),
-			'Scheme can be forced with pseudo-relative path' => array(
+			'Scheme can be forced with relative path' => array(
 				'typo3://localhost/fileadmin/dummy.txt',
-				'/fileadmin/dummy.txt',
+				'/fileadmin/dummy.txt', // this leading slash is weird, but we need it to really get an absolute link
 				array(
 					'forceAbsoluteUrl' => '1',
 					'forceAbsoluteUrl.' => array(
@@ -2760,23 +2746,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					)
 				)
 			),
-			'Hostname only is not treated as valid absolute URL' => array(
-				'http://localhost/example.org',
-				'example.org',
-				array(
-					'forceAbsoluteUrl' => '1'
-				)
-			),
-			'Scheme and host is added to local file path' => array(
-				'typo3://localhost/fileadmin/my.pdf',
-				'fileadmin/my.pdf',
-				array(
-					'forceAbsoluteUrl' => '1',
-					'forceAbsoluteUrl.' => array(
-						'scheme' => 'typo3'
-					)
-				)
-			)
 		);
 	}
 
