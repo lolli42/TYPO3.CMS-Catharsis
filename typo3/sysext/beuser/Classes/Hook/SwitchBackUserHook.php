@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Beuser\Hook;
  */
 
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\HttpUtility;
 
 /**
  * Backend user switchback, for logoff_pre_processing hook within
@@ -39,10 +37,10 @@ class SwitchBackUserHook {
 	 */
 	public function switchBack($params, AbstractUserAuthentication $authentication) {
 		if ($this->isAHandledBackendSession($authentication)) {
-			$objectManager = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
+			$objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
 			$backendUserSessionRepository = $objectManager->get('TYPO3\\CMS\\Beuser\\Domain\\Repository\\BackendUserSessionRepository');
 			$backendUserSessionRepository->switchBackToOriginalUser($authentication);
-			HttpUtility::redirect($GLOBALS['BACK_PATH'] . 'backend.php');
+			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($GLOBALS['BACK_PATH'] . 'backend.php');
 		}
 	}
 

@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Beuser\Controller;
+namespace TYPO3\CMS\Perm\Controller;
 
 /**
  * This file is part of the TYPO3 CMS project.
@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Beuser\Controller;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
-use TYPO3\CMS\Core\Http\AjaxRequestHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -37,7 +35,7 @@ class PermissionAjaxController {
 	 * The constructor of this class
 	 */
 	public function __construct() {
-		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_mod_web_perm.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_mod_web_perm.xlf');
 		// Configuration, variable assignment
 		$this->conf['page'] = GeneralUtility::_POST('page');
 		$this->conf['who'] = GeneralUtility::_POST('who');
@@ -64,16 +62,16 @@ class PermissionAjaxController {
 	 * The main dispatcher function. Collect data and prepare HTML output.
 	 *
 	 * @param array $params array of parameters from the AJAX interface, currently unused
-	 * @param AjaxRequestHandler $ajaxObj object of type AjaxRequestHandler
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj object of type AjaxRequestHandler
 	 * @return void
 	 */
-	public function dispatch($params = array(), AjaxRequestHandler $ajaxObj = NULL) {
+	public function dispatch($params = array(), \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj = NULL) {
 		$content = '';
 		// Basic test for required value
 		if ($this->conf['page'] > 0) {
 			// Init TCE for execution of update
 			/** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
-			$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
+			$tce = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 			$tce->stripslashes_values = 1;
 			// Determine the scripts to execute
 			switch ($this->conf['action']) {
@@ -164,8 +162,8 @@ class PermissionAjaxController {
 		$elementId = 'o_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_owner" id="new_page_owner">' . $options . '</select>';
-		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
-		$cancelButton = '<a class="restoreowner" data-page="' . $page . '"  data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '"' . (!empty($username) ? ' data-username="' . htmlspecialchars($username) . '"' : '') . ' title="Cancel">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-save') . '</a>';
+		$cancelButton = '<a class="restoreowner" data-page="' . $page . '"  data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '"' . (!empty($username) ? ' data-username="' . htmlspecialchars($username) . '"' : '') . ' title="Cancel">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-close') . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
 
@@ -182,7 +180,7 @@ class PermissionAjaxController {
 		$beGroups = BackendUtility::getListGroupNames('title,uid');
 		$beGroupKeys = array_keys($beGroups);
 		$beGroupsO = ($beGroups = BackendUtility::getGroupNames());
-		if (!$this->getBackendUser()->isAdmin()) {
+		if (!$GLOBALS['BE_USER']->isAdmin()) {
 			$beGroups = BackendUtility::blindGroupNames($beGroupsO, $beGroupKeys, 1);
 		}
 		// Group selector:
@@ -201,14 +199,13 @@ class PermissionAjaxController {
 		}
 		// If the group was not set AND there is a group for the page
 		if (!$userset && $groupUid) {
-			$options = '<option value="' . $groupUid . '" selected="selected">' .
-				htmlspecialchars($beGroupsO[$groupUid]['title']) . '</option>' . $options;
+			$options = '<option value="' . $groupUid . '" selected="selected">' . htmlspecialchars($beGroupsO[$groupUid]['title']) . '</option>' . $options;
 		}
 		$elementId = 'g_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_group" id="new_page_group">' . $options . '</select>';
-		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
-		$cancelButton = '<a class="restoregroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '"' . (!empty($groupname) ? ' data-groupname="' . htmlspecialchars($groupname) . '"' : '') . ' title="Cancel">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-save') . '</a>';
+		$cancelButton = '<a class="restoregroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '"' . (!empty($groupname) ? ' data-groupname="' . htmlspecialchars($groupname) . '"' : '') . ' title="Cancel">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-close') . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
 
@@ -249,7 +246,7 @@ class PermissionAjaxController {
 	 */
 	protected function renderToggleEditLock($page, $editLockState) {
 		if ($editLockState === 1) {
-			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . (int)$page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . IconUtility::getSpriteIcon('status-warning-lock') . '</a></span>';
+			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . (int)$page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-warning-lock') . '</a></span>';
 		} else {
 			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . (int)$page . '" data-lockstate="0" title="Enable the &raquo;Admin-only&laquo; edit lock for this page">[+]</a></span>';
 		}
@@ -269,7 +266,7 @@ class PermissionAjaxController {
 		$permissions = array(1, 16, 2, 4, 8);
 		foreach ($permissions as $permission) {
 			if ($int & $permission) {
-				$str .= IconUtility::getSpriteIcon('status-status-permission-granted', array(
+				$str .= \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-permission-granted', array(
 					'title' => $GLOBALS['LANG']->getLL($permission, TRUE),
 					'class' => 'change-permission',
 					'data-page' => $pageId,
@@ -280,7 +277,7 @@ class PermissionAjaxController {
 					'style' => 'cursor:pointer'
 				));
 			} else {
-				$str .= IconUtility::getSpriteIcon('status-status-permission-denied', array(
+				$str .= \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-permission-denied', array(
 					'title' => $GLOBALS['LANG']->getLL($permission, TRUE),
 					'class' => 'change-permission',
 					'data-page' => $pageId,
@@ -295,17 +292,4 @@ class PermissionAjaxController {
 		return '<span id="' . $pageId . '_' . $who . '">' . $str . '</span>';
 	}
 
-	/**
-	 * @return \TYPO3\CMS\Lang\LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
-	/**
-	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-	 */
-	protected function getBackendUser() {
-		return $GLOBALS['BE_USER'];
-	}
 }
