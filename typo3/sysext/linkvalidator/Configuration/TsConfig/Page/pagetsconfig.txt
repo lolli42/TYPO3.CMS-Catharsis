@@ -14,5 +14,4 @@ mod.linkvalidator {
 		replytoemail =
 		subject = TYPO3 Linkvalidator report
 	}
-	linkhandler.reportHiddenRecords = 0
 }
