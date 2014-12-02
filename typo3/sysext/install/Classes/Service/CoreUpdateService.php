@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Install\Service;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\OpcodeCacheUtility;
 
 /**
  * Core update service.
@@ -432,9 +431,7 @@ class CoreUpdateService {
 				$messages[] = $message;
 			} else {
 				$symlinkResult = symlink($newCoreLocation, $this->currentCoreLocation);
-				if ($symlinkResult) {
-					OpcodeCacheUtility::clearAllActive();
-				} else {
+				if (!$symlinkResult) {
 					$success = FALSE;
 					/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
 					$message = $this->objectManager->get('TYPO3\\CMS\\Install\\Status\\ErrorStatus');
