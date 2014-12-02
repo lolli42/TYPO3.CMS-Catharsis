@@ -26,7 +26,7 @@ class FramesetRenderer {
 	 *
 	 * @param array $setup The TypoScript properties of the PAGE object property "frameSet.". See link.
 	 * @return string A <frameset> tag.
-	 * @see \TYPO3\CMS\Frontend\Page\PageGenerator::renderContentWithHeader()
+	 * @see TSpagegen::renderContentWithHeader()
 	 */
 	public function make($setup) {
 		$content = '';
