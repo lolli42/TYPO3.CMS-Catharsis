@@ -483,7 +483,7 @@ class Clipboard {
 		if ($el) {
 			return '<strong>' . $str . '</strong> (' . ($pad == 'normal' ? ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) : htmlspecialchars($el)) . ')';
 		} else {
-			return '<span class="text-muted">' . $str . '</span>';
+			return $GLOBALS['TBE_TEMPLATE']->dfw($str);
 		}
 	}
 
@@ -498,13 +498,13 @@ class Clipboard {
 	public function linkItemText($str, $rec, $table = '') {
 		if (is_array($rec) && $table) {
 			if ($this->fileMode) {
-				$str = '<span class="text-muted">' . $str . '</span>';
+				$str = $GLOBALS['TBE_TEMPLATE']->dfw($str);
 			} else {
 				$str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', array('id' => $rec['pid']), $this->backPath)) . '">' . $str . '</a>';
 			}
 		} elseif (file_exists($rec)) {
 			if (!$this->fileMode) {
-				$str = '<span class="text-muted">' . $str . '</span>';
+				$str = $GLOBALS['TBE_TEMPLATE']->dfw($str);
 			} else {
 				if (ExtensionManagementUtility::isLoaded('filelist')) {
 					$str = '<a href="' . htmlspecialchars(($this->backPath . BackendUtility::getModuleUrl('file_list') . '&id=' . dirname($rec))) . '">' . $str . '</a>';

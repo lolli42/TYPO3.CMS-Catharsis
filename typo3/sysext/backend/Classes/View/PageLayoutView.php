@@ -1073,7 +1073,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			// Wrap in dimmed-span tags if record is "disabled"
 			if ($this->isDisabled($table, $row)) {
-				$out[$fieldName] = '<span class="text-muted">' . $out[$fieldName] . '</span>';
+				$out[$fieldName] = $this->getDocumentTemplate()->dfw($out[$fieldName]);
 			}
 		}
 		return $out;
@@ -1615,7 +1615,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		}
 		// Return values:
 		if ($this->isDisabled('tt_content', $row)) {
-			return '<span class="text-muted">' . $out . '</span>';
+			return $this->getDocumentTemplate()->dfw($out);
 		} else {
 			return $out;
 		}
