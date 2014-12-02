@@ -187,12 +187,20 @@ class SelectElement extends AbstractFormElement {
 					', $opt) . '
 				</select>';
 
-			// enable filter functionality via a text field
-			if ($config['enableMultiSelectFilterTextfield']) {
-				$filterTextfield = '<span class="input-group"><span class="input-group-addon"><span class="fa fa-filter"></span></span><input class="t3-form-multiselect-filter-textfield form-control" value="" /></span>';
+			if ($config['enableMultiSelectFilterTextfield'] || $config['multiSelectFilterItems']) {
+				$this->formEngine->multiSelectFilterCount++;
+				$jsSelectBoxFilterName = str_replace(' ', '', ucwords(str_replace('-', ' ', GeneralUtility::strtolower($multiSelectId))));
+				$this->formEngine->additionalJS_post[] = '
+					var ' . $jsSelectBoxFilterName . ' = new TCEForms.SelectBoxFilter("' . $multiSelectId . '");
+				';
 			}
 
-			// enable filter functionality via a select
+			if ($config['enableMultiSelectFilterTextfield']) {
+				// add input field for filter
+				$filterTextfield = '<input class="typo3-TCEforms-suggest-search typo3-TCEforms-multiselect-filter" id="'
+					. $multiSelectId . '_filtertextfield" value="" style="width: 104px;" />';
+			}
+
 			if (isset($config['multiSelectFilterItems']) && is_array($config['multiSelectFilterItems']) && count($config['multiSelectFilterItems']) > 1) {
 				$filterDropDownOptions = array();
 				foreach ($config['multiSelectFilterItems'] as $optionElement) {
@@ -201,18 +209,13 @@ class SelectElement extends AbstractFormElement {
 					$filterDropDownOptions[] = '<option value="' . htmlspecialchars($this->formEngine->sL($optionElement[0])) . '">'
 						. htmlspecialchars($optionValue) . '</option>';
 				}
-				$filterSelectbox = '<select class="t3-form-multiselect-filter-dropdown form-control">
+				$filterSelectbox = '
+					<select id="' . $multiSelectId . '_filterdropdown">
 						' . implode('
 						', $filterDropDownOptions) . '
 					</select>';
 			}
 		}
-
-		$selectBoxFilterContents = trim($filterSelectbox . $filterTextfield);
-		if (!empty($selectBoxFilterContents)) {
-			$selectBoxFilterContents = '<div class="form-inline"><div class="t3-form-multiselect-filter-container form-group-sm pull-right">' . $selectBoxFilterContents . '</div></div>';
-		}
-
 		// Pass to "dbFileIcons" function:
 		$params = array(
 			'size' => $size,
@@ -225,7 +228,7 @@ class SelectElement extends AbstractFormElement {
 			'info' => '',
 			'headers' => array(
 				'selector' => $this->formEngine->getLL('l_selected') . ':<br />',
-				'items' => '<div class="pull-left">' . $this->formEngine->getLL('l_items') . ':</div>' . $selectBoxFilterContents
+				'items' => $this->formEngine->getLL('l_items') . ': ' . $filterSelectbox . $filterTextfield . '<br />'
 			),
 			'noBrowser' => 1,
 			'thumbnails' => $itemsToSelect,
