@@ -163,6 +163,23 @@ interface QuerySettingsInterface {
 	public function getIncludeDeleted();
 
 	/**
+	 * Sets the state, if the QueryResult should be returned unmapped.
+	 *
+	 * @param bool $returnRawQueryResult TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
+	 * @return void
+	 * @deprecated since Extbase 6.2, will be removed two versions later
+	 */
+	public function setReturnRawQueryResult($returnRawQueryResult);
+
+	/**
+	 * Returns the state, if the QueryResult should be returned unmapped.
+	 *
+	 * @return bool TRUE, if the QueryResult should be returned unmapped; otherwise FALSE.
+	 * @deprecated since Extbase 6.2, will be removed two versions later
+	 */
+	public function getReturnRawQueryResult();
+
+	/**
 	 * @return bool
 	 */
 	public function getUseQueryCache();

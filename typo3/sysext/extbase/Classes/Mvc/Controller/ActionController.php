@@ -13,11 +13,9 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
-use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extbase\Mvc\Web\Request as WebRequest;
-use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 use TYPO3\CMS\Extbase\Validation\Validator\AbstractCompositeValidator;
 
 /**
@@ -46,6 +44,16 @@ class ActionController extends AbstractController {
 	 * @api
 	 */
 	protected $view = NULL;
+
+	/**
+	 * Pattern after which the view object name is built if no Fluid template
+	 * is found.
+	 *
+	 * @var string
+	 * @api
+	 * @deprecated since Extbase 6.2, will be removed two versions later
+	 */
+	protected $viewObjectNamePattern = 'Tx_@extension_View_@controller_@action@format';
 
 	/**
 	 * @var string
@@ -354,8 +362,9 @@ class ActionController extends AbstractController {
 		// set TemplateRootPaths
 		$viewFunctionName = 'setTemplateRootPaths';
 		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'templateRootPath';
 			$setting = 'templateRootPaths';
-			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting);
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
 			// no need to bother if there is nothing to set
 			if ($parameter) {
 				$view->$viewFunctionName($parameter);
@@ -365,8 +374,9 @@ class ActionController extends AbstractController {
 		// set LayoutRootPaths
 		$viewFunctionName = 'setLayoutRootPaths';
 		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'layoutRootPath';
 			$setting = 'layoutRootPaths';
-			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting);
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
 			// no need to bother if there is nothing to set
 			if ($parameter) {
 				$view->$viewFunctionName($parameter);
@@ -376,8 +386,9 @@ class ActionController extends AbstractController {
 		// set PartialRootPaths
 		$viewFunctionName = 'setPartialRootPaths';
 		if (method_exists($view, $viewFunctionName)) {
+			$deprecatedSetting = 'partialRootPath';
 			$setting = 'partialRootPaths';
-			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting);
+			$parameter = $this->getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting);
 			// no need to bother if there is nothing to set
 			if ($parameter) {
 				$view->$viewFunctionName($parameter);
@@ -387,22 +398,35 @@ class ActionController extends AbstractController {
 
 	/**
 	 * Handles the path resolving for *rootPath(s)
+	 * singular one is deprecated and will be removed two versions after 6.2
+	 * if deprecated setting is found, use it as the very last fallback target
 	 *
 	 * numerical arrays get ordered by key ascending
 	 *
 	 * @param array $extbaseFrameworkConfiguration
 	 * @param string $setting parameter name from TypoScript
+	 * @param string $deprecatedSetting parameter name from TypoScript
 	 *
 	 * @return array
 	 */
-	protected function getViewProperty($extbaseFrameworkConfiguration, $setting) {
+	protected function getViewProperty($extbaseFrameworkConfiguration, $setting, $deprecatedSetting = '') {
+
 		$values = array();
+
 		if (
 			!empty($extbaseFrameworkConfiguration['view'][$setting])
 			&& is_array($extbaseFrameworkConfiguration['view'][$setting])
 		) {
-			$values = ArrayUtility::sortArrayWithIntegerKeys($extbaseFrameworkConfiguration['view'][$setting]);
+			$values = \TYPO3\CMS\Extbase\Utility\ArrayUtility::sortArrayWithIntegerKeys($extbaseFrameworkConfiguration['view'][$setting]);
 			$values = array_reverse($values, TRUE);
+		}
+
+		// @todo remove handling of deprecatedSetting two versions after 6.2
+		if (
+			isset($extbaseFrameworkConfiguration['view'][$deprecatedSetting])
+			&& strlen($extbaseFrameworkConfiguration['view'][$deprecatedSetting]) > 0
+		) {
+			$values[] = $extbaseFrameworkConfiguration['view'][$deprecatedSetting];
 		}
 
 		return $values;
@@ -416,24 +440,25 @@ class ActionController extends AbstractController {
 	 */
 	protected function resolveViewObjectName() {
 		$vendorName = $this->request->getControllerVendorName();
-		if ($vendorName === NULL) {
-			return FALSE;
+
+		if ($vendorName !== NULL) {
+			$possibleViewName = str_replace('@vendor', $vendorName, $this->namespacesViewObjectNamePattern);
+		} else {
+			$possibleViewName = $this->viewObjectNamePattern;
 		}
 
 		$possibleViewName = str_replace(
 			array(
-				'@vendor',
 				'@extension',
 				'@controller',
 				'@action'
 			),
 			array(
-				$vendorName,
 				$this->request->getControllerExtensionName(),
 				$this->request->getControllerName(),
 				ucfirst($this->request->getControllerActionName())
 			),
-			$this->namespacesViewObjectNamePattern
+			$possibleViewName
 		);
 		$format = $this->request->getFormat();
 		$viewObjectName = str_replace('@format', ucfirst($format), $possibleViewName);
@@ -489,10 +514,10 @@ class ActionController extends AbstractController {
 		$this->clearCacheOnError();
 		$errorFlashMessage = $this->getErrorFlashMessage();
 		if ($errorFlashMessage !== FALSE) {
-			$errorFlashMessageObject = new FlashMessage(
+			$errorFlashMessageObject = new \TYPO3\CMS\Core\Messaging\FlashMessage(
 				$errorFlashMessage,
 				'',
-				FlashMessage::ERROR
+				\TYPO3\CMS\Core\Messaging\FlashMessage::ERROR
 			);
 			$this->controllerContext->getFlashMessageQueue()->enqueue($errorFlashMessageObject);
 		}
