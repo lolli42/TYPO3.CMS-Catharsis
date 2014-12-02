@@ -310,16 +310,17 @@ class Locker {
 		if ($this->isAcquired) {
 			return TRUE;
 		}
+		$isAcquired = FALSE;
 		if ($this->method === self::LOCKING_METHOD_FLOCK) {
 			$this->filePointer = fopen($this->resource, 'c');
 			if ($this->filePointer === FALSE) {
 				throw new \RuntimeException('Lock file could not be opened', 1294586099);
 			}
 			if (flock($this->filePointer, LOCK_SH)) {
-				$this->isAcquired = TRUE;
+				$isAcquired = TRUE;
 			}
 		}
-		return $this->isAcquired;
+		return $isAcquired;
 	}
 
 	/**
