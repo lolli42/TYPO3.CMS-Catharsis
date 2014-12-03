@@ -1,15 +1,16 @@
 language: php
 
+php:
+  - 5.5
+  - 5.6
+  - hhvm-nightly
+
 matrix:
   allow_failures:
     - php: hhvm-nightly
-  include:
-    - php: 5.5
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
-    - php: 5.6
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
-    - php: hhvm-nightly
-      env: UNIT_TESTS=yes
+
+env:
+  - DB=mysql
 
 services:
   - memcached
@@ -25,19 +26,18 @@ notifications:
 before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - chmod a+x typo3/sysext/core/Build/Scripts/*
   - sudo apt-get install parallel
   - composer self-update
   - composer install
 
 script:
   - >
-    if [[ "$UNIT_TESTS" == "yes" ]]; then
-      echo;
-      echo "Running unit tests";
-      ./bin/phpunit --colors -c typo3/sysext/core/Build/UnitTests.xml
-    fi
+    echo;
+    echo "Running unit tests";
+    ./bin/phpunit --colors -c typo3/sysext/core/Build/UnitTests.xml
   - >
-    if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
+    if [[ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]]; then
         echo;
         export typo3DatabaseName="typo3";
         export typo3DatabaseHost="localhost";
@@ -46,7 +46,7 @@ script:
         find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
-    if [[ "$PHP_LINT" == "yes" ]]; then
+    if [[ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]]; then
         echo;
         echo "Running php lint";
         /bin/bash -c "
@@ -57,7 +57,7 @@ script:
         "
     fi
   - >
-    if [[ "$XLF_CHECK" == "yes" ]]; then
+    if [[ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]]; then
         echo;
         echo "Running XLF checker";
         ./typo3/sysext/core/Build/Scripts/xlfcheck.sh
