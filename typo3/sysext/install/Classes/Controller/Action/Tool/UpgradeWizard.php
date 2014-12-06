@@ -103,12 +103,15 @@ class UpgradeWizard extends Action\AbstractAction {
 					'explanation' => $explanation,
 					'renderNext' => FALSE,
 				);
-				if ($identifier === 'initialUpdateDatabaseSchema') {
-					$availableUpdates['initialUpdateDatabaseSchema']['renderNext'] = $this->needsInitialUpdateDatabaseSchema;
-				} elseif ($identifier === 'finalUpdateDatabaseSchema') {
-					// Okay to check here because finalUpdateDatabaseSchema is last element in array
-					$availableUpdates['finalUpdateDatabaseSchema']['renderNext'] = count($availableUpdates) === 1;
-				} elseif (!$this->needsInitialUpdateDatabaseSchema && $updateObject->shouldRenderNextButton()) {
+// hack to always show execute for wizards
+// @TODO: make sqlschemaparser constraint aware ...
+//				if ($identifier === 'initialUpdateDatabaseSchema') {
+//					$availableUpdates['initialUpdateDatabaseSchema']['renderNext'] = $this->needsInitialUpdateDatabaseSchema;
+//				} elseif ($identifier === 'finalUpdateDatabaseSchema') {
+//					// Okay to check here because finalUpdateDatabaseSchema is last element in array
+//					$availableUpdates['finalUpdateDatabaseSchema']['renderNext'] = count($availableUpdates) === 1;
+//				} elseif (!$this->needsInitialUpdateDatabaseSchema && $updateObject->shouldRenderNextButton()) {
+				if ($updateObject->shouldRenderNextButton()) {
 					// There are Updates that only show text and don't want to be executed
 					$availableUpdates[$identifier]['renderNext'] = TRUE;
 				}

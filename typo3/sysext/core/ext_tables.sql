@@ -184,6 +184,18 @@ CREATE TABLE pages (
 );
 
 #
+# Table structure for table 'pages_closure'
+# TODO: keys, default 0 on depth?
+CREATE TABLE pages_closure (
+  ancestor int(11) NOT NULL,
+  descendant int(11) NOT NULL,
+  depth tinyint NOT NULL,
+  PRIMARY KEY (ancestor,descendant),
+  CONSTRAINT FOREIGN KEY(ancestor) REFERENCES pages(uid),
+  CONSTRAINT FOREIGN KEY(descendant) REFERENCES pages(uid)
+);
+
+#
 # Table structure for table 'sys_registry'
 #
 CREATE TABLE sys_registry (
