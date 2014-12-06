@@ -185,7 +185,8 @@ CREATE TABLE pages (
 
 #
 # Table structure for table 'pages_closure'
-# TODO: keys, default 0 on depth?
+# TODO: keys, default 0 on depth, constraints lets functionals fail
+#
 CREATE TABLE pages_closure (
   ancestor int(11) NOT NULL,
   descendant int(11) NOT NULL,

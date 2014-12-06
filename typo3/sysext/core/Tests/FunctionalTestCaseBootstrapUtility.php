@@ -493,7 +493,11 @@ class FunctionalTestCaseBootstrapUtility {
 		$database->setDatabaseName($this->databaseName);
 		$database->sql_select_db();
 		foreach ($database->admin_get_tables() as $table) {
+			// Straight hack to truncate even if constraints point to the to-truncate-table
+			// https://stackoverflow.com/questions/5452760/truncate-foreign-key-constrained-table
+			$database->admin_query('SET FOREIGN_KEY_CHECKS = 0;');
 			$database->admin_query('TRUNCATE ' . $table['Name'] . ';');
+			$database->admin_query('SET FOREIGN_KEY_CHECKS = 1');
 		}
 	}
 

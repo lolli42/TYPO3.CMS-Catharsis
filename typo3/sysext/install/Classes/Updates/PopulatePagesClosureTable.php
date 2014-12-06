@@ -68,7 +68,6 @@ class PopulatePagesClosureTable extends AbstractDatabaseSchemaUpdate {
 					'depth' => $depth,
 				);
 			}
-			// Insert reference to self
 			$database->exec_INSERTmultipleRows(
 				'pages_closure',
 				array('ancestor', 'descendant', 'depth'),
