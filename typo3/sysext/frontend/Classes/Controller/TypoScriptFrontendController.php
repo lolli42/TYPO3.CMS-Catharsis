@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Frontend\Controller;
 use TYPO3\CMS\Core\Error\Http\PageNotFoundException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -567,8 +568,7 @@ class TypoScriptFrontendController {
 
 	/**
 	 * Is set to the iso code of the sys_language_content if that is properly defined
-	 * by the sys_language record representing the sys_language_uid. (Requires the
-	 * extension "static_info_tables")
+	 * by the sys_language record representing the sys_language_uid.
 	 * @var string
 	 */
 	public $sys_language_isocode = '';
@@ -1048,7 +1048,7 @@ class TypoScriptFrontendController {
 			$this->gr_list .= ',' . implode(',', $gr_array);
 		}
 		if ($this->fe_user->writeDevLog) {
-			GeneralUtility::devLog('Valid usergroups for TSFE: ' . $this->gr_list, 'TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController');
+			GeneralUtility::devLog('Valid usergroups for TSFE: ' . $this->gr_list, \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class);
 		}
 	}
 
@@ -1495,7 +1495,7 @@ class TypoScriptFrontendController {
 		// If the page is a mountpoint which should be overlaid with the contents of the mounted page,
 		// it must never be accessible directly, but only in the mountpoint context. Therefore we change
 		// the current ID and the user is redirected by checkPageForMountpointRedirect().
-		if ($this->page['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT && $this->page['mount_pid_ol']) {
+		if ($this->page['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT && $this->page['mount_pid_ol']) {
 			$this->originalMountPointPage = $this->page;
 			$this->page = $this->sys_page->getPage($this->page['mount_pid']);
 			if (empty($this->page)) {
@@ -2558,17 +2558,38 @@ class TypoScriptFrontendController {
 			$this->pageNotFoundAndExit($message);
 		}
 		$this->updateRootLinesWithTranslations();
-		// Finding the ISO code:
-		if (\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables') && $this->sys_language_content) {
+
+		// Finding the ISO code for the currently selected language
+		// fetched by the sys_language record when not fetching content from the default language
+		if ($this->sys_language_content > 0) {
 			// using sys_language_content because the ISO code only (currently) affect content selection from FlexForms - which should follow "sys_language_content"
 			// Set the fourth parameter to TRUE in the next two getRawRecord() calls to
 			// avoid versioning overlay to be applied as it generates an SQL error
-			$sys_language_row = $this->sys_page->getRawRecord('sys_language', $this->sys_language_content, 'static_lang_isocode', TRUE);
-			if (is_array($sys_language_row) && $sys_language_row['static_lang_isocode']) {
-				$stLrow = $this->sys_page->getRawRecord('static_languages', $sys_language_row['static_lang_isocode'], 'lg_iso_2', TRUE);
-				$this->sys_language_isocode = $stLrow['lg_iso_2'];
+			$sys_language_row = $this->sys_page->getRawRecord('sys_language', $this->sys_language_content, 'language_isocode,static_lang_isocode', TRUE);
+			if (is_array($sys_language_row)) {
+				if (!empty($sys_language_row['language_isocode'])) {
+					$this->sys_language_isocode = $sys_language_row['language_isocode'];
+				} elseif ($sys_language_row['static_lang_isocode'] && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('static_info_tables')) {
+					GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
+					$stLrow = $this->sys_page->getRawRecord('static_languages', $sys_language_row['static_lang_isocode'], 'lg_iso_2', TRUE);
+					$this->sys_language_isocode = $stLrow['lg_iso_2'];
+				}
+			}
+			// the DB value is overriden by TypoScript
+			if (!empty($this->config['config']['sys_language_isocode'])) {
+				$this->sys_language_isocode = $this->config['config']['sys_language_isocode'];
+			}
+		} else {
+			// fallback to the TypoScript option when rendering with sys_language_uid=0
+			// also: use "en" by default
+			if (!empty($this->config['config']['sys_language_isocode_default'])) {
+				$this->sys_language_isocode = $this->config['config']['sys_language_isocode_default'];
+			} else {
+				$this->sys_language_isocode = $this->lang != 'default' ? $this->lang : 'en';
 			}
 		}
+
+
 		// Setting softMergeIfNotBlank:
 		$table_fields = GeneralUtility::trimExplode(',', $this->config['config']['sys_language_softMergeIfNotBlank'], TRUE);
 		foreach ($table_fields as $TF) {
@@ -2968,7 +2989,7 @@ class TypoScriptFrontendController {
 	 * @return void
 	 */
 	public function checkPageForMountpointRedirect() {
-		if (!empty($this->originalMountPointPage) && $this->originalMountPointPage['doktype'] === PageRepository::DOKTYPE_MOUNTPOINT) {
+		if (!empty($this->originalMountPointPage) && $this->originalMountPointPage['doktype'] == PageRepository::DOKTYPE_MOUNTPOINT) {
 			$this->redirectToCurrentPage();
 		}
 	}
@@ -3000,7 +3021,7 @@ class TypoScriptFrontendController {
 		$cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$parameter = $this->page['uid'];
 		$type = GeneralUtility::_GET('type');
-		if ($type) {
+		if ($type && MathUtility::canBeInterpretedAsInteger($type)) {
 			$parameter .= ',' . $type;
 		}
 		$redirectUrl = $cObj->typoLink_URL(array('parameter' => $parameter));

@@ -25,14 +25,14 @@
 	padding:0px 1px;
 	margin:0;
 }
-.editorWrap .resizable {
+.editorWrap .resizable .statusBar,
+.editorWrap .resizable .noStatusBar {
 	background-image: url("images/status/resizable.gif");
 	background-position: bottom right;
 	background-repeat: no-repeat;
 }
-.editorWrap div.resizable {
-	padding-right: 7px;
-	padding-bottom: 5px;
+.editorWrap .resizable .noStatusBar {
+	padding-bottom: 10px;
 }
 /* Selectors for the editor toolbar */
 .htmlarea .toolbar {
@@ -159,14 +159,13 @@
 }
 .htmlarea .editorIframe {
 	clear:both;
-	width:100%;
 	border:1px solid #c7c7c7;
 	border-bottom: none;
 	margin:0;
 	padding:0;
 }
-div.resizable .editorIframe {
-	margin-right: 7px !important;
+.editorWrap .resizable .editorIframe {
+	margin-bottom: -3px;
 }
 .htmlarea .noStatusBar {
 	border-bottom:1px solid #A2AAB8;
@@ -195,6 +194,7 @@ div.resizable .editorIframe {
 }
 .htmlarea .statusBar .statusBarWordCount {
 	float: right;
+	padding-right: 8px;
 }
 /* Selectors for dialogue windows */
 .htmlarea-window .x-panel-icon {
@@ -555,3 +555,27 @@ div.resizable .editorIframe {
 .htmlarea-action-unordered-list { background-position: 0 -4756px !important; }
 .htmlarea-action-user-element-edit { background-position: 0 -4814px !important; }
 .htmlarea-action-variable { background-position: 0 -4872px !important; }
+	
+/* ExtJs combo boxes */
+.x-combo-list {
+	border-color:#bcbcbc;
+	background-color:#eaeaea;
+}
+.x-combo-list-inner {
+	background-color:#fff;
+}
+.x-combo-list-hd {
+	color:#55545E;
+	background-image: url(images/panel-title-light-bg.gif);
+	border-bottom-color:#bcbcbc;
+}
+.x-combo-list-item {
+	border-color:#fff;
+}
+.x-combo-list .x-combo-selected {
+	border-color:#b9b9b9 !important;
+	background-color:#e7e7e7;
+}
+.x-combo-list .x-toolbar {
+	border-top-color:#bcbcbc;
+}

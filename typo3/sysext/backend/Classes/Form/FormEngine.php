@@ -662,11 +662,11 @@ class FormEngine {
 			'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly')
 		);
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
-		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], 'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement::') !== 0) {
+		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '::') !== 0) {
 			$this->inline = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InlineElement::class);
 		}
 		// Create instance of \TYPO3\CMS\Backend\Form\Element\SuggestElement only if this a non-Suggest-AJAX call:
-		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], 'TYPO3\\CMS\\Backend\\Form\\Element\\SuggestElement::') !== 0) {
+		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\SuggestElement::class . '::') !== 0) {
 			$this->suggest = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SuggestElement::class);
 		}
 		// Prepare user defined objects (if any) for hooks which extend this function:
@@ -2408,7 +2408,7 @@ class FormEngine {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'] as $classRef) {
 				$hookObject = GeneralUtility::getUserObj($classRef);
 				if (!$hookObject instanceof DatabaseFileIconsHookInterface) {
-					throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Backend\\Form\\DatabaseFileIconsHookInterface', 1290167704);
+					throw new \UnexpectedValueException('$hookObject must implement interface ' . \TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface::class, 1290167704);
 				}
 				$additionalParams = array(
 					'mode' => $mode,
@@ -4272,7 +4272,7 @@ class FormEngine {
 		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
 		// Find all language records in the system:
 		$db = $this->getDatabaseConnection();
-		$res = $db->exec_SELECTquery('static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
+		$res = $db->exec_SELECTquery('language_isocode,static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
 		// Traverse them:
 		$output = array();
 		if ($setDefault) {
@@ -4284,7 +4284,10 @@ class FormEngine {
 		}
 		while ($row = $db->sql_fetch_assoc($res)) {
 			$output[$row['uid']] = $row;
-			if ($isL && $row['static_lang_isocode']) {
+			if (!empty($row['language_isocode'])) {
+				$output[$row['uid']]['ISOcode'] = $row['language_isocode'];
+			} elseif ($isL && $row['static_lang_isocode']) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
 				$rr = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
 				if ($rr['lg_iso_2']) {
 					$output[$row['uid']]['ISOcode'] = $rr['lg_iso_2'];
@@ -4405,7 +4408,10 @@ class FormEngine {
 				foreach ($uids as $uid) {
 					if ($sys_language_rec = BackendUtility::getRecord('sys_language', $uid)) {
 						$this->cachedAdditionalPreviewLanguages[$uid] = array('uid' => $uid);
-						if ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
+						if (!empty($sys_language_rec['language_isocode'])) {
+							$this->cachedAdditionalPreviewLanguages[$uid]['ISOcode'] = $sys_language_rec['language_isocode'];
+						} elseif ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
+							\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
 							$staticLangRow = BackendUtility::getRecord('static_languages', $sys_language_rec['static_lang_isocode'], 'lg_iso_2');
 							if ($staticLangRow['lg_iso_2']) {
 								$this->cachedAdditionalPreviewLanguages[$uid]['uid'] = $uid;
