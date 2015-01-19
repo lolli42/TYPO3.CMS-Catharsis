@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Extbase\Mvc\Cli\CommandArgumentDefinition;
 
@@ -214,7 +215,7 @@ class CommandController implements CommandControllerInterface {
 		$originalRole = $this->ensureAdminRoleIfRequested();
 		$commandResult = call_user_func_array(array($this, $this->commandMethodName), $preparedArguments);
 		$this->restoreUserRole($originalRole);
-		if (is_string($commandResult) && strlen($commandResult) > 0) {
+		if (is_string($commandResult) && $commandResult !== '') {
 			$this->response->appendContent($commandResult);
 		} elseif (is_object($commandResult) && method_exists($commandResult, '__toString')) {
 			$this->response->appendContent((string)$commandResult);
@@ -299,4 +300,5 @@ class CommandController implements CommandControllerInterface {
 		$this->response->send();
 		die($exitCode);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Page;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Test case
  *
@@ -42,7 +43,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function isGetPageHookCalled() {
 		// Create a hook mock object
-		$className = uniqid('tx_coretest');
+		$className = $this->getUniqueId('tx_coretest');
 		$getPageHookMock = $this->getMock(\TYPO3\CMS\Frontend\Page\PageRepositoryGetPageHookInterface::class, array('getPage_preProcess'), array(), $className);
 		// Register hook mock object
 		$GLOBALS['T3_VAR']['getUserObj'][$className] = $getPageHookMock;
@@ -234,7 +235,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enableFieldsHidesVersionedRecordsAndPlaceholders() {
-		$table = uniqid('aTable');
+		$table = $this->getUniqueId('aTable');
 		$GLOBALS['TCA'] = array(
 			$table => array(
 				'ctrl' => array(
@@ -256,7 +257,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enableFieldsDoesNotHidePlaceholdersInPreview() {
-		$table = uniqid('aTable');
+		$table = $this->getUniqueId('aTable');
 		$GLOBALS['TCA'] = array(
 			$table => array(
 				'ctrl' => array(
@@ -278,7 +279,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enableFieldsDoesFilterToCurrentAndLiveWorkspaceForRecordsInPreview() {
-		$table = uniqid('aTable');
+		$table = $this->getUniqueId('aTable');
 		$GLOBALS['TCA'] = array(
 			$table => array(
 				'ctrl' => array(
@@ -300,7 +301,7 @@ class PageRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enableFieldsDoesNotHideVersionedRecordsWhenCheckingVersionOverlays() {
-		$table = uniqid('aTable');
+		$table = $this->getUniqueId('aTable');
 		$GLOBALS['TCA'] = array(
 			$table => array(
 				'ctrl' => array(

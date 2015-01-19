@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Example;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -35,11 +35,10 @@ class CrawlerHook {
 	 * 1) Carry out actual indexing of content (one or more items)
 	 * 2) Add one or more new entries into the crawlers queue so we are called again (another instance) for further indexing in the session (optional of course, if all indexing is done, we add no new entries)
 	 *
-	 * @param array Indexing Configuration Record (the record which holds the information that lead to this indexing session...)
-	 * @param array Session data variable. Passed by reference. Changed content is saved and passed back upon next instance in the session.
-	 * @param array Params array from the queue entry.
-	 * @param object Grant Parent Object (from "crawler" extension)
-	 * @param object Parent Object (from "indexed_search" extension)
+	 * @param array $cfgRec Indexing Configuration Record (the record which holds the information that lead to this indexing session...)
+	 * @param array $session_data Session data variable. Passed by reference. Changed content is saved and passed back upon next instance in the session.
+	 * @param array $params Params array from the queue entry.
+	 * @param object $pObj Parent Object (from "indexed_search" extension)
 	 * @return void
 	 */
 	public function indexOperation($cfgRec, &$session_data, $params, &$pObj) {

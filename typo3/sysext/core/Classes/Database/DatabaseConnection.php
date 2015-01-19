@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -168,6 +168,22 @@ class DatabaseConnection {
 	 * @var array<PreProcessQueryHookInterface>
 	 */
 	protected $postProcessHookObjects = array();
+
+	/**
+	 * the date and time formats compatible with the database in general
+	 *
+	 * @var array
+	 */
+	static protected $dateTimeFormats = array(
+		'date' => array(
+			'empty' => '0000-00-00',
+			'format' => 'Y-m-d'
+		),
+		'datetime' => array(
+			'empty' => '0000-00-00 00:00:00',
+			'format' => 'Y-m-d H:i:s'
+		)
+	);
 
 	/**
 	 * Initialize the database connection
@@ -956,16 +972,7 @@ class DatabaseConnection {
 	 * @return array
 	 */
 	public function getDateTimeFormats($table) {
-		return array(
-			'date' => array(
-				'empty' => '0000-00-00',
-				'format' => 'Y-m-d'
-			),
-			'datetime' => array(
-				'empty' => '0000-00-00 00:00:00',
-				'format' => 'Y-m-d H:i:s'
-			)
-		);
+		return self::$dateTimeFormats;
 	}
 
 	/**************************************
@@ -1211,7 +1218,7 @@ class DatabaseConnection {
 			$this->setSqlMode();
 			$this->checkConnectionCharset();
 		} else {
-			// @TODO: This should raise an exception. Would be useful especially to work during installation.
+			// @todo This should raise an exception. Would be useful especially to work during installation.
 			$error_msg = $this->link->connect_error;
 			$this->link = NULL;
 			GeneralUtility::sysLog(
@@ -1338,7 +1345,7 @@ class DatabaseConnection {
 	 */
 	public function admin_get_fields($tableName) {
 		$output = array();
-		$columns_res = $this->query('SHOW COLUMNS FROM `' . $tableName . '`');
+		$columns_res = $this->query('SHOW FULL COLUMNS FROM `' . $tableName . '`');
 		if ($columns_res !== FALSE) {
 			while ($fieldRow = $columns_res->fetch_assoc()) {
 				$output[$fieldRow['Field']] = $fieldRow;
@@ -1771,7 +1778,7 @@ class DatabaseConnection {
 	 * If $this->explainOutput is set, SELECT queries will be explained here. Only queries with more than one possible result row will be displayed.
 	 * The output is either printed as raw HTML output or embedded into the TS admin panel (checkbox must be enabled!)
 	 *
-	 * TODO: Feature is not DBAL-compliant
+	 * @todo Feature is not DBAL-compliant
 	 *
 	 * @param string $query SQL query
 	 * @param string $from_table Table(s) from which to select. This is what comes right after "FROM ...". Required value.
@@ -1880,4 +1887,5 @@ class DatabaseConnection {
 			'default_charset',
 		);
 	}
+
 }

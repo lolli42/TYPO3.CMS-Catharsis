@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility\File;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -343,35 +343,57 @@ class ExtendedFileUtility extends BasicFileUtility {
 				'deleted=0 AND ref_table="sys_file" AND ref_uid=' . (int)$fileObject->getUid()
 				. ' AND tablename != "sys_file_metadata"'
 			);
+			$deleteFile = TRUE;
 			if (count($refIndexRecords) > 0) {
 				$shortcutContent = array();
+				$brokenReferences = array();
+
 				foreach ($refIndexRecords as $fileReferenceRow) {
-					$row = $fileReferenceRow;
 					if ($fileReferenceRow['tablename'] === 'sys_file_reference') {
 						$row = $this->transformFileReferenceToRecordReference($fileReferenceRow);
-					}
-					$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
-					$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
-					$icon = '<a href="#" class="t3-js-clickmenutrigger" data-table="' . $row['tablename'] . '" data-uid="' . $row['recuid'] . '" data-listframe="1" data-iteminfo="%2Binfo,history,edit">' . $icon . '</a>';
-					$shortcutContent[] = $icon . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
-				}
+						$shortcutRecord = BackendUtility::getRecord($row['tablename'], $row['recuid']);
 
-				// render a message that the file could not be deleted
-				$flashMessage = GeneralUtility::makeInstance(
-					'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
-					sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . '<br />' . implode('<br />', $shortcutContent),
-					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
-					FlashMessage::WARNING,
-					TRUE
-				);
-				$this->addFlashMessage($flashMessage);
-			} else {
+						if ($shortcutRecord) {
+							$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $shortcutRecord);
+							$icon = '<a href="#" class="t3-js-clickmenutrigger" data-table="' . $row['tablename'] . '" data-uid="' . $row['recuid'] . '" data-listframe="1" data-iteminfo="%2Binfo,history,edit">' . $icon . '</a>';
+							$shortcutContent[] = $icon . htmlspecialchars((BackendUtility::getRecordTitle($row['tablename'], $shortcutRecord) . '  [' . BackendUtility::getRecordPath($shortcutRecord['pid'], '', 80) . ']'));
+						} else {
+							$brokenReferences[] = $fileReferenceRow['ref_uid'];
+						}
+					}
+				}
+				if (!empty($brokenReferences)) {
+					// render a message that the file has broken references
+					$flashMessage = GeneralUtility::makeInstance(
+						FlashMessage::class,
+						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileHasBrokenReferences'), count($brokenReferences)),
+						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileHasBrokenReferences'),
+						FlashMessage::INFO,
+						TRUE
+					);
+					$this->addFlashMessage($flashMessage);
+				}
+				if (!empty($shortcutContent)) {
+					// render a message that the file could not be deleted
+					$flashMessage = GeneralUtility::makeInstance(
+						FlashMessage::class,
+						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileNotDeletedHasReferences'), $fileObject->getName()) . '<br />' . implode('<br />', $shortcutContent),
+						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileNotDeletedHasReferences'),
+						FlashMessage::WARNING,
+						TRUE
+					);
+					$this->addFlashMessage($flashMessage);
+					$deleteFile = FALSE;
+				}
+			}
+
+			if ($deleteFile) {
 				try {
 					$result = $fileObject->delete();
 
 					// show the user that the file was deleted
 					$flashMessage = GeneralUtility::makeInstance(
-						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+						FlashMessage::class,
 						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.fileDeleted'), $fileObject->getName()),
 						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.fileDeleted'),
 						FlashMessage::OK,
@@ -390,23 +412,13 @@ class ExtendedFileUtility extends BasicFileUtility {
 			}
 		} else {
 			try {
-				/** @var $fileObject \TYPO3\CMS\Core\Resource\FolderInterface */
-				if ($fileObject->getFileCount() > 0) {
-					// render a message that the folder could not be deleted because it still contains files
-					$flashMessage = GeneralUtility::makeInstance(
-						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
-						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderNotDeletedHasFiles'), $fileObject->getName()),
-						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderNotDeletedHasFiles'),
-						FlashMessage::WARNING,
-						TRUE
-					);
-					$this->addFlashMessage($flashMessage);
-				} else {
-					$result = $fileObject->delete(TRUE);
-
+				/** @var \TYPO3\CMS\Core\Resource\Folder $fileObject */
+				$result = $fileObject->delete(TRUE);
+				if ($result) {
 					// notify the user that the folder was deleted
+					/** @var FlashMessage $flashMessage */
 					$flashMessage = GeneralUtility::makeInstance(
-						'\\TYPO3\\CMS\\Core\\Messaging\\FlashMessage',
+						FlashMessage::class,
 						sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.description.folderDeleted'), $fileObject->getName()),
 						$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:message.header.folderDeleted'),
 						FlashMessage::OK,
@@ -416,13 +428,14 @@ class ExtendedFileUtility extends BasicFileUtility {
 					// Log success
 					$this->writelog(4, 0, 3, 'Directory "%s" deleted', array($fileObject->getIdentifier()));
 				}
-
+			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientUserPermissionsException $e) {
+				$this->writelog(4, 1, 120, 'Could not delete directory! Is directory "%s" empty? (You are not allowed to delete directories recursively).', array($fileObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException $e) {
 				$this->writelog(4, 1, 123, 'You are not allowed to access the directory', array($fileObject->getIdentifier()));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\NotInMountPointException $e) {
 				$this->writelog(4, 1, 121, 'Target was not within your mountpoints! T="%s"', array($fileObject->getIdentifier()));
-			} catch (\RuntimeException $e) {
-				$this->writelog(4, 1, 120, 'Could not delete directory! Write-permission problem? Is directory "%s" empty? (You are not allowed to delete directories recursively).', array($fileObject->getIdentifier()));
+			} catch (\TYPO3\CMS\Core\Resource\Exception\FileOperationErrorException $e) {
+				$this->writelog(4, 1, 120, 'Could not delete directory "%s"! Write-permission problem?', array($fileObject->getIdentifier()));
 			}
 		}
 		return $result;
@@ -947,7 +960,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 	/**
 	 * Add flash message to message queue
 	 *
-	 * @param \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage
+	 * @param FlashMessage $flashMessage
 	 * @return void
 	 */
 	protected function addFlashMessage(FlashMessage $flashMessage) {

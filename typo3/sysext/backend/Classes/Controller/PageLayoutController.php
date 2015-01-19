@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -206,13 +206,6 @@ class PageLayoutController {
 	public $MOD_SETTINGS = array();
 
 	/**
-	 * Array, where files to include is accumulated in the init() function
-	 *
-	 * @var array
-	 */
-	public $include_once = array();
-
-	/**
 	 * Array of tables to be listed by the Web > Page module in addition to the default tables
 	 *
 	 * @var array
@@ -258,6 +251,9 @@ class PageLayoutController {
 		$this->MCONF = $GLOBALS['MCONF'];
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		$this->backPath = $GLOBALS['BACK_PATH'];
+		// Get session data
+		$sessionData = $GLOBALS['BE_USER']->getSessionData(\TYPO3\CMS\Recordlist\RecordList::class);
+		$this->search_field = !empty($sessionData['search_field']) ? $sessionData['search_field'] : '';
 		// GPvars:
 		$this->id = (int)GeneralUtility::_GP('id');
 		$this->pointer = GeneralUtility::_GP('pointer');
@@ -266,11 +262,20 @@ class PageLayoutController {
 		$this->popView = GeneralUtility::_GP('popView');
 		$this->edit_record = GeneralUtility::_GP('edit_record');
 		$this->new_unique_uid = GeneralUtility::_GP('new_unique_uid');
-		$this->search_field = GeneralUtility::_GP('search_field');
+		if (!empty(GeneralUtility::_GP('search_field'))) {
+			$this->search_field = GeneralUtility::_GP('search_field');
+			$sessionData['search_field'] = $this->search_field;
+		}
 		$this->search_levels = GeneralUtility::_GP('search_levels');
 		$this->showLimit = GeneralUtility::_GP('showLimit');
 		$this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
 		$this->externalTables = $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cms']['db_layout']['addTables'];
+		if (!empty(GeneralUtility::_GP('search')) && empty(GeneralUtility::_GP('search_field'))) {
+			$this->search_field = '';
+			$sessionData['search_field'] = $this->search_field;
+		}
+		// Store session data
+		$GLOBALS['BE_USER']->setAndSaveSessionData(\TYPO3\CMS\Recordlist\RecordList::class, $sessionData);
 		// Load page info array:
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		// Initialize menu

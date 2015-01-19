@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\DomainObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -23,7 +23,7 @@ class AbstractEntityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function objectIsNotDirtyAfterCallingMemorizeCleanStateWithSimpleProperties() {
-		$domainObjectName = uniqid('DomainObject_');
+		$domainObjectName = $this->getUniqueId('DomainObject_');
 		$domainObjectNameWithNS = __NAMESPACE__ . '\\' . $domainObjectName;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $domainObjectName . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 			public $foo;
@@ -40,7 +40,7 @@ class AbstractEntityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function objectIsDirtyAfterCallingMemorizeCleanStateWithSimplePropertiesAndModifyingThePropertiesAfterwards() {
-		$domainObjectName = uniqid('DomainObject_');
+		$domainObjectName = $this->getUniqueId('DomainObject_');
 		$domainObjectNameWithNS = __NAMESPACE__ . '\\' . $domainObjectName;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $domainObjectName . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 			public $foo;
@@ -58,7 +58,7 @@ class AbstractEntityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function objectIsNotDirtyAfterCallingMemorizeCleanStateWithObjectProperties() {
-		$domainObjectName = uniqid('DomainObject_');
+		$domainObjectName = $this->getUniqueId('DomainObject_');
 		$domainObjectNameWithNS = __NAMESPACE__ . '\\' . $domainObjectName;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $domainObjectName . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 			public $foo;
@@ -75,13 +75,13 @@ class AbstractEntityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function objectIsNotDirtyAfterCallingMemorizeCleanStateWithOtherDomainObjectsAsProperties() {
-		$domainObjectName = uniqid('DomainObject_');
+		$domainObjectName = $this->getUniqueId('DomainObject_');
 		$domainObjectNameWithNS = __NAMESPACE__ . '\\' . $domainObjectName;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $domainObjectName . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 			public $foo;
 			public $bar;
 		}');
-		$secondDomainObjectName = uniqid('DomainObject_');
+		$secondDomainObjectName = $this->getUniqueId('DomainObject_');
 		$secondDomainObjectNameWithNS = __NAMESPACE__ . '\\' . $secondDomainObjectName;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $secondDomainObjectName . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 			public $foo;
@@ -95,4 +95,5 @@ class AbstractEntityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$domainObject->_memorizeCleanState();
 		$this->assertFalse($domainObject->_isDirty());
 	}
+
 }

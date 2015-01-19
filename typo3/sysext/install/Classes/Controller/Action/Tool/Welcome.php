@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Tool;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -29,4 +29,5 @@ class Welcome extends Action\AbstractAction {
 	protected function executeAction() {
 		return $this->view->render();
 	}
+
 }

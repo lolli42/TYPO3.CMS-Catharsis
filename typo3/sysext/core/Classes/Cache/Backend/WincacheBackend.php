@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A caching backend which stores cache entries by using wincache.
  *

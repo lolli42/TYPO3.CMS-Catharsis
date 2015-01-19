@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Page;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -109,7 +109,7 @@ class PageGenerator {
 		if (is_array($GLOBALS['TSFE']->sWordList)) {
 			$space = !empty($GLOBALS['TSFE']->config['config']['sword_standAlone']) ? '[[:space:]]' : '';
 			foreach ($GLOBALS['TSFE']->sWordList as $val) {
-				if (strlen(trim($val)) > 0) {
+				if (trim($val) !== '') {
 					$GLOBALS['TSFE']->sWordRegEx .= $space . quotemeta($val) . $space . '|';
 				}
 			}
@@ -154,6 +154,7 @@ class PageGenerator {
 					$GLOBALS['TSFE']->xhtmlVersion = 110;
 					break;
 				case 'xhtml_2':
+					GeneralUtility::deprecationLog('The option "config.xhtmlDoctype=xhtml_2" is deprecated since TYPO3 CMS 7, and will be removed with CMS 8');
 					$GLOBALS['TSFE']->xhtmlVersion = 200;
 					break;
 				default:
@@ -204,7 +205,7 @@ class PageGenerator {
 	 * Processing JavaScript handlers
 	 *
 	 * @return array Array with a) a JavaScript section with event handlers and variables set and b) an array with attributes for the body tag.
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use JS directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use JS directly
 	 */
 	static public function JSeventFunctions() {
 		$functions = array();
@@ -212,7 +213,7 @@ class PageGenerator {
 		$setBody = array();
 		foreach ($GLOBALS['TSFE']->JSeventFuncCalls as $event => $handlers) {
 			if (count($handlers)) {
-				GeneralUtility::deprecationLog('The usage of $GLOBALS[\'TSFE\']->JSeventFuncCalls is deprecated as of CMS 7. Use Javascript directly.');
+				GeneralUtility::deprecationLog('The usage of $GLOBALS[\'TSFE\']->JSeventFuncCalls is deprecated as of TYPO3 CMS 7. Use Javascript directly.');
 				$functions[] = '	function T3_' . $event . 'Wrapper(e) {	' . implode('   ', $handlers) . '	}';
 				$setEvents[] = '	document.' . $event . '=T3_' . $event . 'Wrapper;';
 				if ($event == 'onload') {
@@ -403,6 +404,9 @@ class PageGenerator {
 		$pageRenderer->setHtmlTag($htmlTag);
 		// Head tag:
 		$headTag = $GLOBALS['TSFE']->pSetup['headTag'] ?: '<head>';
+		if (isset($GLOBALS['TSFE']->pSetup['headTag.'])) {
+			$headTag = $GLOBALS['TSFE']->cObj->stdWrap($headTag, $GLOBALS['TSFE']->pSetup['headTag.']);
+		}
 		$pageRenderer->setHeadTag($headTag);
 		// Setting charset meta tag:
 		$pageRenderer->setCharSet($theCharset);
@@ -416,15 +420,16 @@ class PageGenerator {
 		}
 		if ($GLOBALS['TSFE']->pSetup['shortcutIcon']) {
 			$favIcon = $GLOBALS['TSFE']->tmpl->getFileName($GLOBALS['TSFE']->pSetup['shortcutIcon']);
-			$iconMimeType = '';
-			if (function_exists('finfo_open')) {
-				if ($finfo = @finfo_open(FILEINFO_MIME)) {
-					$iconMimeType = ' type="' . finfo_file($finfo, (PATH_site . $favIcon)) . '"';
-					finfo_close($finfo);
-					$pageRenderer->setIconMimeType($iconMimeType);
+			if (is_file(PATH_site . $favIcon)) {
+				if (function_exists('finfo_open')) {
+					if ($finfo = @finfo_open(FILEINFO_MIME)) {
+						$iconMimeType = ' type="' . finfo_file($finfo, (PATH_site . $favIcon)) . '"';
+						finfo_close($finfo);
+						$pageRenderer->setIconMimeType($iconMimeType);
+					}
 				}
+				$pageRenderer->setFavIcon(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $favIcon);
 			}
-			$pageRenderer->setFavIcon(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $favIcon);
 		}
 		// Including CSS files
 		if (is_array($GLOBALS['TSFE']->tmpl->setup['plugin.'])) {
@@ -664,7 +669,8 @@ class PageGenerator {
 							$jsFileConfig['forceOnTop'] ? TRUE : FALSE,
 							$jsFileConfig['allWrap'],
 							$jsFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
-							$jsFileConfig['allWrap.']['splitChar']
+							$jsFileConfig['allWrap.']['splitChar'],
+							$jsFileConfig['async'] ? TRUE : FALSE
 						);
 						unset($jsFileConfig);
 					}
@@ -692,7 +698,8 @@ class PageGenerator {
 							$jsFileConfig['forceOnTop'] ? TRUE : FALSE,
 							$jsFileConfig['allWrap'],
 							$jsFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
-							$jsFileConfig['allWrap.']['splitChar']
+							$jsFileConfig['allWrap.']['splitChar'],
+							$jsFileConfig['async'] ? TRUE : FALSE
 						);
 						unset($jsFileConfig);
 					}
@@ -720,7 +727,8 @@ class PageGenerator {
 							$jsConfig['forceOnTop'] ? TRUE : FALSE,
 							$jsConfig['allWrap'],
 							$jsConfig['excludeFromConcatenation'] ? TRUE : FALSE,
-							$jsConfig['allWrap.']['splitChar']
+							$jsConfig['allWrap.']['splitChar'],
+							$jsConfig['async'] ? TRUE : FALSE
 						);
 						unset($jsConfig);
 					}
@@ -747,7 +755,8 @@ class PageGenerator {
 							$jsConfig['forceOnTop'] ? TRUE : FALSE,
 							$jsConfig['allWrap'],
 							$jsConfig['excludeFromConcatenation'] ? TRUE : FALSE,
-							$jsConfig['allWrap.']['splitChar']
+							$jsConfig['allWrap.']['splitChar'],
+							$jsConfig['async'] ? TRUE : FALSE
 						);
 						unset($jsConfig);
 					}
@@ -1099,17 +1108,31 @@ class PageGenerator {
 
 	/**
 	 * Generate title for page.
-	 * Takes the settings ['config']['noPageTitle'], ['config']['pageTitleFirst'], ['config']['titleTagFunction']
-	 * and ['config']['noPageTitle'] into account.
-	 * Furthermore $GLOBALS['TSFE']->altPageTitle is observed.
+	 * Takes the settings [config][noPageTitle], [config][pageTitleFirst], [config][titleTagFunction]
+	 * [config][pageTitleSeparator] and [config][noPageTitle] into account.
+	 * Furthermore $GLOBALS[TSFE]->altPageTitle is observed.
 	 *
 	 * @return void
 	 */
 	static public function generatePageTitle() {
+		$pageTitleSeparator = '';
+
+		// check for a custom pageTitleSeparator, and perform stdWrap on it
+		if (isset($GLOBALS['TSFE']->config['config']['pageTitleSeparator']) && $GLOBALS['TSFE']->config['config']['pageTitleSeparator'] !== '') {
+			$pageTitleSeparator = $GLOBALS['TSFE']->config['config']['pageTitleSeparator'];
+
+			if (isset($GLOBALS['TSFE']->config['config']['pageTitleSeparator.']) && is_array($GLOBALS['TSFE']->config['config']['pageTitleSeparator.'])) {
+				$pageTitleSeparator = $GLOBALS['TSFE']->cObj->stdWrap($pageTitleSeparator, $GLOBALS['TSFE']->config['config']['pageTitleSeparator.']);
+			} else {
+				$pageTitleSeparator .= ' ';
+			}
+		}
+
 		$titleTagContent = $GLOBALS['TSFE']->tmpl->printTitle(
-			$GLOBALS['TSFE']->altPageTitle ? $GLOBALS['TSFE']->altPageTitle : $GLOBALS['TSFE']->page['title'],
+			$GLOBALS['TSFE']->altPageTitle ?: $GLOBALS['TSFE']->page['title'],
 			$GLOBALS['TSFE']->config['config']['noPageTitle'],
-			$GLOBALS['TSFE']->config['config']['pageTitleFirst']
+			$GLOBALS['TSFE']->config['config']['pageTitleFirst'],
+			$pageTitleSeparator
 		);
 		if ($GLOBALS['TSFE']->config['config']['titleTagFunction']) {
 			$titleTagContent = $GLOBALS['TSFE']->cObj->callUserFunction(
@@ -1117,6 +1140,10 @@ class PageGenerator {
 				array(),
 				$titleTagContent
 			);
+		}
+		// stdWrap around the title tag
+		if (isset($GLOBALS['TSFE']->config['config']['pageTitle.']) && is_array($GLOBALS['TSFE']->config['config']['pageTitle.'])) {
+			$titleTagContent = $GLOBALS['TSFE']->cObj->stdWrap($titleTagContent, $GLOBALS['TSFE']->config['config']['pageTitle.']);
 		}
 		if ($titleTagContent !== '' && (int)$GLOBALS['TSFE']->config['config']['noPageTitle'] !== self::NO_PAGE_TITLE) {
 			$GLOBALS['TSFE']->getPageRenderer()->setTitle($titleTagContent);
@@ -1159,4 +1186,5 @@ class PageGenerator {
 		}
 		return $metaTags;
 	}
+
 }

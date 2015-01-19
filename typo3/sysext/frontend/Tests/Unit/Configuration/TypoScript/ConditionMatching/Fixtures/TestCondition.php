@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Configuration\TypoScript\ConditionMatching\Fixtures;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -23,7 +23,7 @@ class TestCondition extends \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMa
 	 * Test matcher tests input parameters.
 	 *
 	 * @param array $conditionParameters
-	 * @throws \RuntimeException
+	 * @throws TestConditionException
 	 * @return bool
 	 */
 	public function matchCondition(array $conditionParameters) {
@@ -32,4 +32,5 @@ class TestCondition extends \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMa
 			throw new TestConditionException('All Ok', 1411581139);
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,8 +13,10 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
+use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extbase\Mvc\Web\Request as WebRequest;
 use TYPO3\CMS\Extbase\Utility\ArrayUtility;
@@ -261,7 +263,7 @@ class ActionController extends AbstractController {
 			if (isset($methodTagsValues['ignorevalidation'])) {
 				$ignoreValidationAnnotations = $methodTagsValues['ignorevalidation'];
 			}
-			// if there exists more errors than in ignoreValidationAnnotations_=> call error method
+			// if there exist errors which are not ignored with @ignorevalidation => call error method
 			// else => call action method
 			$shouldCallActionMethod = TRUE;
 			foreach ($validationResult->getSubResults() as $argumentName => $subValidationResult) {
@@ -272,6 +274,7 @@ class ActionController extends AbstractController {
 					continue;
 				}
 				$shouldCallActionMethod = FALSE;
+				break;
 			}
 			if ($shouldCallActionMethod) {
 				$this->emitBeforeCallActionMethodSignal($preparedArguments);
@@ -283,7 +286,7 @@ class ActionController extends AbstractController {
 
 		if ($actionResult === NULL && $this->view instanceof ViewInterface) {
 			$this->response->appendContent($this->view->render());
-		} elseif (is_string($actionResult) && strlen($actionResult) > 0) {
+		} elseif (is_string($actionResult) && $actionResult !== '') {
 			$this->response->appendContent($actionResult);
 		} elseif (is_object($actionResult) && method_exists($actionResult, '__toString')) {
 			$this->response->appendContent((string)$actionResult);
@@ -334,7 +337,7 @@ class ActionController extends AbstractController {
 			$view->injectSettings($this->settings);
 		}
 		$view->initializeView();
-		// In FLOW3, solved through Object Lifecycle methods, we need to call it explicitely
+		// In TYPO3.Flow, solved through Object Lifecycle methods, we need to call it explicitly
 		$view->assign('settings', $this->settings);
 		// same with settings injection.
 		return $view;
@@ -487,36 +490,10 @@ class ActionController extends AbstractController {
 	 */
 	protected function errorAction() {
 		$this->clearCacheOnError();
-		$errorFlashMessage = $this->getErrorFlashMessage();
-		if ($errorFlashMessage !== FALSE) {
-			$errorFlashMessageObject = new FlashMessage(
-				$errorFlashMessage,
-				'',
-				FlashMessage::ERROR
-			);
-			$this->controllerContext->getFlashMessageQueue()->enqueue($errorFlashMessageObject);
-		}
-		$referringRequest = $this->request->getReferringRequest();
-		if ($referringRequest !== NULL) {
-			$originalRequest = clone $this->request;
-			$this->request->setOriginalRequest($originalRequest);
-			$this->request->setOriginalRequestMappingResults($this->arguments->getValidationResults());
-			$this->forward($referringRequest->getControllerActionName(), $referringRequest->getControllerName(), $referringRequest->getControllerExtensionName(), $referringRequest->getArguments());
-		}
-		$message = 'An error occurred while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '().' . PHP_EOL;
-		return $message;
-	}
+		$this->addErrorFlashMessage();
+		$this->forwardToReferringRequest();
 
-	/**
-	 * A template method for displaying custom error flash messages, or to
-	 * display no flash message at all on errors. Override this to customize
-	 * the flash message in your action controller.
-	 *
-	 * @return string The flash message or FALSE if no flash message should be set
-	 * @api
-	 */
-	protected function getErrorFlashMessage() {
-		return 'An error occurred while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '()';
+		return $this->getFlattenedValidationErrorMessage();
 	}
 
 	/**
@@ -533,6 +510,66 @@ class ActionController extends AbstractController {
 				$this->cacheService->clearPageCache(array($pageUid));
 			}
 		}
+	}
+
+	/**
+	 * If an error occurred during this request, this adds a flash message describing the error to the flash
+	 * message container.
+	 *
+	 * @return void
+	 */
+	protected function addErrorFlashMessage() {
+		$errorFlashMessage = $this->getErrorFlashMessage();
+		if ($errorFlashMessage !== FALSE) {
+			$this->addFlashMessage($errorFlashMessage, '', FlashMessage::ERROR);
+		}
+	}
+
+	/**
+	 * A template method for displaying custom error flash messages, or to
+	 * display no flash message at all on errors. Override this to customize
+	 * the flash message in your action controller.
+	 *
+	 * @return string The flash message or FALSE if no flash message should be set
+	 * @api
+	 */
+	protected function getErrorFlashMessage() {
+		return 'An error occurred while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '()';
+	}
+
+	/**
+	 * If information on the request before the current request was sent, this method forwards back
+	 * to the originating request. This effectively ends processing of the current request, so do not
+	 * call this method before you have finished the necessary business logic!
+	 *
+	 * @return void
+	 * @throws StopActionException
+	 */
+	protected function forwardToReferringRequest() {
+		$referringRequest = $this->request->getReferringRequest();
+		if ($referringRequest !== NULL) {
+			$originalRequest = clone $this->request;
+			$this->request->setOriginalRequest($originalRequest);
+			$this->request->setOriginalRequestMappingResults($this->arguments->getValidationResults());
+			$this->forward(
+				$referringRequest->getControllerActionName(),
+				$referringRequest->getControllerName(),
+				$referringRequest->getControllerExtensionName(),
+				$referringRequest->getArguments()
+			);
+		}
+	}
+
+	/**
+	 * Returns a string with a basic error message about validation failure.
+	 * We may add all validation error messages to a log file in the future,
+	 * but for security reasons (@see #54074) we do not return these here.
+	 *
+	 * @return string
+	 */
+	protected function getFlattenedValidationErrorMessage() {
+		$outputMessage = 'Validation failed while trying to call ' . get_class($this) . '->' . $this->actionMethodName . '().' . PHP_EOL;
+		return $outputMessage;
 	}
 
 	/**
@@ -557,4 +594,5 @@ class ActionController extends AbstractController {
 
 		return $result;
 	}
+
 }

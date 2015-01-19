@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\TypoScript;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -161,7 +161,7 @@ class ExtendedTemplateService extends TemplateService {
 	public $ext_noPMicons = 0;
 
 	/**
-	 * @deprecated since CMS 7.0, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 *
 	 * @var int
 	 */
@@ -501,7 +501,7 @@ class ExtendedTemplateService extends TemplateService {
 	/**
 	 * @param array $theValue
 	 * @return array
-	 * @deprecated since CMS 7.0, will be removed in CMS 8  - use htmlspecialchars() directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use htmlspecialchars() directly
 	 */
 	public function makeHtmlspecialchars($theValue) {
 		GeneralUtility::logDeprecatedFunction();
@@ -985,8 +985,8 @@ class ExtendedTemplateService extends TemplateService {
 							$constRefs = explode(',', $val);
 							foreach ($constRefs as $const) {
 								$const = trim($const);
-								if ($const && $const <= 20) {
-									$out['constants'][$const] .= $this->ext_getKeyImage($key);
+								if ($const) {
+									$out['constants'][$const] .= '<span class="label label-danger">' . $key . '</span>';
 								}
 							}
 						}
@@ -999,9 +999,11 @@ class ExtendedTemplateService extends TemplateService {
 	/**
 	 * @param string $key
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
 	 */
 	public function ext_getKeyImage($key) {
-		return '<img src="' . $this->ext_localWebGfxPrefix . 'gfx/' . $key . '.gif" align="top" hspace=2>';
+		GeneralUtility::logDeprecatedFunction();
+		return '<span class="label label-danger">' . $key . '</span>';
 	}
 
 	/**

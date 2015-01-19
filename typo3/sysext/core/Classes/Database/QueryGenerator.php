@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -817,7 +817,7 @@ class QueryGenerator {
 								}
 							} else {
 								$singleValue = $row[$fieldName];
-								if (strlen($singleValue) && !stristr($singleValue, '_')) {
+								if ($singleValue !== '' && !stristr($singleValue, '_')) {
 									$dontPrefixFirstTable = 1;
 								}
 							}

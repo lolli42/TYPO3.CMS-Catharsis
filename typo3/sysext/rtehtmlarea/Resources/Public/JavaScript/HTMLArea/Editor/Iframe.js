@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,51 +10,55 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/**
- * HTMLArea.Iframe extends Ext.BoxComponent
- */
-HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 
-	var Iframe = Ext.extend(Ext.BoxComponent, {
+/**
+ * The editor iframe
+ */
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Iframe',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/Walker',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/KeyMap'],
+	function (UserAgent, Walker, Typo3, Util, Dom, Event, KeyMap) {
+
+	/**
+	 * Editor iframe constructor
+	 */
+	var Iframe = function (config) {
+		Util.apply(this, config);
+	};
+
+	Iframe.prototype = {
 
 		/**
-		 * Constructor
+		 * Render the iframe (called by framework rendering)
+		 *
+		 * @param object container: the container into which to insert the iframe (that is the framework)
+		 * @return void
 		 */
-		initComponent: function () {
-			Iframe.superclass.initComponent.call(this);
-			this.addListener({
-				afterrender: {
-					fn: this.initEventListeners,
-					single: true
-				},
-				beforedestroy: {
-					fn: this.onBeforeDestroy,
-					single: true
-				}
-			});
+		render: function (container) {
 			this.config = this.getEditor().config;
-			this.htmlRenderer = new Walker({
-				keepComments: !this.config.htmlRemoveComments,
-				removeTags: this.config.htmlRemoveTags,
-				removeTagsAndContents: this.config.htmlRemoveTagsAndContents,
-				baseUrl: this.config.baseURL
-			});
+			this.createIframe(container);
 			if (!this.config.showStatusBar) {
-				this.addClass('noStatusBar');
+				Dom.addClass(this.getEl(), 'noStatusBar');
+			}
+			this.initStyleChangeEventListener();
+			if (UserAgent.isOpera) {
+				var self = this;
+				Event.one(this.getEl(), 'load', function (event) { self.initializeIframe(); return true; })
+			} else {
+				this.initializeIframe();
 			}
 		},
 
 		/**
-		 * Initialize event listeners and the document after the iframe has rendered
+		 * Get the element to which the iframe is rendered
 		 */
-		initEventListeners: function () {
-			this.initStyleChangeEventListener();
-			if (UserAgent.isOpera) {
-				var self = this;
-				Event.one(this.getEl().dom, 'load', function (event) { Event.stopEvent(event); self.initializeIframe(event); return false; })
-			} else {
-				this.initializeIframe();
-			}
+		getEl: function () {
+			return this.el;
 		},
 
 		/**
@@ -63,7 +67,7 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 		 * In all browsers, it breaks the evaluation of the framework dimensions
 		 */
 		initStyleChangeEventListener: function () {
-			if (this.isNested && UserAgent.isGecko) {
+			if (this.isNested && !UserAgent.isWebKit) {
 				var self = this;
 				var options = {
 					delay: 50
@@ -72,13 +76,13 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 					var nestedElement = document.getElementById(this.nestedParentElements.sorted[i]);
 					Event.on(
 						nestedElement,
-						'DOMAttrModified',
+						UserAgent.isIEBeforeIE9 ? 'propertychange' : 'DOMAttrModified',
 						function (event) { return self.onNestedShow(event); },
 						options
 					);
 					Event.on(
 						nestedElement.parentNode,
-						'DOMAttrModified',
+						UserAgent.isIEBeforeIE9 ? 'propertychange' : 'DOMAttrModified',
 						function (event) { return self.onNestedShow(event); },
 						options
 					);
@@ -102,63 +106,78 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 		 * Get a reference to the toolbar
 		 */
 		getToolbar: function () {
-			return this.ownerCt.getTopToolbar();
+			return this.framework.toolbar;
 		},
-		/*
+
+		/**
 		 * Get a reference to the statusBar
 		 */
 		getStatusBar: function () {
-			return this.ownerCt.getBottomToolbar();
+			return this.framework.statusBar;
 		},
-		/*
+
+		/**
 		 * Get a reference to a button
 		 */
 		getButton: function (buttonId) {
 			return this.getToolbar().getButton(buttonId);
 		},
-		/*
+
+		/**
 		 * Flag set to true when the iframe becomes usable for editing
 		 */
 		ready: false,
-		/*
+
+		/**
 		 * Create the iframe element at rendering time
+		 *
+		 * @param object container: the container into which to insert the iframe (that is the framework)
+		 * @return void
 		 */
-		onRender: function (ct, position){
-				// from Ext.Component
-			if (!this.el && this.autoEl) {
-				if (typeof this.autoEl === 'string' && this.autoEl.length > 0) {
-					this.el = document.createElement(this.autoEl);
-				} else {
-						// ExtJS Default method will not work with iframe element
-					this.el = Ext.DomHelper.append(ct, this.autoEl, true);
+		createIframe: function (container) {
+			if (this.autoEl && this.autoEl.tag) {
+				this.el = document.createElement(this.autoEl.tag);
+				if (this.autoEl.id) {
+					this.el.setAttribute('id', this.autoEl.id);
 				}
-				if (!this.el.id) {
-					this.el.id = this.getId();
+				if (this.autoEl.cls) {
+					this.el.setAttribute('class', this.autoEl.cls);
 				}
+				if (this.autoEl.src) {
+					this.el.setAttribute('src', this.autoEl.src);
+				}
+				this.el = container.appendChild(this.el);
 			}
-				// from Ext.BoxComponent
-			if (this.resizeEl){
-				this.resizeEl = Ext.get(this.resizeEl);
-			}
-			if (this.positionEl){
-				this.positionEl = Ext.get(this.positionEl);
-			}
+		},
+
+		/**
+		 * Get the content window of the iframe
+		 */
+		getIframeWindow: function () {
+			return this.el.contentWindow ? this.el.contentWindow : this.el.contentDocument;
 		},
 
 		/**
 		 * Proceed to build the iframe document head and ensure style sheets are available after the iframe document becomes available
 		 */
 		initializeIframe: function () {
-			var iframe = this.getEl().dom;
+			var self = this;
+			var iframe = this.getEl();
 			// All browsers
 			if (!iframe || (!iframe.contentWindow && !iframe.contentDocument)) {
-				this.initializeIframe.defer(50, this);
+				window.setTimeout(function () {
+					self.initializeIframe();
+				}, 50);
 			// All except WebKit
 			} else if (iframe.contentWindow && !UserAgent.isWebKit && (!iframe.contentWindow.document || !iframe.contentWindow.document.documentElement)) {
-				this.initializeIframe.defer(50, this);
+				window.setTimeout(function () {
+					self.initializeIframe();
+				}, 50);
 			// WebKit
 			} else if (UserAgent.isWebKit && (!iframe.contentDocument.documentElement || !iframe.contentDocument.body)) {
-				this.initializeIframe.defer(50, this);
+				window.setTimeout(function () {
+					self.initializeIframe();
+				}, 50);
 			} else {
 				this.document = iframe.contentWindow ? iframe.contentWindow.document : iframe.contentDocument;
 				this.getEditor().document = this.document;
@@ -184,6 +203,21 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 		},
 
 		/**
+		 * Show the iframe
+		 */
+		show: function () {
+			this.getEl().style.display = '';
+			Event.trigger(this, 'HTMLAreaEventIframeShow');
+		},
+
+		/**
+		 * Hide the iframe
+		 */
+		hide: function () {
+			this.getEl().style.display = 'none';
+		},
+
+		/**
 		 * Create one of each of the configured custom tags so they are properly parsed by the walker when using IE
 		 * See: http://en.wikipedia.org/wiki/HTML5_Shiv
 		 *
@@ -196,7 +230,8 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 				}
 			}
 		},
-		/*
+
+		/**
 		 * Build the iframe document head
 		 */
 		createHead: function () {
@@ -236,29 +271,32 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 				this.getEditor().appendToLog('HTMLArea.Iframe', 'createHead', 'Content CSS set to: ' + link.href, 'info');
 			}
 		},
-		/*
+
+		/**
 		 * Focus on the iframe
 		 */
 		focus: function () {
 			try {
 				if (UserAgent.isWebKit) {
-					this.getEl().dom.focus();
-				} else {
-					this.getEl().dom.contentWindow.focus();
+					this.getEl().focus();
 				}
+				this.getEl().contentWindow.focus();
 			} catch(e) { }
 		},
-		/*
+
+		/**
 		 * Flag indicating whether the framework is inside a tab or inline element that may be hidden
 		 * Should be set in config
 		 */
 		isNested: false,
-		/*
+
+		/**
 		 * All nested tabs and inline levels in the sorting order they were applied
 		 * Should be set in config
 		 */
 		nestedParentElements: {},
-		/*
+
+		/**
 		 * Set designMode
 		 *
 		 * @param	boolean		on: if true set designMode to on, otherwise set to off
@@ -291,7 +329,8 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 				}
 			}
 		},
-		/*
+
+		/**
 		 * Set editing mode options (if we can... raises exception in Firefox 3)
 		 *
 		 * @return	void
@@ -330,12 +369,10 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 			window.setTimeout(function () {
 				var styleEvent = true;
 				// In older versions of Gecko attrName is not set and refering to it causes a non-catchable crash
-				if ((UserAgent.isGecko && navigator.productSub > 2007112700) || UserAgent.isOpera) {
-					//styleEvent = (event.browserEvent.attrName == 'style') || (event.browserEvent.attrName == 'className');
-					styleEvent = (event.attrName == 'style') || (event.attrName == 'className');
-				} else if (UserAgent.isIE) {
-					//styleEvent = (event.browserEvent.propertyName == 'style.display');
-					styleEvent = (event.propertyName == 'style.display');
+				if ((UserAgent.isGecko && navigator.productSub > 2007112700) || UserAgent.isOpera || (UserAgent.isIE && !UserAgent.isIEBeforeIE9)) {
+					styleEvent = (event.originalEvent.attrName === 'style') || (event.originalEvent.attrName === 'className') || (event.originalEvent.attrName === 'class');
+				} else if (UserAgent.isIEBeforeIE9) {
+					styleEvent = (event.originalEvent.propertyName === 'style.display');
 				}
 				if (styleEvent && (self.nestedParentElements.sorted.indexOf(target.id) != -1 || self.nestedParentElements.sorted.indexOf(target.id.replace('_div', '_fields')) != -1)) {
 					// Check if all container nested elements are displayed
@@ -344,9 +381,9 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 							if (UserAgent.isGecko) {
 								self.setDesignMode(true);
 							}
-							self.fireEvent('show');
+							Event.trigger(self, 'HTMLAreaEventIframeShow');
 						} else {
-							self.ownerCt.textAreaContainer.fireEvent('show');
+							Event.trigger(self.framework.getTextAreaContainer(), 'HTMLAreaEventTextAreaContainerShow');
 						}
 						self.getToolbar().update();
 					}
@@ -358,13 +395,28 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 		/**
 		 * Instance of DOM walker
 		 */
-		htmlRenderer: {},
+		htmlRenderer: null,
+
+		/**
+		 * Getter for the instance of DOM walker
+		 */
+		getHtmlRenderer: function () {
+			if (!this.htmlRenderer) {
+				this.htmlRenderer = new Walker({
+					keepComments: !this.config.htmlRemoveComments,
+					removeTags: this.config.htmlRemoveTags,
+					removeTagsAndContents: this.config.htmlRemoveTagsAndContents,
+					baseUrl: this.config.baseURL
+				});
+			}
+			return this.htmlRenderer;
+		},
 
 		/**
 		 * Get the HTML content of the iframe
 		 */
 		getHTML: function () {
-			return this.htmlRenderer.render(this.document.body, false);
+			return this.getHtmlRenderer().render(this.document.body, false);
 		},
 
 		/**
@@ -536,7 +588,7 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 			if (UserAgent.isGecko) {
 				var self = this;
 				window.setTimeout(function () {
-					Dom.makeUrlsAbsolute(self.getEditor().document.body, self.config.baseURL, self.htmlRenderer);	
+					Dom.makeUrlsAbsolute(self.getEditor().document.body, self.config.baseURL, self.getHtmlRenderer());
 				}, 50);
 			}
 			return true;
@@ -556,7 +608,7 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 			// Make src url absolute in Firefox
 			if (UserAgent.isGecko) {
 				window.setTimeout(function () {
-					Dom.makeUrlsAbsolute(event.target, self.config.baseURL, self.htmlRenderer);
+					Dom.makeUrlsAbsolute(event.target, self.config.baseURL, self.getHtmlRenderer());
 				}, 50);
 			}
 			this.getToolbar().updateLater(100);
@@ -709,36 +761,27 @@ HTMLArea.Iframe = function (UserAgent, Walker, Typo3, Dom, Event, KeyMap) {
 		},
 
 		/**
-		 * Cleanup
+		 * Cleanup (called by framework)
 		 */
 		onBeforeDestroy: function () {
 			// Remove listeners on nested elements
 			if (this.isNested && UserAgent.isGecko) {
 				for (var i = this.nestedParentElements.sorted.length; --i >= 0;) {
 					var nestedElement = document.getElementById(this.nestedParentElements.sorted[i]);
-					Event.off(
-						nestedElement,
-						'DOMAttrModified'
-					);
-					Event.off(
-						nestedElement.parentNode,
-						'DOMAttrModified'
-					);
+					Event.off(nestedElement);
+					Event.off(nestedElement.parentNode);
 				}
 			}
 			Event.off(this);
-			Event.off(this.getEl().dom);
+			Event.off(this.getEl());
 			Event.off(this.document.body);
 			Event.off(this.document.documentElement);
 			// Cleaning references to DOM in order to avoid IE memory leaks
 			this.document = null;
-			this.getEditor().document = null;
-			Ext.destroy(this.autoEl, this.el, this.resizeEl, this.positionEl);
-			return true;
+			this.el = null;
 		}
-	});
+	};
 
 	return Iframe;
 
-}(HTMLArea.UserAgent, HTMLArea.DOM.Walker, HTMLArea.util.TYPO3, HTMLArea.DOM, HTMLArea.Event, HTMLArea.Event.KeyMap);
-Ext.reg('htmlareaiframe', HTMLArea.Iframe);
+});

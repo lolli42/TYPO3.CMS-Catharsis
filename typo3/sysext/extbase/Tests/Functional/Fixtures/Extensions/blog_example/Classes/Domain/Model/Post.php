@@ -1,6 +1,7 @@
 <?php
 namespace ExtbaseTeam\BlogExample\Domain\Model;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -360,4 +361,5 @@ class Post extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 			wordwrap($this->content, 70, chr(10)) . chr(10) .
 			implode(', ', $this->tags->toArray());
 	}
+
 }

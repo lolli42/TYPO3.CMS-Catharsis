@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A data map to map a single table configured in $TCA on a domain object.
  */
@@ -499,4 +500,5 @@ class DataMap {
 	public function getRootLevel() {
 		return $this->rootLevel;
 	}
+
 }

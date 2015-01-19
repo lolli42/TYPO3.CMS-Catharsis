@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log\Processor;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -61,7 +61,7 @@ class IntrospectionProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function setUp() {
 		$this->processor = $this->getAccessibleMock(
-			'\TYPO3\CMS\Core\Log\Processor\IntrospectionProcessor',
+			\TYPO3\CMS\Core\Log\Processor\IntrospectionProcessor::class,
 			array('getDebugBacktrace', 'formatDebugBacktrace')
 		);
 	}
@@ -171,4 +171,5 @@ class IntrospectionProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertContains($this->dummyBacktrace[2], $logRecord['data']['backtrace']);
 		$this->assertContains($this->dummyBacktrace[3], $logRecord['data']['backtrace']);
 	}
+
 }

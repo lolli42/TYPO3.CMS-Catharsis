@@ -124,7 +124,7 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'Doctrine.Common' => $mockCommonPackage
 		);
 
-		$packageManager = $this->getAccessibleMock('\TYPO3\Flow\Package\PackageManager', array('dummy'));
+		$packageManager = $this->getAccessibleMock(\TYPO3\Flow\Package\PackageManager::class, array('dummy'));
 		$packageManager->_set('packages', $packages);
 		$dependencyArray = $packageManager->_call('getDependencyArrayForPackage', 'TYPO3.Flow');
 
@@ -145,10 +145,10 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function scanAvailablePackagesTraversesThePackagesDirectoryAndRegistersPackagesItFinds() {
 		$expectedPackageKeys = array(
-			'TYPO3.Flow' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.Flow.Test' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.YetAnotherTestPackage' . md5(uniqid(mt_rand(), TRUE)),
-			'RobertLemke.Flow.NothingElse' . md5(uniqid(mt_rand(), TRUE))
+			$this->getUniqueId('TYPO3.Flow'),
+			$this->getUniqueId('TYPO3.Flow.Test'),
+			$this->getUniqueId('TYPO3.YetAnotherTestPackage'),
+			$this->getUniqueId('RobertLemke.Flow.NothingElse')
 		);
 
 		foreach ($expectedPackageKeys as $packageKey) {
@@ -179,10 +179,10 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function scanAvailablePackagesKeepsExistingPackageConfiguration() {
 		$expectedPackageKeys = array(
-			'TYPO3.Flow' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.Flow.Test' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.YetAnotherTestPackage' . md5(uniqid(mt_rand(), TRUE)),
-			'RobertLemke.Flow.NothingElse' . md5(uniqid(mt_rand(), TRUE))
+			$this->getUniqueId('TYPO3.Flow'),
+			$this->getUniqueId('TYPO3.Flow.Test'),
+			$this->getUniqueId('TYPO3.YetAnotherTestPackage'),
+			$this->getUniqueId('RobertLemke.Flow.NothingElse')
 		);
 
 		foreach ($expectedPackageKeys as $packageKey) {
@@ -224,9 +224,9 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function packageStatesConfigurationContainsRelativePaths() {
 		$packageKeys = array(
-			'RobertLemke.Flow.NothingElse' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.Flow' . md5(uniqid(mt_rand(), TRUE)),
-			'TYPO3.YetAnotherTestPackage' . md5(uniqid(mt_rand(), TRUE)),
+			$this->getUniqueId('RobertLemke.Flow.NothingElse'),
+			$this->getUniqueId('TYPO3.Flow'),
+			$this->getUniqueId('TYPO3.YetAnotherTestPackage')
 		);
 
 		foreach ($packageKeys as $packageKey) {
@@ -459,9 +459,10 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			)
 		);
 
-		$packageManager = $this->getAccessibleMock('\TYPO3\Flow\Package\PackageManager', array('resolvePackageDependencies'));
+		$packageManager = $this->getAccessibleMock(\TYPO3\Flow\Package\PackageManager::class, array('resolvePackageDependencies'));
 		$packageManager->_set('packageStatesConfiguration', $packageStatesConfiguration);
 
 		$this->assertEquals($packageKey, $packageManager->_call('getPackageKeyFromComposerName', $composerName));
 	}
+
 }

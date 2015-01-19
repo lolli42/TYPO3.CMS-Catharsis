@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation\Validator;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -65,4 +65,5 @@ class NumberRangeValidator extends AbstractValidator {
 			), 1221561046, array($minimum, $maximum));
 		}
 	}
+
 }

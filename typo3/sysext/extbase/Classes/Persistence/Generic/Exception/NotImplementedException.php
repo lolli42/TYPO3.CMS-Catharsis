@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Exception;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Exception;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * An "NotImplementedException" exception
  */
@@ -24,4 +25,5 @@ class NotImplementedException extends \TYPO3\CMS\Extbase\Persistence\Exception {
 	public function __construct($method) {
 		parent::__construct(sprintf('Method %s is not supported by generic persistence"', $method), 1350213237);
 	}
+
 }

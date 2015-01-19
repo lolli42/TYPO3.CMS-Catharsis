@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -22,7 +22,7 @@ namespace TYPO3\CMS\Extbase\Utility;
 class ArrayUtility {
 
 	/**
-	 * Explodes a $string delimited by $delimeter and casts each item in the array to (int).
+	 * Explodes a $string delimited by $delimiter and casts each item in the array to (int).
 	 * Corresponds to explode(), but with conversion to integers for all values.
 	 *
 	 * @param string $delimiter Delimiter string to explode with
@@ -323,4 +323,5 @@ class ArrayUtility {
 		}
 		return $array;
 	}
+
 }

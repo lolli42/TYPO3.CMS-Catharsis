@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Cli;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Cli;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Builds a CLI request object from the raw command call
  *
@@ -202,4 +203,5 @@ class RequestBuilder implements \TYPO3\CMS\Core\SingletonInterface {
 		$value = isset($splitArgument[1]) ? $splitArgument[1] : '';
 		return $value;
 	}
+
 }

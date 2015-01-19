@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -711,7 +711,6 @@ class Bootstrap {
 		unset($GLOBALS['TBE_STYLES']);
 		unset($GLOBALS['FILEICONS']);
 		// Those set in init.php:
-		unset($GLOBALS['WEBMOUNTS']);
 		unset($GLOBALS['BE_USER']);
 		// Those set otherwise:
 		unset($GLOBALS['TBE_MODULES_EXT']);
@@ -1004,18 +1003,6 @@ class Bootstrap {
 	}
 
 	/**
-	 * Initialize backend user mount points
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeBackendUserMounts() {
-		// Includes deleted mount pages as well! @TODO: Figure out why ...
-		$GLOBALS['WEBMOUNTS'] = $GLOBALS['BE_USER']->returnWebmounts();
-		return $this;
-	}
-
-	/**
 	 * Initialize language object
 	 *
 	 * @return Bootstrap
@@ -1093,4 +1080,5 @@ class Bootstrap {
 		$GLOBALS['TBE_TEMPLATE'] = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		return $this;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Error;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -85,4 +85,5 @@ class MessageTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$error = new \TYPO3\CMS\Extbase\Error\Message('Foo is %s and Bar is %s', 1, array('baz', 'qux'));
 		$this->assertEquals('Foo is baz and Bar is qux', $error);
 	}
+
 }

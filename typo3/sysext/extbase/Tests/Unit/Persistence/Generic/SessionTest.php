@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -141,4 +141,5 @@ class SessionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$reconstitutedObjects = $persistenceSession->getReconstitutedEntities();
 		$this->assertEquals(0, count($reconstitutedObjects), 'The reconstituted objects storage was not empty.');
 	}
+
 }

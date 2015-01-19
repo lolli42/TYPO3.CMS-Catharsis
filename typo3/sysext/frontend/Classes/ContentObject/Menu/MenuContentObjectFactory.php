@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Menu;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -39,7 +39,7 @@ class MenuContentObjectFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Gets a typo script string like 'TMENU' and returns an object of this type
 	 *
 	 * @param string $type
-	 * @return object Menu object
+	 * @return AbstractMenuContentObject Menu object
 	 * @throws Exception\NoSuchMenuTypeException
 	 */
 	public function getMenuObjectByType($type = '') {
@@ -71,4 +71,5 @@ class MenuContentObjectFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$this->menuTypeToClassMapping[strtoupper($type)] = $className;
 	}
+
 }

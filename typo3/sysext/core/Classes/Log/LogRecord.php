@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Log;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -151,7 +151,6 @@ class LogRecord implements \ArrayAccess {
 	 *
 	 * @param int $level Severity level
 	 * @return \TYPO3\CMS\Core\Log\LogRecord
-	 * @throws \RangeException if the given log level is invalid
 	 * @see \TYPO3\CMS\Core\Log\Level
 	 */
 	public function setLevel($level) {

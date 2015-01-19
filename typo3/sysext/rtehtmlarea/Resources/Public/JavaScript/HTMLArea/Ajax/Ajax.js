@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,10 +10,14 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Ajax object
  */
-HTMLArea.Ajax = function($, Util) {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Ajax/Ajax',
+	['jquery',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
+	function($, Util) {
 
 	/**
 	 * Constructor method
@@ -101,4 +105,4 @@ HTMLArea.Ajax = function($, Util) {
 
 	return Ajax;
 
-}(HTMLArea.jQuery, HTMLArea.util);
+});

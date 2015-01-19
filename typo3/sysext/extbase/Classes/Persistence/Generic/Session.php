@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
 
 /**
@@ -30,7 +31,7 @@ class Session implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Reconstituted entity data (effectively their clean state)
 	 * Currently unused in Extbase
-	 * TODO make use of it in Extbase
+	 * @todo make use of it in Extbase
 	 *
 	 * @var array
 	 */
@@ -119,7 +120,7 @@ class Session implements \TYPO3\CMS\Core\SingletonInterface {
 		return $this->reconstitutedEntities->contains($entity);
 	}
 
-	// TODO implement the is dirty checking behaviour of the Flow persistence session here
+	// @todo implement the is dirty checking behaviour of the Flow persistence session here
 
 	/**
 	 * Checks whether the given object is known to the identity map

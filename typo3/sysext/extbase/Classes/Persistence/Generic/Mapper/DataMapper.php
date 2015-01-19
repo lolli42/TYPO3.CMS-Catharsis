@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -536,7 +536,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return DataMap The data map
 	 */
 	public function getDataMap($className) {
-		if (!is_string($className) || strlen($className) === 0) {
+		if (!is_string($className) || $className === '') {
 			throw new Persistence\Generic\Exception('No class name was given to retrieve the Data Map for.', 1251315965);
 		}
 		if (!isset($this->dataMaps[$className])) {
@@ -673,4 +673,5 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return (string)$value;
 	}
+
 }

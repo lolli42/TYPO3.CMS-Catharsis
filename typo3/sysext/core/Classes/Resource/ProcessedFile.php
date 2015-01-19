@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -147,7 +147,7 @@ class ProcessedFile extends AbstractFile {
 	 *
 	 * @return string
 	 */
-	// TODO replace these usages with direct calls to the task object
+	// @todo replace these usages with direct calls to the task object
 	public function calculateChecksum() {
 		return $this->getTask()->getConfigurationChecksum();
 	}
@@ -177,7 +177,7 @@ class ProcessedFile extends AbstractFile {
 		if ($this->identifier === NULL) {
 			throw new \RuntimeException('Cannot update original file!', 1350582054);
 		}
-		// TODO this should be more generic (in fact it only works for local file paths)
+		// @todo this should be more generic (in fact it only works for local file paths)
 		$addedFile = $this->storage->updateProcessedFile($filePath, $this);
 
 		// Update some related properties
@@ -241,7 +241,7 @@ class ProcessedFile extends AbstractFile {
 		}
 
 		$this->name = $name;
-		// TODO this is a *weird* hack that will fail if the storage is non-hierarchical!
+		// @todo this is a *weird* hack that will fail if the storage is non-hierarchical!
 		$this->identifier = $this->storage->getProcessingFolder()->getIdentifier() . $this->name;
 
 		$this->updated = TRUE;
@@ -314,10 +314,10 @@ class ProcessedFile extends AbstractFile {
 			$this->properties['uid'] = $properties['uid'];
 		}
 
-		// TODO we should have a blacklist of properties that might not be updated
+		// @todo we should have a blacklist of properties that might not be updated
 		$this->properties = array_merge($this->properties, $properties);
 
-		// TODO when should this update be done?
+		// @todo when should this update be done?
 		if (!$this->isUnchanged() && $this->exists()) {
 			$this->properties = array_merge($this->properties, $this->storage->getFileInfo($this));
 		}
@@ -369,7 +369,7 @@ class ProcessedFile extends AbstractFile {
 	 * @return void
 	 */
 	public function setUsesOriginalFile() {
-		// TODO check if some of these properties can/should be set in a generic update method
+		// @todo check if some of these properties can/should be set in a generic update method
 		$this->identifier = $this->originalFile->getIdentifier();
 		$this->updated = TRUE;
 		$this->originalFileSha1 = $this->originalFile->getSha1();

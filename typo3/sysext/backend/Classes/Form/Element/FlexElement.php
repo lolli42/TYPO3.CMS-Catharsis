@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -44,13 +45,14 @@ class FlexElement extends AbstractFormElement {
 		}
 		// Get data structure:
 		if (is_array($dataStructArray)) {
+			$languageService = $this->getLanguageService();
 			// Get data:
 			$xmlData = $additionalInformation['itemFormElValue'];
 			$xmlHeaderAttributes = GeneralUtility::xmlGetHeaderAttribs($xmlData);
 			$storeInCharset = strtolower($xmlHeaderAttributes['encoding']);
 			if ($storeInCharset) {
-				$currentCharset = $this->getLanguageService()->charSet;
-				$xmlData = $this->getLanguageService()->csConvObj->conv($xmlData, $storeInCharset, $currentCharset, 1);
+				$currentCharset = $languageService->charSet;
+				$xmlData = $languageService->csConvObj->conv($xmlData, $storeInCharset, $currentCharset, 1);
 			}
 			$editData = GeneralUtility::xml2array($xmlData);
 			// Must be XML parsing error...
@@ -73,7 +75,7 @@ class FlexElement extends AbstractFormElement {
 					. BackendUtility::versioningPlaceholderClause('pages_language_overlay');
 				$pageOverlays = $this->getDatabaseConnection()->exec_SELECTgetRows('*', 'pages_language_overlay', $where_clause, '', '', '', 'sys_language_uid');
 			}
-			$languages = $this->formEngine->getAvailableLanguages();
+			$languages = $this->getAvailableLanguages();
 			foreach ($languages as $lInfo) {
 				if (
 					$this->getBackendUserAuthentication()->checkLanguageAccess($lInfo['uid'])
@@ -184,9 +186,9 @@ class FlexElement extends AbstractFormElement {
 					}
 					// Add to tab:
 					$tabParts[] = array(
-						'label' => $dataStruct['ROOT']['TCEforms']['sheetTitle'] ? $this->formEngine->sL($dataStruct['ROOT']['TCEforms']['sheetTitle']) : $sheet,
-						'description' => $dataStruct['ROOT']['TCEforms']['sheetDescription'] ? $this->formEngine->sL($dataStruct['ROOT']['TCEforms']['sheetDescription']) : '',
-						'linkTitle' => $dataStruct['ROOT']['TCEforms']['sheetShortDescr'] ? $this->formEngine->sL($dataStruct['ROOT']['TCEforms']['sheetShortDescr']) : '',
+						'label' => $dataStruct['ROOT']['TCEforms']['sheetTitle'] ? $languageService->sL($dataStruct['ROOT']['TCEforms']['sheetTitle']) : $sheet,
+						'description' => $dataStruct['ROOT']['TCEforms']['sheetDescription'] ? $languageService->sL($dataStruct['ROOT']['TCEforms']['sheetDescription']) : '',
+						'linkTitle' => $dataStruct['ROOT']['TCEforms']['sheetShortDescr'] ? $languageService->sL($dataStruct['ROOT']['TCEforms']['sheetShortDescr']) : '',
 						'content' => $sheetContent
 					);
 				}
@@ -202,6 +204,45 @@ class FlexElement extends AbstractFormElement {
 		return $item;
 	}
 
+	/**
+	 * Returns an array of available languages (to use for FlexForms)
+	 *
+	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
+	 * @param bool $setDefault If set, an array entry for a default language is set.
+	 * @return array
+	 */
+	protected function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
+		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
+		// Find all language records in the system:
+		$db = $this->getDatabaseConnection();
+		$res = $db->exec_SELECTquery('language_isocode,static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
+		// Traverse them:
+		$output = array();
+		if ($setDefault) {
+			$output[0] = array(
+				'uid' => 0,
+				'title' => 'Default language',
+				'ISOcode' => 'DEF'
+			);
+		}
+		while ($row = $db->sql_fetch_assoc($res)) {
+			$output[$row['uid']] = $row;
+			if (!empty($row['language_isocode'])) {
+				$output[$row['uid']]['ISOcode'] = $row['language_isocode'];
+			} elseif ($isL && $row['static_lang_isocode']) {
+				GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
+				$rr = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
+				if ($rr['lg_iso_2']) {
+					$output[$row['uid']]['ISOcode'] = $rr['lg_iso_2'];
+				}
+			}
+			if ($onlyIsoCoded && !$output[$row['uid']]['ISOcode']) {
+				unset($output[$row['uid']]);
+			}
+		}
+		$db->sql_free_result($res);
+		return $output;
+	}
 
 	/**
 	 * Recursive rendering of flexforms
@@ -223,6 +264,7 @@ class FlexElement extends AbstractFormElement {
 		$mayRestructureFlexforms = $this->getBackendUserAuthentication()->checkLanguageAccess(0);
 		// Data Structure array must be ... and array of course...
 		if (is_array($dataStruct)) {
+			$languageService = $this->getLanguageService();
 			foreach ($dataStruct as $key => $value) {
 				// Traversing fields in structure:
 				if (is_array($value)) {
@@ -236,7 +278,7 @@ class FlexElement extends AbstractFormElement {
 
 					// If there is a title, check for LLL label
 					if (strlen($theTitle) > 0) {
-						$theTitle = htmlspecialchars(GeneralUtility::fixed_lgd_cs($this->formEngine->sL($theTitle),
+						$theTitle = htmlspecialchars(GeneralUtility::fixed_lgd_cs($languageService->sL($theTitle),
 							(int)$this->getBackendUserAuthentication()->uc['titleLen']));
 					}
 					// If it's a "section" or "container":
@@ -302,7 +344,7 @@ class FlexElement extends AbstractFormElement {
 									. 'eval(unescape("' . rawurlencode(implode(';', $this->formEngine->additionalJS_post)) . '").' . $replace . ');'
 									. 'TBE_EDITOR.addActionChecks("submit", unescape("'
 									. rawurlencode(implode(';', $this->formEngine->additionalJS_submit)) . '").' . $replace . ');'
-									. 'TYPO3.TCEFORMS.update();'
+									. 'TYPO3.FormEngine.reinitialize();'
 									. 'return false;';
 								// Kasper's comment (kept for history):
 								// Maybe there is a better way to do this than store the HTML for the new element
@@ -312,7 +354,7 @@ class FlexElement extends AbstractFormElement {
 								$this->formEngine->additionalJS_submit = $additionalJS_submit_saved;
 								$title = '';
 								if (isset($nCfg['title'])) {
-									$title = $this->formEngine->sL($nCfg['title']);
+									$title = $languageService->sL($nCfg['title']);
 								}
 								$newElementsLinks[] = '<a href="#" onclick="' . htmlspecialchars($onClickInsert) . '">'
 									. IconUtility::getSpriteIcon('actions-document-new')
@@ -323,7 +365,7 @@ class FlexElement extends AbstractFormElement {
 							// Adding the sections
 
 							// add the "toggle all" button for the sections
-							$toggleAll = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.toggleall', TRUE);
+							$toggleAll = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.toggleall', TRUE);
 							$output .= '
 							<div class="t3-form-field-toggle-flexsection t3-form-flexsection-toggle">
 								<a href="#">'. IconUtility::getSpriteIcon('actions-move-right', array('title' => $toggleAll)) . $toggleAll . '</a>
@@ -333,7 +375,7 @@ class FlexElement extends AbstractFormElement {
 							// add the "new" link
 							if ($mayRestructureFlexforms) {
 								$output .= '<div class="t3-form-field-add-flexsection"><strong>'
-										. $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.addnew', TRUE)
+										. $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.addnew', TRUE)
 										. ':</strong> ' . implode(' | ', $newElementsLinks) . '</div>';
 							}
 
@@ -425,7 +467,7 @@ class FlexElement extends AbstractFormElement {
 							if ($displayConditionResult) {
 								$fakePA = array();
 								$fakePA['fieldConf'] = array(
-									'label' => $this->formEngine->sL(trim($value['TCEforms']['label'])),
+									'label' => $languageService->sL(trim($value['TCEforms']['label'])),
 									'config' => $value['TCEforms']['config'],
 									'defaultExtras' => $value['TCEforms']['defaultExtras'],
 									'onChange' => $value['TCEforms']['onChange']
@@ -468,7 +510,7 @@ class FlexElement extends AbstractFormElement {
 								$theFormEl = $this->formEngine->getSingleField_SW($table, $field, $row, $fakePA);
 								$theTitle = htmlspecialchars($fakePA['fieldConf']['label']);
 								if (!in_array('DEF', $rotateLang)) {
-									$defInfo = '<div class="typo3-TCEforms-originalLanguageValue">'
+									$defInfo = '<div class="t3-form-original-language">'
 										. $this->formEngine->getLanguageIcon($table, $row, 0)
 										. $this->formEngine->previewFieldValue($editData[$key]['vDEF'], $fakePA['fieldConf'], $field)
 										. '&nbsp;</div>';
@@ -478,7 +520,7 @@ class FlexElement extends AbstractFormElement {
 								if (!$PA['_noEditDEF']) {
 									$prLang = $this->formEngine->getAdditionalPreviewLanguages();
 									foreach ($prLang as $prL) {
-										$defInfo .= '<div class="typo3-TCEforms-originalLanguageValue">'
+										$defInfo .= '<div class="t3-form-original-language">'
 											. $this->formEngine->getLanguageIcon($table, $row, ('v' . $prL['ISOcode']))
 											. $this->formEngine->previewFieldValue($editData[$key][('v' . $prL['ISOcode'])], $fakePA['fieldConf'], $field)
 											. '&nbsp;</div>';
@@ -496,7 +538,7 @@ class FlexElement extends AbstractFormElement {
 									. '<div class="t3-form-field-label t3-form-field-label-flex">' . $languageIcon
 									. BackendUtility::wrapInHelp($PA['_cshKey'], $key, $processedTitle) . '</div>
 									<div class="t3-form-field t3-form-field-flex">' . $theFormEl . $defInfo
-									. $this->formEngine->renderVDEFDiff($editData[$key], $vDEFkey) . '</div>
+									. $this->renderVDEFDiff($editData[$key], $vDEFkey) . '</div>
 								</div>';
 							}
 						}
@@ -509,4 +551,27 @@ class FlexElement extends AbstractFormElement {
 		}
 		return $output;
 	}
+
+	/**
+	 * Renders the diff-view of vDEF fields in flexforms
+	 *
+	 * @param array $vArray Record array of the record being edited
+	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
+	 * @return string Item string returned again, possibly with the original value added to.
+	 */
+	protected function renderVDEFDiff($vArray, $vDEFkey) {
+		$item = NULL;
+		if (
+			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
+			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
+		) {
+			// Create diff-result:
+			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
+			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
+			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
+				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
+		}
+		return $item;
+	}
+
 }

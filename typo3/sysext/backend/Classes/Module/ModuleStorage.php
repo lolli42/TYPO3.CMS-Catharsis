@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,9 @@ namespace TYPO3\CMS\Backend\Module;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Backend\Domain\Model\Module\BackendModule;
+
 /**
  * Model for the module storage
  *
@@ -54,10 +57,10 @@ class ModuleStorage implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Attach Entry
 	 *
-	 * @param \TYPO3\CMS\Backend\Domain\Model\Module\BackendModule $entry
+	 * @param BackendModule $entry
 	 * @return void
 	 */
-	public function attachEntry(\TYPO3\CMS\Backend\Domain\Model\Module\BackendModule $entry) {
+	public function attachEntry(BackendModule $entry) {
 		$this->entries->attach($entry);
 	}
 

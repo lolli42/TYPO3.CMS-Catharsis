@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lang\Exception;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,7 +15,7 @@ namespace TYPO3\CMS\Lang\Exception;
  */
 
 /**
- * An exception when something is wrong within the lang
+ * An exception when something is wrong within the ter
  *
  * @author Sebastian Fischer <typo3@evoweb.de>
  */

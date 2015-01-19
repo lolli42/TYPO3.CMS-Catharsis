@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject\Menu;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -27,7 +27,7 @@ class MenuContentObjectFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getMenuObjectByTypeThrowsExceptionForUnknownType() {
 		$factory = new \TYPO3\CMS\Frontend\ContentObject\Menu\MenuContentObjectFactory;
-		$factory->getMenuObjectByType(uniqid('foo_'));
+		$factory->getMenuObjectByType($this->getUniqueId('foo_'));
 	}
 
 	/**
@@ -62,7 +62,7 @@ class MenuContentObjectFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getMenuObjectByTypeReturnsInstanceOfNewRegisteredType() {
 		$factory = new \TYPO3\CMS\Frontend\ContentObject\Menu\MenuContentObjectFactory;
 		$selfClassName = get_class($this);
-		$uniqueMenuType = uniqid('foo_');
+		$uniqueMenuType = $this->getUniqueId('foo_');
 		$factory->registerMenuType($uniqueMenuType, $selfClassName);
 		$this->assertInstanceOf($selfClassName, $factory->getMenuObjectByType($uniqueMenuType));
 	}
@@ -84,4 +84,5 @@ class MenuContentObjectFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$factory = new \TYPO3\CMS\Frontend\ContentObject\Menu\MenuContentObjectFactory;
 		$factory->registerMenuType('foo', array());
 	}
+
 }

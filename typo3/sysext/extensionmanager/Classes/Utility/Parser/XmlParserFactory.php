@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Parser;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Factory for XML parsers.
  *
@@ -33,10 +34,8 @@ class XmlParserFactory {
 	/**
 	 * Keeps array of all available parsers.
 	 *
-	 * TODO: This would better be moved to
-	 * a global configuration array like
-	 * $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'].
-	 * (might require EM to be moved in a sysext)
+	 * @todo This would better be moved to a global configuration array like
+	 * $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']. (might require EM to be moved in a sysext)
 	 *
 	 * @var array
 	 */

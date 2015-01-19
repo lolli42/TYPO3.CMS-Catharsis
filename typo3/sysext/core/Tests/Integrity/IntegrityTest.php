@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Integrity;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -40,4 +40,5 @@ class IntegrityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertArrayHasKey(\TYPO3\CMS\Core\Cache\CacheManager::class, $registeredSingletons);
 		$this->assertTrue($registeredSingletons[\TYPO3\CMS\Core\Cache\CacheManager::class] instanceof \TYPO3\CMS\Core\Cache\CacheManager);
 	}
+
 }

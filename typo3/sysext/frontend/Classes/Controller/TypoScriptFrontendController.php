@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -404,7 +404,7 @@ class TypoScriptFrontendController {
 	 * applications on a page can set handlers for onload, onmouseover and onmouseup
 	 *
 	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $JSeventFuncCalls = array(
 		'onmousemove' => array(),
@@ -724,7 +724,7 @@ class TypoScriptFrontendController {
 	 * Internal charset of the frontend during rendering. (Default: UTF-8)
 	 * @var string
 	 */
-	public $renderCharset = '';
+	public $renderCharset = 'utf-8';
 
 	/**
 	 * Output charset of the websites content. This is the charset found in the
@@ -732,7 +732,7 @@ class TypoScriptFrontendController {
 	 * happens before output to browser. Defaults to ->renderCharset if not set.
 	 * @var string
 	 */
-	public $metaCharset = '';
+	public $metaCharset = 'utf-8';
 
 	/**
 	 * Assumed charset of locale strings.
@@ -810,19 +810,28 @@ class TypoScriptFrontendController {
 	protected $domainDataCache = array();
 
 	/**
+	 * Content type HTTP header being sent in the request.
+	 * @todo Ticket: #63642 Should be refactored to a request/response model later
+	 * @internal Should only be used by TYPO3 core for now
+	 *
+	 * @var string
+	 */
+	protected $contentType = 'text/html';
+
+	/**
 	 * Class constructor
 	 * Takes a number of GET/POST input variable as arguments and stores them internally.
 	 * The processing of these variables goes on later in this class.
 	 * Also sets internal clientInfo array (browser information) and a unique string (->uniqueString) for this script instance; A md5 hash of the microtime()
 	 *
 	 * @param array $TYPO3_CONF_VARS The global $TYPO3_CONF_VARS array. Will be set internally in ->TYPO3_CONF_VARS
-	 * @param mixed $id The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('id')
-	 * @param int $type The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('type')
-	 * @param bool|string $no_cache The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('no_cache'), evaluated to 1/0
-	 * @param string $cHash The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('cHash')
-	 * @param string $jumpurl The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('jumpurl')
-	 * @param string $MP The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('MP')
-	 * @param string $RDCT The value of \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('RDCT')
+	 * @param mixed $id The value of GeneralUtility::_GP('id')
+	 * @param int $type The value of GeneralUtility::_GP('type')
+	 * @param bool|string $no_cache The value of GeneralUtility::_GP('no_cache'), evaluated to 1/0
+	 * @param string $cHash The value of GeneralUtility::_GP('cHash')
+	 * @param string $jumpurl The value of GeneralUtility::_GP('jumpurl')
+	 * @param string $MP The value of GeneralUtility::_GP('MP')
+	 * @param string $RDCT The value of GeneralUtility::_GP('RDCT')
 	 * @see index_ts.php
 	 */
 	public function __construct($TYPO3_CONF_VARS, $id, $type, $no_cache = '', $cHash = '', $jumpurl = '', $MP = '', $RDCT = '') {
@@ -856,6 +865,14 @@ class TypoScriptFrontendController {
 		}
 		$this->cacheHash = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\CacheHashCalculator::class);
 		$this->initCaches();
+	}
+
+	/**
+	 * @param string $contentType
+	 * @internal Should only be used by TYPO3 core for now
+	 */
+	public function setContentType($contentType) {
+		$this->contentType = $contentType;
 	}
 
 	/**
@@ -1048,7 +1065,7 @@ class TypoScriptFrontendController {
 			$this->gr_list .= ',' . implode(',', $gr_array);
 		}
 		if ($this->fe_user->writeDevLog) {
-			GeneralUtility::devLog('Valid usergroups for TSFE: ' . $this->gr_list, \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class);
+			GeneralUtility::devLog('Valid usergroups for TSFE: ' . $this->gr_list, __CLASS__);
 		}
 	}
 
@@ -1125,9 +1142,9 @@ class TypoScriptFrontendController {
 		if ($_COOKIE[\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::getCookieName()]) {
 			$GLOBALS['TYPO3_MISC']['microtime_BE_USER_start'] = microtime(TRUE);
 			$GLOBALS['TT']->push('Back End user initialized', '');
-			// TODO: validate the comment below: is this necessary? if so,
-			// formfield_status should be set to "" in \TYPO3\CMS\Backend\FrontendBackendUserAuthentication
-			// which is a subclass of \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+			// @todo validate the comment below: is this necessary? if so,
+			//   formfield_status should be set to "" in \TYPO3\CMS\Backend\FrontendBackendUserAuthentication
+			//   which is a subclass of \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
 			// ----
 			// the value this->formfield_status is set to empty in order to
 			// disable login-attempts to the backend account through this script
@@ -1225,7 +1242,7 @@ class TypoScriptFrontendController {
 				// For Live workspace: Check root line for proper connection to tree root (done because of possible preview of page / branch versions)
 				if (!$this->fePreview && $this->whichWorkspace() === 0) {
 					// Initialize the page-select functions to check rootline:
-					$temp_sys_page = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
+					$temp_sys_page = GeneralUtility::makeInstance(PageRepository::class);
 					$temp_sys_page->init($this->showHiddenPage);
 					// If root line contained NO records and ->error_getRootLine_failPid tells us that it was because of a pid=-1 (indicating a "version" record)...:
 					if (!count($temp_sys_page->getRootLine($this->id, $this->MP)) && $temp_sys_page->error_getRootLine_failPid == -1) {
@@ -1299,13 +1316,13 @@ class TypoScriptFrontendController {
 	 * @return bool
 	 */
 	protected function determineIdIsHiddenPage() {
-		$field = \TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->id) ? 'uid' : 'alias';
+		$field = MathUtility::canBeInterpretedAsInteger($this->id) ? 'uid' : 'alias';
 		$pageSelectCondition = $field . '=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->id, 'pages');
 		$page = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid,hidden,starttime,endtime', 'pages', $pageSelectCondition . ' AND pid>=0 AND deleted=0');
 		$workspace = $this->whichWorkspace();
 		if ($workspace !== 0 && $workspace !== FALSE) {
 			// Fetch overlay of page if in workspace and check if it is hidden
-			$pageSelectObject = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
+			$pageSelectObject = GeneralUtility::makeInstance(PageRepository::class);
 			$pageSelectObject->versioningPreview = TRUE;
 			$pageSelectObject->init(FALSE);
 			$targetPage = $pageSelectObject->getWorkspaceVersionOfRecord($this->whichWorkspace(), 'pages', $page['uid']);
@@ -1328,7 +1345,7 @@ class TypoScriptFrontendController {
 	public function fetch_the_id() {
 		$GLOBALS['TT']->push('fetch_the_id initialize/', '');
 		// Initialize the page-select functions.
-		$this->sys_page = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
+		$this->sys_page = GeneralUtility::makeInstance(PageRepository::class);
 		$this->sys_page->versioningPreview = $this->fePreview === 2 || (int)$this->workspacePreview || (bool)GeneralUtility::_GP('ADMCMD_view');
 		$this->sys_page->versioningWorkspaceId = $this->whichWorkspace();
 		$this->sys_page->init($this->showHiddenPage);
@@ -1589,7 +1606,7 @@ class TypoScriptFrontendController {
 				}
 				break;
 			case PageRepository::SHORTCUT_MODE_PARENT_PAGE:
-				$parent = $this->sys_page->getPage($thisUid, $disableGroupCheck);
+				$parent = $this->sys_page->getPage($idArray[0] ? $idArray[0] : $thisUid, $disableGroupCheck);
 				$page = $this->sys_page->getPage($parent['pid'], $disableGroupCheck);
 				if (count($page) == 0) {
 					$message = 'This page (ID ' . $thisUid . ') is of type "Shortcut" and configured to redirect to its parent page. ' . 'However, the parent page is not accessible.';
@@ -1978,7 +1995,7 @@ class TypoScriptFrontendController {
 			}
 		} elseif (GeneralUtility::isFirstPartOfStr($code, 'REDIRECT:')) {
 			HttpUtility::redirect(substr($code, 9));
-		} elseif (strlen($code)) {
+		} elseif ($code !== '') {
 			// Check if URL is relative
 			$url_parts = parse_url($code);
 			if ($url_parts['host'] == '') {
@@ -2070,7 +2087,7 @@ class TypoScriptFrontendController {
 	 * @access private
 	 */
 	public function checkAndSetAlias() {
-		if ($this->id && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($this->id)) {
+		if ($this->id && !MathUtility::canBeInterpretedAsInteger($this->id)) {
 			$aid = $this->sys_page->getPageIdFromAlias($this->id);
 			if ($aid) {
 				$this->id = $aid;
@@ -2157,7 +2174,7 @@ class TypoScriptFrontendController {
 
 	/**
 	 * Will disable caching if the cHash value was not set.
-	 * This function should be called to check the _existence_ of "&cHash" whenever a plugin generating cachable output is using extra GET variables. If there _is_ a cHash value the validation of it automatically takes place in makeCacheHash() (see above)
+	 * This function should be called to check the _existence_ of "&cHash" whenever a plugin generating cacheable output is using extra GET variables. If there _is_ a cHash value the validation of it automatically takes place in makeCacheHash() (see above)
 	 *
 	 * @return void
 	 * @see makeCacheHash(), \TYPO3\CMS\Frontend\Plugin\AbstractPlugin::pi_cHashCheck()
@@ -2756,7 +2773,7 @@ class TypoScriptFrontendController {
 			// These two fields are the ones which contain recipient addresses that can be misused to send mail from foreign servers.
 			$encodedFields = explode(',', 'recipient, recipient_copy');
 			foreach ($encodedFields as $fieldKey) {
-				if (strlen($EMAIL_VARS[$fieldKey])) {
+				if ((string)$EMAIL_VARS[$fieldKey] !== '') {
 					// Decode...
 					if ($res = $this->codeString($EMAIL_VARS[$fieldKey], TRUE)) {
 						$EMAIL_VARS[$fieldKey] = $res;
@@ -2820,7 +2837,7 @@ class TypoScriptFrontendController {
 	 * @return void
 	 */
 	public function checkJumpUrlReferer() {
-		if (strlen($this->jumpurl) && !$this->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
+		if ($this->jumpurl !== '' && !$this->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
 			$referer = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
 			if (isset($referer['host']) && !($referer['host'] == GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'))) {
 				unset($this->jumpurl);
@@ -3222,7 +3239,7 @@ class TypoScriptFrontendController {
 				$lockObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Locking\Locker::class, $key, $this->TYPO3_CONF_VARS['SYS']['lockingMode']);
 			}
 			$success = FALSE;
-			if (strlen($key)) {
+			if ($key !== '') {
 				// TRUE = Page could get locked without blocking
 				// FALSE = Page could get locked but process was blocked before
 				$success = $lockObj->acquire();
@@ -3539,11 +3556,7 @@ class TypoScriptFrontendController {
 		if ($additionalCss !== '') {
 			$this->additionalHeaderData['_CSS'] = '
 <style type="text/css">
-	/*<![CDATA[*/
-<!--
 ' . $additionalCss . '
-// -->
-	/*]]>*/
 </style>';
 		}
 	}
@@ -3609,7 +3622,7 @@ class TypoScriptFrontendController {
 	public function processOutput() {
 		// Set header for charset-encoding unless disabled
 		if (empty($this->config['config']['disableCharsetHeader'])) {
-			$headLine = 'Content-Type: text/html; charset=' . trim($this->metaCharset);
+			$headLine = 'Content-Type: ' . $this->contentType . '; charset=' . trim($this->metaCharset);
 			header($headLine);
 		}
 		// Set cache related headers to client (used to enable proxy / client caching!)
@@ -3619,9 +3632,21 @@ class TypoScriptFrontendController {
 		// Set headers, if any
 		if (!empty($this->config['config']['additionalHeaders'])) {
 			$headerArray = explode('|', $this->config['config']['additionalHeaders']);
+			GeneralUtility::deprecationLog('The TypoScript option "config.additionalHeaders" has been deprecated with TYPO3 CMS 7, and will be removed with CMS 8, please use the more flexible syntax config.additionalHeaders.10... to separate each header value.');
 			foreach ($headerArray as $headLine) {
 				$headLine = trim($headLine);
 				header($headLine);
+			}
+		}
+		if (is_array($this->config['config']['additionalHeaders.'])) {
+			ksort($this->config['config']['additionalHeaders.']);
+			foreach ($this->config['config']['additionalHeaders.'] as $options) {
+				header(
+					trim($options['header']),
+					// "replace existing headers" is turned on by default, unless turned off
+					($options['replace'] === '0' ? FALSE : TRUE),
+					((int)$options['httpResponseCode'] ?: NULL)
+				);
 			}
 		}
 		// Send appropriate status code in case of temporary content
@@ -4051,7 +4076,7 @@ class TypoScriptFrontendController {
 	public function baseUrlWrap($url) {
 		if ($this->baseUrl) {
 			$urlParts = parse_url($url);
-			if (!strlen($urlParts['scheme']) && $url[0] !== '/') {
+			if ($urlParts['scheme'] === '' && $url[0] !== '/') {
 				$url = $this->baseUrl . $url;
 			}
 		}
@@ -4068,7 +4093,7 @@ class TypoScriptFrontendController {
 	 * @return void
 	 */
 	public function logDeprecatedTyposcript($typoScriptProperty, $explanation = '') {
-		$explanationText = strlen($explanation) ? ' - ' . $explanation : '';
+		$explanationText = $explanation !== '' ? ' - ' . $explanation : '';
 		$GLOBALS['TT']->setTSlogMessage($typoScriptProperty . ' is deprecated.' . $explanationText, 2);
 		GeneralUtility::deprecationLog('TypoScript ' . $typoScriptProperty . ' is deprecated' . $explanationText);
 	}
@@ -4090,7 +4115,17 @@ class TypoScriptFrontendController {
 	 * @return void Works directly on $this->content
 	 */
 	public function prefixLocalAnchorsWithScript() {
-		$scriptPath = $GLOBALS['TSFE']->absRefPrefix . substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), strlen(GeneralUtility::getIndpEnv('TYPO3_SITE_URL')));
+		if (!$this->beUserLogin) {
+			if (!is_object($this->cObj)) {
+				$this->newCObj();
+			}
+			$scriptPath = $this->cObj->getUrlToCurrentLocation();
+		} else {
+			// To break less existing sites, we allow the REQUEST_URI to be used for the prefix
+			$scriptPath = GeneralUtility::getIndpEnv('REQUEST_URI');
+			// Disable the cache so that these URI will not be the ones to be cached
+			$this->disableCache();
+		}
 		$originalContent = $this->content;
 		$this->content = preg_replace('/(<(?:a|area).*?href=")(#[^"]*")/i', '${1}' . htmlspecialchars($scriptPath) . '${2}', $originalContent);
 		// There was an error in the call to preg_replace, so keep the original content (behavior prior to PHP 5.2)
@@ -4169,7 +4204,7 @@ class TypoScriptFrontendController {
 	/**
 	 * Traverses the ->rootLine and returns an array with the first occurrance of storage pid and siteroot pid
 	 *
-	 * @return array Array with keys '_STORAGE_PID' and '_SITEROOT' set to the first occurances found.
+	 * @return array Array with keys '_STORAGE_PID' and '_SITEROOT' set to the first occurrences found.
 	 */
 	public function getStorageSiterootPids() {
 		$res = array();
@@ -4293,7 +4328,7 @@ class TypoScriptFrontendController {
 			$severity = GeneralUtility::SYSLOG_SEVERITY_WARNING;
 		}
 
-		if (strlen($reason)) {
+		if ($reason !== '') {
 			$warning = '$TSFE->set_no_cache() was triggered. Reason: ' . $reason . '.';
 		} else {
 			$trace = debug_backtrace();
@@ -4602,7 +4637,7 @@ class TypoScriptFrontendController {
 	 * config.cache.42 = tt_news:15,tt_address:16
 	 *
 	 * @return array Array of 'tablename:pid' pairs. There is at least a current page id in the array
-	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::calculatePageCacheTimeout()
+	 * @see TypoScriptFrontendController::calculatePageCacheTimeout()
 	 */
 	protected function getCurrentPageCacheConfiguration() {
 		$result = array('tt_content:' . $this->id);
@@ -4622,7 +4657,7 @@ class TypoScriptFrontendController {
 	 * @param int $now "Now" time value
 	 * @throws \InvalidArgumentException
 	 * @return int Value of the next start/stop time or PHP_INT_MAX if not found
-	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::calculatePageCacheTimeout()
+	 * @see TypoScriptFrontendController::calculatePageCacheTimeout()
 	 */
 	protected function getFirstTimeValueForRecord($tableDef, $now) {
 		$result = PHP_INT_MAX;
@@ -4742,4 +4777,5 @@ class TypoScriptFrontendController {
 		$domainData = $this->getDomainDataForPid($targetPid);
 		return $domainData ? $domainData['domainName'] : NULL;
 	}
+
 }

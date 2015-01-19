@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -39,7 +39,7 @@ class ExtensionManagementUtility {
 	 * the access to the cache file to read the single ext_tables.php if it was
 	 * already read from cache
 	 *
-	 * @TODO : See if we can get rid of the 'load multiple times' scenario in fe
+	 * @todo See if we can get rid of the 'load multiple times' scenario in fe
 	 * @var bool
 	 */
 	static protected $extTablesWasReadFromCacheOnce = FALSE;
@@ -367,7 +367,7 @@ class ExtensionManagementUtility {
 			$types = &$GLOBALS['TCA'][$table]['types'];
 			if (is_array($types)) {
 				// Iterate through all types and search for the field that defines the palette to be extended:
-				foreach (array_keys($types) as $type) {
+				foreach ($types as $type => $_) {
 					$items = self::explodeItemList($types[$type]['showitem']);
 					if (isset($items[$field])) {
 						// If the field already has a palette, extend it:
@@ -464,7 +464,7 @@ class ExtensionManagementUtility {
 		}
 		// Make sure item keys are integers
 		$GLOBALS['TCA'][$table]['columns'][$field]['config']['items'] = array_values($GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
-		if (strlen($relativePosition) > 0) {
+		if ($relativePosition !== '') {
 			// Insert at specified position
 			$matchedPosition = ArrayUtility::filterByValueRecursive($relativeToField, $GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
 			if (count($matchedPosition) > 0) {
@@ -650,18 +650,19 @@ class ExtensionManagementUtility {
 	 */
 	static protected function removeDuplicatesForInsertion($insertionList, $list = '') {
 		$insertionListParts = preg_split('/\\s*,\\s*/', $insertionList);
-		$insertionList = implode(', ', array_unique($insertionListParts));
-		if ($list === '') {
-			return $insertionList;
+		$listMatches = array();
+		if ($list !== '') {
+			preg_match_all('/(?:^|,)\\s*\\b([^;,]+)\\b[^,]*/', $list, $listMatches);
+			$listMatches = $listMatches[1];
 		}
-		// Get a list of fieldNames that are present in the list.
-		preg_match_all('/(?:^|,)\\s*\\b([^;,]+)\\b[^,]*/', $list, $listMatches);
-		// Remove the field names from the insertionlist.
-		$fieldReplacePatterns = array();
-		foreach ($listMatches[1] as $fieldName) {
-			$fieldReplacePatterns[] = '/(?:^|,)\\s*\\b' . preg_quote($fieldName, '/') . '\\b[^,$]*/';
+
+		$cleanInsertionListParts = array();
+		foreach ($insertionListParts as $fieldName) {
+			if ($fieldName == '--linebreak--' || (!in_array($fieldName, $cleanInsertionListParts) && !in_array($fieldName, $listMatches))) {
+				$cleanInsertionListParts[] = $fieldName;
+			}
 		}
-		return preg_replace($fieldReplacePatterns, '', $insertionList);
+		return implode(', ', $cleanInsertionListParts);
 	}
 
 	/**
@@ -762,7 +763,7 @@ class ExtensionManagementUtility {
 		}
 		ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
 		$moduleConfiguration = $defaultModuleConfiguration;
-		if (strlen($subModuleName) > 0) {
+		if ($subModuleName !== '') {
 			$moduleSignature = $mainModuleName . '_' . $subModuleName;
 		} else {
 			$moduleSignature = $mainModuleName;
@@ -770,7 +771,7 @@ class ExtensionManagementUtility {
 		$moduleConfiguration['name'] = $moduleSignature;
 		$moduleConfiguration['script'] = 'extjspaneldummy.html';
 		$moduleConfiguration['extensionName'] = $extensionName;
-		$moduleConfiguration['configureModuleFunction'] = array(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::class, 'configureModule');
+		$moduleConfiguration['configureModuleFunction'] = array(ExtensionManagementUtility::class, 'configureModule');
 		$GLOBALS['TBE_MODULES']['_configuration'][$moduleSignature] = $moduleConfiguration;
 		self::addModule($mainModuleName, $subModuleName, $position);
 	}
@@ -794,7 +795,7 @@ class ExtensionManagementUtility {
 			list($extensionKey, $relativePath) = explode('/', substr($iconPathAndFilename, 4), 2);
 			$iconPathAndFilename = self::extPath($extensionKey) . $relativePath;
 		}
-		// TODO: skin support
+		// @todo skin support
 		$moduleLabels = array(
 			'tabs_images' => array(
 				'tab' => $iconPathAndFilename
@@ -1287,21 +1288,21 @@ class ExtensionManagementUtility {
 	 *
 	 * @param string $key The extension key
 	 * @param string $classFile The PHP-class filename relative to the extension root directory. If set to blank a default value is chosen according to convensions.
-	 * @param string $prefix Is used as a - yes, suffix - of the class name (fx. "_pi1")
+	 * @param string $suffix Is used as a suffix of the class name (e.g. "_pi1")
 	 * @param string $type See description above
 	 * @param int $cached If $cached is set as USER content object (cObject) is created - otherwise a USER_INT object is created.
 	 *
 	 * @return void
 	 */
-	static public function addPItoST43($key, $classFile = '', $prefix = '', $type = 'list_type', $cached = 0) {
-		$classFile = $classFile ? $classFile : 'pi/class.tx_' . str_replace('_', '', $key) . $prefix . '.php';
+	static public function addPItoST43($key, $classFile = '', $suffix = '', $type = 'list_type', $cached = 0) {
+		$classFile = $classFile ? $classFile : 'pi/class.tx_' . str_replace('_', '', $key) . $suffix . '.php';
 		$cN = self::getCN($key);
 		// General plugin
 		$pluginContent = trim('
-plugin.' . $cN . $prefix . ' = USER' . ($cached ? '' : '_INT') . '
-plugin.' . $cN . $prefix . ' {
+plugin.' . $cN . $suffix . ' = USER' . ($cached ? '' : '_INT') . '
+plugin.' . $cN . $suffix . ' {
 	includeLibs = ' . $GLOBALS['TYPO3_LOADED_EXT'][$key]['siteRelPath'] . $classFile . '
-	userFunc = ' . $cN . $prefix . '->main
+	userFunc = ' . $cN . $suffix . '->main
 }');
 		self::addTypoScript($key, 'setup', '
 # Setting ' . $key . ' plugin TypoScript
@@ -1309,25 +1310,25 @@ plugin.' . $cN . $prefix . ' {
 		// After ST43
 		switch ($type) {
 			case 'list_type':
-				$addLine = 'tt_content.list.20.' . $key . $prefix . ' = < plugin.' . $cN . $prefix;
+				$addLine = 'tt_content.list.20.' . $key . $suffix . ' = < plugin.' . $cN . $suffix;
 				break;
 			case 'menu_type':
-				$addLine = 'tt_content.menu.20.' . $key . $prefix . ' = < plugin.' . $cN . $prefix;
+				$addLine = 'tt_content.menu.20.' . $key . $suffix . ' = < plugin.' . $cN . $suffix;
 				break;
 			case 'CType':
 				$addLine = trim('
-tt_content.' . $key . $prefix . ' = COA
-tt_content.' . $key . $prefix . ' {
+tt_content.' . $key . $suffix . ' = COA
+tt_content.' . $key . $suffix . ' {
 	10 = < lib.stdheader
-	20 = < plugin.' . $cN . $prefix . '
+	20 = < plugin.' . $cN . $suffix . '
 }
 ');
 				break;
 			case 'header_layout':
-				$addLine = 'lib.stdheader.10.' . $key . $prefix . ' = < plugin.' . $cN . $prefix;
+				$addLine = 'lib.stdheader.10.' . $key . $suffix . ' = < plugin.' . $cN . $suffix;
 				break;
 			case 'includeLib':
-				$addLine = 'page.1000 = < plugin.' . $cN . $prefix;
+				$addLine = 'page.1000 = < plugin.' . $cN . $suffix;
 				break;
 			default:
 				$addLine = '';
@@ -1763,7 +1764,7 @@ tt_content.' . $key . $prefix . ' {
 				// Add ext_tables.php content of extension
 				$phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_tables.php']));
 				$phpCodeToCache[] = '';
-				$phpCodeToCache[] = '\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadNewTcaColumnsConfigFiles();';
+				$phpCodeToCache[] = ExtensionManagementUtility::class . '::loadNewTcaColumnsConfigFiles();';
 				$phpCodeToCache[] = '';
 			}
 		}
@@ -1796,7 +1797,7 @@ tt_content.' . $key . $prefix . ' {
 	static public function loadNewTcaColumnsConfigFiles() {
 		global $TCA;
 
-		foreach (array_keys($TCA) as $tableName) {
+		foreach ($TCA as $tableName => $_) {
 			if (!isset($TCA[$tableName]['columns'])) {
 				$columnsConfigFile = $TCA[$tableName]['ctrl']['dynamicConfigFile'];
 				if ($columnsConfigFile) {
@@ -1899,7 +1900,7 @@ tt_content.' . $key . $prefix . ' {
 		// Update the category registry
 		$result = CategoryRegistry::getInstance()->add($extensionKey, $tableName, $fieldName, $options);
 		if ($result === FALSE) {
-			$message = '\TYPO3\CMS\Core\Category\CategoryRegistry: no category registered for table "%s". Key was already registered.';
+			$message = CategoryRegistry::class . ': no category registered for table "%s". Key was already registered.';
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */
 			$logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
 			$logger->warning(
@@ -1907,4 +1908,5 @@ tt_content.' . $key . $prefix . ' {
 			);
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -373,7 +373,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			// CSH:
 			$out = BackendUtility::cshItem($this->descrTable, ('func_' . $pKey)) . '
 				<div class="table-fit">
-					<table class="t3-table typo3-page-pages">' .
+					<table class="table table-striped table-hover typo3-page-pages">' .
 						'<thead>' .
 							$this->addelement(1, '', $theData) .
 						'</thead>' .
@@ -566,6 +566,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 				$out = '';
 				if ($this->tt_contentConfig['languageMode']) {
 					// in language mode process the content elements, but only fill $languageColumn. output will be generated later
+					$sortedLanguageColumn = array();
 					foreach ($cList as $key) {
 						$languageColumn[$key][$lP] = $head[$key] . $content[$key];
 						if (!$this->defLangBinding) {
@@ -574,7 +575,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 								$lP
 							);
 						}
+						// We sort $languageColumn again according to $cList as it may contain data already from above.
+						$sortedLanguageColumn[$key] = $languageColumn[$key];
 					}
+					$languageColumn = $sortedLanguageColumn;
 				} else {
 					$backendLayout = $this->getBackendLayoutView()->getSelectedBackendLayout($this->id);
 					// GRID VIEW:
@@ -631,7 +635,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							) {
 								$grid .= $this->tt_content_drawColHeader($this->getLanguageService()->sL($columnConfig['name']) .
 									' (' . $this->getLanguageService()->getLL('noAccess') . ')', '', '');
-							} elseif (isset($columnConfig['name']) && strlen($columnConfig['name']) > 0) {
+							} elseif (isset($columnConfig['name']) && $columnConfig['name'] !== '') {
 								$grid .= $this->tt_content_drawColHeader($this->getLanguageService()->sL($columnConfig['name'])
 									. ' (' . $this->getLanguageService()->getLL('notAssigned') . ')', '', '');
 							} else {
@@ -668,7 +672,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 
 					// "View page" icon is added:
 					$onClick = BackendUtility::viewOnClick($this->id, $this->backPath, BackendUtility::BEgetRootLine($this->id), '', '', ('&L=' . $lP));
-					$viewLink = '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+					$viewLink = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 					// Language overlay page header:
 					if ($lP) {
 						list($lpRecord) = BackendUtility::getRecordsByField('pages_language_overlay', 'pid', $id, 'AND sys_language_uid=' . $lP);
@@ -1284,6 +1288,19 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		// Get processed values:
 		$info = array();
 		$this->getProcessedValue('tt_content', 'starttime,endtime,fe_group,spaceBefore,spaceAfter', $row, $info);
+
+		// Call drawFooter hooks
+		$drawFooterHooks = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php']['tt_content_drawFooter'];
+		if (is_array($drawFooterHooks)) {
+			foreach ($drawFooterHooks as $hookClass) {
+				$hookObject = GeneralUtility::getUserObj($hookClass);
+				if (!$hookObject instanceof PageLayoutViewDrawFooterHookInterface) {
+					throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Backend\\View\\PageLayoutViewDrawFooterHookInterface', 1404378171);
+				}
+				$hookObject->preProcess($this, $info, $row);
+			}
+		}
+
 		// Display info from records fields:
 		if (count($info)) {
 			$content = '<div class="t3-page-ce-info">
@@ -1477,8 +1494,14 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					if ($row['CType'] == 'textpic' || $row['CType'] == 'image') {
 						if ($row['image']) {
 							$out .= $this->thumbCode($row, 'tt_content', 'image') . '<br />';
-							if ($row['imagecaption']) {
-								$out .= $this->linkEditContent($this->renderText($row['imagecaption']), $row) . '<br />';
+							$fileReferences = BackendUtility::resolveFileReferences('tt_content', 'image', $row);
+							if (!empty($fileReferences)) {
+								$linkedContent = '';
+								foreach ($fileReferences as $fileReference) {
+									$linkedContent .= htmlspecialchars($fileReference->getDescription()) . '<br />';
+								}
+								$out .= $this->linkEditContent($linkedContent, $row);
+								unset($linkedContent);
 							}
 						}
 					}
@@ -1504,8 +1527,16 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					}
 					break;
 				case 'menu':
-					if ($row['pages']) {
-						$out .= $this->linkEditContent($row['pages'], $row) . '<br />';
+					$contentType = $this->CType_labels[$row['CType']];
+					$out .= '<strong>' . htmlspecialchars($contentType) . '</strong><br />';
+					// Add Menu Type
+					$menuTypeLabel = $this->getLanguageService()->sL(
+						BackendUtility::getLabelFromItemListMerged($row['pid'], 'tt_content', 'menu_type', $row['menu_type'])
+					);
+					$out .= $menuTypeLabel !== '' ? $menuTypeLabel : 'invalid menu type';
+					if ($row['menu_type'] !== '2' && ($row['pages'] || $row['selected_categories'])) {
+						// Show pages if menu type is not "Sitemap"
+						$out .= ':' . $this->linkEditContent($this->generateListForCTypeMenu($row), $row) . '<br />';
 					}
 					break;
 				case 'shortcut':
@@ -1613,6 +1644,33 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		} else {
 			return $out;
 		}
+	}
+
+	/**
+	 * Generates a list of selected pages or categories for the CType menu
+	 *
+	 * @param array $row row from pages
+	 * @return string
+	 */
+	protected function generateListForCTypeMenu(array $row) {
+		$table = 'pages';
+		$field = 'pages';
+		// get categories instead of pages
+		if (strpos($row['menu_type'], 'categorized_') !== FALSE) {
+			$table = 'sys_category';
+			$field = 'selected_categories';
+		}
+		if (trim($row[$field]) === '') {
+			return '';
+		}
+		$content = '';
+		$uidList = explode(',', $row[$field]);
+		foreach ($uidList as $uid) {
+			$uid = (int)$uid;
+			$record = BackendUtility::getRecord($table, $uid, 'title');
+			$content .= '<br>' . $record['title'] . ' (' .$uid. ')';
+		}
+		return $content;
 	}
 
 	/**
@@ -1761,7 +1819,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			// Remove disallowed languages
 			if (count($langSelItems) > 1
 				&& !$this->getBackendUser()->user['admin']
-				&& strlen($this->getBackendUser()->groupData['allowed_languages'])
+				&& $this->getBackendUser()->groupData['allowed_languages'] !== ''
 			) {
 				$allowed_languages = array_flip(explode(',', $this->getBackendUser()->groupData['allowed_languages']));
 				if (count($allowed_languages)) {

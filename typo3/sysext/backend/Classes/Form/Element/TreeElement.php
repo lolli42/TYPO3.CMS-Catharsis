@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -69,13 +69,13 @@ class TreeElement extends AbstractFormElement {
 				if ($additionalItem[1] !== '--div--') {
 					$item = new \stdClass();
 					$item->uid = $additionalItem[1];
-					$item->text = $GLOBALS['LANG']->sL($additionalItem[0]);
+					$item->text = $this->getLanguageService()->sL($additionalItem[0]);
 					$item->selectable = TRUE;
 					$item->leaf = TRUE;
 					$item->checked = in_array($additionalItem[1], $selectedNodes);
 					if (file_exists(PATH_typo3 . $additionalItem[3])) {
 						$item->icon = $additionalItem[3];
-					} elseif (strlen(trim($additionalItem[3]))) {
+					} elseif (trim($additionalItem[3]) !== '') {
 						$item->iconCls = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconClasses($additionalItem[3]);
 					}
 					$itemArray[] = $item;
@@ -175,7 +175,7 @@ class TreeElement extends AbstractFormElement {
 				tcaExclusiveKeys: "' . ($PA['fieldConf']['config']['exclusiveKeys'] ? $PA['fieldConf']['config']['exclusiveKeys'] : '') . '",
 				ucId: "' . md5(($table . '|' . $field)) . '",
 				selModel: TYPO3.Components.Tree.EmptySelectionModel,
-				disabled: ' . ($PA['fieldConf']['config']['readOnly'] || $this->formEngine->renderReadonly ? 'true' : 'false') . '
+				disabled: ' . ($PA['fieldConf']['config']['readOnly'] || $this->isRenderReadonly() ? 'true' : 'false') . '
 			});' . LF .
 				($autoSizeMax
 					? 'tree' . $id . '.bodyStyle = "max-height: ' . $autoSizeMax . 'px;min-height: ' . $height . 'px;";'
@@ -208,4 +208,5 @@ class TreeElement extends AbstractFormElement {
 		// deliberately empty as this class is not used the same way
 		return '';
 	}
+
 }

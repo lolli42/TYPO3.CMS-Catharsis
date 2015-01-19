@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\WizardSortpages\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -80,7 +80,7 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
 					</tr>';
 				}
 				$theCode .= '<h2>' . $GLOBALS['LANG']->getLL('wiz_currentPageOrder', TRUE) . '</h2>';
-				$theCode .= '<div class="table-fit"><table class="t3-table">' . implode('', $lines) . '</table></div>';
+				$theCode .= '<div class="table-fit"><table class="table table-striped table-hover">' . implode('', $lines) . '</table></div>';
 
 				// Menu:
 				$lines = array();

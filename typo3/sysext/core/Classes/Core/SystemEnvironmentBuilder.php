@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -98,10 +98,12 @@ class SystemEnvironmentBuilder {
 		define('TYPO3_URL_DONATE', 'http://typo3.org/donate/online-donation/');
 		define('TYPO3_URL_WIKI_OPCODECACHE', 'http://wiki.typo3.org/Opcode_Cache');
 
-		// A tabulator, a linefeed, a carriage return, a CR-LF combination
+		// A null, a tabulator, a linefeed, a carriage return, a substitution, a CR-LF combination
+		define('NUL', chr(0));
 		define('TAB', chr(9));
 		define('LF', chr(10));
 		define('CR', chr(13));
+		define('SUB', chr(26));
 		define('CRLF', CR . LF);
 
 		// Security related constant: Default value of fileDenyPattern
@@ -470,7 +472,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function getPathSiteByRelativePathPart($relativePathPart) {
 		$entryScriptDirectory = self::getUnifiedDirectoryNameWithTrailingSlash(PATH_thisScript);
-		if (strlen($relativePathPart) > 0) {
+		if ($relativePathPart !== '') {
 			$pathSite = substr($entryScriptDirectory, 0, -strlen($relativePathPart));
 		} else {
 			$pathSite = $entryScriptDirectory;
@@ -501,4 +503,5 @@ class SystemEnvironmentBuilder {
 		header('Content-type: text/plain');
 		die($message);
 	}
+
 }

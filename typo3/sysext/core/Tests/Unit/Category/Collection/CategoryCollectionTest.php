@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Category\Collection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,4 +30,5 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function missingTableNameArgumentForObjectCategoryCollection() {
 		new \TYPO3\CMS\Core\Category\Collection\CategoryCollection();
 	}
+
 }

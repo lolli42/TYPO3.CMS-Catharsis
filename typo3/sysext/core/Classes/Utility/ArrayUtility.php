@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -90,7 +90,7 @@ class ArrayUtility {
 	 *
 	 * @param array $array Given array
 	 * @param string $path Path to test, 'foo/bar/foobar'
-	 * @param string $delimiter Delimeter for path, default /
+	 * @param string $delimiter Delimiter for path, default /
 	 * @return bool TRUE if path exists in array
 	 */
 	static public function isValidPath(array $array, $path, $delimiter = '/') {
@@ -432,8 +432,7 @@ class ArrayUtility {
 	 */
 	public static function intersectRecursive(array $source, array $mask = array()) {
 		$intersection = array();
-		$sourceArrayKeys = array_keys($source);
-		foreach ($sourceArrayKeys as $key) {
+		foreach ($source as $key => $_) {
 			if (!array_key_exists($key, $mask)) {
 				continue;
 			}
@@ -477,7 +476,7 @@ class ArrayUtility {
 	static public function renumberKeysToAvoidLeapsIfKeysAreAllNumeric(array $array = array(), $level = 0) {
 		$level++;
 		$allKeysAreNumeric = TRUE;
-		foreach (array_keys($array) as $key) {
+		foreach ($array as $key => $_) {
 			if (is_numeric($key) === FALSE) {
 				$allKeysAreNumeric = FALSE;
 				break;
@@ -517,7 +516,7 @@ class ArrayUtility {
 	 * @return void
 	 */
 	static public function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {
-		foreach (array_keys($overrule) as $key) {
+		foreach ($overrule as $key => $_) {
 			if ($enableUnsetFeature && $overrule[$key] === '__UNSET') {
 				unset($original[$key]);
 				continue;
@@ -536,4 +535,5 @@ class ArrayUtility {
 		// This line is kept for backward compatibility reasons.
 		reset($original);
 	}
+
 }

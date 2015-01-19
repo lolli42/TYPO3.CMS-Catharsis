@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -415,4 +415,5 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 	public function __destruct() {
 		session_write_close();
 	}
+
 }

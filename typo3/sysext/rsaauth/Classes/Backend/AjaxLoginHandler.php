@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rsaauth\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -40,4 +40,5 @@ class AjaxLoginHandler {
 			$parent->setError('No OpenSSL backend could be obtained for rsaauth.');
 		}
 	}
+
 }

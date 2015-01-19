@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -56,7 +56,6 @@ return array(
 			)
 		),
 		'sitename' => 'TYPO3',					// Name of the base-site. This title shows up in the root of the tree structure if you're an 'admin' backend user.
-		'compat_version' => '3.8',				// Compatibility version. TYPO3 behavior will try to be compatible with the output from the TYPO3 version set here. It is recommended to change this setting with the Upgrade Wizard.
 		'encryptionKey' => '',					// This is a "salt" used for various kinds of encryption, CRC checksums and validations. You can enter any rubbish string here but try to keep it secret. You should notice that a change to this value might invalidate temporary information, URLs etc. At least, clear all cache if you change this so any such information can be rebuild with the new key.
 		'cookieDomain' => '',					// Restricts the domain name for FE and BE session cookies. When setting the value to ".domain.com" (replace domain.com with your domain!), login sessions will be shared across subdomains. Alternatively, if you have more than one domain with sub-domains, you can set the value to a regular expression to match against the domain of the HTTP request. The result of the match is used as the domain for the cookie. eg. /\.(example1|example2)\.com$/ or /\.(example1\.com)|(example2\.net)$/. Separate domains for FE and BE can be set using <a href="#FE-cookieDomain">$TYPO3_CONF_VARS['FE']['cookieDomain']</a> and <a href="#BE-cookieDomain">$TYPO3_CONF_VARS['BE']['cookieDomain']</a> respectively.
 		'cookieSecure' => 0,					// <p>Integer (0, 1, 2): Indicates that the cookie should only be transmitted over a secure HTTPS connection from the client.</p><dl><dt>0</dt><dd>always send cookie</dd><dt>1 (force HTTPS)</dt><dd>the cookie will only be set if a secure (HTTPS) connection exists - use this in combination with lockSSL since otherwise the application will fail and throw an exception</dd><dt>2</dt><dd>the cookie will be set in each case, but uses the secure flag if a secure (HTTPS) connection exists.</dd></dl>
@@ -109,7 +108,7 @@ return array(
 		'maxFileNameLength' => 60,				// Integer: This is the maximum file name length. The value will be taken into account by basic file operations like renaming or creation of files and folders.
 		'UTF8filesystem' => FALSE,				// Boolean: If TRUE then TYPO3 uses utf-8 to store file names. This allows for accented Latin letters as well as any other non-latin characters like Cyrillic and Chinese.
 		'systemLocale' => '',					// String: locale used for certain system related functions, e.g. escaping shell commands. If problems with filenames containing special characters occur, the value of this option is probably wrong. See <a href="http://php.net/manual/en/function.setlocale.php" target="_blank">setlocale()</a>.
-		'lockingMode' => 'simple',				// String: Define which locking mode is used to control requests to pages being generated. Can be one of either "disable" (no locking), "simple" (checks for file existance), "flock" (using PHPs <a href="http://php.net/flock" target="_blank">flock()</a> function), "semaphore" (using PHPs <a href="http://php.net/sem-acquire" target="_blank">sem_acquire()</a> function). Default is "simple".
+		'lockingMode' => 'simple',				// String: Define which locking mode is used to control requests to pages being generated. Can be one of either "disable" (no locking), "simple" (checks for file existence), "flock" (using PHPs <a href="http://php.net/flock" target="_blank">flock()</a> function), "semaphore" (using PHPs <a href="http://php.net/sem-acquire" target="_blank">sem_acquire()</a> function). Default is "simple".
 		'reverseProxyIP' => '',					// String: list of IP addresses. If TYPO3 is behind one or more (intransparent) reverese proxies the IP addresses must be added here.
 		'reverseProxyHeaderMultiValue' => 'none',	// String: "none","first","last": defines which values of a proxy header (eg HTTP_X_FORWARDED_FOR) to use, if more than one is found. "none" discards the value, "first" and "last" use the first/last of the values in the list.
 		'reverseProxyPrefix' => '',				// String: optional prefix to be added to the internal URL (SCRIPT_NAME and REQUEST_URI).
@@ -280,7 +279,6 @@ return array(
 		'RTEenabled' => TRUE,							// Boolean: If set, the Rich Text editor will be an option in the backend. Notice that the editor must be enabled per-user and options are configurable. See admin guide.
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
 		'RTE_reg' => array(),							// Contains arrays of possible RTEs available (keys=extKey, values=cfg-array). Each array contains a key, "objRef", which contains a user function call with prefixed script path and instanciating a persistent global object. This can report back if browser requirements are OK, draw the RTE and do the transformations needed.
-		'staticFileEditPath' => 'fileadmin/static/',	// Path to directory with static files for editing (see table sys_staticfiles_edit). Relative to PATH_site.
 		'lockRootPath' => '',							// This path is used to evaluate if paths outside of PATH_site should be allowed. Ending slash required!
 		'userHomePath' => '',							// Combined folder identifier of the directory where TYPO3 backend-users have their home-dirs. A combined folder identifier looks like this: [storageUid]:[folderIdentifier]. Eg. '2:users/'. A home for backend user 2 would be: '2:users/2/'. Ending slash required!
 		'groupHomePath' => '',							// Combined folder identifier of the directory where TYPO3 backend-groups have their home-dirs. A combined folder identifier looks like this: [storageUid]:[folderIdentifier]. Eg. '2:groups/'. A home for backend group 1 would be: '2:groups/1/'. Ending slash required!
@@ -591,7 +589,6 @@ return array(
 		'interfaces' => 'backend',							// This determines which interface options is available in the login prompt and in which order (All options: ",backend,frontend")
 		'loginNewsTitle' => '',								// Define alternative header message for the LoginNews. If this var is empty, the default header "Important messages:" is displayed.
 		'notificationPrefix' => '[TYPO3 Note]',				// String: Used to prefix the subject of mails sent in the taskcenter
-		'accessListRenderMode' => 'checkbox',				// Can be "singlebox", "checkbox" or blank. Refers to the "renderMode" for the selector boxes in be-groups configuration.
 		'explicitADmode' => 'explicitDeny',					// Sets the general allow/deny mode for selector box values. Value can be either "explicitAllow" or "explicitDeny", nothing else!
 		'niceFlexFormXMLtags' => TRUE,						// If set, the flexform XML will be stored with meaningful tags which can be validated with DTD schema. If you rely on custom reading of the XML from pre-4.0 versions you should set this to FALSE if you don't like to change your reader code (internally it is insignificant since \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array() doesn't care for the tags if the index-attribute value is set)
 		'flexFormXMLincludeDiffBase' => TRUE,				// If set, an additional tag with index "vXX.vDEFbase" is created for translations in flexforms holding the value of the default language when translation was changed. Used to show diff of value. This setting will change whether the system thinks flexform XML looks clean. For example when FALSE XX.vDEFbase fields will be removed in cleaning while accepted if TRUE (of course)
@@ -701,6 +698,14 @@ return array(
 				'callbackMethod' => \TYPO3\CMS\Backend\Controller\ClickMenuController::class . '->printContentForAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
+			'DataHandler::process' => array(
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\SimpleDataHandlerController::class . '->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			'UserSettings::process' => array(
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\UserSettingsController::class . '->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			)
 		),
 		'toolbarItems' => array(), // Array: Registered toolbar items classes
 		'HTTP' => array(
@@ -831,8 +836,8 @@ return array(
 				'email' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
 				'url' => \TYPO3\CMS\Core\Database\SoftReferenceIndex::class,
 			),
+			// @deprecated global soft reference parsers are deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8
 			'softRefParser_GL' => array(),
-			// Global soft reference parsers
 			'cliKeys' => array()
 		),
 	),

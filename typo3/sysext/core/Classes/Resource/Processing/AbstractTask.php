@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Processing;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -217,4 +217,5 @@ abstract class AbstractTask implements TaskInterface {
 
 		return $this->successful;
 	}
+
 }

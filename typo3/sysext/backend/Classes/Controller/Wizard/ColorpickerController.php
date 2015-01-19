@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller\Wizard;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -213,9 +213,15 @@ class ColorpickerController extends AbstractWizardController {
 					<p class="c-head">' . $this->getLanguageService()->getLL('colorpicker_colorValue', TRUE) . '</p>
 					<table border="0" cellpadding="0" cellspacing="3">
 						<tr>
-							<td><input type="text" ' . $this->doc->formWidth(7) . ' maxlength="10" name="colorValue" value="' . htmlspecialchars($this->colorValue) . '" /></td>
-							<td style="background-color:' . htmlspecialchars($this->colorValue) . '; border: 1px solid black;">&nbsp;<span style="color: black;">' . $this->getLanguageService()->getLL('colorpicker_black', TRUE) . '</span>&nbsp;<span style="color: white;">' . $this->getLanguageService()->getLL('colorpicker_white', TRUE) . '</span>&nbsp;</td>
-							<td><input type="submit" name="save_close" value="' . $this->getLanguageService()->getLL('colorpicker_setClose', TRUE) . '" /></td>
+							<td>
+								<input type="text" ' . $this->doc->formWidth(7) . ' maxlength="10" name="colorValue" value="' . htmlspecialchars($this->colorValue) . '" />
+							</td>
+							<td style="background-color:' . htmlspecialchars($this->colorValue) . '; border: 1px solid black;">
+								<span style="color: black;">' . $this->getLanguageService()->getLL('colorpicker_black', TRUE) . '</span>&nbsp;<span style="color: white;">' . $this->getLanguageService()->getLL('colorpicker_white', TRUE) . '</span>
+							</td>
+							<td>
+								<input class="btn btn-default" type="submit" name="save_close" value="' . $this->getLanguageService()->getLL('colorpicker_setClose', TRUE) . '" />
+							</td>
 						</tr>
 					</table>
 
@@ -386,7 +392,7 @@ class ColorpickerController extends AbstractWizardController {
 	 * Gets the HTML (Hex) Color Code for the selected pixel of an image
 	 * This method handles the correct imageResource no matter what format
 	 *
-	 * @param pointer $im Valid ImageResource returned by \TYPO3\CMS\Core\Imaging\GraphicalFunctions::imageCreateFromFile
+	 * @param resource $im Valid ImageResource returned by \TYPO3\CMS\Core\Imaging\GraphicalFunctions::imageCreateFromFile
 	 * @param int $x X-Coordinate of the pixel that should be checked
 	 * @param int $y Y-Coordinate of the pixel that should be checked
 	 * @return string HEX RGB value for color

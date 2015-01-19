@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -1593,7 +1593,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @return FileInterface
 	 */
 	public function renameFile($file, $targetFileName) {
-		// TODO add $conflictMode setting
+		// @todo add $conflictMode setting
 
 		// The name should be different from the current.
 		if ($file->getName() === $targetFileName) {
@@ -1708,13 +1708,13 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @return Folder
 	 */
 	public function moveFolder(Folder $folderToMove, Folder $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
-		// TODO add tests
+		// @todo add tests
 		$originalFolder = $folderToMove->getParentFolder();
 		$this->assureFolderMovePermissions($folderToMove, $targetParentFolder);
 		$sourceStorage = $folderToMove->getStorage();
 		$returnObject = NULL;
 		$sanitizedNewFolderName = $this->driver->sanitizeFileName($newFolderName ?: $folderToMove->getName());
-		// TODO check if folder already exists in $targetParentFolder, handle this conflict then
+		// @todo check if folder already exists in $targetParentFolder, handle this conflict then
 		$this->emitPreFolderMoveSignal($folderToMove, $targetParentFolder, $sanitizedNewFolderName);
 		// Get all file objects now so we are able to update them after moving the folder
 		$fileObjects = $this->getAllFileObjectsInFolder($folderToMove);
@@ -1758,7 +1758,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @return Folder The new (copied) folder object
 	 */
 	public function copyFolder(FolderInterface $folderToCopy, FolderInterface $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
-		// TODO implement the $conflictMode handling
+		// @todo implement the $conflictMode handling
 		$this->assureFolderCopyPermissions($folderToCopy, $targetParentFolder);
 		$returnObject = NULL;
 		$sanitizedNewFolderName = $this->driver->sanitizeFileName($newFolderName ?: $folderToCopy->getName());
@@ -1842,6 +1842,10 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param Folder $folderObject
 	 * @param bool $deleteRecursively
 	 * @throws \RuntimeException
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
+	 * @throws Exception\InsufficientUserPermissionsException
+	 * @throws Exception\FileOperationErrorException
+	 * @throws Exception\InvalidPathException
 	 * @return bool
 	 */
 	public function deleteFolder($folderObject, $deleteRecursively = FALSE) {
@@ -2296,7 +2300,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function getUniqueName(Folder $folder, $theFile, $dontCheckForUnique = FALSE) {
 		static $maxNumber = 99, $uniqueNamePrefix = '';
-		// Fetches info about path, name, extention of $theFile
+		// Fetches info about path, name, extension of $theFile
 		$origFileInfo = GeneralUtility::split_fileref($theFile);
 		// Adds prefix
 		if ($uniqueNamePrefix) {
@@ -2463,4 +2467,5 @@ class ResourceStorage implements ResourceStorageInterface {
 	public function isDefault() {
 		return $this->isDefault;
 	}
+
 }

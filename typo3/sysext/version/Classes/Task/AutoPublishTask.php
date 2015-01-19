@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Version\Task;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -36,7 +36,7 @@ class AutoPublishTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 		$autopubObj->autoPublishWorkspaces();
 		// There's no feedback from the publishing process,
 		// so there can't be any failure.
-		// TODO: This could certainly be improved.
+		// @todo This could certainly be improved.
 		return TRUE;
 	}
 

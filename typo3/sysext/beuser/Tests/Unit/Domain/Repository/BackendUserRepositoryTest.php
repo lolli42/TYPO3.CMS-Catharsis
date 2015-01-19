@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Beuser\Tests\Unit\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -26,4 +26,5 @@ class BackendUserRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$objectManager = $this->getMock(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface::class, array(), array(), '', FALSE);
 		new \TYPO3\CMS\Beuser\Domain\Repository\BackendUserRepository($objectManager);
 	}
+
 }

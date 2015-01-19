@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -109,7 +109,7 @@ class Typo3DatabaseBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array(), array(), '', FALSE);
 
 		$backend->expects($this->once())->method('remove');
-		$data = uniqid('someData');
+		$data = $this->getUniqueId('someData');
 		$entryIdentifier = 'anIdentifier';
 		$backend->set($entryIdentifier, $data, array(), 500);
 	}
@@ -355,22 +355,6 @@ class Typo3DatabaseBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function collectGarbageSelectsExpiredCacheEntries() {
-		/** @var \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend|\PHPUnit_Framework_MockObject_MockObject $backend */
-		$backend = $this->getMock(\TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class, array('dummy'), array('Testing'));
-		$this->setUpMockFrontendOfBackend($backend);
-
-		$GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array(), array(), '', FALSE);
-		$GLOBALS['TYPO3_DB']
-			->expects($this->once())
-			->method('exec_SELECTquery')
-			->with('identifier', 'cf_Testing');
-		$backend->collectGarbage();
-	}
-
-	/**
-	 * @test
-	 */
 	public function collectGarbageDeletesTagsFromExpiredEntries() {
 		/** @var \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend|\PHPUnit_Framework_MockObject_MockObject $backend */
 		$backend = $this->getMock(\TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class, array('dummy'), array('Testing'));
@@ -553,4 +537,5 @@ class Typo3DatabaseBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$backend->flushByTag('UnitTestTag%special');
 	}
+
 }

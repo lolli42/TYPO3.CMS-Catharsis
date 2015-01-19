@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A caching backend which stores cache entries by using APC.
  *
@@ -44,7 +45,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
 class ApcBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implements \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface {
 
 	/**
-	 * A prefix to seperate stored data from other data possible stored in the APC
+	 * A prefix to separate stored data from other data possible stored in the APC
 	 *
 	 * @var string
 	 */

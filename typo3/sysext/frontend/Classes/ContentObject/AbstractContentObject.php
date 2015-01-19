@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -58,4 +58,5 @@ abstract class AbstractContentObject {
 	public function getContentObject() {
 		return $this->cObj;
 	}
+
 }

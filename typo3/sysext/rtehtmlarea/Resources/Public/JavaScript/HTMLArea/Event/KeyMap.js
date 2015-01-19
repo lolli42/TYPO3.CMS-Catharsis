@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,9 @@
 /********************************************************************
  * HTMLArea.KeyMap: Utility functions for dealing with key events   *
  ********************************************************************/
-HTMLArea.Event.KeyMap = function ($, Event) {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/KeyMap',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
+	function (Event) {
 
 	/**
 	 * Constructor method
@@ -90,4 +92,4 @@ HTMLArea.Event.KeyMap = function ($, Event) {
 
 	return KeyMap;
 
-}(HTMLArea.jQuery, HTMLArea.Event);
+});

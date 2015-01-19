@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Mail;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,10 @@ namespace TYPO3\CMS\Core\Mail;
 
 // Make sure Swift's auto-loader is registered
 require_once PATH_typo3 . 'contrib/swiftmailer/lib/swift_required.php';
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 
 /**
  * Adapter for Swift_Mailer to be used by TYPO3 extensions.
@@ -57,6 +61,8 @@ class Mailer extends \Swift_Mailer {
 			}
 		}
 		parent::__construct($this->transport);
+
+		$this->emitPostInitializeMailerSignal();
 	}
 
 	/**
@@ -144,6 +150,33 @@ class Mailer extends \Swift_Mailer {
 		} else {
 			$this->mailSettings = (array)$GLOBALS['TYPO3_CONF_VARS']['MAIL'];
 		}
+	}
+
+	/**
+	 * Get the object manager
+	 *
+	 * @return \TYPO3\CMS\Extbase\Object\ObjectManager
+	 */
+	protected function getObjectManager() {
+		return GeneralUtility::makeInstance(ObjectManager::class);
+	}
+
+	/**
+	 * Get the SignalSlot dispatcher
+	 *
+	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		return $this->getObjectManager()->get(Dispatcher::class);
+	}
+
+	/**
+	 * Emits a signal after mailer initialization
+	 *
+	 * @return void
+	 */
+	protected function emitPostInitializeMailerSignal() {
+		$this->getSignalSlotDispatcher()->dispatch('TYPO3\\CMS\\Core\\Mail\\Mailer', 'postInitializeMailer', array($this));
 	}
 
 }

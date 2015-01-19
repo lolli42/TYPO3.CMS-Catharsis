@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Template;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -165,7 +165,7 @@ function jumpToUrl(URL) {
 	 * If set, then a JavaScript section will be outputted in the bottom of page which will try and update the top.busy session expiry object.
 	 *
 	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $endJS = 1;
 
@@ -175,47 +175,47 @@ function jumpToUrl(URL) {
 	/**
 	 * Light background color
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor = '#F7F3EF';
 
 	/**
 	 * Steel-blue
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor2 = '#9BA1A8';
 
 	/**
 	 * dok.color
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor3 = '#F6F2E6';
 
 	/**
 	 * light tablerow background, brownish
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor4 = '#D9D5C9';
 
 	/**
 	 * light tablerow background, greenish
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor5 = '#ABBBB4';
 
 	/**
 	 * light tablerow background, yellowish, for section headers. Light.
 	 *
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $bgColor6 = '#E7DBA8';
 
 	/**
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $hoverColor = '#254D7B';
 
@@ -244,7 +244,7 @@ function jumpToUrl(URL) {
 	 * Background image of page (relative to PATH_typo3)
 	 *
 	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use a stylesheet instead
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use a stylesheet instead
 	 */
 	public $backGroundImage = '';
 
@@ -268,7 +268,7 @@ function jumpToUrl(URL) {
 	 *
 	 * @var string
 	 */
-	protected $xUaCompatibilityVersion = 'IE=10';
+	protected $xUaCompatibilityVersion = 'IE=edge,chrome=1';
 
 	// Skinning
 	/**
@@ -320,7 +320,7 @@ function jumpToUrl(URL) {
 	 * internal character set, nowadays utf-8 for everything
 	 *
 	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, as it is always utf-8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, as it is always utf-8
 	 */
 	protected $charset = 'utf-8';
 
@@ -389,6 +389,10 @@ function jumpToUrl(URL) {
 	public function __construct() {
 		// Initializes the page rendering object:
 		$this->getPageRenderer();
+
+		// load Legacy CSS Support
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyCssClasses');
+
 		// Setting default scriptID:
 		if (($temp_M = (string)GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
 			$this->scriptID = preg_replace('/^.*\\/(sysext|ext)\\//', 'ext/', $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M] . 'index.php');
@@ -441,7 +445,6 @@ function jumpToUrl(URL) {
 		if (!isset($this->pageRenderer)) {
 			$this->pageRenderer = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Page\PageRenderer::class);
 			$this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
-			$this->pageRenderer->addCssLibrary($GLOBALS['BACK_PATH'] . 'contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 			$this->pageRenderer->enableConcatenateFiles();
 			$this->pageRenderer->enableCompressCss();
 			$this->pageRenderer->enableCompressJavascript();
@@ -1080,7 +1083,7 @@ function jumpToUrl(URL) {
 	 * Further a JavaScript section is outputted which will update the top.busy session-expiry object (unless $this->endJS is set to FALSE)
 	 *
 	 * @return string HTML content (<script> tag section)
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, nothing there to output anymore
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, nothing there to output anymore
 	 */
 	public function endPageJS() {
 		GeneralUtility::logDeprecatedFunction();
@@ -1288,7 +1291,7 @@ function jumpToUrl(URL) {
 	 * @return string A <input> tag of the type "submit
 	 */
 	public function t3Button($onClick, $label) {
-		$button = '<input type="submit" onclick="' . htmlspecialchars($onClick) . '; return false;" value="' . htmlspecialchars($label) . '" />';
+		$button = '<input class="btn btn-default" type="submit" onclick="' . htmlspecialchars($onClick) . '; return false;" value="' . htmlspecialchars($label) . '" />';
 		return $button;
 	}
 
@@ -1297,7 +1300,7 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $string Input string
 	 * @return string Output string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use proper HTML directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use proper HTML directly
 	 */
 	public function dfw($string) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1309,7 +1312,7 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $string Input string
 	 * @return string Output string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use proper HTML directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use proper HTML directly
 	 */
 	public function rfw($string) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1341,11 +1344,10 @@ function jumpToUrl(URL) {
 			// <script wrapped in nl?
 			$cr = $linebreak ? LF : '';
 			// Remove nl from the beginning
-			$string = preg_replace('/^\\n+/', '', $string);
+			$string = ltrim($string, LF);
 			// Re-ident to one tab using the first line as reference
-			$match = array();
-			if (preg_match('/^(\\t+)/', $string, $match)) {
-				$string = str_replace($match[1], TAB, $string);
+			if ($string[0] === TAB) {
+				$string = TAB . ltrim($string, TAB);
 			}
 			$string = $cr . '<script type="text/javascript">
 /*<![CDATA[*/
@@ -1375,8 +1377,10 @@ function jumpToUrl(URL) {
 	 * @param array $layout If set, then this provides an alternative layout array instead of $this->tableLayout
 	 * @return string The HTML table.
 	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function table($data, $layout = NULL) {
+		GeneralUtility::logDeprecatedFunction();
 		$result = '';
 		if (is_array($data)) {
 			$tableLayout = is_array($layout) ? $layout : $this->tableLayout;
@@ -1417,7 +1421,7 @@ function jumpToUrl(URL) {
 	 * @param array $arr2 Secondary items
 	 * @param array $arr3 Third-level items
 	 * @return string HTML content, <table>...</table>
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function menuTable($arr1, $arr2 = array(), $arr3 = array()) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1484,21 +1488,18 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * Includes the necessary javascript file (tree.js) for use on pages which have the
-	 * drag and drop functionality (usually pages and folder display trees)
+	 * Includes the necessary javascript file for use on pages which have the
+	 * drag and drop functionality (legacy folder tree)
 	 *
 	 * @param string $table indicator of which table the drag and drop function should work on (pages or folders)
+	 * @param string $additionalJavaScriptCode adds more code to the additional javascript code
 	 * @return void
 	 */
-	public function getDragDropCode($table) {
-		$this->getContextMenuCode();
-		$this->pageRenderer->loadPrototype();
-		$this->loadJavascriptLib('js/tree.js');
-		// Setting prefs for drag & drop
-		$this->JScodeArray['dragdrop'] = '
-			DragDrop.backPath  = "' . GeneralUtility::shortMD5('|' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']) . '";
-			DragDrop.table     = "' . $table . '";
-		';
+	public function getDragDropCode($table, $additionalJavaScriptCode = '') {
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function() {
+			DragDrop.table = "' . $table . '";
+			' . $additionalJavaScriptCode . '
+		}');
 	}
 
 	/**
@@ -1897,9 +1898,9 @@ function jumpToUrl(URL) {
 		if (is_array($pageRecord) && $pageRecord['uid']) {
 			$title = substr($pageRecord['_thePathFull'], 0, -1);
 			// Remove current page title
-			$pos = strrpos($title, '/');
+			$pos = strrpos($title, $pageRecord['title']);
 			if ($pos !== FALSE) {
-				$title = substr($title, 0, $pos) . '/';
+				$title = substr($title, 0, $pos);
 			}
 		} else {
 			$title = '';
@@ -2023,4 +2024,5 @@ function jumpToUrl(URL) {
 	protected function getBackendFavicon() {
 		return IconUtility::skinImg($this->backPath, 'gfx/favicon.ico', '', 1);
 	}
+
 }

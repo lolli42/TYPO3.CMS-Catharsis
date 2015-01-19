@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller\ContentElement;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -73,13 +73,6 @@ class NewContentElementController {
 	public $doc;
 
 	/**
-	 * Includes a list of files to include between init() and main() - see init()
-	 *
-	 * @var array
-	 */
-	public $include_once = array();
-
-	/**
 	 * Used to accumulate the content of the module.
 	 *
 	 * @var string
@@ -106,10 +99,6 @@ class NewContentElementController {
 	 * @return void
 	 */
 	public function init() {
-		// Setting class files to include:
-		if (is_array($GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses'])) {
-			$this->include_once = array_merge($this->include_once, $GLOBALS['TBE_MODULES_EXT']['xMOD_db_new_content_el']['addElClasses']);
-		}
 		// Setting internal vars:
 		$this->id = (int)GeneralUtility::_GP('id');
 		$this->sys_language = (int)GeneralUtility::_GP('sys_language_uid');
@@ -348,7 +337,7 @@ class NewContentElementController {
 		$wizardItems = array();
 		if (is_array($wizards)) {
 			foreach ($wizards as $groupKey => $wizardGroup) {
-				$groupKey = preg_replace('/\\.$/', '', $groupKey);
+				$groupKey = rtrim($groupKey, '.');
 				$showItems = GeneralUtility::trimExplode(',', $wizardGroup['show'], TRUE);
 				$showAll = $wizardGroup['show'] === '*';
 				$groupItems = array();
@@ -359,7 +348,7 @@ class NewContentElementController {
 				}
 				if (is_array($wizardElements)) {
 					foreach ($wizardElements as $itemKey => $itemConf) {
-						$itemKey = preg_replace('/\\.$/', '', $itemKey);
+						$itemKey = rtrim($itemKey, '.');
 						if ($showAll || in_array($itemKey, $showItems)) {
 							$tmpItem = $this->wizard_getItem($groupKey, $itemKey, $itemConf);
 							if ($tmpItem) {

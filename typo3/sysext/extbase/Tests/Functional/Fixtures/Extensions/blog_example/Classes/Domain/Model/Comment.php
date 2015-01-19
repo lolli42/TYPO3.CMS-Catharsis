@@ -1,6 +1,7 @@
 <?php
 namespace ExtbaseTeam\BlogExample\Domain\Model;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -133,4 +134,5 @@ class Comment extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 		return $this->author . ' (' . $this->email . ') said on ' . $this->date->format('Y-m-d') . ':' . chr(10) .
 			$this->content . chr(10);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -50,14 +50,14 @@ class GroupElement extends AbstractFormElement {
 		$disallowed = trim($config['disallowed']);
 		$item = '';
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
+		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		$item .= '<input type="hidden" name="' . $additionalInformation['itemFormElName'] . '_mul" value="' . ($config['multiple'] ? 1 : 0) . '"' . $disabled . ' />';
 		$this->formEngine->registerRequiredProperty('range', $additionalInformation['itemFormElName'], array($minitems, $maxitems, 'imgName' => $table . '_' . $row['uid'] . '_' . $field));
 		$info = '';
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist.
-		$specConf = $this->formEngine->getSpecConfFromString($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
+		$specConf = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
 		$additionalInformation['itemFormElID_file'] = $additionalInformation['itemFormElID'] . '_files';
 		// whether the list and delete controls should be disabled
 		$noList = isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'list');
@@ -225,8 +225,9 @@ class GroupElement extends AbstractFormElement {
 				// Creating string showing allowed types:
 				$tempFT = GeneralUtility::trimExplode(',', $allowed, TRUE);
 				$onlySingleTableAllowed = FALSE;
+				$languageService = $this->getLanguageService();
 				if (trim($tempFT[0]) === '*') {
-					$info .= '<span class="nobr">' . htmlspecialchars($this->formEngine->getLL('l_allTables')) . '</span><br />';
+					$info .= '<span class="nobr">' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allTables')) . '</span><br />';
 				} elseif ($tempFT) {
 					$onlySingleTableAllowed = count($tempFT) == 1;
 					foreach ($tempFT as $theT) {
@@ -234,7 +235,7 @@ class GroupElement extends AbstractFormElement {
 						$info .= '<span class="nobr">
 									<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">'
 							. IconUtility::getSpriteIconForRecord($theT, array())
-							. htmlspecialchars($this->formEngine->sL($GLOBALS['TCA'][$theT]['ctrl']['title'])) . '</a></span><br />';
+							. htmlspecialchars($languageService->sL($GLOBALS['TCA'][$theT]['ctrl']['title'])) . '</a></span><br />';
 					}
 				}
 				$perms_clause = $this->getBackendUserAuthentication()->getPagePermsClause(1);
@@ -288,4 +289,5 @@ class GroupElement extends AbstractFormElement {
 		}
 		return $item;
 	}
+
 }

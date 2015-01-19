@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Ajax;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -45,4 +45,5 @@ class FolderStatus extends AbstractAjaxAction {
 
 		return count($folderStructureErrors);
 	}
+
 }

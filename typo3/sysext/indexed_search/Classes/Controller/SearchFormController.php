@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -29,7 +29,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public $prefixId = 'tx_indexedsearch';
 
 	// Same as class name
-	public $scriptRelPath = 'pi/class.tx_indexedsearch.php';
+	public $scriptRelPath = 'Classes/Controller/SearchFormController.php';
 
 	// Path to this script relative to the extension dir.
 	public $extKey = 'indexed_search';
@@ -238,7 +238,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$this->join_pages = 1;
 		}
 		// Add media to search in:
-		if (strlen(trim($this->conf['search.']['mediaList']))) {
+		if (trim($this->conf['search.']['mediaList']) !== '') {
 			$mediaList = implode(',', GeneralUtility::trimExplode(',', $this->conf['search.']['mediaList'], TRUE));
 		}
 		foreach ($this->external_parsers as $extension => $obj) {
@@ -491,7 +491,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// Now, traverse result and put the rows to be displayed into an array
 			// Each row should contain the fields from 'ISEC.*, IP.*' combined + artificial fields "show_resume" (bool) and "result_number" (counter)
 			while (FALSE !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
-				if (!$this->checkExistance($row)) {
+				if (!$this->checkExistence($row)) {
 					// Check if the record is still available or if it has been deleted meanwhile.
 					// Currently this works for files only, since extending it to content elements would cause a lot of overhead...
 					// Otherwise, skip the row.
@@ -672,9 +672,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 						}
 						if (!trim($sectionName)) {
 							$sectionTitleLinked = $this->pi_getLL('unnamedSection', '', TRUE) . ':';
-						} else {
+						} elseif ($this->conf['linkSectionTitles']) {
 							$onclick = 'document.' . $this->prefixId . '[\'' . $this->prefixId . '[_sections]\'].value=\'' . $theRLid . '\';document.' . $this->prefixId . '.submit();return false;';
 							$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . htmlspecialchars($sectionName) . ':</a>';
+						} else {
+							$sectionTitleLinked = htmlspecialchars($sectionName);
 						}
 						$this->resultSections[$id] = array($sectionName, count($resultRows));
 						// Add content header:
@@ -803,9 +805,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	/**
 	 * Returns a query which selects the search-word from the word/rel tables.
 	 *
-	 * @param string WHERE clause selecting the word from phash
-	 * @param string Additional AND clause in the end of the query.
-	 * @return pointer SQL result pointer
+	 * @param string $wordSel WHERE clause selecting the word from phash
+	 * @param string $plusQ Additional AND clause in the end of the query.
+	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function execPHashListQuery($wordSel, $plusQ = '') {
 		return $GLOBALS['TYPO3_DB']->exec_SELECTquery('IR.phash', 'index_words IW,
@@ -822,7 +824,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 *
 	 * @param string $sWord Word to search for
 	 * @param int $mode Bit-field which can contain WILDCARD_LEFT and/or WILDCARD_RIGHT
-	 * @return pointer SQL result pointer
+	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function searchWord($sWord, $mode) {
 		$wildcard_left = $mode & self::WILDCARD_LEFT ? '%' : '';
@@ -837,7 +839,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * Search for one distinct word
 	 *
 	 * @param string $sWord Word to search for
-	 * @return pointer SQL result pointer
+	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function searchDistinct($sWord) {
 		$wSel = 'IW.wid=' . \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::md5inthash($sWord);
@@ -850,7 +852,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * Search for a sentence
 	 *
 	 * @param string $sSentence Sentence to search for
-	 * @return pointer SQL result pointer
+	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function searchSentence($sSentence) {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('ISEC.phash', 'index_section ISEC, index_fulltext IFT', 'IFT.fulltextdata LIKE \'%' . $GLOBALS['TYPO3_DB']->quoteStr($sSentence, 'index_fulltext') . '%\' AND
@@ -998,9 +1000,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	/**
 	 * Execute final query, based on phash integer list. The main point is sorting the result in the right order.
 	 *
-	 * @param string List of phash integers which match the search.
-	 * @param int Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
-	 * @return pointer Query result pointer
+	 * @param string $list List of phash integers which match the search.
+	 * @param int $freeIndexUid Pointer to which indexing configuration you want to search in. -1 means no filtering. 0 means only regular indexed content.
+	 * @return bool|\mysqli_result Query result pointer
 	 */
 	public function execFinalQuery($list, $freeIndexUid = -1) {
 		// Setting up methods of filtering results based on page types, access, etc.
@@ -1154,8 +1156,21 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 *
 	 * @param array Result row array
 	 * @return bool Returns TRUE if record is still available
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkExistance($row) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->checkExistence($row);
+	}
+
+	/**
+	 * Check if the record is still available or if it has been deleted meanwhile.
+	 * Currently this works for files only, since extending it to page content would cause a lot of overhead.
+	 *
+	 * @param array Result row array
+	 * @return bool Returns TRUE if record is still available
+	 */
+	protected function checkExistence($row) {
 		$recordExists = TRUE;
 		// Always expect that page content exists
 		if ($row['item_type']) {
@@ -2164,8 +2179,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	/**
 	 * Returns an object reference to the hook object if any
 	 *
-	 * @param string Name of the function you want to call / hook key
-	 * @return object Hook object, if any. Otherwise NULL.
+	 * @param string $functionName Name of the function you want to call / hook key
+	 * @return object|NULL Hook object, if any. Otherwise NULL.
 	 */
 	public function hookRequest($functionName) {
 		// Hook: menuConfig_preProcessModMenu

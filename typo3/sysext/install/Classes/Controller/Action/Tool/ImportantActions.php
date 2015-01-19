@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Tool;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -124,7 +124,7 @@ class ImportantActions extends Action\AbstractAction {
 	 */
 	protected function changeSiteName() {
 		$values = $this->postValues['values'];
-		if (isset($values['newSiteName']) && strlen($values['newSiteName']) > 0) {
+		if (isset($values['newSiteName']) && $values['newSiteName'] !== '') {
 			/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
 			$configurationManager = $this->objectManager->get(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class);
 			$configurationManager->setLocalConfigurationValueByPath('SYS/sitename', $values['newSiteName']);
@@ -415,4 +415,5 @@ class ImportantActions extends Action\AbstractAction {
 		$message->setTitle('Analyzed current database');
 		return $message;
 	}
+
 }

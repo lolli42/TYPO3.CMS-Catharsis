@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -36,9 +36,6 @@ class TextElement extends AbstractFormElement {
 	 */
 	public function render($table, $field, $row, &$additionalInformation) {
 		$config = $additionalInformation['fieldConf']['config'];
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
-			return $this->formEngine->getSingleField_typeNone_render($config, $additionalInformation['itemFormElValue']);
-		}
 
 		// Setting columns number
 		$cols = MathUtility::forceIntegerInRange($config['cols'] ?: 30, 5, $this->formEngine->maxTextareaWidth);
@@ -60,6 +57,14 @@ class TextElement extends AbstractFormElement {
 			}
 		}
 
+		// must be called after the cols and rows calculation, so the parameters are applied
+		// to read-only fields as well.
+		if ($this->isRenderReadonly() || $config['readOnly']) {
+			$config['cols'] = $cols;
+			$config['rows'] = $rows;
+			return $this->formEngine->getSingleField_typeNone_render($config, $additionalInformation['itemFormElValue']);
+		}
+
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
 		if (in_array('required', $evalList, TRUE)) {
 			$this->formEngine->requiredFields[$table . '_' . $row['uid'] . '_' . $field] = $additionalInformation['itemFormElName'];
@@ -70,7 +75,7 @@ class TextElement extends AbstractFormElement {
 		// Set TRUE, if the RTE would have been loaded if it wasn't for the disable-RTE flag in the bottom of the page...
 		$rteWouldHaveBeenLoaded = FALSE;
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist. Traditionally, this is where RTE configuration has been found.
-		$specialConfiguration = $this->formEngine->getSpecConfFromString($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
+		$specialConfiguration = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
 		// Setting up the altItem form field, which is a hidden field containing the value
 		$altItem = '<input type="hidden" name="' . htmlspecialchars($additionalInformation['itemFormElName']) . '" value="' . htmlspecialchars($additionalInformation['itemFormElValue']) . '" />';
 		$item = '';
@@ -80,7 +85,7 @@ class TextElement extends AbstractFormElement {
 			// If the field is configured for RTE and if any flag-field is not set to disable it.
 			if (isset($specialConfiguration['richtext']) && (!$parameters['flag'] || !$row[$parameters['flag']])) {
 				BackendUtility::fixVersioningPid($table, $row);
-				list($recordPid, $tsConfigPid) = $this->formEngine->getTSCpid($table, $row['uid'], $row['pid']);
+				list($recordPid, $tsConfigPid) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
 				// If the pid-value is not negative (that is, a pid could NOT be fetched)
 				if ($tsConfigPid >= 0) {
 					$rteSetup = $this->getBackendUserAuthentication()->getTSConfig('RTE', BackendUtility::getPagesTSconfig($recordPid));
@@ -89,9 +94,6 @@ class TextElement extends AbstractFormElement {
 					if (!$rteSetupConfiguration['disabled']) {
 						if (!$this->formEngine->disableRTE) {
 							$this->formEngine->RTEcounter++;
-							// Find alternative relative path for RTE images/links:
-							$evalWriteFile = RteHtmlParser::evalWriteFile($specialConfiguration['static_write'], $row);
-							$rteRelativePath = is_array($evalWriteFile) ? dirname($evalWriteFile['relEditFile']) : '';
 							// Get RTE object, draw form and set flag:
 							$rteObject = BackendUtility::RTEgetObj();
 							$item = $rteObject->drawRTE(
@@ -103,7 +105,7 @@ class TextElement extends AbstractFormElement {
 								$specialConfiguration,
 								$rteSetupConfiguration,
 								$rteTcaTypeValue,
-								$rteRelativePath,
+								'',
 								$tsConfigPid
 							);
 
@@ -143,7 +145,7 @@ class TextElement extends AbstractFormElement {
 		if (!$rteWasLoaded) {
 			// Show message, if no RTE (field can only be edited with RTE!)
 			if ($specialConfiguration['rte_only']) {
-				$item = '<p><em>' . htmlspecialchars($this->formEngine->getLL('l_noRTEfound')) . '</em></p>';
+				$item = '<p><em>' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noRTEfound')) . '</em></p>';
 			} else {
 				if ($specialConfiguration['nowrap']) {
 					$wrap = 'off';
@@ -158,6 +160,12 @@ class TextElement extends AbstractFormElement {
 					$classes[] = 'enable-tab';
 				}
 				$formWidthText = $this->formWidthText($cols, $wrap);
+				// add the max-height from the users' preference to it
+				$maximumHeight = (int)$this->getBackendUserAuthentication()->uc['resizeTextareas_MaxHeight'];
+				if ($maximumHeight > 0) {
+					$formWidthText = str_replace('style="', 'style="max-height: ' . $maximumHeight . 'px; ', $formWidthText);
+				}
+
 				// Extract class attributes from $formWidthText (otherwise it would be added twice to the output)
 				$res = array();
 				if (preg_match('/ class="(.+?)"/', $formWidthText, $res)) {
@@ -166,9 +174,9 @@ class TextElement extends AbstractFormElement {
 				}
 
 				if (!empty($classes)) {
-					$class = ' class="tceforms-textarea ' . implode(' ', $classes) . '"';
+					$class = ' class="tceforms-textarea t3js-formengine-textarea ' . implode(' ', $classes) . '"';
 				} else {
-					$class = ' class="tceforms-textarea"';
+					$class = ' class="tceforms-textarea t3js-formengine-textarea"';
 				}
 
 				foreach ($evalList as $func) {
@@ -187,11 +195,15 @@ class TextElement extends AbstractFormElement {
 					}
 				}
 				$textOnChange = implode('', $additionalInformation['fieldChangeFunc']);
+				$additionalAttributes = '';
+				if (isset($config['max']) && (int)$config['max'] > 0) {
+					$additionalAttributes = ' maxlength="' . (int)$config['max'] . '"';
+				}
 				$item .= '
 							<textarea ' . 'id="' . str_replace('.', '', uniqid('tceforms-textarea-', TRUE)) . '" ' . 'name="' . $additionalInformation['itemFormElName']
 					. '"' . $formWidthText . $class . ' ' . 'rows="' . $rows . '" ' . 'wrap="' . $wrap . '" ' . 'onchange="'
 					. htmlspecialchars($textOnChange) . '"' . $this->formEngine->getPlaceholderAttribute($table, $field, $config, $row)
-					. $additionalInformation['onFocus'] . '>' . GeneralUtility::formatForTextarea($additionalInformation['itemFormElValue']) . '</textarea>';
+					. $additionalInformation['onFocus'] . $additionalAttributes . '>' . GeneralUtility::formatForTextarea($additionalInformation['itemFormElValue']) . '</textarea>';
 				$item = $this->formEngine->renderWizards(
 					array($item, $altItem),
 					$config['wizards'],
@@ -225,4 +237,5 @@ class TextElement extends AbstractFormElement {
 		}
 		return $wTags;
 	}
+
 }

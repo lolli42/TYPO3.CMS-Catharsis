@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\RecordList;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\RecordList;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Library with a single function addElement that returns table
@@ -209,7 +210,7 @@ abstract class AbstractRecordList {
 		// Start up:
 		$out = '
 		<!-- Element, begin: -->
-		<tr ' . $rowParams . '>';
+		<tr ' . $rowParams . ' data-uid="' . (int)$data['uid'] . '">';
 		// Show icon and lines
 		if ($this->showIcon) {
 			$out .= '
@@ -435,30 +436,31 @@ abstract class AbstractRecordList {
 	 * Generates HTML code for a Reference tooltip out of
 	 * sys_refindex records you hand over
 	 *
-	 * @param array $references array of records from sys_refindex table
+	 * @param int $references number of records from sys_refindex table
 	 * @param string $launchViewParameter JavaScript String, which will be passed as parameters to top.launchView
 	 * @return string
 	 */
-	protected function generateReferenceToolTip(array $references, $launchViewParameter = '') {
-		$result = array();
-		foreach ($references as $reference) {
-			$result[] = $reference['tablename'] . ':' . $reference['recuid'] . ':' . $reference['field'];
-			if (strlen(implode(' / ', $result)) >= 100) {
-				break;
-			}
-		}
-		if (empty($result)) {
+	protected function generateReferenceToolTip($references, $launchViewParameter = '') {
+		if (!$references) {
 			$htmlCode = '-';
 		} else {
 			$htmlCode = '<a href="#"';
 			if ($launchViewParameter !== '') {
 				$htmlCode .= ' onclick="' . htmlspecialchars(('top.launchView(' . $launchViewParameter . '); return false;')) . '"';
 			}
-			$htmlCode .= ' title="' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(implode(' / ', $result), 100)) . '">';
-			$htmlCode .= count($references);
+			$htmlCode .= ' title="' . htmlspecialchars($this->getLanguageService()->sl('LLL:EXT:backend/Resources/Private/Language/locallang.xlf:show_references') . ' (' .  $references . ')') . '">';
+			$htmlCode .= $references;
 			$htmlCode .= '</a>';
 		}
 		return $htmlCode;
+	}
+
+	/**
+	 * Returns the language service
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 }

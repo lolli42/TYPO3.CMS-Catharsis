@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -224,7 +224,7 @@ class StepController extends AbstractController {
 					}
 					unset($typo_db_host, $typo_db, $typo_db_username, $typo_db_password, $typo_db_extTableDef_script);
 				} elseif (
-					strlen($line) > 0 && preg_match('/^\\/\\/.+|^#.+|^<\\?php$|^<\\?$|^\\?>$/', $line, $matches) === 0
+					$line !== '' && preg_match('/^\\/\\/.+|^#.+|^<\\?php$|^<\\?$|^\\?>$/', $line, $matches) === 0
 				) {
 					$additionalConfiguration[] = $line;
 				}
@@ -422,4 +422,5 @@ class StepController extends AbstractController {
 			$this->redirect();
 		}
 	}
+
 }

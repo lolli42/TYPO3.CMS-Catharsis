@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -88,4 +88,5 @@ abstract class AbstractCustomPreset extends AbstractPreset {
 		}
 		return $configurationValues;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -80,4 +80,5 @@ class LogLevelTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$levelString = 'invalid';
 		$this->assertEquals($levelString, \TYPO3\CMS\Core\Log\LogLevel::normalizeLevel($levelString));
 	}
+
 }

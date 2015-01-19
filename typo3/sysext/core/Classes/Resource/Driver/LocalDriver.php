@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Driver;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -228,13 +228,13 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		if ($recursive == FALSE) {
 			$newFolderName = $this->sanitizeFileName($newFolderName);
 			$newIdentifier = $parentFolderIdentifier . $newFolderName . '/';
-			GeneralUtility::mkdir($this->getAbsoluteBasePath() . $newIdentifier);
+			GeneralUtility::mkdir($this->getAbsolutePath($newIdentifier));
 		} else {
 			$parts = GeneralUtility::trimExplode('/', $newFolderName);
 			$parts = array_map(array($this, 'sanitizeFileName'), $parts);
 			$newFolderName = implode('/', $parts);
 			$newIdentifier = $parentFolderIdentifier . $newFolderName . '/';
-			GeneralUtility::mkdir_deep($this->getAbsoluteBasePath() . $parentFolderIdentifier, $newFolderName);
+			GeneralUtility::mkdir_deep($this->getAbsolutePath($parentFolderIdentifier) . '/', $newFolderName);
 		}
 		return $newIdentifier;
 	}
@@ -318,7 +318,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 			$cleanFileName = preg_replace('/[' . self::UNSAFE_FILENAME_CHARACTER_EXPRESSION . '\\xC0-\\xFF]/', '_', trim($fileName));
 		}
 		// Strip trailing dots and return
-		$cleanFileName = preg_replace('/\\.*$/', '', $cleanFileName);
+		$cleanFileName = rtrim($cleanFileName, '.');
 		if (!$cleanFileName) {
 			throw new Exception\InvalidFileNameException(
 				'File name ' . $cleanFileName . ' is invalid.',
@@ -362,7 +362,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		$items = $this->retrieveFileAndFoldersInPath($realPath, $recursive, $includeFiles, $includeDirs);
 		uksort(
 			$items,
-			array('\\TYPO3\\CMS\\Core\\Utility\\ResourceUtility', 'recursiveFileListSortingHelper')
+			array(\TYPO3\CMS\Core\Utility\ResourceUtility::class, 'recursiveFileListSortingHelper')
 		);
 
 		$iterator = new \ArrayIterator($items);
@@ -581,6 +581,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 *
 	 * @param string $fileIdentifier
 	 * @return string
+	 * @throws Exception\InvalidPathException
 	 */
 	protected function getAbsolutePath($fileIdentifier) {
 		$relativeFilePath = ltrim($this->canonicalizeAndCheckFileIdentifier($fileIdentifier), '/');
@@ -647,7 +648,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 		$localFilePath = $this->canonicalizeAndCheckFilePath($localFilePath);
 		// as for the "virtual storage" for backwards-compatibility, this check always fails, as the file probably lies under PATH_site
 		// thus, it is not checked here
-		// @ todo is check in storage
+		// @todo is check in storage
 		if (GeneralUtility::isFirstPartOfStr($localFilePath, $this->absoluteBasePath) && $this->storageUid > 0) {
 			throw new \InvalidArgumentException('Cannot add a file that is already part of this storage.', 1314778269);
 		}
@@ -1018,6 +1019,7 @@ class LocalDriver extends AbstractHierarchicalFilesystemDriver {
 	 * @param bool $deleteRecursively
 	 * @return bool
 	 * @throws Exception\FileOperationErrorException
+	 * @throws Exception\InvalidPathException
 	 */
 	public function deleteFolder($folderIdentifier, $deleteRecursively = FALSE) {
 		$folderPath = $this->getAbsolutePath($folderIdentifier);

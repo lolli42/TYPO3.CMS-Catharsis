@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -82,7 +82,7 @@ class GridDataService {
 	 * Generates grid list array from given versions.
 	 *
 	 * @param array $versions All records uids etc. First key is table name, second key incremental integer. Records are associative arrays with uid and t3ver_oid fields. The pid of the online record is found as "livepid" the pid of the offline record is found in "wspid
-	 * @param object $parameter Parameters as submitted by JavaScript component
+	 * @param \stdClass $parameter Parameters as submitted by JavaScript component
 	 * @param int $currentWorkspace The current workspace
 	 * @return array Version record information (filtered, sorted and limited)
 	 * @throws \InvalidArgumentException

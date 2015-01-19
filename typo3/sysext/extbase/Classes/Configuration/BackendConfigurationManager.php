@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Configuration;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A general purpose configuration manager used in backend mode.
  */
@@ -215,7 +216,7 @@ class BackendConfigurationManager extends \TYPO3\CMS\Extbase\Configuration\Abstr
 		$storagePids = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $storagePid);
 		foreach ($storagePids as $startPid) {
 			$pids = $this->queryGenerator->getTreeList($startPid, $recursionDepth, 0, 1);
-			if (strlen($pids) > 0) {
+			if ((string)$pids !== '') {
 				$recursiveStoragePids .= $pids . ',';
 			}
 		}

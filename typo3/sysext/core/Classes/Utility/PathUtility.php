@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -244,7 +244,7 @@ class PathUtility {
 		// Replace backslashes with slashes to work with Windows paths if given
 		$path = trim(str_replace('\\', '/', $path));
 
-		// TODO: do we really need this? Probably only in testing context for vfs?
+		// @todo do we really need this? Probably only in testing context for vfs?
 		$protocol = '';
 		if (strpos($path, '://') !== FALSE) {
 			list($protocol, $path) = explode('://', $path);
@@ -301,7 +301,7 @@ class PathUtility {
 	 * Strip first part of a path, equal to the length of PATH_site
 	 *
 	 * @param string $path
-	 * @return array
+	 * @return string
 	 * @internal
 	 */
 	static public function stripPathSitePrefix($path) {

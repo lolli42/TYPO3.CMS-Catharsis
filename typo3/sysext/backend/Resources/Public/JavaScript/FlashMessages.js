@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -21,7 +21,7 @@
 define('TYPO3/CMS/Backend/FlashMessages', ['jquery'], function ($) {
 	var Severity = {
 		notice: -2,
-		// @deprecated since 7.0 and will be removed with CMS 9, use info instead of information
+		// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 9, use info instead of information
 		information: -1,
 		info: -1,
 		ok: 0,

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation\Validator;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -50,4 +50,5 @@ class RegularExpressionValidator extends AbstractValidator {
 			throw new \TYPO3\CMS\Extbase\Validation\Exception\InvalidValidationOptionsException('regularExpression "' . $this->options['regularExpression'] . '" in RegularExpressionValidator contained an error.', 1298273089);
 		}
 	}
+
 }

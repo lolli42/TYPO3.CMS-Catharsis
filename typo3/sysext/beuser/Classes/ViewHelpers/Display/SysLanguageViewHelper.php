@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Beuser\ViewHelpers\Display;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Beuser\ViewHelpers\Display;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Converts comma separated list of sys_language uids to html unordered list (<ul>) with speaking titles
  *

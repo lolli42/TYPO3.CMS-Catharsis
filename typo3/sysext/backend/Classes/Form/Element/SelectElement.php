@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -26,6 +26,36 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 class SelectElement extends AbstractFormElement {
 
 	/**
+	 * If this value is set during traversal and the traversal chain can
+	 * not be walked to the end this value will be returned instead.
+	 *
+	 * @var string
+	 */
+	protected $alternativeFieldValue;
+
+	/**
+	 * If this is TRUE the alternative field value will be used even if
+	 * the detected field value is not empty.
+	 *
+	 * @var bool
+	 */
+	protected $forceAlternativeFieldValueUse = FALSE;
+
+	/**
+	 * The row data of the record that is currently traversed.
+	 *
+	 * @var array
+	 */
+	protected $currentRow;
+
+	/**
+	 * Name of the table that is currently traversed.
+	 *
+	 * @var string
+	 */
+	protected $currentTable;
+
+	/**
 	 * This will render a selector box element, or possibly a special construction with two selector boxes.
 	 * That depends on configuration.
 	 *
@@ -39,17 +69,17 @@ class SelectElement extends AbstractFormElement {
 		// Field configuration from TCA:
 		$config = $additionalInformation['fieldConf']['config'];
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
+		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist.
-		$specConf = $this->formEngine->getSpecConfFromString($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
+		$specConf = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
 		$selItems = $this->getSelectItems($table, $field, $row, $additionalInformation);
 
 		// Creating the label for the "No Matching Value" entry.
 		$nMV_label = isset($additionalInformation['fieldTSConfig']['noMatchingValue_label'])
-			? $this->formEngine->sL($additionalInformation['fieldTSConfig']['noMatchingValue_label'])
-			: '[ ' . $this->formEngine->getLL('l_noMatchingValue') . ' ]';
+			? $this->getLanguageService()->sL($additionalInformation['fieldTSConfig']['noMatchingValue_label'])
+			: '[ ' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue') . ' ]';
 		// Prepare some values:
 		$maxitems = (int)$config['maxitems'];
 		// If a SINGLE selector box...
@@ -95,9 +125,10 @@ class SelectElement extends AbstractFormElement {
 	 * @see getSingleField_typeSelect()
 	 */
 	public function getSingleField_typeSelect_multiple($table, $field, $row, &$PA, $config, $selItems, $nMV_label) {
+		$languageService = $this->getLanguageService();
 		$item = '';
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
+		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Setting this hidden field (as a flag that JavaScript can read out)
@@ -136,8 +167,13 @@ class SelectElement extends AbstractFormElement {
 				&& !$this->getBackendUserAuthentication()->checkAuthMode($table, $field, $evalValue, $config['authMode']);
 			if ($isRemoved && !$PA['fieldTSConfig']['disableNoMatchingValueElement'] && !$config['disableNoMatchingValueElement']) {
 				$tvP[1] = rawurlencode(@sprintf($nMV_label, $evalValue));
-			} elseif (isset($PA['fieldTSConfig']['altLabels.'][$evalValue])) {
-				$tvP[1] = rawurlencode($this->formEngine->sL($PA['fieldTSConfig']['altLabels.'][$evalValue]));
+			} else {
+				if (isset($PA['fieldTSConfig']['altLabels.'][$evalValue])) {
+					$tvP[1] = rawurlencode($languageService->sL($PA['fieldTSConfig']['altLabels.'][$evalValue]));
+				}
+				if (isset($PA['fieldTSConfig']['altIcons.'][$evalValue])) {
+					$tvP[2] = $PA['fieldTSConfig']['altIcons.'][$evalValue];
+				}
 			}
 			if ($tvP[1] == '') {
 				// Case: flexform, default values supplied, no label provided (bug #9795)
@@ -180,7 +216,7 @@ class SelectElement extends AbstractFormElement {
 			$itemsToSelect = '
 				<select data-relatedfieldname="' . htmlspecialchars($PA['itemFormElName']) . '" data-exclusivevalues="'
 				. htmlspecialchars($config['exclusiveKeys']) . '" id="' . $multiSelectId . '" name="' . $PA['itemFormElName'] . '_sel" '
-				. $this->formEngine->insertDefStyle('select', 'tceforms-multiselect tceforms-itemstoselect t3-form-select-itemstoselect')
+				. ' class="' . $this->cssClassTypeElementPrefix . 'select tceforms-multiselect tceforms-itemstoselect t3-form-select-itemstoselect" '
 				. ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"'
 				. $PA['onFocus'] . $selector_itemListStyle . '>
 					' . implode('
@@ -196,9 +232,9 @@ class SelectElement extends AbstractFormElement {
 			if (isset($config['multiSelectFilterItems']) && is_array($config['multiSelectFilterItems']) && count($config['multiSelectFilterItems']) > 1) {
 				$filterDropDownOptions = array();
 				foreach ($config['multiSelectFilterItems'] as $optionElement) {
-					$optionValue = $this->formEngine->sL(isset($optionElement[1]) && $optionElement[1] != '' ? $optionElement[1]
+					$optionValue = $languageService->sL(isset($optionElement[1]) && $optionElement[1] != '' ? $optionElement[1]
 						: $optionElement[0]);
-					$filterDropDownOptions[] = '<option value="' . htmlspecialchars($this->formEngine->sL($optionElement[0])) . '">'
+					$filterDropDownOptions[] = '<option value="' . htmlspecialchars($languageService->sL($optionElement[0])) . '">'
 						. htmlspecialchars($optionValue) . '</option>';
 				}
 				$filterSelectbox = '<select class="t3-form-multiselect-filter-dropdown form-control">
@@ -224,8 +260,8 @@ class SelectElement extends AbstractFormElement {
 			'maxitems' => $maxitems,
 			'info' => '',
 			'headers' => array(
-				'selector' => $this->formEngine->getLL('l_selected') . ':<br />',
-				'items' => '<div class="pull-left">' . $this->formEngine->getLL('l_items') . ':</div>' . $selectBoxFilterContents
+				'selector' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.selected') . ':<br />',
+				'items' => '<div class="pull-left">' . $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.items') . ':</div>' . $selectBoxFilterContents
 			),
 			'noBrowser' => 1,
 			'thumbnails' => $itemsToSelect,
@@ -301,7 +337,7 @@ class SelectElement extends AbstractFormElement {
 			if (in_array($selectItem[1], $removeItems) || $languageDeny || $authModeDeny) {
 				unset($selectItems[$selectItemIndex]);
 			} elseif (isset($PA['fieldTSConfig']['altLabels.'][$selectItem[1]])) {
-				$selectItems[$selectItemIndex][0] = htmlspecialchars($this->formEngine->sL($PA['fieldTSConfig']['altLabels.'][$selectItem[1]]));
+				$selectItems[$selectItemIndex][0] = htmlspecialchars($this->getLanguageService()->sL($PA['fieldTSConfig']['altLabels.'][$selectItem[1]]));
 			}
 
 			// Removing doktypes with no access:
@@ -361,7 +397,7 @@ class SelectElement extends AbstractFormElement {
 		$selectedStyle = '';
 		$item = '';
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
+		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 			$onlySelectedIconShown = 1;
 		}
@@ -470,7 +506,7 @@ class SelectElement extends AbstractFormElement {
 		if ($config['iconsInOptionTags']) {
 			$classesForSelectTag[] = 'icon-select';
 		}
-		$item .= '<select' . $selectedStyle . ' id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE)) . '" name="' . $PA['itemFormElName'] . '" ' . $this->formEngine->insertDefStyle('select', implode(' ', $classesForSelectTag)) . ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus'] . $disabled . '>';
+		$item .= '<select' . $selectedStyle . ' id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE)) . '" name="' . $PA['itemFormElName'] . '" class="' . $this->cssClassTypeElementPrefix . 'select ' . implode(' ', $classesForSelectTag) . '"' . ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus'] . $disabled . '>';
 		$item .= implode('', $opt);
 		$item .= '</select>';
 		// Create icon table:
@@ -518,17 +554,17 @@ class SelectElement extends AbstractFormElement {
 		}
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
 		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
-		$item = '';
-		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
-			$disabled = ' disabled="disabled"';
+		$output = '';
+
+		// Disabled
+		$disabled = 0;
+		if ($this->isRenderReadonly() || $config['readOnly']) {
+			$disabled = 1;
 		}
 		// Traverse the Array of selector box items:
-		$tRows = array();
+		$groups = array();
+		$currentGroup = 0;
 		$c = 0;
-		$setAll = array();
-		$unSetAll = array();
-		$restoreCmd = array();
 		$sOnChange = '';
 		if (!$disabled) {
 			$sOnChange = implode('', $PA['fieldChangeFunc']);
@@ -540,32 +576,13 @@ class SelectElement extends AbstractFormElement {
 					if (isset($p[2]) && $p[2] != 'empty-emtpy') {
 						$selIcon = $this->formEngine->getIconHtml($p[2]);
 					}
-					$tRows[] = '
-						<tr class="c-header">
-							<td colspan="3">' . $selIcon . htmlspecialchars($p[0]) . '</td>
-						</tr>';
+					$currentGroup++;
+					$groups[$currentGroup]['header'] = array(
+						'icon' => $selIcon,
+						'title' => htmlspecialchars($p[0])
+					);
 				} else {
-					// Selected or not by default:
-					$sM = '';
-					if (isset($itemArray[$p[1]])) {
-						$sM = ' checked="checked"';
-						unset($itemArray[$p[1]]);
-					}
-					// Icon:
-					if (!empty($p[2])) {
-						$selIcon = $this->formEngine->getIconHtml($p[2]);
-					} else {
-						$selIcon = IconUtility::getSpriteIcon('empty-empty');
-					}
-					// Compile row:
-					$rowId = str_replace('.', '', uniqid('select_checkbox_row_', TRUE));
-					$onClickCell = $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked=!' . $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked;';
-					$onClick = 'this.attributes.getNamedItem("class").nodeValue = ' . $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked ? "c-selectedItem" : "c-unselectedItem";';
-					$setAll[] = $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked=1;';
-					$setAll[] = '$(\'' . $rowId . '\').removeClassName(\'c-unselectedItem\');$(\'' . $rowId . '\').addClassName(\'c-selectedItem\');';
-					$unSetAll[] = $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked=0;';
-					$unSetAll[] = '$(\'' . $rowId . '\').removeClassName(\'c-selectedItem\');$(\'' . $rowId . '\').addClassName(\'c-unselectedItem\');';
-					$restoreCmd[] = $this->formEngine->elName(($PA['itemFormElName'] . '[' . $c . ']')) . '.checked=' . ($sM ? 1 : 0) . ';' . '$(\'' . $rowId . '\').removeClassName(\'c-selectedItem\');$(\'' . $rowId . '\').removeClassName(\'c-unselectedItem\');' . '$(\'' . $rowId . '\').addClassName(\'c-' . ($sM ? '' : 'un') . 'selectedItem\');';
+
 					// Check if some help text is available
 					// Since TYPO3 4.5 help text is expected to be an associative array
 					// with two key, "title" and "description"
@@ -583,64 +600,143 @@ class SelectElement extends AbstractFormElement {
 							$helpArray['description'] = $p[3];
 						}
 					}
-					$label = htmlspecialchars($p[0], ENT_COMPAT, 'UTF-8', FALSE);
 					if ($hasHelp) {
 						$help = BackendUtility::wrapInHelp('', '', '', $helpArray);
 					}
-					$tRows[] = '
-						<tr id="' . $rowId . '" class="' . ($sM ? 'c-selectedItem' : 'c-unselectedItem')
-						. '" onclick="' . htmlspecialchars($onClick) . '" style="cursor: pointer;">
-							<td class="c-checkbox"><input type="checkbox" ' . $this->formEngine->insertDefStyle('check')
-						. ' name="' . htmlspecialchars(($PA['itemFormElName'] . '[' . $c . ']'))
-						. '" value="' . htmlspecialchars($p[1]) . '"' . $sM . ' onclick="' . htmlspecialchars($sOnChange)
-						. '"' . $PA['onFocus'] . ' /></td>
-							<td class="c-labelCell" onclick="' . htmlspecialchars($onClickCell) . '">' . $selIcon . $label . '</td>
-								<td class="c-descr" onclick="' . htmlspecialchars($onClickCell) . '">' . (empty($help) ? '' : $help) . '</td>
-						</tr>';
+
+					// Selected or not by default:
+					$checked = 0;
+					if (isset($itemArray[$p[1]])) {
+						$checked = 1;
+						unset($itemArray[$p[1]]);
+					}
+
+					// Build item array
+					$groups[$currentGroup]['items'][] = array(
+						'id' => str_replace('.', '', uniqid('select_checkbox_row_', TRUE)),
+						'name' => $PA['itemFormElName'] . '[' . $c . ']',
+						'value' => $p[1],
+						'checked' => $checked,
+						'disabled' => $disabled,
+						'class' => '',
+						'icon' => (!empty($p[2]) ? $this->formEngine->getIconHtml($p[2]) : IconUtility::getSpriteIcon('empty-empty')),
+						'title' => htmlspecialchars($p[0], ENT_COMPAT, 'UTF-8', FALSE),
+						'help' => $help
+					);
 					$c++;
 				}
 			}
 		}
 		// Remaining values (invalid):
 		if (count($itemArray) && !$PA['fieldTSConfig']['disableNoMatchingValueElement'] && !$config['disableNoMatchingValueElement']) {
+			$currentGroup++;
 			foreach ($itemArray as $theNoMatchValue => $temp) {
-				// Compile <checkboxes> tag:
-				array_unshift($tRows, '
-						<tr class="c-invalidItem">
-							<td class="c-checkbox"><input type="checkbox" ' . $this->formEngine->insertDefStyle('check')
-					. ' name="' . htmlspecialchars(($PA['itemFormElName'] . '[' . $c . ']'))
-					. '" value="' . htmlspecialchars($theNoMatchValue) . '" checked="checked" onclick="' . htmlspecialchars($sOnChange) . '"'
-					. $PA['onFocus'] . $disabled . ' /></td>
-							<td class="c-labelCell">' . htmlspecialchars(@sprintf($nMV_label, $theNoMatchValue), ENT_COMPAT, 'UTF-8', FALSE) . '</td><td>&nbsp;</td>
-						</tr>');
+				// Build item array
+				$groups[$currentGroup]['items'][] = array(
+					'id' => str_replace('.', '', uniqid('select_checkbox_row_', TRUE)),
+					'name' => $PA['itemFormElName'] . '[' . $c . ']',
+					'value' => $theNoMatchValue,
+					'checked' => 1,
+					'disabled' => $disabled,
+					'class' => 'danger',
+					'icon' => '',
+					'title' => htmlspecialchars(@sprintf($nMV_label, $theNoMatchValue), ENT_COMPAT, 'UTF-8', FALSE),
+					'help' => ''
+				);
 				$c++;
 			}
 		}
 		// Add an empty hidden field which will send a blank value if all items are unselected.
-		$item .= '<input type="hidden" class="select-checkbox" name="' . htmlspecialchars($PA['itemFormElName']) . '" value="" />';
-		// Remaining checkboxes will get their set-all link:
-		$tableHead = '';
-		if (count($setAll)) {
-			$tableHead = '<thead>
-					<tr class="c-header-checkbox-controls t3-row-header">
-						<td class="c-checkbox">
-						<input type="checkbox" class="checkbox" onclick="if (checked) {' . htmlspecialchars(implode('', $setAll) . '} else {' . implode('', $unSetAll)) . '}">
-						</td>
-						<td colspan="2">
-						</td>
-					</tr></thead>';
+		$output .= '<input type="hidden" class="select-checkbox" name="' . htmlspecialchars($PA['itemFormElName']) . '" value="" />';
+
+		// Building the checkboxes
+		foreach($groups as $groupKey => $group){
+			$groupId = htmlspecialchars($PA['itemFormElID']) . '-group-' . $groupKey;
+			$output .= '<div class="panel panel-default">';
+			if(is_array($group['header'])){
+				$output .= '
+					<div class="panel-heading">
+						<a data-toggle="collapse" href="#' . $groupId . '" aria-expanded="true" aria-controls="' . $groupId . '">
+							' . $group['header']['icon'] . '
+							' . $group['header']['title'] . '
+						</a>
+					</div>
+					';
+			}
+			if(is_array($group['items']) && count($group['items']) >= 1){
+				$tableRows = '';
+				$checkGroup = array();
+				$uncheckGroup = array();
+				$resetGroup = array();
+
+				// Render rows
+				foreach($group['items'] as $item){
+					$tableRows .= '
+						<tr class="' . $item['class'] . '">
+							<td class="col-checkbox">
+								<input type="checkbox"
+									id="' . $item['id'] . '"
+									name="' . htmlspecialchars($item['name']) . '"
+									value="' . htmlspecialchars($item['value']) . '"
+									onclick="' . htmlspecialchars($sOnChange) . '"
+									' . ($item['checked'] ? ' checked=checked' : '') . '
+									' . ($item['disabled'] ? ' disabled=disabled' : '') . '
+									' . $PA['onFocus'] . ' />
+							</td>
+							<td class="col-icon">
+								<label class="label-block" for="' . $item['id'] . '">' . $item['icon'] . '</label>
+							</td>
+							<td class="col-title">
+								<label class="label-block" for="' . $item['id'] . '">' . $item['title'] . '</label>
+							</td>
+							<td>' . $item['help'] . '</td>
+						</tr>
+						';
+					$checkGroup[] = $this->formEngine->elName($item['name']) . '.checked=1;';
+					$uncheckGroup[] = $this->formEngine->elName($item['name']) . '.checked=0;';
+					$resetGroup[] = $this->formEngine->elName($item['name']) . '.checked='.$item['checked'] . ';';
+				}
+
+				// Build toggle group checkbox
+				$toggleGroupCheckbox = '';
+				if(count($resetGroup)){
+					$toggleGroupCheckbox = '
+						<input type="checkbox" class="checkbox" onclick="if (checked) {' . htmlspecialchars(implode('', $checkGroup) . '} else {' . implode('', $uncheckGroup)) . '}">
+						';
+				}
+
+				// Build reset group button
+				$resetGroupBtn = '';
+				if(count($resetGroup)){
+					$resetGroupBtn = '
+						<a href="#" class="btn btn-default" onclick="' . implode('', $resetGroup) . ' return false;' . '">
+							' . IconUtility::getSpriteIcon('actions-edit-undo', array('title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.revertSelection')))) . '
+							' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.revertSelection') . '
+						</a>
+						';
+				}
+
+				$output .= '
+					<div id="' . $groupId . '" class="panel-collapse collapse in" role="tabpanel">
+						<div class="table-fit">
+							<table class="table table-transparent table-hover">
+								<thead>
+									<tr>
+										<th class="col-checkbox">' . $toggleGroupCheckbox . '</th>
+										<th class="col-icon"></th>
+										<th class="text-right" colspan="2">' . $resetGroupBtn . '</th>
+									</tr>
+								</thead>
+								<tbody>' . $tableRows . '</tbody>
+							</table>
+						</div>
+					</div>
+					';
+			}
+			$output .= '</div>';
 		}
-		// Implode rows in table:
-		$item .= '
-			<table border="0" cellpadding="0" cellspacing="0" class="typo3-TCEforms-select-checkbox">' . $tableHead . '<tbody>' . implode('', $tRows) . '</tbody>
-			</table>
-			';
-		// Add revert icon
-		if (!empty($restoreCmd)) {
-			$item .= '<a href="#" onclick="' . implode('', $restoreCmd) . ' return false;' . '">'
-				. IconUtility::getSpriteIcon('actions-edit-undo', array('title' => htmlspecialchars($this->formEngine->getLL('l_revertSelection')))) . '</a>';
-		}
-		return $item;
+
+		return $output;
 	}
 
 	/**
@@ -658,11 +754,12 @@ class SelectElement extends AbstractFormElement {
 	 * @see getSingleField_typeSelect()
 	 */
 	public function getSingleField_typeSelect_singlebox($table, $field, $row, &$PA, $config, $selItems, $nMV_label) {
+		$languageService = $this->getLanguageService();
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
 		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$item = '';
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
+		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Traverse the Array of selector box items:
@@ -713,7 +810,7 @@ class SelectElement extends AbstractFormElement {
 			? MathUtility::forceIntegerInRange(count($selItems) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax'])
 			: $size;
 		$selectBox = '<select id="' . str_replace('.', '', uniqid($cssPrefix, TRUE)) . '" name="' . $PA['itemFormElName'] . '[]" '
-			. $this->formEngine->insertDefStyle('select', $cssPrefix) . ($size ? ' size="' . $size . '" ' : '')
+			. 'class="' . $this->cssClassTypeElementPrefix . 'select ' . $cssPrefix . '"' . ($size ? ' size="' . $size . '" ' : '')
 			. ' multiple="multiple" onchange="' . htmlspecialchars($sOnChange) . '"' . $PA['onFocus']
 			. ' ' . $selector_itemListStyle . $disabled . '>
 						' . implode('
@@ -731,10 +828,10 @@ class SelectElement extends AbstractFormElement {
 					<td>
 					' . $selectBox . '
 					<br/>
-					<em>' . htmlspecialchars($this->formEngine->getLL('l_holdDownCTRL')) . '</em>
+					<em>' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.holdDownCTRL')) . '</em>
 					</td>
 					<td valign="top">
-						<a href="#" onclick="' . $onClick . '" title="' . htmlspecialchars($this->formEngine->getLL('l_revertSelection')) . '">'
+						<a href="#" onclick="' . $onClick . '" title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.revertSelection')) . '">'
 			. IconUtility::getSpriteIcon('actions-edit-undo') . '</a>
 					</td>
 				</tr>
@@ -742,4 +839,135 @@ class SelectElement extends AbstractFormElement {
 				';
 		return $item;
 	}
+
+	/**
+	 * If the select field is build by a foreign_table the related UIDs
+	 * will be returned.
+	 *
+	 * Otherwise the label of the currently selected value will be written
+	 * to the alternativeFieldValue class property.
+	 *
+	 * @param array $fieldConfig The "config" section of the TCA for the current select field.
+	 * @param string $fieldName The name of the select field.
+	 * @param string $value The current value in the local record, usually a comma separated list of selected values.
+	 * @return array Array of related UIDs.
+	 */
+	public function getRelatedSelectFieldUids(array $fieldConfig, $fieldName, $value) {
+		$relatedUids = array();
+
+		$isTraversable = FALSE;
+		if (isset($fieldConfig['foreign_table'])) {
+			$isTraversable = TRUE;
+			// if a foreign_table is used we pre-filter the records for performance
+			$fieldConfig['foreign_table_where'] .= ' AND ' . $fieldConfig['foreign_table'] . '.uid IN (' . $value . ')';
+		}
+
+		$PA = array();
+		$PA['fieldConf']['config'] = $fieldConfig;
+		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
+		$PA['fieldTSConfig'] = $this->formEngine->setTSconfig($this->currentTable, $this->currentRow, $fieldName);
+		$PA['fieldConf']['config'] = $this->formEngine->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
+		$selectItemArray = $this->getSelectItems($this->currentTable, $fieldName, $this->currentRow, $PA);
+
+		if ($isTraversable && count($selectItemArray)) {
+			$this->currentTable = $fieldConfig['foreign_table'];
+			$relatedUids = $this->getSelectedValuesFromSelectItemArray($selectItemArray, $value);
+		} else {
+			$selectedLabels = $this->getSelectedValuesFromSelectItemArray($selectItemArray, $value, 1, TRUE);
+			if (count($selectedLabels) === 1) {
+				$this->alternativeFieldValue = $selectedLabels[0];
+				$this->forceAlternativeFieldValueUse = TRUE;
+			}
+		}
+
+		return $relatedUids;
+	}
+
+	/**
+	 * Extracts the selected values from a given array of select items.
+	 *
+	 * @param array $selectItemArray The select item array generated by \TYPO3\CMS\Backend\Form\FormEngine->getSelectItems.
+	 * @param string $value The currently selected value(s) as comma separated list.
+	 * @param int|NULL $maxItems Optional value, if set processing is skipped and an empty array will be returned when the number of selected values is larger than the provided value.
+	 * @param bool $returnLabels If TRUE the select labels will be returned instead of the values.
+	 * @return array
+	 */
+	protected function getSelectedValuesFromSelectItemArray(array $selectItemArray, $value, $maxItems = NULL, $returnLabels = FALSE) {
+		$values = GeneralUtility::trimExplode(',', $value);
+		$selectedValues = array();
+
+		if ($maxItems !== NULL && (count($values) > (int)$maxItems)) {
+			return $selectedValues;
+		}
+
+		foreach ($selectItemArray as $selectItem) {
+			$selectItemValue = $selectItem[1];
+			if (in_array($selectItemValue, $values)) {
+				if ($returnLabels) {
+					$selectedValues[] = $selectItem[0];
+				} else {
+					$selectedValues[] = $selectItemValue;
+				}
+			}
+		}
+
+		return $selectedValues;
+	}
+
+	/**
+	 * @param string $alternativeFieldValue
+	 */
+	public function setAlternativeFieldValue($alternativeFieldValue) {
+		$this->alternativeFieldValue = $alternativeFieldValue;
+	}
+
+	/**
+	 * @param array $currentRow
+	 */
+	public function setCurrentRow($currentRow) {
+		$this->currentRow = $currentRow;
+	}
+
+	/**
+	 * @param string $currentTable
+	 */
+	public function setCurrentTable($currentTable) {
+		$this->currentTable = $currentTable;
+	}
+
+	/**
+	 * @param boolean $forceAlternativeFieldValueUse
+	 */
+	public function setForceAlternativeFieldValueUse($forceAlternativeFieldValueUse) {
+		$this->forceAlternativeFieldValueUse = $forceAlternativeFieldValueUse;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getAlternativeFieldValue() {
+		return $this->alternativeFieldValue;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getCurrentRow() {
+		return $this->currentRow;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getCurrentTable() {
+		return $this->currentTable;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function isForceAlternativeFieldValueUse() {
+		return $this->forceAlternativeFieldValueUse;
+	}
+
 }

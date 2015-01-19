@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Messaging;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -45,4 +45,5 @@ class FlashMessageService implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return $this->flashMessageQueues[$identifier];
 	}
+
 }

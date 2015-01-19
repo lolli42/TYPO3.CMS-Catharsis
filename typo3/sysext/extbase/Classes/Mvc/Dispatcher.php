@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Dispatches requests to the controller which was specified by the request and
  * returns the response the controller generated.
@@ -99,4 +100,5 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return $controller;
 	}
+
 }

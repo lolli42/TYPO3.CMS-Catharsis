@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Tests\Unit\Tree\Pagetree;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -53,4 +53,5 @@ class DataProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getRootNodeReturnsExpandedNode() {
 		$this->assertTrue($this->subject->getRoot()->isExpanded());
 	}
+
 }

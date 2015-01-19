@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Wizard;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -236,7 +236,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	 * @return void
 	 */
 	protected function loadCss() {
-		// TODO Set to TRUE when finished
+		// @todo Set to TRUE when finished
 		$compress = FALSE;
 		$cssFiles = array(
 			'Wizard/Form.css',

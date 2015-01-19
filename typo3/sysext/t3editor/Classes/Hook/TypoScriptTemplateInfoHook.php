@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\T3editor\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -120,6 +120,8 @@ class TypoScriptTemplateInfoHook {
 							switch ($field) {
 								case 'constants':
 								case 'config':
+									// Replace Windows- and Mac linebreaks
+									$val = str_replace([CRLF, CR], LF, $val);
 									$recData['sys_template'][$saveId][$field] = $val;
 									break;
 							}

@@ -1,7 +1,7 @@
 <?php
 namespace Acme\Mypkg\Command;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace Acme\Mypkg\Command;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * MockBCommandController Fixture
  */
@@ -23,4 +24,5 @@ class MockBCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 	 */
 	public function funcBCommand() {
 	}
+
 }

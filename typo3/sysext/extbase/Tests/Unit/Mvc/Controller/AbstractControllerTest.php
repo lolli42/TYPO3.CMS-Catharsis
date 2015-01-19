@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -23,7 +23,7 @@ class AbstractControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function constructResolvesExtensionnameFromOldStyle() {
-		$className = uniqid('Tx_Extbase_Tests_Fixtures_Controller');
+		$className = $this->getUniqueId('Tx_Extbase_Tests_Fixtures_Controller');
 		eval('class ' . $className . ' extends \\' . \TYPO3\CMS\Extbase\Mvc\Controller\AbstractController::class . ' { function getExtensionName() { return $this->extensionName; } }');
 		$mockController = new $className();
 		$expectedResult = 'Extbase';
@@ -35,7 +35,7 @@ class AbstractControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function constructResolvesExtensionnameFromNamespaced() {
-		$className = uniqid('DummyController');
+		$className = $this->getUniqueId('DummyController');
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $className . ' extends \\' . \TYPO3\CMS\Extbase\Mvc\Controller\AbstractController::class . ' { function getExtensionName() { return $this->extensionName; } }');
 		$classNameNamespaced = __NAMESPACE__ . '\\' . $className;
 		$mockController = new $classNameNamespaced();
@@ -103,12 +103,12 @@ class AbstractControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$flashMessageQueue = $this->getMock(
 			\TYPO3\CMS\Core\Messaging\FlashMessageQueue::class,
 			array('enqueue'),
-			array(uniqid('identifier_', TRUE))
+			array($this->getUniqueId('identifier_'))
 		);
 		$flashMessageQueue->expects($this->once())->method('enqueue')->with($this->equalTo($expectedMessage));
 
 		$controllerContext = $this->getMock(
-			'\\TYPO3\\CMS\\Extbase\\Mvc\\Controller\\ControllerContext',
+			\TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext::class,
 			array('getFlashMessageQueue')
 		);
 		$controllerContext->expects($this->once())->method('getFlashMessageQueue')->will($this->returnValue($flashMessageQueue));
@@ -142,4 +142,5 @@ class AbstractControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$controller->addFlashMessage(new \stdClass());
 	}
+
 }

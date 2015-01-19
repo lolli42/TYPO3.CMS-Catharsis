@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Core;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Creates a request an dispatches it to the controller which was specified
  * by TS Setup, flexForm and returns the content to the v4 framework.
@@ -75,10 +76,10 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface {
 	 */
 	public function initialize($configuration) {
 		if (!$this->isInCliMode()) {
-			if (!isset($configuration['extensionName']) || strlen($configuration['extensionName']) === 0) {
+			if (!isset($configuration['extensionName']) || $configuration['extensionName'] === '') {
 				throw new \RuntimeException('Invalid configuration: "extensionName" is not set', 1290623020);
 			}
-			if (!isset($configuration['pluginName']) || strlen($configuration['pluginName']) === 0) {
+			if (!isset($configuration['pluginName']) || $configuration['pluginName'] === '') {
 				throw new \RuntimeException('Invalid configuration: "pluginName" is not set', 1290623027);
 			}
 		}
@@ -224,4 +225,5 @@ class Bootstrap implements \TYPO3\CMS\Extbase\Core\BootstrapInterface {
 	protected function isInCliMode() {
 		return (defined('TYPO3_cliMode') && TYPO3_cliMode);
 	}
+
 }

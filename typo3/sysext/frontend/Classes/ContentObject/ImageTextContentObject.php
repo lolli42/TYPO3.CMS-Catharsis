@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -37,7 +37,7 @@ class ImageTextContentObject extends AbstractContentObject {
 		}
 		$imgList = isset($conf['imgList.']) ? trim($this->cObj->stdWrap($conf['imgList'], $conf['imgList.'])) : trim($conf['imgList']);
 		if ($imgList) {
-			$imgs = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $imgList);
+			$imgs = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(',', $imgList, TRUE);
 			$imgStart = isset($conf['imgStart.']) ? (int)$this->cObj->stdWrap($conf['imgStart'], $conf['imgStart.']) : (int)$conf['imgStart'];
 			$imgCount = count($imgs) - $imgStart;
 			$imgMax = isset($conf['imgMax.']) ? (int)$this->cObj->stdWrap($conf['imgMax'], $conf['imgMax.']) : (int)$conf['imgMax'];
@@ -182,6 +182,9 @@ class ImageTextContentObject extends AbstractContentObject {
 				$GLOBALS['TSFE']->register['IMAGE_NUM'] = $a;
 				$GLOBALS['TSFE']->register['IMAGE_NUM_CURRENT'] = $a;
 				$imgKey = $a + $imgStart;
+				if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($imgs[$imgKey])) {
+					$this->setCurrentFileInContentObjectRenderer(intval($imgs[$imgKey]));
+				}
 				$totalImagePath = $imgPath . $imgs[$imgKey];
 				$this->cObj->data[$this->cObj->currentValKey] = $totalImagePath;
 				$imgObjNum = (int)$splitArr[$a]['imgObjNum'];
@@ -231,15 +234,15 @@ class ImageTextContentObject extends AbstractContentObject {
 						}
 					}
 					// "alt", "title" and "longdesc" attributes:
-					if (!strlen($imgConf['altText']) && !is_array($imgConf['altText.'])) {
+					if ($imgConf['altText'] === '' && !is_array($imgConf['altText.'])) {
 						$imgConf['altText'] = $conf['altText'];
 						$imgConf['altText.'] = $conf['altText.'];
 					}
-					if (!strlen($imgConf['titleText']) && !is_array($imgConf['titleText.'])) {
+					if ($imgConf['titleText'] === '' && !is_array($imgConf['titleText.'])) {
 						$imgConf['titleText'] = $conf['titleText'];
 						$imgConf['titleText.'] = $conf['titleText.'];
 					}
-					if (!strlen($imgConf['longdescURL']) && !is_array($imgConf['longdescURL.'])) {
+					if ($imgConf['longdescURL'] === '' && !is_array($imgConf['longdescURL.'])) {
 						$imgConf['longdescURL'] = $conf['longdescURL'];
 						$imgConf['longdescURL.'] = $conf['longdescURL.'];
 					}
@@ -469,4 +472,17 @@ class ImageTextContentObject extends AbstractContentObject {
 		return $output;
 	}
 
+	/**
+	 * Loads the file reference object and sets it in the
+	 * currentFile property of the ContentObjectRenderer.
+	 *
+	 * This makes the file data available during image rendering.
+	 *
+	 * @param int $fileUid The UID of the file reference that should be loaded.
+	 * @return void
+	 */
+	protected function setCurrentFileInContentObjectRenderer($fileUid) {
+		$imageFile = $this->fileFactory->getFileReferenceObject($fileUid);
+		$this->cObj->setCurrentFile($imageFile);
+	}
 }

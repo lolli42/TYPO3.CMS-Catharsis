@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lang\View\Language;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -17,17 +17,17 @@ namespace TYPO3\CMS\Lang\View\Language;
 /**
  * JSON view for "updateTranslation" action in "Language" controller
  *
- * @author Kai Vogel <kai.vogel@speedprogs.de>
+ * @author Kai Vogel <k.vogel@reply.de>
  */
-class UpdateTranslationJson extends CheckTranslationJson {
+class UpdateTranslationJson extends \TYPO3\CMS\Lang\View\AbstractJsonView {
 
 	/**
-	 * Render method, returns json encoded template variables
+	 * Returns the response data
 	 *
-	 * @return string JSON content
+	 * @return array The response data
 	 */
-	public function render() {
-		return json_encode($this->variables);
+	protected function getReponseData() {
+		return $this->variables['response'];
 	}
 
 }

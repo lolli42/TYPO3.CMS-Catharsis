@@ -66,11 +66,12 @@ class ContainerViewHelper extends AbstractBackendViewHelper {
 	 * @param array $includeJsFiles List of custom JavaScript file to be loaded
 	 * @param array $addJsInlineLabels Custom labels to add to JavaScript inline labels
 	 * @param bool $includeCsh flag for including CSH
+	 * @param array $includeRequireJsModules List of RequireJS modules to be loaded
 	 * @return string
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 * @see \TYPO3\CMS\Core\Page\PageRenderer
 	 */
-	public function render($pageTitle = '', $enableClickMenu = TRUE, $loadPrototype = TRUE, $loadScriptaculous = FALSE, $scriptaculousModule = '', $loadExtJs = FALSE, $loadExtJsTheme = TRUE, $extJsAdapter = '', $enableExtJsDebug = FALSE, $loadJQuery = FALSE, $includeCssFiles = NULL, $includeJsFiles = NULL, $addJsInlineLabels = NULL, $includeCsh = TRUE) {
+	public function render($pageTitle = '', $enableClickMenu = TRUE, $loadPrototype = TRUE, $loadScriptaculous = FALSE, $scriptaculousModule = '', $loadExtJs = FALSE, $loadExtJsTheme = TRUE, $extJsAdapter = '', $enableExtJsDebug = FALSE, $loadJQuery = FALSE, $includeCssFiles = NULL, $includeJsFiles = NULL, $addJsInlineLabels = NULL, $includeCsh = TRUE, $includeRequireJsModules = NULL) {
 		$doc = $this->getDocInstance();
 		$pageRenderer = $doc->getPageRenderer();
 		$doc->JScode .= $doc->wrapScriptTags($doc->redirectUrls());
@@ -105,6 +106,11 @@ class ContainerViewHelper extends AbstractBackendViewHelper {
 				$pageRenderer->addJsFile($addJsFile);
 			}
 		}
+		if (is_array($includeRequireJsModules) && count($includeRequireJsModules) > 0) {
+			foreach ($includeRequireJsModules as $addRequireJsFile) {
+				$pageRenderer->loadRequireJsModule($addRequireJsFile);
+			}
+		}
 		// Add inline language labels
 		if (is_array($addJsInlineLabels) && count($addJsInlineLabels) > 0) {
 			$extensionKey = $this->controllerContext->getRequest()->getControllerExtensionKey();
@@ -119,4 +125,5 @@ class ContainerViewHelper extends AbstractBackendViewHelper {
 		$output .= $doc->endPage();
 		return $output;
 	}
+
 }

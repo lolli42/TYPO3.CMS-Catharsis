@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Configuration\Image;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -43,9 +43,10 @@ class ImageFeature extends Configuration\AbstractFeature implements Configuratio
 	 */
 	public function getAdditionalSearchPath() {
 		$additionalPath = '';
-		if (isset($this->postValues['additionalSearchPath']) && strlen($this->postValues['additionalSearchPath'])) {
+		if (isset($this->postValues['additionalSearchPath']) && $this->postValues['additionalSearchPath'] !== '') {
 			$additionalPath = $this->postValues['additionalSearchPath'];
 		}
 		return $additionalPath;
 	}
+
 }

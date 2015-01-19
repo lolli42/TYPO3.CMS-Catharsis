@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -148,7 +148,11 @@ class FilesContentObject extends AbstractContentObject {
 					return 0;
 				}
 			});
-			if (is_array($conf['sorting.']) && isset($conf['sorting.']['direction']) && strtolower($conf['sorting.']['direction']) === 'desc') {
+			$sortingDirection = isset($conf['sorting.']['direction']) ? $conf['sorting.']['direction'] : '';
+			if (isset($conf['sorting.']['direction.'])) {
+				$sortingDirection = $this->cObj->stdWrap($sortingDirection, $conf['sorting.']['direction.']);
+			}
+			if (strtolower($sortingDirection) === 'desc') {
 				$fileObjects = array_reverse($fileObjects);
 			}
 		}

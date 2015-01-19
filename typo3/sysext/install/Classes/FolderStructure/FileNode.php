@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -299,4 +299,5 @@ class FileNode extends AbstractNode implements NodeInterface {
 		$path = $this->getAbsolutePath();
 		return (!is_link($path) && is_file($path));
 	}
+
 }

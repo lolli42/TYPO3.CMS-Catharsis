@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Configuration;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A generic Configuration Exception
  */

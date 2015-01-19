@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -39,7 +40,7 @@ class FluidTemplateContentObject extends AbstractContentObject {
 	 * Configuration properties:
 	 * - file string+stdWrap The FLUID template file
 	 * - layoutRootPaths array of filepath+stdWrap Root paths to layouts (fallback)
-	 * - partialRootPaths filepath+stdWrap Root paths to partials (fallback)
+	 * - partialRootPaths array of filepath+stdWrap Root paths to partials (fallback)
 	 * - variable array of cObjects, the keys are the variable names in fluid
 	 * - extbase.pluginName
 	 * - extbase.controllerExtensionName

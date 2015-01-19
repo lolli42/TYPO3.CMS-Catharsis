@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -65,4 +65,5 @@ class BootstrapTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$bootstrapMock->_set('configurationManager', $configurationManagerMock);
 		$bootstrapMock->configureObjectManager();
 	}
+
 }

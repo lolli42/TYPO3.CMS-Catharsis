@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Web;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -568,7 +568,7 @@ class RequestBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
-	 * @see TYPO3\FLOW3\Tests\Unit\Utility\EnvironmentTest
+	 * @see TYPO3\Flow\Tests\Unit\Utility\EnvironmentTest
 	 */
 	public function untangleFilesArrayTransformsTheFilesSuperglobalIntoAManageableForm() {
 		$convolutedFiles = array(
@@ -757,4 +757,5 @@ class RequestBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$result = $requestBuilder->_call('untangleFilesArray', $convolutedFiles);
 		$this->assertSame($untangledFiles, $result);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A persistence backend interface
  */
@@ -58,14 +59,14 @@ interface BackendInterface {
 	 */
 	public function commit();
 
-	// TODO refactor towards being closer to the Flow backend interface again
+	// @todo refactor towards being closer to the Flow backend interface again
 
 	/**
 	 * Returns the (internal) identifier for the object, if it is known to the
 	 * backend. Otherwise NULL is returned.
 	 *
 	 * @param object $object
-	 * @return string The identifier for the object if it is known, or NULL
+	 * @return string|NULL The identifier for the object if it is known, or NULL
 	 */
 	public function getIdentifierByObject($object);
 
@@ -75,7 +76,7 @@ interface BackendInterface {
 	 *
 	 * @param string $identifier
 	 * @param string $className
-	 * @return object The object for the identifier if it is known, or NULL
+	 * @return object|NULL The object for the identifier if it is known, or NULL
 	 */
 	public function getObjectByIdentifier($identifier, $className);
 

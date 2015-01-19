@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Fixture class with getters and setters
  *
@@ -35,6 +36,8 @@ class DummyClassWithGettersAndSetters {
 	public $publicProperty;
 
 	public $publicProperty2 = 42;
+
+	protected $anotherBooleanProperty = TRUE;
 
 	/**
 	 * @param mixed $property
@@ -111,4 +114,23 @@ class DummyClassWithGettersAndSetters {
 	 */
 	public function setWriteOnlyMagicProperty($value) {
 	}
+
+	/**
+	 * sets the AnotherBooleanProperty
+	 *
+	 * @param boolean $anotherBooleanProperty
+	 *
+	 * @return void
+	 */
+	public function setAnotherBooleanProperty($anotherBooleanProperty) {
+		$this->anotherBooleanProperty = $anotherBooleanProperty;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function hasAnotherBooleanProperty() {
+		return $this->anotherBooleanProperty;
+	}
+
 }

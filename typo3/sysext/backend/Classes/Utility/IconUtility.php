@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -281,7 +281,7 @@ class IconUtility {
 		if (isset($cachedSkinImages[$imageId])) {
 			return $cachedSkinImages[$imageId];
 		}
-		// Setting source key. If the icon is refered to inside an extension, we homogenize the prefix to "ext/":
+		// Setting source key. If the icon is referred to inside an extension, we homogenize the prefix to "ext/":
 		$srcKey = preg_replace('/^(\\.\\.\\/typo3conf\\/ext|sysext|ext)\\//', 'ext/', $src);
 		// LOOKING for alternative icons:
 		if ($GLOBALS['TBE_STYLES']['skinImg'][$srcKey]) {
@@ -507,7 +507,7 @@ class IconUtility {
 	/**
 	 * Write the icon in $im pointer to $path
 	 *
-	 * @param pointer $im Pointer to GDlib image resource
+	 * @param resource $im Pointer to GDlib image resource
 	 * @param string $path Absolute path to the filename in which to write the icon.
 	 * @return void
 	 * @access private

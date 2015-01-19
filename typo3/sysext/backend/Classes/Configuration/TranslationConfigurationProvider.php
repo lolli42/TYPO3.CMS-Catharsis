@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -27,14 +27,13 @@ class TranslationConfigurationProvider {
 	/**
 	 * Returns array of system languages
 	 *
-	 * Since TYPO3 4.5 the flagIcon is not returned as a filename in "gfx/flags/*" anymore,
-	 * but as a string <flags-xx>. The calling party should call
+	 * The property flagIcon returns a string <flags-xx>. The calling party should call
 	 * \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon(<flags-xx>) to get an HTML
 	 * which will represent the flag of this language.
 	 *
 	 * @param int $page_id Page id (only used to get TSconfig configuration setting flag and label for default language)
 	 * @param string $backPath Backpath for flags
-	 * @return array Array with languages (title, uid, flagIcon)
+	 * @return array Array with languages (title, uid, flagIcon - used with IconUtility::getSpriteIcon)
 	 */
 	public function getSystemLanguages($page_id = 0, $backPath = '') {
 		$modSharedTSconfig = BackendUtility::getModTSconfig($page_id, 'mod.SHARED');
@@ -45,9 +44,13 @@ class TranslationConfigurationProvider {
 		}
 		$languageIconTitles[0] = array(
 			'uid' => 0,
-			'title' => strlen($modSharedTSconfig['properties']['defaultLanguageLabel']) ? $modSharedTSconfig['properties']['defaultLanguageLabel'] . ' (' . $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage') . ')' : $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage'),
+			'title' => $modSharedTSconfig['properties']['defaultLanguageLabel'] !== ''
+					? $modSharedTSconfig['properties']['defaultLanguageLabel'] . ' (' . $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage') . ')'
+					: $GLOBALS['LANG']->sl('LLL:EXT:lang/locallang_mod_web_list.xlf:defaultLanguage'),
 			'ISOcode' => 'DEF',
-			'flagIcon' => strlen($modSharedTSconfig['properties']['defaultLanguageFlag']) ? 'flags-' . $modSharedTSconfig['properties']['defaultLanguageFlag'] : 'empty-empty'
+			'flagIcon' => $modSharedTSconfig['properties']['defaultLanguageFlag'] !== ''
+					? 'flags-' . $modSharedTSconfig['properties']['defaultLanguageFlag']
+					: 'empty-empty'
 		);
 		// Set "All" language:
 		$languageIconTitles[-1] = array(
@@ -57,7 +60,7 @@ class TranslationConfigurationProvider {
 			'flagIcon' => 'flags-multiple'
 		);
 		// Find all system languages:
-		$sysLanguages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_language', '');
+		$sysLanguages = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_language', '1=1' . BackendUtility::BEenableFields('sys_language'));
 		foreach ($sysLanguages as $row) {
 			$languageIconTitles[$row['uid']] = $row;
 			if (!empty($row['language_isocode'])) {
@@ -69,7 +72,7 @@ class TranslationConfigurationProvider {
 					$languageIconTitles[$row['uid']]['ISOcode'] = $staticLangRow['lg_iso_2'];
 				}
 			}
-			if (strlen($row['flag'])) {
+			if ($row['flag'] !== '') {
 				$languageIconTitles[$row['uid']]['flagIcon'] = IconUtility::mapRecordTypeToSpriteIconName('sys_language', $row);
 			}
 		}

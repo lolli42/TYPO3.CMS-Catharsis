@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Class for rendering the TYPO3 backend version 4.2+
+ * Class for rendering the TYPO3 backend
  *
  * @author Ingo Renner <ingo@typo3.org>
  */
@@ -28,12 +28,12 @@ class BackendController {
 	/**
 	 * @var string
 	 */
-	protected $content;
+	protected $content = '';
 
 	/**
 	 * @var string
 	 */
-	protected $css;
+	protected $css = '';
 
 	/**
 	 * @var array
@@ -43,12 +43,12 @@ class BackendController {
 	/**
 	 * @var string
 	 */
-	protected $js;
+	protected $js = '';
 
 	/**
 	 * @var array
 	 */
-	protected $jsFiles;
+	protected $jsFiles = array();
 
 	/**
 	 * @var array
@@ -56,19 +56,19 @@ class BackendController {
 	protected $toolbarItems = array();
 
 	/**
-	 * @var int Intentionally private as nobody should modify defaults
-	 */
-	private $menuWidthDefault = 190;
-
-	/**
 	 * @var int
 	 */
-	protected $menuWidth;
+	protected $menuWidth = 190;
 
 	/**
 	 * @var bool
 	 */
 	protected $debug;
+
+	/**
+	 * @var string
+	 */
+	protected $templatePath = 'EXT:backend/Resources/Private/Templates/';
 
 	/**
 	 * @var \TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository
@@ -111,7 +111,6 @@ class BackendController {
 		$this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', FALSE);
 		$this->pageRenderer->addExtDirectCode();
 		// Add default BE javascript
-		$this->js = '';
 		$this->jsFiles = array(
 			'locallang' => $this->getLocalLangFileName(),
 			'modernizr' => 'contrib/modernizr/modernizr.min.js',
@@ -131,14 +130,26 @@ class BackendController {
 		if (!$this->debug) {
 			$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LoginRefresh');
 		}
-		// Add default BE css
-		$this->pageRenderer->addCssLibrary('contrib/normalize/normalize.css', 'stylesheet', 'all', '', TRUE, TRUE);
 
 		// load FlashMessages functionality
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FlashMessages');
+
+		// load Modals
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
+
+		// load Legacy CSS Support
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyCssClasses');
+
+		// load the storage API and fill the UC into the PersistentStorage, so no additional AJAX call is needed
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Storage', 'function(Storage) {
+			Storage.Persistent.load(' . json_encode($GLOBALS['BE_USER']->uc) . ');
+		}');
 		$this->css = '';
+
 		$this->initializeToolbarItems();
-		$this->menuWidth = isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW']) ? (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'] : $this->menuWidthDefault;
+		if (isset($GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'])) {
+			$this->menuWidth = (int)$GLOBALS['TBE_STYLES']['dims']['leftMenuFrameW'];
+		}
 		$this->executeHook('constructPostProcess');
 	}
 
@@ -156,7 +167,7 @@ class BackendController {
 			if (!$toolbarItemInstance instanceof \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface) {
 				throw new \RuntimeException(
 					'class ' . $className . ' is registered as toolbar item but does not implement'
-						. '\TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface',
+						. \TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface::class,
 					1415958218
 				);
 			}
@@ -186,7 +197,7 @@ class BackendController {
 		$this->executeHook('renderPreProcess');
 
 		// Prepare the scaffolding, at this point extension may still add javascript and css
-		$view = $this->getFluidTemplateObject('EXT:backend/Resources/Private/Templates/Backend/Main.html');
+		$view = $this->getFluidTemplateObject($this->templatePath . 'Backend/Main.html');
 		// @todo: kick logo view class and move all logic to Fluid
 		$view->assign('logo', GeneralUtility::makeInstance(\TYPO3\CMS\Backend\View\LogoView::class)->render());
 		$view->assign('moduleMenu', $this->generateModuleMenu());
@@ -467,6 +478,26 @@ class BackendController {
 	 * @return void
 	 */
 	protected function generateJavascript() {
+
+		// Needed for tceform manipulation (date picker)
+		$dateFormat = ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? array('MM-DD-YYYY', 'HH:mm MM-DD-YYYY') : array('DD-MM-YYYY', 'HH:mm DD-MM-YYYY'));
+		$this->pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
+		// define the window size of the element browser etc.
+		$popupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.popupWindowSize'));
+		if (!empty($popupWindowSize)) {
+			list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::trimExplode('x', $popupWindowSize);
+		}
+		$popupWindowWidth  = !empty($popupWindowWidth) ? (int)$popupWindowWidth : 700;
+		$popupWindowHeight = !empty($popupWindowHeight) ? (int)$popupWindowHeight : 750;
+
+		// define the window size of the popups within the RTE
+		$rtePopupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.rte.popupWindowSize'));
+		if (!empty($rtePopupWindowSize)) {
+			list($rtePopupWindowWidth, $rtePopupWindowHeight) = GeneralUtility::trimExplode('x', $rtePopupWindowSize);
+		}
+		$rtePopupWindowWidth  = !empty($rtePopupWindowWidth) ? (int)$rtePopupWindowWidth : ($popupWindowWidth-200);
+		$rtePopupWindowHeight = !empty($rtePopupWindowHeight) ? (int)$rtePopupWindowHeight : ($popupWindowHeight-250);
+
 		$pathTYPO3 = GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/';
 		// If another page module was specified, replace the default Page module with the new one
 		$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
@@ -502,6 +533,14 @@ class BackendController {
 				'width' => 600,
 				'height' => 400
 			),
+			'PopupWindow' => array(
+				'width' => $popupWindowWidth,
+				'height' => $popupWindowHeight
+			),
+			'RTEPopupWindow' => array(
+				'width' => $rtePopupWindowWidth,
+				'height' => $rtePopupWindowHeight
+			)
 		);
 		$this->js .= '
 	TYPO3.configuration = ' . json_encode($t3Configuration) . ';
@@ -638,7 +677,7 @@ class BackendController {
 	 * @throws \InvalidArgumentException
 	 */
 	public function addJavascript($javascript) {
-		// TODO do we need more checks?
+		// @todo do we need more checks?
 		if (!is_string($javascript)) {
 			throw new \InvalidArgumentException('parameter $javascript must be of type string', 1195129553);
 		}
@@ -653,7 +692,7 @@ class BackendController {
 	 */
 	public function addJavascriptFile($javascriptFile) {
 		$jsFileAdded = FALSE;
-		//TODO add more checks if necessary
+		// @todo add more checks if necessary
 		if (file_exists(GeneralUtility::resolveBackPath(PATH_typo3 . $javascriptFile))) {
 			$this->jsFiles[] = $javascriptFile;
 			$jsFileAdded = TRUE;
@@ -697,7 +736,7 @@ class BackendController {
 	 * @param string $toolbarItemClassName Toolbar item class name, f.e. tx_toolbarExtension_coolItem
 	 * @return void
 	 * @throws \UnexpectedValueException
-	 * @deprecated since CMS 7, will be removed with CMS 8. Toolbar items are registered in $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'] now.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Toolbar items are registered in $GLOBALS['TYPO3_CONF_VARS']['BE']['toolbarItems'] now.
 	 */
 	public function addToolbarItem($toolbarItemName, $toolbarItemClassName) {
 		GeneralUtility::logDeprecatedFunction();
@@ -734,7 +773,7 @@ class BackendController {
 		// get all modules except the user modules for the side menu
 		$moduleStorage = $this->backendModuleRepository->loadAllowedModules(array('user', 'help'));
 
-		$view = $this->getFluidTemplateObject('EXT:backend/Resources/Private/Templates/ModuleMenu/Main.html');
+		$view = $this->getFluidTemplateObject($this->templatePath . 'ModuleMenu/Main.html');
 		$view->assign('modules', $moduleStorage);
 		return $view->render();
 	}
@@ -765,4 +804,5 @@ class BackendController {
 		}
 		return $view;
 	}
+
 }

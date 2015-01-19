@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,41 +10,52 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/**
- * HTMLArea.Toolbar extends Ext.Container
- */
-HTMLArea.Toolbar = function (Event) {
 
-	Toolbar = Ext.extend(Ext.Container, {
+/**
+ * The editor toolbar
+ */
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Toolbar',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Extjs/ux/Combo',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Button',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText'],
+	function (Util, Dom, Event, Combo, Button, ToolbarText) {
+
+	/**
+	 * Editor toolbar constructor
+	 */
+	var Toolbar = function (config) {
+		Util.apply(this, config);
+	};
+
+	Toolbar.prototype = {
 
 		/**
-		 * Constructor
+		 * Render the toolbar (called by framework rendering)
+		 *
+		 * @param object container: the container into which to insert the toolbar (that is the framework)
+		 * @return void
 		 */
-		initComponent: function () {
-			Toolbar.superclass.initComponent.call(this);
-			// Add the toolbar items
+		render: function (container) {
+			this.el = document.createElement('div');
+			if (this.id) {
+				this.el.setAttribute('id', this.id);
+			}
+			if (this.cls) {
+				this.el.setAttribute('class', this.cls);
+			}
+			this.el = container.appendChild(this.el);
 			this.addItems();
-			this.addListener({
-				afterrender: {
-					fn: this.initEventListeners,
-					single: true
-				}
-			});
+			this.rendered = true;
 		},
 
 		/**
-		 * Initialize listeners
+		 * Get the element to which the toolbar is rendered
 		 */
-		initEventListeners: function () {
-			this.addListener({
-				beforedestroy: {
-					fn: this.onBeforeDestroy,
-					single: true
-				}
-			});
-			// Monitor editor becoming ready
-			var self = this;
-			Event.one(this.getEditor(), 'HtmlAreaEventEditorReady', function (event) { Event.stopEvent(event); self.update(); return false; });
+		getEl: function () {
+			return this.el;
 		},
 
 		/**
@@ -60,6 +71,11 @@ HTMLArea.Toolbar = function (Event) {
 		},
 
 		/**
+		 * The toolbar items
+		 */
+		items: {},
+
+		/**
 		 * Create the toolbar items based on editor toolbar configuration
 		 */
 		addItems: function () {
@@ -72,10 +88,7 @@ HTMLArea.Toolbar = function (Event) {
 				row = editor.config.toolbar[i];
 				if (!firstOnRow) {
 					// If a visible item was added to the previous line
-					this.add({
-						xtype: 'tbspacer',
-						cls: 'x-form-clear-left'
-					});
+					this.addSpacer('space-clear-left');
 				}
 				firstOnRow = true;
 				// Add the groups
@@ -84,26 +97,33 @@ HTMLArea.Toolbar = function (Event) {
 					// To do: this.config.keepButtonGroupTogether ...
 					if (!firstOnRow && !firstInGroup) {
 						// If a visible item was added to the line
-						this.add({
-							xtype: 'tbseparator',
-							cls: 'separator'
-						});
+						this.addSeparator();
 					}
 					firstInGroup = true;
 					// Add each item
 					for (k = 0, p = group.length; k < p; k++) {
 						item = group[k];
 						if (item == 'space') {
-							this.add({
-								xtype: 'tbspacer',
-								cls: 'space'
-							});
+							this.addSpacer();
 						} else {
 							// Get the item's config as registered by some plugin
 							var itemConfig = editor.config.buttonsConfig[item];
 							if (typeof itemConfig === 'object' && itemConfig !== null) {
 								itemConfig.id = this.editorId + '-' + itemConfig.id;
-								this.add(itemConfig);
+								itemConfig.toolbar = this;
+								switch (itemConfig.xtype) {
+									case 'htmlareabutton':
+										this.add(new Button(itemConfig));
+										break;
+									case 'htmlareacombo':
+										this.add(new Combo(itemConfig));
+										break;
+									case 'htmlareatoolbartext':
+										this.add(new ToolbarText(itemConfig));
+										break;
+									default:
+										this.add(itemConfig);
+								}
 								firstInGroup = firstInGroup && itemConfig.hidden;
 								firstOnRow = firstOnRow && firstInGroup;
 							}
@@ -111,17 +131,105 @@ HTMLArea.Toolbar = function (Event) {
 					}
 				}
 			}
-			this.add({
-				xtype: 'tbspacer',
-				cls: 'x-form-clear-left'
-			});
+			this.addSpacer('space-clear-left');
+		},
+
+		/**
+		 * Add an item to the toolbar
+		 *
+		 * @param object item: the item to be added (not yet rendered)
+		 * @return void
+		 */
+		add: function (item) {
+			if (item.itemId) {
+				this.items[item.itemId] = item;
+			}
+			switch (item.xtype) {
+				case 'htmlareacombo':
+					var wrapDiv = document.createElement('div');
+					Dom.addClass(wrapDiv, 'x-form-item');
+					wrapDiv = this.el.appendChild(wrapDiv);
+					item.render(wrapDiv);
+					if (item.helpTitle) {
+						item.getEl().dom.setAttribute('title', item.helpTitle);
+					}
+					wrapDiv.appendChild(item.getEl().dom);
+					if (item.fieldLabel) {
+						var textDiv = document.createElement('div');
+						Dom.addClass(textDiv, 'x-form-item');
+						Dom.addClass(textDiv, 'toolbar-text');
+						var text = document.createElement('label');
+						text.innerHTML = item.fieldLabel;
+						Dom.addClass(text, 'x-form-item-label');
+						text.setAttribute('for', item.getEl().dom.id);
+						textDiv.appendChild(text);
+						this.el.insertBefore(textDiv, wrapDiv);
+					}
+					break;
+				default:
+					item.render(this.el);
+			}
+		},
+
+		/**
+		 * Add a spacer to the toolbar
+		 *
+		 * @param string cls: a class to be added on the spacer rather than 'space' (default)
+		 * @return void
+		 */
+		addSpacer: function (cls) {
+			var spacer = document.createElement('div');
+			if (typeof cls === 'string') {
+				Dom.addClass(spacer, cls);
+			} else {
+				Dom.addClass(spacer, 'space');
+			}
+			this.el.appendChild(spacer);
+		},
+
+		/**
+		 * Add a separator to the toolbar
+		 *
+		 * @param string cls: a class to be added on the separator
+		 * @return void
+		 */
+		addSeparator: function (cls) {
+			var spacer = document.createElement('div');
+			Dom.addClass(spacer, 'separator');
+			if (typeof cls === 'string') {
+				Dom.addClass(spacer, cls);
+			}
+			this.el.appendChild(spacer);
+		},
+
+		/**
+		 * Remove a button from the toolbar
+		 *
+		 * @param string buttonId: the itemId of the item to remove
+		 * @return void
+		 */
+		remove: function (buttonId) {
+			var item = this.items[buttonId];
+			if (item) {
+				if (item.getEl()) {
+					Dom.removeFromParent(item.getEl().dom);
+				}
+				this.items[item.itemId] = null;
+			}
 		},
 
 		/**
 		 * Retrieve a toolbar item by itemId
 		 */
 		getButton: function (buttonId) {
-			return this.find('itemId', buttonId)[0];
+			return this.items[buttonId];
+		},
+
+		/**
+		 * Get the current height of the toolbar
+		 */
+		getHeight: function () {
+			return Dom.getSize(this.el).height;
 		},
 
 		/**
@@ -156,6 +264,7 @@ HTMLArea.Toolbar = function (Event) {
 				ancestors = selection.getAllAncestors();
 				endPointsInSameBlock = selection.endPointsInSameBlock();
 			}
+			this.framework.getStatusBar().onUpdateToolbar(mode, selectionEmpty, ancestors, endPointsInSameBlock);
 			/**
 			 * @event HTMLAreaEventToolbarUpdate
 			 * Fires when the toolbar is updated
@@ -164,16 +273,28 @@ HTMLArea.Toolbar = function (Event) {
 		},
 
 		/**
-		 * Cleanup
+		 * Cleanup (called by framework onBeforeDestroy)
 		 */
 		onBeforeDestroy: function () {
 			Event.off(this);
-			this.removeAll(true);
-			return true;
+			for (var itemId in this.items) {
+				if (typeof this.items[itemId].destroy === 'function') {
+					try {
+						this.items[itemId].destroy();
+					} catch (e) {}
+				}
+				if (typeof this.items[itemId].onBeforeDestroy === 'function' && this.items[itemId].xtype !== 'htmlareacombo') {
+					this.items[itemId].onBeforeDestroy();
+				}
+			}
+			var node;
+			while (node = this.el.firstChild) {
+				this.el.removeChild(node);
+			}
+			this.el = null;
 		}
-	});
+	};
 
 	return Toolbar;
 
-}(HTMLArea.Event);
-Ext.reg('htmlareatoolbar', HTMLArea.Toolbar);
+});

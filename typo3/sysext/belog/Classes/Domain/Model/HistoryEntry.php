@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Belog\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -35,7 +35,7 @@ class HistoryEntry extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @return void
 	 */
 	public function setFieldlist($fieldlist) {
-		// TODO think about exploding this to an array
+		// @todo think about exploding this to an array
 		$this->fieldlist = $fieldlist;
 	}
 

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Fluid\Tests\Unit\Core\Compiler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,7 +30,7 @@ class AbstractCompilerTemplateTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function isDefaultEncodingIsSetThanDefaultEncodingWillReturned() {
-		$className = 'AbstractCompiledTemplate' . uniqid();
+		$className = $this->getUniqueId('AbstractCompiledTemplate');
 		$fullClassName = 'TYPO3\\CMS\\Fluid\\Core\\Compiler\\' . $className;
 		eval(
 			'namespace TYPO3\\CMS\\Fluid\\Core\\Compiler;' .
@@ -40,4 +40,5 @@ class AbstractCompilerTemplateTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$this->assertSame('ISO-8859-1', $fullClassName::resolveDefaultEncoding());
 	}
+
 }

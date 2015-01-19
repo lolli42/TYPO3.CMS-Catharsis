@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\TypoScript;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -462,7 +462,7 @@ class TemplateService {
 			if (is_array($cc)) {
 				// If currentPageData was actually there, we match the result (if this wasn't done already in $TSFE->getFromCache()...)
 				if (!$cc['match']) {
-					// TODO: check if this can ever be the case - otherwise remove
+					// @todo check if this can ever be the case - otherwise remove
 					$cc = $this->matching($cc);
 					ksort($cc);
 				}
@@ -821,7 +821,7 @@ class TemplateService {
 	public function addExtensionStatics($idList, $templateID, $pid, $row) {
 		$this->extensionStaticsProcessed = TRUE;
 
-		// @TODO: Change to use new API
+		// @todo Change to use new API
 		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $extKey => $files) {
 			if ((is_array($files) || $files instanceof \ArrayAccess) && ($files['ext_typoscript_constants.txt'] || $files['ext_typoscript_setup.txt'])) {
 				$mExtKey = str_replace('_', '', $extKey);
@@ -1170,7 +1170,7 @@ class TemplateService {
 					}
 				} else {
 					// Splitting of all values on this level of the TypoScript object tree:
-					if (!strstr($val, '|*|') && !strstr($val, '||')) {
+					if ($cKey === 'noTrimWrap' || (!strstr($val, '|*|') && !strstr($val, '||'))) {
 						for ($aKey = 0; $aKey < $splitCount; $aKey++) {
 							$conf2[$aKey][$cKey] = $val;
 						}
@@ -1269,29 +1269,24 @@ class TemplateService {
 	 * @param string $pageTitle The input title string, typically the "title" field of a page's record.
 	 * @param bool $noTitle If set, then only the site title is outputted (from $this->setup['sitetitle'])
 	 * @param bool $showTitleFirst If set, then "sitetitle" and $title is swapped
+	 * @param string $pageTitleSeparator an alternative to the ": " as the separator between site title and page title
 	 * @return string The page title on the form "[sitetitle]: [input-title]". Not htmlspecialchar()'ed.
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::tempPageCacheContent(), \TYPO3\CMS\Frontend\Page\PageGenerator::renderContentWithHeader()
 	 */
-	public function printTitle($pageTitle, $noTitle = FALSE, $showTitleFirst = FALSE) {
+	public function printTitle($pageTitle, $noTitle = FALSE, $showTitleFirst = FALSE, $pageTitleSeparator = '') {
 		$siteTitle = trim($this->setup['sitetitle']);
 		$pageTitle = $noTitle ? '' : $pageTitle;
-		$pageTitleSeparator = '';
 		if ($showTitleFirst) {
 			$temp = $siteTitle;
 			$siteTitle = $pageTitle;
 			$pageTitle = $temp;
 		}
-		if ($pageTitle != '' && $siteTitle != '') {
+		// only show a separator if there are both site title and page title
+		if ($pageTitle === '' || $siteTitle === '') {
+			$pageTitleSeparator = '';
+		// use the default separator if non given
+		} elseif (empty($pageTitleSeparator)) {
 			$pageTitleSeparator = ': ';
-			if (isset($this->setup['config.']['pageTitleSeparator']) && $this->setup['config.']['pageTitleSeparator']) {
-				$pageTitleSeparator = $this->setup['config.']['pageTitleSeparator'];
-
-				if (is_object($GLOBALS['TSFE']->cObj) && isset($this->setup['config.']['pageTitleSeparator.']) && is_array($this->setup['config.']['pageTitleSeparator.'])) {
-					$pageTitleSeparator = $GLOBALS['TSFE']->cObj->stdWrap($pageTitleSeparator, $this->setup['config.']['pageTitleSeparator.']);
-				} else {
-					$pageTitleSeparator .= ' ';
-				}
-			}
 		}
 		return $siteTitle . $pageTitleSeparator . $pageTitle;
 	}
@@ -1318,7 +1313,7 @@ class TemplateService {
 	 * @param string $content The content to wrap
 	 * @param string $wrap The wrap value, eg. "<strong> | </strong>
 	 * @return string Wrapped input string
-	 * @deprecated since TYPO3 CMS 7.0 - use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap() instead
 	 * @see \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject, \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::wrap()
 	 */
 	public function wrap($content, $wrap) {

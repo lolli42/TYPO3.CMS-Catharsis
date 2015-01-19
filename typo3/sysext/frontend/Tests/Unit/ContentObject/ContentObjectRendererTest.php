@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\ContentObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Core\ApplicationContext;
@@ -128,7 +129,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$resourceFactory = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class, array(), array(), '', FALSE);
 		$this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
-		$className = uniqid('tx_coretest');
+		$className = $this->getUniqueId('tx_coretest');
 		$getImgResourceHookMock = $this->getMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectGetImageResourceHookInterface::class, array('getImgResourcePostProcess'), array(), $className);
 		$getImgResourceHookMock
 			->expects($this->once())
@@ -1425,7 +1426,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				)
 			),
 		);
-		$this->subject = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
+		$this->subject = $this->getAccessibleMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class, array('getTreeList'));
 		$this->subject->start(array(), 'tt_content');
 		$conf = array(
 			'recursive' => '15',
@@ -1462,7 +1463,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				)
 			),
 		);
-		$this->subject = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer', array('getTreeList'));
+		$this->subject = $this->getAccessibleMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class, array('getTreeList'));
 		$GLOBALS['TSFE']->id = 27;
 		$this->subject->start(array(), 'tt_content');
 		$conf = array(
@@ -1775,8 +1776,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeGetenv() {
-		$envName = uniqid('frontendtest');
-		$value = uniqid('someValue');
+		$envName = $this->getUniqueId('frontendtest');
+		$value = $this->getUniqueId('someValue');
 		putenv($envName . '=' . $value);
 		$this->assertEquals($value, $this->subject->getData('getenv:' . $envName));
 	}
@@ -1793,7 +1794,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Checks if getData() works with type "getindpenv"
+	 * Checks if getData() works with type "field"
 	 *
 	 * @test
 	 */
@@ -1806,12 +1807,26 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
+	 * Checks if getData() works with type "field" of the field content
+	 * is multi-dimensional (e.g. an array)
+	 *
+	 * @test
+	 */
+	public function getDataWithTypeFieldAndFieldIsMultiDimensional() {
+		$key = 'somekey|level1|level2';
+		$value = 'somevalue';
+		$field = array('somekey' => array('level1' => array('level2' => 'somevalue')));
+
+		$this->assertEquals($value, $this->subject->getData('field:' . $key, $field));
+	}
+
+	/**
 	 * Basic check if getData gets the uid of a file object
 	 *
 	 * @test
 	 */
 	public function getDataWithTypeFileReturnsUidOfFileObject() {
-		$uid = uniqid();
+		$uid = $this->getUniqueId();
 		$file = $this->getMock(\TYPO3\CMS\Core\Resource\File::class, array(), array(), '', FALSE);
 		$file->expects($this->once())->method('getUid')->will($this->returnValue($uid));
 		$this->subject->setCurrentFile($file);
@@ -1824,8 +1839,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeParameters() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
 		$this->subject->parameters[$key] = $value;
 
 		$this->assertEquals($value, $this->subject->getData('parameters:' . $key));
@@ -1837,8 +1852,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeRegister() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
 		$GLOBALS['TSFE']->register[$key] = $value;
 
 		$this->assertEquals($value, $this->subject->getData('register:' . $key));
@@ -1990,8 +2005,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeCurrent() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
 		$this->subject->data[$key] = $value;
 		$this->subject->currentValKey = $key;
 		$this->assertEquals($value, $this->subject->getData('current'));
@@ -2015,9 +2030,9 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeLll() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
-		$language = uniqid('someLanguage');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
+		$language = $this->getUniqueId('someLanguage');
 		$GLOBALS['TSFE']->LL_labels_cache[$language]['LLL:' . $key] = $value;
 		$GLOBALS['TSFE']->lang = $language;
 
@@ -2030,8 +2045,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypePath() {
-		$filenameIn = uniqid('someValue');
-		$filenameOut = uniqid('someValue');
+		$filenameIn = $this->getUniqueId('someValue');
+		$filenameOut = $this->getUniqueId('someValue');
 		$this->templateServiceMock->expects($this->atLeastOnce())->method('getFileName')->with($filenameIn)->will($this->returnValue($filenameOut));
 		$this->assertEquals($filenameOut, $this->subject->getData('path:' . $filenameIn));
 	}
@@ -2101,8 +2116,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeDebugData() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
 		$this->subject->data = array($key => $value);
 
 		$expectedResult = $key . $value;
@@ -2123,8 +2138,8 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getDataWithTypeDebugRegister() {
-		$key = uniqid('someKey');
-		$value = uniqid('someValue');
+		$key = $this->getUniqueId('someKey');
+		$value = $this->getUniqueId('someValue');
 		$GLOBALS['TSFE']->register = array($key => $value);
 
 		$expectedResult = $key . $value;
@@ -2630,7 +2645,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$resourceFactory = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceFactory::class, array(), array(), '', FALSE);
 		$this->subject->expects($this->any())->method('getResourceFactory')->will($this->returnValue($resourceFactory));
 
-		$className = uniqid('tx_coretest_getImageSourceCollectionHookCalled');
+		$className = $this->getUniqueId('tx_coretest_getImageSourceCollectionHookCalled');
 		$getImageSourceCollectionHookMock = $this->getMock(\TYPO3\CMS\Frontend\ContentObject\ContentObjectOneSourceCollectionHookInterface::class, array('getOneSourceCollection'), array(), $className);
 		$GLOBALS['T3_VAR']['getUserObj'][$className] = $getImageSourceCollectionHookMock;
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['getImageSourceCollection'][] = $className;
@@ -2658,7 +2673,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 		);
 
-		$result = $this->subject->getImageSourceCollection('data', $configuration, uniqid('testImage-'));
+		$result = $this->subject->getImageSourceCollection('data', $configuration, $this->getUniqueId('testImage-'));
 
 		$this->assertSame($result, 'isGetOneSourceCollectionCalledCallback');
 	}
@@ -2691,6 +2706,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array('TYPO3_SITE_PATH', '/'),
 			)
 		));
+		$GLOBALS['TSFE']->absRefPrefix = '';
 
 		$this->assertEquals($expected, $this->subject->_call('forceAbsoluteUrl', $url, $configuration));
 	}
@@ -2906,4 +2922,26 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			});
 		return $contentObjectFixture;
 	}
+
+	/**
+	 * @test
+	 */
+	public function forceAbsoluteUrlReturnsCorrectAbsoluteUrlWithSubfolder() {
+		// Force hostname and subfolder
+		$this->subject->expects($this->any())->method('getEnvironmentVariable')->will($this->returnValueMap(
+			array(
+				array('HTTP_HOST', 'localhost'),
+				array('TYPO3_SITE_PATH', '/subfolder/'),
+			)
+		));
+
+		$expected = 'http://localhost/subfolder/fileadmin/my.pdf';
+		$url = 'fileadmin/my.pdf';
+		$configuration = array(
+			'forceAbsoluteUrl' => '1'
+		);
+
+		$this->assertEquals($expected, $this->subject->_call('forceAbsoluteUrl', $url, $configuration));
+	}
+
 }

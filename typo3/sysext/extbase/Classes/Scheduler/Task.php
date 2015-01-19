@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Scheduler;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Scheduler task to execute CommandController commands
  */
@@ -175,4 +176,5 @@ class Task extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	protected function logException(\Exception $e) {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($e->getMessage(), $this->commandIdentifier, 3);
 	}
+
 }

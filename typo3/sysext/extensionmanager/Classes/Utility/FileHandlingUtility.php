@@ -6,7 +6,7 @@ use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 use TYPO3\CMS\Lang\LanguageService;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -18,6 +18,7 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Utility for dealing with files and folders
  *
@@ -213,7 +214,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Wrapper method for directory existance check
+	 * Wrapper method for directory existence check
 	 *
 	 * @param string $directory
 	 * @return bool
@@ -432,7 +433,7 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 					if (!is_dir($dir)) {
 						GeneralUtility::mkdir_deep($extensionDir . $dir);
 					}
-					if (strlen(trim($file)) > 0) {
+					if (trim($file) !== '') {
 						$return = GeneralUtility::writeFile($extensionDir . $dir . '/' . $file, zip_entry_read($zipEntry, zip_entry_filesize($zipEntry)));
 						if ($return === FALSE) {
 							throw new ExtensionManagerException('Could not write file ' . $this->getRelativePath($file), 1344691048);

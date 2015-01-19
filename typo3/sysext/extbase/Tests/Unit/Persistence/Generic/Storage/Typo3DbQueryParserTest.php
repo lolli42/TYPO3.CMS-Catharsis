@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Storage;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForDefaultLanguage() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid'
 		);
@@ -36,7 +36,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForNonDefaultLanguage() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid'
 		);
@@ -54,7 +54,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksInBackendContextWithNoGlobalTypoScriptFrontendControllerAvailable() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid'
 		);
@@ -70,7 +70,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForDefaultLanguageWithoutDeleteStatementReturned() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid',
 			'delete' => 'deleted'
@@ -88,7 +88,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForForeignLanguageWithoutSubselection() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid'
 		);
@@ -105,7 +105,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForForeignLanguageWithSubselectionWithoutDeleteStatementReturned() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid',
 			'transOrigPointerField' => 'l10n_parent'
@@ -123,7 +123,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksForForeignLanguageWithSubselectionTakesDeleteStatementIntoAccountIfNecessary() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid',
 			'transOrigPointerField' => 'l10n_parent',
@@ -149,7 +149,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function addSysLanguageStatementWorksInBackendContextWithSubselectionTakesDeleteStatementIntoAccountIfNecessary() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		$table = 'tt_content';
 		$GLOBALS['TCA'][$table]['ctrl'] = array(
 			'languageField' => 'sys_language_uid',
@@ -347,7 +347,7 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * DataProvider for addPageIdStatement Tests
 	 */
 	public function providerForAddPageIdStatementData() {
-		$table = uniqid('tx_coretest_table');
+		$table = $this->getUniqueId('tx_coretest_table');
 		return array(
 			'set Pid to zero if rootLevel = 1' => array(
 				'1',
@@ -386,4 +386,5 @@ class Typo3DbQueryParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame($expectedSql, $sql);
 	}
+
 }

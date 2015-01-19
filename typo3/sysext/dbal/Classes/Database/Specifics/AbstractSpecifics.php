@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Dbal\Database\Specifics;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -68,4 +68,5 @@ abstract class AbstractSpecifics {
 
 		return array_chunk($expressionList, $this->getSpecific(self::LIST_MAXEXPRESSIONS), $preserveArrayKeys);
 	}
+
 }

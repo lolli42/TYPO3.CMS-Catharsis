@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,13 @@ namespace TYPO3\CMS\Form\Validation;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class AlphanumericValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_system_validate_alphanumeric';
 
 	/**
 	 * Allow white space in the submitted value
@@ -87,7 +94,7 @@ class AlphanumericValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator
 	 * @see \TYPO3\CMS\Form\Validation\AbstractValidator::_getLocalLanguageLabel()
 	 */
 	protected function getLocalLanguageLabel() {
-		$label = strtolower(get_class($this)) . '.message';
+		$label = self::LOCALISATION_OBJECT_NAME . '.message';
 		$messages[] = $this->localizationHandler->getLocalLanguageLabel($label);
 		if ($this->allowWhiteSpace) {
 			$messages[] = $this->localizationHandler->getLocalLanguageLabel($label . '2');

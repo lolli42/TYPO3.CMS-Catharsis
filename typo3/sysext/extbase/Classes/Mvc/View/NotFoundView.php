@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\View;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * The not found view - a special case.
  *
@@ -70,4 +71,5 @@ class NotFoundView extends \TYPO3\CMS\Extbase\Mvc\View\AbstractView {
 	 */
 	public function __call($methodName, array $arguments) {
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -47,6 +47,14 @@ use TYPO3\CMS\Lang\LanguageService;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BackendUtility {
+
+	/**
+	 * Cache the TCA configuration of tables with their types during runtime
+	 *
+	 * @var array
+	 * @see getTCAtypes()
+	 */
+	static protected $tcaTableTypeConfigurationCache = array();
 
 	/*******************************************
 	 *
@@ -118,7 +126,7 @@ class BackendUtility {
 			$row = self::getRecord($table, $uid, $internalFields, $where, $useDeleteClause);
 			self::workspaceOL($table, $row, -99, $unsetMovePointers);
 			if (is_array($row)) {
-				foreach (array_keys($row) as $key) {
+				foreach ($row as $key => $_) {
 					if (!GeneralUtility::inList($fields, $key) && $key[0] !== '_') {
 						unset($row[$key]);
 					}
@@ -282,6 +290,12 @@ class BackendUtility {
 	 */
 	static public function getRecordLocalization($table, $uid, $language, $andWhereClause = '') {
 		$recordLocalization = FALSE;
+
+		// Check if translations are stored in other table
+		if (isset($GLOBALS['TCA'][$table]['ctrl']['transForeignTable'])) {
+			$table = $GLOBALS['TCA'][$table]['ctrl']['transForeignTable'];
+		}
+
 		if (self::isTableLocalizable($table)) {
 			$tcaCtrl = $GLOBALS['TCA'][$table]['ctrl'];
 			$recordLocalization = self::getRecordsByField($table, $tcaCtrl['transOrigPointerField'], $uid, 'AND ' . $tcaCtrl['languageField'] . '=' . (int)$language . ($andWhereClause ? ' ' . $andWhereClause : ''), '', '', '1');
@@ -471,13 +485,12 @@ class BackendUtility {
 	static public function getExcludeFields() {
 		$finalExcludeArray = array();
 
-		// All TCA keys
-		$tableNamesFromTca = array_keys($GLOBALS['TCA']);
 		// Fetch translations for table names
 		$tableToTranslation = array();
 		$lang = static::getLanguageService();
-		foreach ($tableNamesFromTca as $table) {
-			$tableToTranslation[$table] = $lang->sl($GLOBALS['TCA'][$table]['ctrl']['title']);
+		// All TCA keys
+		foreach ($GLOBALS['TCA'] as $table => $conf) {
+			$tableToTranslation[$table] = $lang->sl($conf['ctrl']['title']);
 		}
 		// Sort by translations
 		asort($tableToTranslation);
@@ -489,8 +502,7 @@ class BackendUtility {
 					&& empty($GLOBALS['TCA'][$table]['ctrl']['adminOnly'])
 					&& (empty($GLOBALS['TCA'][$table]['ctrl']['rootLevel']) || !empty($GLOBALS['TCA'][$table]['ctrl']['security']['ignoreRootLevelRestriction']))
 			) {
-				$fieldKeys = array_keys($GLOBALS['TCA'][$table]['columns']);
-				foreach ($fieldKeys as $field) {
+				foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $_) {
 					if ($GLOBALS['TCA'][$table]['columns'][$field]['exclude']) {
 						// Get human readable names of fields
 						$translatedField = $lang->sl($GLOBALS['TCA'][$table]['columns'][$field]['label']);
@@ -552,12 +564,10 @@ class BackendUtility {
 		);
 		// All TCA keys:
 		$allowDenyOptions = array();
-		$tc_keys = array_keys($GLOBALS['TCA']);
-		foreach ($tc_keys as $table) {
+		foreach ($GLOBALS['TCA'] as $table => $_) {
 			// All field names configured:
 			if (is_array($GLOBALS['TCA'][$table]['columns'])) {
-				$f_keys = array_keys($GLOBALS['TCA'][$table]['columns']);
-				foreach ($f_keys as $field) {
+				foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $_) {
 					$fCfg = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 					if ($fCfg['type'] == 'select' && $fCfg['authMode']) {
 						// Check for items:
@@ -604,12 +614,11 @@ class BackendUtility {
 	/**
 	 * Returns an array with system languages:
 	 *
-	 * Since TYPO3 4.5 the flagIcon is not returned as a filename in "gfx/flags/*" anymore,
-	 * but as a string <flags-xx>. The calling party should call
+	 * The property flagIcon returns a string <flags-xx>. The calling party should call
 	 * \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon(<flags-xx>) to get an HTML
 	 * which will represent the flag of this language.
 	 *
-	 * @return array Array with languages (title, uid, flagIcon)
+	 * @return array Array with languages (title, uid, flagIcon - used with IconUtility::getSpriteIcon)
 	 */
 	static public function getSystemLanguages() {
 		/** @var TranslationConfigurationProvider $translationConfigurationProvider */
@@ -732,10 +741,28 @@ class BackendUtility {
 		if ($GLOBALS['TCA'][$table]) {
 			// Get type value:
 			$fieldValue = self::getTCAtypeValue($table, $rec);
+			$cacheIdentifier = $table . '-type-' . $fieldValue . '-fnk-' . $useFieldNameAsKey;
+
+			// Fetch from first-level-cache if available
+			if (isset(self::$tcaTableTypeConfigurationCache[$cacheIdentifier])) {
+				return self::$tcaTableTypeConfigurationCache[$cacheIdentifier];
+			}
+
 			// Get typesConf
 			$typesConf = $GLOBALS['TCA'][$table]['types'][$fieldValue];
 			// Get fields list and traverse it
 			$fieldList = explode(',', $typesConf['showitem']);
+
+			// Add subtype fields e.g. for a valid RTE transformation
+			// The RTE runs the DB -> RTE transformation only, if the RTE field is part of the getTCAtypes array
+			if (isset($typesConf['subtype_value_field'])) {
+				$subType = $rec[$typesConf['subtype_value_field']];
+				if (isset($typesConf['subtypes_addlist'][$subType])) {
+					$subFields = GeneralUtility::trimExplode(',', $typesConf['subtypes_addlist'][$subType], TRUE);
+					$fieldList = array_merge($fieldList, $subFields);
+				}
+			}
+
 			$altFieldList = array();
 			// Traverse fields in types config and parse the configuration into a nice array:
 			foreach ($fieldList as $k => $v) {
@@ -756,6 +783,10 @@ class BackendUtility {
 			if ($useFieldNameAsKey) {
 				$fieldList = $altFieldList;
 			}
+
+			// Add to first-level-cache
+			self::$tcaTableTypeConfigurationCache[$cacheIdentifier] = $fieldList;
+
 			// Return array:
 			return $fieldList;
 		}
@@ -1168,14 +1199,15 @@ class BackendUtility {
 	 * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
 	 */
 	static public function getPagesTSconfig($id, $rootLine = NULL, $returnPartArray = FALSE) {
-		static $pagesTSconfig_cache = array();
+		static $pagesTSconfig_cacheReference = array();
+		static $combinedTSconfig_cache = array();
 
 		$id = (int)$id;
 		if ($returnPartArray === FALSE
 			&& $rootLine === NULL
-			&& isset($pagesTSconfig_cache[$id])
+			&& isset($pagesTSconfig_cacheReference[$id])
 		) {
-			return $pagesTSconfig_cache[$id];
+			return $combinedTSconfig_cache[$pagesTSconfig_cacheReference[$id]];
 		} else {
 			$TSconfig = array();
 			if (!is_array($rootLine)) {
@@ -1206,14 +1238,19 @@ class BackendUtility {
 			if ($res) {
 				$TSconfig = $res['TSconfig'];
 			}
+			$cacheHash = $res['hash'];
 			// Get User TSconfig overlay
 			$userTSconfig = static::getBackendUserAuthentication()->userTS['page.'];
 			if (is_array($userTSconfig)) {
 				ArrayUtility::mergeRecursiveWithOverrule($TSconfig, $userTSconfig);
+				$cacheHash .= '_user' . $GLOBALS['BE_USER']->user['uid'];
 			}
 
 			if ($useCacheForCurrentPageId) {
-				$pagesTSconfig_cache[$id] = $TSconfig;
+				if (!isset($combinedTSconfig_cache[$cacheHash])) {
+					$combinedTSconfig_cache[$cacheHash] = $TSconfig;
+				}
+				$pagesTSconfig_cacheReference[$id] = $cacheHash;
 			}
 		}
 		return $TSconfig;
@@ -1909,7 +1946,7 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name, present in $GLOBALS['TCA']
 	 * @param string $col Field name
-	 * @param string $printAllWrap Wrap value - set function description - this parameter is deprecated since TYPO3 6.2 and is removed two versions later. This paramater is a conceptual failure, as the content can then never be HSCed afterwards (which is how the method is used all the time), and then the code would be HSCed twice.
+	 * @param string $printAllWrap Wrap value - set function description - this parameter is deprecated since TYPO3 6.2 and is removed two versions later. This parameter is a conceptual failure, as the content can then never be HSCed afterwards (which is how the method is used all the time), and then the code would be HSCed twice.
 	 * @return string or NULL if $col is not found in the TCA table
 	 */
 	static public function getItemLabel($table, $col, $printAllWrap = '') {
@@ -1944,7 +1981,7 @@ class BackendUtility {
 
 		$originalTable = self::getOriginalTranslationTable($table);
 		$originalRow = self::getRecord($originalTable, $row[$originalUidField]);
-		foreach (array_keys($row) as $field) {
+		foreach ($row as $field => $_) {
 			$l10n_mode = isset($GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode'])
 				? $GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode']
 				: '';
@@ -2441,7 +2478,7 @@ class BackendUtility {
 			}
 		}
 		$out = implode('', $lines);
-		$out .= '<input type="submit" name="submit" value="Update configuration" />';
+		$out .= '<input class="btn btn-default" type="submit" name="submit" value="Update configuration" />';
 		return $out;
 	}
 
@@ -2691,14 +2728,14 @@ class BackendUtility {
 		$beUser = static::getBackendUserAuthentication();
 		$viewLanguageOrder = $beUser->getTSConfigVal('options.view.languageOrder');
 
-		if (strlen($viewLanguageOrder) > 0) {
+		if ((string)$viewLanguageOrder !== '') {
 			$suffix = '';
 			// Find allowed languages (if none, all are allowed!)
 			$allowedLanguages = NULL;
-			if (!$beUser->user['admin'] && strlen($beUser->groupData['allowed_languages'])) {
+			if (!$beUser->user['admin'] && $beUser->groupData['allowed_languages'] !== '') {
 				$allowedLanguages = array_flip(explode(',', $beUser->groupData['allowed_languages']));
 			}
-			// Traverse the view order, match first occurence:
+			// Traverse the view order, match first occurrence:
 			$languageOrder = GeneralUtility::intExplode(',', $viewLanguageOrder);
 			foreach ($languageOrder as $langUid) {
 				if (is_array($allowedLanguages) && count($allowedLanguages)) {
@@ -3466,11 +3503,37 @@ class BackendUtility {
 	 * @param int $pid Record pid
 	 * @return int
 	 * @internal
-	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getTSCpid()
 	 */
 	static public function getPidForModTSconfig($table, $uid, $pid) {
 		$retVal = $table == 'pages' && MathUtility::canBeInterpretedAsInteger($uid) ? $uid : $pid;
 		return $retVal;
+	}
+
+	/**
+	 * Return the real pid of a record and caches the result.
+	 * The non-cached method needs database queries to do the job, so this method
+	 * can be used if code sometimes calls the same record multiple times to save
+	 * some queries. This should not be done if the calling code may change the
+	 * same record meanwhile.
+	 *
+	 * @param string $table Tablename
+	 * @param string $uid UID value
+	 * @param string $pid PID value
+	 * @return array Array of two integers; first is the real PID of a record, second is the PID value for TSconfig.
+	 */
+	static public function getTSCpidCached($table, $uid, $pid) {
+		// A local first level cache
+		static $firstLevelCache;
+
+		if (!is_array($firstLevelCache)) {
+			$firstLevelCache = array();
+		}
+
+		$key = $table . ':' . $uid . ':' . $pid;
+		if (!isset($firstLevelCache[$key])) {
+			$firstLevelCache[$key] = static::getTSCpid($table, $uid, $pid);
+		}
+		return $firstLevelCache[$key];
 	}
 
 	/**
@@ -3602,9 +3665,14 @@ class BackendUtility {
 			// Set the object string to blank by default:
 			$GLOBALS['T3_VAR']['softRefParser'][$spKey] = '';
 			// Now, try to create parser object:
-			$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey]
-				? $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey]
-				: $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey];
+			$objRef = NULL;
+			if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey])) {
+				$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser'][$spKey];
+			} elseif (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey])) {
+				GeneralUtility::deprecationLog('The hook softRefParser_GL (used with parser key "'
+					. $spKey . '") is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8');
+				$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey];
+			}
 			if ($objRef) {
 				$softRefParserObj = GeneralUtility::getUserObj($objRef, '');
 				if (is_object($softRefParserObj)) {
@@ -3624,11 +3692,12 @@ class BackendUtility {
 	 */
 	static public function explodeSoftRefParserList($parserList) {
 		// Looking for global parsers:
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL']) && !empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) {
+			GeneralUtility::deprecationLog('The hook softRefParser_GL is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8');
 			$parserList = implode(',', array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) . ',' . $parserList;
 		}
 		// Return immediately if list is blank:
-		if (!strlen($parserList)) {
+		if ($parserList === '') {
 			return FALSE;
 		}
 		// Otherwise parse the list:
@@ -3874,7 +3943,7 @@ class BackendUtility {
 						$versionState = VersionState::cast($wsAlt['t3ver_state']);
 					}
 					if ($versionState->equals(VersionState::MOVE_POINTER)) {
-						// TODO: Same problem as frontend in versionOL(). See TODO point there.
+						// @todo Same problem as frontend in versionOL(). See TODO point there.
 						$row = FALSE;
 						return;
 					}
@@ -4061,6 +4130,17 @@ class BackendUtility {
 				if (!is_array($output[$tableName]) || !count($output[$tableName])) {
 					unset($output[$tableName]);
 				}
+			}
+		}
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['countVersionsOfRecordsOnPage'])) {
+			$reference = NULL;
+			$parameters = array(
+				'workspace' => 'workspace',
+				'pageId' => $pageId,
+				'versions' => &$output,
+			);
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['countVersionsOfRecordsOnPage'] as $hookFunction) {
+				GeneralUtility::callUserFunction($hookFunction, $parameters, $reference);
 			}
 		}
 		return $output;
@@ -4330,4 +4410,5 @@ class BackendUtility {
 	static protected function getDocumentTemplate() {
 		return $GLOBALS['TBE_TEMPLATE'];
 	}
+
 }

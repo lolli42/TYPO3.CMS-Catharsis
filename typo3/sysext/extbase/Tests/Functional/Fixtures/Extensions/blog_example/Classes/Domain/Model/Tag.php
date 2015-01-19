@@ -1,6 +1,7 @@
 <?php
 namespace ExtbaseTeam\BlogExample\Domain\Model;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -49,4 +50,5 @@ class Tag extends \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject {
 	public function __toString() {
 		return $this->getName();
 	}
+
 }

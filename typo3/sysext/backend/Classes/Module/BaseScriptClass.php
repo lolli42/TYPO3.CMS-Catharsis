@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,11 @@ namespace TYPO3\CMS\Backend\Module;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Parent class for 'ScriptClasses' in backend modules.
@@ -36,8 +40,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * class PrototypeController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
  * 	public function __construct() {
- * 		$GLOBALS['LANG']->includeLLFile('EXT:prototype/Resources/Private/Language/locallang.xlf');
- * 		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], TRUE);
+ * 		$this->getLanguageService()->includeLLFile('EXT:prototype/Resources/Private/Language/locallang.xlf');
+ * 		$this->getBackendUser()->modAccess($GLOBALS['MCONF'], TRUE);
  * 	}
  * }
  *
@@ -59,11 +63,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * $SOBE = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\Vendor\Prototype\Controller\PrototypeController::class);
  * $SOBE->init();
  *
- * AFTER INIT THE INTERNAL ARRAY ->include_once MAY HOLD FILENAMES TO INCLUDE
- * foreach($SOBE->include_once as $INC_FILE) {
- * 	include_once($INC_FILE);
- * }
- * Note: This "include_once" is deprecated since TYPO3 6.2: use auto-loading instead!
  *
  * THEN WE WILL CHECK IF THERE IS A 'SUBMODULE' REGISTERED TO BE INITIALIZED AS WELL:
  * $SOBE->checkExtObj();
@@ -171,14 +170,6 @@ class BaseScriptClass {
 	public $extClassConf;
 
 	/**
-	 * Contains absolute paths to class files to include from the global scope. This is done in the module index.php files after calling the init() function
-	 *
-	 * @see handleExternalFunctionValue()
-	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
-	 */
-	public $include_once = array();
-
-	/**
 	 * Generally used for accumulating the output content of backend modules
 	 *
 	 * @var string
@@ -194,7 +185,7 @@ class BaseScriptClass {
 	 * May contain an instance of a 'Function menu module' which connects to this backend module.
 	 *
 	 * @see checkExtObj()
-	 * @var object
+	 * @var AbstractFunctionModule
 	 */
 	public $extObj;
 
@@ -211,7 +202,7 @@ class BaseScriptClass {
 		}
 		$this->id = (int)GeneralUtility::_GP('id');
 		$this->CMD = GeneralUtility::_GP('CMD');
-		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
+		$this->perms_clause = $this->getBackendUser()->getPagePermsClause(1);
 		$this->menuConfig();
 		$this->handleExternalFunctionValue();
 	}
@@ -246,8 +237,8 @@ class BaseScriptClass {
 		$mergeArray = $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
 		if (is_array($mergeArray)) {
 			foreach ($mergeArray as $k => $v) {
-				if (((string)$v['ws'] === '' || $GLOBALS['BE_USER']->workspace === 0 && GeneralUtility::inList($v['ws'], 'online')) || $GLOBALS['BE_USER']->workspace === -1 && GeneralUtility::inList($v['ws'], 'offline') || $GLOBALS['BE_USER']->workspace > 0 && GeneralUtility::inList($v['ws'], 'custom')) {
-					$menuArr[$k] = $GLOBALS['LANG']->sL($v['title']);
+				if (((string)$v['ws'] === '' || $this->getBackendUser()->workspace === 0 && GeneralUtility::inList($v['ws'], 'online')) || $this->getBackendUser()->workspace === -1 && GeneralUtility::inList($v['ws'], 'offline') || $this->getBackendUser()->workspace > 0 && GeneralUtility::inList($v['ws'], 'custom')) {
+					$menuArr[$k] = $this->getLanguageService()->sL($v['title']);
 				}
 			}
 		}
@@ -256,22 +247,17 @@ class BaseScriptClass {
 
 	/**
 	 * Loads $this->extClassConf with the configuration for the CURRENT function of the menu.
-	 * If for this array the key 'path' is set then that is expected to be an absolute path to a file which should be included - so it is set in the internal array $this->include_once
 	 *
 	 * @param string $MM_key The key to MOD_MENU for which to fetch configuration. 'function' is default since it is first and foremost used to get information per "extension object" (I think that is what its called)
 	 * @param string $MS_value The value-key to fetch from the config array. If NULL (default) MOD_SETTINGS[$MM_key] will be used. This is useful if you want to force another function than the one defined in MOD_SETTINGS[function]. Call this in init() function of your Script Class: handleExternalFunctionValue('function', $forcedSubModKey)
 	 * @return void
-	 * @see getExternalItemConfig(), $include_once, init()
-	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
+	 * @see getExternalItemConfig(), init()
 	 */
 	public function handleExternalFunctionValue($MM_key = 'function', $MS_value = NULL) {
 		if ($MS_value === NULL) {
 			$MS_value = $this->MOD_SETTINGS[$MM_key];
 		}
 		$this->extClassConf = $this->getExternalItemConfig($this->MCONF['name'], $MM_key, $MS_value);
-		if (is_array($this->extClassConf) && $this->extClassConf['path']) {
-			$this->include_once[] = $this->extClassConf['path'];
-		}
 	}
 
 	/**
@@ -285,14 +271,16 @@ class BaseScriptClass {
 	 * @see handleExternalFunctionValue()
 	 */
 	public function getExternalItemConfig($modName, $menuKey, $value = '') {
-		return (string)$value !== '' ? $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey][$value] : $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
+		if (isset($GLOBALS['TBE_MODULES_EXT'][$modName])) {
+			return (string)$value !== '' ? $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey][$value] : $GLOBALS['TBE_MODULES_EXT'][$modName]['MOD_MENU'][$menuKey];
+		}
+		return NULL;
 	}
 
 	/**
 	 * Creates an instance of the class found in $this->extClassConf['name'] in $this->extObj if any (this should hold three keys, "name", "path" and "title" if a "Function menu module" tries to connect...)
 	 * This value in extClassConf might be set by an extension (in a ext_tables/ext_localconf file) which thus "connects" to a module.
 	 * The array $this->extClassConf is set in handleExternalFunctionValue() based on the value of MOD_SETTINGS[function]
-	 * (Should be) called from global scope right after inclusion of files from the ->include_once array.
 	 * If an instance is created it is initiated with $this passed as value and $this->extClassConf as second argument. Further the $this->MOD_SETTING is cleaned up again after calling the init function.
 	 *
 	 * @return void
@@ -338,10 +326,43 @@ class BaseScriptClass {
 	 * @return void
 	 */
 	public function extObjContent() {
-		$this->extObj->pObj = $this;
-		if (is_callable(array($this->extObj, 'main'))) {
-			$this->content .= $this->extObj->main();
+		if ($this->extObj === NULL) {
+			$flashMessage = GeneralUtility::makeInstance(
+				FlashMessage::class,
+				$this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang.xlf:no_modules_registered'),
+				$this->getLanguageService()->getLL('title'),
+				FlashMessage::ERROR
+			);
+			$this->content .= $flashMessage->render();
+		} else {
+			$this->extObj->pObj = $this;
+			if (is_callable(array($this->extObj, 'main'))) {
+				$this->content .= $this->extObj->main();
+			}
 		}
+	}
+
+	/**
+	 * Returns the Language Service
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * Returns the Backend User
+	 * @return BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

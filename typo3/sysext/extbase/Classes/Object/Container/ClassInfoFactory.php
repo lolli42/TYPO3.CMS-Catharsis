@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Object\Container;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Object\Container;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * TYPO3 Dependency Injection container
  *
@@ -159,4 +160,5 @@ class ClassInfoFactory {
 	private function getIsInitializeable($classname) {
 		return method_exists($classname, 'initializeObject');
 	}
+
 }

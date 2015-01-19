@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,7 +14,7 @@
 /**
  * Javascript compatibility file for a breaking change to the
  * flashmessage javascript object
- * @deprecate this file will be removed with CMS 9
+ * @deprecated since TYPO3 CMS 7, this file will be removed in TYPO3 CMS 9
  */
 
 // map old Flashmessage API to the new one

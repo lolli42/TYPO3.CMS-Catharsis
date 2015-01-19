@@ -44,7 +44,7 @@ class ArrayNode extends \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode {
 			if ($value instanceof \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode) {
 				$arrayToBuild[$key] = $value->evaluate($renderingContext);
 			} else {
-				// TODO - this case should not happen!
+				// @todo - this case should not happen!
 				$arrayToBuild[$key] = $value;
 			}
 		}
@@ -59,4 +59,5 @@ class ArrayNode extends \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\AbstractNode {
 	public function getInternalArray() {
 		return $this->internalArray;
 	}
+
 }

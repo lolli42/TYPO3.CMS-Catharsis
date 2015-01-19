@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Category;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -209,7 +209,7 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 	public function applyTcaForPreRegisteredTables() {
 		$this->registerDefaultCategorizedTables();
 		foreach ($this->registry as $tableName => $fields) {
-			foreach (array_keys($fields) as $fieldName) {
+			foreach ($fields as $fieldName => $_) {
 				$this->applyTcaForTableAndField($tableName, $fieldName);
 			}
 		}
@@ -420,4 +420,5 @@ class CategoryRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 		$sqlString[] = $this->getDatabaseTableDefinition($extensionKey);
 		return array('sqlString' => $sqlString, 'extensionKey' => $extensionKey);
 	}
+
 }

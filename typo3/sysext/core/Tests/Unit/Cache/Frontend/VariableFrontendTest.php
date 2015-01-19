@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Cache\Frontend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -211,4 +211,5 @@ class VariableFrontendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$cache->initializeObject();
 		$this->assertEquals($entries, $cache->getByTag($tag), 'Did not receive the expected entries');
 	}
+
 }

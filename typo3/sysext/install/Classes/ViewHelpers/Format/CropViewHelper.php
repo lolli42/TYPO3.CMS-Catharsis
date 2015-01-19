@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\ViewHelpers\Format;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -55,4 +55,5 @@ class CropViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper
 		$stringToTruncate = $this->renderChildren();
 		return substr($stringToTruncate, 0, $maxCharacters);
 	}
+
 }

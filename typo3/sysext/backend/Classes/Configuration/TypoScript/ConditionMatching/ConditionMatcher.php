@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Configuration\TypoScript\ConditionMatching;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -43,7 +43,7 @@ class ConditionMatcher extends AbstractConditionMatcher {
 	 */
 	protected function evaluateCondition($string) {
 		list($key, $value) = GeneralUtility::trimExplode('=', $string, FALSE, 2);
-		$result = parent::evaluateConditionCommon($key, $value);
+		$result = $this->evaluateConditionCommon($key, $value);
 		if (is_bool($result)) {
 			return $result;
 		} else {
@@ -88,6 +88,11 @@ class ConditionMatcher extends AbstractConditionMatcher {
 						}
 					}
 					break;
+				default:
+					$conditionResult = $this->evaluateCustomDefinedCondition($string);
+					if ($conditionResult !== NULL) {
+						return $conditionResult;
+					}
 			}
 		}
 		return FALSE;
@@ -102,7 +107,7 @@ class ConditionMatcher extends AbstractConditionMatcher {
 	 */
 	protected function getVariable($var) {
 		$vars = explode(':', $var, 2);
-		return parent::getVariableCommon($vars);
+		return $this->getVariableCommon($vars);
 	}
 
 	/**

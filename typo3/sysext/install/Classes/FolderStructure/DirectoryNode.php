@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -294,4 +294,5 @@ class DirectoryNode extends AbstractNode implements NodeInterface {
 			$this->children[] = new $child['type']($child, $this);
 		}
 	}
+
 }

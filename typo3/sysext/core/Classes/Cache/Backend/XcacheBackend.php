@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -300,4 +300,5 @@ class XcacheBackend extends AbstractBackend implements TaggableBackendInterface 
 		$varSize = ini_get('xcache.var_size');
 		return php_sapi_name() === 'cli' || empty($varSize);
 	}
+
 }

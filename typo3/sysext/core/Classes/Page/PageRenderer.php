@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Page;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -35,7 +35,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const EXTJS_ADAPTER_PROTOTYPE = 'prototype';
 	const EXTJS_ADAPTER_YUI = 'yui';
 	// jQuery Core version that is shipped with TYPO3
-	const JQUERY_VERSION_LATEST = '1.11.1';
+	const JQUERY_VERSION_LATEST = '1.11.2';
 	// jQuery namespace options
 	const JQUERY_NAMESPACE_NONE = 'none';
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
@@ -334,6 +334,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		'1.8.2',	// jquery version shipped with TYPO3 6.0, still available in the contrib/ directory
 		'1.9.1',
 		'1.11.0',
+		'1.11.1',
 		self::JQUERY_VERSION_LATEST
 	);
 
@@ -486,7 +487,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->reset();
 		$this->csConvObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Charset\CharsetConverter::class);
 		$this->locales = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\Locales::class);
-		if (strlen($templateFile)) {
+		if ($templateFile !== '') {
 			$this->templateFile = $templateFile;
 		}
 		$this->backPath = isset($backPath) ? $backPath : $GLOBALS['BACK_PATH'];
@@ -1191,9 +1192,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $allWrap
 	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
+	 * @param bool $async Flag if property 'async="async"' should be added to JavaScript tags
 	 * @return void
 	 */
-	public function addJsLibrary($name, $file, $type = 'text/javascript', $compress = FALSE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|') {
+	public function addJsLibrary($name, $file, $type = 'text/javascript', $compress = FALSE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|', $async = FALSE) {
 		if (!$type) {
 			$type = 'text/javascript';
 		}
@@ -1206,7 +1208,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'forceOnTop' => $forceOnTop,
 				'allWrap' => $allWrap,
 				'excludeFromConcatenation' => $excludeFromConcatenation,
-				'splitChar' => $splitChar
+				'splitChar' => $splitChar,
+				'async' => $async
 			);
 		}
 	}
@@ -1222,9 +1225,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $allWrap
 	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
+	 * @param bool $async Flag if property 'async="async"' should be added to JavaScript tags
 	 * @return void
 	 */
-	public function addJsFooterLibrary($name, $file, $type = 'text/javascript', $compress = FALSE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|') {
+	public function addJsFooterLibrary($name, $file, $type = 'text/javascript', $compress = FALSE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|', $async = FALSE) {
 		if (!$type) {
 			$type = 'text/javascript';
 		}
@@ -1237,7 +1241,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'forceOnTop' => $forceOnTop,
 				'allWrap' => $allWrap,
 				'excludeFromConcatenation' => $excludeFromConcatenation,
-				'splitChar' => $splitChar
+				'splitChar' => $splitChar,
+				'async' => $async
 			);
 		}
 	}
@@ -1252,9 +1257,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $allWrap
 	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
+	 * @param bool $async Flag if property 'async="async"' should be added to JavaScript tags
 	 * @return void
 	 */
-	public function addJsFile($file, $type = 'text/javascript', $compress = TRUE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|') {
+	public function addJsFile($file, $type = 'text/javascript', $compress = TRUE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|', $async = FALSE) {
 		if (!$type) {
 			$type = 'text/javascript';
 		}
@@ -1270,7 +1276,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'forceOnTop' => $forceOnTop,
 				'allWrap' => $allWrap,
 				'excludeFromConcatenation' => $excludeFromConcatenation,
-				'splitChar' => $splitChar
+				'splitChar' => $splitChar,
+				'async' => $async
 			);
 		}
 	}
@@ -1285,9 +1292,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $allWrap
 	 * @param bool $excludeFromConcatenation
 	 * @param string $splitChar The char used to split the allWrap value, default is "|"
+	 * @param bool $async Flag if property 'async="async"' should be added to JavaScript tags
 	 * @return void
 	 */
-	public function addJsFooterFile($file, $type = 'text/javascript', $compress = TRUE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|') {
+	public function addJsFooterFile($file, $type = 'text/javascript', $compress = TRUE, $forceOnTop = FALSE, $allWrap = '', $excludeFromConcatenation = FALSE, $splitChar = '|', $async = FALSE) {
 		if (!$type) {
 			$type = 'text/javascript';
 		}
@@ -1303,7 +1311,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'forceOnTop' => $forceOnTop,
 				'allWrap' => $allWrap,
 				'excludeFromConcatenation' => $excludeFromConcatenation,
-				'splitChar' => $splitChar
+				'splitChar' => $splitChar,
+				'async' => $async
 			);
 		}
 	}
@@ -1379,7 +1388,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		if (count($filterNamespaces) === 0) {
 			$filterNamespaces = array('TYPO3');
 		}
-		// @deprecated since 7.0 and will be removed with CMS 8
+		// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 		// add compatibility mapping for the old flashmessage API
 		$this->addJsFile(GeneralUtility::resolveBackPath($this->backPath .
 			'sysext/backend/Resources/Public/JavaScript/flashmessage_compatibility.js'));
@@ -1618,9 +1627,13 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		if (count($this->requireJsConfig) === 0) {
 			// first, load all paths for the namespaces, and configure contrib libs.
 			$this->requireJsConfig['paths'] = array(
-				'jquery-ui' => 'contrib/jquery-ui',
-				'jquery' => 'contrib/jquery',
-				'twbs' => 'contrib/twbs/bootstrap.min'
+				'jquery-ui' => $this->backPath . 'contrib/jquery-ui',
+				'jquery' => $this->backPath . 'contrib/jquery',
+				'datatables' => $this->backPath . 'contrib/jquery/jquery.dataTables.min',
+				'nprogress' => $this->backPath . 'contrib/nprogress/nprogress',
+				'moment' => $this->backPath . 'contrib/moment/moment.min',
+				'twbs' => $this->backPath . 'contrib/twbs/bootstrap.min',
+				'twbs/bootstrap-datetimepicker' => $this->backPath . 'contrib/twbs/bootstrap-datetimepicker.min',
 			);
 			// get all extensions that are loaded
 			$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
@@ -1663,7 +1676,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * includes a AMD-compatible JS file by resolving the ModuleName, and then requires the file via a requireJS request
+	 * includes a AMD-compatible JS file by resolving the ModuleName, and then requires the file via a requireJS request,
+	 * additionally allowing to execute JavaScript code afterwards
 	 *
 	 * this function only works for AMD-ready JS modules, used like "define('TYPO3/CMS/Backend/FormEngine..."
 	 * in the JS file
@@ -1675,15 +1689,22 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *		"FormEngine": FileName in the Resources/Public/JavaScript folder
 	 *
 	 * @param string $mainModuleName Must be in the form of "TYPO3/CMS/PackageName/ModuleName" e.g. "TYPO3/CMS/Backend/FormEngine"
+	 * @param string $callBackFunction loaded right after the requireJS loading, must be wrapped in function() {}
 	 * @return void
 	 */
-	public function loadRequireJsModule($mainModuleName) {
-
+	public function loadRequireJsModule($mainModuleName, $callBackFunction = NULL) {
+		$inlineCodeKey = $mainModuleName;
 		// make sure requireJS is initialized
 		$this->loadRequireJs();
 
-		// execute the main module
-		$this->addJsInlineCode('RequireJS-Module-' . $mainModuleName, 'require(["' . $mainModuleName . '"]);');
+		// execute the main module, and load a possible callback function
+		$javaScriptCode = 'require(["' . $mainModuleName . '"]';
+		if ($callBackFunction !== NULL) {
+			$inlineCodeKey .= sha1($callBackFunction);
+			$javaScriptCode .= ', ' . $callBackFunction;
+		}
+		$javaScriptCode .= ');';
+		$this->addJsInlineCode('RequireJS-Module-' . $inlineCodeKey, $javaScriptCode);
 	}
 
 	/**
@@ -1842,7 +1863,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Gets labels to be used in JavaScript fetched from a locallang file.
 	 *
-	 * @param string $fileRef Input is a file-reference (see GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xml' file containing a valid XML TYPO3 language structure.
+	 * @param string $fileRef Input is a file-reference (see GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xlf' file containing a valid XML TYPO3 language structure.
 	 * @param string $selectionPrefix Prefix to select the correct labels (default: '')
 	 * @param string $stripFromSelectionName Sub-prefix to be removed from label names in the result (default: '')
 	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
@@ -2219,7 +2240,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			// Swedish
 			$localeMap['se'] = 'se_SV';
 			$extJsLang = isset($localeMap[$this->lang]) ? $localeMap[$this->lang] : $this->lang;
-			// TODO autoconvert file from UTF8 to current BE charset if necessary!!!!
+			// @todo autoconvert file from UTF8 to current BE charset if necessary!!!!
 			$extJsLocaleFile = $this->extJsPath . 'locale/ext-lang-' . $extJsLang . '.js';
 			if (file_exists(PATH_typo3 . $extJsLocaleFile)) {
 				$out .= '<script src="' . $this->processJsFile(($this->backPath . $extJsLocaleFile)) . '" type="text/javascript" charset="utf-8"></script>' . LF;
@@ -2229,7 +2250,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		if (count($this->inlineLanguageLabelFiles)) {
 			foreach ($this->inlineLanguageLabelFiles as $languageLabelFile) {
-				$this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['$errorMode']);
+				$this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['errorMode']);
 			}
 		}
 		$this->inlineLanguageLabelFiles = array();
@@ -2257,7 +2278,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$out .= $this->inlineJavascriptWrap[0] . '
 				Ext.ns("TYPO3");
-				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF
+				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";
+				Ext.SSL_SECURE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF
 				. $inlineSettings
 				. 'Ext.onReady(function() {'
 					. ($this->enableExtJSQuickTips ? 'Ext.QuickTips.init();' . LF : '')
@@ -2299,7 +2321,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function addAjaxUrlsToInlineSettings() {
 		$ajaxUrls = array();
-		foreach (array_keys($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX']) as $ajaxHandler) {
+		foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'] as $ajaxHandler => $_) {
 			$ajaxUrls[$ajaxHandler] = BackendUtility::getAjaxUrl($ajaxHandler);
 		}
 		$this->inlineSettings['ajaxUrls'] = $ajaxUrls;
@@ -2446,7 +2468,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			foreach ($this->jsLibs as $properties) {
 				$properties['file'] = GeneralUtility::resolveBackPath($properties['file']);
 				$properties['file'] = GeneralUtility::createVersionNumberedFilename($properties['file']);
-				$tag = '<script src="' . htmlspecialchars($properties['file']) . '" type="' . htmlspecialchars($properties['type']) . '"></script>';
+				$async = ($properties['async']) ? ' async="async"' : '';
+				$tag = '<script src="' . htmlspecialchars($properties['file']) . '" type="' . htmlspecialchars($properties['type']) . '"' . $async . '></script>';
 				if ($properties['allWrap']) {
 					$wrapArr = explode($properties['splitChar'] ?: '|', $properties['allWrap'], 2);
 					$tag = $wrapArr[0] . $tag . $wrapArr[1];
@@ -2486,7 +2509,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			foreach ($this->jsFiles as $file => $properties) {
 				$file = GeneralUtility::resolveBackPath($file);
 				$file = GeneralUtility::createVersionNumberedFilename($file);
-				$tag = '<script src="' . htmlspecialchars($file) . '" type="' . htmlspecialchars($properties['type']) . '"></script>';
+				$async = ($properties['async']) ? ' async="async"' : '';
+				$tag = '<script src="' . htmlspecialchars($file) . '" type="' . htmlspecialchars($properties['type']) . '"' . $async . '></script>';
 				if ($properties['allWrap']) {
 					$wrapArr = explode($properties['splitChar'] ?: '|', $properties['allWrap'], 2);
 					$tag = $wrapArr[0] . $tag . $wrapArr[1];

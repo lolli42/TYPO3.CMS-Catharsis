@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Security\Cryptography;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Security\Cryptography;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A hash service which should be used to generate and validate hashes.
  *
@@ -90,4 +91,5 @@ class HashService implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return $stringWithoutHmac;
 	}
+
 }

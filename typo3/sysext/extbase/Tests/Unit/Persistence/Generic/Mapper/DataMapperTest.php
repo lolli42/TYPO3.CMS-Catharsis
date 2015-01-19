@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Mapper;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Mapper;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Tests\AccessibleObjectInterface;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
@@ -55,7 +56,7 @@ class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function thawPropertiesSetsPropertyValues() {
-		$className = 'Class' . md5(uniqid(mt_rand(), TRUE));
+		$className = $this->getUniqueId('Class');
 		$classNameWithNS = __NAMESPACE__ . '\\' . $className;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $className . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' {
 		 public $firstProperty; public $secondProperty; public $thirdProperty; public $fourthProperty;
@@ -163,12 +164,12 @@ class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$columnMap->setTypeOfRelation(ColumnMap::RELATION_HAS_ONE);
 		$dataMap = $this->getMock(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMap::class, array('getColumnMap'), array(), '', FALSE);
 
-		$className = 'Class1' . md5(uniqid(mt_rand(), TRUE));
+		$className = $this->getUniqueId('Class1');
 		$classNameWithNS = __NAMESPACE__ . '\\' . $className;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $className . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' { public $relationProperty; }');
 		$object = new $classNameWithNS();
 
-		$className2 = 'Class2' . md5(uniqid(mt_rand(), TRUE));
+		$className2 = $this->getUniqueId('Class2');
 		$className2WithNS = __NAMESPACE__ . '\\' . $className2;
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $className2 . ' extends \\' . \TYPO3\CMS\Extbase\DomainObject\AbstractEntity::class . ' { }');
 		$child = new $className2WithNS();
@@ -307,4 +308,5 @@ class DataMapperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$input->expects($this->once())->method('getUid')->will($this->returnValue(23));
 		$this->assertSame(23, $dataMapper->getPlainValue($input));
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -61,7 +61,7 @@ class LogManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function managerReturnsSameLoggerOnRepeatedRequest() {
-		$loggerName = uniqid('test.core.log');
+		$loggerName = $this->getUniqueId('test.core.log');
 		$this->logManagerInstance->registerLogger($loggerName);
 		$logger1 = $this->logManagerInstance->getLogger($loggerName);
 		$logger2 = $this->logManagerInstance->getLogger($loggerName);

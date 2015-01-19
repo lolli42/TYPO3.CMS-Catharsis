@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Service;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Service for determining environment params
  */
@@ -51,4 +52,5 @@ class EnvironmentService implements \TYPO3\CMS\Core\SingletonInterface {
 	public function getServerRequestMethod() {
 		return isset($_SERVER['REQUEST_METHOD']) && is_string($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
 	}
+
 }

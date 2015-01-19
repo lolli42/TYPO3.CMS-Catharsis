@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Locking;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -171,7 +171,7 @@ class Locker {
 	 * @deprecated since 6.2 - will be removed two versions later; use new API instead
 	 */
 	public function acquire() {
-		// TODO refactor locking in TSFE to use the new API, then this call can be logged
+		// @todo refactor locking in TSFE to use the new API, then this call can be logged
 		// GeneralUtility::logDeprecatedFunction();
 
 		// Default is TRUE, which means continue without caring for other clients.
@@ -491,4 +491,5 @@ class Locker {
 		}
 		$this->resource = $path . $this->id;
 	}
+
 }

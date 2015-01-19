@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -174,7 +174,7 @@ class CommandUtility {
 			if ($validPath) {
 				if (TYPO3_OS == 'WIN') {
 						// Windows OS
-						// TODO Why is_executable() is not called here?
+						// @todo Why is_executable() is not called here?
 					if (@is_file($path . $cmd)) {
 						self::$applications[$cmd]['app'] = $cmd;
 						self::$applications[$cmd]['path'] = $path;
@@ -389,7 +389,7 @@ class CommandUtility {
 		}
 
 			// Add path from environment
-			// TODO: how does this work for WIN
+			// @todo how does this work for WIN
 		if ($GLOBALS['_SERVER']['PATH']) {
 			$sep = (TYPO3_OS == 'WIN' ? ';' : ':');
 			$envPath = GeneralUtility::trimExplode($sep, $GLOBALS['_SERVER']['PATH'], TRUE);

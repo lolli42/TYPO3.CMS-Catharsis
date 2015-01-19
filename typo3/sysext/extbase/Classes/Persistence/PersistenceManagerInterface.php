@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * The Extbase Persistence Manager interface
  */
@@ -46,7 +47,7 @@ interface PersistenceManagerInterface {
 	 */
 	public function isNewObject($object);
 
-	// TODO realign with Flow PersistenceManager again
+	// @todo realign with Flow PersistenceManager again
 
 	/**
 	 * Returns the (internal) identifier for the object, if it is known to the

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Tests\Unit\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -110,7 +110,7 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			->expects($this->any())
 			->method('isWindowsOs')
 			->will($this->returnValue(FALSE));
-		$childName = uniqid('test_');
+		$childName = $this->getUniqueId('test_');
 		$structure = array(
 			'name' => '/foo',
 			'children' => array(
@@ -157,7 +157,7 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			->expects($this->any())
 			->method('isWindowsOs')
 			->will($this->returnValue(FALSE));
-		$name = '/' . uniqid('test_');
+		$name = '/' . $this->getUniqueId('test_');
 		$node->__construct(array('name' => $name), NULL);
 		$this->assertSame($name, $node->getName());
 	}
@@ -174,7 +174,7 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'',
 			FALSE
 		);
-		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		$path = PATH_site . 'typo3temp/' . $this->getUniqueId('dir_');
 		touch ($path);
 		$this->testFilesToDelete[] = $path;
 		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
@@ -185,7 +185,7 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$statusArray = $node->getStatus();
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$status = $statusArray[0];
-		$this->assertInstanceOf('\TYPO3\CMS\Install\Status\OkStatus', $status);
+		$this->assertInstanceOf(\TYPO3\CMS\Install\Status\OkStatus::class, $status);
 	}
 
 	/**
@@ -200,7 +200,7 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'',
 			FALSE
 		);
-		$path = PATH_site . 'typo3temp/' . uniqid('dir_');
+		$path = PATH_site . 'typo3temp/' . $this->getUniqueId('dir_');
 		touch ($path);
 		$this->testFilesToDelete[] = $path;
 		$node->expects($this->any())->method('getAbsolutePath')->will($this->returnValue($path));
@@ -214,8 +214,8 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var $status \TYPO3\CMS\Install\Status\StatusInterface */
 		$statusSelf = $statusArray[0];
 		$statusOfChild = $statusArray[1];
-		$this->assertInstanceOf('\TYPO3\CMS\Install\Status\OkStatus', $statusSelf);
-		$this->assertInstanceOf('\TYPO3\CMS\Install\Status\ErrorStatus', $statusOfChild);
+		$this->assertInstanceOf(\TYPO3\CMS\Install\Status\OkStatus::class, $statusSelf);
+		$this->assertInstanceOf(\TYPO3\CMS\Install\Status\ErrorStatus::class, $statusOfChild);
 	}
 
 	/**
@@ -235,4 +235,5 @@ class RootNodeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$node->__construct($structure, NULL);
 		$this->assertSame($path, $node->getAbsolutePath());
 	}
+
 }

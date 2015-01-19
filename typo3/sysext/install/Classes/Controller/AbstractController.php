@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -556,7 +556,7 @@ class AbstractController {
 		$parameters[] = $controllerParameter;
 
 		// Add action if specified
-		if (strlen($action) > 0) {
+		if ((string)$action !== '') {
 			$parameters[] = 'install[action]=' . $action;
 		}
 
@@ -607,4 +607,5 @@ class AbstractController {
 			? $GLOBALS['TYPO3_CONF_VARS']['MAIL']['defaultMailFromName']
 			: 'TYPO3 CMS install tool';
 	}
+
 }

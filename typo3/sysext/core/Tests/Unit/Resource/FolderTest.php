@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -51,8 +51,8 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function constructorArgumentsAreAvailableAtRuntime() {
-		$path = uniqid();
-		$name = uniqid();
+		$path = $this->getUniqueId();
+		$name = $this->getUniqueId();
 		$mockedStorage = $this->getMock(\TYPO3\CMS\Core\Resource\ResourceStorage::class, array(), array(), '', FALSE);
 		$fixture = $this->createFolderFixture($path, $name, $mockedStorage);
 		$this->assertSame($mockedStorage, $fixture->getStorage());
@@ -159,4 +159,5 @@ class FolderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame($parentFolderFixture, $currentFolderFixture->getParentFolder());
 	}
+
 }

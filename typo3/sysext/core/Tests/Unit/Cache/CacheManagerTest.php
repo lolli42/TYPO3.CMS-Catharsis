@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Cache;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -129,7 +129,7 @@ class CacheManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getCacheCreatesCacheInstanceWithGivenConfiguration() {
 		$manager = new \TYPO3\CMS\Core\Cache\CacheManager();
-		$cacheIdentifier = 'Test' . md5(uniqid(mt_rand(), TRUE));
+		$cacheIdentifier = $this->getUniqueId('Test');
 		$cacheObjectName = 'testCache';
 		$backendObjectName = 'testBackend';
 		$backendOptions = array('foo');
@@ -152,7 +152,7 @@ class CacheManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getCacheCreatesCacheInstanceWithFallbackToDefaultFrontend() {
 		$manager = new \TYPO3\CMS\Core\Cache\CacheManager();
-		$cacheIdentifier = 'Test' . md5(uniqid(mt_rand(), TRUE));
+		$cacheIdentifier = $this->getUniqueId('Test');
 		$backendObjectName = 'testBackend';
 		$backendOptions = array('foo');
 		$configuration = array(
@@ -173,7 +173,7 @@ class CacheManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getCacheCreatesCacheInstanceWithFallbackToDefaultBackend() {
 		$manager = new \TYPO3\CMS\Core\Cache\CacheManager();
-		$cacheIdentifier = 'Test' . md5(uniqid(mt_rand(), TRUE));
+		$cacheIdentifier = $this->getUniqueId('Test');
 		$cacheObjectName = 'testCache';
 		$backendOptions = array('foo');
 		$configuration = array(
@@ -194,7 +194,7 @@ class CacheManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getCacheCreatesCacheInstanceWithFallbackToDefaultBackenOptions() {
 		$manager = new \TYPO3\CMS\Core\Cache\CacheManager();
-		$cacheIdentifier = 'Test' . md5(uniqid(mt_rand(), TRUE));
+		$cacheIdentifier = $this->getUniqueId('Test');
 		$cacheObjectName = 'testCache';
 		$backendObjectName = 'testBackend';
 		$configuration = array(

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -113,4 +113,5 @@ class UpdateFromTerControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$controllerMock->_set('request', $requestMock);
 		$controllerMock->updateExtensionListFromTerAction(TRUE);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -718,7 +718,7 @@ class FunctionalTestCaseBootstrapUtility {
 	 * @return void
 	 */
 	protected function mergeRecursiveWithOverrule(array &$original, array $overrule, $addKeys = TRUE, $includeEmptyValues = TRUE, $enableUnsetFeature = TRUE) {
-		foreach (array_keys($overrule) as $key) {
+		foreach ($overrule as $key => $_) {
 			if ($enableUnsetFeature && $overrule[$key] === '__UNSET') {
 				unset($original[$key]);
 				continue;
@@ -737,4 +737,5 @@ class FunctionalTestCaseBootstrapUtility {
 		// This line is kept for backward compatibility reasons.
 		reset($original);
 	}
+
 }

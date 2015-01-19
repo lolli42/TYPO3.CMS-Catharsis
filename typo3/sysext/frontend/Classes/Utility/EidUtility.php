@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,9 @@ namespace TYPO3\CMS\Frontend\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 
 /**
  * Tools for scripts using the eID feature of index.php
@@ -60,7 +62,7 @@ class EidUtility {
 	 * Load and initialize Frontend User. Note, this process is slow because
 	 * it creates a calls many objects. Call this method only if necessary!
 	 *
-	 * @return object Frontend User object (usually known as TSFE->fe_user)
+	 * @return FrontendUserAuthentication Frontend User object (usually known as TSFE->fe_user)
 	 */
 	static public function initFeUser() {
 		// Get TSFE instance. It knows how to initialize the user. We also

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\TypoScript;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -113,7 +113,7 @@ class ConfigurationForm extends \TYPO3\CMS\Core\TypoScript\ExtendedTemplateServi
 	 * @param string $script
 	 * @param string $addFields
 	 * @param string $extKey
-	 * @param bool Adds opening <form> tag to the ouput, if TRUE
+	 * @param bool Adds opening <form> tag to the output, if TRUE
 	 * @return string The form
 	 */
 	public function ext_getForm($cat, $theConstants, $script = '', $addFields = '', $extKey = '', $addFormTag = TRUE) {
@@ -130,7 +130,7 @@ class ConfigurationForm extends \TYPO3\CMS\Core\TypoScript\ExtendedTemplateServi
 		}
 		$content .= $addFields;
 		$content .= $printFields;
-		$content .= '<input type="submit" name="submit" value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_tsfe.xlf:update', TRUE) . '" id="configuration-submit-' . htmlspecialchars($extKey) . '" />';
+		$content .= '<input class="btn btn-default" type="submit" name="submit" value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_tsfe.xlf:update', TRUE) . '" id="configuration-submit-' . htmlspecialchars($extKey) . '" />';
 		$example = $this->ext_displayExample();
 		$content .= $example ? '<hr/>' . $example : '';
 		return $content;
@@ -163,10 +163,13 @@ class ConfigurationForm extends \TYPO3\CMS\Core\TypoScript\ExtendedTemplateServi
 	}
 
 	/**
+	 * @param string $key
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
 	 */
 	public function ext_getKeyImage($key) {
-		return '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($this->ext_backPath, ('gfx/rednumbers/' . $key . '.gif'), '') . ' hspace="2" align="top" alt="" />';
+		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
+		return '<span class="label label-danger">' . $key . '</span>';
 	}
 
 	/**

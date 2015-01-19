@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -105,13 +106,6 @@ class SimpleDataHandlerController {
 	 * @var string
 	 */
 	public $generalComment;
-
-	/**
-	 * Files to include after init() function is called:
-	 *
-	 * @var array
-	 */
-	public $include_once = array();
 
 	/**
 	 * TYPO3 Core Engine
@@ -244,6 +238,48 @@ class SimpleDataHandlerController {
 		if ($this->redirect && !$this->tce->debug) {
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->redirect);
 		}
+	}
+
+	/**
+	 * Processes all AJAX calls and returns a JSON formatted string
+	 *
+	 * @param array $parameters
+	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler
+	 */
+	public function processAjaxRequest($parameters, \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxRequestHandler) {
+		// do the regular / main logic
+		$this->initClipboard();
+		$this->main();
+
+		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+
+		$content = array(
+			'redirect' => $this->redirect,
+			'messages' => array(),
+			'hasErrors' => FALSE
+		);
+
+		// Prints errors (= write them to the message queue)
+		if ($this->prErr) {
+			$content['hasErrors'] = TRUE;
+			$this->tce->printLogErrorMessages($this->redirect);
+		}
+
+		$messages = $flashMessageService->getMessageQueueByIdentifier()->getAllMessagesAndFlush();
+		if (!empty($messages)) {
+			foreach ($messages as $message) {
+				$content['messages'][] = array(
+					'title'    => $message->getTitle(),
+					'message'  => $message->getMessage(),
+					'severity' => $message->getSeverity()
+				);
+				if ($message->getSeverity() === AbstractMessage::ERROR) {
+					$content['hasErrors'] = TRUE;
+				}
+			}
+		}
+		$ajaxRequestHandler->setContentFormat('json');
+		$ajaxRequestHandler->setContent($content);
 	}
 
 }

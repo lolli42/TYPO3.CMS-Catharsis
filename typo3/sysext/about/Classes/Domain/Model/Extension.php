@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\About\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\About\Domain\Model;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * An extension helper model to be used in ext:about context
  *

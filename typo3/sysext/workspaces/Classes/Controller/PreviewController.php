@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -69,7 +69,7 @@ class PreviewController extends AbstractController {
 			$this->pageRenderer->addJsFile($resourcePathJavaScript . $jsFile);
 		}
 		$this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
-		// todo this part should be done with inlineLocallanglabels
+		// @todo this part should be done with inlineLocallanglabels
 		$this->pageRenderer->addJsInlineCode('workspace-inline-code', $this->generateJavascript());
 	}
 

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -643,7 +643,7 @@ class PreparedStatement {
 				if (!preg_match('/^:[\\w]+$/', $key)) {
 					throw new \InvalidArgumentException('Parameter names must start with ":" followed by an arbitrary number of alphanumerical characters.', 1282348825);
 				}
-				// Replace the marker (not preceeded by a word character or a ':' but
+				// Replace the marker (not preceded by a word character or a ':' but
 				// followed by a word boundary)
 				$query = preg_replace('/(?<![\\w:])' . preg_quote($key, '/') . '\\b/', $this->parameterWrapToken . $key . $this->parameterWrapToken, $query);
 			} else {

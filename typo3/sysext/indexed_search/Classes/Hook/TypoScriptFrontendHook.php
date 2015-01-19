@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,9 @@ namespace TYPO3\CMS\IndexedSearch\Hook;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+
 /**
  * Hooks for \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController (TSFE).
  *
@@ -23,8 +26,8 @@ class TypoScriptFrontendHook {
 	/**
 	 * Frontend hook: If the page is not being re-generated this is our chance to force it to be (because re-generation of the page is required in order to have the indexer called!)
 	 *
-	 * @param array Parameters from frontend
-	 * @param object TSFE object (reference under PHP5)
+	 * @param array $params Parameters from frontend
+	 * @param TypoScriptFrontendController $ref TSFE object
 	 * @return void
 	 */
 	public function headerNoCache(array &$params, $ref) {

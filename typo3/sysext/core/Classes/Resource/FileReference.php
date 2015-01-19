@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Representation of a specific usage of a file with possibilities to override certain
  * properties of the original file just for this usage of the file.
@@ -191,7 +192,7 @@ class FileReference implements FileInterface {
 	/**
 	 * Returns the title text to this image
 	 *
-	 * TODO: Possibly move this to the image domain object instead
+	 * @todo Possibly move this to the image domain object instead
 	 *
 	 * @return string
 	 */
@@ -202,7 +203,7 @@ class FileReference implements FileInterface {
 	/**
 	 * Returns the alternative text to this image
 	 *
-	 * TODO: Possibly move this to the image domain object instead
+	 * @todo Possibly move this to the image domain object instead
 	 *
 	 * @return string
 	 */
@@ -213,7 +214,7 @@ class FileReference implements FileInterface {
 	/**
 	 * Returns the description text to this file
 	 *
-	 * TODO: Possibly move this to the image domain object instead
+	 * @todo Possibly move this to the image domain object instead
 	 *
 	 * @return string
 	 */
@@ -224,7 +225,7 @@ class FileReference implements FileInterface {
 	/**
 	 * Returns the link that should be active when clicking on this image
 	 *
-	 * TODO: Move this to the image domain object instead
+	 * @todo Move this to the image domain object instead
 	 *
 	 * @return string
 	 */
@@ -382,7 +383,7 @@ class FileReference implements FileInterface {
 	 * @return bool TRUE if deletion succeeded
 	 */
 	public function delete() {
-		// TODO: Implement this function. This should only delete the
+		// @todo Implement this function. This should only delete the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::delete().', 1333754461);
 		//return $this->fileRepository->removeUsageRecord($this);
@@ -392,12 +393,11 @@ class FileReference implements FileInterface {
 	 * Renames the fileName in this particular usage.
 	 *
 	 * @param string $newName The new name
-	 *
 	 * @throws \BadMethodCallException
 	 * @return FileReference
 	 */
 	public function rename($newName) {
-		// TODO: Implement this function. This should only rename the
+		// @todo Implement this function. This should only rename the
 		// FileReference (sys_file_reference) record, not the file itself.
 		throw new \BadMethodCallException('Function not implemented FileReference::rename().', 1333754473);
 		//return $this->fileRepository->renameUsageRecord($this, $newName);
@@ -480,4 +480,5 @@ class FileReference implements FileInterface {
 	public function getParentFolder() {
 		return $this->originalFile->getParentFolder();
 	}
+
 }

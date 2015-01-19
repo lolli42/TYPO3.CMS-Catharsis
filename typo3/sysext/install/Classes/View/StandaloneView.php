@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -41,4 +41,5 @@ class StandaloneView extends \TYPO3\CMS\Fluid\View\StandaloneView {
 		$this->templateCompiler = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Compiler\TemplateCompiler::class);
 		$this->templateCompiler->setTemplateCache(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('fluid_template'));
 	}
+
 }

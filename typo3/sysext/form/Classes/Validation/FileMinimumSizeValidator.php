@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\Validation;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * File Minimum size rule
  * The file size must be bigger than the minimum
@@ -20,6 +21,13 @@ namespace TYPO3\CMS\Form\Validation;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class FileMinimumSizeValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator implements \TYPO3\CMS\Form\Validation\ValidatorInterface {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_system_validate_fileminimumsize';
 
 	/**
 	 * Minimum value

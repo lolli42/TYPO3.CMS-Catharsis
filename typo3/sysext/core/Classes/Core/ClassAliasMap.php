@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -186,4 +187,5 @@ class ClassAliasMap implements \TYPO3\CMS\Core\SingletonInterface {
 		$lookUpClassName = strtolower($className);
 		return isset($this->classNameToAliasMapping[$lookUpClassName]) ? $this->classNameToAliasMapping[$lookUpClassName] : array($className);
 	}
+
 }

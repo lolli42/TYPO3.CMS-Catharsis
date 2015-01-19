@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Domain\Repository;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A repository for extension repositories
  *
@@ -65,4 +66,5 @@ class RepositoryRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 		}
 		return $typo3OrgRepository;
 	}
+
 }

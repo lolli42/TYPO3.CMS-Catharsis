@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Menu;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -114,7 +114,7 @@ class CategoryMenuUtility {
 				uasort(
 					$pages,
 					array(
-						'\TYPO3\CMS\Frontend\ContentObject\Menu\CategoryMenuUtility',
+						\TYPO3\CMS\Frontend\ContentObject\Menu\CategoryMenuUtility::class,
 						'sortPagesUtility'
 					)
 				);
@@ -137,4 +137,5 @@ class CategoryMenuUtility {
 	static public function sortPagesUtility($pageA, $pageB) {
 		return strnatcasecmp($pageA[self::$sortingField], $pageB[self::$sortingField]);
 	}
+
 }

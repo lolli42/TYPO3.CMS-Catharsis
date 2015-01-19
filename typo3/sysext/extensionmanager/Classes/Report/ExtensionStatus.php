@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Report;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -84,7 +84,7 @@ class ExtensionStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 	}
 
 	/**
-	 * Check main repository status: existance, has extensions, last update younger than 7 days
+	 * Check main repository status: existence, has extensions, last update younger than 7 days
 	 *
 	 * @return \TYPO3\CMS\Reports\Report\Status\Status
 	 */
@@ -299,4 +299,5 @@ class ExtensionStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 
 		return $result;
 	}
+
 }

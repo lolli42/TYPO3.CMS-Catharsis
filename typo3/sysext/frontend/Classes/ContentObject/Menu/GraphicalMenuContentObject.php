@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Menu;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -402,7 +402,7 @@ class GraphicalMenuContentObject extends AbstractMenuContentObject {
 					$this->I['linkHREF'] = $this->link($key, $this->I['val']['altTarget'], $this->mconf['forceTypeValue']);
 					// Title attribute of links:
 					$titleAttrValue = isset($this->I['val']['ATagTitle.']) ? $this->WMcObj->stdWrap($this->I['val']['ATagTitle'], $this->I['val']['ATagTitle.']) . $this->I['accessKey']['alt'] : $this->I['val']['ATagTitle'] . $this->I['accessKey']['alt'];
-					if (strlen($titleAttrValue)) {
+					if ($titleAttrValue !== '') {
 						$this->I['linkHREF']['title'] = $titleAttrValue;
 					}
 					// Set rollover

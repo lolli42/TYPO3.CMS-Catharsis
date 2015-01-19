@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Configuration\Image;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -113,21 +113,21 @@ abstract class AbstractImagePreset extends Configuration\AbstractPreset {
 
 		// Add configured im_path on top
 		$imPath = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path'];
-		if (strlen($imPath) && !in_array($imPath, $searchPaths)) {
+		if ((string)$imPath !== '' && !in_array($imPath, $searchPaths)) {
 			$path = $this->cleanUpPath($imPath);
 			array_unshift($searchPaths, $path);
 		}
 
 		// Add configured im_path_lzw on top
 		$imLzwSearchPath = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'];
-		if (strlen($imLzwSearchPath) && !in_array($imLzwSearchPath, $searchPaths)) {
+		if ((string)$imLzwSearchPath !== '' && !in_array($imLzwSearchPath, $searchPaths)) {
 			$path = $this->cleanUpPath($imLzwSearchPath);
 			array_unshift($searchPaths, $path);
 		}
 
 		// Add additional search path from form if given
 		if (isset($this->postValues['additionalSearchPath'])
-			&& strlen($this->postValues['additionalSearchPath'])
+			&& (string)$this->postValues['additionalSearchPath'] !== ''
 			&& !in_array($this->postValues['additionalSearchPath'], $searchPaths)
 		) {
 			$path = $this->cleanUpPath($this->postValues['additionalSearchPath']);
@@ -151,4 +151,5 @@ abstract class AbstractImagePreset extends Configuration\AbstractPreset {
 		}
 		return $path;
 	}
+
 }

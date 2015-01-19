@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,13 @@ namespace TYPO3\CMS\Form\Validation;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class RequiredValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_system_validate_required';
 
 	/**
 	 * Returns TRUE if submitted value validates according to rule

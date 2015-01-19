@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -90,7 +90,7 @@ class AdditionalColumnService implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function getHandler() {
 		$columnSettings = array();
-		foreach (array_keys($this->columns) as $columnName) {
+		foreach ($this->columns as $columnName => $_) {
 			$columnSettings[] = 'TYPO3.Workspaces.extension.AdditionalColumn.' . $columnName;
 		}
 		return $columnSettings;
@@ -113,4 +113,5 @@ class AdditionalColumnService implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return $recordData;
 	}
+
 }

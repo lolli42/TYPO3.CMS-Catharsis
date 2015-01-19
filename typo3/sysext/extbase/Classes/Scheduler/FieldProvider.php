@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Scheduler;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Field provider for Extbase CommandController Scheduler task
  */
@@ -230,10 +231,10 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 		}
 		$descriptionIndex = $labelNameIndex . '.description';
 		$description = $this->getLanguageLabel($descriptionIndex);
-		if (strlen($description) === 0) {
+		if ((string)$description === '') {
 			$description = $argument->getDescription();
 		}
-		if (strlen($description) > 0) {
+		if ((string)$description !== '') {
 			$label .= '. <em>' . htmlspecialchars($description) . '</em>';
 		}
 		return $label;
@@ -312,4 +313,5 @@ class FieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInter
 		}
 		return $html;
 	}
+
 }

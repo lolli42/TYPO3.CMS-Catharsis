@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Filelist;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Filelist;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\FolderInterface;
 
@@ -265,7 +266,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		// prepare space icon
 		$this->spaceIcon = '<span class="btn disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
 
-		// TODO use folder methods directly when they support filters
+		// @todo use folder methods directly when they support filters
 		$storage = $this->folderObject->getStorage();
 		$storage->resetFileAndFolderNameFiltersToDefault();
 
@@ -379,7 +380,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 			File list table:
 		-->
 			<div class="table-fit">
-				<table class="table table-hover" id="typo3-filelist">
+				<table class="table table-striped table-hover" id="typo3-filelist">
 					' . $out . '
 				</table>
 			</div>';
@@ -591,7 +592,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 				$ext = $fileObject->getExtension();
 				$fileName = trim($fileObject->getName());
 				// The icon with link
-				$theIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileName));
+				$theIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileName . ' [' . (int)$fileObject->getUid() . ']'));
 				if ($this->clickMenus) {
 					$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
 				}
@@ -879,8 +880,20 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		}
 		// Look up the file in the sys_refindex.
 		// Exclude sys_file_metadata records as these are no use references
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'sys_refindex', 'ref_table=\'sys_file\' AND ref_uid = ' . (int)$fileOrFolderObject->getUid() . ' AND deleted=0 AND tablename != "sys_file_metadata"');
-		return $this->generateReferenceToolTip($rows, '\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileOrFolderObject->getCombinedIdentifier()));
+		$referenceCount = $this->getDatabaseConnection()->exec_SELECTcountRows(
+			'*',
+			'sys_refindex',
+			'ref_table=\'sys_file\' AND ref_uid = ' . (int)$fileOrFolderObject->getUid() . ' AND deleted=0 AND tablename != "sys_file_metadata"'
+		);
+		return $this->generateReferenceToolTip($referenceCount, '\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileOrFolderObject->getCombinedIdentifier()));
+	}
+
+	/**
+	 * Returns the database connection
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

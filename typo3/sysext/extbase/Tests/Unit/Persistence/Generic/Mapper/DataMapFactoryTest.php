@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Mapper;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -413,7 +414,7 @@ class DataMapFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function classNameTableNameMappings() {
 		return array(
 			'Core classes' => array(\TYPO3\CMS\Belog\Domain\Model\LogEntry::class, 'tx_belog_domain_model_logentry'),
-			'Core classes with namespaces and leading backslash' => array('\\TYPO3\\CMS\\Belog\\Domain\\Model\\LogEntry', 'tx_belog_domain_model_logentry'),
+			'Core classes with namespaces and leading backslash' => array(\TYPO3\CMS\Belog\Domain\Model\LogEntry::class, 'tx_belog_domain_model_logentry'),
 			'Extension classes' => array('ExtbaseTeam\\BlogExample\\Domain\\Model\\Blog', 'tx_blogexample_domain_model_blog'),
 			'Extension classes with namespaces and leading backslash' => array('\\ExtbaseTeam\\BlogExample\\Domain\\Model\\Blog', 'tx_blogexample_domain_model_blog'),
 			'Extension classes without namespace' => array('Tx_News_Domain_Model_News', 'tx_news_domain_model_news'),
@@ -492,4 +493,5 @@ class DataMapFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($type, (string)$columnMap->getType());
 		$this->assertEquals($internalType, (string)$columnMap->getInternalType());
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Tests\Unit\CronCommand;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -27,7 +27,7 @@ class NormalizeCommandTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return string Name of the accessible proxy class
 	 */
 	protected function getAccessibleProxy() {
-		$className = 'NormalizeCommand' . uniqid();
+		$className = $this->getUniqueId('NormalizeCommand');
 		$fullClassName = __NAMESPACE__ . '\\' . $className;
 		if (!class_exists($className, FALSE)) {
 			eval(

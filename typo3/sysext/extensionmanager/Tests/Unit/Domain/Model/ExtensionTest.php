@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -84,4 +84,5 @@ class ExtensionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$extension = new \TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 		$this->assertEquals($expected, $extension->getCategoryIndexFromStringOrNumber($input));
 	}
+
 }

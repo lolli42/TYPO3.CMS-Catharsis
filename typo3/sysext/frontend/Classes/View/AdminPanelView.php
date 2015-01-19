@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -161,14 +161,19 @@ class AdminPanelView {
 		if (!$this->isAdminModuleEnabled($sectionName)) {
 			return NULL;
 		}
-		// Exceptions where the values can be overridden from backend:
+
+		// Exceptions where the values can be overridden (forced) from backend:
 		// deprecated
-		if ($sectionName . '_' . $val === 'edit_displayIcons' && $GLOBALS['BE_USER']->extAdminConfig['module.']['edit.']['forceDisplayIcons']) {
+		if (
+			$sectionName === 'edit' && (
+				$val === 'displayIcons' && $GLOBALS['BE_USER']->extAdminConfig['module.']['edit.']['forceDisplayIcons'] ||
+				$val === 'displayFieldIcons' && $GLOBALS['BE_USER']->extAdminConfig['module.']['edit.']['forceDisplayFieldIcons'] ||
+				$val === 'editNoPopup' && $GLOBALS['BE_USER']->extAdminConfig['module.']['edit.']['forceNoPopup']
+			)
+		) {
 			return TRUE;
 		}
-		if ($sectionName . '_' . $val === 'edit_displayFieldIcons' && $GLOBALS['BE_USER']->extAdminConfig['module.']['edit.']['forceDisplayFieldIcons']) {
-			return TRUE;
-		}
+
 		// Override all settings with user TSconfig
 		if ($val && isset($GLOBALS['BE_USER']->extAdminConfig['override.'][$sectionName . '.'][$val])) {
 			return $GLOBALS['BE_USER']->extAdminConfig['override.'][$sectionName . '.'][$val];
@@ -176,13 +181,16 @@ class AdminPanelView {
 		if (isset($GLOBALS['BE_USER']->extAdminConfig['override.'][$sectionName])) {
 			return $GLOBALS['BE_USER']->extAdminConfig['override.'][$sectionName];
 		}
-		$retVal = $val ? $GLOBALS['BE_USER']->uc['TSFE_adminConfig'][$sectionName . '_' . $val] : 1;
+
+		$returnValue = $val ? $GLOBALS['BE_USER']->uc['TSFE_adminConfig'][$sectionName . '_' . $val] : 1;
+
+		// Exception for preview
 		if ($sectionName === 'preview' && $this->ext_forcePreview) {
-			return !$val ? TRUE : $retVal;
+			return !$val ? TRUE : $returnValue;
 		}
 
 		// See if the menu is expanded!
-		return $this->isAdminModuleOpen($sectionName) ? $retVal : NULL;
+		return $this->isAdminModuleOpen($sectionName) ? $returnValue : NULL;
 	}
 
 	/**
@@ -352,9 +360,15 @@ class AdminPanelView {
 
 			$options = '';
 
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('fe_groups.uid, fe_groups.title', 'fe_groups,pages', 'pages.uid=fe_groups.pid AND pages.deleted=0 ' . BackendUtility::deleteClause('fe_groups') . ' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1));
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+				'fe_groups.uid, fe_groups.title',
+				'fe_groups,pages',
+				'pages.uid=fe_groups.pid AND pages.deleted=0 ' . BackendUtility::deleteClause('fe_groups') . ' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1),
+				'',
+				'fe_groups.title ASC'
+			);
 			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$options .= '<option value="' . $row['uid'] . '"' . ($GLOBALS['BE_USER']->uc['TSFE_adminConfig']['preview_simulateUserGroup'] == $row['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars(('[' . $row['uid'] . '] ' . $row['title'])) . '</option>';
+				$options .= '<option value="' . $row['uid'] . '"' . ($GLOBALS['BE_USER']->uc['TSFE_adminConfig']['preview_simulateUserGroup'] == $row['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars(($row['title'] . ' [' . $row['uid'] . ']')) . '</option>';
 			}
 			$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			if ($options) {
@@ -503,7 +517,7 @@ class AdminPanelView {
 			$table = '';
 			foreach ($tableArr as $key => $arr) {
 				$label = (isset($arr[2]) ? '<strong>' . $arr[0] . '</strong>' : $arr[0]);
-				$value = strlen($arr[1]) ? $arr[1] : '';
+				$value = (string)$arr[1] !== '' ? $arr[1] : '';
 				$table .=
 					'<tr class="typo3-adminPanel-itemRow ' . ($key % 2 == 0 ? 'line-even' : 'line-odd') . '">
 							<td class="typo3-adminPanel-section-content-title">' . $label . '</td>

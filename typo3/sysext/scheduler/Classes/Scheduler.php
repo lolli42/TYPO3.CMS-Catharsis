@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -78,7 +78,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Cleans the execution lists of the scheduled tasks, executions older than 24h are removed
-	 * TODO: find a way to actually kill the job
+	 * @todo find a way to actually kill the job
 	 *
 	 * @return void
 	 */
@@ -186,7 +186,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Removes a task completely from the system.
-	 * TODO: find a way to actually kill the existing jobs
+	 * @todo find a way to actually kill the existing jobs
 	 *
 	 * @param \TYPO3\CMS\Scheduler\Task\AbstractTask $task The object representing the task to delete
 	 * @return bool TRUE if task was successfully deleted, FALSE otherwise

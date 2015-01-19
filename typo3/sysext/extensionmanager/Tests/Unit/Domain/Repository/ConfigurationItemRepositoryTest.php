@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -169,7 +169,7 @@ class ConfigurationItemRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
 		$this->assertSame(
 			$expectedArray,
-			$configurationItemRepository->_call('getConfigurationArrayFromExtensionKey', uniqid('some_extension'))
+			$configurationItemRepository->_call('getConfigurationArrayFromExtensionKey', $this->getUniqueId('some_extension'))
 		);
 	}
 
@@ -335,7 +335,7 @@ class ConfigurationItemRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 		$this->configurationItemRepository->_call(
 			'mergeWithExistingConfiguration',
 			array(),
-			uniqid('not_existing_extension')
+			$this->getUniqueId('not_existing_extension')
 		);
 	}
 
@@ -360,7 +360,7 @@ class ConfigurationItemRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 		$configuration = $this->configurationItemRepository->_call(
 			'mergeWithExistingConfiguration',
 			$defaultConfiguration,
-			uniqid('not_existing_extension')
+			$this->getUniqueId('not_existing_extension')
 		);
 		$this->assertEquals($defaultConfiguration, $configuration);
 	}
@@ -433,4 +433,5 @@ class ConfigurationItemRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase
 
 		$this->assertEquals($expectedResult, $actualResult);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -68,4 +68,5 @@ class DataSubmissionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertTrue($fileExists);
 	}
+
 }

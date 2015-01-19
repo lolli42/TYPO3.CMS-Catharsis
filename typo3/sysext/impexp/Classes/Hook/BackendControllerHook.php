@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Impexp\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Impexp\Hook;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
@@ -29,4 +30,5 @@ class BackendControllerHook {
 	public function addJavaScript(array $configuration, \TYPO3\CMS\Backend\Controller\BackendController $backendController) {
 		$backendController->getPageRenderer()->addInlineSetting('ImportExport', 'moduleUrl', BackendUtility::getModuleUrl('xMOD_tximpexp'));
 	}
+
 }

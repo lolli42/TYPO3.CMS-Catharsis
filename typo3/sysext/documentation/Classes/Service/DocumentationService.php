@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Documentation\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -286,7 +286,7 @@ class DocumentationService {
 						GeneralUtility::mkdir_deep($path, implode('/', $zipEntryPathSegments));
 					} else {
 						$absoluteTargetPath = GeneralUtility::getFileAbsFileName($path . implode('/', $zipEntryPathSegments) . '/' . $fileName);
-						if (strlen(trim($absoluteTargetPath)) > 0) {
+						if (trim($absoluteTargetPath) !== '') {
 							$return = GeneralUtility::writeFile(
 								$absoluteTargetPath, zip_entry_read($zipEntry, zip_entry_filesize($zipEntry))
 							);

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Tests\Functional\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -168,4 +168,5 @@ class WorkspacesServiceTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertEquals(1, sizeof($result['pages']), 'Wrong amount of page versions found within workspace 91');
 		$this->assertEquals(103, $result['pages'][0]['uid'], 'Wrong move-to pointer found for page 3 in workspace 91');
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\DomainObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\DomainObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A generic Domain Object.
  *
@@ -327,4 +328,5 @@ abstract class AbstractDomainObject implements DomainObjectInterface, \TYPO3\CMS
 	public function __toString() {
 		return get_class($this) . ':' . (string)$this->uid;
 	}
+
 }

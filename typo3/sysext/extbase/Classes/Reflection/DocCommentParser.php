@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Reflection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Reflection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A little parser which creates tag objects from doc comments
  */
@@ -41,7 +42,7 @@ class DocCommentParser {
 		$this->tags = array();
 		$lines = explode(LF, $docComment);
 		foreach ($lines as $line) {
-			if (strlen($line) > 0 && strpos($line, '@') !== FALSE) {
+			if ($line !== '' && strpos($line, '@') !== FALSE) {
 				$this->parseTag(substr($line, strpos($line, '@')));
 			} elseif (count($this->tags) === 0) {
 				$this->description .= preg_replace('/\\s*\\/?[\\\\*]*(.*)$/', '$1', $line) . LF;
@@ -110,4 +111,5 @@ class DocCommentParser {
 			$this->tags[$tag] = array();
 		}
 	}
+
 }

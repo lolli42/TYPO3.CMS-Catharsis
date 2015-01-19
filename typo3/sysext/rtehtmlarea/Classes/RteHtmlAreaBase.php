@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -330,7 +330,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	public function drawRTE($parentObject, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue) {
 		$this->TCEform = $parentObject;
 		$inline = $this->TCEform->inline;
-		$GLOBALS['LANG']->includeLLFile('EXT:' . $this->ID . '/locallang.xml');
+		$GLOBALS['LANG']->includeLLFile('EXT:' . $this->ID . '/locallang.xlf');
 		$this->client = $this->clientInfo();
 		$this->typoVersion = \TYPO3\CMS\Core\Utility\VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
 		$this->userUid = 'BE_' . $GLOBALS['BE_USER']->user['uid'];
@@ -553,6 +553,8 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 		// Editing area style sheet
 		$this->editedContentCSS = $skinDir . '/htmlarea-edited-content.css';
 		$this->addStyleSheet('rtehtmlarea-editing-area-skin', $this->editedContentCSS);
+		// jQuery UI Resizable style sheet
+		$this->addStyleSheet('jquery-ui-resizable', $skinDir . '/jquery-ui-resizable.css');
 		// Main skin
 		$this->addStyleSheet('rtehtmlarea-skin', $this->editorCSS);
 		// Additional icons from registered plugins
@@ -807,6 +809,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			'UserAgent/UserAgent',
 			'Util/Util',
 			'Util/Color',
+			'Util/Resizable',
 			'Util/Tips',
 			'Util/TYPO3',
 			'Ajax/Ajax',
@@ -819,39 +822,45 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			'DOM/Selection',
 			'DOM/Walker',
 			'Configuration/Config',
-			'Extjs/ux/Ext.ux.HTMLAreaButton',
-			'Extjs/ux/Ext.ux.Toolbar.HTMLAreaToolbarText',
-			'Extjs/ux/Ext.ux.form.HTMLAreaCombo',
+			'Toolbar/Button',
+			'Toolbar/ToolbarText',
+			'Extjs/ux/Combo',
+			'Extjs/ColorPalette',
+			'Extjs/ux/ColorMenu',
+			'Extjs/ux/ColorPaletteField',
+			'LoremIpsum',
+			'Plugin/Plugin'
+		);
+		$components2 = array(
 			'Editor/Toolbar',
 			'Editor/Iframe',
+			'Editor/TextAreaContainer',
 			'Editor/StatusBar',
 			'Editor/Framework',
 			'Editor/Editor',
-			'HTMLArea',
-			'Extjs/Ext.ColorPalette',
-			'Extjs/ux/Ext.ux.menu.HTMLAreaColorMenu',
-			'Extjs/ux/Ext.ux.form.ColorPaletteField',
-			'LoremIpsum',
-			'Plugin/Plugin'
+			'HTMLArea'
 		);
 		foreach ($components as $component) {
 			$this->pageRenderer->addJsFile($this->getFullFileName('EXT:' . $this->ID . '/Resources/Public/JavaScript/HTMLArea/' . $component . '.js'));
 		}
 		foreach ($this->pluginEnabledCumulativeArray[$RTEcounter] as $pluginId) {
 			$extensionKey = is_object($this->registeredPlugins[$pluginId]) ? $this->registeredPlugins[$pluginId]->getExtensionKey() : $this->ID;
-			$pluginName = strtolower(preg_replace('/([a-z])([A-Z])([a-z])/', '$1-$2$3', $pluginId));
-			$fileName = 'EXT:' . $extensionKey . '/Resources/Public/JavaScript/Plugins/' . $pluginName . '.js';
+			$fileName = 'EXT:' . $extensionKey . '/Resources/Public/JavaScript/Plugins/' . $pluginId . '.js';
 			$absolutePath = GeneralUtility::getFileAbsFileName($fileName);
 			if (file_exists($absolutePath)) {
 				$this->pageRenderer->addJsFile($this->getFullFileName($fileName));
 			} else {
 				// Backward compatibility
+				$pluginName = strtolower(preg_replace('/([a-z])([A-Z])([a-z])/', '$1-$2$3', $pluginId));
 				$fileName = 'EXT:' . $extensionKey . '/htmlarea/plugins/' . $pluginId . '/' . $pluginName . '.js';
 				$absolutePath = GeneralUtility::getFileAbsFileName($fileName);
 				if (file_exists($absolutePath)) {
 					$this->pageRenderer->addJsFile($this->getFullFileName($fileName));
 				}
 			}
+		}
+		foreach ($components2 as $component) {
+			$this->pageRenderer->addJsFile($this->getFullFileName('EXT:' . $this->ID . '/Resources/Public/JavaScript/HTMLArea/' . $component . '.js'));
 		}
 		$this->pageRenderer->addJsFile($this->getFullFileName('EXT:' . $this->ID . '/Resources/Public/JavaScript/HTMLArea/Util/Wrap.close.js'));
 	}
@@ -862,7 +871,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 * @return string RTE initialization inline JavaScript code
 	 */
 	protected function getRteInitJsCode() {
-		return '
+		return 'require(["TYPO3/CMS/Rtehtmlarea/HTMLArea/HTMLArea"], function (HTMLArea) {
 			if (typeof RTEarea === "undefined") {
 				RTEarea = new Object();
 				RTEarea[0] = new Object();
@@ -892,7 +901,8 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 					}
 				};
 			}
-			RTEarea.init();';
+			RTEarea.init();
+		});';
 	}
 
 	/**
@@ -1501,8 +1511,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 *
 	 ***************************/
 	/**
-	 * @return 	[type]		...
-	 * @desc
+	 * @return string
 	 */
 	public function RTEtsConfigParams() {
 		if ($this->is_FE()) {
@@ -1513,6 +1522,12 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 		}
 	}
 
+	/**
+	 * Clean list
+	 *
+	 * @param string $str
+	 * @return string
+	 */
 	public function cleanList($str) {
 		if (strstr($str, '*')) {
 			$str = '*';

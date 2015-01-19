@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Importer;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Importer;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Module: Extension manager - Extension list importer
  *
@@ -121,7 +122,7 @@ class ExtensionListUtility implements \SplObserver {
 		$this->repositoryRepository = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Domain\Repository\RepositoryRepository::class);
 		$this->extensionRepository = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository::class);
 		$this->extensionModel = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension::class);
-		// TODO catch parser exception
+		// @todo catch parser exception
 		$this->parser = \TYPO3\CMS\Extensionmanager\Utility\Parser\XmlParserFactory::getParserInstance('extension');
 		if (is_object($this->parser)) {
 			$this->parser->attach($this);

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,11 +30,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  * @author Kasper Skårhøj	<kasperYYYY@typo3.com>
  */
 class ThumbnailView {
-
-	/**
-	 * @var array
-	 */
-	public $include_once = array();
 
 	/**
 	 * The output directory of temporary files in PATH_site
@@ -106,7 +101,7 @@ class ThumbnailView {
 			/** @var File $filePathOrCombinedFileIdentifier */
 			$fileObject = ResourceFactory::getInstance()->getFileObject($filePathOrCombinedFileIdentifier);
 		} elseif (count($parts) <= 1 || !MathUtility::canBeInterpretedAsInteger($parts[0])) {
-			// TODO: Historically, the input parameter could also be an absolute path. This should be supported again to stay compatible.
+			// @todo Historically, the input parameter could also be an absolute path. This should be supported again to stay compatible.
 			// We assume the FilePath to be a relative file path (as in backwards compatibility mode)
 			$relativeFilePath = $filePathOrCombinedFileIdentifier;
 			// The incoming relative path is relative to the typo3/ directory, but we need it relative to PATH_site. This is corrected here:
@@ -229,7 +224,7 @@ class ThumbnailView {
 					header('Content-type: image/' . $outext);
 					header('Last-Modified: ' . date('r', $fileModificationTime));
 					header('Etag: ' . md5($this->output) . '-' . $fileModificationTime);
-					// Expiration time is choosen arbitrary to 1 month
+					// Expiration time is chosen arbitrary to 1 month
 					header('Expires: ' . date('r', ($fileModificationTime + 30 * 24 * 60 * 60)));
 					fpassthru($fd);
 					fclose($fd);

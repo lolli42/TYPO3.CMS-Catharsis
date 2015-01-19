@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\ExtDirect;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -52,7 +52,7 @@ class ExtDirectServer extends AbstractHandler {
 	/**
 	 * Get List of workspace changes
 	 *
-	 * @param object $parameter
+	 * @param \stdClass $parameter
 	 * @return array $data
 	 */
 	public function getWorkspaceInfos($parameter) {
@@ -85,10 +85,10 @@ class ExtDirectServer extends AbstractHandler {
 	/**
 	 * Get List of available workspace actions
 	 *
-	 * @param object $parameter
+	 * @param \stdClass $parameter
 	 * @return array $data
 	 */
-	public function getStageActions($parameter) {
+	public function getStageActions(\stdClass $parameter) {
 		$currentWorkspace = $this->getCurrentWorkspace();
 		$stages = array();
 		if ($currentWorkspace != \TYPO3\CMS\Workspaces\Service\WorkspaceService::SELECT_ALL_WORKSPACES) {
@@ -102,9 +102,9 @@ class ExtDirectServer extends AbstractHandler {
 	}
 
 	/**
-	 * Fetch futher information to current selected worspace record.
+	 * Fetch further information to current selected workspace record.
 	 *
-	 * @param object $parameter
+	 * @param \stdClass $parameter
 	 * @return array $data
 	 */
 	public function getRowDetails($parameter) {

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -51,7 +51,7 @@ class FieldProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		/** @var \TYPO3\CMS\Extbase\Scheduler\FieldProvider|\PHPUnit_Framework_MockObject_MockObject|\Tx_Phpunit_Interface_AccessibleObject $fieldProvider */
 		$fieldProvider = $this->getAccessibleMock(
-			'\TYPO3\CMS\Extbase\Scheduler\FieldProvider',
+			\TYPO3\CMS\Extbase\Scheduler\FieldProvider::class,
 			array('getActionLabel'),
 			array(),
 			'',
@@ -70,7 +70,7 @@ class FieldProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @author Stefan Neufeind <info@speedpartner.de>
 	 */
 	public function constructResolvesExtensionnameFromNamespaced() {
-		$className = uniqid('DummyController');
+		$className = $this->getUniqueId('DummyController');
 		eval('namespace ' . __NAMESPACE__ . '; class ' . $className . ' extends \\' . \TYPO3\CMS\Extbase\Mvc\Controller\AbstractController::class . ' { function getExtensionName() { return $this->extensionName; } }');
 		$classNameNamespaced = __NAMESPACE__ . '\\' . $className;
 		$mockController = new $classNameNamespaced();
@@ -86,7 +86,7 @@ class FieldProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function validateAdditionalFieldsReturnsTrue() {
 		/** @var \TYPO3\CMS\Extbase\Scheduler\FieldProvider|\PHPUnit_Framework_MockObject_MockObject|\Tx_Phpunit_Interface_AccessibleObject $fieldProvider */
 		$fieldProvider = $this->getAccessibleMock(
-			'\TYPO3\CMS\Extbase\Scheduler\FieldProvider',
+			\TYPO3\CMS\Extbase\Scheduler\FieldProvider::class,
 			array('dummy'),
 			array(),
 			'',
@@ -133,7 +133,7 @@ class FieldProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		/** @var \TYPO3\CMS\Extbase\Scheduler\FieldProvider|\PHPUnit_Framework_MockObject_MockObject|\Tx_Phpunit_Interface_AccessibleObject $fieldProvider */
 		$fieldProvider = $this->getAccessibleMock(
-			'\TYPO3\CMS\Extbase\Scheduler\FieldProvider',
+			\TYPO3\CMS\Extbase\Scheduler\FieldProvider::class,
 			array('getActionLabel', 'getArgumentLabel', 'getCommandControllerActionArgumentFields'),
 			array(),
 			'',
@@ -177,4 +177,5 @@ class FieldProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertEquals($expectedAdditionalFields, $fieldProvider->getAdditionalFields($taskInfo, $task, $schedulerModule));
 	}
+
 }

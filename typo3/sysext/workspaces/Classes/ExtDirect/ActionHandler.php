@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\ExtDirect;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -166,7 +166,7 @@ class ActionHandler extends AbstractHandler {
 	/**
 	 * Saves the selected columns to be shown to the preferences of the current backend user.
 	 *
-	 * @param object $model
+	 * @param \stdClass $model
 	 * @return void
 	 */
 	public function saveColumnModel($model) {

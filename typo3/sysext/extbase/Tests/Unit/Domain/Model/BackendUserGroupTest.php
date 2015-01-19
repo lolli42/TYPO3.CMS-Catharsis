@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -460,4 +460,5 @@ class BackendUserGroupTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->fixture->setTsConfig($tsConfig);
 		$this->assertSame($tsConfig, $this->fixture->getTsConfig());
 	}
+
 }

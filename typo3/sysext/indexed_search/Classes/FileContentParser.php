@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\IndexedSearch;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * External standard parsers for indexed_search
  *
@@ -449,9 +450,10 @@ class FileContentParser {
 							$content = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($tempFileName);
 							unlink($tempFileName);
 						} else {
+							$content = '';
 							$this->pObj->log_setTSlogMessage(sprintf($this->sL('LLL:EXT:indexed_search/locallang.xlf:pdfToolsFailed'), $absFile), 2);
 						}
-						if (strlen($content)) {
+						if ((string)$content !== '') {
 							$contentArr = $this->pObj->splitRegularContent($this->removeEndJunk($content));
 						}
 					}
@@ -558,7 +560,7 @@ class FileContentParser {
 				$this->setLocaleForServerFileSystem();
 				// Raw text
 				$content = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($absFile);
-				// TODO: Implement auto detection of charset (currently assuming utf-8)
+				// @todo Implement auto detection of charset (currently assuming utf-8)
 				$contentCharset = 'utf-8';
 				$content = $this->pObj->convertHTMLToUtf8($content, $contentCharset);
 				$contentArr = $this->pObj->splitRegularContent($content);
@@ -737,10 +739,9 @@ class FileContentParser {
 	 * @return string Relative file reference, resolvable by \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName()
 	 */
 	public function getIcon($extension) {
-		if ($extension == 'htm') {
+		if ($extension === 'htm') {
 			$extension = 'html';
-		}
-		if ($extension == 'jpeg') {
+		} elseif ($extension === 'jpeg') {
 			$extension = 'jpg';
 		}
 		return 'EXT:indexed_search/pi/res/' . $extension . '.gif';

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Impexp;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -15,8 +15,10 @@ namespace TYPO3\CMS\Impexp;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\File\ExtendedFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
@@ -976,7 +978,7 @@ class ImportExport {
 		if (!isset($this->dat['header']['records']['sys_file']) || !is_array($this->dat['header']['records']['sys_file'])) {
 			return;
 		}
-		foreach (array_keys($this->dat['header']['records']['sys_file']) as $sysFileUid) {
+		foreach ($this->dat['header']['records']['sys_file'] as $sysFileUid => $_) {
 			$recordData = $this->dat['records']['sys_file:' . $sysFileUid]['data'];
 			$file = ResourceFactory::getInstance()->createFileObject($recordData);
 			$this->export_addSysFile($file);
@@ -1529,7 +1531,7 @@ class ImportExport {
 			return;
 		}
 		$sysFileStorageUidsToBeResetToDefaultStorage = array();
-		foreach (array_keys($this->dat['header']['records']['sys_file_storage']) as $sysFileStorageUid) {
+		foreach ($this->dat['header']['records']['sys_file_storage'] as $sysFileStorageUid => $_) {
 			$storageRecord = $this->dat['records']['sys_file_storage:' . $sysFileStorageUid]['data'];
 			// continue with Local, writable and online storage only
 			if ($storageRecord['driver'] === 'Local' && $storageRecord['is_writable'] && $storageRecord['is_online']) {
@@ -1601,6 +1603,7 @@ class ImportExport {
 		if (!isset($this->dat['header']['records']['sys_file'])) {
 			return;
 		}
+		$this->addGeneralErrorsByTable('sys_file');
 
 		// fetch fresh storage records from database
 		$storageRecords = $this->fetchStorageRecords();
@@ -1609,7 +1612,7 @@ class ImportExport {
 
 		$sanitizedFolderMappings = array();
 
-		foreach (array_keys($this->dat['header']['records']['sys_file']) as $sysFileUid) {
+		foreach ($this->dat['header']['records']['sys_file'] as $sysFileUid => $_) {
 			$fileRecord = $this->dat['records']['sys_file:' . $sysFileUid]['data'];
 
 			$temporaryFile = NULL;
@@ -1745,7 +1748,7 @@ class ImportExport {
 			return;
 		}
 
-		foreach (array_keys($this->dat['header']['records']['sys_file_reference']) as $sysFileReferenceUid) {
+		foreach ($this->dat['header']['records']['sys_file_reference'] as $sysFileReferenceUid => $_) {
 			$fileReferenceRecord = $this->dat['records']['sys_file_reference:' . $sysFileReferenceUid]['data'];
 			if ($fileReferenceRecord['uid_local'] == $oldFileUid) {
 				$fileReferenceRecord['uid_local'] = $newFileUid;
@@ -1839,6 +1842,7 @@ class ImportExport {
 	public function writeRecords_pages($pid) {
 		// First, write page structure if any:
 		if (is_array($this->dat['header']['records']['pages'])) {
+			$this->addGeneralErrorsByTable('pages');
 			// $pageRecords is a copy of the pages array in the imported file. Records here are unset one by one when the addSingle function is called.
 			$pageRecords = $this->dat['header']['records']['pages'];
 			$this->import_data = array();
@@ -1935,6 +1939,7 @@ class ImportExport {
 		$this->import_data = array();
 		if (is_array($this->dat['header']['records'])) {
 			foreach ($this->dat['header']['records'] as $table => $recs) {
+				$this->addGeneralErrorsByTable($table);
 				if ($table != 'pages') {
 					foreach ($recs as $uid => $thisRec) {
 						// PID: Set the main $pid, unless a NEW-id is found
@@ -2154,7 +2159,7 @@ class ImportExport {
 	/**
 	 * Returns a new $TCE object
 	 *
-	 * @return object $TCE object
+	 * @return DataHandler $TCE object
 	 */
 	public function getNewTCE() {
 		$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
@@ -3463,18 +3468,28 @@ class ImportExport {
 	 */
 	public function traverseAllRecords($pT, &$lines) {
 		foreach ($pT as $t => $recUidArr) {
-			if ($this->update && $t === 'sys_file') {
-				$this->error('Updating sys_file records is not supported! They will be imported as new records!');
-			}
-			if ($this->force_all_UIDS && $t === 'sys_file') {
-				$this->error('Forcing uids of sys_file records is not supported! They will be imported as new records!');
-			}
+			$this->addGeneralErrorsByTable($t);
 			if ($t != 'pages') {
 				$preCode = '';
 				foreach ($recUidArr as $ruid => $value) {
 					$this->singleRecordLines($t, $ruid, $lines, $preCode, 1);
 				}
 			}
+		}
+	}
+
+    /**
+     * Log general error message for a given table
+     *
+     * @param string $table database table name
+     * @return void
+     */
+	protected function addGeneralErrorsByTable($table) {
+		if ($this->update && $table === 'sys_file') {
+			$this->error('Updating sys_file records is not supported! They will be imported as new records!');
+		}
+		if ($this->force_all_UIDS && $table === 'sys_file') {
+			$this->error('Forcing uids of sys_file records is not supported! They will be imported as new records!');
 		}
 	}
 
@@ -4102,7 +4117,7 @@ class ImportExport {
 	/**
 	 * Returns file processing object, initialized only once.
 	 *
-	 * @return object File processor object
+	 * @return ExtendedFileUtility File processor object
 	 */
 	public function getFileProcObj() {
 		if ($this->fileProcObj === NULL) {

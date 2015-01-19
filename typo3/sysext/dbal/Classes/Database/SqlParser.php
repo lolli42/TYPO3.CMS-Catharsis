@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Dbal\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Dbal\Database;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -154,7 +155,7 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 							$outputParts[$k] .= ' ' . $v['sortDir'];
 						}
 					}
-					// TODO: Handle SQL hints in comments according to current DBMS
+					// @todo Handle SQL hints in comments according to current DBMS
 					if (FALSE && $selectFields[0]['comments']) {
 						$output = $selectFields[0]['comments'] . ' ';
 					}
@@ -341,7 +342,7 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 					case 'DEFAULTCHARACTERSET':
 
 					case 'ENGINE':
-						// ??? todo!
+						// @todo ???
 						break;
 				}
 				break;
@@ -366,7 +367,7 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 				$type = $this->databaseConnection->MySQLMetaType($fieldCfg['fieldType']);
 				$cfg = $type;
 				// Add value, if any:
-				if (strlen($fieldCfg['value']) && in_array($type, array('C', 'C2'))) {
+				if ((string)$fieldCfg['value'] !== '' && in_array($type, array('C', 'C2'))) {
 					$cfg .= ' ' . $fieldCfg['value'];
 				} elseif (!isset($fieldCfg['value']) && in_array($type, array('C', 'C2'))) {
 					$cfg .= ' 255';
@@ -654,7 +655,7 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 										}
 										$output .= ' ' . $v['comparator'];
 										// Detecting value type; list or plain:
-										$comparator = strtoupper(str_replace(array(' ', TAB, CR, LF), '', $v['comparator']));
+										$comparator = $this->normalizeKeyword($v['comparator']);
 										if (GeneralUtility::inList('NOTIN,IN', $comparator)) {
 											if (isset($v['subquery'])) {
 												$output .= ' (' . $this->compileSELECT($v['subquery']) . ')';
@@ -684,6 +685,8 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 															case 'NOTIN':
 																$operator = 'AND';
 																break;
+															default:
+																$operator = '';
 														}
 
 														for ($i = 0; $i < $chunkCount; ++$i) {
@@ -752,4 +755,5 @@ class SqlParser extends \TYPO3\CMS\Core\Database\SqlParser {
 			die;
 		}
 	}
+
 }

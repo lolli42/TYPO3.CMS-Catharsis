@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Controller for actions relating to update of full extension list from TER
  *
@@ -67,4 +68,5 @@ class UpdateFromTerController extends AbstractController {
 				->assign('repository', $repository)
 				->assign('errorMessage', $errorMessage);
 	}
+
 }

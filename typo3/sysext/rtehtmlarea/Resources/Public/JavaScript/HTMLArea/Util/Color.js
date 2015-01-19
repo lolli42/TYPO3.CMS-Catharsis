@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,8 @@
 /***************************************************
  *  Color utilities
  ***************************************************/
-HTMLArea.util.Color = function () {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Color', [], function () {
+
 	return {
 
 		/**
@@ -73,4 +74,4 @@ HTMLArea.util.Color = function () {
 			}
 		}
 	}
-}();
+});

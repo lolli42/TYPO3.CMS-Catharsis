@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Compatibility;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -216,4 +217,5 @@ class LoadedExtensionArrayElement implements \IteratorAggregate, \ArrayAccess, \
 	public function toArray() {
 		return iterator_to_array($this);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -111,7 +111,7 @@ class ConfigurationUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 		$theConstants = array();
 
-		if (strlen($rawConfigurationString) > 0) {
+		if ((string)$rawConfigurationString !== '') {
 			$extensionPathInformation = $this->getExtensionPathInformation($extensionKey);
 
 			$tsStyleConfig = $this->objectManager->get(\TYPO3\CMS\Core\TypoScript\ConfigurationForm::class);
@@ -215,4 +215,5 @@ class ConfigurationUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		return $valuedCurrentExtensionConfig;
 	}
+
 }

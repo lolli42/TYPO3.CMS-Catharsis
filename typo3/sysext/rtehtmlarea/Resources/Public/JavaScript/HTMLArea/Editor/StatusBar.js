@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,48 +10,72 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
-/**
- * HTMLArea.StatusBar extends Ext.Container
- */
-HTMLArea.StatusBar = function (UserAgent, Dom, Event) {
 
-	var StatusBar = Ext.extend(Ext.Container, {
+/**
+ * The optional status bar at the bottom of the editor framework
+ */
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/StatusBar',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
+	function (UserAgent, Util, Dom, Event) {
+
+	/**
+	 * Status bar constructor
+	 */
+	var StatusBar = function (config) {
+		Util.apply(this, config);
+	};
+
+	StatusBar.prototype = {
 
 		/**
-		 * Constructor
+		 * Render the status bar (called by framework rendering)
+		 *
+		 * @param object container: the container into which to insert the status bar (that is the framework)
+		 * @return void
 		 */
-		initComponent: function () {
-			StatusBar.superclass.initComponent.call(this);
-			this.addListener({
-				render: {
-					fn: this.addComponents,
-					single: true
-				},
-				afterrender: {
-					fn: this.initEventListeners,
-					single: true
-				}
-			});
+		render: function (container) {
+			this.el = document.createElement('div');
+			if (this.id) {
+				this.el.setAttribute('id', this.id);
+			}
+			if (this.cls) {
+				this.el.setAttribute('class', this.cls);
+			}
+			this.el = container.appendChild(this.el);
+			this.addComponents();
+			this.initEventListeners();
+			if (!this.getEditor().config.showStatusBar) {
+				this.hide();
+			}
+			this.rendered = true;
 		},
 
 		/**
-		 * Initialize listeners
+		 * Initialize listeners (after rendering)
 		 */
 		initEventListeners: function () {
-			this.addListener({
-				beforedestroy: {
-					fn: this.onBeforeDestroy,
-					single: true
-				}
-			});
 			var self = this;
-			// Monitor toolbar updates in order to refresh the contents of the statusbar
-			// The toolbar must have been rendered
-			Event.on(this.ownerCt.toolbar, 'HTMLAreaEventToolbarUpdate', function (event, mode, selectionEmpty, ancestors, endPointsInSameBlock) { Event.stopEvent(event); self.onUpdateToolbar(mode, selectionEmpty, ancestors, endPointsInSameBlock); return false; });
 			// Monitor editor changing mode
 			Event.on(this.getEditor(), 'HTMLAreaEventModeChange', function (event, mode) { Event.stopEvent(event); self.onModeChange(mode); return false; });
 			// Monitor word count change
-			Event.on(this.ownerCt.iframe, 'HTMLAreaEventWordCountChange', function (event, delay) { Event.stopEvent(event); self.onWordCountChange(delay); return false; });
+			Event.on(this.framework.iframe, 'HTMLAreaEventWordCountChange', function (event, delay) { Event.stopEvent(event); self.onWordCountChange(delay); return false; });
+		},
+
+		/**
+		 * Get the element to which the status bar is rendered
+		 */
+		getEl: function () {
+			return this.el;
+		},
+
+		/**
+		 * Get the current height of the status bar
+		 */
+		getHeight: function () {
+			return Dom.getSize(this.el).height;
 		},
 
 		/**
@@ -76,38 +100,47 @@ HTMLArea.StatusBar = function (UserAgent, Dom, Event) {
 			wordCount.style.display = 'block';
 			wordCount.innerHTML = '&nbsp;';
 			Dom.addClass(wordCount, 'statusBarWordCount');
-			this.statusBarWordCount = this.getEl().dom.appendChild(wordCount);
+			this.statusBarWordCount = this.getEl().appendChild(wordCount);
 			// Element tree
 			var tree = document.createElement('span');
 			tree.id = this.editorId + '-statusBarTree';
 			tree.style.display = 'block';
 			tree.innerHTML = HTMLArea.localize('Path') + ': ';
 			Dom.addClass(tree, 'statusBarTree');
-			this.statusBarTree = this.getEl().dom.appendChild(tree);
+			this.statusBarTree = this.getEl().appendChild(tree);
 			// Text mode
 			var textMode = document.createElement('span');
 			textMode.id = this.editorId + '-statusBarTextMode';
 			textMode.style.display = 'none';
 			textMode.innerHTML = HTMLArea.localize('TEXT_MODE');
 			Dom.addClass(textMode, 'statusBarTextMode');
-			this.statusBarTextMode = this.getEl().dom.appendChild(textMode);
+			this.statusBarTextMode = this.getEl().appendChild(textMode);
+		},
+
+		/**
+		 * Show the status bar
+		 */
+		show: function () {
+			this.getEl().style.display = '';
+		},
+
+		/**
+		 * Hide the status bar
+		 */
+		hide: function () {
+			this.getEl().style.display = 'none';
 		},
 
 		/**
 		 * Clear the status bar tree
 		 */
 		clear: function () {
-			var node = this.statusBarTree.firstChild;
-			while (node) {
+			var node;
+			while (node = this.statusBarTree.firstChild) {
 				if (/^(a)$/i.test(node.nodeName)) {
 					Event.off(node);
-					var extNode = Ext.get(node);
-					Ext.QuickTips.unregister(extNode);
-					extNode.dom = null;
 				}
-				var nextNode = node.nextSibling;
 				Dom.removeFromParent(node);
-				var node = nextNode;
 			}
 			this.setSelection(null);
 		},
@@ -123,7 +156,8 @@ HTMLArea.StatusBar = function (UserAgent, Dom, Event) {
 		 * @return void
 		 */
 		onUpdateToolbar: function (mode, selectionEmpty, ancestors, endPointsInSameBlock) {
-			if (mode === 'wysiwyg' && !this.noUpdate) {
+			if (mode === 'wysiwyg' && !this.noUpdate && this.getEditor().config.showStatusBar) {
+				var self = this;
 				var text,
 					language,
 					languageObject = this.getEditor().getPlugin('Language'),
@@ -162,12 +196,12 @@ HTMLArea.StatusBar = function (UserAgent, Dom, Event) {
 					}
 					var element = document.createElement('a');
 					element.href = '#';
-					element.setAttribute('ext:qtitle', HTMLArea.localize('statusBarStyle'));
-					element.setAttribute('ext:qtip', ancestor.style.cssText.split(';').join('<br />'));
+					if (ancestor.style.cssText) {
+						element.setAttribute('title', HTMLArea.localize('statusBarStyle') + ':\x0D ' + ancestor.style.cssText.split(';').join('\x0D'));
+					}
 					element.innerHTML = text;
 					element = path.parentNode.insertBefore(element, path.nextSibling);
 					element.ancestor = ancestor;
-					var self = this;
 					Event.on(element, 'click', function (event) { return self.onClick(event); });
 					Event.on(element, 'mousedown', function (event) { return self.onClick(event); });
 					if (!UserAgent.isOpera) {
@@ -312,18 +346,20 @@ HTMLArea.StatusBar = function (UserAgent, Dom, Event) {
 		},
 
 		/**
-		 * Cleanup
+		 * Cleanup (called by framework)
 		 */
 		onBeforeDestroy: function() {
 			this.clear();
-			this.removeAll(true);
+			var node;
+			while (node = this.el.firstChild) {
+				this.el.removeChild(node);
+			}
 			this.statusBarTree = null;
 			this.statusBarWordCount = null;
-			return true;
+			this.el = null;
 		}
-	});
+	};
 
 	return StatusBar;
 
-}(HTMLArea.UserAgent, HTMLArea.DOM, HTMLArea.Event);
-Ext.reg('htmlareastatusbar', HTMLArea.StatusBar);
+});

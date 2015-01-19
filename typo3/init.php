@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -57,7 +57,6 @@ require __DIR__ . '/sysext/core/Classes/Core/Bootstrap.php';
 	->initializeSpriteManager()
 	->initializeBackendUser()
 	->initializeBackendAuthentication()
-	->initializeBackendUserMounts()
 	->initializeLanguageObject()
 	->initializeBackendTemplate()
 	->endOutputBufferingAndCleanPreviousOutput()

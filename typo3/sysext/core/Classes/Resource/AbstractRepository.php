@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Resource;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Abstract repository implementing the basic repository methods
  *
@@ -249,7 +250,7 @@ abstract class AbstractRepository implements \TYPO3\CMS\Extbase\Persistence\Repo
 	 * Finds an object matching the given identifier.
 	 *
 	 * @param mixed $identifier The identifier of the object to find
-	 * @return object The matching object if found, otherwise NULL
+	 * @return object|NULL The matching object if found, otherwise NULL
 	 * @api
 	 */
 	public function findByIdentifier($identifier) {

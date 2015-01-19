@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Step;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -32,7 +32,7 @@ class DatabaseData extends AbstractStepAction {
 
 		$postValues = $this->postValues['values'];
 
-		$username = strlen($postValues['username']) ? $postValues['username'] : 'admin';
+		$username = (string)$postValues['username'] !== '' ? $postValues['username'] : 'admin';
 
 		// Check password and return early if not good enough
 		$password = $postValues['password'];
@@ -135,4 +135,5 @@ class DatabaseData extends AbstractStepAction {
 			}
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Remove accessibility icon when no link was rendered
  *
@@ -108,4 +109,5 @@ class AccessibilityLinkController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlu
 		}
 		return  \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath($newFilename);
 	}
+
 }

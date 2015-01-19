@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recordlist\Tests\Unit\Browser;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -29,4 +29,5 @@ class ElementBrowserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$result = $subject->printCurrentUrl('Teststring');
 		$this->assertContains('Teststring', $result);
 	}
+
 }

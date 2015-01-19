@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Belog\Tests\Unit\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -34,4 +34,5 @@ class LogEntryRepositoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject->expects($this->once())->method('setDefaultQuerySettings')->with($querySettings);
 		$subject->initializeObject();
 	}
+
 }

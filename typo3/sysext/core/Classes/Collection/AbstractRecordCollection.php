@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Collection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -257,7 +257,7 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
 	 * @return void
 	 */
 	public function usort($callbackFunction) {
-		// TODO: Implement usort() method with TCEforms in mind
+		// @todo Implement usort() method with TCEforms in mind
 		throw new \RuntimeException('This method is not yet supported.', 1322545589);
 	}
 
@@ -272,7 +272,7 @@ abstract class AbstractRecordCollection implements RecordCollectionInterface, Pe
 	 * @return void
 	 */
 	public function moveItemAt($currentPosition, $newPosition = 0) {
-		// TODO: Implement usort() method with TCEforms in mind
+		// @todo Implement usort() method with TCEforms in mind
 		throw new \RuntimeException('This method is not yet supported.', 1322545626);
 	}
 

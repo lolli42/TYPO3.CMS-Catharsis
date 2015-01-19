@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -362,4 +362,5 @@ class FrontendUserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->fixture->setLastlogin($date);
 		$this->assertSame($date, $this->fixture->getLastlogin());
 	}
+
 }

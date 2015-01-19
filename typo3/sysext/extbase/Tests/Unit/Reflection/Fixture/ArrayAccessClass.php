@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Reflection\Fixture;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * ArrayAccess class for the Reflection tests
  *
@@ -59,4 +60,5 @@ class ArrayAccessClass implements \ArrayAccess {
 	public function offsetUnset($offset) {
 		unset($this->array[$offset]);
 	}
+
 }

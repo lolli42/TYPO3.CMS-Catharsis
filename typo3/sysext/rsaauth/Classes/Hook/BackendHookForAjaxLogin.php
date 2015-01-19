@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rsaauth\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -38,4 +38,5 @@ class BackendHookForAjaxLogin {
 			$backendController->getPageRenderer()->addJsLibrary($file, $javascriptPath . $file);
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Belog\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Belog\Domain\Model;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Constraints for log entries
@@ -64,20 +65,6 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	protected $groupByPage = FALSE;
 
 	/**
-	 * Manual date start
-	 *
-	 * @var \DateTime
-	 */
-	protected $manualDateStart = NULL;
-
-	/**
-	 * Manual date stop
-	 *
-	 * @var \DateTime
-	 */
-	protected $manualDateStop = NULL;
-
-	/**
 	 * Calculated start timestamp
 	 *
 	 * @var int
@@ -90,6 +77,20 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @var int
 	 */
 	protected $endTimestamp = 0;
+
+	/**
+	 * Manual date start
+	 * @var \DateTime
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	protected $manualDateStart = NULL;
+
+	/**
+	 * Manual date stop
+	 * @var \DateTime
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	protected $manualDateStop = NULL;
 
 	/**
 	 * Whether the plugin is called in page context (submodule of Web > Info)
@@ -234,44 +235,6 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * Set manual date start
-	 *
-	 * @param \DateTime $manualDateStart
-	 * @return void
-	 */
-	public function setManualDateStart(\DateTime $manualDateStart = NULL) {
-		$this->manualDateStart = $manualDateStart;
-	}
-
-	/**
-	 * Get manual date start
-	 *
-	 * @return \DateTime
-	 */
-	public function getManualDateStart() {
-		return $this->manualDateStart;
-	}
-
-	/**
-	 * Set manual date stop
-	 *
-	 * @param \DateTime $manualDateStop
-	 * @return void
-	 */
-	public function setManualDateStop(\DateTime $manualDateStop = NULL) {
-		$this->manualDateStop = $manualDateStop;
-	}
-
-	/**
-	 * Get manual date stop
-	 *
-	 * @return \DateTime
-	 */
-	public function getManualDateStop() {
-		return $this->manualDateStop;
-	}
-
-	/**
 	 * Set calculated start timestamp from query constraints
 	 *
 	 * @param int $timestamp
@@ -366,4 +329,49 @@ class Constraint extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 		return (int)$this->depth;
 	}
 
+	/**
+	 * Set manual date start
+	 *
+	 * @param \DateTime $manualDateStart
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function setManualDateStart(\DateTime $manualDateStart = NULL) {
+		GeneralUtility::logDeprecatedFunction();
+		$this->manualDateStart = $manualDateStart;
+	}
+
+	/**
+	 * Get manual date start
+	 *
+	 * @return \DateTime
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getManualDateStart() {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->manualDateStart;
+	}
+
+	/**
+	 * Set manual date stop
+	 *
+	 * @param \DateTime $manualDateStop
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function setManualDateStop(\DateTime $manualDateStop = NULL) {
+		GeneralUtility::logDeprecatedFunction();
+		$this->manualDateStop = $manualDateStop;
+	}
+
+	/**
+	 * Get manual date stop
+	 *
+	 * @return \DateTime
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getManualDateStop() {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->manualDateStop;
+	}
 }

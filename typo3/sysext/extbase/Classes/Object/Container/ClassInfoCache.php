@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Object\Container;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Object\Container;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Simple Cache for classInfos
  *
@@ -77,4 +78,5 @@ class ClassInfoCache {
 	private function initializeLevel2Cache() {
 		$this->level2Cache = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('extbase_object');
 	}
+
 }

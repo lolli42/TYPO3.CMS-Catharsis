@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Storage;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Persistence\Generic\Storage;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 
 /**
@@ -121,4 +122,5 @@ class Typo3DbBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$result = $mock->_call('resolveParameterPlaceholders', $stmtParts, $parameters);
 		$this->assertSame($expected, $result['where']);
 	}
+
 }

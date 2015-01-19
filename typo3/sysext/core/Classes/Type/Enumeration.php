@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Type;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -198,4 +198,5 @@ abstract class Enumeration implements TypeInterface {
 	public function __toString() {
 		return (string)$this->value;
 	}
+
 }

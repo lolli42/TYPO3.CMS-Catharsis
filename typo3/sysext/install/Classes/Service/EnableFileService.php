@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -172,4 +172,5 @@ class EnableFileService {
 	static protected function getFirstInstallFilePath() {
 		return PATH_site . self::FIRST_INSTALL_FILE_PATH;
 	}
+
 }

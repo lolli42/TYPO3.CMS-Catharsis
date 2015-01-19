@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Tests\Unit\Filter;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -61,4 +61,5 @@ class RegExpFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$this->fixture->filter($input)
 		);
 	}
+
 }

@@ -93,7 +93,7 @@ return array(
 				'size' => '3',
 				'maxitems' => 25,
 				'autoSizeMax' => 10,
-				'renderMode' => $GLOBALS['TYPO3_CONF_VARS']['BE']['accessListRenderMode'],
+				'renderMode' => 'checkbox',
 				'iconsInOptionTags' => 1
 			)
 		),
@@ -132,13 +132,6 @@ return array(
 		),
 		'live_edit' => array(
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_workspace.live_edit',
-			'config' => array(
-				'type' => 'check',
-				'default' => '0'
-			)
-		),
-		'disable_autocreate' => array(
-			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_workspace.disable_autocreate',
 			'config' => array(
 				'type' => 'check',
 				'default' => '0'
@@ -271,6 +264,6 @@ return array(
 			--div--;LLL:EXT:lang/locallang_tca.xlf:sys_filemounts.tabs.mountpoints,db_mountpoints,file_mountpoints,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:sys_filemounts.tabs.publishing,publish_time,unpublish_time,
 			--div--;LLL:EXT:workspaces/Resources/Private/Language/locallang_db.xlf:sys_filemounts.tabs.staging,custom_stages,
-			--div--;LLL:EXT:lang/locallang_tca.xlf:sys_filemounts.tabs.other,freeze,live_edit,disable_autocreate,swap_modes,publish_access')
+			--div--;LLL:EXT:lang/locallang_tca.xlf:sys_filemounts.tabs.other,freeze,live_edit,swap_modes,publish_access')
 	)
 );

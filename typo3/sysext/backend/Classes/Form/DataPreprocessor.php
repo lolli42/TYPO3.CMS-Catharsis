@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Backend\Form;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 
 /**
  * Class for getting and transforming data for display in backend forms (TCEforms)
@@ -180,6 +182,8 @@ class DataPreprocessor {
 				}
 			}
 		}
+
+		$this->emitFetchRecordPostProcessingSignal();
 	}
 
 	/**
@@ -268,12 +272,6 @@ class DataPreprocessor {
 			$data = $this->renderRecord_SW($data, $fieldConfig, $TSconfig, $table, $row, $field);
 			$totalRecordContent[$field] = $data;
 		}
-		// Further processing may apply for each field in the record depending on the settings in the "types" configuration (the list of fields to currently display for a record in TCEforms).
-		// For instance this could be processing instructions for the Rich Text Editor.
-		$types_fieldConfig = BackendUtility::getTCAtypes($table, $totalRecordContent);
-		if (is_array($types_fieldConfig)) {
-			$totalRecordContent = $this->renderRecord_typesProc($totalRecordContent, $types_fieldConfig, $tscPID, $table, $pid);
-		}
 		// Register items, mostly for external use (overriding the regItem() function)
 		foreach ($totalRecordContent as $field => $data) {
 			$this->regItem($table, $id, $field, $data);
@@ -287,7 +285,7 @@ class DataPreprocessor {
 	 * Function with the switch() construct which triggers functions for processing of the data value depending on the TCA-config field type.
 	 *
 	 * @param string $data Value to process
-	 * @param array $fieldConfig TCA/columns array for field	(independant of TCA for flexforms - coming from XML then)
+	 * @param array $fieldConfig TCA/columns array for field	(independent of TCA for flexforms - coming from XML then)
 	 * @param array $TSconfig TSconfig	(blank for flexforms for now)
 	 * @param string $table Table name
 	 * @param array $row The row array, always of the real record (also for flexforms)
@@ -384,6 +382,7 @@ class DataPreprocessor {
 		$dataAcc = array();
 		// For list selectors (multi-value):
 		if ((int)$fieldConfig['config']['maxitems'] > 1 || $fieldConfig['config']['renderMode'] === 'tree') {
+			$languageService = $this->getLanguageService();
 			// Add regular elements:
 			if (!is_array($fieldConfig['config']['items'])) {
 				$fieldConfig['config']['items'] = array();
@@ -392,7 +391,7 @@ class DataPreprocessor {
 			foreach ($fieldConfig['config']['items'] as $pvpv) {
 				foreach ($elements as $eKey => $value) {
 					if ((string)$value === (string)$pvpv[1]) {
-						$dataAcc[$eKey] = rawurlencode($pvpv[1]) . '|' . rawurlencode($this->sL($pvpv[0]));
+						$dataAcc[$eKey] = rawurlencode($pvpv[1]) . '|' . rawurlencode($languageService->sL($pvpv[0]));
 					}
 				}
 			}
@@ -471,22 +470,10 @@ class DataPreprocessor {
 	 * @param int $pid PID value
 	 * @return array The processed version of $totalRecordContent
 	 * @access private
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function renderRecord_typesProc($totalRecordContent, $types_fieldConfig, $tscPID, $table, $pid) {
-		foreach ($types_fieldConfig as $vconf) {
-			// Find file to write to, if configured:
-			$eFile = \TYPO3\CMS\Core\Html\RteHtmlParser::evalWriteFile($vconf['spec']['static_write'], $totalRecordContent);
-			// Write file configuration:
-			if (is_array($eFile)) {
-				if ($eFile['loadFromFileField'] && $totalRecordContent[$eFile['loadFromFileField']]) {
-					// Read the external file, and insert the content between the ###TYPO3_STATICFILE_EDIT### markers:
-					$SW_fileContent = GeneralUtility::getUrl($eFile['editFile']);
-					$parseHTML = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Html\RteHtmlParser::class);
-					$parseHTML->init('', '');
-					$totalRecordContent[$vconf['field']] = $parseHTML->getSubpart($SW_fileContent, $eFile['markerField'] && trim($totalRecordContent[$eFile['markerField']]) ? trim($totalRecordContent[$eFile['markerField']]) : '###TYPO3_STATICFILE_EDIT###');
-				}
-			}
-		}
+		GeneralUtility::logDeprecatedFunction();
 		return $totalRecordContent;
 	}
 
@@ -623,6 +610,7 @@ class DataPreprocessor {
 	 * @see renderRecord_selectProc()
 	 */
 	public function selectAddSpecial($dataAcc, $elements, $specialKey) {
+		$languageService = $this->getLanguageService();
 		// Special select types:
 		switch ((string)$specialKey) {
 			case 'tables':
@@ -630,7 +618,7 @@ class DataPreprocessor {
 				foreach ($tNames as $tableName) {
 					foreach ($elements as $eKey => $value) {
 						if ((string)$tableName === (string)$value) {
-							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($GLOBALS['TCA'][$value]['ctrl']['title']));
+							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($languageService->sL($GLOBALS['TCA'][$value]['ctrl']['title']));
 						}
 					}
 				}
@@ -641,7 +629,7 @@ class DataPreprocessor {
 					foreach ($theTypes as $theTypesArrays) {
 						foreach ($elements as $eKey => $value) {
 							if ((string)$theTypesArrays[1] === (string)$value) {
-								$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($theTypesArrays[0]));
+								$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($languageService->sL($theTypesArrays[0]));
 							}
 						}
 					}
@@ -692,7 +680,7 @@ class DataPreprocessor {
 							foreach ($coValue['items'] as $itemKey => $itemCfg) {
 								foreach ($elements as $eKey => $value) {
 									if (($coKey . ':' . $itemKey) === (string)$value) {
-										$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($this->sL($itemCfg[0]));
+										$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($languageService->sL($itemCfg[0]));
 									}
 								}
 							}
@@ -714,10 +702,10 @@ class DataPreprocessor {
 						// Add label for main module:
 						$pp = explode('_', $value);
 						if (count($pp) > 1) {
-							$label .= $GLOBALS['LANG']->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
+							$label .= $languageService->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
 						}
 						// Add modules own label now:
-						$label .= $GLOBALS['LANG']->moduleLabels['tabs'][$value . '_tab'];
+						$label .= $languageService->moduleLabels['tabs'][$value . '_tab'];
 						if ((string)$theModName === (string)$value) {
 							$dataAcc[$eKey] = rawurlencode($value) . '|' . rawurlencode($label);
 						}
@@ -743,6 +731,7 @@ class DataPreprocessor {
 	 * @see renderRecord_selectProc()
 	 */
 	public function selectAddForeign($dataAcc, $elements, $fieldConfig, $field, $TSconfig, $row, $table) {
+		$languageService = $this->getLanguageService();
 		// Init:
 		$recordList = array();
 		// Foreign_table
@@ -773,7 +762,7 @@ class DataPreprocessor {
 		// After this we can traverse the loadDBgroup values and match values with the list of possible values in $recordList:
 		foreach ($dataIds as $theId) {
 			if (isset($recordList[$theId])) {
-				$lPrefix = $this->sL($fieldConfig['config'][($theId > 0 ? '' : 'neg_') . 'foreign_table_prefix']);
+				$lPrefix = $languageService->sL($fieldConfig['config'][($theId > 0 ? '' : 'neg_') . 'foreign_table_prefix']);
 				if ($fieldConfig['config']['MM'] || $fieldConfig['config']['foreign_field']) {
 					$dataAcc[] = rawurlencode($theId) . '|' . rawurlencode(GeneralUtility::fixed_lgd_cs(($lPrefix . strip_tags($recordList[$theId])), $GLOBALS['BE_USER']->uc['titleLen']));
 				} else {
@@ -913,12 +902,14 @@ class DataPreprocessor {
 	/**
 	 * Local wrapper function for LANG->sL (returning language labels)
 	 *
-	 * @param string Language label key
+	 * @param string $in Language label key
 	 * @return string Localized label value.
 	 * @access private
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function sL($in) {
-		return $GLOBALS['LANG']->sL($in);
+		GeneralUtility::logDeprecatedFunction();
+		return $this->getLanguageService()->sL($in);
 	}
 
 	/**
@@ -935,6 +926,31 @@ class DataPreprocessor {
 			$liveDefaultId = $id;
 		}
 		return $liveDefaultId;
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * This method is called at the very end of fetchRecord(). It emits a signal
+	 * that can be used to e.g. manipulate the regTableItems_data array to display
+	 * that manipulated data in TCEForms.
+	 *
+	 * @return void
+	 */
+	protected function emitFetchRecordPostProcessingSignal() {
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Backend\Form\DataPreprocessor::class, 'fetchRecordPostProcessing', array($this));
+	}
+
+	/**
+	 * @return Dispatcher
+	 */
+	protected function getSignalSlotDispatcher() {
+		return GeneralUtility::makeInstance(Dispatcher::class);
 	}
 
 }

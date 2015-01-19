@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
 
 /**
@@ -65,7 +66,7 @@ class Argument {
 	/**
 	 * Actual value of this argument
 	 *
-	 * @var object
+	 * @var mixed
 	 */
 	protected $value = NULL;
 
@@ -102,8 +103,8 @@ class Argument {
 		if (!is_string($name)) {
 			throw new \InvalidArgumentException('$name must be of type string, ' . gettype($name) . ' given.', 1187951688);
 		}
-		if (strlen($name) === 0) {
-			throw new \InvalidArgumentException('$name must be a non-empty string, ' . strlen($name) . ' characters given.', 1232551853);
+		if ($name === '') {
+			throw new \InvalidArgumentException('$name must be a non-empty string.', 1232551853);
 		}
 		$this->name = $name;
 		$this->dataType = TypeHandlingUtility::normalizeType($dataType);
@@ -240,7 +241,7 @@ class Argument {
 		$this->value = $this->propertyMapper->convert($rawValue, $this->dataType, $this->propertyMappingConfiguration);
 		$this->validationResults = $this->propertyMapper->getMessages();
 		if ($this->validator !== NULL) {
-			// TODO: Validation API has also changed!!!
+			// @todo Validation API has also changed!!!
 			$validationMessages = $this->validator->validate($this->value);
 			$this->validationResults->merge($validationMessages);
 		}
@@ -250,7 +251,7 @@ class Argument {
 	/**
 	 * Returns the value of this argument
 	 *
-	 * @return object The value of this argument - if none was set, NULL is returned
+	 * @return mixed The value of this argument - if none was set, NULL is returned
 	 * @api
 	 */
 	public function getValue() {
@@ -296,4 +297,5 @@ class Argument {
 	public function __toString() {
 		return (string)$this->value;
 	}
+
 }

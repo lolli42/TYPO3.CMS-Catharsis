@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lowlevel\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,66 +14,46 @@ namespace TYPO3\CMS\Lowlevel\View;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Module\BaseScriptClass;
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
+use TYPO3\CMS\Lowlevel\Utility\ArrayBrowser;
 
 /**
  * Script class for the Config module
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-class ConfigurationView {
+class ConfigurationView extends BaseScriptClass {
 
 	/**
-	 * @var \TYPO3\CMS\Fluid\View\StandaloneView
+	 * @var StandaloneView
 	 */
 	protected $view;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Messaging\FlashMessageQueue
+	 * @var FlashMessageQueue
 	 */
 	protected $flashMessageQueue;
 
 	/**
-	 * @var array
-	 */
-	public $MCONF = array();
-
-	/**
-	 * @var array
-	 */
-	public $MOD_MENU = array();
-
-	/**
-	 * @var array
-	 */
-	public $MOD_SETTINGS = array();
-
-	/**
-	 * Document template object
+	 * The name of the module
 	 *
-	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
-	 */
-	public $doc;
-
-	/**
-	 * @var array
-	 */
-	public $include_once = array();
-
-	/**
 	 * @var string
 	 */
-	public $content;
+	protected $moduleName = 'system_config';
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], 1);
-		$this->view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
+		$this->view = GeneralUtility::makeInstance(StandaloneView::class);
 		$this->view->getRequest()->setControllerExtensionName('lowlevel');
 	}
 
@@ -83,9 +63,8 @@ class ConfigurationView {
 	 * @return void
 	 */
 	public function init() {
-		$this->MCONF = $GLOBALS['MCONF'];
 		$this->menuConfig();
-		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
+		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:lowlevel/Resources/Private/Templates/config.html');
 		$this->doc->form = '<form action="" method="post">';
@@ -119,17 +98,17 @@ class ConfigurationView {
 			'fixedLgd' => ''
 		);
 		// CLEANSE SETTINGS
-		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name']);
+		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->moduleName);
 	}
 
 	/**
-	 * [Describe function...]
+	 * Main function
 	 *
 	 * @return void
 	 */
 	public function main() {
-		/** @var \TYPO3\CMS\Lowlevel\Utility\ArrayBrowser $arrayBrowser */
-		$arrayBrowser = GeneralUtility::makeInstance(\TYPO3\CMS\Lowlevel\Utility\ArrayBrowser::class);
+		/** @var ArrayBrowser $arrayBrowser */
+		$arrayBrowser = GeneralUtility::makeInstance(ArrayBrowser::class);
 		$label = $this->MOD_MENU['function'][$this->MOD_SETTINGS['function']];
 		$search_field = GeneralUtility::_GP('search_field');
 
@@ -202,7 +181,7 @@ class ConfigurationView {
 			$update = 1;
 		}
 		if ($update) {
-			$GLOBALS['BE_USER']->pushModuleData($this->MCONF['name'], $this->MOD_SETTINGS);
+			$this->getBackendUser()->pushModuleData($this->moduleName, $this->MOD_SETTINGS);
 		}
 		$arrayBrowser->depthKeys = $this->MOD_SETTINGS['node_' . $this->MOD_SETTINGS['function']];
 		$arrayBrowser->regexMode = $this->MOD_SETTINGS['regexsearch'];
@@ -284,7 +263,7 @@ class ConfigurationView {
 			'CONTENT' => $this->view->render(),
 		);
 		// Build the <body> for the module
-		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
+		$this->content = $this->doc->moduleBody(array(), $docHeaderButtons, $markers);
 		// Renders the module page
 		$this->content = $this->doc->render('Configuration', $this->content);
 	}
@@ -309,8 +288,8 @@ class ConfigurationView {
 			'shortcut' => ''
 		);
 		// Shortcut
-		if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
-			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', 'function', $this->MCONF['name']);
+		if ($this->getBackendUser()->mayMakeShortcut()) {
+			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', 'function', $this->moduleName);
 		}
 		return $buttons;
 	}
@@ -326,15 +305,16 @@ class ConfigurationView {
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Core\Messaging\FlashMessageQueue
+	 * @return FlashMessageQueue
 	 */
 	protected function getFlashMessageQueue() {
-		if (!$this->flashMessageQueue instanceof \TYPO3\CMS\Core\Messaging\FlashMessageQueue) {
-			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
+		if (!$this->flashMessageQueue instanceof FlashMessageQueue) {
+			/** @var $flashMessageService FlashMessageService */
+			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
 			$this->flashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
 		}
 
 		return $this->flashMessageQueue;
 	}
+
 }

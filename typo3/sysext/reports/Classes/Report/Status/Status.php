@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Reports\Report\Status;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -169,7 +169,7 @@ class Status implements ReportInterface {
 				));
 			}
 			$header = '<h2>' . $provider . '</h2>';
-			$table = '<table class="t3-table">';
+			$table = '<table class="table table-striped table-hover">';
 			$table .= '<tbody>' . $messages . '</tbody>';
 			$table .= '</table>';
 
@@ -197,7 +197,7 @@ class Status implements ReportInterface {
 		unset($statusCollection['typo3'], $statusCollection['system'], $statusCollection['security'], $statusCollection['configuration']);
 		// Assemble list of secondary status collections with left-over collections
 		// Change their keys using localized labels if available
-		// TODO extract into getLabel() method
+		// @todo extract into getLabel() method
 		$secondaryStatuses = array();
 		foreach ($statusCollection as $statusProviderId => $collection) {
 			$label = '';

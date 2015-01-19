@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\SignalSlot;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\SignalSlot;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A dispatcher which dispatches signals by calling its registered slot methods
  * and passing them the method arguments which were originally passed to the
@@ -141,7 +142,7 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface {
 						. gettype($slotReturn) . ').', 1376683067);
 				} elseif (count($slotReturn) !== count($signalArguments)) {
 					throw new Exception\InvalidSlotReturnException('The slot method ' . get_class($object) . '->' . $slotInformation['method'] . '() returned a different number ('
-						. count($slotReturn) . ') of arguments, than it recieved (' . count($signalArguments) . ').', 1376683066);
+						. count($slotReturn) . ') of arguments, than it received (' . count($signalArguments) . ').', 1376683066);
 				} else {
 					$signalArguments = $slotReturn;
 				}
@@ -162,4 +163,5 @@ class Dispatcher implements \TYPO3\CMS\Core\SingletonInterface {
 	public function getSlots($signalClassName, $signalName) {
 		return isset($this->slots[$signalClassName][$signalName]) ? $this->slots[$signalClassName][$signalName] : array();
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 
 /**
@@ -123,7 +124,7 @@ class Query implements QueryInterface {
 	 *
 	 * @param QuerySettingsInterface $querySettings The Query Settings
 	 * @return void
-	 * @api This method is not part of FLOW3 API
+	 * @api This method is not part of TYPO3.Flow API
 	 */
 	public function setQuerySettings(QuerySettingsInterface $querySettings) {
 		$this->querySettings = $querySettings;
@@ -134,7 +135,7 @@ class Query implements QueryInterface {
 	 *
 	 * @throws Exception
 	 * @return QuerySettingsInterface $querySettings The Query Settings
-	 * @api This method is not part of FLOW3 API
+	 * @api This method is not part of TYPO3.Flow API
 	 */
 	public function getQuerySettings() {
 		if (!$this->querySettings instanceof QuerySettingsInterface) {
@@ -164,7 +165,7 @@ class Query implements QueryInterface {
 
 	/**
 	 * Returns the selectorn name or an empty string, if the source is not a selector
-	 * TODO This has to be checked at another place
+	 * @todo This has to be checked at another place
 	 *
 	 * @return string The selector name
 	 */
@@ -566,4 +567,5 @@ class Query implements QueryInterface {
 	public function isEmpty($propertyName) {
 		throw new \TYPO3\CMS\Extbase\Persistence\Generic\Exception\NotImplementedException(__METHOD__);
 	}
+
 }

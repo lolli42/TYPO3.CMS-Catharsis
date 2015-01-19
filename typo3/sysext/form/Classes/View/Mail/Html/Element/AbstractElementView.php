@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Mail\Html\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,10 @@ namespace TYPO3\CMS\Form\View\Mail\Html\Element;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
+use TYPO3\CMS\Form\View\Mail\Html\Additional\AdditionalElementView;
 
 /**
  * Abstract class for the form elements view
@@ -51,7 +54,7 @@ abstract class AbstractElementView {
 	/**
 	 * Constructor
 	 *
-	 * @param object $model Current elements model
+	 * @param AbstractElement $model Current elements model
 	 */
 	public function __construct($model) {
 		$this->model = $model;
@@ -235,7 +238,7 @@ abstract class AbstractElementView {
 		foreach ($attributes as $key => $attribute) {
 			if (!empty($attribute)) {
 				$value = htmlspecialchars($attribute->getValue(), ENT_QUOTES);
-				if (!empty($value)) {
+				if ($value !== '') {
 					$domElement->setAttribute($key, $value);
 				}
 			}
@@ -251,7 +254,7 @@ abstract class AbstractElementView {
 	 */
 	public function setAttribute(\DOMElement $domElement, $key) {
 		$value = htmlspecialchars($this->model->getAttributeValue((string)$key), ENT_QUOTES);
-		if (!empty($value)) {
+		if ($value !== '') {
 			$domElement->setAttribute($key, $value);
 		}
 	}
@@ -267,7 +270,7 @@ abstract class AbstractElementView {
 	 */
 	public function setAttributeWithValueofOtherAttribute(\DOMElement $domElement, $key, $other) {
 		$value = htmlspecialchars($this->model->getAttributeValue((string)$other), ENT_QUOTES);
-		if (!empty($value)) {
+		if ($value !== '') {
 			$domElement->setAttribute($key, $value);
 		}
 	}
@@ -276,7 +279,7 @@ abstract class AbstractElementView {
 	 * Load and instantiate an additional object
 	 *
 	 * @param string $class Type of additional
-	 * @return object
+	 * @return AdditionalElementView
 	 */
 	protected function createAdditional($class) {
 		$class = strtolower((string)$class);

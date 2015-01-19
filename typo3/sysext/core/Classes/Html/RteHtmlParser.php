@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Html;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -125,6 +125,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 *
 	 * @param string $path The relative path from PATH_site to the place where the file being edited is. Eg. "fileadmin/static".
 	 * @return void There is no output, it is set in internal variables. With the above example of "fileadmin/static" as input this will yield ->relPath to be "fileadmin/static/" and ->relBackPath to be "../../
+	 * @TODO: Check if relPath and relBackPath are used for anything useful after removal of "static file edit" with #63818
 	 */
 	public function setRelPath($path) {
 		$path = trim($path);
@@ -149,36 +150,10 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * @param array $pArr Parameters for the current field as found in types-config
 	 * @param array $currentRecord Current record we are editing.
 	 * @return mixed On success an array with various information is returned, otherwise a string with an error message
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function evalWriteFile($pArr, $currentRecord) {
-		// Write file configuration:
-		if (is_array($pArr)) {
-			if ($GLOBALS['TYPO3_CONF_VARS']['BE']['staticFileEditPath'] && substr($GLOBALS['TYPO3_CONF_VARS']['BE']['staticFileEditPath'], -1) == '/' && @is_dir((PATH_site . $GLOBALS['TYPO3_CONF_VARS']['BE']['staticFileEditPath']))) {
-				$SW_p = $pArr['parameters'];
-				$SW_editFileField = trim($SW_p[0]);
-				$SW_editFile = $currentRecord[$SW_editFileField];
-				if ($SW_editFileField && $SW_editFile && GeneralUtility::validPathStr($SW_editFile)) {
-					$SW_relpath = $GLOBALS['TYPO3_CONF_VARS']['BE']['staticFileEditPath'] . $SW_editFile;
-					$SW_editFile = PATH_site . $SW_relpath;
-					if (@is_file($SW_editFile)) {
-						return array(
-							'editFile' => $SW_editFile,
-							'relEditFile' => $SW_relpath,
-							'contentField' => trim($SW_p[1]),
-							'markerField' => trim($SW_p[2]),
-							'loadFromFileField' => trim($SW_p[3]),
-							'statusField' => trim($SW_p[4])
-						);
-					} else {
-						return 'ERROR: Editfile \'' . $SW_relpath . '\' did not exist';
-					}
-				} else {
-					return 'ERROR: Edit file name could not be found or was bad.';
-				}
-			} else {
-				return 'ERROR: staticFileEditPath was not set, not set correctly or did not exist!';
-			}
-		}
+		GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**********************************************
@@ -228,7 +203,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		if ($direction == 'rte') {
 			$modes = array_reverse($modes);
 		}
-		// Getting additional HTML cleaner configuration. These are applied either before or after the main transformation is done and is thus totally independant processing options you can set up:
+		// Getting additional HTML cleaner configuration. These are applied either before or after the main transformation is done and is thus totally independent processing options you can set up:
 		$entry_HTMLparser = $this->procOptions['entryHTMLparser_' . $direction] ? $this->HTMLparserConfig($this->procOptions['entryHTMLparser_' . $direction . '.']) : '';
 		$exit_HTMLparser = $this->procOptions['exitHTMLparser_' . $direction] ? $this->HTMLparserConfig($this->procOptions['exitHTMLparser_' . $direction . '.']) : '';
 		// Line breaks of content is unified into char-10 only (removing char 13)
@@ -468,7 +443,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 								if ($fileOrFolderObject instanceof Resource\FileInterface) {
 									$fileIdentifier = $fileOrFolderObject->getIdentifier();
 									$fileObject = $fileOrFolderObject->getStorage()->getFile($fileIdentifier);
-									// TODO: if the retrieved file is a processed file, get the original file...
+									// @todo if the retrieved file is a processed file, get the original file...
 									$attribArray['data-htmlarea-file-uid'] = $fileObject->getUid();
 								}
 							} catch (Resource\Exception\ResourceDoesNotExistException $resourceDoesNotExistException) {
@@ -865,7 +840,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		if ($this->TS_transform_db_safecounter < 0) {
 			return $value;
 		}
-		// Split the content from RTE by the occurence of these blocks:
+		// Split the content from RTE by the occurrence of these blocks:
 		$blockSplit = $this->splitIntoBlock('TABLE,BLOCKQUOTE,' . ($this->procOptions['preserveDIVSections'] ? 'DIV,' : '') . $this->blockElementList, $value);
 		$cc = 0;
 		$aC = count($blockSplit);
@@ -1023,7 +998,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * @see TS_transform_db()
 	 */
 	public function TS_transform_rte($value, $css = 0) {
-		// Split the content from database by the occurence of the block elements
+		// Split the content from database by the occurrence of the block elements
 		$blockElementList = 'TABLE,BLOCKQUOTE,TYPOLIST,TYPOHEAD,' . ($this->procOptions['preserveDIVSections'] ? 'DIV,' : '') . $this->blockElementList;
 		$blockSplit = $this->splitIntoBlock($blockElementList, $value);
 		// Traverse the blocks
@@ -1667,7 +1642,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$attribArray = $this->get_tag_attributes_classic($this->getFirstTag($v), 1);
 				// Checking if there is a scheme, and if not, prepend the current url.
 				// ONLY do this if href has content - the <a> tag COULD be an anchor and if so, it should be preserved...
-				if (strlen($attribArray['href'])) {
+				if ($attribArray['href'] !== '') {
 					$uP = parse_url(strtolower($attribArray['href']));
 					if (!$uP['scheme']) {
 						$attribArray['href'] = $this->siteUrl() . substr($attribArray['href'], strlen($this->relBackPath));

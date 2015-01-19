@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -164,7 +164,7 @@ define('TYPO3/CMS/Scheduler/Scheduler', ['jquery'], function($) {
 		});
 	};
 
-	// intialize and return the Scheduler object
+	// initialize and return the Scheduler object
 	return function() {
 		$(document).ready(function() {
 			Scheduler.initializeEvents();

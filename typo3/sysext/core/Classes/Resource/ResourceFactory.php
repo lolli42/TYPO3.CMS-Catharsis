@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
-// TODO implement constructor-level caching
+// @todo implement constructor-level caching
 /**
  * Factory class for FAL objects
  *
@@ -311,7 +311,7 @@ class ResourceFactory implements ResourceFactoryInterface, \TYPO3\CMS\Core\Singl
 		$driverObject = $this->getDriverObject($driverType, $storageConfiguration);
 		/** @var $storage ResourceStorage */
 		$storage = GeneralUtility::makeInstance($className, $driverObject, $storageRecord);
-		// TODO handle publisher
+		// @todo handle publisher
 		return $storage;
 	}
 

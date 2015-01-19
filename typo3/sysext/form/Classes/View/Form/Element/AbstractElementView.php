@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\View\Form\Element;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
 use TYPO3\CMS\Form\Utility\FormUtility;
@@ -291,7 +292,7 @@ abstract class AbstractElementView {
 		foreach ($attributes as $key => $attribute) {
 			if (!empty($attribute)) {
 				$value = htmlspecialchars($attribute->getValue(), ENT_QUOTES);
-				if (!empty($value)) {
+				if ($value !== '') {
 					$domElement->setAttribute($key, $value);
 				}
 			}
@@ -307,7 +308,7 @@ abstract class AbstractElementView {
 	 */
 	public function setAttribute(\DOMElement $domElement, $key) {
 		$value = htmlspecialchars($this->model->getAttributeValue((string)$key), ENT_QUOTES);
-		if (!empty($value)) {
+		if ($value !== '') {
 			$domElement->setAttribute($key, $value);
 		}
 	}
@@ -319,10 +320,11 @@ abstract class AbstractElementView {
 	 * @param \DOMElement $domElement DOM element of the specific HTML tag
 	 * @param string $key Key of the attribute which needs to be changed
 	 * @param string $other Key of the attribute to take the value from
+	 * @return void
 	 */
 	public function setAttributeWithValueofOtherAttribute(\DOMElement $domElement, $key, $other) {
 		$value = htmlspecialchars($this->model->getAttributeValue((string)$other), ENT_QUOTES);
-		if (!empty($value)) {
+		if ($value !== '') {
 			$domElement->setAttribute($key, $value);
 		}
 	}

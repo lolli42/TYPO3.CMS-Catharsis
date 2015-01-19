@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Filelist\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -28,7 +28,7 @@ class FileListController {
 	* Module configuration
 	*
 	* @var array
-	* @deprecated since TYPO3 CMS 7, will be removed in CMS 8. The Module gets configured by ExtensionManagementUtility::addModule() in ext_tables.php
+	* @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. The Module gets configured by ExtensionManagementUtility::addModule() in ext_tables.php
 	*/
 	public $MCONF = array();
 

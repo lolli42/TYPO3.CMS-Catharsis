@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Sv\Report;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -87,7 +87,7 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 	protected function renderServiceTypeList($serviceType, $services) {
 		$header = '<h3>' . sprintf($GLOBALS['LANG']->getLL('service_type'), $serviceType) . '</h3>';
 		$serviceList = '
-			<table class="t3-table table tx_sv_reportlist">
+			<table class="table table-striped table-hover tx_sv_reportlist">
 				<thead>
 					<tr>
 						<td style="width: 35%">' . $GLOBALS['LANG']->getLL('service') . '</td>
@@ -166,7 +166,7 @@ class ServicesListReport implements \TYPO3\CMS\Reports\ReportInterface {
 			$content .= '<p>' . $GLOBALS['LANG']->getLL('no_search_paths') . '</p>';
 		} else {
 			$content .= '
-			<table class="t3-table tx_sv_reportlist">
+			<table class="table table-striped table-hover tx_sv_reportlist">
 				<thead>
 					<tr>
 						<td>' . $GLOBALS['LANG']->getLL('path') . '</td>
