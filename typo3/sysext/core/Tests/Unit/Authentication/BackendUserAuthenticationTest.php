@@ -61,7 +61,6 @@ class BackendUserAuthenticationTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logoffCleansFormProtectionIfBackendUserIsLoggedIn() {
-		$this->assertTrue(FALSE);
 		$formProtection = $this->getMock(
 			\TYPO3\CMS\Core\FormProtection\BackendFormProtection::class,
 			array('clean'),

@@ -21,11 +21,6 @@ notifications:
       - lolli@schwarzbu.ch
     on_success: change
     on_failure: change
-  slack:
-    rooms:
-      secure: nHWVTPyG3CQWIcYA1LASS11dD0/NBcmrAyr3xxQW0XYtH47ZUKRlEtxrVLuL7ptciNwMbfZgsiRQ1QGWDerHUlBkg0iwRxpUZgeylzWaiXsHFVAp2IBfEX54KrWeYm9gewIBDDtnp+sLgpXGgmpIs2bAGkZe5129UsUExoWh0+g=
-    on_success: change
-    on_failure: always
 
 before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
