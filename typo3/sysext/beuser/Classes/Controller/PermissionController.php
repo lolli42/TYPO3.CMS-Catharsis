@@ -163,7 +163,15 @@ class PermissionController extends ActionController {
 				$beGroupArray = BackendUtility::blindGroupNames($beGroupArray, $beGroupKeys, 0);
 			}
 
+			$treeData = array();
+
+			/** @var \TYPO3\CMS\Core\Tree\PageTree $pageTree */
+			$pageTree = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\PageTree::class);
+			var_dump($pageTree->fetchTreeByRoot(14, TRUE));
+			die();
+
 			/** @var \TYPO3\CMS\Backend\Tree\View\PageTreeView */
+			/**
 			$tree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 			$tree->init('AND ' . $this->permissionsClause);
 			$tree->addField('perms_user', TRUE);
@@ -255,6 +263,9 @@ class PermissionController extends ActionController {
 
 				$treeData[] = $viewData;
 			}
+			$this->view->assign('viewTree', $treeData);
+			*/
+
 			$this->view->assign('viewTree', $treeData);
 
 			// CSH for permissions setting
