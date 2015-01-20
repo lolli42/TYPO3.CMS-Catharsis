@@ -60,12 +60,12 @@ class PopulatePagesClosureTable extends AbstractDatabaseSchemaUpdate {
 			$rootlineOfThisChild = $rootline;
 			$rootlineOfThisChild[] = $child['uid'];
 			$toInsertRows = array();
-			$depth = count($rootline);
-			foreach($rootlineOfThisChild as $node) {
+			$maxDepth = count($rootlineOfThisChild) - 1;
+			foreach($rootlineOfThisChild as $depth => $node) {
 				$toInsertRows[] = array(
 					'ancestor' => $node,
 					'descendant' => $child['uid'],
-					'depth' => $depth,
+					'depth' => $maxDepth - $depth,
 				);
 			}
 			$database->exec_INSERTmultipleRows(
