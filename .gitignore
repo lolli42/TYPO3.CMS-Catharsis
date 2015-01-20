@@ -23,6 +23,7 @@
 .settings
 .TemporaryItems
 .webprj
+.htaccess
 bin/*
 nbproject
 Packages/*
