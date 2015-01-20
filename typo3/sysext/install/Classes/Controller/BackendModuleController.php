@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -88,4 +88,5 @@ class BackendModuleController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionCo
 	protected function redirect($uri) {
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($uri);
 	}
+
 }

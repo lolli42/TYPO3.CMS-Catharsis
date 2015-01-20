@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -33,7 +33,7 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			->expects($this->once())
 			->method('getDefaultConfigurationFromExtConfTemplateAsValuedArray')
 			->will($this->returnValue(array()));
-		$extensionKey = uniqid('some-extension');
+		$extensionKey = $this->getUniqueId('some-extension');
 
 		$currentConfiguration = array(
 			'key1' => 'value1',
@@ -148,7 +148,7 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			)
 		);
 
-		$result = $configurationUtility->getDefaultConfigurationFromExtConfTemplateAsValuedArray(uniqid('some_extension'));
+		$result = $configurationUtility->getDefaultConfigurationFromExtConfTemplateAsValuedArray($this->getUniqueId('some_extension'));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -317,4 +317,5 @@ class ConfigurationUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject = $this->getAccessibleMock(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility::class, array('dummy'), array(), '', FALSE);
 		$this->assertEquals($expected, $subject->convertNestedToValuedConfiguration($configuration));
 	}
+
 }

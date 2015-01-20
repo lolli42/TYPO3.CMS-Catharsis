@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,6 +10,7 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * This file provides a jQuery plugin for generating 'clearable' input fields.
  * These fields show a "clear"-button when someone hovers over them and
@@ -69,7 +70,12 @@
 				// be shown or hidden.
 				var handler = function() {
 					var value = $inputFieldWithValue.val();
-					if ($input.data('isHovering') && value.length > 0) {
+					var hasEmptyValue = (value.length === 0);
+					if (value == "0" && $inputFieldWithValue.closest('.date').length) {
+						hasEmptyValue = true;
+					}
+					// only show the clearing button if the value is set, or if the value is not "0" on a datetime field
+					if ($input.data('isHovering') && !hasEmptyValue) {
 						$clearer.show();
 					} else {
 						$clearer.hide();

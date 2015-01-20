@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -64,7 +64,7 @@ class UserFileInlineLabelService {
 					$value = BackendUtility::getRecordTitlePrep($fileRecord[$field]);
 				}
 			}
-			if (!strlen($value)) {
+			if ((string)$value === '') {
 				continue;
 			}
 			$labelText = LocalizationUtility::translate('LLL:EXT:lang/locallang_tca.xlf:sys_file.' . $field, 'lang');
@@ -72,4 +72,5 @@ class UserFileInlineLabelService {
 		}
 		$params['title'] = '<dl>' . implode('', $title) . '</dl>';
 	}
+
 }

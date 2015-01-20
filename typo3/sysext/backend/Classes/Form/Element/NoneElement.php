@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -33,4 +33,5 @@ class NoneElement extends AbstractFormElement {
 		$itemValue = $additionalInformation['itemFormElValue'];
 		return $this->formEngine->getSingleField_typeNone_render($config, $itemValue);
 	}
+
 }

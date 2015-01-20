@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\CssStyledContent\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -1257,7 +1257,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * Returns an object reference to the hook object if any
 	 *
 	 * @param string $functionName Name of the function you want to call / hook key
-	 * @return object Hook object, if any. Otherwise NULL.
+	 * @return object|NULL Hook object, if any. Otherwise NULL.
 	 */
 	public function hookRequest($functionName) {
 		// Hook: menuConfig_preProcessModMenu
@@ -1278,4 +1278,5 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	protected function getResourceFactory() {
 		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
 	}
+
 }

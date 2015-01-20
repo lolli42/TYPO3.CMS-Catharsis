@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Reflection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -18,8 +18,8 @@ use TYPO3\CMS\Core\Utility\ClassNamingUtility;
 use TYPO3\CMS\Extbase\Utility\TypeHandlingUtility;
 
 /**
- * A backport of the FLOW3 reflection service for aquiring reflection based information.
- * Most of the code is based on the FLOW3 reflection service.
+ * A backport of the TYPO3.Flow reflection service for aquiring reflection based information.
+ * Most of the code is based on the TYPO3.Flow reflection service.
  *
  * @api
  */
@@ -576,4 +576,5 @@ class ReflectionService implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$this->dataCache->set($this->cacheIdentifier, $data);
 	}
+
 }

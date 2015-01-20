@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,11 @@
 /***************************************************
  *  HTMLArea.DOM.Node: Node object
  ***************************************************/
-HTMLArea.DOM.Node = function(UserAgent, Util, Dom) {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/Node',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM'],
+	function (UserAgent, Util, Dom) {
 
 	/**
 	 * Constructor method
@@ -241,7 +245,7 @@ HTMLArea.DOM.Node = function(UserAgent, Util, Dom) {
 				if (Dom.hasClass(spans[i], 'Apple-style-span')) {
 					this.removeMarkup(spans[i]);
 				}
-				if (/^(li)$/i.test(spans[i].parentNode.nodeName) && (spans[i].style.cssText.indexOf('line-height') !== -1 || spans[i].style.cssText.indexOf('font-family') !== -1 || spans[i].style.cssText.indexOf('font-size') !== -1)) {
+				if (/^(li|h[1-6])$/i.test(spans[i].parentNode.nodeName) && (spans[i].style.cssText.indexOf('line-height') !== -1 || spans[i].style.cssText.indexOf('font-family') !== -1 || spans[i].style.cssText.indexOf('font-size') !== -1)) {
 					this.removeMarkup(spans[i]);
 				}
 			}
@@ -256,4 +260,4 @@ HTMLArea.DOM.Node = function(UserAgent, Util, Dom) {
 
 	return Node;
 
-}(HTMLArea.UserAgent, HTMLArea.util, HTMLArea.DOM);
+});

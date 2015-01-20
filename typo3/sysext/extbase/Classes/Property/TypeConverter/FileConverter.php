@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Property\TypeConverter;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Property\TypeConverter;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Converter which transforms simple types to \TYPO3\CMS\Extbase\Domain\Model\File.
  *
@@ -42,4 +43,5 @@ class FileConverter extends \TYPO3\CMS\Extbase\Property\TypeConverter\AbstractFi
 	protected function getOriginalResource($source) {
 		return $this->fileFactory->retrieveFileOrFolderObject($source);
 	}
+
 }

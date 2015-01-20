@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Package\PackageInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -113,7 +114,7 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array
 	 */
 	public function getAvailableAndInstalledExtensions(array $availableExtensions) {
-		foreach (array_keys($this->packageManager->getActivePackages()) as $extKey) {
+		foreach ($this->packageManager->getActivePackages() as $extKey => $_) {
 			if (isset($availableExtensions[$extKey])) {
 				$availableExtensions[$extKey]['installed'] = TRUE;
 			}
@@ -156,4 +157,5 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$availableAndInstalledExtensions = $this->getAvailableAndInstalledExtensions($availableExtensions);
 		return $this->enrichExtensionsWithEmConfAndTerInformation($availableAndInstalledExtensions);
 	}
+
 }

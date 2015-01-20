@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -29,7 +29,7 @@ TYPO3.backendContentIframePanel = Ext.extend(TYPO3.iframePanel ,{
 			} else {
 				wrapper.getLayout().setActiveItem(this.id);
 				this.body.dom.src = source;
-				this.setMask();
+				this.startLoader();
 			}
 		}
 	},

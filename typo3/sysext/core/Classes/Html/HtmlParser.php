@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Html;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -489,7 +489,7 @@ class HtmlParser {
 
 	/**
 	 * Returns the first tag in $str
-	 * Actually everything from the begining of the $str is returned, so you better make sure the tag is the first thing...
+	 * Actually everything from the beginning of the $str is returned, so you better make sure the tag is the first thing...
 	 *
 	 * @param string $str HTML string with tags
 	 * @return string
@@ -800,10 +800,10 @@ class HtmlParser {
 									$tagAttrib = $this->get_tag_attributes($tagParts[1]);
 									$tagParts[1] = '';
 									foreach ($tags[$tagName]['fixAttrib'] as $attr => $params) {
-										if (strlen($params['set'])) {
+										if ($params['set'] !== '') {
 											$tagAttrib[0][$attr] = $params['set'];
 										}
-										if (isset($params['unset']) && !empty($params['unset'])) {
+										if (!empty($params['unset'])) {
 											unset($tagAttrib[0][$attr]);
 										}
 										if (!isset($tagAttrib[0][$attr]) && (string)$params['default'] !== '') {
@@ -859,11 +859,14 @@ class HtmlParser {
 											}
 											if ($params['prefixLocalAnchors']) {
 												if ($tagAttrib[0][$attr][0] === '#') {
-													$prefix = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
-													$tagAttrib[0][$attr] = $prefix . $tagAttrib[0][$attr];
-													if ($params['prefixLocalAnchors'] == 2 && GeneralUtility::isFirstPartOfStr($prefix, GeneralUtility::getIndpEnv('TYPO3_SITE_URL'))) {
-														$tagAttrib[0][$attr] = substr($tagAttrib[0][$attr], strlen(GeneralUtility::getIndpEnv('TYPO3_SITE_URL')));
+													if ($params['prefixLocalAnchors'] == 2) {
+														/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObjectRenderer */
+														$contentObjectRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+														$prefix = $contentObjectRenderer->getUrlToCurrentLocation();
+													} else {
+														$prefix = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
 													}
+													$tagAttrib[0][$attr] = $prefix . $tagAttrib[0][$attr];
 												}
 											}
 											if ($params['prefixRelPathWith']) {
@@ -1079,7 +1082,7 @@ class HtmlParser {
 		$content = implode('', $parts);
 		// Fix <style> section:
 		$prefix = isset($alternatives['style']) ? $alternatives['style'] : $main_prefix;
-		if (strlen($prefix)) {
+		if ($prefix !== '') {
 			$parts = $this->splitIntoBlock('style', $content);
 			foreach ($parts as $k => &$part) {
 				if ($k % 2) {

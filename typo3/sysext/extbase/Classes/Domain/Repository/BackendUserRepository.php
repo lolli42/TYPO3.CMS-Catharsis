@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Domain\Repository;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Domain\Repository;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Repository for \TYPO3\CMS\Extbase\Domain\Model\BackendUser.
  *
@@ -31,4 +32,5 @@ class BackendUserRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 		$querySettings->setRespectStoragePage(FALSE);
 		$this->setDefaultQuerySettings($querySettings);
 	}
+
 }

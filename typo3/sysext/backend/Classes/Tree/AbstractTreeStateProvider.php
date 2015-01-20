@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Tree;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,10 +13,11 @@ namespace TYPO3\CMS\Backend\Tree;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Abstract State Provider
  *
- * @TODO This class is incomplete, because the methods still need
+ * @todo This class is incomplete, because the methods still need
  * @author Stefan Galinski <stefan.galinski@gmail.com>
  * @author Steffen Ritter <info@steffen-ritter.net>
  */

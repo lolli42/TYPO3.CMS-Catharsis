@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -127,7 +127,7 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param string $expectedVersion
 	 */
 	public function getNumericTypo3VersionNumber($currentVersion, $expectedVersion) {
-		$className = uniqid('VersionNumberUtility');
+		$className = $this->getUniqueId('VersionNumberUtility');
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\VersionNumberUtility {' .
@@ -179,4 +179,5 @@ class VersionNumberUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$versions = VersionNumberUtility::convertVersionsStringToVersionNumbers($versionString);
 		$this->assertEquals($expectedResult, $versions);
 	}
+
 }

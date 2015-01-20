@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,8 +13,9 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
- * A query settings interface. This interface is NOT part of the FLOW3 API.
+ * A query settings interface. This interface is NOT part of the TYPO3.Flow API.
  */
 interface QuerySettingsInterface {
 
@@ -51,18 +52,18 @@ interface QuerySettingsInterface {
 	public function getStoragePageIds();
 
 	/**
-	 * Sets the flag if a  and language overlay should be performed.
+	 * Sets the flag if a translation is chosen and language overlay should be performed.
 	 *
-	 * @param bool $respectSysLanguage TRUE if a  and language overlay should be performed.
+	 * @param bool $respectSysLanguage TRUE if a translation is chosen and language overlay should be performed.
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface instance of $this to allow method chaining
 	 * @api
 	 */
 	public function setRespectSysLanguage($respectSysLanguage);
 
 	/**
-	 * Returns the state, if a  and language overlay should be performed.
+	 * Returns the state, if a language overlay should be performed when a translation is active.
 	 *
-	 * @return bool TRUE, if a  and language overlay should be performed; otherwise FALSE.
+	 * @return bool TRUE, if a language overlay should be performed when a translation is active; otherwise FALSE.
 	 */
 	public function getRespectSysLanguage();
 

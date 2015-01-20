@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Dbal\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -522,7 +522,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery, FALSE);
 				} else {
 					$this->handlerInstance[$this->lastHandlerKey]->StartTrans();
-					if (strlen($this->lastQuery[0])) {
+					if ($this->lastQuery[0] !== '') {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery[0], FALSE);
 					}
 					if (is_array($this->lastQuery[1])) {
@@ -675,7 +675,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery, FALSE);
 				} else {
 					$this->handlerInstance[$this->lastHandlerKey]->StartTrans();
-					if (strlen($this->lastQuery[0])) {
+					if ($this->lastQuery[0] !== '') {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery[0], FALSE);
 					}
 					if (is_array($this->lastQuery[1])) {
@@ -777,6 +777,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
+	 * @throws \RuntimeException
 	 * @return bool|\mysqli_result|object MySQLi result object / DBAL object
 	 */
 	public function exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy = '', $orderBy = '', $limit = '') {
@@ -834,6 +835,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						$this->lastQuery = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
 					}
 					$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_Execute($this->lastQuery);
+				}
+				if (!is_object($sqlResult)) {
+					throw new \RuntimeException('ADOdb could not run this query: ' . $this->lastQuery, 1421053336);
 				}
 				$sqlResult->TYPO3_DBAL_handlerType = 'adodb';
 				// Setting handler type in result object (for later recognition!)
@@ -1154,7 +1158,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$query[0] = 'UPDATE ' . $this->quoteFromTables($table) . '
 						SET
 							' . implode(',
-							', $nArr) . (strlen($where) > 0 ? '
+							', $nArr) . ($where !== '' ? '
 						WHERE
 							' . $this->quoteWhereClause($where) : '');
 				}
@@ -1171,7 +1175,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$query = 'UPDATE ' . $this->quoteFromTables($table) . '
 					SET
 						' . implode(',
-						', $nArr) . (strlen($where) > 0 ? '
+						', $nArr) . ($where !== '' ? '
 					WHERE
 						' . $this->quoteWhereClause($where) : '');
 				if ($this->debugOutput || $this->store_lastBuiltQuery) {
@@ -1199,7 +1203,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			}
 			$table = $this->quoteFromTables($table);
 			$where = $this->quoteWhereClause($where);
-			$query = 'DELETE FROM ' . $table . (strlen($where) > 0 ? ' WHERE ' . $where : '');
+			$query = 'DELETE FROM ' . $table . ($where !== '' ? ' WHERE ' . $where : '');
 			if ($this->debugOutput || $this->store_lastBuiltQuery) {
 				$this->debug_lastBuiltQuery = $query;
 			}
@@ -3056,8 +3060,6 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						$this->checkConnectionCharset();
 					}
 
-					// TODO:
-
 					$output = TRUE;
 				} else {
 					GeneralUtility::sysLog('Could not connect to MySQL server ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'Core', 4);
@@ -3089,7 +3091,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$this->handlerInstance[$handlerKey]->PConnect($cfgArray['config']['host'] . (isset($cfgArray['config']['port']) ? ':' . $cfgArray['config']['port'] : ''), $cfgArray['config']['username'], $cfgArray['config']['password'], $cfgArray['config']['database']);
 				}
 				if (!$this->handlerInstance[$handlerKey]->isConnected()) {
-					$dsn = $cfgArray['config']['driver'] . '://' . $cfgArray['config']['username'] . (strlen($cfgArray['config']['password']) ? ':XXXX@' : '') . $cfgArray['config']['host'] . (isset($cfgArray['config']['port']) ? ':' . $cfgArray['config']['port'] : '') . '/' . $cfgArray['config']['database'] . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['no_pconnect'] ? '' : '?persistent=1');
+					$dsn = $cfgArray['config']['driver'] . '://' . $cfgArray['config']['username'] . ((string)$cfgArray['config']['password'] !== '' ? ':XXXX@' : '') . $cfgArray['config']['host'] . (isset($cfgArray['config']['port']) ? ':' . $cfgArray['config']['port'] : '') . '/' . $cfgArray['config']['database'] . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['no_pconnect'] ? '' : '?persistent=1');
 					GeneralUtility::sysLog('Could not connect to DB server using ADOdb on ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'Core', 4);
 					error_log('DBAL error: Connection to ' . $dsn . ' failed. Maybe PHP doesn\'t support the database?');
 					$output = FALSE;
@@ -3720,7 +3722,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						$parseResults['ORDERBY'] = $this->SQLparser->debug_parseSQLpart('SELECT', $inData['args'][4]);
 						// Using select field list syntax
 						foreach ($parseResults as $k => $v) {
-							if (!strlen($parseResults[$k])) {
+							if ($v === '') {
 								unset($parseResults[$k]);
 							}
 						}

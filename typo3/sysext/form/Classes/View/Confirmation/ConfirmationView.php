@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Confirmation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\View\Confirmation;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Domain\Model\Form;
 
@@ -22,6 +23,13 @@ use TYPO3\CMS\Form\Domain\Model\Form;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class ConfirmationView extends \TYPO3\CMS\Form\View\Confirmation\Element\ContainerElementView {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_view_confirmation';
 
 	/**
 	 * Default layout of this object
@@ -116,7 +124,7 @@ class ConfirmationView extends \TYPO3\CMS\Form\View\Confirmation\Element\Contain
 			$type = 'TEXT';
 		} else {
 			$value['wrap'] = '<p>|</p>';
-			$value['value'] = $this->localizationHandler->getLocalLanguageLabel('tx_form_view_confirmation.message');
+			$value['value'] = $this->getLocalLanguageLabel('message');
 			$type = 'TEXT';
 		}
 		return $this->localCobj->cObjGetSingle($type, $value);
@@ -136,16 +144,28 @@ class ConfirmationView extends \TYPO3\CMS\Form\View\Confirmation\Element\Contain
 				<fieldset>
 					<ol>
 						<li class="csc-form-confirmation-false">
-							<input type="submit" value="' . $this->localizationHandler->getLocalLanguageLabel('tx_form_view_confirmation.donotconfirm') . '" name="' . $prefix . '[confirmation-false]" />
+							<input type="submit" value="' . $this->getLocalLanguageLabel('donotconfirm') . '" name="' . $prefix . '[confirmation-false]" />
 						</li>
 						<li class="csc-form-confirmation-true">
-							<input type="submit" value="' . $this->localizationHandler->getLocalLanguageLabel('tx_form_view_confirmation.confirm') . '" name="' . $prefix . '[confirmation-true]" />
+							<input type="submit" value="' . $this->getLocalLanguageLabel('confirm') . '" name="' . $prefix . '[confirmation-true]" />
 						</li>
 					</ol>
 				</fieldset>
 			</form>
 		';
 		return $confirmationButtons;
+	}
+
+	/**
+	 * Get the local language label(s) for the message
+	 *
+	 * @param string $type The type
+	 * @return string The local language message label
+	 */
+	protected function getLocalLanguageLabel($type) {
+		$label = self::LOCALISATION_OBJECT_NAME . '.' . $type;
+		$message = $this->localizationHandler->getLocalLanguageLabel($label);
+		return $message;
 	}
 
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -887,7 +887,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 			}
 			// Add media to search in:
 			$additionalMedia = trim($this->settings['mediaList']);
-			if (strlen($additionalMedia) > 0) {
+			if ($additionalMedia !== '') {
 				$additionalMedia = GeneralUtility::trimExplode(',', $additionalMedia, TRUE);
 			}
 			foreach ($this->externalParsers as $extension => $obj) {
@@ -1257,7 +1257,7 @@ class SearchController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControlle
 	 * Returns an object reference to the hook object if any
 	 *
 	 * @param string $functionName Name of the function you want to call / hook key
-	 * @return object Hook object, if any. Otherwise NULL.
+	 * @return object|NULL Hook object, if any. Otherwise NULL.
 	 */
 	protected function hookRequest($functionName) {
 		// Hook: menuConfig_preProcessModMenu

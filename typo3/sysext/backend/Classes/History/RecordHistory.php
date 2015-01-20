@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\History;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -449,7 +449,7 @@ class RecordHistory {
 			<!--
 				History (list):
 			-->
-			<table class="t3-table" id="typo3-history">
+			<table class="table table-striped table-hover" id="typo3-history">
 				' . implode('', $lines) . '
 			</table>';
 		if ($this->lastSyslogId) {

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -158,7 +158,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getProcessedValueForGroupWithOneAllowedTable() {
 		// Disable getRecordWSOL and getRecordTitle dependency by returning stable results
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -213,7 +213,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getProcessedValueForGroupWithMultipleAllowedTables() {
 		// Disable getRecordWSOL and getRecordTitle dependency by returning stable results
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -516,7 +516,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getLabelFromItemListMergedReturnsCorrectFields($pageId, $table, $column = '', $key = '', array $tca, $expectedLabel = '') {
 		// Disable getPagesTSconfig by returning stable result
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -764,7 +764,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getExcludeFieldsReturnsCorrectFieldList($tca, $expected) {
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -891,7 +891,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			));
 
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -1200,7 +1200,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['BE_USER']->expects($this->at(1))->method('getTSConfig')->will($this->returnValue(array('value' => NULL, 'properties' => NULL)));
 
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
-		$className = uniqid('BackendUtility');
+		$className = $this->getUniqueId('BackendUtility');
 		$subject = __NAMESPACE__ . '\\' . $className;
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
@@ -1360,4 +1360,5 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject = $this->getAccessibleMock(\TYPO3\CMS\Backend\Utility\BackendUtility::class, array('dummy'));
 		$this->assertSame($expected, $subject->_call('replaceL10nModeFields', $table, $row));
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Mail;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,13 @@ namespace TYPO3\CMS\Form\View\Mail;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class MailView {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_view_mail';
 
 	/**
 	 * The mail message
@@ -127,7 +134,7 @@ class MailView {
 	 * @return string The local language message label
 	 */
 	protected function getLocalLanguageLabel($type) {
-		$label = strtolower(get_class($this)) . '.' . $type;
+		$label = self::LOCALISATION_OBJECT_NAME . '.' . $type;
 		$message = $this->localizationHandler->getLocalLanguageLabel($label);
 		return $message;
 	}

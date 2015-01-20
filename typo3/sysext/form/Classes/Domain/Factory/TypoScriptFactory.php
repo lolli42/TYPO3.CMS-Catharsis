@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Domain\Factory;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\Domain\Factory;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -157,7 +158,7 @@ class TypoScriptFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param AbstractElement $parentElement Parent model object
 	 * @param string $class Type of element
 	 * @param array $arguments Configuration array
-	 * @return object
+	 * @return void
 	 */
 	public function addElement(AbstractElement $parentElement, $class, array $arguments = array()) {
 		$element = $this->createElement($class, $arguments);
@@ -240,7 +241,7 @@ class TypoScriptFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$mandatoryAttributes = $element->getMandatoryAttributes();
 			foreach ($attributes as $attribute => $value) {
 				if (isset($arguments[$attribute]) || isset($arguments[$attribute . '.']) || in_array($attribute, $mandatoryAttributes) || !empty($value)) {
-					if (!empty($arguments[$attribute])) {
+					if ($arguments[$attribute] !== '') {
 						$value = $arguments[$attribute];
 					} elseif (!empty($arguments[($attribute . '.')])) {
 						$value = $arguments[$attribute . '.'];

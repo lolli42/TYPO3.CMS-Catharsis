@@ -20,6 +20,9 @@
 	</f:link.action>
 	<em:showExtensionVersions extension="{extension}" />
 </td>
+<td>
+	<f:format.date>{extension.lastUpdated}</f:format.date>
+</td>
 <td title="{extension.description}">
 	<f:format.crop maxCharacters="50" respectWordBoundaries="true" respectHtml="false">{extension.description}</f:format.crop>
 
@@ -28,6 +31,6 @@
 		<div class="author-email">{extension.authorEmail}</div>
 	</div>
 </td>
-<td class="state {extension.stateString}">
-	{extension.stateString}
+<td>
+	<span class="label label-{extension.stateString}">{extension.stateString}</span>
 </td>

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearchMysql\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\IndexedSearchMysql\Hook;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class that hooks into Indexed Search and replaces standard SQL queries with MySQL fulltext index queries.
  *

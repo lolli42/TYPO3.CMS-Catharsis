@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\ClickMenu;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -305,7 +305,7 @@ class ClickMenu {
 					$localItems['moreoptions'] = $this->linkItem(
 						$this->label('more'),
 						'',
-						'top.loadTopMenu(\'' . GeneralUtility::linkThisScript() . '&cmLevel=1&subname=moreoptions\');return false;',
+						'TYPO3.ClickMenu.fetch(' . GeneralUtility::quoteJSvalue(GeneralUtility::linkThisScript() . '&cmLevel=1&subname=moreoptions') . ');return false;',
 						FALSE,
 						TRUE
 					);
@@ -511,7 +511,7 @@ class ClickMenu {
 		if ($this->listFrame) {
 			$addParam['reloadListFrame'] = $this->alwaysContentFrame ? 2 : 1;
 		}
-		return $this->linkItem($this->label($type), IconUtility::getSpriteIcon('actions-edit-' . $type . ($isSel === $type ? '-release' : '')), 'top.loadTopMenu(\'' . $this->clipObj->selUrlDB($table, $uid, ($type === 'copy' ? 1 : 0), ($isSel == $type), $addParam) . '\');return false;');
+		return $this->linkItem($this->label($type), IconUtility::getSpriteIcon('actions-edit-' . $type . ($isSel === $type ? '-release' : '')), 'TYPO3.ClickMenu.fetch(' . GeneralUtility::quoteJSvalue($this->clipObj->selUrlDB($table, $uid, ($type === 'copy' ? 1 : 0), ($isSel == $type), $addParam)) . ');return false;');
 	}
 
 	/**
@@ -995,7 +995,7 @@ class ClickMenu {
 		if ($this->listFrame) {
 			$addParam['reloadListFrame'] = $this->alwaysContentFrame ? 2 : 1;
 		}
-		return $this->linkItem($this->label($type), IconUtility::getSpriteIcon('actions-edit-' . $type . ($isSel === $type ? '-release' : '')), 'top.loadTopMenu(\'' . $this->clipObj->selUrlFile($path, ($type === 'copy' ? 1 : 0), ($isSel == $type), $addParam) . '\');return false;');
+		return $this->linkItem($this->label($type), IconUtility::getSpriteIcon('actions-edit-' . $type . ($isSel === $type ? '-release' : '')), 'TYPO3.ClickMenu.fetch(' . GeneralUtility::quoteJSvalue($this->clipObj->selUrlFile($path, ($type === 'copy' ? 1 : 0), ($isSel == $type), $addParam)) . ');return false;');
 	}
 
 	/**
@@ -1176,7 +1176,7 @@ class ClickMenu {
 	 *
 	 * @param string $str HTML content to wrap in table.
 	 * @return string
-	 * @deprecated since TYPO3 CMS 7, will be removed CMS 8,
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function wrapColorTableCM($str) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1320,7 +1320,7 @@ class ClickMenu {
 	 *
 	 * @param string $iconCode The icon-image tag
 	 * @return string The icon-image tag prefixed with space char IF the icon should be printed at all due to user settings
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function excludeIcon($iconCode) {
 		GeneralUtility::logDeprecatedFunction();

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\FormProtection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -136,7 +136,7 @@ class BackendFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function persistSessionTokenWritesTokenToSession() {
-		$sessionToken = uniqid('test_');
+		$sessionToken = $this->getUniqueId('test_');
 		$this->subject->_set('sessionToken', $sessionToken);
 		$this->getBackendUser()
 			->expects($this->once())
@@ -232,4 +232,5 @@ class BackendFormProtectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function enqueueAjaxFlashMessageCallback(\TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage) {
 		$this->assertFalse($flashMessage->isSessionMessage());
 	}
+
 }

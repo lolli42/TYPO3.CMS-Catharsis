@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recycler\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -86,7 +86,7 @@ class RecyclerUtility {
 		$output = ($fullOutput = '/');
 		while ($uid != 0 && $loopCheck > 0) {
 			$loopCheck--;
-			$res = $databaseConnection->exec_SELECTquery('uid,pid,title,deleted,t3ver_oid,t3ver_wsid', 'pages', 'uid=' . (int)$uid . (strlen(trim($clause)) ? ' AND ' . $clause : ''));
+			$res = $databaseConnection->exec_SELECTquery('uid,pid,title,deleted,t3ver_oid,t3ver_wsid', 'pages', 'uid=' . (int)$uid . (trim($clause) !== '' ? ' AND ' . $clause : ''));
 			if (is_resource($res)) {
 				$row = $databaseConnection->sql_fetch_assoc($res);
 				$databaseConnection->sql_free_result($res);

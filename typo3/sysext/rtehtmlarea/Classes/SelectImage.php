@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -131,10 +131,9 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
 		$this->doc->bodyTagId = 'typo3-browse-links-php';
 		$this->doc->bodyTagAdditions = $this->getBodyTagAdditions();
-
-		$this->doc->JScode .= $this->doc->wrapScriptTags('
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
 			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
-		');
+		}');
 		$this->doc->getPageRenderer()->addCssFile($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
 		$this->doc->getContextMenuCode();
 	}
@@ -304,11 +303,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		}
 		$JScode = '
 			var plugin = window.parent.RTEarea["' . $editorNo . '"].editor.getPlugin("TYPO3Image");
-			var HTMLArea = window.parent.HTMLArea;
 
-			HTMLArea.TYPO3Image.insertElement = function (table, uid, type, filename, filePath, fileExt, fileIcon) {
-				return jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript() . 'editorNo=') . ' + \'' . $editorNo . '\' + \'&insertImage=\' + filePath + \'&table=\' + table + \'&uid=\' + uid + \'&type=\' + type + \'bparams=\' + \'' . $this->bparams . '\');
-			}
 			function insertElement(table, uid, type, fileName, filePath, fileExt, fileIcon, action, close) {
 				return jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript() . 'editorNo=') . ' + \'' . $editorNo . '\' + \'&insertImage=\' + filePath + \'&table=\' + table + \'&uid=\' + uid + \'&type=\' + type + \'bparams=\' + \'' . $this->bparams . '\');
 			}
@@ -353,9 +348,10 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				var floatSelector=\'<select id="iFloat" name="iFloat"><option value="">' . $GLOBALS['LANG']->getLL('notSet') . '</option><option value="none">' . $GLOBALS['LANG']->getLL('nonFloating') . '</option><option value="left">' . $GLOBALS['LANG']->getLL('left') . '</option><option value="right">' . $GLOBALS['LANG']->getLL('right') . '</option></select>\';
 				if (plugin.getButton("Language")) {
 					var languageSelector = \'<select id="iLang" name="iLang">\';
-					plugin.getButton("Language").getStore().each(function (record) {
-						languageSelector +=\'<option value="\' + record.get("value") + \'">\' + record.get("text") + \'</option>\';
-					});
+					var options = plugin.getButton("Language").getOptions();
+					for (var i = 0, n = options.length; i < n; i++) {
+						languageSelector +=\'<option value="\' + options[i].value + \'">\' + options[i].innerHTML + \'</option>\';
+					}
 					languageSelector += \'</select>\';
 				}
 				var sz="";
@@ -382,7 +378,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 					sz+=\'<tr><td><label for="iLang">\' + plugin.editor.getPlugin("Language").localize(\'Language-Tooltip\') + \': </label></td><td>\' + languageSelector + \'</td></tr>\';
 				}') . (in_array('clickenlarge', $removedProperties) || in_array('data-htmlarea-clickenlarge', $removedProperties) ? '' : '
 				sz+=\'<tr><td><label for="iClickEnlarge">' . $GLOBALS['LANG']->sL('LLL:EXT:cms/locallang_ttc.xlf:image_zoom', TRUE) . ' </label></td><td><input type="checkbox" name="iClickEnlarge" id="iClickEnlarge" value="0" /></td></tr>\';') . '
-				sz+=\'<tr><td></td><td><input type="submit" value="' . $GLOBALS['LANG']->getLL('update') . '" onClick="return setImageProperties();"></td></tr>\';
+				sz+=\'<tr><td></td><td><input class="btn btn-default" type="submit" value="' . $GLOBALS['LANG']->getLL('update') . '" onClick="return setImageProperties();"></td></tr>\';
 				sz+=\'</table></form>\';
 				return sz;
 			}
@@ -669,7 +665,11 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 						$selectedFolder = $fileOrFolderObject;
 					} elseif ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
 						// it's a file
-						$selectedFolder = $fileOrFolderObject->getParentFolder();
+						try {
+							$selectedFolder = $fileOrFolderObject->getParentFolder();
+						} catch (\Exception $e) {
+							// Accessing the parent folder failed for some reason. e.g. permissions
+						}
 					}
 				}
 				// If no folder is selected, get the user's default upload folder
@@ -697,7 +697,10 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 					$files = $this->TBE_expandFolder($selectedFolder, $this->act === 'plain' ? self::PLAIN_MODE_IMAGE_FILE_EXTENSIONS : $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $GLOBALS['BE_USER']->getTSConfigVal('options.noThumbsInRTEimageSelect'));
 				}
 				// Setup filelist indexed elements:
-				$this->doc->JScode .= $this->doc->wrapScriptTags('BrowseLinks.addElements(' . json_encode($this->elements) . ');');
+				$this->doc->JScode .= $this->doc->wrapScriptTags('
+				require(["TYPO3/CMS/Backend/BrowseLinks"], function(BrowseLinks) {
+					BrowseLinks.addElements(' . json_encode($this->elements) . ');
+				});');
 				// Wrap tree
 				$this->content .= '
 
@@ -976,4 +979,5 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 			)
 		);
 	}
+
 }

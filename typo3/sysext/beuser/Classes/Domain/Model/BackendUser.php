@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Beuser\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -133,4 +133,5 @@ class BackendUser extends \TYPO3\CMS\Extbase\Domain\Model\BackendUser {
 	public function getBackendUser() {
 		return $GLOBALS['BE_USER'];
 	}
+
 }

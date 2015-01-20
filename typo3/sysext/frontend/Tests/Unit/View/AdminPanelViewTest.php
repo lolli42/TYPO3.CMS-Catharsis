@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -56,7 +56,7 @@ class AdminPanelViewTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \UnexpectedValueException
 	 */
 	public function extendAdminPanelHookThrowsExceptionIfHookClassDoesNotImplementInterface() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		eval('class ' . $hookClass . ' {}');
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'][] = $hookClass;
 		/** @var $adminPanelMock \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Frontend\View\AdminPanelView */
@@ -68,7 +68,7 @@ class AdminPanelViewTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function extendAdminPanelHookCallsExtendAdminPanelMethodOfHook() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		$hookMock = $this->getMock(\TYPO3\CMS\Frontend\View\AdminPanelViewHookInterface::class, array(), array(), $hookClass);
 		$GLOBALS['T3_VAR']['getUserObj'][$hookClass] = $hookMock;
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_adminpanel.php']['extendAdminPanel'][] = $hookClass;

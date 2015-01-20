@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\ViewHelpers;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -39,4 +39,5 @@ class TimeSinceLastUpdateViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\Abs
 			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
 		);
 	}
+
 }

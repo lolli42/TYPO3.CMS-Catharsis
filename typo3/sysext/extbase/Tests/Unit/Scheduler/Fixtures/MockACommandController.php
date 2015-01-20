@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -28,4 +28,5 @@ class MockACommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCo
 	public function funcACommand($arg = 1) {
 		return 'Foo';
 	}
+
 }

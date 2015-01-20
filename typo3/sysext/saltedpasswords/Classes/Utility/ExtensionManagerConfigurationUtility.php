@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Saltedpasswords\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -80,7 +80,7 @@ class ExtensionManagerConfigurationUtility {
 				}
 				break;
 			case 'ok':
-				// TODO: Remove INFO condition as it has lower importance
+				// @todo Remove INFO condition as it has lower importance
 				if ($this->errorType < FlashMessage::WARNING && $this->errorType != FlashMessage::INFO) {
 					$this->errorType = FlashMessage::OK;
 					$this->header = 'No errors were found';
@@ -442,17 +442,18 @@ class ExtensionManagerConfigurationUtility {
 	 */
 	protected function processPostData(array $postArray = array()) {
 		foreach ($postArray as $key => $value) {
-			// TODO: Explain
+			// @todo Explain
 			$parts = explode('.', $key, 2);
 			if (count($parts) == 2) {
-				// TODO: Explain
+				// @todo Explain
 				$value = $this->processPostData(array($parts[1] => $value));
 				$postArray[$parts[0] . '.'] = array_merge((array)$postArray[($parts[0] . '.')], $value);
 			} else {
-				// TODO: Explain
+				// @todo Explain
 				$postArray[$parts[0]] = $value;
 			}
 		}
 		return $postArray;
 	}
+
 }

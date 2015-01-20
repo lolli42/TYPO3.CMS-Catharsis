@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -49,4 +49,5 @@ class ExtbaseRequirementsCheckUtility implements \TYPO3\CMS\Reports\StatusProvid
 		}
 		return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Reports\Status::class, 'DBAL Extension', $value, $message, $status);
 	}
+
 }

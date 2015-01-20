@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Domain\Model;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * This model represents a file mount.
  *
@@ -128,4 +129,5 @@ class FileMount extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	public function isReadOnly() {
 		return $this->readOnly;
 	}
+
 }

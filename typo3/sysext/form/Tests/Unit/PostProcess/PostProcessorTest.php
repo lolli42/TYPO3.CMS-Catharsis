@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Tests\Unit\PostProcess;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\Tests\Unit\PostProcess;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Testcase for PostProcessor
  */
@@ -39,7 +40,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function processFindsClassSpecifiedByTypoScriptWithoutFormPrefix() {
-		$classNameWithoutPrefix = uniqid('postprocess');
+		$classNameWithoutPrefix = $this->getUniqueId('postprocess');
 		eval(
 			'namespace TYPO3\CMS\Form\PostProcess;' .
 			'class ' . $classNameWithoutPrefix . 'PostProcessor implements PostProcessorInterface {' .
@@ -51,7 +52,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'}'
 		);
 		$typoScript = array(
-			10 => uniqid('postprocess'),
+			10 => $this->getUniqueId('postprocess'),
 			20 => $classNameWithoutPrefix
 		);
 		$this->fixture->typoScript = $typoScript;
@@ -64,7 +65,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function processFindsClassSpecifiedByTypoScriptWithFormPrefix() {
-		$classNameWithPrefix = uniqid('postprocess');
+		$classNameWithPrefix = $this->getUniqueId('postprocess');
 		eval(
 			'namespace TYPO3\CMS\Form\PostProcess;' .
 			'class ' . $classNameWithPrefix . 'PostProcessor implements PostProcessorInterface {' .
@@ -76,7 +77,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'}'
 		);
 		$typoScript = array(
-			10 => uniqid('postprocess'),
+			10 => $this->getUniqueId('postprocess'),
 			20 => $classNameWithPrefix
 		);
 		$this->fixture->typoScript = $typoScript;
@@ -89,7 +90,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function processReturnsEmptyStringIfSpecifiedPostProcessorDoesNotImplementTheInterface() {
-		$classNameWithoutInterface = uniqid('postprocess');
+		$classNameWithoutInterface = $this->getUniqueId('postprocess');
 		eval(
 			'namespace TYPO3\CMS\Form\PostProcess;' .
 			'class ' . $classNameWithoutInterface . 'PostProcessor {' .
@@ -101,7 +102,7 @@ class PostProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'}'
 		);
 		$typoScript = array(
-			10 => uniqid('postprocess'),
+			10 => $this->getUniqueId('postprocess'),
 			20 => $classNameWithoutInterface
 		);
 		$this->fixture->typoScript = $typoScript;

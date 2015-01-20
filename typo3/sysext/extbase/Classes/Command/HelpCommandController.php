@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Command;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Command;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A Command Controller which provides help for available commands
  *
@@ -209,4 +210,5 @@ class HelpCommandController extends \TYPO3\CMS\Extbase\Mvc\Controller\CommandCon
 			$this->commandsByExtensionsAndControllers[$extensionKey][$commandControllerClassName][$commandName] = $command;
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -26,9 +26,19 @@ use TYPO3\CMS\Lang\LanguageService;
 abstract class AbstractFormElement {
 
 	/**
+	 * @var string A CSS class name prefix for all element types, single elements add their type to this string
+	 */
+	protected $cssClassTypeElementPrefix = 't3-formengine-field-';
+
+	/**
 	 * @var FormEngine
 	 */
 	protected $formEngine;
+
+	/**
+	 * @var bool If TRUE, the element will not be editable
+	 */
+	protected $renderReadonly = FALSE;
 
 	/**
 	 * Constructor function, setting the FormEngine
@@ -37,6 +47,24 @@ abstract class AbstractFormElement {
 	 */
 	public function __construct(FormEngine $formEngine) {
 		$this->formEngine = $formEngine;
+	}
+
+	/**
+	 * @return bool TRUE if field is set to read only
+	 */
+	public function isRenderReadonly() {
+		return $this->renderReadonly;
+	}
+
+	/**
+	 * Set render read only state
+	 *
+	 * @param bool $renderReadonly
+	 * @return AbstractFormElement
+	 */
+	public function setRenderReadonly($renderReadonly) {
+		$this->renderReadonly = (bool)$renderReadonly;
+		return $this;
 	}
 
 	/**
@@ -86,4 +114,5 @@ abstract class AbstractFormElement {
 		// These classes do not inherit from any common class, but they all seem to have a "doc" member
 		return $GLOBALS['SOBE']->doc;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Impexp\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -89,4 +89,5 @@ class ImportExportUtility {
 	protected function emitAfterImportExportInitialisationSignal(\TYPO3\CMS\Impexp\ImportExport $import) {
 		$this->getSignalSlotDispatcher()->dispatch(__CLASS__, 'afterImportExportInitialisation', array($import));
 	}
+
 }

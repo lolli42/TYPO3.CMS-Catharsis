@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log\Writer;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -23,7 +23,7 @@ class AbstractWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \InvalidArgumentException
+	 * @expectedException \TYPO3\CMS\Core\Log\Exception\InvalidLogWriterConfigurationException
 	 */
 	public function constructThrowsExceptionWithInvalidConfigurationOption() {
 		$invalidConfiguration = array(
@@ -31,4 +31,5 @@ class AbstractWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$this->getMockForAbstractClass(\TYPO3\CMS\Core\Log\Writer\AbstractWriter::class, array($invalidConfiguration));
 	}
+
 }

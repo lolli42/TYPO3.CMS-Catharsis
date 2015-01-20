@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@ class CoreUpdateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getMessagesReturnsPreviouslySetMessage() {
 		/** @var $instance \TYPO3\CMS\Install\Service\CoreUpdateService|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|\PHPUnit_Framework_MockObject_MockObject */
 		$instance = $this->getAccessibleMock(\TYPO3\CMS\Install\Service\CoreUpdateService::class, array('dummy'), array(), '', FALSE);
-		$aMessage = uniqid('message_');
+		$aMessage = $this->getUniqueId('message_');
 		$instance->_set('messages', $aMessage);
 		$this->assertSame($aMessage, $instance->getMessages());
 	}
@@ -62,4 +62,5 @@ class CoreUpdateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		putenv('REDIRECT_TYPO3_DISABLE_CORE_UPDATER=1');
 		$this->assertFalse($instance->isCoreUpdateEnabled());
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Mail;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -27,7 +27,7 @@ class MailerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $fixture;
 
 	public function setUp() {
-		$this->fixture = $this->getMock(\TYPO3\CMS\Core\Mail\Mailer::class, array('noMethodMocked'), array(), '', FALSE);
+		$this->fixture = $this->getMock(\TYPO3\CMS\Core\Mail\Mailer::class, array('emitPostInitializeMailerSignal'), array(), '', FALSE);
 	}
 
 	//////////////////////////
@@ -121,4 +121,5 @@ class MailerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$port = $this->fixture->getTransport()->getPort();
 		$this->assertEquals(12345, $port);
 	}
+
 }

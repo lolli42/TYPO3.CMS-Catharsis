@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Dbal\Tests\Unit\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -698,4 +698,5 @@ class SqlParserTest extends AbstractTestCase {
 		$expected = 'SELECT * FROM pages WHERE pid = 12 AND timestamp < 1281782690 AND title != \'How to test?\'';
 		$this->assertEquals($expected, $this->cleanSql($result));
 	}
+
 }

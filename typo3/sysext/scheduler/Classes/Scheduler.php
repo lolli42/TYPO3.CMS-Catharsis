@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Scheduler;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Utility\CommandUtility;
 
 /**
  * TYPO3 Scheduler. This class handles scheduling and execution of tasks.
@@ -78,7 +80,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Cleans the execution lists of the scheduled tasks, executions older than 24h are removed
-	 * TODO: find a way to actually kill the job
+	 * @todo find a way to actually kill the job
 	 *
 	 * @return void
 	 */
@@ -186,7 +188,7 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Removes a task completely from the system.
-	 * TODO: find a way to actually kill the existing jobs
+	 * @todo find a way to actually kill the existing jobs
 	 *
 	 * @param \TYPO3\CMS\Scheduler\Task\AbstractTask $task The object representing the task to delete
 	 * @return bool TRUE if task was successfully deleted, FALSE otherwise
@@ -420,14 +422,9 @@ class Scheduler implements \TYPO3\CMS\Core\SingletonInterface {
 				$startTime = 'now+1minute';
 			}
 			$cliDispatchPath = PATH_site . 'typo3/cli_dispatch.phpsh';
-			$currentLocale = setlocale(LC_CTYPE, 0);
-			if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['UTF8filesystem']) {
-				setlocale(LC_CTYPE, $GLOBALS['TYPO3_CONF_VARS']['SYS']['systemLocale']);
-			}
-			$cmd = 'echo ' . escapeshellarg($cliDispatchPath) . ' scheduler | at ' . escapeshellarg($startTime) . ' 2>&1';
-			if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['UTF8filesystem']) {
-				setlocale(LC_CTYPE, $currentLocale);
-			}
+			list($cliDispatchPathEscaped, $startTimeEscaped) =
+				CommandUtility::escapeShellArguments(array($cliDispatchPath, $startTime));
+			$cmd = 'echo ' . $cliDispatchPathEscaped . ' scheduler | at ' . $startTimeEscaped . ' 2>&1';
 			$output = shell_exec($cmd);
 			$outputParts = '';
 			foreach (explode(LF, $output) as $outputLine) {

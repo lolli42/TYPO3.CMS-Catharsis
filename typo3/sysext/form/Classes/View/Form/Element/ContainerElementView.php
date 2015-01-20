@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\View\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\View\Form\Element;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
 
 /**
  * Abstract class for the form element containers (FORM and FIELDSET) view
@@ -48,7 +49,12 @@ class ContainerElementView extends \TYPO3\CMS\Form\View\Form\Element\AbstractEle
 				$childNode = $child->render();
 			} else {
 				$childNode = $child->render('elementWrap');
-				$childNode->setAttribute('class', $child->getElementWraps());
+				$class = '';
+				if (strlen($childNode->getAttribute('class')) > 0) {
+					$class = $childNode->getAttribute('class') . ' ';
+				}
+				$class .= $child->getElementWraps();
+				$childNode->setAttribute('class', $class);
 			}
 			$importedNode = $dom->importNode($childNode, TRUE);
 			$documentFragment->appendChild($importedNode);
@@ -59,7 +65,7 @@ class ContainerElementView extends \TYPO3\CMS\Form\View\Form\Element\AbstractEle
 	/**
 	 * Create child object from the classname of the model
 	 *
-	 * @param object $modelChild The childs model
+	 * @param AbstractElement $modelChild The childs model
 	 * @return \TYPO3\CMS\Form\View\Form\Element\AbstractElementView
 	 */
 	public function createChildElementFromModel($modelChild) {

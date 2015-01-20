@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Tests\Unit\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -26,4 +26,5 @@ class DefaultFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$object = new \TYPO3\CMS\Install\FolderStructure\DefaultFactory();
 		$this->assertInstanceOf(\TYPO3\CMS\Install\FolderStructure\StructureFacadeInterface::class, $object->getStructure());
 	}
+
 }

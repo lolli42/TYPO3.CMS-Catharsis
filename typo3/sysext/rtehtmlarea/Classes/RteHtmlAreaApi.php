@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Rtehtmlarea;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * API for extending htmlArea RTE
  *
@@ -46,7 +47,7 @@ abstract class RteHtmlAreaApi {
 	// Reference to RTE PageTSConfig
 	protected $toolbar;
 
-	// Refrence to RTE toolbar array
+	// Reference to RTE toolbar array
 	protected $LOCAL_LANG;
 
 	// Frontend language array
@@ -74,7 +75,7 @@ abstract class RteHtmlAreaApi {
 	/**
 	 * Returns TRUE if the plugin is available and correctly initialized
 	 *
-	 * @param object Reference to parent object, which is an instance of the htmlArea RTE
+	 * @param RteHtmlAreaBase $parentObject parent object
 	 * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
 	 */
 	public function main($parentObject) {

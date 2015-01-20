@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Hook\Install;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -135,7 +135,10 @@ class DeprecatedRteProperties extends AbstractUpdate {
 				$description .= '<p>This wizard will perform automatic replacement of the following properties on <strong>' . strval(count($updateablePages)) . '&nbsp;pages</strong> (including deleted and hidden):</p>' . LF . '<table><thead><tr><th>Deprecated property</th><th>Will be replaced by</th></tr></thead><tbody>' . $replacementProperties . '</tboby></table>' . LF . '<p>The Page TSconfig column of the remaining pages will need to be updated manually.</p>' . LF;
 			} else {
 				$replacementProperties = '';
-				foreach (array_keys(array_merge($this->useInsteadRteProperties, $this->doubleReplacementRteProperties)) as $deprecatedProperty) {
+				foreach ($this->useInsteadRteProperties as $deprecatedProperty => $_) {
+					$replacementProperties .= '<tr><td>' . $deprecatedProperty . '</td></tr>' . LF;
+				}
+				foreach ($this->doubleReplacementRteProperties as $deprecatedProperty => $_) {
 					$replacementProperties .= '<tr><td>' . $deprecatedProperty . '</td></tr>' . LF;
 				}
 				$description .= '<p>This wizard cannot update the following properties, some of which are present on those pages:</p>' . LF . '<table><thead><tr><th>Deprecated property</th></tr></thead><tbody>' . $replacementProperties . '</tboby></table>' . LF . '<p>Therefore, the Page TSconfig column of those pages will need to be updated manually.</p>' . LF;
@@ -202,12 +205,11 @@ class DeprecatedRteProperties extends AbstractUpdate {
 	protected function getPagesWithDeprecatedRteProperties(&$dbQueries, &$customMessages) {
 		$fields = 'uid, TSconfig';
 		$table = 'pages';
-		$deprecatedRteProperties = array_keys(array_merge($this->replacementRteProperties, $this->useInsteadRteProperties, $this->doubleReplacementRteProperties));
 		$where = '';
-		foreach ($deprecatedRteProperties as $deprecatedRteProperty) {
-			$where .= ($where ? ' OR ' : '') . '(TSConfig LIKE BINARY "%RTE.%' . $deprecatedRteProperty . '%" AND TSConfig NOT LIKE BINARY "%RTE.%' . $deprecatedRteProperty . 's%") ';
-		}
 		$db = $this->getDatabaseConnection();
+		foreach (array_merge($this->replacementRteProperties, $this->useInsteadRteProperties, $this->doubleReplacementRteProperties) as $deprecatedRteProperty => $_) {
+			$where .= ($where ? ' OR ' : '') . '(TSConfig LIKE BINARY ' . $db->fullQuoteStr('%RTE.%' . $deprecatedRteProperty . '%', 'pages') . ' AND TSConfig NOT LIKE BINARY ' . $db->fullQuoteStr('%RTE.%' . $deprecatedRteProperty . 's%', 'pages') . ')' . LF;
+		}
 		$res = $db->exec_SELECTquery($fields, $table, $where);
 		$dbQueries[] = str_replace(LF, ' ', $db->debug_lastBuiltQuery);
 		if ($db->sql_error()) {
@@ -262,4 +264,5 @@ class DeprecatedRteProperties extends AbstractUpdate {
 			}
 		}
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation\Validator;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Validation\Validator;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Validator for boolean values
  */
@@ -25,7 +26,7 @@ class BooleanValidator extends AbstractValidator {
 		// The default is set to NULL here, because we need to be backward compatible here, because this
 		// BooleanValidator is called automatically on boolean action arguments. If we would set it to TRUE,
 		// every FALSE value for an action argument would break.
-		// TODO with next patches: deprecate this BooleanValidator and introduce a BooleanValueValidator, like
+		// @todo with next patches: deprecate this BooleanValidator and introduce a BooleanValueValidator, like
 		// in Flow, which won't be called on boolean action arguments.
 		'is' => array(NULL, 'Boolean value', 'boolean|string|integer')
 	);

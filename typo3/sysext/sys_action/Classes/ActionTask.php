@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\SysAction;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -315,7 +315,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 							<div class="row">
 								<input type="hidden" name="data[key]" value="' . $key . '" />
 								<input type="hidden" name="data[sent]" value="1" />
-								<input type="submit" value="' . ($key === 'NEW' ? $GLOBALS['LANG']->getLL('action_Create') : $GLOBALS['LANG']->getLL('action_Update')) . '" />
+								<input class="btn btn-default" type="submit" value="' . ($key === 'NEW' ? $GLOBALS['LANG']->getLL('action_Create') : $GLOBALS['LANG']->getLL('action_Update')) . '" />
 							</div>
 						</fieldset>
 					</form>';
@@ -700,6 +700,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 						$fullsearch->formW = 48;
 						// Additional configuration
 						$GLOBALS['SOBE']->MOD_SETTINGS['search_result_labels'] = 1;
+						$GLOBALS['SOBE']->MOD_SETTINGS['queryFields'] = $sql_query['qC']['queryFields'];
 						$cP = $fullsearch->getQueryResultCode($type, $res, $sql_query['qC']['queryTable']);
 						$actionContent = $cP['content'];
 						// If the result is rendered as csv or xml, show a download link

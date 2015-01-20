@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lowlevel\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -135,7 +135,7 @@ class ArrayBrowser {
 	 */
 	public function wrapValue($theValue, $depth) {
 		$wrappedValue = '';
-		if (strlen($theValue) > 0) {
+		if ((string)$theValue !== '') {
 			$wrappedValue = '<strong>' . htmlspecialchars($theValue) . '</strong>';
 		}
 		return $wrappedValue;

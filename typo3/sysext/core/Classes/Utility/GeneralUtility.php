@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -780,8 +780,7 @@ class GeneralUtility {
 	 * @todo Still needs a function to convert versions to branches
 	 */
 	static public function compat_version($verNumberStr) {
-		$currVersionStr = $GLOBALS['TYPO3_CONF_VARS']['SYS']['compat_version'] ?: TYPO3_branch;
-		return VersionNumberUtility::convertVersionNumberToInteger($currVersionStr) >= VersionNumberUtility::convertVersionNumberToInteger($verNumberStr);
+		return VersionNumberUtility::convertVersionNumberToInteger(TYPO3_branch) >= VersionNumberUtility::convertVersionNumberToInteger($verNumberStr);
 	}
 
 	/**
@@ -952,7 +951,7 @@ class GeneralUtility {
 	 */
 	static public function formatSize($sizeInBytes, $labels = '') {
 		// Set labels:
-		if (strlen($labels) == 0) {
+		if ($labels === '') {
 			$labels = ' | K| M| G';
 		} else {
 			$labels = str_replace('"', '', $labels);
@@ -960,7 +959,7 @@ class GeneralUtility {
 		$labelArr = explode('|', $labels);
 		// Find size:
 		if ($sizeInBytes > 900) {
-			// TODO find out which locale is used for current BE user to cover the BE case as well
+			// @todo find out which locale is used for current BE user to cover the BE case as well
 			$locale = is_object($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
 			$oldLocale = setlocale(LC_NUMERIC, 0);
 			if ($locale) {
@@ -1115,8 +1114,8 @@ class GeneralUtility {
 	 * errors. This function will return TRUE if current mail sending method has
 	 * problem with recipient name in recipient/sender argument for mail().
 	 *
-	 * TODO: 4.3 should have additional configuration variable, which is combined
-	 * by || with the rest in this function.
+	 * @todo 4.3 should have additional configuration variable, which is combined
+	 *   by || with the rest in this function.
 	 *
 	 * @return bool TRUE if mail() does not accept recipient name
 	 */
@@ -1642,7 +1641,7 @@ class GeneralUtility {
 		} else {
 			$p = explode('&', $string);
 			foreach ($p as $v) {
-				if (strlen($v)) {
+				if ($v !== '') {
 					list($pK, $pV) = explode('=', $v, 2);
 					$output[rawurldecode($pK)] = rawurldecode($pV);
 				}
@@ -2252,7 +2251,7 @@ class GeneralUtility {
 			// Closing tag.
 			$tagName = $tagName[0] === 'n' && MathUtility::canBeInterpretedAsInteger($testNtag) ? (int)$testNtag : $tagName;
 			// Test for alternative index value:
-			if (strlen($val['attributes']['index'])) {
+			if ((string)$val['attributes']['index'] !== '') {
 				$tagName = $val['attributes']['index'];
 			}
 			// Setting tag-values, manage stack:
@@ -2547,7 +2546,7 @@ Connection: close
 					}
 				}
 				$content .= $line;
-				if (!strlen(trim($line))) {
+				if (trim($line) === '') {
 					// Stop at the first empty line (= end of header)
 					break;
 				}
@@ -2688,7 +2687,7 @@ Connection: close
 				// Set createGroup if not empty
 				if (
 					isset($GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'])
-					&& strlen($GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup']) > 0
+					&& $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] !== ''
 				) {
 					// "@" is there because file is not necessarily OWNED by the user
 					$changeGroupResult = @chgrp($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup']);
@@ -2811,7 +2810,7 @@ Connection: close
 			throw new \InvalidArgumentException('The specified directory is of type "' . gettype($deepDirectory) . '" but a string is expected.', 1303662956);
 		}
 		$fullPath = $directory . $deepDirectory;
-		if (!is_dir($fullPath) && strlen($fullPath) > 0) {
+		if ($fullPath !== '' && !is_dir($fullPath)) {
 			$firstCreatedPath = self::createDirectoryPath($fullPath);
 			if ($firstCreatedPath !== '') {
 				self::fixPermissions($firstCreatedPath, TRUE);
@@ -3018,7 +3017,7 @@ Connection: close
 		$dirs = self::get_dirs($path);
 		if ($recursivityLevels > 0 && is_array($dirs)) {
 			foreach ($dirs as $subdirs) {
-				if ((string)$subdirs != '' && (!strlen($excludePattern) || !preg_match(('/^' . $excludePattern . '$/'), $subdirs))) {
+				if ((string)$subdirs !== '' && ($excludePattern === '' || !preg_match(('/^' . $excludePattern . '$/'), $subdirs))) {
 					$fileArr = self::getAllFilesAndFoldersInPath($fileArr, $path . $subdirs . '/', $extList, $regDirs, $recursivityLevels - 1, $excludePattern);
 				}
 			}
@@ -3363,7 +3362,7 @@ Connection: close
 					// This is for ISS/CGI which does not have the REQUEST_URI available.
 					$retVal = '/' . ltrim(self::getIndpEnv('SCRIPT_NAME'), '/') . ($_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : '');
 				} else {
-					$retVal = $_SERVER['REQUEST_URI'];
+					$retVal = '/' . ltrim($_SERVER['REQUEST_URI'], '/');
 				}
 				// Add a prefix if TYPO3 is behind a proxy: ext-domain.com => int-server.com/prefix
 				if (self::cmpIP($_SERVER['REMOTE_ADDR'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'])) {
@@ -3602,14 +3601,14 @@ Connection: close
 			$defaultPort = self::getIndpEnv('TYPO3_SSL') ? '443' : '80';
 			$parsedHostValue = parse_url('http://' . $hostHeaderValue);
 			if (isset($parsedHostValue['port'])) {
-				static::$allowHostHeaderValue = ($parsedHostValue['host'] === $_SERVER['SERVER_NAME'] && (string)$parsedHostValue['port'] === $_SERVER['SERVER_PORT']);
+				static::$allowHostHeaderValue = (strtolower($parsedHostValue['host']) === strtolower($_SERVER['SERVER_NAME']) && (string)$parsedHostValue['port'] === $_SERVER['SERVER_PORT']);
 			} else {
-				static::$allowHostHeaderValue = ($hostHeaderValue === $_SERVER['SERVER_NAME'] && $defaultPort === $_SERVER['SERVER_PORT']);
+				static::$allowHostHeaderValue = (strtolower($hostHeaderValue) === strtolower($_SERVER['SERVER_NAME']) && $defaultPort === $_SERVER['SERVER_PORT']);
 			}
 		} else {
 			// In case name based virtual hosts are not possible, we allow setting a trusted host pattern
 			// See https://typo3.org/teams/security/security-bulletins/typo3-core/typo3-core-sa-2014-001/ for further details
-			static::$allowHostHeaderValue = (bool)preg_match('/^' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] . '$/', $hostHeaderValue);
+			static::$allowHostHeaderValue = (bool)preg_match('/^' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] . '$/i', $hostHeaderValue);
 		}
 
 		return static::$allowHostHeaderValue;
@@ -3828,7 +3827,7 @@ Connection: close
 	 * Verifies the input filename against the 'fileDenyPattern'. Returns TRUE if OK.
 	 *
 	 * Filenames are not allowed to contain control characters. Therefore we
-	 * allways filter on [[:cntrl:]].
+	 * always filter on [[:cntrl:]].
 	 *
 	 * @param string $filename File path to evaluate
 	 * @return bool
@@ -4047,7 +4046,7 @@ Connection: close
 	/**
 	 * Includes a locallang file and returns the $LOCAL_LANG array found inside.
 	 *
-	 * @param string $fileRef Input is a file-reference (see \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.php' file containing a $LOCAL_LANG array (will be included!) or a 'locallang.xml' file conataining a valid XML TYPO3 language structure.
+	 * @param string $fileRef Input is a file-reference (see \TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xlf' file conataining a valid XML TYPO3 language structure.
 	 * @param string $langKey Language key
 	 * @param string $charset Character set (option); if not set, determined by the language key
 	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
@@ -4279,7 +4278,7 @@ Connection: close
 	 * Just prefix the function call with "&": "$objRef = &\TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj('EXT:myext/class.tx_myext_myclass.php:&tx_myext_myclass');".
 	 * This will work ONLY if you prefix the class name with "&" as well. See description of function arguments.
 	 *
-	 * @TODO : Deprecate the whole method in several steps:
+	 * @todo Deprecate the whole method in several steps:
 	 *      1. Deprecated singleton pattern,
 	 *      2. Deprecate file prefix/ require file,
 	 *      3. Deprecate usage without valid class name.
@@ -4344,6 +4343,10 @@ Connection: close
 	static public function makeInstance($className) {
 		if (!is_string($className) || empty($className)) {
 			throw new \InvalidArgumentException('$className must be a non empty string.', 1288965219);
+		}
+		// Never instantiate with a beginning backslash, otherwise things like singletons won't work.
+		if ($className[0] === '\\') {
+			throw new \InvalidArgumentException('$className must not start with a backslash.', 1420281366);
 		}
 		if (isset(static::$finalClassNameCache[$className])) {
 			$finalClassName = static::$finalClassNameCache[$className];
@@ -4414,7 +4417,6 @@ Connection: close
 				$class = new \ReflectionClass($className);
 				array_shift($arguments);
 				$instance = $class->newInstanceArgs($arguments);
-				return $instance;
 		}
 		return $instance;
 	}
@@ -4616,7 +4618,7 @@ Connection: close
 	 * @param string $serviceType Type of service (service key).
 	 * @param string $serviceSubType Sub type like file extensions or similar. Defined by the service.
 	 * @param mixed $excludeServiceKeys List of service keys which should be excluded in the search for a service. Array or comma list.
-	 * @return object The service object or an array with error info's.
+	 * @return object|string[] The service object or an array with error infos.
 	 */
 	static public function makeInstanceService($serviceType, $serviceSubType = '', $excludeServiceKeys = array()) {
 		$error = FALSE;
@@ -4696,7 +4698,7 @@ Connection: close
 	 * @param string $string Content to encode
 	 * @param int $maxlen Length of the lines, default is 76
 	 * @return string The QP encoded string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use mailer API instead
 	 */
 	static public function quoted_printable($string, $maxlen = 76) {
 		static::logDeprecatedFunction();
@@ -4756,7 +4758,7 @@ Connection: close
 	 * @param string $enc Encoding type: "base64" or "quoted-printable". Default value is "quoted-printable".
 	 * @param string $charset Charset used for encoding
 	 * @return string The encoded string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use mailer API instead
 	 */
 	static public function encodeHeader($line, $enc = 'quoted-printable', $charset = 'utf-8') {
 		static::logDeprecatedFunction();
@@ -4812,7 +4814,7 @@ Connection: close
 	 * @param string $index_script_url URL of index script (see makeRedirectUrl())
 	 * @return string Processed message content
 	 * @see makeRedirectUrl()
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8. Use mailer API instead
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use mailer API instead
 	 */
 	static public function substUrlsInPlainText($message, $urlmode = '76', $index_script_url = '') {
 		static::logDeprecatedFunction();
@@ -5263,4 +5265,5 @@ Connection: close
 	static public function isRunningOnCgiServerApi() {
 		return in_array(PHP_SAPI, self::$supportedCgiServerApis, TRUE);
 	}
+
 }

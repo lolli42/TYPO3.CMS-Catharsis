@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -27,7 +27,13 @@ use TYPO3\CMS\Core\Utility\OpcodeCacheUtility;
  * - typo3conf/LocalConfiguration.php (overrides of TYPO3_CONF_VARS)
  * - typo3conf/AdditionalConfiguration.php (optional additional local code blocks)
  *
+ * IMPORTANT:
+ *   This class is intended for internal core use ONLY.
+ *   Extensions should usually use the resulting $GLOBALS['TYPO3_CONF_VARS'] array,
+ *   do not try to modify settings in LocalConfiguration.php with an extension.
+ *
  * @author Helge Funk <helge.funk@e-net.info>
+ * @internal
  */
 class ConfigurationManager {
 

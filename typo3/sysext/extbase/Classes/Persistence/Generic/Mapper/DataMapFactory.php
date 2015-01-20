@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -97,10 +97,10 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			if (isset($classSettings['subclasses']) && is_array($classSettings['subclasses'])) {
 				$subclasses = $this->resolveSubclassesRecursive($frameworkConfiguration['persistence']['classes'], $classSettings['subclasses']);
 			}
-			if (isset($classSettings['mapping']['recordType']) && strlen($classSettings['mapping']['recordType']) > 0) {
+			if (isset($classSettings['mapping']['recordType']) && $classSettings['mapping']['recordType'] !== '') {
 				$recordType = $classSettings['mapping']['recordType'];
 			}
-			if (isset($classSettings['mapping']['tableName']) && strlen($classSettings['mapping']['tableName']) > 0) {
+			if (isset($classSettings['mapping']['tableName']) && $classSettings['mapping']['tableName'] !== '') {
 				$tableName = $classSettings['mapping']['tableName'];
 			}
 			$classHierarchy = array_merge(array($className), class_parents($className));
@@ -122,7 +122,7 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 		// $classPropertyNames = $this->reflectionService->getClassPropertyNames($className);
 		$tcaColumnsDefinition = $this->getColumnsDefinition($tableName);
 		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($tcaColumnsDefinition, $columnMapping);
-		// TODO Is this is too powerful?
+		// @todo Is this is too powerful?
 
 		foreach ($tcaColumnsDefinition as $columnName => $columnDefinition) {
 			if (isset($columnDefinition['mapOnProperty'])) {
@@ -130,7 +130,8 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			} else {
 				$propertyName = \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToLowerCamelCase($columnName);
 			}
-			// if (in_array($propertyName, $classPropertyNames)) { // TODO Enable check for property existance
+			// if (in_array($propertyName, $classPropertyNames)) {
+			// @todo Enable check for property existence
 			$columnMap = $this->createColumnMap($columnName, $propertyName);
 			$propertyMetaData = $this->reflectionService->getClassSchema($className)->getProperty($propertyName);
 			$columnMap = $this->setType($columnMap, $columnDefinition['config']);
@@ -412,4 +413,5 @@ class DataMapFactory implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function createColumnMap($columnName, $propertyName) {
 		return $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap::class, $columnName, $propertyName);
 	}
+
 }

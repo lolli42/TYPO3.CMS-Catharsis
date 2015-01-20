@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Extbase\Mvc\Exception\UnsupportedRequestTypeException;
@@ -238,7 +239,7 @@ abstract class AbstractController implements ControllerInterface {
 	/**
 	 * Forwards the request to another action and / or controller.
 	 *
-	 * Request is directly transfered to the other action / controller
+	 * Request is directly transferred to the other action / controller
 	 * without the need for a new request.
 	 *
 	 * @param string $actionName Name of the action to forward to
@@ -401,4 +402,5 @@ abstract class AbstractController implements ControllerInterface {
 			}
 		}
 	}
+
 }

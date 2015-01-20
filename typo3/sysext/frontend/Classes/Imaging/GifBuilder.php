@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Imaging;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -235,6 +235,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 						if (!$cObj->checkIf($conf['if.'])) {
 							unset($this->setup[$theKey]);
 							unset($this->setup[$theKey . '.']);
+							unset($this->objBB[$theKey]);
 						}
 					}
 				}

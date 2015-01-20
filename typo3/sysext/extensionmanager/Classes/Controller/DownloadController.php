@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
@@ -67,7 +68,7 @@ class DownloadController extends AbstractController {
 			$dependencyTypes = $this->managementService->getAndResolveDependencies($extension);
 			if (count($dependencyTypes) > 0) {
 				$hasDependencies = TRUE;
-				$message = $this->translate('downloadExtension.dependencies.headline');
+				$message = '<p>' . $this->translate('downloadExtension.dependencies.headline') . '</p>';
 				foreach ($dependencyTypes as $dependencyType => $dependencies) {
 					$extensions = '';
 					foreach ($dependencies as $extensionKey => $dependency) {
@@ -243,4 +244,5 @@ class DownloadController extends AbstractController {
 
 		return array($result, $errorMessages);
 	}
+
 }

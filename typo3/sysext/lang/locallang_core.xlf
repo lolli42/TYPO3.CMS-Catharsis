@@ -753,6 +753,12 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="message.description.fileNotDeletedHasReferences" xml:space="preserve">
 				<source>The file cannot be deleted since it is still used at the following places:</source>
 			</trans-unit>
+			<trans-unit id="message.header.fileHasBrokenReferences" xml:space="preserve">
+				<source>File has broken references</source>
+			</trans-unit>
+			<trans-unit id="message.description.fileHasBrokenReferences" xml:space="preserve">
+				<source>The file has %s broken reference(s) but it will be deleted regardless.</source>
+			</trans-unit>
 			<trans-unit id="message.header.fileDeleted" xml:space="preserve">
 				<source>File deleted</source>
 			</trans-unit>
@@ -1056,7 +1062,7 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="ExtDirect.namespaceError" xml:space="preserve">
 				<source>Ext Direct error in "%s" with namespace: "%s"\n
-Try to clear the TYPO3 cache and / or use paramater no_cache=1 as parameter in URL typo3/ajax.php\n\n
+Try to clear the TYPO3 cache and / or use parameter no_cache=1 as parameter in URL typo3/ajax.php\n\n
 Check also the following points:\n
 - configuration in ext_localconf.php: registration key should be like "TYPO3.MyExtension.Sample"\n
 - URL typo3/ajax.php: namespace parameter should be like: "TYPO3.MyExtension"\n

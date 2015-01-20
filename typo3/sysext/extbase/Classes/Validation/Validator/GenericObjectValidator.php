@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation\Validator;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Validation\Validator;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 
 /**
@@ -56,7 +57,7 @@ class GenericObjectValidator extends AbstractValidator implements ObjectValidato
 	 * @return mixed
 	 */
 	protected function getPropertyValue($object, $propertyName) {
-		// TODO: add support for lazy loading proxies, if needed
+		// @todo add support for lazy loading proxies, if needed
 		if (ObjectAccess::isPropertyGettable($object, $propertyName)) {
 			return ObjectAccess::getProperty($object, $propertyName);
 		} else {
@@ -111,7 +112,7 @@ class GenericObjectValidator extends AbstractValidator implements ObjectValidato
 	/**
 	 * Checks the given object can be validated by the validator implementation
 	 *
-	 * @param object $object The object to be checked
+	 * @param mixed $object The object to be checked
 	 * @return bool TRUE if the given value is an object
 	 * @api
 	 */
@@ -180,4 +181,5 @@ class GenericObjectValidator extends AbstractValidator implements ObjectValidato
 	public function setValidatedInstancesContainer(\SplObjectStorage $validatedInstancesContainer) {
 		$this->validatedInstancesContainer = $validatedInstancesContainer;
 	}
+
 }

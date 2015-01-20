@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\ViewHelpers\Be;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -103,4 +103,5 @@ class ContainerViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBacken
 		$output .= $doc->endPage();
 		return $output;
 	}
+
 }

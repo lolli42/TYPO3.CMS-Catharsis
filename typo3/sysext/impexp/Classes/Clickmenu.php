@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Impexp;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ class Clickmenu {
 	/**
 	 * Processing of clickmenu items
 	 *
-	 * @param object $backRef Reference to parent
+	 * @param \TYPO3\CMS\Backend\ClickMenu\ClickMenu $backRef parent
 	 * @param array $menuItems Menu items array to modify
 	 * @param string $table Table name
 	 * @param int $uid Uid of the record

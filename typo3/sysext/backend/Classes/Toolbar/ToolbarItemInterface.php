@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Toolbar;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -62,7 +62,7 @@ interface ToolbarItemInterface {
 	 *     'data-foo' => '42',
 	 * )
 	 *
-	 * @return string List item HTML attributes
+	 * @return array List item HTML attributes
 	 */
 	public function getAdditionalAttributes();
 

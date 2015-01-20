@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -76,4 +76,5 @@ class EmConfUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture = new \TYPO3\CMS\Extensionmanager\Utility\EmConfUtility();
 		$this->assertEquals($expected, $fixture->fixEmConf($input));
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,7 +20,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 class CheckboxElement extends AbstractFormElement {
 
 	/**
-	 * This will render a checkbox OR an array of checkboxes
+	 * This will render a checkbox or an array of checkboxes
 	 *
 	 * @param string $table The table name of the record
 	 * @param string $field The field name which this element is supposed to edit
@@ -31,15 +31,15 @@ class CheckboxElement extends AbstractFormElement {
 	public function render($table, $field, $row, &$additionalInformation) {
 		$config = $additionalInformation['fieldConf']['config'];
 		$item = '';
-		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
-			$disabled = ' disabled="disabled"';
+		$disabled = FALSE;
+		if ($this->isRenderReadonly() || $config['readOnly']) {
+			$disabled = TRUE;
 		}
 		// Traversing the array of items
-		$selectedItems = $this->formEngine->initItemArray($additionalInformation['fieldConf']);
+		$items = $this->formEngine->initItemArray($additionalInformation['fieldConf']);
 		if ($config['itemsProcFunc']) {
-			$selectedItems = $this->formEngine->procItems(
-				$selectedItems,
+			$items = $this->formEngine->procItems(
+				$items,
 				$additionalInformation['fieldTSConfig']['itemsProcFunc.'],
 				$config,
 				$table,
@@ -48,70 +48,126 @@ class CheckboxElement extends AbstractFormElement {
 			);
 		}
 
-		$selectedItemsCount = count($selectedItems);
-		if ($selectedItemsCount === 0) {
-			$selectedItems[] = array('', '');
-			$selectedItemsCount = 1;
+		$numberOfItems = count($items);
+		if ($numberOfItems === 0) {
+			$items[] = array('', '');
+			$numberOfItems = 1;
 		}
-
 		$formElementValue = (int)$additionalInformation['itemFormElValue'];
 		$cols = (int)$config['cols'];
 		if ($cols > 1) {
-			$item .= '<table border="0" cellspacing="0" cellpadding="0" class="typo3-TCEforms-checkboxArray">';
-			for ($c = 0; $c < $selectedItemsCount; $c++) {
-				$selectedItem = $selectedItems[$c];
-				if (!($c % $cols)) {
-					$item .= '<tr>';
-				}
-				$checkboxParameters = $this->checkBoxParams(
-					$additionalInformation['itemFormElName'],
-					$formElementValue,
-					$c,
-					$selectedItemsCount,
-					implode('', $additionalInformation['fieldChangeFunc'])
+			$colWidth = (int)floor(12 / $cols);
+			$colClass = "col-md-12";
+			$colClear = array();
+			if ($colWidth == 6){
+				$colClass = "col-sm-6";
+				$colClear = array(
+					2 => 'visible-sm-block visible-md-block visible-lg-block',
 				);
-				$checkboxName = $additionalInformation['itemFormElName'] . '_' . $c;
-				$checkboxId = $additionalInformation['itemFormElID'] . '_' . $c;
-				$item .= '<td nowrap="nowrap"><input type="checkbox" ' . $this->formEngine->insertDefStyle('check')
-					. ' value="1" name="' . $checkboxName . '" ' . $checkboxParameters . $disabled . ' id="' . $checkboxId . '" />'
-					. '<label for="' . $checkboxId . '">' . htmlspecialchars($selectedItem[0]) . '</label>&nbsp;'
-					. '</td>';
-				if ($c % $cols + 1 == $cols) {
-					$item .= '</tr>';
+			} elseif ($colWidth === 4) {
+				$colClass = "col-sm-4";
+				$colClear = array(
+					3 => 'visible-sm-block visible-md-block visible-lg-block',
+				);
+			} elseif ($colWidth === 3) {
+				$colClass = "col-sm-6 col-md-3";
+				$colClear = array(
+					2 => 'visible-sm-block',
+					4 => 'visible-md-block visible-lg-block',
+				);
+			} elseif ($colWidth <= 2) {
+				$colClass = "checkbox-column col-sm-6 col-md-3 col-lg-2";
+				$colClear = array(
+					2 => 'visible-sm-block',
+					4 => 'visible-md-block',
+					6 => 'visible-lg-block'
+				);
+			}
+			$item .= '<div class="checkbox-row row">';
+			for ($counter = 0; $counter < $numberOfItems; $counter++) {
+				// use "default" for typical single checkboxes
+				$tsConfigKey = ($numberOfItems === 1 ? 'default' : $items[$counter][1]);
+				// useful for e.g. pages.l18n_cfg, where there is no value set
+				if ($tsConfigKey === '') {
+					$tsConfigKey = $counter;
+				}
+				if (isset($additionalInformation['fieldTSConfig']['altLabels.'][$tsConfigKey])) {
+					$label = $this->getLanguageService()->sL($additionalInformation['fieldTSConfig']['altLabels.'][$tsConfigKey]);
+				} else {
+					$label = $items[$counter][0];
+				}
+				$item .=
+					'<div class="checkbox-column ' . $colClass . '">'
+						. $this->renderSingleCheckboxElement($label, $counter,  $formElementValue, $numberOfItems, $additionalInformation, $disabled) .
+					'</div>';
+				if ($counter + 1 < $numberOfItems && !empty($colClear)) {
+					foreach ($colClear as $rowBreakAfter => $clearClass) {
+						if (($counter + 1) % $rowBreakAfter === 0) {
+							$item .= '<div class="clearfix '. $clearClass . '"></div>';
+						}
+					}
 				}
 			}
-			if ($c % $cols) {
-				$rest = $cols - $c % $cols;
-				for ($c = 0; $c < $rest; $c++) {
-					$item .= '<td></td>';
-				}
-				if ($c > 0) {
-					$item .= '</tr>';
-				}
-			}
-			$item .= '</table>';
+			$item .= '</div>';
 		} else {
-			for ($c = 0; $c < $selectedItemsCount; $c++) {
-				$selectedItem = $selectedItems[$c];
-				$checkboxParameters = $this->checkBoxParams(
-					$additionalInformation['itemFormElName'],
-					$formElementValue,
-					$c,
-					$selectedItemsCount,
-					implode('', $additionalInformation['fieldChangeFunc'])
-				);
-				$checkboxName = $additionalInformation['itemFormElName'] . '_' . $c;
-				$checkboxId = $additionalInformation['itemFormElID'] . '_' . $c;
-				$item .= ($c > 0 ? '<br />' : '') . '<input type="checkbox" ' . $this->formEngine->insertDefStyle('check')
-					. ' value="1" name="' . $checkboxName . '"' . $checkboxParameters . $additionalInformation['onFocus'] . $disabled
-					. ' id="' . $checkboxId . '" /> '
-					. '<label for="' . $checkboxId . '">' . htmlspecialchars($selectedItem[0]) . '</label>';
+			for ($counter = 0; $counter < $numberOfItems; $counter++) {
+				// use "default" for typical single checkboxes
+				$tsConfigKey = ($numberOfItems === 1 ? 'default' : $items[$counter][1]);
+				// useful for e.g. pages.l18n_cfg, where there is no value set
+				if ($tsConfigKey === '') {
+					$tsConfigKey = $counter;
+				}
+				if (isset($additionalInformation['fieldTSConfig']['altLabels.'][$tsConfigKey])) {
+					$label = $this->getLanguageService()->sL($additionalInformation['fieldTSConfig']['altLabels.'][$tsConfigKey]);
+				} else {
+					$label = $items[$counter][0];
+				}
+				$item .=  $this->renderSingleCheckboxElement($label, $counter, $formElementValue, $numberOfItems, $additionalInformation, $disabled);
 			}
 		}
 		if (!$disabled) {
 			$item .= '<input type="hidden" name="' . $additionalInformation['itemFormElName'] . '" value="' . htmlspecialchars($formElementValue) . '" />';
 		}
 		return $item;
+	}
+
+	/**
+	 * This functions builds the HTML output for the checkbox
+	 *
+	 * @param string $label Label of this item
+	 * @param integer $itemCounter Number of this element in the list of all elements
+	 * @param integer $formElementValue Value of this element
+	 * @param integer $numberOfItems Full number of items
+	 * @param array $additionalInformation Information with additional configuration options.
+	 * @param boolean $disabled TRUE if form element is disabled
+	 * @return string Single element HTML
+	 */
+	protected function renderSingleCheckboxElement($label, $itemCounter, $formElementValue, $numberOfItems, $additionalInformation, $disabled) {
+		$config = $additionalInformation['fieldConf']['config'];
+		$inline = !empty($config['cols']) && $config['cols'] === "inline";
+		$checkboxParameters = $this->checkBoxParams(
+			$additionalInformation['itemFormElName'],
+			$formElementValue,
+			$itemCounter,
+			$numberOfItems,
+			implode('', $additionalInformation['fieldChangeFunc'])
+		);
+		$checkboxName = $additionalInformation['itemFormElName'] . '_' . $itemCounter;
+		$checkboxId = $additionalInformation['itemFormElID'] . '_' . $itemCounter;
+		return '
+			<div class="checkbox' . ($inline ? ' checkbox-inline' : '') . (!$disabled ? '' : ' disabled') . '">
+				<label>
+					<input type="checkbox"
+						value="1"
+						class="' . $this->cssClassTypeElementPrefix . 'check"
+						name="' . $checkboxName . '"
+						' . $checkboxParameters . '
+						' . $additionalInformation['onFocus'] . '
+						' . (!$disabled ?: ' disabled="disabled"') . '
+						id="' . $checkboxId . '" />
+					' . ($label ? htmlspecialchars($label) : '&nbsp;') . '
+				</label>
+			</div>';
 	}
 
 	/**
@@ -129,6 +185,7 @@ class CheckboxElement extends AbstractFormElement {
 		$checkboxPow = pow(2, $checkbox);
 		$onClick = $elementName . '.value=this.checked?(' . $elementName . '.value|' . $checkboxPow . '):('
 			. $elementName . '.value&' . (pow(2, $checkboxesCount) - 1 - $checkboxPow) . ');' . $additionalJavaScript;
-	 	return ' onclick="' . htmlspecialchars($onClick) . '"' . ($formElementValue & $checkboxPow ? ' checked="checked"' : '');
+		return ' onclick="' . htmlspecialchars($onClick) . '"' . ($formElementValue & $checkboxPow ? ' checked="checked"' : '');
 	}
+
 }

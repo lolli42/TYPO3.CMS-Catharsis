@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Object\Container;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Object\Container;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Value object containing the relevant informations for a class,
  * this object is build by the classInfoFactory - or could also be restored from a cache
@@ -159,4 +160,5 @@ class ClassInfo {
 	public function hasInjectProperties() {
 		return count($this->injectProperties) > 0;
 	}
+
 }

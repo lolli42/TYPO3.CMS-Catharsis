@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Reports\Tests\Unit\Report\Status;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -74,4 +74,5 @@ class Typo3StatusTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$statusObject = $result['registeredXclass'];
 		$this->assertSame(\TYPO3\CMS\Reports\Status::NOTICE, $statusObject->getSeverity());
 	}
+
 }

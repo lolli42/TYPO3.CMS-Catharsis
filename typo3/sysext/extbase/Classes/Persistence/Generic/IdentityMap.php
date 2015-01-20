@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * An identity mapper to map nodes to objects
  *
@@ -98,4 +99,5 @@ class IdentityMap implements \TYPO3\CMS\Core\SingletonInterface {
 	public function unregisterObject($object) {
 		$this->persistenceSession->unregisterObject($object);
 	}
+
 }

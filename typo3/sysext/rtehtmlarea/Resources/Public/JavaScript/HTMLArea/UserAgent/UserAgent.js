@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,20 +10,22 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Identify the current user agent
  */
-HTMLArea.UserAgent = function () {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent', [], function () {
+
 	var userAgent = navigator.userAgent.toLowerCase();
 	var documentMode = document.documentMode,
 		isOpera = /opera/i.test(userAgent),
 		isChrome = /\bchrome\b/i.test(userAgent),
 		isWebKit = /webkit/i.test(userAgent),
-		isIE = !isOpera && /msie/i.test(userAgent),
+		isIE = (!isOpera && /msie/i.test(userAgent)) || /trident/i.test(userAgent),
 		isIE6 = isIE && /msie 6/i.test(userAgent),
 		isIE7 = isIE && (/msie 7/i.test(userAgent) || documentMode == 7),
 		isIE8 = isIE && ((/msie 8/i.test(userAgent) && documentMode != 7) || documentMode == 8),
-		isGecko = !isWebKit && /gecko/i.test(userAgent),
+		isGecko = !isWebKit && !isIE && /gecko/i.test(userAgent),
 		isiPhone = /iphone/i.test(userAgent),
 		isiPad = /ipad/i.test(userAgent);
 	return {
@@ -56,4 +58,4 @@ HTMLArea.UserAgent = function () {
 			return isGecko || isWebKit || isOpera || isIE;
 		}
 	};
-}();
+});

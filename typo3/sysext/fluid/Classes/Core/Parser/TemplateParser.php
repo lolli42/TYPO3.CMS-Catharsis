@@ -530,7 +530,7 @@ class TemplateParser {
 			$expectedArgumentNames[] = $expectedArgument->getName();
 		}
 
-		foreach (array_keys($actualArguments) as $argumentName) {
+		foreach ($actualArguments as $argumentName => $_) {
 			if (!in_array($argumentName, $expectedArgumentNames)) {
 				throw new \TYPO3\CMS\Fluid\Core\Parser\Exception('Argument "' . $argumentName . '" was not registered.', 1237823695);
 			}
@@ -638,17 +638,17 @@ class TemplateParser {
 
 		// The following post-processing handles a case when there is only a ViewHelper, and no Object Accessor.
 		// Resolves bug #5107.
-		if (strlen($delimiter) === 0 && strlen($viewHelperString) > 0) {
+		if ($delimiter === '' && $viewHelperString !== '') {
 			$viewHelperString = $objectAccessorString . $viewHelperString;
 			$objectAccessorString = '';
 		}
 
 		// ViewHelpers
 		$matches = array();
-		if (strlen($viewHelperString) > 0 && preg_match_all(self::$SPLIT_PATTERN_SHORTHANDSYNTAX_VIEWHELPER, $viewHelperString, $matches, PREG_SET_ORDER) > 0) {
+		if ($viewHelperString !== '' && preg_match_all(self::$SPLIT_PATTERN_SHORTHANDSYNTAX_VIEWHELPER, $viewHelperString, $matches, PREG_SET_ORDER) > 0) {
 			// The last ViewHelper has to be added first for correct chaining.
 			foreach (array_reverse($matches) as $singleMatch) {
-				if (strlen($singleMatch['ViewHelperArguments']) > 0) {
+				if ($singleMatch['ViewHelperArguments'] !== '') {
 					$arguments = $this->postProcessArgumentsForObjectAccessor(
 						$this->recursiveArrayHandler($singleMatch['ViewHelperArguments'])
 					);
@@ -661,7 +661,7 @@ class TemplateParser {
 		}
 
 		// Object Accessor
-		if (strlen($objectAccessorString) > 0) {
+		if ($objectAccessorString !== '') {
 
 			$node = $this->objectManager->get(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ObjectAccessorNode::class, $objectAccessorString);
 			$this->callInterceptor($node, \TYPO3\CMS\Fluid\Core\Parser\InterceptorInterface::INTERCEPT_OBJECTACCESSOR, $state);
@@ -687,9 +687,9 @@ class TemplateParser {
 	protected function callInterceptor(\TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\NodeInterface &$node, $interceptionPoint, \TYPO3\CMS\Fluid\Core\Parser\ParsingState $state) {
 		if ($this->configuration !== NULL) {
 			// $this->configuration is UNSET inside the arguments of a ViewHelper.
-			// That's why the interceptors are only called if the object accesor is not inside a ViewHelper Argument
+			// That's why the interceptors are only called if the object accessor is not inside a ViewHelper Argument
 			// This could be a problem if We have a ViewHelper as an argument to another ViewHelper, and an ObjectAccessor nested inside there.
-			// TODO: Clean up this.
+			// @todo Clean up this.
 			$interceptors = $this->configuration->getInterceptors($interceptionPoint);
 			if (count($interceptors) > 0) {
 				foreach ($interceptors as $interceptor) {
@@ -887,4 +887,5 @@ class TemplateParser {
 
 		$state->getNodeFromStack()->addChildNode($node);
 	}
+
 }

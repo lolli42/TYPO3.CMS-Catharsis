@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Hook\DataHandler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -54,4 +54,5 @@ class CheckFlexFormValueTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame($expectedFlexFormDataArray, $currentFlexFormDataArray);
 	}
+
 }

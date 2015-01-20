@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Domain\Model;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Domain\Model;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A file object (File Abstraction Layer)
  *
@@ -38,4 +39,5 @@ abstract class AbstractFileFolder extends \TYPO3\CMS\Extbase\DomainObject\Abstra
 	public function getOriginalResource() {
 		return $this->originalResource;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Tree\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -47,7 +47,7 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 		$this->domIdPrefix = 'pages';
 		$this->iconName = '';
 		$this->title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
-		$this->MOUNTS = $GLOBALS['WEBMOUNTS'];
+		$this->MOUNTS = $GLOBALS['BE_USER']->returnWebmounts();
 		if ($pidList) {
 			// Remove mountpoint if explicitly set in options.hideRecords.pages (see above)
 			$hideList = explode(',', $pidList);

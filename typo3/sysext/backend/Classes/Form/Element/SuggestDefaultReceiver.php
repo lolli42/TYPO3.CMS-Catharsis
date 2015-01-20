@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Default implementation of a handler class for an ajax record selector.
@@ -167,7 +168,14 @@ class SuggestDefaultReceiver {
 				$uid = $row['t3ver_oid'] > 0 ? $row['t3ver_oid'] : $row['uid'];
 				$path = $this->getRecordPath($row, $uid);
 				if (strlen($path) > 30) {
-					$croppedPath = '<abbr title="' . htmlspecialchars($path) . '">' . htmlspecialchars(($GLOBALS['LANG']->csConvObj->crop($GLOBALS['LANG']->charSet, $path, 10) . '...' . $GLOBALS['LANG']->csConvObj->crop($GLOBALS['LANG']->charSet, $path, -20))) . '</abbr>';
+					$languageService = $this->getLanguageService();
+					$croppedPath = '<abbr title="' . htmlspecialchars($path) . '">' .
+						htmlspecialchars(
+								$languageService->csConvObj->crop($languageService->charSet, $path, 10)
+								. '...'
+								. $languageService->csConvObj->crop($languageService->charSet, $path, -20)
+						) .
+						'</abbr>';
 				} else {
 					$croppedPath = htmlspecialchars($path);
 				}
@@ -205,7 +213,7 @@ class SuggestDefaultReceiver {
 		$searchWholePhrase = $this->config['searchWholePhrase'];
 		$searchString = $this->params['value'];
 		$searchUid = (int)$searchString;
-		if (strlen($searchString)) {
+		if ($searchString !== '') {
 			$searchString = $GLOBALS['TYPO3_DB']->quoteStr($searchString, $this->table);
 			$likeCondition = ' LIKE \'' . ($searchWholePhrase ? '%' : '') . $GLOBALS['TYPO3_DB']->escapeStrForLike($searchString, $this->table) . '%\'';
 			// Search in all fields given by label or label_alt
@@ -231,7 +239,7 @@ class SuggestDefaultReceiver {
 			}
 		}
 		// add an additional search condition comment
-		if (isset($this->config['searchCondition']) && strlen($this->config['searchCondition']) > 0) {
+		if (isset($this->config['searchCondition']) && $this->config['searchCondition'] !== '') {
 			$this->selectClause .= ' AND ' . $this->config['searchCondition'];
 		}
 		// add the global clauses to the where-statement
@@ -239,10 +247,10 @@ class SuggestDefaultReceiver {
 	}
 
 	/**
-	 * Selects all subpages of one page, optionally only upto a certain level
+	 * Selects all subpages of one page, optionally only up to a certain level
 	 *
 	 * @param int $uid The uid of the page
-	 * @param int $depth The depth to select upto. Defaults to 99
+	 * @param int $depth The depth to select up to. Defaults to 99
 	 * @return array of page IDs
 	 */
 	protected function getAllSubpagesOfPage($uid, $depth = 99) {
@@ -387,6 +395,13 @@ class SuggestDefaultReceiver {
 			GeneralUtility::callUserFunction($this->config['renderFunc'], $params, $this, '');
 		}
 		return $entry;
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 }

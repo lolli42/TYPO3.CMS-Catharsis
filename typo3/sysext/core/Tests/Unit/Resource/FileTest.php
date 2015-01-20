@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Resource;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
@@ -60,7 +61,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function commonPropertiesAreAvailableWithOwnGetters() {
 		$properties = array(
-			'name' => uniqid(),
+			'name' => $this->getUniqueId(),
 			'storage' => $this->storageMock,
 			'size' => 1024
 		);
@@ -84,7 +85,7 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function updatePropertiesUpdatesFileProperties() {
-		$identifier = '/' . uniqid();
+		$identifier = '/' . $this->getUniqueId();
 		$fixture = new \TYPO3\CMS\Core\Resource\File(array('uid' => 1, 'identifier' => '/test'), $this->storageMock);
 		$fixture->updateProperties(array('identifier' => $identifier));
 		$this->assertEquals($identifier, $fixture->getIdentifier());
@@ -241,4 +242,5 @@ class FileTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture->_set('metaDataProperties', array('testproperty' => 'testvalue'));
 		$this->assertTrue($fixture->hasProperty('testproperty'));
 	}
+
 }

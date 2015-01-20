@@ -73,7 +73,7 @@ class TemplateCompiler implements \TYPO3\CMS\Core\SingletonInterface {
 
 		if ($parsingState->getVariableContainer()->exists('sections')) {
 			$sections = $parsingState->getVariableContainer()->get('sections');
-			// TODO: refactor to $parsedTemplate->getSections()
+			// @todo refactor to $parsedTemplate->getSections()
 			foreach ($sections as $sectionName => $sectionRootNode) {
 				$generatedRenderFunctions .= $this->generateCodeForSection($this->convertListOfSubNodes($sectionRootNode), 'section_' . sha1($sectionName), 'section ' . $sectionName);
 			}
@@ -87,7 +87,7 @@ class TemplateCompiler implements \TYPO3\CMS\Core\SingletonInterface {
 %s {
 
 public function getVariableContainer() {
-	// TODO
+	// @todo
 	return new \TYPO3\CMS\Fluid\Core\ViewHelper\TemplateVariableContainer();
 }
 public function getLayoutName(\TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface \$renderingContext) {
@@ -391,4 +391,5 @@ EOD;
 	public function variableName($prefix) {
 		return '$' . $prefix . $this->variableCounter++;
 	}
+
 }

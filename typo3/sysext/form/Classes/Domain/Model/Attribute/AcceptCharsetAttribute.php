@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Domain\Model\Attribute;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -38,7 +38,7 @@ class AcceptCharsetAttribute extends \TYPO3\CMS\Form\Domain\Model\Attribute\Abst
 	 *
 	 * RFC2045: For a complete list, see http://www.iana.org/assignments/character-sets/
 	 *
-	 * TODO: Perhaps we once can add a list of all character-sets to TYPO3
+	 * @todo Perhaps we once can add a list of all character-sets to TYPO3
 	 *
 	 * @return string Attribute value
 	 */

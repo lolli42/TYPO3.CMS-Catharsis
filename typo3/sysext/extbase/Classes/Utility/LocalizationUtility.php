@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Localization helper which should be used to fetch localized labels.
  *
@@ -144,8 +145,8 @@ class LocalizationUtility {
 	}
 
 	/**
-	 * Loads local-language values by looking for a "locallang.php" (or "locallang.xml") file in the plugin resources directory and if found includes it.
-	 * Also locallang values set in the TypoScript property "_LOCAL_LANG" are merged onto the values found in the "locallang.php" file.
+	 * Loads local-language values by looking for a "locallang.xlf" (or "locallang.xml") file in the plugin resources directory and if found includes it.
+	 * Also locallang values set in the TypoScript property "_LOCAL_LANG" are merged onto the values found in the "locallang.xlf" file.
 	 *
 	 * @param string $extensionName
 	 * @return void
@@ -154,7 +155,7 @@ class LocalizationUtility {
 		if (isset(self::$LOCAL_LANG[$extensionName])) {
 			return;
 		}
-		$locallangPathAndFilename = 'EXT:' . \TYPO3\CMS\Core\Utility\GeneralUtility::camelCaseToLowerCaseUnderscored($extensionName) . '/' . self::$locallangPath . 'locallang.xml';
+		$locallangPathAndFilename = 'EXT:' . \TYPO3\CMS\Core\Utility\GeneralUtility::camelCaseToLowerCaseUnderscored($extensionName) . '/' . self::$locallangPath . 'locallang.xlf';
 		self::setLanguageKeys();
 		$renderCharset = TYPO3_MODE === 'FE' ? $GLOBALS['TSFE']->renderCharset : $GLOBALS['LANG']->charSet;
 		self::$LOCAL_LANG[$extensionName] = \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile($locallangPathAndFilename, self::$languageKey, $renderCharset);
@@ -191,7 +192,7 @@ class LocalizationUtility {
 					}
 				}
 			}
-		} elseif (strlen($GLOBALS['BE_USER']->uc['lang']) > 0) {
+		} elseif ($GLOBALS['BE_USER']->uc['lang'] !== '') {
 			self::$languageKey = $GLOBALS['BE_USER']->uc['lang'];
 		}
 	}
@@ -297,4 +298,5 @@ class LocalizationUtility {
 		static::$configurationManager = $configurationManager;
 		return $configurationManager;
 	}
+
 }

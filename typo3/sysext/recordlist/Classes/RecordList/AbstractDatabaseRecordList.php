@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recordlist\RecordList;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -477,7 +477,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 		// Setting form-elements, if applicable:
 		$formElements = array('', '');
 		if ($formFields) {
-			$formElements = array('<form action="' . htmlspecialchars($this->listURL('', -1, 'firstElementNumber')) . '" method="post">', '</form>');
+			$formElements = array('<form action="' . htmlspecialchars($this->listURL('', -1, 'firstElementNumber,search_field')) . '" method="post">', '</form>');
 		}
 		// Make level selector:
 		$opt = array();
@@ -485,18 +485,36 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 		foreach ($parts as $kv => $label) {
 			$opt[] = '<option value="' . $kv . '"' . ($kv == (int)$this->searchLevels ? ' selected="selected"' : '') . '>' . htmlspecialchars($label) . '</option>';
 		}
-		$lMenu = '<select name="search_levels" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search_levels', TRUE) . '" id="search_levels">' . implode('', $opt) . '</select>';
+		$lMenu = '<select class="form-control" name="search_levels" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search_levels', TRUE) . '" id="search_levels">' . implode('', $opt) . '</select>';
 		// Table with the search box:
 		$content = '<div class="db_list-searchbox-form db_list-searchbox-toolbar" id="db_list-searchbox-toolbar" style="display: ' . ($this->searchString == '' ? 'none' : 'block') . ';">
 			' . $formElements[0] . '
-				<div id="typo3-dblist-search">
-					<label for="search_field">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.searchString', TRUE) . ': </label>
-					<input type="search" placeholder="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.enterSearchString', TRUE) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchString', TRUE) . '" name="search_field" id="search_field" value="' . htmlspecialchars($this->searchString) . '"' . $GLOBALS['TBE_TEMPLATE']->formWidth(15) . ' />
-					<label for="search_levels">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.search_levels', TRUE) . ': </label>
-					' . $lMenu . '
-					<label for="showLimit">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.limit', TRUE) . ': </label>
-					<input type="number" placeholder="10" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.limit', TRUE) . '" name="showLimit" id="showLimit" value="' . htmlspecialchars(($this->showLimit ? $this->showLimit : '')) . '"' . $GLOBALS['TBE_TEMPLATE']->formWidth(5) . ' />
-					<input type="submit" name="search" value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search', TRUE) . '" />
+				<div id="typo3-dblist-search" class="container">
+					<div class="row">
+						<div class="col-xs-3 col-md-3 col-lg-3">
+							<div class="input-group">
+								<label class="pull-left" for="search_field">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.searchString', TRUE) . ': </label>
+								<input class="form-control" type="search" placeholder="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.enterSearchString', TRUE) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchString', TRUE) . '" name="search_field" id="search_field" value="' . htmlspecialchars($this->searchString) . '" />
+							</div>
+						</div>
+						<div class="col-xs-3 col-md-3 col-lg-3">
+							<div class="input-group">
+								<label class="pull-left" for="search_levels">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.search_levels', TRUE) . ': </label>
+								' . $lMenu . '
+							</div>
+						</div>
+						<div class="col-xs-3 col-md-3 col-lg-3">
+							<div class="input-group">
+								<label class="pull-left" for="showLimit">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.limit', TRUE) . ': </label>
+								<input class="form-control" type="number" min="0" max="10000" placeholder="10" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.limit', TRUE) . '" name="showLimit" id="showLimit" value="' . htmlspecialchars(($this->showLimit ? $this->showLimit : '')) . '" />
+							</div>
+						</div>
+						<div class="col-xs-3 col-md-3 col-lg-3">
+							<div class="input-group">
+								<input type="submit" class="btn btn-default btn-block" name="search" value="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search', TRUE) . '" />
+							</div>
+						</div>
+					</div>
 			' . $formElements[1] . '</div></div>';
 		return $content;
 	}
@@ -835,7 +853,7 @@ class AbstractDatabaseRecordList extends \TYPO3\CMS\Backend\RecordList\AbstractR
 		if ($this->returnUrl) {
 			$urlParameters['returnUrl'] = $this->returnUrl;
 		}
-		if ($this->searchString) {
+		if ((!$exclList || !GeneralUtility::inList($exclList, 'search_field')) && $this->searchString) {
 			$urlParameters['search_field'] = $this->searchString;
 		}
 		if ($this->searchLevels) {

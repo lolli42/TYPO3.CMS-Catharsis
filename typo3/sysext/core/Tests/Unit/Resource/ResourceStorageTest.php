@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -221,9 +222,9 @@ class ResourceStorageTest extends BaseTestCase {
 		$this->prepareSubject(array(), FALSE, $driverMock);
 		$fileMock = $this->getSimpleFileMock($fileIdentifier);
 		$this->subject->setEvaluatePermissions(TRUE);
-		$this->subject->addFileMount('/' . uniqid('random') . '/', array('read_only' => FALSE));
+		$this->subject->addFileMount('/' . $this->getUniqueId('random') . '/', array('read_only' => FALSE));
 		$this->subject->addFileMount($fileMountFolderIdentifier, array('read_only' => $isFileMountReadOnly));
-		$this->subject->addFileMount('/' . uniqid('random') . '/', array('read_only' => FALSE));
+		$this->subject->addFileMount('/' . $this->getUniqueId('random') . '/', array('read_only' => FALSE));
 		$this->assertSame($expectedResult, $this->subject->isWithinFileMountBoundaries($fileMock, $checkWriteAccess));
 	}
 
@@ -518,7 +519,7 @@ class ResourceStorageTest extends BaseTestCase {
 		$mockedFile->expects($this->any())->method('getUpdatedProperties')->will($this->returnValue(array_keys($newProperties)));
 		// do not update directly; that's up to the indexer
 		$indexFileRepositoryMock->expects($this->never())->method('update');
-		$this->subject->setFileContents($mockedFile, uniqid());
+		$this->subject->setFileContents($mockedFile, $this->getUniqueId());
 	}
 
 	/**
@@ -697,7 +698,7 @@ class ResourceStorageTest extends BaseTestCase {
 		$this->setExpectedException('InvalidArgumentException', '', 1325842622);
 		$this->prepareSubject(array(), TRUE);
 		$mockedFile = $this->getSimpleFileMock('/someFile');
-		$this->subject->replaceFile($mockedFile, PATH_site . uniqid());
+		$this->subject->replaceFile($mockedFile, PATH_site . $this->getUniqueId());
 	}
 
 	/**
@@ -706,7 +707,7 @@ class ResourceStorageTest extends BaseTestCase {
 	 */
 	public function getRoleReturnsDefaultForRegularFolders() {
 		$this->markTestSkipped('This test does way to much and is mocked incomplete. Skipped for now.');
-		$folderIdentifier = uniqid();
+		$folderIdentifier = $this->getUniqueId();
 		$this->addToMount(array(
 			$folderIdentifier => array()
 		));
@@ -716,4 +717,5 @@ class ResourceStorageTest extends BaseTestCase {
 
 		$this->assertSame(FolderInterface::ROLE_DEFAULT, $role);
 	}
+
 }

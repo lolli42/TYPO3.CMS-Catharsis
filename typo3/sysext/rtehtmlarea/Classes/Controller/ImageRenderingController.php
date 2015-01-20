@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -159,4 +159,5 @@ class ImageRenderingController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin
 	protected function getFrontendObject() {
 		return $GLOBALS['TSFE'];
 	}
+
 }

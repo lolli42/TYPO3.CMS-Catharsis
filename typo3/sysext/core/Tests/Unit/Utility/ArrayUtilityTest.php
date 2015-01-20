@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -159,6 +159,9 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider filterByValueRecursive
+	 * @param array $needle
+	 * @param array $haystack
+	 * @param array $expectedResult
 	 */
 	public function filterByValueRecursiveCorrectlyFiltersArray($needle, $haystack, $expectedResult) {
 		$this->assertEquals(
@@ -200,7 +203,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function isValidPathReturnsTrueIfPathExists() {
-		$className = uniqid('ArrayUtility');
+		$className = $this->getUniqueId('ArrayUtility');
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ArrayUtility {' .
@@ -217,7 +220,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function isValidPathReturnsFalseIfPathDoesNotExist() {
-		$className = uniqid('ArrayUtility');
+		$className = $this->getUniqueId('ArrayUtility');
 		eval(
 			'namespace ' . __NAMESPACE__ . ';' .
 			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\ArrayUtility {' .
@@ -247,6 +250,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * - Array to get value from
 	 * - String path
 	 * - Expected result
+	 * @return array
 	 */
 	public function getValueByPathInvalidPathDataProvider() {
 		return array(
@@ -296,6 +300,8 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider getValueByPathInvalidPathDataProvider
 	 * @expectedException \RuntimeException
+	 * @param array $array
+	 * @param string $path
 	 */
 	public function getValueByPathThrowsExceptionIfPathNotExists(array $array, $path) {
 		ArrayUtility::getValueByPath($array, $path);
@@ -396,6 +402,9 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider getValueByPathValidDataProvider
+	 * @param array $array
+	 * @param string $path
+	 * @param mixed $expectedResult
 	 */
 	public function getValueByPathGetsCorrectValue(array $array, $path, $expectedResult) {
 		$this->assertEquals($expectedResult, ArrayUtility::getValueByPath($array, $path));
@@ -404,7 +413,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function getValueByPathAccpetsDifferentDelimeter() {
+	public function getValueByPathAcceptsDifferentDelimiter() {
 		$input = array(
 			'foo' => array(
 				'bar' => array(
@@ -415,10 +424,10 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$searchPath = 'foo%bar%baz';
 		$expected = 42;
-		$delimeter = '%';
+		$delimiter = '%';
 		$this->assertEquals(
 			$expected,
-			ArrayUtility::getValueByPath($input, $searchPath, $delimeter)
+			ArrayUtility::getValueByPath($input, $searchPath, $delimiter)
 		);
 	}
 
@@ -615,6 +624,10 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider setValueByPathSetsCorrectValueDataProvider
+	 * @param array $array
+	 * @param string $path
+	 * @param string $value
+	 * @param array $expectedResult
 	 */
 	public function setValueByPathSetsCorrectValue(array $array, $path, $value, $expectedResult) {
 		$this->assertEquals(
@@ -741,6 +754,9 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider removeByPathRemovesCorrectPathDataProvider
+	 * @param array $array
+	 * @param string $path
+	 * @param array $expectedResult
 	 */
 	public function removeByPathRemovesCorrectPath(array $array, $path, $expectedResult) {
 		$this->assertEquals(
@@ -791,7 +807,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					'22' => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
 					),
 					'24' => array(
@@ -801,26 +817,26 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					),
 					'23' => array(
 						'uid' => '23',
-						'title' => 'a',
+						'title' => 'b',
 						'dummy' => 4
 					),
 				),
 				'title',
 				TRUE,
 				array(
-					'23' => array(
-						'uid' => '23',
-						'title' => 'a',
-						'dummy' => 4
-					),
 					'24' => array(
 						'uid' => '24',
 						'title' => 'a',
 						'dummy' => 3
 					),
+					'23' => array(
+						'uid' => '23',
+						'title' => 'b',
+						'dummy' => 4
+					),
 					'22' => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
 					),
 				),
@@ -829,7 +845,7 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					22 => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
 					),
 					24 => array(
@@ -839,26 +855,26 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					),
 					23 => array(
 						'uid' => '23',
-						'title' => 'a',
+						'title' => 'b',
 						'dummy' => 4
 					),
 				),
 				'title',
 				TRUE,
 				array(
-					23 => array(
-						'uid' => '23',
-						'title' => 'a',
-						'dummy' => 4
-					),
 					24 => array(
 						'uid' => '24',
 						'title' => 'a',
 						'dummy' => 3
 					),
+					23 => array(
+						'uid' => '23',
+						'title' => 'b',
+						'dummy' => 4
+					),
 					22 => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
 					),
 				),
@@ -867,12 +883,12 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					23 => array(
 						'uid' => '23',
-						'title' => 'a',
+						'title' => 'b',
 						'dummy' => 4
 					),
 					22 => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
 					),
 					24 => array(
@@ -886,18 +902,18 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					22 => array(
 						'uid' => '22',
-						'title' => 'b',
+						'title' => 'c',
 						'dummy' => 2
+					),
+					23 => array(
+						'uid' => '23',
+						'title' => 'b',
+						'dummy' => 4
 					),
 					24 => array(
 						'uid' => '24',
 						'title' => 'a',
 						'dummy' => 3
-					),
-					23 => array(
-						'uid' => '23',
-						'title' => 'a',
-						'dummy' => 4
 					),
 				),
 			),
@@ -907,10 +923,14 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider sortArraysByKeyCheckIfSortingIsCorrectDataProvider
+	 * @param array $array
+	 * @param string $key
+	 * @param bool $ascending
+	 * @param array $expectedResult
 	 */
 	public function sortArraysByKeyCheckIfSortingIsCorrect(array $array, $key, $ascending, $expectedResult) {
 		$sortedArray = ArrayUtility::sortArraysByKey($array, $key, $ascending);
-		$this->assertSame($sortedArray, $expectedResult);
+		$this->assertSame($expectedResult, $sortedArray);
 	}
 
 	/**
@@ -1478,37 +1498,254 @@ class ArrayUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @param array $expected
 	 * @dataProvider renumberKeysToAvoidLeapsIfKeysAreAllNumericDataProvider
 	 */
-	public function renumberKeysToAvoidLeapsIfKeysAreAllNumeric(array $inputArray, array $expected) {
+	public function renumberKeysToAvoidLeapsIfKeysAreAllNumericReturnsExpectedOrder(array $inputArray, array $expected) {
 		$this->assertEquals($expected, ArrayUtility::renumberKeysToAvoidLeapsIfKeysAreAllNumeric($inputArray));
 	}
 
+	/**
+	 * @return array
+	 */
+	public function mergeRecursiveWithOverruleCalculatesExpectedResultDataProvider() {
+		return array(
+			'Override array can reset string to array' => array(
+				array(
+					'first' => array(
+						'second' => 'foo',
+					),
+				),
+				array(
+					'first' => array(
+						'second' => array('third' => 'bar'),
+					),
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => array(
+						'second' => array('third' => 'bar'),
+					),
+				),
+			),
+			'Override array does not reset array to string (weird!)' => array(
+				array(
+					'first' => array(),
+				),
+				array(
+					'first' => 'foo',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => array(), // This is rather unexpected, naive expectation: first => 'foo'
+				),
+			),
+			'Override array does override string with null' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'first' => NULL,
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => NULL,
+				),
+			),
+			'Override array does override null with string' => array(
+				array(
+					'first' => NULL,
+				),
+				array(
+					'first' => 'foo',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override array does override null with empty string' => array(
+				array(
+					'first' => NULL,
+				),
+				array(
+					'first' => '',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => '',
+				),
+			),
+			'Override array does not override string with NULL if requested' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'first' => NULL,
+				),
+				TRUE,
+				FALSE, // no include empty values
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override array does override null with null' => array(
+				array(
+					'first' => NULL,
+				),
+				array(
+					'first' => NULL,
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => '',
+				),
+			),
+			'Override array can __UNSET values' => array(
+				array(
+					'first' => array(
+						'second' => 'second',
+						'third' => 'third',
+					),
+					'fifth' => array(),
+				),
+				array(
+					'first' => array(
+						'second' => 'overrule',
+						'third' => '__UNSET',
+						'fourth' => 'overrile',
+					),
+					'fifth' => '__UNSET',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => array(
+						'second' => 'overrule',
+						'fourth' => 'overrile',
+					),
+				),
+			),
+			'Override can add keys' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'second' => 'bar',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => 'foo',
+					'second' => 'bar',
+				),
+			),
+			'Override does not add key if __UNSET' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'second' => '__UNSET',
+				),
+				TRUE,
+				TRUE,
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override does not add key if not requested' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'second' => 'bar',
+				),
+				FALSE, // no add keys
+				TRUE,
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override does not add key if not requested with add include empty values' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'second' => 'bar',
+				),
+				FALSE, // no add keys
+				FALSE, // no include empty values
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override does not override string with empty string if requested' => array(
+				array(
+					'first' => 'foo',
+				),
+				array(
+					'first' => '',
+				),
+				TRUE,
+				FALSE, // no include empty values
+				TRUE,
+				array(
+					'first' => 'foo',
+				),
+			),
+			'Override array does merge instead of __UNSET if requested (weird!)' => array(
+				array(
+					'first' => array(
+						'second' => 'second',
+						'third' => 'third',
+					),
+					'fifth' => array(),
+				),
+				array(
+					'first' => array(
+						'second' => 'overrule',
+						'third' => '__UNSET',
+						'fourth' => 'overrile',
+					),
+					'fifth' => '__UNSET',
+				),
+				TRUE,
+				TRUE,
+				FALSE,
+				array(
+					'first' => array(
+						'second' => 'overrule',
+						'third' => '__UNSET', // overruled
+						'fourth' => 'overrile',
+					),
+					'fifth' => array(), // not overruled with string here, naive expectation: 'fifth' => '__UNSET'
+				),
+			),
+		);
+	}
 
 	/**
 	 * @test
+	 * @dataProvider mergeRecursiveWithOverruleCalculatesExpectedResultDataProvider
 	 */
-	public function arrayMergeRecursiveOverruleDoesConsiderUnsetValues() {
-		$array1 = array(
-			'first' => array(
-				'second' => 'second',
-				'third' => 'third'
-			),
-			'fifth' => array()
-		);
-		$array2 = array(
-			'first' => array(
-				'second' => 'overrule',
-				'third' => '__UNSET',
-				'fourth' => 'overrile'
-			),
-			'fifth' => '__UNSET'
-		);
-		$expected = array(
-			'first' => array(
-				'second' => 'overrule',
-				'fourth' => 'overrile'
-			)
-		);
-		ArrayUtility::mergeRecursiveWithOverrule($array1, $array2);
-		$this->assertEquals($expected, $array1);
+	public function mergeRecursiveWithOverruleCalculatesExpectedResult($input1, $input2, $addKeys, $includeEmptyValues, $enableUnsetFeature, $expected) {
+		ArrayUtility::mergeRecursiveWithOverrule($input1, $input2, $addKeys, $includeEmptyValues, $enableUnsetFeature);
+		$this->assertEquals($expected, $input1);
 	}
+
 }

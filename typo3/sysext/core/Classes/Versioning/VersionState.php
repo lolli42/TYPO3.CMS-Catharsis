@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Versioning;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -75,4 +75,5 @@ class VersionState extends \TYPO3\CMS\Core\Type\Enumeration {
 	public function indicatesPlaceholder() {
 		return (int)$this->__toString() > self::DEFAULT_STATE;
 	}
+
 }

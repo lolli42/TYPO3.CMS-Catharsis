@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Install\View;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -105,4 +106,5 @@ class FailsafeView extends \TYPO3\CMS\Extbase\Mvc\View\AbstractView {
 	public function setPartialRootPath($partialRootPath) {
 		$this->partialRootPath = $partialRootPath;
 	}
+
 }

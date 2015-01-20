@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -91,7 +91,7 @@ class LogRecordTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
-	 * @expectedException Psr\Log\InvalidArgumentException
+	 * @expectedException \Psr\Log\InvalidArgumentException
 	 */
 	public function setLevelValidatesLevel() {
 		$record = $this->getRecord();

@@ -1,7 +1,22 @@
+/**
+ * This file is part of the TYPO3 CMS project.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE.txt file that was distributed with this source code.
+ *
+ * The TYPO3 project - inspiring people to share!
+ */
 /*****************************************************************
  * HTMLArea.DOM: Utility functions for dealing with the DOM tree *
  *****************************************************************/
-HTMLArea.DOM = function (UserAgent) {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
+	function (UserAgent, Util) {
 
 	var Dom = {
 
@@ -254,7 +269,7 @@ HTMLArea.DOM = function (UserAgent) {
 				var types = [types];
 			}
 			// Is types a non-empty array?
-			if (types && toString.apply(types) === '[object Array]' && types.length > 0) {
+			if (types && Object.prototype.toString.call(types) === '[object Array]' && types.length > 0) {
 				types = new RegExp( '^(' + types.join('|') + ')$', 'i');
 				while (parent && parent.nodeType === Dom.ELEMENT_NODE && !/^(body)$/i.test(parent.nodeName)) {
 					if (types.test(parent.nodeName)) {
@@ -308,7 +323,7 @@ HTMLArea.DOM = function (UserAgent) {
 				var allowedAttributes = [allowedAttributes];
 			}
 			// Is allowedAttributes an array?
-			if (allowedAttributes && toString.apply(allowedAttributes) === '[object Array]') {
+			if (allowedAttributes && Object.prototype.toString.call(allowedAttributes) === '[object Array]') {
 				for (var i = allowedAttributes.length; --i >= 0;) {
 					value = node.getAttribute(allowedAttributes[i]);
 					if (value) {
@@ -414,7 +429,7 @@ HTMLArea.DOM = function (UserAgent) {
 		 * @return	void
 		 */
 		makeUrlsAbsolute: function (node, baseUrl, walker) {
-			walker.walk(node, true, 'HTMLArea.DOM.makeImageSourceAbsolute(node, args[0]) || HTMLArea.DOM.makeLinkHrefAbsolute(node, args[0])', 'HTMLArea.util.emptyFunction', [baseUrl]);
+			walker.walk(node, true, 'args[0].makeImageSourceAbsolute(node, args[2]) || args[0].makeLinkHrefAbsolute(node, args[2])', 'args[1].emptyFunction', [Dom, Util, baseUrl]);
 		},
 
 		/**
@@ -479,9 +494,69 @@ HTMLArea.DOM = function (UserAgent) {
 				}
 			}
 			return absoluteUrl;
+		},
+
+		/**
+		 * Get the position of a node
+		 *
+		 * @param object node
+		 * @return object left and top coordinates
+		 */
+		getPosition: function (node) {
+			var x = 0, y = 0;
+			while (node && !isNaN(node.offsetLeft) && !isNaN(node.offsetTop)) {
+				x += node.offsetLeft - node.scrollLeft;
+				y += node.offsetTop - node.scrollTop;
+				node = node.offsetParent;
+			}
+			return { x: x, y: y };
+		},
+
+		/**
+		 * Get the current size of a node
+		 *
+		 * @param object node
+		 * @return object width and height
+		 */
+		getSize: function (node) {
+			return {
+				width:  Math.max(node.offsetWidth, node.clientWidth) || 0,
+				height: Math.max(node.offsetHeight, node.clientHeight) || 0
+			}
+		},
+
+		/**
+		 * Set the size of a node
+		 *
+		 * @param object node
+		 * @param object size: width and height
+		 * @return void
+		 */
+		setSize: function (node, size) {
+			if (typeof size.width !== 'undefined') {
+				node.style.width = size.width + 'px';
+			}
+			if (typeof size.height !== 'undefined') {
+				node.style.height = size.height + 'px';
+			}
+		},
+
+		/**
+		 * Set the style of a node
+		 *
+		 * @param object node
+		 * @param object style
+		 * @return void
+		 */
+		setStyle: function (node, style) {
+			for (var property in style) {
+				if (typeof style[property] !== 'undefined') {
+					node.style[property] = style[property];
+				}
+			}
 		}
 	};
 
 	return Dom;
 
-}(HTMLArea.UserAgent);
+});

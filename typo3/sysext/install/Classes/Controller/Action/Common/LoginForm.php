@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Common;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,4 +30,5 @@ class LoginForm extends Action\AbstractAction {
 		$this->view->assign('messages', $this->messages);
 		return $this->view->render();
 	}
+
 }

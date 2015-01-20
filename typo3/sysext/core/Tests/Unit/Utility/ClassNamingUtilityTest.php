@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\ClassNamingUtility
  */
@@ -247,4 +248,5 @@ class ClassNamingUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame($expectedMatches, $actualMatches);
 	}
+
 }

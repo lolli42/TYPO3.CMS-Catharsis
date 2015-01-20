@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Tests\Unit\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -44,4 +44,5 @@ class StructureFacadeTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$status = $facade->fix();
 		$this->assertInternalType('array', $status);
 	}
+
 }

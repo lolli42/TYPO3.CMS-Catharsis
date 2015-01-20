@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log\Processor;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -23,13 +23,13 @@ class AbstractProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @test
-	 * @expectedException \InvalidArgumentException
+	 * @expectedException \TYPO3\CMS\Core\Log\Exception\InvalidLogProcessorConfigurationException
 	 */
 	public function processorRefusesInvalidConfigurationOptions() {
 		$invalidConfiguration = array(
 			'foo' => 'bar'
 		);
-		$processor = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tests\Unit\Log\Fixtures\ProcessorFixture::class, $invalidConfiguration);
+		\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tests\Unit\Log\Fixtures\ProcessorFixture::class, $invalidConfiguration);
 	}
 
 	/**
@@ -40,11 +40,12 @@ class AbstractProcessorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$writer = new \TYPO3\CMS\Core\Log\Writer\NullWriter();
 		$level = \TYPO3\CMS\Core\Log\LogLevel::DEBUG;
 		$logRecord = new \TYPO3\CMS\Core\Log\LogRecord('dummy', $level, 'message');
-		$processor = $this->getMock('\\TYPO3\\CMS\\Core\\Log\\Processor\\ProcessorInterface', array('processLogRecord'));
+		$processor = $this->getMock(\TYPO3\CMS\Core\Log\Processor\ProcessorInterface::class, array('processLogRecord'));
 		$processor->expects($this->once())->method('processLogRecord')->willReturn($logRecord);
 
 		$logger->addWriter($level, $writer);
 		$logger->addProcessor($level, $processor);
 		$logger->warning('test');
 	}
+
 }

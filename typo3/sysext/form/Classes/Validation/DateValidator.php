@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,13 @@ namespace TYPO3\CMS\Form\Validation;
  * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class DateValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
+
+	/**
+	 * Constant for localisation
+	 *
+	 * @var string
+	 */
+	const LOCALISATION_OBJECT_NAME = 'tx_form_system_validate_date';
 
 	/**
 	 * strftime format for date
@@ -47,11 +54,31 @@ class DateValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	public function isValid() {
 		if ($this->requestHandler->has($this->fieldName)) {
 			$value = $this->requestHandler->getByMethod($this->fieldName);
-			$parsedDate = strptime($value, $this->format);
-			$parsedDateYear = $parsedDate['tm_year'] + 1900;
-			$parsedDateMonth = $parsedDate['tm_mon'] + 1;
-			$parsedDateDay = $parsedDate['tm_mday'];
-			return checkdate($parsedDateMonth, $parsedDateDay, $parsedDateYear);
+			if (function_exists('strptime')) {
+				$parsedDate = strptime($value, $this->format);
+				$parsedDateYear = $parsedDate['tm_year'] + 1900;
+				$parsedDateMonth = $parsedDate['tm_mon'] + 1;
+				$parsedDateDay = $parsedDate['tm_mday'];
+				return checkdate($parsedDateMonth, $parsedDateDay, $parsedDateYear);
+			} else {
+				// %a => D : An abbreviated textual representation of the day (conversion works only for english)
+				// %A => l : A full textual representation of the day (conversion works only for english)
+				// %d => d : Day of the month, 2 digits with leading zeros
+				// %e => j : Day of the month, 2 digits without leading zeros
+				// %j => z : Day of the year, 3 digits with leading zeros
+				// %b => M : Abbreviated month name, based on the locale (conversion works only for english)
+				// %B => F : Full month name, based on the locale (conversion works only for english)
+				// %h => M : Abbreviated month name, based on the locale (an alias of %b) (conversion works only for english)
+				// %m => m : Two digit representation of the month
+				// %y => y : Two digit representation of the year
+				// %Y => Y : Four digit representation for the year
+				$dateTimeFormat = str_replace(
+					array('%a', '%A', '%d', '%e', '%j', '%b', '%B', '%h', '%m', '%y', '%Y'),
+					array('D', 'l', 'd', 'j', 'z', 'M', 'F', 'M', 'm', 'y', 'Y'),
+					$this->format
+				);
+				return date_create_from_format($dateTimeFormat, $value) !== FALSE;
+			}
 		}
 		return TRUE;
 	}

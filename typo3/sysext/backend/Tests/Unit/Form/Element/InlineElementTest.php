@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Tests\Unit\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -321,4 +321,5 @@ class InlineElementTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 		);
 	}
+
 }

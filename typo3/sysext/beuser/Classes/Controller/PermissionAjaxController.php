@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Beuser\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -308,4 +308,5 @@ class PermissionAjaxController {
 	protected function getBackendUser() {
 		return $GLOBALS['BE_USER'];
 	}
+
 }

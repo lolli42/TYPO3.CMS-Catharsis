@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\ViewHelpers;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -82,4 +82,5 @@ class PhpInfoViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHel
 		// Replace font tag with span
 		return str_replace(array('<font', '</font>'), array('<span', '</span>'), $html);
 	}
+
 }

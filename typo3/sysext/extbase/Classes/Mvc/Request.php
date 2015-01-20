@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -129,7 +129,7 @@ class Request implements RequestInterface {
 	 * The dispatcher will try to dispatch the request again if it has not been
 	 * addressed yet.
 	 *
-	 * @return bool TRUE if this request has been disptached sucessfully
+	 * @return bool TRUE if this request has been disptached successfully
 	 * @api
 	 */
 	public function isDispatched() {
@@ -181,7 +181,7 @@ class Request implements RequestInterface {
 				$this->controllerObjectNamePattern
 			);
 		}
-		// TODO implement getCaseSensitiveObjectName()
+		// @todo implement getCaseSensitiveObjectName()
 		if ($objectName === FALSE) {
 			throw new \TYPO3\CMS\Extbase\Mvc\Exception\NoSuchControllerException('The controller object "' . $objectName . '" does not exist.', 1220884009);
 		}
@@ -368,7 +368,7 @@ class Request implements RequestInterface {
 	 * @return void
 	 */
 	public function setArgument($argumentName, $value) {
-		if (!is_string($argumentName) || strlen($argumentName) == 0) {
+		if (!is_string($argumentName) || $argumentName === '') {
 			throw new \TYPO3\CMS\Extbase\Mvc\Exception\InvalidArgumentNameException('Invalid argument name.', 1210858767);
 		}
 		if ($argumentName[0] === '_' && $argumentName[1] === '_') {
@@ -553,4 +553,5 @@ class Request implements RequestInterface {
 		}
 		return $this->internalArguments[$argumentName];
 	}
+
 }

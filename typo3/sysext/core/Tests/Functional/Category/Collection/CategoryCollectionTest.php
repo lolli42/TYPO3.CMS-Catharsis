@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Functional\Category\Collection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Tests\Functional\Category\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -68,8 +69,8 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->fixture = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, $this->tableName);
 		$this->collectionRecord = array(
 			'uid' => 0,
-			'title' => uniqid('title'),
-			'description' => uniqid('description'),
+			'title' => $this->getUniqueId('title'),
+			'description' => $this->getUniqueId('description'),
 			'table_name' => $this->tableName,
 		);
 		$GLOBALS['TCA'][$this->tableName] = array('ctrl' => array());
@@ -101,7 +102,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function canCreateDummyCollection() {
 		$collection = \TYPO3\CMS\Core\Category\Collection\CategoryCollection::create($this->collectionRecord);
-		$this->assertInstanceOf('\TYPO3\CMS\Core\Category\Collection\CategoryCollection', $collection);
+		$this->assertInstanceOf(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, $collection);
 	}
 
 	/**
@@ -111,7 +112,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 */
 	public function canCreateDummyCollectionAndFillItems() {
 		$collection = \TYPO3\CMS\Core\Category\Collection\CategoryCollection::create($this->collectionRecord, TRUE);
-		$this->assertInstanceOf('\TYPO3\CMS\Core\Category\Collection\CategoryCollection', $collection);
+		$this->assertInstanceOf(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, $collection);
 	}
 
 	/**
@@ -162,7 +163,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$fakeRecord = array(
 			'uid' => $this->numberOfRecords + 1,
 			'pid' => 0,
-			'title' => uniqid('title'),
+			'title' => $this->getUniqueId('title'),
 			'categories' => 0
 		);
 		// Check the number of records
@@ -180,7 +181,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$fakeRecord = array(
 			'uid' => $this->numberOfRecords + 1,
 			'pid' => 0,
-			'title' => uniqid('title'),
+			'title' => $this->getUniqueId('title'),
 			'categories' => 0
 		);
 		// Check the number of records
@@ -210,7 +211,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	private function populateDummyTable() {
 		for ($index = 1; $index <= $this->numberOfRecords; $index++) {
 			$values = array(
-				'title' => uniqid('title')
+				'title' => $this->getUniqueId('title')
 			);
 			$this->database->exec_INSERTquery($this->tableName, $values);
 		}
@@ -271,10 +272,11 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 			$this->database->sql_query($_sql);
 		}
 		$values = array(
-			'title' => uniqid('title'),
+			'title' => $this->getUniqueId('title'),
 			'is_dummy_record' => 1
 		);
 		$this->database->exec_INSERTquery('sys_category', $values);
 		$this->categoryUid = $this->database->sql_insert_id();
 	}
+
 }

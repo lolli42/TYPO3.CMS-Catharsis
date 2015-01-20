@@ -29,8 +29,8 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '20',
-				'max' => '50',
-				'eval' => 'nospace,lower,uniqueInPid,required'
+				'max' => '255',
+				'eval' => 'nospace,trim,lower,uniqueInPid,required'
 			)
 		),
 		'password' => array(
@@ -39,7 +39,7 @@ return array(
 				'type' => 'input',
 				'size' => '10',
 				'max' => '40',
-				'eval' => 'nospace,required,password'
+				'eval' => 'nospace,trim,required,password'
 			)
 		),
 		'usergroup' => array(
@@ -140,7 +140,7 @@ return array(
 				'type' => 'input',
 				'size' => '20',
 				'eval' => 'trim',
-				'max' => '80'
+				'max' => '255'
 			)
 		),
 		'title' => array(

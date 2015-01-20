@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Mapper;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A column map to map a column configured in $TCA on a property of a domain object.
  */
@@ -173,7 +174,7 @@ class ColumnMap {
 	 * @return \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap
 	 */
 	public function __construct($columnName, $propertyName) {
-		// TODO Enable aliases (tx_anotherextension_addedcolumn -> theAddedColumn)
+		// @todo Enable aliases (tx_anotherextension_addedcolumn -> theAddedColumn)
 		$this->setColumnName($columnName);
 		$this->setPropertyName($propertyName);
 	}
@@ -415,4 +416,5 @@ class ColumnMap {
 	public function getType() {
 		return $this->type;
 	}
+
 }

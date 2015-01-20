@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@ var setFormValueOpenBrowser
 	,setFormValueFromBrowseWin
 	,setHiddenFromList
 	,setFormValueManipulate
-	,setFormValue_getFObj
+	,setFormValue_getFObj;
 
 
 define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
@@ -46,10 +46,14 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 *
 	 * @param mode can be "db" or "file"
 	 * @param params additional params for the browser window
+	 * @param width width of the window
+	 * @param height height of the window
 	 */
-	FormEngine.openPopupWindow = setFormValueOpenBrowser = function(mode, params) {
+	FormEngine.openPopupWindow = setFormValueOpenBrowser = function(mode, params, width, height) {
 		var url = FormEngine.backPath + 'browser.php?mode=' + mode + '&bparams=' + params;
-		FormEngine.openedPopupWindow = window.open(url, 'Typo3WinBrowser', 'height=650,width=' + (mode == 'db' ? 650 : 600) + ',status=0,menubar=0,resizable=1,scrollbars=1');
+		width = width ? width : top.TYPO3.configuration.PopupWindow.width;
+		height = height ? height : top.TYPO3.configuration.PopupWindow.height;
+		FormEngine.openedPopupWindow = window.open(url, 'Typo3WinBrowser', 'height=' + height + ',width=' + width + ',status=0,menubar=0,resizable=1,scrollbars=1');
 		FormEngine.openedPopupWindow.focus();
 	};
 
@@ -624,6 +628,18 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	};
 
 	/**
+	 * convert all textareas so they grow when it is typed in.
+	 */
+	FormEngine.convertTextareasResizable = function() {
+		var $elements = $('.t3js-formengine-textarea');
+		if (TYPO3.settings.Textarea.autosize && $elements.length) {
+			require(['jquery/jquery.autosize.min'], function() {
+				$elements.autosize();
+			});
+		}
+	};
+
+	/**
 	 * this is the main function that is called on page load, but also after elements are asynchroniously
 	 * called e.g. after IRRE elements are loaded again, or a new flexform section is added.
 	 * use this function in your extension like this "TYPO3.FormEngine.initialize()"
@@ -637,8 +653,9 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 				$('.t3-tceforms-input-wrapper .formfield-input, .t3-tceforms-input-wrapper-datetime .formfield-input').clearable();
 			});
 		}
-		// note, this will be migrated to FormEngine itself soon
-		TYPO3.TCEFORMS.convertDateFieldsToDatePicker();
+		// apply DatePicker to all date time fields
+		require(['TYPO3/CMS/Backend/DateTimePicker']);
+		FormEngine.convertTextareasResizable();
 	};
 
 	/**

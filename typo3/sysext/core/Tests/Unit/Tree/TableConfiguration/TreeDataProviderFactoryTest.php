@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Tree\TableConfiguration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -82,7 +82,7 @@ class TreeDataProviderFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function configuredDataProviderClassIsInstantiated() {
-		$dataProviderMockClassName = uniqid('tx_coretest_tree_data_provider');
+		$dataProviderMockClassName = $this->getUniqueId('tx_coretest_tree_data_provider');
 		eval('class ' . $dataProviderMockClassName . ' {
 			function __construct($configuration) {
 			}
@@ -98,12 +98,12 @@ class TreeDataProviderFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function configuredDataProviderClassIsInstantiatedWithTcaConfigurationInConstructor() {
-		$dataProviderMockClassName = uniqid('tx_coretest_tree_data_provider');
+		$dataProviderMockClassName = $this->getUniqueId('tx_coretest_tree_data_provider');
 		$tcaConfiguration = array('treeConfig' => array('dataProvider' => $dataProviderMockClassName), 'internal_type' => 'foo');
 		$classCode = 'class ' . $dataProviderMockClassName . ' {
 			function __construct($configuration) {
-				if (!is_array($configuration)) throw new Exception(\'Failed asserting that the contructor arguments are an array\');
-				if ($configuration !== ' . var_export($tcaConfiguration, TRUE) . ') throw new Exception(\'Failed asserting that the contructor arguments are correctly passed\');
+				if (!is_array($configuration)) throw new Exception(\'Failed asserting that the constructor arguments are an array\');
+				if ($configuration !== ' . var_export($tcaConfiguration, TRUE) . ') throw new Exception(\'Failed asserting that the constructor arguments are correctly passed\');
 			}
 		}';
 		eval($classCode);
@@ -111,4 +111,5 @@ class TreeDataProviderFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertInstanceOf($dataProviderMockClassName, $dataProvider);
 	}
+
 }

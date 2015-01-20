@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -98,7 +98,7 @@ class InstallUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @return string The extension key
 	 */
 	protected function createFakeExtension() {
-		$extKey = strtolower(uniqid('testing'));
+		$extKey = strtolower($this->getUniqueId('testing'));
 		$absExtPath = PATH_site . 'typo3temp/' . $extKey;
 		$relPath = 'typo3temp/' . $extKey . '/';
 		\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($absExtPath);
@@ -316,7 +316,7 @@ class InstallUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$absPath = PATH_site . $this->fakedExtensions[$extKey]['siteRelPath'];
 		\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($absPath . 'Initialisation');
 		file_put_contents($absPath . 'Initialisation/' . $fileName, 'DUMMY');
-		$registryMock = $this->getMock('\\TYPO3\\CMS\\Core\\Registry', array('get', 'set'));
+		$registryMock = $this->getMock(\TYPO3\CMS\Core\Registry::class, array('get', 'set'));
 		$registryMock
 			->expects($this->any())
 			->method('get')
@@ -339,4 +339,5 @@ class InstallUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$installMock->expects($this->never())->method('getImportExportUtility');
 		$installMock->_call('importT3DFile', $this->fakedExtensions[$extKey]['siteRelPath']);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A caching backend which stores cache entries during one script run.
  *
@@ -90,7 +91,7 @@ class TransientMemoryBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBacke
 	public function remove($entryIdentifier) {
 		if (isset($this->entries[$entryIdentifier])) {
 			unset($this->entries[$entryIdentifier]);
-			foreach (array_keys($this->tagsAndEntries) as $tag) {
+			foreach ($this->tagsAndEntries as $tag => $_) {
 				if (isset($this->tagsAndEntries[$tag][$entryIdentifier])) {
 					unset($this->tagsAndEntries[$tag][$entryIdentifier]);
 				}

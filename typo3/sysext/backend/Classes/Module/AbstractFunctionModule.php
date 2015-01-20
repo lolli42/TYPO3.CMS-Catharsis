@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,8 +14,13 @@ namespace TYPO3\CMS\Backend\Module;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Parent class for 'Extension Objects' in backend modules.
@@ -76,40 +81,16 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * $SOBE = GeneralUtility::makeInstance(\TYPO3\CMS\Func\Controller\PageFunctionsController::class);
  * $SOBE->init();
  *
- * Include files?
- * Note: This "include_once" is deprecated since TYPO3 6.2: use auto-loading instead!
- * foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
- * $SOBE->checkExtObj();	// Checking for first level external objects
- *
- * Repeat Include files! - if any files has been added by second-level extensions
- * foreach($SOBE->include_once as $INC_FILE)	include_once($INC_FILE);
- * $SOBE->checkSubExtObj(); // Checking second level external objects
- *
- * $SOBE->main();
- * $SOBE->printContent();
- *
- * Notice that the first part is as usual: Include classes and call
- * $SOBE->checkExtObj() to initialize any level-1 sub-modules.
- * But then again ->include_once is traversed IF the initialization of
- * the level-1 modules might have added more files!!
- * And after that $SOBE->checkSubExtObj() is called to initialize the second level.
- *
- * In this way even a third level could be supported - but most likely that is
- * a too layered model to be practical.
- *
  * Anyways, the final interesting thing is to see what the framework
  * "func_wizard" actually does:
  *
  * class WebFunctionWizardsBaseController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
- * var $localLangFile = "locallang.php";
+ * var $localLangFile = "locallang.xlf";
  * var $function_key = "wiz";
  * function init(&$pObj, $conf) {
  * OK, handles ordinary init. This includes setting up the
  * menu array with ->modMenu
  * parent::init($pObj,$conf);
- * Making sure that any further external classes are added to the
- * include_once array. Notice that inclusion happens twice
- * in the main script because of this!!!
  * $this->handleExternalFunctionValue();
  * }
  * }
@@ -131,10 +112,15 @@ abstract class AbstractFunctionModule {
 	 * Contains a reference to the parent (calling) object (which is probably an instance of
 	 * an extension class to \TYPO3\CMS\Backend\Module\BaseScriptClass
 	 *
-	 * @var \TYPO3\CMS\Backend\Module\BaseScriptClass
+	 * @var BaseScriptClass
 	 * @see init()
 	 */
 	public $pObj;
+
+	/**
+	 * @var BaseScriptClass
+	 */
+	public $extObj = NULL;
 
 	/**
 	 * Set to the directory name of this class file.
@@ -145,12 +131,12 @@ abstract class AbstractFunctionModule {
 	public $thisPath = '';
 
 	/**
-	 * Can be hardcoded to the name of a locallang.php file (from the same directory as the class file) to use/load
+	 * Can be hardcoded to the name of a locallang.xlf file (from the same directory as the class file) to use/load
 	 *
 	 * @see incLocalLang()
 	 * @var string
 	 */
-	public $localLangFile = 'locallang.php';
+	public $localLangFile = 'locallang.xlf';
 
 	/**
 	 * Contains module configuration parts from TBE_MODULES_EXT if found
@@ -173,11 +159,9 @@ abstract class AbstractFunctionModule {
 	/**
 	 * Initialize the object
 	 *
-	 * @param object $pObj A reference to the parent (calling) object (which is probably an instance of an
-	 * extension class to \TYPO3\CMS\Backend\Module\BaseScriptClass
-	 *
+	 * @param BaseScriptClass $pObj A reference to the parent (calling) object
 	 * @param array $conf The configuration set for this module - from global array TBE_MODULES_EXT
-	 * @return void
+	 * @throws \RuntimeException
 	 * @see \TYPO3\CMS\Backend\Module\BaseScriptClass::checkExtObj()
 	 */
 	public function init(&$pObj, $conf) {
@@ -195,34 +179,39 @@ abstract class AbstractFunctionModule {
 	}
 
 	/**
-	 * If $this->function_key is set (which means there are two levels of object connectivity) then $this->extClassConf is loaded with the TBE_MODULES_EXT configuration for that sub-sub-module
+	 * If $this->function_key is set (which means there are two levels of object connectivity) then
+	 * $this->extClassConf is loaded with the TBE_MODULES_EXT configuration for that sub-sub-module
 	 *
 	 * @return void
 	 * @see $function_key, \TYPO3\CMS\FuncWizards\Controller\WebFunctionWizardsBaseController::init()
-	 * @deprecated since 6.2. Instead of this include_once array, extensions should use auto-loading
 	 */
 	public function handleExternalFunctionValue() {
 		// Must clean first to make sure the correct key is set...
 		$this->pObj->MOD_SETTINGS = BackendUtility::getModuleData($this->pObj->MOD_MENU, GeneralUtility::_GP('SET'), $this->pObj->MCONF['name']);
 		if ($this->function_key) {
 			$this->extClassConf = $this->pObj->getExternalItemConfig($this->pObj->MCONF['name'], $this->function_key, $this->pObj->MOD_SETTINGS[$this->function_key]);
-			if (is_array($this->extClassConf) && $this->extClassConf['path']) {
-				$this->pObj->include_once[] = $this->extClassConf['path'];
-			}
 		}
 	}
 
 	/**
-	 * Including any locallang file configured and merging its content over the current global LOCAL_LANG array (which is EXPECTED to exist!!!)
+	 * Including any locallang file configured and merging its content over
+	 * the current global LOCAL_LANG array (which is EXPECTED to exist!!!)
 	 *
 	 * @return void
 	 */
 	public function incLocalLang() {
-		if ($this->localLangFile && (@is_file(($this->thisPath . '/' . $this->localLangFile)) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xml')) || @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xlf')))) {
-			$LOCAL_LANG = $GLOBALS['LANG']->includeLLFile($this->thisPath . '/' . $this->localLangFile, FALSE);
+		if (
+			$this->localLangFile
+			&& (
+				@is_file(($this->thisPath . '/' . $this->localLangFile))
+				|| @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.xml'))
+				|| @is_file(($this->thisPath . '/' . substr($this->localLangFile, 0, -4) . '.php'))
+			)
+		) {
+			$LOCAL_LANG = $this->getLanguageService()->includeLLFile($this->thisPath . '/' . $this->localLangFile, FALSE);
 			if (is_array($LOCAL_LANG)) {
 				$GLOBALS['LOCAL_LANG'] = (array)$GLOBALS['LOCAL_LANG'];
-				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
+				ArrayUtility::mergeRecursiveWithOverrule($GLOBALS['LOCAL_LANG'], $LOCAL_LANG);
 			}
 		}
 	}
@@ -255,14 +244,47 @@ abstract class AbstractFunctionModule {
 
 	/**
 	 * Dummy function - but is used to set up additional menu items for this submodule.
-	 * For an example see the extension 'cms' where the 'web_info' submodule is defined
-	 * in cms/web_info/class.tx_cms_webinfo.php, \TYPO3\CMS\\Frontend\Controller\PageInformationController::modMenu()
 	 *
 	 * @return array A MOD_MENU array which will be merged together with the one from the parent object
 	 * @see init(), \TYPO3\CMS\Frontend\Controller\PageInformationController::modMenu()
 	 */
 	public function modMenu() {
 		return array();
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * @return BackendUserAuthentication
+	 */
+	protected function getBackendUserAuthentication() {
+		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * @return DocumentTemplate
+	 */
+	protected function getDocumentTemplate() {
+		return $GLOBALS['TBE_TEMPLATE'];
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function getBackPath() {
+		return $GLOBALS['BACK_PATH'];
+	}
+
+	/**
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

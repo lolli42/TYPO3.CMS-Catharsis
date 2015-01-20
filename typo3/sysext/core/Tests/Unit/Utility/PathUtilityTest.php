@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -338,7 +338,7 @@ class PathUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider getCanonicalPathCorrectlyCleansPathDataProvider
 	 */
 	public function getCanonicalPathCorrectlyCleansPath($inputName, $expectedResult) {
-		$className = uniqid('PathUtilityFixture');
+		$className = $this->getUniqueId('PathUtilityFixture');
 		$fixtureClassString = '
 			namespace ' . ltrim(__NAMESPACE__, '\\') . ';
 			class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\PathUtility {

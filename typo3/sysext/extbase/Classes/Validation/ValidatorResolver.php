@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -87,7 +87,7 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 	public function createValidator($validatorType, array $validatorOptions = array()) {
 		try {
 			/**
-			 * todo: remove throwing Exceptions in resolveValidatorObjectName
+			 * @todo remove throwing Exceptions in resolveValidatorObjectName
 			 */
 			$validatorObjectName = $this->resolveValidatorObjectName($validatorType);
 
@@ -421,7 +421,7 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 			 */
 			list($extensionName, $extensionValidatorName) = explode(':', $validatorName);
 
-			if ($validatorName !== $extensionName && strlen($extensionValidatorName) > 0) {
+			if ($validatorName !== $extensionName && $extensionValidatorName !== '') {
 				/**
 				 * Shorthand custom
 				 */
@@ -521,4 +521,5 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 
 		return $validateAnnotations;
 	}
+
 }

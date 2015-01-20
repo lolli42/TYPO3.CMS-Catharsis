@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Rendering;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -76,8 +76,9 @@ class AudioTagRenderer implements FileRendererInterface {
 		return sprintf(
 			'<audio%s><source src="%s" type="%s"></audio>',
 			empty($additionalAttributes) ? '' : ' ' . implode(' ', $additionalAttributes),
-			$file->getPublicUrl($usedPathsRelativeToCurrentScript),
+			htmlspecialchars($file->getPublicUrl($usedPathsRelativeToCurrentScript)),
 			$file->getMimeType()
 		);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Http;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Http;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class to hold all the information about an AJAX call and send
  * the right headers for the request type

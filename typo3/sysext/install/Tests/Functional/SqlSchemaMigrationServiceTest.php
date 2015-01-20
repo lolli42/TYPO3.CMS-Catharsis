@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Tests\Functional;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -62,4 +62,5 @@ class SqlSchemaMigrationServiceTest extends \TYPO3\CMS\Core\Tests\FunctionalTest
 		$result = $this->sqlSchemaMigrationService->performUpdateQueries($removeFieldDiff['drop'], $removeFieldDiff['drop']);
 		$this->assertTrue($result, 'performUpdateQueries() did not return TRUE, this means an error occurred: ' . (is_array($result) ? array_pop($result) : ''));
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\ExtDirect;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -34,7 +34,7 @@ class MassActionHandler extends AbstractHandler {
 	/**
 	 * Get list of available mass workspace actions.
 	 *
-	 * @param object $parameter
+	 * @param \stdClass $parameter
 	 * @return array $data
 	 */
 	public function getMassStageActions($parameter) {

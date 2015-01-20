@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Resource\Service;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -114,7 +115,11 @@ class UserFileMountService {
 		$allFolderItems = array($parentFolder);
 		$subFolders = $parentFolder->getSubfolders();
 		foreach ($subFolders as $subFolder) {
-			$subFolderItems = $this->getSubfoldersForOptionList($subFolder, $level);
+			try {
+				$subFolderItems = $this->getSubfoldersForOptionList($subFolder, $level);
+			}  catch(\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderReadPermissionsException $e) {
+				$subFolderItems  = array();
+			}
 			$allFolderItems = array_merge($allFolderItems, $subFolderItems);
 		}
 		return $allFolderItems;

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Reflection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Reflection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
@@ -123,6 +124,10 @@ class ObjectAccess {
 			return $subject->{$getterMethodName}();
 		}
 		$getterMethodName = 'is' . ucfirst($propertyName);
+		if (is_callable(array($subject, $getterMethodName))) {
+			return $subject->{$getterMethodName}();
+		}
+		$getterMethodName = 'has' . ucfirst($propertyName);
 		if (is_callable(array($subject, $getterMethodName))) {
 			return $subject->{$getterMethodName}();
 		}
@@ -237,6 +242,9 @@ class ObjectAccess {
 				if (substr($methodName, 0, 3) === 'get') {
 					$declaredPropertyNames[] = lcfirst(substr($methodName, 3));
 				}
+				if (substr($methodName, 0, 3) === 'has') {
+					$declaredPropertyNames[] = lcfirst(substr($methodName, 3));
+				}
 			}
 		}
 		$propertyNames = array_unique($declaredPropertyNames);
@@ -319,6 +327,9 @@ class ObjectAccess {
 		if (is_callable(array($object, 'get' . ucfirst($propertyName)))) {
 			return TRUE;
 		}
+		if (is_callable(array($object, 'has' . ucfirst($propertyName)))) {
+			return TRUE;
+		}
 		if (is_callable(array($object, 'is' . ucfirst($propertyName)))) {
 			return TRUE;
 		}
@@ -361,4 +372,5 @@ class ObjectAccess {
 	static public function buildSetterMethodName($propertyName) {
 		return 'set' . ucfirst($propertyName);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Configuration\TypoScript\ConditionMatching;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -71,13 +71,7 @@ class AbstractConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		/** @var \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $abstractConditionMatcherMock */
 		$abstractConditionMatcherMock = $this->getMockForAbstractClass(
-			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class,
-			array(),
-			'',
-			TRUE,
-			TRUE,
-			TRUE,
-			array('evaluateConditionCommon')
+			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class
 		);
 
 		$method = new \ReflectionMethod(
@@ -118,13 +112,7 @@ class AbstractConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		/** @var \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $abstractConditionMatcherMock */
 		$abstractConditionMatcherMock = $this->getMockForAbstractClass(
-			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class,
-			array(),
-			'',
-			TRUE,
-			TRUE,
-			TRUE,
-			array('evaluateConditionCommon')
+			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class
 		);
 
 		$method = new \ReflectionMethod(
@@ -198,13 +186,7 @@ class AbstractConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function evaluateConditionCommonEvaluatesIpAddressesCorrectly($devIpMask, $actualIp, $expectedResult) {
 		/** @var \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $abstractConditionMatcherMock */
 		$abstractConditionMatcherMock = $this->getMockForAbstractClass(
-			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class,
-			array(),
-			'',
-			TRUE,
-			TRUE,
-			TRUE,
-			array('evaluateConditionCommon')
+			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class
 		);
 		$method = new \ReflectionMethod(
 			\TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher::class,
@@ -221,4 +203,5 @@ class AbstractConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$actualResult = $method->invokeArgs($abstractConditionMatcherMock, array('IP', 'devIP'));
 		$this->assertSame($expectedResult, $actualResult);
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Task;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -51,4 +51,5 @@ class UpdateExtensionListTask extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 		$persistenceManager = $objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager::class);
 		$persistenceManager->persistAll();
 	}
+
 }

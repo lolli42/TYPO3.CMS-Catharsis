@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -285,4 +285,5 @@ class TypoScriptServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$converted = $typoScriptService->convertPlainArrayToTypoScriptArray($extbaseTS);
 		$this->assertEquals($converted, $classic);
 	}
+
 }

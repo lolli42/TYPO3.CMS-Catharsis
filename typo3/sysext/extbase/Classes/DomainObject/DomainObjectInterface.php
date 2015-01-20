@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\DomainObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\DomainObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A Domain Object Interface. All domain objects which should be persisted need to implement the below interface.
  * Usually you will need to subclass \TYPO3\CMS\Extbase\DomainObject\AbstractEntity and \TYPO3\CMS\Extbase\DomainObject\AbstractValueObject

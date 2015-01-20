@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Beuser\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Beuser\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -85,7 +86,7 @@ class PermissionController extends ActionController {
 			$this->id = (int)$this->request->getArgument('id');
 		}
 
-		// determine depth paramter
+		// determine depth parameter
 		$this->depth = ((int)GeneralUtility::_GP('depth') > 0) ? (int) GeneralUtility::_GP('depth') :
 			$this->getBackendUser()->getSessionData(self::SESSION_PREFIX . 'depth');
 		if ($this->request->hasArgument('depth')) {
@@ -247,7 +248,8 @@ class PermissionController extends ActionController {
 				$viewData['editPermsAllowed'] = ($data['row']['perms_userid'] == $this->getBackendUser()->user['uid']
 					|| $this->getBackendUser()->isAdmin());
 
-				$viewData['html'] = $data['HTML'] . htmlspecialchars(GeneralUtility::fixed_lgd_cs($data['row']['title'], 20));
+				$viewData['html'] = $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($data['HTML'], 'pages', $data['row']['uid'])
+					. htmlspecialchars(GeneralUtility::fixed_lgd_cs($data['row']['title'], 20));
 				$viewData['id'] = $data['row']['_ORIG_uid'] ? $data['row']['_ORIG_uid'] : $pageId;
 
 				$viewData['userPermissions'] = ($pageId ?
@@ -307,30 +309,26 @@ class PermissionController extends ActionController {
 				$beGroupArray = BackendUtility::blindGroupNames($beGroupArrayO, $beGroupKeys, 1);
 			}
 
-			// Owner selector:
-			$beUserDataArray = array();
-			$beUserDataArray[0] = '';
+			// Owner selector
+			$beUserDataArray = array(0 => LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:selectNone', 'beuser'));
 			foreach ($beUserArray as $uid => &$row) {
 				$beUserDataArray[$uid] = $row['username'];
 			}
+			$beUserDataArray[-1] = LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:selectUnchanged', 'beuser');
 			$this->view->assign('currentBeUser', $this->pageInfo['perms_userid']);
 			$this->view->assign('beUserData', $beUserDataArray);
 
-			// Group selector:
-			$beGroupDataArray = array();
-			$beGroupDataArray[0] = '';
+			// Group selector
+			$beGroupDataArray = array(0 => LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:selectNone', 'beuser'));
 			foreach ($beGroupArray as $uid => $row) {
 				$beGroupDataArray[$uid] = $row['title'];
 			}
+			$beGroupDataArray[-1] = LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:selectUnchanged', 'beuser');
 			$this->view->assign('currentBeGroup', $this->pageInfo['perms_groupid']);
 			$this->view->assign('beGroupData', $beGroupDataArray);
 			$this->view->assign('pageInfo', $this->pageInfo);
 			$this->view->assign('returnId', $this->returnId);
 			$this->view->assign('recursiveSelectOptions', $this->getRecursiveSelectOptions());
-			// Adding help text:
-			if ($this->getBackendUser()->uc['helpText']) {
-				$this->view->assign('showHelp', TRUE);
-			}
 		}
 	}
 
@@ -346,6 +344,13 @@ class PermissionController extends ActionController {
 		if ($this->checkAccess()) {
 			if (!empty($data['pages'])) {
 				foreach ($data['pages'] as $pageUid => $properties) {
+					// if the owner and group field shouldn't be touched, unset the option
+					if ((int)$properties['perms_userid'] === -1) {
+						unset($properties['perms_userid']);
+					}
+					if ((int)$properties['perms_groupid'] === -1) {
+						unset($properties['perms_groupid']);
+					}
 					$this->getDatabaseConnection()->exec_UPDATEquery(
 						'pages',
 						'uid = ' . (int)$pageUid,
@@ -379,6 +384,13 @@ class PermissionController extends ActionController {
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @return DocumentTemplate
+	 */
+	protected function getControllerDocumentTemplate() {
+		return $GLOBALS['TBE_TEMPLATE'];
 	}
 
 	/**
@@ -454,4 +466,5 @@ class PermissionController extends ActionController {
 		}
 		return FALSE;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -259,9 +259,12 @@ class MediaContentObject extends AbstractContentObject {
 		} elseif (is_file(PATH_site . $fileParts[0])) {
 			$returnValue = $GLOBALS['TSFE']->tmpl->getFileName($fileParts[0]);
 		} elseif ($mediaWizard !== NULL) {
+			$jumpUrlEnabled = $GLOBALS['TSFE']->config['config']['jumpurl_enable'];
+			$GLOBALS['TSFE']->config['config']['jumpurl_enable'] = 0;
 			$returnValue = $this->cObj->typoLink_URL(array(
 				'parameter' => $mediaWizard->rewriteUrl($fileParts[0])
 			));
+			$GLOBALS['TSFE']->config['config']['jumpurl_enable'] = $jumpUrlEnabled;
 		} elseif (\TYPO3\CMS\Core\Utility\GeneralUtility::isValidUrl($fileParts[0])) {
 			$returnValue = $fileParts[0];
 		}

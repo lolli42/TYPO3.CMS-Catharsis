@@ -6,7 +6,18 @@ if (TYPO3_MODE === 'BE') {
 		'user',
 		'setup',
 		'after:task',
-		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'mod/'
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'mod/',
+		array(
+			'script' => '_DISPATCH',
+			'access' => 'group,user',
+			'name' => 'user_setup',
+			'labels' => array(
+				'tabs_images' => array(
+					'tab' => '../Resources/Public/Icons/module-setup.png',
+				),
+				'll_ref' => 'LLL:EXT:setup/mod/locallang_mod.xlf',
+			),
+		)
 	);
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr(
 		'_MOD_user_setup',
@@ -112,11 +123,6 @@ if (TYPO3_MODE === 'BE') {
 					'LLL:EXT:setup/mod/locallang.xlf:clearSessionVarsQuestion'
 				)
 			),
-			'resizeTextareas' => array(
-				'type' => 'check',
-				'label' => 'LLL:EXT:setup/mod/locallang.xlf:resizeTextareas',
-				'csh' => 'resizeTextareas'
-			),
 			'resizeTextareas_Flexible' => array(
 				'type' => 'check',
 				'label' => 'LLL:EXT:setup/mod/locallang.xlf:resizeTextareas_Flexible',
@@ -135,7 +141,7 @@ if (TYPO3_MODE === 'BE') {
 		),
 		'showitem' => '--div--;LLL:EXT:setup/mod/locallang.xlf:personal_data,realName,email,emailMeAtLogin,password,password2,lang,
 				--div--;LLL:EXT:setup/mod/locallang.xlf:opening,startModule,thumbnailsByDefault,titleLen,
-				--div--;LLL:EXT:setup/mod/locallang.xlf:editFunctionsTab,edit_RTE,edit_docModuleUpload,showHiddenFilesAndFolders,resizeTextareas,resizeTextareas_Flexible,resizeTextareas_MaxHeight,copyLevels,recursiveDelete,resetConfiguration,clearSessionVars,
+				--div--;LLL:EXT:setup/mod/locallang.xlf:editFunctionsTab,edit_RTE,edit_docModuleUpload,showHiddenFilesAndFolders,resizeTextareas_Flexible,resizeTextareas_MaxHeight,copyLevels,recursiveDelete,resetConfiguration,clearSessionVars,
 				--div--;LLL:EXT:setup/mod/locallang.xlf:adminFunctions,debugInWindow'
 	);
 }

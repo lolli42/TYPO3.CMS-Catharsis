@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\PostProcess;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Form\PostProcess;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * The redirect post processor
  */
@@ -87,4 +88,5 @@ class RedirectPostProcessor implements \TYPO3\CMS\Form\PostProcess\PostProcessor
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($this->destination);
 		return '';
 	}
+
 }

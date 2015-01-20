@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Module;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -33,7 +33,7 @@ class ModuleController {
 
 	/**
 	 * Constructor
-	 * @deprecated since TYPO3 CMS 7, not in use, as everything can be done via the ModuleMenuRepository directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use, as everything can be done via the ModuleMenuRepository directly
 	 */
 	public function __construct() {
 		\TYPO3\CMS\Core\Utility\GeneralUtility::logDeprecatedFunction();
@@ -149,4 +149,5 @@ class ModuleController {
 	protected function getLanguageService() {
 		return $GLOBALS['LANG'];
 	}
+
 }

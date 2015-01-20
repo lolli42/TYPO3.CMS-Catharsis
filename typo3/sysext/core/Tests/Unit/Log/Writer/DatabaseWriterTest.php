@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Log\Writer;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@ class DatabaseWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getTableReturnsPreviouslySetTable() {
-		$logTable = uniqid('logtable_');
+		$logTable = $this->getUniqueId('logtable_');
 		/** @var \TYPO3\CMS\Core\Log\Writer\DatabaseWriter|\PHPUnit_Framework_MockObject_MockObject $subject */
 		$subject = $this->getMock(\TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class, array('dummy'), array(), '', FALSE);
 		$subject->setLogTable($logTable);
@@ -50,7 +50,7 @@ class DatabaseWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function writeLogInsertsToSpecifiedTable() {
-		$logTable = uniqid('logtable_');
+		$logTable = $this->getUniqueId('logtable_');
 		$GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array(), array(), '', FALSE);
 		$GLOBALS['TYPO3_DB']->expects($this->once())->method('exec_INSERTquery')->with($logTable, $this->anything());
 		/** @var \TYPO3\CMS\Core\Log\LogRecord|\PHPUnit_Framework_MockObject_MockObject $subject */
@@ -66,11 +66,11 @@ class DatabaseWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function writeLogInsertsLogRecordWithGivenProperties() {
 		$logRecordData = array(
-			'request_id' => uniqid('request_id'),
-			'time_micro' => uniqid('time_micro'),
-			'component' => uniqid('component'),
-			'level' => uniqid('level'),
-			'message' => uniqid('message'),
+			'request_id' => $this->getUniqueId('request_id'),
+			'time_micro' => $this->getUniqueId('time_micro'),
+			'component' => $this->getUniqueId('component'),
+			'level' => $this->getUniqueId('level'),
+			'message' => $this->getUniqueId('message'),
 			'data' => '',
 		);
 		/** @var \TYPO3\CMS\Core\Log\LogRecord|\PHPUnit_Framework_MockObject_MockObject $subject */
@@ -89,4 +89,5 @@ class DatabaseWriterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$subject->writeLog($logRecordMock);
 	}
+
 }

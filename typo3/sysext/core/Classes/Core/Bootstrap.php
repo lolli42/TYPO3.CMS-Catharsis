@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -15,8 +15,6 @@ namespace TYPO3\CMS\Core\Core;
  */
 
 use TYPO3\CMS\Core\Utility;
-
-require_once __DIR__ . '/SystemEnvironmentBuilder.php';
 
 /**
  * This class encapsulates bootstrap related methods.
@@ -152,9 +150,30 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function baseSetup($relativePathPart = '') {
+		$this->initializeComposerClassLoader();
 		SystemEnvironmentBuilder::run($relativePathPart);
 		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
+	}
+
+	/**
+	 * @return \Composer\Autoload\ClassLoader
+	 */
+	protected function initializeComposerClassLoader() {
+		$respectComposerPackagesForClassLoading = getenv('TYPO3_COMPOSER_AUTOLOAD') ?: (getenv('REDIRECT_TYPO3_COMPOSER_AUTOLOAD') ?: NULL);
+		if (!empty($respectComposerPackagesForClassLoading)) {
+			$possiblePaths = array(
+				'distribution is root package' => __DIR__ . '/../../../../../../Packages/Libraries/autoload.php',
+				'typo3/cms is root package' => __DIR__ . '/../../../../../Packages/Libraries/autoload.php',
+			);
+			foreach ($possiblePaths as $possiblePath) {
+				if (file_exists($possiblePath)) {
+					return include $possiblePath;
+				}
+			}
+		}
+		// Committed vendor dir in typo3/contrib
+		return require __DIR__ . '/../../../../contrib/vendor/autoload.php';
 	}
 
 	/**
@@ -262,7 +281,7 @@ class Bootstrap {
 		$classAliasMap->injectClassLoader($classLoader);
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
 		$classLoader->injectClassAliasMap($classAliasMap);
-		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, TRUE);
+		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);
 		return $this;
 	}
 
@@ -711,7 +730,6 @@ class Bootstrap {
 		unset($GLOBALS['TBE_STYLES']);
 		unset($GLOBALS['FILEICONS']);
 		// Those set in init.php:
-		unset($GLOBALS['WEBMOUNTS']);
 		unset($GLOBALS['BE_USER']);
 		// Those set otherwise:
 		unset($GLOBALS['TBE_MODULES_EXT']);
@@ -1004,18 +1022,6 @@ class Bootstrap {
 	}
 
 	/**
-	 * Initialize backend user mount points
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeBackendUserMounts() {
-		// Includes deleted mount pages as well! @TODO: Figure out why ...
-		$GLOBALS['WEBMOUNTS'] = $GLOBALS['BE_USER']->returnWebmounts();
-		return $this;
-	}
-
-	/**
 	 * Initialize language object
 	 *
 	 * @return Bootstrap
@@ -1093,4 +1099,5 @@ class Bootstrap {
 		$GLOBALS['TBE_TEMPLATE'] = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		return $this;
 	}
+
 }

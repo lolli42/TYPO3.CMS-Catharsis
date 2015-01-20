@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Tests\Unit\Domain\Factory;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -47,4 +47,5 @@ class TypoScriptFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$element->getValue()
 		);
 	}
+
 }

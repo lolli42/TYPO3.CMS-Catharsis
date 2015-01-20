@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Domain\Factory;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -164,7 +164,7 @@ class JsonToTypoScript {
 	 * @return void
 	 */
 	protected function getForm(array $element, array &$parent, $elementCounter) {
-		// TODO: Put at the top of the form
+		// @todo Put at the top of the form
 		if (!empty($this->validationRules)) {
 			$parent[$elementCounter . '.']['rules'] = $this->validationRules;
 		}

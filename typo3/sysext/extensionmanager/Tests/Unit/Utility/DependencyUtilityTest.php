@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -437,7 +437,7 @@ class DependencyUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$extension2 = new \TYPO3\CMS\Extensionmanager\Domain\Model\Extension();
 		$extension2->setExtensionKey('bar');
 		$extension2->setVersion('1.0.42');
-		$className = uniqid('objectStorage');
+		$className = $this->getUniqueId('objectStorage');
 		eval('class ' . $className . ' {' . 'public $extensions = array();' . 'public function getFirst() {' . '  return $this->extensions[0];' . '}' . '}');
 		$myStorage = new $className();
 		$myStorage->extensions[] = $extension1;

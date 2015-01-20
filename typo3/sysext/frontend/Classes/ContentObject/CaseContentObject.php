@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -38,9 +38,13 @@ class CaseContentObject extends AbstractContentObject {
 			$this->cObj->data[$this->cObj->currentValKey] = $setCurrent;
 		}
 		$key = isset($conf['key.']) ? $this->cObj->stdWrap($conf['key'], $conf['key.']) : $conf['key'];
-		$key = strlen($conf[$key]) ? $key : 'default';
-		$name = $conf[$key];
-		$theValue = $this->cObj->cObjGetSingle($name, $conf[$key . '.'], $key);
+		$key = (string)$conf[$key] !== '' ? $key : 'default';
+		// If no "default" property is available, then an empty string is returned
+		if ($key === 'default' && $conf['default'] === NULL) {
+			$theValue = '';
+		} else {
+			$theValue = $this->cObj->cObjGetSingle($conf[$key], $conf[$key . '.'], $key);
+		}
 		if (isset($conf['stdWrap.'])) {
 			$theValue = $this->cObj->stdWrap($theValue, $conf['stdWrap.']);
 		}

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -800,21 +800,21 @@ class DoubleMetaPhoneUtility {
 	}
 
 	/**
-	 * [Describe function...]
+	 * Is vowel?
 	 *
-	 * @param 	[type]		$string: ...
-	 * @param 	[type]		$pos: ...
-	 * @return 	[type]		...
+	 * @param string $string
+	 * @param int $pos
+	 * @return bool|int
 	 */
 	public function IsVowel($string, $pos) {
 		return preg_match('/[AEIOUY]/', substr($string, $pos, 1));
 	}
 
 	/**
-	 * [Describe function...]
+	 * Is slavogermanic?
 	 *
-	 * @param 	[type]		$string: ...
-	 * @return 	[type]		...
+	 * @param string $string
+	 * @return bool|int
 	 */
 	public function SlavoGermanic($string) {
 		return preg_match('/W|K|CZ|WITZ/', $string);

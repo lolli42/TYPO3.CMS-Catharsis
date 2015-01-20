@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -22,19 +22,19 @@ namespace TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching;
 abstract class AbstractCondition {
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
+	 * @var \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
 	 */
 	protected $conditionMatcherInstance;
 
 	/**
-	 * @return \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
+	 * @return \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
 	 */
 	protected function getConditionMatcherInstance() {
 		return $this->conditionMatcherInstance;
 	}
 
 	/**
-	 * @param \TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher $conditionMatcherInstance
+	 * @param \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher $conditionMatcherInstance
 	 */
 	public function setConditionMatcherInstance($conditionMatcherInstance) {
 		$this->conditionMatcherInstance = $conditionMatcherInstance;

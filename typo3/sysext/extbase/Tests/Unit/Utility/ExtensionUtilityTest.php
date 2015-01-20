@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Testcase for class \TYPO3\CMS\Extbase\Utility\ExtensionUtility
  */
@@ -313,4 +314,5 @@ class ExtensionUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'][0][2]
 		);
 	}
+
 }

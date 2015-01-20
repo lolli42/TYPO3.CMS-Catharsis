@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Hook;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Hook into the backend module "Reports" checking whether there are extensions installed that conflicting with htmlArea RTE
  */

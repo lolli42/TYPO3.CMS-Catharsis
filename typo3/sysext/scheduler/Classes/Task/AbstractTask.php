@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -350,7 +350,7 @@ abstract class AbstractTask {
 		);
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if (strlen($row['serialized_executions']) > 0) {
+			if ($row['serialized_executions'] !== '') {
 				$isRunning = TRUE;
 			}
 		}
@@ -374,7 +374,7 @@ abstract class AbstractTask {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
 		$runningExecutions = array();
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if (strlen($row['serialized_executions']) > 0) {
+			if ($row['serialized_executions'] !== '') {
 				$runningExecutions = unserialize($row['serialized_executions']);
 			}
 		}
@@ -413,7 +413,7 @@ abstract class AbstractTask {
 		);
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryArr);
 		if ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			if (strlen($row['serialized_executions']) > 0) {
+			if ($row['serialized_executions'] !== '') {
 				$runningExecutions = unserialize($row['serialized_executions']);
 				// Remove the selected execution
 				unset($runningExecutions[$executionID]);

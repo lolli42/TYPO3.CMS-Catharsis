@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\TypoScript;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Tests\Unit\TypoScript;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -42,7 +43,7 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_LOADED_EXT'] = array();
 		$this->templateService = new \TYPO3\CMS\Core\TypoScript\TemplateService();
 		$this->templateService->tt_track = FALSE;
-		$this->templateServiceMock = $this->getAccessibleMock('\\TYPO3\\CMS\\Core\\TypoScript\\TemplateService', array('dummy'));
+		$this->templateServiceMock = $this->getAccessibleMock(\TYPO3\CMS\Core\TypoScript\TemplateService::class, array('dummy'));
 		$this->templateServiceMock->tt_track = FALSE;
 	}
 
@@ -62,7 +63,7 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function extensionStaticFilesAreNotProcessedIfNotExplicitlyRequested() {
-		$identifier = uniqid('test');
+		$identifier = $this->getUniqueId('test');
 		$GLOBALS['TYPO3_LOADED_EXT'] = array(
 			$identifier => array(
 				'ext_typoscript_setup.txt' => ExtensionManagementUtility::extPath(
@@ -81,7 +82,7 @@ class TemplateServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function extensionStaticsAreProcessedIfExplicitlyRequested() {
-		$identifier = uniqid('test');
+		$identifier = $this->getUniqueId('test');
 		$GLOBALS['TYPO3_LOADED_EXT'] = array(
 			$identifier => array(
 				'ext_typoscript_setup.txt' => ExtensionManagementUtility::extPath(

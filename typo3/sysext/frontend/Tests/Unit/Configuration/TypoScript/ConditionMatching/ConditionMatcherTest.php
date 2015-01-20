@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Configuration\TypoScript\ConditionMatching;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,7 +30,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $matchCondition;
 
 	public function setUp() {
-		$this->testGlobalNamespace = uniqid('TEST');
+		$this->testGlobalNamespace = $this->getUniqueId('TEST');
 		$GLOBALS[$this->testGlobalNamespace] = array();
 		$GLOBALS['TSFE'] = new \stdClass();
 		$GLOBALS['TSFE']->tmpl = new \stdClass();
@@ -68,7 +68,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function simulateEnabledMatchSpecificConditionsSucceeds() {
-		$testCondition = '[' . uniqid('test') . ' = Any condition to simulate a positive match]';
+		$testCondition = '[' . $this->getUniqueId('test') . ' = Any condition to simulate a positive match]';
 		$this->matchCondition->setSimulateMatchConditions(array($testCondition));
 		$this->assertTrue($this->matchCondition->match($testCondition));
 	}
@@ -420,7 +420,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function globalVarConditionMatchesOnEmptyExpressionWithNoValueSet() {
-		$testKey = uniqid('test');
+		$testKey = $this->getUniqueId('test');
 		$this->assertTrue($this->matchCondition->match('[globalVar = GP:' . $testKey . '=]'));
 		$this->assertTrue($this->matchCondition->match('[globalVar = GP:' . $testKey . ' = ]'));
 	}
@@ -431,11 +431,24 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function globalVarConditionDoesNotMatchOnEmptyExpressionWithValueSetToZero() {
-		$testKey = uniqid('test');
+		$testKey = $this->getUniqueId('test');
 		$_GET = array();
 		$_POST = array($testKey => 0);
 		$this->assertFalse($this->matchCondition->match('[globalVar = GP:' . $testKey . '=]'));
 		$this->assertFalse($this->matchCondition->match('[globalVar = GP:' . $testKey . ' = ]'));
+	}
+
+	/**
+	 * Tests whether an array with zero as key matches its value
+	 *
+	 * @test
+	 */
+	public function globalVarConditionMatchesOnArrayExpressionWithZeroAsKey() {
+		$testKey = uniqid('test');
+		$testValue = '1';
+		$_GET = array();
+		$_POST = array($testKey => array('0' => $testValue));
+		$this->assertTrue($this->matchCondition->match('[globalVar = GP:' . $testKey . '|0=' . $testValue . ']'));
 	}
 
 	/**
@@ -454,7 +467,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function globalStringConditionMatchesOnEmptyExpressionWithValueSetToEmptyString() {
-		$testKey = uniqid('test');
+		$testKey = $this->getUniqueId('test');
 		$_GET = array();
 		$_POST = array($testKey => '');
 		$this->assertTrue($this->matchCondition->match('[globalString = GP:' . $testKey . '=]'));
@@ -499,7 +512,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function globalStringConditionMatchesEmptyRegularExpression() {
-		$testKey = uniqid('test');
+		$testKey = $this->getUniqueId('test');
 		$_SERVER[$testKey] = '';
 		$this->assertTrue($this->matchCondition->match('[globalString = _SERVER|' . $testKey . ' = /^$/]'));
 	}
@@ -613,35 +626,32 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * Tests whether the compatibility version can be evaluated.
-	 * (e.g. 4.9 is compatible to 4.0 but not to 5.0)
+	 * (e.g. 7.9 is compatible to 7.0 but not to 15.0)
 	 *
 	 * @test
 	 */
 	public function compatVersionConditionMatchesOlderRelease() {
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['compat_version'] = '4.9';
-		$this->assertTrue($this->matchCondition->match('[compatVersion = 4.0]'));
+		$this->assertTrue($this->matchCondition->match('[compatVersion = 7.0]'));
 	}
 
 	/**
 	 * Tests whether the compatibility version can be evaluated.
-	 * (e.g. 4.9 is compatible to 4.0 but not to 5.0)
+	 * (e.g. 7.9 is compatible to 7.0 but not to 15.0)
 	 *
 	 * @test
 	 */
 	public function compatVersionConditionMatchesSameRelease() {
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['compat_version'] = '4.9';
-		$this->assertTrue($this->matchCondition->match('[compatVersion = 4.9]'));
+		$this->assertTrue($this->matchCondition->match('[compatVersion = ' . TYPO3_branch . ']'));
 	}
 
 	/**
 	 * Tests whether the compatibility version can be evaluated.
-	 * (e.g. 4.9 is compatible to 4.0 but not to 5.0)
+	 * (e.g. 7.9 is compatible to 7.0 but not to 15.0)
 	 *
 	 * @test
 	 */
 	public function compatVersionConditionDoesNotMatchNewerRelease() {
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['compat_version'] = '4.9';
-		$this->assertFalse($this->matchCondition->match('[compatVersion = 5.0]'));
+		$this->assertFalse($this->matchCondition->match('[compatVersion = 15.0]'));
 	}
 
 	/**
@@ -675,7 +685,7 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function genericGetVariablesSucceedsWithNamespaceENV() {
-		$testKey = uniqid('test');
+		$testKey = $this->getUniqueId('test');
 		putenv($testKey . '=testValue');
 		$this->assertTrue($this->matchCondition->match('[globalString = ENV:' . $testKey . ' = testValue]'));
 	}
@@ -719,4 +729,5 @@ class ConditionMatcherTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function matchCallsTestConditionAndHandsOverParameters() {
 		$this->matchCondition->match('[TYPO3\\CMS\\Frontend\\Tests\\Unit\\Configuration\\TypoScript\\ConditionMatching\\Fixtures\\TestCondition = 7, != 6]');
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Utilities to manage plugins and  modules of an extension. Also useful to auto-generate the autoloader registry
  * file ext_autoload.php.
@@ -157,7 +158,7 @@ tt_content.' . $pluginSignature . ' {
 			list($extensionKey, $relativePath) = explode('/', substr($iconPathAndFilename, 4), 2);
 			$iconPathAndFilename = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
 		}
-		// TODO: skin support
+		// @todo skin support
 		$moduleLabels = array(
 			'tabs_images' => array(
 				'tab' => $iconPathAndFilename
@@ -205,10 +206,10 @@ tt_content.' . $pluginSignature . ' {
 			'labels' => '',
 			'extRelPath' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($extensionKey) . 'Classes/'
 		);
-		if (strlen($mainModuleName) > 0 && !array_key_exists($mainModuleName, $GLOBALS['TBE_MODULES'])) {
+		if ($mainModuleName !== '' && !array_key_exists($mainModuleName, $GLOBALS['TBE_MODULES'])) {
 			$mainModuleName = $extensionName . \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToUpperCamelCase($mainModuleName);
 		} else {
-			$mainModuleName = strlen($mainModuleName) > 0 ? $mainModuleName : 'web';
+			$mainModuleName = $mainModuleName !== '' ? $mainModuleName : 'web';
 		}
 		// add mandatory parameter to use new pagetree
 		if ($mainModuleName === 'web') {
@@ -217,7 +218,7 @@ tt_content.' . $pluginSignature . ' {
 		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($defaultModuleConfiguration, $moduleConfiguration);
 		$moduleConfiguration = $defaultModuleConfiguration;
 		$moduleSignature = $mainModuleName;
-		if (strlen($subModuleName) > 0) {
+		if ($subModuleName !== '') {
 			$subModuleName = $extensionName . \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToUpperCamelCase($subModuleName);
 			$moduleSignature .= '_' . $subModuleName;
 		}
@@ -252,4 +253,5 @@ tt_content.' . $pluginSignature . ' {
 		}
 		$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['extbase']['typeConverters'][] = $typeConverterClassName;
 	}
+
 }

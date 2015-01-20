@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Tests\Unit;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -40,7 +40,7 @@ class IndexerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function extractHyperLinksDoesNotReturnNonExistingLocalPath() {
-		$html = 'test <a href="' . md5(uniqid('')) . '">test</a> test';
+		$html = 'test <a href="' . $this->getUniqueId() . '">test</a> test';
 		$result = $this->fixture->extractHyperLinks($html);
 		$this->assertEquals(1, count($result));
 		$this->assertEquals('', $result[0]['localPath']);
@@ -97,7 +97,7 @@ class IndexerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function extractHyperLinksFindsCorrectPathUsingAbsRefPrefix() {
-		$absRefPrefix = '/' . md5(uniqid(''));
+		$absRefPrefix = '/' . $this->getUniqueId();
 		$html = 'test <a href="' . $absRefPrefix . 'index.php">test</a> test';
 		$GLOBALS['TSFE'] = $this->getMock(\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class, array(), array(), '', FALSE);
 		$GLOBALS['TSFE']->config['config']['absRefPrefix'] = $absRefPrefix;

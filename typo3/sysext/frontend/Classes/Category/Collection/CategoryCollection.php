@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Category\Collection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -159,4 +159,5 @@ class CategoryCollection extends \TYPO3\CMS\Core\Category\Collection\CategoryCol
 	static protected function getFrontendObject() {
 		return $GLOBALS['TSFE'];
 	}
+
 }

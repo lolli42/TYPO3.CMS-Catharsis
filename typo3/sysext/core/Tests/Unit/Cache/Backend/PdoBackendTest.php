@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Cache\Backend;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -123,7 +123,7 @@ class PdoBackendTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function setOverwritesExistingEntryThatExceededItsLifetimeWithNewData() {
 		$backend = $this->setUpBackend();
 		$data1 = 'data1';
-		$entryIdentifier = uniqid('test');
+		$entryIdentifier = $this->getUniqueId('test');
 		$backend->set($entryIdentifier, $data1, array(), 1);
 		$data2 = 'data2';
 		$GLOBALS['EXEC_TIME'] += 2;

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -68,7 +68,7 @@ class SqlSchemaMigrationService {
 				// Ignore comments
 				continue;
 			}
-			if (!strlen($table)) {
+			if ($table === '') {
 				$parts = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(' ', $value, TRUE);
 				if (strtoupper($parts[0]) === 'CREATE' && strtoupper($parts[1]) === 'TABLE') {
 					$table = str_replace('`', '', $parts[2]);
@@ -103,7 +103,7 @@ class SqlSchemaMigrationService {
 					// Strip trailing commas
 					$lineV = preg_replace('/,$/', '', $value);
 					$lineV = str_replace('`', '', $lineV);
-					// Reduce muliple blanks and tabs except newline
+					// Reduce multiple blanks and tabs except newline
 					$lineV = preg_replace('/\h+/', ' ', $lineV);
 					$parts = explode(' ', $lineV, 2);
 					// Field definition
@@ -248,7 +248,7 @@ class SqlSchemaMigrationService {
 		$diffArr = array();
 		if (is_array($FDsrc)) {
 			foreach ($FDsrc as $table => $info) {
-				if (!strlen($onlyTableList) || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($onlyTableList, $table)) {
+				if ($onlyTableList === '' || \TYPO3\CMS\Core\Utility\GeneralUtility::inList($onlyTableList, $table)) {
 					if (!isset($FDcomp[$table])) {
 						// If the table was not in the FDcomp-array, the result array is loaded with that table.
 						$extraArr[$table] = $info;
@@ -260,7 +260,7 @@ class SqlSchemaMigrationService {
 								foreach ($info[$theKey] as $fieldN => $fieldC) {
 									$fieldN = str_replace('`', '', $fieldN);
 									if ($fieldN == 'COLLATE') {
-										// TODO: collation support is currently disabled (needs more testing)
+										// @todo collation support is currently disabled (needs more testing)
 										continue;
 									}
 									if (!isset($FDcomp[$table][$theKey][$fieldN])) {
@@ -449,7 +449,8 @@ class SqlSchemaMigrationService {
 							if ($info['extra']) {
 								foreach ($info['extra'] as $k => $v) {
 									if ($k == 'COLLATE' || $k == 'CLEAR') {
-										// Skip these special statements. TODO: collation support is currently disabled (needs more testing)
+										// Skip these special statements.
+										// @todo collation support is currently disabled (needs more testing)
 										continue;
 									}
 									// Add extra attributes like ENGINE, CHARSET, etc.
@@ -489,6 +490,9 @@ class SqlSchemaMigrationService {
 		}
 		if ($row['Extra']) {
 			$field[] = $row['Extra'];
+		}
+		if (trim($row['Comment']) !== '') {
+			$field[] = "COMMENT '" . $row['Comment'] . "'";
 		}
 		return implode(' ', $field);
 	}
@@ -631,4 +635,5 @@ class SqlSchemaMigrationService {
 		unset($value);
 		return $whichTables;
 	}
+
 }

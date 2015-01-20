@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\About\ViewHelpers;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\About\ViewHelpers;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Render images that can be registered in the TYPO3 backend skinning API
  * Extends the default image view helper from fluid

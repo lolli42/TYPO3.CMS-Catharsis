@@ -91,7 +91,7 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 			$action = $this->controllerContext->getRequest()->getControllerActionName();
 		}
 		$arguments['id'] = $GLOBALS['TSFE']->id;
-		// TODO page type should be configurable
+		// @todo page type should be configurable
 		$arguments['type'] = 7076;
 		$arguments['fluid-widget-id'] = $this->controllerContext->getRequest()->getWidgetContext()->getAjaxWidgetIdentifier();
 		$arguments['action'] = $action;
@@ -118,4 +118,5 @@ class LinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedVi
 		}
 		return $uriBuilder->reset()->setArguments(array($argumentPrefix => $arguments))->setSection($this->arguments['section'])->setAddQueryString(TRUE)->setAddQueryStringMethod($this->arguments['addQueryStringMethod'])->setArgumentsToBeExcludedFromQueryString(array($argumentPrefix, 'cHash'))->setFormat($this->arguments['format'])->build();
 	}
+
 }

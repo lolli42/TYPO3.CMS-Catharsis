@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -165,4 +165,5 @@ class FileProcessingService {
 	protected function emitPostFileProcessSignal(Resource\ProcessedFile $processedFile, Resource\FileInterface $file, $context, array $configuration = array()) {
 		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\ResourceStorage::class, self::SIGNAL_PostFileProcess, array($this, $this->driver, $processedFile, $file, $context, $configuration));
 	}
+
 }

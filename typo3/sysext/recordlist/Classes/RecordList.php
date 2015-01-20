@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recordlist;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Recordlist;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
@@ -133,6 +134,7 @@ class RecordList {
 	 * Module configuration
 	 *
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8.
 	 */
 	public $MCONF = array();
 
@@ -158,11 +160,17 @@ class RecordList {
 	public $content;
 
 	/**
+	 * The name of the module
+	 *
+	 * @var string
+	 */
+	protected $moduleName = 'web_list';
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
 		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_mod_web_list.xlf');
-		$GLOBALS['BE_USER']->modAccess($GLOBALS['MCONF'], 1);
 	}
 
 	/**
@@ -171,23 +179,34 @@ class RecordList {
 	 * @return void
 	 */
 	public function init() {
-		// Setting module configuration / page select clause
-		$this->MCONF = $GLOBALS['MCONF'];
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
+		// Get session data
+		$sessionData = $GLOBALS['BE_USER']->getSessionData(\TYPO3\CMS\Recordlist\RecordList::class);
+		$this->search_field = !empty($sessionData['search_field']) ? $sessionData['search_field'] : '';
 		// GPvars:
 		$this->id = (int)GeneralUtility::_GP('id');
 		$this->pointer = GeneralUtility::_GP('pointer');
 		$this->imagemode = GeneralUtility::_GP('imagemode');
 		$this->table = GeneralUtility::_GP('table');
-		$this->search_field = GeneralUtility::_GP('search_field');
+		if (!empty(GeneralUtility::_GP('search_field'))) {
+			$this->search_field = GeneralUtility::_GP('search_field');
+			$sessionData['search_field'] = $this->search_field;
+		}
 		$this->search_levels = (int)GeneralUtility::_GP('search_levels');
 		$this->showLimit = GeneralUtility::_GP('showLimit');
 		$this->returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl'));
 		$this->clear_cache = GeneralUtility::_GP('clear_cache');
 		$this->cmd = GeneralUtility::_GP('cmd');
 		$this->cmd_table = GeneralUtility::_GP('cmd_table');
+		if (!empty(GeneralUtility::_GP('search')) && empty(GeneralUtility::_GP('search_field'))) {
+			$this->search_field = '';
+			$sessionData['search_field'] = $this->search_field;
+		}
 		// Initialize menu
 		$this->menuConfig();
+		// Store session data
+		$GLOBALS['BE_USER']->setAndSaveSessionData(\TYPO3\CMS\Recordlist\RecordList::class, $sessionData);
+		$GLOBALS['TBE_TEMPLATE']->getPageRenderer()->addInlineLanguageLabelFile('EXT:lang/locallang_mod_web_list.xlf');
 	}
 
 	/**
@@ -203,9 +222,9 @@ class RecordList {
 			'localization' => ''
 		);
 		// Loading module configuration:
-		$this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.' . $this->MCONF['name']);
+		$this->modTSconfig = BackendUtility::getModTSconfig($this->id, 'mod.' . $this->moduleName);
 		// Clean up settings:
-		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name']);
+		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->moduleName);
 	}
 
 	/**
@@ -232,6 +251,7 @@ class RecordList {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:recordlist/Resources/Private/Templates/db_list.html');
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/AjaxDataHandler');
 		// Loading current page record and checking access:
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		$access = is_array($this->pageinfo) ? 1 : 0;
@@ -309,7 +329,7 @@ class RecordList {
 		// It is set, if the clickmenu-layer is active AND the extended view is not enabled.
 		$dblist->dontShowClipControlPanels = (!$this->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
 		// If there is access to the page or root page is used for searching, then render the list contents and set up the document template object:
-		if ($access || ($this->id === 0 && $this->search_levels > 0 && strlen($this->search_field) > 0)) {
+		if ($access || ($this->id === 0 && $this->search_levels > 0 && $this->search_field !== '')) {
 			// Deleting records...:
 			// Has not to do with the clipboard but is simply the delete action. The clipboard object is used to clean up the submitted entries to only the selected table.
 			if ($this->cmd == 'delete') {
@@ -393,9 +413,25 @@ class RecordList {
 		}
 		// access
 		// Begin to compile the whole page, starting out with page header:
-		$this->body = $this->doc->header($this->pageinfo['title']);
+		if (!$this->id) {
+			$this->body = $this->doc->header($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
+		} else {
+			$this->body = $this->doc->header($this->pageinfo['title']);
+		}
+
+		if (!empty($dblist->HTMLcode)) {
+			$output = $dblist->HTMLcode;
+		} else {
+			$output = $flashMessage = GeneralUtility::makeInstance(
+				FlashMessage::class,
+				$GLOBALS['LANG']->getLL('noRecordsOnThisPage'),
+				'',
+				FlashMessage::INFO
+			)->render();
+		}
+
 		$this->body .= '<form action="' . htmlspecialchars($dblist->listURL()) . '" method="post" name="dblistForm">';
-		$this->body .= $dblist->HTMLcode;
+		$this->body .= $output;
 		$this->body .= '<input type="hidden" name="cmd_table" /><input type="hidden" name="cmd" /></form>';
 		// If a listing was produced, create the page footer with search form etc:
 		if ($dblist->HTMLcode) {

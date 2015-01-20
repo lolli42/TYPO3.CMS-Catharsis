@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\MediaWizard;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\MediaWizard;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Testcase for TYPO3\CMS\Frontend\MediaWizard\MediaWizardProvider
  *
@@ -29,7 +30,7 @@ class MediaWizardProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * Setup
 	 */
 	public function setUp() {
-		$this->fixture = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\MediaWizard\\MediaWizardProvider', array('dummy'), array(), '', FALSE);
+		$this->fixture = $this->getAccessibleMock(\TYPO3\CMS\Frontend\MediaWizard\MediaWizardProvider::class, array('dummy'), array(), '', FALSE);
 	}
 
 	/**
@@ -85,4 +86,5 @@ class MediaWizardProviderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$result = $this->fixture->_call('process_youtube', $url);
 		$this->assertEquals($expected, $result);
 	}
+
 }

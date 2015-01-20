@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,7 +13,11 @@
 /*****************************************************************
  * HTMLArea.Event: Utility functions for dealing with events     *
  *****************************************************************/
-HTMLArea.Event = function ($, UserAgent, Util) {
+define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event',
+	['jquery',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util'],
+	function ($, UserAgent, Util) {
 
 	var Event = {
 
@@ -169,8 +173,12 @@ HTMLArea.Event = function ($, UserAgent, Util) {
 		 * @return integer the normalized key
 		 */
 		getKey: function (event) {
-			return Event.normalizeKey(event.originalEvent.key ? event.originalEvent.key : (event.originalEvent.charCode ? event.originalEvent.charCode : (event.originalEvent.keyCode ? event.originalEvent.keyCode : event.originalEvent.which)));
-			return Event.normalizeKey((event.originalEvent.charCode ? event.originalEvent.charCode : (event.originalEvent.keyCode ? event.originalEvent.keyCode : event.originalEvent.which)));
+			var originalEvent = event.originalEvent;
+			return Event.normalizeKey(
+				(typeof originalEvent.key !== 'undefined' && originalEvent.key && originalEvent.key !== 'Unidentified')
+				? (Event.domLevel3Keys[originalEvent.key] || originalEvent.key)
+				: (originalEvent.charCode ? originalEvent.charCode : (originalEvent.keyCode ? originalEvent.keyCode : originalEvent.which))
+			);
 		},
 
 		/**
@@ -180,7 +188,7 @@ HTMLArea.Event = function ($, UserAgent, Util) {
 		 * @return integer the normalized key
 		 */
 		normalizeKey: function(key){
-		    return UserAgent.isSafari ? (Event.safariKeys[key] || key) : (Event.domLevel3Keys[key] || key);
+		    return UserAgent.isSafari ? (Event.safariKeys[key] || key) : key;
 		},
 
 		/**
@@ -196,4 +204,4 @@ HTMLArea.Event = function ($, UserAgent, Util) {
 
 	return Event;
 
-}(HTMLArea.jQuery, HTMLArea.UserAgent, HTMLArea.util);
+});

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\T3editor\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -68,8 +68,7 @@ class FileEditHook {
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::startPage
 	 */
 	public function preStartPageHook($parameters, $pObj) {
-		// The preg_match call is deprecated and can be removed if the file typo3/file_edit.php is removed.
-		if (GeneralUtility::_GET('M') === 'file_edit' || preg_match('/typo3\\/file_edit\\.php/', $_SERVER['SCRIPT_NAME'])) {
+		if (GeneralUtility::_GET('M') === 'file_edit') {
 			$t3editor = $this->getT3editor();
 			if (!$t3editor->isEnabled()) {
 				return;

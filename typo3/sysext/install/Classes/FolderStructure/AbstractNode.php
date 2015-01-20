@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\FolderStructure;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -212,9 +212,10 @@ abstract class AbstractNode {
 		}
 		$relativePath = substr($path, strlen($pathSiteWithoutTrailingSlash), strlen($path));
 		// Add a forward slash again, so we don't end up with an empty string
-		if (strlen($relativePath) === 0) {
+		if ($relativePath === '') {
 			$relativePath = '/';
 		}
 		return $relativePath;
 	}
+
 }

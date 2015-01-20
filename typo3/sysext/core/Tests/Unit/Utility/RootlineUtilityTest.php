@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -309,13 +309,13 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function enrichWithRelationFieldsCreatesWhereClauseForDisabledField() {
-		$mockDatabaseConnection = $this->getMock('\TYPO3\CMS\Core\Database\DatabaseConnection', array('exec_SELECTgetRows'), array(), '', FALSE);
-		$subject = $this->getAccessibleMock('\TYPO3\CMS\Core\Utility\RootlineUtility', array('columnHasRelationToResolve'), array(1, '', $this->pageContextMock));
+		$mockDatabaseConnection = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array('exec_SELECTgetRows'), array(), '', FALSE);
+		$subject = $this->getAccessibleMock(\TYPO3\CMS\Core\Utility\RootlineUtility::class, array('columnHasRelationToResolve'), array(1, '', $this->pageContextMock));
 		$subject->_set('databaseConnection', $mockDatabaseConnection);
 		$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] = '';
-		$foreign_table = uniqid('foreign_table');
-		$foreign_field = uniqid('foreign_field');
-		$GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] = uniqid('disabled');
+		$foreign_table = $this->getUniqueId('foreign_table');
+		$foreign_field = $this->getUniqueId('foreign_field');
+		$GLOBALS['TCA'][$foreign_table]['ctrl']['enablecolumns']['disabled'] = $this->getUniqueId('disabled');
 		$GLOBALS['TCA']['pages']['columns'] = array(
 			'test' => array(
 				'config' => array(
@@ -339,4 +339,5 @@ class RootlineUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject->expects($this->once())->method('columnHasRelationToResolve')->will($this->returnValue(TRUE));
 		$subject->_call('enrichWithRelationFields', 17, array());
 	}
+
 }

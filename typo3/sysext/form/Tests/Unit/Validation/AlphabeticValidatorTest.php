@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Form\Tests\Unit\Validation;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -154,4 +154,5 @@ class AlphabeticValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$this->subject->isValid()
 		);
 	}
+
 }

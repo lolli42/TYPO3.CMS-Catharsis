@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -31,7 +31,7 @@ class AutoPublishService {
 	 */
 	public function autoPublishWorkspaces() {
 		// Temporarily set admin rights
-		// FIXME: once workspaces are cleaned up a better solution should be implemented
+		// @todo once workspaces are cleaned up a better solution should be implemented
 		$currentAdminStatus = $GLOBALS['BE_USER']->user['admin'];
 		$GLOBALS['BE_USER']->user['admin'] = 1;
 		// Select all workspaces that needs to be published / unpublished:

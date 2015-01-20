@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\DataHandling;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -47,4 +48,5 @@ class TableColumnType extends \TYPO3\CMS\Core\Type\Enumeration {
 
 		parent::__construct($type);
 	}
+
 }

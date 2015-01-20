@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Authentication;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -77,7 +77,7 @@ class BackendUserAuthenticationTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		// logoff() call the static factory that has a dependency to a valid BE_USER object. Mock this away
 		$GLOBALS['BE_USER'] = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class, array(), array(), '', FALSE);
-		$GLOBALS['BE_USER']->user = array('uid' => uniqid());
+		$GLOBALS['BE_USER']->user = array('uid' => $this->getUniqueId());
 		$GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array(), array(), '', FALSE);
 
 		$subject = $this->getAccessibleMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class, array('dummy'), array(), '', FALSE);
@@ -171,7 +171,7 @@ class BackendUserAuthenticationTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'properties' => NULL,
 				),
 			),
-			'one level, not existant string' => array(
+			'one level, not existent string' => array(
 				$completeConfiguration,
 				'foo',
 				array(
@@ -179,7 +179,7 @@ class BackendUserAuthenticationTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'properties' => NULL,
 				),
 			),
-			'two level, not existant string' => array(
+			'two level, not existent string' => array(
 				$completeConfiguration,
 				'foo.bar',
 				array(

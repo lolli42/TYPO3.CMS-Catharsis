@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Version\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -231,7 +231,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Set preview keyword, eg:
 	 * $previewUrl = GeneralUtility::getIndpEnv('TYPO3_SITE_URL').'index.php?ADMCMD_prev='.$this->compilePreviewKeyword('id='.$pageId.'&L='.$language.'&ADMCMD_view=1&ADMCMD_editIcons=1&ADMCMD_previewWS='.$this->workspace, $GLOBALS['BE_USER']->user['uid'], 120);
 	 *
-	 * todo for sys_preview:
+	 * @todo for sys_preview:
 	 * - Add a comment which can be shown to previewer in frontend in some way (plus maybe ability to write back, take other action?)
 	 * - Add possibility for the preview keyword to work in the backend as well: So it becomes a quick way to a certain action of sorts?
 	 *

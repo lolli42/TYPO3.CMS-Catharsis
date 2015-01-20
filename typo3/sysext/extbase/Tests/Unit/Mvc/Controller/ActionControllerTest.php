@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Tests\Unit\Mvc\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
@@ -520,4 +521,5 @@ class ActionControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			),
 		);
 	}
+
 }

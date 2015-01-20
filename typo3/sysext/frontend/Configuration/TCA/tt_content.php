@@ -600,42 +600,42 @@ return array(
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.0',
 						0,
-						'selicons/above_center.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/above_center.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.1',
 						1,
-						'selicons/above_right.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/above_right.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.2',
 						2,
-						'selicons/above_left.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/above_left.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.3',
 						8,
-						'selicons/below_center.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/below_center.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.4',
 						9,
-						'selicons/below_right.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/below_right.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.5',
 						10,
-						'selicons/below_left.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/below_left.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.6',
 						17,
-						'selicons/intext_right.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/intext_right.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.7',
 						18,
-						'selicons/intext_left.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/intext_left.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.8',
@@ -644,12 +644,12 @@ return array(
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.9',
 						25,
-						'selicons/intext_right_nowrap.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/intext_right_nowrap.gif'
 					),
 					array(
 						'LLL:EXT:cms/locallang_ttc.xlf:imageorient.I.10',
 						26,
-						'selicons/intext_left_nowrap.gif'
+						'EXT:frontend/Resources/Public/Icons/ImageOrientation/intext_left_nowrap.gif'
 					)
 				),
 				'selicon_cols' => 6,
@@ -1798,15 +1798,14 @@ return array(
 					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.header;header,
 				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.plugin,
 					list_type;LLL:EXT:cms/locallang_ttc.xlf:list_type_formlabel,
+					select_key;LLL:EXT:cms/locallang_ttc.xlf:select_key_formlabel,
+					pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.list_formlabel,
+					recursive,
 				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.appearance,
 					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.frames;frames,
 				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.access,
 					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.visibility;visibility,
 					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.access;access,
-				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.behaviour,
-					select_key;LLL:EXT:cms/locallang_ttc.xlf:select_key_formlabel,
-					pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.list_formlabel,
-					recursive,
 				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.extended',
 			'subtype_value_field' => 'list_type',
 			'subtypes_excludelist' => array(

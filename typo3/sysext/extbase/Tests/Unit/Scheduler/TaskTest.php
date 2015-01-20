@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Unit\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -147,4 +147,5 @@ class TaskTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 		$this->assertSame('foo qux=quux', $this->task->getAdditionalInformation());
 	}
+
 }

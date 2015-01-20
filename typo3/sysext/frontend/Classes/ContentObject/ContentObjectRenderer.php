@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -865,7 +865,7 @@ class ContentObjectRenderer {
 		if (!empty($exceptionHandlerClassName)) {
 			$exceptionHandler = GeneralUtility::makeInstance($exceptionHandlerClassName, $this->mergeExceptionHandlerConfiguration($configuration));
 			if (!$exceptionHandler instanceof ExceptionHandlerInterface) {
-				throw new ContentRenderingException('An exception handler was configured but the class does not exist or does not implement the ExceptionHandlerInterface', 1403653369, $exception);
+				throw new ContentRenderingException('An exception handler was configured but the class does not exist or does not implement the ExceptionHandlerInterface', 1403653369);
 			}
 		}
 
@@ -1508,7 +1508,7 @@ class ContentObjectRenderer {
 				if ($sourceInfo) {
 					$sourceConfiguration['width'] = $sourceInfo[0];
 					$sourceConfiguration['height'] = $sourceInfo[1];
-					$sourceConfiguration['src'] = htmlspecialchars($sourceInfo[3]);
+					$sourceConfiguration['src'] = htmlspecialchars($GLOBALS['TSFE']->absRefPrefix . $sourceInfo[3]);
 					$sourceConfiguration['selfClosingTagSlash'] = (!empty($GLOBALS['TSFE']->xhtmlDoctype) ? ' /' : '');
 
 					$oneSourceCollection = $this->substituteMarkerArray($sourceLayout, $sourceConfiguration, '###|###', TRUE, TRUE);
@@ -2484,7 +2484,7 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_ifBlank($content = '', $conf = array()) {
-		if (!strlen(trim($content))) {
+		if (trim($content) === '') {
 			$content = $conf['ifBlank'];
 		}
 		return $content;
@@ -2535,7 +2535,7 @@ class ContentObjectRenderer {
 			$length = isset($conf['strPad.']['length.']) ? $this->stdWrap($conf['strPad.']['length'], $conf['strPad.']['length.']) : $conf['strPad.']['length'];
 			$length = (int)$length;
 		}
-		if (isset($conf['strPad.']['padWith']) && strlen($conf['strPad.']['padWith']) > 0) {
+		if (isset($conf['strPad.']['padWith']) && (string)$conf['strPad.']['padWith'] !== '') {
 			$padWith = isset($conf['strPad.']['padWith.']) ? $this->stdWrap($conf['strPad.']['padWith'], $conf['strPad.']['padWith.']) : $conf['strPad.']['padWith'];
 		}
 		if (!empty($conf['strPad.']['type'])) {
@@ -3370,7 +3370,7 @@ class ContentObjectRenderer {
 
 	/**
 	 * insertData
-	 * Can fetch additional content the same way data does and replaces any occurence of {field:whatever} with this content
+	 * Can fetch additional content the same way data does and replaces any occurrence of {field:whatever} with this content
 	 *
 	 * @param string $content Input value undergoing processing in this function.
 	 * @param array $conf stdWrap properties for insertData.
@@ -3447,8 +3447,8 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_prefixComment($content = '', $conf = array()) {
-		if (!$GLOBALS['TSFE']->config['config']['disablePrefixComment']) {
-			$content = $this->prefixComment($conf['prefixComment'], $conf['prefixComment.'], $content);
+		if (!$GLOBALS['TSFE']->config['config']['disablePrefixComment'] && !empty($conf['prefixComment'])) {
+			$content = $this->prefixComment($conf['prefixComment'], array(), $content);
 		}
 		return $content;
 	}
@@ -3882,8 +3882,17 @@ class ContentObjectRenderer {
 	 * @see stdWrap()
 	 */
 	public function prefixComment($str, $conf, $content) {
+		if (empty($str)) {
+			return $content;
+		}
 		$parts = explode('|', $str);
-		$output = LF . str_pad('', $parts[0], TAB) . '<!-- ' . htmlspecialchars($this->insertData($parts[1])) . ' [begin] -->' . LF . str_pad('', ($parts[0] + 1), TAB) . $content . LF . str_pad('', $parts[0], TAB) . '<!-- ' . htmlspecialchars($this->insertData($parts[1])) . ' [end] -->' . LF . str_pad('', ($parts[0] + 1), TAB);
+		$indent = (int)$parts[0];
+		$comment = htmlspecialchars($this->insertData($parts[1]));
+		$output = LF
+			. str_pad('', $indent, TAB) . '<!-- ' . $comment . ' [begin] -->' . LF
+			. str_pad('', ($indent + 1), TAB) . $content . LF
+			. str_pad('', $indent, TAB) . '<!-- ' . $comment . ' [end] -->' . LF
+			. str_pad('', ($indent + 1), TAB);
 		return $output;
 	}
 
@@ -3961,7 +3970,7 @@ class ContentObjectRenderer {
 		$crop2space = trim($options[2]) === '1' ? TRUE : FALSE;
 		// Split $content into an array(even items in the array are outside the tags, odd numbers are tag-blocks).
 		$tags = 'a|b|blockquote|body|div|em|font|form|h1|h2|h3|h4|h5|h6|i|li|map|ol|option|p|pre|sub|sup|select|span|strong|table|thead|tbody|tfoot|td|textarea|tr|u|ul|br|hr|img|input|area|link';
-		// TODO We should not crop inside <script> tags.
+		// @todo We should not crop inside <script> tags.
 		$tagsRegEx = '
 			(
 				(?:
@@ -4129,8 +4138,10 @@ class ContentObjectRenderer {
 	 * @return string The processed output value
 	 * @access private
 	 * @see stdWrap()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function textStyle($theValue, $conf) {
+		$this->typoScriptFrontendController->logDeprecatedTyposcript('textStyle', 'Deprecated since 7.1 and will be removed with CMS 8. Use CSS instead');
 		$conf['face.'][1] = 'Times New Roman';
 		$conf['face.'][2] = 'Verdana,Arial,Helvetica,Sans serif';
 		$conf['face.'][3] = 'Arial,Helvetica,Sans serif';
@@ -4208,8 +4219,10 @@ class ContentObjectRenderer {
 	 * @return string The processed output value
 	 * @access private
 	 * @see stdWrap()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function tableStyle($theValue, $conf) {
+		$this->typoScriptFrontendController->logDeprecatedTyposcript('tableStyle', 'Deprecated since 7.1 and will be removed with CMS 8. Use CSS instead');
 		$conf['color.'][240] = 'black';
 		$conf['color.'][241] = 'white';
 		$conf['color.'][242] = '#333333';
@@ -4935,7 +4948,12 @@ class ContentObjectRenderer {
 				// tags
 				$len = strcspn(substr($theValue, $pointer), '>') + 1;
 				$data = substr($theValue, $pointer, $len);
-				$tag = explode(' ', trim(substr($data, 1, -1)), 2);
+				if (substr($data, -2) === '/>') {
+					$tagContent = substr($data, 1, -2);
+				} else {
+					$tagContent = substr($data, 1, -1);
+				}
+				$tag = explode(' ', trim($tagContent), 2);
 				$tag[0] = strtolower($tag[0]);
 				if ($tag[0][0] === '/') {
 					$tag[0] = substr($tag[0], 1);
@@ -5134,7 +5152,8 @@ class ContentObjectRenderer {
 
 	/**
 	 * Finds URLS in text and makes it to a real link.
-	 * Will find all strings prefixed with "http://" in the $data string and make them into a link, linking to the URL we should have found.
+	 * Will find all strings prefixed with "http://" and "https://" in the $data string and make them into a link,
+	 * linking to the URL we should have found.
 	 *
 	 * @param string $data The string in which to search for "http://
 	 * @param array $conf Configuration for makeLinks, see link
@@ -5143,62 +5162,66 @@ class ContentObjectRenderer {
 	 */
 	public function http_makelinks($data, $conf) {
 		$aTagParams = $this->getATagParams($conf);
-		$textpieces = explode('http://', $data);
-		$pieces = count($textpieces);
-		$textstr = $textpieces[0];
-		$initP = '?id=' . $GLOBALS['TSFE']->id . '&type=' . $GLOBALS['TSFE']->type;
-		for ($i = 1; $i < $pieces; $i++) {
-			$len = strcspn($textpieces[$i], chr(32) . TAB . CRLF);
-			if (trim(substr($textstr, -1)) == '' && $len) {
-				$lastChar = substr($textpieces[$i], $len - 1, 1);
-				if (!preg_match('/[A-Za-z0-9\\/#_-]/', $lastChar)) {
-					$len--;
-				}
-				// Included '\/' 3/12
-				$parts[0] = substr($textpieces[$i], 0, $len);
-				$parts[1] = substr($textpieces[$i], $len);
-				$keep = $conf['keep'];
-				$linkParts = parse_url('http://' . $parts[0]);
-				$linktxt = '';
-				if (strstr($keep, 'scheme')) {
-					$linktxt = 'http://';
-				}
-				$linktxt .= $linkParts['host'];
-				if (strstr($keep, 'path')) {
-					$linktxt .= $linkParts['path'];
-					// Added $linkParts['query'] 3/12
-					if (strstr($keep, 'query') && $linkParts['query']) {
-						$linktxt .= '?' . $linkParts['query'];
-					} elseif ($linkParts['path'] == '/') {
-						$linktxt = substr($linktxt, 0, -1);
+		$schemes = array('http://', 'https://');
+		foreach ($schemes as $scheme) {
+			$textpieces = explode($scheme, $data);
+			$pieces = count($textpieces);
+			$textstr = $textpieces[0];
+			$initP = '?id=' . $GLOBALS['TSFE']->id . '&type=' . $GLOBALS['TSFE']->type;
+			for ($i = 1; $i < $pieces; $i++) {
+				$len = strcspn($textpieces[$i], chr(32) . TAB . CRLF);
+				if (trim(substr($textstr, -1)) == '' && $len) {
+					$lastChar = substr($textpieces[$i], $len - 1, 1);
+					if (!preg_match('/[A-Za-z0-9\\/#_-]/', $lastChar)) {
+						$len--;
 					}
-				}
-				if (isset($conf['extTarget'])) {
-					if (isset($conf['extTarget.'])) {
-						$target = $this->stdWrap($conf['extTarget'], $conf['extTarget.']);
+					// Included '\/' 3/12
+					$parts[0] = substr($textpieces[$i], 0, $len);
+					$parts[1] = substr($textpieces[$i], $len);
+					$keep = $conf['keep'];
+					$linkParts = parse_url($scheme . $parts[0]);
+					$linktxt = '';
+					if (strstr($keep, 'scheme')) {
+						$linktxt = $scheme;
+					}
+					$linktxt .= $linkParts['host'];
+					if (strstr($keep, 'path')) {
+						$linktxt .= $linkParts['path'];
+						// Added $linkParts['query'] 3/12
+						if (strstr($keep, 'query') && $linkParts['query']) {
+							$linktxt .= '?' . $linkParts['query'];
+						} elseif ($linkParts['path'] == '/') {
+							$linktxt = substr($linktxt, 0, -1);
+						}
+					}
+					if (isset($conf['extTarget'])) {
+						if (isset($conf['extTarget.'])) {
+							$target = $this->stdWrap($conf['extTarget'], $conf['extTarget.']);
+						} else {
+							$target = $conf['extTarget'];
+						}
 					} else {
-						$target = $conf['extTarget'];
+						$target = $GLOBALS['TSFE']->extTarget;
 					}
+					if ($GLOBALS['TSFE']->config['config']['jumpurl_enable']) {
+						$jumpurl = 'http://' . $parts[0];
+						$juHash = GeneralUtility::hmac($jumpurl, 'jumpurl');
+						$res = '<a' . ' href="' . htmlspecialchars(($GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP . '&jumpurl=' . rawurlencode($jumpurl))) . '&juHash=' . $juHash . $GLOBALS['TSFE']->getMethodUrlIdToken . '"' . ($target ? ' target="' . $target . '"' : '') . $aTagParams . $this->extLinkATagParams(('http://' . $parts[0]), 'url') . '>';
+					} else {
+						$res = '<a' . ' href="' . $scheme . htmlspecialchars($parts[0]) . '"' . ($target ? ' target="' . $target . '"' : '') . $aTagParams . $this->extLinkATagParams(('http://' . $parts[0]), 'url') . '>';
+					}
+					$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
+					if ($conf['ATagBeforeWrap']) {
+						$res = $res . $this->wrap($linktxt, $wrap) . '</a>';
+					} else {
+						$res = $this->wrap($res . $linktxt . '</a>', $wrap);
+					}
+					$textstr .= $res . $parts[1];
 				} else {
-					$target = $GLOBALS['TSFE']->extTarget;
+					$textstr .= $scheme . $textpieces[$i];
 				}
-				if ($GLOBALS['TSFE']->config['config']['jumpurl_enable']) {
-					$jumpurl = 'http://' . $parts[0];
-					$juHash = GeneralUtility::hmac($jumpurl, 'jumpurl');
-					$res = '<a' . ' href="' . htmlspecialchars(($GLOBALS['TSFE']->absRefPrefix . $GLOBALS['TSFE']->config['mainScript'] . $initP . '&jumpurl=' . rawurlencode($jumpurl))) . '&juHash=' . $juHash . $GLOBALS['TSFE']->getMethodUrlIdToken . '"' . ($target ? ' target="' . $target . '"' : '') . $aTagParams . $this->extLinkATagParams(('http://' . $parts[0]), 'url') . '>';
-				} else {
-					$res = '<a' . ' href="http://' . htmlspecialchars($parts[0]) . '"' . ($target ? ' target="' . $target . '"' : '') . $aTagParams . $this->extLinkATagParams(('http://' . $parts[0]), 'url') . '>';
-				}
-				$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
-				if ($conf['ATagBeforeWrap']) {
-					$res = $res . $this->wrap($linktxt, $wrap) . '</a>';
-				} else {
-					$res = $this->wrap($res . $linktxt . '</a>', $wrap);
-				}
-				$textstr .= $res . $parts[1];
-			} else {
-				$textstr .= 'http://' . $textpieces[$i];
 			}
+			$data = $textstr;
 		}
 		return $textstr;
 	}
@@ -5466,7 +5489,7 @@ class ContentObjectRenderer {
 						$retVal = $this->getEnvironmentVariable($key);
 						break;
 					case 'field':
-						$retVal = $fieldArray[$key];
+						$retVal = $this->getGlobal($key, $fieldArray);
 						break;
 					case 'file':
 						$retVal = $this->getFileDataKey($key);
@@ -5647,7 +5670,7 @@ class ContentObjectRenderer {
 					return $fileObject->getProperty($requestedFileInformationKey);
 			}
 		} else {
-			// TODO: fail silently as is common in tslib_content
+			// @todo fail silently as is common in tslib_content
 			return 'Error: no file object';
 		}
 	}
@@ -6110,10 +6133,10 @@ class ContentObjectRenderer {
 						$linkParameter = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($linkParameter);
 					}
 					// Link to page even if access is missing?
-					if (strlen($conf['linkAccessRestrictedPages'])) {
-						$disableGroupAccessCheck = $conf['linkAccessRestrictedPages'] ? TRUE : FALSE;
+					if (isset($conf['linkAccessRestrictedPages'])) {
+						$disableGroupAccessCheck = (bool)$conf['linkAccessRestrictedPages'];
 					} else {
-						$disableGroupAccessCheck = $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] ? TRUE : FALSE;
+						$disableGroupAccessCheck = (bool)$GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'];
 					}
 					// Looking up the page record to verify its existence:
 					$page = $GLOBALS['TSFE']->sys_page->getPage($linkParameter, $disableGroupAccessCheck);
@@ -6213,7 +6236,7 @@ class ContentObjectRenderer {
 							}
 						}
 						// If target page has a different domain and the current domain's linking scheme (e.g. RealURL/...) should not be used
-						if (strlen($targetDomain) && $targetDomain !== $currentDomain && !$enableLinksAcrossDomains) {
+						if ($targetDomain !== '' && $targetDomain !== $currentDomain && !$enableLinksAcrossDomains) {
 							$target = isset($conf['extTarget']) ? $conf['extTarget'] : $GLOBALS['TSFE']->extTarget;
 							if ($conf['extTarget.']) {
 								$target = $this->stdWrap($target, $conf['extTarget.']);
@@ -6233,7 +6256,7 @@ class ContentObjectRenderer {
 								$target = $forceTarget;
 							}
 							$LD = $GLOBALS['TSFE']->tmpl->linkData($page, $target, $conf['no_cache'], '', '', $addQueryParams, $theTypeP, $targetDomain);
-							if (strlen($targetDomain)) {
+							if ($targetDomain !== '') {
 								// We will add domain only if URL does not have it already.
 								if ($enableLinksAcrossDomains) {
 									// Get rid of the absRefPrefix if necessary. absRefPrefix is applicable only
@@ -6270,7 +6293,7 @@ class ContentObjectRenderer {
 							}
 						}
 						// If link is to a access restricted page which should be redirected, then find new URL:
-						if ($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] !== 'NONE' && !$GLOBALS['TSFE']->checkPageGroupAccess($page)) {
+						if (empty($conf['linkAccessRestrictedPages']) && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] !== 'NONE' && !$GLOBALS['TSFE']->checkPageGroupAccess($page)) {
 							$thePage = $GLOBALS['TSFE']->sys_page->getPage($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages']);
 							$addParams = str_replace(
 								array(
@@ -6388,6 +6411,12 @@ class ContentObjectRenderer {
 					$urlParts['scheme'] = 'http';
 					$urlParts['host'] = $this->getEnvironmentVariable('HTTP_HOST');
 					$urlParts['path'] = '/' . ltrim($urlParts['path'], '/');
+					// absRefPrefix has been prepended to $url beforehand
+					// so we only modify the path if no absRefPrefix has been set
+					// otherwise we would destroy the path
+					if ($GLOBALS['TSFE']->absRefPrefix === '') {
+						$urlParts['path'] = $this->getEnvironmentVariable('TYPO3_SITE_PATH') . ltrim($urlParts['path'], '/');
+					}
 					$isUrlModified = TRUE;
 				}
 				// Override scheme:
@@ -6447,6 +6476,29 @@ class ContentObjectRenderer {
 		}
 		$out = $this->typolink($label, $conf);
 		return $out;
+	}
+
+	/**
+	 * Returns the canonical URL to the current "location", which include the current page ID and type
+	 * and optionally the query string
+	 *
+	 * @param bool $addQueryString Whether additional GET arguments in the query string should be included or not
+	 * @return string
+	 */
+	public function getUrlToCurrentLocation($addQueryString = TRUE) {
+		$conf = array();
+		$conf['parameter'] = $GLOBALS['TSFE']->id . ',' . $GLOBALS['TSFE']->type;
+		if ($addQueryString) {
+			$conf['addQueryString'] = '1';
+			$linkVars = implode(',', array_keys(GeneralUtility::explodeUrl2Array($GLOBALS['TSFE']->linkVars)));
+			$conf['addQueryString.'] = array(
+				'method' => 'GET',
+				'exclude' => 'id,type,cHash' . ($linkVars ? ',' . $linkVars : '')
+			);
+			$conf['useCacheHash'] = GeneralUtility::_GET('cHash') ? '1' : '0';
+		}
+
+		return $this->typoLink_URL($conf);
 	}
 
 	/**
@@ -6985,7 +7037,7 @@ class ContentObjectRenderer {
 			$old_conf = $confArr[$prop . '.'];
 			list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
 			if (is_array($old_conf) && count($old_conf)) {
-				$conf = array_replace_recursive($conf, $old_conf);
+				$conf = is_array($conf) ? array_replace_recursive($conf, $old_conf) : $old_conf;
 			}
 			$confArr[$prop . '.'] = $conf;
 		}
@@ -7102,7 +7154,7 @@ class ContentObjectRenderer {
 	 * @param array $config TypoScript configuration (naturally of a USER or COA cObject)
 	 * @return bool Whether the class is available
 	 * @link http://forge.typo3.org/issues/19510
-	 * @TODO This method was introduced in TYPO3 4.3 and can be removed if the autoload was integrated
+	 * @todo This method was introduced in TYPO3 4.3 and can be removed if the autoload was integrated
 	 */
 	protected function isClassAvailable($className, array $config = NULL) {
 		if (class_exists($className)) {
@@ -7559,7 +7611,7 @@ class ContentObjectRenderer {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @return pointer		SQL result pointer
+	 * @return bool|\mysqli_result SQL result pointer
 	 * @see mm_query_uidList()
 	 */
 	public function exec_mm_query($select, $local_table, $mm_table, $foreign_table, $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
@@ -7578,7 +7630,7 @@ class ContentObjectRenderer {
 	 * @param string $groupBy Optional GROUP BY field(s), if none, supply blank string.
 	 * @param string $orderBy Optional ORDER BY field(s), if none, supply blank string.
 	 * @param string $limit Optional LIMIT value ([begin,]max), if none, supply blank string.
-	 * @return pointer		SQL result pointer
+	 * @return bool|\mysqli_result SQL result pointer
 	 * @see mm_query()
 	 */
 	public function exec_mm_query_uidList($select, $local_table_uidlist, $mm_table, $foreign_table = '', $whereClause = '', $groupBy = '', $orderBy = '', $limit = '') {
@@ -7880,6 +7932,7 @@ class ContentObjectRenderer {
 		}
 		$andWhere = isset($conf['andWhere.']) ? trim($this->stdWrap($conf['andWhere'], $conf['andWhere.'])) : trim($conf['andWhere']);
 		if ($andWhere) {
+			GeneralUtility::deprecationLog('Usage of TypoScript property "andWhere" is deprecated since 7.1 in favor of "where". It has been used to query the table "' . $table . '".');
 			$query .= ' AND ' . $andWhere;
 		}
 		// Enablefields
@@ -8145,4 +8198,5 @@ class ContentObjectRenderer {
 	protected function getEnvironmentVariable($key) {
 		return GeneralUtility::getIndpEnv($key);
 	}
+
 }

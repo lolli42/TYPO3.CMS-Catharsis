@@ -13,7 +13,17 @@
 		The configuration module suggests best matching configuration settings
 		based on your system setup.
 	</p>
-
+	<p>
+		Alternatively TYPO3 can be run in a specific <a href="http://docs.typo3.org/typo3cms/CoreApiReference/ApiOverview/Bootstrapping/Index.html#bootstrapping-context" target="_blank">application context</a>,
+		by setting an environment variable in the web server configuration.
+		The application context can then be accessed e.g. in the AdditionalConfiguration.php file or
+		TypoScript configuration to customize settings accordingly.
+	</p>
+	<p>
+		Changed values are written to LocalConfiguration.php. The optional file AdditionalConfiguration.php
+		is not controlled by the TYPO3 CMS core and may override single settings again. Administrators
+		must maintain AdditionalConfiguration.php on their own and should use it with care.
+	</p>
 	<form method="post">
 		<f:render partial="Action/Common/HiddenFormFields" arguments="{_all}" />
 

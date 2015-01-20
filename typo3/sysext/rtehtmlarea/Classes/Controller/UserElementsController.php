@@ -1,6 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -60,7 +61,7 @@ class UserElementsController {
 	}
 
 	/**
-	 * @return 	[type]		...
+	 * @return void
 	 */
 	public function init() {
 		$this->editorNo = \TYPO3\CMS\Core\Utility\GeneralUtility::_GP('editorNo');
@@ -121,9 +122,9 @@ class UserElementsController {
 	}
 
 	/**
-	 * [Describe function...]
+	 * Main function
 	 *
-	 * @return 	[type]		...
+	 * @return void
 	 */
 	public function main() {
 		$this->content = '';
@@ -131,9 +132,9 @@ class UserElementsController {
 	}
 
 	/**
-	 * [Describe function...]
+	 * Print content
 	 *
-	 * @return 	[type]		...
+	 * @return void
 	 */
 	public function printContent() {
 		echo $this->content;
@@ -145,10 +146,10 @@ class UserElementsController {
 	 *
 	 *********************************/
 	/**
-	 * @param 	[type]		$imgInfo: ...
-	 * @param 	[type]		$maxW: ...
-	 * @param 	[type]		$maxH: ...
-	 * @return 	[type]		...
+	 * @param array $imgInfo
+	 * @param int $maxW
+	 * @param int $maxH
+	 * @return array
 	 */
 	public function calcWH($imgInfo, $maxW = 380, $maxH = 500) {
 		$IW = $imgInfo[0];
@@ -168,8 +169,8 @@ class UserElementsController {
 	/**
 	 * Rich Text Editor (RTE) user element selector
 	 *
-	 * @param 	[type]		$openKeys: ...
-	 * @return 	[type]		...
+	 * @param array $openKeys
+	 * @return string
 	 */
 	public function main_user($openKeys) {
 		// Starting content:
@@ -274,7 +275,7 @@ class UserElementsController {
 				} else {
 					$title = $GLOBALS['LANG']->sL($title, TRUE);
 				}
-				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('rtehtmlarea_wizard_user', array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . ($openKeys[$openK] ? 'minus' : 'plus') . 'bullet.gif'), 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" /><strong>' . $title . '</strong></a></td></tr>';
+				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl($GLOBALS['MCONF']['name'], array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . ($openKeys[$openK] ? 'minus' : 'plus') . 'bullet.gif'), 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" /><strong>' . $title . '</strong></a></td></tr>';
 				$lines[] = $v;
 			}
 			$content .= '<table border="0" cellpadding="1" cellspacing="1">' . implode('', $lines) . '</table>';

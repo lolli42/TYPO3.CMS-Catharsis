@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\DomainObject;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\DomainObject;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A abstract Value Object. A Value Object is an object that describes some characteristic
  * or attribute (e.g. a color) but carries no concept of identity.
@@ -27,4 +28,5 @@ abstract class AbstractValueObject extends \TYPO3\CMS\Extbase\DomainObject\Abstr
 	public function getValue() {
 		return $this->__toString();
 	}
+
 }

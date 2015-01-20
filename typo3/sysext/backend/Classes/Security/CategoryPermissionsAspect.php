@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Security;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -118,4 +118,5 @@ class CategoryPermissionsAspect {
 		}
 		return $result;
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Validation\Validator;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -43,4 +43,5 @@ class DateTimeValidator extends AbstractValidator {
 				)
 			), 1238087674, array(gettype($value)));
 	}
+
 }

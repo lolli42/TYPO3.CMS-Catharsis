@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Processing;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -95,7 +95,7 @@ interface TaskInterface {
 	 * Returns TRUE if the file has to be processed at all, such as e.g. the original file does.
 	 *
 	 * Note: This does not indicate if the concrete ProcessedFile attached to this task has to be (re)processed.
-	 * This check is done in ProcessedFile::isOutdated(). TODO isOutdated()/needsReprocessing()?
+	 * This check is done in ProcessedFile::isOutdated(). @todo isOutdated()/needsReprocessing()?
 	 *
 	 * @return bool
 	 */

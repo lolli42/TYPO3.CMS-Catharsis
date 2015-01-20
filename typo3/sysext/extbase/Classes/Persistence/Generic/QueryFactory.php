@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * The QueryFactory used to create queries against the storage backend
  */
@@ -60,4 +61,5 @@ class QueryFactory implements QueryFactoryInterface, \TYPO3\CMS\Core\SingletonIn
 		$query->setQuerySettings($querySettings);
 		return $query;
 	}
+
 }

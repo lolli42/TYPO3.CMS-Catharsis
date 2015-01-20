@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Messaging;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -44,4 +44,5 @@ class FlashMessageServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$this->flashMessageService->getMessageQueueByIdentifier('core.template.flashMessages')
 		);
 	}
+
 }

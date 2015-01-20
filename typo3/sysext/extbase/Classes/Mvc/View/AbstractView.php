@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\View;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * An abstract View
  *
@@ -49,7 +50,7 @@ abstract class AbstractView implements \TYPO3\CMS\Extbase\Mvc\View\ViewInterface
 	 * Can be chained, so $this->view->assign(..., ...)->assign(..., ...); is possible
 	 *
 	 * @param string $key Key of variable
-	 * @param object $value Value of object
+	 * @param mixed $value Value of object
 	 * @return \TYPO3\CMS\Extbase\Mvc\View\AbstractView an instance of $this, to enable chaining
 	 * @api
 	 */
@@ -96,4 +97,5 @@ abstract class AbstractView implements \TYPO3\CMS\Extbase\Mvc\View\ViewInterface
 	 */
 	public function initializeView() {
 	}
+
 }

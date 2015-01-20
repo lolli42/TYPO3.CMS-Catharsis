@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Reflection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Reflection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Extended version of the ReflectionMethod
  */
@@ -35,7 +36,7 @@ class MethodReflection extends \ReflectionMethod {
 	/**
 	 * Replacement for the original getParameters() method which makes sure
 	 * that \TYPO3\CMS\Extbase\Reflection\ParameterReflection objects are returned instead of the
-	 * orginal ReflectionParameter instances.
+	 * original ReflectionParameter instances.
 	 *
 	 * @return ParameterReflection[] Parameter reflection objects of the parameters of this method
 	 */
@@ -100,4 +101,5 @@ class MethodReflection extends \ReflectionMethod {
 		}
 		return $this->docCommentParser;
 	}
+
 }

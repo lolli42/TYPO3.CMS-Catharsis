@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Processing;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -46,10 +46,11 @@ class ImageCropScaleMaskTask extends AbstractGraphicalTask {
 	 * @return bool
 	 */
 	protected function isValidConfiguration(array $configuration) {
-		// TODO: Implement isValidConfiguration() method.
+		// @todo Implement isValidConfiguration() method.
 	}
 
 	public function fileNeedsProcessing() {
-		// TODO: Implement fileNeedsProcessing() method.
+		// @todo Implement fileNeedsProcessing() method.
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Page;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -92,7 +92,7 @@ class FramesetRenderer {
 	 * Creates the attributes for a <frameset> tag based on a conf array($setup)
 	 *
 	 * @param array $setup The setup array(TypoScript properties)
-	 * @return string Attributes with preceeding space.
+	 * @return string Attributes with preceding space.
 	 * @access private
 	 * @see make()
 	 */

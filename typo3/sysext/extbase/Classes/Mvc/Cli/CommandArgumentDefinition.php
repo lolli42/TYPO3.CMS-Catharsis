@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Cli;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Cli;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Represents a CommandArgumentDefinition
  *
@@ -79,4 +80,5 @@ class CommandArgumentDefinition {
 	public function isRequired() {
 		return $this->required;
 	}
+
 }

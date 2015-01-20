@@ -2,7 +2,7 @@
 namespace TYPO3\CMS\Core\Resource;
 use \TYPO3\CMS\Core\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ use \TYPO3\CMS\Core\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Repository for accessing files
  * it also serves as the public API for the indexing part of files in general
@@ -206,4 +207,5 @@ class ProcessedFileRepository extends AbstractRepository {
 	protected function cleanUnavailableColumns(array $data) {
 		return array_intersect_key($data, $this->databaseConnection->admin_get_fields($this->table));
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Rendering;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -78,8 +78,9 @@ class VideoTagRenderer implements FileRendererInterface {
 			(int)$width,
 			(int)$height,
 			empty($additionalAttributes) ? '' : ' ' . implode(' ', $additionalAttributes),
-			$file->getPublicUrl($usedPathsRelativeToCurrentScript),
+			htmlspecialchars($file->getPublicUrl($usedPathsRelativeToCurrentScript)),
 			$file->getMimeType()
 		);
 	}
+
 }

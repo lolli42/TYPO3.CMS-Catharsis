@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -66,6 +66,12 @@ class SilentConfigurationUpgradeService {
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TceformsUpdateWizard',
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TtContentUploadsUpdateWizard',
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TruncateSysFileProcessedFileTable',
+		// #63818
+		'BE/staticFileEditPath',
+		// #64226
+		'BE/accessListRenderMode',
+		// #24900
+		'SYS/compat_version'
 	);
 
 	/**
@@ -348,7 +354,7 @@ class SilentConfigurationUpgradeService {
 		catch (\RuntimeException $e) {
 			$currentIm5EffectsValue = $this->configurationManager->getDefaultConfigurationValueByPath('GFX/im_v5effects');
 		}
-		if (strlen($currentIm5Value) > 0) {
+		if ((string)$currentIm5Value !== '') {
 			if ($currentImMaskValue != 1) {
 				$changedValues['GFX/im_mask_temp_ext_gif'] = 1;
 			}
@@ -375,4 +381,5 @@ class SilentConfigurationUpgradeService {
 			1379024938
 		);
 	}
+
 }

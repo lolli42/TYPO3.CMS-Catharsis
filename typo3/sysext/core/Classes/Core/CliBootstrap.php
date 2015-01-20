@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Core;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * This class encapsulates cli specific bootstrap methods.
  *
@@ -95,9 +96,9 @@ class CliBootstrap {
 		ini_set('html_errors', 0);
 		ini_set('implicit_flush', 1);
 		ini_set('max_execution_time', 0);
-		define(STDIN, fopen('php://stdin', 'r'));
-		define(STDOUT, fopen('php://stdout', 'w'));
-		define(STDERR, fopen('php://stderr', 'w'));
+		define('STDIN', fopen('php://stdin', 'r'));
+		define('STDOUT', fopen('php://stdout', 'w'));
+		define('STDERR', fopen('php://stderr', 'w'));
 	}
 
 }

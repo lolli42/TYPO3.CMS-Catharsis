@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Functional\Persistence;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -189,4 +189,5 @@ class TranslationTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertSame('B EN:Post1', $posts[1]->getTitle());
 		$this->assertSame('Post3', $posts[2]->getTitle());
 	}
+
 }

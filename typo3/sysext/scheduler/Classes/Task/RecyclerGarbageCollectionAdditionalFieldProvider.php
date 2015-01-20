@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Scheduler\Task;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -36,7 +36,7 @@ class RecyclerGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Sch
 	 * and file modification time in days to select from
 	 *
 	 * @param array $taskInfo Reference to the array containing the info used in the add/edit form
-	 * @param object $task When editing, reference to the current task object. Null when adding.
+	 * @param AbstractTask|NULL $task When editing, reference to the current task. NULL when adding.
 	 * @param \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController $parentObject Reference to the calling object (Scheduler's BE module)
 	 * @return array Array containing all the information pertaining to the additional fields
 	 */

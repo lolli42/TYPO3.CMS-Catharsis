@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Resource;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -103,7 +103,7 @@ class FileReferenceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function hasPropertyReturnsTrueForAllMergedPropertyKeys($fileReferenceProperties, $originalFileProperties, $expectedMergedProperties) {
 		$fixture = $this->prepareFixture($fileReferenceProperties, $originalFileProperties);
-		foreach (array_keys($expectedMergedProperties) as $key) {
+		foreach ($expectedMergedProperties as $key => $_) {
 			$this->assertTrue($fixture->hasProperty($key));
 		}
 	}
@@ -132,7 +132,7 @@ class FileReferenceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getPropertyThrowsExceptionForNotAvailableProperty($fileReferenceProperties, $originalFileProperties) {
 		$fixture = $this->prepareFixture($fileReferenceProperties, $originalFileProperties);
-		$fixture->getProperty(uniqid('nothingHere'));
+		$fixture->getProperty($this->getUniqueId('nothingHere'));
 	}
 
 	/**
@@ -159,4 +159,5 @@ class FileReferenceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$fixture = $this->prepareFixture($fileReferenceProperties, $originalFileProperties);
 		$fixture->getReferenceProperty('file_only_property');
 	}
+
 }

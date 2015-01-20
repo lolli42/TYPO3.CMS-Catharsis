@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Scheduler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Scheduler;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Task Executor
  *
@@ -128,4 +129,5 @@ class TaskExecutor implements \TYPO3\CMS\Core\SingletonInterface {
 		$reflectionService = $this->objectManager->get(\TYPO3\CMS\Extbase\Reflection\ReflectionService::class);
 		$reflectionService->shutdown();
 	}
+
 }

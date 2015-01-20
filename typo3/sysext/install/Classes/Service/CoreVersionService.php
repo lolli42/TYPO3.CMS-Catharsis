@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -116,6 +116,17 @@ class CoreVersionService {
 	 */
 	public function getInstalledVersion() {
 		return VersionNumberUtility::getCurrentTypo3Version();
+	}
+
+	/**
+	 * Checks if TYPO3 version (e.g. 6.2) is an actively maintained version
+	 *
+	 * @return bool TRUE if version is actively maintained
+	 */
+	public function isVersionActivelyMaintained() {
+		$minorVersion = $this->getInstalledMinorVersion();
+		$versionMatrix = $this->getVersionMatrix();
+		return (bool)$versionMatrix[$minorVersion]['active'];
 	}
 
 	/**
@@ -320,4 +331,5 @@ class CoreVersionService {
 			);
 		}
 	}
+
 }

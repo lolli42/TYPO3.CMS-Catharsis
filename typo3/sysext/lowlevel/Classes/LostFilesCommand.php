@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lowlevel;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -59,9 +59,9 @@ Will report lost files.';
 	 * Find lost files in uploads/ folder
 	 * FIX METHOD: Simply delete the file...
 	 *
-	 * TODO: Add parameter to exclude filepath
-	 * TODO: Add parameter to list more file names/patterns to ignore
-	 * TODO: Add parameter to include RTEmagic images
+	 * @todo Add parameter to exclude filepath
+	 * @todo Add parameter to list more file names/patterns to ignore
+	 * @todo Add parameter to include RTEmagic images
 	 *
 	 * @return array
 	 */

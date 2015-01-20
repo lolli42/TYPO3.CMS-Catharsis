@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\IndexedSearch\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Class with common methods used across various classes in the indexed search.
  * Impementation is provided by various people from the TYPO3 community.
@@ -46,4 +47,5 @@ class IndexedSearchUtility {
 	static public function md5inthash($stringToHash) {
 		return hexdec(substr(md5($stringToHash), 0, 7));
 	}
+
 }

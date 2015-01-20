@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Collection;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Resource\Collection;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A collection containing a a set files to be represented as a (virtual) folder.
  * This collection is persisted to the database with the accordant folder reference.

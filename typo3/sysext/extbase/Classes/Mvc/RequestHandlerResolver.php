@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Analyzes the raw request and delivers a request handler which can handle it.
  */
@@ -72,4 +73,5 @@ class RequestHandlerResolver {
 		$settings = $this->configurationManager->getConfiguration(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface::CONFIGURATION_TYPE_FRAMEWORK);
 		return is_array($settings['mvc']['requestHandlers']) ? $settings['mvc']['requestHandlers'] : array();
 	}
+
 }

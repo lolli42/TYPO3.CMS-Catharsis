@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Lang;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Lang;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -260,7 +261,7 @@ class LanguageService {
 		if (strpos($input, 'LLL:') === 0) {
 			$restStr = trim(substr($input, 4));
 			$extPrfx = '';
-				// ll-file refered to is found in an extension.
+				// ll-file referred to is found in an extension.
 			if (strpos($restStr, 'EXT:') === 0) {
 				$restStr = trim(substr($restStr, 4));
 				$extPrfx = 'EXT:';
@@ -431,9 +432,11 @@ class LanguageService {
 	 *
 	 * @param string $fileRef Filename/path of a 'locallang.php' file
 	 * @return string Input filename with a '.[lang-key].php' ending added if $this->lang is not 'default'
+	 * @deprecated since TYPO3 CMS 7, this method will be removed in CMS 8. Please use XLF files for translation handling.
 	 */
 	protected function localizedFileRef($fileRef) {
 		if ($this->lang !== 'default' && substr($fileRef, -4) === '.php') {
+			GeneralUtility::logDeprecatedFunction();
 			return substr($fileRef, 0, -4) . '.' . $this->lang . '.php';
 		} else {
 			return NULL;
@@ -457,4 +460,28 @@ class LanguageService {
 			$GLOBALS['LOCAL_LANG']['default'][$index][0]['target'] = $value;
 		}
 	}
+
+	/**
+	 * Gets labels with a specific fetched from the current locallang file.
+	 * This is useful for e.g gathering javascript labels.
+	 *
+	 * @param string $prefix Prefix to select the correct labels
+	 * @param string $strip Sub-prefix to be removed from label names in the result
+	 * @return array Processed labels
+	 */
+	public function getLabelsWithPrefix($prefix, $strip = '') {
+		$extraction = array();
+		$labels = array_merge((array)$GLOBALS['LOCAL_LANG']['default'], (array)$GLOBALS['LOCAL_LANG'][$GLOBALS['LANG']->lang]);
+		// Regular expression to strip the selection prefix and possibly something from the label name:
+		$labelPattern = '#^' . preg_quote($prefix, '#') . '(' . preg_quote($strip, '#') . ')?#';
+		// Iterate through all locallang labels:
+		foreach ($labels as $label => $value) {
+			if (strpos($label, $prefix) === 0) {
+				$key = preg_replace($labelPattern, '', $label);
+				$extraction[$key] = $value;
+			}
+		}
+		return $extraction;
+	}
+
 }

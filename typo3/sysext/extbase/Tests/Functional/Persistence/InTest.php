@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Tests\Functional\Persistence;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -198,7 +198,7 @@ class InTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$blog = $this->blogRepository->findByUid(1);
 
 		$this->assertInstanceOf(
-			'\TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage',
+			\TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage::class,
 			$blog->getPosts()
 		);
 
@@ -218,7 +218,7 @@ class InTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$blog = $this->blogRepository->findByUid(1);
 
 		$this->assertInstanceOf(
-			'\TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage',
+			\TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage::class,
 			$blog->getPosts()
 		);
 
@@ -239,4 +239,5 @@ class InTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 
 		$this->assertSame(10, $newInQuery->count());
 	}
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility\Importer;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility\Importer;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Module: Extension manager - Mirror list importer
  *
@@ -49,7 +50,7 @@ class MirrorListUtility implements \SplObserver {
 	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
 	 */
 	public function __construct() {
-		// TODO catch parser exception
+		// @todo catch parser exception
 		$this->parser = \TYPO3\CMS\Extensionmanager\Utility\Parser\XmlParserFactory::getParserInstance('mirror');
 		if (is_object($this->parser)) {
 			$this->parser->attach($this);
@@ -82,7 +83,7 @@ class MirrorListUtility implements \SplObserver {
 	 * @return void
 	 */
 	public function update(\SplSubject $subject) {
-		// TODO mirrorxml_abstract_parser
+		// @todo mirrorxml_abstract_parser
 		if (is_subclass_of($subject, \TYPO3\CMS\Extensionmanager\Utility\Parser\AbstractXmlParser::class)) {
 			$this->arrTmpMirrors[] = $subject->getAll();
 		}

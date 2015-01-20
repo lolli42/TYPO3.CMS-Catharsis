@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Category;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -40,8 +40,8 @@ class CategoryRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TCA']['pages']['columns'] = array();
 		$this->subject = new \TYPO3\CMS\Core\Category\CategoryRegistry();
 		$this->tables = array(
-			'first' => uniqid('first'),
-			'second' => uniqid('second')
+			'first' => $this->getUniqueId('first'),
+			'second' => $this->getUniqueId('second')
 		);
 		foreach ($this->tables as $tableName) {
 			$GLOBALS['TCA'][$tableName] = array(

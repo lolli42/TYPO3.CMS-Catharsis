@@ -1,6 +1,7 @@
 <?php
 namespace ExtbaseTeam\BlogExample\Domain\Repository;
-/**
+
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -30,7 +31,7 @@ class BlogRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 	 */
 	public function initializeObject() {
 		/*
-		$querySettings = $this->objectManager->get('\TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings');
+		$querySettings = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings::class);
 		$querySettings->setRespectStoragePage(FALSE);
 		$this->setDefaultQuerySettings($querySettings);
 		 */

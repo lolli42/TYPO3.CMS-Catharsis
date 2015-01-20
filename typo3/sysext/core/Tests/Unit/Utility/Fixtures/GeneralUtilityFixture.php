@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -73,4 +73,5 @@ class GeneralUtilityFixture extends GeneralUtility {
 	static public function stripHttpHeaders($content) {
 		return parent::stripHttpHeaders($content);
 	}
+
 }

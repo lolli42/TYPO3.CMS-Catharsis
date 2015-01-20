@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Workspaces\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -91,7 +91,7 @@ class DataHandlerHook {
 				$where .= BackendUtility::deleteClause($tcaTable);
 				$records = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', $tcaTable, $where, '', '', '', 'uid');
 				if (is_array($records)) {
-					foreach (array_keys($records) as $recordId) {
+					foreach ($records as $recordId => $_) {
 						$command[$tcaTable][$recordId]['version']['action'] = 'flush';
 					}
 				}

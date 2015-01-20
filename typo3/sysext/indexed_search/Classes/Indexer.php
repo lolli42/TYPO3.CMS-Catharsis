@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\IndexedSearch;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,7 @@ namespace TYPO3\CMS\IndexedSearch;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * This class is a search indexer for TYPO3
@@ -138,7 +139,7 @@ class Indexer {
 	/**
 	 * Parent Object (TSFE) Initialization
 	 *
-	 * @param object Parent Object (frontend TSFE object), passed by reference
+	 * @param TypoScriptFrontendController $pObj Parent Object, passed by reference
 	 * @return void
 	 */
 	public function hook_indexContent(&$pObj) {
@@ -239,7 +240,7 @@ class Indexer {
 	 * @param string The MP variable (Mount Points), &MP=
 	 * @param array Rootline array of only UIDs.
 	 * @param array Array of GET variables to register with this indexing
-	 * @param bool If set, calculates a cHash value from the $cHash_array. Probably you will not do that since such cases are indexed through the frontend and the idea of this interface is to index non-cachable pages from the backend!
+	 * @param bool If set, calculates a cHash value from the $cHash_array. Probably you will not do that since such cases are indexed through the frontend and the idea of this interface is to index non-cacheable pages from the backend!
 	 * @return void
 	 */
 	public function backend_initIndexer($id, $type, $sys_language_uid, $MP, $uidRL, $cHash_array = array(), $createCHash = FALSE) {
@@ -513,7 +514,7 @@ class Indexer {
 			while ($this->embracingTags($headPart, 'meta', $dummy, $headPart, $meta[$i])) {
 				$i++;
 			}
-			// TODO The code below stops at first unset tag. Is that correct?
+			// @todo The code below stops at first unset tag. Is that correct?
 			for ($i = 0; isset($meta[$i]); $i++) {
 				$meta[$i] = GeneralUtility::get_tag_attributes($meta[$i]);
 				if (stristr($meta[$i]['name'], 'keywords')) {
@@ -577,7 +578,7 @@ class Indexer {
 	}
 
 	/**
-	 * Finds first occurence of embracing tags and returns the embraced content and the original string with
+	 * Finds first occurrence of embracing tags and returns the embraced content and the original string with
 	 * the tag removed in the two passed variables. Returns FALSE if no match found. ie. useful for finding
 	 * <title> of document or removing <script>-sections
 	 *
@@ -789,7 +790,7 @@ class Indexer {
 		$urlHeaders = $this->getUrlHeaders($externalUrl);
 		if (stristr($urlHeaders['Content-Type'], 'text/html')) {
 			$content = ($this->indexExternalUrl_content = GeneralUtility::getUrl($externalUrl));
-			if (strlen($content)) {
+			if ((string)$content !== '') {
 				// Create temporary file:
 				$tmpFile = GeneralUtility::tempnam('EXTERNAL_URL');
 				if ($tmpFile) {
@@ -813,12 +814,12 @@ class Indexer {
 	public function getUrlHeaders($url) {
 		// Try to get the headers only
 		$content = GeneralUtility::getUrl($url, 2);
-		if (strlen($content)) {
+		if ((string)$content !== '') {
 			// Compile headers:
 			$headers = GeneralUtility::trimExplode(LF, $content, TRUE);
 			$retVal = array();
 			foreach ($headers as $line) {
-				if (!strlen(trim($line))) {
+				if (trim($line) === '') {
 					break;
 				}
 				list($headKey, $headValue) = explode(':', $line, 2);
@@ -1151,7 +1152,7 @@ class Indexer {
 	public function charsetEntity2utf8(&$contentArr, $charset) {
 		// Convert charset if necessary
 		foreach ($contentArr as $key => $value) {
-			if (strlen($contentArr[$key])) {
+			if ((string)$contentArr[$key] !== '') {
 				if ($charset !== 'utf-8') {
 					$contentArr[$key] = $this->csObj->utf8_encode($contentArr[$key], $charset);
 				}
@@ -1239,7 +1240,7 @@ class Indexer {
 			}
 			// Priority used for flagBitMask feature (see extension configuration)
 			$retArr[$val]['cmp'] = $retArr[$val]['cmp'] | pow(2, $offset);
-			// Increase number of occurences
+			// Increase number of occurrences
 			$retArr[$val]['count']++;
 			$this->wordcount++;
 		}
@@ -1257,7 +1258,7 @@ class Indexer {
 			$val = substr($val, 0, 60);
 			// Cut after 60 chars because the index_words.baseword varchar field has this length. This MUST be the same.
 			if (!isset($retArr[$val])) {
-				// First occurence (used for ranking results)
+				// First occurrence (used for ranking results)
 				$retArr[$val]['first'] = $key;
 				// Word ID (wid)
 				$retArr[$val]['hash'] = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::md5inthash($val);
@@ -1269,7 +1270,7 @@ class Indexer {
 			if ($this->storeMetaphoneInfoAsWords) {
 				$this->metaphoneContent .= ' ' . $retArr[$val]['metaphone'];
 			}
-			// Increase number of occurences
+			// Increase number of occurrences
 			$retArr[$val]['count']++;
 			$this->wordcount++;
 		}
@@ -1291,7 +1292,7 @@ class Indexer {
 		}
 		if ($returnRawMetaphoneValue) {
 			$result = $metaphoneRawValue;
-		} elseif (strlen($metaphoneRawValue)) {
+		} elseif ($metaphoneRawValue !== '') {
 			// Create hash and return integer
 			$result = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::md5inthash($metaphoneRawValue);
 		} else {

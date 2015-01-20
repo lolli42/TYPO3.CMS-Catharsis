@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Front end RTE based on htmlArea
  *
@@ -85,16 +86,16 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 	/**
 	 * Draws the RTE as an iframe
 	 *
-	 * @param object Reference to parent object, which is an instance of the TCEforms.
-	 * @param string The table name
-	 * @param string The field name
-	 * @param array The current row from which field is being rendered
-	 * @param array Array of standard content for rendering form fields from TCEforms. See TCEforms for details on this. Includes for instance the value and the form field name, java script actions and more.
-	 * @param array "special" configuration - what is found at position 4 in the types configuration of a field from record, parsed into an array.
-	 * @param array Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
-	 * @param string Record "type" field value.
-	 * @param string Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
-	 * @param int PID value of record (true parent page id)
+	 * @param object $parentObject parent object
+	 * @param string $table The table name
+	 * @param string $field The field name
+	 * @param array $row The current row from which field is being rendered
+	 * @param array $PA standard content for rendering form fields from TCEforms. See TCEforms for details on this. Includes for instance the value and the form field name, java script actions and more.
+	 * @param array $specConf "special" configuration - what is found at position 4 in the types configuration of a field from record, parsed into an array.
+	 * @param array $thisConfig Configuration for RTEs; A mix between TSconfig and otherwise. Contains configuration for display, which buttons are enabled, additional transformation information etc.
+	 * @param string $RTEtypeVal Record "type" field value.
+	 * @param string $RTErelPath Relative path for images/links in RTE; this is used when the RTE edits content from static files where the path of such media has to be transformed forth and back!
+	 * @param int $thePidValue PID value of record (true parent page id)
 	 * @return string HTML code for RTE!
 	 */
 	public function drawRTE(&$parentObject, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue) {
@@ -148,7 +149,7 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		// Language
 		$GLOBALS['TSFE']->initLLvars();
 		$this->language = $GLOBALS['TSFE']->lang;
-		$this->LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile('EXT:' . $this->ID . '/locallang.xml', $this->language);
+		$this->LOCAL_LANG = \TYPO3\CMS\Core\Utility\GeneralUtility::readLLfile('EXT:' . $this->ID . '/locallang.xlf', $this->language);
 		if ($this->language === 'default' || !$this->language) {
 			$this->language = 'en';
 		}
@@ -212,19 +213,18 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 		$this->TCEform->additionalJS_post[] = $this->wrapCDATA($this->registerRTEinJS($this->TCEform->RTEcounter, '', '', '', $textAreaId));
 		// Set the save option for the RTE:
 		$this->TCEform->additionalJS_submit[] = $this->setSaveRTE($this->TCEform->RTEcounter, $this->TCEform->formName, $textAreaId);
+		$this->pageRenderer->loadRequireJs();
 		// Loading ExtJs JavaScript files and inline code, if not configured in TS setup
 		if (!is_array($GLOBALS['TSFE']->pSetup['javascriptLibs.']['ExtJs.'])) {
 			$this->pageRenderer->loadExtJs();
 			$this->pageRenderer->enableExtJSQuickTips();
 		}
-		$this->pageRenderer->addJsFile($this->getFullFileName('typo3/js/extjs/ux/ext.resizable.js'));
 		$this->pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/notifications.js');
 		// Preloading the pageStyle and including RTE skin stylesheets
 		$this->addPageStyle();
 		$this->pageRenderer->addCssFile($this->siteURL . 'typo3/contrib/extjs/resources/css/ext-all-notheme.css');
 		$this->pageRenderer->addCssFile($this->siteURL . 'typo3/sysext/t3skin/extjs/xtheme-t3skin.css');
 		$this->addSkin();
-		$this->pageRenderer->addCssFile($this->siteURL . 'typo3/js/extjs/ux/resize.css');
 		// Add RTE JavaScript
 		$this->pageRenderer->loadJquery();
 		$this->addRteJsFiles($this->TCEform->RTEcounter);
@@ -312,4 +312,5 @@ class FrontendRteController extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase {
 			'/*]]>*/'
 		));
 	}
+
 }

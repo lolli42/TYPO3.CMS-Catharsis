@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Database;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -50,16 +50,6 @@ class ReferenceIndex {
 	 * @var array
 	 */
 	public $relations = array();
-
-	/**
-	 * @var array
-	 */
-	public $words_strings = array();
-
-	/**
-	 * @var array
-	 */
-	public $words = array();
 
 	/**
 	 * Number which we can increase if a change in the code means we will have to force a re-generation of the index.
@@ -165,9 +155,6 @@ class ReferenceIndex {
 			// Get raw record from DB:
 			$record = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('*', $table, 'uid=' . (int)$uid);
 			if (is_array($record)) {
-				// Initialize:
-				$this->words_strings = array();
-				$this->words = array();
 				// Deleted:
 				$deleted = $GLOBALS['TCA'][$table]['ctrl']['delete'] && $record[$GLOBALS['TCA'][$table]['ctrl']['delete']] ? 1 : 0;
 				// Get all relations from record:
@@ -210,12 +197,6 @@ class ReferenceIndex {
 					// Softreferences in the field:
 					if (is_array($dat['softrefs'])) {
 						$this->createEntryData_softreferences($table, $uid, $fieldname, '', $deleted, $dat['softrefs']['keys']);
-					}
-				}
-				// Word indexing:
-				foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
-					if (GeneralUtility::inList('input,text', $conf['config']['type']) && (string)$record[$field] !== '' && !\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($record[$field])) {
-						$this->words_strings[$field] = $record[$field];
 					}
 				}
 				return $this->relations;
@@ -420,7 +401,7 @@ class ReferenceIndex {
 					}
 				}
 				// Soft References:
-				if (strlen($value) && ($softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']))) {
+				if ((string)$value !== '' && ($softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']))) {
 					$softRefValue = $value;
 					foreach ($softRefs as $spKey => $spParams) {
 						$softRefObj = BackendUtility::softRefParserObj($spKey);
@@ -428,7 +409,7 @@ class ReferenceIndex {
 							$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams);
 							if (is_array($resultArray)) {
 								$outRow[$field]['softrefs']['keys'][$spKey] = $resultArray['elements'];
-								if (strlen($resultArray['content'])) {
+								if ((string)$resultArray['content'] !== '') {
 									$softRefValue = $resultArray['content'];
 								}
 							}
@@ -490,7 +471,7 @@ class ReferenceIndex {
 			$this->temp_flexRelations['db'][$structurePath] = $resultsFromDatabase;
 		}
 		// Soft References:
-		if ((is_array($dataValue) || strlen($dataValue)) && $softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref'])) {
+		if ((is_array($dataValue) || (string)$dataValue !== '') && $softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref'])) {
 			$softRefValue = $dataValue;
 			foreach ($softRefs as $spKey => $spParams) {
 				$softRefObj = BackendUtility::softRefParserObj($spKey);
@@ -498,7 +479,7 @@ class ReferenceIndex {
 					$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams, $structurePath);
 					if (is_array($resultArray) && is_array($resultArray['elements'])) {
 						$this->temp_flexRelations['softrefs'][$structurePath]['keys'][$spKey] = $resultArray['elements'];
-						if (strlen($resultArray['content'])) {
+						if ((string)$resultArray['content'] !== '') {
 							$softRefValue = $resultArray['content'];
 						}
 					}

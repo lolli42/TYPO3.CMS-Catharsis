@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Utility for dealing with ext_emconf
  *
@@ -85,10 +86,10 @@ $EM_CONF[$_EXTKEY] = ' . $emConf . ';
 		) {
 			if (!isset($emConf['constraints']) || !isset($emConf['constraints']['depends'])) {
 				$emConf['constraints']['depends'] = $this->stringToDependency($emConf['dependencies']);
-				if (strlen($emConf['PHP_version'])) {
+				if ((string)$emConf['PHP_version'] !== '') {
 					$emConf['constraints']['depends']['php'] = $emConf['PHP_version'];
 				}
-				if (strlen($emConf['TYPO3_version'])) {
+				if ((string)$emConf['TYPO3_version'] !== '') {
 					$emConf['constraints']['depends']['typo3'] = $emConf['TYPO3_version'];
 				}
 			}
@@ -134,7 +135,7 @@ $EM_CONF[$_EXTKEY] = ' . $emConf . ';
 	 */
 	public function stringToDependency($dependency) {
 		$constraint = array();
-		if (is_string($dependency) && strlen($dependency)) {
+		if (is_string($dependency) && $dependency !== '') {
 			$dependency = explode(',', $dependency);
 			foreach ($dependency as $v) {
 				$constraint[$v] = '';

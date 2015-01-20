@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Form\Element\InlineElement;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -40,6 +41,11 @@ use TYPO3\CMS\Lang\LanguageService;
 class FormEngine {
 
 	/**
+	 * @var string A CSS class name prefix for all element types, single elements add their type to this string
+	 */
+	protected $cssClassTypeElementPrefix = 't3-formengine-field-';
+
+	/**
 	 * @var array
 	 */
 	public $palFieldArr = array();
@@ -61,7 +67,7 @@ class FormEngine {
 
 	/**
 	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defStyle = '';
 
@@ -84,14 +90,6 @@ class FormEngine {
 	 * @var array|NULL
 	 */
 	public $cachedAdditionalPreviewLanguages = NULL;
-
-	/**
-	 * Cache for the real PID of a record. The array key consists for a combined string "<table>:<uid>:<pid>".
-	 * The value is an array with two values: first is the real PID of a record, second is the PID value for TSconfig.
-	 *
-	 * @var array
-	 */
-	protected $cache_getTSCpid = array();
 
 	/**
 	 * @var array
@@ -236,7 +234,7 @@ class FormEngine {
 	 *
 	 * @var bool
 	 */
-	public $renderReadonly = FALSE;
+	protected $renderReadonly = FALSE;
 
 	/**
 	 * Form field width compensation: Factor of "size=12" to "style="width: 12*9.58px"
@@ -393,7 +391,7 @@ class FormEngine {
 	 * Contains current color scheme
 	 *
 	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $colorScheme = array();
 
@@ -401,7 +399,7 @@ class FormEngine {
 	 * Contains current class scheme
 	 *
 	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $classScheme = array();
 
@@ -409,7 +407,7 @@ class FormEngine {
 	 * Contains the default color scheme
 	 *
 	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defColorScheme = array();
 
@@ -417,7 +415,7 @@ class FormEngine {
 	 * Contains the default class scheme
 	 *
 	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defClassScheme = array();
 
@@ -425,7 +423,7 @@ class FormEngine {
 	 * Contains field style values
 	 *
 	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $fieldStyle = NULL;
 
@@ -433,7 +431,7 @@ class FormEngine {
 	 * Contains border style values
 	 *
 	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $borderStyle = NULL;
 
@@ -642,6 +640,19 @@ class FormEngine {
 	protected $suggest;
 
 	/**
+	 * protected properties which were public
+	 * use old property name as key and new property name as value
+	 * e.g. 'foo_BarName' => 'fooBarName'
+	 *
+	 * For each property a getter and setter method must be implemented!
+	 * @see __set() and __get()
+	 * @var array
+	 */
+	protected $protectedProperties = array(
+		'renderReadonly' => 'renderReadonly'
+	);
+
+	/**
 	 * Constructor function, setting internal variables, loading the styles used.
 	 *
 	 */
@@ -683,6 +694,59 @@ class FormEngine {
 			}
 		}
 		$this->templateFile = 'sysext/backend/Resources/Private/Templates/FormEngine.html';
+	}
+
+	/**
+	 * Fallback method to protect public properties
+	 * This is only a temporary solution and will be removed in TYPO3 CMS 8
+	 *
+	 * @param string $name name of the property
+	 * @param mixed $value value of the property
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function __set($name, $value) {
+		if (array_key_exists($name, $this->protectedProperties)) {
+			$method = 'set' . ucfirst($this->protectedProperties[$name]);
+			if (is_callable(array($this, $method))) {
+				GeneralUtility::deprecationLog('direct access to "FormEngine::$' . $name . '" is deprecated, use "FormEngine::' . $method . '()" instead.');
+				call_user_func_array(array($this, $method), array($value));
+			}
+		}
+	}
+
+	/**
+	 * Fallback method to protect public properties
+	 * This is only a temporary solution and will be removed in TYPO3 CMS 8
+	 *
+	 * @param string $name name of the property
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function __get($name) {
+		if (array_key_exists($name, $this->protectedProperties)) {
+			$method = 'get' . ucfirst($this->protectedProperties[$name]);
+			if (is_callable(array($this, $method))) {
+				GeneralUtility::deprecationLog('direct access to "FormEngine::$' . $name . '" is deprecated, use "FormEngine::' . $method . '()" instead.');
+				call_user_func(array($this, $method));
+			}
+		}
+	}
+
+	/**
+	 * Set render read only flag
+	 *
+	 * @param bool $value
+	 */
+	public function setRenderReadonly($value) {
+		$this->renderReadonly = (bool)$value;
+	}
+
+	/**
+	 * Get render readonly flag
+	 *
+	 * @return bool
+	 */
+	public function getRenderReadonly() {
+		return $this->renderReadonly;
 	}
 
 	/**
@@ -755,13 +819,14 @@ class FormEngine {
 	 * @see getSoloField()
 	 */
 	public function getMainFields($table, array $row, $depth = 0, array $overruleTypesArray = array()) {
+		$languageService = $this->getLanguageService();
 		$this->renderDepth = $depth;
 		// Init vars:
 		$out_array = array(array());
 		$out_array_meta = array(
 			array(
-				'title' => $this->getLL('l_generalTab')
-			)
+				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalTab'),
+			),
 		);
 		$out_pointer = 0;
 		$out_sheet = 0;
@@ -778,7 +843,7 @@ class FormEngine {
 		if ($GLOBALS['TCA'][$table]) {
 			// Load the description content for the table.
 			if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
-				$this->getLanguageService()->loadSingleTableDescription($table);
+				$languageService->loadSingleTableDescription($table);
 			}
 			// Get the current "type" value for the record.
 			$typeNum = $this->getRTypeNum($table, $row);
@@ -841,13 +906,13 @@ class FormEngine {
 										// Remember on which sheet we're currently working:
 										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
 										$out_array[$out_sheet] = array();
-										$out_array_meta[$out_sheet]['title'] = $this->sL($fieldLabel);
+										$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
 										// Register newline for Tab
 										$out_array_meta[$out_sheet]['newline'] = $additionalPalette == 'newline';
 									}
 								} else {
 									// Setting alternative title for "General" tab if "--div--" is the very first element.
-									$out_array_meta[$out_sheet]['title'] = $this->sL($fieldLabel);
+									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
 									// Only add the first tab to the dynNestedStack if there are more tabs:
 									if ($tabIdentString && strpos($itemList, '--div--', strlen($fieldInfo))) {
 										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-1');
@@ -857,9 +922,9 @@ class FormEngine {
 								if ($additionalPalette && !isset($this->palettesRendered[$this->renderDepth][$table][$additionalPalette])) {
 									// Render a 'header' if not collapsed
 									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $this->sL($fieldLabel));
+										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $languageService->sL($fieldLabel));
 									} else {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $this->sL($fieldLabel));
+										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel));
 									}
 									$this->palettesRendered[$this->renderDepth][$table][$additionalPalette] = 1;
 								}
@@ -884,7 +949,9 @@ class FormEngine {
 				if (!isset($this->palettesRendered[$this->renderDepth][$table][$mP])) {
 					$temp_palettesCollapsed = $this->palettesCollapsed;
 					$this->palettesCollapsed = FALSE;
-					$label = $i == 0 ? $this->getLL('l_generalOptions') : $this->getLL('l_generalOptions_more');
+					$label = $i == 0
+						? $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions')
+						: $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions_more');
 					$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $mP, $label);
 					$this->palettesCollapsed = $temp_palettesCollapsed;
 					$this->palettesRendered[$this->renderDepth][$table][$mP] = 1;
@@ -896,41 +963,38 @@ class FormEngine {
 			}
 		}
 		// Return the imploded $out_array:
-		// There were --div-- dividers around...
-		if ($out_sheet > 0) {
-			// Create parts array for the tab menu:
-			$parts = array();
-			foreach ($out_array as $idx => $sheetContent) {
-				$content = implode('', $sheetContent);
-				if ($content) {
-					// Wrap content (row) with table-tag, otherwise tab/sheet will be disabled (see getdynTabMenu() )
-					$content = '<table border="0" cellspacing="0" cellpadding="0" width="100%">' . $content . '</table>';
-				}
-				$parts[$idx] = array(
-					'label' => $out_array_meta[$idx]['title'],
-					'content' => $content,
-					'newline' => $out_array_meta[$idx]['newline']
-				);
+		// Create parts array for the tab menu:
+		$parts = array();
+		foreach ($out_array as $idx => $sheetContent) {
+			$content = implode('', $sheetContent);
+			if ($content) {
+				// Wrap content (row) with table-tag, otherwise tab/sheet will be disabled (see getdynTabMenu() )
+				$content = '<table border="0" cellspacing="0" cellpadding="0" width="100%">' . $content . '</table>';
 			}
-			if (count($parts) > 1) {
-				// Unset the current level of tab menus:
-				$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-				$output = $this->getDynTabMenu($parts, $tabIdentString);
-			} else {
-				// If there is only one tab/part there is no need to wrap it into the dynTab code
-				$output = isset($parts[0]) ? trim($parts[0]['content']) : '';
-			}
-			$output = '
-				<tr>
-					<td colspan="2">
-					' . $output . '
-					</td>
-				</tr>';
+			$parts[$idx] = array(
+				'label' => $out_array_meta[$idx]['title'],
+				'content' => $content,
+				'newline' => $out_array_meta[$idx]['newline']
+			);
+		}
+		if (count($parts) > 1) {
+			// Unset the current level of tab menus:
+			$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
+			$output = $this->getDynTabMenu($parts, $tabIdentString);
 		} else {
-			// Only one tab, so just implode and wrap the background image (= tab container) around:
-			$output = implode('', $out_array[$out_sheet]);
+			// If there is only one tab/part there is no need to wrap it into the dynTab code
+			$output = isset($parts[0]) ? trim($parts[0]['content']) : '';
+		}
+		// Only one tab, so just implode and wrap the background image (= tab container) around:
+		if ($out_sheet === 0) {
 			$output = '<div class="typo3-dyntabmenu-divs">' . $output . '</div>';
 		}
+		$output = '
+			<tr>
+				<td colspan="2">
+				' . $output . '
+				</td>
+			</tr>';
 
 		return $output;
 	}
@@ -1003,7 +1067,16 @@ class FormEngine {
 				$isHiddenPalette = !empty($GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']);
 				$thePalIcon = '';
 				if ($collapsed && $collapsedHeader !== NULL && !$isHiddenPalette) {
-					list($thePalIcon, ) = $this->wrapOpenPalette(IconUtility::getSpriteIcon('actions-system-options-view', array('title' => htmlspecialchars($this->getLL('l_moreOptions')))), $table, $row, $palette, 1);
+					list($thePalIcon, ) = $this->wrapOpenPalette(
+						IconUtility::getSpriteIcon(
+							'actions-system-options-view',
+							array('title' => htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.moreOptions')))
+						),
+						$table,
+						$row,
+						$palette,
+						1
+					);
 					$thePalIcon = '<span style="margin-left: 20px;">' . $thePalIcon . $collapsedHeader . '</span>';
 				}
 				$paletteHtml = $this->wrapPaletteField($this->printPalette($parts), $table, $row, $palette, $collapsed);
@@ -1108,6 +1181,7 @@ class FormEngine {
 				if (in_array($field, $this->hiddenFieldListArr)) {
 					$this->hiddenFieldAccum[] = '<input type="hidden" name="' . $PA['itemFormElName'] . '" value="' . htmlspecialchars($PA['itemFormElValue']) . '" />';
 				} else {
+					$languageService = $this->getLanguageService();
 					// Render as a normal field:
 					// If the field is NOT a palette field, then we might create an icon which links to a palette for the field, if one exists.
 					$palJSfunc = '';
@@ -1115,15 +1189,24 @@ class FormEngine {
 					if (!$PA['palette']) {
 						$paletteFields = $this->loadPaletteElements($table, $row, $PA['pal']);
 						if ($PA['pal'] && $this->isPalettesCollapsed($table, $PA['pal']) && count($paletteFields)) {
-							list($thePalIcon, $palJSfunc) = $this->wrapOpenPalette(IconUtility::getSpriteIcon('actions-system-options-view', array('title' => htmlspecialchars($this->getLL('l_moreOptions')))), $table, $row, $PA['pal'], 1);
+							list($thePalIcon, $palJSfunc) = $this->wrapOpenPalette(
+								IconUtility::getSpriteIcon(
+									'actions-system-options-view',
+									array('title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.moreOptions')))
+								),
+								$table,
+								$row,
+								$PA['pal'],
+								1
+							);
 						}
 					}
 					// onFocus attribute to add to the field:
 					$PA['onFocus'] = $palJSfunc && !$this->getBackendUserAuthentication()->uc['dontShowPalettesOnFocusInAB'] ? ' onfocus="' . htmlspecialchars($palJSfunc) . '"' : '';
 					$PA['label'] = $PA['altName'] ?: $PA['fieldConf']['label'];
 					$PA['label'] = $PA['fieldTSConfig']['label'] ?: $PA['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label.'][$this->getLanguageService()->lang] ?: $PA['label'];
-					$PA['label'] = $this->sL($PA['label']);
+					$PA['label'] = $PA['fieldTSConfig']['label.'][$languageService->lang] ?: $PA['label'];
+					$PA['label'] = $languageService->sL($PA['label']);
 					// JavaScript code for event handlers:
 					$PA['fieldChangeFunc'] = array();
 					$PA['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'TBE_EDITOR.fieldChanged(\'' . $table . '\',\'' . $row['uid'] . '\',\'' . $field . '\',\'' . $PA['itemFormElName'] . '\');';
@@ -1169,7 +1252,7 @@ class FormEngine {
 							'<input type="hidden" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="0" />' .
 							'<input type="checkbox" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="1" id="tce-forms-textfield-use-override-' . $field . '-' . $row['uid'] . '" onchange="' . htmlspecialchars($onChange) . '"' . $checked . ' />' .
 							'<label for="tce-forms-textfield-use-override-' . $field . '-' . $row['uid'] . '">' .
-							sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.placeholder.override'),
+							sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.placeholder.override'),
 							BackendUtility::getRecordTitlePrep($placeholder, 20)) . '</label>' .
 						'</span>'
 						. '<div class="t3-form-placeholder-placeholder">' . $this->getSingleField_typeNone_render(
@@ -1266,8 +1349,11 @@ class FormEngine {
 			if (!isset($typeClassNameMapping[$type])) {
 				$type = 'unknown';
 			}
-			$item = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this)
-				->render($table, $field, $row, $PA);
+			$formElement = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this);
+			if ($formElement instanceof AbstractFormElement) {
+				$formElement->setRenderReadonly($this->getRenderReadonly());
+			}
+			$item = $formElement->render($table, $field, $row, $PA);
 		}
 		return $item;
 	}
@@ -1286,7 +1372,7 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\InputElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\InputElement
 	 */
 	public function getSingleField_typeInput($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1359,11 +1445,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\TextElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\TextElement
 	 */
 	public function getSingleField_typeText($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1376,11 +1463,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\CheckboxElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\CheckboxElement
 	 */
 	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1393,11 +1481,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\RadioElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\RadioElement
 	 */
 	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1411,11 +1500,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\SelectElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\SelectElement
 	 */
 	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1433,6 +1523,7 @@ class FormEngine {
 	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1445,11 +1536,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\NoneElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
 	 */
 	public function getSingleField_typeNone($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1465,43 +1557,26 @@ class FormEngine {
 		if ($config['format']) {
 			$itemValue = $this->formatValue($config, $itemValue);
 		}
+		if (!$config['pass_content']) {
+			$itemValue = htmlspecialchars($itemValue);
+		}
+
 		$rows = (int)$config['rows'];
+		// Render as textarea
 		if ($rows > 1) {
 			if (!$config['pass_content']) {
-				$itemValue = nl2br(htmlspecialchars($itemValue));
+				$itemValue = nl2br($itemValue);
 			}
-			// Like textarea
-			$cols = MathUtility::forceIntegerInRange($config['cols'] ? $config['cols'] : 30, 5, $this->maxTextareaWidth);
-			if (!$config['fixedRows']) {
-				$origRows = ($rows = MathUtility::forceIntegerInRange($rows, 1, 20));
-				if (strlen($itemValue) > $this->charsPerRow * 2) {
-					$cols = $this->maxTextareaWidth;
-					$rows = MathUtility::forceIntegerInRange(round(strlen($itemValue) / $this->charsPerRow), count(explode(LF, $itemValue)), 20);
-					if ($rows < $origRows) {
-						$rows = $origRows;
-					}
-				}
-			}
-
-			$cols = round($cols * $this->form_largeComp);
+			$cols = round($config['cols'] * $this->form_largeComp);
 			$width = ceil($cols * $this->form_rowsToStylewidth);
-			// Hardcoded: 12 is the height of the font
-			$height = $rows * 12;
-			$item = '
-				<div style="overflow:auto; height:' . $height . 'px; width:' . $width . 'px;" class="t3-tceforms-fieldReadOnly">'
-				. $itemValue . IconUtility::getSpriteIcon('status-status-readonly') . '</div>';
+			$item = '<textarea class="form-control" style="width:' . $width . 'px;" cols="' . $cols . '" rows="' . $rows . '" disabled>' . $itemValue . '</textarea>';
 		} else {
-			if (!$config['pass_content']) {
-				$itemValue = htmlspecialchars($itemValue);
-			}
-			$cols = $config['cols'] ? $config['cols'] : ($config['size'] ? $config['size'] : $this->maxInputWidth);
+			$cols = $config['cols'] ?: ($config['size'] ?: $this->maxInputWidth);
 			$cols = round($cols * $this->form_largeComp);
 			$width = ceil($cols * $this->form_rowsToStylewidth);
-			// Overflow:auto crashes mozilla here. Title tag is useful when text is longer than the div box (overflow:hidden).
 			$item = '
-				<div style="overflow:hidden; width:' . $width . 'px;" class="t3-tceforms-fieldReadOnly" title="' . $itemValue . '">'
-				. '<span class="nobr">' . ((string)$itemValue !== '' ? $itemValue : '&nbsp;') . '</span>'
-				. IconUtility::getSpriteIcon('status-status-readonly') . '</div>';
+				<input class="form-control" value="'. $itemValue .'" style="width:' . $width . 'px;" type="text" disabled>'
+				. '<span class="nobr">' . ((string)$itemValue !== '' ? $itemValue : '&nbsp;') . '</span>';
 		}
 		return $item;
 	}
@@ -1514,11 +1589,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\FlexElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\FlexElement
 	 */
 	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1530,8 +1606,10 @@ class FormEngine {
 	 * @param array $selectedLanguage
 	 * @param bool $multi
 	 * @return string HTML for menu
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getSingleField_typeFlex_langMenu($languages, $elName, $selectedLanguage, $multi = TRUE) {
+		GeneralUtility::logDeprecatedFunction();
 		$opt = array();
 		foreach ($languages as $lArr) {
 			$opt[] = '<option value="' . htmlspecialchars($lArr['ISOcode']) . '"'
@@ -1552,8 +1630,10 @@ class FormEngine {
 	 * @param string $elName Form element name of the field containing the sheet pointer
 	 * @param string $sheetKey Current sheet key
 	 * @return string HTML for menu
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getSingleField_typeFlex_sheetMenu($sArr, $elName, $sheetKey) {
+		GeneralUtility::logDeprecatedFunction();
 		$tCells = array();
 		$pct = round(100 / count($sArr));
 		foreach ($sArr as $sKey => $sheetCfg) {
@@ -1566,7 +1646,7 @@ class FormEngine {
 			$tCells[] = '<td width="' . $pct . '%" style="'
 				. ($sKey == $sheetKey ? 'background-color: #9999cc; font-weight: bold;' : 'background-color: #aaaaaa;')
 				. ' cursor: hand;" onclick="' . htmlspecialchars($onClick) . '" align="center">'
-				. ($sheetCfg['ROOT']['TCEforms']['sheetTitle'] ? $this->sL($sheetCfg['ROOT']['TCEforms']['sheetTitle']) : $sKey)
+				. ($sheetCfg['ROOT']['TCEforms']['sheetTitle'] ? $this->getLanguageService()->sL($sheetCfg['ROOT']['TCEforms']['sheetTitle']) : $sKey)
 				. '</td>';
 		}
 		return '<table border="0" cellpadding="0" cellspacing="2" class="typo3-TCEforms-flexForm-sheetMenu"><tr>' . implode('', $tCells) . '</tr></table>';
@@ -1580,11 +1660,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\UnknownElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UnknownElement
 	 */
 	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1596,11 +1677,12 @@ class FormEngine {
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\UserElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UserElement
 	 */
 	public function getSingleField_typeUser($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
+			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1942,7 +2024,7 @@ class FormEngine {
 			$type = $fieldConfig['type'];
 			if (is_array($TSconfig['config']) && is_array($this->allowOverrideMatrix[$type])) {
 				// Check if the keys in TSconfig['config'] are allowed to override TCA field config:
-				foreach (array_keys($TSconfig['config']) as $key) {
+				foreach ($TSconfig['config'] as $key => $_) {
 					if (!in_array($key, $this->allowOverrideMatrix[$type], TRUE)) {
 						unset($TSconfig['config'][$key]);
 					}
@@ -1965,7 +2047,7 @@ class FormEngine {
 	 * @param string $field Specify the field name.
 	 * @return array|NULL
 	 * @see getSpecConfFromString(), BackendUtility::getTCAtypes()
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getSpecConfForField($table, $row, $field) {
 		GeneralUtility::logDeprecatedFunction();
@@ -1990,8 +2072,10 @@ class FormEngine {
 	 * @param string $defaultExtras The ['defaultExtras'] value from field configuration
 	 * @return array An array with the special options in.
 	 * @see getSpecConfForField(), BackendUtility::getSpecConfParts()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getSpecConfFromString($extraString, $defaultExtras) {
+		GeneralUtility::logDeprecatedFunction();
 		return BackendUtility::getSpecConfParts($extraString, $defaultExtras);
 	}
 
@@ -2118,23 +2202,23 @@ class FormEngine {
 	 */
 	public function renderDefaultLanguageContent($table, $field, $row, $item) {
 		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->defaultLanguageData[$table . ':' . $row['uid']][$field], 0, 1);
+			$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->defaultLanguageData[$table . ':' . $row['uid']][$field], 0, 1, FALSE, $this->defaultLanguageData[$table . ':' . $row['uid']]['uid']);
 			$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
 			// Don't show content if it's for IRRE child records:
 			if ($fieldConfig['config']['type'] != 'inline') {
 				if ($defaultLanguageValue !== '') {
-					$item .= '<div class="typo3-TCEforms-originalLanguageValue">' . $this->getLanguageIcon($table, $row, 0)
+					$item .= '<div class="t3-form-original-language">' . $this->getLanguageIcon($table, $row, 0)
 						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '&nbsp;</div>';
+						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 				}
 				$previewLanguages = $this->getAdditionalPreviewLanguages();
 				foreach ($previewLanguages as $previewLanguage) {
 					$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->additionalPreviewLanguageData[$table . ':' . $row['uid']][$previewLanguage['uid']][$field], 0, 1);
 					if ($defaultLanguageValue !== '') {
-						$item .= '<div class="typo3-TCEforms-originalLanguageValue">'
+						$item .= '<div class="t3-form-original-language">'
 							. $this->getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
 							. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '&nbsp;</div>';
+							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 					}
 				}
 			}
@@ -2170,8 +2254,10 @@ class FormEngine {
 						BackendUtility::getProcessedValue($table, $field, $dLVal['old'][$field], 0, 1),
 						BackendUtility::getProcessedValue($table, $field, $dLVal['new'][$field], 0, 1)
 					);
-					$item .= '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
-						. htmlspecialchars($this->getLL('l_changeInOrig')) . ':</div>' . $diffres . '</div>';
+					$item .= '<div class="t3-form-original-language-diff">
+						<div class="t3-form-original-language-diffheader">' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . '</div>
+						<div class="t3-form-original-language-diffcontent">' . $diffres . '</div>
+					</div>';
 				}
 			}
 		}
@@ -2185,8 +2271,10 @@ class FormEngine {
 	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
 	 * @return string Item string returned again, possibly with the original value added to.
 	 * @see getSingleField(), registerDefaultLanguageData()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function renderVDEFDiff($vArray, $vDEFkey) {
+		GeneralUtility::logDeprecatedFunction();
 		$item = NULL;
 		if (
 			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
@@ -2196,7 +2284,7 @@ class FormEngine {
 			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
 			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
 			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
-				. htmlspecialchars($this->getLL('l_changeInOrig')) . ':</div>' . $diffres . '</div>';
+				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
 		}
 		return $item;
 	}
@@ -2224,8 +2312,9 @@ class FormEngine {
 	 * @throws \UnexpectedValueException
 	 */
 	public function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = array(), $onFocus = '', $table = '', $field = '', $uid = '', $config = array()) {
+		$languageService = $this->getLanguageService();
 		$disabled = '';
-		if ($this->renderReadonly || $params['readOnly']) {
+		if ($this->getRenderReadonly() || $params['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Sets a flag which means some JavaScript is included on the page to support this element.
@@ -2285,7 +2374,7 @@ class FormEngine {
 		if (!$selector) {
 			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
 			$selector = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE)) . '" '
-				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" ' . $this->insertDefStyle('group', 'tceforms-multiselect'))
+				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" class="' . $this->cssClassTypeElementPrefix . 'group tceforms-multiselect"')
 				. ($isMultiple ? ' multiple="multiple"' : '')
 				. ' name="' . $fName . '_list" ' . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
 				. '</select>';
@@ -2320,7 +2409,7 @@ class FormEngine {
 				$aOnClick = 'setFormValueOpenBrowser(\'' . $elementBrowserType . '\',\''
 					. ($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline) . '\'); return false;';
 				$spriteIcon = IconUtility::getSpriteIcon('actions-insert-record', array(
-					'title' => htmlspecialchars($this->getLL('l_browse_' . ($mode == 'db' ? 'db' : 'file')))
+					'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file')))
 				));
 				$icons['R'][] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '" class="btn btn-default">' . $spriteIcon . '</a>';
 			}
@@ -2329,24 +2418,24 @@ class FormEngine {
 					$icons['L'][] = IconUtility::getSpriteIcon('actions-move-to-top', array(
 						'data-fieldname' => $fName,
 						'class' => 't3-btn t3-btn-moveoption-top',
-						'title' => htmlspecialchars($this->getLL('l_move_to_top'))
+						'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top'))
 					));
 				}
 				$icons['L'][] = IconUtility::getSpriteIcon('actions-move-up', array(
 					'data-fieldname' => $fName,
 					'class' => 't3-btn t3-btn-moveoption-up',
-					'title' => htmlspecialchars($this->getLL('l_move_up'))
+					'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up'))
 				));
 				$icons['L'][] = IconUtility::getSpriteIcon('actions-move-down', array(
 					'data-fieldname' => $fName,
 					'class' => 't3-btn t3-btn-moveoption-down',
-					'title' => htmlspecialchars($this->getLL('l_move_down'))
+					'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down'))
 				));
 				if ($sSize >= 5) {
 					$icons['L'][] = IconUtility::getSpriteIcon('actions-move-to-bottom', array(
 						'data-fieldname' => $fName,
 						'class' => 't3-btn t3-btn-moveoption-bottom',
-						'title' => htmlspecialchars($this->getLL('l_move_to_bottom'))
+						'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom'))
 					));
 				}
 			}
@@ -2368,7 +2457,7 @@ class FormEngine {
 				}
 				$aOnClick .= 'return false;';
 				$spriteIcon1 = IconUtility::getSpriteIcon('actions-document-paste-into', array(
-					'title' => htmlspecialchars(sprintf($this->getLL('l_clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements)))
+					'title' => htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements)))
 				));
 				$icons['R'][] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $spriteIcon1 . '</a>';
 			}
@@ -2378,7 +2467,7 @@ class FormEngine {
 				'onclick' => $rOnClickInline,
 				'data-fieldname' => $fName,
 				'class' => 't3-btn t3-btn-removeoption',
-				'title' => htmlspecialchars($this->getLL('l_remove_selected'))
+				'title' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected'))
 
 			));
 		}
@@ -2563,7 +2652,7 @@ class FormEngine {
 					|| is_array($parametersOfWizards) && in_array($wid, $parametersOfWizards)) && ($RTE || !$wConf['RTEonly'])
 				) {
 					// Title / icon:
-					$iTitle = htmlspecialchars($this->sL($wConf['title']));
+					$iTitle = htmlspecialchars($this->getLanguageService()->sL($wConf['title']));
 					if ($wConf['icon']) {
 						$icon = $this->getIconHtml($wConf['icon'], $iTitle, $iTitle);
 					} else {
@@ -2626,7 +2715,7 @@ class FormEngine {
 											// Current form value is passed as P[currentValue]!
 											$addJS = $wConf['popup_onlyOpenIfSelected']
 												? 'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){alert('
-													. GeneralUtility::quoteJSvalue($this->getLL('m_noSelItemForEdit'))
+													. GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit'))
 													. '); return false;}'
 												: '';
 											$curSelectedValues = '+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')';
@@ -3009,7 +3098,7 @@ class FormEngine {
 	 * @param string $type Field type (eg. "check", "radio", "select")
 	 * @return string CSS attributes
 	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function formElStyle($type) {
 		GeneralUtility::logDeprecatedFunction();
@@ -3022,7 +3111,7 @@ class FormEngine {
 	 * @param string $type Field type (eg. "check", "radio", "select")
 	 * @return string CSS attributes
 	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function formElClass($type) {
 		GeneralUtility::logDeprecatedFunction();
@@ -3035,7 +3124,7 @@ class FormEngine {
 	 * @param string $type Field type (eg. "check", "radio", "select")
 	 * @param bool $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
 	 * @return string CSS attributes
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function formElStyleClassValue($type, $class = FALSE) {
 		GeneralUtility::logDeprecatedFunction();
@@ -3060,8 +3149,10 @@ class FormEngine {
 	 * @param string $type Field type (eg. "check", "radio", "select")
 	 * @param string $additionalClass Additional class(es) to be added
 	 * @return string CSS attributes
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function insertDefStyle($type, $additionalClass = '') {
+		GeneralUtility::logDeprecatedFunction();
 		$cssClasses = trim('t3-formengine-field-' . $type . ' ' . $additionalClass);
 		return 'class="' . htmlspecialchars($cssClasses) . '"';
 	}
@@ -3108,26 +3199,42 @@ class FormEngine {
 	 * @return array An array of arrays with three elements; label, value, icon
 	 */
 	public function initItemArray($fieldValue) {
+		$languageService = $this->getLanguageService();
 		$items = array();
 		if (is_array($fieldValue['config']['items'])) {
 			foreach ($fieldValue['config']['items'] as $itemValue) {
-				$items[] = array($this->sL($itemValue[0]), $itemValue[1], $itemValue[2]);
+				$items[] = array($languageService->sL($itemValue[0]), $itemValue[1], $itemValue[2]);
 			}
 		}
 		return $items;
 	}
 
 	/**
-	 * Merges items into an item-array
+	 * Merges items into an item-array, optionally with an icon
+	 * example:
+	 * TCEFORM.pages.doktype.addItems.13 = My Label
+	 * TCEFORM.pages.doktype.addItems.13.icon = EXT:t3skin/icons/gfx/i/pages.gif
 	 *
 	 * @param array $items The existing item array
 	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
 	 * @return array The updated $item array
 	 */
 	public function addItems($items, $iArray) {
+		$languageService = $this->getLanguageService();
 		if (is_array($iArray)) {
 			foreach ($iArray as $value => $label) {
-				$items[] = array($this->sl($label), $value);
+				// if the label is an array (that means it is a subelement
+				// like "34.icon = mylabel.png", skip it (see its usage below)
+				if (is_array($label)) {
+					continue;
+				}
+				// check if the value "34 = mylabel" also has a "34.icon = myimage.png"
+				if (isset($iArray[$value . '.']) && $iArray[$value . '.']['icon']) {
+					$icon = $iArray[$value . '.']['icon'];
+				} else {
+					$icon = '';
+				}
+				$items[] = array($languageService->sL($label), $value, $icon);
 			}
 		}
 		return $items;
@@ -3145,6 +3252,7 @@ class FormEngine {
 	 * @return array The modified $items array
 	 */
 	public function procItems($items, $iArray, $config, $table, $row, $field) {
+		$languageService = $this->getLanguageService();
 		$params = array();
 		$params['items'] = &$items;
 		$params['config'] = $config;
@@ -3159,10 +3267,10 @@ class FormEngine {
 		} catch (\Exception $exception) {
 			$fieldLabel = $field;
 			if (isset($GLOBALS['TCA'][$table]['columns'][$field]['label'])) {
-				$fieldLabel = $this->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+				$fieldLabel = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
 			}
 			$message = sprintf(
-				$this->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
+				$languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
 				$fieldLabel,
 				$exception->getMessage()
 			);
@@ -3227,24 +3335,23 @@ class FormEngine {
 		}
 		// If 'special' is configured:
 		if ($fieldValue['config']['special']) {
-			$lang = $this->getLanguageService();
+			$languageService = $this->getLanguageService();
 			switch ($fieldValue['config']['special']) {
 				case 'tables':
-					$temp_tc = array_keys($GLOBALS['TCA']);
-					foreach ($temp_tc as $theTableNames) {
+					foreach ($GLOBALS['TCA'] as $theTableNames => $_) {
 						if (!$GLOBALS['TCA'][$theTableNames]['ctrl']['adminOnly']) {
 							// Icon:
 							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTableNames, array());
 							// Add help text
 							$helpText = array();
-							$lang->loadSingleTableDescription($theTableNames);
+							$languageService->loadSingleTableDescription($theTableNames);
 							$helpTextArray = $GLOBALS['TCA_DESCR'][$theTableNames]['columns'][''];
 							if (!empty($helpTextArray['description'])) {
 								$helpText['description'] = $helpTextArray['description'];
 							}
 							// Item configuration:
 							$items[] = array(
-								$this->sL($GLOBALS['TCA'][$theTableNames]['ctrl']['title']),
+								$languageService->sL($GLOBALS['TCA'][$theTableNames]['ctrl']['title']),
 								$theTableNames,
 								$icon,
 								$helpText
@@ -3262,7 +3369,7 @@ class FormEngine {
 						}
 						// Item configuration:
 						$items[] = array(
-							$this->sL($theTypeArrays[0]),
+							$languageService->sL($theTypeArrays[0]),
 							$theTypeArrays[1],
 							$icon
 						);
@@ -3279,21 +3386,21 @@ class FormEngine {
 						if (!array_key_exists($theTable, $items)) {
 							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTable, array());
 							$items[$theTable] = array(
-								$this->sL($GLOBALS['TCA'][$theTable]['ctrl']['title']),
+								$languageService->sL($GLOBALS['TCA'][$theTable]['ctrl']['title']),
 								'--div--',
 								$icon
 							);
 						}
 						// Add help text
 						$helpText = array();
-						$lang->loadSingleTableDescription($theTable);
+						$languageService->loadSingleTableDescription($theTable);
 						$helpTextArray = $GLOBALS['TCA_DESCR'][$theTable]['columns'][$theFullField];
 						if (!empty($helpTextArray['description'])) {
 							$helpText['description'] = $helpTextArray['description'];
 						}
 						// Item configuration:
 						$items[] = array(
-							rtrim($lang->sl($GLOBALS['TCA'][$theTable]['columns'][$theField]['label']), ':') . ' (' . $theField . ')',
+							rtrim($languageService->sL($GLOBALS['TCA'][$theTable]['columns'][$theField]['label']), ':') . ' (' . $theField . ')',
 							$theTypeArrays[1],
 							'empty-empty',
 							$helpText
@@ -3338,7 +3445,7 @@ class FormEngine {
 							if (is_array($coValue['items'])) {
 								// Add header:
 								$items[] = array(
-									$lang->sl($coValue['header']),
+									$languageService->sL($coValue['header']),
 									'--div--'
 								);
 								// Traverse items:
@@ -3352,11 +3459,11 @@ class FormEngine {
 									// Add help text
 									$helpText = array();
 									if (!empty($itemCfg[2])) {
-										$helpText['description'] = $lang->sl($itemCfg[2]);
+										$helpText['description'] = $languageService->sL($itemCfg[2]);
 									}
 									// Add item to be selected:
 									$items[] = array(
-										$lang->sl($itemCfg[0]),
+										$languageService->sL($itemCfg[0]),
 										$coKey . ':' . preg_replace('/[:|,]/', '', $itemKey),
 										$icon,
 										$helpText
@@ -3375,14 +3482,14 @@ class FormEngine {
 					if (is_array($modList)) {
 						foreach ($modList as $theMod) {
 							// Icon:
-							$icon = $lang->moduleLabels['tabs_images'][$theMod . '_tab'];
+							$icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
 							if ($icon) {
 								$icon = '../' . PathUtility::stripPathSitePrefix($icon);
 							}
 							// Add help text
 							$helpText = array(
-								'title' => $lang->moduleLabels['labels'][$theMod . '_tablabel'],
-								'description' => $lang->moduleLabels['labels'][$theMod . '_tabdescr']
+								'title' => $languageService->moduleLabels['labels'][$theMod . '_tablabel'],
+								'description' => $languageService->moduleLabels['labels'][$theMod . '_tabdescr']
 							);
 							// Item configuration:
 							$items[] = array(
@@ -3432,6 +3539,7 @@ class FormEngine {
 	 * @see addSelectOptionsToItemArray(), BackendUtility::exec_foreign_table_where_query()
 	 */
 	public function foreignTable($items, $fieldValue, $TSconfig, $field, $pFFlag = FALSE) {
+		$languageService = $this->getLanguageService();
 		// Init:
 		$pF = $pFFlag ? 'neg_' : '';
 		$f_table = $fieldValue['config'][$pF . 'foreign_table'];
@@ -3443,8 +3551,8 @@ class FormEngine {
 		if ($db->sql_error()) {
 			$msg = htmlspecialchars($db->sql_error());
 			$msg .= '<br />' . LF;
-			$msg .= $this->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
-			$msgTitle = $this->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
+			$msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
+			$msgTitle = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
 			/** @var $flashMessage FlashMessage */
 			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, TRUE);
 			/** @var $flashMessageService FlashMessageService */
@@ -3455,7 +3563,7 @@ class FormEngine {
 			return array();
 		}
 		// Get label prefix.
-		$lPrefix = $this->sL($fieldValue['config'][$pF . 'foreign_table_prefix']);
+		$lPrefix = $languageService->sL($fieldValue['config'][$pF . 'foreign_table_prefix']);
 		// Get icon field + path if any:
 		$iField = $GLOBALS['TCA'][$f_table]['ctrl']['selicon_field'];
 		$iPath = trim($GLOBALS['TCA'][$f_table]['ctrl']['selicon_field_path']);
@@ -3575,24 +3683,25 @@ class FormEngine {
 	 * @return string
 	 */
 	public function replaceTableWrap($arr, $rec, $table) {
+		$icon = IconUtility::getSpriteIconForRecord($table, $rec, array('title' => $this->getRecordPath($table, $rec)));
 		// Make "new"-label
-		$lang = $this->getLanguageService();
+		$languageService = $this->getLanguageService();
 		if (strstr($rec['uid'], 'NEW')) {
-			$newLabel = ' <span class="typo3-TCEforms-newToken">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.new', TRUE) . '</span>';
+			$newLabel = ' <span class="typo3-TCEforms-newToken">' . $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.new', TRUE) . '</span>';
 			// BackendUtility::fixVersioningPid Should not be used here because NEW records are not offline workspace versions...
 			$truePid = BackendUtility::getTSconfig_pidValue($table, $rec['uid'], $rec['pid']);
 			$prec = BackendUtility::getRecordWSOL('pages', $truePid, 'title');
 			$pageTitle = BackendUtility::getRecordTitle('pages', $prec, TRUE, FALSE);
 			$rLabel = '<em>[PID: ' . $truePid . '] ' . $pageTitle . '</em>';
 			// Fetch translated title of the table
-			$tableTitle = $lang->sL($GLOBALS['TCA'][$table]['ctrl']['title']);
+			$tableTitle = $languageService->sL($GLOBALS['TCA'][$table]['ctrl']['title']);
 			if ($table === 'pages') {
-				$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewPage', TRUE);
+				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewPage', TRUE);
 				$pageTitle = sprintf($label, $tableTitle);
 			} else {
-				$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewRecord', TRUE);
+				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewRecord', TRUE);
 				if ($rec['pid'] == 0) {
-					$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewRecordRootLevel', TRUE);
+					$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.createNewRecordRootLevel', TRUE);
 				}
 				$pageTitle = sprintf($label, $tableTitle, $pageTitle);
 			}
@@ -3601,19 +3710,19 @@ class FormEngine {
 			$rLabel = BackendUtility::getRecordTitle($table, $rec, TRUE, FALSE);
 			$prec = BackendUtility::getRecordWSOL('pages', $rec['pid'], 'uid,title');
 			// Fetch translated title of the table
-			$tableTitle = $lang->sL($GLOBALS['TCA'][$table]['ctrl']['title']);
+			$tableTitle = $languageService->sL($GLOBALS['TCA'][$table]['ctrl']['title']);
 			if ($table === 'pages') {
-				$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.editPage', TRUE);
+				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editPage', TRUE);
 				// Just take the record title and prepend an edit label.
 				$pageTitle = sprintf($label, $tableTitle, $rLabel);
 			} else {
-				$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecord', TRUE);
+				$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecord', TRUE);
 				$pageTitle = BackendUtility::getRecordTitle('pages', $prec, TRUE, FALSE);
 				if ($rLabel === BackendUtility::getNoRecordTitle(TRUE)) {
-					$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordNoTitle', TRUE);
+					$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordNoTitle', TRUE);
 				}
 				if ($rec['pid'] == 0) {
-					$label = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordRootLevel', TRUE);
+					$label = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.editRecordRootLevel', TRUE);
 				}
 				if ($rLabel !== BackendUtility::getNoRecordTitle(TRUE)) {
 					// Just take the record title and prepend an edit label.
@@ -3623,6 +3732,7 @@ class FormEngine {
 					$pageTitle = sprintf($label, $tableTitle, $pageTitle);
 				}
 			}
+			$icon = $this->getClickMenu($icon, $table, $rec['uid']);
 		}
 		foreach ($arr as $k => $v) {
 			// Make substitutions:
@@ -3638,8 +3748,8 @@ class FormEngine {
 					$pageTitle,
 					$newLabel,
 					$rLabel,
-					htmlspecialchars($this->sL($GLOBALS['TCA'][$table]['ctrl']['title'])),
-					IconUtility::getSpriteIconForRecord($table, $rec, array('title' => $this->getRecordPath($table, $rec)))
+					htmlspecialchars($languageService->sL($GLOBALS['TCA'][$table]['ctrl']['title'])),
+					$icon
 				),
 				$arr[$k]
 			);
@@ -3669,7 +3779,7 @@ class FormEngine {
 	 *
 	 * @param string $inTemplate Template string with markers to be substituted.
 	 * @return string
-	 * @deprecated since TYPO3 CMS 7, will be removed with CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function rplColorScheme($inTemplate) {
 		GeneralUtility::logDeprecatedFunction();
@@ -3718,7 +3828,7 @@ class FormEngine {
 	 */
 	public function printPalette($palArr) {
 		$fieldAttributes = ' class="t3-form-palette-field"';
-		$labelAttributes = ' class="t3-form-palette-field-label"';
+		$labelAttributes = ' class="t3-form-palette-field-label t3-form-field-label"';
 
 		$row = 0;
 		$iRow = array();
@@ -3757,7 +3867,7 @@ class FormEngine {
 		for ($i = 0; $i <= $row; $i++) {
 			if (isset($iRow[$i])) {
 				$out .= implode('', $iRow[$i]);
-				$out .= $i < $row ? '<br />' : '';
+				$out .= $i < $row ? '<div class="clearfix"></div>' : '';
 			}
 		}
 		$out .= '</fieldset>';
@@ -3769,7 +3879,7 @@ class FormEngine {
 	 *
 	 * @param string $scheme A color scheme string.
 	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed with CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function setColorScheme($scheme) {
 		GeneralUtility::logDeprecatedFunction();
@@ -3800,7 +3910,7 @@ class FormEngine {
 	 * Reset color schemes.
 	 *
 	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed with CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function resetSchemes() {
 		GeneralUtility::logDeprecatedFunction();
@@ -3813,7 +3923,7 @@ class FormEngine {
 	 * Store current color scheme
 	 *
 	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed with CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function storeSchemes() {
 		GeneralUtility::logDeprecatedFunction();
@@ -3827,7 +3937,7 @@ class FormEngine {
 	 * Restore the saved color scheme
 	 *
 	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed with CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function restoreSchemes() {
 		GeneralUtility::logDeprecatedFunction();
@@ -3899,6 +4009,7 @@ class FormEngine {
 	 * @return string A section with JavaScript - if $update is FALSE, embedded in <script></script>
 	 */
 	public function JSbottom($formname = 'forms[0]', $update = FALSE) {
+		$languageService = $this->getLanguageService();
 		$jsFile = array();
 		$elements = array();
 		$out = '';
@@ -3935,34 +4046,24 @@ class FormEngine {
 			$pageRenderer->loadPrototype();
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
-			// Make textareas resizable and flexible
 			$beUserAuth = $this->getBackendUserAuthentication();
-			if (!($beUserAuth->uc['resizeTextareas'] == '0' && $beUserAuth->uc['resizeTextareas_Flexible'] == '0')) {
-				$pageRenderer->addCssFile($this->backPath . 'js/extjs/ux/resize.css');
-				$this->loadJavascriptLib('js/extjs/ux/ext.resizable.js');
-			}
-			$resizableSettings = array(
-				'textareaMaxHeight' => $beUserAuth->uc['resizeTextareas_MaxHeight'] > 0 ? $beUserAuth->uc['resizeTextareas_MaxHeight'] : '600',
-				'textareaFlexible' => !$beUserAuth->uc['resizeTextareas_Flexible'] == '0',
-				'textareaResize' => !$beUserAuth->uc['resizeTextareas'] == '0'
+			// Make textareas resizable and flexible ("autogrow" in height)
+			$textareaSettings = array(
+				'autosize'  => (bool)$beUserAuth->uc['resizeTextareas_Flexible']
 			);
-			$pageRenderer->addInlineSettingArray('', $resizableSettings);
+			$pageRenderer->addInlineSettingArray('Textarea', $textareaSettings);
+
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tbe_editor.js');
+			// Needed for FormEngine manipulation (date picker)
+			$dateFormat = ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? array('MM-DD-YYYY', 'HH:mm MM-DD-YYYY') : array('DD-MM-YYYY', 'HH:mm DD-MM-YYYY'));
+			$pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
 
 			// support placeholders for IE9 and lower
 			if ($this->clientInfo['BROWSER'] == 'msie' && $this->clientInfo['VERSION'] <= 9) {
 				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
 			}
 
-			// Needed for tceform manipulation (date picker)
-			$typo3Settings = array(
-				'datePickerUSmode' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? 1 : 0,
-				'dateFormat' => array('j-n-Y', 'G:i j-n-Y'),
-				'dateFormatUS' => array('n-j-Y', 'G:i n-j-Y')
-			);
-			$pageRenderer->addInlineSettingArray('', $typo3Settings);
-			$this->loadJavascriptLib('js/extjs/ux/Ext.ux.DateTimePicker.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
 			// If IRRE fields were processed, add the JavaScript functions:
 			if ($this->inline->inlineCount) {
@@ -3985,7 +4086,6 @@ class FormEngine {
 			}
 			$out .= '
 			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg($this->backPath, 'gfx/required_h.gif', '', 1) . '";
-			TBE_EDITOR.images.cm.src = "' . IconUtility::skinImg($this->backPath, 'gfx/content_client.gif', '', 1) . '";
 			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg($this->backPath, 'gfx/content_selected.gif', '', 1) . '";
 			TBE_EDITOR.images.clear.src = "' . $this->backPath . 'clear.gif";
 
@@ -3997,10 +4097,10 @@ class FormEngine {
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
 			TBE_EDITOR.isPalettedoc = ' . ($this->isPalettedoc ? addslashes($this->isPalettedoc) : 'null') . ';
 			TBE_EDITOR.doSaveFieldName = "' . ($this->doSaveFieldName ? addslashes($this->doSaveFieldName) : '') . '";
-			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
-			TBE_EDITOR.labels.fieldsMissing = ' . GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
-			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($this->getLL('m_refresh_login')) . ';
-			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($this->getLL('m_onChangeAlert')) . ';
+			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
+			TBE_EDITOR.labels.fieldsMissing = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
+			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login')) . ';
+			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.onChangeAlert')) . ';
 			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
 			TBE_EDITOR.backend_interface = "' . $beUserAuth->uc['interfaceSetup'] . '";
 
@@ -4108,7 +4208,7 @@ class FormEngine {
 	 * @param string $table Database Tablename
 	 * @param int $pid PID value (positive / negative)
 	 * @return array|NULL "default" row.
-	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getDefaultRecord($table, $pid = 0) {
 		GeneralUtility::logDeprecatedFunction();
@@ -4160,7 +4260,7 @@ class FormEngine {
 	 */
 	public function getRecordPath($table, $rec) {
 		BackendUtility::fixVersioningPid($table, $rec);
-		list($tscPID, $thePidValue) = $this->getTSCpid($table, $rec['uid'], $rec['pid']);
+		list($tscPID, $thePidValue) = BackendUtility::getTSCpidCached($table, $rec['uid'], $rec['pid']);
 		if ($thePidValue >= 0) {
 			return BackendUtility::getRecordPath($tscPID, $this->readPerms(), 15);
 		}
@@ -4186,8 +4286,10 @@ class FormEngine {
 	 *
 	 * @param string $str Language label reference, eg. 'LLL:EXT:lang/locallang_core.xlf:labels.blablabla'
 	 * @return string The value of the label, fetched for the current backend language.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function sL($str) {
+		GeneralUtility::logDeprecatedFunction();
 		return $this->getLanguageService()->sL($str);
 	}
 
@@ -4199,8 +4301,10 @@ class FormEngine {
 	 *
 	 * @param string $str The label key
 	 * @return string The value of the label, fetched for the current backend language.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getLL($str) {
+		GeneralUtility::logDeprecatedFunction();
 		$content = '';
 		switch (substr($str, 0, 2)) {
 			case 'l_':
@@ -4242,13 +4346,11 @@ class FormEngine {
 	 * @param string $pid PID value
 	 * @return array Array of two integers; first is the real PID of a record, second is the PID value for TSconfig.
 	 * @see BackendUtility::getTSCpid()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getTSCpid($table, $uid, $pid) {
-		$key = $table . ':' . $uid . ':' . $pid;
-		if (!isset($this->cache_getTSCpid[$key])) {
-			$this->cache_getTSCpid[$key] = BackendUtility::getTSCpid($table, $uid, $pid);
-		}
-		return $this->cache_getTSCpid[$key];
+		GeneralUtility::logDeprecatedFunction();
+		return BackendUtility::getTSCpidCached($table, $uid, $pid);
 	}
 
 	/**
@@ -4267,8 +4369,10 @@ class FormEngine {
 	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
 	 * @param bool $setDefault If set, an array entry for a default language is set.
 	 * @return array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
+		GeneralUtility::logDeprecatedFunction();
 		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
 		// Find all language records in the system:
 		$db = $this->getDatabaseConnection();
@@ -4313,7 +4417,7 @@ class FormEngine {
 		$mainKey = $table . ':' . $row['uid'];
 		if (!isset($this->cachedLanguageFlag[$mainKey])) {
 			BackendUtility::fixVersioningPid($table, $row);
-			list($tscPID) = $this->getTSCpid($table, $row['uid'], $row['pid']);
+			list($tscPID) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
 			/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
 			$t8Tools = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
 			$this->cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID, $this->backPath);
@@ -4327,7 +4431,7 @@ class FormEngine {
 			}
 		}
 		$out = '';
-		if ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']) {
+		if ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && $this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
 			$out .= IconUtility::getSpriteIcon($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
 			$out .= '&nbsp;';
 		} elseif ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
@@ -4349,7 +4453,7 @@ class FormEngine {
 	protected function getMergeBehaviourIcon($l10nMode) {
 		$icon = '';
 		if ($l10nMode === 'mergeIfNotBlank') {
-			$icon = IconUtility::getSpriteIcon('actions-edit-merge-localization', array('title' => $this->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank')));
+			$icon = IconUtility::getSpriteIcon('actions-edit-merge-localization', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank')));
 		}
 		return $icon;
 	}
@@ -4527,14 +4631,10 @@ class FormEngine {
 	 * @return string
 	 */
 	public function getPlaceholderAttribute($table, $field, array $config, array $row) {
-		if (!isset($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder') {
-			return '';
-		}
-
 		$value = $this->getPlaceholderValue($table, $field, $config, $row);
 
 		// Cleanup the string and support 'LLL:'
-		$value = htmlspecialchars(trim($this->sL($value)));
+		$value = htmlspecialchars(trim($this->getLanguageService()->sL($value)));
 		return empty($value) ? '' : ' placeholder="' . $value . '" ';
 	}
 
@@ -4612,4 +4712,5 @@ class FormEngine {
 	protected function getDocumentTemplate() {
 		return $GLOBALS['TBE_TEMPLATE'];
 	}
+
 }

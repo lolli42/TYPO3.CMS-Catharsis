@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Mvc\Exception;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Mvc\Exception;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * This exception is thrown by a controller to stop the execution of the current
  * action and return the control to the dispatcher. The dispatcher catches this

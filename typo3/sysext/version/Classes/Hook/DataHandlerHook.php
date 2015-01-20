@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Version\Hook;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -424,8 +424,8 @@ class DataHandlerHook {
 				$stageService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\StagesService::class);
 				$newStage = $stageService->getStageTitle((int)$stageId);
 			} else {
-				// TODO: CONSTANTS SHOULD BE USED - tx_service_workspace_workspaces
-				// TODO: use localized labels
+				// @todo CONSTANTS SHOULD BE USED - tx_service_workspace_workspaces
+				// @todo use localized labels
 				// Compile label:
 				switch ((int)$stageId) {
 					case 1:
@@ -630,7 +630,7 @@ class DataHandlerHook {
 			}
 			if ($table === 'be_users' || $noTablePrefix) {
 				if ($userRecord = BackendUtility::getRecord('be_users', $id, 'uid,email,lang,realName', BackendUtility::BEenableFields('be_users'))) {
-					if (strlen(trim($userRecord['email']))) {
+					if (trim($userRecord['email']) !== '') {
 						$emails[$id] = $userRecord;
 					}
 				}

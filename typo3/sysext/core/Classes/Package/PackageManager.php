@@ -707,7 +707,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 
 		// Reorder the packages according to the loading order
 		$newPackages = array();
-		foreach (array_keys($this->packageStatesConfiguration['packages']) as $packageKey) {
+		foreach ($this->packageStatesConfiguration['packages'] as $packageKey => $_) {
 			$newPackages[$packageKey] = $this->packages[$packageKey];
 		}
 		$this->packages = $newPackages;
@@ -773,4 +773,5 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	public function isPackageKeyValid($packageKey) {
 		return parent::isPackageKeyValid($packageKey) || preg_match(\TYPO3\CMS\Core\Package\Package::PATTERN_MATCH_EXTENSIONKEY, $packageKey) === 1;
 	}
+
 }

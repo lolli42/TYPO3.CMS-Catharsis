@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Tests\Unit\DataHandler;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -43,13 +43,19 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $backEndUser;
 
 	/**
+	 * @var DatabaseConnection|\PHPUnit_Framework_MockObject_MockObject
+	 */
+	protected $mockDatabaseConnection;
+
+	/**
 	 * Set up the tests
 	 */
 	public function setUp() {
 		$GLOBALS['TCA'] = array();
 		$this->singletonInstances = GeneralUtility::getSingletonInstances();
 		$this->backEndUser = $this->getMock(BackendUserAuthentication::class);
-		$GLOBALS['TYPO3_DB'] = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
+		$this->mockDatabaseConnection = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
+		$GLOBALS['TYPO3_DB'] = $this->mockDatabaseConnection;
 		$this->subject = new DataHandler();
 		$this->subject->start(array(), '', $this->backEndUser);
 	}
@@ -120,7 +126,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function nonAdminWithTableModifyAccessIsNotAllowedToModifyAdminTable() {
-		$tableName = uniqid('aTable');
+		$tableName = $this->getUniqueId('aTable');
 		$GLOBALS['TCA'] = array(
 			$tableName => array(
 				'ctrl' => array(
@@ -162,7 +168,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'0',
 				0
 			),
-			'"-1999999" is interpreted correctly as -1999999 and is lot lower then -200000' => array(
+			'"-1999999" is interpreted correctly as -1999999 and is lot lower than -200000' => array(
 				'-1999999',
 				-1999999
 			),
@@ -192,6 +198,64 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertSame($returnValue['value'], $expectedReturnValue);
 	}
 
+	/**
+	 * @return array
+	 */
+	public function inputValueCheckCallsGetDateTimeFormatsForDatetimeFieldsDataProvider() {
+		return array(
+			'dbType = date' => array(
+				'date'
+			),
+			'dbType = datetime' => array(
+				'datetime'
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider inputValueCheckCallsGetDateTimeFormatsForDatetimeFieldsDataProvider
+	 * @param string $dbType
+	 */
+	public function inputValueCheckCallsGetDateTimeFormatsForDatetimeFields($dbType) {
+		$tcaFieldConf = array(
+			'input' => array(),
+			'dbType' => $dbType
+		);
+		$this->mockDatabaseConnection->expects($this->once())->method('getDateTimeFormats');
+		$this->subject->checkValue_input(array(), '', $tcaFieldConf, array());
+	}
+
+	/**
+	 * @return array
+	 */
+	public function inputValueCheckDoesNotCallGetDateTimeFormatsForNonDatetimeFieldsDataProvider() {
+		return array(
+			'tca without dbType' => array(
+				array(
+					'input' => array()
+				)
+			),
+			'tca with dbType != date/datetime' => array(
+				array(
+					'input' => array(),
+					'dbType' => 'foo'
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 * @param array $tcaFieldConf
+	 * @dataProvider inputValueCheckDoesNotCallGetDateTimeFormatsForNonDatetimeFieldsDataProvider
+	 */
+	public function inputValueCheckDoesNotCallGetDateTimeFormatsForNonDatetimeFields($tcaFieldConf) {
+		$this->mockDatabaseConnection->expects($this->never())->method('getDateTimeFormats');
+		$this->subject->checkValue_input(array(), '', $tcaFieldConf, array());
+	}
+
+
 	///////////////////////////////////////////
 	// Tests concerning checkModifyAccessList
 	///////////////////////////////////////////
@@ -203,7 +267,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @expectedException \UnexpectedValueException
 	 */
 	public function doesCheckModifyAccessListThrowExceptionOnWrongHookInterface() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		eval('class ' . $hookClass . ' {}');
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'][] = $hookClass;
 		$this->subject->checkModifyAccessList('tt_content');
@@ -215,7 +279,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function doesCheckModifyAccessListHookGetsCalled() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		$hookMock = $this->getMock(\TYPO3\CMS\Core\DataHandling\DataHandlerCheckModifyAccessListHookInterface::class, array('checkModifyAccessList'), array(), $hookClass);
 		$hookMock->expects($this->once())->method('checkModifyAccessList');
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkModifyAccessList'][] = $hookClass;
@@ -229,7 +293,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function doesCheckModifyAccessListHookModifyAccessAllowed() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		eval('
 			class ' . $hookClass . ' implements \\TYPO3\\CMS\\Core\\DataHandling\\DataHandlerCheckModifyAccessListHookInterface {
 				public function checkModifyAccessList(&$accessAllowed, $table, \\TYPO3\\CMS\\Core\\DataHandling\\DataHandler $parent) { $accessAllowed = TRUE; }
@@ -287,7 +351,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject->expects($this->once())->method('checkRecordUpdateAccess')->will($this->returnValue(TRUE));
 
 		/** @var BackendUserAuthentication|\PHPUnit_Framework_MockObject_MockObject $backEndUser */
-		$backEndUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backEndUser = $this->getMock(BackendUserAuthentication::class);
 		$backEndUser->workspace = 1;
 		$backEndUser->workspaceRec = array('freeze' => FALSE);
 		$backEndUser->expects($this->once())->method('workspaceAllowAutoCreation')->will($this->returnValue(TRUE));
@@ -316,7 +380,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function doesCheckFlexFormValueHookGetsCalled() {
-		$hookClass = uniqid('tx_coretest');
+		$hookClass = $this->getUniqueId('tx_coretest');
 		$hookMock = $this->getMock($hookClass, array('checkFlexFormValue_beforeMerge'));
 		$hookMock->expects($this->once())->method('checkFlexFormValue_beforeMerge');
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['checkFlexFormValue'][] = $hookClass;
@@ -331,7 +395,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logCallsWriteLogOfBackendUserIfLoggingIsEnabled() {
-		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backendUser = $this->getMock(BackendUserAuthentication::class);
 		$backendUser->expects($this->once())->method('writelog');
 		$this->subject->enableLogging = TRUE;
 		$this->subject->BE_USER = $backendUser;
@@ -342,7 +406,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logDoesNotCallWriteLogOfBackendUserIfLoggingIsDisabled() {
-		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backendUser = $this->getMock(BackendUserAuthentication::class);
 		$backendUser->expects($this->never())->method('writelog');
 		$this->subject->enableLogging = FALSE;
 		$this->subject->BE_USER = $backendUser;
@@ -353,11 +417,11 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logAddsEntryToLocalErrorLogArray() {
-		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backendUser = $this->getMock(BackendUserAuthentication::class);
 		$this->subject->BE_USER = $backendUser;
 		$this->subject->enableLogging = TRUE;
 		$this->subject->errorLog = array();
-		$logDetailsUnique = uniqid('details');
+		$logDetailsUnique = $this->getUniqueId('details');
 		$this->subject->log('', 23, 0, 42, 1, $logDetailsUnique);
 		$this->assertStringEndsWith($logDetailsUnique, $this->subject->errorLog[0]);
 	}
@@ -366,11 +430,11 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function logFormatsDetailMessageWithAdditionalDataInLocalErrorArray() {
-		$backendUser = $this->getMock(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backendUser = $this->getMock(BackendUserAuthentication::class);
 		$this->subject->BE_USER = $backendUser;
 		$this->subject->enableLogging = TRUE;
 		$this->subject->errorLog = array();
-		$logDetails = uniqid('details');
+		$logDetails = $this->getUniqueId('details');
 		$this->subject->log('', 23, 0, 42, 1, '%1s' . $logDetails . '%2s', -1, array('foo', 'bar'));
 		$expected = 'foo' . $logDetails . 'bar';
 		$this->assertStringEndsWith($expected, $this->subject->errorLog[0]);
@@ -635,10 +699,10 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function deleteRecord_procBasedOnFieldTypeRespectsEnableCascadingDelete() {
-		$table = uniqid('foo_');
+		$table = $this->getUniqueId('foo_');
 		$conf = array(
 			'type' => 'inline',
-			'foreign_table' => uniqid('foreign_foo_'),
+			'foreign_table' => $this->getUniqueId('foreign_foo_'),
 			'behaviour' => array(
 				'enableCascadingDelete' => 0,
 			)
@@ -647,7 +711,7 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		/** @var \TYPO3\CMS\Core\Database\RelationHandler $mockRelationHandler */
 		$mockRelationHandler = $this->getMock(\TYPO3\CMS\Core\Database\RelationHandler::class, array(), array(), '', FALSE);
 		$mockRelationHandler->itemArray = array(
-			'1' => array('table' => uniqid('bar_'), 'id' => 67)
+			'1' => array('table' => $this->getUniqueId('bar_'), 'id' => 67)
 		);
 
 		/** @var DataHandler|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $mockDataHandler */
@@ -707,4 +771,5 @@ class DataHandlerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$this->assertSame($expectedResult, $this->subject->checkValue_check($result, $value, $tcaFieldConfiguration, array()));
 	}
+
 }

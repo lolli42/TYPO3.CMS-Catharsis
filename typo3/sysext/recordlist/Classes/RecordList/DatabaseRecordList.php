@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recordlist\RecordList;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Recordlist\RecordList;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -488,12 +489,12 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			$theData = array();
 			if ($this->disableSingleTableView) {
 				$theData[$titleCol] = '<span class="c-table">' . BackendUtility::wrapInHelp($table, '', $tableTitle)
-					. '</span> (' . $this->totalItems . ')';
+					. '</span> (<span class="t3js-table-total-items">' . $this->totalItems . '</span>)';
 			} else {
 				$icon = $this->table
 					? IconUtility::getSpriteIcon('actions-view-table-collapse', array('title' => $GLOBALS['LANG']->getLL('contractView', TRUE)))
 					: IconUtility::getSpriteIcon('actions-view-table-expand', array('title' => $GLOBALS['LANG']->getLL('expandView', TRUE)));
-				$theData[$titleCol] = $this->linkWrapTable($table, $tableTitle . ' (' . $this->totalItems . ') ' . $icon);
+				$theData[$titleCol] = $this->linkWrapTable($table, $tableTitle . ' (<span class="t3js-table-total-items">' . $this->totalItems . '</span>) ' . $icon);
 			}
 			if ($listOnlyInSingleTableMode) {
 				$tableHeader .= BackendUtility::wrapInHelp($table, '', $theData[$titleCol]);
@@ -626,12 +627,12 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			<!--
 				DB listing of elements:	"' . htmlspecialchars($table) . '"
 			-->
-				<div class="panel panel-default">
+				<div class="panel panel-space panel-default">
 					<div class="panel-heading">
 					' . $tableHeader . '
 					</div>
 					<div class="table-fit">
-						<table class="table table-hover' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
+						<table data-table="' . htmlspecialchars($table) . '" class="table table-striped table-hover' . ($listOnlyInSingleTableMode ? ' typo3-dblist-overview' : '') . '">
 							' . $out . '
 						</table>
 					</div>
@@ -677,7 +678,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		$iOut = '';
 		$id_orig = NULL;
 		// If in search mode, make sure the preview will show the correct page
-		if (strlen($this->searchString)) {
+		if ((string)$this->searchString !== '') {
 			$id_orig = $this->id;
 			$this->id = $row['pid'];
 		}
@@ -775,7 +776,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				}
 			}
 			// Reset the ID if it was overwritten
-			if (strlen($this->searchString)) {
+			if ((string)$this->searchString !== '') {
 				$this->id = $id_orig;
 			}
 			// Add row to CSV list:
@@ -792,6 +793,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			$this->addElement_tdCssClass['_LOCALIZATION_'] = 'col-localizationa';
 			$this->addElement_tdCssClass['_LOCALIZATION_b'] = 'col-localizationb';
 			// Create element in table cells:
+			$theData['uid'] = $row['uid'];
 			$iOut .= $this->addelement(1, $theIcon, $theData, $row_bgColor);
 			// Finally, return table row element:
 			return $iOut;
@@ -1080,7 +1082,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		if ($renderPart === 'top') {
 			// Add js to traverse a page select input to a pointer value
 			$content = '
-<script type="text/JavaScript">
+<script type="text/javascript">
 /*<![CDATA[*/
 	function calculatePointer(page) {
 		if (page > ' . $totalPages . ') {
@@ -1095,11 +1097,11 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 </script>
 ';
 		}
-		$pageNumberInput = '<span class="paginator-input">
-			<input type="text" value="' . $currentPage . '" size="3" id="jumpPage-' . $renderPart . '" name="jumpPage-'
-			. $renderPart . '" onkeyup="if (event.keyCode == Event.KEY_RETURN) { document.dblistForm.action=\'' . $listURL
+		$pageNumberInput = '
+			<input type="text" value="' . $currentPage . '" size="3" class="form-control input-sm paginator-input" id="jumpPage-' . $renderPart . '" name="jumpPage-'
+			. $renderPart . '" onkeyup="if (event.keyCode == 13) { document.dblistForm.action=\'' . $listURL
 			. '&pointer=\'+calculatePointer(this.value); document.dblistForm.submit(); } return true;" />
-			</span>';
+			';
 		$pageIndicatorText = sprintf(
 			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:pageIndicator'),
 			$pageNumberInput,
@@ -1115,16 +1117,16 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 
 		$titleColumn = $this->fieldArray[0];
 		$data = array(
-			$titleColumn => '
-				<nav>
-					<ul class="pagination">
+			$titleColumn => $content . '
+				<nav class="pagination-wrap">
+					<ul class="pagination pagination-block">
 						' . $first . '
 						' . $previous . '
 						' . $rangeIndicator . '
 						' . $pageIndicator . '
 						' . $next . '
 						' . $last . '
-						' .	$reload . '
+						' . $reload . '
 					</ul>
 				</nav>
 			'
@@ -1274,16 +1276,16 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 						|| $GLOBALS['BE_USER']->check('non_exclude_fields', $table . ':' . $hiddenField))
 				) {
 					if ($row[$hiddenField]) {
-						$params = '&data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=0';
-						$cells['hide'] = '<a class="btn" href="#" onclick="'
-							. htmlspecialchars('return jumpToUrl(\'' . $GLOBALS['SOBE']->doc->issueCommand($params, -1) . '\');')
-							. '" title="' . $GLOBALS['LANG']->getLL(('unHide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
+						$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=0';
+						$cells['hide'] = '<a class="btn t3js-record-hide" data-state="hidden" href="#"'
+							. ' data-params="' . htmlspecialchars($params) . '"'
+							. ' title="' . $GLOBALS['LANG']->getLL(('unHide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
 							. IconUtility::getSpriteIcon('actions-edit-unhide') . '</a>';
 					} else {
-						$params = '&data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=1';
-						$cells['hide'] = '<a class="btn" href="#" onclick="'
-							. htmlspecialchars('return jumpToUrl(\'' . $GLOBALS['SOBE']->doc->issueCommand($params, -1) . '\');')
-							. '" title="' . $GLOBALS['LANG']->getLL(('hide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
+						$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=1';
+						$cells['hide'] = '<a class="btn t3js-record-hide" data-state="visible" href="#"'
+							. ' data-params="' . htmlspecialchars($params) . '"'
+							. ' title="' . $GLOBALS['LANG']->getLL(('hide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
 							. IconUtility::getSpriteIcon('actions-edit-hide') . '</a>';
 					}
 				}
@@ -1305,18 +1307,17 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 					}
 
 					$titleOrig = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
-					$title = GeneralUtility::slashJS(GeneralUtility::fixed_lgd_cs($titleOrig, $this->fixedL), 1);
-					$warningText = GeneralUtility::quoteJSvalue(
-						$GLOBALS['LANG']->getLL($actionName . 'Warning') . ' "' . $title . '" ' . $refCountMsg
-					);
+					$title = GeneralUtility::fixed_lgd_cs($titleOrig, $this->fixedL);
+					$warningText = $GLOBALS['LANG']->getLL($actionName . 'Warning') . ' "' . $title . '" ' . '[' . $table . ':' . $row['uid'] . ']' . $refCountMsg;
 
-					$params = '&cmd[' . $table . '][' . $row['uid'] . '][delete]=1';
-					$onClick = 'if (confirm(' . $warningText . ')) {jumpToUrl(\''
-						. $GLOBALS['SOBE']->doc->issueCommand($params, -1) . '\');} return false;';
-
+					$params = 'cmd[' . $table . '][' . $row['uid'] . '][delete]=1';
 					$icon = IconUtility::getSpriteIcon('actions-edit-' . $actionName);
 					$linkTitle = $GLOBALS['LANG']->getLL($actionName, TRUE);
-					$cells['delete'] = '<a class="btn" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $linkTitle . '">' . $icon . '</a>';
+					$cells['delete'] = '<a class="btn t3js-record-delete" href="#" '
+						. ' data-l10parent="' . htmlspecialchars($row['l10n_parent']) . '"'
+						. ' data-params="' . htmlspecialchars($params) . '" data-title="' . htmlspecialchars($titleOrig) . '"'
+						. ' data-message="' . htmlspecialchars($warningText) . '" title="' . $linkTitle . '"'
+						. '>' . $icon . '</a>';
 				}
 				// "Levels" links: Moving pages into new levels...
 				if ($permsEdit && $table == 'pages' && !$this->searchLevels) {
@@ -1485,13 +1486,13 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 	 * @return string HTML of reference a link, will be empty if there are no
 	 */
 	protected function createReferenceHtml($tableName, $uid) {
-		$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'tablename, recuid, field',
+		$referenceCount = $this->getDatabaseConnection()->exec_SELECTcountRows(
+			'*',
 			'sys_refindex',
-			'ref_table = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') .
+			'ref_table = ' . $this->getDatabaseConnection()->fullQuoteStr($tableName, 'sys_refindex') .
 			' AND ref_uid = ' . $uid . ' AND deleted = 0'
 		);
-		return $this->generateReferenceToolTip($rows, '\'' . $tableName . '\', \'' . $uid . '\'');
+		return $this->generateReferenceToolTip($referenceCount, '\'' . $tableName . '\', \'' . $uid . '\'');
 	}
 
 	/**
@@ -1584,17 +1585,20 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				';
 		// Table with the field selector::
 		$content = $formElements[0] . '
-
-				<!--
-					Field selector for extended table view:
-				-->
-				<table border="0" cellpadding="0" cellspacing="0" id="typo3-dblist-fieldSelect">
-					<tr>
-						<td>' . $lMenu . '</td>
-						<td><input type="submit" name="search" value="'
-			. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.setFields', TRUE) . '" /></td>
-					</tr>
-				</table>
+			<!--
+				Field selector for extended table view:
+			-->
+			<table border="0" cellpadding="0" cellspacing="0" id="typo3-dblist-fieldSelect">
+				<tr>
+					<td>
+						' . $lMenu . '
+					</td>
+					<td>
+						<input class="btn btn-default" type="submit" name="search" value="'
+						. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.setFields', TRUE) . '" />
+					</td>
+				</tr>
+			</table>
 			' . $formElements[1];
 		return '<div class="db_list-fieldSelect">' . $content . '</div>';
 	}
@@ -1783,12 +1787,20 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		header('Content-Type: application/octet-stream');
 		header('Content-Disposition: attachment; filename=' . $filename);
 		// Cache-Control header is needed here to solve an issue with browser IE and
-		// versions lower then 9. See for more information: http://support.microsoft.com/kb/323308
+		// versions lower than 9. See for more information: http://support.microsoft.com/kb/323308
 		header("Cache-Control: ''");
 		// Printing the content of the CSV lines:
 		echo implode(CRLF, $this->csvLines);
 		// Exits:
 		die;
+	}
+
+	/**
+	 * Returns the database connection
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

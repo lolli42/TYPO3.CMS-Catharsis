@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -186,4 +186,5 @@ class ToolController extends AbstractController {
 		$toolAction->setLastError($this->getLastError());
 		$this->output($toolAction->handle());
 	}
+
 }

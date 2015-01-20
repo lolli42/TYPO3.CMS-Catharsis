@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\About\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\About\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Module 'about' shows some standard information for TYPO3 CMS: About-text, version number and so on.
  *

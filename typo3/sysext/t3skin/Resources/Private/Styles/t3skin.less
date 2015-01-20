@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,8 @@
 
 // Prefix for composer require-dev libraries
 @composer-package-directory-prefix: "../../../../../../Packages/Libraries";
+// Prefix for third-party libraries in typo3contrib/
+@typo3contrib-directory-prefix: "../../../../../contrib/";
 
 // Core variables and mixins
 @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/variables.less";
@@ -20,7 +22,7 @@
 @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/mixins.less";
 
 // Reset and dependencies
-// @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/normalize.less";
+@import "@{composer-package-directory-prefix}/twbs/bootstrap/less/normalize.less";
 // @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/print.less";
 // @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/glyphicons.less";
 
@@ -66,6 +68,9 @@
 @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/utilities.less";
 @import "@{composer-package-directory-prefix}/twbs/bootstrap/less/responsive-utilities.less";
 
+// Components from bootstrap plugins
+@import "@{typo3contrib-directory-prefix}/twbs/bootstrap-datetimepicker.less";
+
 /*!
  *  Font Awesome 4.2.0 by @davegandy - http://fontawesome.io - @fontawesome
  *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
@@ -87,10 +92,17 @@
 @import "@{composer-package-directory-prefix}/fortawesome/font-awesome/less/icons.less";
 
 /*!
+ * add nprogress styles, adapted to TYPO3 needs
+ */
+@import "nprogress/nprogress.less";
+
+/*!
  * TYPO3
  */
 
 @import "TYPO3/_deprecated.less";
+
+@import "TYPO3/_main_type.less";
 
 @import "TYPO3/_debug_panel.less";
 @import "TYPO3/_element_clipboard.less";
@@ -99,6 +111,7 @@
 @import "TYPO3/_element_docheader.less";
 @import "TYPO3/_element_history.less";
 @import "TYPO3/_element_message.less";
+@import "TYPO3/_element_modal.less";
 @import "TYPO3/_element_pagetree.less";
 @import "TYPO3/_element_rte.less";
 @import "TYPO3/_element_spinner.less";
@@ -108,18 +121,21 @@
 @import "TYPO3/_element_tceforms.less";
 @import "TYPO3/_element_tree.less";
 @import "TYPO3/_element_pagination.less";
+@import "TYPO3/_element_label.less";
 @import "TYPO3/_fonts.less";
 @import "TYPO3/_login_screen.less";
 @import "TYPO3/_main_body.less";
 @import "TYPO3/_main_content.less";
 @import "TYPO3/_main_form.less";
 @import "TYPO3/_main_scaffolding.less";
-@import "TYPO3/_misc_loading.less";
 @import "TYPO3/_module_menu.less";
 @import "TYPO3/_topbar.less";
 
 @import "TYPO3/_module_web_list_sysnote.less";
 @import "TYPO3/_module_web_new_element.less";
+@import "TYPO3/_module_extensionmanager.less";
+@import "TYPO3/_module_lang.less";
+@import "TYPO3/_module_beuser.less";
 
 @import "TYPO3/structure/_element_move_element.less";
 @import "TYPO3/structure/_element_version.less";
@@ -134,6 +150,4 @@
 @import "TYPO3/visual/_element_version.less";
 @import "TYPO3/visual/_module_file_list.less";
 @import "TYPO3/visual/_module_file_upload.less";
-@import "TYPO3/visual/_module_web_info.less";
-@import "TYPO3/visual/_module_web_list.less";
 @import "TYPO3/visual/_module_web_page.less";

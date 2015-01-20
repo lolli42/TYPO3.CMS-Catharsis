@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Resource\Driver;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Core\Resource\Driver;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Registry for driver classes.
  *
@@ -126,4 +127,5 @@ class DriverRegistry implements \TYPO3\CMS\Core\SingletonInterface {
 	public function driverExists($shortName) {
 		return array_key_exists($shortName, $this->drivers);
 	}
+
 }

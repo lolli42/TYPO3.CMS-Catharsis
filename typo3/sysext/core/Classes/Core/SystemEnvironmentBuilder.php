@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Core;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -62,7 +62,6 @@ class SystemEnvironmentBuilder {
 		self::defineBaseConstants();
 		self::definePaths($relativePathPart);
 		self::checkMainPathsExist();
-		self::requireBaseClasses();
 		self::handleMagicQuotesGpc();
 		self::addCorePearPathToIncludePath();
 		self::initializeGlobalVariables();
@@ -98,10 +97,12 @@ class SystemEnvironmentBuilder {
 		define('TYPO3_URL_DONATE', 'http://typo3.org/donate/online-donation/');
 		define('TYPO3_URL_WIKI_OPCODECACHE', 'http://wiki.typo3.org/Opcode_Cache');
 
-		// A tabulator, a linefeed, a carriage return, a CR-LF combination
+		// A null, a tabulator, a linefeed, a carriage return, a substitution, a CR-LF combination
+		define('NUL', chr(0));
 		define('TAB', chr(9));
 		define('LF', chr(10));
 		define('CR', chr(13));
+		define('SUB', chr(26));
 		define('CRLF', CR . LF);
 
 		// Security related constant: Default value of fileDenyPattern
@@ -185,31 +186,6 @@ class SystemEnvironmentBuilder {
 				. '* A symlink "typo3" - the backend entry point - pointing to "typo3_src/typo3"' . LF
 				. '* A symlink "index.php" - the frontend entry point - points to "typo3_src/index.php"');
 		}
-	}
-
-	/**
-	 * Load several base classes during bootstrap
-	 *
-	 * @return void
-	 */
-	static protected function requireBaseClasses() {
-		require_once __DIR__ . '/../Utility/GeneralUtility.php';
-		require_once __DIR__ . '/../Utility/ArrayUtility.php';
-		require_once __DIR__ . '/../Utility/PathUtility.php';
-		require_once __DIR__ . '/../SingletonInterface.php';
-		require_once __DIR__ . '/../Configuration/ConfigurationManager.php';
-		require_once __DIR__ . '/../Cache/Frontend/FrontendInterface.php';
-		require_once __DIR__ . '/../Cache/Frontend/AbstractFrontend.php';
-		require_once __DIR__ . '/../Cache/Frontend/StringFrontend.php';
-		require_once __DIR__ . '/../Cache/Frontend/PhpFrontend.php';
-		require_once __DIR__ . '/../Cache/Frontend/VariableFrontend.php';
-		require_once __DIR__ . '/../Cache/Backend/BackendInterface.php';
-		require_once __DIR__ . '/../Cache/Backend/PhpCapableBackendInterface.php';
-		require_once __DIR__ . '/../Cache/Backend/TaggableBackendInterface.php';
-		require_once __DIR__ . '/../Cache/Backend/AbstractBackend.php';
-		require_once __DIR__ . '/../Cache/Backend/TransientMemoryBackend.php';
-		require_once __DIR__ . '/ClassLoader.php';
-		require_once __DIR__ . '/ClassAliasMap.php';
 	}
 
 	/**
@@ -470,7 +446,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function getPathSiteByRelativePathPart($relativePathPart) {
 		$entryScriptDirectory = self::getUnifiedDirectoryNameWithTrailingSlash(PATH_thisScript);
-		if (strlen($relativePathPart) > 0) {
+		if ($relativePathPart !== '') {
 			$pathSite = substr($entryScriptDirectory, 0, -strlen($relativePathPart));
 		} else {
 			$pathSite = $entryScriptDirectory;
@@ -501,4 +477,5 @@ class SystemEnvironmentBuilder {
 		header('Content-type: text/plain');
 		die($message);
 	}
+
 }

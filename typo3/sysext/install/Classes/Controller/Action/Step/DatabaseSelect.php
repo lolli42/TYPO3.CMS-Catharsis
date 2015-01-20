@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Controller\Action\Step;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -97,7 +97,7 @@ class DatabaseSelect extends AbstractStepAction {
 	public function needsExecution() {
 		$this->initializeDatabaseConnection();
 		$result = TRUE;
-		if (strlen($GLOBALS['TYPO3_CONF_VARS']['DB']['database']) > 0) {
+		if ((string)$GLOBALS['TYPO3_CONF_VARS']['DB']['database'] !== '') {
 			$this->databaseConnection->setDatabaseName($GLOBALS['TYPO3_CONF_VARS']['DB']['database']);
 			try {
 				$selectResult = $this->databaseConnection->sql_select_db();
@@ -171,4 +171,5 @@ class DatabaseSelect extends AbstractStepAction {
 		$this->databaseConnection->setDatabaseSocket($GLOBALS['TYPO3_CONF_VARS']['DB']['socket']);
 		$this->databaseConnection->sql_pconnect();
 	}
+
 }

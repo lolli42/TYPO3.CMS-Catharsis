@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic\Qom;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Tests whether the value of a property in a first selector is equal to the value of a
  * property in a second selector.
@@ -51,7 +52,7 @@ class EquiJoinCondition implements EquiJoinConditionInterface {
 	 * @param string $property2Name the property name in the second selector; non-null
 	 */
 	public function __construct($selector1Name, $property1Name, $selector2Name, $property2Name) {
-		// TODO Test for selector1Name = selector2Name -> exception
+		// @todo Test for selector1Name = selector2Name -> exception
 		$this->selector1Name = $selector1Name;
 		$this->property1Name = $property1Name;
 		$this->selector2Name = $selector2Name;
@@ -111,4 +112,5 @@ class EquiJoinCondition implements EquiJoinConditionInterface {
 	public function getParentSelectorName() {
 		return '';
 	}
+
 }

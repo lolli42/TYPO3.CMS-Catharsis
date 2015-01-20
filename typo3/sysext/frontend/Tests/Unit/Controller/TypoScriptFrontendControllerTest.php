@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Tests\Unit\Controller;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Frontend\Tests\Unit\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * Testcase for TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController
  *
@@ -26,7 +27,7 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
 	protected $fixture;
 
 	public function setUp() {
-		$this->fixture = $this->getAccessibleMock('\\TYPO3\\CMS\\Frontend\\Controller\\TypoScriptFrontendController', array('dummy'), array(), '', FALSE);
+		$this->fixture = $this->getAccessibleMock(\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class, array('dummy'), array(), '', FALSE);
 		$this->fixture->TYPO3_CONF_VARS = $GLOBALS['TYPO3_CONF_VARS'];
 		$this->fixture->TYPO3_CONF_VARS['SYS']['encryptionKey'] = '170928423746123078941623042360abceb12341234231';
 	}
@@ -100,7 +101,7 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
 	 * @test
 	 */
 	public function localizationReturnsUnchangedStringIfNotLocallangLabel() {
-		$string = uniqid();
+		$string = $this->getUniqueId();
 		$this->assertEquals($string, $this->fixture->sL($string));
 	}
 
@@ -131,4 +132,5 @@ class TypoScriptFrontendControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCas
 		$refValue = $this->fixture->_callRef('roundTripCryptString', $clearText);
 		$this->assertEquals($clearText, $this->fixture->_callRef('roundTripCryptString', $refValue));
 	}
+
 }

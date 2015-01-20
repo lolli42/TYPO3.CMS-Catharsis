@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Recordlist\Browser;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -345,10 +345,8 @@ class ElementBrowser {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->bodyTagId = 'typo3-browse-links-php';
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		// Load the Prototype library and browse_links.js
-		$this->doc->getPageRenderer()->loadPrototype();
-		$this->doc->loadJavascriptLib('js/browse_links.js');
-		$this->doc->loadJavascriptLib('js/tree.js');
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/BrowseLinks');
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree');
 	}
 
 	/**
@@ -509,7 +507,7 @@ class ElementBrowser {
 				cur_params=params;
 				add_params="&curUrl[params]="+escape(params);
 			}
-		';
+		' . $this->doc->redirectUrls();
 		// Functions used, if the link selector is in wizard mode (= TCEforms fields)
 		if ($this->mode == 'wizard') {
 			if (!$this->areFieldChangeFunctionsValid() && !$this->areFieldChangeFunctionsValid(TRUE)) {
@@ -594,11 +592,13 @@ class ElementBrowser {
 							cur_params = cur_params.replace(/\\bid\\=.*?(\\&|$)/, "");
 						}
 						input = input + " " + cur_target + " " + cur_class + " " + cur_title + " " + cur_params;
+						input = input.replace(/^\s+|\s+$/g, "");
 						if(field.value && field.className.search(/textarea/) != -1) {
 							field.value += "\\n" + input;
 						} else {
 							field.value = input;
 						}
+						field.onchange();
 						' . $update . '
 					}
 				}
@@ -967,7 +967,7 @@ class ElementBrowser {
 				&& $this->curUrlArray['href'] && $this->curUrlInfo['act'] == $this->act
 			) {
 				$ltarget .= '
-							<input type="submit" value="' . $GLOBALS['LANG']->getLL('update', TRUE)
+							<input class="btn btn-default" type="submit" value="' . $GLOBALS['LANG']->getLL('update', TRUE)
 								. '" onclick="return link_current();" />';
 			}
 			$selectJS = '
@@ -1112,22 +1112,26 @@ class ElementBrowser {
 	 */
 	protected function getEmailSelectorHtml() {
 		$extUrl = '
-
-				<!--
-					Enter mail address:
-				-->
-						<form action="" name="lurlform" id="lurlform">
-							<table border="0" cellpadding="2" cellspacing="1" id="typo3-linkMail">
-								<tr>
-									<td style="width: 96px;">' . $GLOBALS['LANG']->getLL('emailAddress', TRUE) . ':</td>
-									<td><input type="text" name="lemail"' . $this->doc->formWidth(20) . ' value="'
-			. htmlspecialchars(($this->curUrlInfo['act'] === 'mail' ? $this->curUrlInfo['info'] : ''))
-			. '" /> ' . '<input type="submit" value="' . $GLOBALS['LANG']->getLL('setLink', TRUE)
-			. '" onclick="browse_links_setTarget(\'\');browse_links_setValue(\'mailto:\'+'
-			. 'document.lurlform.lemail.value); return link_current();" /></td>
-								</tr>
-							</table>
-						</form>';
+			<!--
+				Enter mail address:
+			-->
+			<form action="" name="lurlform" id="lurlform">
+				<table border="0" cellpadding="2" cellspacing="1" id="typo3-linkMail">
+					<tr>
+						<td style="width: 96px;">
+							' . $GLOBALS['LANG']->getLL('emailAddress', TRUE) . ':
+						</td>
+						<td>
+							<input type="text" name="lemail"' . $this->doc->formWidth(20) . ' value="'
+								. htmlspecialchars(($this->curUrlInfo['act'] === 'mail' ? $this->curUrlInfo['info'] : ''))
+								. '" />
+							<input class="btn btn-default" type="submit" value="' . $GLOBALS['LANG']->getLL('setLink', TRUE)
+								. '" onclick="browse_links_setTarget(\'\');browse_links_setValue(\'mailto:\'+'
+								. 'document.lurlform.lemail.value); return link_current();" />
+						</td>
+					</tr>
+				</table>
+			</form>';
 		return $extUrl;
 	}
 
@@ -1148,7 +1152,7 @@ class ElementBrowser {
 									<td style="width: 96px;">URL:</td>
 									<td><input type="text" name="lurl"' . $this->doc->formWidth(30) . ' value="'
 			. htmlspecialchars(($this->curUrlInfo['act'] === 'url' ? $this->curUrlInfo['info'] : 'http://'))
-			. '" /> ' . '<input type="submit" value="' . $GLOBALS['LANG']->getLL('setLink', TRUE)
+			. '" /> ' . '<input class="btn btn-default" type="submit" value="' . $GLOBALS['LANG']->getLL('setLink', TRUE)
 			. '" onclick="browse_links_setValue(document.lurlform.lurl.value); return link_current();" /></td>
 								</tr>
 							</table>
@@ -1189,7 +1193,11 @@ class ElementBrowser {
 				$selectedFolder = $fileOrFolderObject;
 			} elseif ($fileOrFolderObject instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
 				// It's a file
-				$selectedFolder = $fileOrFolderObject->getParentFolder();
+				try {
+					$selectedFolder = $fileOrFolderObject->getParentFolder();
+				} catch (\Exception $e) {
+					// Accessing the parent folder failed for some reason. e.g. permissions
+				}
 			}
 		}
 		// If no folder is selected, get the user's default upload folder
@@ -1220,9 +1228,9 @@ class ElementBrowser {
 			$files = $this->expandFolder($selectedFolder, $allowedExtensions);
 		}
 		// Create folder tree:
-		$this->doc->JScode .= $this->doc->wrapScriptTags('
-				Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
-			');
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
+			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
+		}');
 		$content .= '
 				<!--
 					Wrapper table for folder tree / file/folder list:
@@ -1424,10 +1432,7 @@ class ElementBrowser {
 	 */
 	public function main_file() {
 		// include JS files and set prefs for foldertree
-		$this->doc->getDragDropCode('folders');
-		$this->doc->JScode .= $this->doc->wrapScriptTags('
-			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
-		');
+		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse"');
 		// Starting content:
 		$content = $this->doc->startPage('TBE file selector');
 		// Init variable:
@@ -1540,7 +1545,10 @@ class ElementBrowser {
 		// Add some space
 		$content .= '<br /><br />';
 		// Setup indexed elements:
-		$this->doc->JScode .= $this->doc->wrapScriptTags('BrowseLinks.addElements(' . json_encode($this->elements) . ');');
+		$this->doc->JScode .= $this->doc->wrapScriptTags('
+		require(["TYPO3/CMS/Backend/BrowseLinks"], function(BrowseLinks) {
+			BrowseLinks.addElements(' . json_encode($this->elements) . ');
+		});');
 		// Ending page, returning content:
 		$content .= $this->doc->endPage();
 		$content = $this->doc->insertStylesAndJS($content);
@@ -1554,11 +1562,8 @@ class ElementBrowser {
 	 */
 	public function main_folder() {
 		// include JS files
-		$this->doc->getDragDropCode('folders');
 		// Setting prefs for foldertree
-		$this->doc->JScode .= $this->doc->wrapScriptTags('
-			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
-		');
+		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";');
 		// Starting content:
 		$content = $this->doc->startPage('TBE folder selector');
 		// Init variable:
@@ -1577,10 +1582,12 @@ class ElementBrowser {
 		$folderTree->ext_noTempRecyclerDirs = $this->mode == 'filedrag';
 		$tree = $folderTree->getBrowsableTree(FALSE);
 		list(, , $specUid) = explode('_', $this->PM);
-		if ($this->mode == 'filedrag') {
-			$folders = $this->TBE_dragNDrop($this->selectedFolder, $parameters[3]);
-		} else {
-			$folders = $this->TBE_expandSubFolders($this->selectedFolder);
+		if ($this->selectedFolder) {
+			if ($this->mode == 'filedrag') {
+				$folders = $this->TBE_dragNDrop($this->selectedFolder, $parameters[3]);
+			} else {
+				$folders = $this->TBE_expandSubFolders($this->selectedFolder);
+			}
 		}
 		// Putting the parts together, side by side:
 		$content .= '
@@ -1810,8 +1817,12 @@ class ElementBrowser {
 			return '';
 		}
 		$renderFolders = $this->act === 'folder';
-		// Create header for file listing:
-		$out = $this->barheader($GLOBALS['LANG']->getLL('files') . ':');
+		// Create header for file/folder listing:
+		if ($renderFolders) {
+			$out = $this->barheader($GLOBALS['LANG']->getLL('folders') . ':');
+		} else {
+			$out = $this->barheader($GLOBALS['LANG']->getLL('files') . ':');
+		}
 		// Prepare current path value for comparison (showing red arrow)
 		$currentIdentifier = '';
 		if ($this->curUrlInfo['value']) {
@@ -2058,41 +2069,41 @@ class ElementBrowser {
 	public function folderList(Folder $baseFolder) {
 		$content = '';
 		$folders = $baseFolder->getSubfolders();
-		$baseFolderPath = $baseFolder->getPublicUrl();
+		$folderIdentifier = $baseFolder->getCombinedIdentifier();
 		// Create headline (showing number of folders):
 		$content .= $this->barheader(sprintf($GLOBALS['LANG']->getLL('folders') . ' (%s):', count($folders)));
 		$titleLength = (int)$GLOBALS['BE_USER']->uc['titleLen'];
 		// Create the header of current folder:
-		$aTag = '<a href="#" onclick="return insertElement(\'\',' . GeneralUtility::quoteJSvalue($baseFolderPath)
-			. ', \'folder\', ' . GeneralUtility::quoteJSvalue($baseFolderPath) . ', ' . GeneralUtility::quoteJSvalue($baseFolderPath)
+		$aTag = '<a href="#" onclick="return insertElement(\'\',' . GeneralUtility::quoteJSvalue($folderIdentifier)
+			. ', \'folder\', ' . GeneralUtility::quoteJSvalue($folderIdentifier) . ', ' . GeneralUtility::quoteJSvalue($folderIdentifier)
 			. ', \'\', \'\',\'\',1);">';
 		// Add the foder icon
 		$folderIcon = $aTag;
 		$folderIcon .= '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif',
 				'width="18" height="16"') . ' alt="" />';
-		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($baseFolder), $titleLength));
+		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($baseFolder->getName(), $titleLength));
 		$folderIcon .= '</a>';
 		$content .= $folderIcon . '<br />';
 
 		$lines = array();
 		// Traverse the folder list:
-		foreach ($folders as $folderPath) {
-			$pathInfo = pathinfo($folderPath);
+		foreach ($folders as $subFolder) {
+			$subFolderIdentifier = $subFolder->getCombinedIdentifier();
 			// Create folder icon:
 			$icon = '<img src="clear.gif" width="16" height="16" alt="" /><img'
 				. IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif',
-					'width="16" height="16"') . ' title="' . htmlspecialchars(($pathInfo['basename']))
+					'width="16" height="16"') . ' title="' . htmlspecialchars($subFolder->getName())
 				. '" class="absmiddle" alt="" />';
 			// Create links for adding the folder:
 			if ($this->P['itemName'] != '' && $this->P['formName'] != '') {
-				$aTag = '<a href="#" onclick="return set_folderpath(' . GeneralUtility::quoteJSvalue($folderPath)
+				$aTag = '<a href="#" onclick="return set_folderpath(' . GeneralUtility::quoteJSvalue($subFolderIdentifier)
 					. ');">';
 			} else {
-				$aTag = '<a href="#" onclick="return insertElement(\'\',' . GeneralUtility::quoteJSvalue($folderPath)
-					. ', \'folder\', ' . GeneralUtility::quoteJSvalue($folderPath) . ', '
-					. GeneralUtility::quoteJSvalue($folderPath) . ', \'' . $pathInfo['extension'] . '\', \'\');">';
+				$aTag = '<a href="#" onclick="return insertElement(\'\',' . GeneralUtility::quoteJSvalue($subFolderIdentifier)
+					. ', \'folder\', ' . GeneralUtility::quoteJSvalue($subFolderIdentifier) . ', '
+					. GeneralUtility::quoteJSvalue($subFolderIdentifier) . ', \'\', \'\');">';
 			}
-			if (strstr($folderPath, ',') || strstr($folderPath, '|')) {
+			if (strstr($subFolderIdentifier, ',') || strstr($subFolderIdentifier, '|')) {
 				// In case an invalid character is in the filepath, display error message:
 				$errorMessage = GeneralUtility::quoteJSvalue(sprintf($GLOBALS['LANG']->getLL('invalidChar'), ', |'));
 				$aTag = ($aTag_alt = '<a href="#" onclick="alert(' . $errorMessage . ');return false;">');
@@ -2103,7 +2114,7 @@ class ElementBrowser {
 			$aTag_e = '</a>';
 			// Combine icon and folderpath:
 			$foldernameAndIcon = $aTag_alt . $icon
-				. htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($folderPath), $titleLength)) . $aTag_e;
+				. htmlspecialchars(GeneralUtility::fixed_lgd_cs($subFolder->getName(), $titleLength)) . $aTag_e;
 			if ($this->P['itemName'] != '') {
 				$lines[] = '
 					<tr class="bgColor4">
@@ -2303,7 +2314,7 @@ class ElementBrowser {
 			}
 			$str = is_object($fileObject) ? $fileObject->getIdentifier() : '';
 		}
-		if (strlen($str)) {
+		if ($str !== '') {
 			return '
 				<!-- Print current URL -->
 				<table border="0" cellpadding="0" cellspacing="0" id="typo3-curUrl">
@@ -2477,11 +2488,13 @@ class ElementBrowser {
 		$code .= \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction');
 		$code .= '
 			<div id="c-override">
-				<label><input type="checkbox" name="overwriteExistingFiles" id="overwriteExistingFiles" value="1" /> '
-					. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:overwriteExistingFiles', TRUE) . '</label>
+				<label>
+					<input type="checkbox" name="overwriteExistingFiles" id="overwriteExistingFiles" value="1" /> '
+					. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:overwriteExistingFiles', TRUE) . '
+				</label>
 			</div>
-			<input type="submit" name="submit" value="'
-					. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.submit', TRUE) . '" />
+			<input class="btn btn-default" type="submit" name="submit" value="'
+				. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:file_upload.php.submit', TRUE) . '" />
 		';
 		$code .= '</td>
 					</tr>
@@ -2538,7 +2551,7 @@ class ElementBrowser {
 			. '&bparams=' . rawurlencode($this->bparams);
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />'
 			. \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction')
-			. '<input type="submit" name="submit" value="'
+			. '<input class="btn btn-default" type="submit" name="submit" value="'
 			. $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:file_newfolder.php.submit', TRUE) . '" />';
 		$code .= '</td>
 					</tr>
@@ -2653,4 +2666,5 @@ class ElementBrowser {
 		}
 		return $folder->getFiles();
 	}
+
 }

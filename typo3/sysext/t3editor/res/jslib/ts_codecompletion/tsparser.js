@@ -1,4 +1,4 @@
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -10,6 +10,7 @@
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * @fileoverview contains the TsParser class and the TreeNode helper class
  */

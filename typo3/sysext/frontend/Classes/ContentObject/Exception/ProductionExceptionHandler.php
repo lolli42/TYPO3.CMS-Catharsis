@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\ContentObject\Exception;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -76,4 +76,5 @@ class ProductionExceptionHandler implements ExceptionHandlerInterface {
 	protected function getLogger() {
 		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
 	}
+
 }

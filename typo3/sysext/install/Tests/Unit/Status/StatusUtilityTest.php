@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Tests\Unit\Status;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -58,4 +58,5 @@ class StatusUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$return = $statusUtility->filterBySeverity(array($errorMock, $warningMock), 'error');
 		$this->assertSame(array($errorMock), $return);
 	}
+
 }

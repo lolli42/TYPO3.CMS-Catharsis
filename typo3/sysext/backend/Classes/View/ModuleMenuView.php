@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\View;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -48,7 +48,7 @@ class ModuleMenuView {
 
 	/**
 	 * Constructor, initializes several variables
-	 * @deprecated since TYPO3 CMS 7, not in use, as everything can be done via the ModuleMenuRepository directly
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use, as everything can be done via the ModuleMenuRepository directly
 	 */
 	public function __construct() {
 		GeneralUtility::logDeprecatedFunction();
@@ -358,7 +358,7 @@ class ModuleMenuView {
 		$buttonLabel = $GLOBALS['BE_USER']->user['ses_backuserid'] ? 'LLL:EXT:lang/locallang_core.xlf:buttons.exit' : 'LLL:EXT:lang/locallang_core.xlf:buttons.logout';
 		$buttonForm = '
 		<form action="logout.php" target="_top">
-			<input type="submit" id="logout-submit-button" value="' . $GLOBALS['LANG']->sL($buttonLabel, TRUE) . '" />
+			<input class="btn btn-default" type="submit" id="logout-submit-button" value="' . $GLOBALS['LANG']->sL($buttonLabel, TRUE) . '" />
 		</form>';
 		return $buttonForm;
 	}

@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extensionmanager\Utility;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 use TYPO3\CMS\Impexp\Utility\ImportExportUtility;
 
 /**
@@ -544,4 +545,5 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
 	}
+
 }

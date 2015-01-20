@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Linkvalidator\Linktype;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,7 @@ namespace TYPO3\CMS\Linkvalidator\Linktype;
  * @author Michael Miousse <michael.miousse@infoglobe.ca>
  */
 interface LinktypeInterface {
+
 	/**
 	 * Checks a given link for validity
 	 *

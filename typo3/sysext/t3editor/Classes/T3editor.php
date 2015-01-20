@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\T3editor;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -180,7 +180,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 
 			$content .= \TYPO3\CMS\Core\Utility\GeneralUtility::wrapJS(
 				'T3editor = T3editor || {};' .
-				'T3editor.lang = ' . json_encode($this->getJavaScriptLabels()) . ';' . LF .
+				'T3editor.lang = ' . json_encode($GLOBALS['LANG']->getLabelsWithPrefix('js.', 'label_')) . ';' . LF .
 				'T3editor.PATH_t3e = "' . $GLOBALS['BACK_PATH'] . $path_t3e . '"; ' . LF .
 				'T3editor.PATH_codemirror = "' . $GLOBALS['BACK_PATH'] . $path_codemirror . '"; ' . LF .
 				'T3editor.URL_typo3 = "' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir) . '"; ' . LF .
@@ -301,42 +301,6 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Gets the labels to be used in JavaScript in the Ext JS interface.
-	 * TODO this method is copied from EXT:Recycler, maybe this should be refactored into a helper class
-	 *
-	 * @return array The labels to be used in JavaScript
-	 */
-	protected function getJavaScriptLabels() {
-		$coreLabels = array();
-		$extensionLabels = $this->getJavaScriptLabelsFromLocallang('js.', 'label_');
-		return array_merge($coreLabels, $extensionLabels);
-	}
-
-	/**
-	 * Gets labels to be used in JavaScript fetched from the current locallang file.
-	 * TODO this method is copied from EXT:Recycler, maybe this should be refactored into a helper class
-	 *
-	 * @param string $selectionPrefix Prefix to select the correct labels (default: 'js.')
-	 * @param string $stripFromSelectionName Sub-prefix to be removed from label names in the result (default: '')
-	 * @return array Lables to be used in JavaScript of the current locallang file
-	 * @todo Check, whether this method can be moved in a generic way to $GLOBALS['LANG']
-	 */
-	protected function getJavaScriptLabelsFromLocallang($selectionPrefix = 'js.', $stripFromSelectionName = '') {
-		$extraction = array();
-		$labels = array_merge((array)$GLOBALS['LOCAL_LANG']['default'], (array)$GLOBALS['LOCAL_LANG'][$GLOBALS['LANG']->lang]);
-		// Regular expression to strip the selection prefix and possibly something from the label name:
-		$labelPattern = '#^' . preg_quote($selectionPrefix, '#') . '(' . preg_quote($stripFromSelectionName, '#') . ')?#';
-		// Iterate throuh all locallang lables:
-		foreach ($labels as $label => $value) {
-			if (strpos($label, $selectionPrefix) === 0) {
-				$key = preg_replace($labelPattern, '', $label);
-				$extraction[$key] = $value;
-			}
-		}
-		return $extraction;
-	}
-
-	/**
 	 * Generates HTML with code editor
 	 *
 	 * @param string $name Name attribute of HTML tag
@@ -358,7 +322,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$code .= '<div>' . '<textarea id="t3editor_' . $this->editorCounter . '" ' . 'name="' . $name . '" ' . 'class="' . $class . '" ' . $additionalParams . ' ' . $alt . '>' . htmlspecialchars($content) . '</textarea></div>';
 			$checked = $GLOBALS['BE_USER']->uc['disableT3Editor'] ? 'checked="checked"' : '';
-			$code .= '<br /><br />' . '<input type="checkbox" ' . 'class="checkbox t3editor_disableEditor" ' . 'onclick="T3editor.toggleEditor(this);" ' . 'name="t3editor_disableEditor" ' . 'value="true" ' . 'id="t3editor_disableEditor_' . $this->editorCounter . '_checkbox" ' . $checked . ' />&nbsp;' . '<label for="t3editor_disableEditor_' . $this->editorCounter . '_checkbox">' . $GLOBALS['LANG']->getLL('deactivate') . '</label>' . '<br /><br />';
+			$code .= '<br /><br />' . '<div class="checkbox"><label for="t3editor_disableEditor_' . $this->editorCounter . '_checkbox"><input type="checkbox" class="checkbox t3editor_disableEditor" onclick="T3editor.toggleEditor(this);" name="t3editor_disableEditor" value="true" id="t3editor_disableEditor_' . $this->editorCounter . '_checkbox" ' . $checked . ' />' . $GLOBALS['LANG']->getLL('deactivate') . '</label></div><br /><br />';
 			if (count($hiddenfields)) {
 				foreach ($hiddenfields as $name => $value) {
 					$code .= '<input type="hidden" ' . 'name="' . $name . '" ' . 'value="' . $value . '" />';

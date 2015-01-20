@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Frontend\Plugin;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -653,7 +653,7 @@ class AbstractPlugin {
 	 *
 	 * @param string $tableParams Attributes for the table tag which is wrapped around the table cells containing the search box
 	 * @return string Output HTML, wrapped in <div>-tags with a class attribute
-	 * @deprecated since CMS 7, will be removed with version 8
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function pi_list_searchBox($tableParams = '') {
 		GeneralUtility::logDeprecatedFunction();
@@ -970,13 +970,13 @@ class AbstractPlugin {
 	 * plugin class directory ($this->scriptRelPath) and if found includes it.
 	 * Also locallang values set in the TypoScript property "_LOCAL_LANG" are
 	 * merged onto the values found in the "locallang" file.
-	 * Supported file extensions xlf, xml, php
+	 * Supported file extensions xlf, xml
 	 *
 	 * @return void
 	 */
 	public function pi_loadLL() {
 		if (!$this->LOCAL_LANG_loaded && $this->scriptRelPath) {
-			$basePath = 'EXT:' . $this->extKey . '/' . dirname($this->scriptRelPath) . '/locallang.xml';
+			$basePath = 'EXT:' . $this->extKey . '/' . dirname($this->scriptRelPath) . '/locallang.xlf';
 			// Read the strings in the required charset (since TYPO3 4.2)
 			$this->LOCAL_LANG = GeneralUtility::readLLfile($basePath, $this->LLkey, $this->frontendController->renderCharset);
 			$alternativeLanguageKeys = GeneralUtility::trimExplode(',', $this->altLLkey, TRUE);

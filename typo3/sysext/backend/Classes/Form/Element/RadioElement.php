@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Backend\Form\Element;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -32,8 +32,8 @@ class RadioElement extends AbstractFormElement {
 		$config = $additionalInformation['fieldConf']['config'];
 		$item = '';
 		$disabled = '';
-		if ($this->formEngine->renderReadonly || $config['readOnly']) {
-			$disabled = ' disabled="disabled"';
+		if ($this->isRenderReadonly() || $config['readOnly']) {
+			$disabled = ' disabled';
 		}
 
 		// Get items for the array
@@ -50,16 +50,35 @@ class RadioElement extends AbstractFormElement {
 		}
 
 		// Traverse the items, making the form elements
-		foreach ($selectedItems as $checkbox => $selectedItem) {
-			$radioId = $additionalInformation['itemFormElID'] . '_' . $checkbox;
+		foreach ($selectedItems as $radioButton => $selectedItem) {
+			if (isset($additionalInformation['fieldTSConfig']['altLabels.'][$radioButton])) {
+				$label = $this->getLanguageService()->sL(
+					$additionalInformation['fieldTSConfig']['altLabels.'][$radioButton]
+				);
+			} else {
+				$label =  $selectedItem[0];
+			}
+			$radioId = htmlspecialchars($additionalInformation['itemFormElID'] . '_' . $radioButton);
 			$radioOnClick = implode('', $additionalInformation['fieldChangeFunc']);
 			$radioChecked = (string)$selectedItem[1] === (string)$additionalInformation['itemFormElValue'] ? ' checked="checked"' : '';
-			$item .= '<input type="radio" ' . $this->formEngine->insertDefStyle('radio') . ' name="' . $additionalInformation['itemFormElName']
-				. '" value="' . htmlspecialchars($selectedItem[1]) . '" onclick="' . htmlspecialchars($radioOnClick) . '"' . $radioChecked
-				. $additionalInformation['onFocus'] . $disabled . ' id="' . $radioId . '" />
-					<label for="' . $radioId . '">' . htmlspecialchars($selectedItem[0]) . '</label>
-					<br />';
+			$item .= '<div class="radio' . $disabled . '">'
+				. '<label for="' . $radioId . '">'
+				. '<input '
+				. 'type="radio" '
+				. 'class="' . $this->cssClassTypeElementPrefix . 'radio" '
+				. 'name="' . htmlspecialchars($additionalInformation['itemFormElName']) . '" '
+				. 'id="' . $radioId . '" '
+				. 'value="' . htmlspecialchars($selectedItem[1]) . '" '
+				. $radioChecked . ' '
+				. $additionalInformation['onFocus'] . ' '
+				. $disabled . ' '
+				. 'onclick="' . htmlspecialchars($radioOnClick) . '" '
+				. '/>'
+				. htmlspecialchars($label)
+				. '</label>'
+			. '</div>';
 		}
 		return $item;
 	}
+
 }

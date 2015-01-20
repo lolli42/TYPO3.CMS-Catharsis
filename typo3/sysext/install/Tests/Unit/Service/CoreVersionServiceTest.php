@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Install\Service;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -464,4 +464,5 @@ class CoreVersionServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$instance->expects($this->once())->method('getVersionMatrix')->will($this->returnValue(require($versionMatrixFixtureFile)));
 		$instance->_call('ensureVersionExistsInMatrix', '6.2.5');
 	}
+
 }

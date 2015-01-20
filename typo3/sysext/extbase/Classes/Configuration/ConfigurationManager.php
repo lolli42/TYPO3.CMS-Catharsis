@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Extbase\Configuration;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@ namespace TYPO3\CMS\Extbase\Configuration;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
 /**
  * A configuration manager following the strategy pattern (GoF315). It hides the concrete
  * implementation of the configuration manager and provides an unified acccess point.
@@ -129,4 +130,5 @@ class ConfigurationManager implements \TYPO3\CMS\Extbase\Configuration\Configura
 		$configuration = $this->getConfiguration(self::CONFIGURATION_TYPE_FRAMEWORK);
 		return (bool)(isset($configuration['features'][$featureName]) && $configuration['features'][$featureName]);
 	}
+
 }

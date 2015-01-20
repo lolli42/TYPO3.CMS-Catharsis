@@ -1,7 +1,7 @@
 <?php
 namespace TYPO3\CMS\Core\Authentication;
 
-/**
+/*
  * This file is part of the TYPO3 CMS project.
  *
  * It is free software; you can redistribute it and/or modify it under
@@ -306,7 +306,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 		'emailMeAtLogin' => 0,
 		'startModule' => 'help_AboutmodulesAboutmodules',
 		'hideSubmoduleIcons' => 0,
-		'helpText' => 1,
 		'titleLen' => 50,
 		'edit_showFieldHelp' => 'icon',
 		'edit_RTE' => '1',
@@ -1023,14 +1022,12 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 		// enabled and look for workspace version of input record.
 		// If there is no versionized record found we will create one and save to that.
 		if (
-			$this->workspace !== 0 && !$this->workspaceRec['disable_autocreate']
+			$this->workspace !== 0
 			&& $GLOBALS['TCA'][$table]['ctrl']['versioningWS'] && $recpid >= 0
 			&& !BackendUtility::getWorkspaceVersionOfRecord($this->workspace, $table, $id, 'uid')
 		) {
 			// There must be no existing version of this record in workspace.
 			return TRUE;
-		} elseif ($this->workspaceRec['disable_autocreate']) {
-			GeneralUtility::deprecationLog('Usage of disable_autocreate feature is deprecated since 4.5.');
 		}
 		return FALSE;
 	}
@@ -1162,8 +1159,8 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 		$TSConf = array('value' => NULL, 'properties' => NULL);
 		$parts = GeneralUtility::trimExplode('.', $objectString, TRUE, 2);
 		$key = $parts[0];
-		if (strlen($key) > 0) {
-			if (count($parts) > 1 && strlen($parts[1]) > 0) {
+		if ($key !== '') {
+			if (count($parts) > 1 && $parts[1] !== '') {
 				// Go on, get the next level
 				if (is_array($config[$key . '.'])) {
 					$TSConf = $this->getTSConfig($parts[1], $config[$key . '.']);

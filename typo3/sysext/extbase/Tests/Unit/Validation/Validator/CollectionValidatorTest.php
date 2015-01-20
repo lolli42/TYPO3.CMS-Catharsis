@@ -103,9 +103,9 @@ class CollectionValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function collectionValidatorValidatesNestedObjectStructuresWithoutEndlessLooping() {
-		$classNameA = 'A' . md5(uniqid(mt_rand(), TRUE));
+		$classNameA = $this->getUniqueId('A');
 		eval('class ' . $classNameA . '{ public $b = array(); public $integer = 5; }');
-		$classNameB = 'B' . md5(uniqid(mt_rand(), TRUE));
+		$classNameB = $this->getUniqueId('B');
 		eval('class ' . $classNameB . '{ public $a; public $c; public $integer = "Not an integer"; }');
 		$A = new $classNameA();
 		$B = new $classNameB();
@@ -140,7 +140,7 @@ class CollectionValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function collectionValidatorIsValidEarlyReturnsOnUnitializedLazyObjectStorages() {
 		$parentObject  = new \TYPO3\CMS\Extbase\Tests\Fixture\Entity('Foo');
-		$elementType = '\TYPO3\CMS\Extbase\Tests\Fixture\Entity';
+		$elementType = \TYPO3\CMS\Extbase\Tests\Fixture\Entity::class;
 		$lazyObjectStorage = new \TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage(
 			$parentObject,
 			'someProperty',
@@ -159,7 +159,7 @@ class CollectionValidatorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function collectionValidatorCallsCollectionElementValidatorWhenValidatingObjectStorages() {
 		$entity = new \TYPO3\CMS\Extbase\Tests\Fixture\Entity('Foo');
-		$elementType = '\TYPO3\CMS\Extbase\Tests\Fixture\Entity';
+		$elementType = \TYPO3\CMS\Extbase\Tests\Fixture\Entity::class;
 		$objectStorage = new \TYPO3\CMS\Extbase\Persistence\ObjectStorage();
 		$objectStorage->attach($entity);
 		$aValidator = new \TYPO3\CMS\Extbase\Validation\Validator\GenericObjectValidator(array());
