@@ -186,14 +186,14 @@ CREATE TABLE pages (
 #
 # Table structure for table 'pages_closure'
 # TODO: keys, default 0 on depth, constraints lets functionals fail
+# CONSTRAINT FOREIGN KEY(ancestor) REFERENCES pages(uid),
+# CONSTRAINT FOREIGN KEY(descendant) REFERENCES pages(uid)
 #
 CREATE TABLE pages_closure (
   ancestor int(11) NOT NULL,
   descendant int(11) NOT NULL,
   depth tinyint NOT NULL,
-  PRIMARY KEY (ancestor,descendant),
-  CONSTRAINT FOREIGN KEY(ancestor) REFERENCES pages(uid),
-  CONSTRAINT FOREIGN KEY(descendant) REFERENCES pages(uid)
+  PRIMARY KEY (ancestor,descendant)
 );
 
 #
