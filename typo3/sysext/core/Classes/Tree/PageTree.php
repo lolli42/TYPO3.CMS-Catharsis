@@ -21,13 +21,38 @@ class PageTree {
 
 //	protected $
 
-	public function fetchTreeByRoot($rootId, $expand) {
+	public function fetchTreeByRoot($rootId, array $additionalPagesFields = array()) {
+		// List of pages fields to be fetched
+		$defaultPagesFields = array(
+			'uid',
+			'pid',
+		);
+		// Merge unique with additional fields
+		$pagesFields = array_unique(array_merge($defaultPagesFields, $additionalPagesFields));
+		// p2.field1, p2.field2, ...
+		array_walk(
+			$pagesFields,
+			function(&$value, $key) {
+				$value = 'p2.' . $value . ', ';
+			}
+		);
+
 		$database = $this->getDatabaseConnection();
 		$res = $database->sql_query(
-			'SELECT pages.uid, pages.pid, closure.ancestor FROM pages INNER JOIN pages_closure AS closure ON pages.uid = closure.descendant WHERE closure.ancestor = 14'
+			'SELECT ' .
+				implode('', $pagesFields) . // casual fields from pages: p2.uid, p2.pid, ...
+				' GROUP_CONCAT( LPAD( o.sorting, 5,  \'0\' ) ORDER BY breadcrumb.depth DESC ) AS breadcrumbs' . // "rootline" used for sorting, slices arranged by group by below
+			' FROM pages AS p1' . // entry page where uid=
+			' JOIN pages_closure AS pc1 ON ( pc1.ancestor = p1.uid )' . // add all sub pages as single rows
+			' JOIN pages AS p2 ON ( pc1.descendant = p2.uid )' . // join in data fields from pages
+			' JOIN pages_closure AS breadcrumb ON (pc1.descendant = breadcrumb.descendant)' . // add rootline rows of every single page
+			' JOIN pages AS o ON breadcrumb.ancestor = o.uid' . // join in sorting field for all rows
+			' WHERE p1.uid = 12' .
+			' GROUP BY pc1.descendant' . // slices for group_concat above - each slice is a page with its rootline
+			' ORDER BY breadcrumbs' // use rootline-sorting string as order
 		);
 		$result = array();
-		while ($row = $database->sql_fetch_row($res)) {
+		while ($row = $database->sql_fetch_assoc($res)) {
 			$result[] = $row;
 		}
 		return $result;
