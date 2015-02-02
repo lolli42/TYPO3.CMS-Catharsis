@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Frontend\ContentObject\Exception\ContentRenderingException;
@@ -221,46 +223,11 @@ class ContentObjectRenderer {
 	);
 
 	/**
-	 * Class names for accordant content objects
+	 * Class names for accordant content object names
 	 *
 	 * @var array
 	 */
-	protected $contentObjectClassMapping = array(
-		'TEXT' => 'Text',
-		'CASE' => 'Case',
-		'CLEARGIF' => 'ClearGif',
-		'COBJ_ARRAY' => 'ContentObjectArray',
-		'COA' => 'ContentObjectArray',
-		'COA_INT' => 'ContentObjectArrayInternal',
-		'USER' => 'User',
-		'USER_INT' => 'UserInternal',
-		'FILE' => 'File',
-		'FILES' => 'Files',
-		'IMAGE' => 'Image',
-		'IMG_RESOURCE' => 'ImageResource',
-		'IMGTEXT' => 'ImageText',
-		'CONTENT' => 'Content',
-		'RECORDS' => 'Records',
-		'HMENU' => 'HierarchicalMenu',
-		'CTABLE' => 'ContentTable',
-		'OTABLE' => 'OffsetTable',
-		'COLUMNS' => 'Columns',
-		'HRULER' => 'HorizontalRuler',
-		'CASEFUNC' => 'Case',
-		'LOAD_REGISTER' => 'LoadRegister',
-		'RESTORE_REGISTER' => 'RestoreRegister',
-		'FORM' => 'Form',
-		'SEARCHRESULT' => 'SearchResult',
-		'TEMPLATE' => 'Template',
-		'FLUIDTEMPLATE' => 'FluidTemplate',
-		'MULTIMEDIA' => 'Multimedia',
-		'MEDIA' => 'Media',
-		'SWFOBJECT' => 'ShockwaveFlashObject',
-		'FLOWPLAYER' => 'FlowPlayer',
-		'QTOBJECT' => 'QuicktimeObject',
-		'SVG' => 'ScalableVectorGraphics',
-		'EDITPANEL' => 'EditPanel',
-	);
+	protected $contentObjectClassMap = array();
 
 	/**
 	 * Holds ImageMagick parameters and extensions used for compression
@@ -583,6 +550,34 @@ class ContentObjectRenderer {
 	 */
 	public function __construct(TypoScriptFrontendController $typoScriptFrontendController = NULL) {
 		$this->typoScriptFrontendController = $typoScriptFrontendController ?: $GLOBALS['TSFE'];
+		$this->contentObjectClassMap = $GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'];
+	}
+
+	/**
+	 * Allow injecting content object class map.
+	 *
+	 * This method is private API, please use configuration
+	 * $GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'] to add new content objects
+	 *
+	 * @internal
+	 * @param array $contentObjectClassMap
+	 */
+	public function setContentObjectClassMap(array $contentObjectClassMap) {
+		$this->contentObjectClassMap = $contentObjectClassMap;
+	}
+
+	/**
+	 * Register a single content object name to class name
+	 *
+	 * This method is private API, please use configuration
+	 * $GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'] to add new content objects
+	 *
+	 * @internal
+	 * @param string $className
+	 * @param string $contentObjectName
+	 */
+	public function registerContentObjectClass($className, $contentObjectName) {
+		$this->contentObjectClassMap[$contentObjectName] = $className;
 	}
 
 	/**
@@ -804,16 +799,23 @@ class ContentObjectRenderer {
 
 	/**
 	 * Returns a new content object of type $name.
+	 * This content object needs to be registered as content object
+	 * in $this->contentObjectClassMap
 	 *
 	 * @param string $name
 	 * @return NULL|AbstractContentObject
+	 * @throws ContentRenderingException
 	 */
 	public function getContentObject($name) {
-		if (!isset($this->contentObjectClassMapping[$name])) {
+		if (!isset($this->contentObjectClassMap[$name])) {
 			return NULL;
 		}
-		$fullyQualifiedClassName = 'TYPO3\\CMS\\Frontend\\ContentObject\\' . $this->contentObjectClassMapping[$name] . 'ContentObject';
-		return GeneralUtility::makeInstance($fullyQualifiedClassName, $this);
+		$fullyQualifiedClassName = $this->contentObjectClassMap[$name];
+		$contentObject = GeneralUtility::makeInstance($fullyQualifiedClassName, $this);
+		if (!($contentObject instanceof AbstractContentObject)) {
+			throw new ContentRenderingException(sprintf('Registered content object class name "%" must be an instance of AbstractContentObject, but is not!', $fullyQualifiedClassName), 1422564295);
+		}
+		return $contentObject;
 	}
 
 	/********************************************
@@ -1407,7 +1409,7 @@ class ContentObjectRenderer {
 			return '';
 		}
 		if (is_file(PATH_site . $info['3'])) {
-			$source = GeneralUtility::rawUrlEncodeFP(GeneralUtility::png_to_gif_by_imagemagick($info[3]));
+			$source = GeneralUtility::rawUrlEncodeFP(GraphicalFunctions::pngToGifByImagemagick($info[3]));
 			$source = $GLOBALS['TSFE']->absRefPrefix . $source;
 		} else {
 			$source = $info[3];
@@ -1776,8 +1778,10 @@ class ContentObjectRenderer {
 	 * @param string $name Input string
 	 * @return string the cleaned string
 	 * @see FORM()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, the method is moved to FormContentObject
 	 */
 	public function cleanFormName($name) {
+		GeneralUtility::logDeprecatedFunction();
 		// Turn data[x][y] into data:x:y:
 		$name = preg_replace('/\\[|\\]\\[?/', ':', trim($name));
 		// Remove illegal chars like _
@@ -5501,7 +5505,10 @@ class ContentObjectRenderer {
 		}
 		$retVal = '';
 		$sections = explode('//', $string);
-		while (!$retVal and list($secKey, $secVal) = each($sections)) {
+		foreach ($sections as $secKey => $secVal) {
+			if ($retVal) {
+				break;
+			}
 			$parts = explode(':', $secVal, 2);
 			$type = strtolower(trim($parts[0]));
 			$typesWithOutParameters = array('level', 'date', 'current');
@@ -5511,7 +5518,7 @@ class ContentObjectRenderer {
 					case 'gp':
 						// Merge GET and POST and get $key out of the merged array
 						$getPostArray = GeneralUtility::_GET();
-						\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($getPostArray, GeneralUtility::_POST());
+						ArrayUtility::mergeRecursiveWithOverrule($getPostArray, GeneralUtility::_POST());
 						$retVal = $this->getGlobal($key, $getPostArray);
 						break;
 					case 'tsfe':
@@ -6689,11 +6696,11 @@ class ContentObjectRenderer {
 				break;
 			case 'GET,POST':
 				$currentQueryArray = GeneralUtility::_GET();
-				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($currentQueryArray, GeneralUtility::_POST());
+				ArrayUtility::mergeRecursiveWithOverrule($currentQueryArray, GeneralUtility::_POST());
 				break;
 			case 'POST,GET':
 				$currentQueryArray = GeneralUtility::_POST();
-				\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($currentQueryArray, GeneralUtility::_GET());
+				ArrayUtility::mergeRecursiveWithOverrule($currentQueryArray, GeneralUtility::_GET());
 				break;
 			default:
 				$currentQueryArray = GeneralUtility::explodeUrl2Array($this->getEnvironmentVariable('QUERY_STRING'), TRUE);
@@ -6703,14 +6710,14 @@ class ContentObjectRenderer {
 			$exclude = GeneralUtility::explodeUrl2Array($exclude, TRUE);
 			// never repeat id
 			$exclude['id'] = 0;
-			$newQueryArray = GeneralUtility::arrayDiffAssocRecursive($currentQueryArray, $exclude);
+			$newQueryArray = ArrayUtility::arrayDiffAssocRecursive($currentQueryArray, $exclude);
 		} else {
 			$newQueryArray = $currentQueryArray;
 		}
 		if ($forceOverruleArguments) {
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments);
+			ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments);
 		} else {
-			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments, FALSE);
+			ArrayUtility::mergeRecursiveWithOverrule($newQueryArray, $overruleQueryArguments, FALSE);
 		}
 		return GeneralUtility::implodeArrayForUrl('', $newQueryArray, '', FALSE, TRUE);
 	}

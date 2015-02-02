@@ -14,7 +14,7 @@ namespace TYPO3\CMS\Core\Tests;
  * The TYPO3 project - inspiring people to share!
  */
 
-use \TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\Response;
+use TYPO3\CMS\Core\Tests\Functional\Framework\Frontend\Response;
 
 /**
  * Base test case class for functional tests, all TYPO3 CMS
@@ -173,7 +173,7 @@ abstract class FunctionalTestCase extends BaseTestCase {
 	 *
 	 * @return void
 	 */
-	public function setUp() {
+	protected function setUp() {
 		if (!defined('ORIGINAL_ROOT')) {
 			$this->markTestSkipped('Functional tests must be called through phpunit on CLI');
 		}
@@ -329,13 +329,18 @@ abstract class FunctionalTestCase extends BaseTestCase {
 	 * @param int $backendUserId
 	 * @param int $workspaceId
 	 * @param bool $failOnFailure
+	 * @param int $frontendUserId
 	 * @return Response
 	 */
-	protected function getFrontendResponse($pageId, $languageId = 0, $backendUserId = 0, $workspaceId = 0, $failOnFailure = TRUE) {
+	protected function getFrontendResponse($pageId, $languageId = 0, $backendUserId = 0, $workspaceId = 0, $failOnFailure = TRUE, $frontendUserId = 0) {
 		$pageId = (int)$pageId;
 		$languageId = (int)$languageId;
 
 		$additionalParameter = '';
+
+		if (!empty($frontendUserId)) {
+			$additionalParameter .= '&frontendUserId=' . (int)$frontendUserId;
+		}
 		if (!empty($backendUserId)) {
 			$additionalParameter .= '&backendUserId=' . (int)$backendUserId;
 		}

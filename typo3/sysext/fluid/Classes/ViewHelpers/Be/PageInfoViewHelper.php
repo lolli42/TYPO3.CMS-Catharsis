@@ -1,9 +1,6 @@
 <?php
 namespace TYPO3\CMS\Fluid\ViewHelpers\Be;
 
-use \TYPO3\CMS\Backend\Utility\BackendUtility;
-use \TYPO3\CMS\Backend\Utility\IconUtility;
-
 /*                                                                        *
  * This script is backported from the TYPO3 Flow package "TYPO3.Fluid".   *
  *                                                                        *
@@ -23,6 +20,10 @@ use \TYPO3\CMS\Backend\Utility\IconUtility;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+
 /**
  * View helper which return page info icon as known from TYPO3 backend modules
  * Note: This view helper is experimental!

@@ -331,8 +331,9 @@ class HtmlParser {
 		$buffer = $parts[0];
 		$nested = 0;
 		reset($parts);
-		next($parts);
-		while (list($k, $v) = each($parts)) {
+		// We skip the first element in foreach loop
+		$partsSliced = array_slice($parts, 1, null, true);
+		foreach ($partsSliced as $v) {
 			$isEndTag = substr($content, $pointer, 2) == '</' ? 1 : 0;
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
 			// We meet a start-tag:
@@ -434,8 +435,9 @@ class HtmlParser {
 		$newParts = array();
 		$newParts[] = $parts[0];
 		reset($parts);
-		next($parts);
-		while (list($k, $v) = each($parts)) {
+		// We skip the first element in foreach loop
+		$partsSliced = array_slice($parts, 1, null, true);
+		foreach ($partsSliced as $v) {
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
 			// Set tag:
 			// New buffer set and pointer increased
@@ -698,14 +700,15 @@ class HtmlParser {
 		$newContent = array();
 		$tokArr = explode('<', $content);
 		$newContent[] = $this->processContent(current($tokArr), $hSC, $addConfig);
-		next($tokArr);
+		// We skip the first element in foreach loop
+		$tokArrSliced = array_slice($tokArr, 1, null, true);
 		$c = 1;
 		$tagRegister = array();
 		$tagStack = array();
 		$inComment = FALSE;
 		$inCdata = FALSE;
 		$skipTag = FALSE;
-		while (list(, $tok) = each($tokArr)) {
+		foreach ($tokArrSliced as $tok) {
 			if ($inComment) {
 				if (($eocPos = strpos($tok, '-->')) === FALSE) {
 					// End of comment is not found in the token. Go further until end of comment is found in other tokens.
@@ -1181,9 +1184,9 @@ class HtmlParser {
 	public function unprotectTags($content, $tagList = '') {
 		$tagsArray = GeneralUtility::trimExplode(',', $tagList, TRUE);
 		$contentParts = explode('&lt;', $content);
-		next($contentParts);
 		// bypass the first
-		while (list($k, $tok) = each($contentParts)) {
+		$contentPartsSliced = array_slice($contentParts, 1, null, true);
+		foreach ($contentPartsSliced as $k => $tok) {
 			$firstChar = $tok[0];
 			if (trim($firstChar) !== '') {
 				$subparts = explode('&gt;', $tok, 2);
@@ -1337,7 +1340,6 @@ class HtmlParser {
 									$keepTags[$key]['fixAttrib'][$atName] = array();
 								}
 								$keepTags[$key]['fixAttrib'][$atName] = array_merge($keepTags[$key]['fixAttrib'][$atName], $atConfig);
-								// Candidate for \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge() if integer-keys will some day make trouble...
 								if ((string)$keepTags[$key]['fixAttrib'][$atName]['range'] !== '') {
 									$keepTags[$key]['fixAttrib'][$atName]['range'] = GeneralUtility::trimExplode(',', $keepTags[$key]['fixAttrib'][$atName]['range']);
 								}
@@ -1349,7 +1351,6 @@ class HtmlParser {
 					}
 					unset($tagC['fixAttrib.']);
 					unset($tagC['fixAttrib']);
-					// Candidate for \TYPO3\CMS\Core\Utility\GeneralUtility::array_merge() if integer-keys will some day make trouble...
 					$keepTags[$key] = array_merge($keepTags[$key], $tagC);
 				}
 			}
@@ -1441,10 +1442,11 @@ class HtmlParser {
 	 * @param string $content Content to clean up
 	 * @return string Cleaned up content returned.
 	 * @access private
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function XHTML_clean($content) {
-		$content = $this->HTMLcleaner($content, array(), 1, 0, array('xhtml' => 1));
-		return $content;
+		GeneralUtility::logDeprecatedFunction('TYPO3\CMS\Core\Html\HtmlParser::XHTML_clean has been deprecated with TYPO3 CMS 7 and will be removed with TYPO3 CMS 8.');
+		return $this->HTMLcleaner($content, array(), 1, 0, array('xhtml' => 1));
 	}
 
 	/**
@@ -1466,6 +1468,7 @@ class HtmlParser {
 		// OK then, begin processing for XHTML output:
 		// STILL VERY EXPERIMENTAL!!
 		if ($conf['xhtml']) {
+			GeneralUtility::deprecationLog('This section has been deprecated with TYPO3 CMS 7 and will be removed with CMS 8.');
 			// Endtags are just set lowercase right away
 			if ($endTag) {
 				$value = strtolower($value);

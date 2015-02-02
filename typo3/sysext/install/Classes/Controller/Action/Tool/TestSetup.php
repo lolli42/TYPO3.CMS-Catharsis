@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Install\Controller\Action\Tool;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Install\Controller\Action;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -40,9 +41,9 @@ class TestSetup extends Action\AbstractAction {
 			$actionMessages[] = $this->sendTestMail();
 		}
 
-		if (isset($this->postValues['set']['testTrueTypeFontDpi'])) {
-			$this->view->assign('trueTypeFontDpiTested', TRUE);
-			$actionMessages[] = $this->createTrueTypeFontDpiTestImage();
+		if (isset($this->postValues['set']['testTrueTypeFont'])) {
+			$this->view->assign('trueTypeFontTested', TRUE);
+			$actionMessages[] = $this->createTrueTypeFontTestImage();
 		}
 
 		if (isset($this->postValues['set']['testConvertImageFormatsToJpg'])) {
@@ -114,7 +115,7 @@ class TestSetup extends Action\AbstractAction {
 			$mailMessage
 				->addTo($recipient)
 				->addFrom($this->getSenderEmailAddress(), $this->getSenderEmailName())
-				->setSubject('Test TYPO3 CMS mail delivery')
+				->setSubject($this->getEmailSubject())
 				->setBody('<html><body>html test content</body></html>', 'text/html')
 				->addPart('TEST CONTENT')
 				->send();
@@ -152,11 +153,25 @@ class TestSetup extends Action\AbstractAction {
 	}
 
 	/**
+	 * Gets email subject from configuration
+	 * ['TYPO3_CONF_VARS']['SYS']['sitename']
+	 * If this setting is empty, it falls back to a default string.
+	 *
+	 * @return string
+	 */
+	protected function getEmailSubject() {
+		$name = !empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'])
+			? ' from site "' .  $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . '"'
+			: '';
+		return 'Test TYPO3 CMS mail delivery' . $name;
+	}
+
+	/**
 	 * Create true type font test image
 	 *
 	 * @return \TYPO3\CMS\Install\Status\StatusInterface
 	 */
-	protected function createTrueTypeFontDpiTestImage() {
+	protected function createTrueTypeFontTestImage() {
 		$parseTimeStart = GeneralUtility::milliseconds();
 
 		$image = @imagecreate(200, 50);
@@ -172,14 +187,14 @@ class TestSetup extends Action\AbstractAction {
 			\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('install') . 'Resources/Private/Font/vera.ttf',
 			'Testing true type'
 		);
-		$outputFile = PATH_site . 'typo3temp/installTool-' . uniqid('createTrueTypeFontDpiTestImage', TRUE) . '.gif';
+		$outputFile = PATH_site . 'typo3temp/installTool-' . uniqid('createTrueTypeFontTestImage', TRUE) . '.gif';
 		imagegif($image, $outputFile);
 
 		/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
 		$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\InfoStatus::class);
-		$message->setTitle('True type font DPI settings');
+		$message->setTitle('True type font');
 		$message->setMessage(
-			'If the two images below do not look the same, set $TYPO3_CONF_VARS[GFX][TTFdpi] to a value of 72.'
+			'If the two images below do not look the same, please check your FreeType 2 module.'
 		);
 
 		$testResults = array();
@@ -259,7 +274,7 @@ class TestSetup extends Action\AbstractAction {
 			if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gif_compress']) {
 				clearstatcache();
 				$previousSize = GeneralUtility::formatSize(filesize($imResult[3]));
-				$methodUsed = GeneralUtility::gif_compress($imResult[3], '');
+				$methodUsed = GraphicalFunctions::gifCompress($imResult[3], '');
 				clearstatcache();
 				$compressedSize = GeneralUtility::formatSize(filesize($imResult[3]));
 				/** @var \TYPO3\CMS\Install\Status\StatusInterface $message */
@@ -593,7 +608,7 @@ class TestSetup extends Action\AbstractAction {
 		$message->setMessage(
 			'ImageMagick / GraphicsMagick handling is enabled, but the execute'
 			. ' command returned an error. Please check your settings, especially'
-			. ' [\'GFX\'][\'im_path\'] and [\'GFX\'][\'im_path_lzw\'].'
+			. ' [\'GFX\'][\'im_path\'] and [\'GFX\'][\'im_path_lzw\'] and ensure Ghostscript is installed on your server.'
 		);
 		return $message;
 	}
@@ -612,7 +627,6 @@ class TestSetup extends Action\AbstractAction {
 		$result['imageMagick5Effects'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_v5effects'];
 		$result['gdlibEnabled'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib'];
 		$result['gdlibPng'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'];
-		$result['freeTypeDpi'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi'];
 		$result['fileFormats'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'];
 		return $result;
 	}
@@ -620,15 +634,14 @@ class TestSetup extends Action\AbstractAction {
 	/**
 	 * Initialize image processor
 	 *
-	 * @return \TYPO3\CMS\Core\Imaging\GraphicalFunctions Initialized image processor
+	 * @return GraphicalFunctions Initialized image processor
 	 */
 	protected function initializeImageProcessor() {
-		/** @var \TYPO3\CMS\Core\Imaging\GraphicalFunctions $imageProcessor */
-		$imageProcessor = $this->objectManager->get(\TYPO3\CMS\Core\Imaging\GraphicalFunctions::class);
+		/** @var GraphicalFunctions $imageProcessor */
+		$imageProcessor = $this->objectManager->get(GraphicalFunctions::class);
 		$imageProcessor->init();
 		$imageProcessor->tempPath = PATH_site . 'typo3temp/';
 		$imageProcessor->dontCheckForExistingTempFile = 1;
-		$imageProcessor->enable_typo3temp_db_tracking = 0;
 		$imageProcessor->filenamePrefix = 'installTool-';
 		$imageProcessor->dontCompress = 1;
 		$imageProcessor->alternativeOutputKey = 'typo3InstallTest';

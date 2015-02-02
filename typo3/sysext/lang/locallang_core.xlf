@@ -76,6 +76,9 @@
 				<source>There are unsaved changes in the form!
 Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
+			<trans-unit id="labels.maxItemsAllowed" xml:space="preserve">
+				<source>A maximum of {0} child records are allowed.</source>
+			</trans-unit>
 			<trans-unit id="labels.noRTEfound" xml:space="preserve">
 				<source>Notice: This field can only be edited with a Rich Text Editor. No editor is currently available or enabled.</source>
 			</trans-unit>
@@ -753,11 +756,23 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="message.description.fileNotDeletedHasReferences" xml:space="preserve">
 				<source>The file cannot be deleted since it is still used at the following places:</source>
 			</trans-unit>
+			<trans-unit id="message.header.folderNotDeletedHasFilesWithReferences" xml:space="preserve">
+				<source>Folder not deleted</source>
+			</trans-unit>
+			<trans-unit id="message.description.folderNotDeletedHasFilesWithReferences" xml:space="preserve">
+				<source>The folder cannot be deleted since it still contains files in use.</source>
+			</trans-unit>
 			<trans-unit id="message.header.fileHasBrokenReferences" xml:space="preserve">
 				<source>File has broken references</source>
 			</trans-unit>
 			<trans-unit id="message.description.fileHasBrokenReferences" xml:space="preserve">
 				<source>The file has %s broken reference(s) but it will be deleted regardless.</source>
+			</trans-unit>
+			<trans-unit id="message.header.fileNotFound" xml:space="preserve">
+				<source>File not found</source>
+			</trans-unit>
+			<trans-unit id="message.description.fileNotFound" xml:space="preserve">
+				<source>The file %s is not found, possible already removed.</source>
 			</trans-unit>
 			<trans-unit id="message.header.fileDeleted" xml:space="preserve">
 				<source>File deleted</source>
@@ -909,6 +924,9 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="cm.more" xml:space="preserve">
 				<source>More options...</source>
+			</trans-unit>
+			<trans-unit id="cm.allowedFileExtensions" xml:space="preserve">
+				<source>Allowed file extensions:</source>
 			</trans-unit>
 			<trans-unit id="tree.defaultPageTitle" xml:space="preserve">
 				<source>[Default Title]</source>

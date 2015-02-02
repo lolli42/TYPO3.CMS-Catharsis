@@ -717,11 +717,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$value = ($taskInfo['start'] > 0 ? strftime($dateFormat, $taskInfo['start']) : '');
 		$table[] = '<div class="form-group">' .
 			$label .
-			'<div class="input-group date t3js-datetimepicker" data-date-offset="0" id="tceforms-datetimefield-task_start_row-wrapper">' .
-			'<input name="tx_scheduler[start]_hr" value="' . $value . '" class="form-control datetime" type="text" ' .
+			'<div class="input-group" id="tceforms-datetimefield-task_start_row-wrapper">' .
+			'<input name="tx_scheduler[start]_hr" value="' . $value . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" ' .
 			'id="tceforms-datetimefield-task_start_row">' .
 			'<input name="tx_scheduler[start]" value="' . $taskInfo['start'] . '" type="hidden">' .
-			'<span class="input-group-addon datepickerbutton"><span class="fa fa-calendar"></span></span>' .
+			'<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_start_row"><span class="fa fa-calendar"></span></label></span>' .
 			'</div>' .
 			'</div>';
 
@@ -732,11 +732,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$label = '<label for="tceforms-datetimefield-task_end">' . $this->getLanguageService()->getLL('label.end') . '</label>';
 		$table[] = '<div class="form-group">' .
 			BackendUtility::wrapInHelp($this->cshKey, 'task_end', $label) .
-			'<div class="input-group date t3js-datetimepicker" data-date-offset="0" id="tceforms-datetimefield-task_end_row-wrapper">' .
-			'<input name="tx_scheduler[end]_hr" value="' . $value . '" class="form-control datetime" type="text" ' .
+			'<div class="input-group" id="tceforms-datetimefield-task_end_row-wrapper">' .
+			'<input name="tx_scheduler[end]_hr" value="' . $value . '" class="form-control  t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" ' .
 			'id="tceforms-datetimefield-task_end_row">' .
 			'<input name="tx_scheduler[end]" value="' . $taskInfo['end'] . '" type="hidden">' .
-			'<span class="input-group-addon datepickerbutton"><span class="fa fa-calendar"></span></span>' .
+			'<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_end_row"><span class="fa fa-calendar"></span></label></span>' .
 			'</div>' .
 			'</div>';
 
@@ -1443,7 +1443,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			'reload' => '',
 			'shortcut' => $this->getShortcutButton()
 		);
-		if (empty($this->CMD) || $this->CMD === 'list' || $this->CMD === 'delete') {
+		if (empty($this->CMD) || $this->CMD === 'list' || $this->CMD === 'delete' || $this->CMD === 'toggleHidden') {
 			$buttons['reload'] = '<a href="' . $GLOBALS['MCONF']['_'] . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
 			if ($this->MOD_SETTINGS['function'] === 'scheduler' && count($this->getRegisteredClasses())) {
 				$link = $GLOBALS['MCONF']['_'] . '&CMD=add';

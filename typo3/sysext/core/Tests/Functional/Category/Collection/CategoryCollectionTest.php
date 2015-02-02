@@ -26,7 +26,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	/**
 	 * @var \TYPO3\CMS\Core\Category\Collection\CategoryCollection
 	 */
-	private $fixture;
+	private $subject;
 
 	/**
 	 * @var string
@@ -63,10 +63,10 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 *
 	 * @return void
 	 */
-	public function setUp() {
+	protected function setUp() {
 		parent::setUp();
 		$this->database = $this->getDatabaseConnection();
-		$this->fixture = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, $this->tableName);
+		$this->subject = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, $this->tableName);
 		$this->collectionRecord = array(
 			'uid' => 0,
 			'title' => $this->getUniqueId('title'),
@@ -87,12 +87,12 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	 * @return void
 	 */
 	public function checkIfFromArrayMethodSetCorrectProperties() {
-		$this->fixture->fromArray($this->collectionRecord);
-		$this->assertEquals($this->collectionRecord['uid'], $this->fixture->getIdentifier());
-		$this->assertEquals($this->collectionRecord['uid'], $this->fixture->getUid());
-		$this->assertEquals($this->collectionRecord['title'], $this->fixture->getTitle());
-		$this->assertEquals($this->collectionRecord['description'], $this->fixture->getDescription());
-		$this->assertEquals($this->collectionRecord['table_name'], $this->fixture->getItemTableName());
+		$this->subject->fromArray($this->collectionRecord);
+		$this->assertEquals($this->collectionRecord['uid'], $this->subject->getIdentifier());
+		$this->assertEquals($this->collectionRecord['uid'], $this->subject->getUid());
+		$this->assertEquals($this->collectionRecord['title'], $this->subject->getTitle());
+		$this->assertEquals($this->collectionRecord['description'], $this->subject->getDescription());
+		$this->assertEquals($this->collectionRecord['table_name'], $this->subject->getItemTableName());
 	}
 
 	/**
@@ -123,7 +123,7 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function getCollectedRecordsReturnsEmptyRecordSet() {
 		$method = new \ReflectionMethod(\TYPO3\CMS\Core\Category\Collection\CategoryCollection::class, 'getCollectedRecords');
 		$method->setAccessible(TRUE);
-		$records = $method->invoke($this->fixture);
+		$records = $method->invoke($this->subject);
 		$this->assertInternalType('array', $records);
 		$this->assertEmpty($records);
 	}
@@ -198,6 +198,25 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$collection = \TYPO3\CMS\Core\Category\Collection\CategoryCollection::load($this->categoryUid, FALSE, $this->tableName);
 		// Check the number of record
 		$this->assertEquals(0, $collection->count());
+	}
+
+	/**
+	 * @test
+	 * @return void
+	 */
+	public function canLoadADummyCollectionFromDatabaseAfterRemoveOneRelation() {
+		// Remove one relation
+		$fakeName = array(
+			'tablenames' => $this->getUniqueId('name')
+		);
+		$this->database->exec_UPDATEquery(
+			'sys_category_record_mm',
+			'uid_foreign = 1',
+			$fakeName
+		);
+		// Check the number of records
+		$collection = \TYPO3\CMS\Core\Category\Collection\CategoryCollection::load($this->categoryUid, TRUE, $this->tableName);
+		$this->assertEquals($this->numberOfRecords - 1, $collection->count());
 	}
 
 	/********************/

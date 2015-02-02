@@ -276,7 +276,6 @@ class Bootstrap {
 	public function initializeClassLoader() {
 		$classLoader = new ClassLoader($this->applicationContext);
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class, $classLoader);
-		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array)include __DIR__ . '/../../ext_autoload.php');
 		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
@@ -357,8 +356,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
-		$this->getInstance()
-			->loadAdditionalConfigurationFromExtensions($allowCaching);
+		$this->loadAdditionalConfigurationFromExtensions($allowCaching);
 		return $this;
 	}
 
@@ -369,8 +367,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function applyAdditionalConfigurationSettings() {
-		$this->getInstance()
-			->initializeExceptionHandling()
+		$this->initializeExceptionHandling()
 			->setFinalCachingFrameworkCacheConfiguration()
 			->defineLoggingAndExceptionConstants()
 			->unsetReservedGlobalVariables();
