@@ -101,8 +101,6 @@ class UnitTestsBootstrap {
 	 * Returns the absolute path the TYPO3 document root.
 	 *
 	 * @return string the TYPO3 document root using Unix path separators
-	 *
-	 * @throws \RuntimeException
 	 */
 	protected function getWebRoot() {
 		if (getenv('TYPO3_PATH_WEB')) {
@@ -163,7 +161,7 @@ class UnitTestsBootstrap {
 		}
 
 		if (!mkdir($directory, 0777, TRUE)) {
-			throw new \RuntimeException('Directory "' . $directory . '" could not be created', 1404038665);
+			throw new \RuntimeException('Directory "' . $directory . '" could not be created', 1423043755);
 		}
 	}
 
