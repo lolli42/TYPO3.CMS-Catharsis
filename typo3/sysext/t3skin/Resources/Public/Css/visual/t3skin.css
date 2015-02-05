@@ -7352,6 +7352,9 @@ button.close {
 .text-monospace {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+.lead {
+  font-size: 1.25em;
+}
 @media (min-width: 768px) {
   .dl-horizontal dt {
     text-align: left;
@@ -9030,6 +9033,17 @@ fieldset[disabled] .table .btn-checkbox-holder input[type=checkbox]:checked + .b
 .panel-space {
   margin: 3em 0;
 }
+.panel-tab {
+  border-radius: 0;
+  border: 1px solid #cccccc;
+  background-color: #fafafa;
+}
+.panel-tab + .panel-tab {
+  margin-top: -19px;
+}
+.tab-pane > .panel-tab:first-child {
+  border-top: none;
+}
 img.t3-TCEforms-reqImg {
   display: block;
   position: absolute;
@@ -9823,8 +9837,8 @@ em {
   position: relative;
   display: inline-block;
   padding: 0px;
-  height: 32px;
-  width: 32px;
+  height: 28px;
+  width: 28px;
   overflow: hidden;
   border-radius: 2px;
   background-color: #484848;
@@ -9840,8 +9854,8 @@ em {
   vertical-align: middle;
 }
 .typo3-app-icon img {
-  max-height: 32px;
-  max-width: 32px;
+  max-height: 28px;
+  max-width: 28px;
 }
 .typo3-app-icon .fa {
   font-size: 21px;
@@ -10334,7 +10348,7 @@ iframe {
 [id="typo3-menu"] .typo3-module-menu-item-title {
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-top: 7px;
+  padding-top: 5px;
   display: block;
   overflow: hidden;
   *zoom: 1;
@@ -10351,7 +10365,7 @@ iframe {
   -o-transform: rotate(90deg);
   transform: rotate(90deg);
   position: absolute;
-  top: 17px;
+  top: 15px;
   right: 18px;
 }
 [id="typo3-menu"] .expanded .typo3-module-menu-group-title .caret {
@@ -10594,7 +10608,7 @@ iframe {
 .typo3-topbar-navigation-items .dropdown-list .modlink .submodule-label {
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding-top: 7px;
+  padding-top: 5px;
   display: block;
   overflow: hidden;
   *zoom: 1;
@@ -10967,20 +10981,6 @@ fieldset[disabled] .live-search-list .x-btn button.active {
 #typo3-dblist-sysnotes .single-note:hover .header,
 #typo3-dblist-sysnotes .single-note:hover .header span {
   color: #d7d7d7;
-}
-.contentelement-wizard li {
-  margin-bottom: 10px;
-}
-.contentelement-wizard li .contentelement-wizard-item-input,
-.contentelement-wizard li .contentelement-wizard-item-icon {
-  float: left;
-  margin-right: 5px;
-}
-.contentelement-wizard li:last-child {
-  margin-bottom: 0px;
-}
-.contentelement-wizard a {
-  display: inline-block;
 }
 .typo3-extension-list .ext-icon {
   max-height: 16px;

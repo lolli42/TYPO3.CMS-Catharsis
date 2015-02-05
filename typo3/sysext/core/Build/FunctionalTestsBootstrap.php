@@ -79,7 +79,7 @@ class FunctionalTestsBootstrap {
 	 * Creates the following directories in the TYPO3 core:
 	 * - typo3temp
 	 *
-	 * @return UnitTestsBootstrap fluent interface
+	 * @return FunctionalTestsBootstrap fluent interface
 	 */
 	protected function createNecessaryDirectoriesInDocumentRoot() {
 		$this->createDirectory(ORIGINAL_ROOT . 'typo3temp');
@@ -110,8 +110,6 @@ class FunctionalTestsBootstrap {
 	 * Returns the absolute path the TYPO3 document root.
 	 *
 	 * @return string the TYPO3 document root using Unix path separators
-	 *
-	 * @throws \RuntimeException
 	 */
 	protected function getWebRoot() {
 		if (getenv('TYPO3_PATH_WEB')) {

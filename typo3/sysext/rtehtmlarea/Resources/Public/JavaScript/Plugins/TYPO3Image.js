@@ -116,9 +116,13 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/TYPO3Image',
 		 */
 		onDrop: function (event) {
 			if (UserAgent.isWebKit) {
-				this.editor.iframe.onDrop();
+				this.editor.iframe.onDrop(event);
 			}
-			this.close();
+			// IE 11 needs the event to complete before the dialog gets closed, otherwise the image is always inserted at the end of body
+			var self = this;
+			window.setTimeout(function () {
+				self.close();
+			}, 50);
 			return true;
 		},
 

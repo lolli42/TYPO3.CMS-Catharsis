@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+
 /**
  * Issue command ViewHelper, see TYPO3 Core Engine method issueCommand
  *
@@ -34,7 +36,7 @@ class IssueCommandViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractVi
 	 */
 	public function render($parameters, $redirectUrl = '') {
 		$redirectUrl = $redirectUrl ?: \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI');
-		return htmlspecialchars($GLOBALS['BACK_PATH'] . 'tce_db.php?' . $parameters . '&redirect=' . ($redirectUrl === '' ? '\' + T3_THIS_LOCATION + \'' : rawurlencode($redirectUrl)) . '&vC=' . rawurlencode($GLOBALS['BE_USER']->veriCode()) . \TYPO3\CMS\Backend\Utility\BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1');
+		return htmlspecialchars($GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_db') . '&' . $parameters . '&redirect=' . ($redirectUrl === '' ? '\' + T3_THIS_LOCATION + \'' : rawurlencode($redirectUrl)) . '&vC=' . rawurlencode($GLOBALS['BE_USER']->veriCode()) . \TYPO3\CMS\Backend\Utility\BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1');
 	}
 
 }
