@@ -1540,8 +1540,22 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getIndpEnvTypo3SitePathReturnsStringStartingWithSlash() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
 		$result = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
 		$this->assertEquals('/', $result[0]);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getIndpEnvTypo3SitePathReturnsStringStartingWithDrive() {
+		if (TYPO3_OS !== 'WIN') {
+			$this->markTestSkipped('Test available only on Windows OS.');
+		}
+		$result = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		$this->assertRegExp('/^[a-z]:\//i', $result);
 	}
 
 	/**
@@ -2115,6 +2129,35 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function unlink_tempfileReturnsNullIfFileIsNowWithinTypo3temp() {
 		$returnValue = Utility\GeneralUtility::unlink_tempfile('/tmp/typo3-unit-test-unlink_tempfile');
 		$this->assertNull($returnValue);
+	}
+
+	//////////////////////////////////////
+	// Tests concerning tempnam
+	//////////////////////////////////////
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsPathStartingWithGivenPrefix() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$fileName = basename($filePath);
+		$this->assertStringStartsWith('foo', $fileName);
+	}
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsPathWithoutBackslashes() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$this->assertNotContains('\\', $filePath);
+	}
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsAbsolutePathInsideDocumentRoot() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$this->assertStringStartsWith(PATH_site, $filePath);
 	}
 
 	//////////////////////////////////////

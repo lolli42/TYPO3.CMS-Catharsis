@@ -1531,8 +1531,15 @@ class BackendUtility {
 		$referenceUids = $relationHandler->tableArray[$configuration['foreign_table']];
 
 		foreach ($referenceUids as $referenceUid) {
-			$fileReference = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid, array(), ($workspaceId === 0));
-			$fileReferences[$fileReference->getUid()] = $fileReference;
+			try {
+				$fileReference = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid, array(), ($workspaceId === 0));
+				$fileReferences[$fileReference->getUid()] = $fileReference;
+			} catch (\TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException $e) {
+				/**
+				 * We just catch the exception here
+				 * Reasoning: There is nothing an editor or even admin could do
+				 */
+			}
 		}
 
 		return $fileReferences;
@@ -2141,7 +2148,13 @@ class BackendUtility {
 							} else {
 								$rParts = array();
 								if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
-									$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid);
+									$whereClause = '';
+									// Add additional where clause if foreign_match_fields are defined
+									$foreignMatchFields = is_array($theColConf['foreign_match_fields']) ? $theColConf['foreign_match_fields'] : array();
+									foreach ($foreignMatchFields as $matchField => $matchValue) {
+										$whereClause .= ' AND ' . $matchField . '=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($matchValue, $theColConf['foreign_table']);
+									}
+									$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid, $whereClause);
 									if (!empty($records)) {
 										foreach ($records as $record) {
 											$rParts[] = $record['uid'];

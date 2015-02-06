@@ -2910,6 +2910,8 @@ Connection: close
 				if ($OK) {
 					$OK = @rmdir($path);
 				}
+			} elseif (is_link($path) && is_dir($path) && TYPO3_OS === 'WIN') {
+				$OK = rmdir($path);
 			} else {
 				// If $path is a file, simply remove it
 				$OK = unlink($path);
@@ -4015,7 +4017,7 @@ Connection: close
 	static public function tempnam($filePrefix, $fileSuffix = '') {
 		$temporaryPath = PATH_site . 'typo3temp/';
 		if ($fileSuffix === '') {
-			$tempFileName = tempnam($temporaryPath, $filePrefix);
+			$tempFileName = static::fixWindowsFilePath(tempnam($temporaryPath, $filePrefix));
 		} else {
 			do {
 				$tempFileName = $temporaryPath . $filePrefix . mt_rand(1, PHP_INT_MAX) . $fileSuffix;

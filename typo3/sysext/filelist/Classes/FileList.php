@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Filelist;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\FolderInterface;
 
@@ -151,6 +153,23 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	public $CBnames = array();
 
 	/**
+	 * @var \TYPO3\CMS\Backend\Clipboard\Clipboard $clipObj
+	 */
+	public $clipObj;
+
+	/**
+	 * @var ResourceFactory
+	 */
+	protected $resourceFactory;
+
+	/**
+	 * @param ResourceFactory $resourceFactory
+	 */
+	public function injectResourceFactory(ResourceFactory $resourceFactory) {
+		$this->resourceFactory = $resourceFactory;
+	}
+
+	/**
 	 * Initialization of class
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject The folder to work on
@@ -177,6 +196,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		// Setting the maximum length of the filenames to the user's settings or minimum 30 (= $this->fixedL)
 		$this->fixedL = max($this->fixedL, $GLOBALS['BE_USER']->uc['titleLen']);
 		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_common.xlf');
+		$this->resourceFactory = ResourceFactory::getInstance();
 	}
 
 	/**
@@ -229,7 +249,16 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 			if ($this->clipObj instanceof \TYPO3\CMS\Backend\Clipboard\Clipboard && $folderObject->checkActionPermission('write')) {
 				$elFromTable = $this->clipObj->elFromTable('_FILE');
 				if (count($elFromTable)) {
-					$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+					$addPasteButton = TRUE;
+					foreach ($elFromTable as $element) {
+						$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
+						if ($clipBoardElement instanceof Folder && $this->folderObject->getStorage()->isWithinFolder($clipBoardElement, $folderObject)) {
+							$addPasteButton = FALSE;
+						}
+					}
+					if ($addPasteButton) {
+						$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+					}
 				}
 			}
 
@@ -345,7 +374,16 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 					$table = '_FILE';
 					$elFromTable = $this->clipObj->elFromTable($table);
 					if (count($elFromTable) && $this->folderObject->checkActionPermission('write')) {
-						$cells[] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', 1) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+						$addPasteButton = TRUE;
+						foreach ($elFromTable as $element) {
+							$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
+							if ($clipBoardElement instanceof Folder && $this->folderObject->getStorage()->isWithinFolder($clipBoardElement, $this->folderObject)) {
+								$addPasteButton = FALSE;
+							}
+						}
+						if ($addPasteButton) {
+							$cells[] = '<a class="btn" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_paste', 1) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+						}
 					}
 					if ($this->clipObj->current != 'normal' && $iOut) {
 						$cells[] = $this->linkClipboardHeaderIcon(IconUtility::getSpriteIcon('actions-edit-copy', array('title' => $GLOBALS['LANG']->getLL('clip_selectMarked', TRUE))), $table, 'setCB');
@@ -518,7 +556,7 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 	 */
 	public function linkWrapDir($title, \TYPO3\CMS\Core\Resource\Folder $folderObject) {
 		$href = $this->backPath . $this->script . '&id=' . rawurlencode($folderObject->getCombinedIdentifier());
-		$onclick = ' onclick="' . htmlspecialchars(('top.content.nav_frame.hilight_row("file","folder' . GeneralUtility::md5int($folderObject->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)')) . '"';
+		$onclick = ' onclick="' . htmlspecialchars(('top.document.getElementsByName("navigation")[0].contentWindow.Tree.highlightActiveItem("file","folder' . GeneralUtility::md5int($folderObject->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)')) . '"';
 		// Sometimes $code contains plain HTML tags. In such a case the string should not be modified!
 		if ((string)$title === strip_tags($title)) {
 			return '<a href="' . htmlspecialchars($href) . '"' . $onclick . ' title="' . htmlspecialchars($title) . '">' . GeneralUtility::fixed_lgd_cs($title, $this->fixedL) . '</a>';
@@ -797,7 +835,16 @@ class FileList extends \TYPO3\CMS\Backend\RecordList\AbstractRecordList {
 		// Display PASTE button, if directory:
 		$elFromTable = $this->clipObj->elFromTable('_FILE');
 		if (is_a($fileOrFolderObject, 'TYPO3\\CMS\\Core\\Resource\\Folder') && count($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
-			$cells[] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $fullIdentifier)) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $fullIdentifier, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_pasteInto', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
+			$addPasteButton = TRUE;
+			foreach ($elFromTable as $element) {
+				$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
+				if ($clipBoardElement instanceof Folder && $fileOrFolderObject->getStorage()->isWithinFolder($clipBoardElement, $fileOrFolderObject)) {
+					$addPasteButton = FALSE;
+				}
+			}
+			if ($addPasteButton) {
+				$cells[] = '<a class="btn" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $fullIdentifier)) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $fullIdentifier, 'into', $elFromTable)) . '" title="' . $GLOBALS['LANG']->getLL('clip_pasteInto', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
+			}
 		}
 		// Compile items into a DIV-element:
 		return '							<!-- CLIPBOARD PANEL: -->

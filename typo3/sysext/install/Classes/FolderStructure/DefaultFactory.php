@@ -129,6 +129,11 @@ class DefaultFactory {
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => $directoryPermission,
 						),
+						array(
+							'name' => '_processed_',
+							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
+							'targetPermission' => $directoryPermission,
+						),
 					),
 				),
 				array(
@@ -174,19 +179,6 @@ class DefaultFactory {
 						),
 						array(
 							'name' => 'pics',
-							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
-							'targetPermission' => $directoryPermission,
-							'children' => array(
-								array(
-									'name' => 'index.html',
-									'type' => 'TYPO3\\CMS\\install\\FolderStructure\\FileNode',
-									'targetPermission' => $filePermission,
-									'targetContent' => '',
-								),
-							),
-						),
-						array(
-							'name' => 'tf',
 							'type' => 'TYPO3\\CMS\\install\\FolderStructure\\DirectoryNode',
 							'targetPermission' => $directoryPermission,
 							'children' => array(

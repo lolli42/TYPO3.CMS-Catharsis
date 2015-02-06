@@ -1528,7 +1528,6 @@ class DataHandler {
 	public function checkValue($table, $field, $value, $id, $status, $realPid, $tscPID) {
 		// Result array
 		$res = array();
-		$recFID = $table . ':' . $id . ':' . $field;
 		// Processing special case of field pages.doktype
 		if (($table === 'pages' || $table === 'pages_language_overlay') && $field === 'doktype') {
 			// If the user may not use this specific doktype, we issue a warning
@@ -1550,11 +1549,17 @@ class DataHandler {
 				}
 			}
 		}
-		// Get current value:
-		$curValueRec = $this->recordInfo($table, $id, $field);
-		$curValue = $curValueRec[$field];
+		$curValue = NULL;
+		if ((int)$id !== 0) {
+			// Get current value:
+			$curValueRec = $this->recordInfo($table, $id, $field);
+			if (isset($curValueRec[$field])) {
+				$curValue = $curValueRec[$field];
+			}
+		}
 		// Getting config for the field
 		$tcaFieldConf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
+		$recFID = $table . ':' . $id . ':' . $field;
 		// Preform processing:
 		$res = $this->checkValue_SW($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $field, $this->uploadedFileArray[$table][$id][$field], $tscPID);
 		return $res;
@@ -2460,7 +2465,7 @@ class DataHandler {
 					break;
 				case 'required':
 					if (!$value) {
-						$set = 0;
+						$set = FALSE;
 					}
 					break;
 				default:
@@ -4441,7 +4446,8 @@ class DataHandler {
 		if (is_array($files) && $dsArr['TCEforms']['config']['internal_type'] === 'file') {
 			foreach ($files as $dat) {
 				if (@is_file($dat['ID_absFile'])) {
-					unlink($dat['ID_absFile']);
+					$file = $this->getResourceFactory()->retrieveFileOrFolderObject($dat['ID_absFile']);
+					$file->delete();
 				} else {
 					$this->log('', 0, 3, 0, 100, 'Delete: Referenced file \'' . $dat['ID_absFile'] . '\' that was supposed to be deleted together with its record which didn\'t exist');
 				}
@@ -5863,16 +5869,13 @@ class DataHandler {
 	 */
 	public function recordInfo($table, $id, $fieldList) {
 		// Skip, if searching for NEW records or there's no TCA table definition
-		if (!(int)$id || !isset($GLOBALS['TCA'][$table])) {
+		if ((int)$id === 0 || !isset($GLOBALS['TCA'][$table])) {
 			return NULL;
 		}
 		/** @var DatabaseConnection $db */
 		$db = $GLOBALS['TYPO3_DB'];
 		$result = $db->exec_SELECTgetSingleRow($fieldList, $table, 'uid=' . (int)$id);
-		if ($result) {
-			return $result;
-		}
-		return NULL;
+		return $result ?: NULL;
 	}
 
 	/**
@@ -6636,7 +6639,10 @@ class DataHandler {
 	 */
 	public function removeRegisteredFiles() {
 		foreach ($this->removeFilesStore as $file) {
-			unlink($file);
+			if (@is_file($file)) {
+				$file = $this->getResourceFactory()->retrieveFileOrFolderObject($file);
+				$file->delete();
+			}
 		}
 	}
 
@@ -6920,8 +6926,10 @@ class DataHandler {
 				if ($theFile) {
 					switch ($func) {
 						case 'deleteAll':
-							if (@is_file(($uploadPath . '/' . $theFile))) {
-								unlink($uploadPath . '/' . $theFile);
+							$theFileFullPath = $uploadPath . '/' . $theFile;
+							if (@is_file($theFileFullPath)) {
+								$file = $this->getResourceFactory()->retrieveFileOrFolderObject($theFileFullPath);
+								$file->delete();
 							} else {
 								$this->log($table, 0, 3, 0, 100, 'Delete: Referenced file that was supposed to be deleted together with it\'s record didn\'t exist');
 							}
@@ -7634,4 +7642,13 @@ class DataHandler {
 	protected function getCacheManager() {
 		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
 	}
+
+	/**
+	 * Gets the resourceFactory
+	 * @return ResourceFactory
+	 */
+	protected function getResourceFactory() {
+		return \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
+	}
+
 }
