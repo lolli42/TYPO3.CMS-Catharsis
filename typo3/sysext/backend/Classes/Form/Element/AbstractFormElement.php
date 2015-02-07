@@ -95,6 +95,20 @@ abstract class AbstractFormElement {
 	abstract public function render($table, $field, $row, &$additionalInformation);
 
 	/**
+	 * Returns the max width in pixels for a elements like input and text
+	 *
+	 * @param int $size The abstract size value (1-48)
+	 * @return int Maximum width in pixels
+	 */
+	protected function formMaxWidth($size = 48) {
+		$compensationForLargeDocuments = 1.33;
+		$compensationForFormFields = 12;
+
+		$size = round($size * $compensationForLargeDocuments);
+		return ceil($size * $compensationForFormFields);
+	}
+
+	/**
 	 * @return LanguageService
 	 */
 	protected function getLanguageService() {

@@ -228,7 +228,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		);
 
 		// Add a wrapper to remain maximum width
-		$width = (int)$this->formEngine->formMaxWidth($size);
+		$width = (int)$this->formMaxWidth($size);
 		$item = '<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>' . $item . '</div>';
 		return $item;
 	}

@@ -225,7 +225,7 @@ class FormEngine {
 	public $enableTabMenu = FALSE;
 
 	/**
-	 * When enabled all fields are rendered non-editable
+	 * When enabled all elements are rendered non-editable
 	 *
 	 * @var bool
 	 */
@@ -236,6 +236,7 @@ class FormEngine {
 	 * for form field widths of style-aware browsers
 	 *
 	 * @var float
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $form_rowsToStylewidth = 12;
 
@@ -250,6 +251,7 @@ class FormEngine {
 	 * Form field width compensation: Compensation for large documents, doc-tab (editing)
 	 *
 	 * @var float
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $form_largeComp = 1.33;
 
@@ -3163,9 +3165,10 @@ class FormEngine {
 	 *
 	 * @param int $size The abstract size value (1-48)
 	 * @return int max-width in pixels
-	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function formMaxWidth($size = 48) {
+		GeneralUtility::logDeprecatedFunction();
 		$size = round($size * $this->form_largeComp);
 		$width = ceil($size * $this->form_rowsToStylewidth);
 		return $width;

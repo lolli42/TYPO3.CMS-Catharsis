@@ -48,7 +48,7 @@ class NoneElement extends AbstractFormElement {
 				$itemValue = nl2br($itemValue);
 			}
 			$cols = MathUtility::forceIntegerInRange($config['cols'] ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formEngine->formMaxWidth($cols);
+			$width = $this->formMaxWidth($cols);
 			$item = '
 				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
 					<textarea class="form-control" rows="' . $rows . '" disabled>' . $itemValue . '</textarea>
@@ -56,7 +56,7 @@ class NoneElement extends AbstractFormElement {
 		} else {
 			$cols = $config['cols'] ?: ($config['size'] ?: $this->defaultInputWidth);
 			$size = MathUtility::forceIntegerInRange($cols ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formEngine->formMaxWidth($size);
+			$width = $this->formMaxWidth($size);
 			$item = '
 				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
 					<input class="form-control" value="'. $itemValue .'" type="text" disabled>

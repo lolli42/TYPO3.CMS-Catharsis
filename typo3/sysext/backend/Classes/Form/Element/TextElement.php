@@ -231,7 +231,7 @@ class TextElement extends AbstractFormElement {
 					$rteWouldHaveBeenLoaded
 				);
 
-				$maximumWidth = (int)$this->formEngine->formMaxWidth($cols);
+				$maximumWidth = (int)$this->formMaxWidth($cols);
 				$item = '<div class="form-control-wrap"' . ($maximumWidth ? ' style="max-width: ' . $maximumWidth . 'px"' : '') . '>' . $item . '</div>';
 			}
 		}
