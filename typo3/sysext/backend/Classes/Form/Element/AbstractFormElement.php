@@ -36,6 +36,27 @@ abstract class AbstractFormElement {
 	protected $renderReadonly = FALSE;
 
 	/**
+	 * Default width value for a couple of elements like text
+	 *
+	 * @var int
+	 */
+	protected $defaultInputWidth = 30;
+
+	/**
+	 * Minimum width value for a couple of elements like text
+	 *
+	 * @var int
+	 */
+	protected $minimumInputWidth = 10;
+
+	/**
+	 * Maximum width value for a couple of elements like text
+	 *
+	 * @var int
+	 */
+	protected $maxInputWidth = 50;
+
+	/**
 	 * Constructor function, setting the FormEngine
 	 *
 	 * @param FormEngine $formEngine

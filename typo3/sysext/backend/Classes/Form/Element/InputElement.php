@@ -39,7 +39,7 @@ class InputElement extends AbstractFormElement {
 
 		$config = $additionalInformation['fieldConf']['config'];
 		$specConf = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
-		$size = MathUtility::forceIntegerInRange($config['size'] ?: $this->formEngine->defaultInputWidth, $this->formEngine->minimumInputWidth, $this->formEngine->maxInputWidth);
+		$size = MathUtility::forceIntegerInRange($config['size'] ?: $this->defaultInputWidth, $this->minimumInputWidth, $this->maxInputWidth);
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
 		$classes = array();
 		$attributes = array();

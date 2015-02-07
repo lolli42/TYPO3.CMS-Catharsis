@@ -37,7 +37,7 @@ class TextElement extends AbstractFormElement {
 		$config = $additionalInformation['fieldConf']['config'];
 
 		// Setting columns number
-		$cols = MathUtility::forceIntegerInRange($config['cols'] ?: $this->formEngine->defaultInputWidth, $this->formEngine->minimumInputWidth, $this->formEngine->maxInputWidth);
+		$cols = MathUtility::forceIntegerInRange($config['cols'] ?: $this->defaultInputWidth, $this->minimumInputWidth, $this->maxInputWidth);
 
 		// Setting number of rows
 		$rows = MathUtility::forceIntegerInRange($config['rows'] ?: 5, 1, 20);
@@ -45,7 +45,7 @@ class TextElement extends AbstractFormElement {
 
 		$itemFormElementValueLength = strlen($additionalInformation['itemFormElValue']);
 		if ($itemFormElementValueLength > $this->formEngine->charsPerRow * 2) {
-			$cols = $this->formEngine->maxInputWidth;
+			$cols = $this->maxInputWidth;
 			$rows = MathUtility::forceIntegerInRange(
 				round($itemFormElementValueLength / $this->formEngine->charsPerRow),
 				count(explode(LF, $additionalInformation['itemFormElValue'])),

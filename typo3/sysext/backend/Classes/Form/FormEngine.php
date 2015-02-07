@@ -273,7 +273,7 @@ class FormEngine {
 	 * The default abstract value for input and textarea elements
 	 *
 	 * @var int
-	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defaultInputWidth = 30;
 
@@ -281,7 +281,7 @@ class FormEngine {
 	 * The minimum abstract value for input and textarea elements
 	 *
 	 * @var int
-	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $minimumInputWidth = 10;
 
@@ -289,7 +289,7 @@ class FormEngine {
 	 * The maximum abstract value for input and textarea elements
 	 *
 	 * @var int
-	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $maxInputWidth = 50;
 

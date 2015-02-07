@@ -41,7 +41,7 @@ class GroupElement extends AbstractFormElement {
 
 		$config = $additionalInformation['fieldConf']['config'];
 		$show_thumbs = $config['show_thumbs'];
-		$size = isset($config['size']) ? (int)$config['size'] : $this->formEngine->minimumInputWidth;
+		$size = isset($config['size']) ? (int)$config['size'] : $this->minimumInputWidth;
 		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
 		if (!$maxitems) {
 			$maxitems = 100000;
