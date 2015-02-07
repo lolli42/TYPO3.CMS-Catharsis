@@ -329,7 +329,7 @@ class RecordList {
 			// CBH is all the fields selected for the clipboard, CBC is the checkbox fields which were checked.
 			// By merging we get a full array of checked/unchecked elements
 			// This is set to the 'el' array of the CB after being parsed so only the table in question is registered.
-			$CB['el'] = $dblist->clipObj->cleanUpCBC(array_merge((array)GeneralUtility::_POST('CBH'), (array)GeneralUtility::_POST('CBC')), $this->cmd_table);
+			$CB['el'] = $dblist->clipObj->cleanUpCBC(array_merge(GeneralUtility::_POST('CBH'), (array)GeneralUtility::_POST('CBC')), $this->cmd_table);
 		}
 		if (!$this->MOD_SETTINGS['clipBoard']) {
 			// If the clipboard is NOT shown, set the pad to 'normal'.
@@ -343,7 +343,7 @@ class RecordList {
 		$dblist->clipObj->endClipboard();
 		// This flag will prevent the clipboard panel in being shown.
 		// It is set, if the clickmenu-layer is active AND the extended view is not enabled.
-		$dblist->dontShowClipControlPanels = (!$this->MOD_SETTINGS['bigControlPanel'] && $dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
+		$dblist->dontShowClipControlPanels = ($dblist->clipObj->current == 'normal' && !$this->modTSconfig['properties']['showClipControlPanelsDespiteOfCMlayers']);
 		// If there is access to the page or root page is used for searching, then render the list contents and set up the document template object:
 		if ($access || ($this->id === 0 && $this->search_levels > 0 && $this->search_field !== '')) {
 			// Deleting records...:
