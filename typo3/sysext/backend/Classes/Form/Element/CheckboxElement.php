@@ -32,7 +32,7 @@ class CheckboxElement extends AbstractFormElement {
 		$config = $additionalInformation['fieldConf']['config'];
 		$item = '';
 		$disabled = FALSE;
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = TRUE;
 		}
 		// Traversing the array of items

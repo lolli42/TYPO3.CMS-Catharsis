@@ -31,9 +31,11 @@ abstract class AbstractFormElement {
 	protected $formEngine;
 
 	/**
-	 * @var bool If TRUE, the element will not be editable
+	 * A list of global options given from FormEngine to child elements
+	 *
+	 * @var array
 	 */
-	protected $renderReadonly = FALSE;
+	protected $globalOptions = array();
 
 	/**
 	 * Default width value for a couple of elements like text
@@ -66,20 +68,13 @@ abstract class AbstractFormElement {
 	}
 
 	/**
-	 * @return bool TRUE if field is set to read only
-	 */
-	public function isRenderReadonly() {
-		return $this->renderReadonly;
-	}
-
-	/**
-	 * Set render read only state
+	 * Set global options from parent FormEngine instance
 	 *
-	 * @param bool $renderReadonly
+	 * @param array $globalOptions Global options like 'readonly' for all elements
 	 * @return AbstractFormElement
 	 */
-	public function setRenderReadonly($renderReadonly) {
-		$this->renderReadonly = (bool)$renderReadonly;
+	public function setGlobalOptions(array $globalOptions) {
+		$this->globalOptions = $globalOptions;
 		return $this;
 	}
 
@@ -93,6 +88,13 @@ abstract class AbstractFormElement {
 	 * @return string The HTML code for the TCEform field
 	 */
 	abstract public function render($table, $field, $row, &$additionalInformation);
+
+	/**
+	 * @return bool TRUE if field is set to read only
+	 */
+	protected function isGlobalReadonly() {
+		return isset($this->globalOptions['renderReadonly']) ? $this->globalOptions['renderReadonly'] : FALSE;
+	}
 
 	/**
 	 * Returns the max width in pixels for a elements like input and text

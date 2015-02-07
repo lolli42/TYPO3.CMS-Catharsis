@@ -1344,11 +1344,22 @@ class FormEngine {
 			}
 			$formElement = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this);
 			if ($formElement instanceof AbstractFormElement) {
-				$formElement->setRenderReadonly($this->getRenderReadonly());
+				$formElement->setGlobalOptions($this->getConfigurationOptionsForChildElements());
 			}
 			$item = $formElement->render($table, $field, $row, $PA);
 		}
 		return $item;
+	}
+
+	/**
+	 * Returns an array of global form settings to be given to child elements.
+	 *
+	 * @return array
+	 */
+	protected function getConfigurationOptionsForChildElements() {
+		return array(
+			'renderReadonly' => $this->getRenderReadonly(),
+		);
 	}
 
 	/**********************************************************
@@ -1446,7 +1457,7 @@ class FormEngine {
 	public function getSingleField_typeText($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1464,7 +1475,7 @@ class FormEngine {
 	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1482,7 +1493,7 @@ class FormEngine {
 	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1501,7 +1512,7 @@ class FormEngine {
 	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1519,7 +1530,7 @@ class FormEngine {
 	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1573,7 +1584,7 @@ class FormEngine {
 	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1644,7 +1655,7 @@ class FormEngine {
 	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1661,7 +1672,7 @@ class FormEngine {
 	public function getSingleField_typeUser($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
 

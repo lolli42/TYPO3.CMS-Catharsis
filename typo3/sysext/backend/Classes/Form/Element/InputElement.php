@@ -65,7 +65,7 @@ class InputElement extends AbstractFormElement {
 		$dateFormats['datetimesec'] = $dateFormats['timesec'] . ' ' . $dateFormats['date'];
 
 		// readonly
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$itemFormElValue = $additionalInformation['itemFormElValue'];
 			if (in_array('date', $evalList)) {
 				$config['format'] = 'date';

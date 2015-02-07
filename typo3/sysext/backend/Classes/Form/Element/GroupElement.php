@@ -50,7 +50,7 @@ class GroupElement extends AbstractFormElement {
 		$thumbnails = array();
 		$allowed = GeneralUtility::trimExplode(',', $config['allowed'], TRUE);
 		$disallowed = GeneralUtility::trimExplode(',', $config['disallowed'], TRUE);
-		$disabled = ($this->isRenderReadonly() || $config['readOnly']);
+		$disabled = ($this->isGlobalReadonly() || $config['readOnly']);
 		$info = array();
 		$additionalInformation['itemFormElID_file'] = $additionalInformation['itemFormElID'] . '_files';
 

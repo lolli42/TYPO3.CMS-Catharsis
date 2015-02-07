@@ -69,7 +69,7 @@ class SelectElement extends AbstractFormElement {
 		// Field configuration from TCA:
 		$config = $additionalInformation['fieldConf']['config'];
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist.
@@ -128,7 +128,7 @@ class SelectElement extends AbstractFormElement {
 		$languageService = $this->getLanguageService();
 		$item = '';
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Setting this hidden field (as a flag that JavaScript can read out)
@@ -409,7 +409,7 @@ class SelectElement extends AbstractFormElement {
 		$out = '';
 		$options = '';
 		$disabled = FALSE;
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = TRUE;
 			$onlySelectedIconShown = 1;
 		}
@@ -594,7 +594,7 @@ class SelectElement extends AbstractFormElement {
 
 		// Disabled
 		$disabled = 0;
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = 1;
 		}
 		// Traverse the Array of selector box items:
@@ -795,7 +795,7 @@ class SelectElement extends AbstractFormElement {
 		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$item = '';
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Traverse the Array of selector box items:

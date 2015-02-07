@@ -66,7 +66,7 @@ class TextElement extends AbstractFormElement {
 
 		// must be called after the cols and rows calculation, so the parameters are applied
 		// to read-only fields as well.
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$config['cols'] = $cols;
 			$config['rows'] = $rows;
 			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine);
