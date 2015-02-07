@@ -260,6 +260,7 @@ class FormEngine {
 	 * automatically calculated based on the number of characters found in the field content.
 	 *
 	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $charsPerRow = 40;
 

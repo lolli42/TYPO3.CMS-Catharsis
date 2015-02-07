@@ -24,6 +24,14 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 class TextElement extends AbstractFormElement {
 
 	/**
+	 * The number of chars expected per row when the height of a text area field is
+	 * automatically calculated based on the number of characters found in the field content.
+	 *
+	 * @var int
+	 */
+	protected $charactersPerRow = 40;
+
+	/**
 	 * This will render a <textarea> OR RTE area form field,
 	 * possibly with various control/validation features
 	 *
@@ -44,10 +52,10 @@ class TextElement extends AbstractFormElement {
 		$originalRows = $rows;
 
 		$itemFormElementValueLength = strlen($additionalInformation['itemFormElValue']);
-		if ($itemFormElementValueLength > $this->formEngine->charsPerRow * 2) {
+		if ($itemFormElementValueLength > $this->charactersPerRow * 2) {
 			$cols = $this->maxInputWidth;
 			$rows = MathUtility::forceIntegerInRange(
-				round($itemFormElementValueLength / $this->formEngine->charsPerRow),
+				round($itemFormElementValueLength / $this->charactersPerRow),
 				count(explode(LF, $additionalInformation['itemFormElValue'])),
 				20
 			);
