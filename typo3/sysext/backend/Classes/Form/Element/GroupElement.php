@@ -178,7 +178,7 @@ class GroupElement extends AbstractFormElement {
 					'maxitems' => $maxitems,
 					'style' => isset($config['selectedListStyle'])
 						? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-						: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"',
+						: '',
 					'thumbnails' => $thumbnails,
 					'readOnly' => $disabled,
 					'noBrowser' => $noList || isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'browser'),
@@ -229,7 +229,7 @@ class GroupElement extends AbstractFormElement {
 					'maxitems' => $maxitems,
 					'style' => isset($config['selectedListStyle'])
 						? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-						: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"',
+						: '',
 					'readOnly' => $disabled,
 					'noBrowser' => $noList || isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'browser'),
 					'noList' => $noList
@@ -298,7 +298,7 @@ class GroupElement extends AbstractFormElement {
 					'maxitems' => $maxitems,
 					'style' => isset($config['selectedListStyle'])
 						? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-						: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"',
+						: '',
 					'info' => $info,
 					'allowedTables' => $allowedTables,
 					'thumbnails' => $thumbnails,

@@ -205,7 +205,7 @@ class SelectElement extends AbstractFormElement {
 			// Put together the selector box:
 			$selector_itemListStyle = isset($config['itemListStyle'])
 				? ' style="' . htmlspecialchars($config['itemListStyle']) . '"'
-				: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"';
+				: '';
 			$size = (int)$config['size'];
 			$size = $config['autoSizeMax']
 				? MathUtility::forceIntegerInRange(count($itemArray) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax'])
@@ -264,7 +264,7 @@ class SelectElement extends AbstractFormElement {
 			'autoSizeMax' => MathUtility::forceIntegerInRange($config['autoSizeMax'], 0),
 			'style' => isset($config['selectedListStyle'])
 				? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-				: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"',
+				: '',
 			'dontShowMoveIcons' => $maxitems <= 1,
 			'maxitems' => $maxitems,
 			'info' => '',
@@ -839,7 +839,7 @@ class SelectElement extends AbstractFormElement {
 		$sOnChange = implode('', $PA['fieldChangeFunc']);
 		$selector_itemListStyle = isset($config['itemListStyle'])
 			? ' style="' . htmlspecialchars($config['itemListStyle']) . '"'
-			: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"';
+			: '';
 		$size = (int)$config['size'];
 		$cssPrefix = $size === 1 ? 'tceforms-select' : 'tceforms-multiselect';
 		$size = $config['autoSizeMax']

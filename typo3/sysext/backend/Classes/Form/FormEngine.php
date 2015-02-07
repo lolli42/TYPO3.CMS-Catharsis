@@ -299,6 +299,7 @@ class FormEngine {
 	 * Default style for the selector boxes used for multiple items in "select" and "group" types.
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defaultMultipleSelectorStyle = '';
 
