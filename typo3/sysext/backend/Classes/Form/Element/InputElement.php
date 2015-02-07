@@ -77,7 +77,14 @@ class InputElement extends AbstractFormElement {
 			if (in_array('password', $evalList)) {
 				$itemFormElValue = $itemFormElValue ? '*********' : '';
 			}
-			return $this->formEngine->getSingleField_typeNone_render($config, $itemFormElValue);
+			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine);
+			$elementConfiguration = array(
+				'fieldConf' => array(
+					'config' => $config,
+				),
+				'itemFormElValue' => $itemFormElValue,
+			);
+			return $noneElement->render('', '', '', $elementConfiguration);
 		}
 
 

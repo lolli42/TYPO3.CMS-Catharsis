@@ -1231,6 +1231,11 @@ class FormEngine {
 						$this->additionalJS_post[] = 'typo3form.fieldTogglePlaceholder('
 							. GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ', ' . ($checked ? 'false' : 'true') . ');';
 
+						$noneElement = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this);
+						$noneElementConfiguration = $PA;
+						$noneElementConfiguration['itemFormElValue'] = GeneralUtility::fixed_lgd_cs($placeholder, 30);
+						$noneElementHtml = $noneElement->render('', '', '', $noneElementConfiguration);
+
 						$item = '
 							<input type="hidden" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="0" />
 							<div class="checkbox">
@@ -1240,7 +1245,7 @@ class FormEngine {
 								</label>
 							</div>
 							<div class="t3js-formengine-placeholder-placeholder">
-								' . $this->getSingleField_typeNone_render($PA['fieldConf']['config'], GeneralUtility::fixed_lgd_cs($placeholder, 30)) . '
+								' . $noneElementHtml . '
 							</div>
 							<div class="t3js-formengine-placeholder-formfield">' . $item . '</div>';
 					}
@@ -1528,7 +1533,6 @@ class FormEngine {
 	public function getSingleField_typeNone($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
 			->render($table, $field, $row, $PA);
 	}
 
@@ -1538,39 +1542,18 @@ class FormEngine {
 	 * @param array $config Configuration for the display
 	 * @param string $itemValue The value to display
 	 * @return string The HTML code for the display
-	 * @see getSingleField_typeNone();
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
 	 */
 	public function getSingleField_typeNone_render($config, $itemValue) {
-		if ($config['format']) {
-			$itemValue = $this->formatValue($config, $itemValue);
-		}
-		if (!$config['pass_content']) {
-			$itemValue = htmlspecialchars($itemValue);
-		}
-
-		$rows = (int)$config['rows'];
-		// Render as textarea
-		if ($rows > 1 || $config['type'] === 'text') {
-			if (!$config['pass_content']) {
-				$itemValue = nl2br($itemValue);
-			}
-			$cols = MathUtility::forceIntegerInRange($config['cols'] ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formMaxWidth($cols);
-			$item = '
-				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
-					<textarea class="form-control" rows="' . $rows . '" disabled>' . $itemValue . '</textarea>
-				</div>';
-		} else {
-			$cols = $config['cols'] ?: ($config['size'] ?: $this->defaultInputWidth);
-			$size = MathUtility::forceIntegerInRange($cols ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formMaxWidth($size);
-			$item = '
-				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
-					<input class="form-control" value="'. $itemValue .'" type="text" disabled>
-				</div>
-				' . ((string)$itemValue !== '' ? '<p class="help-block">' . $itemValue . '</p>' : '');
-		}
-		return $item;
+		GeneralUtility::logDeprecatedFunction();
+		$noneElement = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this);
+		$elementConfiguration = array(
+			'fieldConf' => array(
+				'config' => $config,
+			),
+			'itemFormElValue' => $itemValue,
+		);
+		return $noneElement->render('', '', '', $elementConfiguration);
 	}
 
 	/**
@@ -2838,7 +2821,14 @@ class FormEngine {
 									// Setting the item to a hidden-field.
 									$item = $itemKinds[1];
 									if (is_array($wConf['hideParent'])) {
-										$item .= $this->getSingleField_typeNone_render($wConf['hideParent'], $PA['itemFormElValue']);
+										$noneElement = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this);
+										$elementConfiguration = array(
+											'fieldConf' => array(
+												'config' => $wConf['hideParent'],
+											),
+											'itemFormElValue' => $PA['itemFormElValue'],
+										);
+										$item .= $noneElement->render('', '', '', $elementConfiguration);
 									}
 								}
 							}

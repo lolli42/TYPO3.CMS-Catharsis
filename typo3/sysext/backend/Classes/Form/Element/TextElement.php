@@ -61,7 +61,14 @@ class TextElement extends AbstractFormElement {
 		if ($this->isRenderReadonly() || $config['readOnly']) {
 			$config['cols'] = $cols;
 			$config['rows'] = $rows;
-			return $this->formEngine->getSingleField_typeNone_render($config, $additionalInformation['itemFormElValue']);
+			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine);
+			$elementConfiguration = array(
+				'fieldConf' => array(
+					'config' => $config,
+				),
+				'itemFormElValue' => $additionalInformation['itemFormElValue'],
+			);
+			return $noneElement->render('', '', '', $elementConfiguration);
 		}
 
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
