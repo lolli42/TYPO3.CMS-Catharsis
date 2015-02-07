@@ -858,7 +858,7 @@ class SelectElement extends AbstractFormElement {
 		}
 		// Put it all into a table:
 		$onClick = htmlspecialchars($this->formEngine->elName(($PA['itemFormElName'] . '[]')) . '.selectedIndex=-1;' . implode('', $restoreCmd) . ' return false;');
-		$width = $this->formEngine->formMaxWidth($this->formEngine->defaultInputWidth);
+		$width = $this->formEngine->formMaxWidth($this->defaultInputWidth);
 		$item .= '
 			<div class="form-control-wrap" ' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
 				<div class="form-wizards-wrap form-wizards-aside">
