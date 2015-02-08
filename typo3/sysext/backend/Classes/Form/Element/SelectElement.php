@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Form\DataPreprocessor;
 
 /**
  * Generation of TCEform elements of the type "select"
@@ -317,7 +318,8 @@ class SelectElement extends AbstractFormElement {
 
 		// Process items by a user function:
 		if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {
-			$selectItems = $this->formEngine->procItems($selectItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $fieldName);
+			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+			$selectItems = $dataPreprocessor->procItems($selectItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $fieldName);
 		}
 
 		// Possibly remove some items:

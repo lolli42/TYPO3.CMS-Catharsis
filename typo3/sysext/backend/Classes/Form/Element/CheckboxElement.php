@@ -14,6 +14,9 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\DataPreprocessor;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Generation of TCEform elements of the type "check"
  */
@@ -38,7 +41,8 @@ class CheckboxElement extends AbstractFormElement {
 		// Traversing the array of items
 		$items = $this->formEngine->initItemArray($additionalInformation['fieldConf']);
 		if ($config['itemsProcFunc']) {
-			$items = $this->formEngine->procItems(
+			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+			$items = $dataPreprocessor->procItems(
 				$items,
 				$additionalInformation['fieldTSConfig']['itemsProcFunc.'],
 				$config,

@@ -202,7 +202,8 @@ class FlexFormsHelper extends \TYPO3\CMS\Backend\Form\FormEngine {
 			$selItems = $this->addItems($selItems, $addItems);
 			// Process items by a user function
 			if (!empty($field['TCEforms']['config']['itemsProcFunc'])) {
-				$selItems = $this->procItems($selItems, $fieldConf['config'], $field['TCEforms']['config'], $table, $tableRow, $tableField);
+				$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+				$selItems = $dataPreprocessor->procItems($selItems, $fieldConf['config'], $field['TCEforms']['config'], $table, $tableRow, $tableField);
 			}
 			// Remove special configuration options after creating items to prevent double parsing
 			foreach ($this->removeSelectConfig as $option) {

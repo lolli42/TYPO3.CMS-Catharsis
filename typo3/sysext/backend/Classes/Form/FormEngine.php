@@ -2863,7 +2863,8 @@ class FormEngine {
 							// Process items by a user function:
 							if (!empty($wConf['itemsProcFunc'])) {
 								$funcConfig = !empty($wConf['itemsProcFunc.']) ? $wConf['itemsProcFunc.'] : array();
-								$selItems = $this->procItems($selItems, $funcConfig, $wConf, $table, $row, $field);
+								$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+								$selItems = $dataPreprocessor->procItems($selItems, $funcConfig, $wConf, $table, $row, $field);
 							}
 							$opt = array();
 							$opt[] = '<option>' . $iTitle . '</option>';
@@ -3390,8 +3391,10 @@ class FormEngine {
 	 * @param array $row Record row
 	 * @param string $field Field name
 	 * @return array The modified $items array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function procItems($items, $iArray, $config, $table, $row, $field) {
+		GeneralUtility::logDeprecatedFunction();
 		$languageService = $this->getLanguageService();
 		$params = array();
 		$params['items'] = &$items;

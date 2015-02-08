@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Backend\Form\DataPreprocessor;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -1759,7 +1760,8 @@ class InlineElement {
 			// Possibly add some items:
 			$selItems = $this->fObj->addItems($selItems, $PA['fieldTSConfig']['addItems.']);
 			if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {
-				$selItems = $this->fObj->procItems($selItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $field);
+				$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+				$selItems = $dataPreprocessor->procItems($selItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $field);
 			}
 			// Possibly remove some items:
 			$removeItems = GeneralUtility::trimExplode(',', $PA['fieldTSConfig']['removeItems'], TRUE);

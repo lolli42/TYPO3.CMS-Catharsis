@@ -19,6 +19,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 
 /**
  * Class for getting and transforming data for display in backend forms (TCEforms)
@@ -855,6 +857,7 @@ class DataPreprocessor {
 	 * @see procesItemArray()
 	 */
 	public function procItems($items, $itemsProcFuncTSconfig, $config, $table, $row, $field) {
+		$languageService = $this->getLanguageService();
 		$params = array();
 		$params['items'] = &$items;
 		$params['config'] = $config;
@@ -862,7 +865,33 @@ class DataPreprocessor {
 		$params['table'] = $table;
 		$params['row'] = $row;
 		$params['field'] = $field;
-		GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
+		// The itemsProcFunc method may throw an exception.
+		// If it does display an error message and return items unchanged.
+		try {
+			GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
+		} catch (\Exception $exception) {
+			$fieldLabel = $field;
+			if (isset($GLOBALS['TCA'][$table]['columns'][$field]['label'])) {
+				$fieldLabel = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+			}
+			$message = sprintf(
+				$languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
+				$fieldLabel,
+				$exception->getMessage()
+			);
+			/** @var $flashMessage FlashMessage */
+			$flashMessage = GeneralUtility::makeInstance(
+				FlashMessage::class,
+				htmlspecialchars($message),
+				'',
+				FlashMessage::ERROR,
+				TRUE
+			);
+			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+			$defaultFlashMessageQueue->enqueue($flashMessage);
+		}
 		return $items;
 	}
 
