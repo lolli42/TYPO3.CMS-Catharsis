@@ -466,10 +466,10 @@ class SelectElement extends AbstractFormElement {
 				);
 				// ICON
 				if ($icon && !$suppressIcons && (!$onlySelectedIconShown || $selected)) {
-					$onClick = $this->formEngine->elName($PA['itemFormElName']) . '.selectedIndex=' . $selectItemCounter . ';';
+					$onClick = 'document.editform[\'' . $PA['itemFormElName'] . '\'].selectedIndex=' . $selectItemCounter . ';';
 					if ($config['iconsInOptionTags']) {
 						$onClick .= 'document.getElementById(\'' . $selectId . '_icon\').innerHTML = '
-							. $this->formEngine->elName($PA['itemFormElName'])
+							. 'document.editform[\'' . $PA['itemFormElName'] . '\']'
 							. '.options[' . $selectItemCounter . '].getAttribute(\'data-icon\'); ';
 					}
 					$onClick .= implode('', $PA['fieldChangeFunc']);
@@ -728,9 +728,9 @@ class SelectElement extends AbstractFormElement {
 							<td>' . $item['help'] . '</td>
 						</tr>
 						';
-					$checkGroup[] = $this->formEngine->elName($item['name']) . '.checked=1;';
-					$uncheckGroup[] = $this->formEngine->elName($item['name']) . '.checked=0;';
-					$resetGroup[] = $this->formEngine->elName($item['name']) . '.checked='.$item['checked'] . ';';
+					$checkGroup[] = 'document.editform[\'' . $item['name'] . '\'].checked=1;';
+					$uncheckGroup[] = 'document.editform[\'' . $item['name'] . '\'].checked=0;';
+					$resetGroup[] = 'document.editform[\'' . $item['name'] . '\'].checked='.$item['checked'] . ';';
 				}
 
 				// Build toggle group checkbox
@@ -808,7 +808,7 @@ class SelectElement extends AbstractFormElement {
 			$sM = '';
 			if (isset($itemArray[$p[1]])) {
 				$sM = ' selected="selected"';
-				$restoreCmd[] = $this->formEngine->elName(($PA['itemFormElName'] . '[]')) . '.options[' . $c . '].selected=1;';
+				$restoreCmd[] = 'document.editform[\'' . $PA['itemFormElName'] . '[]\'].options[' . $c . '].selected=1;';
 				unset($itemArray[$p[1]]);
 			}
 			// Non-selectable element:
@@ -857,7 +857,7 @@ class SelectElement extends AbstractFormElement {
 			$item .= '<input type="hidden" name="' . htmlspecialchars($PA['itemFormElName']) . '" value="" />';
 		}
 		// Put it all into a table:
-		$onClick = htmlspecialchars($this->formEngine->elName(($PA['itemFormElName'] . '[]')) . '.selectedIndex=-1;' . implode('', $restoreCmd) . ' return false;');
+		$onClick = htmlspecialchars('document.editform[\'' . $PA['itemFormElName'] . '[]\'].selectedIndex=-1;' . implode('', $restoreCmd) . ' return false;');
 		$width = $this->formMaxWidth($this->defaultInputWidth);
 		$item .= '
 			<div class="form-control-wrap" ' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>

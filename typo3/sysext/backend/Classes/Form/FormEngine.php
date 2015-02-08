@@ -1634,9 +1634,9 @@ class FormEngine {
 		foreach ($sArr as $sKey => $sheetCfg) {
 			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
 				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
-					. $this->elName($elName) . '.value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
+					. 'document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
 			} else {
-				$onClick = 'if(TBE_EDITOR.checkSubmit(-1)){ ' . $this->elName($elName) . '.value=\'' . $sKey . '\'; TBE_EDITOR.submitForm();}';
+				$onClick = 'if(TBE_EDITOR.checkSubmit(-1)){ document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm();}';
 			}
 			$tCells[] = '<td width="' . $pct . '%" style="'
 				. ($sKey == $sheetKey ? 'background-color: #9999cc; font-weight: bold;' : 'background-color: #aaaaaa;')
@@ -2803,7 +2803,7 @@ class FormEngine {
 											$aOnClick = 'this.blur();' . $addJS . 'vHWin=window.open(\'' . $url
 												. GeneralUtility::implodeArrayForUrl('', array('P' => $params))
 												. '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode('
-												. $this->elName($itemName) . '.value,200)' . $curSelectedValues
+												. 'document.editform[\'' . $itemName . '\'].value,200)' . $curSelectedValues
 												. ',\'popUp' . $md5ID . '\',\'' . $wConf['JSopenParams'] . '\');'
 												. 'vHWin.focus();return false;';
 											// Setting "colorBoxLinks" - user LATER to wrap around the color box as well:
@@ -2869,11 +2869,11 @@ class FormEngine {
 								$opt[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
 							}
 							if ($wConf['mode'] == 'append') {
-								$assignValue = $this->elName($itemName) . '.value=\'\'+this.options[this.selectedIndex].value+' . $this->elName($itemName) . '.value';
+								$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+'document.editform[\'' . $itemName . '\'].value';
 							} elseif ($wConf['mode'] == 'prepend') {
-								$assignValue = $this->elName($itemName) . '.value+=\'\'+this.options[this.selectedIndex].value';
+								$assignValue = 'document.editform[\'' . $itemName . '\'].value+=\'\'+this.options[this.selectedIndex].value';
 							} else {
-								$assignValue = $this->elName($itemName) . '.value=this.options[this.selectedIndex].value';
+								$assignValue = 'document.editform[\'' . $itemName . '\'].value=this.options[this.selectedIndex].value';
 							}
 							$sOnChange = $assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc);
 							$outArr['additional'][] = '<select id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE))
@@ -3144,8 +3144,10 @@ class FormEngine {
 	 *
 	 * @param string $itemName Form element name
 	 * @return string Form element reference (JS)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function elName($itemName) {
+		GeneralUtility::logDeprecatedFunction();
 		return 'document.editform[\'' . $itemName . '\']';
 	}
 

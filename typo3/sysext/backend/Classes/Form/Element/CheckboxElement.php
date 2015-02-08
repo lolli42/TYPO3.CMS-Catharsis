@@ -180,7 +180,7 @@ class CheckboxElement extends AbstractFormElement {
 	 * @return string The onclick attribute + possibly the checked-option set.
 	 */
 	protected function checkBoxParams($itemName, $formElementValue, $checkbox, $checkboxesCount, $additionalJavaScript = '') {
-		$elementName = $this->formEngine->elName($itemName);
+		$elementName = 'document.editform[\'' . $itemName . '\']';
 		$checkboxPow = pow(2, $checkbox);
 		$onClick = $elementName . '.value=this.checked?(' . $elementName . '.value|' . $checkboxPow . '):('
 			. $elementName . '.value&' . (pow(2, $checkboxesCount) - 1 - $checkboxPow) . ');' . $additionalJavaScript;
