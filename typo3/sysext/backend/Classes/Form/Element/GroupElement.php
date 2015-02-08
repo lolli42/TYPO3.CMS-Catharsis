@@ -144,7 +144,7 @@ class GroupElement extends AbstractFormElement {
 										$rowCopy,
 										$table,
 										$field,
-										$this->formEngine->backPath,
+										'',
 										'thumbs.php',
 										$config['uploadfolder'],
 										0,

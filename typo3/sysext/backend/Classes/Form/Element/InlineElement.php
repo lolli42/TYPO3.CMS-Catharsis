@@ -53,8 +53,9 @@ class InlineElement {
 	 * Reference to $fObj->backPath
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
-	public $backPath;
+	public $backPath = '';
 
 	/**
 	 * Indicates if a field is rendered upon an AJAX call
@@ -146,7 +147,6 @@ class InlineElement {
 	 */
 	public function init(&$formEngine) {
 		$this->fObj = $formEngine;
-		$this->backPath = &$formEngine->backPath;
 		$this->prependFormFieldNames = &$this->fObj->prependFormFieldNames;
 		$this->prependCmdFieldNames = &$this->fObj->prependCmdFieldNames;
 		$this->inlineStyles['margin-right'] = '5';
@@ -2278,7 +2278,7 @@ class InlineElement {
 			$style = ' style="' . $style . '"';
 		}
 		if (!$tableAttrs['background'] && $this->fObj->borderStyle[2]) {
-			$tableAttrs['background'] = $this->backPath . $this->borderStyle[2];
+			$tableAttrs['background'] = $this->borderStyle[2];
 		}
 		if (!$tableAttrs['class'] && $this->borderStyle[3]) {
 			$tableAttrs['class'] = $this->borderStyle[3];

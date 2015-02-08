@@ -140,6 +140,7 @@ class FormEngine {
 	 * from the script where this form is displayed.
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $backPath = '';
 
@@ -1227,7 +1228,7 @@ class FormEngine {
 					// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in alt_doc.php
 					$label = htmlspecialchars($PA['label'], ENT_COMPAT, 'UTF-8', FALSE);
 					if (MathUtility::canBeInterpretedAsInteger($row['uid']) && $PA['fieldTSConfig']['linkTitleToSelf'] && !GeneralUtility::_GP('columnsOnly')) {
-						$lTTS_url = $this->backPath . 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $field . '&returnUrl=' . rawurlencode($this->thisReturnUrl());
+						$lTTS_url = 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $field . '&returnUrl=' . rawurlencode($this->thisReturnUrl());
 						$label = '<a href="' . htmlspecialchars($lTTS_url) . '">' . $label . '</a>';
 					}
 
@@ -2772,12 +2773,12 @@ class FormEngine {
 									if (isset($wConf['module']['urlParameters']) && is_array($wConf['module']['urlParameters'])) {
 										$urlParameters = $wConf['module']['urlParameters'];
 									}
-									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters, $this->backPath);
+									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters, '');
 								} elseif (in_array($wConf['type'], array('script', 'colorbox', 'popup'), TRUE)) {
 									// Illegal configuration, fail silently
 									break;
 								}
-								$url = ($wScript ?: $this->backPath) . (strstr($wScript, '?') ? '' : '?');
+								$url = ($wScript ?: '') . (strstr($wScript, '?') ? '' : '?');
 								// If "script" type, create the links around the icon:
 								if ((string)$wConf['type'] === 'script') {
 									$aUrl = $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
@@ -2893,7 +2894,7 @@ class FormEngine {
 						$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
 						$color = $PA['itemFormElValue'] ? ' bgcolor="' . htmlspecialchars($PA['itemFormElValue']) . '"' : '';
 						$skinImg = IconUtility::skinImg(
-							$this->backPath,
+							'',
 							$color === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
 							'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
 						);
@@ -2949,7 +2950,7 @@ class FormEngine {
 	 * Get icon (for example for selector boxes)
 	 *
 	 * @param string $icon Icon reference
-	 * @return array Array with two values; the icon file reference (relative to PATH_typo3 minus backPath), the icon file information array (getimagesize())
+	 * @return array Array with two values; the icon file reference, the icon file information array (getimagesize())
 	 */
 	public function getIcon($icon) {
 		$selIconInfo = FALSE;
@@ -2957,24 +2958,24 @@ class FormEngine {
 			$file = GeneralUtility::getFileAbsFileName($icon);
 			if ($file) {
 				$file = PathUtility::stripPathSitePrefix($file);
-				$selIconFile = $this->backPath . '../' . $file;
+				$selIconFile = '../' . $file;
 				$selIconInfo = @getimagesize((PATH_site . $file));
 			} else {
 				$selIconFile = '';
 			}
 		} elseif (substr($icon, 0, 3) == '../') {
-			$selIconFile = $this->backPath . GeneralUtility::resolveBackPath($icon);
+			$selIconFile = GeneralUtility::resolveBackPath($icon);
 			if (is_file(PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3)))) {
 				$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
 			}
 		} elseif (substr($icon, 0, 4) == 'ext/' || substr($icon, 0, 7) == 'sysext/') {
-			$selIconFile = $this->backPath . $icon;
+			$selIconFile = $icon;
 			if (is_file(PATH_typo3 . $icon)) {
 				$selIconInfo = getimagesize(PATH_typo3 . $icon);
 			}
 		} else {
-			$selIconFile = IconUtility::skinImg($this->backPath, 'gfx/' . $icon, '', 1);
-			$iconPath = substr($selIconFile, strlen($this->backPath));
+			$selIconFile = IconUtility::skinImg('', 'gfx/' . $icon, '', 1);
+			$iconPath = $selIconFile;
 			if (is_file(PATH_typo3 . $iconPath)) {
 				$selIconInfo = getimagesize(PATH_typo3 . $iconPath);
 			}
@@ -3307,7 +3308,7 @@ class FormEngine {
 		}
 		$docTemplate = $this->getDocumentTemplate();
 		if (is_object($docTemplate)) {
-			$docTemplate->backPath = $this->backPath;
+			$docTemplate->backPath = '';
 			return $docTemplate->getDynTabMenu($parts, $idString, 0, FALSE, 1, FALSE, 1);
 		} else {
 			$output = '';
@@ -4268,13 +4269,13 @@ class FormEngine {
 				}
 			}
 			$out .= '
-			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg($this->backPath, 'gfx/required_h.gif', '', 1) . '";
-			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg($this->backPath, 'gfx/content_selected.gif', '', 1) . '";
-			TBE_EDITOR.images.clear.src = "' . $this->backPath . 'clear.gif";
+			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
+			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg('', 'gfx/content_selected.gif', '', 1) . '";
+			TBE_EDITOR.images.clear.src = "clear.gif";
 
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
-			TBE_EDITOR.backPath = "' . addslashes($this->backPath) . '";
+			TBE_EDITOR.backPath = "' . addslashes('') . '";
 			TBE_EDITOR.prependFormFieldNames = "' . $this->prependFormFieldNames . '";
 			TBE_EDITOR.prependFormFieldNamesUENC = "' . rawurlencode($this->prependFormFieldNames) . '";
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
@@ -4341,7 +4342,7 @@ class FormEngine {
 
 		// set variables to be accessible for JS
 		$pageRenderer->addInlineSetting('FormEngine', 'formName', $this->formName);
-		$pageRenderer->addInlineSetting('FormEngine', 'backPath', $this->backPath);
+		$pageRenderer->addInlineSetting('FormEngine', 'backPath', '');
 
 		// Integrate JS functions for the element browser if such fields or IRRE fields were processed
 		if ($this->printNeededJS['dbFileIcons'] || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
@@ -4673,7 +4674,7 @@ class FormEngine {
 					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
 					$fileInformation = pathinfo($imgPath);
 					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
-					$imgs[] = '<span class="nobr">' . BackendUtility::thumbCode($rowCopy, $table, $field, $this->backPath, 'thumbs.php', $config['config']['uploadfolder'], 0, ' align="middle"') . ($absFilePath ? $this->getClickMenu($fileIcon, $absFilePath) : $fileIcon) . $imgPath . '</span>';
+					$imgs[] = '<span class="nobr">' . BackendUtility::thumbCode($rowCopy, $table, $field, '', 'thumbs.php', $config['config']['uploadfolder'], 0, ' align="middle"') . ($absFilePath ? $this->getClickMenu($fileIcon, $absFilePath) : $fileIcon) . $imgPath . '</span>';
 				}
 				$thumbsnail = implode('<br />', $imgs);
 			}

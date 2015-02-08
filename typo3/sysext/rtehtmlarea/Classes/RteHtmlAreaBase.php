@@ -344,8 +344,6 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			 * INIT THE EDITOR-SETTINGS
 			 * =======================================
 			 */
-			// Set backPath
-			$this->backPath = $this->TCEform->backPath;
 			// Get the path to this extension:
 			$this->extHttpPath = $this->backPath . ExtensionManagementUtility::extRelPath($this->ID);
 			// Get the site URL

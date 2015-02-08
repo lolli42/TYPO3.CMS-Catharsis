@@ -135,11 +135,7 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 * @return string
 	 */
 	private function prependBackPath($url) {
-		if (strpos($url, '://') !== FALSE || $url[0] === '/') {
-			return $url;
-		} else {
-			return $this->backPath . $url;
-		}
+		return $url;
 	}
 
 }
