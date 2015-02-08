@@ -42,6 +42,7 @@ class FormEngine {
 
 	/**
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $palFieldArr = array();
 
@@ -2101,7 +2102,6 @@ class FormEngine {
 					if ($theField === '--linebreak--') {
 						$parts[]['NAME'] = '--linebreak--';
 					} elseif (!in_array($theField, $this->excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
-						$this->palFieldArr[$palette][] = $theField;
 						$elem = $this->getSingleField($table, $theField, $row, $fieldParts[1], 1, '', $fieldParts[2]);
 						if (is_array($elem)) {
 							$parts[] = $elem;
