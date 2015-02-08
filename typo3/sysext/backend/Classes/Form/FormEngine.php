@@ -2869,7 +2869,7 @@ class FormEngine {
 								$opt[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
 							}
 							if ($wConf['mode'] == 'append') {
-								$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+'document.editform[\'' . $itemName . '\'].value';
+								$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+document.editform[\'' . $itemName . '\'].value';
 							} elseif ($wConf['mode'] == 'prepend') {
 								$assignValue = 'document.editform[\'' . $itemName . '\'].value+=\'\'+this.options[this.selectedIndex].value';
 							} else {
