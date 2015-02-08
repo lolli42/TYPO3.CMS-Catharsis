@@ -386,6 +386,7 @@ class FormEngine {
 	 * TRUE, if RTE is possible for the current user (based on result from BE_USER->isRTE())
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $RTEenabled = FALSE;
 
@@ -676,9 +677,9 @@ class FormEngine {
 	 */
 	public function __construct() {
 		$this->clientInfo = GeneralUtility::clientInfo();
-		$this->RTEenabled = $this->getBackendUserAuthentication()->isRTE();
-		if (!$this->RTEenabled) {
-			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . implode(LF, $this->getBackendUserAuthentication()->RTE_errors);
+		$backendUser = $this->getBackendUserAuthentication();
+		if (!$backendUser->isRTE()) {
+			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . implode(LF, $backendUser->RTE_errors);
 		}
 		// Define whitelist that allows TCA field configuration to be overridden by TSconfig, @see overrideFieldConf():
 		$this->allowOverrideMatrix = array(
@@ -1105,6 +1106,8 @@ class FormEngine {
 	 * @return mixed String (normal) or array (palettes)
 	 */
 	public function getSingleField($table, $field, $row, $altName = '', $palette = FALSE, $extra = '', $pal = 0) {
+		$backendUser = $this->getBackendUserAuthentication();
+
 		// Hook: getSingleField_preProcess
 		foreach ($this->hookObjectsSingleField as $hookObj) {
 			if (method_exists($hookObj, 'getSingleField_preProcess')) {
@@ -1135,9 +1138,9 @@ class FormEngine {
 		if (
 			is_array($PA['fieldConf'])
 			&& !$skipThisField
-			&& (!$PA['fieldConf']['exclude'] || $this->getBackendUserAuthentication()->check('non_exclude_fields', $table . ':' . $field))
+			&& (!$PA['fieldConf']['exclude'] || $backendUser->check('non_exclude_fields', $table . ':' . $field))
 			&& $PA['fieldConf']['config']['form_type'] != 'passthrough'
-			&& ($this->RTEenabled || !$PA['fieldConf']['config']['showIfRTE'])
+			&& ($backendUser->isRTE() || !$PA['fieldConf']['config']['showIfRTE'])
 			&& $displayConditionResult
 			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || $PA['fieldConf']['l10n_display'] || ($PA['fieldConf']['l10n_mode'] !== 'exclude') || $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] <= 0)
 			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || !$this->localizationMode || $this->localizationMode === $PA['fieldConf']['l10n_cat'])
@@ -1175,7 +1178,7 @@ class FormEngine {
 					|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
 					&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
 				) {
-					if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
+					if ($backendUser->jsConfirmation(1)) {
 						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 					} else {
 						$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
@@ -1190,7 +1193,7 @@ class FormEngine {
 					$languageService = $this->getLanguageService();
 					// Render as a normal field:
 					// onFocus attribute to add to the field:
-					$PA['onFocus'] = $palJSfunc && !$this->getBackendUserAuthentication()->uc['dontShowPalettesOnFocusInAB'] ? ' onfocus="' . htmlspecialchars($palJSfunc) . '"' : '';
+					$PA['onFocus'] = $palJSfunc && !$backendUser->uc['dontShowPalettesOnFocusInAB'] ? ' onfocus="' . htmlspecialchars($palJSfunc) . '"' : '';
 					$PA['label'] = $PA['altName'] ?: $PA['fieldConf']['label'];
 					$PA['label'] = $PA['fieldTSConfig']['label'] ?: $PA['label'];
 					$PA['label'] = $PA['fieldTSConfig']['label.'][$languageService->lang] ?: $PA['label'];

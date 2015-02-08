@@ -42,6 +42,8 @@ class TextElement extends AbstractFormElement {
 	 * @return string The HTML code for the TCEform field
 	 */
 	public function render($table, $field, $row, &$additionalInformation) {
+		$backendUser = $this->getBackendUserAuthentication();
+
 		$config = $additionalInformation['fieldConf']['config'];
 
 		// Setting columns number
@@ -94,7 +96,7 @@ class TextElement extends AbstractFormElement {
 		$altItem = '<input type="hidden" name="' . htmlspecialchars($additionalInformation['itemFormElName']) . '" value="' . htmlspecialchars($additionalInformation['itemFormElValue']) . '" />';
 		$item = '';
 		// If RTE is generally enabled (TYPO3_CONF_VARS and user settings)
-		if ($this->formEngine->RTEenabled) {
+		if ($backendUser->isRTE()) {
 			$parameters = BackendUtility::getSpecConfParametersFromArray($specialConfiguration['rte_transform']['parameters']);
 			// If the field is configured for RTE and if any flag-field is not set to disable it.
 			if (isset($specialConfiguration['richtext']) && (!$parameters['flag'] || !$row[$parameters['flag']])) {
@@ -102,7 +104,7 @@ class TextElement extends AbstractFormElement {
 				list($recordPid, $tsConfigPid) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
 				// If the pid-value is not negative (that is, a pid could NOT be fetched)
 				if ($tsConfigPid >= 0) {
-					$rteSetup = $this->getBackendUserAuthentication()->getTSConfig('RTE', BackendUtility::getPagesTSconfig($recordPid));
+					$rteSetup = $backendUser->getTSConfig('RTE', BackendUtility::getPagesTSconfig($recordPid));
 					$rteTcaTypeValue = BackendUtility::getTCAtypeValue($table, $row);
 					$rteSetupConfiguration = BackendUtility::RTEsetup($rteSetup['properties'], $table, $field, $rteTcaTypeValue);
 					if (!$rteSetupConfiguration['disabled']) {
@@ -193,7 +195,7 @@ class TextElement extends AbstractFormElement {
 				// calculate inline styles
 				$styles = array();
 				// add the max-height from the users' preference to it
-				$maximumHeight = (int)$this->getBackendUserAuthentication()->uc['resizeTextareas_MaxHeight'];
+				$maximumHeight = (int)$backendUser->uc['resizeTextareas_MaxHeight'];
 				if ($maximumHeight > 0) {
 					$styles[] = 'max-height: ' . $maximumHeight . 'px';
 				}
