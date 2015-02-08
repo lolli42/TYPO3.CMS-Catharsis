@@ -1693,8 +1693,10 @@ class FormEngine {
 	 * @param array $config Configuration for the display
 	 * @param string $itemValue The value to display
 	 * @return string Formatted Field content
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. This is now encapsulated within NoneElement
 	 */
 	public function formatValue($config, $itemValue) {
+		GeneralUtility::logDeprecatedFunction();
 		$format = trim($config['format']);
 		switch ($format) {
 			case 'date':
