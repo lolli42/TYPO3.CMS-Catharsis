@@ -1187,7 +1187,6 @@ class InlineElement {
 		$GLOBALS['SOBE']->MOD_MENU = array(
 			'showPalettes' => '',
 			'showDescriptions' => '',
-			'disableRTE' => ''
 		);
 		// Setting virtual document name
 		$GLOBALS['SOBE']->MCONF['name'] = 'xMOD_alt_doc.php';
@@ -1202,7 +1201,6 @@ class InlineElement {
 		$GLOBALS['SOBE']->tceforms->RTEcounter = (int)array_shift($ajaxArguments);
 		$GLOBALS['SOBE']->tceforms->initDefaultBEMode();
 		$GLOBALS['SOBE']->tceforms->palettesCollapsed = !$GLOBALS['SOBE']->MOD_SETTINGS['showPalettes'];
-		$GLOBALS['SOBE']->tceforms->disableRTE = $GLOBALS['SOBE']->MOD_SETTINGS['disableRTE'];
 		$GLOBALS['SOBE']->tceforms->enableClickMenu = TRUE;
 		$GLOBALS['SOBE']->tceforms->enableTabMenu = TRUE;
 		// Clipboard is initialized:
@@ -1869,7 +1867,6 @@ class InlineElement {
 		$trData = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\DataPreprocessor::class);
 		$trData->addRawData = TRUE;
 		$trData->lockRecords = 1;
-		$trData->disableRTE = $GLOBALS['SOBE']->MOD_SETTINGS['disableRTE'];
 		// If a new record should be created
 		$trData->fetchRecord($table, $uid, $cmd === 'new' ? 'new' : '');
 		$rec = reset($trData->regTableItems_data);

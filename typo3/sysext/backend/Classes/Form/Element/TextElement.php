@@ -108,40 +108,35 @@ class TextElement extends AbstractFormElement {
 					$rteTcaTypeValue = BackendUtility::getTCAtypeValue($table, $row);
 					$rteSetupConfiguration = BackendUtility::RTEsetup($rteSetup['properties'], $table, $field, $rteTcaTypeValue);
 					if (!$rteSetupConfiguration['disabled']) {
-						if (!$this->formEngine->disableRTE) {
-							$this->formEngine->RTEcounter++;
-							// Get RTE object, draw form and set flag:
-							$rteObject = BackendUtility::RTEgetObj();
-							$item = $rteObject->drawRTE(
-								$this->formEngine,
-								$table,
-								$field,
-								$row,
-								$additionalInformation,
-								$specialConfiguration,
-								$rteSetupConfiguration,
-								$rteTcaTypeValue,
-								'',
-								$tsConfigPid
-							);
+						$this->formEngine->RTEcounter++;
+						// Get RTE object, draw form and set flag:
+						$rteObject = BackendUtility::RTEgetObj();
+						$item = $rteObject->drawRTE(
+							$this->formEngine,
+							$table,
+							$field,
+							$row,
+							$additionalInformation,
+							$specialConfiguration,
+							$rteSetupConfiguration,
+							$rteTcaTypeValue,
+							'',
+							$tsConfigPid
+						);
 
-							// Wizard
-							$item = $this->formEngine->renderWizards(
-								array($item, $altItem),
-								$config['wizards'],
-								$table,
-								$row,
-								$field,
-								$additionalInformation,
-								$additionalInformation['itemFormElName'],
-								$specialConfiguration,
-								TRUE
-							);
-							$rteWasLoaded = TRUE;
-						} else {
-							$rteWouldHaveBeenLoaded = TRUE;
-							$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': RTE is disabled by the on-page RTE-flag (probably you can enable it by the check-box in the bottom of this page!)';
-						}
+						// Wizard
+						$item = $this->formEngine->renderWizards(
+							array($item, $altItem),
+							$config['wizards'],
+							$table,
+							$row,
+							$field,
+							$additionalInformation,
+							$additionalInformation['itemFormElName'],
+							$specialConfiguration,
+							TRUE
+						);
+						$rteWasLoaded = TRUE;
 					} else {
 						$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': RTE is disabled by the Page TSconfig, "RTE"-key (eg. by RTE.default.disabled=0 or such)';
 					}

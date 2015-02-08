@@ -171,6 +171,7 @@ class FormEngine {
 	 * If set, the RTE is disabled (from form display, eg. by checkbox in the bottom of the page!)
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $disableRTE = FALSE;
 

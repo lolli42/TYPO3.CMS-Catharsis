@@ -523,7 +523,6 @@ class EditDocumentController {
 			$tce->neverHideAtCopy = 1;
 		}
 		$tce->debug = 0;
-		$tce->disableRTE = !$GLOBALS['BE_USER']->isRTE();
 		// Loading TCEmain with data:
 		$tce->start($this->data, $this->cmd);
 		if (is_array($this->mirror)) {
@@ -714,7 +713,6 @@ class EditDocumentController {
 			// text,media is keywords defined in TYPO3 Core API..., see "l10n_cat"
 			$this->tceforms->returnUrl = $this->R_URI;
 			$this->tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-			$this->tceforms->disableRTE = !$GLOBALS['BE_USER']->isRTE();
 			$this->tceforms->enableClickMenu = TRUE;
 			$this->tceforms->enableTabMenu = TRUE;
 			// Clipboard is initialized:
@@ -891,7 +889,6 @@ class EditDocumentController {
 								$trData->addRawData = TRUE;
 								$trData->defVals = $this->defVals;
 								$trData->lockRecords = 1;
-								$trData->disableRTE = !$GLOBALS['BE_USER']->isRTE();
 								$trData->prevPageID = $prevPageID;
 								// 'new'
 								$trData->fetchRecord($table, $theUid, $cmd == 'new' ? 'new' : '');

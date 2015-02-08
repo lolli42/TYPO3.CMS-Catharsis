@@ -38,6 +38,7 @@ class DataPreprocessor {
 	 * Is set externally if RTE is disabled.
 	 *
 	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $disableRTE = 0;
 
