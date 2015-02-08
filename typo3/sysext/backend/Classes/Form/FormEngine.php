@@ -339,6 +339,7 @@ class FormEngine {
 	 * The name attribute of the form
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $formName = 'editform';
 
@@ -776,7 +777,6 @@ class FormEngine {
 	 */
 	public function initDefaultBEmode() {
 		$this->prependFormFieldNames = 'data';
-		$this->formName = 'editform';
 		$this->setNewBEDesign();
 		$this->edit_showFieldHelp = (bool)$this->getBackendUserAuthentication()->uc['edit_showFieldHelp'];
 		$this->edit_docModuleUpload = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
@@ -2785,7 +2785,7 @@ class FormEngine {
 									$outArr['buttons'][] = ' <a class="btn btn-default" href="' . htmlspecialchars($aUrl) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
 								} else {
 									// ... else types "popup", "colorbox" and "userFunc" will need additional parameters:
-									$params['formName'] = $this->formName;
+									$params['formName'] = 'editForm';
 									$params['itemName'] = $itemName;
 									$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
 									$params['fieldChangeFunc'] = $fieldChangeFunc;
@@ -3146,7 +3146,7 @@ class FormEngine {
 	 * @return string Form element reference (JS)
 	 */
 	public function elName($itemName) {
-		return 'document.' . $this->formName . '[\'' . $itemName . '\']';
+		return 'document.editform[\'' . $itemName . '\']';
 	}
 
 	/**
@@ -4341,7 +4341,7 @@ class FormEngine {
 		$pageRenderer = $this->getControllerDocumentTemplate()->getPageRenderer();
 
 		// set variables to be accessible for JS
-		$pageRenderer->addInlineSetting('FormEngine', 'formName', $this->formName);
+		$pageRenderer->addInlineSetting('FormEngine', 'formName', 'editform');
 		$pageRenderer->addInlineSetting('FormEngine', 'backPath', '');
 
 		// Integrate JS functions for the element browser if such fields or IRRE fields were processed
@@ -4349,7 +4349,7 @@ class FormEngine {
 			$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
 		}
 
-		return $this->JSbottom($this->formName);
+		return $this->JSbottom('editform');
 	}
 
 	/**
@@ -4358,7 +4358,7 @@ class FormEngine {
 	 * @return string
 	 */
 	public function printNeededJSFunctions_top() {
-		return $this->JStop($this->formName);
+		return $this->JStop('editform');
 	}
 
 	/**

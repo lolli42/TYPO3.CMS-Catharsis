@@ -1223,7 +1223,7 @@ class InlineElement {
 			$jsonArray['headData'] = $headTags;
 		}
 		// Add the JavaScript data that would have been added at the bottom of a regular FormEngine call:
-		$jsonArray['scriptCall'][] = $this->fObj->JSbottom($this->fObj->formName, TRUE);
+		$jsonArray['scriptCall'][] = $this->fObj->JSbottom('editform', TRUE);
 		// If script.aculo.us Sortable is used, update the Observer to know the record:
 		if ($config['appearance']['useSortable']) {
 			$jsonArray['scriptCall'][] = 'inline.createDragAndDropSorting(\'' . $this->inlineNames['object'] . '_records\');';
