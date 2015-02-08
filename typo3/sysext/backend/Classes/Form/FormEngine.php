@@ -394,6 +394,7 @@ class FormEngine {
 	 * which is filled with reasons why the RTE could not be loaded)
 	 *
 	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $RTEenabled_notReasons = '';
 
@@ -677,8 +678,7 @@ class FormEngine {
 		$this->clientInfo = GeneralUtility::clientInfo();
 		$this->RTEenabled = $this->getBackendUserAuthentication()->isRTE();
 		if (!$this->RTEenabled) {
-			$this->RTEenabled_notReasons = implode(LF, $this->getBackendUserAuthentication()->RTE_errors);
-			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . $this->RTEenabled_notReasons;
+			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . implode(LF, $this->getBackendUserAuthentication()->RTE_errors);
 		}
 		// Define whitelist that allows TCA field configuration to be overridden by TSconfig, @see overrideFieldConf():
 		$this->allowOverrideMatrix = array(
