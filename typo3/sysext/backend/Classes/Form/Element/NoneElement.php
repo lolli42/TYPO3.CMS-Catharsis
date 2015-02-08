@@ -69,7 +69,7 @@ class NoneElement extends AbstractFormElement {
 	}
 
 	/**
-	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user
+	 * Format field content if $config['format'] is set to date, filesize, ..., user
 	 *
 	 * @param array $config Configuration for the display
 	 * @param string $itemValue The value to display
