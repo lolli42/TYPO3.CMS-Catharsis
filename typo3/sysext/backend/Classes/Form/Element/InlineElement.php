@@ -1321,10 +1321,11 @@ class InlineElement {
 			// For a selector of type group/db, prepend the tablename (<tablename>_<uid>):
 			$record[$config['foreign_selector']] = $selConfig['type'] != 'groupdb' ? '' : $selConfig['table'] . '_';
 			$record[$config['foreign_selector']] .= $foreignUid;
-			$fileRecord = $this->getRecord(0, $selConfig['table'], $foreignUid);
-
-			if (!$this->checkFileTypeAccessForField($selConfig, $fileRecord)) {
-				return $this->getErrorMessageForAJAX('File extension ' . $fileRecord['extension'] . ' is not allowed here!');
+			if ($selConfig['table'] === 'sys_file') {
+				$fileRecord = $this->getRecord(0, $selConfig['table'], $foreignUid);
+				if ($fileRecord !== FALSE && !$this->checkFileTypeAccessForField($selConfig, $fileRecord)) {
+					return $this->getErrorMessageForAJAX('File extension ' . $fileRecord['extension'] . ' is not allowed here!');
+				}
 			}
 		}
 		// The HTML-object-id's prefix of the dynamically created record
@@ -1375,7 +1376,7 @@ class InlineElement {
 	 * @return bool
 	 */
 	protected function checkFileTypeAccessForField(array $selectorConfiguration, array $fileRecord) {
-		if (isset($selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'])) {
+		if (!empty($selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'])) {
 			$allowedFileExtensions = GeneralUtility::trimExplode(
 				',',
 				$selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'],

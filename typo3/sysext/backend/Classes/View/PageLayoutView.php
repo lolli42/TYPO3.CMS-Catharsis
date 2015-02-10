@@ -460,7 +460,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						<div class="t3-page-ce-dropzone" id="colpos-' . $key . '-' . 'page-' . $id . '-' . uniqid('', TRUE) . '">
 							<div class="t3-page-ce-wrapper-new-ce">
 								<a href="#" onclick="' . htmlspecialchars($this->newContentElementOnClick($id, $key, $lP))
-									. '" title="' . $this->getLanguageService()->getLL('newRecordHere', TRUE) . '">'
+									. '" title="' . $this->getLanguageService()->getLL('newRecordHere', TRUE) . '" class="btn btn-default btn-sm">'
 									. IconUtility::getSpriteIcon('actions-document-new') . '</a>
 							</div>
 						</div>
@@ -527,7 +527,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 								$singleElementHTML .= '
 									<div class="t3-page-ce-wrapper-new-ce">
 										<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
-											. $this->getLanguageService()->getLL('newRecordHere', TRUE) . '">'
+											. $this->getLanguageService()->getLL('newRecordHere', TRUE) . '" class="btn btn-default btn-sm">'
 											. IconUtility::getSpriteIcon('actions-document-new') . '</a>
 									</div>
 								';
@@ -873,8 +873,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			if ($this->ext_CALC_PERMS & 4 || $this->ext_CALC_PERMS & 2) {
 				$bArray[1] = $this->getPageLayoutController()->doc->t3Button(
-					'window.location.href=\'' . $this->backPath . BackendUtility::getModuleUrl('move_element') . '&table=pages&uid=' . $id
-						. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';',
+					'window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('move_element', array(), $this->backPath) . '&table=pages&uid=' . $id
+						. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ';',
 					$this->getLanguageService()->getLL('move_page')
 				);
 			}

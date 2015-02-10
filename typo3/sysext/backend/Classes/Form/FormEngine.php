@@ -1086,7 +1086,7 @@ class FormEngine {
 
 				$out = '
 					<!-- getPaletteFields -->
-					<fieldset class="form-section">
+					<fieldset class="'. ($isHiddenPalette ? 'hide' : 'form-section') . '">
 						' . ($header ? '<h4 class="form-section-headline">' . htmlspecialchars($header) . '</h4>' : '') . '
 						' . ($collapsedHeader ? '<h4 class="form-section-headline">' . htmlspecialchars($collapsedHeader) . '</h4>' : '') . '
 						' . $code . '
