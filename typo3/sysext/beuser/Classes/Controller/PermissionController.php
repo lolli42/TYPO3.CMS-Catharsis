@@ -170,19 +170,22 @@ class PermissionController extends ActionController {
 			$pageTree = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\PageTree::class);
 
 			$pagesFields = array(
-				'perms_user',
-				'perms_group',
-				'perms_everybody',
-				'perms_userid',
-				'perms_groupid',
-				'hidden',
-				'fe_group',
-				'starttime',
-				'endtime',
-				'editlock',
+				't2' => array(
+					'title',
+					'perms_user',
+					'perms_group',
+					'perms_everybody',
+					'perms_userid',
+					'perms_groupid',
+					'hidden',
+					'fe_group',
+					'starttime',
+					'endtime',
+					'editlock',
+				)
 			);
 
-			$tree = $pageTree->fetchTreeByRoot(14, $pagesFields);
+			$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth);
 
 			/** @var \TYPO3\CMS\Backend\Tree\View\PageTreeView */
 			/**
