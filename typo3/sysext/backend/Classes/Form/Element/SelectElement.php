@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Form\DataPreprocessor;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 
 /**
  * Generation of TCEform elements of the type "select"
@@ -446,12 +447,12 @@ class SelectElement extends AbstractFormElement {
 				}
 				$selectItemGroups[$selectItemGroupCount]['header'] = array(
 					'title' => $item[0],
-					'icon' => (!empty($item[2]) ? $this->formEngine->getIconHtml($item[2]) : '')
+					'icon' => (!empty($item[2]) ? FormEngineUtility::getIconHtml($item[2]) : ''),
 				);
 			} else {
 				// IS ITEM
 				$title = htmlspecialchars($item['0'], ENT_COMPAT, 'UTF-8', FALSE);
-				$icon = (!empty($item[2]) ? $this->formEngine->getIconHtml($item[2], $title, $title) : '');
+				$icon = !empty($item[2]) ? FormEngineUtility::getIconHtml($item[2], $title, $title) : '';
 				$selected = ((string)$PA['itemFormElValue'] === (string)$item[1] ? 1 : 0);
 				if ($selected) {
 					$selectedIndex = $selectItemCounter;
@@ -611,7 +612,7 @@ class SelectElement extends AbstractFormElement {
 				if ($p[1] === '--div--') {
 					$selIcon = '';
 					if (isset($p[2]) && $p[2] != 'empty-emtpy') {
-						$selIcon = $this->formEngine->getIconHtml($p[2]);
+						$selIcon = FormEngineUtility::getIconHtml($p[2]);
 					}
 					$currentGroup++;
 					$groups[$currentGroup]['header'] = array(
@@ -656,7 +657,7 @@ class SelectElement extends AbstractFormElement {
 						'checked' => $checked,
 						'disabled' => $disabled,
 						'class' => '',
-						'icon' => (!empty($p[2]) ? $this->formEngine->getIconHtml($p[2]) : IconUtility::getSpriteIcon('empty-empty')),
+						'icon' => (!empty($p[2]) ? FormEngineUtility::getIconHtml($p[2]) : IconUtility::getSpriteIcon('empty-empty')),
 						'title' => htmlspecialchars($p[0], ENT_COMPAT, 'UTF-8', FALSE),
 						'help' => $help
 					);

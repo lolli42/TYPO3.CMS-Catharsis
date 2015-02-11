@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form;
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Form\Element\InlineElement;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
@@ -2737,7 +2738,7 @@ class FormEngine {
 					// Title / icon:
 					$iTitle = htmlspecialchars($this->getLanguageService()->sL($wConf['title']));
 					if ($wConf['icon']) {
-						$icon = $this->getIconHtml($wConf['icon'], $iTitle, $iTitle);
+						$icon = FormEngineUtility::getIconHtml($wConf['icon'], $iTitle, $iTitle);
 					} else {
 						$icon = $iTitle;
 					}
@@ -2954,40 +2955,11 @@ class FormEngine {
 	 *
 	 * @param string $icon Icon reference
 	 * @return array Array with two values; the icon file reference, the icon file information array (getimagesize())
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getIcon($icon) {
-		$selIconInfo = FALSE;
-		if (substr($icon, 0, 4) == 'EXT:') {
-			$file = GeneralUtility::getFileAbsFileName($icon);
-			if ($file) {
-				$file = PathUtility::stripPathSitePrefix($file);
-				$selIconFile = '../' . $file;
-				$selIconInfo = @getimagesize((PATH_site . $file));
-			} else {
-				$selIconFile = '';
-			}
-		} elseif (substr($icon, 0, 3) == '../') {
-			$selIconFile = GeneralUtility::resolveBackPath($icon);
-			if (is_file(PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3)))) {
-				$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
-			}
-		} elseif (substr($icon, 0, 4) == 'ext/' || substr($icon, 0, 7) == 'sysext/') {
-			$selIconFile = $icon;
-			if (is_file(PATH_typo3 . $icon)) {
-				$selIconInfo = getimagesize(PATH_typo3 . $icon);
-			}
-		} else {
-			$selIconFile = IconUtility::skinImg('', 'gfx/' . $icon, '', 1);
-			$iconPath = $selIconFile;
-			if (is_file(PATH_typo3 . $iconPath)) {
-				$selIconInfo = getimagesize(PATH_typo3 . $iconPath);
-			}
-		}
-		if ($selIconInfo === FALSE) {
-			// Unset to empty string if icon is not available
-			$selIconFile = '';
-		}
-		return array($selIconFile, $selIconInfo);
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::getIcon($icon);
 	}
 
 	/**
@@ -2997,14 +2969,11 @@ class FormEngine {
 	 * @param string $alt Alt attribute of the icon returned
 	 * @param string $title Title attribute of the icon return
 	 * @return string A tag representing to show the asked icon
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getIconHtml($icon, $alt = '', $title = '') {
-		$iconArray = $this->getIcon($icon);
-		if (!empty($iconArray[0]) && is_file(GeneralUtility::resolveBackPath(PATH_typo3 . PATH_typo3_mod . $iconArray[0]))) {
-			return '<img src="' . $iconArray[0] . '" alt="' . $alt . '" ' . ($title ? 'title="' . $title . '"' : '') . ' />';
-		} else {
-			return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));
-		}
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::getIconHtml($icon, $alt, $title);
 	}
 
 	/**
@@ -3018,7 +2987,7 @@ class FormEngine {
 		if (!$iconString) {
 			return '';
 		}
-		list($selIconFile, $selIconInfo) = $this->getIcon($iconString);
+		list($selIconFile, $selIconInfo) = FormEngineUtility::getIcon($iconString);
 		if (empty($selIconFile)) {
 			// Skip background style if image is unavailable
 			return '';
@@ -3047,7 +3016,7 @@ class FormEngine {
 		if (!$iconString) {
 			return '';
 		}
-		list($selIconFile, $selIconInfo) = $this->getIcon($iconString);
+		list($selIconFile, $selIconInfo) = FormEngineUtility::getIcon($iconString);
 		if (empty($selIconFile)) {
 			// Skip background style if image is unavailable
 			return '';
@@ -3595,7 +3564,7 @@ class FormEngine {
 								foreach ($coValue['items'] as $itemKey => $itemCfg) {
 									// Icon:
 									if ($itemCfg[1]) {
-										list($icon) = $this->getIcon($itemCfg[1]);
+										list($icon) = FormEngineUtility::getIcon($itemCfg[1]);
 									} else {
 										$icon = 'empty-empty';
 									}
