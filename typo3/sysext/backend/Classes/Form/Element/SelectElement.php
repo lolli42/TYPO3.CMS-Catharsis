@@ -299,7 +299,7 @@ class SelectElement extends AbstractFormElement {
 
 		// Getting the selector box items from the system
 		$selectItems = $this->formEngine->addSelectOptionsToItemArray(
-			$this->formEngine->initItemArray($PA['fieldConf']),
+			FormEngineUtility::initItemArray($PA['fieldConf']),
 			$PA['fieldConf'],
 			$this->formEngine->setTSconfig($table, $row),
 			$fieldName
@@ -315,7 +315,7 @@ class SelectElement extends AbstractFormElement {
 		);
 
 		// Possibly add some items:
-		$selectItems = $this->formEngine->addItems($selectItems, $PA['fieldTSConfig']['addItems.']);
+		$selectItems = FormEngineUtility::addItems($selectItems, $PA['fieldTSConfig']['addItems.']);
 
 		// Process items by a user function:
 		if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {

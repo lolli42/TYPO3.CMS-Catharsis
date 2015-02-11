@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 
 /**
  * The Inline-Relational-Record-Editing (IRRE) functions as part of the FormEngine.
@@ -1747,7 +1748,7 @@ class InlineElement {
 		$config = $PA['fieldConf']['config'];
 		if ($foreignConfig['type'] == 'select') {
 			// Getting the selector box items from the system
-			$selItems = $this->fObj->addSelectOptionsToItemArray($this->fObj->initItemArray($PA['fieldConf']), $PA['fieldConf'], $this->fObj->setTSconfig($table, $row), $field);
+			$selItems = $this->fObj->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($PA['fieldConf']), $PA['fieldConf'], $this->fObj->setTSconfig($table, $row), $field);
 
 			// Possibly filter some items:
 			$selItems = ArrayUtility::keepItemsInArray(
@@ -1759,7 +1760,7 @@ class InlineElement {
 			);
 
 			// Possibly add some items:
-			$selItems = $this->fObj->addItems($selItems, $PA['fieldTSConfig']['addItems.']);
+			$selItems = FormEngineUtility::addItems($selItems, $PA['fieldTSConfig']['addItems.']);
 			if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {
 				$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
 				$selItems = $dataPreprocessor->procItems($selItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $field);

@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form;
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 
 /**
  * Contains FlexForm manipulation methods as part of the TCEforms
@@ -187,7 +188,7 @@ class FlexFormsHelper extends \TYPO3\CMS\Backend\Form\FormEngine {
 				continue;
 			}
 			// Getting the selector box items from system
-			$selItems = $this->addSelectOptionsToItemArray($this->initItemArray($field['TCEforms']), $field['TCEforms'], $this->setTSconfig($table, $tableRow), $tableField);
+			$selItems = $this->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($field['TCEforms']), $field['TCEforms'], $this->setTSconfig($table, $tableRow), $tableField);
 
 			// Possibly filter some items
 			$selItems = ArrayUtility::keepItemsInArray(
@@ -199,7 +200,7 @@ class FlexFormsHelper extends \TYPO3\CMS\Backend\Form\FormEngine {
 			);
 
 			// Possibly add some items
-			$selItems = $this->addItems($selItems, $addItems);
+			$selItems = FormEngineUtility::addItems($selItems, $addItems);
 			// Process items by a user function
 			if (!empty($field['TCEforms']['config']['itemsProcFunc'])) {
 				$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);

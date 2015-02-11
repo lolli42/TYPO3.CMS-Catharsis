@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Form\DataPreprocessor;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 
 /**
  * Generation of TCEform elements of the type "check"
@@ -39,7 +40,7 @@ class CheckboxElement extends AbstractFormElement {
 			$disabled = TRUE;
 		}
 		// Traversing the array of items
-		$items = $this->formEngine->initItemArray($additionalInformation['fieldConf']);
+		$items = FormEngineUtility::initItemArray($additionalInformation['fieldConf']);
 		if ($config['itemsProcFunc']) {
 			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
 			$items = $dataPreprocessor->procItems(

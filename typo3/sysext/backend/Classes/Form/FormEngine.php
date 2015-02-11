@@ -2860,7 +2860,7 @@ class FormEngine {
 							$fieldValue = array('config' => $wConf);
 							$TSconfig = $this->setTSconfig($table, $row);
 							$TSconfig[$field] = $TSconfig[$field]['wizards.'][$wid . '.'];
-							$selItems = $this->addSelectOptionsToItemArray($this->initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
+							$selItems = $this->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
 							// Process items by a user function:
 							if (!empty($wConf['itemsProcFunc'])) {
 								$funcConfig = !empty($wConf['itemsProcFunc.']) ? $wConf['itemsProcFunc.'] : array();
@@ -3307,16 +3307,11 @@ class FormEngine {
 	 *
 	 * @param array $fieldValue The "columns" array for the field (from TCA)
 	 * @return array An array of arrays with three elements; label, value, icon
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function initItemArray($fieldValue) {
-		$languageService = $this->getLanguageService();
-		$items = array();
-		if (is_array($fieldValue['config']['items'])) {
-			foreach ($fieldValue['config']['items'] as $itemValue) {
-				$items[] = array($languageService->sL($itemValue[0]), $itemValue[1], $itemValue[2]);
-			}
-		}
-		return $items;
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::initItemArray($fieldValue);
 	}
 
 	/**
@@ -3328,26 +3323,11 @@ class FormEngine {
 	 * @param array $items The existing item array
 	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
 	 * @return array The updated $item array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function addItems($items, $iArray) {
-		$languageService = $this->getLanguageService();
-		if (is_array($iArray)) {
-			foreach ($iArray as $value => $label) {
-				// if the label is an array (that means it is a subelement
-				// like "34.icon = mylabel.png", skip it (see its usage below)
-				if (is_array($label)) {
-					continue;
-				}
-				// check if the value "34 = mylabel" also has a "34.icon = myimage.png"
-				if (isset($iArray[$value . '.']) && $iArray[$value . '.']['icon']) {
-					$icon = $iArray[$value . '.']['icon'];
-				} else {
-					$icon = '';
-				}
-				$items[] = array($languageService->sL($label), $value, $icon);
-			}
-		}
-		return $items;
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::addItems($items, $iArray);
 	}
 
 	/**

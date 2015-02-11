@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Form\DataPreprocessor;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 
 /**
  * Generation of TCEform elements of the type "radio"
@@ -40,7 +41,7 @@ class RadioElement extends AbstractFormElement {
 		}
 
 		// Get items for the array
-		$selectedItems = $this->formEngine->initItemArray($additionalInformation['fieldConf']);
+		$selectedItems = FormEngineUtility::initItemArray($additionalInformation['fieldConf']);
 		if ($config['itemsProcFunc']) {
 			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
 			$selectedItems = $dataPreprocessor->procItems(

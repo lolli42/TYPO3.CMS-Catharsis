@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Form\Utility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * This is a static, internal and intermediate helper class for various
@@ -89,6 +90,64 @@ class FormEngineUtility {
 		} else {
 			return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));
 		}
+	}
+
+	/**
+	 * Initialize item array (for checkbox, selectorbox, radio buttons)
+	 * Will resolve the label value.
+	 *
+	 * @param array $fieldValue The "columns" array for the field (from TCA)
+	 * @return array An array of arrays with three elements; label, value, icon
+	 * @internal
+	 */
+	static public function initItemArray($fieldValue) {
+		$languageService = static::getLanguageService();
+		$items = array();
+		if (is_array($fieldValue['config']['items'])) {
+			foreach ($fieldValue['config']['items'] as $itemValue) {
+				$items[] = array($languageService->sL($itemValue[0]), $itemValue[1], $itemValue[2]);
+			}
+		}
+		return $items;
+	}
+
+	/**
+	 * Merges items into an item-array, optionally with an icon
+	 * example:
+	 * TCEFORM.pages.doktype.addItems.13 = My Label
+	 * TCEFORM.pages.doktype.addItems.13.icon = EXT:t3skin/icons/gfx/i/pages.gif
+	 *
+	 * @param array $items The existing item array
+	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
+	 * @return array The updated $item array
+	 * @internal
+	 */
+	static public function addItems($items, $iArray) {
+		$languageService = static::getLanguageService();
+		if (is_array($iArray)) {
+			foreach ($iArray as $value => $label) {
+				// if the label is an array (that means it is a subelement
+				// like "34.icon = mylabel.png", skip it (see its usage below)
+				if (is_array($label)) {
+					continue;
+				}
+				// check if the value "34 = mylabel" also has a "34.icon = myimage.png"
+				if (isset($iArray[$value . '.']) && $iArray[$value . '.']['icon']) {
+					$icon = $iArray[$value . '.']['icon'];
+				} else {
+					$icon = '';
+				}
+				$items[] = array($languageService->sL($label), $value, $icon);
+			}
+		}
+		return $items;
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	static protected function  getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 }
