@@ -137,18 +137,7 @@ class TextElement extends AbstractFormElement {
 							TRUE
 						);
 						$rteWasLoaded = TRUE;
-					} else {
-						$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': RTE is disabled by the Page TSconfig, "RTE"-key (eg. by RTE.default.disabled=0 or such)';
 					}
-				} else {
-					$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': PID value could NOT be fetched. Rare error, normally with new records.';
-				}
-			} else {
-				if (!isset($specialConfiguration['richtext'])) {
-					$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': RTE was not configured for this field in TCA-types';
-				}
-				if (!(!$parameters['flag'] || !$row[$parameters['flag']])) {
-					$this->formEngine->commentMessages[] = $additionalInformation['itemFormElName'] . ': Field-flag (' . $additionalInformation['flag'] . ') has been set to disable RTE!';
 				}
 			}
 		}

@@ -886,14 +886,6 @@ class PageLayoutController {
 			$content .= $this->doc->section($GLOBALS['LANG']->getLL('CEonThisPage'), $HTMLcode, 0, 1);
 			$content .= $this->doc->spacer(20);
 		}
-		// Finally, if comments were generated in TCEforms object, print these as a HTML comment:
-		if (count($tceforms->commentMessages)) {
-			$content .= '
-	<!-- TCEFORM messages
-	' . htmlspecialchars(implode(LF, $tceforms->commentMessages)) . '
-	-->
-	';
-		}
 		return $content;
 	}
 

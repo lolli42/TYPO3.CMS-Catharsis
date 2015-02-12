@@ -741,7 +741,6 @@ class EditDocumentController {
 				$body .= $this->compileForm($editForm);
 				$body .= $this->tceforms->printNeededJSFunctions();
 				$body .= $this->functionMenus();
-				$body .= $this->tceformMessages();
 			}
 		}
 		// Access check...
@@ -1160,17 +1159,12 @@ class EditDocumentController {
 	/**
 	 * Reads comment messages from TCEforms and prints them in a HTML comment in the bottom of the page.
 	 *
-	 * @return void
+	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function tceformMessages() {
-		if (count($this->tceforms->commentMessages)) {
-			$tceformMessages = '
-				<!-- TCEFORM messages
-				' . htmlspecialchars(implode(LF, $this->tceforms->commentMessages)) . '
-				-->
-			';
-		}
-		return $tceformMessages;
+		GeneralUtility::logDeprecatedFunction();
+		return '';
 	}
 
 	/***************************

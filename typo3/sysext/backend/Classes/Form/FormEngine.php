@@ -463,6 +463,7 @@ class FormEngine {
 	 * An accumulation of messages from the class
 	 *
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $commentMessages = array();
 
@@ -682,10 +683,6 @@ class FormEngine {
 	 */
 	public function __construct() {
 		$this->clientInfo = GeneralUtility::clientInfo();
-		$backendUser = $this->getBackendUserAuthentication();
-		if (!$backendUser->isRTE()) {
-			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . implode(LF, $backendUser->RTE_errors);
-		}
 		// Define whitelist that allows TCA field configuration to be overridden by TSconfig, @see overrideFieldConf():
 		$this->allowOverrideMatrix = array(
 			'input' => array('size', 'max', 'readOnly'),
@@ -1296,8 +1293,6 @@ class FormEngine {
 						';
 					}
 				}
-			} else {
-				$this->commentMessages[] = $this->prependFormFieldNames . '[' . $table . '][' . $row['uid'] . '][' . $field . ']: Disabled by TSconfig';
 			}
 		}
 		// Hook: getSingleField_postProcess
