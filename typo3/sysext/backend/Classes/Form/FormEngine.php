@@ -377,6 +377,7 @@ class FormEngine {
 
 	/**
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $edit_docModuleUpload = FALSE;
 
@@ -778,7 +779,6 @@ class FormEngine {
 		$this->prependFormFieldNames = 'data';
 		$this->setNewBEDesign();
 		$this->edit_showFieldHelp = (bool)$this->getBackendUserAuthentication()->uc['edit_showFieldHelp'];
-		$this->edit_docModuleUpload = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
 		$this->inline->init($this);
 		$this->suggest->init($this);
 	}

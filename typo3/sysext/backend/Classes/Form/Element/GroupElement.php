@@ -199,7 +199,8 @@ class GroupElement extends AbstractFormElement {
 					$config);
 				if (!$disabled && !(isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'upload'))) {
 					// Adding the upload field:
-					if ($this->formEngine->edit_docModuleUpload && $config['uploadfolder']) {
+					$isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
+					if ($isDirectFileUploadEnabled && $config['uploadfolder']) {
 						// Insert the multiple attribute to enable HTML5 multiple file upload
 						$multipleAttribute = '';
 						$multipleFilenameSuffix = '';

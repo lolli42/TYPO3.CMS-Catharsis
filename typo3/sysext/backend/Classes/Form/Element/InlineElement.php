@@ -26,6 +26,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
  * The Inline-Relational-Record-Editing (IRRE) functions as part of the FormEngine.
@@ -980,7 +981,8 @@ class InlineElement {
 				' . $createNewRelationText . '
 			</a>';
 
-		if ($showUpload && $this->fObj->edit_docModuleUpload) {
+		$isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
+		if ($showUpload && $isDirectFileUploadEnabled) {
 			$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
 			if (
 				$folder instanceof \TYPO3\CMS\Core\Resource\Folder
@@ -2724,6 +2726,13 @@ class InlineElement {
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @return BackendUserAuthentication
+	 */
+	protected function getBackendUserAuthentication() {
+		return $GLOBALS['BE_USER'];
 	}
 
 }
