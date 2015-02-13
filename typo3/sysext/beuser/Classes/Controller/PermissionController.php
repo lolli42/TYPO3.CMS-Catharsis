@@ -165,8 +165,6 @@ class PermissionController extends ActionController {
 				$beGroupArray = BackendUtility::blindGroupNames($beGroupArray, $beGroupKeys, 0);
 			}
 
-			$treeData = array();
-
 			/** @var \TYPO3\CMS\Core\Tree\PageTree $pageTree */
 			$pageTree = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\PageTree::class);
 
@@ -229,6 +227,7 @@ class PermissionController extends ActionController {
 				$viewData = array();
 				$pageId = $data['uid'];
 				$viewData['pageId'] = $pageId;
+				$data['HTML'] = $this->getIcon($data);
 
 				// User/Group names:
 				if ($beUserArray[$data['perms_userid']]) {
@@ -237,20 +236,13 @@ class PermissionController extends ActionController {
 					$userName = ($data['perms_userid'] ? $data['perms_userid'] : '');
 				}
 
-				if ($data['perms_userid'] && !$beUserArray[$data['perms_userid']]) {
-					$userName = PermissionAjaxController::renderOwnername(
-						$pageId,
-						$data['perms_userid'],
-						htmlspecialchars(GeneralUtility::fixed_lgd_cs($userName, 20)),
-						FALSE
-					);
-				} else {
-					$userName = PermissionAjaxController::renderOwnername(
-						$pageId,
-						$data['perms_userid'],
-						htmlspecialchars(GeneralUtility::fixed_lgd_cs($userName, 20))
-					);
-				}
+				$validUser = ($data['perms_userid'] && !$beUserArray[$data['perms_userid']]) ? FALSE : TRUE;
+				$userName = PermissionAjaxController::renderOwnername(
+					$pageId,
+					$data['perms_userid'],
+					htmlspecialchars(GeneralUtility::fixed_lgd_cs($userName, 20)),
+					$validUser
+				);
 				$viewData['userName'] = $userName;
 
 				if ($beGroupArray[$data['perms_groupid']]) {
@@ -259,37 +251,31 @@ class PermissionController extends ActionController {
 					$groupName = $data['perms_groupid'] ? $data['perms_groupid'] : '';
 				}
 
-				if ($data['perms_groupid'] && !$beGroupArray[$data['perms_groupid']]) {
-					$groupName = PermissionAjaxController::renderGroupname(
-						$pageId,
-						$data['perms_groupid'],
-						htmlspecialchars(GeneralUtility::fixed_lgd_cs($groupName, 20)),
-						FALSE
-					);
-				} else {
-					$groupName = PermissionAjaxController::renderGroupname(
-						$pageId, $data['perms_groupid'],
-						htmlspecialchars(GeneralUtility::fixed_lgd_cs($groupName, 20))
-					);
-				}
+				$validGroup = ($data['perms_groupid'] && !$beGroupArray[$data['perms_groupid']]) ? FALSE : TRUE;
+				$groupName = PermissionAjaxController::renderGroupname(
+					$pageId,
+					$data['perms_groupid'],
+					htmlspecialchars(GeneralUtility::fixed_lgd_cs($groupName, 20)),
+					$validGroup
+				);
 				$viewData['groupName'] = $groupName;
 
 				// Seeing if editing of permissions are allowed for that page:
-				$viewData['editPermsAllowed'] = ($data['perms_userid'] == $this->getBackendUser()->user['uid']
-					|| $this->getBackendUser()->isAdmin());
+				$viewData['editPermsAllowed'] = ($data['perms_userid'] == $this->getBackendUser()->user['uid'] || $this->getBackendUser()->isAdmin());
 
 				$viewData['html'] = $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($data['HTML'], 'pages', $data['uid'])
 					. htmlspecialchars(GeneralUtility::fixed_lgd_cs($data['title'], 20));
-				$viewData['id'] = $data['_ORIG_uid'] ? $data['_ORIG_uid'] : $pageId;
+				$viewData['id'] = $data['_ORIG_uid'] ?: $pageId;
 
-				$viewData['userPermissions'] = ($pageId ?
-					PermissionAjaxController::renderPermissions($data['perms_user'], $pageId, 'user') .
-					' ' . $userName : '');
-				$viewData['groupPermissions'] = ($pageId ?
-					PermissionAjaxController::renderPermissions($data['perms_group'], $pageId, 'group') .
-					' ' . $groupName : '');
-				$viewData['otherPermissions'] = ($pageId ? ' ' .
-					PermissionAjaxController::renderPermissions($data['perms_everybody'], $pageId, 'everybody') : '');
+				$viewData['userPermissions'] = ($pageId
+					? PermissionAjaxController::renderPermissions($data['perms_user'], $pageId, 'user') . ' ' . $userName
+					: '');
+				$viewData['groupPermissions'] = ($pageId
+					? PermissionAjaxController::renderPermissions($data['perms_group'], $pageId, 'group') . ' ' . $groupName
+					: '');
+				$viewData['otherPermissions'] = ($pageId
+					? ' ' . PermissionAjaxController::renderPermissions($data['perms_everybody'], $pageId, 'everybody')
+					: '');
 
 				$viewData['editLock'] = ($data['editlock']) ? TRUE : FALSE;
 
@@ -492,6 +478,17 @@ class PermissionController extends ActionController {
 			return TRUE;
 		}
 		return FALSE;
+	}
+
+	/**
+	 * get icon for tree and record
+	 *
+	 * @param $row
+	 * @return string
+	 */
+	protected function getIcon($row) {
+		// @TODO: Add treeline icon here
+		return IconUtility::getSpriteIconForRecord('pages', $row);
 	}
 
 }

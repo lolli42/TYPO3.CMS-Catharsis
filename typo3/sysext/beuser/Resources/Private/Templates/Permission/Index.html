@@ -33,12 +33,12 @@
 					<tr>
 						<f:if condition="{data.cellAttrib}">
 							<f:then>
-								<td align="left" nowrap="nowrap" {data.cellAttrib}>
+								<td align="left" nowrap="nowrap" <f:format.raw>{data.cellAttrib}</f:format.raw> >
 									<f:format.raw>{data.html}</f:format.raw>
 								</td>
 							</f:then>
 							<f:else>
-								<td align="left" nowrap="nowrap" {data.groupName}>
+								<td align="left" nowrap="nowrap">
 									<f:format.raw>{data.html}</f:format.raw>
 								</td>
 							</f:else>
