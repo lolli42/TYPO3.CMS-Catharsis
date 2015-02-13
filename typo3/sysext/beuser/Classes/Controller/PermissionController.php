@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -182,10 +183,22 @@ class PermissionController extends ActionController {
 					'starttime',
 					'endtime',
 					'editlock',
+				),
+				'be_users' => array(
+					'username as beuserUsername'
+				),
+				'be_groups' => array(
+					'title as begroupTitle'
 				)
 			);
 
-			$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth);
+			$joinTables = array(
+				'be_users' => 'ON be_users.uid = t2.perms_user',
+				'be_groups' => 'ON be_groups.uid = t2.perms_group'
+			);
+
+			$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth, '', $joinTables);
+			DebugUtility::debug($tree);
 
 			/** @var \TYPO3\CMS\Backend\Tree\View\PageTreeView */
 			/**
