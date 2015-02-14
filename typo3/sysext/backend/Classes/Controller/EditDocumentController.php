@@ -174,6 +174,7 @@ class EditDocumentController {
 	 * Disable help... ?
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $disHelp;
 
@@ -627,7 +628,6 @@ class EditDocumentController {
 		$this->viewUrl = GeneralUtility::_GP('viewUrl');
 		$this->editRegularContentFromId = GeneralUtility::_GP('editRegularContentFromId');
 		$this->recTitle = GeneralUtility::_GP('recTitle');
-		$this->disHelp = GeneralUtility::_GP('disHelp');
 		$this->noView = GeneralUtility::_GP('noView');
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// Set other internal variables:
@@ -912,7 +912,6 @@ class EditDocumentController {
 									}
 									// Setting variables in TCEforms object:
 									$this->tceforms->hiddenFieldList = '';
-									$this->tceforms->globalShowHelp = !$this->disHelp;
 									if (is_array($this->overrideVals) && is_array($this->overrideVals[$table])) {
 										$this->tceforms->hiddenFieldListArr = array_keys($this->overrideVals[$table]);
 									}
@@ -1140,7 +1139,7 @@ class EditDocumentController {
 		if ($this->returnUrl == 'close.html' || !$GLOBALS['BE_USER']->mayMakeShortcut()) {
 			return '';
 		}
-		return $this->doc->makeShortcutIcon('returnUrl,edit,defVals,overrideVals,columnsOnly,returnNewPageId,editRegularContentFromId,disHelp,noView', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name'], 1);
+		return $this->doc->makeShortcutIcon('returnUrl,edit,defVals,overrideVals,columnsOnly,returnNewPageId,editRegularContentFromId,noView', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name'], 1);
 	}
 
 	/**
@@ -1420,7 +1419,7 @@ class EditDocumentController {
 	 * @see makeDocSel()
 	 */
 	public function compileStoreDat() {
-		$this->storeArray = GeneralUtility::compileSelectedGetVarsFromArray('edit,defVals,overrideVals,columnsOnly,disHelp,noView,editRegularContentFromId,workspace', $this->R_URL_getvars);
+		$this->storeArray = GeneralUtility::compileSelectedGetVarsFromArray('edit,defVals,overrideVals,columnsOnly,noView,editRegularContentFromId,workspace', $this->R_URL_getvars);
 		$this->storeUrl = GeneralUtility::implodeArrayForUrl('', $this->storeArray);
 		$this->storeUrlMd5 = md5($this->storeUrl);
 	}

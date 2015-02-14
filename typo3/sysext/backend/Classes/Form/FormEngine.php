@@ -186,6 +186,7 @@ class FormEngine {
 	 * If FALSE, then all CSH will be disabled, regardless of settings in $this->edit_showFieldHelp
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $globalShowHelp = TRUE;
 
