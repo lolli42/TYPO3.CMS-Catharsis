@@ -1205,7 +1205,6 @@ class InlineElement {
 		$GLOBALS['SOBE']->tceforms->RTEcounter = (int)array_shift($ajaxArguments);
 		$GLOBALS['SOBE']->tceforms->initDefaultBEMode();
 		$GLOBALS['SOBE']->tceforms->palettesCollapsed = !$GLOBALS['SOBE']->MOD_SETTINGS['showPalettes'];
-		$GLOBALS['SOBE']->tceforms->enableClickMenu = TRUE;
 		$GLOBALS['SOBE']->tceforms->enableTabMenu = TRUE;
 		// Clipboard is initialized:
 		// Start clipboard

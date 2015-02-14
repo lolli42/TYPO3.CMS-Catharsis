@@ -713,7 +713,6 @@ class EditDocumentController {
 			// text,media is keywords defined in TYPO3 Core API..., see "l10n_cat"
 			$this->tceforms->returnUrl = $this->R_URI;
 			$this->tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-			$this->tceforms->enableClickMenu = TRUE;
 			$this->tceforms->enableTabMenu = TRUE;
 			// Clipboard is initialized:
 			// Start clipboard

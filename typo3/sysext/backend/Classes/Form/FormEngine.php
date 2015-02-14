@@ -226,6 +226,7 @@ class FormEngine {
 	 * Enable click menu on reference icons.
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $enableClickMenu = FALSE;
 
@@ -2666,8 +2667,6 @@ class FormEngine {
 
 	/**
 	 * Wraps the icon of a relation item (database record or file) in a link opening the context menu for the item.
-	 * Icons will be wrapped only if $this->enableClickMenu is set. This must be done only if a global SOBE object
-	 * exists and if the necessary JavaScript for displaying the context menus has been added to the page properties.
 	 *
 	 * @param string $str The icon HTML to wrap
 	 * @param string $table Table name (eg. "pages" or "tt_content") OR the absolute path to the file
@@ -2675,10 +2674,7 @@ class FormEngine {
 	 * @return string HTML
 	 */
 	public function getClickMenu($str, $table, $uid = 0) {
-		if ($this->enableClickMenu) {
-			return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
-		}
-		return '';
+		return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
 	}
 
 	/**
