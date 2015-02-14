@@ -620,6 +620,7 @@ class FormEngine {
 	 * Additional JavaScript, printed before the form
 	 *
 	 * @var array
+	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $additionalJS_pre = array();
 
@@ -4098,28 +4099,6 @@ class FormEngine {
 				<!-- NEXT: -->
 			', $this->additionalCode_pre);
 		}
-		// Additional top JavaScript
-		if (count($this->additionalJS_pre)) {
-			$out .= '
-
-
-		<!--
-			JavaScript in top of page (before form):
-		-->
-
-		<script type="text/javascript">
-			/*<![CDATA[*/
-
-			' . implode('
-
-					// NEXT:
-			', $this->additionalJS_pre) . '
-
-			/*]]>*/
-		</script>
-			';
-		}
-		// Return result:
 		return $out;
 	}
 
