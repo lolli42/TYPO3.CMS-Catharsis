@@ -256,6 +256,7 @@ class FormEngine {
 	 * Value that gets added for style="width: ...px" for textareas compared to input fields.
 	 *
 	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	protected $form_additionalTextareaStyleWidth = 23;
 
