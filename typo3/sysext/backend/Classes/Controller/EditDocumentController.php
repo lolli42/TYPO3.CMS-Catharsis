@@ -718,8 +718,6 @@ class EditDocumentController {
 			$this->tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
 			// Initialize - reads the clipboard content from the user session
 			$this->tceforms->clipObj->initializeClipboard();
-			// Setting external variables:
-			$this->tceforms->edit_showFieldHelp = $GLOBALS['BE_USER']->uc['edit_showFieldHelp'];
 			if ($this->editRegularContentFromId) {
 				$this->editRegularContentFromId();
 			}

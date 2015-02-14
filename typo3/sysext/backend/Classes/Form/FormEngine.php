@@ -183,7 +183,7 @@ class FormEngine {
 	public $disableRTE = FALSE;
 
 	/**
-	 * If FALSE, then all CSH will be disabled, regardless of settings in $this->edit_showFieldHelp
+	 * If FALSE, then all CSH will be disabled
 	 *
 	 * @var bool
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
@@ -388,6 +388,7 @@ class FormEngine {
 	 * whether it should be icons-only ('icon') or not at all (blank).
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $edit_showFieldHelp = FALSE;
 
@@ -785,7 +786,6 @@ class FormEngine {
 	public function initDefaultBEmode() {
 		$this->prependFormFieldNames = 'data';
 		$this->setNewBEDesign();
-		$this->edit_showFieldHelp = (bool)$this->getBackendUserAuthentication()->uc['edit_showFieldHelp'];
 		$this->inline->init($this);
 		$this->suggest->init($this);
 	}
@@ -868,7 +868,7 @@ class FormEngine {
 		$tabIdentStringMD5 = '';
 		if ($GLOBALS['TCA'][$table]) {
 			// Load the description content for the table.
-			if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
+			if ($this->doLoadTableDescr($table)) {
 				$languageService->loadSingleTableDescription($table);
 			}
 			// Get the current "type" value for the record.
@@ -1024,7 +1024,7 @@ class FormEngine {
 	 * @return string TCEform elements in a string.
 	 */
 	public function getListedFields($table, $row, $list) {
-		if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
+		if ($this->doLoadTableDescr($table)) {
 			$this->getLanguageService()->loadSingleTableDescription($table);
 		}
 		$out = '';
