@@ -2333,9 +2333,7 @@ class ElementBrowser {
 	 */
 	public function printCurrentUrl($str) {
 		// Output the folder or file identifier, when working with files
-		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)
-			&& ($this->act === 'file' || $this->act === 'folder')
-		) {
+		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)) {
 			try {
 				$fileObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($str);
 			} catch (Exception\FileDoesNotExistException $e) {
@@ -2514,7 +2512,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />';
 		$code .= FormEngine::getHiddenTokenField('tceAction');
 		$code .= '
