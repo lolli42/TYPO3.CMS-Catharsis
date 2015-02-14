@@ -360,7 +360,14 @@ class FormEngine {
 	 * @see overrideFieldConf()
 	 * @var array
 	 */
-	public $allowOverrideMatrix = array();
+	protected $allowOverrideMatrix = array(
+		'input' => array('size', 'max', 'readOnly'),
+		'text' => array('cols', 'rows', 'wrap', 'readOnly'),
+		'check' => array('cols', 'showIfRTE', 'readOnly'),
+		'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
+		'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
+		'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly'),
+	);
 
 	/**
 	 * Set by readPerms()  (caching)
@@ -693,15 +700,6 @@ class FormEngine {
 	 */
 	public function __construct() {
 		$this->clientInfo = GeneralUtility::clientInfo();
-		// Define whitelist that allows TCA field configuration to be overridden by TSconfig, @see overrideFieldConf():
-		$this->allowOverrideMatrix = array(
-			'input' => array('size', 'max', 'readOnly'),
-			'text' => array('cols', 'rows', 'wrap', 'readOnly'),
-			'check' => array('cols', 'showIfRTE', 'readOnly'),
-			'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
-			'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
-			'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly')
-		);
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '::') !== 0) {
 			$this->inline = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InlineElement::class);
