@@ -210,6 +210,7 @@ class FormEngine {
 	 * If set to FALSE, palettes will NEVER be rendered.
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $doPrintPalette = TRUE;
 
@@ -1059,9 +1060,6 @@ class FormEngine {
 	 * @return string HTML code.
 	 */
 	public function getPaletteFields($table, $row, $palette, $header = '', $itemList = '', $collapsedHeader = NULL) {
-		if (!$this->doPrintPalette) {
-			return '';
-		}
 		$out = '';
 		$parts = $this->loadPaletteElements($table, $row, $palette, $itemList);
 		// Put palette together if there are fields in it:
