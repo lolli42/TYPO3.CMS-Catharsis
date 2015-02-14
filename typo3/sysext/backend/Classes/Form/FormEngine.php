@@ -597,6 +597,7 @@ class FormEngine {
 	 * Color scheme buffer
 	 *
 	 * @var array
+	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $savedSchemes = array();
 
