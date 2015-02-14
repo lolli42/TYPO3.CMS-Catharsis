@@ -232,6 +232,7 @@ class FormEngine {
 
 	/**
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $enableTabMenu = FALSE;
 
@@ -890,7 +891,7 @@ class FormEngine {
 					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
 					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
 					// If TCEforms will render a tab menu in the next step, push the name to the tab stack:
-					if (strstr($itemList, '--div--') !== FALSE && $this->enableTabMenu) {
+					if (strstr($itemList, '--div--') !== FALSE) {
 						$tabIdentString = 'TCEforms:' . $table . ':' . $row['uid'];
 						$tabIdentStringMD5 = $this->getDocumentTemplate()->getDynTabMenuId($tabIdentString);
 						// Remember that were currently working on the general tab:
@@ -924,18 +925,16 @@ class FormEngine {
 								$out_array[$out_sheet][$out_pointer] .= $sField;
 							} elseif ($theField == '--div--') {
 								if ($cc > 0) {
-									if ($this->enableTabMenu) {
-										// Remove last tab entry from the dynNestedStack:
-										$out_sheet++;
-										// Remove the previous sheet from stack (if any):
-										$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . $out_sheet);
-										// Remember on which sheet we're currently working:
-										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-										$out_array[$out_sheet] = array();
-										$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-										// Register newline for Tab
-										$out_array_meta[$out_sheet]['newline'] = $additionalPalette == 'newline';
-									}
+									// Remove last tab entry from the dynNestedStack:
+									$out_sheet++;
+									// Remove the previous sheet from stack (if any):
+									$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . $out_sheet);
+									// Remember on which sheet we're currently working:
+									$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
+									$out_array[$out_sheet] = array();
+									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
+									// Register newline for Tab
+									$out_array_meta[$out_sheet]['newline'] = $additionalPalette == 'newline';
 								} else {
 									// Setting alternative title for "General" tab if "--div--" is the very first element.
 									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);

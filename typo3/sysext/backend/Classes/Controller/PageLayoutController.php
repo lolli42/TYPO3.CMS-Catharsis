@@ -799,7 +799,6 @@ class PageLayoutController {
 				$tceforms->initDefaultBEMode();
 				$tceforms->fieldOrder = $this->modTSconfig['properties']['tt_content.']['fieldOrder'];
 				$tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-				$tceforms->enableTabMenu = TRUE;
 				// Clipboard is initialized:
 				// Start clipboard
 				$tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
