@@ -402,6 +402,7 @@ class FormEngine {
 	 * Loaded with info about the browser when class is instantiated
 	 *
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $clientInfo = array();
 
@@ -700,7 +701,6 @@ class FormEngine {
 	 *
 	 */
 	public function __construct() {
-		$this->clientInfo = GeneralUtility::clientInfo();
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '::') !== 0) {
 			$this->inline = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InlineElement::class);
@@ -4191,7 +4191,8 @@ class FormEngine {
 			$pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
 
 			// support placeholders for IE9 and lower
-			if ($this->clientInfo['BROWSER'] == 'msie' && $this->clientInfo['VERSION'] <= 9) {
+			$clientInfo = GeneralUtility::clientInfo();
+			if ($clientInfo['BROWSER'] == 'msie' && $clientInfo['VERSION'] <= 9) {
 				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
 			}
 
