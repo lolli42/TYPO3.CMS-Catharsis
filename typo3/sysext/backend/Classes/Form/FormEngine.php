@@ -54,11 +54,13 @@ class FormEngine {
 
 	/**
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $isPalettedoc = FALSE;
 
 	/**
 	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $paletteMargin = 1;
 
@@ -75,6 +77,7 @@ class FormEngine {
 
 	/**
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $cachedTSconfig_fieldLevel = array();
 
@@ -90,6 +93,7 @@ class FormEngine {
 
 	/**
 	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $transformedRow = array();
 
@@ -1004,7 +1008,6 @@ class FormEngine {
 		if ($out_sheet === 0) {
 			$output = '<div class="tab-content">' . $output . '</div>';
 		}
-		$output = $output;
 
 		return $output;
 	}
@@ -4230,7 +4233,7 @@ class FormEngine {
 			TBE_EDITOR.prependFormFieldNames = "' . $this->prependFormFieldNames . '";
 			TBE_EDITOR.prependFormFieldNamesUENC = "' . rawurlencode($this->prependFormFieldNames) . '";
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
-			TBE_EDITOR.isPalettedoc = ' . ($this->isPalettedoc ? addslashes($this->isPalettedoc) : 'null') . ';
+			TBE_EDITOR.isPalettedoc = null;
 			TBE_EDITOR.doSaveFieldName = "' . ($this->doSaveFieldName ? addslashes($this->doSaveFieldName) : '') . '";
 			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
 			TBE_EDITOR.labels.fieldsMissing = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
