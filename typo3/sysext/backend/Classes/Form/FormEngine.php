@@ -42,44 +42,14 @@ use TYPO3\CMS\Lang\LanguageService;
 class FormEngine {
 
 	/**
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $palFieldArr = array();
-
-	/**
 	 * @var bool
 	 */
 	public $disableWizards = FALSE;
 
 	/**
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $isPalettedoc = FALSE;
-
-	/**
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $paletteMargin = 1;
-
-	/**
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defStyle = '';
-
-	/**
 	 * @var array
 	 */
 	public $cachedTSconfig = array();
-
-	/**
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $cachedTSconfig_fieldLevel = array();
 
 	/**
 	 * @var array
@@ -90,12 +60,6 @@ class FormEngine {
 	 * @var array|NULL
 	 */
 	public $cachedAdditionalPreviewLanguages = NULL;
-
-	/**
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $transformedRow = array();
 
 	/**
 	 * @var string
@@ -142,15 +106,6 @@ class FormEngine {
 	public $additionalPreviewLanguageData = array();
 
 	/**
-	 * Set this to the 'backPath' pointing back to the typo3 admin directory
-	 * from the script where this form is displayed.
-	 *
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $backPath = '';
-
-	/**
 	 * Alternative return URL path (default is \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript())
 	 *
 	 * @var string
@@ -175,22 +130,6 @@ class FormEngine {
 	public $palettesCollapsed = FALSE;
 
 	/**
-	 * If set, the RTE is disabled (from form display, eg. by checkbox in the bottom of the page!)
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $disableRTE = FALSE;
-
-	/**
-	 * If FALSE, then all CSH will be disabled
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $globalShowHelp = TRUE;
-
-	/**
 	 * If this evaluates to TRUE, the forms are rendering only localization relevant fields of the records.
 	 *
 	 * @var string
@@ -207,14 +146,6 @@ class FormEngine {
 	public $fieldOrder = '';
 
 	/**
-	 * If set to FALSE, palettes will NEVER be rendered.
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $doPrintPalette = TRUE;
-
-	/**
 	 * Set to initialized clipboard object;
 	 * Then the element browser will offer a link to paste in records from clipboard.
 	 *
@@ -223,99 +154,11 @@ class FormEngine {
 	public $clipObj = NULL;
 
 	/**
-	 * Enable click menu on reference icons.
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $enableClickMenu = FALSE;
-
-	/**
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $enableTabMenu = FALSE;
-
-	/**
 	 * When enabled all elements are rendered non-editable
 	 *
 	 * @var bool
 	 */
 	protected $renderReadonly = FALSE;
-
-	/**
-	 * Form field width compensation: Factor of "size=12" to "style="width: 12*12px"
-	 * for form field widths of style-aware browsers
-	 *
-	 * @var float
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $form_rowsToStylewidth = 12;
-
-	/**
-	 * Value that gets added for style="width: ...px" for textareas compared to input fields.
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	protected $form_additionalTextareaStyleWidth = 23;
-
-	/**
-	 * Form field width compensation: Compensation for large documents, doc-tab (editing)
-	 *
-	 * @var float
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $form_largeComp = 1.33;
-
-	/**
-	 * The number of chars expected per row when the height of a text area field is
-	 * automatically calculated based on the number of characters found in the field content.
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $charsPerRow = 40;
-
-	/**
-	 * The maximum abstract value for textareas
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $maxTextareaWidth = 48;
-
-	/**
-	 * The default abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defaultInputWidth = 30;
-
-	/**
-	 * The minimum abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $minimumInputWidth = 10;
-
-	/**
-	 * The maximum abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $maxInputWidth = 50;
-
-	/**
-	 * Default style for the selector boxes used for multiple items in "select" and "group" types.
-	 *
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defaultMultipleSelectorStyle = '';
 
 	// INTERNAL, static
 	/**
@@ -347,14 +190,6 @@ class FormEngine {
 	protected $prependFormFieldNamesActive = 'control[active]';
 
 	/**
-	 * The name attribute of the form
-	 *
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $formName = 'editform';
-
-	/**
 	 * Whitelist that allows TCA field configuration to be overridden by TSconfig
 	 *
 	 * @see overrideFieldConf()
@@ -384,107 +219,11 @@ class FormEngine {
 	public $perms_clause_set = FALSE;
 
 	/**
-	 * Used to indicate the mode of CSH (Context Sensitive Help),
-	 * whether it should be icons-only ('icon') or not at all (blank).
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $edit_showFieldHelp = FALSE;
-
-	/**
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $edit_docModuleUpload = FALSE;
-
-	/**
-	 * Loaded with info about the browser when class is instantiated
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $clientInfo = array();
-
-	/**
-	 * TRUE, if RTE is possible for the current user (based on result from BE_USER->isRTE())
-	 *
-	 * @var bool
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $RTEenabled = FALSE;
-
-	/**
-	 * If $this->RTEenabled was FALSE, you can find the reasons listed in this array
-	 * which is filled with reasons why the RTE could not be loaded)
-	 *
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $RTEenabled_notReasons = '';
-
-	/**
 	 * Counter that is incremented before an RTE is created. Can be used for unique ids etc.
 	 *
 	 * @var int
 	 */
 	public $RTEcounter = 0;
-
-	/**
-	 * Contains current color scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $colorScheme = array();
-
-	/**
-	 * Contains current class scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $classScheme = array();
-
-	/**
-	 * Contains the default color scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defColorScheme = array();
-
-	/**
-	 * Contains the default class scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defClassScheme = array();
-
-	/**
-	 * Contains field style values
-	 *
-	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $fieldStyle = NULL;
-
-	/**
-	 * Contains border style values
-	 *
-	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $borderStyle = NULL;
-
-	/**
-	 * An accumulation of messages from the class
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $commentMessages = array();
 
 	/**
 	 * Total wrapping for the table rows
@@ -1372,22 +1111,6 @@ class FormEngine {
 	 * Rendering of each TCEform field type
 	 *
 	 ************************************************************/
-	/**
-	 * Generation of TCEform elements of the type "input"
-	 * This will render a single-line input form field, possibly with various control/validation features
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\InputElement
-	 */
-	public function getSingleField_typeInput($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InputElement::class, $this)
-			->render($table, $field, $row, $PA);
-	}
 
 	/**
 	 * Renders a view widget to handle and activate NULL values.
@@ -1448,348 +1171,6 @@ class FormEngine {
 		return $result;
 	}
 
-	/**
-	 * Generation of TCEform elements of the type "text"
-	 * This will render a <textarea> OR RTE area form field, possibly with various control/validation features
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\TextElement
-	 */
-	public function getSingleField_typeText($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "check"
-	 * This will render a check-box OR an array of checkboxes
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\CheckboxElement
-	 */
-	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "radio"
-	 * This will render a series of radio buttons.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\RadioElement
-	 */
-	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "select"
-	 * This will render a selector box element, or possibly a special construction with two selector boxes.
-	 * That depends on configuration.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\SelectElement
-	 */
-	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "group"
-	 * This will render a selectorbox into which elements from either the file system or database can be inserted. Relations.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\GroupElement
-	 */
-	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "none"
-	 * This will render a non-editable display of the content of the field.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
-	 */
-	public function getSingleField_typeNone($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * HTML rendering of a value which is not editable.
-	 *
-	 * @param array $config Configuration for the display
-	 * @param string $itemValue The value to display
-	 * @return string The HTML code for the display
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
-	 */
-	public function getSingleField_typeNone_render($config, $itemValue) {
-		GeneralUtility::logDeprecatedFunction();
-		$noneElement = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this);
-		$elementConfiguration = array(
-			'fieldConf' => array(
-				'config' => $config,
-			),
-			'itemFormElValue' => $itemValue,
-		);
-		return $noneElement->render('', '', '', $elementConfiguration);
-	}
-
-	/**
-	 * Handler for Flex Forms
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\FlexElement
-	 */
-	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Creates the language menu for FlexForms:
-	 *
-	 * @param array $languages
-	 * @param string $elName
-	 * @param array $selectedLanguage
-	 * @param bool $multi
-	 * @return string HTML for menu
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSingleField_typeFlex_langMenu($languages, $elName, $selectedLanguage, $multi = TRUE) {
-		GeneralUtility::logDeprecatedFunction();
-		$opt = array();
-		foreach ($languages as $lArr) {
-			$opt[] = '<option value="' . htmlspecialchars($lArr['ISOcode']) . '"'
-				. (in_array($lArr['ISOcode'], $selectedLanguage) ? ' selected="selected"' : '') . '>'
-				. htmlspecialchars($lArr['title']) . '</option>';
-		}
-		$output = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE))
-			. ' class="tceforms-select tceforms-multiselect tceforms-flexlangmenu" name="' . $elName . '[]"'
-			. ($multi ? ' multiple="multiple" size="' . count($languages) . '"' : '') . '>' . implode('', $opt)
-			. '</select>';
-		return $output;
-	}
-
-	/**
-	 * Creates the menu for selection of the sheets:
-	 *
-	 * @param array $sArr Sheet array for which to render the menu
-	 * @param string $elName Form element name of the field containing the sheet pointer
-	 * @param string $sheetKey Current sheet key
-	 * @return string HTML for menu
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSingleField_typeFlex_sheetMenu($sArr, $elName, $sheetKey) {
-		GeneralUtility::logDeprecatedFunction();
-		$tCells = array();
-		$pct = round(100 / count($sArr));
-		foreach ($sArr as $sKey => $sheetCfg) {
-			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
-				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
-					. 'document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
-			} else {
-				$onClick = 'if(TBE_EDITOR.checkSubmit(-1)){ document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm();}';
-			}
-			$tCells[] = '<td width="' . $pct . '%" style="'
-				. ($sKey == $sheetKey ? 'background-color: #9999cc; font-weight: bold;' : 'background-color: #aaaaaa;')
-				. ' cursor: hand;" onclick="' . htmlspecialchars($onClick) . '" align="center">'
-				. ($sheetCfg['ROOT']['TCEforms']['sheetTitle'] ? $this->getLanguageService()->sL($sheetCfg['ROOT']['TCEforms']['sheetTitle']) : $sKey)
-				. '</td>';
-		}
-		return '<table border="0" cellpadding="0" cellspacing="2" class="typo3-TCEforms-flexForm-sheetMenu"><tr>' . implode('', $tCells) . '</tr></table>';
-	}
-
-	/**
-	 * Handler for unknown types.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UnknownElement
-	 */
-	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * User defined field type
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UserElement
-	 */
-	public function getSingleField_typeUser($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
-	}
-
-	/************************************************************
-	 *
-	 * Field content processing
-	 *
-	 ************************************************************/
-	/**
-	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user
-	 * This is primarily for the field type none but can be used for user field types for example
-	 *
-	 * @param array $config Configuration for the display
-	 * @param string $itemValue The value to display
-	 * @return string Formatted Field content
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. This is now encapsulated within NoneElement
-	 */
-	public function formatValue($config, $itemValue) {
-		GeneralUtility::logDeprecatedFunction();
-		$format = trim($config['format']);
-		switch ($format) {
-			case 'date':
-				if ($itemValue) {
-					$option = trim($config['format.']['option']);
-					if ($option) {
-						if ($config['format.']['strftime']) {
-							$value = strftime($option, $itemValue);
-						} else {
-							$value = date($option, $itemValue);
-						}
-					} else {
-						$value = date('d-m-Y', $itemValue);
-					}
-				} else {
-					$value = '';
-				}
-				if ($config['format.']['appendAge']) {
-					$age = BackendUtility::calcAge(
-						$GLOBALS['EXEC_TIME'] - $itemValue,
-						$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
-					);
-					$value .= ' (' . $age . ')';
-				}
-				$itemValue = $value;
-				break;
-			case 'datetime':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i d-m-Y', (int)$itemValue);
-				}
-				break;
-			case 'time':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i', (int)$itemValue);
-				}
-				break;
-			case 'timesec':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i:s', (int)$itemValue);
-				}
-				break;
-			case 'year':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('Y', (int)$itemValue);
-				}
-				break;
-			case 'int':
-				$baseArr = array('dec' => 'd', 'hex' => 'x', 'HEX' => 'X', 'oct' => 'o', 'bin' => 'b');
-				$base = trim($config['format.']['base']);
-				$format = $baseArr[$base] ?: 'd';
-				$itemValue = sprintf('%' . $format, $itemValue);
-				break;
-			case 'float':
-				$precision = MathUtility::forceIntegerInRange($config['format.']['precision'], 1, 10, 2);
-				$itemValue = sprintf('%.' . $precision . 'f', $itemValue);
-				break;
-			case 'number':
-				$format = trim($config['format.']['option']);
-				$itemValue = sprintf('%' . $format, $itemValue);
-				break;
-			case 'md5':
-				$itemValue = md5($itemValue);
-				break;
-			case 'filesize':
-				// We need to cast to int here, otherwise empty values result in empty output,
-				// but we expect zero.
-				$value = GeneralUtility::formatSize((int)$itemValue);
-				if ($config['format.']['appendByteSize']) {
-					$value .= ' (' . $itemValue . ')';
-				}
-				$itemValue = $value;
-				break;
-			case 'user':
-				$func = trim($config['format.']['userFunc']);
-				if ($func) {
-					$params = array(
-						'value' => $itemValue,
-						'args' => $config['format.']['userFunc'],
-						'config' => $config,
-						'pObj' => &$this
-					);
-					$itemValue = GeneralUtility::callUserFunction($func, $params, $this);
-				}
-				break;
-			default:
-				// Do nothing e.g. when $format === ''
-		}
-		return $itemValue;
-	}
 
 	/************************************************************
 	 *
@@ -2035,47 +1416,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Returns the "special" configuration (from the "types" "showitem" list) for a fieldname based on input table/record
-	 * (Not used anywhere...?)
-	 *
-	 * @param string $table The table name
-	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
-	 * @param string $field Specify the field name.
-	 * @return array|NULL
-	 * @see getSpecConfFromString(), BackendUtility::getTCAtypes()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSpecConfForField($table, $row, $field) {
-		GeneralUtility::logDeprecatedFunction();
-		// Finds the current "types" configuration for the table/row:
-		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row);
-		// If this is an array, then traverse it:
-		if (is_array($types_fieldConfig)) {
-			foreach ($types_fieldConfig as $vconf) {
-				// If the input field name matches one found in the 'types' list, then return the 'special' configuration.
-				if ($vconf['field'] == $field) {
-					return $vconf['spec'];
-				}
-			}
-		}
-		return NULL;
-	}
-
-	/**
-	 * Returns the "special" configuration of an "extra" string (non-parsed)
-	 *
-	 * @param string $extraString The "Part 4" of the fields configuration in "types" "showitem" lists.
-	 * @param string $defaultExtras The ['defaultExtras'] value from field configuration
-	 * @return array An array with the special options in.
-	 * @see getSpecConfForField(), BackendUtility::getSpecConfParts()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSpecConfFromString($extraString, $defaultExtras) {
-		GeneralUtility::logDeprecatedFunction();
-		return BackendUtility::getSpecConfParts($extraString, $defaultExtras);
-	}
-
-	/**
 	 * Loads the elements of a palette (collection of secondary options) in an array.
 	 *
 	 * @param string $table The table name
@@ -2255,31 +1595,6 @@ class FormEngine {
 					</div>';
 				}
 			}
-		}
-		return $item;
-	}
-
-	/**
-	 * Renders the diff-view of vDEF fields in flexforms
-	 *
-	 * @param array $vArray Record array of the record being edited
-	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function renderVDEFDiff($vArray, $vDEFkey) {
-		GeneralUtility::logDeprecatedFunction();
-		$item = NULL;
-		if (
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
-			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
-		) {
-			// Create diff-result:
-			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
-			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
-			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
-				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
 		}
 		return $item;
 	}
@@ -2944,32 +2259,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Get icon (for example for selector boxes)
-	 *
-	 * @param string $icon Icon reference
-	 * @return array Array with two values; the icon file reference, the icon file information array (getimagesize())
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getIcon($icon) {
-		GeneralUtility::logDeprecatedFunction();
-		return FormEngineUtility::getIcon($icon);
-	}
-
-	/**
-	 * Renders the $icon, supports a filename for skinImg or sprite-icon-name
-	 *
-	 * @param string $icon The icon passed, could be a file-reference or a sprite Icon name
-	 * @param string $alt Alt attribute of the icon returned
-	 * @param string $title Title attribute of the icon return
-	 * @return string A tag representing to show the asked icon
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getIconHtml($icon, $alt = '', $title = '') {
-		GeneralUtility::logDeprecatedFunction();
-		return FormEngineUtility::getIconHtml($icon, $alt, $title);
-	}
-
-	/**
 	 * Creates style attribute content for option tags in a selector box, primarily setting
 	 * it up to show the icon of an element as background image (works in mozilla)
 	 *
@@ -3068,55 +2357,6 @@ class FormEngine {
 
 
 	/**
-	 * Wraps a string with a link to the palette.
-	 *
-	 * @param string $header The string to wrap in an A-tag
-	 * @param string $table The table name for which to open the palette.
-	 * @param array $row The palette pointer.
-	 * @param int $palette The record array
-	 * @param mixed $retFunc Not used
-	 * @return array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function wrapOpenPalette($header, $table, $row, $palette, $retFunc) {
-		GeneralUtility::logDeprecatedFunction();
-		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
-		$res = '<a href="#" onclick="TBE_EDITOR.toggle_display_states(\'' . $id . '\',\'block\',\'none\'); return false;" >' . $header . '</a>';
-		return array($res, '');
-	}
-
-	/**
-	 * Add the id and the style property to the field palette
-	 *
-	 * @param string $code Palette Code
-	 * @param string $table The table name for which to open the palette.
-	 * @param string $row Palette ID
-	 * @param string $palette The record array
-	 * @param bool $collapsed TRUE if collapsed
-	 * @return bool Is collapsed
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function wrapPaletteField($code, $table, $row, $palette, $collapsed) {
-		GeneralUtility::logDeprecatedFunction();
-		$display = $collapsed ? 'none' : 'block';
-		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
-		$code = '<div id="' . $id . '" style="display:' . $display . ';" >' . $code . '</div>';
-		return $code;
-	}
-
-	/**
-	 * Returns element reference for form element name
-	 *
-	 * @param string $itemName Form element name
-	 * @return string Form element reference (JS)
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function elName($itemName) {
-		GeneralUtility::logDeprecatedFunction();
-		return 'document.editform[\'' . $itemName . '\']';
-	}
-
-	/**
 	 * Returns the "returnUrl" of the form. Can be set externally or will be taken from "GeneralUtility::linkThisScript()"
 	 *
 	 * @return string Return URL of current script
@@ -3143,121 +2383,6 @@ class FormEngine {
 			$item = '<input type="hidden" name="' . $itemName . '" value="' . htmlspecialchars($itemValue) . '" />';
 		}
 		return $item;
-	}
-
-	/**
-	 * Returns the max-width in pixels for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @return int max-width in pixels
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formMaxWidth($size = 48) {
-		GeneralUtility::logDeprecatedFunction();
-		$size = round($size * $this->form_largeComp);
-		$width = ceil($size * $this->form_rowsToStylewidth);
-		return $width;
-	}
-
-	/**
-	 * Returns parameters to set the width for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @param bool $textarea If this is for a text area.
-	 * @return string Either a "style" attribute string or "cols"/"size" attribute string.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formWidth($size = 48, $textarea = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		$fieldWidthAndStyle = $this->formWidthAsArray($size, $textarea);
-		// Setting width by style-attribute. 'cols' MUST be avoided with NN6+
-		$widthAndStyleAttributes = ' style="' . htmlspecialchars($fieldWidthAndStyle['style']) . '"';
-		if ($fieldWidthAndStyle['class']) {
-			$widthAndStyleAttributes .= ' class="' . htmlspecialchars($fieldWidthAndStyle['class']) . '"';
-		}
-		return $widthAndStyleAttributes;
-	}
-
-	/**
-	 * Returns parameters to set the width for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @param bool $textarea If set, calculates sizes for a text area.
-	 * @return array An array containing style, class, and width attributes.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formWidthAsArray($size = 48, $textarea = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		$fieldWidthAndStyle = array('style' => '', 'class' => '', 'width' => '');
-		$widthInPixels = $this->formMaxWidth($size);
-		$fieldWidthAndStyle['style'] = 'width: ' . $widthInPixels . 'px; ';
-		$fieldWidthAndStyle['class'] = 'formfield-' . ($textarea ? 'text' : 'input');
-		return $fieldWidthAndStyle;
-	}
-
-	/**
-	 * Get style CSS values for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @return string CSS attributes
-	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElStyle($type) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->formElStyleClassValue($type);
-	}
-
-	/**
-	 * Get class attribute value for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @return string CSS attributes
-	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElClass($type) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->formElStyleClassValue($type, TRUE);
-	}
-
-	/**
-	 * Get style CSS values for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @param bool $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
-	 * @return string CSS attributes
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElStyleClassValue($type, $class = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		// Get value according to field:
-		if (isset($this->fieldStyle[$type])) {
-			$style = trim($this->fieldStyle[$type]);
-		} else {
-			$style = trim($this->fieldStyle['all']);
-		}
-		// Check class prefixed:
-		if (substr($style, 0, 6) == 'CLASS:') {
-			$out = $class ? trim(substr($style, 6)) : '';
-		} else {
-			$out = !$class ? $style : '';
-		}
-		return $out;
-	}
-
-	/**
-	 * Return default "style" / "class" attribute line.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @param string $additionalClass Additional class(es) to be added
-	 * @return string CSS attributes
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function insertDefStyle($type, $additionalClass = '') {
-		GeneralUtility::logDeprecatedFunction();
-		$cssClasses = trim('t3-formengine-field-' . $type . ' ' . $additionalClass);
-		return 'class="' . htmlspecialchars($cssClasses) . '"';
 	}
 
 	/**
@@ -3294,86 +2419,6 @@ class FormEngine {
 	 * Item-array manipulation functions (check/select/radio)
 	 *
 	 ************************************************************/
-	/**
-	 * Initialize item array (for checkbox, selectorbox, radio buttons)
-	 * Will resolve the label value.
-	 *
-	 * @param array $fieldValue The "columns" array for the field (from TCA)
-	 * @return array An array of arrays with three elements; label, value, icon
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function initItemArray($fieldValue) {
-		GeneralUtility::logDeprecatedFunction();
-		return FormEngineUtility::initItemArray($fieldValue);
-	}
-
-	/**
-	 * Merges items into an item-array, optionally with an icon
-	 * example:
-	 * TCEFORM.pages.doktype.addItems.13 = My Label
-	 * TCEFORM.pages.doktype.addItems.13.icon = EXT:t3skin/icons/gfx/i/pages.gif
-	 *
-	 * @param array $items The existing item array
-	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
-	 * @return array The updated $item array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function addItems($items, $iArray) {
-		GeneralUtility::logDeprecatedFunction();
-		return FormEngineUtility::addItems($items, $iArray);
-	}
-
-	/**
-	 * Perform user processing of the items arrays of checkboxes, selectorboxes and radio buttons.
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $iArray The "itemsProcFunc." from fieldTSconfig of the field.
-	 * @param array $config The config array for the field.
-	 * @param string $table Table name
-	 * @param array $row Record row
-	 * @param string $field Field name
-	 * @return array The modified $items array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function procItems($items, $iArray, $config, $table, $row, $field) {
-		GeneralUtility::logDeprecatedFunction();
-		$languageService = $this->getLanguageService();
-		$params = array();
-		$params['items'] = &$items;
-		$params['config'] = $config;
-		$params['TSconfig'] = $iArray;
-		$params['table'] = $table;
-		$params['row'] = $row;
-		$params['field'] = $field;
-		// The itemsProcFunc method may throw an exception.
-		// If it does display an error message and return items unchanged.
-		try {
-			GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
-		} catch (\Exception $exception) {
-			$fieldLabel = $field;
-			if (isset($GLOBALS['TCA'][$table]['columns'][$field]['label'])) {
-				$fieldLabel = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
-			}
-			$message = sprintf(
-				$languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
-				$fieldLabel,
-				$exception->getMessage()
-			);
-			/** @var $flashMessage FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance(
-				FlashMessage::class,
-				htmlspecialchars($message),
-				'',
-				FlashMessage::ERROR,
-				TRUE
-			);
-			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-			$defaultFlashMessageQueue->enqueue($flashMessage);
-		}
-		return $items;
-	}
 
 	/**
 	 * Add selector box items of more exotic kinds.
@@ -3719,23 +2764,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Overwrite this function in own extended class to add own markers for output
-	 *
-	 * @param array $marker Array with key/value pairs to insert in the template.
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return array Marker array for template output
-	 * @see function intoTemplate()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function addUserTemplateMarkers($marker, $table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $marker;
-	}
-
-	/**
 	 * Wraps all the table rows into a single table.
 	 * Used externally from scripts like alt_doc.php and db_layout.php (which uses TCEforms...)
 	 *
@@ -3845,69 +2873,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Wraps an element in the $out_array with the template row for a "section" ($this->sectionWrap)
-	 *
-	 * @param array $out_array The array with form elements stored in (passed by reference and changed!)
-	 * @param int $out_pointer The pointer to the entry in the $out_array  (passed by reference and incremented!)
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use anymore
-	 */
-	public function wrapBorder(&$out_array, &$out_pointer) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($this->sectionWrap && $out_array[$out_pointer]) {
-			$tableAttribs = 'border="0" cellspacing="0" cellpadding="0" width="100%" class="table table-border"';
-			$out_array[$out_pointer] = str_replace('###CONTENT###', $out_array[$out_pointer], str_replace('###TABLE_ATTRIBS###', $tableAttribs, $this->sectionWrap));
-			$out_pointer++;
-		}
-	}
-
-	/**
-	 * Replaces colorscheme markers in the template string
-	 *
-	 * @param string $inTemplate Template string with markers to be substituted.
-	 * @return string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function rplColorScheme($inTemplate) {
-		GeneralUtility::logDeprecatedFunction();
-		return str_replace(
-			array(
-				// Colors:
-				'###BGCOLOR###',
-				'###BGCOLOR_HEAD###',
-				'###FONTCOLOR_HEAD###',
-				// Classes:
-				'###CLASSATTR_1###',
-				'###CLASSATTR_2###',
-				'###CLASSATTR_4###'
-			),
-			array(
-				// Colors:
-				$this->colorScheme[0] ? ' bgcolor="' . $this->colorScheme[0] . '"' : '',
-				$this->colorScheme[1] ? ' bgcolor="' . $this->colorScheme[1] . '"' : '',
-				$this->colorScheme[3],
-				// Classes:
-				$this->classScheme[0] ? ' class="' . $this->classScheme[0] . '"' : '',
-				$this->classScheme[1] ? ' class="' . $this->classScheme[1] . '"' : '',
-				$this->classScheme[3] ? ' class="' . $this->classScheme[3] . '"' : ''
-			),
-			$inTemplate
-		);
-	}
-
-	/**
-	 * Returns divider.
-	 * Currently not implemented and returns only blank value.
-	 *
-	 * @return string Empty string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getDivider() {
-		GeneralUtility::logDeprecatedFunction();
-		return '';
-	}
-
-	/**
 	 * Creates HTML output for a palette
 	 *
 	 * @param array $palArr The palette array to print
@@ -4005,79 +2970,6 @@ class FormEngine {
 			}
 		}
 		return $out;
-	}
-
-	/**
-	 * Setting the current color scheme ($this->colorScheme) based on $this->defColorScheme plus input string.
-	 *
-	 * @param string $scheme A color scheme string.
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function setColorScheme($scheme) {
-		GeneralUtility::logDeprecatedFunction();
-		$this->colorScheme = $this->defColorScheme;
-		$this->classScheme = $this->defClassScheme;
-		$parts = GeneralUtility::trimExplode(',', $scheme);
-		foreach ($parts as $key => $col) {
-			// Split for color|class:
-			list($color, $class) = GeneralUtility::trimExplode('|', $col);
-			// Handle color values:
-			if ($color) {
-				$this->colorScheme[$key] = $color;
-			}
-			if ($color == '-') {
-				$this->colorScheme[$key] = '';
-			}
-			// Handle class values:
-			if ($class) {
-				$this->classScheme[$key] = $class;
-			}
-			if ($class == '-') {
-				$this->classScheme[$key] = '';
-			}
-		}
-	}
-
-	/**
-	 * Reset color schemes.
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function resetSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->setColorScheme($GLOBALS['TBE_STYLES']['colorschemes'][0]);
-		$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][0];
-		$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][0];
-	}
-
-	/**
-	 * Store current color scheme
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function storeSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->savedSchemes['classScheme'] = $this->classScheme;
-		$this->savedSchemes['colorScheme'] = $this->colorScheme;
-		$this->savedSchemes['fieldStyle'] = $this->fieldStyle;
-		$this->savedSchemes['borderStyle'] = $this->borderStyle;
-	}
-
-	/**
-	 * Restore the saved color scheme
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function restoreSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->classScheme = $this->savedSchemes['classScheme'];
-		$this->colorScheme = $this->savedSchemes['colorScheme'];
-		$this->fieldStyle = $this->savedSchemes['fieldStyle'];
-		$this->borderStyle = $this->savedSchemes['borderStyle'];
 	}
 
 	/********************************************
@@ -4315,42 +3207,6 @@ class FormEngine {
 	 * Various helper functions
 	 *
 	 ********************************************/
-	/**
-	 * Gets default record. Maybe not used anymore. FE-editor?
-	 *
-	 * @param string $table Database Tablename
-	 * @param int $pid PID value (positive / negative)
-	 * @return array|NULL "default" row.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getDefaultRecord($table, $pid = 0) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($GLOBALS['TCA'][$table]) {
-			$row = array();
-			if ($pid < 0 && $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']) {
-				// Fetches the previous record:
-				$db = $this->getDatabaseConnection();
-				$res = $db->exec_SELECTquery('*', $table, 'uid=' . abs($pid) . BackendUtility::deleteClause($table));
-				if ($drow = $db->sql_fetch_assoc($res)) {
-					// Gets the list of fields to copy from the previous record.
-					$fArr = explode(',', $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']);
-					foreach ($fArr as $theF) {
-						if ($GLOBALS['TCA'][$table]['columns'][$theF]) {
-							$row[$theF] = $drow[$theF];
-						}
-					}
-				}
-				$db->sql_free_result($res);
-			}
-			foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $info) {
-				if (isset($info['config']['default'])) {
-					$row[$field] = $info['config']['default'];
-				}
-			}
-			return $row;
-		}
-		return NULL;
-	}
 
 	/**
 	 * Returns TRUE if the given $row is new (i.e. has not been saved to the database)
@@ -4395,42 +3251,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Fetches language label for key
-	 *
-	 * @param string $str Language label reference, eg. 'LLL:EXT:lang/locallang_core.xlf:labels.blablabla'
-	 * @return string The value of the label, fetched for the current backend language.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function sL($str) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getLanguageService()->sL($str);
-	}
-
-	/**
-	 * Returns language label from locallang_core.xlf
-	 * Labels must be prefixed with either "l_" or "m_".
-	 * The prefix "l_" maps to the prefix "labels." inside locallang_core.xlf
-	 * The prefix "m_" maps to the prefix "mess." inside locallang_core.xlf
-	 *
-	 * @param string $str The label key
-	 * @return string The value of the label, fetched for the current backend language.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getLL($str) {
-		GeneralUtility::logDeprecatedFunction();
-		$content = '';
-		switch (substr($str, 0, 2)) {
-			case 'l_':
-				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . substr($str, 2));
-				break;
-			case 'm_':
-				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.' . substr($str, 2));
-				break;
-		}
-		return $content;
-	}
-
-	/**
 	 * Returns TRUE, if the palette, $palette, is collapsed (not shown, but found in top-frame) for the table.
 	 *
 	 * @param string $table The table name
@@ -4451,22 +3271,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Return TSCpid (cached)
-	 * Using BackendUtility::getTSCpid()
-	 *
-	 * @param string $table Tablename
-	 * @param string $uid UID value
-	 * @param string $pid PID value
-	 * @return array Array of two integers; first is the real PID of a record, second is the PID value for TSconfig.
-	 * @see BackendUtility::getTSCpid()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getTSCpid($table, $uid, $pid) {
-		GeneralUtility::logDeprecatedFunction();
-		return BackendUtility::getTSCpidCached($table, $uid, $pid);
-	}
-
-	/**
 	 * Returns TRUE if descriptions should be loaded always
 	 *
 	 * @param string $table Table for which to check
@@ -4474,48 +3278,6 @@ class FormEngine {
 	 */
 	public function doLoadTableDescr($table) {
 		return $GLOBALS['TCA'][$table]['interface']['always_description'];
-	}
-
-	/**
-	 * Returns an array of available languages (to use for FlexForms)
-	 *
-	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
-	 * @param bool $setDefault If set, an array entry for a default language is set.
-	 * @return array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
-		GeneralUtility::logDeprecatedFunction();
-		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
-		// Find all language records in the system:
-		$db = $this->getDatabaseConnection();
-		$res = $db->exec_SELECTquery('language_isocode,static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
-		// Traverse them:
-		$output = array();
-		if ($setDefault) {
-			$output[0] = array(
-				'uid' => 0,
-				'title' => 'Default language',
-				'ISOcode' => 'DEF'
-			);
-		}
-		while ($row = $db->sql_fetch_assoc($res)) {
-			$output[$row['uid']] = $row;
-			if (!empty($row['language_isocode'])) {
-				$output[$row['uid']]['ISOcode'] = $row['language_isocode'];
-			} elseif ($isL && $row['static_lang_isocode']) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
-				$rr = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
-				if ($rr['lg_iso_2']) {
-					$output[$row['uid']]['ISOcode'] = $rr['lg_iso_2'];
-				}
-			}
-			if ($onlyIsoCoded && !$output[$row['uid']]['ISOcode']) {
-				unset($output[$row['uid']]);
-			}
-		}
-		$db->sql_free_result($res);
-		return $output;
 	}
 
 	/**
@@ -4824,6 +3586,1250 @@ class FormEngine {
 	 */
 	protected function getDocumentTemplate() {
 		return $GLOBALS['TBE_TEMPLATE'];
+	}
+
+
+
+
+
+
+
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $palFieldArr = array();
+
+	/**
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $isPalettedoc = FALSE;
+
+	/**
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $paletteMargin = 1;
+
+	/**
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defStyle = '';
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $cachedTSconfig_fieldLevel = array();
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $transformedRow = array();
+
+	/**
+	 * Set this to the 'backPath' pointing back to the typo3 admin directory
+	 * from the script where this form is displayed.
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $backPath = '';
+
+	/**
+	 * If set, the RTE is disabled (from form display, eg. by checkbox in the bottom of the page!)
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $disableRTE = FALSE;
+
+	/**
+	 * If FALSE, then all CSH will be disabled
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $globalShowHelp = TRUE;
+
+	/**
+	 * If set to FALSE, palettes will NEVER be rendered.
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $doPrintPalette = TRUE;
+
+	/**
+	 * Enable click menu on reference icons.
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $enableClickMenu = FALSE;
+
+	/**
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $enableTabMenu = FALSE;
+
+	/**
+	 * Form field width compensation: Factor of "size=12" to "style="width: 12*12px"
+	 * for form field widths of style-aware browsers
+	 *
+	 * @var float
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $form_rowsToStylewidth = 12;
+
+	/**
+	 * Value that gets added for style="width: ...px" for textareas compared to input fields.
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	protected $form_additionalTextareaStyleWidth = 23;
+
+	/**
+	 * Form field width compensation: Compensation for large documents, doc-tab (editing)
+	 *
+	 * @var float
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $form_largeComp = 1.33;
+
+	/**
+	 * The number of chars expected per row when the height of a text area field is
+	 * automatically calculated based on the number of characters found in the field content.
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $charsPerRow = 40;
+
+	/**
+	 * The maximum abstract value for textareas
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $maxTextareaWidth = 48;
+
+	/**
+	 * The default abstract value for input and textarea elements
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defaultInputWidth = 30;
+
+	/**
+	 * The minimum abstract value for input and textarea elements
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $minimumInputWidth = 10;
+
+	/**
+	 * The maximum abstract value for input and textarea elements
+	 *
+	 * @var int
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $maxInputWidth = 50;
+
+	/**
+	 * Default style for the selector boxes used for multiple items in "select" and "group" types.
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defaultMultipleSelectorStyle = '';
+
+	/**
+	 * The name attribute of the form
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $formName = 'editform';
+
+	/**
+	 * Used to indicate the mode of CSH (Context Sensitive Help),
+	 * whether it should be icons-only ('icon') or not at all (blank).
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $edit_showFieldHelp = FALSE;
+
+	/**
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $edit_docModuleUpload = FALSE;
+
+	/**
+	 * Loaded with info about the browser when class is instantiated
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $clientInfo = array();
+
+	/**
+	 * TRUE, if RTE is possible for the current user (based on result from BE_USER->isRTE())
+	 *
+	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $RTEenabled = FALSE;
+
+	/**
+	 * If $this->RTEenabled was FALSE, you can find the reasons listed in this array
+	 * which is filled with reasons why the RTE could not be loaded)
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $RTEenabled_notReasons = '';
+
+	/**
+	 * Contains current color scheme
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $colorScheme = array();
+
+	/**
+	 * Contains current class scheme
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $classScheme = array();
+
+	/**
+	 * Contains the default color scheme
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defColorScheme = array();
+
+	/**
+	 * Contains the default class scheme
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defClassScheme = array();
+
+	/**
+	 * Contains field style values
+	 *
+	 * @var array|NULL
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $fieldStyle = NULL;
+
+	/**
+	 * Contains border style values
+	 *
+	 * @var array|NULL
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $borderStyle = NULL;
+
+	/**
+	 * An accumulation of messages from the class
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $commentMessages = array();
+
+	/**
+	 * Generation of TCEform elements of the type "input"
+	 * This will render a single-line input form field, possibly with various control/validation features
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\InputElement
+	 */
+	public function getSingleField_typeInput($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InputElement::class, $this)
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "text"
+	 * This will render a <textarea> OR RTE area form field, possibly with various control/validation features
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\TextElement
+	 */
+	public function getSingleField_typeText($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "check"
+	 * This will render a check-box OR an array of checkboxes
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\CheckboxElement
+	 */
+	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "radio"
+	 * This will render a series of radio buttons.
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\RadioElement
+	 */
+	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "select"
+	 * This will render a selector box element, or possibly a special construction with two selector boxes.
+	 * That depends on configuration.
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\SelectElement
+	 */
+	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "group"
+	 * This will render a selectorbox into which elements from either the file system or database can be inserted. Relations.
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\GroupElement
+	 */
+	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Generation of TCEform elements of the type "none"
+	 * This will render a non-editable display of the content of the field.
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
+	 */
+	public function getSingleField_typeNone($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * HTML rendering of a value which is not editable.
+	 *
+	 * @param array $config Configuration for the display
+	 * @param string $itemValue The value to display
+	 * @return string The HTML code for the display
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
+	 */
+	public function getSingleField_typeNone_render($config, $itemValue) {
+		GeneralUtility::logDeprecatedFunction();
+		$noneElement = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this);
+		$elementConfiguration = array(
+			'fieldConf' => array(
+				'config' => $config,
+			),
+			'itemFormElValue' => $itemValue,
+		);
+		return $noneElement->render('', '', '', $elementConfiguration);
+	}
+
+	/**
+	 * Handler for Flex Forms
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\FlexElement
+	 */
+	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Creates the language menu for FlexForms:
+	 *
+	 * @param array $languages
+	 * @param string $elName
+	 * @param array $selectedLanguage
+	 * @param bool $multi
+	 * @return string HTML for menu
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSingleField_typeFlex_langMenu($languages, $elName, $selectedLanguage, $multi = TRUE) {
+		GeneralUtility::logDeprecatedFunction();
+		$opt = array();
+		foreach ($languages as $lArr) {
+			$opt[] = '<option value="' . htmlspecialchars($lArr['ISOcode']) . '"'
+				. (in_array($lArr['ISOcode'], $selectedLanguage) ? ' selected="selected"' : '') . '>'
+				. htmlspecialchars($lArr['title']) . '</option>';
+		}
+		$output = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE))
+			. ' class="tceforms-select tceforms-multiselect tceforms-flexlangmenu" name="' . $elName . '[]"'
+			. ($multi ? ' multiple="multiple" size="' . count($languages) . '"' : '') . '>' . implode('', $opt)
+			. '</select>';
+		return $output;
+	}
+
+	/**
+	 * Creates the menu for selection of the sheets:
+	 *
+	 * @param array $sArr Sheet array for which to render the menu
+	 * @param string $elName Form element name of the field containing the sheet pointer
+	 * @param string $sheetKey Current sheet key
+	 * @return string HTML for menu
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSingleField_typeFlex_sheetMenu($sArr, $elName, $sheetKey) {
+		GeneralUtility::logDeprecatedFunction();
+		$tCells = array();
+		$pct = round(100 / count($sArr));
+		foreach ($sArr as $sKey => $sheetCfg) {
+			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
+				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
+					. 'document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
+			} else {
+				$onClick = 'if(TBE_EDITOR.checkSubmit(-1)){ document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm();}';
+			}
+			$tCells[] = '<td width="' . $pct . '%" style="'
+				. ($sKey == $sheetKey ? 'background-color: #9999cc; font-weight: bold;' : 'background-color: #aaaaaa;')
+				. ' cursor: hand;" onclick="' . htmlspecialchars($onClick) . '" align="center">'
+				. ($sheetCfg['ROOT']['TCEforms']['sheetTitle'] ? $this->getLanguageService()->sL($sheetCfg['ROOT']['TCEforms']['sheetTitle']) : $sKey)
+				. '</td>';
+		}
+		return '<table border="0" cellpadding="0" cellspacing="2" class="typo3-TCEforms-flexForm-sheetMenu"><tr>' . implode('', $tCells) . '</tr></table>';
+	}
+
+	/**
+	 * Handler for unknown types.
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UnknownElement
+	 */
+	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * User defined field type
+	 *
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return string The HTML code for the TCEform field
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UserElement
+	 */
+	public function getSingleField_typeUser($table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
+			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
+			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user
+	 * This is primarily for the field type none but can be used for user field types for example
+	 *
+	 * @param array $config Configuration for the display
+	 * @param string $itemValue The value to display
+	 * @return string Formatted Field content
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. This is now encapsulated within NoneElement
+	 */
+	public function formatValue($config, $itemValue) {
+		GeneralUtility::logDeprecatedFunction();
+		$format = trim($config['format']);
+		switch ($format) {
+			case 'date':
+				if ($itemValue) {
+					$option = trim($config['format.']['option']);
+					if ($option) {
+						if ($config['format.']['strftime']) {
+							$value = strftime($option, $itemValue);
+						} else {
+							$value = date($option, $itemValue);
+						}
+					} else {
+						$value = date('d-m-Y', $itemValue);
+					}
+				} else {
+					$value = '';
+				}
+				if ($config['format.']['appendAge']) {
+					$age = BackendUtility::calcAge(
+						$GLOBALS['EXEC_TIME'] - $itemValue,
+						$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
+					);
+					$value .= ' (' . $age . ')';
+				}
+				$itemValue = $value;
+				break;
+			case 'datetime':
+				// compatibility with "eval" (type "input")
+				if ($itemValue !== '') {
+					$itemValue = date('H:i d-m-Y', (int)$itemValue);
+				}
+				break;
+			case 'time':
+				// compatibility with "eval" (type "input")
+				if ($itemValue !== '') {
+					$itemValue = date('H:i', (int)$itemValue);
+				}
+				break;
+			case 'timesec':
+				// compatibility with "eval" (type "input")
+				if ($itemValue !== '') {
+					$itemValue = date('H:i:s', (int)$itemValue);
+				}
+				break;
+			case 'year':
+				// compatibility with "eval" (type "input")
+				if ($itemValue !== '') {
+					$itemValue = date('Y', (int)$itemValue);
+				}
+				break;
+			case 'int':
+				$baseArr = array('dec' => 'd', 'hex' => 'x', 'HEX' => 'X', 'oct' => 'o', 'bin' => 'b');
+				$base = trim($config['format.']['base']);
+				$format = $baseArr[$base] ?: 'd';
+				$itemValue = sprintf('%' . $format, $itemValue);
+				break;
+			case 'float':
+				$precision = MathUtility::forceIntegerInRange($config['format.']['precision'], 1, 10, 2);
+				$itemValue = sprintf('%.' . $precision . 'f', $itemValue);
+				break;
+			case 'number':
+				$format = trim($config['format.']['option']);
+				$itemValue = sprintf('%' . $format, $itemValue);
+				break;
+			case 'md5':
+				$itemValue = md5($itemValue);
+				break;
+			case 'filesize':
+				// We need to cast to int here, otherwise empty values result in empty output,
+				// but we expect zero.
+				$value = GeneralUtility::formatSize((int)$itemValue);
+				if ($config['format.']['appendByteSize']) {
+					$value .= ' (' . $itemValue . ')';
+				}
+				$itemValue = $value;
+				break;
+			case 'user':
+				$func = trim($config['format.']['userFunc']);
+				if ($func) {
+					$params = array(
+						'value' => $itemValue,
+						'args' => $config['format.']['userFunc'],
+						'config' => $config,
+						'pObj' => &$this
+					);
+					$itemValue = GeneralUtility::callUserFunction($func, $params, $this);
+				}
+				break;
+			default:
+				// Do nothing e.g. when $format === ''
+		}
+		return $itemValue;
+	}
+
+	/**
+	 * Returns the "special" configuration (from the "types" "showitem" list) for a fieldname based on input table/record
+	 * (Not used anywhere...?)
+	 *
+	 * @param string $table The table name
+	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
+	 * @param string $field Specify the field name.
+	 * @return array|NULL
+	 * @see getSpecConfFromString(), BackendUtility::getTCAtypes()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSpecConfForField($table, $row, $field) {
+		GeneralUtility::logDeprecatedFunction();
+		// Finds the current "types" configuration for the table/row:
+		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row);
+		// If this is an array, then traverse it:
+		if (is_array($types_fieldConfig)) {
+			foreach ($types_fieldConfig as $vconf) {
+				// If the input field name matches one found in the 'types' list, then return the 'special' configuration.
+				if ($vconf['field'] == $field) {
+					return $vconf['spec'];
+				}
+			}
+		}
+		return NULL;
+	}
+
+	/**
+	 * Returns the "special" configuration of an "extra" string (non-parsed)
+	 *
+	 * @param string $extraString The "Part 4" of the fields configuration in "types" "showitem" lists.
+	 * @param string $defaultExtras The ['defaultExtras'] value from field configuration
+	 * @return array An array with the special options in.
+	 * @see getSpecConfForField(), BackendUtility::getSpecConfParts()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSpecConfFromString($extraString, $defaultExtras) {
+		GeneralUtility::logDeprecatedFunction();
+		return BackendUtility::getSpecConfParts($extraString, $defaultExtras);
+	}
+
+	/**
+	 * Renders the diff-view of vDEF fields in flexforms
+	 *
+	 * @param array $vArray Record array of the record being edited
+	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
+	 * @return string Item string returned again, possibly with the original value added to.
+	 * @see getSingleField(), registerDefaultLanguageData()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function renderVDEFDiff($vArray, $vDEFkey) {
+		GeneralUtility::logDeprecatedFunction();
+		$item = NULL;
+		if (
+			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
+			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
+		) {
+			// Create diff-result:
+			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
+			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
+			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
+				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
+		}
+		return $item;
+	}
+
+	/**
+	 * Get icon (for example for selector boxes)
+	 *
+	 * @param string $icon Icon reference
+	 * @return array Array with two values; the icon file reference, the icon file information array (getimagesize())
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getIcon($icon) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::getIcon($icon);
+	}
+
+	/**
+	 * Renders the $icon, supports a filename for skinImg or sprite-icon-name
+	 *
+	 * @param string $icon The icon passed, could be a file-reference or a sprite Icon name
+	 * @param string $alt Alt attribute of the icon returned
+	 * @param string $title Title attribute of the icon return
+	 * @return string A tag representing to show the asked icon
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getIconHtml($icon, $alt = '', $title = '') {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::getIconHtml($icon, $alt, $title);
+	}
+
+	/**
+	 * Wraps a string with a link to the palette.
+	 *
+	 * @param string $header The string to wrap in an A-tag
+	 * @param string $table The table name for which to open the palette.
+	 * @param array $row The palette pointer.
+	 * @param int $palette The record array
+	 * @param mixed $retFunc Not used
+	 * @return array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function wrapOpenPalette($header, $table, $row, $palette, $retFunc) {
+		GeneralUtility::logDeprecatedFunction();
+		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
+		$res = '<a href="#" onclick="TBE_EDITOR.toggle_display_states(\'' . $id . '\',\'block\',\'none\'); return false;" >' . $header . '</a>';
+		return array($res, '');
+	}
+
+	/**
+	 * Add the id and the style property to the field palette
+	 *
+	 * @param string $code Palette Code
+	 * @param string $table The table name for which to open the palette.
+	 * @param string $row Palette ID
+	 * @param string $palette The record array
+	 * @param bool $collapsed TRUE if collapsed
+	 * @return bool Is collapsed
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function wrapPaletteField($code, $table, $row, $palette, $collapsed) {
+		GeneralUtility::logDeprecatedFunction();
+		$display = $collapsed ? 'none' : 'block';
+		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
+		$code = '<div id="' . $id . '" style="display:' . $display . ';" >' . $code . '</div>';
+		return $code;
+	}
+
+	/**
+	 * Returns element reference for form element name
+	 *
+	 * @param string $itemName Form element name
+	 * @return string Form element reference (JS)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function elName($itemName) {
+		GeneralUtility::logDeprecatedFunction();
+		return 'document.editform[\'' . $itemName . '\']';
+	}
+
+	/**
+	 * Returns the max-width in pixels for a <input>/<textarea>-element
+	 *
+	 * @param int $size The abstract size value (1-48)
+	 * @return int max-width in pixels
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formMaxWidth($size = 48) {
+		GeneralUtility::logDeprecatedFunction();
+		$size = round($size * $this->form_largeComp);
+		$width = ceil($size * $this->form_rowsToStylewidth);
+		return $width;
+	}
+
+	/**
+	 * Returns parameters to set the width for a <input>/<textarea>-element
+	 *
+	 * @param int $size The abstract size value (1-48)
+	 * @param bool $textarea If this is for a text area.
+	 * @return string Either a "style" attribute string or "cols"/"size" attribute string.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formWidth($size = 48, $textarea = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
+		$fieldWidthAndStyle = $this->formWidthAsArray($size, $textarea);
+		// Setting width by style-attribute. 'cols' MUST be avoided with NN6+
+		$widthAndStyleAttributes = ' style="' . htmlspecialchars($fieldWidthAndStyle['style']) . '"';
+		if ($fieldWidthAndStyle['class']) {
+			$widthAndStyleAttributes .= ' class="' . htmlspecialchars($fieldWidthAndStyle['class']) . '"';
+		}
+		return $widthAndStyleAttributes;
+	}
+
+	/**
+	 * Returns parameters to set the width for a <input>/<textarea>-element
+	 *
+	 * @param int $size The abstract size value (1-48)
+	 * @param bool $textarea If set, calculates sizes for a text area.
+	 * @return array An array containing style, class, and width attributes.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formWidthAsArray($size = 48, $textarea = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
+		$fieldWidthAndStyle = array('style' => '', 'class' => '', 'width' => '');
+		$widthInPixels = $this->formMaxWidth($size);
+		$fieldWidthAndStyle['style'] = 'width: ' . $widthInPixels . 'px; ';
+		$fieldWidthAndStyle['class'] = 'formfield-' . ($textarea ? 'text' : 'input');
+		return $fieldWidthAndStyle;
+	}
+
+	/**
+	 * Get style CSS values for the current field type.
+	 *
+	 * @param string $type Field type (eg. "check", "radio", "select")
+	 * @return string CSS attributes
+	 * @see formElStyleClassValue()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formElStyle($type) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->formElStyleClassValue($type);
+	}
+
+	/**
+	 * Get class attribute value for the current field type.
+	 *
+	 * @param string $type Field type (eg. "check", "radio", "select")
+	 * @return string CSS attributes
+	 * @see formElStyleClassValue()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formElClass($type) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->formElStyleClassValue($type, TRUE);
+	}
+
+	/**
+	 * Get style CSS values for the current field type.
+	 *
+	 * @param string $type Field type (eg. "check", "radio", "select")
+	 * @param bool $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
+	 * @return string CSS attributes
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function formElStyleClassValue($type, $class = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
+		// Get value according to field:
+		if (isset($this->fieldStyle[$type])) {
+			$style = trim($this->fieldStyle[$type]);
+		} else {
+			$style = trim($this->fieldStyle['all']);
+		}
+		// Check class prefixed:
+		if (substr($style, 0, 6) == 'CLASS:') {
+			$out = $class ? trim(substr($style, 6)) : '';
+		} else {
+			$out = !$class ? $style : '';
+		}
+		return $out;
+	}
+
+	/**
+	 * Return default "style" / "class" attribute line.
+	 *
+	 * @param string $type Field type (eg. "check", "radio", "select")
+	 * @param string $additionalClass Additional class(es) to be added
+	 * @return string CSS attributes
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function insertDefStyle($type, $additionalClass = '') {
+		GeneralUtility::logDeprecatedFunction();
+		$cssClasses = trim('t3-formengine-field-' . $type . ' ' . $additionalClass);
+		return 'class="' . htmlspecialchars($cssClasses) . '"';
+	}
+
+	/**
+	 * Initialize item array (for checkbox, selectorbox, radio buttons)
+	 * Will resolve the label value.
+	 *
+	 * @param array $fieldValue The "columns" array for the field (from TCA)
+	 * @return array An array of arrays with three elements; label, value, icon
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function initItemArray($fieldValue) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::initItemArray($fieldValue);
+	}
+
+	/**
+	 * Merges items into an item-array, optionally with an icon
+	 * example:
+	 * TCEFORM.pages.doktype.addItems.13 = My Label
+	 * TCEFORM.pages.doktype.addItems.13.icon = EXT:t3skin/icons/gfx/i/pages.gif
+	 *
+	 * @param array $items The existing item array
+	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
+	 * @return array The updated $item array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function addItems($items, $iArray) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::addItems($items, $iArray);
+	}
+
+	/**
+	 * Perform user processing of the items arrays of checkboxes, selectorboxes and radio buttons.
+	 *
+	 * @param array $items The array of items (label,value,icon)
+	 * @param array $iArray The "itemsProcFunc." from fieldTSconfig of the field.
+	 * @param array $config The config array for the field.
+	 * @param string $table Table name
+	 * @param array $row Record row
+	 * @param string $field Field name
+	 * @return array The modified $items array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function procItems($items, $iArray, $config, $table, $row, $field) {
+		GeneralUtility::logDeprecatedFunction();
+		$languageService = $this->getLanguageService();
+		$params = array();
+		$params['items'] = &$items;
+		$params['config'] = $config;
+		$params['TSconfig'] = $iArray;
+		$params['table'] = $table;
+		$params['row'] = $row;
+		$params['field'] = $field;
+		// The itemsProcFunc method may throw an exception.
+		// If it does display an error message and return items unchanged.
+		try {
+			GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
+		} catch (\Exception $exception) {
+			$fieldLabel = $field;
+			if (isset($GLOBALS['TCA'][$table]['columns'][$field]['label'])) {
+				$fieldLabel = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
+			}
+			$message = sprintf(
+				$languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
+				$fieldLabel,
+				$exception->getMessage()
+			);
+			/** @var $flashMessage FlashMessage */
+			$flashMessage = GeneralUtility::makeInstance(
+				FlashMessage::class,
+				htmlspecialchars($message),
+				'',
+				FlashMessage::ERROR,
+				TRUE
+			);
+			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+			$defaultFlashMessageQueue->enqueue($flashMessage);
+		}
+		return $items;
+	}
+
+	/**
+	 * Overwrite this function in own extended class to add own markers for output
+	 *
+	 * @param array $marker Array with key/value pairs to insert in the template.
+	 * @param string $table The table name of the record
+	 * @param string $field The field name which this element is supposed to edit
+	 * @param array $row The record data array where the value(s) for the field can be found
+	 * @param array $PA An array with additional configuration options.
+	 * @return array Marker array for template output
+	 * @see function intoTemplate()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function addUserTemplateMarkers($marker, $table, $field, $row, &$PA) {
+		GeneralUtility::logDeprecatedFunction();
+		return $marker;
+	}
+
+	/**
+	 * Wraps an element in the $out_array with the template row for a "section" ($this->sectionWrap)
+	 *
+	 * @param array $out_array The array with form elements stored in (passed by reference and changed!)
+	 * @param int $out_pointer The pointer to the entry in the $out_array  (passed by reference and incremented!)
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use anymore
+	 */
+	public function wrapBorder(&$out_array, &$out_pointer) {
+		GeneralUtility::logDeprecatedFunction();
+		if ($this->sectionWrap && $out_array[$out_pointer]) {
+			$tableAttribs = 'border="0" cellspacing="0" cellpadding="0" width="100%" class="table table-border"';
+			$out_array[$out_pointer] = str_replace('###CONTENT###', $out_array[$out_pointer], str_replace('###TABLE_ATTRIBS###', $tableAttribs, $this->sectionWrap));
+			$out_pointer++;
+		}
+	}
+
+	/**
+	 * Replaces colorscheme markers in the template string
+	 *
+	 * @param string $inTemplate Template string with markers to be substituted.
+	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function rplColorScheme($inTemplate) {
+		GeneralUtility::logDeprecatedFunction();
+		return str_replace(
+			array(
+				// Colors:
+				'###BGCOLOR###',
+				'###BGCOLOR_HEAD###',
+				'###FONTCOLOR_HEAD###',
+				// Classes:
+				'###CLASSATTR_1###',
+				'###CLASSATTR_2###',
+				'###CLASSATTR_4###'
+			),
+			array(
+				// Colors:
+				$this->colorScheme[0] ? ' bgcolor="' . $this->colorScheme[0] . '"' : '',
+				$this->colorScheme[1] ? ' bgcolor="' . $this->colorScheme[1] . '"' : '',
+				$this->colorScheme[3],
+				// Classes:
+				$this->classScheme[0] ? ' class="' . $this->classScheme[0] . '"' : '',
+				$this->classScheme[1] ? ' class="' . $this->classScheme[1] . '"' : '',
+				$this->classScheme[3] ? ' class="' . $this->classScheme[3] . '"' : ''
+			),
+			$inTemplate
+		);
+	}
+
+	/**
+	 * Returns divider.
+	 * Currently not implemented and returns only blank value.
+	 *
+	 * @return string Empty string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getDivider() {
+		GeneralUtility::logDeprecatedFunction();
+		return '';
+	}
+
+	/**
+	 * Setting the current color scheme ($this->colorScheme) based on $this->defColorScheme plus input string.
+	 *
+	 * @param string $scheme A color scheme string.
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function setColorScheme($scheme) {
+		GeneralUtility::logDeprecatedFunction();
+		$this->colorScheme = $this->defColorScheme;
+		$this->classScheme = $this->defClassScheme;
+		$parts = GeneralUtility::trimExplode(',', $scheme);
+		foreach ($parts as $key => $col) {
+			// Split for color|class:
+			list($color, $class) = GeneralUtility::trimExplode('|', $col);
+			// Handle color values:
+			if ($color) {
+				$this->colorScheme[$key] = $color;
+			}
+			if ($color == '-') {
+				$this->colorScheme[$key] = '';
+			}
+			// Handle class values:
+			if ($class) {
+				$this->classScheme[$key] = $class;
+			}
+			if ($class == '-') {
+				$this->classScheme[$key] = '';
+			}
+		}
+	}
+
+	/**
+	 * Reset color schemes.
+	 *
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function resetSchemes() {
+		GeneralUtility::logDeprecatedFunction();
+		$this->setColorScheme($GLOBALS['TBE_STYLES']['colorschemes'][0]);
+		$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][0];
+		$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][0];
+	}
+
+	/**
+	 * Store current color scheme
+	 *
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function storeSchemes() {
+		GeneralUtility::logDeprecatedFunction();
+		$this->savedSchemes['classScheme'] = $this->classScheme;
+		$this->savedSchemes['colorScheme'] = $this->colorScheme;
+		$this->savedSchemes['fieldStyle'] = $this->fieldStyle;
+		$this->savedSchemes['borderStyle'] = $this->borderStyle;
+	}
+
+	/**
+	 * Restore the saved color scheme
+	 *
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function restoreSchemes() {
+		GeneralUtility::logDeprecatedFunction();
+		$this->classScheme = $this->savedSchemes['classScheme'];
+		$this->colorScheme = $this->savedSchemes['colorScheme'];
+		$this->fieldStyle = $this->savedSchemes['fieldStyle'];
+		$this->borderStyle = $this->savedSchemes['borderStyle'];
+	}
+
+	/**
+	 * Gets default record. Maybe not used anymore. FE-editor?
+	 *
+	 * @param string $table Database Tablename
+	 * @param int $pid PID value (positive / negative)
+	 * @return array|NULL "default" row.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getDefaultRecord($table, $pid = 0) {
+		GeneralUtility::logDeprecatedFunction();
+		if ($GLOBALS['TCA'][$table]) {
+			$row = array();
+			if ($pid < 0 && $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']) {
+				// Fetches the previous record:
+				$db = $this->getDatabaseConnection();
+				$res = $db->exec_SELECTquery('*', $table, 'uid=' . abs($pid) . BackendUtility::deleteClause($table));
+				if ($drow = $db->sql_fetch_assoc($res)) {
+					// Gets the list of fields to copy from the previous record.
+					$fArr = explode(',', $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']);
+					foreach ($fArr as $theF) {
+						if ($GLOBALS['TCA'][$table]['columns'][$theF]) {
+							$row[$theF] = $drow[$theF];
+						}
+					}
+				}
+				$db->sql_free_result($res);
+			}
+			foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $info) {
+				if (isset($info['config']['default'])) {
+					$row[$field] = $info['config']['default'];
+				}
+			}
+			return $row;
+		}
+		return NULL;
+	}
+
+	/**
+	 * Fetches language label for key
+	 *
+	 * @param string $str Language label reference, eg. 'LLL:EXT:lang/locallang_core.xlf:labels.blablabla'
+	 * @return string The value of the label, fetched for the current backend language.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function sL($str) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->getLanguageService()->sL($str);
+	}
+
+	/**
+	 * Returns language label from locallang_core.xlf
+	 * Labels must be prefixed with either "l_" or "m_".
+	 * The prefix "l_" maps to the prefix "labels." inside locallang_core.xlf
+	 * The prefix "m_" maps to the prefix "mess." inside locallang_core.xlf
+	 *
+	 * @param string $str The label key
+	 * @return string The value of the label, fetched for the current backend language.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getLL($str) {
+		GeneralUtility::logDeprecatedFunction();
+		$content = '';
+		switch (substr($str, 0, 2)) {
+			case 'l_':
+				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . substr($str, 2));
+				break;
+			case 'm_':
+				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.' . substr($str, 2));
+				break;
+		}
+		return $content;
+	}
+
+	/**
+	 * Return TSCpid (cached)
+	 * Using BackendUtility::getTSCpid()
+	 *
+	 * @param string $table Tablename
+	 * @param string $uid UID value
+	 * @param string $pid PID value
+	 * @return array Array of two integers; first is the real PID of a record, second is the PID value for TSconfig.
+	 * @see BackendUtility::getTSCpid()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getTSCpid($table, $uid, $pid) {
+		GeneralUtility::logDeprecatedFunction();
+		return BackendUtility::getTSCpidCached($table, $uid, $pid);
+	}
+
+	/**
+	 * Returns an array of available languages (to use for FlexForms)
+	 *
+	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
+	 * @param bool $setDefault If set, an array entry for a default language is set.
+	 * @return array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
+		GeneralUtility::logDeprecatedFunction();
+		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
+		// Find all language records in the system:
+		$db = $this->getDatabaseConnection();
+		$res = $db->exec_SELECTquery('language_isocode,static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
+		// Traverse them:
+		$output = array();
+		if ($setDefault) {
+			$output[0] = array(
+				'uid' => 0,
+				'title' => 'Default language',
+				'ISOcode' => 'DEF'
+			);
+		}
+		while ($row = $db->sql_fetch_assoc($res)) {
+			$output[$row['uid']] = $row;
+			if (!empty($row['language_isocode'])) {
+				$output[$row['uid']]['ISOcode'] = $row['language_isocode'];
+			} elseif ($isL && $row['static_lang_isocode']) {
+				\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
+				$rr = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
+				if ($rr['lg_iso_2']) {
+					$output[$row['uid']]['ISOcode'] = $rr['lg_iso_2'];
+				}
+			}
+			if ($onlyIsoCoded && !$output[$row['uid']]['ISOcode']) {
+				unset($output[$row['uid']]);
+			}
+		}
+		$db->sql_free_result($res);
+		return $output;
 	}
 
 }
