@@ -28,11 +28,6 @@ use TYPO3\CMS\Lang\LanguageService;
 class SuggestElement {
 
 	/**
-	 * @var int Count the number of ajax selectors used
-	 */
-	public $suggestCount = 0;
-
-	/**
 	 * @var string
 	 */
 	public $cssClass = 'typo3-TCEforms-suggest';
@@ -64,7 +59,6 @@ class SuggestElement {
 	 */
 	public function renderSuggestSelector($fieldname, $table, $field, array $row, array $config) {
 		$languageService = $this->getLanguageService();
-		$this->suggestCount++;
 		$containerCssClass = $this->cssClass . ' ' . $this->cssClass . '-position-right';
 		$suggestId = 'suggest-' . $table . '-' . $field . '-' . $row['uid'];
 		$isFlexFormField = $GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] === 'flex';

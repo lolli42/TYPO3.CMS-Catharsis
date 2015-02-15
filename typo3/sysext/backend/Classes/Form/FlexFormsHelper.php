@@ -80,7 +80,7 @@ class FlexFormsHelper extends \TYPO3\CMS\Backend\Form\FormEngine {
 			return $dataStructure;
 		}
 		// Get field configuration from page TSConfig
-		$TSconfig = $this->setTSconfig($table, $tableRow);
+		$TSconfig = FormEngineUtility::getTSconfigForTableRow($table, $tableRow);
 		if (!empty($TSconfig[$tableField][($flexformIdentifier . '.')])) {
 			$sheetConf = GeneralUtility::removeDotsFromTS($TSconfig[$tableField][$flexformIdentifier . '.']);
 		}
@@ -188,7 +188,7 @@ class FlexFormsHelper extends \TYPO3\CMS\Backend\Form\FormEngine {
 				continue;
 			}
 			// Getting the selector box items from system
-			$selItems = $this->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($field['TCEforms']), $field['TCEforms'], $this->setTSconfig($table, $tableRow), $tableField);
+			$selItems = FormEngineUtility::addSelectOptionsToItemArray(FormEngineUtility::initItemArray($field['TCEforms']), $field['TCEforms'], FormEngineUtility::getTSconfigForTableRow($table, $tableRow), $tableField);
 
 			// Possibly filter some items
 			$selItems = ArrayUtility::keepItemsInArray(

@@ -107,7 +107,7 @@ class SelectElement extends AbstractFormElement {
 		// Wizards:
 		if (!$disabled) {
 			$altItem = '<input type="hidden" name="' . $additionalInformation['itemFormElName'] . '" value="' . htmlspecialchars($additionalInformation['itemFormElValue']) . '" />';
-			$item = $this->formEngine->renderWizards(array($item, $altItem), $config['wizards'], $table, $row, $field, $additionalInformation, $additionalInformation['itemFormElName'], $specConf);
+			$item = $this->renderWizards(array($item, $altItem), $config['wizards'], $table, $row, $field, $additionalInformation, $additionalInformation['itemFormElName'], $specConf);
 		}
 		return $item;
 	}
@@ -298,10 +298,10 @@ class SelectElement extends AbstractFormElement {
 		$config = $PA['fieldConf']['config'];
 
 		// Getting the selector box items from the system
-		$selectItems = $this->formEngine->addSelectOptionsToItemArray(
+		$selectItems = FormEngineUtility::addSelectOptionsToItemArray(
 			FormEngineUtility::initItemArray($PA['fieldConf']),
 			$PA['fieldConf'],
-			$this->formEngine->setTSconfig($table, $row),
+			FormEngineUtility::getTSconfigForTableRow($table, $row),
 			$fieldName
 		);
 
@@ -905,7 +905,7 @@ class SelectElement extends AbstractFormElement {
 		$PA = array();
 		$PA['fieldConf']['config'] = $fieldConfig;
 		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
-		$PA['fieldTSConfig'] = $this->formEngine->setTSconfig($this->currentTable, $this->currentRow, $fieldName);
+		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($this->currentTable, $this->currentRow, $fieldName);
 		$PA['fieldConf']['config'] = $this->formEngine->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
 		$selectItemArray = $this->getSelectItems($this->currentTable, $fieldName, $this->currentRow, $PA);
 

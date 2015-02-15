@@ -890,7 +890,7 @@ class InlineElement {
 		$PA['fieldConf'] = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector];
 		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 		// Using "form_type" locally in this script
-		$PA['fieldTSConfig'] = $this->fObj->setTSconfig($foreign_table, array(), $foreign_selector);
+		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($foreign_table, array(), $foreign_selector);
 		$config = $PA['fieldConf']['config'];
 		// @todo $disabled is not present - should be read from config?
 		$disabled = FALSE;
@@ -1748,7 +1748,12 @@ class InlineElement {
 		$config = $PA['fieldConf']['config'];
 		if ($foreignConfig['type'] == 'select') {
 			// Getting the selector box items from the system
-			$selItems = $this->fObj->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($PA['fieldConf']), $PA['fieldConf'], $this->fObj->setTSconfig($table, $row), $field);
+			$selItems = FormEngineUtility::addSelectOptionsToItemArray(
+				FormEngineUtility::initItemArray($PA['fieldConf']),
+				$PA['fieldConf'],
+				FormEngineUtility::getTSconfigForTableRow($table, $row),
+				$field
+			);
 
 			// Possibly filter some items:
 			$selItems = ArrayUtility::keepItemsInArray(
@@ -2091,7 +2096,7 @@ class InlineElement {
 					if ($loadConfig) {
 						$unstable['config'] = $GLOBALS['TCA'][$unstable['table']]['columns'][$unstable['field']]['config'];
 						// Fetch TSconfig:
-						$TSconfig = $this->fObj->setTSconfig($unstable['table'], array('uid' => $unstable['uid'], 'pid' => $this->inlineFirstPid), $unstable['field']);
+						$TSconfig = FormEngineUtility::getTSconfigForTableRow($unstable['table'], array('uid' => $unstable['uid'], 'pid' => $this->inlineFirstPid), $unstable['field']);
 						// Override TCA field config by TSconfig:
 						if (!$TSconfig['disabled']) {
 							$unstable['config'] = $this->fObj->overrideFieldConf($unstable['config'], $TSconfig);
@@ -2472,7 +2477,7 @@ class InlineElement {
 			}
 			$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 			// Using "form_type" locally in this script
-			$PA['fieldTSConfig'] = $this->fObj->setTSconfig($foreign_table, array(), $field);
+			$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($foreign_table, array(), $field);
 			$config = $PA['fieldConf']['config'];
 			// Determine type of Selector:
 			$type = $this->getPossibleRecordsSelectorType($config);

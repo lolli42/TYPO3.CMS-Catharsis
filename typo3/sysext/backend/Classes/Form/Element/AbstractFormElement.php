@@ -15,10 +15,16 @@ namespace TYPO3\CMS\Backend\Form\Element;
  */
 
 use TYPO3\CMS\Backend\Form\FormEngine;
+use TYPO3\CMS\Backend\Form\DataPreprocessor;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
 
 /**
  * Base class for form elements of FormEngine
@@ -97,6 +103,20 @@ abstract class AbstractFormElement {
 	}
 
 	/**
+	 * @return bool TRUE if wizards are disabled on a global level
+	 */
+	protected function isWizardsDisabled() {
+		return isset($this->globalOptions['disabledWizards']) ? $this->globalOptions['disableWizards'] : FALSE;
+	}
+
+	/**
+	 * @return string URL to return to this entry script
+	 */
+	protected function getReturnUrl() {
+		return isset($this->globalOptions['returnUrl']) ? $this->globalOptions['returnUrl'] : '';
+	}
+
+	/**
 	 * Returns the max width in pixels for a elements like input and text
 	 *
 	 * @param int $size The abstract size value (1-48)
@@ -108,6 +128,397 @@ abstract class AbstractFormElement {
 
 		$size = round($size * $compensationForLargeDocuments);
 		return ceil($size * $compensationForFormFields);
+	}
+
+	/**
+	 * Rendering wizards for form fields.
+	 *
+	 * @param array $itemKinds Array with the real item in the first value, and an alternative item in the second value.
+	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
+	 * @param string $table Table name
+	 * @param array $row The record array
+	 * @param string $field The field name
+	 * @param array $PA Additional configuration array.
+	 * @param string $itemName The field name
+	 * @param array $specConf Special configuration if available.
+	 * @param bool $RTE Whether the RTE could have been loaded.
+	 * @return string The new item value.
+	 */
+	protected function renderWizards($itemKinds, $wizConf, $table, $row, $field, $PA, $itemName, $specConf, $RTE = FALSE) {
+		// Return not changed main item directly if wizards are disabled
+		if (!is_array($wizConf) || $this->isWizardsDisabled()) {
+			return $itemKinds[0];
+		}
+
+		$languageService = $this->getLanguageService();
+
+		$fieldChangeFunc = $PA['fieldChangeFunc'];
+		$item = $itemKinds[0];
+		$outArr = array(
+			'buttons' => '',
+			'additional' => ''
+		);
+		$fName = '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
+		$md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
+		$fieldConfig = $PA['fieldConf']['config'];
+		$prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
+		$flexFormPath = '';
+		if (GeneralUtility::isFirstPartOfStr($PA['itemFormElName'], $prefixOfFormElName)) {
+			$flexFormPath = str_replace('][', '/', substr($PA['itemFormElName'], strlen($prefixOfFormElName) + 1, -1));
+		}
+
+		// Manipulate the field name (to be the TRUE form field name) and remove
+		// a suffix-value if the item is a selector box with renderMode "singlebox":
+		$listFlag = '_list';
+		if ($PA['fieldConf']['config']['form_type'] == 'select') {
+			// Single select situation:
+			if ($PA['fieldConf']['config']['maxitems'] <= 1) {
+				$listFlag = '';
+			} elseif ($PA['fieldConf']['config']['renderMode'] == 'singlebox') {
+				$itemName .= '[]';
+				$listFlag = '';
+			}
+		}
+
+		// Contains wizard identifiers enabled for this record type, see "special configuration" docs
+		$wizardsEnabledByType = $specConf['wizards']['parameters'];
+
+		foreach ($wizConf as $wizardIdentifier => $wizardConfiguration) {
+			// If an identifier starts with "_", this is a configuration option like _POSITION and not a wizard
+			if ($wizardIdentifier[0] === '_') {
+				continue;
+			}
+
+			// Sanitize wizard type
+			$wizardConfiguration['type'] = (string)$wizardConfiguration['type'];
+
+			// Wizards can be shown based on selected "type" of record. If this is the case, the wizard configuration
+			// is set to enableByTypeConfig = 1, and the wizardIdentifier is found in $wizardsEnabledByType
+			$wizardIsEnabled = TRUE;
+			if (
+				isset($wizardConfiguration['enableByTypeConfig'])
+				&& (bool)$wizardConfiguration['enableByTypeConfig']
+				&& (!is_array($wizardsEnabledByType) || !in_array($wizardIdentifier, $wizardsEnabledByType))
+			) {
+				$wizardIsEnabled = FALSE;
+			}
+			// Disable if wizard is for RTE fields only and the handled field is no RTE field or RTE can not be loaded
+			if (isset($wizardConfiguration['RTEonly']) && (bool)$wizardConfiguration['RTEonly'] && !$RTE) {
+				$wizardIsEnabled = FALSE;
+			}
+			// Disable if wizard is for not-new records only and we're handling a new record
+			if (isset($wizardConfiguration['notNewRecords']) && $wizardConfiguration['notNewRecords'] && !MathUtility::canBeInterpretedAsInteger($row['uid'])) {
+				$wizardIsEnabled = FALSE;
+			}
+			// Wizard types script, colorbox and popup must contain a module name configuration
+			if (!isset($wizardConfiguration['module']['name']) && in_array($wizardConfiguration['type'], array('script', 'colorbox', 'popup'), TRUE)) {
+				$wizardIsEnabled = FALSE;
+			}
+
+			if (!$wizardIsEnabled) {
+				continue;
+			}
+
+			// Title / icon:
+			$iTitle = htmlspecialchars($languageService->sL($wizardConfiguration['title']));
+			if (isset($wizardConfiguration['icon'])) {
+				$icon = FormEngineUtility::getIconHtml($wizardConfiguration['icon'], $iTitle, $iTitle);
+			} else {
+				$icon = $iTitle;
+			}
+
+			switch ($wizardConfiguration['type']) {
+				case 'userFunc':
+					$params = array();
+					$params['fieldConfig'] = $fieldConfig;
+					$params['params'] = $wizardConfiguration['params'];
+					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
+					$params['table'] = $table;
+					$params['uid'] = $row['uid'];
+					$params['pid'] = $row['pid'];
+					$params['field'] = $field;
+					$params['flexFormPath'] = $flexFormPath;
+					$params['md5ID'] = $md5ID;
+					$params['returnUrl'] = $this->getReturnUrl();
+
+					$params['formName'] = 'editform';
+					$params['itemName'] = $itemName;
+					$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
+					$params['fieldChangeFunc'] = $fieldChangeFunc;
+					$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
+
+					$params['item'] = &$item;
+					$params['icon'] = $icon;
+					$params['iTitle'] = $iTitle;
+					$params['wConf'] = $wizardConfiguration;
+					$params['row'] = $row;
+					$outArr['additional'][] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $this);
+					break;
+
+				case 'script':
+					$params = array();
+					// Including the full fieldConfig from TCA may produce too long an URL
+					if ($wizardIdentifier != 'RTE') {
+						$params['fieldConfig'] = $fieldConfig;
+					}
+					$params['params'] = $wizardConfiguration['params'];
+					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
+					$params['table'] = $table;
+					$params['uid'] = $row['uid'];
+					$params['pid'] = $row['pid'];
+					$params['field'] = $field;
+					$params['flexFormPath'] = $flexFormPath;
+					$params['md5ID'] = $md5ID;
+					$params['returnUrl'] = $this->getReturnUrl();
+
+					// Resolving script filename and setting URL.
+					$urlParameters = array();
+					if (isset($wizardConfiguration['module']['urlParameters']) && is_array($wizardConfiguration['module']['urlParameters'])) {
+						$urlParameters = $wizardConfiguration['module']['urlParameters'];
+					}
+					$wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
+					$url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
+					$outArr['buttons'][] = ' <a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
+					break;
+
+				case 'popup':
+					$params = array();
+					$params['fieldConfig'] = $fieldConfig;
+					$params['params'] = $wizardConfiguration['params'];
+					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
+					$params['table'] = $table;
+					$params['uid'] = $row['uid'];
+					$params['pid'] = $row['pid'];
+					$params['field'] = $field;
+					$params['flexFormPath'] = $flexFormPath;
+					$params['md5ID'] = $md5ID;
+					$params['returnUrl'] = $this->getReturnUrl();
+
+					$params['formName'] = 'editform';
+					$params['itemName'] = $itemName;
+					$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
+					$params['fieldChangeFunc'] = $fieldChangeFunc;
+					$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
+
+					// Resolving script filename and setting URL.
+					$urlParameters = array();
+					if (isset($wizardConfiguration['module']['urlParameters']) && is_array($wizardConfiguration['module']['urlParameters'])) {
+						$urlParameters = $wizardConfiguration['module']['urlParameters'];
+					}
+					$wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
+					$url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
+
+					$onlyIfSelectedJS = '';
+					if (isset($wizardConfiguration['popup_onlyOpenIfSelected']) && $wizardConfiguration['popup_onlyOpenIfSelected']) {
+						$notSelectedText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit');
+						$onlyIfSelectedJS =
+							'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){' .
+								'alert(' . GeneralUtility::quoteJSvalue($notSelectedText) . ');' .
+								'return false; .
+							}';
+					}
+					$aOnClick =
+						'this.blur();' .
+						$onlyIfSelectedJS .
+						'vHWin=window.open(' .
+							'\'' . $url  . '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
+								'document.editform[\'' . $itemName . '\'].value,200' .
+							')' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\'),' .
+							'\'popUp' . $md5ID . '\',' .
+							'\'' . $wizardConfiguration['JSopenParams'] . '\'' .
+						');' .
+						'vHWin.focus();' .
+						'return false;';
+
+					$outArr['buttons'][] =
+						'<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">' .
+							$icon .
+						'</a>';
+					break;
+
+				case 'colorbox':
+					$params = array();
+					$params['fieldConfig'] = $fieldConfig;
+					$params['params'] = $wizardConfiguration['params'];
+					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
+					$params['table'] = $table;
+					$params['uid'] = $row['uid'];
+					$params['pid'] = $row['pid'];
+					$params['field'] = $field;
+					$params['flexFormPath'] = $flexFormPath;
+					$params['md5ID'] = $md5ID;
+					$params['returnUrl'] = $this->getReturnUrl();
+
+					$params['formName'] = 'editform';
+					$params['itemName'] = $itemName;
+					$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
+					$params['fieldChangeFunc'] = $fieldChangeFunc;
+					$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
+
+					// Resolving script filename and setting URL.
+					$urlParameters = array();
+					if (isset($wizardConfiguration['module']['urlParameters']) && is_array($wizardConfiguration['module']['urlParameters'])) {
+						$urlParameters = $wizardConfiguration['module']['urlParameters'];
+					}
+					$wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
+					$url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
+
+					$aOnClick =
+						'this.blur();' .
+						'vHWin=window.open(' .
+							'\'' . $url  . '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
+							'document.editform[\'' . $itemName . '\'].value,200' .
+							')' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\'),' .
+							'\'popUp' . $md5ID . '\',' .
+							'\'' . $wizardConfiguration['JSopenParams'] . '\'' .
+						');' .
+						'vHWin.focus();' .
+						'return false;';
+
+					$dim = GeneralUtility::intExplode('x', $wizardConfiguration['dim']);
+					$dX = MathUtility::forceIntegerInRange($dim[0], 1, 200, 20);
+					$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
+					$color = $PA['itemFormElValue'] ? ' bgcolor="' . htmlspecialchars($PA['itemFormElValue']) . '"' : '';
+					$skinImg = IconUtility::skinImg(
+						'',
+						$PA['itemFormElValue'] === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
+						'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
+					);
+					$outArr['additional'][] =
+						'<table border="0" id="' . $md5ID . '"' . $color . ' style="' . htmlspecialchars($wizardConfiguration['tableStyle']) . '">' .
+							'<tr>' .
+								'<td>' .
+									'<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . '<img ' . $skinImg . '>' . '</a>' .
+								'</td>' .
+							'</tr>' .
+						'</table>';
+					break;
+
+				case 'slider':
+					$params = array();
+					$params['fieldConfig'] = $fieldConfig;
+					$params['params'] = $wizardConfiguration['params'];
+					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
+					$params['table'] = $table;
+					$params['uid'] = $row['uid'];
+					$params['pid'] = $row['pid'];
+					$params['field'] = $field;
+					$params['flexFormPath'] = $flexFormPath;
+					$params['md5ID'] = $md5ID;
+					$params['returnUrl'] = $this->getReturnUrl();
+
+					$params['itemName'] = $itemName;
+					$params['fieldChangeFunc'] = $fieldChangeFunc;
+
+					// Reference set!
+					$params['wConf'] = $wizardConfiguration;
+					$params['row'] = $row;
+
+					/** @var ValueSlider $wizard */
+					$wizard = GeneralUtility::makeInstance(ValueSlider::class);
+					$outArr['additional'][] = $wizard->renderWizard($params, $this->formEngine); // @todo
+					break;
+
+				case 'select':
+					$fieldValue = array('config' => $wizardConfiguration);
+					$TSconfig = FormEngineUtility::getTSconfigForTableRow($table, $row);
+					$TSconfig[$field] = $TSconfig[$field]['wizards.'][$wizardIdentifier . '.'];
+					$selItems = FormEngineUtility::addSelectOptionsToItemArray(FormEngineUtility::initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
+					// Process items by a user function:
+					if (!empty($wizardConfiguration['itemsProcFunc'])) {
+						$funcConfig = !empty($wizardConfiguration['itemsProcFunc.']) ? $wizardConfiguration['itemsProcFunc.'] : array();
+						$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+						$selItems = $dataPreprocessor->procItems($selItems, $funcConfig, $wizardConfiguration, $table, $row, $field);
+					}
+					$options = array();
+					$options[] = '<option>' . $iTitle . '</option>';
+					foreach ($selItems as $p) {
+						$options[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
+					}
+					if ($wizardConfiguration['mode'] == 'append') {
+						$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+document.editform[\'' . $itemName . '\'].value';
+					} elseif ($wizardConfiguration['mode'] == 'prepend') {
+						$assignValue = 'document.editform[\'' . $itemName . '\'].value+=\'\'+this.options[this.selectedIndex].value';
+					} else {
+						$assignValue = 'document.editform[\'' . $itemName . '\'].value=this.options[this.selectedIndex].value';
+					}
+					$outArr['additional'][] =
+						'<select' .
+							' id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE)) . '"' .
+							' class="form-control tceforms-select tceforms-wizardselect"' .
+							' name="_WIZARD' . $fName . '"' .
+							' onchange="' . htmlspecialchars($assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc)) . '"'.
+						'>' .
+							implode('', $options) .
+						'</select>';
+					break;
+				case 'suggest':
+					if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
+						break;
+					}
+					/** @var SuggestElement $suggestWizard */
+					$suggestWizard = GeneralUtility::makeInstance(SuggestElement::class);
+					$suggestWizard->init($this->formEngine); // @todo
+					$outArr['additional'][] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
+					break;
+			}
+
+			// Hide the real form element?
+			if (is_array($wizardConfiguration['hideParent']) || $wizardConfiguration['hideParent']) {
+				// Setting the item to a hidden-field.
+				$item = $itemKinds[1];
+				if (is_array($wizardConfiguration['hideParent'])) {
+					/** @var NoneElement $noneElement */
+					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine); // @todo
+					$elementConfiguration = array(
+						'fieldConf' => array(
+							'config' => $wizardConfiguration['hideParent'],
+						),
+						'itemFormElValue' => $PA['itemFormElValue'],
+					);
+					$item .= $noneElement->render('', '', '', $elementConfiguration);
+				}
+			}
+		}
+
+		// For each rendered wizard, put them together around the item.
+		if (count($outArr['buttons']) || count($outArr['additional'])) {
+			if ($wizConf['_HIDDENFIELD']) {
+				$item = $itemKinds[1];
+			}
+
+			$outStr = '';
+			if (!empty($outArr['buttons'])) {
+				$outStr .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $outArr['buttons']) . '</div>';
+			}
+			if (!empty($outArr['additional'])) {
+				$outStr .= implode(' ', $outArr['additional']);
+			}
+
+			// Position
+			$class = array();
+			if ($wizConf['_POSITION'] === 'left') {
+				$class[] = 'form-wizards-aside';
+				$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
+			} elseif ($wizConf['_POSITION'] === 'top') {
+				$class[] = 'form-wizards-top';
+				$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
+			} elseif ($wizConf['_POSITION'] === 'bottom') {
+				$class[] = 'form-wizards-bottom';
+				$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
+			} else {
+				$class[] = 'form-wizards-aside';
+				$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
+			}
+			$item = '
+				<div class="form-wizards-wrap ' . (!empty($class) ? implode(' ', $class) : '' ) . '">
+					' . $outStr . '
+				</div>';
+		}
+
+		return $item;
 	}
 
 	/**

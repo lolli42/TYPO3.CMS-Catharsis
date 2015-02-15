@@ -125,7 +125,7 @@ class TextElement extends AbstractFormElement {
 						);
 
 						// Wizard
-						$item = $this->formEngine->renderWizards(
+						$item = $this->renderWizards(
 							array($item, $altItem),
 							$config['wizards'],
 							$table,
@@ -213,7 +213,7 @@ class TextElement extends AbstractFormElement {
 							. '>' . GeneralUtility::formatForTextarea($additionalInformation['itemFormElValue']) . '</textarea>';
 
 				// Wrap a wizard around the item?
-				$item = $this->formEngine->renderWizards(
+				$item = $this->renderWizards(
 					array($item, $altItem),
 					$config['wizards'],
 					$table,

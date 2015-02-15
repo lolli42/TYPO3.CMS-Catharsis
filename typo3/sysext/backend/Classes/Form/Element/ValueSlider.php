@@ -30,7 +30,7 @@ class ValueSlider {
 	 * @param \TYPO3\CMS\Backend\Form\FormEngine $pObj
 	 * @return string
 	 */
-	public function renderWizard(&$params, &$pObj) {
+	public function renderWizard($params, $pObj) {
 		$pObj->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/ValueSlider.js');
 		$field = $params['field'];
 		$value = $params['row'][$field];

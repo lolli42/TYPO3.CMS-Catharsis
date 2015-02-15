@@ -58,11 +58,6 @@ class FormEngine {
 	/**
 	 * @var array
 	 */
-	public $cachedTSconfig = array();
-
-	/**
-	 * @var array
-	 */
 	public $cachedLanguageFlag = array();
 
 	/**
@@ -429,11 +424,6 @@ class FormEngine {
 	public $templateFile = '';
 
 	/**
-	 * @var SuggestElement
-	 */
-	protected $suggest;
-
-	/**
 	 * protected properties which were public
 	 * use old property name as key and new property name as value
 	 * e.g. 'foo_BarName' => 'fooBarName'
@@ -454,10 +444,6 @@ class FormEngine {
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], InlineElement::class . '::') !== 0) {
 			$this->inline = GeneralUtility::makeInstance(InlineElement::class);
-		}
-		// Create instance of \TYPO3\CMS\Backend\Form\Element\SuggestElement only if this a non-Suggest-AJAX call:
-		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], SuggestElement::class . '::') !== 0) {
-			$this->suggest = GeneralUtility::makeInstance(SuggestElement::class);
 		}
 		// Prepare user defined objects (if any) for hooks which extend this function:
 		$this->hookObjectsMainFields = array();
@@ -537,7 +523,6 @@ class FormEngine {
 		$this->prependFormFieldNames = 'data';
 		$this->setNewBEDesign();
 		$this->inline->init($this);
-		$this->suggest->init($this);
 	}
 
 	/*******************************************************
@@ -898,7 +883,7 @@ class FormEngine {
 			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || !$this->localizationMode || $this->localizationMode === $PA['fieldConf']['l10n_cat'])
 		) {
 			// Fetching the TSconfig for the current table/field. This includes the $row which means that
-			$PA['fieldTSConfig'] = $this->setTSconfig($table, $row, $field);
+			$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($table, $row, $field);
 			// If the field is NOT disabled from TSconfig (which it could have been) then render it
 			if (!$PA['fieldTSConfig']['disabled']) {
 				// Override fieldConf by fieldTSconfig:
@@ -1110,6 +1095,8 @@ class FormEngine {
 	protected function getConfigurationOptionsForChildElements() {
 		return array(
 			'renderReadonly' => $this->getRenderReadonly(),
+			'disabledWizards' => $this->disableWizards,
+			'returnUrl' => $this->thisReturnUrl(),
 		);
 	}
 
@@ -1367,29 +1354,6 @@ class FormEngine {
 			}
 		}
 		return $fields;
-	}
-
-	/**
-	 * Returns TSconfig for table/row
-	 * Multiple requests to this function will return cached content so there is no performance loss in calling
-	 * this many times since the information is looked up only once.
-	 *
-	 * @param string $table The table name
-	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
-	 * @param string $field Optionally you can specify the field name as well. In that case the TSconfig for the field is returned.
-	 * @return mixed The TSconfig values (probably in an array)
-	 * @see BackendUtility::getTCEFORM_TSconfig()
-	 */
-	public function setTSconfig($table, $row, $field = '') {
-		$mainKey = $table . ':' . $row['uid'];
-		if (!isset($this->cachedTSconfig[$mainKey])) {
-			$this->cachedTSconfig[$mainKey] = BackendUtility::getTCEFORM_TSconfig($table, $row);
-		}
-		if ($field) {
-			return $this->cachedTSconfig[$mainKey][$field];
-		} else {
-			return $this->cachedTSconfig[$mainKey];
-		}
 	}
 
 	/**
@@ -2000,269 +1964,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Rendering wizards for form fields.
-	 *
-	 * @param array $itemKinds Array with the real item in the first value, and an alternative item in the second value.
-	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
-	 * @param string $table Table name
-	 * @param array $row The record array
-	 * @param string $field The field name
-	 * @param array $PA Additional configuration array. (passed by reference!)
-	 * @param string $itemName The field name
-	 * @param array $specConf Special configuration if available.
-	 * @param bool $RTE Whether the RTE could have been loaded.
-	 * @return string The new item value.
-	 */
-	public function renderWizards($itemKinds, $wizConf, $table, $row, $field, &$PA, $itemName, $specConf, $RTE = FALSE) {
-		// Init:
-		$fieldChangeFunc = $PA['fieldChangeFunc'];
-		$item = $itemKinds[0];
-		$outArr = array(
-			'buttons' => '',
-			'additional' => ''
-		);
-		$colorBoxLinks = array();
-		$fName = '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-		$md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
-		$listFlag = '_list';
-		$fieldConfig = $PA['fieldConf']['config'];
-		$prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-		$flexFormPath = '';
-		if (GeneralUtility::isFirstPartOfStr($PA['itemFormElName'], $prefixOfFormElName)) {
-			$flexFormPath = str_replace('][', '/', substr($PA['itemFormElName'], strlen($prefixOfFormElName) + 1, -1));
-		}
-		// Manipulate the field name (to be the TRUE form field name) and remove
-		// a suffix-value if the item is a selector box with renderMode "singlebox":
-		if ($PA['fieldConf']['config']['form_type'] == 'select') {
-			// Single select situation:
-			if ($PA['fieldConf']['config']['maxitems'] <= 1) {
-				$listFlag = '';
-			} elseif ($PA['fieldConf']['config']['renderMode'] == 'singlebox') {
-				$itemName .= '[]';
-				$listFlag = '';
-			}
-		}
-		// Traverse wizards:
-		if (is_array($wizConf) && !$this->disableWizards) {
-			$parametersOfWizards = &$specConf['wizards']['parameters'];
-			foreach ($wizConf as $wid => $wConf) {
-				if (
-					$wid[0] !== '_' && (!$wConf['enableByTypeConfig']
-					|| is_array($parametersOfWizards) && in_array($wid, $parametersOfWizards)) && ($RTE || !$wConf['RTEonly'])
-				) {
-					// Title / icon:
-					$iTitle = htmlspecialchars($this->getLanguageService()->sL($wConf['title']));
-					if ($wConf['icon']) {
-						$icon = FormEngineUtility::getIconHtml($wConf['icon'], $iTitle, $iTitle);
-					} else {
-						$icon = $iTitle;
-					}
-					switch ((string)$wConf['type']) {
-						case 'userFunc':
-
-						case 'script':
-
-						case 'popup':
-
-						case 'colorbox':
-
-						case 'slider':
-							if (!$wConf['notNewRecords'] || MathUtility::canBeInterpretedAsInteger($row['uid'])) {
-								// Setting &P array contents:
-								$params = array();
-								// Including the full fieldConfig from TCA may produce too long an URL
-								if ($wid != 'RTE') {
-									$params['fieldConfig'] = $fieldConfig;
-								}
-								$params['params'] = $wConf['params'];
-								$params['exampleImg'] = $wConf['exampleImg'];
-								$params['table'] = $table;
-								$params['uid'] = $row['uid'];
-								$params['pid'] = $row['pid'];
-								$params['field'] = $field;
-								$params['flexFormPath'] = $flexFormPath;
-								$params['md5ID'] = $md5ID;
-								$params['returnUrl'] = $this->thisReturnUrl();
-
-								$wScript = '';
-								// Resolving script filename and setting URL.
-								if (isset($wConf['module']['name'])) {
-									$urlParameters = array();
-									if (isset($wConf['module']['urlParameters']) && is_array($wConf['module']['urlParameters'])) {
-										$urlParameters = $wConf['module']['urlParameters'];
-									}
-									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters, '');
-								} elseif (in_array($wConf['type'], array('script', 'colorbox', 'popup'), TRUE)) {
-									// Illegal configuration, fail silently
-									break;
-								}
-								$url = ($wScript ?: '') . (strstr($wScript, '?') ? '' : '?');
-								// If "script" type, create the links around the icon:
-								if ((string)$wConf['type'] === 'script') {
-									$aUrl = $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
-									$outArr['buttons'][] = ' <a class="btn btn-default" href="' . htmlspecialchars($aUrl) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
-								} else {
-									// ... else types "popup", "colorbox" and "userFunc" will need additional parameters:
-									$params['formName'] = 'editForm';
-									$params['itemName'] = $itemName;
-									$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
-									$params['fieldChangeFunc'] = $fieldChangeFunc;
-									$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
-									switch ((string)$wConf['type']) {
-										case 'popup':
-										case 'colorbox':
-											// Current form value is passed as P[currentValue]!
-											$addJS = $wConf['popup_onlyOpenIfSelected']
-												? 'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){alert('
-													. GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit'))
-													. '); return false;}'
-												: '';
-											$curSelectedValues = '+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')';
-											$aOnClick = 'this.blur();' . $addJS . 'vHWin=window.open(\'' . $url
-												. GeneralUtility::implodeArrayForUrl('', array('P' => $params))
-												. '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode('
-												. 'document.editform[\'' . $itemName . '\'].value,200)' . $curSelectedValues
-												. ',\'popUp' . $md5ID . '\',\'' . $wConf['JSopenParams'] . '\');'
-												. 'vHWin.focus();return false;';
-											// Setting "colorBoxLinks" - user LATER to wrap around the color box as well:
-											$colorBoxLinks = array('<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">', '</a>');
-											if ((string)$wConf['type'] == 'popup') {
-												$outArr['buttons'][] = $colorBoxLinks[0] . $icon . $colorBoxLinks[1];
-											}
-											break;
-										case 'userFunc':
-											// Reference set!
-											$params['item'] = &$item;
-											$params['icon'] = $icon;
-											$params['iTitle'] = $iTitle;
-											$params['wConf'] = $wConf;
-											$params['row'] = $row;
-											$outArr['additional'][] = GeneralUtility::callUserFunction($wConf['userFunc'], $params, $this);
-											break;
-										case 'slider':
-											// Reference set!
-											$params['item'] = &$item;
-											$params['icon'] = $icon;
-											$params['iTitle'] = $iTitle;
-											$params['wConf'] = $wConf;
-											$params['row'] = $row;
-											$wizard = GeneralUtility::makeInstance(ValueSlider::class);
-											$outArr['additional'][] = call_user_func_array(array(&$wizard, 'renderWizard'), array(&$params, &$this));
-											break;
-									}
-								}
-								// Hide the real form element?
-								if (is_array($wConf['hideParent']) || $wConf['hideParent']) {
-									// Setting the item to a hidden-field.
-									$item = $itemKinds[1];
-									if (is_array($wConf['hideParent'])) {
-										$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this);
-										$elementConfiguration = array(
-											'fieldConf' => array(
-												'config' => $wConf['hideParent'],
-											),
-											'itemFormElValue' => $PA['itemFormElValue'],
-										);
-										$item .= $noneElement->render('', '', '', $elementConfiguration);
-									}
-								}
-							}
-							break;
-						case 'select':
-							$fieldValue = array('config' => $wConf);
-							$TSconfig = $this->setTSconfig($table, $row);
-							$TSconfig[$field] = $TSconfig[$field]['wizards.'][$wid . '.'];
-							$selItems = $this->addSelectOptionsToItemArray(FormEngineUtility::initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
-							// Process items by a user function:
-							if (!empty($wConf['itemsProcFunc'])) {
-								$funcConfig = !empty($wConf['itemsProcFunc.']) ? $wConf['itemsProcFunc.'] : array();
-								$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
-								$selItems = $dataPreprocessor->procItems($selItems, $funcConfig, $wConf, $table, $row, $field);
-							}
-							$opt = array();
-							$opt[] = '<option>' . $iTitle . '</option>';
-							foreach ($selItems as $p) {
-								$opt[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
-							}
-							if ($wConf['mode'] == 'append') {
-								$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+document.editform[\'' . $itemName . '\'].value';
-							} elseif ($wConf['mode'] == 'prepend') {
-								$assignValue = 'document.editform[\'' . $itemName . '\'].value+=\'\'+this.options[this.selectedIndex].value';
-							} else {
-								$assignValue = 'document.editform[\'' . $itemName . '\'].value=this.options[this.selectedIndex].value';
-							}
-							$sOnChange = $assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc);
-							$outArr['additional'][] = '<select id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE))
-								. '" class="form-control tceforms-select tceforms-wizardselect" name="_WIZARD' . $fName . '" onchange="'
-								. htmlspecialchars($sOnChange) . '">' . implode('', $opt) . '</select>';
-							break;
-						case 'suggest':
-							if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
-								break;
-							}
-							$outArr['additional'][] = $this->suggest->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
-							break;
-					}
-					// Color wizard colorbox:
-					if ((string)$wConf['type'] === 'colorbox') {
-						$dim = GeneralUtility::intExplode('x', $wConf['dim']);
-						$dX = MathUtility::forceIntegerInRange($dim[0], 1, 200, 20);
-						$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
-						$color = $PA['itemFormElValue'] ? ' bgcolor="' . htmlspecialchars($PA['itemFormElValue']) . '"' : '';
-						$skinImg = IconUtility::skinImg(
-							'',
-							$color === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
-							'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
-						);
-						$outArr['additional'][] = '<table border="0" cellpadding="0" cellspacing="0" id="' . $md5ID . '"' . $color
-							. ' style="' . htmlspecialchars($wConf['tableStyle']) . '">
-									<tr>
-										<td>' . $colorBoxLinks[0] . '<img ' . $skinImg . '>' . $colorBoxLinks[1] . '</td>
-									</tr>
-								</table>';
-					}
-				}
-			}
-			// For each rendered wizard, put them together around the item.
-			if (count($outArr['buttons']) || count($outArr['additional'])) {
-				if ($wizConf['_HIDDENFIELD']) {
-					$item = $itemKinds[1];
-				}
-
-				$outStr = '';
-				if (!empty($outArr['buttons'])) {
-					$outStr .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $outArr['buttons']) . '</div>';
-				}
-				if (!empty($outArr['additional'])) {
-					$outStr .= implode(' ', $outArr['additional']);
-				}
-
-				// Position
-				$class = array();
-				if ($wizConf['_POSITION'] === 'left') {
-					$class[] = 'form-wizards-aside';
-					$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
-				} elseif ($wizConf['_POSITION'] === 'top') {
-					$class[] = 'form-wizards-top';
-					$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
-				} elseif ($wizConf['_POSITION'] === 'bottom') {
-					$class[] = 'form-wizards-bottom';
-					$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
-				} else {
-					$class[] = 'form-wizards-aside';
-					$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
-				}
-				$item = '
-					<!-- renderWizards -->
-					<div class="form-wizards-wrap ' . (!empty($class) ? implode(' ', $class) : '' ) . '">
-						' . $outStr . '
-					</div>';
-			}
-		}
-		return $item;
-	}
-
-	/**
 	 * Creates style attribute content for option tags in a selector box, primarily setting
 	 * it up to show the icon of an element as background image (works in mozilla)
 	 *
@@ -2416,314 +2117,6 @@ class FormEngine {
 			}
 			return '<div class="tab-content">' . $output . '</div>';
 		}
-	}
-
-	/************************************************************
-	 *
-	 * Item-array manipulation functions (check/select/radio)
-	 *
-	 ************************************************************/
-
-	/**
-	 * Add selector box items of more exotic kinds.
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $fieldValue The "columns" array for the field (from TCA)
-	 * @param array $TSconfig TSconfig for the table/row
-	 * @param string $field The fieldname
-	 * @return array The $items array modified.
-	 */
-	public function addSelectOptionsToItemArray($items, $fieldValue, $TSconfig, $field) {
-		// Values from foreign tables:
-		if ($fieldValue['config']['foreign_table']) {
-			$items = $this->foreignTable($items, $fieldValue, $TSconfig, $field);
-			if ($fieldValue['config']['neg_foreign_table']) {
-				$items = $this->foreignTable($items, $fieldValue, $TSconfig, $field, 1);
-			}
-		}
-		// Values from a file folder:
-		if ($fieldValue['config']['fileFolder']) {
-			$fileFolder = GeneralUtility::getFileAbsFileName($fieldValue['config']['fileFolder']);
-			if (@is_dir($fileFolder)) {
-				// Configurations:
-				$extList = $fieldValue['config']['fileFolder_extList'];
-				$recursivityLevels = isset($fieldValue['config']['fileFolder_recursions'])
-					? MathUtility::forceIntegerInRange($fieldValue['config']['fileFolder_recursions'], 0, 99)
-					: 99;
-				// Get files:
-				$fileFolder = rtrim($fileFolder, '/') . '/';
-				$fileArr = GeneralUtility::getAllFilesAndFoldersInPath(array(), $fileFolder, $extList, 0, $recursivityLevels);
-				$fileArr = GeneralUtility::removePrefixPathFromList($fileArr, $fileFolder);
-				foreach ($fileArr as $fileRef) {
-					$fI = pathinfo($fileRef);
-					$icon = GeneralUtility::inList('gif,png,jpeg,jpg', strtolower($fI['extension']))
-						? '../' . PathUtility::stripPathSitePrefix($fileFolder) . $fileRef
-						: '';
-					$items[] = array(
-						$fileRef,
-						$fileRef,
-						$icon
-					);
-				}
-			}
-		}
-		// If 'special' is configured:
-		if ($fieldValue['config']['special']) {
-			$languageService = $this->getLanguageService();
-			switch ($fieldValue['config']['special']) {
-				case 'tables':
-					foreach ($GLOBALS['TCA'] as $theTableNames => $_) {
-						if (!$GLOBALS['TCA'][$theTableNames]['ctrl']['adminOnly']) {
-							// Icon:
-							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTableNames, array());
-							// Add help text
-							$helpText = array();
-							$languageService->loadSingleTableDescription($theTableNames);
-							$helpTextArray = $GLOBALS['TCA_DESCR'][$theTableNames]['columns'][''];
-							if (!empty($helpTextArray['description'])) {
-								$helpText['description'] = $helpTextArray['description'];
-							}
-							// Item configuration:
-							$items[] = array(
-								$languageService->sL($GLOBALS['TCA'][$theTableNames]['ctrl']['title']),
-								$theTableNames,
-								$icon,
-								$helpText
-							);
-						}
-					}
-					break;
-				case 'pagetypes':
-					$theTypes = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
-					foreach ($theTypes as $theTypeArrays) {
-						// Icon:
-						$icon = 'empty-emtpy';
-						if ($theTypeArrays[1] != '--div--') {
-							$icon = IconUtility::mapRecordTypeToSpriteIconName('pages', array('doktype' => $theTypeArrays[1]));
-						}
-						// Item configuration:
-						$items[] = array(
-							$languageService->sL($theTypeArrays[0]),
-							$theTypeArrays[1],
-							$icon
-						);
-					}
-					break;
-				case 'exclude':
-					$theTypes = BackendUtility::getExcludeFields();
-					foreach ($theTypes as $theTypeArrays) {
-						list($theTable, $theFullField) = explode(':', $theTypeArrays[1]);
-						// If the field comes from a FlexForm, the syntax is more complex
-						$theFieldParts = explode(';', $theFullField);
-						$theField = array_pop($theFieldParts);
-						// Add header if not yet set for table:
-						if (!array_key_exists($theTable, $items)) {
-							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTable, array());
-							$items[$theTable] = array(
-								$languageService->sL($GLOBALS['TCA'][$theTable]['ctrl']['title']),
-								'--div--',
-								$icon
-							);
-						}
-						// Add help text
-						$helpText = array();
-						$languageService->loadSingleTableDescription($theTable);
-						$helpTextArray = $GLOBALS['TCA_DESCR'][$theTable]['columns'][$theFullField];
-						if (!empty($helpTextArray['description'])) {
-							$helpText['description'] = $helpTextArray['description'];
-						}
-						// Item configuration:
-						$items[] = array(
-							rtrim($languageService->sL($GLOBALS['TCA'][$theTable]['columns'][$theField]['label']), ':') . ' (' . $theField . ')',
-							$theTypeArrays[1],
-							'empty-empty',
-							$helpText
-						);
-					}
-					break;
-				case 'explicitValues':
-					$theTypes = BackendUtility::getExplicitAuthFieldValues();
-					// Icons:
-					$icons = array(
-						'ALLOW' => 'status-status-permission-granted',
-						'DENY' => 'status-status-permission-denied'
-					);
-					// Traverse types:
-					foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
-						if (is_array($theTypeArrays['items'])) {
-							// Add header:
-							$items[] = array(
-								$theTypeArrays['tableFieldLabel'],
-								'--div--'
-							);
-							// Traverse options for this field:
-							foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
-								// Add item to be selected:
-								$items[] = array(
-									'[' . $itemContent[2] . '] ' . $itemContent[1],
-									$tableFieldKey . ':' . preg_replace('/[:|,]/', '', $itemValue) . ':' . $itemContent[0],
-									$icons[$itemContent[0]]
-								);
-							}
-						}
-					}
-					break;
-				case 'languages':
-					$items = array_merge($items, BackendUtility::getSystemLanguages());
-					break;
-				case 'custom':
-					// Initialize:
-					$customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
-					if (is_array($customOptions)) {
-						foreach ($customOptions as $coKey => $coValue) {
-							if (is_array($coValue['items'])) {
-								// Add header:
-								$items[] = array(
-									$languageService->sL($coValue['header']),
-									'--div--'
-								);
-								// Traverse items:
-								foreach ($coValue['items'] as $itemKey => $itemCfg) {
-									// Icon:
-									if ($itemCfg[1]) {
-										list($icon) = FormEngineUtility::getIcon($itemCfg[1]);
-									} else {
-										$icon = 'empty-empty';
-									}
-									// Add help text
-									$helpText = array();
-									if (!empty($itemCfg[2])) {
-										$helpText['description'] = $languageService->sL($itemCfg[2]);
-									}
-									// Add item to be selected:
-									$items[] = array(
-										$languageService->sL($itemCfg[0]),
-										$coKey . ':' . preg_replace('/[:|,]/', '', $itemKey),
-										$icon,
-										$helpText
-									);
-								}
-							}
-						}
-					}
-					break;
-				case 'modListGroup':
-
-				case 'modListUser':
-					$loadModules = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
-					$loadModules->load($GLOBALS['TBE_MODULES']);
-					$modList = $fieldValue['config']['special'] == 'modListUser' ? $loadModules->modListUser : $loadModules->modListGroup;
-					if (is_array($modList)) {
-						foreach ($modList as $theMod) {
-							// Icon:
-							$icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
-							if ($icon) {
-								$icon = '../' . PathUtility::stripPathSitePrefix($icon);
-							}
-							// Add help text
-							$helpText = array(
-								'title' => $languageService->moduleLabels['labels'][$theMod . '_tablabel'],
-								'description' => $languageService->moduleLabels['labels'][$theMod . '_tabdescr']
-							);
-							// Item configuration:
-							$items[] = array(
-								$this->addSelectOptionsToItemArray_makeModuleData($theMod),
-								$theMod,
-								$icon,
-								$helpText
-							);
-						}
-					}
-					break;
-			}
-		}
-		// Return the items:
-		return $items;
-	}
-
-	/**
-	 * Creates value/label pair for a backend module (main and sub)
-	 *
-	 * @param string $value The module key
-	 * @return string The rawurlencoded 2-part string to transfer to interface
-	 * @access private
-	 * @see addSelectOptionsToItemArray()
-	 */
-	public function addSelectOptionsToItemArray_makeModuleData($value) {
-		$label = '';
-		// Add label for main module:
-		$pp = explode('_', $value);
-		if (count($pp) > 1) {
-			$label .= $this->getLanguageService()->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
-		}
-		// Add modules own label now:
-		$label .= $this->getLanguageService()->moduleLabels['tabs'][$value . '_tab'];
-		return $label;
-	}
-
-	/**
-	 * Adds records from a foreign table (for selector boxes)
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $fieldValue The 'columns' array for the field (from TCA)
-	 * @param array $TSconfig TSconfig for the table/row
-	 * @param string $field The fieldname
-	 * @param bool $pFFlag If set, then we are fetching the 'neg_' foreign tables.
-	 * @return array The $items array modified.
-	 * @see addSelectOptionsToItemArray(), BackendUtility::exec_foreign_table_where_query()
-	 */
-	public function foreignTable($items, $fieldValue, $TSconfig, $field, $pFFlag = FALSE) {
-		$languageService = $this->getLanguageService();
-		// Init:
-		$pF = $pFFlag ? 'neg_' : '';
-		$f_table = $fieldValue['config'][$pF . 'foreign_table'];
-		$uidPre = $pFFlag ? '-' : '';
-		// Exec query:
-		$res = BackendUtility::exec_foreign_table_where_query($fieldValue, $field, $TSconfig, $pF);
-		// Perform error test
-		$db = $this->getDatabaseConnection();
-		if ($db->sql_error()) {
-			$msg = htmlspecialchars($db->sql_error());
-			$msg .= '<br />' . LF;
-			$msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
-			$msgTitle = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
-			/** @var $flashMessage FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, TRUE);
-			/** @var $flashMessageService FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-			/** @var $defaultFlashMessageQueue FlashMessageQueue */
-			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-			$defaultFlashMessageQueue->enqueue($flashMessage);
-			return array();
-		}
-		// Get label prefix.
-		$lPrefix = $languageService->sL($fieldValue['config'][$pF . 'foreign_table_prefix']);
-		// Get icon field + path if any:
-		$iField = $GLOBALS['TCA'][$f_table]['ctrl']['selicon_field'];
-		$iPath = trim($GLOBALS['TCA'][$f_table]['ctrl']['selicon_field_path']);
-		// Traverse the selected rows to add them:
-		while ($row = $db->sql_fetch_assoc($res)) {
-			BackendUtility::workspaceOL($f_table, $row);
-			if (is_array($row)) {
-				// Prepare the icon if available:
-				if ($iField && $iPath && $row[$iField]) {
-					$iParts = GeneralUtility::trimExplode(',', $row[$iField], TRUE);
-					$icon = '../' . $iPath . '/' . trim($iParts[0]);
-				} elseif (GeneralUtility::inList('singlebox,checkbox', $fieldValue['config']['renderMode'])) {
-					$icon = IconUtility::mapRecordTypeToSpriteIconName($f_table, $row);
-				} else {
-					$icon = '';
-				}
-				// Add the item:
-				$items[] = array(
-					$lPrefix . htmlspecialchars(BackendUtility::getRecordTitle($f_table, $row)),
-					$uidPre . $row['uid'],
-					$icon
-				);
-			}
-		}
-		$db->sql_free_result($res);
-		return $items;
 	}
 
 	/********************************************
@@ -3073,6 +2466,8 @@ class FormEngine {
 			}
 
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
+			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
+
 			// If IRRE fields were processed, add the JavaScript functions:
 			if ($this->inline->inlineCount) {
 				$pageRenderer->loadScriptaculous();
@@ -3083,14 +2478,6 @@ class FormEngine {
 				inline.setPrependFormFieldNames("' . $this->inline->prependNaming . '");
 				inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
 				';
-				// Always include JS functions for Suggest fields as we don't know what will come
-				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
-			} else {
-				// If Suggest fields were processed, add the JS functions
-				if ($this->suggest->suggestCount > 0) {
-					$pageRenderer->loadScriptaculous();
-					$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
-				}
 			}
 			$out .= '
 			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
@@ -3169,9 +2556,7 @@ class FormEngine {
 		$pageRenderer->addInlineSetting('FormEngine', 'backPath', '');
 
 		// Integrate JS functions for the element browser if such fields or IRRE fields were processed
-		if ($this->printNeededJS['dbFileIcons'] || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
-			$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
-		}
+		$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
 
 		return $this->JSbottom('editform');
 	}
@@ -3622,6 +3007,12 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defStyle = '';
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $cachedTSconfig = array();
 
 	/**
 	 * @var array
@@ -4834,6 +4225,154 @@ class FormEngine {
 		}
 		$db->sql_free_result($res);
 		return $output;
+	}
+
+	/**
+	 * Returns TSconfig for table/row
+	 * Multiple requests to this function will return cached content so there is no performance loss in calling
+	 * this many times since the information is looked up only once.
+	 *
+	 * @param string $table The table name
+	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
+	 * @param string $field Optionally you can specify the field name as well. In that case the TSconfig for the field is returned.
+	 * @return mixed The TSconfig values (probably in an array)
+	 * @see BackendUtility::getTCEFORM_TSconfig()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function setTSconfig($table, $row, $field = '') {
+		GeneralUtility::logDeprecatedFunction();
+		$mainKey = $table . ':' . $row['uid'];
+		if (!isset($this->cachedTSconfig[$mainKey])) {
+			$this->cachedTSconfig[$mainKey] = BackendUtility::getTCEFORM_TSconfig($table, $row);
+		}
+		if ($field) {
+			return $this->cachedTSconfig[$mainKey][$field];
+		} else {
+			return $this->cachedTSconfig[$mainKey];
+		}
+	}
+
+	/**
+	 * Add selector box items of more exotic kinds.
+	 *
+	 * @param array $items The array of items (label,value,icon)
+	 * @param array $fieldValue The "columns" array for the field (from TCA)
+	 * @param array $TSconfig TSconfig for the table/row
+	 * @param string $field The fieldname
+	 * @return array The $items array modified.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function addSelectOptionsToItemArray($items, $fieldValue, $TSconfig, $field) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::addSelectOptionsToItemArray($items, $fieldValue, $TSconfig, $field);
+	}
+
+	/**
+	 * Creates value/label pair for a backend module (main and sub)
+	 *
+	 * @param string $value The module key
+	 * @return string The rawurlencoded 2-part string to transfer to interface
+	 * @access private
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function addSelectOptionsToItemArray_makeModuleData($value) {
+		GeneralUtility::logDeprecatedFunction();
+		$label = '';
+		// Add label for main module:
+		$pp = explode('_', $value);
+		if (count($pp) > 1) {
+			$label .= $this->getLanguageService()->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
+		}
+		// Add modules own label now:
+		$label .= $this->getLanguageService()->moduleLabels['tabs'][$value . '_tab'];
+		return $label;
+	}
+
+	/**
+	 * Adds records from a foreign table (for selector boxes)
+	 *
+	 * @param array $items The array of items (label,value,icon)
+	 * @param array $fieldValue The 'columns' array for the field (from TCA)
+	 * @param array $TSconfig TSconfig for the table/row
+	 * @param string $field The fieldname
+	 * @param bool $pFFlag If set, then we are fetching the 'neg_' foreign tables.
+	 * @return array The $items array modified.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function foreignTable($items, $fieldValue, $TSconfig, $field, $pFFlag = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
+		$languageService = $this->getLanguageService();
+		// Init:
+		$pF = $pFFlag ? 'neg_' : '';
+		$f_table = $fieldValue['config'][$pF . 'foreign_table'];
+		$uidPre = $pFFlag ? '-' : '';
+		// Exec query:
+		$res = BackendUtility::exec_foreign_table_where_query($fieldValue, $field, $TSconfig, $pF);
+		// Perform error test
+		$db = $this->getDatabaseConnection();
+		if ($db->sql_error()) {
+			$msg = htmlspecialchars($db->sql_error());
+			$msg .= '<br />' . LF;
+			$msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
+			$msgTitle = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
+			/** @var $flashMessage FlashMessage */
+			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, TRUE);
+			/** @var $flashMessageService FlashMessageService */
+			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+			/** @var $defaultFlashMessageQueue FlashMessageQueue */
+			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+			$defaultFlashMessageQueue->enqueue($flashMessage);
+			return array();
+		}
+		// Get label prefix.
+		$lPrefix = $languageService->sL($fieldValue['config'][$pF . 'foreign_table_prefix']);
+		// Get icon field + path if any:
+		$iField = $GLOBALS['TCA'][$f_table]['ctrl']['selicon_field'];
+		$iPath = trim($GLOBALS['TCA'][$f_table]['ctrl']['selicon_field_path']);
+		// Traverse the selected rows to add them:
+		while ($row = $db->sql_fetch_assoc($res)) {
+			BackendUtility::workspaceOL($f_table, $row);
+			if (is_array($row)) {
+				// Prepare the icon if available:
+				if ($iField && $iPath && $row[$iField]) {
+					$iParts = GeneralUtility::trimExplode(',', $row[$iField], TRUE);
+					$icon = '../' . $iPath . '/' . trim($iParts[0]);
+				} elseif (GeneralUtility::inList('singlebox,checkbox', $fieldValue['config']['renderMode'])) {
+					$icon = IconUtility::mapRecordTypeToSpriteIconName($f_table, $row);
+				} else {
+					$icon = '';
+				}
+				// Add the item:
+				$items[] = array(
+					$lPrefix . htmlspecialchars(BackendUtility::getRecordTitle($f_table, $row)),
+					$uidPre . $row['uid'],
+					$icon
+				);
+			}
+		}
+		$db->sql_free_result($res);
+		return $items;
+	}
+
+	/**
+	 * Rendering wizards for form fields.
+	 *
+	 * @param array $itemKinds Array with the real item in the first value, and an alternative item in the second value.
+	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
+	 * @param string $table Table name
+	 * @param array $row The record array
+	 * @param string $field The field name
+	 * @param array $PA Additional configuration array. (passed by reference!)
+	 * @param string $itemName The field name
+	 * @param array $specConf Special configuration if available.
+	 * @param bool $RTE Whether the RTE could have been loaded.
+	 * @return string The new item value.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function renderWizards($itemKinds, $wizConf, $table, $row, $field, &$PA, $itemName, $specConf, $RTE = FALSE) {
+		// renderWizards() in AbstractFormElement is now protected. The method was never meant to be
+		// called directly. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('renderWizards() can not be called directly', 1424031813);
 	}
 
 }
