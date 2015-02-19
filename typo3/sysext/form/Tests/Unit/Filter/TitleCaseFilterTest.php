@@ -27,13 +27,13 @@ class TitleCaseFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var TitleCaseFilter
 	 */
-	protected $fixture = NULL;
+	protected $subject = NULL;
 
 	/**
 	 * Set up
 	 */
-	public function setUp() {
-		$this->fixture = new TitleCaseFilter();
+	protected function setUp() {
+		$this->subject = new TitleCaseFilter();
 		$GLOBALS['TSFE'] = new \stdClass();
 		$GLOBALS['TSFE']->csConvObj = new CharsetConverter();
 		$GLOBALS['TSFE']->renderCharset = 'utf-8';
@@ -58,7 +58,7 @@ class TitleCaseFilterTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function filterForStringReturnsStringWithUppercasedWords($input, $expected) {
 		$this->assertSame(
 			$expected,
-			$this->fixture->filter($input)
+			$this->subject->filter($input)
 		);
 	}
 

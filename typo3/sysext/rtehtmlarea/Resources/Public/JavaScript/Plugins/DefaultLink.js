@@ -96,12 +96,13 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/DefaultLink',
 				tpl: '<tpl for="."><div ext:qtip="{value}" style="text-align:left;font-size:11px;" class="x-combo-list-item">{text}</div></tpl>'
 			}
 		},
-		/*
+
+		/**
 		 * This function gets called when the editor is generated
 		 */
 		onGenerate: function () {
 			if (UserAgent.isIE) {
-				this.editor.iframe.htmlRenderer.stripBaseUrl = this.stripBaseUrl;
+				this.editor.iframe.getHtmlRenderer().stripBaseUrl = this.stripBaseUrl;
 			}
 		},
 		/*
@@ -320,7 +321,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/DefaultLink',
 				this.restoreSelection();
 				this.editor.getSelection().execCommand('CreateLink', false, href);
 				a = this.editor.getSelection().getParentElement();
-				if (!UserAgent.isIEBeforeIE9 && !/^a$/i.test(a.nodeName)) {
+				if (!/^a$/i.test(a.nodeName)) {
 					var range = this.editor.getSelection().createRange();
 					if (range.startContainer.nodeType !== Dom.TEXT_NODE) {
 						a = range.startContainer.childNodes[range.startOffset];
@@ -378,6 +379,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/DefaultLink',
 		 * This function gets called when the toolbar is updated
 		 */
 		onUpdateToolbar: function (button, mode, selectionEmpty, ancestors) {
+			button.setInactive(true);
 			if (mode === 'wysiwyg' && this.editor.isEditable()) {
 				switch (button.itemId) {
 					case 'CreateLink':
@@ -390,6 +392,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/DefaultLink',
 							}
 							if (node != null && /^a$/i.test(node.nodeName)) {
 								button.setTooltip(this.localize('Modify link'));
+								button.setInactive(false);
 							} else {
 								button.setTooltip(this.localize('Insert link'));
 							}

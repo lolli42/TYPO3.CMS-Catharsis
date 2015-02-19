@@ -26,68 +26,144 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 
+	/**
+	 * Used as fieldname prefix
+	 *
+	 * @var string
+	 */
 	public $prefixId = 'tx_indexedsearch';
 
-	// Same as class name
-	public $scriptRelPath = 'Classes/Controller/SearchFormController.php';
+	/**
+	 * Path to this script relative to the extension dir.
+	 *
+	 * @var string
+	 * @TODO This is still set to the "old" class location since the locallang.xlf file in the same dir is loaded by pi_loadLL
+	 */
+	public $scriptRelPath = 'pi/class.tx_indexedsearch.php';
 
-	// Path to this script relative to the extension dir.
+	/**
+	 * Extension key.
+	 *
+	 * @var string
+	 */
 	public $extKey = 'indexed_search';
 
-	// The extension key.
+	/**
+	 * See document for info about this flag...
+	 *
+	 * @var int
+	 */
 	public $join_pages = 0;
 
-	// See document for info about this flag...
+
 	public $defaultResultNumber = 10;
 
+	/**
+	 * Internal variable
+	 *
+	 * @var array
+	 */
 	public $operator_translate_table = array(array('+', 'AND'), array('|', 'OR'), array('-', 'AND NOT'));
 
-	// Internal variable
+	/**
+	 * Root-page ids to search in (rl0 field where clause, see initialize() function)
+	 *
+	 * @var int|string id or comma separated list of ids
+	 */
 	public $wholeSiteIdList = 0;
 
-	// Root-page PIDs to search in (rl0 field where clause, see initialize() function)
-	// Internals:
+	/**
+	 * Search Words and operators
+	 *
+	 * @var array
+	 */
 	public $sWArr = array();
 
-	// Search Words and operators
+	/**
+	 * Selector box values for search configuration form
+	 *
+	 * @var array
+	 */
 	public $optValues = array();
 
-	// Selector box values for search configuration form
+	/**
+	 * Will hold the first row in result - used to calculate relative hit-ratings.
+	 *
+	 * @var array
+	 */
 	public $firstRow = array();
 
-	// Will hold the first row in result - used to calculate relative hit-ratings.
+	/**
+	 * Caching of page path
+	 *
+	 * @var array
+	 */
 	public $cache_path = array();
 
-	// Caching of page path
+	/**
+	 * Caching of root line data
+	 *
+	 * @var array
+	 */
 	public $cache_rl = array();
 
-	// Caching of root line data
+	/**
+	 * Required fe_groups memberships for display of a result.
+	 *
+	 * @var array
+	 */
 	public $fe_groups_required = array();
 
-	// Required fe_groups memberships for display of a result.
+	/**
+	 * sys_domain records
+	 *
+	 * @var array
+	 */
 	public $domain_records = array();
 
-	// Select clauses for individual words
+	/**
+	 * Select clauses for individual words
+	 *
+	 * @var array
+	 */
 	public $wSelClauses = array();
 
-	// Domain records (?)
+	/**
+	 * Page tree sections for search result.
+	 *
+	 * @var array
+	 */
 	public $resultSections = array();
 
-	// Page tree sections for search result.
+	/**
+	 * External parser objects
+	 * @var array
+	 */
 	public $external_parsers = array();
 
-	// External parser objects
+	/**
+	 * Storage of icons....
+	 *
+	 * @var array
+	 */
 	public $iconFileNameCache = array();
 
-	// Storage of icons....
-	public $templateCode;
+	/**
+	 * Will hold the content of $conf['templateFile']
+	 *
+	 * @var string
+	 */
+	public $templateCode = '';
 
-	// Will hold the content of $conf['templateFile']
 	public $hiddenFieldList = 'ext, type, defOp, media, order, group, lang, desc, results';
 
+	/**
+	 * Indexer configuration, coming from $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']
+	 *
+	 * @var array
+	 */
 	public $indexerConfig = array();
 
-	// Indexer configuration, coming from $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']
 	public $enableMetaphoneSearch = FALSE;
 
 	public $storeMetaphoneInfoAsWords;
@@ -104,8 +180,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	/**
 	 * Main function, called from TypoScript as a USER_INT object.
 	 *
-	 * @param string Content input, ignore (just put blank string)
-	 * @param array TypoScript configuration of the plugin!
+	 * @param string $content Content input, ignore (just put blank string)
+	 * @param array $conf TypoScript configuration of the plugin!
 	 * @return string HTML code for the search form / result display.
 	 */
 	public function main($content, $conf) {
@@ -117,7 +193,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		$this->initialize();
 		// Do search:
 		// If there were any search words entered...
-		if (is_array($this->sWArr)) {
+		if (is_array($this->sWArr) && !empty($this->sWArr)) {
 			$content = $this->doSearch($this->sWArr);
 		}
 		// Finally compile all the content, form, messages and results:
@@ -226,7 +302,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Free Index Uid:
 		if ($this->conf['search.']['defaultFreeIndexUidList']) {
 			$uidList = GeneralUtility::intExplode(',', $this->conf['search.']['defaultFreeIndexUidList']);
-			$indexCfgRecords = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid,title', 'index_config', 'uid IN (' . implode(',', $uidList) . ')' . $this->cObj->enableFields('index_config'), '', '', '', 'uid');
+			$indexCfgRecords = $this->databaseConnection->exec_SELECTgetRows('uid,title', 'index_config', 'uid IN (' . implode(',', $uidList) . ')' . $this->cObj->enableFields('index_config'), '', '', '', 'uid');
 			foreach ($uidList as $uidValue) {
 				if (is_array($indexCfgRecords[$uidValue])) {
 					$this->optValues['freeIndexUid'][$uidValue] = $indexCfgRecords[$uidValue]['title'];
@@ -252,11 +328,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		}
 		// Add operators for various languages
 		// Converts the operators to UTF-8 and lowercase
-		$this->operator_translate_table[] = array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode($this->pi_getLL('local_operator_AND'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'AND');
-		$this->operator_translate_table[] = array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode($this->pi_getLL('local_operator_OR'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'OR');
-		$this->operator_translate_table[] = array($GLOBALS['TSFE']->csConvObj->conv_case('utf-8', $GLOBALS['TSFE']->csConvObj->utf8_encode($this->pi_getLL('local_operator_NOT'), $GLOBALS['TSFE']->renderCharset), 'toLower'), 'AND NOT');
+		$this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_AND'), $this->frontendController->renderCharset), 'toLower'), 'AND');
+		$this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_OR'), $this->frontendController->renderCharset), 'toLower'), 'OR');
+		$this->operator_translate_table[] = array($this->frontendController->csConvObj->conv_case('utf-8', $this->frontendController->csConvObj->utf8_encode($this->pi_getLL('local_operator_NOT'), $this->frontendController->renderCharset), 'toLower'), 'AND NOT');
 		// This is the id of the site root. This value may be a commalist of integer (prepared for this)
-		$this->wholeSiteIdList = (int)$GLOBALS['TSFE']->config['rootLine'][0]['uid'];
+		$this->wholeSiteIdList = (int)$this->frontendController->config['rootLine'][0]['uid'];
 		// Creating levels for section menu:
 		// This selects the first and secondary menus for the "sections" selector - so we can search in sections and sub sections.
 		if ($this->conf['show.']['L1sections']) {
@@ -281,7 +357,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			}
 			$this->optValues['sections']['rl1_' . implode(',', array_keys($firstLevelMenu))] = $this->pi_getLL('opt_RL1ALL');
 		}
-		// Setting the list of root PIDs for the search. Notice, these page IDs MUST have a TypoScript template with root flag on them! Basically this list is used to select on the "rl0" field and page ids are registered as "rl0" only if a TypoScript template record with root flag is there.
+		// Setting the list of root IDs for the search. Notice, these page IDs MUST have a TypoScript template with root flag on them! Basically this list is used to select on the "rl0" field and page ids are registered as "rl0" only if a TypoScript template record with root flag is there.
 		// This happens AFTER the use of $this->wholeSiteIdList above because the above will then fetch the menu for the CURRENT site - regardless of this kind of searching here. Thus a general search will lookup in the WHOLE database while a specific section search will take the current sections...
 		if ($this->conf['search.']['rootPidList']) {
 			$this->wholeSiteIdList = implode(',', GeneralUtility::intExplode(',', $this->conf['search.']['rootPidList']));
@@ -289,11 +365,11 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Load the template
 		$this->templateCode = $this->cObj->fileResource($this->conf['templateFile']);
 		// Add search languages:
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'sys_language', '1=1' . $this->cObj->enableFields('sys_language'));
-		while (FALSE !== ($data = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
+		$res = $this->databaseConnection->exec_SELECTquery('*', 'sys_language', '1=1' . $this->cObj->enableFields('sys_language'));
+		while (FALSE !== ($data = $this->databaseConnection->sql_fetch_assoc($res))) {
 			$this->optValues['lang'][$data['uid']] = $data['title'];
 		}
-		$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		$this->databaseConnection->sql_free_result($res);
 		// Calling hook for modification of initialized content
 		if ($hookObj = $this->hookRequest('initialize_postProc')) {
 			$hookObj->initialize_postProc();
@@ -344,8 +420,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Shorten search-word string to max 200 bytes (does NOT take multibyte charsets into account - but never mind, shortening the string here is only a run-away feature!)
 		$inSW = substr($this->piVars['sword'], 0, 200);
 		// Convert to UTF-8 + conv. entities (was also converted during indexing!)
-		$inSW = $GLOBALS['TSFE']->csConvObj->utf8_encode($inSW, $GLOBALS['TSFE']->metaCharset);
-		$inSW = $GLOBALS['TSFE']->csConvObj->entities_to_utf8($inSW, TRUE);
+		$inSW = $this->frontendController->csConvObj->utf8_encode($inSW, $this->frontendController->metaCharset);
+		$inSW = $this->frontendController->csConvObj->entities_to_utf8($inSW, TRUE);
 		$sWordArray = FALSE;
 		if ($hookObj = $this->hookRequest('getSearchWords')) {
 			$sWordArray = $hookObj->getSearchWords_splitSWords($inSW, $defOp);
@@ -354,12 +430,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				// type = Sentence
 				$sWordArray = array(array('sword' => trim($inSW), 'oper' => 'AND'));
 			} else {
-				$search = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\SearchResultContentObject::class);
-				$search->default_operator = $defOp == 1 ? 'OR' : 'AND';
-				$search->operator_translate_table = $this->operator_translate_table;
-				$search->register_and_explode_search_string($inSW);
-				if (is_array($search->sword_array)) {
-					$sWordArray = $this->procSearchWordsByLexer($search->sword_array);
+				$searchWords = \TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::getExplodedSearchString($inSW, $defOp == 1 ? 'OR' : 'AND', $this->operator_translate_table);
+				if (is_array($searchWords)) {
+					$sWordArray = $this->procSearchWordsByLexer($searchWords);
 				}
 			}
 		}
@@ -432,7 +505,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// Create header if we are searching more than one indexing configuration:
 			if (count($indexCfgs) > 1) {
 				if ($freeIndexUid > 0) {
-					$indexCfgRec = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('title', 'index_config', 'uid=' . (int)$freeIndexUid . $this->cObj->enableFields('index_config'));
+					$indexCfgRec = $this->databaseConnection->exec_SELECTgetSingleRow('title', 'index_config', 'uid=' . (int)$freeIndexUid . $this->cObj->enableFields('index_config'));
 					$titleString = $indexCfgRec['title'];
 				} else {
 					$titleString = $this->pi_getLL('opt_freeIndexUid_header_' . $freeIndexUid);
@@ -466,7 +539,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Organize and process result:
 		$result = FALSE;
 		if ($res) {
-			$totalSearchResultCount = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
+			$totalSearchResultCount = $this->databaseConnection->sql_num_rows($res);
 			// Total search-result count
 			$currentPageNumber = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->piVars['pointer'], 0, floor($totalSearchResultCount / $this->piVars['results']));
 			// The pointer is set to the result page that is currently being viewed
@@ -490,7 +563,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$lastResultNumberToAnalyze = ($currentPageNumber + 1) * $this->piVars['results'] + $this->piVars['results'];
 			// Now, traverse result and put the rows to be displayed into an array
 			// Each row should contain the fields from 'ISEC.*, IP.*' combined + artificial fields "show_resume" (bool) and "result_number" (counter)
-			while (FALSE !== ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res))) {
+			while (FALSE !== ($row = $this->databaseConnection->sql_fetch_assoc($res))) {
 				if (!$this->checkExistence($row)) {
 					// Check if the record is still available or if it has been deleted meanwhile.
 					// Currently this works for files only, since extending it to content elements would cause a lot of overhead...
@@ -543,7 +616,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					$totalSearchResultCount--;
 				}
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$this->databaseConnection->sql_free_result($res);
 			$result = array(
 				'resultRows' => $resultRows,
 				'firstRow' => $firstRow,
@@ -775,10 +848,10 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			if ($res) {
 				// Get phash list by searching for it:
 				$phashList = array();
-				while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+				while ($row = $this->databaseConnection->sql_fetch_assoc($res)) {
 					$phashList[] = $row['phash'];
 				}
-				$GLOBALS['TYPO3_DB']->sql_free_result($res);
+				$this->databaseConnection->sql_free_result($res);
 				// Here the phash list are merged with the existing result based on whether we are dealing with OR, NOT or AND operations.
 				if ($c) {
 					switch ($v['oper']) {
@@ -810,7 +883,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function execPHashListQuery($wordSel, $plusQ = '') {
-		return $GLOBALS['TYPO3_DB']->exec_SELECTquery('IR.phash', 'index_words IW,
+		return $this->databaseConnection->exec_SELECTquery('IR.phash', 'index_words IW,
 						index_rel IR,
 						index_section ISEC', $wordSel . '
 						AND IW.wid=IR.wid
@@ -829,7 +902,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function searchWord($sWord, $mode) {
 		$wildcard_left = $mode & self::WILDCARD_LEFT ? '%' : '';
 		$wildcard_right = $mode & self::WILDCARD_RIGHT ? '%' : '';
-		$wSel = 'IW.baseword LIKE \'' . $wildcard_left . $GLOBALS['TYPO3_DB']->quoteStr($sWord, 'index_words') . $wildcard_right . '\'';
+		$wSel = 'IW.baseword LIKE \'' . $wildcard_left . $this->databaseConnection->quoteStr($sWord, 'index_words') . $wildcard_right . '\'';
 		$this->wSelClauses[] = $wSel;
 		$res = $this->execPHashListQuery($wSel, ' AND is_stopword=0');
 		return $res;
@@ -855,7 +928,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return bool|\mysqli_result SQL result pointer
 	 */
 	public function searchSentence($sSentence) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('ISEC.phash', 'index_section ISEC, index_fulltext IFT', 'IFT.fulltextdata LIKE \'%' . $GLOBALS['TYPO3_DB']->quoteStr($sSentence, 'index_fulltext') . '%\' AND
+		$res = $this->databaseConnection->exec_SELECTquery('ISEC.phash', 'index_section ISEC, index_fulltext IFT', 'IFT.fulltextdata LIKE \'%' . $this->databaseConnection->quoteStr($sSentence, 'index_fulltext') . '%\' AND
 				ISEC.phash = IFT.phash
 			' . $this->sectionTableWhere(), 'ISEC.phash');
 		$this->wSelClauses[] = '1=1';
@@ -906,7 +979,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			switch ((string)$this->piVars['sections']) {
 				case '-1':
 					// '-1' => 'Only this page',
-					$out .= ' AND ISEC.page_id=' . $GLOBALS['TSFE']->id;
+					$out .= ' AND ISEC.page_id=' . $this->frontendController->id;
 					break;
 				case '-2':
 					// '-2' => 'Top + level 1',
@@ -930,18 +1003,18 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		switch ((string)$this->piVars['media']) {
 			case '0':
 				// '0' => 'Kun TYPO3 sider',
-				$out = ' AND IP.item_type=' . $GLOBALS['TYPO3_DB']->fullQuoteStr('0', 'index_phash');
+				$out = ' AND IP.item_type=' . $this->databaseConnection->fullQuoteStr('0', 'index_phash');
 				break;
 			case '-2':
 				// All external documents
-				$out = ' AND IP.item_type<>' . $GLOBALS['TYPO3_DB']->fullQuoteStr('0', 'index_phash');
+				$out = ' AND IP.item_type<>' . $this->databaseConnection->fullQuoteStr('0', 'index_phash');
 				break;
 			case '-1':
 				// All content
 				$out = '';
 				break;
 			default:
-				$out = ' AND IP.item_type=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->piVars['media'], 'index_phash');
+				$out = ' AND IP.item_type=' . $this->databaseConnection->fullQuoteStr($this->piVars['media'], 'index_phash');
 		}
 		return $out;
 	}
@@ -967,7 +1040,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function freeIndexUidWhere($freeIndexUid) {
 		if ($freeIndexUid >= 0) {
 			// First, look if the freeIndexUid is a meta configuration:
-			$indexCfgRec = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('indexcfgs', 'index_config', 'type=5 AND uid=' . (int)$freeIndexUid . $this->cObj->enableFields('index_config'));
+			$indexCfgRec = $this->databaseConnection->exec_SELECTgetSingleRow('indexcfgs', 'index_config', 'type=5 AND uid=' . (int)$freeIndexUid . $this->cObj->enableFields('index_config'));
 			if (is_array($indexCfgRec)) {
 				$refs = GeneralUtility::trimExplode(',', $indexCfgRec['indexcfgs']);
 				$list = array(-99);
@@ -976,13 +1049,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					list($table, $uid) = GeneralUtility::revExplode('_', $ref, 2);
 					switch ($table) {
 						case 'index_config':
-							$idxRec = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid', 'index_config', 'uid=' . (int)$uid . $this->cObj->enableFields('index_config'));
+							$idxRec = $this->databaseConnection->exec_SELECTgetSingleRow('uid', 'index_config', 'uid=' . (int)$uid . $this->cObj->enableFields('index_config'));
 							if ($idxRec) {
 								$list[] = $uid;
 							}
 							break;
 						case 'pages':
-							$indexCfgRecordsFromPid = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'index_config', 'pid=' . (int)$uid . $this->cObj->enableFields('index_config'));
+							$indexCfgRecordsFromPid = $this->databaseConnection->exec_SELECTgetRows('uid', 'index_config', 'pid=' . (int)$uid . $this->cObj->enableFields('index_config'));
 							foreach ($indexCfgRecordsFromPid as $idxRec) {
 								$list[] = $idxRec['uid'];
 							}
@@ -1062,7 +1135,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// So, words are imploded into an OR statement (no "sentence search" should be done here - may deselect results)
 			$wordSel = '(' . implode(' OR ', $this->wSelClauses) . ') AND ';
 
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+			$res = $this->databaseConnection->exec_SELECTquery(
 				'ISEC.*, IP.*, ' . $grsel,
 				'index_words IW,
 					index_rel IR,
@@ -1092,7 +1165,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					$orderBy = 'IP.item_mtime' . $this->isDescending();
 					break;
 			}
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('ISEC.*, IP.*', 'index_phash IP,index_section ISEC' . $page_join, 'IP.phash IN (' . $list . ') ' . $this->mediaTypeWhere() . ' ' . $this->languageWhere() . $freeIndexUidClause . '
+			$res = $this->databaseConnection->exec_SELECTquery('ISEC.*, IP.*', 'index_phash IP,index_section ISEC' . $page_join, 'IP.phash IN (' . $list . ') ' . $this->mediaTypeWhere() . ' ' . $this->languageWhere() . $freeIndexUidClause . '
 							AND IP.phash = ISEC.phash
 							AND ' . $page_where, 'IP.phash,ISEC.phash,ISEC.phash_t3,ISEC.rl0,ISEC.rl1,ISEC.rl2 ,ISEC.page_id,ISEC.uniqid,IP.phash_grouping,IP.data_filename ,IP.data_page_id ,IP.data_page_reg1,IP.data_page_type,IP.data_page_mp,IP.gr_list,IP.item_type,IP.item_title,IP.item_description,IP.item_mtime,IP.tstamp,IP.item_size,IP.contentHash,IP.crdate,IP.parsetime,IP.sys_language_uid,IP.item_crdate,IP.cHashParams,IP.externalUrl,IP.recordUid,IP.freeIndexUid,IP.freeIndexSetId', $orderBy);
 		}
@@ -1121,25 +1194,25 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// So, selecting for the grlist records belonging to the parent phash-row where the current users gr_list exists will help us to know.
 			// If this is NOT found, there is still a theoretical possibility that another user accessible page would display a link, so maybe the resume of such a document here may be unjustified hidden. But better safe than sorry.
 			if (\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_grlist')) {
-				$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('phash', 'index_grlist', 'phash=' . (int)$row['phash_t3'] . ' AND gr_list=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($GLOBALS['TSFE']->gr_list, 'index_grlist'));
+				$res = $this->databaseConnection->exec_SELECTquery('phash', 'index_grlist', 'phash=' . (int)$row['phash_t3'] . ' AND gr_list=' . $this->databaseConnection->fullQuoteStr($this->frontendController->gr_list, 'index_grlist'));
 			} else {
 				$res = FALSE;
 			}
-			if ($res && $GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
+			if ($res && $this->databaseConnection->sql_num_rows($res)) {
 				return TRUE;
 			} else {
 				return FALSE;
 			}
 		} else {
 			// Ordinary TYPO3 pages:
-			if ((string)$row['gr_list'] !== (string)$GLOBALS['TSFE']->gr_list) {
+			if ((string)$row['gr_list'] !== (string)$this->frontendController->gr_list) {
 				// Selecting for the grlist records belonging to the phash-row where the current users gr_list exists. If it is found it is proof that this user has direct access to the phash-rows content although he did not himself initiate the indexing...
 				if (\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_grlist')) {
-					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('phash', 'index_grlist', 'phash=' . (int)$row['phash'] . ' AND gr_list=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($GLOBALS['TSFE']->gr_list, 'index_grlist'));
+					$res = $this->databaseConnection->exec_SELECTquery('phash', 'index_grlist', 'phash=' . (int)$row['phash'] . ' AND gr_list=' . $this->databaseConnection->fullQuoteStr($this->frontendController->gr_list, 'index_grlist'));
 				} else {
 					$res = FALSE;
 				}
-				if ($res && $GLOBALS['TYPO3_DB']->sql_num_rows($res)) {
+				if ($res && $this->databaseConnection->sql_num_rows($res)) {
 					return TRUE;
 				} else {
 					return FALSE;
@@ -1218,8 +1291,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			// Number of hits on the search.
 			'tstamp' => $GLOBALS['EXEC_TIME']
 		);
-		$GLOBALS['TYPO3_DB']->exec_INSERTquery('index_stat_search', $insertFields);
-		$newId = $GLOBALS['TYPO3_DB']->sql_insert_id();
+		$this->databaseConnection->exec_INSERTquery('index_stat_search', $insertFields);
+		$newId = $this->databaseConnection->sql_insert_id();
 		if ($newId) {
 			foreach ($sWArr as $val) {
 				$insertFields = array(
@@ -1227,9 +1300,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					'index_stat_search_id' => $newId,
 					'tstamp' => $GLOBALS['EXEC_TIME'],
 					// Time stamp
-					'pageid' => $GLOBALS['TSFE']->id
+					'pageid' => $this->frontendController->id
 				);
-				$GLOBALS['TYPO3_DB']->exec_INSERTquery('index_stat_word', $insertFields);
+				$this->databaseConnection->exec_INSERTquery('index_stat_word', $insertFields);
 			}
 		}
 	}
@@ -1355,7 +1428,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$html = $this->cObj->substituteSubpart($html, '###SEARCH_FORM_EXTENDED###', '');
 		}
 		if ($this->conf['show.']['advancedSearchLink']) {
-			$linkToOtherMode = $this->piVars['ext'] ? $this->pi_getPageLink($GLOBALS['TSFE']->id, $GLOBALS['TSFE']->sPre) : $this->pi_getPageLink($GLOBALS['TSFE']->id, $GLOBALS['TSFE']->sPre, array($this->prefixId . '[ext]' => 1));
+			$linkToOtherMode = $this->piVars['ext'] ? $this->pi_getPageLink($this->frontendController->id, $this->frontendController->sPre) : $this->pi_getPageLink($this->frontendController->id, $this->frontendController->sPre, array($this->prefixId . '[ext]' => 1));
 			$markerArray['###LINKTOOTHERMODE###'] = '<a href="' . htmlspecialchars($linkToOtherMode) . '">' . $this->pi_getLL(($this->piVars['ext'] ? 'link_regularSearch' : 'link_advancedSearch'), '', TRUE) . '</a>';
 		} else {
 			$markerArray['###LINKTOOTHERMODE###'] = '';
@@ -1415,7 +1488,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$item = $this->cObj->getSubpart($this->templateCode, '###RESULT_SECTION_LINKS_LINK###');
 			foreach ($this->resultSections as $id => $dat) {
 				$markerArray = array();
-				$aBegin = '<a href="' . htmlspecialchars(($GLOBALS['TSFE']->anchorPrefix . '#anchor_' . md5($id))) . '">';
+				$aBegin = '<a href="' . htmlspecialchars(($this->frontendController->anchorPrefix . '#anchor_' . md5($id))) . '">';
 				$aContent = htmlspecialchars((trim($dat[0]) ? trim($dat[0]) : $this->pi_getLL('unnamedSection'))) . ' (' . $dat[1] . ' ' . $this->pi_getLL(($dat[1] > 1 ? 'word_pages' : 'word_page'), '', TRUE) . ')';
 				$aEnd = '</a>';
 				$markerArray['###LINK###'] = $aBegin . $aContent . $aEnd;
@@ -1591,8 +1664,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			if ($row['show_resume']) {
 				// Can link directly.
 				$targetAttribute = '';
-				if ($GLOBALS['TSFE']->config['config']['fileTarget']) {
-					$targetAttribute = ' target="' . htmlspecialchars($GLOBALS['TSFE']->config['config']['fileTarget']) . '"';
+				if ($this->frontendController->config['config']['fileTarget']) {
+					$targetAttribute = ' target="' . htmlspecialchars($this->frontendController->config['config']['fileTarget']) . '"';
 				}
 				$title = '<a href="' . htmlspecialchars($row['data_filename']) . '"' . $targetAttribute . '>' . htmlspecialchars($this->makeTitle($row)) . '</a>';
 			} else {
@@ -1735,7 +1808,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				$icon = '';
 				if ($it === '0' || substr($it, 0, 2) == '0:') {
 					if (is_array($specRowConf['pageIcon.'])) {
-						$this->iconFileNameCache[$it] = $this->cObj->IMAGE($specRowConf['pageIcon.']);
+						$this->iconFileNameCache[$it] = $this->cObj->cObjGetSingle('IMAGE', $specRowConf['pageIcon.']);
 					} else {
 						$icon = 'EXT:indexed_search/pi/res/pages.gif';
 					}
@@ -1815,21 +1888,21 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			if (!$noMarkup) {
 				$markedSW = '';
 				if (\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_fulltext')) {
-					$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
+					$res = $this->databaseConnection->exec_SELECTquery('*', 'index_fulltext', 'phash=' . (int)$row['phash']);
 				} else {
 					$res = FALSE;
 				}
 				if ($res) {
-					if ($ftdrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
+					if ($ftdrow = $this->databaseConnection->sql_fetch_assoc($res)) {
 						// Cut HTTP references after some length
 						$content = preg_replace('/(http:\\/\\/[^ ]{60})([^ ]+)/i', '$1...', $ftdrow['fulltextdata']);
 						$markedSW = $this->markupSWpartsOfString($content);
 					}
-					$GLOBALS['TYPO3_DB']->sql_free_result($res);
+					$this->databaseConnection->sql_free_result($res);
 				}
 			}
 			if (!trim($markedSW)) {
-				$outputStr = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $row['item_description'], $lgd);
+				$outputStr = $this->frontendController->csConvObj->crop('utf-8', $row['item_description'], $lgd);
 				$outputStr = htmlspecialchars($outputStr);
 			}
 			$output = $this->utf8_to_currentCharset($outputStr ?: $markedSW);
@@ -1873,26 +1946,26 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		foreach ($parts as $k => $strP) {
 			if ($k % 2 == 0) {
 				// Find length of the summary part:
-				$strLen = $GLOBALS['TSFE']->csConvObj->strlen('utf-8', $parts[$k]);
+				$strLen = $this->frontendController->csConvObj->strlen('utf-8', $parts[$k]);
 				$output[$k] = $parts[$k];
 				// Possibly shorten string:
 				if (!$k) {
 					// First entry at all (only cropped on the frontside)
 					if ($strLen > $postPreLgd) {
-						$output[$k] = $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $GLOBALS['TSFE']->csConvObj->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
+						$output[$k] = $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
 					}
 				} elseif ($summaryLgd > $summaryMax || !isset($parts[($k + 1)])) {
 					// In case summary length is exceed OR if there are no more entries at all:
 					if ($strLen > $postPreLgd) {
-						$output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $GLOBALS['TSFE']->csConvObj->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider;
+						$output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider;
 					}
 				} else {
 					// In-between search words:
 					if ($strLen > $postPreLgd * 2) {
-						$output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $GLOBALS['TSFE']->csConvObj->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $GLOBALS['TSFE']->csConvObj->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
+						$output[$k] = preg_replace('/[[:space:]][^[:space:]]+$/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], ($postPreLgd - $postPreLgd_offset))) . $divider . preg_replace('/^[^[:space:]]+[[:space:]]/', '', $this->frontendController->csConvObj->crop('utf-8', $parts[$k], -($postPreLgd - $postPreLgd_offset)));
 					}
 				}
-				$summaryLgd += $GLOBALS['TSFE']->csConvObj->strlen('utf-8', $output[$k]);
+				$summaryLgd += $this->frontendController->csConvObj->strlen('utf-8', $output[$k]);
 				// Protect output:
 				$output[$k] = htmlspecialchars($output[$k]);
 				// If summary lgd is exceed, break the process:
@@ -1900,7 +1973,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 					break;
 				}
 			} else {
-				$summaryLgd += $GLOBALS['TSFE']->csConvObj->strlen('utf-8', $strP);
+				$summaryLgd += $this->frontendController->csConvObj->strlen('utf-8', $strP);
 				$output[$k] = '<strong class="tx-indexedsearch-redMarkup">' . htmlspecialchars($parts[$k]) . '</strong>';
 			}
 		}
@@ -1925,7 +1998,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				$add = ', ' . $this->pi_getLL('word_page') . ' ' . $pp[0];
 			}
 		}
-		$outputString = $GLOBALS['TSFE']->csConvObj->crop('utf-8', $row['item_title'], 50, '...');
+		$outputString = $this->frontendController->csConvObj->crop('utf-8', $row['item_title'], 50, '...');
 		return $this->utf8_to_currentCharset($outputString) . $add;
 	}
 
@@ -1945,8 +2018,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		$pI = parse_url($row['data_filename']);
 		if ($pI['scheme']) {
 			$targetAttribute = '';
-			if ($GLOBALS['TSFE']->config['config']['fileTarget']) {
-				$targetAttribute = ' target="' . htmlspecialchars($GLOBALS['TSFE']->config['config']['fileTarget']) . '"';
+			if ($this->frontendController->config['config']['fileTarget']) {
+				$targetAttribute = ' target="' . htmlspecialchars($this->frontendController->config['config']['fileTarget']) . '"';
 			}
 			$tmplArray['path'] = '<a href="' . htmlspecialchars($row['data_filename']) . '"' . $targetAttribute . '>' . htmlspecialchars($row['data_filename']) . '</a>';
 		} else {
@@ -2073,7 +2146,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function getRootLine($id, $pathMP = '') {
 		$identStr = $id . '|' . $pathMP;
 		if (!isset($this->cache_path[$identStr])) {
-			$this->cache_rl[$identStr] = $GLOBALS['TSFE']->sys_page->getRootLine($id, $pathMP);
+			$this->cache_rl[$identStr] = $this->frontendController->sys_page->getRootLine($id, $pathMP);
 		}
 		return $this->cache_rl[$identStr];
 	}
@@ -2085,8 +2158,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return string Domain name
 	 */
 	public function getFirstSysDomainRecordForPage($id) {
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('domainName', 'sys_domain', 'pid=' . (int)$id . $this->cObj->enableFields('sys_domain'), '', 'sorting');
-		$row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+		$res = $this->databaseConnection->exec_SELECTquery('domainName', 'sys_domain', 'pid=' . (int)$id . $this->cObj->enableFields('sys_domain'), '', 'sorting');
+		$row = $this->databaseConnection->sql_fetch_assoc($res);
 		return rtrim($row['domainName'], '/');
 	}
 
@@ -2122,7 +2195,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 						}
 					}
 					// Stop, if we find that the current id is the current root page.
-					if ($v['uid'] == $GLOBALS['TSFE']->config['rootLine'][0]['uid']) {
+					if ($v['uid'] == $this->frontendController->config['rootLine'][0]['uid']) {
 						break;
 					}
 					$path = '/' . $v['title'] . $path;
@@ -2145,14 +2218,14 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function getMenu($id) {
 		if ($this->conf['show.']['LxALLtypes']) {
 			$output = array();
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('title,uid', 'pages', 'pid=' . (int)$id . $this->cObj->enableFields('pages'), '', 'sorting');
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-				$output[$row['uid']] = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
+			$res = $this->databaseConnection->exec_SELECTquery('title,uid', 'pages', 'pid=' . (int)$id . $this->cObj->enableFields('pages'), '', 'sorting');
+			while ($row = $this->databaseConnection->sql_fetch_assoc($res)) {
+				$output[$row['uid']] = $this->frontendController->sys_page->getPageOverlay($row);
 			}
-			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+			$this->databaseConnection->sql_free_result($res);
 			return $output;
 		} else {
-			return $GLOBALS['TSFE']->sys_page->getMenu($id);
+			return $this->frontendController->sys_page->getMenu($id);
 		}
 	}
 
@@ -2173,7 +2246,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return string Converted string (backend charset if different from utf-8)
 	 */
 	public function utf8_to_currentCharset($str) {
-		return $GLOBALS['TSFE']->csConv($str, 'utf-8');
+		return $this->frontendController->csConv($str, 'utf-8');
 	}
 
 	/**
@@ -2201,9 +2274,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	protected function getSearchFormActionURL() {
 		$targetUrlPid = $this->getSearchFormActionPidFromTS();
 		if ($targetUrlPid == 0) {
-			$targetUrlPid = $GLOBALS['TSFE']->id;
+			$targetUrlPid = $this->frontendController->id;
 		}
-		return $this->pi_getPageLink($targetUrlPid, $GLOBALS['TSFE']->sPre);
+		return $this->pi_getPageLink($targetUrlPid, $this->frontendController->sPre);
 	}
 
 	/**

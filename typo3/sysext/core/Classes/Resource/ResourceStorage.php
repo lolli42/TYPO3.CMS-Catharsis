@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderWritePermissionsException;
+use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -690,7 +692,10 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function assureFolderReadPermission(Folder $folder = NULL) {
 		if (!$this->checkFolderActionPermission('read', $folder)) {
-			throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to access the given folder', 1375955684);
+			throw new Exception\InsufficientFolderAccessPermissionsException(
+				'You are not allowed to access the given folder: "' . $folder->getName() . '"',
+				1375955684
+			);
 		}
 	}
 
@@ -711,7 +716,10 @@ class ResourceStorage implements ResourceStorageInterface {
 		}
 		// Check user action permission
 		if (!$this->checkFolderActionPermission('delete', $folder)) {
-			throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to delete the given folder', 1377779039);
+			throw new Exception\InsufficientFolderAccessPermissionsException(
+				'You are not allowed to delete the given folder: "' . $folder->getName() . '"',
+				1377779039
+			);
 		}
 		// Check if the user has write permissions to folders
 		// Would be good if we could check for actual write permissions in the containig folder
@@ -731,10 +739,16 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function assureFileReadPermission(FileInterface $file) {
 		if (!$this->checkFileActionPermission('read', $file)) {
-			throw new Exception\InsufficientFileAccessPermissionsException('You are not allowed to access that file.', 1375955429);
+			throw new Exception\InsufficientFileAccessPermissionsException(
+				'You are not allowed to access that file: "' . $file->getName() . '"',
+				1375955429
+			);
 		}
 		if (!$this->checkFileExtensionPermission($file->getName())) {
-			throw new Exception\IllegalFileExtensionException('You are not allowed to use that file extension', 1375955430);
+			throw new Exception\IllegalFileExtensionException(
+				'You are not allowed to use that file extension. File: "' . $file->getName() . '"',
+				1375955430
+			);
 		}
 	}
 
@@ -858,7 +872,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	protected function assureFileMovePermissions(FileInterface $file, Folder $targetFolder, $targetFileName) {
 		// Check if targetFolder is within this storage
 		if ($this->getUid() !== $targetFolder->getStorage()->getUid()) {
-			throw new \RuntimeException();
+			throw new \RuntimeException('The target folder is not in the same storage. Target folder given: "' . $targetFolder . '"', 1422553107);
 		}
 		// Check for a valid file extension
 		if (!$this->checkFileExtensionPermission($targetFileName)) {
@@ -888,11 +902,11 @@ class ResourceStorage implements ResourceStorageInterface {
 	protected function assureFileRenamePermissions(FileInterface $file, $targetFileName) {
 		// Check if file extension is allowed
 		if (!$this->checkFileExtensionPermission($targetFileName) || !$this->checkFileExtensionPermission($file->getName())) {
-			throw new Exception\IllegalFileExtensionException('You are not allowed to rename a file with to this extension', 1371466663);
+			throw new Exception\IllegalFileExtensionException('You are not allowed to rename a file with this extension. File given: "' . $file->getName() . '"', 1371466663);
 		}
 		// Check if user is allowed to rename
 		if (!$this->checkFileActionPermission('rename', $file)) {
-			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files."', 1319219351);
+			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files. File given."' . $file . '"', 1319219351);
 		}
 		// Check if the user is allowed to write to folders
 		// Although it would be good to check, we cannot check here if the folder actually is writable
@@ -958,14 +972,14 @@ class ResourceStorage implements ResourceStorageInterface {
 			throw new Exception('The operation of the folder cannot be called by this storage "' . $this->getUid() . '"', 1377777624);
 		}
 		if (!$folderToCopy instanceof Folder) {
-			throw new \RuntimeException('The folder "' . $folderToCopy->getIdentifier() . '" to copy is not of type Folder.', 1384209020);
+			throw new \RuntimeException('The folder "' . $folderToCopy->getIdentifier() . '" to copy is not of type folder.', 1384209020);
 		}
 		// Check if user is allowed to copy and the folder is readable
 		if (!$folderToCopy->getStorage()->checkFolderActionPermission('copy', $folderToCopy)) {
 			throw new Exception\InsufficientFileReadPermissionsException('You are not allowed to copy the folder "' . $folderToCopy->getIdentifier() . '"', 1377777629);
 		}
 		if (!$targetParentFolder instanceof Folder) {
-			throw new \RuntimeException('The target folder "' . $targetParentFolder->getIdentifier() . '" is not of type Folder.', 1384209021);
+			throw new \RuntimeException('The target folder "' . $targetParentFolder->getIdentifier() . '" is not of type folder.', 1384209021);
 		}
 		// Check if targetFolder is writable
 		if (!$this->checkFolderActionPermission('write', $targetParentFolder)) {
@@ -1412,6 +1426,9 @@ class ResourceStorage implements ResourceStorageInterface {
 		);
 		ob_clean();
 		flush();
+		while (ob_get_level() > 0) {
+			ob_end_clean();
+		}
 		$this->driver->dumpFileContents($file->getIdentifier());
 	}
 
@@ -1705,6 +1722,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 *
 	 * @throws \Exception|\TYPO3\CMS\Core\Exception
 	 * @throws \InvalidArgumentException
+	 * @throws InvalidTargetFolderException
 	 * @return Folder
 	 */
 	public function moveFolder(Folder $folderToMove, Folder $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
@@ -1719,6 +1737,16 @@ class ResourceStorage implements ResourceStorageInterface {
 		// Get all file objects now so we are able to update them after moving the folder
 		$fileObjects = $this->getAllFileObjectsInFolder($folderToMove);
 		if ($sourceStorage === $this) {
+			if ($this->isWithinFolder($folderToMove, $targetParentFolder)) {
+				throw new InvalidTargetFolderException(
+					sprintf(
+						'Cannot move folder "%s" into target folder "%s", because the target folder is already within the folder to be moved!',
+						$folderToMove->getName(),
+						$targetParentFolder->getName()
+					),
+					1422723050
+				);
+			}
 			$fileMappings = $this->driver->moveFolderWithinStorage($folderToMove->getIdentifier(), $targetParentFolder->getIdentifier(), $sanitizedNewFolderName);
 		} else {
 			$fileMappings = $this->moveFolderBetweenStorages($folderToMove, $targetParentFolder, $sanitizedNewFolderName);
@@ -1756,6 +1784,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $newFolderName
 	 * @param string $conflictMode  "overrideExistingFolder", "renameNewFolder", "cancel
 	 * @return Folder The new (copied) folder object
+	 * @throws InvalidTargetFolderException
 	 */
 	public function copyFolder(FolderInterface $folderToCopy, FolderInterface $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
 		// @todo implement the $conflictMode handling
@@ -1768,15 +1797,21 @@ class ResourceStorage implements ResourceStorageInterface {
 		$sourceStorage = $folderToCopy->getStorage();
 		// call driver method to move the file
 		// that also updates the file object properties
-		try {
-			if ($sourceStorage === $this) {
-				$this->driver->copyFolderWithinStorage($folderToCopy->getIdentifier(), $targetParentFolder->getIdentifier(), $sanitizedNewFolderName);
-				$returnObject = $this->getFolder($targetParentFolder->getSubfolder($sanitizedNewFolderName)->getIdentifier());
-			} else {
-				$this->copyFolderBetweenStorages($folderToCopy, $targetParentFolder, $sanitizedNewFolderName);
+		if ($sourceStorage === $this) {
+			if ($this->isWithinFolder($folderToCopy, $targetParentFolder)) {
+				throw new InvalidTargetFolderException(
+					sprintf(
+						'Cannot copy folder "%s" into target folder "%s", because the target folder is already within the folder to be copied!',
+						$folderToCopy->getName(),
+						$targetParentFolder->getName()
+					),
+					1422723059
+				);
 			}
-		} catch (\TYPO3\CMS\Core\Exception $e) {
-			echo $e->getMessage();
+			$this->driver->copyFolderWithinStorage($folderToCopy->getIdentifier(), $targetParentFolder->getIdentifier(), $sanitizedNewFolderName);
+			$returnObject = $this->getFolder($targetParentFolder->getSubfolder($sanitizedNewFolderName)->getIdentifier());
+		} else {
+			$this->copyFolderBetweenStorages($folderToCopy, $targetParentFolder, $sanitizedNewFolderName);
 		}
 		$this->emitPostFolderCopySignal($folderToCopy, $targetParentFolder, $returnObject->getName());
 		return $returnObject;
@@ -1994,6 +2029,24 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * Checks if a resource (file or folder) is within the given folder
+	 *
+	 * @param Folder $folder
+	 * @param ResourceInterface $resource
+	 * @return bool
+	 * @throws \InvalidArgumentException
+	 */
+	public function isWithinFolder(Folder $folder, ResourceInterface $resource) {
+		if ($folder->getStorage() !== $this) {
+			throw new \InvalidArgumentException('Given folder "' . $folder->getIdentifier() . '" is not part of this storage!', 1422709241);
+		}
+		if ($folder->getStorage() !== $resource->getStorage()) {
+			return FALSE;
+		}
+		return $this->driver->isWithin($folder->getIdentifier(), $resource->getIdentifier());
+	}
+
+	/**
 	 * Returns the folders on the root level of the storage
 	 * or the first mount point of this storage for this user.
 	 *
@@ -2114,7 +2167,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * Emits the file post-replace signal
 	 *
 	 * @param FileInterface $file
-	 * @param $localFilePath
+	 * @param string $localFilePath
 	 * @return void
 	 */
 	protected function emitPostFileReplaceSignal(FileInterface $file, $localFilePath) {
@@ -2425,11 +2478,17 @@ class ResourceStorage implements ResourceStorageInterface {
 			if (!empty($this->storageRecord['processingfolder'])) {
 				$processingFolder = $this->storageRecord['processingfolder'];
 			}
-			if ($this->driver->folderExists($processingFolder) === FALSE) {
-				$this->processingFolder = $this->createFolder($processingFolder);
-			} else {
-				$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
-				$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
+			try {
+				if ($this->driver->folderExists($processingFolder) === FALSE) {
+					$this->processingFolder = $this->createFolder($processingFolder);
+				} else {
+					$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
+					$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
+				}
+			} catch(InsufficientFolderWritePermissionsException $e) {
+				$this->processingFolder = GeneralUtility::makeInstance(
+					InaccessibleFolder::class, $this, $processingFolder, $processingFolder
+				);
 			}
 		}
 		return $this->processingFolder;

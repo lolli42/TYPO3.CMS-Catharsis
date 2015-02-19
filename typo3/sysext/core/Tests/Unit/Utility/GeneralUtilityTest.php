@@ -33,14 +33,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	protected $singletonInstances = array();
 
-	public function setUp() {
+	protected function setUp() {
 		GeneralUtilityFixture::$isAllowedHostHeaderValueCallCount = 0;
 		GeneralUtilityFixture::setAllowHostHeaderValue(FALSE);
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = Utility\GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL;
 		$this->singletonInstances = Utility\GeneralUtility::getSingletonInstances();
 	}
 
-	public function tearDown() {
+	protected function tearDown() {
 		Utility\GeneralUtility::resetSingletonInstances($this->singletonInstances);
 		parent::tearDown();
 	}
@@ -912,18 +912,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'short mail address' => array('a@b.c'),
 			'simple mail address' => array('test@example.com'),
 			'uppercase characters' => array('QWERTYUIOPASDFGHJKLZXCVBNM@QWERTYUIOPASDFGHJKLZXCVBNM.NET'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6 and 5.3.2 but fails with 5.3.0 on windows
-			// 'equal sign in local part' => array('test=mail@example.com'),
+			'equal sign in local part' => array('test=mail@example.com'),
 			'dash in local part' => array('test-mail@example.com'),
 			'plus in local part' => array('test+mail@example.com'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6 and 5.3.2 but fails with 5.3.0 on windows
-			// 'question mark in local part' => array('test?mail@example.com'),
+			'question mark in local part' => array('test?mail@example.com'),
 			'slash in local part' => array('foo/bar@example.com'),
 			'hash in local part' => array('foo#bar@example.com'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6 and 5.3.2 but fails with 5.3.0 on windows
-			// 'dot in local part' => array('firstname.lastname@employee.2something.com'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6, but not ok with 5.3.2
-			// 'dash as local part' => array('-@foo.com'),
+			'dot in local part' => array('firstname.lastname@employee.2something.com'),
+			'dash as local part' => array('-@foo.com'),
 			'umlauts in domain part' => array('foo@äöüfoo.com')
 		);
 	}
@@ -957,17 +953,13 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'closing parenthesis in local part' => array('foo)bar@example.com'),
 			'opening square bracket in local part' => array('foo[bar@example.com'),
 			'closing square bracket as local part' => array(']@example.com'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6, but not ok with 5.3.2
-			// 'top level domain only' => array('test@com'),
+			'top level domain only' => array('test@com'),
 			'dash as second level domain' => array('foo@-.com'),
 			'domain part starting with dash' => array('foo@-foo.com'),
 			'domain part ending with dash' => array('foo@foo-.com'),
 			'number as top level domain' => array('foo@bar.123'),
-			// Fix / change if TYPO3 php requirement changed: Address not ok with 5.2.6, but ok with 5.3.2 (?)
-			// 'dash as top level domain' => array('foo@bar.-'),
 			'dot at beginning of domain part' => array('test@.com'),
-			// Fix / change if TYPO3 php requirement changed: Address ok with 5.2.6, but not ok with 5.3.2
-			// 'local part ends with dot' => array('e.x.a.m.p.l.e.@example.com'),
+			'local part ends with dot' => array('e.x.a.m.p.l.e.@example.com'),
 			'umlauts in local part' => array('äöüfoo@bar.com'),
 			'trailing whitespace' => array('test@example.com '),
 			'trailing carriage return' => array('test@example.com' . CR),
@@ -986,35 +978,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	//////////////////////////////////
-	// Tests concerning inArray
-	//////////////////////////////////
-	/**
-	 * @test
-	 * @dataProvider inArrayDataProvider
-	 */
-	public function inArrayChecksStringExistenceWithinArray($array, $item, $expected) {
-		$this->assertEquals($expected, Utility\GeneralUtility::inArray($array, $item));
-	}
-
-	/**
-	 * Data provider for inArrayChecksStringExistenceWithinArray
-	 *
-	 * @return array
-	 */
-	public function inArrayDataProvider() {
-		return array(
-			'Empty array' => array(array(), 'search', FALSE),
-			'One item array no match' => array(array('one'), 'two', FALSE),
-			'One item array match' => array(array('one'), 'one', TRUE),
-			'Multiple items array no match' => array(array('one', 2, 'three', 4), 'four', FALSE),
-			'Multiple items array match' => array(array('one', 2, 'three', 4), 'three', TRUE),
-			'Integer search items can match string values' => array(array('0', '1', '2'), 1, TRUE),
-			'Search item is not casted to integer for a match' => array(array(4), '4a', FALSE),
-			'Empty item won\'t match - in contrast to the php-builtin ' => array(array(0, 1, 2), '', FALSE)
-		);
-	}
-
-	//////////////////////////////////
 	// Tests concerning intExplode
 	//////////////////////////////////
 	/**
@@ -1025,81 +988,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$expectedArray = array(1, 0, 2);
 		$actualArray = Utility\GeneralUtility::intExplode(',', $testString);
 		$this->assertEquals($expectedArray, $actualArray);
-	}
-
-	//////////////////////////////////
-	// Tests concerning keepItemsInArray
-	//////////////////////////////////
-	/**
-	 * @test
-	 * @dataProvider keepItemsInArrayWorksWithOneArgumentDataProvider
-	 */
-	public function keepItemsInArrayWorksWithOneArgument($search, $array, $expected) {
-		$this->assertEquals($expected, Utility\GeneralUtility::keepItemsInArray($array, $search));
-	}
-
-	/**
-	 * Data provider for keepItemsInArrayWorksWithOneArgument
-	 *
-	 * @return array
-	 */
-	public function keepItemsInArrayWorksWithOneArgumentDataProvider() {
-		$array = array(
-			'one' => 'one',
-			'two' => 'two',
-			'three' => 'three'
-		);
-		return array(
-			'Empty argument will match "all" elements' => array(NULL, $array, $array),
-			'No match' => array('four', $array, array()),
-			'One match' => array('two', $array, array('two' => 'two')),
-			'Multiple matches' => array('two,one', $array, array('one' => 'one', 'two' => 'two')),
-			'Argument can be an array' => array(array('three'), $array, array('three' => 'three'))
-		);
-	}
-
-	/**
-	 * Shows the exmaple from the doc comment where
-	 * a function is used to reduce the sub arrays to one item which
-	 * is then used for the matching.
-	 *
-	 * @test
-	 */
-	public function keepItemsInArrayCanUseCallbackOnSearchArray() {
-		$array = array(
-			'aa' => array('first', 'second'),
-			'bb' => array('third', 'fourth'),
-			'cc' => array('fifth', 'sixth')
-		);
-		$expected = array('bb' => array('third', 'fourth'));
-		$keepItems = 'third';
-		$getValueFunc = create_function('$value', 'return $value[0];');
-		$match = Utility\GeneralUtility::keepItemsInArray($array, $keepItems, $getValueFunc);
-		$this->assertEquals($expected, $match);
-	}
-
-	/**
-	 * Similar to keepItemsInArrayCanUseCallbackOnSearchArray(),
-	 * but uses a closure instead of create_function()
-	 *
-	 * @test
-	 */
-	public function keepItemsInArrayCanUseClosure() {
-		$array = array(
-			'aa' => array('first', 'second'),
-			'bb' => array('third', 'fourth'),
-			'cc' => array('fifth', 'sixth')
-		);
-		$expected = array('bb' => array('third', 'fourth'));
-		$keepItems = 'third';
-		$match = Utility\GeneralUtility::keepItemsInArray(
-			$array,
-			$keepItems,
-			function ($value) {
-				return $value[0];
-			}
-		);
-		$this->assertEquals($expected, $match);
 	}
 
 	//////////////////////////////////
@@ -1201,31 +1089,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$expected = array('foo' => 1, 'bar' => '2');
 		$result = Utility\GeneralUtility::compileSelectedGetVarsFromArray($filter, $getArray, TRUE);
 		$this->assertSame($expected, $result);
-	}
-
-	//////////////////////////////////
-	// Tests concerning remapArrayKeys
-	//////////////////////////////////
-	/**
-	 * @test
-	 */
-	public function remapArrayKeysExchangesKeysWithGivenMapping() {
-		$array = array(
-			'one' => 'one',
-			'two' => 'two',
-			'three' => 'three'
-		);
-		$keyMapping = array(
-			'one' => '1',
-			'two' => '2'
-		);
-		$expected = array(
-			'1' => 'one',
-			'2' => 'two',
-			'three' => 'three'
-		);
-		Utility\GeneralUtility::remapArrayKeys($array, $keyMapping);
-		$this->assertEquals($expected, $array);
 	}
 
 	//////////////////////////////////
@@ -1435,66 +1298,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	//////////////////////////////////
-	// Tests concerning removeArrayEntryByValue
-	//////////////////////////////////
-	/**
-	 * @test
-	 */
-	public function checkRemoveArrayEntryByValueRemovesEntriesFromOneDimensionalArray() {
-		$inputArray = array(
-			'0' => 'test1',
-			'1' => 'test2',
-			'2' => 'test3',
-			'3' => 'test2'
-		);
-		$compareValue = 'test2';
-		$expectedResult = array(
-			'0' => 'test1',
-			'2' => 'test3'
-		);
-		$actualResult = Utility\GeneralUtility::removeArrayEntryByValue($inputArray, $compareValue);
-		$this->assertEquals($expectedResult, $actualResult);
-	}
-
-	/**
-	 * @test
-	 */
-	public function checkRemoveArrayEntryByValueRemovesEntriesFromMultiDimensionalArray() {
-		$inputArray = array(
-			'0' => 'foo',
-			'1' => array(
-				'10' => 'bar'
-			),
-			'2' => 'bar'
-		);
-		$compareValue = 'bar';
-		$expectedResult = array(
-			'0' => 'foo',
-			'1' => array()
-		);
-		$actualResult = Utility\GeneralUtility::removeArrayEntryByValue($inputArray, $compareValue);
-		$this->assertEquals($expectedResult, $actualResult);
-	}
-
-	/**
-	 * @test
-	 */
-	public function checkRemoveArrayEntryByValueRemovesEntryWithEmptyString() {
-		$inputArray = array(
-			'0' => 'foo',
-			'1' => '',
-			'2' => 'bar'
-		);
-		$compareValue = '';
-		$expectedResult = array(
-			'0' => 'foo',
-			'2' => 'bar'
-		);
-		$actualResult = Utility\GeneralUtility::removeArrayEntryByValue($inputArray, $compareValue);
-		$this->assertEquals($expectedResult, $actualResult);
-	}
-
-	//////////////////////////////////
 	// Tests concerning getBytesFromSizeMeasurement
 	//////////////////////////////////
 	/**
@@ -1532,8 +1335,22 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getIndpEnvTypo3SitePathReturnsStringStartingWithSlash() {
+		if (TYPO3_OS === 'WIN') {
+			$this->markTestSkipped('Test not available on Windows OS.');
+		}
 		$result = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
 		$this->assertEquals('/', $result[0]);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getIndpEnvTypo3SitePathReturnsStringStartingWithDrive() {
+		if (TYPO3_OS !== 'WIN') {
+			$this->markTestSkipped('Test available only on Windows OS.');
+		}
+		$result = Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		$this->assertRegExp('/^[a-z]:\//i', $result);
 	}
 
 	/**
@@ -2110,6 +1927,35 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	//////////////////////////////////////
+	// Tests concerning tempnam
+	//////////////////////////////////////
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsPathStartingWithGivenPrefix() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$fileName = basename($filePath);
+		$this->assertStringStartsWith('foo', $fileName);
+	}
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsPathWithoutBackslashes() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$this->assertNotContains('\\', $filePath);
+	}
+
+	/**
+	 * @test
+	 */
+	public function tempnamReturnsAbsolutePathInsideDocumentRoot() {
+		$filePath = Utility\GeneralUtility::tempnam('foo');
+		$this->assertStringStartsWith(PATH_site, $filePath);
+	}
+
+	//////////////////////////////////////
 	// Tests concerning addSlashesOnArray
 	//////////////////////////////////////
 	/**
@@ -2157,90 +2003,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		Utility\GeneralUtility::stripSlashesOnArray($inputArray);
 		$this->assertEquals($expectedResult, $inputArray);
-	}
-
-	//////////////////////////////////////
-	// Tests concerning arrayDiffAssocRecursive
-	//////////////////////////////////////
-	/**
-	 * @test
-	 */
-	public function arrayDiffAssocRecursiveHandlesOneDimensionalArrays() {
-		$array1 = array(
-			'key1' => 'value1',
-			'key2' => 'value2',
-			'key3' => 'value3'
-		);
-		$array2 = array(
-			'key1' => 'value1',
-			'key3' => 'value3'
-		);
-		$expectedResult = array(
-			'key2' => 'value2'
-		);
-		$actualResult = Utility\GeneralUtility::arrayDiffAssocRecursive($array1, $array2);
-		$this->assertEquals($expectedResult, $actualResult);
-	}
-
-	/**
-	 * @test
-	 */
-	public function arrayDiffAssocRecursiveHandlesMultiDimensionalArrays() {
-		$array1 = array(
-			'key1' => 'value1',
-			'key2' => array(
-				'key21' => 'value21',
-				'key22' => 'value22',
-				'key23' => array(
-					'key231' => 'value231',
-					'key232' => 'value232'
-				)
-			)
-		);
-		$array2 = array(
-			'key1' => 'value1',
-			'key2' => array(
-				'key21' => 'value21',
-				'key23' => array(
-					'key231' => 'value231'
-				)
-			)
-		);
-		$expectedResult = array(
-			'key2' => array(
-				'key22' => 'value22',
-				'key23' => array(
-					'key232' => 'value232'
-				)
-			)
-		);
-		$actualResult = Utility\GeneralUtility::arrayDiffAssocRecursive($array1, $array2);
-		$this->assertEquals($expectedResult, $actualResult);
-	}
-
-	/**
-	 * @test
-	 */
-	public function arrayDiffAssocRecursiveHandlesMixedArrays() {
-		$array1 = array(
-			'key1' => array(
-				'key11' => 'value11',
-				'key12' => 'value12'
-			),
-			'key2' => 'value2',
-			'key3' => 'value3'
-		);
-		$array2 = array(
-			'key1' => 'value1',
-			'key2' => array(
-				'key21' => 'value21'
-			)
-		);
-		$expectedResult = array(
-			'key3' => 'value3'
-		);
-		$actualResult = Utility\GeneralUtility::arrayDiffAssocRecursive($array1, $array2);
-		$this->assertEquals($expectedResult, $actualResult);
 	}
 
 	//////////////////////////////////////
@@ -2319,117 +2081,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'propertyB' => 3
 		);
 		$this->assertEquals($expectedResult, Utility\GeneralUtility::removeDotsFromTS($typoScript));
-	}
-
-	//////////////////////////////////////
-	// Tests concerning naturalKeySortRecursive
-	//////////////////////////////////////
-	/**
-	 * @test
-	 */
-	public function naturalKeySortRecursiveReturnsFalseIfInputIsNotAnArray() {
-		$testValues = array(
-			1,
-			'string',
-			FALSE
-		);
-		foreach ($testValues as $testValue) {
-			$this->assertFalse(Utility\GeneralUtility::naturalKeySortRecursive($testValue));
-		}
-	}
-
-	/**
-	 * @test
-	 */
-	public function naturalKeySortRecursiveSortsOneDimensionalArrayByNaturalOrder() {
-		$testArray = array(
-			'bb' => 'bb',
-			'ab' => 'ab',
-			'123' => '123',
-			'aaa' => 'aaa',
-			'abc' => 'abc',
-			'23' => '23',
-			'ba' => 'ba',
-			'bad' => 'bad',
-			'2' => '2',
-			'zap' => 'zap',
-			'210' => '210'
-		);
-		$expectedResult = array(
-			'2',
-			'23',
-			'123',
-			'210',
-			'aaa',
-			'ab',
-			'abc',
-			'ba',
-			'bad',
-			'bb',
-			'zap'
-		);
-		Utility\GeneralUtility::naturalKeySortRecursive($testArray);
-		$this->assertEquals($expectedResult, array_values($testArray));
-	}
-
-	/**
-	 * @test
-	 */
-	public function naturalKeySortRecursiveSortsMultiDimensionalArrayByNaturalOrder() {
-		$testArray = array(
-			'2' => '2',
-			'bb' => 'bb',
-			'ab' => 'ab',
-			'23' => '23',
-			'aaa' => array(
-				'bb' => 'bb',
-				'ab' => 'ab',
-				'123' => '123',
-				'aaa' => 'aaa',
-				'2' => '2',
-				'abc' => 'abc',
-				'ba' => 'ba',
-				'23' => '23',
-				'bad' => array(
-					'bb' => 'bb',
-					'ab' => 'ab',
-					'123' => '123',
-					'aaa' => 'aaa',
-					'abc' => 'abc',
-					'23' => '23',
-					'ba' => 'ba',
-					'bad' => 'bad',
-					'2' => '2',
-					'zap' => 'zap',
-					'210' => '210'
-				),
-				'210' => '210',
-				'zap' => 'zap'
-			),
-			'abc' => 'abc',
-			'ba' => 'ba',
-			'210' => '210',
-			'bad' => 'bad',
-			'123' => '123',
-			'zap' => 'zap'
-		);
-		$expectedResult = array(
-			'2',
-			'23',
-			'123',
-			'210',
-			'aaa',
-			'ab',
-			'abc',
-			'ba',
-			'bad',
-			'bb',
-			'zap'
-		);
-		Utility\GeneralUtility::naturalKeySortRecursive($testArray);
-		$this->assertEquals($expectedResult, array_values(array_keys($testArray['aaa']['bad'])));
-		$this->assertEquals($expectedResult, array_values(array_keys($testArray['aaa'])));
-		$this->assertEquals($expectedResult, array_values(array_keys($testArray)));
 	}
 
 	//////////////////////////////////////
@@ -4581,6 +4232,23 @@ text with a ' . $urlMatch . '$|s'),
 	 */
 	public function stripHttpHeadersStripsHeadersFromHttpResponse($httpResponse, $expected) {
 		$this->assertEquals($expected, GeneralUtilityFixture::stripHttpHeaders($httpResponse));
+	}
+
+	/**
+	 * @test
+	 */
+	public function getAllFilesAndFoldersInPathReturnsArrayWithMd5Keys() {
+		$directory = PATH_site . 'typo3temp/' . $this->getUniqueId('directory_');
+		mkdir($directory);
+		$filesAndDirectories = Utility\GeneralUtility::getAllFilesAndFoldersInPath(array(), $directory, '', TRUE);
+		$check = TRUE;
+		foreach ($filesAndDirectories as $md5 => $path) {
+			if (!preg_match('/^[a-f0-9]{32}$/', $md5)) {
+				$check = FALSE;
+			}
+		}
+		Utility\GeneralUtility::rmdir($directory);
+		$this->assertTrue($check);
 	}
 
 }

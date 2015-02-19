@@ -31,11 +31,16 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText',
 
 		/**
 		 * Render the text item (called by the toolbar)
+		 *
+		 * @param object container: the container of the toolbarText (the toolbar object)
+		 * @return void
 		 */
-		render: function () {
+		render: function (container) {
 			this.el = document.createElement('div');
-			Dom.addClass(this.el, 'x-form-item');
-			Dom.addClass(this.el, 'x-form-item-label');
+			Dom.addClass(this.el, 'btn');
+			Dom.addClass(this.el, 'btn-sm');
+			Dom.addClass(this.el, 'btn-default');
+			Dom.addClass(this.el, 'toolbar-text');
 			if (this.id) {
 				this.el.setAttribute('id', this.id);
 			}
@@ -47,8 +52,9 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText',
 			}
 			if (typeof this.tooltip === 'string') {
 				this.el.setAttribute('title', this.tooltip);
+				this.el.setAttribute('aria-label', this.tooltip);
 			}
-			this.getToolbar().getEl().appendChild(this.el);
+			container.appendChild(this.el);
 			this.initEventListeners();
 		},
 
@@ -66,13 +72,6 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText',
 			// Monitor toolbar updates in order to refresh the state of the text item
 			var self = this;
 			Event.on(this.getToolbar(), 'HTMLAreaEventToolbarUpdate', function (event, mode, selectionEmpty, ancestors, endPointsInSameBlock) { Event.stopEvent(event); self.onUpdateToolbar(mode, selectionEmpty, ancestors, endPointsInSameBlock); return false; });
-		},
-
-		/**
-		 * Get a reference to the editor
-		 */
-		getEditor: function() {
-			return RTEarea[this.toolbar.editorId].editor;
 		},
 
 		/**
@@ -98,11 +97,11 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/ToolbarText',
 		 * @return void
 		 */
 		setDisabled: function(disabled){
-			this.el.disabled = disabled;
+			this.disabled = disabled;
 			if (disabled) {
-				Dom.addClass(this.el, this.disabledClass);
+				this.el.setAttribute('disabled', 'disabled');
 			} else {
-				Dom.removeClass(this.el, this.disabledClass);
+				this.el.removeAttribute('disabled');
 			}
 		},
 

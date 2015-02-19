@@ -99,6 +99,12 @@ class NewContentElementController {
 	 * @return void
 	 */
 	public function init() {
+		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_misc.xlf');
+		$LOCAL_LANG_orig = $GLOBALS['LOCAL_LANG'];
+		$GLOBALS['LANG']->includeLLFile('EXT:cms/layout/locallang_db_new_content_el.xlf');
+		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($LOCAL_LANG_orig, $GLOBALS['LOCAL_LANG']);
+		$GLOBALS['LOCAL_LANG'] = $LOCAL_LANG_orig;
+
 		// Setting internal vars:
 		$this->id = (int)GeneralUtility::_GP('id');
 		$this->sys_language = (int)GeneralUtility::_GP('sys_language_uid');
@@ -157,7 +163,7 @@ class NewContentElementController {
 			$code = '';
 			$wizardItems = $this->getWizardItems();
 			// Wrapper for wizards
-			$this->elementWrapper['section'] = array('<ul class="contentelement-wizard list-unstyled">', '</ul>');
+			$this->elementWrapper['section'] = array('<div class="panel panel-tab"><div class="panel-body">', '</div></div>');
 			// Copy wrapper for tabs
 			$this->elementWrapperForTabs = $this->elementWrapper;
 			// Hook for manipulating wizardItems, wrapper, onClickEvent etc.
@@ -210,23 +216,21 @@ class NewContentElementController {
 						$aOnClick = "document.editForm.defValues.value=unescape('" . rawurlencode($wInfo['params']) . "');goToalt_doc();" . (!$this->onClickEvent?"window.location.hash='#sel2';":'');
 					}
 
-					$menuItems[$key]['content'] .=
-						'<li>
-							<div class="contentelement-wizard-item">
-								' . $content . '
-								<div class="contentelement-wizard-item-icon">
-									<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-										<img' . IconUtility::skinImg($this->doc->backPath, $wInfo['icon'], '') . ' alt="" />
-									</a>
-								</div>
-								<div class="contentelement-wizard-item-text">
-									<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-										<strong>' . htmlspecialchars($wInfo['title']) . '</strong>
-										<br />' . nl2br(htmlspecialchars(trim($wInfo['description']))) .
-									'</a>
-								</div>
+					$menuItems[$key]['content'] .= '
+						<div class="media">
+							' . $content . '
+							<div class="media-left">
+								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
+									<img' . IconUtility::skinImg($this->doc->backPath, $wInfo['icon'], '') . ' alt="" />
+								</a>
 							</div>
-						</li>';
+							<div class="media-body">
+								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
+									<strong>' . htmlspecialchars($wInfo['title']) . '</strong>
+									<br />' . nl2br(htmlspecialchars(trim($wInfo['description']))) .
+								'</a>
+							</div>
+						</div>';
 					$cc++;
 				}
 			}
@@ -466,7 +470,7 @@ class NewContentElementController {
 							$keepItems[$fN] = GeneralUtility::trimExplode(',', $TCEFORM_TSconfig[$fN]['keepItems'], TRUE);
 						}
 						$isNotInKeepItems = count($keepItems[$fN]) && !in_array($fV, $keepItems[$fN]);
-						if ($authModeDeny || in_array($fV, $removeItems[$fN]) || $isNotInKeepItems) {
+						if ($authModeDeny || $fN === 'CType' && in_array($fV, $removeItems[$fN]) || $isNotInKeepItems) {
 							// Remove element all together:
 							unset($wizardItems[$key]);
 							break;

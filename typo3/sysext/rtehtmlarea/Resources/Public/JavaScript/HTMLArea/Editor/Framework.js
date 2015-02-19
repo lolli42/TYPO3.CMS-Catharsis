@@ -15,12 +15,13 @@
  * Framework is the visual component of the Editor and contains the tool bar, the iframe, the textarea and the status bar
  */
 define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
-	['TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
+	['TYPO3/CMS/Rtehtmlarea/HTMLArea/UserAgent/UserAgent',
+	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Util',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/Resizable',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/DOM/DOM',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Util/TYPO3',
 	'TYPO3/CMS/Rtehtmlarea/HTMLArea/Event/Event'],
-	function (Util, Resizable, Dom, Typo3, Event) {
+	function (UserAgent, Util, Resizable, Dom, Typo3, Event) {
 
 	/**
 	 * Framework constructor
@@ -92,7 +93,14 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 			// Monitor iframe becoming shown or hidden as it may change the height of the status bar
 			Event.on(this.iframe, 'HTMLAreaEventIframeShow', function(event) { Event.stopEvent(event); self.resizable ? self.onIframeShow() : self.onWindowResize(); return false; });
 			// Monitor window resizing
-			Event.on(window, 'resize', function (event) { self.onWindowResize(); });
+			Event.on(window, 'resize', function (event) {
+				// Avoid resizing while the framework is already being resized by jQuery UI Resizable
+				if (self.isResizing) {
+					Event.stopEvent(event);
+				} else {
+					self.onWindowResize();
+				}
+			});
 			// If the textarea is inside a form, on reset, re-initialize the HTMLArea content and update the toolbar
 			var form = this.textArea.form;
 			if (form) {
@@ -154,6 +162,11 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 		maxHeight: 2000,
 
 		/**
+		 * When true, the framework is being resized by jQuery UI Resizable
+		 */
+		isResizing: false,
+
+		/**
 		 * Initial textArea dimensions
 		 * Should be set in config
 		 */
@@ -197,19 +210,65 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 		makeResizable: function () {
 			if (this.resizable) {
 				var self = this;
-				this.resizer = Resizable.makeResizable(this.getEl(), {
-					minHeight: 200,
-					minWidth: 300,
-					maxHeight: this.maxHeight,
-					stop: function (event, ui) { Event.stopEvent(event); self.onHtmlAreaResize(ui.size); return false; }
-				});
+				// Mutation observer will not work in WebKit on manual resize: https://code.google.com/p/chromium/issues/detail?id=293948
+				// The same is true in Opera 26
+				if (Util.testCssPropertySupport(this.getEl(), 'resize', 'both') && typeof MutationObserver === 'function' && !UserAgent.isWebKit && !UserAgent.isOpera) {
+					this.getEl().style['resize'] = 'both';
+					this.getEl().style['maxHeight'] = this.maxHeight;
+					// WebKit adds scollbars
+					this.getEl().style['overflow'] = UserAgent.isWebKit ? 'hidden' : 'auto';
+					// For WebKit, we need to reset the resize property set by default on textareas and iframes
+					if (UserAgent.isWebKit) {
+						this.textArea.style['resize'] = 'none';
+						this.iframe.getEl().style['resize'] = 'none';
+					}
+					this.mutationObserver = new MutationObserver(function (mutations) { self.onSizeMutation(mutations); });
+					var options = {
+						attributes: true,
+						attributeFilter: ['style']
+					};
+					this.mutationObserver.observe(this.getEl(), options);
+				} else {
+					this.resizer = Resizable.makeResizable(this.getEl(), {
+						delay: 150,
+						minHeight: 200,
+						minWidth: 300,
+						alsoResize: '#' + this.editorId + '-iframe',
+						maxHeight: this.maxHeight,
+						start: function (event, ui) {
+							Event.stopEvent(event);
+							self.isResizing = true;
+							return false;
+						},
+						resize: function (event, ui) {
+							Event.stopEvent(event);
+							self.doHtmlAreaResize(ui.size);
+							return false;
+						},
+						stop: function (event, ui) {
+							Event.stopEvent(event);
+							self.isResizing = false;
+							self.doHtmlAreaResize(ui.size);
+							return false;
+						}
+					});
+				}
 			}
 		},
 
 		/**
-		 * Resize the framework when the resizer handles are used
+		 * Mutations handler invoked when the framework is resized by css
 		 */
-		onHtmlAreaResize: function (size) {
+		onSizeMutation: function (mutations) {
+			for (var i = mutations.length; --i >= 0;) {
+				this.onFrameworkResize();
+			}
+		},
+
+		/**
+		 * Resize the framework when the handle is used
+		 */
+		doHtmlAreaResize: function (size) {
 			Dom.setSize(this.getEl(), size);
 			this.onFrameworkResize();
 		},
@@ -298,7 +357,7 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 		 * Calculate the width available for the editing iframe
 		 */
 		getInnerWidth: function () {
-			return Dom.getSize(this.getEl()).width;
+			return Dom.getSize(this.getEl()).width - 2;
 		},
 
 		/**
@@ -351,6 +410,9 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Editor/Framework',
 			if (form) {
 				Event.off(form);
 				form.htmlAreaPreviousOnReset = null;
+			}
+			if (this.mutationObserver) {
+				this.mutationObserver.disconnect();
 			}
 			if (this.resizer) {
 				Resizable.destroy(this.resizer);

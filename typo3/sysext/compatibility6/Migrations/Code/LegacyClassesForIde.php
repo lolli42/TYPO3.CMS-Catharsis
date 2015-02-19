@@ -244,7 +244,7 @@ class SC_wizard_edit extends \TYPO3\CMS\Backend\Controller\Wizard\EditController
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class SC_wizard_forms extends \TYPO3\CMS\Backend\Controller\Wizard\FormsController {}
+class SC_wizard_forms extends \TYPO3\CMS\Compatibility6\Controller\Wizard\FormsController {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4714,7 +4714,7 @@ class t3lib_matchCondition_frontend extends \TYPO3\CMS\Frontend\Configuration\Ty
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class t3lib_formmail extends \TYPO3\CMS\Frontend\Controller\DataSubmissionController {}
+class t3lib_formmail extends \TYPO3\CMS\Compatibility6\Controller\FormDataSubmissionController {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4729,12 +4729,12 @@ class tslib_content_Case extends \TYPO3\CMS\Frontend\ContentObject\CaseContentOb
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_ClearGif extends \TYPO3\CMS\Frontend\ContentObject\ClearGifContentObject {}
+class tslib_content_ClearGif extends \TYPO3\CMS\Compatibility6\ContentObject\ClearGifContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_Columns extends \TYPO3\CMS\Frontend\ContentObject\ColumnsContentObject {}
+class tslib_content_Columns extends \TYPO3\CMS\Compatibility6\ContentObject\ColumnsContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4789,7 +4789,7 @@ interface tslib_content_stdWrapHook extends \TYPO3\CMS\Frontend\ContentObject\Co
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_ContentTable extends \TYPO3\CMS\Frontend\ContentObject\ContentTableContentObject {}
+class tslib_content_ContentTable extends \TYPO3\CMS\Compatibility6\ContentObject\ContentTableContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4824,7 +4824,7 @@ class tslib_content_FluidTemplate extends \TYPO3\CMS\Frontend\ContentObject\Flui
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_Form extends \TYPO3\CMS\Frontend\ContentObject\FormContentObject {}
+class tslib_content_Form extends \TYPO3\CMS\Compatibility6\ContentObject\FormContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4834,7 +4834,7 @@ class tslib_content_HierarchicalMenu extends \TYPO3\CMS\Frontend\ContentObject\H
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_HorizontalRuler extends \TYPO3\CMS\Frontend\ContentObject\HorizontalRulerContentObject {}
+class tslib_content_HorizontalRuler extends \TYPO3\CMS\Compatibility6\ContentObject\HorizontalRulerContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4849,7 +4849,7 @@ class tslib_content_ImageResource extends \TYPO3\CMS\Frontend\ContentObject\Imag
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_ImageText extends \TYPO3\CMS\Frontend\ContentObject\ImageTextContentObject {}
+class tslib_content_ImageText extends \TYPO3\CMS\Compatibility6\ContentObject\ImageTextContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4869,7 +4869,7 @@ class tslib_content_Multimedia extends \TYPO3\CMS\Frontend\ContentObject\Multime
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_OffsetTable extends \TYPO3\CMS\Frontend\ContentObject\OffsetTableContentObject {}
+class tslib_content_OffsetTable extends \TYPO3\CMS\Compatibility6\ContentObject\OffsetTableContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4894,7 +4894,7 @@ class tslib_content_ScalableVectorGraphics extends \TYPO3\CMS\Frontend\ContentOb
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_content_SearchResult extends \TYPO3\CMS\Frontend\ContentObject\SearchResultContentObject {}
+class tslib_content_SearchResult extends \TYPO3\CMS\Compatibility6\ContentObject\SearchResultContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4944,7 +4944,7 @@ class tslib_imgmenu extends \TYPO3\CMS\Frontend\ContentObject\Menu\ImageMenuCont
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_tableOffset extends \TYPO3\CMS\Frontend\ContentObject\OffsetTableContentObject {}
+class tslib_tableOffset extends \TYPO3\CMS\Compatibility6\ContentObject\OffsetTableContentObject {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -4954,7 +4954,7 @@ class tslib_search extends \TYPO3\CMS\Frontend\ContentObject\SearchResultContent
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class tslib_controlTable extends \TYPO3\CMS\Frontend\ContentObject\TableRenderer {}
+class tslib_controlTable extends \TYPO3\CMS\Compatibility6\ContentObject\TableRenderer {}
 
 /**
  * @deprecated since 6.0, removed since 7.0

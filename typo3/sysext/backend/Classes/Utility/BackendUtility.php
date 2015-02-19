@@ -1257,13 +1257,15 @@ class BackendUtility {
 	}
 
 	/**
-	 * Implodes a multi dimensional TypoScript array, $p, into a one-dimentional array (return value)
+	 * Implodes a multi dimensional TypoScript array, $p, into a one-dimensional array (return value)
 	 *
 	 * @param array $p TypoScript structure
 	 * @param string $k Prefix string
 	 * @return array Imploded TypoScript objectstring/values
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function implodeTSParams($p, $k = '') {
+		GeneralUtility::logDeprecatedFunction();
 		$implodeParams = array();
 		if (is_array($p)) {
 			foreach ($p as $kb => $val) {
@@ -1413,7 +1415,7 @@ class BackendUtility {
 			foreach ($groups as $uid => $row) {
 				$groupN = $uid;
 				$set = 0;
-				if (GeneralUtility::inArray($groupArray, $uid)) {
+				if (ArrayUtility::inArray($groupArray, $uid)) {
 					$groupN = $row['title'];
 					$set = 1;
 				}
@@ -1569,8 +1571,15 @@ class BackendUtility {
 		$referenceUids = $relationHandler->tableArray[$configuration['foreign_table']];
 
 		foreach ($referenceUids as $referenceUid) {
-			$fileReference = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid, array(), ($workspaceId === 0));
-			$fileReferences[$fileReference->getUid()] = $fileReference;
+			try {
+				$fileReference = ResourceFactory::getInstance()->getFileReferenceObject($referenceUid, array(), ($workspaceId === 0));
+				$fileReferences[$fileReference->getUid()] = $fileReference;
+			} catch (\TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException $e) {
+				/**
+				 * We just catch the exception here
+				 * Reasoning: There is nothing an editor or even admin could do
+				 */
+			}
 		}
 
 		return $fileReferences;
@@ -2186,7 +2195,13 @@ class BackendUtility {
 						} else {
 							$rParts = array();
 							if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
-								$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid);
+								$whereClause = '';
+								// Add additional where clause if foreign_match_fields are defined
+								$foreignMatchFields = is_array($theColConf['foreign_match_fields']) ? $theColConf['foreign_match_fields'] : array();
+								foreach ($foreignMatchFields as $matchField => $matchValue) {
+									$whereClause .= ' AND ' . $matchField . '=' . static::getDatabaseConnection()->fullQuoteStr($matchValue, $theColConf['foreign_table']);
+								}
+								$records = self::getRecordsByField($theColConf['foreign_table'], $theColConf['foreign_field'], $uid, $whereClause);
 								if (!empty($records)) {
 									foreach ($records as $record) {
 										$rParts[] = $record['uid'];
@@ -2620,8 +2635,10 @@ class BackendUtility {
 					$wrappedText .= ' data-description="' . htmlspecialchars($overloadHelpText['description']) . '"';
 				}
 			}
-			$wrappedText .= '>' . $text . '</span>';
+		} else {
+			$wrappedText = '<span data-table="' . $table . '" data-field="' . $field . '"';
 		}
+		$wrappedText .= '>' . $text . '</span>';
 		return $wrappedText;
 	}
 

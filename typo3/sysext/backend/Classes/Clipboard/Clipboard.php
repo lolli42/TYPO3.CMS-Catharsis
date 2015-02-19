@@ -370,7 +370,7 @@ class Clipboard {
 									<td nowrap="nowrap" width="95%">' . $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getName(), $GLOBALS['BE_USER']->uc['titleLen'])), $fileObject->getName()) . ($pad == 'normal' ? ' <strong>(' . ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) . ')</strong>' : '') . '&nbsp;' . $thumb . '</td>
 									<td nowrap="nowrap" class="col-control">
 										<div class="btn-group">
-											<a class="btn" href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . $v . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn" href="' . htmlspecialchars($this->removeUrl('_FILE', GeneralUtility::shortmd5($v))) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
+											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . $v . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl('_FILE', GeneralUtility::shortmd5($v))) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
 										</div>
 									</td>
 								</tr>';
@@ -389,7 +389,7 @@ class Clipboard {
 									<td nowrap="nowrap" width="95%">' . $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(BackendUtility::getRecordTitle($table, $rec), $GLOBALS['BE_USER']->uc['titleLen'])), $rec, $table) . ($pad == 'normal' ? ' <strong>(' . ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) . ')</strong>' : '') . '&nbsp;</td>
 									<td nowrap="nowrap" class="col-control">
 										<div class="btn-group">
-											<a class="btn" href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . (int)$uid . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn" href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
+											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(\'' . $table . '\', \'' . (int)$uid . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
 										</div>
 									</td>
 								</tr>';
@@ -565,7 +565,7 @@ class Clipboard {
 	 * @return string
 	 */
 	public function pasteUrl($table, $uid, $setRedirect = TRUE, array $update = NULL) {
-		$rU = $this->backPath . ($table == '_FILE' ? 'tce_file.php' : 'tce_db.php') . '?' .
+		$rU = $this->backPath . ($table == '_FILE' ? BackendUtility::getModuleUrl('tce_file') . '&' : BackendUtility::getModuleUrl('tce_db') . '&') .
 			($setRedirect ? 'redirect=' . rawurlencode(GeneralUtility::linkThisScript(array('CB' => ''))) : '') .
 			'&vC=' . $GLOBALS['BE_USER']->veriCode() .
 			'&prErr=1&uPT=1' .
@@ -584,7 +584,7 @@ class Clipboard {
 	 * @return string
 	 */
 	public function deleteUrl($setRedirect = 1, $file = 0) {
-		$rU = $this->backPath . ($file ? 'tce_file.php' : 'tce_db.php') . '?' . ($setRedirect ? 'redirect=' . rawurlencode(GeneralUtility::linkThisScript(array('CB' => ''))) : '') . '&vC=' . $GLOBALS['BE_USER']->veriCode() . '&prErr=1&uPT=1' . '&CB[delete]=1' . '&CB[pad]=' . $this->current . BackendUtility::getUrlToken('tceAction');
+		$rU = $this->backPath . ($file ? BackendUtility::getModuleUrl('tce_file') . '&' : BackendUtility::getModuleUrl('tce_db') . '&') . ($setRedirect ? 'redirect=' . rawurlencode(GeneralUtility::linkThisScript(array('CB' => ''))) : '') . '&vC=' . $GLOBALS['BE_USER']->veriCode() . '&prErr=1&uPT=1' . '&CB[delete]=1' . '&CB[pad]=' . $this->current . BackendUtility::getUrlToken('tceAction');
 		return $rU;
 	}
 

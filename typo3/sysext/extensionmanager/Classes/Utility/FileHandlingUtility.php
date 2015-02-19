@@ -4,7 +4,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
-use TYPO3\CMS\Lang\LanguageService;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -264,8 +263,9 @@ class FileHandlingUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	public function removeDirectory($extDirPath) {
-		$extensionPathWithoutTrailingSlash = rtrim($extDirPath, DIRECTORY_SEPARATOR);
-		if (is_link($extensionPathWithoutTrailingSlash)) {
+		$extDirPath = GeneralUtility::fixWindowsFilePath($extDirPath);
+		$extensionPathWithoutTrailingSlash = rtrim($extDirPath, '/');
+		if (is_link($extensionPathWithoutTrailingSlash) && TYPO3_OS !== 'WIN') {
 			$result = unlink($extensionPathWithoutTrailingSlash);
 		} else {
 			$result = GeneralUtility::rmdir($extDirPath, TRUE);

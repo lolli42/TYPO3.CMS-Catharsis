@@ -34,15 +34,15 @@ class RemoveUserViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractView
 	 */
 	public function render(BackendUser $backendUser) {
 		if ($backendUser->getUid() == $GLOBALS['BE_USER']->user['uid']) {
-			return '<span class="btn disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+			return '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
 		}
 
 		$redirectUrl = GeneralUtility::getIndpEnv('REQUEST_URI');
 		$parameters = 'cmd[be_users][' . $backendUser->getUid() . '][delete]=1';
-		$url = $GLOBALS['BACK_PATH'] . 'tce_db.php?&' . $parameters . '&redirect=' .
+		$url = $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_db') . '&' . $parameters . '&redirect=' .
 			($redirectUrl == '' ? '\' + T3_THIS_LOCATION + \'' : rawurlencode($redirectUrl)) . '&vC=' .
 			rawurlencode($GLOBALS['BE_USER']->veriCode()) . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1';
-		return '<a class="btn" href="' . $url . '"  onclick="return confirm(' .
+		return '<a class="btn btn-default" href="' . $url . '"  onclick="return confirm(' .
 			GeneralUtility::quoteJSvalue(LocalizationUtility::translate('confirm', 'beuser', array($backendUser->getUserName()))) .
 			')">' . IconUtility::getSpriteIcon(('actions-edit-delete')) . '</a>';
 	}

@@ -10,25 +10,15 @@ return array(
 		'delete' => 'deleted',
 		'rootLevel' => TRUE,
 		'versioningWS_alwaysAllowLiveEdit' => TRUE, // Only have LIVE records of file storages
-		'enablecolumns' => array(
-			'disabled' => 'hidden'
-		),
+		'enablecolumns' => array(),
 		'requestUpdate' => 'driver',
 		'iconfile' => '_icon_ftp.gif',
 		'searchFields' => 'name,description'
 	),
 	'interface' => array(
-		'showRecordFieldList' => 'hidden,name,description,driver,processingfolder,configuration'
+		'showRecordFieldList' => 'name,description,driver,processingfolder,configuration'
 	),
 	'columns' => array(
-		'hidden' => array(
-			'exclude' => 1,
-			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_storage.hidden',
-			'config' => array(
-				'type' => 'check',
-				'default' => '0'
-			)
-		),
 		'name' => array(
 			'exclude' => 0,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_storage.name',
@@ -122,7 +112,7 @@ return array(
 		)
 	),
 	'types' => array(
-		'0' => array('showitem' => 'name, description, hidden, --div--;Configuration, driver, configuration, is_default, processingfolder, --div--;Access, --palette--;Capabilities;capabilities, is_online')
+		'0' => array('showitem' => 'name, description, --div--;Configuration, driver, configuration, is_default, processingfolder, --div--;Access, --palette--;Capabilities;capabilities, is_online')
 	),
 	'palettes' => array(
 		'capabilities' => array('showitem' => 'is_browsable, is_public, is_writable', 'canNotCollapse' => TRUE)

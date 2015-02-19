@@ -529,10 +529,6 @@ class EditDocumentController {
 		if (is_array($this->mirror)) {
 			$tce->setMirror($this->mirror);
 		}
-		// If pages are being edited, we set an instruction about updating the page tree after this operation.
-		if (isset($this->data['pages']) || $GLOBALS['BE_USER']->workspace != 0 && count($this->data)) {
-			BackendUtility::setUpdateSignal('updatePageTree');
-		}
 		// Checking referer / executing
 		$refInfo = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
 		$httpHost = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
@@ -544,6 +540,10 @@ class EditDocumentController {
 			$tce->process_uploads($_FILES);
 			$tce->process_datamap();
 			$tce->process_cmdmap();
+			// If pages are being edited, we set an instruction about updating the page tree after this operation.
+			if ($tce->pagetreeNeedsRefresh && (isset($this->data['pages']) || $GLOBALS['BE_USER']->workspace != 0 && count($this->data))) {
+				BackendUtility::setUpdateSignal('updatePageTree');
+			}
 			// If there was saved any new items, load them:
 			if (count($tce->substNEWwithIDs_table)) {
 				// save the expanded/collapsed states for new inline records, if any
@@ -686,7 +686,7 @@ class EditDocumentController {
 				if (
 					' . ($GLOBALS['BE_USER']->jsConfirmation(4) ? 'confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('deleteWarning')) . ')' : '1==1') . '
 				)	{
-					window.location.href = "tce_db.php?cmd["+table+"]["+id+"][delete]=1' . BackendUtility::getUrlToken('tceAction') . '&redirect="+escape(url)+"&vC=' . $GLOBALS['BE_USER']->veriCode() . '&prErr=1&uPT=1";
+					window.location.href = "' . BackendUtility::getModuleUrl('tce_db') . '&cmd["+table+"]["+id+"][delete]=1' . BackendUtility::getUrlToken('tceAction') . '&redirect="+escape(url)+"&vC=' . $GLOBALS['BE_USER']->veriCode() . '&prErr=1&uPT=1";
 				}
 				return false;
 			}
@@ -1001,8 +1001,8 @@ class EditDocumentController {
 			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<input type="image" class="c-inputButton" name="_saveandclosedok" src="clear.gif" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />'));
 			// FINISH TRANSLATION / SAVE / CLOSE
 			if ($GLOBALS['TYPO3_CONF_VARS']['BE']['explicitConfirmationOfTranslation']) {
-				$buttons['translation_save'] = '<input type="image" class="c-inputButton" name="_translation_savedok" src="' . IconUtility::skinImg($this->doc->backPath, 'gfx/translationsavedok.gif', '', 1) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDoc', TRUE) . '" />';
-				$buttons['translation_saveclear'] = '<input type="image" class="c-inputButton" name="_translation_savedokclear" src="' . IconUtility::skinImg($this->doc->backPath, 'gfx/translationsavedok_clear.gif', '', 1) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDocClear', TRUE) . '" />';
+				$buttons['translation_save'] = '<input type="image" class="c-inputButton" name="_translation_savedok" src="' . IconUtility::skinImg($this->doc->backPath, 'sysext/t3skin/images/icons/actions/document-save-translation.png', '', 1) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDoc', TRUE) . '" /> ';
+				$buttons['translation_saveclear'] = '<input type="image" class="c-inputButton" name="_translation_savedokclear" src="' . IconUtility::skinImg($this->doc->backPath, 'sysext/t3skin/images/icons/actions/document-save-cleartranslationcache.png', '', 1) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDocClear', TRUE) . '" />';
 			}
 		}
 		// CLOSE button:

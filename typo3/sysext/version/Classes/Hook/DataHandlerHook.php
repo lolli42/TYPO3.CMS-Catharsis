@@ -15,7 +15,9 @@ namespace TYPO3\CMS\Version\Hook;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\ReferenceIndex;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
@@ -237,7 +239,7 @@ class DataHandlerHook {
 				$tcemainObj->versionizeRecord($table, $id, 'DELETED!', TRUE);
 				// Determine newly created versions:
 				// (remove placeholders are copied and modified, thus they appear in the copyMappingArray)
-				$versionizedElements = GeneralUtility::arrayDiffAssocRecursive($tcemainObj->copyMappingArray, $copyMappingArray);
+				$versionizedElements = ArrayUtility::arrayDiffAssocRecursive($tcemainObj->copyMappingArray, $copyMappingArray);
 				// Delete localization overlays:
 				foreach ($versionizedElements as $versionizedTableName => $versionizedOriginalIds) {
 					foreach ($versionizedOriginalIds as $versionizedOriginalId => $_) {
@@ -468,7 +470,7 @@ class DataHandlerHook {
 									// Find all implicated since the last stage-raise from editing to review:
 									foreach ($rows as $dat) {
 										$data = unserialize($dat['log_data']);
-										$emails = GeneralUtility::array_merge($emails, $this->getEmailsForStageChangeNotification($dat['userid'], TRUE));
+										$emails = $this->getEmailsForStageChangeNotification($dat['userid'], TRUE) + $emails;
 										if ($data['stage'] == 1) {
 											break;
 										}
@@ -484,8 +486,8 @@ class DataHandlerHook {
 						break;
 					case 10:
 						$emails = $this->getEmailsForStageChangeNotification($workspaceRec['adminusers'], TRUE);
-						$emails = GeneralUtility::array_merge($emails, $this->getEmailsForStageChangeNotification($workspaceRec['reviewers']));
-						$emails = GeneralUtility::array_merge($emails, $this->getEmailsForStageChangeNotification($workspaceRec['members']));
+						$emails = $this->getEmailsForStageChangeNotification($workspaceRec['reviewers']) + $emails;
+						$emails = $this->getEmailsForStageChangeNotification($workspaceRec['members']) + $emails;
 						break;
 					default:
 						// Do nothing
@@ -948,6 +950,13 @@ class DataHandlerHook {
 												// For delete + completely delete!
 												$tcemainObj->deleteEl($table, $swapWith, TRUE, TRUE);
 											}
+
+											//Update reference index for live workspace too:
+											/** @var $refIndexObj \TYPO3\CMS\Core\Database\ReferenceIndex */
+											$refIndexObj = GeneralUtility::makeInstance(ReferenceIndex::class);
+											$refIndexObj->setWorkspaceId(0);
+											$refIndexObj->updateRefIndexTable($table, $id);
+											$refIndexObj->updateRefIndexTable($table, $swapWith);
 										} else {
 											$tcemainObj->newlog('During Swapping: SQL errors happened: ' . implode('; ', $sqlErrors), 2);
 										}

@@ -22,6 +22,10 @@
 define('TYPO3_PROCEED_IF_NO_USER', 1);
 require __DIR__ . '/init.php';
 
+\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+	'Login frameset is moved to an own module. Please use BackendUtility::getModuleUrl(\'login_frameset\') to link to login_frameset.php. This script will be removed in TYPO3 CMS 8.'
+);
+
 // Make instance:
 $loginFramesetController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\LoginFramesetController::class);
 $loginFramesetController->main();

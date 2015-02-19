@@ -129,21 +129,6 @@ class Abbreviation extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 	}
 
 	/**
-	 * Return tranformed content
-	 *
-	 * @param string $content: The content that is about to be sent to the RTE
-	 * @return string the transformed content
-	 */
-	public function transformContent($content) {
-		// <abbr> was not supported by IE before version 7
-		if ($this->htmlAreaRTE->client['browser'] == 'msie' && $this->htmlAreaRTE->client['version'] < 7) {
-			// change <abbr> to <acronym>
-			$content = preg_replace('/<(\\/?)abbr/i', '<$1acronym', $content);
-		}
-		return $content;
-	}
-
-	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
 	 * @param int Relative id of the RTE editing area in the form
@@ -159,10 +144,6 @@ class Abbreviation extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 			}
 			$registerRTEinJavascriptString .= '
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.abbreviationUrl = "' . $this->htmlAreaRTE->writeTemporaryFile('', ('abbreviation_' . $this->htmlAreaRTE->contentLanguageUid), 'js', $this->buildJSAbbreviationArray($this->htmlAreaRTE->contentLanguageUid)) . '";';
-			// <abbr> was not supported by IE before version 7
-			if ($this->htmlAreaRTE->client['browser'] == 'msie' && $this->htmlAreaRTE->client['version'] < 7) {
-				$this->abbreviationIndex = 0;
-			}
 			$registerRTEinJavascriptString .= '
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.noAcronym = ' . ($this->acronymIndex ? 'false' : 'true') . ';
 			RTEarea[' . $RTEcounter . '].buttons.' . $button . '.noAbbr =  ' . ($this->abbreviationIndex ? 'false' : 'true') . ';';
@@ -189,10 +170,13 @@ class Abbreviation extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 		$lockBeUserToDBmounts = isset($this->thisConfig['buttons.'][$button . '.']['lockBeUserToDBmounts']) ? $this->thisConfig['buttons.'][$button . '.']['lockBeUserToDBmounts'] : $GLOBALS['TYPO3_CONF_VARS']['BE']['lockBeUserToDBmounts'];
 		if (!$GLOBALS['BE_USER']->isAdmin() && $GLOBALS['TYPO3_CONF_VARS']['BE']['lockBeUserToDBmounts'] && $lockBeUserToDBmounts) {
 			// Temporarily setting alternative web browsing mounts
-			$altMountPoints = trim($GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.altElementBrowserMountPoints'));
-			if ($altMountPoints) {
-				$savedGroupDataWebmounts = $GLOBALS['BE_USER']->groupData['webmounts'];
-				$GLOBALS['BE_USER']->groupData['webmounts'] = implode(',', array_unique(\TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $altMountPoints)));
+			$existingWebMounts = '';
+			$alternativeWebmountPoints = trim($GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.altElementBrowserMountPoints'));
+			$appendAlternativeWebmountPoints = trim($GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.altElementBrowserMountPoints.append'));
+			if (!empty($alternativeWebmountPoints)) {
+				$alternativeWebmountPoints = \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $alternativeWebmountPoints);
+				$existingWebMounts = $GLOBALS['BE_USER']->returnWebmounts();
+				$GLOBALS['BE_USER']->setWebmounts($alternativeWebmountPoints, $appendAlternativeWebmountPoints);
 			}
 			$webMounts = $GLOBALS['BE_USER']->returnWebmounts();
 			$perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
@@ -208,8 +192,8 @@ class Abbreviation extends \TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi {
 				$pids = $webMounts;
 			}
 			// Restoring webmounts
-			if ($altMountPoints) {
-				$GLOBALS['BE_USER']->groupData['webmounts'] = $savedGroupDataWebmounts;
+			if (!empty($alternativeWebmountPoints)) {
+				$GLOBALS['BE_USER']->setWebmounts($existingWebMounts);
 			}
 			$queryGenerator = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\QueryGenerator::class);
 			$pageTree = '';

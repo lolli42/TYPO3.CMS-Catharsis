@@ -133,7 +133,6 @@ class AdminPanelView {
 		if (is_array($input)) {
 			// Setting
 			$GLOBALS['BE_USER']->uc['TSFE_adminConfig'] = array_merge(!is_array($GLOBALS['BE_USER']->uc['TSFE_adminConfig']) ? array() : $GLOBALS['BE_USER']->uc['TSFE_adminConfig'], $input);
-			// Candidate for GeneralUtility::array_merge() if integer-keys will some day make trouble...
 			unset($GLOBALS['BE_USER']->uc['TSFE_adminConfig']['action']);
 			// Actions:
 			if ($input['action']['clearCache'] && $this->isAdminModuleEnabled('cache')) {
@@ -597,7 +596,7 @@ class AdminPanelView {
 		//  If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's create new content wizard instead:
 		$tsConfig = BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
 		$tsConfig = $tsConfig['properties']['newContentWiz.']['overrideWithExtension'];
-		$newContentWizScriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($tsConfig) ? \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($tsConfig) . 'mod1/db_new_content_el.php' : TYPO3_mainDir . 'sysext/cms/layout/db_new_content_el.php';
+		$newContentWizScriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($tsConfig) ? \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($tsConfig) . 'mod1/db_new_content_el.php?' : TYPO3_mainDir . BackendUtility::getModuleUrl('new_content_element') . '&';
 		$perms = $GLOBALS['BE_USER']->calcPerms($GLOBALS['TSFE']->page);
 		$langAllowed = $GLOBALS['BE_USER']->checkLanguageAccess($GLOBALS['TSFE']->sys_language_uid);
 		$id = $GLOBALS['TSFE']->id;
@@ -611,11 +610,11 @@ class AdminPanelView {
 				$params = '&sys_language_uid=' . $GLOBALS['TSFE']->sys_language_uid;
 			}
 			$icon = IconUtility::getSpriteIcon('actions-document-new', array('title' => $this->extGetLL('edit_newContentElement', FALSE)));
-			$toolBar .= '<a href="' . htmlspecialchars(($newContentWizScriptPath . '?id=' . $id . $params . '&returnUrl=' . $returnUrl)) . '">' . $icon . '</a>';
+			$toolBar .= '<a href="' . htmlspecialchars(($newContentWizScriptPath . 'id=' . $id . $params . '&returnUrl=' . $returnUrl)) . '">' . $icon . '</a>';
 		}
 		if ($perms & 2) {
 			$icon = IconUtility::getSpriteIcon('actions-document-move', array('title' => $this->extGetLL('edit_move_page', FALSE)));
-			$toolBar .= '<a href="' . htmlspecialchars((TYPO3_mainDir . 'move_el.php?table=pages&uid=' . $id . '&returnUrl=' . $returnUrl)) . '">' . $icon . '</a>';
+			$toolBar .= '<a href="' . htmlspecialchars((TYPO3_mainDir . BackendUtility::getModuleUrl('move_element') . '&table=pages&uid=' . $id . '&returnUrl=' . $returnUrl)) . '">' . $icon . '</a>';
 		}
 		if ($perms & 8) {
 			$icon = IconUtility::getSpriteIcon('actions-page-new', array('title' => $this->extGetLL('edit_newPage', FALSE)));

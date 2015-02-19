@@ -26,6 +26,40 @@ $signalSlotDispatcher->connect(
 	'removeFromRepository'
 );
 
+$signalSlotDispatcher->connect(
+	\TYPO3\CMS\Core\Resource\ResourceStorage::class,
+	\TYPO3\CMS\Core\Resource\ResourceStorageInterface::SIGNAL_PostFileAdd,
+	\TYPO3\CMS\Core\Resource\Processing\FileDeletionAspect::class,
+	'cleanupProcessedFilesPostFileAdd'
+);
+
+$signalSlotDispatcher->connect(
+	\TYPO3\CMS\Core\Resource\ResourceStorage::class,
+	\TYPO3\CMS\Core\Resource\ResourceStorageInterface::SIGNAL_PostFileReplace,
+	\TYPO3\CMS\Core\Resource\Processing\FileDeletionAspect::class,
+	'cleanupProcessedFilesPostFileReplace'
+);
+
+if (!\TYPO3\CMS\Core\Core\Bootstrap::usesComposerClassLoading()) {
+	$buildAliasMap = function() {
+		$bootstrap = \TYPO3\CMS\Core\Core\Bootstrap::getInstance();
+		$classAliasMap = $bootstrap->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class);
+		$classAliasMap->buildStaticMappingFile();
+	};
+	$signalSlotDispatcher->connect(
+		\TYPO3\CMS\Extensionmanager\Service\ExtensionManagementService::class,
+		'hasInstalledExtensions',
+		$buildAliasMap
+	);
+
+	$signalSlotDispatcher->connect(
+		\TYPO3\CMS\Extensionmanager\Utility\InstallUtility::class,
+		'afterExtensionUninstall',
+		$buildAliasMap
+	);
+	unset($buildAliasMap);
+}
+
 unset($signalSlotDispatcher);
 
 $GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['dumpFile'] = 'EXT:core/Resources/PHP/FileDumpEID.php';

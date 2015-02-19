@@ -219,7 +219,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 							$content .= $this->editTaskAction();
 							$sectionTitle = $this->getLanguageService()->getLL('action.' . $this->CMD);
 						} catch (\Exception $e) {
-							// An exception may happen when the task to
+							if ($e->getCode() === 1305100019) {
+								// Invalid controller class name exception
+								$this->addMessage($e->getMessage(), FlashMessage::ERROR);
+							}
+							// An exception may also happen when the task to
 							// edit could not be found. In this case revert
 							// to displaying the list of tasks
 							// It can also happen when attempting to edit a running task
@@ -232,6 +236,10 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						break;
 					case 'stop':
 						$this->stopTask();
+						$content .= $this->listTasksAction();
+						break;
+					case 'toggleHidden':
+						$this->toggleDisableAction();
 						$content .= $this->listTasksAction();
 						break;
 					case 'list':
@@ -506,6 +514,17 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	}
 
 	/**
+	 * Toggles the disabled state of the submitted task
+	 *
+	 * @return void
+	 */
+	protected function toggleDisableAction() {
+		$task = $this->scheduler->fetchTask($this->submittedData['uid']);
+		$task->setDisabled(!$task->isDisabled());
+		$task->save();
+	}
+
+	/**
 	 * Return a form to add a new task or edit an existing one
 	 *
 	 * @return string HTML form to add or edit a task
@@ -702,11 +721,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$value = ($taskInfo['start'] > 0 ? strftime($dateFormat, $taskInfo['start']) : '');
 		$table[] = '<div class="form-group">' .
 			$label .
-			'<div class="input-group date t3js-datetimepicker" data-date-offset="0" id="tceforms-datetimefield-task_start_row-wrapper">' .
-			'<input name="tx_scheduler[start]_hr" value="' . $value . '" class="form-control datetime" type="text" ' .
+			'<div class="input-group" id="tceforms-datetimefield-task_start_row-wrapper">' .
+			'<input name="tx_scheduler[start]_hr" value="' . $value . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" ' .
 			'id="tceforms-datetimefield-task_start_row">' .
 			'<input name="tx_scheduler[start]" value="' . $taskInfo['start'] . '" type="hidden">' .
-			'<span class="input-group-addon datepickerbutton"><span class="fa fa-calendar"></span></span>' .
+			'<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_start_row"><span class="fa fa-calendar"></span></label></span>' .
 			'</div>' .
 			'</div>';
 
@@ -717,11 +736,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$label = '<label for="tceforms-datetimefield-task_end">' . $this->getLanguageService()->getLL('label.end') . '</label>';
 		$table[] = '<div class="form-group">' .
 			BackendUtility::wrapInHelp($this->cshKey, 'task_end', $label) .
-			'<div class="input-group date t3js-datetimepicker" data-date-offset="0" id="tceforms-datetimefield-task_end_row-wrapper">' .
-			'<input name="tx_scheduler[end]_hr" value="' . $value . '" class="form-control datetime" type="text" ' .
+			'<div class="input-group" id="tceforms-datetimefield-task_end_row-wrapper">' .
+			'<input name="tx_scheduler[end]_hr" value="' . $value . '" class="form-control  t3js-datetimepicker t3js-clearable" data-date-type="datetime" data-date-offset="0" type="text" ' .
 			'id="tceforms-datetimefield-task_end_row">' .
 			'<input name="tx_scheduler[end]" value="' . $taskInfo['end'] . '" type="hidden">' .
-			'<span class="input-group-addon datepickerbutton"><span class="fa fa-calendar"></span></span>' .
+			'<span class="input-group-btn"><label class="btn btn-default" for="tceforms-datetimefield-task_end_row"><span class="fa fa-calendar"></span></label></span>' .
 			'</div>' .
 			'</div>';
 
@@ -909,6 +928,15 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				foreach ($taskGroup['tasks'] as $schedulerRecord) {// Define action icons
 					$editAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:edit', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+					if ((int)$schedulerRecord['disable'] === 1) {
+						$translationKey = 'enable';
+						$spriteIcon = 'actions-edit-unhide';
+					} else {
+						$translationKey = 'disable';
+						$spriteIcon = 'actions-edit-hide';
+					}
+					$toggleHiddenAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=toggleHidden&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:' . $translationKey, TRUE) . '" class="icon">' .
+						IconUtility::getSpriteIcon($spriteIcon) . '</a>';
 					$deleteAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $this->getLanguageService()->getLL('msg.delete') . '\');" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
 					$stopAction = '<a href="' . $GLOBALS['MCONF']['_'] . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid'] . '" onclick="return confirm(\'' . $this->getLanguageService()->getLL('msg.stop') . '\');" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon">' .
@@ -993,7 +1021,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						// Define checkbox
 						$startExecutionElement = '<input type="checkbox" name="tx_scheduler[execute][]" value="' . $schedulerRecord['uid'] . '" id="task_' . $schedulerRecord['uid'] . '" class="checkboxes" />';
 
-						$actions = $editAction . $deleteAction;
+						$actions = $editAction . $toggleHiddenAction . $deleteAction;
 
 						// Check the disable status
 						// Row is shown dimmed if task is disabled, unless it is still running
@@ -1419,7 +1447,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			'reload' => '',
 			'shortcut' => $this->getShortcutButton()
 		);
-		if (empty($this->CMD) || $this->CMD === 'list' || $this->CMD === 'delete') {
+		if (empty($this->CMD) || $this->CMD === 'list' || $this->CMD === 'delete' || $this->CMD === 'toggleHidden') {
 			$buttons['reload'] = '<a href="' . $GLOBALS['MCONF']['_'] . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
 			if ($this->MOD_SETTINGS['function'] === 'scheduler' && count($this->getRegisteredClasses())) {
 				$link = $GLOBALS['MCONF']['_'] . '&CMD=add';

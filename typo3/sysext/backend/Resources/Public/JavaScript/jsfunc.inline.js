@@ -18,8 +18,8 @@
  */
 
 var inline = {
-	classVisible: 't3-form-field-container-inline-visible',
-	classCollapsed: 't3-form-field-container-inline-collapsed',
+	classVisible: 'panel-visible',
+	classCollapsed: 'panel-collapsed',
 	structureSeparator: '-',
 	flexFormSeparator: '---',
 	flexFormSubstitute: ':',
@@ -46,7 +46,7 @@ var inline = {
 	},
 	toggleEvent: function (event) {
 		var $triggerElement = TYPO3.jQuery(event.target);
-		if ($triggerElement.parents('.t3-form-field-header-inline-ctrl').length == 1) {
+		if ($triggerElement.parents('.t3js-formengine-irre-control').length == 1) {
 			return;
 		}
 
@@ -167,7 +167,13 @@ var inline = {
 			}
 			this.makeAjaxCall('createNewRecord', [this.getNumberOfRTE(), objectId], true, context);
 		} else {
-			alert('There are no more relations possible at this moment!');
+			var message = TBE_EDITOR.labels.maxItemsAllowed.replace('{0}', this.data.config[objectId].max);
+			var matches = objectId.match(/^(data-\d+-.*?-\d+-.*?)-(.*?)$/);
+			var title = '';
+			if (matches) {
+				title = TYPO3.jQuery('#' + matches[1] + '_records').data('title');
+			}
+			top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, title, message, 5);
 		}
 		return false;
 	},
@@ -501,15 +507,20 @@ var inline = {
 	},
 
 	domAddNewRecord: function (method, insertObjectId, objectPrefix, htmlData) {
+		var $insertObject = TYPO3.jQuery('#' + this.escapeObjectId(insertObjectId));
 		if (this.isBelowMax(objectPrefix)) {
-			var $insertObject = TYPO3.jQuery('#' + this.escapeObjectId(insertObjectId));
 			if (method == 'bottom') {
 				$insertObject.append(htmlData);
 			} else if (method == 'after') {
 				$insertObject.after(htmlData);
 			}
+		} else {
+			var message = TBE_EDITOR.labels.maxItemsAllowed.replace('{0}', this.data.config[objectPrefix].max);
+			var title = $insertObject.data('title');
+			top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, title, message, 500);
 		}
 	},
+
 	domAddRecordDetails: function (objectId, objectPrefix, expandSingle, htmlData) {
 		var hiddenValue, formObj, valueObj;
 		var escapeObjectId = this.escapeObjectId(objectId);
@@ -683,7 +694,6 @@ var inline = {
 				return;
 			}
 
-			$sortingContainer.addClass('t3-form-field-container-wrap');
 			$sortingContainer.sortable(
 				{
 					containment: 'parent',
@@ -1321,6 +1331,6 @@ Object.extend(Array.prototype, {
 /*]]>*/
 (function ($) {
 	$(function () {
-		$(document).delegate('div.t3-form-field-header-inline', 'click', inline.toggleEvent);
+		$(document).delegate('[data-toggle="formengine-inline"]', 'click', inline.toggleEvent);
 	});
 })(TYPO3.jQuery);

@@ -16,13 +16,13 @@ namespace TYPO3\CMS\Backend\ClickMenu;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Core\Resource\Folder;
 
 /**
  * Class for generating the click menu
@@ -617,12 +617,13 @@ class ClickMenu {
 	 */
 	public function DB_moveWizard($table, $uid, $rec) {
 		// Hardcoded field for tt_content elements.
-		$url = 'move_el.php?table=' . $table . '&uid=' . $uid . ($table === 'tt_content' ? '&sys_language_uid=' . (int)$rec['sys_language_uid'] : '');
+		$url = BackendUtility::getModuleUrl('move_element') . '&table=' . $table . '&uid=' . $uid;
+		$url .= ($table === 'tt_content' ? '&sys_language_uid=' . (int)$rec['sys_language_uid'] : '');
 		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_moveWizard' . ($table === 'pages' ? '_page' : ''))), IconUtility::getSpriteIcon('actions-' . ($table === 'pages' ? 'page' : 'document') . '-move'), $this->urlRefForCM($url, 'returnUrl'), 0);
 	}
 
 	/**
-	 * Adding CM element for Create new wizard (either db_new.php or sysext/cms/layout/db_new_content_el.php or custom wizard)
+	 * Adding CM element for Create new wizard (either db_new.php or BackendUtility::getModuleUrl('new_content_element') or custom wizard)
 	 *
 	 * @param string $table Table name
 	 * @param int $uid UID for the current record.
@@ -634,8 +635,9 @@ class ClickMenu {
 		//  If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's create new content wizard instead:
 		$tmpTSc = BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
 		$tmpTSc = $tmpTSc['properties']['newContentWiz.']['overrideWithExtension'];
-		$newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tmpTSc) ? ExtensionManagementUtility::extRelPath($tmpTSc) . 'mod1/db_new_content_el.php' : 'sysext/cms/layout/db_new_content_el.php';
-		$url = $table === 'pages' ? 'db_new.php?id=' . $uid . '&pagesOnly=1' : $newContentWizScriptPath . '?id=' . $rec['pid'] . '&sys_language_uid=' . (int)$rec['sys_language_uid'];
+
+		$newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tmpTSc) ? ExtensionManagementUtility::extRelPath($tmpTSc) . 'mod1/db_new_content_el.php?' : BackendUtility::getModuleUrl('new_content_element') . '&';
+		$url = $table === 'pages' ? 'db_new.php?id=' . $uid . '&pagesOnly=1' : $newContentWizScriptPath . 'id=' . $rec['pid'] . '&sys_language_uid=' . (int)$rec['sys_language_uid'];
 		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_newWizard')), IconUtility::getSpriteIcon('actions-' . ($table === 'pages' ? 'page' : 'document') . '-new'), $this->urlRefForCM($url, 'returnUrl'), 0);
 	}
 
@@ -725,7 +727,7 @@ class ClickMenu {
 		} else {
 			$conf = '1==1';
 		}
-		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'tce_db.php?redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&cmd[' . $table . '][' . $uid . '][delete]=1&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
+		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'' . BackendUtility::getModuleUrl('tce_db') . '&redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&cmd[' . $table . '][' . $uid . '][delete]=1&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
 		if ($table === 'pages') {
 			$editOnClick .= 'top.nav.refresh.defer(500, top.nav);';
 		}
@@ -796,7 +798,7 @@ class ClickMenu {
 	public function DB_changeFlag($table, $rec, $flagField, $title) {
 		$uid = $rec['_ORIG_uid'] ?: $rec['uid'];
 		$loc = 'top.content.list_frame';
-		$editOnClick = 'if(' . $loc . '){' . $loc . '.location.href=top.TS.PATH_typo3+\'tce_db.php?redirect=\'' . '+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&data[' . $table . '][' . $uid . '][' . $flagField . ']=' . ($rec[$flagField] ? 0 : 1) . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
+		$editOnClick = 'if(' . $loc . '){' . $loc . '.location.href=top.TS.PATH_typo3+\'' . BackendUtility::getModuleUrl('tce_db') . '&redirect=\'' . '+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&data[' . $table . '][' . $uid . '][' . $flagField . ']=' . ($rec[$flagField] ? 0 : 1) . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
 		if ($table === 'pages') {
 			$editOnClick .= 'top.nav.refresh.defer(500, top.nav);';
 		}
@@ -829,7 +831,7 @@ class ClickMenu {
 			$userMayViewStorage = FALSE;
 			$userMayEditStorage = FALSE;
 			$identifier = $fileObject->getCombinedIdentifier();
-			if ($fileObject instanceof \TYPO3\CMS\Core\Resource\Folder) {
+			if ($fileObject instanceof Folder) {
 				$icon = IconUtility::getSpriteIconForResource($fileObject, array(
 					'class' => 'absmiddle',
 					'title' => htmlspecialchars($fileObject->getName())
@@ -866,7 +868,7 @@ class ClickMenu {
 			}
 			// Edit
 			if (!in_array('edit', $this->disabledItems) && $fileObject->checkActionPermission('write')) {
-				if (!$folder && !$isStorageRoot && $fileObject->isIndexed()) {
+				if (!$folder && !$isStorageRoot && $fileObject->isIndexed() && $this->backendUser->check('tables_modify', 'sys_file_metadata')) {
 					$metaData = $fileObject->_getMetaData();
 					$menuItems['edit2'] = $this->DB_edit('sys_file_metadata', $metaData['uid']);
 				}
@@ -915,7 +917,11 @@ class ClickMenu {
 					basename($identifier),
 					$this->clipObj->currentMode()
 				);
-				$menuItems['pasteinto'] = $this->FILE_paste($identifier, $selItem, $elInfo);
+				$clickedFileOrFolder = ResourceFactory::getInstance()->retrieveFileOrFolderObject($combinedIdentifier);
+				$fileOrFolderInClipBoard = ResourceFactory::getInstance()->retrieveFileOrFolderObject($selItem);
+				if (!$fileOrFolderInClipBoard instanceof Folder || !$fileOrFolderInClipBoard->getStorage()->isWithinFolder($fileOrFolderInClipBoard, $clickedFileOrFolder)) {
+					$menuItems['pasteinto'] = $this->FILE_paste($identifier, $selItem, $elInfo);
+				}
 			}
 			$menuItems[] = 'spacer';
 			// Delete:
@@ -1012,7 +1018,7 @@ class ClickMenu {
 		} else {
 			$conf = '1==1';
 		}
-		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'tce_file.php?redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&file[delete][0][data]=' . rawurlencode($path) . '&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
+		$editOnClick = 'if(' . $loc . ' && ' . $conf . ' ){' . $loc . '.location.href=top.TS.PATH_typo3+\'' . BackendUtility::getModuleUrl('tce_file') . '&redirect=\'+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+\'' . '&file[delete][0][data]=' . rawurlencode($path) . '&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '\';};';
 		return $this->linkItem($this->label('delete'), IconUtility::getSpriteIcon('actions-edit-delete'), $editOnClick . 'return false;');
 	}
 
@@ -1111,7 +1117,7 @@ class ClickMenu {
 	public function dragDrop_copymovepage($srcUid, $dstUid, $action, $into) {
 		$negativeSign = $into === 'into' ? '' : '-';
 		$loc = 'top.content.list_frame';
-		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"tce_db.php?redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&cmd[pages][' . $srcUid . '][' . $action . ']=' . $negativeSign . $dstUid . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '";};top.nav.refresh();';
+		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"' . BackendUtility::getModuleUrl('tce_db') . '&redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&cmd[pages][' . $srcUid . '][' . $action . ']=' . $negativeSign . $dstUid . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '";};top.nav.refresh();';
 		return $this->linkItem($this->label($action . 'Page_' . $into), IconUtility::getSpriteIcon('actions-document-paste-' . $into), $editOnClick . 'return false;', 0);
 	}
 
@@ -1126,7 +1132,7 @@ class ClickMenu {
 	 */
 	public function dragDrop_copymovefolder($srcPath, $dstPath, $action) {
 		$loc = 'top.content.list_frame';
-		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"tce_file.php?redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&file[' . $action . '][0][data]=' . $srcPath . '&file[' . $action . '][0][target]=' . $dstPath . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '";};top.nav.refresh();';
+		$editOnClick = 'if(' . $loc . '){' . $loc . '.document.location=top.TS.PATH_typo3+"' . BackendUtility::getModuleUrl('tce_file') . '&redirect="+top.rawurlencode(' . $this->frameLocation(($loc . '.document')) . '.pathname+' . $this->frameLocation(($loc . '.document')) . '.search)+"' . '&file[' . $action . '][0][data]=' . $srcPath . '&file[' . $action . '][0][target]=' . $dstPath . '&prErr=1&vC=' . $this->backendUser->veriCode() . BackendUtility::getUrlToken('tceAction') . '";};top.nav.refresh();';
 		return $this->linkItem($this->label($action . 'Folder_into'), IconUtility::getSpriteIcon('apps-pagetree-drag-move-into'), $editOnClick . 'return false;', 0);
 	}
 

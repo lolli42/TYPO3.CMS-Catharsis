@@ -60,9 +60,8 @@ table {
 }
 
 
-/* Font size 62.8% = 1em = 10px */
 body {
-	font: 62.8% Verdana, Arial, Helvetica, sans-serif;
+	font: 75% Verdana, Arial, Helvetica, sans-serif;
 }
 
 pre {
@@ -175,7 +174,7 @@ fieldset span {
 }
 
 .t3-install-form-label-after label {
-	padding-left: 3em;
+	padding-left: 2em;
 }
 
 .t3-install-form-label-width-7 label {
@@ -184,6 +183,10 @@ fieldset span {
 
 .t3-install-form-label-width-21 label {
 	width: 21em;
+}
+
+.t3-install-form-label-after input[type=checkbox] {
+	margin-top: 0.7em;
 }
 
 fieldset.t3-install-form-submit {
@@ -320,7 +323,7 @@ button span.t3-install-form-button-icon-negative {
 }
 
 #t3-install-menu li {
-	padding: 0.35em 0 0.35em 2.8em;
+	padding: 0.35em 0;
 }
 
 #t3-install-menu li.act {
@@ -330,6 +333,11 @@ button span.t3-install-form-button-icon-negative {
 #t3-install-menu a {
 	color: #606060;
 	text-decoration: none;
+	padding: 0.35em 0px 0.35em 2.8em;
+	display: block;
+	line-height: 120%;
+	background-repeat: no-repeat;
+	background-position: 10px 5px;
 }
 
 #t3-install-menu a:hover {
@@ -346,11 +354,11 @@ button span.t3-install-form-button-icon-negative {
 	background-position: 0.7em center;
 }
 
-#t3-install-menu #t3-install-menu-importantActions {
+#t3-install-menu #t3-install-menu-importantActions a {
 	background-image: url('../../../Images/Menu/ImportantActions.png');
 }
 
-#t3-install-menu #t3-install-menu-systemEnvironment {
+#t3-install-menu #t3-install-menu-systemEnvironment a {
 	background-image: url('../../../Images/Menu/SystemEnvironment.png');
 }
 
@@ -358,31 +366,31 @@ button span.t3-install-form-button-icon-negative {
 	background-color: #585858;
 }
 
-#t3-install-menu #t3-install-menu-configuration {
+#t3-install-menu #t3-install-menu-configuration a {
 	background-image: url('../../../Images/Menu/Configuration.png');
 }
 
-#t3-install-menu #t3-install-menu-folderStructure {
+#t3-install-menu #t3-install-menu-folderStructure a {
 	background-image: url('../../../Images/Menu/FolderStructure.png');
 }
 
-#t3-install-menu #t3-install-menu-upgradeWizard {
+#t3-install-menu #t3-install-menu-upgradeWizard a {
 	background-image: url('../../../Images/Menu/UpgradeWizard.png');
 }
 
-#t3-install-menu #t3-install-menu-testSetup {
+#t3-install-menu #t3-install-menu-testSetup a {
 	background-image: url('../../../Images/Menu/TestSetup.png');
 }
 
-#t3-install-menu #t3-install-menu-allConfiguration {
+#t3-install-menu #t3-install-menu-allConfiguration a {
 	background-image: url('../../../Images/Menu/AllConfiguration.png');
 }
 
-#t3-install-menu #t3-install-menu-cleanUp {
+#t3-install-menu #t3-install-menu-cleanUp a {
 	background-image: url('../../../Images/Menu/CleanUp.png');
 }
 
-#t3-install-menu #t3-install-menu-welcome {
+#t3-install-menu #t3-install-menu-welcome a {
 	background-image: url('../../../Images/Menu/Welcome.png');
 }
 
@@ -469,7 +477,7 @@ body.standalone #t3-install-menu-logout a {
 #t3-install-box-body .toggleButton {
 	background-image: url('../../../Images/Icon/arrowright-white.png');
 	background-repeat: no-repeat;
-	background-position: 3px 8px;
+	background-position: 0.5% 56%;
 	padding-left: 20px;
 	cursor: pointer;
 }
@@ -547,7 +555,7 @@ h4.item-header {
 .typo3-message {
 	padding: 0.6em 0.6em 0.6em 2.6em;
 	background-repeat: no-repeat;
-	background-position: 0.5em 0.7em;
+	background-position: 0.5em 0.9em;
 	border: 1px solid;
 	color: #000000;
 	word-wrap: break-word;
@@ -771,10 +779,6 @@ body.standalone #t3-install-menu-border-top {
 
 body.standalone #t3-install-menu {
 	background: #ebebeb url('../../../Images/Background/Menu.gif') repeat-x left bottom;
-}
-
-body.standalone #t3-install-menu a:link {
-	background: none;
 }
 
 body.standalone #t3-install-menu-bottom {

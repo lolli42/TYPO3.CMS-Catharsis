@@ -11,18 +11,23 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Format;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\ViewHelperBaseTestcase;
+
 /**
  * Test case
  */
-class StripTagsViewHelperTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
+class StripTagsViewHelperTest extends ViewHelperBaseTestcase {
 
 	/**
 	 * @var \TYPO3\CMS\Fluid\ViewHelpers\Format\StripTagsViewHelper
 	 */
 	protected $viewHelper;
 
-	public function setUp() {
+	protected function setUp() {
+		parent::setUp();
 		$this->viewHelper = $this->getMock(\TYPO3\CMS\Fluid\ViewHelpers\Format\StripTagsViewHelper::class, array('renderChildren'));
+		$this->injectDependenciesIntoViewHelper($this->viewHelper);
+		$this->viewHelper->initializeArguments();
 	}
 
 	/**

@@ -24,15 +24,15 @@ class GraphicalFunctionsTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @var \TYPO3\CMS\Core\Imaging\GraphicalFunctions
 	 */
-	protected $fixture = NULL;
+	protected $subject = NULL;
 
 	/**
 	 * Set up
 	 *
 	 * @return void
 	 */
-	public function setUp() {
-		$this->fixture = new \TYPO3\CMS\Core\Imaging\GraphicalFunctions();
+	protected function setUp() {
+		$this->subject = new \TYPO3\CMS\Core\Imaging\GraphicalFunctions();
 	}
 
 	/**
@@ -105,7 +105,7 @@ class GraphicalFunctionsTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider getScaleForImageDataProvider
 	 */
 	public function getScaleForImage($info, $width, $height, $options, $expected) {
-		$result = $this->fixture->getImageScale($info, $width, $height, $options);
+		$result = $this->subject->getImageScale($info, $width, $height, $options);
 		$this->assertEquals($result, $expected);
 	}
 

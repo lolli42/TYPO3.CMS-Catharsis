@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Version\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
@@ -384,7 +385,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// Create new:
 		$content = '
 
-			<form action="' . $this->doc->backPath . 'tce_db.php" method="post">
+			<form action="' . $this->doc->backPath . BackendUtility::getModuleUrl('tce_db') . '" method="post">
 			' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . ': <input type="text" name="cmd[' . $this->table . '][' . $this->uid . '][version][label]" /><br />
 			<br /><input type="hidden" name="cmd[' . $this->table . '][' . $this->uid . '][version][action]" value="new" />
 			<input type="hidden" name="prErr" value="1" />
@@ -406,7 +407,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 * @return string Table with content if any
 	 */
 	public function pageSubContent($pid, $c = 0) {
-		$tableNames = GeneralUtility::removeArrayEntryByValue(array_keys($GLOBALS['TCA']), 'pages');
+		$tableNames = ArrayUtility::removeArrayEntryByValue(array_keys($GLOBALS['TCA']), 'pages');
 		$tableNames[] = 'pages';
 		$content = '';
 		foreach ($tableNames as $tN) {

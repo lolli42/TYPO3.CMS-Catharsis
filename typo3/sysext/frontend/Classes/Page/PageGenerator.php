@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Frontend\Page;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Type\File\ImageInfo;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
@@ -291,7 +293,6 @@ class PageGenerator {
 		switch ((string)$GLOBALS['TSFE']->config['config']['xmlprologue']) {
 			case 'none':
 				$xmlDocument = FALSE;
-				$GLOBALS['TSFE']->config['config']['xhtml_cleaning'] = 'none';
 				break;
 			case 'xml_10':
 				$docTypeParts[] = '<?xml version="1.0" encoding="' . $theCharset . '"?>';
@@ -420,13 +421,12 @@ class PageGenerator {
 		}
 		if ($GLOBALS['TSFE']->pSetup['shortcutIcon']) {
 			$favIcon = $GLOBALS['TSFE']->tmpl->getFileName($GLOBALS['TSFE']->pSetup['shortcutIcon']);
-			if (is_file(PATH_site . $favIcon)) {
-				if (function_exists('finfo_open')) {
-					if ($finfo = @finfo_open(FILEINFO_MIME)) {
-						$iconMimeType = ' type="' . finfo_file($finfo, (PATH_site . $favIcon)) . '"';
-						finfo_close($finfo);
-						$pageRenderer->setIconMimeType($iconMimeType);
-					}
+			$iconFileInfo = GeneralUtility::makeInstance(ImageInfo::class, PATH_site . $favIcon);
+			if ($iconFileInfo->isFile()) {
+				$iconMimeType = $iconFileInfo->getMimeType();
+				if ($iconMimeType) {
+					$iconMimeType = ' type="' . $iconMimeType . '"';
+					$pageRenderer->setIconMimeType($iconMimeType);
 				}
 				$pageRenderer->setFavIcon(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . $favIcon);
 			}
@@ -647,15 +647,28 @@ class PageGenerator {
 			}
 		}
 		// JavaScript library files
-		if (is_array($GLOBALS['TSFE']->pSetup['includeJSlibs.'])) {
-			foreach ($GLOBALS['TSFE']->pSetup['includeJSlibs.'] as $key => $JSfile) {
+		if (is_array($GLOBALS['TSFE']->pSetup['includeJSlibs.']) || is_array($GLOBALS['TSFE']->pSetup['includeJSLibs.'])) {
+			if (!is_array($GLOBALS['TSFE']->pSetup['includeJSlibs.'])) {
+				$GLOBALS['TSFE']->pSetup['includeJSlibs.'] = array();
+			} else {
+				GeneralUtility::deprecationLog('The property page.includeJSlibs is marked for deprecation and will be removed in TYPO3 CMS 8. Please use page.includeJSLibs (with a uppercase L) instead.');
+			}
+			if (!is_array($GLOBALS['TSFE']->pSetup['includeJSLibs.'])) {
+				$GLOBALS['TSFE']->pSetup['includeJSLibs.'] = array();
+			}
+			ArrayUtility::mergeRecursiveWithOverrule(
+				$GLOBALS['TSFE']->pSetup['includeJSLibs.'],
+				$GLOBALS['TSFE']->pSetup['includeJSlibs.']
+			);
+			unset($GLOBALS['TSFE']->pSetup['includeJSlibs.']);
+			foreach ($GLOBALS['TSFE']->pSetup['includeJSLibs.'] as $key => $JSfile) {
 				if (!is_array($JSfile)) {
-					if (isset($GLOBALS['TSFE']->pSetup['includeJSlibs.'][$key . '.']['if.']) && !$GLOBALS['TSFE']->cObj->checkIf($GLOBALS['TSFE']->pSetup['includeJSlibs.'][($key . '.')]['if.'])) {
+					if (isset($GLOBALS['TSFE']->pSetup['includeJSLibs.'][$key . '.']['if.']) && !$GLOBALS['TSFE']->cObj->checkIf($GLOBALS['TSFE']->pSetup['includeJSLibs.'][($key . '.')]['if.'])) {
 						continue;
 					}
-					$ss = $GLOBALS['TSFE']->pSetup['includeJSlibs.'][$key . '.']['external'] ? $JSfile : $GLOBALS['TSFE']->tmpl->getFileName($JSfile);
+					$ss = $GLOBALS['TSFE']->pSetup['includeJSLibs.'][$key . '.']['external'] ? $JSfile : $GLOBALS['TSFE']->tmpl->getFileName($JSfile);
 					if ($ss) {
-						$jsFileConfig = &$GLOBALS['TSFE']->pSetup['includeJSlibs.'][$key . '.'];
+						$jsFileConfig = &$GLOBALS['TSFE']->pSetup['includeJSLibs.'][$key . '.'];
 						$type = $jsFileConfig['type'];
 						if (!$type) {
 							$type = 'text/javascript';

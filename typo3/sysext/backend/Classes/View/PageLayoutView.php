@@ -15,7 +15,6 @@ namespace TYPO3\CMS\Backend\View;
  */
 
 use TYPO3\CMS\Backend\Controller\PageLayoutController;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -23,7 +22,6 @@ use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Child class for the Web > Page module
@@ -402,8 +400,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		$pageTitleParamForAltDoc = '&recTitle=' . rawurlencode(BackendUtility::getRecordTitle('pages', BackendUtility::getRecordWSOL('pages', $id), TRUE));
 		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 		$pageRenderer = $this->getPageLayoutController()->doc->getPageRenderer();
-		$pageRenderer->loadExtJs();
-		$pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . 'sysext/cms/layout/js/typo3pageModule.js');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LayoutModule/DragDrop');
 		// Get labels for CTypes and tt_content element fields in general:
 		$this->CType_labels = array();
 		foreach ($GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'] as $val) {
@@ -459,7 +456,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					$content[$key] .= '">';
 					// Add new content at the top most position
 					$content[$key] .= '
-					<div class="t3-page-ce" id="' . str_replace('.', '', uniqid('', TRUE)) . '">
+					<div class="t3-page-ce" data-page="' . (int)$id . '" id="' . str_replace('.', '', uniqid('', TRUE)) . '">
 						<div class="t3-page-ce-dropzone" id="colpos-' . $key . '-' . 'page-' . $id . '-' . uniqid('', TRUE) . '">
 							<div class="t3-page-ce-wrapper-new-ce">
 								<a href="#" onclick="' . htmlspecialchars($this->newContentElementOnClick($id, $key, $lP))
@@ -509,7 +506,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$singleElementHTML .= '</div>';
 							$statusHidden = $this->isDisabled('tt_content', $row) ? ' t3-page-ce-hidden' : '';
 							$singleElementHTML = '<div class="t3-page-ce' . $statusHidden . '" id="element-tt_content-'
-								. $row['uid'] . '">' . $singleElementHTML . '</div>';
+								. $row['uid'] . '" data-table="tt_content" data-uid="' . $row['uid'] . '">' . $singleElementHTML . '</div>';
 							if ($this->tt_contentConfig['languageMode']) {
 								$singleElementHTML .= '<div class="t3-page-ce">';
 							}
@@ -519,10 +516,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							if (!$disableMoveAndNewButtons) {
 								// New content element:
 								if ($this->option_newWizard) {
-									$onClick = 'window.location.href=\'db_new_content_el.php?id=' . $row['pid']
+									$onClick = 'window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('new_content_element') . '&id=' . $row['pid']
 										. '&sys_language_uid=' . $row['sys_language_uid'] . '&colPos=' . $row['colPos']
 										. '&uid_pid=' . -$row['uid'] .
-										'&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';';
+										'&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ';';
 								} else {
 									$params = '&edit[tt_content][' . -$row['uid'] . ']=new';
 									$onClick = BackendUtility::editOnClick($params, $this->backPath);
@@ -611,7 +608,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$grid .= '<td valign="top"' .
 								($colSpan > 0 ? ' colspan="' . $colSpan . '"' : '') .
 								($rowSpan > 0 ? ' rowspan="' . $rowSpan . '"' : '') .
-								' class="t3-gridCell t3-page-column t3-page-column-' . $columnKey .
+								' data-colpos="' . (int)$columnConfig['colPos'] . '" class="t3-gridCell t3-page-column t3-page-column-' . $columnKey .
 								((!isset($columnConfig['colPos']) || $columnConfig['colPos'] === '') ? ' t3-gridCell-unassigned' : '') .
 								((isset($columnConfig['colPos']) && $columnConfig['colPos'] !== '' && !$head[$columnKey]) || !GeneralUtility::inList($this->tt_contentConfig['activeCols'], $columnConfig['colPos']) ? ' t3-gridCell-restricted' : '') .
 								($colSpan > 0 ? ' t3-gridCell-width' . $colSpan : '') .
@@ -772,9 +769,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					$rowOut = '';
 					// If it turns out that there are not content elements in the column, then display a big button which links directly to the wizard script:
 					if ($this->doEdit && $this->option_showBigButtons && !(int)$key && $numberOfContentElementsInColumn == 0) {
-						$onClick = 'window.location.href=\'db_new_content_el.php?id=' . $id . '&colPos=' . (int)$key
+						$onClick = 'window.location.href='
+							. GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('new_content_element') . '&id=' . $id . '&colPos=' . (int)$key
 							. '&sys_language_uid=' . $lP . '&uid_pid=' . $id . '&returnUrl='
-							. rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';';
+							. rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ';';
 						$theNewButton = $this->getPageLayoutController()->doc->t3Button($onClick, $this->getLanguageService()->getLL('newPageContent'));
 						$theNewButton = '<img src="clear.gif" width="1" height="5" alt="" /><br />' . $theNewButton;
 					} else {
@@ -875,7 +873,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			if ($this->ext_CALC_PERMS & 4 || $this->ext_CALC_PERMS & 2) {
 				$bArray[1] = $this->getPageLayoutController()->doc->t3Button(
-					'window.location.href=\'' . $this->backPath . 'move_el.php?table=pages&uid=' . $id
+					'window.location.href=\'' . $this->backPath . BackendUtility::getModuleUrl('move_element') . '&table=pages&uid=' . $id
 						. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';',
 					$this->getLanguageService()->getLL('move_page')
 				);
@@ -889,9 +887,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			}
 			if ($this->doEdit && $this->ext_function == 1) {
 				$bArray[3] = $this->getPageLayoutController()->doc->t3Button(
-					'window.location.href=\'db_new_content_el.php?id=' . $id
+					'window.location.href='
+						. GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('new_content_element') . '&id=' . $id
 						. '&sys_language_uid=' . $this->getPageLayoutController()->current_sys_language
-						. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';',
+						. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ';',
 					$this->getLanguageService()->getLL('newPageContent2')
 				);
 			}
@@ -1507,10 +1506,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					}
 					break;
 				case 'bullets':
-
 				case 'table':
-
-				case 'mailform':
 					if ($row['bodytext']) {
 						$out .= $this->linkEditContent($this->renderText($row['bodytext']), $row) . '<br />';
 					}
@@ -1575,7 +1571,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					if ((string)$hookOut !== '') {
 						$out .= $hookOut;
 					} elseif (!empty($row['list_type'])) {
-						$label = BackendUtility::getLabelFromItemlist('tt_content', 'list_type', $row['list_type']);
+						$label = BackendUtility::getLabelFromItemListMerged($row['pid'], 'tt_content', 'list_type', $row['list_type']);
 						if (!empty($label)) {
 							$out .=  '<strong>' . $this->getLanguageService()->sL($label, TRUE) . '</strong><br />';
 						} else {
@@ -1738,7 +1734,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 */
 	public function newContentElementOnClick($id, $colPos, $sys_language) {
 		if ($this->option_newWizard) {
-			$onClick = 'window.location.href=\'db_new_content_el.php?id=' . $id . '&colPos=' . $colPos
+			$onClick = 'window.location.href=\'' . BackendUtility::getModuleUrl('new_content_element') . '&id=' . $id . '&colPos=' . $colPos
 				. '&sys_language_uid=' . $sys_language . '&uid_pid=' . $id
 				. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '\';';
 		} else {
@@ -2245,24 +2241,10 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	}
 
 	/**
-	 * @return LanguageService
-	 */
-	protected function getLanguageService() {
-		return $GLOBALS['LANG'];
-	}
-
-	/**
 	 * @return PageLayoutController
 	 */
 	protected function getPageLayoutController() {
 		return $GLOBALS['SOBE'];
-	}
-
-	/**
-	 * @return DocumentTemplate
-	 */
-	protected function getDocumentTemplate() {
-		return $GLOBALS['TBE_TEMPLATE'];
 	}
 
 }

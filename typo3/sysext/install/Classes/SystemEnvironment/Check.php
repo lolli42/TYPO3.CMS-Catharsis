@@ -89,15 +89,17 @@ class Check {
 		$statusArray[] = $this->checkOpenBaseDir();
 		$statusArray[] = $this->checkXdebugMaxNestingLevel();
 		$statusArray[] = $this->checkOpenSslInstalled();
-		$statusArray[] = $this->checkSuhosinLoaded();
-		$statusArray[] = $this->checkSuhosinRequestMaxVars();
-		$statusArray[] = $this->checkSuhosinRequestMaxVarnameLength();
-		$statusArray[] = $this->checkSuhosinPostMaxNameLength();
-		$statusArray[] = $this->checkSuhosinPostMaxVars();
-		$statusArray[] = $this->checkSuhosinGetMaxNameLength();
-		$statusArray[] = $this->checkSuhosinGetMaxValueLength();
-		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
-		$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
+		if ($this->isSuhosinLoadedAndActive()) {
+			$statusArray[] = $this->getSuhosinLoadedStatus();
+			$statusArray[] = $this->checkSuhosinRequestMaxVars();
+			$statusArray[] = $this->checkSuhosinRequestMaxVarnameLength();
+			$statusArray[] = $this->checkSuhosinPostMaxNameLength();
+			$statusArray[] = $this->checkSuhosinPostMaxVars();
+			$statusArray[] = $this->checkSuhosinGetMaxNameLength();
+			$statusArray[] = $this->checkSuhosinGetMaxValueLength();
+			$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
+			$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
+		}
 		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
 		$statusArray[] = $this->checkReflectionDocComment();
 		$statusArray[] = $this->checkSystemLocale();
@@ -113,7 +115,7 @@ class Check {
 		$statusArray[] = $this->checkGdLibFreeTypeSupport();
 		$statusArray[] = $this->checkRegisterGlobals();
 		$statusArray[] = $this->checkLibXmlBug();
-		$statusArray[] = $this->isTrueTypeFontDpiStandard();
+		$statusArray[] = $this->isTrueTypeFontWorking();
 		return $statusArray;
 	}
 
@@ -299,24 +301,15 @@ class Check {
 		$recommendedMaximumExecutionTime = 240;
 		$currentMaximumExecutionTime = ini_get('max_execution_time');
 		if ($currentMaximumExecutionTime == 0) {
-			if (PHP_SAPI === 'cli') {
-				$status = new Status\OkStatus();
-				$status->setTitle('Infinite PHP script execution time');
-				$status->setMessage(
-					'Maximum PHP script execution time is always set to infinite (0) in cli mode.' .
-					' The setting used for web requests cannot be checked from command line.'
-				);
-			} else {
-				$status = new Status\WarningStatus();
-				$status->setTitle('Infinite PHP script execution time');
-				$status->setMessage(
-					'max_execution_time=' . $currentMaximumExecutionTime . LF .
-					'While TYPO3 is fine with this, you risk a denial-of-service for your system if for whatever' .
-					' reason some script hangs in an infinite loop. You are usually on the safe side ' .
-					' if it is reduced to ' . $recommendedMaximumExecutionTime . ' seconds:' . LF .
-					'max_execution_time=' . $recommendedMaximumExecutionTime
-				);
-			}
+			$status = new Status\WarningStatus();
+			$status->setTitle('Infinite PHP script execution time');
+			$status->setMessage(
+				'max_execution_time=0' . LF .
+				'While TYPO3 is fine with this, you risk a denial-of-service for your system if for whatever' .
+				' reason some script hangs in an infinite loop. You are usually on the safe side ' .
+				' if it is reduced to ' . $recommendedMaximumExecutionTime . ' seconds:' . LF .
+				'max_execution_time=' . $recommendedMaximumExecutionTime
+			);
 		} elseif ($currentMaximumExecutionTime < $minimumMaximumExecutionTime) {
 			$status = new Status\ErrorStatus();
 			$status->setTitle('Low PHP script execution time');
@@ -547,25 +540,20 @@ class Check {
 	}
 
 	/**
-	 * Check enabled suhosin
+	 * Get suhosin loaded status
+	 * Should be called only if suhosin extension is loaded
 	 *
 	 * @return Status\StatusInterface
+	 * @throws \BadMethodCallException
 	 */
-	protected function checkSuhosinLoaded() {
+	protected function getSuhosinLoadedStatus() {
 		if ($this->isSuhosinLoadedAndActive()) {
 			$status = new Status\OkStatus();
 			$status->setTitle('PHP suhosin extension loaded and active');
+			return $status;
 		} else {
-			$status = new Status\NoticeStatus();
-			$status->setTitle('PHP suhosin extension not loaded or in simulation mode');
-			$status->setMessage(
-				'suhosin is an extension to harden the PHP environment. In general, it is' .
-				' good to have it from a security point of view. While TYPO3 CMS works' .
-				' fine with suhosin, it has some requirements different from the default settings' .
-				' to be set if enabled.'
-			);
+			throw new \BadMethodCallException('Should be called only if suhosin extension is loaded', 1422634778);
 		}
-		return $status;
 	}
 
 	/**
@@ -1232,9 +1220,9 @@ class Check {
 	 *
 	 * @return Status\StatusInterface
 	 */
-	protected function isTrueTypeFontDpiStandard() {
+	protected function isTrueTypeFontWorking() {
 		if (function_exists('imageftbbox')) {
-			// 20 Pixels at 96 DPI - the DefaultConfiguration
+			// 20 Pixels at 96 DPI
 			$fontSize = (20 / 96 * 72);
 			$textDimensions = @imageftbbox(
 				$fontSize,
@@ -1255,7 +1243,7 @@ class Check {
 				$status->setTitle('FreeType True Type Font DPI');
 				$status->setMessage('Fonts are rendered by FreeType library. ' .
 					'This server does not render fonts as expected. ' .
-					'Please configure FreeType or TYPO3_CONF_VARS[GFX][TTFdpi]'
+					'Please check your FreeType 2 module.'
 				);
 			}
 		} else {

@@ -59,9 +59,6 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/BlockElements',
 				}
 			}
 			this.allowedAttributes = new Array('id', 'title', 'lang', 'xml:lang', 'dir', 'class', 'itemscope', 'itemtype', 'itemprop');
-			if (UserAgent.isIEBeforeIE9) {
-				this.addAllowedAttribute('className');
-			}
 			this.indentedList = null;
 				// Standard block formating items
 			var standardElements = new Array('address', 'article', 'aside', 'blockquote', 'div', 'footer', 'header', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'nav', 'p', 'pre', 'section');
@@ -327,7 +324,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/BlockElements',
 					}
 				}
 			}
-			var fullNodeTextSelected = (!UserAgent.isIEBeforeIE9 && parentElement.textContent === range.toString()) || (UserAgent.isIEBeforeIE9 && parentElement.innerText === range.text);
+			var fullNodeTextSelected = (parentElement.textContent === range.toString());
 			switch (buttonId) {
 				case "Indent" :
 					if (/^(ol|ul)$/i.test(parentElement.nodeName) && !(fullNodeTextSelected && !/^(li)$/i.test(parentElement.parentNode.nodeName))) {
@@ -903,11 +900,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/BlockElements',
 			if (endElement) {
 				var parent = endElement.parentNode;
 				var paragraph = this.editor.document.createElement('p');
-				if (UserAgent.isIEBeforeIE9) {
-					paragraph.innerHTML = '&nbsp';
-				} else {
-					paragraph.appendChild(this.editor.document.createElement('br'));
-				}
+				paragraph.appendChild(this.editor.document.createElement('br'));
 				if (after && !endElement.nextSibling) {
 					parent.appendChild(paragraph);
 				} else {
@@ -1179,12 +1172,13 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/BlockElements',
 		 */
 		updateDropDown: function(select, deepestBlockAncestor, startAncestor) {
 			var index = -1;
+			var value, item, text;
 			if (deepestBlockAncestor) {
 				var nodeName = deepestBlockAncestor.nodeName.toLowerCase();
 				// Could be a custom item ...
-				var options = select.getOptions();
-				for (var i = 0, n = options.length; i < n; i++) {
-					var item = this.formatBlockItems[options[i].value];
+				for (var i = 0, n = select.getCount(); i < n; i++) {
+					value = select.getOptionValue(i);
+					item = this.formatBlockItems[value];
 					if (item && item.tagName === nodeName && item.addClass && Dom.hasClass(deepestBlockAncestor, item.addClass)) {
 						index = i;
 						break;
@@ -1196,15 +1190,12 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/BlockElements',
 				}
 			}
 			if (index === -1) {
-				var text = this.localize('No block');
-				select.setFirstOption(text, 'none', text);
-				select.setValue('none');
+				text = this.localize('No block');
 			} else {
-				var text = this.localize('Remove block');
-				select.setFirstOption(text, 'none', text);
-				var options = select.getOptions();
-				select.setValue(options[index].value);
+				text = this.localize('Remove block');
 			}
+			select.setFirstOption(text, 'none', text);
+			select.setValueByIndex(index);
 		},
 
 		/**

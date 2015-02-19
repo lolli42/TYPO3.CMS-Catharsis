@@ -29,7 +29,7 @@ class DatabaseConnectionTest extends AbstractTestCase {
 	/**
 	 * Set up
 	 */
-	public function setUp() {
+	protected function setUp() {
 		$GLOBALS['TYPO3_LOADED_EXT'] = array();
 
 		/** @var \TYPO3\CMS\Dbal\Database\DatabaseConnection|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $subject */
@@ -150,6 +150,9 @@ class DatabaseConnectionTest extends AbstractTestCase {
 	 * @see http://forge.typo3.org/issues/20427
 	 */
 	public function positive64BitIntegerIsSupported() {
+		if (!is_int(9223372036854775806)) {
+			$this->markTestSkipped('Test skipped because running on 32 bit system.');
+		}
 		$this->createFakeExtension('
 			CREATE TABLE tx_test_dbal (
 				foo int default \'0\',

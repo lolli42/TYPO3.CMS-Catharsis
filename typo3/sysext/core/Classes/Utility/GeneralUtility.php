@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\Utility;
 
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoader;
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -277,37 +278,11 @@ class GeneralUtility {
 	 * @param string $theFile Filepath
 	 * @param string $type See description of function
 	 * @return string Returns "GD" if GD was used, otherwise "IM" if ImageMagick was used. If nothing done at all, it returns empty string.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Core\Imaging\GraphicalFunctions::gifCompress() instead.
 	 */
 	static public function gif_compress($theFile, $type) {
-		$gfxConf = $GLOBALS['TYPO3_CONF_VARS']['GFX'];
-		$returnCode = '';
-		// GIF...
-		if ($gfxConf['gif_compress'] && strtolower(substr($theFile, -4, 4)) == '.gif') {
-			// IM
-			if (($type == 'IM' || !$type) && $gfxConf['im'] && $gfxConf['im_path_lzw']) {
-				// Use temporary file to prevent problems with read and write lock on same file on network file systems
-				$temporaryName = dirname($theFile) . '/' . md5(uniqid('', TRUE)) . '.gif';
-				// Rename could fail, if a simultaneous thread is currently working on the same thing
-				if (@rename($theFile, $temporaryName)) {
-					$cmd = self::imageMagickCommand('convert', '"' . $temporaryName . '" "' . $theFile . '"', $gfxConf['im_path_lzw']);
-					CommandUtility::exec($cmd);
-					unlink($temporaryName);
-				}
-				$returnCode = 'IM';
-				if (@is_file($theFile)) {
-					self::fixPermissions($theFile);
-				}
-			} elseif (($type == 'GD' || !$type) && $gfxConf['gdlib'] && !$gfxConf['gdlib_png']) {
-				// GD
-				$tempImage = imageCreateFromGif($theFile);
-				imageGif($tempImage, $theFile);
-				imageDestroy($tempImage);
-				$returnCode = 'GD';
-				if (@is_file($theFile)) {
-					self::fixPermissions($theFile);
-				}
-			}
-		}
+		static::logDeprecatedFunction();
+		$returnCode = GraphicalFunctions::gifCompress($theFile, $type);
 		return $returnCode;
 	}
 
@@ -317,19 +292,12 @@ class GeneralUtility {
 	 *
 	 * @param string $theFile The filename with path
 	 * @return string New filename
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Core\Imaging\GraphicalFunctions::pngToGifByImagemagick() instead.
 	 */
 	static public function png_to_gif_by_imagemagick($theFile) {
-		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['png_to_gif'] && $GLOBALS['TYPO3_CONF_VARS']['GFX']['im'] && $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw'] && strtolower(substr($theFile, -4, 4)) == '.png' && @is_file($theFile)) {
-			// IM
-			$newFile = substr($theFile, 0, -4) . '.gif';
-			$cmd = self::imageMagickCommand('convert', '"' . $theFile . '" "' . $newFile . '"', $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path_lzw']);
-			CommandUtility::exec($cmd);
-			$theFile = $newFile;
-			if (@is_file($newFile)) {
-				self::fixPermissions($newFile);
-			}
-		}
-		return $theFile;
+		static::logDeprecatedFunction();
+		$newFile = GraphicalFunctions::pngToGifByImagemagick($theFile);
+		return $newFile;
 	}
 
 	/**
@@ -339,22 +307,12 @@ class GeneralUtility {
 	 * @param string $theFile Filepath of image file
 	 * @param bool $output_png If set, then input file is converted to PNG, otherwise to GIF
 	 * @return string If the new image file exists, its filepath is returned
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Core\Imaging\GraphicalFunctions::readPngGif() instead.
 	 */
 	static public function read_png_gif($theFile, $output_png = FALSE) {
-		if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im'] && @is_file($theFile)) {
-			$ext = strtolower(substr($theFile, -4, 4));
-			if ((string)$ext == '.png' && $output_png || (string)$ext == '.gif' && !$output_png) {
-				return $theFile;
-			} else {
-				$newFile = PATH_site . 'typo3temp/readPG_' . md5(($theFile . '|' . filemtime($theFile))) . ($output_png ? '.png' : '.gif');
-				$cmd = self::imageMagickCommand('convert', '"' . $theFile . '" "' . $newFile . '"', $GLOBALS['TYPO3_CONF_VARS']['GFX']['im_path']);
-				CommandUtility::exec($cmd);
-				if (@is_file($newFile)) {
-					self::fixPermissions($newFile);
-					return $newFile;
-				}
-			}
-		}
+		static::logDeprecatedFunction();
+		$newFile = GraphicalFunctions::readPngGif($theFile, $output_png);
+		return $newFile;
 	}
 
 	/*************************
@@ -1416,7 +1374,7 @@ class GeneralUtility {
 	 *
 	 * Comparison to PHP in_array():
 	 * -> $array = array(0, 1, 2, 3);
-	 * -> variant_a := \TYPO3\CMS\Core\Utility\GeneralUtility::inArray($array, $needle)
+	 * -> variant_a := \TYPO3\CMS\Core\Utility\ArrayUtility::inArray($array, $needle)
 	 * -> variant_b := in_array($needle, $array)
 	 * -> variant_c := in_array($needle, $array, TRUE)
 	 * +---------+-----------+-----------+-----------+
@@ -1431,14 +1389,11 @@ class GeneralUtility {
 	 * @param array $in_array One-dimensional array of items
 	 * @param string $item Item to check for
 	 * @return bool TRUE if $item is in the one-dimensional array $in_array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::inArray() instead
 	 */
 	static public function inArray(array $in_array, $item) {
-		foreach ($in_array as $val) {
-			if (!is_array($val) && (string)$val === (string)$item) {
-				return TRUE;
-			}
-		}
-		return FALSE;
+		static::logDeprecatedFunction();
+		return ArrayUtility::inArray($in_array, $item);
 	}
 
 	/**
@@ -1527,8 +1482,7 @@ class GeneralUtility {
 			$result = $temp;
 		}
 		if ($limit > 0 && count($result) > $limit) {
-			$lastElements = array_slice($result, $limit - 1);
-			$result = array_slice($result, 0, $limit - 1);
+			$lastElements = array_splice($result, $limit - 1);
 			$result[] = implode($delim, $lastElements);
 		} elseif ($limit < 0) {
 			$result = array_slice($result, 0, $limit);
@@ -1542,16 +1496,11 @@ class GeneralUtility {
 	 * @param array $array Array containing the values
 	 * @param string $cmpValue Value to search for and if found remove array entry where found.
 	 * @return array Output array with entries removed if search string is found
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::removeArrayEntryByValue() instead
 	 */
 	static public function removeArrayEntryByValue(array $array, $cmpValue) {
-		foreach ($array as $k => $v) {
-			if (is_array($v)) {
-				$array[$k] = self::removeArrayEntryByValue($v, $cmpValue);
-			} elseif ((string)$v === (string)$cmpValue) {
-				unset($array[$k]);
-			}
-		}
-		return $array;
+		static::logDeprecatedFunction();
+		return ArrayUtility::removeArrayEntryByValue($array, $cmpValue);
 	}
 
 	/**
@@ -1576,29 +1525,11 @@ class GeneralUtility {
 	 * @param mixed $keepItems The items which are allowed/kept in the array - accepts array or csv string
 	 * @param string $getValueFunc (optional) Callback function used to get the value to keep
 	 * @return array The filtered/reduced array with the kept items
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::keepItemsInArray() instead
 	 */
 	static public function keepItemsInArray(array $array, $keepItems, $getValueFunc = NULL) {
-		if ($array) {
-			// Convert strings to arrays:
-			if (is_string($keepItems)) {
-				$keepItems = self::trimExplode(',', $keepItems);
-			}
-			// Check if valueFunc can be executed:
-			if (!is_callable($getValueFunc)) {
-				$getValueFunc = NULL;
-			}
-			// Do the filtering:
-			if (is_array($keepItems) && count($keepItems)) {
-				foreach ($array as $key => $value) {
-					// Get the value to compare by using the callback function:
-					$keepValue = isset($getValueFunc) ? call_user_func($getValueFunc, $value) : $value;
-					if (!in_array($keepValue, $keepItems)) {
-						unset($array[$key]);
-					}
-				}
-			}
-		}
-		return $array;
+		static::logDeprecatedFunction();
+		return ArrayUtility::keepItemsInArray($array, $keepItems, $getValueFunc);
 	}
 
 	/**
@@ -1736,16 +1667,11 @@ class GeneralUtility {
 	 *
 	 * @param array	$array Array by reference which should be remapped
 	 * @param array	$mappingTable Array with remap information, array/$oldKey => $newKey)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::remapArrayKeys() instead
 	 */
 	static public function remapArrayKeys(&$array, $mappingTable) {
-		if (is_array($mappingTable)) {
-			foreach ($mappingTable as $old => $new) {
-				if ($new && isset($array[$old])) {
-					$array[$new] = $array[$old];
-					unset($array[$old]);
-				}
-			}
-		}
+		static::logDeprecatedFunction();
+		ArrayUtility::remapArrayKeys($array, $mappingTable);
 	}
 
 	/**
@@ -1754,8 +1680,10 @@ class GeneralUtility {
 	 * @param array $arr1 First array
 	 * @param array $arr2 Second array
 	 * @return array Merged result.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - native php '+' operator instead
 	 */
 	static public function array_merge(array $arr1, array $arr2) {
+		static::logDeprecatedFunction();
 		return $arr2 + $arr1;
 	}
 
@@ -1766,19 +1694,11 @@ class GeneralUtility {
 	 * @param array $array1 Source array
 	 * @param array $array2 Reduce source array by this array
 	 * @return array Source array reduced by keys also present in second array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::arrayDiffAssocRecursive() instead
 	 */
 	static public function arrayDiffAssocRecursive(array $array1, array $array2) {
-		$differenceArray = array();
-		foreach ($array1 as $key => $value) {
-			if (!array_key_exists($key, $array2)) {
-				$differenceArray[$key] = $value;
-			} elseif (is_array($value)) {
-				if (is_array($array2[$key])) {
-					$differenceArray[$key] = self::arrayDiffAssocRecursive($value, $array2[$key]);
-				}
-			}
-		}
-		return $differenceArray;
+		static::logDeprecatedFunction();
+		return ArrayUtility::arrayDiffAssocRecursive($array1, $array2);
 	}
 
 	/**
@@ -1823,16 +1743,11 @@ class GeneralUtility {
 	 *
 	 * @param array $array array to be sorted recursively, passed by reference
 	 * @return bool TRUE if param is an array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8  - use ArrayUtility::naturalKeySortRecursive() instead
 	 */
 	static public function naturalKeySortRecursive(&$array) {
-		if (!is_array($array)) {
-			return FALSE;
-		}
-		uksort($array, 'strnatcasecmp');
-		foreach ($array as $key => $value) {
-			self::naturalKeySortRecursive($array[$key]);
-		}
-		return TRUE;
+		static::logDeprecatedFunction();
+		return ArrayUtility::naturalKeySortRecursive($array);
 	}
 
 	/*************************
@@ -2138,7 +2053,6 @@ class GeneralUtility {
 			} else {
 				// Just a value:
 				// Look for binary chars:
-				// Check for length, because PHP 5.2.0 may crash when first argument of strcspn is empty
 				$vLen = strlen($v);
 				// Go for base64 encoding if the initial segment NOT matching any binary char has the same length as the whole string!
 				if ($vLen && strcspn($v, $binaryChars) != $vLen) {
@@ -2874,6 +2788,8 @@ Connection: close
 				if ($OK) {
 					$OK = @rmdir($path);
 				}
+			} elseif (is_link($path) && is_dir($path) && TYPO3_OS === 'WIN') {
+				$OK = rmdir($path);
 			} else {
 				// If $path is a file, simply remove it
 				$OK = unlink($path);
@@ -3011,7 +2927,7 @@ Connection: close
 	 */
 	static public function getAllFilesAndFoldersInPath(array $fileArr, $path, $extList = '', $regDirs = FALSE, $recursivityLevels = 99, $excludePattern = '') {
 		if ($regDirs) {
-			$fileArr[] = $path;
+			$fileArr[md5($path)] = $path;
 		}
 		$fileArr = array_merge($fileArr, self::getFilesInDir($path, $extList, 1, 1, $excludePattern));
 		$dirs = self::get_dirs($path);
@@ -3979,7 +3895,7 @@ Connection: close
 	static public function tempnam($filePrefix, $fileSuffix = '') {
 		$temporaryPath = PATH_site . 'typo3temp/';
 		if ($fileSuffix === '') {
-			$tempFileName = tempnam($temporaryPath, $filePrefix);
+			$tempFileName = static::fixWindowsFilePath(tempnam($temporaryPath, $filePrefix));
 		} else {
 			do {
 				$tempFileName = $temporaryPath . $filePrefix . mt_rand(1, PHP_INT_MAX) . $fileSuffix;
@@ -4336,9 +4252,11 @@ Connection: close
 	 * GeneralUtility::makeInstance() first and call its get() method to get
 	 * the instance of a specific class.
 	 *
-	 * @throws \InvalidArgumentException if classname is an empty string
-	 * @param string $className name of the class to instantiate, must not be empty
+	 * @param string $className name of the class to instantiate, must not be empty and not start with a backslash
+	 *
 	 * @return object the created instance
+	 *
+	 * @throws \InvalidArgumentException if $className is empty or starts with a backslash
 	 */
 	static public function makeInstance($className) {
 		if (!is_string($className) || empty($className)) {
@@ -4346,7 +4264,9 @@ Connection: close
 		}
 		// Never instantiate with a beginning backslash, otherwise things like singletons won't work.
 		if ($className[0] === '\\') {
-			throw new \InvalidArgumentException('$className must not start with a backslash.', 1420281366);
+			throw new \InvalidArgumentException(
+				'$className "' . $className . '" must not start with a backslash.', 1420281366
+			);
 		}
 		if (isset(static::$finalClassNameCache[$className])) {
 			$finalClassName = static::$finalClassNameCache[$className];
@@ -4872,17 +4792,16 @@ Connection: close
 	}
 
 	/**
-	 * Function to compensate for FreeType2 96 dpi
+	 * Function to compensate for DPI resolution.
 	 *
-	 * @param int $font_size Fontsize for freetype function call
-	 * @return int Compensated fontsize based on $GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi']
+	 * @param float $fontSize font size for freetype function call
+	 *
+	 * @return float compensated font size based on 96 dpi
 	 */
-	static public function freetypeDpiComp($font_size) {
-		$dpi = (int)$GLOBALS['TYPO3_CONF_VARS']['GFX']['TTFdpi'];
-		if ($dpi != 72) {
-			$font_size = $font_size / $dpi * 72;
-		}
-		return $font_size;
+	static public function freetypeDpiComp($fontSize) {
+		// FreeType 2 always has 96 dpi.
+		$dpi = 96.0;
+		return $fontSize / $dpi * 72;
 	}
 
 	/**

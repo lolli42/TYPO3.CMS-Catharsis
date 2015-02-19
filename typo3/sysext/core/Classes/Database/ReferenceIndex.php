@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Database;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -108,6 +109,9 @@ class ReferenceIndex {
 			if (is_array($relations)) {
 				// Traverse the generated index:
 				foreach ($relations as $k => $datRec) {
+					if (!is_array($relations[$k])){
+						continue;
+					}
 					$relations[$k]['hash'] = md5(implode('///', $relations[$k]) . '///' . $this->hashVersion);
 					// First, check if already indexed and if so, unset that row (so in the end we know which rows to remove!)
 					if (isset($currentRels[$relations[$k]['hash']])) {
@@ -222,6 +226,14 @@ class ReferenceIndex {
 	 * @return array Array record to insert into table.
 	 */
 	public function createEntryData($table, $uid, $field, $flexpointer, $deleted, $ref_table, $ref_uid, $ref_string = '', $sort = -1, $softref_key = '', $softref_id = '') {
+		if (BackendUtility::isTableWorkspaceEnabled($table)) {
+			$element = BackendUtility::getRecord($table, $uid, 't3ver_wsid');
+			if ($element !== NULL && isset($element['t3ver_wsid']) && (int)$element['t3ver_wsid'] !== $this->getWorkspaceId()) {
+				//The given Element is ws-enabled but doesn't live in the selected workspace
+				// => don't add index as it's not actually there
+				return FALSE;
+			}
+		}
 		return array(
 			'tablename' => $table,
 			'recuid' => $uid,
@@ -921,8 +933,9 @@ class ReferenceIndex {
 			// Searching lost indexes for this table:
 			$where = 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') . ' AND recuid NOT IN (' . implode(',', $uidList) . ')';
 			$lostIndexes = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('hash', 'sys_refindex', $where);
-			if (count($lostIndexes)) {
-				$Err = 'Table ' . $tableName . ' has ' . count($lostIndexes) . ' lost indexes which are now deleted';
+			$lostIndexesCount = count($lostIndexes);
+			if ($lostIndexesCount) {
+				$Err = 'Table ' . $tableName . ' has ' . $lostIndexesCount . ' lost indexes which are now deleted';
 				$errors[] = $Err;
 				if ($cli_echo) {
 					echo $Err . LF;
@@ -935,8 +948,9 @@ class ReferenceIndex {
 		// Searching lost indexes for non-existing tables:
 		$where = 'tablename NOT IN (' . implode(',', $GLOBALS['TYPO3_DB']->fullQuoteArray($tableNames, 'sys_refindex')) . ')';
 		$lostTables = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('hash', 'sys_refindex', $where);
-		if (count($lostTables)) {
-			$Err = 'Index table hosted ' . count($lostTables) . ' indexes for non-existing tables, now removed';
+		$lostTablesCount = count($lostTables);
+		if ($lostTablesCount) {
+			$Err = 'Index table hosted ' . $lostTablesCount . ' indexes for non-existing tables, now removed';
 			$errors[] = $Err;
 			if ($cli_echo) {
 				echo $Err . LF;
@@ -945,16 +959,23 @@ class ReferenceIndex {
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery('sys_refindex', $where);
 			}
 		}
-		$testedHowMuch = $recCount . ' records from ' . $tableCount . ' tables were checked/updated.' . LF;
-		$bodyContent = $testedHowMuch . (count($errors) ? implode(LF, $errors) : 'Index Integrity was perfect!');
+		$errorCount = count($errors);
+		$recordsCheckedString = $recCount . ' records from ' . $tableCount . ' tables were checked/updated.' . LF;
+		$flashMessage = GeneralUtility::makeInstance(
+			FlashMessage::class,
+			$errorCount ? implode(LF, $errors) : 'Index Integrity was perfect!',
+			$recordsCheckedString,
+			$errorCount ? FlashMessage::ERROR : FlashMessage::OK
+		);
+		$bodyContent = $flashMessage->render();
 		if ($cli_echo) {
-			echo $testedHowMuch . (count($errors) ? 'Updates: ' . count($errors) : 'Index Integrity was perfect!') . LF;
+			echo $recordsCheckedString . ($errorCount ? 'Updates: ' . $errorCount : 'Index Integrity was perfect!') . LF;
 		}
 		if (!$testOnly) {
 			$registry = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Registry::class);
 			$registry->set('core', 'sys_refindex_lastUpdate', $GLOBALS['EXEC_TIME']);
 		}
-		return array($headerContent, $bodyContent, count($errors));
+		return array($headerContent, $bodyContent, $errorCount);
 	}
 
 	/**

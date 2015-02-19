@@ -55,9 +55,6 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 			}
 			if (!this.allowedAttributes) {
 				this.allowedAttributes = new Array('id', 'title', 'lang', 'xml:lang', 'dir', 'class');
-				if (UserAgent.isIEBeforeIE9) {
-					this.allowedAttributes.push('className');
-				}
 			}
 
 			/**
@@ -165,21 +162,16 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 			var select = this.getButton('Language');
 			if (select) {
 				var styleSheet = this.editor.document.styleSheets[0];
-				var options = select.getOptions();
-				var selector, style, rule;
-				for (var i = 0, n = options.length; i < n; i++) {
-					var option = options[i];
-					selector = 'body.htmlarea-show-language-marks *[' + 'lang="' + option.value + '"]:before';
-					style = 'content: "' + option.value + ': ";';
+				var value, selector, style, rule;
+				for (var i = 0, n = select.getCount(); i < n; i++) {
+					value = select.getOptionValue(i);
+					selector = 'body.htmlarea-show-language-marks *[' + 'lang="' + value + '"]:before';
+					style = 'content: "' + value + ': ";';
 					rule = selector + ' { ' + style + ' }';
-					if (!UserAgent.isIEBeforeIE9) {
-						try {
-							styleSheet.insertRule(rule, styleSheet.cssRules.length);
-						} catch (e) {
-							this.appendToLog('onGenerate', 'Error inserting css rule: ' + rule + ' Error text: ' + e, 'warn');
-						}
-					} else {
-						styleSheet.addRule(selector, style);
+					try {
+						styleSheet.insertRule(rule, styleSheet.cssRules.length);
+					} catch (e) {
+						this.appendToLog('onGenerate', 'Error inserting css rule: ' + rule + ' Error text: ' + e, 'warn');
 					}
 				}
 			}
@@ -265,8 +257,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 				if (endPointsInSameBlock) {
 					var ancestors = this.editor.getSelection().getAllAncestors();
 					for (var i = 0; i < ancestors.length; ++i) {
-						fullNodeSelected =  (!UserAgent.isIEBeforeIE9 && ((statusBarSelection === ancestors[i] && ancestors[i].textContent === range.toString()) || (!statusBarSelection && ancestors[i].textContent === range.toString())))
-							|| (UserAgent.isIEBeforeIE9 && statusBarSelection === ancestors[i] && ((this.editor.getSelection().getType() !== 'Control' && ancestors[i].innerText === range.text) || (this.editor.getSelection().getType() === 'Control' && ancestors[i].innerText === range.item(0).text)));
+						fullNodeSelected = ((statusBarSelection === ancestors[i] && ancestors[i].textContent === range.toString()) || (!statusBarSelection && ancestors[i].textContent === range.toString()));
 						if (fullNodeSelected) {
 							parent = ancestors[i];
 							break;
@@ -292,9 +283,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 					var newElement = this.editor.document.createElement('span');
 					this.setLanguageAttributes(newElement, language);
 					this.editor.getDomNode().wrapWithInlineElement(newElement, range);
-					if (!UserAgent.isIEBeforeIE9) {
-						range.detach();
-					}
+					range.detach();
 				}
 			} else {
 				this.setLanguageAttributeOnBlockElements(language);
@@ -433,8 +422,7 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 						if (!selectionEmpty) {
 							if (endPointsInSameBlock) {
 								for (var i = 0; i < ancestors.length; ++i) {
-									fullNodeSelected =  (!UserAgent.isIEBeforeIE9 && ((statusBarSelection === ancestors[i] && ancestors[i].textContent === range.toString()) || (!statusBarSelection && ancestors[i].textContent === range.toString())))
-										|| (UserAgent.isIEBeforeIE9 && statusBarSelection === ancestors[i] && ((this.editor.getSelection().getType() !== 'Control' && ancestors[i].innerText === range.text) || (this.editor.getSelection().getType() === 'Control' && ancestors[i].innerText === range.item(0).text)));
+									fullNodeSelected = (statusBarSelection === ancestors[i] && ancestors[i].textContent === range.toString()) || (!statusBarSelection && ancestors[i].textContent === range.toString());
 									if (fullNodeSelected) {
 										parent = ancestors[i];
 										break;
@@ -462,16 +450,17 @@ define('TYPO3/CMS/Rtehtmlarea/Plugins/Language',
 		 * This function updates the language drop-down list
 		 */
 		updateValue: function (select, language, selectionEmpty, fullNodeSelected, endPointsInSameBlock) {
-			if (language !== 'none' && (select.findValue(language) !== -1) && (selectionEmpty || fullNodeSelected || !endPointsInSameBlock)) {
+			var index = select.findValue(language);
+			if (index > 0 && (selectionEmpty || fullNodeSelected || !endPointsInSameBlock)) {
 				var text = this.localize('Remove language mark');
 				select.setFirstOption(text, 'none', text);
 				select.setValue(language);
 			} else {
 				var text = this.localize('No language mark');
 				select.setFirstOption(text, 'none', text);
-				select.setValue('none');
+				select.setValueByIndex(0);
 			}
-			select.setDisabled(!(select.getCount()>1) || (selectionEmpty && /^body$/i.test(this.editor.getSelection().getParentElement().nodeName)));
+			select.setDisabled(!(select.getCount() > 1) || (selectionEmpty && /^body$/i.test(this.editor.getSelection().getParentElement().nodeName)));
 		}
 	});
 

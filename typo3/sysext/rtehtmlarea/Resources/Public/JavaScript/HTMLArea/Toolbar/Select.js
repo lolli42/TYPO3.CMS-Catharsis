@@ -31,10 +31,18 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 
 	Select.prototype = {
 
-		render: function () {
+		/**
+		 * Render the select item (called by the toolbar)
+		 *
+		 * @param object container: the container of the select (the toolbar object)
+		 * @return void
+		 */
+		render: function (container) {
 			this.el = document.createElement('div');
-			Dom.addClass(this.el, 'x-form-item');
+			Dom.addClass(this.el, 'btn');
+			Dom.addClass(this.el, 'form-group');
 			this.selectElement = document.createElement('select');
+			Dom.addClass(this.selectElement, 'form-control');
 			if (this.id) {
 				this.selectElement.setAttribute('id', this.id);
 			}
@@ -58,17 +66,15 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 				}
 			}
 			this.selectElement = this.el.appendChild(this.selectElement);
-			this.el = this.getToolbar().getEl().appendChild(this.el);
+			this.el = container.appendChild(this.el);
 			if (this.fieldLabel) {
-				var textDiv = document.createElement('div');
-				Dom.addClass(textDiv, 'x-form-item');
-				Dom.addClass(textDiv, 'toolbar-text');
-				var text = document.createElement('label');
-				text.innerHTML = this.fieldLabel;
-				Dom.addClass(text, 'x-form-item-label');
-				text.setAttribute('for', this.selectElement.id);
-				textDiv.appendChild(text);
-				this.el.insertBefore(textDiv, this.selectElement);
+				var label = document.createElement('label');
+				label.innerHTML = this.fieldLabel;
+				Dom.addClass(label, 'form-label');
+				label.setAttribute('for', this.selectElement.id);
+				this.el.insertBefore(label, this.selectElement);
+			} else if (typeof this.tooltip === 'string') {
+				this.selectElement.setAttribute('aria-label', this.tooltip);
 			}
 			this.selectedElementWidth = Dom.getSize(this.selectElement).width;
 			this.initEventListeners();
@@ -179,6 +185,18 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 		},
 
 		/**
+		 * Set the current value based on index
+		 *
+		 * @param int index: the index of the value to be selected
+		 * @return void
+		 */
+		setValueByIndex: function (index) {
+			this.selectElement.selectedIndex = index >= 0 ? index : 0;
+			this.collapsed = true;
+			this.setSelectedOptionText();
+		},
+
+		/**
 		 * Find the index of the value
 		 *
 		 * @param string value: the value to be looked up
@@ -194,6 +212,21 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 			  	}
 			}
 			return index;
+		},
+
+		/**
+		 * Get the value of the option specified by the index
+		 *
+		 * @param int index: the index of the option
+		 * @return string the value of the option
+		 */
+		getOptionValue: function (index) {
+			var value = '';
+			var option = this.selectElement.options[index];
+			if (option) {
+				value = option.value;
+			}
+			return value;
 		},
 
 		/**
@@ -304,11 +337,6 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 		},
 
 		/**
-		 * Css class applied when the select element is disabled
-		 */
-		disabledClass: 'buttonDisabled',
-
-		/**
 		 * Setting disabled/enabled by boolean.
 		 *
 		 * @param boolean disabled
@@ -318,10 +346,8 @@ define('TYPO3/CMS/Rtehtmlarea/HTMLArea/Toolbar/Select',
 			this.disabled = disabled;
 			if (disabled) {
 				this.selectElement.setAttribute('disabled', 'true');
-				Dom.addClass(this.selectElement, 'buttonDisabled');
 			} else {
 				this.selectElement.removeAttribute('disabled');
-				Dom.removeClass(this.selectElement, this.disabledClass);
 			}
 		},
 

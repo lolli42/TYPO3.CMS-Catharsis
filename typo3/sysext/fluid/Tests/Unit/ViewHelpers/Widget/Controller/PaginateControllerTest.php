@@ -11,7 +11,6 @@ namespace TYPO3\CMS\Fluid\Tests\Unit\ViewHelpers\Widget\Controller;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
-use TYPO3\CMS\Fluid\View\TemplateView;
 
 /**
  * Test case
@@ -53,7 +52,7 @@ class PaginateControllerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 *
 	 * @return void
 	 */
-	public function setUp() {
+	protected function setUp() {
 		$this->query = $this->getAccessibleMock(\TYPO3\CMS\Extbase\Persistence\Generic\Query::class, array('dummy'), array('someType'));
 		$this->querySettings = $this->getMock(\TYPO3\CMS\Extbase\Persistence\Generic\QuerySettingsInterface::class);
 		$this->query->_set('querySettings', $this->querySettings);

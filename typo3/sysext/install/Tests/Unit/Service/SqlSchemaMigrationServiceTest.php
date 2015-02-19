@@ -29,11 +29,12 @@ class SqlSchemaMigrationServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getFieldDefinitionsFileContentHandlesMultipleWhitespacesInFieldDefinitions() {
 		$subject = new SqlSchemaMigrationService();
 		// Multiple whitespaces and tabs in field definition
-		$inputString = 'CREATE table aTable (' . LF . 'aFieldName   int(11)' . TAB . TAB . TAB . 'unsigned   DEFAULT \'0\'' . LF . ');';
+		$inputString = 'CREATE table atable (' . LF . 'aFieldName   int(11)' . TAB . TAB . TAB . 'unsigned   DEFAULT \'0\'' . LF . ');';
 		$result = $subject->getFieldDefinitions_fileContent($inputString);
+
 		$this->assertEquals(
 			array(
-				'aTable' => array(
+				'atable' => array(
 					'fields' => array(
 						'aFieldName' => 'int(11) unsigned default \'0\'',
 					),
@@ -68,7 +69,95 @@ class SqlSchemaMigrationServiceTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			)
 		);
 
+		$this->assertEquals(
+			$differenceArray,
+			array(
+				'extra' => array(),
+				'diff' => array(
+					'tx_foo' => array(
+						'fields' => array(
+							'foo' => 'varchar(999) DEFAULT \'0\' NOT NULL'
+						)
+					)
+				),
+				'diff_currentValues' => array(
+					'tx_foo' => array(
+						'fields' => array(
+							'foo' => 'varchar(255) DEFAULT \'0\' NOT NULL'
+						)
+					)
+				)
+			)
+		);
+	}
 
+	/**
+	 * @test
+	 */
+	public function getDatabaseExtraFindsChangedFieldsIncludingNull() {
+		$subject = new SqlSchemaMigrationService();
+		$differenceArray = $subject->getDatabaseExtra(
+			array(
+				'tx_foo' => array(
+					'fields' => array(
+						'foo' => 'varchar(999) NULL'
+					)
+				)
+			),
+			array(
+				'tx_foo' => array(
+					'fields' => array(
+						'foo' => 'varchar(255) NULL'
+					)
+				)
+			)
+		);
+
+		$this->assertEquals(
+			$differenceArray,
+			array(
+				'extra' => array(),
+				'diff' => array(
+					'tx_foo' => array(
+						'fields' => array(
+							'foo' => 'varchar(999) NULL'
+						)
+					)
+				),
+				'diff_currentValues' => array(
+					'tx_foo' => array(
+						'fields' => array(
+							'foo' => 'varchar(255) NULL'
+						)
+					)
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 */
+	public function getDatabaseExtraFindsChangedFieldsIgnoreNotNull() {
+		$subject = new SqlSchemaMigrationService();
+		$differenceArray = $subject->getDatabaseExtra(
+			array(
+				'tx_foo' => array(
+					'fields' => array(
+						'foo' => 'varchar(999) DEFAULT \'0\' NOT NULL'
+					)
+				)
+			),
+			array(
+				'tx_foo' => array(
+					'fields' => array(
+						'foo' => 'varchar(255) DEFAULT \'0\' NOT NULL'
+					)
+				)
+			),
+			'',
+			TRUE
+		);
 
 		$this->assertEquals(
 			$differenceArray,
