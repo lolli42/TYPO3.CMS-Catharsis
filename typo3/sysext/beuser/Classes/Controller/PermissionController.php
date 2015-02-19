@@ -23,6 +23,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use TYPO3\CMS\Core\Utility\DebugUtility;
 
 /**
  * Backend module page permissions
@@ -145,7 +146,46 @@ class PermissionController extends ActionController {
 		$beGroupArray = BackendUtility::getGroupNames();
 		$this->view->assign('beGroups', $beGroupArray);
 
+		/** @var \TYPO3\CMS\Core\Tree\PageTree $pageTree */
+		$pageTree = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\PageTree::class);
+
+		$pagesFields = array(
+			't2' => array(
+				'title',
+				'perms_user',
+				'perms_group',
+				'perms_everybody',
+				'perms_userid',
+				'perms_groupid',
+				'hidden',
+				'fe_group',
+				'starttime',
+				'endtime',
+				'editlock',
+			),
+			/**
+			'be_users' => array(
+				'username as beuserUsername'
+			),
+			'be_groups' => array(
+				'title as begroupTitle'
+			),
+			 */
+		);
+/**
+		$joinTables = array(
+			'be_users' => 'ON be_users.uid = t2.perms_user',
+			'be_groups' => 'ON be_groups.uid = t2.perms_group'
+		);
+*/
+		$before = microtime(TRUE);
+		$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth, '', array());
+
+		DebugUtility::debug(microtime(TRUE) - $before);
+
+
 		/** @var PageTreeView */
+		/**
 		$tree = GeneralUtility::makeInstance(PageTreeView::class);
 		$tree->init();
 		$tree->addField('perms_user', TRUE);
@@ -169,6 +209,7 @@ class PermissionController extends ActionController {
 
 		// CSH for permissions setting
 		$this->view->assign('cshItem', BackendUtility::cshItem('xMOD_csh_corebe', 'perm_module', $GLOBALS['BACK_PATH']));
+		 */
 	}
 
 	/**
