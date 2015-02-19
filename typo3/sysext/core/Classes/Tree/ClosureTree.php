@@ -102,10 +102,9 @@ abstract class ClosureTree {
 			}
 		}
 
-		// @TODO: additional joins untested yet
 		$additionalJoins = array();
 		foreach ($this->joinTables as $table => $condition) {
-			$additionalJoins[] = ' JOIN ' . $table . ' ' . $condition;
+			$additionalJoins[] = ' LEFT OUTER JOIN ' . $table . ' ' . $condition;
 		}
 
 		$this->query = 'SELECT ' .
@@ -118,12 +117,12 @@ abstract class ClosureTree {
 			' JOIN ' . $this->closureTable . ' AS tc1 ON ( tc1.ancestor = t1.uid )' .
 			// join in data fields from pages
 			' JOIN ' . $this->table . ' AS t2 ON ( tc1.descendant = t2.uid )' .
+			// additional joins
+			implode(' ', $additionalJoins) .
 			// add rootline rows of every single page
 			' JOIN ' . $this->closureTable . ' AS breadcrumb ON (tc1.descendant = breadcrumb.descendant)' .
 			// join in sorting field for all rows
 			' JOIN ' . $this->table . ' AS o ON breadcrumb.ancestor = o.uid' .
-			// additional joins
-			implode(' ', $additionalJoins) .
 			// build where condition
 			' WHERE t1.uid = ' . $this->treeRootIdentifier .
 			// add addtional where
