@@ -191,7 +191,8 @@ CREATE TABLE pages_closure (
   ancestor int(11) NOT NULL,
   descendant int(11) NOT NULL,
   depth tinyint NOT NULL,
-  PRIMARY KEY (ancestor,descendant)
+  PRIMARY KEY (ancestor,descendant),
+  KEY descendant (descendant)
 );
 
 #
