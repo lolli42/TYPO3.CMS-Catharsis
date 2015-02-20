@@ -43,6 +43,7 @@ before_script:
 script:
   - >
     df -h;
+    ls -lha /dev/shm/typo3ramdisk/;
     export typo3DatabaseUsername="root";
     export typo3DatabasePassword="";
     export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
@@ -50,3 +51,4 @@ script:
     export typo3DatabaseName="typo3";
     ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml;
     df -h;
+    du -bs /dev/shm/typo3ramdisk/;
