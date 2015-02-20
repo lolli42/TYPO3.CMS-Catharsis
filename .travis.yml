@@ -45,5 +45,5 @@ script:
     export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
     export typo3DatabaseHost="localhost";
     export typo3DatabaseName="typo3";
-    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel --gnu 'echo; echo $PARALLEL_PID; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}; ls -lha /tmp/';
+    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel --gnu 'echo; echo ${PARALLEL_SEQ}; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}; ls -lha /tmp/; cat /tmp/${PARALLEL_SEQ}';
     ls -lR /dev/shm/typo3ramdisk/;
