@@ -34,7 +34,7 @@ before_script:
     ( if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
       mkdir /dev/shm/typo3ramdisk;
       chmod 700 /dev/shm/typo3ramdisk;
-      mysqld_safe --port=3309 --socket="/dev/shm/typo3ramdisk/mysqld-testing.sock" --user travis --pid-file="/dev/shm/typo3ramdisk/mysqld-testing.pid" --datadir="/dev/shm/typo3ramdisk" --skip-grant-tables --log-error=/dev/shm/typo3ramdisk/error.log;
+      mysqld_safe  --defaults-file=typo3/sysext/core/Build/my.cnf --skip-grant-tables;
     fi ) &
   - rm -rf typo3/sysext/compatibility6
   - composer self-update
