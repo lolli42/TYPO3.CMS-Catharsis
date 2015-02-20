@@ -314,6 +314,11 @@ class FunctionalTestCaseBootstrapUtility {
 		$this->originalDatabaseName = $originalConfigurationArray['DB']['database'];
 		$this->databaseName = $this->originalDatabaseName . '_ft' . $this->identifier;
 
+		$parallelPid = trim(getenv('PARALLEL_PID'));
+		if ($parallelPid) {
+			file_put_contents('/tmp/' . $parallelPid, $this->databaseName);
+		}
+
 		// Maximum database name length for mysql is 64 characters
 		if (strlen($this->databaseName) > 64) {
 			$maximumOriginalDatabaseName = 64 - strlen('_ft' . $this->identifier);

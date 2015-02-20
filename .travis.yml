@@ -42,13 +42,12 @@ before_script:
 
 script:
   - >
-    df -h;
-    ls -lha /dev/shm/typo3ramdisk/;
+    ls -lR /dev/shm/typo3ramdisk/;
     export typo3DatabaseUsername="root";
     export typo3DatabasePassword="";
     export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
     export typo3DatabaseHost="localhost";
     export typo3DatabaseName="typo3";
+    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel --gnu 'echo; echo $PARALLEL_PID; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}; ls -lha /tmp/'
     ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml;
-    df -h;
-    du -bs /dev/shm/typo3ramdisk/;
+    ls -lR /dev/shm/typo3ramdisk/;
