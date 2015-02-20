@@ -29,9 +29,19 @@ notifications:
     on_success: change
     on_failure: change
 
+before_script:
+  - mkdir /dev/shm/typo3ramdisk
+  - chmod 700 /dev/shm/typo3ramdisk
+  - mysqld_safe --port=3308 --socket="/dev/shm/typo3ramdisk/mysqld-testing.sock" --user travis --pid-file="/dev/shm/typo3ramdisk/mysqld-testing.pid" --datadir="/dev/shm/typo3ramdisk" --skip-grant-tables --log-error=/dev/shm/typo3ramdisk/error.log &
+  - rm -rf typo3/sysext/compatibility6
+  - composer self-update
+  - composer install
+
 script:
   - >
-    mount
-  - >
-    cat /etc/fstab
-
+    export typo3DatabaseUsername="root";
+    export typo3DatabasePassword="";
+    export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
+    export typo3DatabaseHost="localhost";
+    export typo3DatabaseName="typo3";
+    ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
