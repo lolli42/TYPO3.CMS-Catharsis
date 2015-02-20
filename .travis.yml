@@ -7,10 +7,6 @@ matrix:
   include:
     - php: 5.5
       env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
-    - php: 5.6
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
-    - php: hhvm-nightly
-      env: UNIT_TESTS=yes
 
 services:
   - memcached
@@ -30,8 +26,8 @@ notifications:
     on_failure: change
 
 before_script:
+  - mkdir parallel && cd parallel && wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xvf parallel-latest.tar.bz2 -C . --strip-components=1 && ./configure && make && cd ..
   - >
-    mkdir parallel && cd parallel && wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xvf parallel-latest.tar.bz2 -C . --strip-components=1 && ./configure && make && cd ..
     ( if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
       mkdir /dev/shm/typo3ramdisk;
       chmod 700 /dev/shm/typo3ramdisk;
