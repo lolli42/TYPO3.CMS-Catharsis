@@ -5,9 +5,9 @@ matrix:
     - php: hhvm-nightly
   include:
     - php: 5.5
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
     - php: 5.6
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
     - php: hhvm-nightly
       env: UNIT_TESTS=yes
 
@@ -50,7 +50,7 @@ script:
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
         echo "Running functional test suite {}";
-        ./bin/paratest --phpunit bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml
+        ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
