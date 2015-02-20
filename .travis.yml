@@ -29,6 +29,7 @@ notifications:
     on_failure: change
 
 before_script:
+  - mkdir parallel && cd parallel && wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xvf parallel-latest.tar.bz2 -C . --strip-components=1 && ./configure && make && cd ..
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - rm -rf typo3/sysext/compatibility6
@@ -49,15 +50,14 @@ script:
         export typo3DatabaseHost="localhost";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        echo "Running functional test suite {}";
-        ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
         echo;
         echo "Running php lint";
         /bin/bash -c "
-            if ! find typo3/ -name \*.php | parallel --gnu 'php -l {}' > /tmp/errors 2>&1; then
+            if ! find typo3/ -name \*.php | ./parallel/src/parallel --gnu 'php -l {}' > /tmp/errors 2>&1; then
                 grep -v \"No syntax errors detected in\" /tmp/errors;
                 exit 99;
             fi
