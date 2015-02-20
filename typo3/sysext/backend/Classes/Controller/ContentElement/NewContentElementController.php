@@ -163,7 +163,7 @@ class NewContentElementController {
 			$code = '';
 			$wizardItems = $this->getWizardItems();
 			// Wrapper for wizards
-			$this->elementWrapper['section'] = array('<div class="panel panel-tab"><div class="panel-body">', '</div></div>');
+			$this->elementWrapper['section'] = array('<div class="contentelement-wizard panel panel-tab"><div class="panel-body">', '</div></div>');
 			// Copy wrapper for tabs
 			$this->elementWrapperForTabs = $this->elementWrapper;
 			// Hook for manipulating wizardItems, wrapper, onClickEvent etc.
@@ -209,7 +209,7 @@ class NewContentElementController {
 					if (!$this->onClickEvent) {
 						// Radio button:
 						$oC = 'document.editForm.defValues.value=unescape(\'' . rawurlencode($wInfo['params']) . '\');goToalt_doc();' . (!$this->onClickEvent ? 'window.location.hash=\'#sel2\';' : '');
-						$content .= '<div class="contentelement-wizard-item-input"><input type="radio" name="tempB" value="' . htmlspecialchars($k) . '" onclick="' . htmlspecialchars($oC) . '" /></div>';
+						$content .= '<div class="media-left"><input type="radio" name="tempB" value="' . htmlspecialchars($k) . '" onclick="' . htmlspecialchars($oC) . '" /></div>';
 						// Onclick action for icon/title:
 						$aOnClick = 'document.getElementsByName(\'tempB\')[' . $cc . '].checked=1;' . $oC . 'return false;';
 					} else {

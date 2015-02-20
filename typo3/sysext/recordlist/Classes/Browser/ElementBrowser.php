@@ -854,6 +854,8 @@ class ElementBrowser {
 	public function main_rte($wiz = FALSE) {
 		// Starting content:
 		$content = $this->doc->startPage('RTE link');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 
 		$allowedItems = $this->getAllowedItems('page,file,folder,url,mail,spec');
 
@@ -1459,6 +1461,8 @@ class ElementBrowser {
 		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse"');
 		// Starting content:
 		$content = $this->doc->startPage('TBE file selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$pArr = explode('|', $this->bparams);
 		// The key number 3 of the pArr contains the "allowed" string. Disallowed is not passed to
@@ -1545,8 +1549,6 @@ class ElementBrowser {
 		} else {
 			$files = '';
 		}
-		// Add the FlashMessages if any
-		$content .= $this->doc->getFlashMessages();
 
 		// Putting the parts together, side by side:
 		$content .= '
@@ -1591,6 +1593,8 @@ class ElementBrowser {
 		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";');
 		// Starting content:
 		$content = $this->doc->startPage('TBE folder selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$parameters = explode('|', $this->bparams);
 		if ($this->expandFolder) {
@@ -2333,9 +2337,7 @@ class ElementBrowser {
 	 */
 	public function printCurrentUrl($str) {
 		// Output the folder or file identifier, when working with files
-		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)
-			&& ($this->act === 'file' || $this->act === 'folder')
-		) {
+		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)) {
 			try {
 				$fileObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($str);
 			} catch (Exception\FileDoesNotExistException $e) {
@@ -2490,7 +2492,7 @@ class ElementBrowser {
 			<!--
 				Form, for uploading files:
 			-->
-			<form action="' . $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_file') . '" method="post" name="editform"'
+			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file', array(),  $GLOBALS['BACK_PATH'])) . '" method="post" name="editform"'
 			. ' id="typo3-uplFilesForm" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">
 				<table border="0" cellpadding="0" cellspacing="0" id="typo3-uplFiles">
 					<tr>
@@ -2514,7 +2516,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />';
 		$code .= FormEngine::getHiddenTokenField('tceAction');
 		$code .= '
@@ -2561,7 +2564,7 @@ class ElementBrowser {
 			<!--
 				Form, for creating new folders:
 			-->
-			<form action="' . $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_file') . '" method="post" name="editform2" id="typo3-crFolderForm">
+			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file', array(), $GLOBALS['BACK_PATH'])) . '" method="post" name="editform2" id="typo3-crFolderForm">
 				<table border="0" cellpadding="0" cellspacing="0" id="typo3-crFolder">
 					<tr>
 						<td>' . $this->barheader($lang->sL(
@@ -2581,7 +2584,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />'
 			. FormEngine::getHiddenTokenField('tceAction')
 			. '<input class="btn btn-default" type="submit" name="submit" value="'
