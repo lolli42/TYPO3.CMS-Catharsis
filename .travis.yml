@@ -45,3 +45,5 @@ script:
     export typo3DatabaseHost="localhost";
     export typo3DatabaseName="typo3";
     find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 4 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
+  - ls -lR /tmp/;
+  - ls -lR /dev/shm/typo3ramdisk;
