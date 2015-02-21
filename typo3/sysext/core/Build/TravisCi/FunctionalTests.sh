@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Running functional test suite {}"
+echo "Running functional test suite ${1}"
 echo ${PARALLEL_SEQ}
 ls -lR /dev/shm/typo3ramdisk/
 ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml ${1}
