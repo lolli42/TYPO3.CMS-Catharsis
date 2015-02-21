@@ -39,10 +39,9 @@ before_script:
 
 script:
   - >
-    ls -lR /dev/shm/typo3ramdisk/;
     export typo3DatabaseUsername="root";
     export typo3DatabasePassword="";
     export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
     export typo3DatabaseHost="localhost";
     export typo3DatabaseName="typo3";
-    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 2 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
+    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 4 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
