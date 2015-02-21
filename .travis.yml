@@ -1,7 +1,6 @@
 language: php
 
 matrix:
-  fast_finish: true
   allow_failures:
     - php: hhvm-nightly
   include:
@@ -16,27 +15,17 @@ services:
   - memcached
   - redis-server
 
-sudo: false
-
-cache:
-  directories:
-    - $HOME/.composer/cache
-
 notifications:
   email:
     recipients:
       - lolli@schwarzbu.ch
-    on_success: change
-    on_failure: change
+     on_success: change
+     on_failure: always
 
 before_script:
-  - mkdir parallel && cd parallel && wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xvf parallel-latest.tar.bz2 -C . --strip-components=1 && ./configure && make && cd ..
-  - >
-    ( if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
-      mkdir /dev/shm/typo3ramdisk;
-      chmod 700 /dev/shm/typo3ramdisk;
-      mysqld_safe --defaults-file=typo3/sysext/core/Build/TravisCi/my.cnf --skip-grant-tables;
-    fi ) &
+  - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
+  - sudo apt-get install parallel
   - rm -rf typo3/sysext/compatibility6
   - composer self-update
   - composer install
@@ -50,19 +39,19 @@ script:
     fi
   - >
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
-      export typo3DatabaseUsername="root";
-      export typo3DatabasePassword="";
-      export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
-      export typo3DatabaseHost="localhost";
-      export typo3DatabaseName="typo3";
-      find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 5 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
+        echo;
+        export typo3DatabaseName="typo3";
+        export typo3DatabaseHost="localhost";
+        export typo3DatabaseUsername="root";
+        export typo3DatabasePassword="";
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
         echo;
         echo "Running php lint";
         /bin/bash -c "
-            if ! find typo3/ -name \*.php | ./parallel/src/parallel --gnu --will-cite 'php -l {}' > /tmp/errors 2>&1; then
+            if ! find typo3/ -name \*.php | parallel --gnu 'php -l {}' > /tmp/errors 2>&1; then
                 grep -v \"No syntax errors detected in\" /tmp/errors;
                 exit 99;
             fi
@@ -72,5 +61,5 @@ script:
     if [[ "$XLF_CHECK" == "yes" ]]; then
         echo;
         echo "Running XLF checker";
-        ./typo3/sysext/core/Build/TravisCi/XlfCheck.sh
+        ./typo3/sysext/core/Build/Scripts/xlfcheck.sh
     fi
