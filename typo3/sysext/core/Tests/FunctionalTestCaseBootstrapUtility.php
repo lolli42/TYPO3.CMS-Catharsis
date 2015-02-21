@@ -314,8 +314,11 @@ class FunctionalTestCaseBootstrapUtility {
 		$this->originalDatabaseName = $originalConfigurationArray['DB']['database'];
 		$this->databaseName = $this->originalDatabaseName . '_ft' . $this->identifier;
 
+		// Write name of database to /tmp/ if we script is executed via parallel in travis
+		// This is a helper "hack" to run the database in a size restricted ramdisk
 		$parallelSeq = trim(getenv('PARALLEL_SEQ'));
-		if ($parallelSeq) {
+		$travis = trim(getenv('TRAVIS'));
+		if ($travis === 'true' && $parallelSeq) {
 			file_put_contents('/tmp/' . $parallelSeq, $this->databaseName);
 		}
 

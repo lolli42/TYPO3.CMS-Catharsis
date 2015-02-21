@@ -7,6 +7,10 @@ matrix:
   include:
     - php: 5.5
       env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
+    - php: 5.6
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
+    - php: hhvm-nightly
+      env: UNIT_TESTS=yes
 
 services:
   - memcached
@@ -39,9 +43,34 @@ before_script:
 
 script:
   - >
-    export typo3DatabaseUsername="root";
-    export typo3DatabasePassword="";
-    export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
-    export typo3DatabaseHost="localhost";
-    export typo3DatabaseName="typo3";
-    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 5 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
+    if [[ "$UNIT_TESTS" == "yes" ]]; then
+      echo;
+      echo "Running unit tests";
+      ./bin/phpunit --colors -c typo3/sysext/core/Build/UnitTests.xml
+    fi
+  - >
+    if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
+      export typo3DatabaseUsername="root";
+      export typo3DatabasePassword="";
+      export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
+      export typo3DatabaseHost="localhost";
+      export typo3DatabaseName="typo3";
+      find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -P 5 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
+    fi
+  - >
+    if [[ "$PHP_LINT" == "yes" ]]; then
+        echo;
+        echo "Running php lint";
+        /bin/bash -c "
+            if ! find typo3/ -name \*.php | ./parallel/src/parallel --gnu --will-cite 'php -l {}' > /tmp/errors 2>&1; then
+                grep -v \"No syntax errors detected in\" /tmp/errors;
+                exit 99;
+            fi
+        "
+    fi
+  - >
+    if [[ "$XLF_CHECK" == "yes" ]]; then
+        echo;
+        echo "Running XLF checker";
+        ./typo3/sysext/core/Build/TravisCi/XlfCheck.sh
+    fi

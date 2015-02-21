@@ -93,7 +93,6 @@ class CategoryCollectionTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertEquals($this->collectionRecord['title'], $this->subject->getTitle());
 		$this->assertEquals($this->collectionRecord['description'], $this->subject->getDescription());
 		$this->assertEquals($this->collectionRecord['table_name'], $this->subject->getItemTableName());
-		$this->assertFalse(TRUE);
 	}
 
 	/**
