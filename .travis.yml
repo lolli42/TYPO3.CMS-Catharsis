@@ -31,7 +31,7 @@ before_script:
     ( if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
       mkdir /dev/shm/typo3ramdisk;
       chmod 700 /dev/shm/typo3ramdisk;
-      mysqld_safe  --defaults-file=typo3/sysext/core/Build/TravisCi/my.cnf --skip-grant-tables;
+      mysqld_safe --defaults-file=typo3/sysext/core/Build/TravisCi/my.cnf --skip-grant-tables;
     fi ) &
   - rm -rf typo3/sysext/compatibility6
   - composer self-update
@@ -45,4 +45,4 @@ script:
     export typo3DatabaseSocket=/dev/shm/typo3ramdisk/mysqld-testing.sock;
     export typo3DatabaseHost="localhost";
     export typo3DatabaseName="typo3";
-    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -N 2 --gnu 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh';
+    find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | ./parallel/src/parallel -N 2 --gnu --will-cite 'typo3/sysext/core/Build/TravisCi/FunctionalTests.sh {}';
