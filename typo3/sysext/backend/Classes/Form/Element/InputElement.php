@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Backend\Form\FormEngine;
 
 /**
  * Generation of TCEform elements of the type "input"
@@ -77,7 +78,8 @@ class InputElement extends AbstractFormElement {
 			if (in_array('password', $evalList)) {
 				$itemFormElValue = $itemFormElValue ? '*********' : '';
 			}
-			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine);
+			$formEngineDummy = new FormEngine;
+			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $formEngineDummy);
 			$elementConfiguration = array(
 				'fieldConf' => array(
 					'config' => $config,

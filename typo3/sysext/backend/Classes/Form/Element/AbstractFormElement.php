@@ -465,9 +465,9 @@ abstract class AbstractFormElement {
 				$item = $itemKinds[1];
 				if (is_array($wizardConfiguration['hideParent'])) {
 					// NoneElement does not access formEngine properties, use a dummy for decoupling
-					$dummyFormEngine = new FormEngine;
+					$formEngineDummy = new FormEngine;
 					/** @var NoneElement $noneElement */
-					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $dummyFormEngine);
+					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $formEngineDummy);
 					$elementConfiguration = array(
 						'fieldConf' => array(
 							'config' => $wizardConfiguration['hideParent'],
