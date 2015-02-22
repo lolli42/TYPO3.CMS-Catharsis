@@ -62,11 +62,6 @@ class FormEngine {
 	/**
 	 * @var array
 	 */
-	public $printNeededJS = array();
-
-	/**
-	 * @var array
-	 */
 	public $hiddenFieldAccum = array();
 
 	/**
@@ -1542,8 +1537,6 @@ class FormEngine {
 		if ($this->getRenderReadonly() || $params['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
-		// Sets a flag which means some JavaScript is included on the page to support this element.
-		$this->printNeededJS['dbFileIcons'] = 1;
 		// INIT
 		$uidList = array();
 		$opt = array();
@@ -2846,6 +2839,12 @@ class FormEngine {
 
 
 
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $printNeededJS = array();
 
 	/**
 	 * @var array
