@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
 
 /**
  * This is a static, internal and intermediate helper class for various
@@ -57,7 +58,7 @@ class FormEngineUtility {
 	/**
 	 * @var array Cache of getLanguageIcon()
 	 */
-	protected $cachedLanguageFlag = array();
+	static protected $cachedLanguageFlag = array();
 
 	/**
 	 * Overrides the TCA field configuration by TSconfig settings.
@@ -74,10 +75,10 @@ class FormEngineUtility {
 		if (is_array($TSconfig)) {
 			$TSconfig = GeneralUtility::removeDotsFromTS($TSconfig);
 			$type = $fieldConfig['type'];
-			if (is_array($TSconfig['config']) && is_array(static::allowOverrideMatrix[$type])) {
+			if (is_array($TSconfig['config']) && is_array(static::$allowOverrideMatrix[$type])) {
 				// Check if the keys in TSconfig['config'] are allowed to override TCA field config:
 				foreach ($TSconfig['config'] as $key => $_) {
-					if (!in_array($key, static::allowOverrideMatrix[$type], TRUE)) {
+					if (!in_array($key, static::$allowOverrideMatrix[$type], TRUE)) {
 						unset($TSconfig['config'][$key]);
 					}
 				}
@@ -101,27 +102,27 @@ class FormEngineUtility {
 	 */
 	static public function getLanguageIcon($table, $row, $sys_language_uid) {
 		$mainKey = $table . ':' . $row['uid'];
-		if (!isset(static::cachedLanguageFlag[$mainKey])) {
+		if (!isset(static::$cachedLanguageFlag[$mainKey])) {
 			BackendUtility::fixVersioningPid($table, $row);
 			list($tscPID) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
 			/** @var $t8Tools TranslationConfigurationProvider */
 			$t8Tools = GeneralUtility::makeInstance(TranslationConfigurationProvider::class);
-			static::cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID);
+			static::$cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID);
 		}
 		// Convert sys_language_uid to sys_language_uid if input was in fact a string (ISO code expected then)
 		if (!MathUtility::canBeInterpretedAsInteger($sys_language_uid)) {
-			foreach (static::cachedLanguageFlag[$mainKey] as $rUid => $cD) {
+			foreach (static::$cachedLanguageFlag[$mainKey] as $rUid => $cD) {
 				if ('v' . $cD['ISOcode'] === $sys_language_uid) {
 					$sys_language_uid = $rUid;
 				}
 			}
 		}
 		$out = '';
-		if (static::cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && static::cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
-			$out .= IconUtility::getSpriteIcon(static::cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
+		if (static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
+			$out .= IconUtility::getSpriteIcon(static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
 			$out .= '&nbsp;';
-		} elseif (static::cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
-			$out .= '[' . static::cachedLanguageFlag[$mainKey][$sys_language_uid]['title'] . ']';
+		} elseif (static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
+			$out .= '[' . static::$cachedLanguageFlag[$mainKey][$sys_language_uid]['title'] . ']';
 			$out .= '&nbsp;';
 		}
 		return $out;
