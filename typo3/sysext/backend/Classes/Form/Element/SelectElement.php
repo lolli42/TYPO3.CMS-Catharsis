@@ -591,7 +591,7 @@ class SelectElement extends AbstractFormElement {
 			return '';
 		}
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
-		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
+		$itemArray = array_flip(FormEngineUtility::extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$output = '';
 
 		// Disabled
@@ -794,7 +794,7 @@ class SelectElement extends AbstractFormElement {
 	public function getSingleField_typeSelect_singlebox($table, $field, $row, &$PA, $config, $selItems, $nMV_label) {
 		$languageService = $this->getLanguageService();
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
-		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
+		$itemArray = array_flip(FormEngineUtility::extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$item = '';
 		$disabled = '';
 		if ($this->isGlobalReadonly() || $config['readOnly']) {

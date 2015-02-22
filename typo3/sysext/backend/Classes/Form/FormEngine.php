@@ -1185,7 +1185,7 @@ class FormEngine {
 					$foreignUid = $row[$pointerField];
 					$foreignTable = $fieldConfig['foreign_table'];
 				} elseif ($relationType === 'group') {
-					$values = $this->extractValuesOnlyFromValueLabelList($row[$pointerField]);
+					$values = FormEngineUtility::extractValuesOnlyFromValueLabelList($row[$pointerField]);
 					list(, $foreignUid) = GeneralUtility::revExplode('_', $values[0], 2);
 					$allowedTables = explode(',', $fieldConfig['allowed']);
 					// Always take the first configured table.
@@ -1981,23 +1981,6 @@ class FormEngine {
 		}
 		$padTop = MathUtility::forceIntegerInRange(($selIconInfo[1] - 12) / 2, 0);
 		return 'background: #ffffff url(' . $selIconFile . ') 0 0 no-repeat; padding-top: ' . $padTop . 'px; padding-left: ' . $padLeft . 'px;';
-	}
-
-	/**
-	 * Extracting values from a value/label list (as made by transferData class)
-	 *
-	 * @param array $itemFormElValue Values in an array
-	 * @return array Input string exploded with comma and for each value only the label part is set in the array. Keys are numeric
-	 */
-	public function extractValuesOnlyFromValueLabelList($itemFormElValue) {
-		// Get values of selected items:
-		$itemArray = GeneralUtility::trimExplode(',', $itemFormElValue, TRUE);
-		foreach ($itemArray as $tk => $tv) {
-			$tvP = explode('|', $tv, 2);
-			$tvP[0] = rawurldecode($tvP[0]);
-			$itemArray[$tk] = $tvP[0];
-		}
-		return $itemArray;
 	}
 
 	/**
@@ -3466,6 +3449,19 @@ class FormEngine {
 			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
 	}
+
+	/**
+	 * Extracting values from a value/label list (as made by transferData class)
+	 *
+	 * @param array $itemFormElValue Values in an array
+	 * @return array Input string exploded with comma and for each value only the label part is set in the array. Keys are numeric
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
+	 */
+	public function extractValuesOnlyFromValueLabelList($itemFormElValue) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::extractValuesOnlyFromValueLabelList($itemFormElValue);
+	}
+
 
 	/**
 	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user

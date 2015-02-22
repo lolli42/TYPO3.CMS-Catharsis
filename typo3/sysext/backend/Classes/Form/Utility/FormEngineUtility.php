@@ -65,6 +65,24 @@ class FormEngineUtility {
 	}
 
 	/**
+	 * Extracting values from a value/label list (as made by transferData class)
+	 *
+	 * @param array $itemFormElValue Values in an array
+	 * @return array Input string exploded with comma and for each value only the label part is set in the array. Keys are numeric
+	 * @internal
+	 */
+	static public function extractValuesOnlyFromValueLabelList($itemFormElValue) {
+		// Get values of selected items:
+		$itemArray = GeneralUtility::trimExplode(',', $itemFormElValue, TRUE);
+		foreach ($itemArray as $tk => $tv) {
+			$tvP = explode('|', $tv, 2);
+			$tvP[0] = rawurldecode($tvP[0]);
+			$itemArray[$tk] = $tvP[0];
+		}
+		return $itemArray;
+	}
+
+	/**
 	 * Get icon (for example for selector boxes)
 	 *
 	 * @param string $icon Icon reference
