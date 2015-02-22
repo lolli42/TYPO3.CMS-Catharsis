@@ -154,10 +154,6 @@ abstract class AbstractFormElement {
 
 		$fieldChangeFunc = $PA['fieldChangeFunc'];
 		$item = $itemKinds[0];
-		$outArr = array(
-			'buttons' => '',
-			'additional' => ''
-		);
 		$fName = '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
 		$md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
 		$fieldConfig = $PA['fieldConf']['config'];
@@ -183,6 +179,8 @@ abstract class AbstractFormElement {
 		// Contains wizard identifiers enabled for this record type, see "special configuration" docs
 		$wizardsEnabledByType = $specConf['wizards']['parameters'];
 
+		$buttonWizards = array();
+		$otherWizards = array();
 		foreach ($wizConf as $wizardIdentifier => $wizardConfiguration) {
 			// If an identifier starts with "_", this is a configuration option like _POSITION and not a wizard
 			if ($wizardIdentifier[0] === '_') {
@@ -252,7 +250,7 @@ abstract class AbstractFormElement {
 					$params['iTitle'] = $iTitle;
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
-					$outArr['additional'][] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $this);
+					$otherWizards[] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $this->formEngine);
 					break;
 
 				case 'script':
@@ -278,7 +276,7 @@ abstract class AbstractFormElement {
 					}
 					$wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
 					$url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
-					$outArr['buttons'][] = ' <a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
+					$buttonWizards[] = ' <a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
 					break;
 
 				case 'popup':
@@ -331,7 +329,7 @@ abstract class AbstractFormElement {
 						'vHWin.focus();' .
 						'return false;';
 
-					$outArr['buttons'][] =
+					$buttonWizards[] =
 						'<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">' .
 							$icon .
 						'</a>';
@@ -386,7 +384,7 @@ abstract class AbstractFormElement {
 						$PA['itemFormElValue'] === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
 						'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
 					);
-					$outArr['additional'][] =
+					$otherWizards[] =
 						'<table border="0" id="' . $md5ID . '"' . $color . ' style="' . htmlspecialchars($wizardConfiguration['tableStyle']) . '">' .
 							'<tr>' .
 								'<td>' .
@@ -418,7 +416,7 @@ abstract class AbstractFormElement {
 
 					/** @var ValueSlider $wizard */
 					$wizard = GeneralUtility::makeInstance(ValueSlider::class);
-					$outArr['additional'][] = $wizard->renderWizard($params, $this->formEngine); // @todo
+					$otherWizards[] = $wizard->renderWizard($params, $this->formEngine); // @todo
 					break;
 
 				case 'select':
@@ -444,7 +442,7 @@ abstract class AbstractFormElement {
 					} else {
 						$assignValue = 'document.editform[\'' . $itemName . '\'].value=this.options[this.selectedIndex].value';
 					}
-					$outArr['additional'][] =
+					$otherWizards[] =
 						'<select' .
 							' id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE)) . '"' .
 							' class="form-control tceforms-select tceforms-wizardselect"' .
@@ -461,7 +459,7 @@ abstract class AbstractFormElement {
 					/** @var SuggestElement $suggestWizard */
 					$suggestWizard = GeneralUtility::makeInstance(SuggestElement::class);
 					$suggestWizard->init($this->formEngine); // @todo
-					$outArr['additional'][] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
+					$otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
 					break;
 			}
 
@@ -484,37 +482,35 @@ abstract class AbstractFormElement {
 		}
 
 		// For each rendered wizard, put them together around the item.
-		if (count($outArr['buttons']) || count($outArr['additional'])) {
+		if (!empty($buttonWizards) || !empty($otherWizards)) {
 			if ($wizConf['_HIDDENFIELD']) {
 				$item = $itemKinds[1];
 			}
 
-			$outStr = '';
-			if (!empty($outArr['buttons'])) {
-				$outStr .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $outArr['buttons']) . '</div>';
+			$innerContent = '';
+			if (!empty($buttonWizards)) {
+				$innerContent .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $buttonWizards) . '</div>';
 			}
-			if (!empty($outArr['additional'])) {
-				$outStr .= implode(' ', $outArr['additional']);
-			}
+			$innerContent .= implode(' ', $otherWizards);
 
 			// Position
-			$class = array();
+			$classes = array('form-wizards-wrap');
 			if ($wizConf['_POSITION'] === 'left') {
-				$class[] = 'form-wizards-aside';
-				$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
+				$classes[] = 'form-wizards-aside';
+				$innerContent = '<div class="form-wizards-items">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
 			} elseif ($wizConf['_POSITION'] === 'top') {
-				$class[] = 'form-wizards-top';
-				$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
+				$classes[] = 'form-wizards-top';
+				$innerContent = '<div class="form-wizards-items">' . $innerContent . '</div><div class="form-wizards-element">' . $item . '</div>';
 			} elseif ($wizConf['_POSITION'] === 'bottom') {
-				$class[] = 'form-wizards-bottom';
-				$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
+				$classes[] = 'form-wizards-bottom';
+				$innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $innerContent . '</div>';
 			} else {
-				$class[] = 'form-wizards-aside';
-				$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
+				$classes[] = 'form-wizards-aside';
+				$innerContent = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $innerContent . '</div>';
 			}
 			$item = '
-				<div class="form-wizards-wrap ' . (!empty($class) ? implode(' ', $class) : '' ) . '">
-					' . $outStr . '
+				<div class="' . implode(' ', $classes) . '">
+					' . $innerContent . '
 				</div>';
 		}
 
