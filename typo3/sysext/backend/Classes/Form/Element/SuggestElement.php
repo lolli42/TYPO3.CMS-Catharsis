@@ -30,7 +30,7 @@ class SuggestElement {
 	/**
 	 * @var string
 	 */
-	public $cssClass = 'typo3-TCEforms-suggest';
+	protected $cssClass = 'typo3-TCEforms-suggest';
 
 	/**
 	 * @var \TYPO3\CMS\Backend\Form\FormEngine
