@@ -19,8 +19,8 @@ notifications:
   email:
     recipients:
       - lolli@schwarzbu.ch
-     on_success: change
-     on_failure: always
+    on_success: change
+    on_failure: always
 
 before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
