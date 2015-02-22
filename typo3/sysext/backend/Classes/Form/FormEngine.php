@@ -1737,12 +1737,12 @@ class FormEngine {
 						<tr>
 							<td class="col-icon">
 								' . ($config['internal_type'] === 'db'
-									? $this->getClickMenu($thumbnail['image'], $thumbnail['table'], $thumbnail['uid'])
+									? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($thumbnail['image'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
 									: $thumbnail['image']) . '
 							</td>
 							<td class="col-title">
 								' . ($config['internal_type'] === 'db'
-									? $this->getClickMenu($thumbnail['name'], $thumbnail['table'], $thumbnail['uid'])
+									? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($thumbnail['name'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
 									: $thumbnail['name']) . '
 								' . ($config['internal_type'] === 'db' ? '' : ' <span class="text-muted">[' . $thumbnail['uid'] . ']</span>') . '
 							</td>
@@ -1886,18 +1886,6 @@ class FormEngine {
 			}
 		}
 		return $output;
-	}
-
-	/**
-	 * Wraps the icon of a relation item (database record or file) in a link opening the context menu for the item.
-	 *
-	 * @param string $str The icon HTML to wrap
-	 * @param string $table Table name (eg. "pages" or "tt_content") OR the absolute path to the file
-	 * @param int $uid The uid of the record OR if file, just blank value.
-	 * @return string HTML
-	 */
-	public function getClickMenu($str, $table, $uid = 0) {
-		return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
 	}
 
 	/**
@@ -2135,7 +2123,7 @@ class FormEngine {
 					$pageTitle = sprintf($label, $tableTitle, $pageTitle);
 				}
 			}
-			$icon = $this->getClickMenu($icon, $table, $rec['uid']);
+			$icon = $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($icon, $table, $rec['uid'], 1, '', '+copy,info,edit,view');
 		}
 		foreach ($arr as $k => $v) {
 			// Make substitutions:
@@ -2609,7 +2597,18 @@ class FormEngine {
 					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
 					$fileInformation = pathinfo($imgPath);
 					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
-					$imgs[] = '<span class="nobr">' . BackendUtility::thumbCode($rowCopy, $table, $field, '', 'thumbs.php', $config['config']['uploadfolder'], 0, ' align="middle"') . ($absFilePath ? $this->getClickMenu($fileIcon, $absFilePath) : $fileIcon) . $imgPath . '</span>';
+					$imgs[] =
+						'<span class="nobr">' .
+							BackendUtility::thumbCode(
+								$rowCopy,
+								$table,
+								$field,
+								'',
+								'thumbs.php',
+								$config['config']['uploadfolder'], 0, ' align="middle"'
+							) .
+							($absFilePath ? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) . $imgPath .
+						'</span>';
 				}
 				$thumbsnail = implode('<br />', $imgs);
 			}
@@ -3514,6 +3513,20 @@ class FormEngine {
 				// Do nothing e.g. when $format === ''
 		}
 		return $itemValue;
+	}
+
+	/**
+	 * Wraps the icon of a relation item (database record or file) in a link opening the context menu for the item.
+	 *
+	 * @param string $str The icon HTML to wrap
+	 * @param string $table Table name (eg. "pages" or "tt_content") OR the absolute path to the file
+	 * @param int $uid The uid of the record OR if file, just blank value.
+	 * @return string HTML
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getClickMenu($str, $table, $uid = 0) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
 	}
 
 	/**
