@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Backend\Form\Element;
+namespace TYPO3\CMS\Backend\Form\Wizard;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -17,11 +17,11 @@ namespace TYPO3\CMS\Backend\Form\Element;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * TCEforms wizard for rendering an AJAX selector for records
+ * Wizard for rendering an AJAX selector for records
  *
  * @author Steffen Kamper <steffen@typo3.org>
  */
-class ValueSlider {
+class ValueSliderWizard {
 
 	/**
 	 * Renders the slider value wizard

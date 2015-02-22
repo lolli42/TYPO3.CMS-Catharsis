@@ -15,14 +15,9 @@ namespace TYPO3\CMS\Backend\Form;
  */
 
 use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
-use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Form\Element\InlineElement;
 use TYPO3\CMS\Backend\Form\Element\NoneElement;
-use TYPO3\CMS\Backend\Form\Element\SuggestElement;
-use TYPO3\CMS\Backend\Form\Element\ValueSlider;
-use TYPO3\CMS\Backend\Form\ElementConditionMatcher;
-use TYPO3\CMS\Backend\Form\FormDataTraverser;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -39,7 +34,6 @@ use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**

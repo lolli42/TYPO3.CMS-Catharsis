@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Backend\Form\Element;
+namespace TYPO3\CMS\Backend\Form\Wizard;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -18,14 +18,15 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Form\Wizard\SuggestWizardDefaultReceiver;
 
 /**
- * TCEforms wizard for rendering an AJAX selector for records
+ * Wizard for rendering an AJAX selector for records
  *
  * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
  * @author Benjamin Mack <benni@typo3.org>
  */
-class SuggestElement {
+class SuggestWizard {
 
 	/**
 	 * @var string
@@ -260,7 +261,7 @@ class SuggestElement {
 			// instantiate the class that should fetch the records for this $queryTable
 			$receiverClassName = $config['receiverClass'];
 			if (!class_exists($receiverClassName)) {
-				$receiverClassName = \TYPO3\CMS\Backend\Form\Element\SuggestDefaultReceiver::class;
+				$receiverClassName = SuggestWizardDefaultReceiver::class;
 			}
 			$receiverObj = GeneralUtility::makeInstance($receiverClassName, $queryTable, $config);
 			$params = array('value' => $search);

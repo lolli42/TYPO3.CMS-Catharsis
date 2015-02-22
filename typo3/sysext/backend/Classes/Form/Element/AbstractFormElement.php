@@ -25,6 +25,8 @@ use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Backend\Form\Wizard\SuggestWizard;
+use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
 
 /**
  * Base class for form elements of FormEngine
@@ -409,8 +411,8 @@ abstract class AbstractFormElement {
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
 
-					/** @var ValueSlider $wizard */
-					$wizard = GeneralUtility::makeInstance(ValueSlider::class);
+					/** @var ValueSliderWizard $wizard */
+					$wizard = GeneralUtility::makeInstance(ValueSliderWizard::class);
 					$otherWizards[] = $wizard->renderWizard($params);
 					break;
 
@@ -451,8 +453,8 @@ abstract class AbstractFormElement {
 					if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
 						break;
 					}
-					/** @var SuggestElement $suggestWizard */
-					$suggestWizard = GeneralUtility::makeInstance(SuggestElement::class);
+					/** @var SuggestWizard $suggestWizard */
+					$suggestWizard = GeneralUtility::makeInstance(SuggestWizard::class);
 					$otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
 					break;
 			}
