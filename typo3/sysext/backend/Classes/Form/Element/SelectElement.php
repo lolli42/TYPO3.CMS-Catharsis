@@ -198,7 +198,7 @@ class SelectElement extends AbstractFormElement {
 			$styleAttrValue = '';
 			foreach ($selItems as $p) {
 				if ($config['iconsInOptionTags']) {
-					$styleAttrValue = $this->formEngine->optionTagStyle($p[2]);
+					$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
 				}
 				$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"'
 					. ($styleAttrValue ? ' style="' . htmlspecialchars($styleAttrValue) . '"' : '')
@@ -821,7 +821,7 @@ class SelectElement extends AbstractFormElement {
 			// Icon style for option tag:
 			$styleAttrValue = '';
 			if ($config['iconsInOptionTags']) {
-				$styleAttrValue = $this->formEngine->optionTagStyle($p[2]);
+				$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
 			}
 			// Compile <option> tag:
 			$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"' . $sM . $nonSel

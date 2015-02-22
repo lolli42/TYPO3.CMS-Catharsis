@@ -900,7 +900,7 @@ class InlineElement {
 			$styleAttrValue = '';
 			foreach ($selItems as $p) {
 				if ($config['iconsInOptionTags']) {
-					$styleAttrValue = $this->fObj->optionTagStyle($p[2]);
+					$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
 				}
 				if (!in_array($p[1], $uniqueIds)) {
 					$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"' . ' style="' . (in_array($p[1], $uniqueIds) ? '' : '') . ($styleAttrValue ? ' style="' . htmlspecialchars($styleAttrValue) : '') . '">' . htmlspecialchars($p[0]) . '</option>';
