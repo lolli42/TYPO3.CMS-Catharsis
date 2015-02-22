@@ -33,21 +33,6 @@ class SuggestElement {
 	protected $cssClass = 'typo3-TCEforms-suggest';
 
 	/**
-	 * @var \TYPO3\CMS\Backend\Form\FormEngine
-	 */
-	public $TCEformsObj;
-
-	/**
-	 * Initialize an instance of SuggestElement
-	 *
-	 * @param \TYPO3\CMS\Backend\Form\FormEngine $tceForms Reference to an TCEforms instance
-	 * @return void
-	 */
-	public function init($tceForms) {
-		$this->TCEformsObj = $tceForms;
-	}
-
-	/**
 	 * Renders an ajax-enabled text field. Also adds required JS
 	 *
 	 * @param string $fieldname The fieldname in the form
@@ -107,9 +92,12 @@ class SuggestElement {
 
 		// Replace "-" with ucwords for the JS object name
 		$jsObj = str_replace(' ', '', ucwords(str_replace(array('-', '.'), ' ', GeneralUtility::strtolower($suggestId))));
-		$this->TCEformsObj->additionalJS_post[] = '
-			var ' . $jsObj . ' = new TCEForms.Suggest("' . $fieldname . '", "' . $table . '", "' . $field . '", "' . $row['uid'] . '", ' . $row['pid'] . ', ' . $minChars . ', "' . $type . '", ' . GeneralUtility::quoteJSvalue($jsRow) . ');' . LF
-				. $jsObj . '.defaultValue = "' . GeneralUtility::slashJS($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.findRecord')) . '";' . LF;
+		$selector .=
+			'<script type="text/javascript">' . LF .
+				'var ' . $jsObj . ' = new TCEForms.Suggest("' . $fieldname . '", "' . $table . '", "' . $field . '", "' . $row['uid'] . '", ' . $row['pid'] . ', ' . $minChars . ', "' . $type . '", ' . GeneralUtility::quoteJSvalue($jsRow) . ');' . LF .
+				$jsObj . '.defaultValue = "' . GeneralUtility::slashJS($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.findRecord')) . '";' . LF .
+			'</script>' . LF;
+
 		return $selector;
 	}
 

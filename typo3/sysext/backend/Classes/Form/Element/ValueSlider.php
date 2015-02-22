@@ -27,11 +27,9 @@ class ValueSlider {
 	 * Renders the slider value wizard
 	 *
 	 * @param array $params
-	 * @param \TYPO3\CMS\Backend\Form\FormEngine $pObj
 	 * @return string
 	 */
-	public function renderWizard($params, $pObj) {
-		$pObj->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/ValueSlider.js');
+	public function renderWizard($params) {
 		$field = $params['field'];
 		$value = $params['row'][$field];
 		// If Slider is used in a flexform

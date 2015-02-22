@@ -250,7 +250,8 @@ abstract class AbstractFormElement {
 					$params['iTitle'] = $iTitle;
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
-					$otherWizards[] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $this->formEngine);
+					$formEngineDummy = new FormEngine;
+					$otherWizards[] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $formEngineDummy);
 					break;
 
 				case 'script':
@@ -276,7 +277,10 @@ abstract class AbstractFormElement {
 					}
 					$wScript = BackendUtility::getModuleUrl($wizardConfiguration['module']['name'], $urlParameters, '');
 					$url = $wScript . (strstr($wScript, '?') ? '' : '?') . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
-					$buttonWizards[] = ' <a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
+					$buttonWizards[] =
+						'<a class="btn btn-default" href="' . htmlspecialchars($url) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">'
+							. $icon .
+						'</a>';
 					break;
 
 				case 'popup':
@@ -397,26 +401,17 @@ abstract class AbstractFormElement {
 				case 'slider':
 					$params = array();
 					$params['fieldConfig'] = $fieldConfig;
-					$params['params'] = $wizardConfiguration['params'];
-					$params['exampleImg'] = $wizardConfiguration['exampleImg'];
-					$params['table'] = $table;
-					$params['uid'] = $row['uid'];
-					$params['pid'] = $row['pid'];
 					$params['field'] = $field;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
-					$params['returnUrl'] = $this->getReturnUrl();
-
 					$params['itemName'] = $itemName;
 					$params['fieldChangeFunc'] = $fieldChangeFunc;
-
-					// Reference set!
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
 
 					/** @var ValueSlider $wizard */
 					$wizard = GeneralUtility::makeInstance(ValueSlider::class);
-					$otherWizards[] = $wizard->renderWizard($params, $this->formEngine); // @todo
+					$otherWizards[] = $wizard->renderWizard($params);
 					break;
 
 				case 'select':
@@ -458,7 +453,6 @@ abstract class AbstractFormElement {
 					}
 					/** @var SuggestElement $suggestWizard */
 					$suggestWizard = GeneralUtility::makeInstance(SuggestElement::class);
-					$suggestWizard->init($this->formEngine); // @todo
 					$otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
 					break;
 			}
@@ -468,8 +462,10 @@ abstract class AbstractFormElement {
 				// Setting the item to a hidden-field.
 				$item = $itemKinds[1];
 				if (is_array($wizardConfiguration['hideParent'])) {
+					// NoneElement does not access formEngine properties, use a dummy for decoupling
+					$dummyFormEngine = new FormEngine;
 					/** @var NoneElement $noneElement */
-					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine); // @todo
+					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $dummyFormEngine);
 					$elementConfiguration = array(
 						'fieldConf' => array(
 							'config' => $wizardConfiguration['hideParent'],
