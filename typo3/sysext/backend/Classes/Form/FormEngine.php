@@ -50,11 +50,6 @@ class FormEngine {
 	public $disableWizards = FALSE;
 
 	/**
-	 * @var array
-	 */
-	public $cachedLanguageFlag = array();
-
-	/**
 	 * @var array|NULL
 	 */
 	public $cachedAdditionalPreviewLanguages = NULL;
@@ -1462,7 +1457,7 @@ class FormEngine {
 			// Don't show content if it's for IRRE child records:
 			if ($fieldConfig['config']['type'] != 'inline') {
 				if ($defaultLanguageValue !== '') {
-					$item .= '<div class="t3-form-original-language">' . $this->getLanguageIcon($table, $row, 0)
+					$item .= '<div class="t3-form-original-language">' . FormEngineUtility::getLanguageIcon($table, $row, 0)
 						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
 						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 				}
@@ -1471,7 +1466,7 @@ class FormEngine {
 					$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->additionalPreviewLanguageData[$table . ':' . $row['uid']][$previewLanguage['uid']][$field], 0, 1);
 					if ($defaultLanguageValue !== '') {
 						$item .= '<div class="t3-form-original-language">'
-							. $this->getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
+							. FormEngineUtility::getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
 							. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
 							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 					}
@@ -2574,42 +2569,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Initializes language icons etc.
-	 *
-	 * @param string $table Table name
-	 * @param array $row Record
-	 * @param string $sys_language_uid Sys language uid OR ISO language code prefixed with "v", eg. "vDA
-	 * @return string
-	 */
-	public function getLanguageIcon($table, $row, $sys_language_uid) {
-		$mainKey = $table . ':' . $row['uid'];
-		if (!isset($this->cachedLanguageFlag[$mainKey])) {
-			BackendUtility::fixVersioningPid($table, $row);
-			list($tscPID) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
-			/** @var $t8Tools TranslationConfigurationProvider */
-			$t8Tools = GeneralUtility::makeInstance(TranslationConfigurationProvider::class);
-			$this->cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID);
-		}
-		// Convert sys_language_uid to sys_language_uid if input was in fact a string (ISO code expected then)
-		if (!MathUtility::canBeInterpretedAsInteger($sys_language_uid)) {
-			foreach ($this->cachedLanguageFlag[$mainKey] as $rUid => $cD) {
-				if ('v' . $cD['ISOcode'] === $sys_language_uid) {
-					$sys_language_uid = $rUid;
-				}
-			}
-		}
-		$out = '';
-		if ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && $this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
-			$out .= IconUtility::getSpriteIcon($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
-			$out .= '&nbsp;';
-		} elseif ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
-			$out .= '[' . $this->cachedLanguageFlag[$mainKey][$sys_language_uid]['title'] . ']';
-			$out .= '&nbsp;';
-		}
-		return $out;
-	}
-
-	/**
 	 * Renders an icon to indicate the way the translation and the original is merged (if this is relevant).
 	 *
 	 * If a field is defined as 'mergeIfNotBlank' this is useful information for an editor. He/she can leave the field blank and
@@ -2917,6 +2876,12 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $cachedTSconfig = array();
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $cachedLanguageFlag = array();
 
 	/**
 	 * @var array
@@ -3433,6 +3398,19 @@ class FormEngine {
 		return FormEngineUtility::extractValuesOnlyFromValueLabelList($itemFormElValue);
 	}
 
+	/**
+	 * Initializes language icons etc.
+	 *
+	 * @param string $table Table name
+	 * @param array $row Record
+	 * @param string $sys_language_uid Sys language uid OR ISO language code prefixed with "v", eg. "vDA
+	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
+	 */
+	public function getLanguageIcon($table, $row, $sys_language_uid) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::getLanguageIcon($table, $row, $sys_language_uid);
+	}
 
 	/**
 	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user
