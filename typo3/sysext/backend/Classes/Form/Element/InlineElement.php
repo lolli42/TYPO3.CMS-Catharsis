@@ -2106,7 +2106,7 @@ class InlineElement {
 						$TSconfig = FormEngineUtility::getTSconfigForTableRow($unstable['table'], array('uid' => $unstable['uid'], 'pid' => $this->inlineFirstPid), $unstable['field']);
 						// Override TCA field config by TSconfig:
 						if (!$TSconfig['disabled']) {
-							$unstable['config'] = $this->formEngine->overrideFieldConf($unstable['config'], $TSconfig);
+							$unstable['config'] = FormEngineUtility::overrideFieldConf($unstable['config'], $TSconfig);
 						}
 						$unstable['localizationMode'] = BackendUtility::getInlineLocalizationMode($unstable['table'], $unstable['config']);
 					}

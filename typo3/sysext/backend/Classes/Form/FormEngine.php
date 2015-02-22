@@ -188,21 +188,6 @@ class FormEngine {
 	protected $prependFormFieldNamesActive = 'control[active]';
 
 	/**
-	 * Whitelist that allows TCA field configuration to be overridden by TSconfig
-	 *
-	 * @see overrideFieldConf()
-	 * @var array
-	 */
-	protected $allowOverrideMatrix = array(
-		'input' => array('size', 'max', 'readOnly'),
-		'text' => array('cols', 'rows', 'wrap', 'readOnly'),
-		'check' => array('cols', 'showIfRTE', 'readOnly'),
-		'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
-		'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
-		'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly'),
-	);
-
-	/**
 	 * Set by readPerms()  (caching)
 	 *
 	 * @var string
@@ -881,7 +866,7 @@ class FormEngine {
 			// If the field is NOT disabled from TSconfig (which it could have been) then render it
 			if (!$PA['fieldTSConfig']['disabled']) {
 				// Override fieldConf by fieldTSconfig:
-				$PA['fieldConf']['config'] = $this->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
+				$PA['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
 				// Init variables:
 				$PA['itemFormElName'] = $this->prependFormFieldNames . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
 				// Form field name, in case of file uploads
@@ -1348,36 +1333,6 @@ class FormEngine {
 			}
 		}
 		return $fields;
-	}
-
-	/**
-	 * Overrides the TCA field configuration by TSconfig settings.
-	 *
-	 * Example TSconfig: TCEform.<table>.<field>.config.appearance.useSortable = 1
-	 * This overrides the setting in $GLOBALS['TCA'][<table>]['columns'][<field>]['config']['appearance']['useSortable'].
-	 *
-	 * @param array $fieldConfig $GLOBALS['TCA'] field configuration
-	 * @param array $TSconfig TSconfig
-	 * @return array Changed TCA field configuration
-	 */
-	public function overrideFieldConf($fieldConfig, $TSconfig) {
-		if (is_array($TSconfig)) {
-			$TSconfig = GeneralUtility::removeDotsFromTS($TSconfig);
-			$type = $fieldConfig['type'];
-			if (is_array($TSconfig['config']) && is_array($this->allowOverrideMatrix[$type])) {
-				// Check if the keys in TSconfig['config'] are allowed to override TCA field config:
-				foreach ($TSconfig['config'] as $key => $_) {
-					if (!in_array($key, $this->allowOverrideMatrix[$type], TRUE)) {
-						unset($TSconfig['config'][$key]);
-					}
-				}
-				// Override $GLOBALS['TCA'] field config by remaining TSconfig['config']:
-				if (count($TSconfig['config'])) {
-					ArrayUtility::mergeRecursiveWithOverrule($fieldConfig, $TSconfig['config']);
-				}
-			}
-		}
-		return $fieldConfig;
 	}
 
 	/**
@@ -3448,6 +3403,22 @@ class FormEngine {
 		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
 			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
 			->render($table, $field, $row, $PA);
+	}
+
+	/**
+	 * Overrides the TCA field configuration by TSconfig settings.
+	 *
+	 * Example TSconfig: TCEform.<table>.<field>.config.appearance.useSortable = 1
+	 * This overrides the setting in $GLOBALS['TCA'][<table>]['columns'][<field>]['config']['appearance']['useSortable'].
+	 *
+	 * @param array $fieldConfig $GLOBALS['TCA'] field configuration
+	 * @param array $TSconfig TSconfig
+	 * @return array Changed TCA field configuration
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
+	 */
+	public function overrideFieldConf($fieldConfig, $TSconfig) {
+		GeneralUtility::logDeprecatedFunction();
+		return FormEngineUtility::overrideFieldConf($fieldConfig, $TSconfig);
 	}
 
 	/**

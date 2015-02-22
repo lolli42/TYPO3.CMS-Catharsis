@@ -906,7 +906,7 @@ class SelectElement extends AbstractFormElement {
 		$PA['fieldConf']['config'] = $fieldConfig;
 		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
 		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($this->currentTable, $this->currentRow, $fieldName);
-		$PA['fieldConf']['config'] = $this->formEngine->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
+		$PA['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
 		$selectItemArray = $this->getSelectItems($this->currentTable, $fieldName, $this->currentRow, $PA);
 
 		if ($isTraversable && count($selectItemArray)) {

@@ -40,6 +40,52 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 class FormEngineUtility {
 
 	/**
+	 * Whitelist that allows TCA field configuration to be overridden by TSconfig
+	 *
+	 * @see overrideFieldConf()
+	 * @var array
+	 */
+	static protected $allowOverrideMatrix = array(
+		'input' => array('size', 'max', 'readOnly'),
+		'text' => array('cols', 'rows', 'wrap', 'readOnly'),
+		'check' => array('cols', 'showIfRTE', 'readOnly'),
+		'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
+		'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
+		'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly'),
+	);
+
+	/**
+	 * Overrides the TCA field configuration by TSconfig settings.
+	 *
+	 * Example TSconfig: TCEform.<table>.<field>.config.appearance.useSortable = 1
+	 * This overrides the setting in $GLOBALS['TCA'][<table>]['columns'][<field>]['config']['appearance']['useSortable'].
+	 *
+	 * @param array $fieldConfig $GLOBALS['TCA'] field configuration
+	 * @param array $TSconfig TSconfig
+	 * @return array Changed TCA field configuration
+	 * @internal
+	 */
+	static public function overrideFieldConf($fieldConfig, $TSconfig) {
+		if (is_array($TSconfig)) {
+			$TSconfig = GeneralUtility::removeDotsFromTS($TSconfig);
+			$type = $fieldConfig['type'];
+			if (is_array($TSconfig['config']) && is_array(static::allowOverrideMatrix[$type])) {
+				// Check if the keys in TSconfig['config'] are allowed to override TCA field config:
+				foreach ($TSconfig['config'] as $key => $_) {
+					if (!in_array($key, static::allowOverrideMatrix[$type], TRUE)) {
+						unset($TSconfig['config'][$key]);
+					}
+				}
+				// Override $GLOBALS['TCA'] field config by remaining TSconfig['config']:
+				if (count($TSconfig['config'])) {
+					ArrayUtility::mergeRecursiveWithOverrule($fieldConfig, $TSconfig['config']);
+				}
+			}
+		}
+		return $fieldConfig;
+	}
+
+	/**
 	 * Returns TSconfig for given table and row
 	 *
 	 * @param string $table The table name
