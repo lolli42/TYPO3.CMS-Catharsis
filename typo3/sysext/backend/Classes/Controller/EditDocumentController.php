@@ -713,11 +713,6 @@ class EditDocumentController {
 			// text,media is keywords defined in TYPO3 Core API..., see "l10n_cat"
 			$this->tceforms->returnUrl = $this->R_URI;
 			$this->tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-			// Clipboard is initialized:
-			// Start clipboard
-			$this->tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
-			// Initialize - reads the clipboard content from the user session
-			$this->tceforms->clipObj->initializeClipboard();
 			if ($this->editRegularContentFromId) {
 				$this->editRegularContentFromId();
 			}

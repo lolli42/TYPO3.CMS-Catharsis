@@ -1212,11 +1212,6 @@ class InlineElement {
 		$GLOBALS['SOBE']->tceforms->RTEcounter = (int)array_shift($ajaxArguments);
 		$GLOBALS['SOBE']->tceforms->initDefaultBEMode();
 		$GLOBALS['SOBE']->tceforms->palettesCollapsed = !$GLOBALS['SOBE']->MOD_SETTINGS['showPalettes'];
-		// Clipboard is initialized:
-		// Start clipboard
-		$GLOBALS['SOBE']->tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
-		// Initialize - reads the clipboard content from the user session
-		$GLOBALS['SOBE']->tceforms->clipObj->initializeClipboard();
 	}
 
 	/**

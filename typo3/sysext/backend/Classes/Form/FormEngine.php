@@ -35,6 +35,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Clipboard\Clipboard;
 
 /**
  * 'TCEforms' - Class for creating the backend editing forms.
@@ -1846,45 +1847,49 @@ class FormEngine {
 	 * @return array Array of elements in values (keys are insignificant), if none found, empty array.
 	 */
 	public function getClipboardElements($allowed, $mode) {
-		$output = array();
-		if (is_object($this->clipObj)) {
-			switch ($mode) {
-				case 'file_reference':
-
-				case 'file':
-					$elFromTable = $this->clipObj->elFromTable('_FILE');
-					$allowedExts = GeneralUtility::trimExplode(',', $allowed, TRUE);
-					// If there are a set of allowed extensions, filter the content:
-					if ($allowedExts) {
-						foreach ($elFromTable as $elValue) {
-							$pI = pathinfo($elValue);
-							$ext = strtolower($pI['extension']);
-							if (in_array($ext, $allowedExts)) {
-								$output[] = $elValue;
-							}
-						}
-					} else {
-						// If all is allowed, insert all: (This does NOT respect any disallowed extensions,
-						// but those will be filtered away by the backend TCEmain)
-						$output = $elFromTable;
-					}
-					break;
-				case 'db':
-					$allowedTables = GeneralUtility::trimExplode(',', $allowed, TRUE);
-					// All tables allowed for relation:
-					if (trim($allowedTables[0]) === '*') {
-						$output = $this->clipObj->elFromTable('');
-					} else {
-						// Only some tables, filter them:
-						foreach ($allowedTables as $tablename) {
-							$elFromTable = $this->clipObj->elFromTable($tablename);
-							$output = array_merge($output, $elFromTable);
-						}
-					}
-					$output = array_keys($output);
-					break;
-			}
+		if (!is_object($this->clipObj)) {
+			$this->clipObj = GeneralUtility::makeInstance(Clipboard::class);
+			$this->clipObj->initializeClipboard();
 		}
+
+		$output = array();
+		switch ($mode) {
+			case 'file_reference':
+
+			case 'file':
+				$elFromTable = $this->clipObj->elFromTable('_FILE');
+				$allowedExts = GeneralUtility::trimExplode(',', $allowed, TRUE);
+				// If there are a set of allowed extensions, filter the content:
+				if ($allowedExts) {
+					foreach ($elFromTable as $elValue) {
+						$pI = pathinfo($elValue);
+						$ext = strtolower($pI['extension']);
+						if (in_array($ext, $allowedExts)) {
+							$output[] = $elValue;
+						}
+					}
+				} else {
+					// If all is allowed, insert all: (This does NOT respect any disallowed extensions,
+					// but those will be filtered away by the backend TCEmain)
+					$output = $elFromTable;
+				}
+				break;
+			case 'db':
+				$allowedTables = GeneralUtility::trimExplode(',', $allowed, TRUE);
+				// All tables allowed for relation:
+				if (trim($allowedTables[0]) === '*') {
+					$output = $this->clipObj->elFromTable('');
+				} else {
+					// Only some tables, filter them:
+					foreach ($allowedTables as $tablename) {
+						$elFromTable = $this->clipObj->elFromTable($tablename);
+						$output = array_merge($output, $elFromTable);
+					}
+				}
+				$output = array_keys($output);
+				break;
+		}
+
 		return $output;
 	}
 
