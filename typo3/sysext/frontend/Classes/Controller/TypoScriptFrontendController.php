@@ -818,6 +818,15 @@ class TypoScriptFrontendController {
 	protected $contentType = 'text/html';
 
 	/**
+	 * Doctype to use
+	 *
+	 * Currently set via PageGenerator
+	 *
+	 * @var string
+	 */
+	public $xhtmlDoctype = '';
+
+	/**
 	 * Class constructor
 	 * Takes a number of GET/POST input variable as arguments and stores them internally.
 	 * The processing of these variables goes on later in this class.
@@ -1149,7 +1158,6 @@ class TypoScriptFrontendController {
 			// disable login-attempts to the backend account through this script
 			// New backend user object
 			$BE_USER = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\FrontendBackendUserAuthentication::class);
-			$BE_USER->OS = TYPO3_OS;
 			$BE_USER->lockIP = $this->TYPO3_CONF_VARS['BE']['lockIP'];
 			// Object is initialized
 			$BE_USER->start();
@@ -1162,7 +1170,6 @@ class TypoScriptFrontendController {
 			if (!$BE_USER->checkLockToIP() || !$BE_USER->checkBackendAccessSettingsFromInitPhp() || empty($BE_USER->user['uid'])) {
 				$BE_USER = NULL;
 				$this->beUserLogin = FALSE;
-				$_SESSION['TYPO3-TT-start'] = FALSE;
 			}
 			$GLOBALS['TT']->pull();
 			$GLOBALS['TYPO3_MISC']['microtime_BE_USER_end'] = microtime(TRUE);
