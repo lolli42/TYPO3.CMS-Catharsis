@@ -10,6 +10,8 @@ matrix:
       env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
     - php: hhvm-nightly
       env: UNIT_TESTS=yes
+    - php: 7
+      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
 
 services:
   - memcached
