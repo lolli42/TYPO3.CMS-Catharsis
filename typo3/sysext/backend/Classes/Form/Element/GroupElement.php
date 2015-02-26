@@ -185,7 +185,7 @@ class GroupElement extends AbstractFormElement {
 					'noList' => $noList,
 					'noDelete' => $noDelete
 				);
-				$item .= $this->formEngine->dbFileIcons(
+				$item .= $this->dbFileIcons(
 					$additionalInformation['itemFormElName'],
 					'file',
 					implode(',', $allowed),
@@ -235,7 +235,7 @@ class GroupElement extends AbstractFormElement {
 					'noBrowser' => $noList || isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'browser'),
 					'noList' => $noList
 				);
-				$item .= $this->formEngine->dbFileIcons(
+				$item .= $this->dbFileIcons(
 					$additionalInformation['itemFormElName'],
 					'folder',
 					'',
@@ -307,7 +307,7 @@ class GroupElement extends AbstractFormElement {
 					'noBrowser' => $noList || isset($config['disable_controls']) && GeneralUtility::inList($config['disable_controls'], 'browser'),
 					'noList' => $noList
 				);
-				$item .= $this->formEngine->dbFileIcons(
+				$item .= $this->dbFileIcons(
 					$additionalInformation['itemFormElName'],
 					'db',
 					implode(',', $allowed),

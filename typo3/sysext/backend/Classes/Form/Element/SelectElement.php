@@ -279,7 +279,7 @@ class SelectElement extends AbstractFormElement {
 			'rightbox' => $itemsToSelect,
 			'readOnly' => $disabled
 		);
-		$item .= $this->formEngine->dbFileIcons($PA['itemFormElName'], '', '', $itemArray, '', $params, $PA['onFocus']);
+		$item .= $this->dbFileIcons($PA['itemFormElName'], '', '', $itemArray, '', $params, $PA['onFocus']);
 		return $item;
 	}
 

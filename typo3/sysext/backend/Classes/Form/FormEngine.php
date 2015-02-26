@@ -29,13 +29,12 @@ use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Clipboard\Clipboard;
+
 
 /**
  * 'TCEforms' - Class for creating the backend editing forms.
@@ -133,14 +132,6 @@ class FormEngine {
 	 * @var string
 	 */
 	public $fieldOrder = '';
-
-	/**
-	 * Set to initialized clipboard object;
-	 * Then the element browser will offer a link to paste in records from clipboard.
-	 *
-	 * @var \TYPO3\CMS\Backend\Clipboard\Clipboard|NULL
-	 */
-	public $clipObj = NULL;
 
 	/**
 	 * When enabled all elements are rendered non-editable
@@ -1067,6 +1058,8 @@ class FormEngine {
 			'renderReadonly' => $this->getRenderReadonly(),
 			'disabledWizards' => $this->disableWizards,
 			'returnUrl' => $this->thisReturnUrl(),
+			// Inline is handed over temporarily until FormEngine uses a real object tree
+			'inline' => $this->inline,
 		);
 	}
 
@@ -1515,384 +1508,6 @@ class FormEngine {
 	 * Form element helper functions
 	 *
 	 ************************************************************/
-	/**
-	 * Prints the selector box form-field for the db/file/select elements (multiple)
-	 *
-	 * @param string $fName Form element name
-	 * @param string $mode Mode "db", "file" (internal_type for the "group" type) OR blank (then for the "select" type)
-	 * @param string $allowed Commalist of "allowed
-	 * @param array $itemArray The array of items. For "select" and "group"/"file" this is just a set of value. For "db" its an array of arrays with table/uid pairs.
-	 * @param string $selector Alternative selector box.
-	 * @param array $params An array of additional parameters, eg: "size", "info", "headers" (array with "selector" and "items"), "noBrowser", "thumbnails
-	 * @param string $onFocus On focus attribute string
-	 * @param string $table (optional) Table name processing for
-	 * @param string $field (optional) Field of table name processing for
-	 * @param string $uid (optional) uid of table record processing for
-	 * @param array $config (optional) The TCA field config
-	 * @return string The form fields for the selection.
-	 * @throws \UnexpectedValueException
-	 */
-	public function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = array(), $onFocus = '', $table = '', $field = '', $uid = '', $config = array()) {
-		$languageService = $this->getLanguageService();
-		$disabled = '';
-		if ($this->getRenderReadonly() || $params['readOnly']) {
-			$disabled = ' disabled="disabled"';
-		}
-		// INIT
-		$uidList = array();
-		$opt = array();
-		$itemArrayC = 0;
-		// Creating <option> elements:
-		if (is_array($itemArray)) {
-			$itemArrayC = count($itemArray);
-			switch ($mode) {
-				case 'db':
-					foreach ($itemArray as $pp) {
-						$pRec = BackendUtility::getRecordWSOL($pp['table'], $pp['id']);
-						if (is_array($pRec)) {
-							$pTitle = BackendUtility::getRecordTitle($pp['table'], $pRec, FALSE, TRUE);
-							$pUid = $pp['table'] . '_' . $pp['id'];
-							$uidList[] = $pUid;
-							$title = htmlspecialchars($pTitle);
-							$opt[] = '<option value="' . htmlspecialchars($pUid) . '" title="' . $title . '">' . $title . '</option>';
-						}
-					}
-					break;
-				case 'file_reference':
-
-				case 'file':
-					foreach ($itemArray as $item) {
-						$itemParts = explode('|', $item);
-						$uidList[] = ($pUid = ($pTitle = $itemParts[0]));
-						$title = htmlspecialchars(rawurldecode($itemParts[1]));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($itemParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-					}
-					break;
-				case 'folder':
-					foreach ($itemArray as $pp) {
-						$pParts = explode('|', $pp);
-						$uidList[] = ($pUid = ($pTitle = $pParts[0]));
-						$title = htmlspecialchars(rawurldecode($pParts[0]));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($pParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-					}
-					break;
-				default:
-					foreach ($itemArray as $pp) {
-						$pParts = explode('|', $pp, 2);
-						$uidList[] = ($pUid = $pParts[0]);
-						$pTitle = $pParts[1];
-						$title = htmlspecialchars(rawurldecode($pTitle));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($pUid)) . '" title="' . $title . '">' . $title . '</option>';
-					}
-			}
-		}
-		// Create selector box of the options
-		$sSize = $params['autoSizeMax']
-			? MathUtility::forceIntegerInRange($itemArrayC + 1, MathUtility::forceIntegerInRange($params['size'], 1), $params['autoSizeMax'])
-			: $params['size'];
-		if (!$selector) {
-			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
-			$selector = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE)) . '" '
-				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" class="form-control tceforms-multiselect"')
-				. ($isMultiple ? ' multiple="multiple"' : '')
-				. ' name="' . $fName . '_list" ' . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
-				. '</select>';
-		}
-		$icons = array(
-			'L' => array(),
-			'R' => array()
-		);
-		$rOnClickInline = '';
-		if (!$params['readOnly'] && !$params['noList']) {
-			if (!$params['noBrowser']) {
-				// Check against inline uniqueness
-				$inlineParent = $this->inline->getStructureLevel(-1);
-				$aOnClickInline = '';
-				if (is_array($inlineParent) && $inlineParent['uid']) {
-					if ($inlineParent['config']['foreign_table'] == $table && $inlineParent['config']['foreign_unique'] == $field) {
-						$objectPrefix = $this->inline->inlineNames['object'] . InlineElement::Structure_Separator . $table;
-						$aOnClickInline = $objectPrefix . '|inline.checkUniqueElement|inline.setUniqueElement';
-						$rOnClickInline = 'inline.revertUnique(\'' . $objectPrefix . '\',null,\'' . $uid . '\');';
-					}
-				}
-				if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserType'])) {
-					$elementBrowserType = $config['appearance']['elementBrowserType'];
-				} else {
-					$elementBrowserType = $mode;
-				}
-				if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserAllowed'])) {
-					$elementBrowserAllowed = $config['appearance']['elementBrowserAllowed'];
-				} else {
-					$elementBrowserAllowed = $allowed;
-				}
-				$aOnClick = 'setFormValueOpenBrowser(\'' . $elementBrowserType . '\',\''
-					. ($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline) . '\'); return false;';
-				$icons['R'][] = '
-					<a href="#"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						class="btn btn-default"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file'))) . '">
-						' . IconUtility::getSpriteIcon('actions-insert-record') . '
-					</a>';
-			}
-			if (!$params['dontShowMoveIcons']) {
-				if ($sSize >= 5) {
-					$icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3-btn-moveoption-top"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-top') . '
-						</a>';
-
-				}
-				$icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3-btn-moveoption-up"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-up') . '
-					</a>';
-				$icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3-btn-moveoption-down"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-down') . '
-					</a>';
-				if ($sSize >= 5) {
-					$icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3-btn-moveoption-bottom"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-bottom') . '
-						</a>';
-				}
-			}
-			$clipElements = $this->getClipboardElements($allowed, $mode);
-			if (count($clipElements)) {
-				$aOnClick = '';
-				foreach ($clipElements as $elValue) {
-					if ($mode == 'db') {
-						list($itemTable, $itemUid) = explode('|', $elValue);
-						$recordTitle = BackendUtility::getRecordTitle($itemTable, BackendUtility::getRecordWSOL($itemTable, $itemUid));
-						$itemTitle = GeneralUtility::quoteJSvalue($recordTitle);
-						$elValue = $itemTable . '_' . $itemUid;
-					} else {
-						// 'file', 'file_reference' and 'folder' mode
-						$itemTitle = 'unescape(\'' . rawurlencode(basename($elValue)) . '\')';
-					}
-					$aOnClick .= 'setFormValueFromBrowseWin(\'' . $fName . '\',unescape(\''
-						. rawurlencode(str_replace('%20', ' ', $elValue)) . '\'),' . $itemTitle . ',' . $itemTitle . ');';
-				}
-				$aOnClick .= 'return false;';
-				$icons['R'][] = '
-					<a href="#"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						title="' . htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements))) . '">
-						' . IconUtility::getSpriteIcon('actions-document-paste-into') . '
-					</a>';
-			}
-		}
-		if (!$params['readOnly'] && !$params['noDelete']) {
-			$icons['L'][] = '
-				<a href="#"
-					class="btn btn-default t3-btn-removeoption"
-					onClick="' . $rOnClickInline . '"
-					data-fieldname="' . $fName . '"
-					title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected')) . '">
-					' . IconUtility::getSpriteIcon('actions-selection-delete') . '
-				</a>';
-
-		}
-
-
-		// Thumbnails
-		$imagesOnly = FALSE;
-		if ($params['thumbnails'] && $params['allowed']) {
-			// In case we have thumbnails, check if only images are allowed.
-			// In this case, render them below the field, instead of to the right
-			$allowedExtensionList = $params['allowed'];
-			$imageExtensionList = GeneralUtility::trimExplode(',', strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']), TRUE);
-			$imagesOnly = TRUE;
-			foreach ($allowedExtensionList as $allowedExtension) {
-				if (!ArrayUtility::inArray($imageExtensionList, $allowedExtension)) {
-					$imagesOnly = FALSE;
-					break;
-				}
-			}
-		}
-		$thumbnails = '';
-		if (is_array($params['thumbnails']) && !empty($params['thumbnails'])) {
-			if ($imagesOnly) {
-				$thumbnails .= '<ul class="list-inline">';
-				foreach ($params['thumbnails'] as $thumbnail) {
-					$thumbnails .= '<li><span class="thumbnail">' . $thumbnail['image'] . '</span></li>';
-				}
-				$thumbnails .= '</ul>';
-			} else {
-				$thumbnails .= '<div class="table-fit"><table class="table table-white"><tbody>';
-				foreach ($params['thumbnails'] as $thumbnail) {
-					$thumbnails .= '
-						<tr>
-							<td class="col-icon">
-								' . ($config['internal_type'] === 'db'
-									? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($thumbnail['image'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
-									: $thumbnail['image']) . '
-							</td>
-							<td class="col-title">
-								' . ($config['internal_type'] === 'db'
-									? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($thumbnail['name'], $thumbnail['table'], $thumbnail['uid'], 1, '', '+copy,info,edit,view')
-									: $thumbnail['name']) . '
-								' . ($config['internal_type'] === 'db' ? '' : ' <span class="text-muted">[' . $thumbnail['uid'] . ']</span>') . '
-							</td>
-						</tr>
-						';
-				}
-				$thumbnails .= '</tbody></table></div>';
-			}
-		}
-
-		// Allowed Tables
-		$allowedTables = '';
-		if (is_array($params['allowedTables']) && !empty($params['allowedTables'])) {
-			$allowedTables .= '<div class="help-block">';
-			foreach ($params['allowedTables'] as $key => $item) {
-				if (is_array($item)) {
-					$allowedTables .= '<a href="#" onClick="' . htmlspecialchars($item['onClick']) . '" class="btn btn-default">' . $item['icon'] . ' ' . htmlspecialchars($item['name']) . '</a> ';
-				} elseif($key === 'name') {
-					$allowedTables .= '<span>' . htmlspecialchars($item) . '</span> ';
-				}
-			}
-			$allowedTables .= '</div>';
-		}
-		// Allowed
-		$allowedList = '';
-		if (is_array($params['allowed']) && !empty($params['allowed'])) {
-			foreach ($params['allowed'] as $item) {
-				$allowedList .= '<span class="label label-success">' . strtoupper($item) . '</span> ';
-			}
-		}
-		// Disallowed
-		$disallowedList = '';
-		if (is_array($params['disallowed']) && !empty($params['disallowed'])) {
-			foreach ($params['disallowed'] as $item) {
-				$disallowedList .= '<span class="label label-danger">' . strtoupper($item) . '</span> ';
-			}
-		}
-		// Rightbox
-		$rightbox = ($params['rightbox'] ?: '');
-
-		// Hook: dbFileIcons_postProcess (requested by FAL-team for use with the "fal" extension)
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'] as $classRef) {
-				$hookObject = GeneralUtility::getUserObj($classRef);
-				if (!$hookObject instanceof DatabaseFileIconsHookInterface) {
-					throw new \UnexpectedValueException('$hookObject must implement interface ' . DatabaseFileIconsHookInterface::class, 1290167704);
-				}
-				$additionalParams = array(
-					'mode' => $mode,
-					'allowed' => $allowed,
-					'itemArray' => $itemArray,
-					'onFocus' => $onFocus,
-					'table' => $table,
-					'field' => $field,
-					'uid' => $uid,
-					'config' => $GLOBALS['TCA'][$table]['columns'][$field]
-				);
-				$hookObject->dbFileIcons_postProcess($params, $selector, $thumbnails, $icons, $rightbox, $fName, $uidList, $additionalParams, $this);
-			}
-		}
-
-		// Output
-		$str = '
-			' . ($params['headers']['selector'] ? '<label>' . $params['headers']['selector'] . '</label>' : '') . '
-			<div class="form-wizards-wrap form-wizards-aside">
-				<div class="form-wizards-element">
-					' . $selector . '
-					' . (!$params['noList'] && !empty($allowedTables) ? $allowedTables : '') . '
-					' . (!$params['noList'] && (!empty($allowedList) || !empty($disallowedList))
-						? '<div class="help-block">' . $allowedList . $disallowedList . ' </div>'
-						: '') . '
-				</div>
-				' . (!empty($icons['L']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['L']) . '</div></div>' : '' ) . '
-				' . (!empty($icons['R']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['R']) . '</div></div>' : '' ) . '
-			</div>
-			';
-		if ($rightbox) {
-			$str = '
-				<div class="form-multigroup-wrap t3js-formengine-field-group">
-					<div class="form-multigroup-item form-multigroup-element">' . $str . '</div>
-					<div class="form-multigroup-item form-multigroup-element">
-						' . ($params['headers']['items'] ? '<label>' . $params['headers']['items'] . '</label>' : '') . '
-						' . ($params['headers']['selectorbox'] ? '<div class="form-multigroup-item-wizard">' . $params['headers']['selectorbox'] . '</div>' : '') . '
-						' . $rightbox . '
-					</div>
-				</div>
-				';
-		}
-		$str .= $thumbnails;
-
-		// Creating the hidden field which contains the actual value as a comma list.
-		$str .= '<input type="hidden" name="' . $fName . '" value="' . htmlspecialchars(implode(',', $uidList)) . '" />';
-		return $str;
-	}
-
-	/**
-	 * Returns array of elements from clipboard to insert into GROUP element box.
-	 *
-	 * @param string $allowed Allowed elements, Eg "pages,tt_content", "gif,jpg,jpeg,png
-	 * @param string $mode Mode of relations: "db" or "file
-	 * @return array Array of elements in values (keys are insignificant), if none found, empty array.
-	 */
-	public function getClipboardElements($allowed, $mode) {
-		if (!is_object($this->clipObj)) {
-			$this->clipObj = GeneralUtility::makeInstance(Clipboard::class);
-			$this->clipObj->initializeClipboard();
-		}
-
-		$output = array();
-		switch ($mode) {
-			case 'file_reference':
-
-			case 'file':
-				$elFromTable = $this->clipObj->elFromTable('_FILE');
-				$allowedExts = GeneralUtility::trimExplode(',', $allowed, TRUE);
-				// If there are a set of allowed extensions, filter the content:
-				if ($allowedExts) {
-					foreach ($elFromTable as $elValue) {
-						$pI = pathinfo($elValue);
-						$ext = strtolower($pI['extension']);
-						if (in_array($ext, $allowedExts)) {
-							$output[] = $elValue;
-						}
-					}
-				} else {
-					// If all is allowed, insert all: (This does NOT respect any disallowed extensions,
-					// but those will be filtered away by the backend TCEmain)
-					$output = $elFromTable;
-				}
-				break;
-			case 'db':
-				$allowedTables = GeneralUtility::trimExplode(',', $allowed, TRUE);
-				// All tables allowed for relation:
-				if (trim($allowedTables[0]) === '*') {
-					$output = $this->clipObj->elFromTable('');
-				} else {
-					// Only some tables, filter them:
-					foreach ($allowedTables as $tablename) {
-						$elFromTable = $this->clipObj->elFromTable($tablename);
-						$output = array_merge($output, $elFromTable);
-					}
-				}
-				$output = array_keys($output);
-				break;
-		}
-
-		return $output;
-	}
-
 	/**
 	 * Creates style attribute content for optgroup tags in a selector box, primarily setting it
 	 * up to show the icon of an element as background image (works in mozilla).
@@ -3882,6 +3497,45 @@ class FormEngine {
 			$defaultFlashMessageQueue->enqueue($flashMessage);
 		}
 		return $items;
+	}
+
+	/**
+	 * Prints the selector box form-field for the db/file/select elements (multiple)
+	 *
+	 * @param string $fName Form element name
+	 * @param string $mode Mode "db", "file" (internal_type for the "group" type) OR blank (then for the "select" type)
+	 * @param string $allowed Commalist of "allowed
+	 * @param array $itemArray The array of items. For "select" and "group"/"file" this is just a set of value. For "db" its an array of arrays with table/uid pairs.
+	 * @param string $selector Alternative selector box.
+	 * @param array $params An array of additional parameters, eg: "size", "info", "headers" (array with "selector" and "items"), "noBrowser", "thumbnails
+	 * @param string $onFocus On focus attribute string
+	 * @param string $table (optional) Table name processing for
+	 * @param string $field (optional) Field of table name processing for
+	 * @param string $uid (optional) uid of table record processing for
+	 * @param array $config (optional) The TCA field config
+	 * @throws \RuntimeException
+	 * @return string The form fields for the selection.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = array(), $onFocus = '', $table = '', $field = '', $uid = '', $config = array()) {
+		// dbFileIcons() in AbstractFormElement is now protected. The method was never meant to be
+		// called directly. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('dbFileIcons() can not be called directly', 1424031815);
+	}
+
+	/**
+	 * Returns array of elements from clipboard to insert into GROUP element box.
+	 *
+	 * @param string $allowed Allowed elements, Eg "pages,tt_content", "gif,jpg,jpeg,png
+	 * @param string $mode Mode of relations: "db" or "file
+	 * @throws \RuntimeException
+	 * @return array Array of elements in values (keys are insignificant), if none found, empty array.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getClipboardElements($allowed, $mode) {
+		// getClipboardElements() in AbstractFormElement is now protected. The method was never meant to be
+		// called directly. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('getClipboardElements() can not be called directly', 1424031814);
 	}
 
 	/**
