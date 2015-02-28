@@ -70,22 +70,22 @@ TYPO3.Install.coreUpdate = {
 		},
 		coreUpdateDownload: {
 			loadingMessage: 'Downloading new core',
-			finishMessage: 'Core download finished',
+			finishMessage: undefined,
 			nextActionName: 'coreUpdateVerifyChecksum'
 		},
 		coreUpdateVerifyChecksum: {
 			loadingMessage: 'Verifying checksum of downloaded core',
-			finishMessage: 'Checksum verified',
+			finishMessage: undefined,
 			nextActionName: 'coreUpdateUnpack'
 		},
 		coreUpdateUnpack: {
 			loadingMessage: 'Unpacking core',
-			finishMessage: 'Unpacking core successful',
+			finishMessage: undefined,
 			nextActionName: 'coreUpdateMove'
 		},
 		coreUpdateMove: {
 			loadingMessage: 'Moving core',
-			finishMessage: 'Moved core to final location',
+			finishMessage: undefined,
 			nextActionName: 'clearCache'
 		},
 		clearCache: {
@@ -586,7 +586,7 @@ function uninstallExtension(extension) {
 				} else {
 					$('.message-loading', '#checkExtensions').hide();
 					$('.message-error .message-body', '#checkExtensions').html(
-						'Something went wrong. Check failed.'
+						'Something went wrong. Check failed.' + '<p>Message:<br />' + data + '</p>'
 					);
 				}
 			}

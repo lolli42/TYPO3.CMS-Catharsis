@@ -850,6 +850,8 @@ class ElementBrowser {
 	public function main_rte($wiz = FALSE) {
 		// Starting content:
 		$content = $this->doc->startPage('RTE link');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 
 		// Initializing the action value, possibly removing blinded values etc:
 		$blindLinkOptions = isset($this->thisConfig['blindLinkOptions'])
@@ -1379,6 +1381,8 @@ class ElementBrowser {
 		');
 		// Starting content:
 		$content = $this->doc->startPage('TBE file selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$pArr = explode('|', $this->bparams);
 		// The key number 3 of the pArr contains the "allowed" string. Disallowed is not passed to
@@ -1463,8 +1467,6 @@ class ElementBrowser {
 		} else {
 			$files = '';
 		}
-		// Add the FlashMessages if any
-		$content .= $this->doc->getFlashMessages();
 
 		// Putting the parts together, side by side:
 		$content .= '
@@ -1510,6 +1512,8 @@ class ElementBrowser {
 		');
 		// Starting content:
 		$content = $this->doc->startPage('TBE folder selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$parameters = explode('|', $this->bparams);
 		if ($this->expandFolder) {
@@ -2460,7 +2464,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />';
 		$code .= \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction');
 		$code .= '
@@ -2524,7 +2529,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />'
 			. \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction')
 			. '<input type="submit" name="submit" value="'
