@@ -205,7 +205,7 @@ class UnitTestsBootstrap {
 			->disableCoreAndClassesCache()
 			->initializeCachingFramework()
 			->initializeClassLoaderCaches()
-			->initializePackageManagement(\TYPO3\CMS\Core\Package\UnitTestPackageManager::class);
+			->initializePackageManagement('TYPO3\\CMS\\Core\\Package\\UnitTestPackageManager');
 
 		return $this;
 	}
