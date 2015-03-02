@@ -70,8 +70,7 @@ abstract class ClosureTree {
 		$this->treeRootIdentifier = (int)$treeRootIdentifier;
 		$this->joinTables = $joinTables;
 		$this->additionalWhere = $additionalWhere;
-		// @TODO: maxDepth not used yet
-		$this->maxDepth = (int)$depth;
+		$this->maxDepth = $depth;
 
 		// List of default fields to be fetched
 		$defaultSelectFields = array(
@@ -114,7 +113,7 @@ abstract class ClosureTree {
 			// entry page where uid=
 			' FROM ' . $this->table . ' AS t1' .
 			// add all sub pages as single rows
-			' JOIN ' . $this->closureTable . ' AS tc1 ON ( tc1.ancestor = t1.uid )' .
+			' JOIN ' . $this->closureTable . ' AS tc1 ON ( tc1.ancestor = t1.uid AND tc1.depth <= ' . (int)$this->maxDepth . ')' .
 			// join in data fields from pages
 			' JOIN ' . $this->table . ' AS t2 ON ( tc1.descendant = t2.uid )' .
 			// additional joins
