@@ -130,6 +130,7 @@ class BackendController {
 		if (!$this->debug) {
 			$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LoginRefresh', 'function(LoginRefresh) {
 				LoginRefresh.setLoginFramesetUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('login_frameset')) . ');
+				LoginRefresh.setLogoutUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('logout')) . ');
 			}');
 		}
 
@@ -146,6 +147,9 @@ class BackendController {
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Storage', 'function(Storage) {
 			Storage.Persistent.load(' . json_encode($GLOBALS['BE_USER']->uc) . ');
 		}');
+
+		$this->pageRenderer->addInlineSetting('ShowItem', 'moduleUrl', BackendUtility::getModuleUrl('show_item'));
+
 		$this->css = '';
 
 		$this->initializeToolbarItems();
@@ -485,12 +489,12 @@ class BackendController {
 		$dateFormat = ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? array('MM-DD-YYYY', 'HH:mm MM-DD-YYYY') : array('DD-MM-YYYY', 'HH:mm DD-MM-YYYY'));
 		$this->pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
 		// define the window size of the element browser etc.
+		$popupWindowWidth  = 700;
+		$popupWindowHeight = 750;
 		$popupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.popupWindowSize'));
 		if (!empty($popupWindowSize)) {
-			list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::trimExplode('x', $popupWindowSize);
+			list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::intExplode('x', $popupWindowSize);
 		}
-		$popupWindowWidth  = !empty($popupWindowWidth) ? (int)$popupWindowWidth : 700;
-		$popupWindowHeight = !empty($popupWindowHeight) ? (int)$popupWindowHeight : 750;
 
 		// define the window size of the popups within the RTE
 		$rtePopupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.rte.popupWindowSize'));

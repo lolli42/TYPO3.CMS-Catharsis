@@ -175,6 +175,14 @@ return array(
 					'options' => array(),
 					'groups' => array('pages', 'all')
 				),
+				'cache_imagesizes' => array(
+					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+					'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
+					'options' => array(
+						'defaultLifetime' => 0,
+					),
+					'groups' => array('lowlevel'),
+				),
 				'l10n' => array(
 					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
 					'backend' => \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend::class,
@@ -182,6 +190,11 @@ return array(
 						'defaultLifetime' => 0,
 					),
 					'groups' => array('system')
+				),
+				'fluid_template' => array(
+					'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
+					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend::class,
+					'groups' => array('system'),
 				),
 				'extbase_object' => array(
 					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
@@ -198,6 +211,21 @@ return array(
 						'defaultLifetime' => 0,
 					),
 					'groups' => array('system')
+				),
+				'extbase_typo3dbbackend_tablecolumns' => array(
+					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+					'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
+					'groups' => array('system'),
+				),
+				'extbase_typo3dbbackend_queries' => array(
+					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+					'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
+					'groups' => array('system'),
+				),
+				'extbase_datamapfactory_datamap' => array(
+					'frontend' => \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend::class,
+					'backend' => \TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend::class,
+					'groups' => array('system'),
 				),
 			),
 		),
@@ -626,7 +654,7 @@ return array(
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_suggest::searchRecord' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Element\SuggestElement::class . '->processAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Form\Wizard\SuggestWizard::class . '->processAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			'ShortcutMenu::getShortcutEditForm' => array(

@@ -9,6 +9,8 @@ matrix:
       env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
     - php: 5.6
       env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
+    - php: 7
+      env: UNIT_TESTS=yes
     - php: hhvm-nightly
       env: UNIT_TESTS=yes
     - php: 7

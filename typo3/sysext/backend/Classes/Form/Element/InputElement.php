@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Backend\Form\FormEngine;
 
 /**
  * Generation of TCEform elements of the type "input"
@@ -39,7 +40,7 @@ class InputElement extends AbstractFormElement {
 
 		$config = $additionalInformation['fieldConf']['config'];
 		$specConf = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
-		$size = MathUtility::forceIntegerInRange($config['size'] ?: $this->formEngine->defaultInputWidth, $this->formEngine->minimumInputWidth, $this->formEngine->maxInputWidth);
+		$size = MathUtility::forceIntegerInRange($config['size'] ?: $this->defaultInputWidth, $this->minimumInputWidth, $this->maxInputWidth);
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
 		$classes = array();
 		$attributes = array();
@@ -65,7 +66,7 @@ class InputElement extends AbstractFormElement {
 		$dateFormats['datetimesec'] = $dateFormats['timesec'] . ' ' . $dateFormats['date'];
 
 		// readonly
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$itemFormElValue = $additionalInformation['itemFormElValue'];
 			if (in_array('date', $evalList)) {
 				$config['format'] = 'date';
@@ -77,7 +78,15 @@ class InputElement extends AbstractFormElement {
 			if (in_array('password', $evalList)) {
 				$itemFormElValue = $itemFormElValue ? '*********' : '';
 			}
-			return $this->formEngine->getSingleField_typeNone_render($config, $itemFormElValue);
+			$formEngineDummy = new FormEngine;
+			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $formEngineDummy);
+			$elementConfiguration = array(
+				'fieldConf' => array(
+					'config' => $config,
+				),
+				'itemFormElValue' => $itemFormElValue,
+			);
+			return $noneElement->render('', '', '', $elementConfiguration);
 		}
 
 
@@ -149,7 +158,7 @@ class InputElement extends AbstractFormElement {
 		$attributes['name'] = $additionalInformation['itemFormElName'] . '_hr';
 		$attributes['value'] = '';
 		$attributes['maxlength'] = $config['max'] ?: 256;
-		$attributes['onchange'] = htmlspecialchars(implode('', $additionalInformation['fieldChangeFunc']));
+		$attributes['onchange'] = implode('', $additionalInformation['fieldChangeFunc']);
 
 		if (!empty($styles)) {
 			$attributes['style'] = implode(' ', $styles);
@@ -164,7 +173,7 @@ class InputElement extends AbstractFormElement {
 		// Build the attribute string
 		$attributeString = '';
 		foreach ($attributes as $attributeName => $attributeValue) {
-			$attributeString .= ' '. $attributeName . '="' . $attributeValue . '"';
+			$attributeString .= ' ' . $attributeName . '="' . htmlspecialchars($attributeValue) . '"';
 		}
 
 		// This is the EDITABLE form field.
@@ -172,7 +181,6 @@ class InputElement extends AbstractFormElement {
 			<input type="text"'
 				. $attributeString
 				. $this->formEngine->getPlaceholderAttribute($table, $field, $config, $row)
-				. 'style="' . $cssStyle . '" '
 				. $additionalInformation['onFocus'] . ' />';
 
 		// This is the ACTUAL form field - values from the EDITABLE field must be transferred to this field which is the one that is written to the database.
@@ -210,7 +218,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 			<input type="hidden" name="' . $additionalInformation['itemFormElName'] . '" value="' . htmlspecialchars($additionalInformation['itemFormElValue']) . '" />';
 
 		// Wrap a wizard around the item?
-		$item = $this->formEngine->renderWizards(
+		$item = $this->renderWizards(
 			array($item, $altItem),
 			$config['wizards'],
 			$table,
@@ -221,7 +229,7 @@ TBE_EDITOR.customEvalFunctions[\'' . $evalData . '\'] = function(value) {
 		);
 
 		// Add a wrapper to remain maximum width
-		$width = (int)$this->formEngine->formMaxWidth($size);
+		$width = (int)$this->formMaxWidth($size);
 		$item = '<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>' . $item . '</div>';
 		return $item;
 	}

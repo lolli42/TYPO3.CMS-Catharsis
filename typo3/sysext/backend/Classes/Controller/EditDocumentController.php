@@ -174,6 +174,7 @@ class EditDocumentController {
 	 * Disable help... ?
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $disHelp;
 
@@ -523,7 +524,6 @@ class EditDocumentController {
 			$tce->neverHideAtCopy = 1;
 		}
 		$tce->debug = 0;
-		$tce->disableRTE = !$GLOBALS['BE_USER']->isRTE();
 		// Loading TCEmain with data:
 		$tce->start($this->data, $this->cmd);
 		if (is_array($this->mirror)) {
@@ -628,7 +628,6 @@ class EditDocumentController {
 		$this->viewUrl = GeneralUtility::_GP('viewUrl');
 		$this->editRegularContentFromId = GeneralUtility::_GP('editRegularContentFromId');
 		$this->recTitle = GeneralUtility::_GP('recTitle');
-		$this->disHelp = GeneralUtility::_GP('disHelp');
 		$this->noView = GeneralUtility::_GP('noView');
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// Set other internal variables:
@@ -661,7 +660,21 @@ class EditDocumentController {
 				}
 			}
 ';
+		// define the window size of the element browser
+		$popupWindowWidth  = 700;
+		$popupWindowHeight = 750;
+		$popupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.popupWindowSize'));
+		if (!empty($popupWindowSize)) {
+			list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::intExplode('x', $popupWindowSize);
+		}
+		$t3Configuration = array(
+			'PopupWindow' => array(
+				'width' => $popupWindowWidth,
+				'height' => $popupWindowHeight
+			),
+		);
 		$this->doc->JScode = $this->doc->wrapScriptTags('
+				TYPO3.configuration = ' . json_encode($t3Configuration) . ';
 				// Object: TS:
 				// passwordDummy and decimalSign are used by tbe_editor.js and have to be declared here as
 				// TS object overwrites the object declared in tbe_editor.js
@@ -677,7 +690,7 @@ class EditDocumentController {
 			function launchView(table,uid,bP) {	//
 				var backPath= bP ? bP : "";
 				var thePreviewWindow="";
-				thePreviewWindow = window.open(backPath+"show_item.php?table="+encodeURIComponent(table)+"&uid="+encodeURIComponent(uid),"ShowItem"+TS.uniqueID,"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0");
+				thePreviewWindow = window.open(backPath+' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('show_item', array(), '') . '&table=') . '+encodeURIComponent(table)+"&uid="+encodeURIComponent(uid),"ShowItem"+TS.uniqueID,"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0");
 				if (thePreviewWindow && thePreviewWindow.focus) {
 					thePreviewWindow.focus();
 				}
@@ -714,16 +727,6 @@ class EditDocumentController {
 			// text,media is keywords defined in TYPO3 Core API..., see "l10n_cat"
 			$this->tceforms->returnUrl = $this->R_URI;
 			$this->tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-			$this->tceforms->disableRTE = !$GLOBALS['BE_USER']->isRTE();
-			$this->tceforms->enableClickMenu = TRUE;
-			$this->tceforms->enableTabMenu = TRUE;
-			// Clipboard is initialized:
-			// Start clipboard
-			$this->tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
-			// Initialize - reads the clipboard content from the user session
-			$this->tceforms->clipObj->initializeClipboard();
-			// Setting external variables:
-			$this->tceforms->edit_showFieldHelp = $GLOBALS['BE_USER']->uc['edit_showFieldHelp'];
 			if ($this->editRegularContentFromId) {
 				$this->editRegularContentFromId();
 			}
@@ -743,7 +746,6 @@ class EditDocumentController {
 				$body .= $this->compileForm($editForm);
 				$body .= $this->tceforms->printNeededJSFunctions();
 				$body .= $this->functionMenus();
-				$body .= $this->tceformMessages();
 			}
 		}
 		// Access check...
@@ -891,7 +893,6 @@ class EditDocumentController {
 								$trData->addRawData = TRUE;
 								$trData->defVals = $this->defVals;
 								$trData->lockRecords = 1;
-								$trData->disableRTE = !$GLOBALS['BE_USER']->isRTE();
 								$trData->prevPageID = $prevPageID;
 								// 'new'
 								$trData->fetchRecord($table, $theUid, $cmd == 'new' ? 'new' : '');
@@ -916,7 +917,6 @@ class EditDocumentController {
 									}
 									// Setting variables in TCEforms object:
 									$this->tceforms->hiddenFieldList = '';
-									$this->tceforms->globalShowHelp = !$this->disHelp;
 									if (is_array($this->overrideVals) && is_array($this->overrideVals[$table])) {
 										$this->tceforms->hiddenFieldListArr = array_keys($this->overrideVals[$table]);
 									}
@@ -1144,7 +1144,7 @@ class EditDocumentController {
 		if ($this->returnUrl == 'close.html' || !$GLOBALS['BE_USER']->mayMakeShortcut()) {
 			return '';
 		}
-		return $this->doc->makeShortcutIcon('returnUrl,edit,defVals,overrideVals,columnsOnly,returnNewPageId,editRegularContentFromId,disHelp,noView', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name'], 1);
+		return $this->doc->makeShortcutIcon('returnUrl,edit,defVals,overrideVals,columnsOnly,returnNewPageId,editRegularContentFromId,noView', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name'], 1);
 	}
 
 	/**
@@ -1163,17 +1163,12 @@ class EditDocumentController {
 	/**
 	 * Reads comment messages from TCEforms and prints them in a HTML comment in the bottom of the page.
 	 *
-	 * @return void
+	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function tceformMessages() {
-		if (count($this->tceforms->commentMessages)) {
-			$tceformMessages = '
-				<!-- TCEFORM messages
-				' . htmlspecialchars(implode(LF, $this->tceforms->commentMessages)) . '
-				-->
-			';
-		}
-		return $tceformMessages;
+		GeneralUtility::logDeprecatedFunction();
+		return '';
 	}
 
 	/***************************
@@ -1429,7 +1424,7 @@ class EditDocumentController {
 	 * @see makeDocSel()
 	 */
 	public function compileStoreDat() {
-		$this->storeArray = GeneralUtility::compileSelectedGetVarsFromArray('edit,defVals,overrideVals,columnsOnly,disHelp,noView,editRegularContentFromId,workspace', $this->R_URL_getvars);
+		$this->storeArray = GeneralUtility::compileSelectedGetVarsFromArray('edit,defVals,overrideVals,columnsOnly,noView,editRegularContentFromId,workspace', $this->R_URL_getvars);
 		$this->storeUrl = GeneralUtility::implodeArrayForUrl('', $this->storeArray);
 		$this->storeUrlMd5 = md5($this->storeUrl);
 	}

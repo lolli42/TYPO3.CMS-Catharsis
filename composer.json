@@ -42,8 +42,8 @@
 	"require-dev": {
 		"mikey179/vfsStream": "1.4.*@dev",
 		"phpunit/phpunit": "~4.4.0",
-		"twbs/bootstrap": "3.3.*",
-		"fortawesome/font-awesome": "4.2.*"
+		"twbs/bootstrap": "3.3.2",
+		"fortawesome/font-awesome": "4.3.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -135,7 +135,8 @@
 			"TYPO3\\CMS\\Recordlist\\": "typo3/sysext/recordlist/Classes/",
 			"TYPO3\\CMS\\Saltedpasswords\\": "typo3/sysext/saltedpasswords/Classes/",
 			"TYPO3\\CMS\\Sv\\": "typo3/sysext/sv/Classes/"
-		}
+		},
+		"classmap": ["typo3/sysext/core/Resources/PHP/RemoveXSS.php"]
 	},
 	"autoload-dev": {
 		"psr-4": {
