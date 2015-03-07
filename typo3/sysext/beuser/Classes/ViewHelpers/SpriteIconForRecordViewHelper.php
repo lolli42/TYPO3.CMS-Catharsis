@@ -27,14 +27,15 @@ class SpriteIconForRecordViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\Abst
 	 *
 	 * @param string $table
 	 * @param object $object
+	 * @param array $row
 	 * @return string
 	 * @see \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($table, $row)
 	 */
-	public function render($table, $object) {
-		if (!is_object($object) || !method_exists($object, 'getUid')) {
+	public function render($table, $object = NULL, array $row = NULL) {
+		if ($row === NULL && (!is_object($object) || !method_exists($object, 'getUid'))) {
 			return '';
 		}
-		$row = array(
+		$row = $row ?: array(
 			'uid' => $object->getUid(),
 			'startTime' => FALSE,
 			'endTime' => FALSE
