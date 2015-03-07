@@ -85,15 +85,45 @@ abstract class ClosureTree {
 		}
 
 		// build tree query
-		$this->buildQuery();
+		$this->buildTreeQuery();
 
-		return $this->getTreeFromDatabase();
+		return $this->getResultFromDatabase();
+	}
+
+	/**
+	 * @param int $treeIdentifier currently this is the UID
+	 * @param array $selectFields e.g. array('tablename' => array('field')), t2 = $table, tc1 = $closureTable, or tablename
+	 * @param string $additionalWhere
+	 * @param array $joinTables e.g. array('tablename' => 'ON t1.uid = tablename.foo')
+	 * @return array
+	 */
+	public function getRootline($treeIdentifier, array $selectFields = array(), $additionalWhere = '', array $joinTables = array()) {
+		$this->treeRootIdentifier = (int)$treeIdentifier;
+		$this->joinTables = $joinTables;
+		$this->additionalWhere = $additionalWhere;
+
+		// List of default fields to be fetched
+		$defaultSelectFields = array(
+			't2' => array( 'uid', 'pid')
+		);
+
+		// Merge unique with additional fields
+		foreach ($selectFields as $table => $fields) {
+			$this->selectFields[$table] = (is_array($defaultSelectFields[$table]))
+				? array_unique(array_merge($defaultSelectFields[$table], $fields))
+				: array_unique($fields);
+		}
+
+		// build rootline query
+		$this->buildRootlineQuery();
+
+		return $this->getResultFromDatabase();
 	}
 
 	/**
 	 * build database query
 	 */
-	protected function buildQuery() {
+	protected function buildTreeQuery() {
 		$selectFields = array();
 		foreach ($this->selectFields as $table => $fields) {
 			foreach ($fields as $field) {
@@ -133,10 +163,41 @@ abstract class ClosureTree {
 	}
 
 	/**
+	 * build rootline query
+	 */
+	protected function buildRootlineQuery() {
+		$selectFields = array();
+		foreach ($this->selectFields as $table => $fields) {
+			foreach ($fields as $field) {
+				$selectFields[] = $this->getDatabaseConnection()->quoteStr($table . '.' . $field, $table);
+			}
+		}
+
+		$additionalJoins = array();
+		foreach ($this->joinTables as $table => $condition) {
+			$additionalJoins[] = ' LEFT OUTER JOIN ' . $table . ' ' . $condition;
+		}
+
+		$this->query = 'SELECT ' .
+			implode(', ', $selectFields) .
+			' FROM ' . $this->table . ' AS t1' .
+			// add all sub pages as single rows
+			' JOIN ' . $this->closureTable . ' AS tc1 ON ( tc1.ancestor = t1.uid AND tc1.depth <= ' . (int)$this->maxDepth . ')' .
+			// join in data fields from pages
+			' JOIN ' . $this->table . ' AS t2 ON ( tc1.ancestor = t2.uid )' .
+			// additional joins
+			implode(' ', $additionalJoins) .
+			// build where condition
+			' WHERE tc1.descendant = ' . $this->treeRootIdentifier .
+			// add addtional where
+			$this->additionalWhere;
+	}
+
+	/**
 	 * query database with build sql query
 	 * @return array
 	 */
-	protected function getTreeFromDatabase() {
+	protected function getResultFromDatabase() {
 		$database = $this->getDatabaseConnection();
 
 		$result = array();
