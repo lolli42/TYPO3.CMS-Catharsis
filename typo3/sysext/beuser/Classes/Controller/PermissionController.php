@@ -163,26 +163,19 @@ class PermissionController extends ActionController {
 				'endtime',
 				'editlock',
 			),
-			/**
 			'be_users' => array(
 				'username as beuserUsername'
 			),
 			'be_groups' => array(
 				'title as begroupTitle'
 			),
-			 */
 		);
-/**
 		$joinTables = array(
 			'be_users' => 'ON be_users.uid = t2.perms_user',
 			'be_groups' => 'ON be_groups.uid = t2.perms_group'
 		);
-*/
-		$before = microtime(TRUE);
-		$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth, '', array());
-
-		DebugUtility::debug(microtime(TRUE) - $before);
-
+		$tree = $pageTree->fetchTreeByRoot($this->id, $pagesFields, $this->depth, '', $joinTables);
+		$this->view->assign('viewTree', $tree);
 
 		/** @var PageTreeView */
 		/**

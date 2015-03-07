@@ -31,7 +31,7 @@
 				</thead>
 				<f:for each="{viewTree}" as="data">
 					<tr>
-						<f:if condition="{data.row.uid}">
+						<f:if condition="{data.uid}">
 							<f:then>
 								<f:comment>
 									A "normal" page row is rendered, not the root page
@@ -42,11 +42,11 @@
 										href="#"
 										class="t3-js-clickmenutrigger"
 										data-table="pages"
-										data-uid="{data.row.uid}"
+										data-uid="{data.uid}"
 										data-listfr="1"
 									>
-										<f:format.raw>{data.HTML}</f:format.raw>
-										{data.row.title -> f:format.crop(maxCharacters:20)}
+										<bu:spriteIconForRecord table="pages" row="{data}" />
+										{data.title -> f:format.crop(maxCharacters:20)}
 									</a>
 								</td>
 
@@ -54,11 +54,11 @@
 									<f:comment>
 										Edit link is workspace aware: If in ws, link to edit the ws overlay record is rendered
 									</f:comment>
-									<f:if condition="{data.row._ORIG_uid}">
+									<f:if condition="{data._ORIG_uid}">
 										<f:then>
 											<f:link.action
 												action="edit"
-												arguments="{id: data.row._ORIG_uid, depth: depth}"
+												arguments="{id: data._ORIG_uid, depth: depth}"
 												title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:ch_permissions')}"
 											>
 												<bu:spriteManagerIcon iconName="actions-document-open" />
@@ -67,7 +67,7 @@
 										<f:else>
 											<f:link.action
 												action="edit"
-												arguments="{id: data.row.uid, depth: depth}"
+												arguments="{id: data.uid, depth: depth}"
 												title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:ch_permissions')}"
 											>
 												<bu:spriteManagerIcon iconName="actions-document-open" />
@@ -77,40 +77,40 @@
 								</td>
 
 								<td nowrap="nowrap">
-									<bu:permissions permission="{data.row.perms_user}" scope="user" pageId="{data.row.uid}" />
+									<bu:permissions permission="{data.perms_user}" scope="user" pageId="{data.uid}" />
 									<f:render
 										partial="Permission/Ownername"
 										arguments="{
-											pageId: '{data.row.uid}',
-											userId: '{data.row.perms_userid}',
-											username: '{bu:arrayElement(array:beUsers, key:data.row.perms_userid, subKey:\'username\')}'
+											pageId: '{data.uid}',
+											userId: '{data.perms_userid}',
+											username: '{bu:arrayElement(array:beUsers, key:data.perms_userid, subKey:\'username\')}'
 										}"
 									/>
 								</td>
 
 								<td nowrap="nowrap">
-									<bu:permissions permission="{data.row.perms_group}" scope="group" pageId="{data.row.uid}" />
+									<bu:permissions permission="{data.perms_group}" scope="group" pageId="{data.uid}" />
 									<f:render
 										partial="Permission/Groupname"
 										arguments="{
-											pageId: '{data.row.uid}',
-											groupId: '{data.row.perms_groupid}',
-											groupname: '{bu:arrayElement(array:beGroups, key:data.row.perms_groupid, subKey:\'title\')}'
+											pageId: '{data.uid}',
+											groupId: '{data.perms_groupid}',
+											groupname: '{bu:arrayElement(array:beGroups, key:data.perms_groupid, subKey:\'title\')}'
 										}"
 									/>
 								</td>
 
 								<td nowrap="nowrap">
-									<bu:permissions permission="{data.row.perms_everybody}" scope="everybody" pageId="{data.row.uid}" />
+									<bu:permissions permission="{data.perms_everybody}" scope="everybody" pageId="{data.uid}" />
 								</td>
 
 								<td nowrap="nowrap">
-									<span id="el_{data.row.uid}">
-										<f:if condition="{data.row.editlock}">
+									<span id="el_{data.uid}">
+										<f:if condition="{data.editlock}">
 											<f:then>
 												<a
 													class="editlock"
-													data-page="{data.row.uid}"
+													data-page="{data.uid}"
 													data-lockstate="1"
 													title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:EditLock_descr')}"
 												>
@@ -120,7 +120,7 @@
 											<f:else>
 												<a
 													class="editlock"
-													data-page="{data.row.uid}"
+													data-page="{data.uid}"
 													data-lockstate="0"
 													title="{f:translate(key: 'LLL:EXT:beuser/Resources/Private/Language/locallang_mod_permission.xlf:EditLock_descr2')}"
 												>
@@ -138,7 +138,7 @@
 								</f:comment>
 								<td align="left" nowrap="nowrap">
 									<f:format.raw>{data.HTML}</f:format.raw>
-									{data.row.title -> f:format.crop(maxCharacters:20)}
+									{data.title -> f:format.crop(maxCharacters:20)}
 								</td>
 								<td></td>
 								<td nowrap="nowrap"></td>
