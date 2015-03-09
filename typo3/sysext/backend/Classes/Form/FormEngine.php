@@ -1863,7 +1863,11 @@ class FormEngine {
 						}
 					}
 				}
+				$thumbsnail = implode('<br />', $imgs);
 			}
+			return $thumbsnail;
+		} else {
+			return nl2br(htmlspecialchars($value));
 		}
 		return $out;
 	}
@@ -1924,6 +1928,8 @@ class FormEngine {
 					$elements[$record][$field]['additional'] = $this->requiredAdditional[$itemName];
 				}
 			}
+		} else {
+			array_pop($this->dynNestedStack);
 		}
 		// Range:
 		foreach ($this->requiredElements as $itemName => $range) {
@@ -1941,7 +1947,9 @@ class FormEngine {
 			}
 			$pageRenderer = $this->getPageRenderer();
 			// load the main module for FormEngine with all important JS functions
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine', 'function(FormEngine) {
+				FormEngine.setBrowserUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('browser')) . ');
+			}');
 			$pageRenderer->loadPrototype();
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
@@ -1965,12 +1973,13 @@ class FormEngine {
 				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
 			}
 
+			// @todo: remove scriptaclous once suggest is moved to RequireJS, see #55575
+			$pageRenderer->loadScriptaculous();
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
 
 			// If IRRE fields were processed, add the JavaScript functions:
 			if ($this->inline->inlineCount) {
-				$pageRenderer->loadScriptaculous();
 				// We want to load jQuery-ui inside our js. Enable this using requirejs.
 				$pageRenderer->loadRequireJs();
 				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
@@ -1986,7 +1995,7 @@ class FormEngine {
 
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
-			TBE_EDITOR.backPath = "' . addslashes('') . '";
+			TBE_EDITOR.backPath = "";
 			TBE_EDITOR.prependFormFieldNames = "' . $this->prependFormFieldNames . '";
 			TBE_EDITOR.prependFormFieldNamesUENC = "' . rawurlencode($this->prependFormFieldNames) . '";
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
@@ -2218,7 +2227,7 @@ class FormEngine {
 					$fileInformation = pathinfo($imgPath);
 					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
 					$imgs[] =
-						'<span class="nobr">' .
+						'<span class="text-nowrap">' .
 							BackendUtility::thumbCode(
 								$rowCopy,
 								$table,
@@ -2456,6 +2465,10 @@ class FormEngine {
 
 
 
+
+	/**
+	 * All properties and methods below are deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8
+	 */
 
 
 

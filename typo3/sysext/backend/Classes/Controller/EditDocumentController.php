@@ -660,7 +660,21 @@ class EditDocumentController {
 				}
 			}
 ';
+		// define the window size of the element browser
+		$popupWindowWidth  = 700;
+		$popupWindowHeight = 750;
+		$popupWindowSize = trim($GLOBALS['BE_USER']->getTSConfigVal('options.popupWindowSize'));
+		if (!empty($popupWindowSize)) {
+			list($popupWindowWidth, $popupWindowHeight) = GeneralUtility::intExplode('x', $popupWindowSize);
+		}
+		$t3Configuration = array(
+			'PopupWindow' => array(
+				'width' => $popupWindowWidth,
+				'height' => $popupWindowHeight
+			),
+		);
 		$this->doc->JScode = $this->doc->wrapScriptTags('
+				TYPO3.configuration = ' . json_encode($t3Configuration) . ';
 				// Object: TS:
 				// passwordDummy and decimalSign are used by tbe_editor.js and have to be declared here as
 				// TS object overwrites the object declared in tbe_editor.js
@@ -676,7 +690,7 @@ class EditDocumentController {
 			function launchView(table,uid,bP) {	//
 				var backPath= bP ? bP : "";
 				var thePreviewWindow="";
-				thePreviewWindow = window.open(backPath+"show_item.php?table="+encodeURIComponent(table)+"&uid="+encodeURIComponent(uid),"ShowItem"+TS.uniqueID,"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0");
+				thePreviewWindow = window.open(backPath+' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('show_item', array(), '') . '&table=') . '+encodeURIComponent(table)+"&uid="+encodeURIComponent(uid),"ShowItem"+TS.uniqueID,"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0");
 				if (thePreviewWindow && thePreviewWindow.focus) {
 					thePreviewWindow.focus();
 				}

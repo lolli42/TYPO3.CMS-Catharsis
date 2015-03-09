@@ -14,7 +14,10 @@ namespace TYPO3\CMS\Recordlist\RecordList;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\RecordList\RecordListGetTableHookInterface;
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -238,7 +241,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			}
 			// New record
 			if (!$module->modTSconfig['properties']['noCreateRecordsLink']) {
-				$onClick = htmlspecialchars(('return jumpExt(\'' . $this->backPath . 'db_new.php?id=' . $this->id . '\');'));
+				$onClick = htmlspecialchars('return jumpExt(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['id' => $this->id], $this->backPath)) . ');');
 				$buttons['new_record'] = '<a href="#" onclick="' . $onClick . '" title="'
 					. $lang->getLL('newRecordGeneral', TRUE) . '">'
 					. IconUtility::getSpriteIcon('actions-document-new') . '</a>';
@@ -951,8 +954,8 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 								$icon = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
 									. $lang->getLL('new', TRUE) . '">' . $spriteIcon . '</a>';
 							} elseif ($table == 'pages' && $this->newWizards) {
-								$href = $this->backPath . 'db_new.php?id=' . $this->id
-									. '&pagesOnly=1&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
+								$parameters = ['id' => $this->id, 'pagesOnly' => 1, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')];
+								$href = BackendUtility::getModuleUrl('db_new', $parameters, $this->backPath);
 								$icon = '<a class="btn btn-default" href="' . htmlspecialchars($href) . '" title="' . $lang->getLL('new', TRUE) . '">'
 									. $spriteIcon . '</a>';
 							} else {

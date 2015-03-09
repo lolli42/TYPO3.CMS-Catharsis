@@ -14,6 +14,12 @@ if (TYPO3_MODE === 'BE') {
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/LoginFrameset/'
 	);
 
+	// Register logout
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'logout',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Logout/'
+	);
+
 	// Register file_edit
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'file_edit',
@@ -110,6 +116,12 @@ if (TYPO3_MODE === 'BE') {
 		)
 	);
 
+	// Register new record
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'db_new',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/NewRecord/'
+	);
+
 	// Register new content element module
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'new_content_element',
@@ -120,5 +132,17 @@ if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'move_element',
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/MoveElement/'
+	);
+
+	// Register show item module
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'show_item',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/ShowItem/'
+	);
+
+	// Register browser
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'browser',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Browser/'
 	);
 }

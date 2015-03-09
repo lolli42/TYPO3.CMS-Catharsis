@@ -879,7 +879,7 @@ class DataPreprocessor {
 				$fieldLabel,
 				$exception->getMessage()
 			);
-			/** @var $flashMessage FlashMessage */
+			/** @var FlashMessage $flashMessage */
 			$flashMessage = GeneralUtility::makeInstance(
 				FlashMessage::class,
 				htmlspecialchars($message),

@@ -72,7 +72,7 @@ abstract class AbstractFormElement {
 	/**
 	 * @var \TYPO3\CMS\Backend\Clipboard\Clipboard|NULL
 	 */
-	protected $clipObj = NULL;
+	protected $clipboard = NULL;
 
 	/**
 	 * Constructor function, setting the FormEngine
@@ -109,14 +109,14 @@ abstract class AbstractFormElement {
 	 * @return bool TRUE if field is set to read only
 	 */
 	protected function isGlobalReadonly() {
-		return isset($this->globalOptions['renderReadonly']) ? $this->globalOptions['renderReadonly'] : FALSE;
+		return !empty($this->globalOptions['renderReadonly']);
 	}
 
 	/**
 	 * @return bool TRUE if wizards are disabled on a global level
 	 */
 	protected function isWizardsDisabled() {
-		return isset($this->globalOptions['disabledWizards']) ? $this->globalOptions['disableWizards'] : FALSE;
+		return !empty($this->globalOptions['disabledWizards']);
 	}
 
 	/**
@@ -326,8 +326,8 @@ abstract class AbstractFormElement {
 						$onlyIfSelectedJS =
 							'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){' .
 								'alert(' . GeneralUtility::quoteJSvalue($notSelectedText) . ');' .
-								'return false; .
-							}';
+								'return false;' .
+							'}';
 					}
 					$aOnClick =
 						'this.blur();' .
@@ -855,9 +855,9 @@ abstract class AbstractFormElement {
 	 * @return array Array of elements in values (keys are insignificant), if none found, empty array.
 	 */
 	protected function getClipboardElements($allowed, $mode) {
-		if (!is_object($this->clipObj)) {
-			$this->clipObj = GeneralUtility::makeInstance(Clipboard::class);
-			$this->clipObj->initializeClipboard();
+		if (!is_object($this->clipboard)) {
+			$this->clipboard = GeneralUtility::makeInstance(Clipboard::class);
+			$this->clipboard->initializeClipboard();
 		}
 
 		$output = array();
@@ -865,7 +865,7 @@ abstract class AbstractFormElement {
 			case 'file_reference':
 
 			case 'file':
-				$elFromTable = $this->clipObj->elFromTable('_FILE');
+				$elFromTable = $this->clipboard->elFromTable('_FILE');
 				$allowedExts = GeneralUtility::trimExplode(',', $allowed, TRUE);
 				// If there are a set of allowed extensions, filter the content:
 				if ($allowedExts) {
@@ -886,11 +886,11 @@ abstract class AbstractFormElement {
 				$allowedTables = GeneralUtility::trimExplode(',', $allowed, TRUE);
 				// All tables allowed for relation:
 				if (trim($allowedTables[0]) === '*') {
-					$output = $this->clipObj->elFromTable('');
+					$output = $this->clipboard->elFromTable('');
 				} else {
 					// Only some tables, filter them:
 					foreach ($allowedTables as $tablename) {
-						$elFromTable = $this->clipObj->elFromTable($tablename);
+						$elFromTable = $this->clipboard->elFromTable($tablename);
 						$output = array_merge($output, $elFromTable);
 					}
 				}
