@@ -1863,11 +1863,7 @@ class FormEngine {
 						}
 					}
 				}
-				$thumbsnail = implode('<br />', $imgs);
 			}
-			return $thumbsnail;
-		} else {
-			return nl2br(htmlspecialchars($value));
 		}
 		return $out;
 	}
@@ -1928,8 +1924,6 @@ class FormEngine {
 					$elements[$record][$field]['additional'] = $this->requiredAdditional[$itemName];
 				}
 			}
-		} else {
-			array_pop($this->dynNestedStack);
 		}
 		// Range:
 		foreach ($this->requiredElements as $itemName => $range) {
