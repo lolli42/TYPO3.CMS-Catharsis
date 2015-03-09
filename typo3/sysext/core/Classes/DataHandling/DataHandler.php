@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Core\DataHandling;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
@@ -1445,7 +1446,7 @@ class DataHandler {
 		}
 		// Checking for RTE-transformations of fields:
 		$types_fieldConfig = BackendUtility::getTCAtypes($table, $currentRecord);
-		$theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
+		$theTypeString = NULL;
 		if (is_array($types_fieldConfig)) {
 			foreach ($types_fieldConfig as $vconf) {
 				$eFile = NULL;
@@ -1465,6 +1466,9 @@ class DataHandler {
 						// Look for transformation flag:
 						switch ((string) $incomingFieldArray[('_TRANSFORM_' . $vconf['field'])]) {
 							case 'RTE':
+								if ($theTypeString === NULL) {
+									$theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
+								}
 								$RTEsetup = $this->BE_USER->getTSConfig('RTE', BackendUtility::getPagesTSconfig($tscPID));
 								$thisConfig = BackendUtility::RTEsetup($RTEsetup['properties'], $table, $vconf['field'], $theTypeString);
 								// Set alternative relative path for RTE images/links:
@@ -5317,6 +5321,11 @@ class DataHandler {
 	 */
 	protected function updateFlexFormData($flexFormId, array $modifications) {
 		list ($table, $uid, $field) = explode(':', $flexFormId, 3);
+
+		if (!MathUtility::canBeInterpretedAsInteger($uid) && !empty($this->substNEWwithIDs[$uid])) {
+			$uid = $this->substNEWwithIDs[$uid];
+		}
+
 		$record = $this->recordInfo($table, $uid, '*');
 
 		if (!$table || !$uid || !$field || !is_array($record)) {
