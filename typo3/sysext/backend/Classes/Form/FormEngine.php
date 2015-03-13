@@ -659,27 +659,6 @@ class FormEngine {
 				$hookObj->getMainFields_postProcess($table, $row, $this);
 			}
 		}
-		// Rendering Main palettes, if any
-		$mParr = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['mainpalette']);
-		$i = 0;
-		if (count($mParr)) {
-			foreach ($mParr as $mP) {
-				if (!isset($this->palettesRendered[$this->renderDepth][$table][$mP])) {
-					$temp_palettesCollapsed = $this->palettesCollapsed;
-					$this->palettesCollapsed = FALSE;
-					$label = $i == 0
-						? $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions')
-						: $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions_more');
-					$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $mP, $label);
-					$this->palettesCollapsed = $temp_palettesCollapsed;
-					$this->palettesRendered[$this->renderDepth][$table][$mP] = 1;
-				}
-				$i++;
-				if ($this->renderDepth) {
-					$this->renderDepth--;
-				}
-			}
-		}
 		// Return the imploded $out_array:
 		// Create parts array for the tab menu:
 		$parts = array();
