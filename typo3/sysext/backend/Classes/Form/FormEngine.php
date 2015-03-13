@@ -599,7 +599,7 @@ class FormEngine {
 					foreach ($fields as $fieldInfo) {
 						// Exploding subparts of the field configuration:
 						// this is documented as this:
-						// fieldname;fieldlabel;paletteidorlinebreaktodisplay;extradata;colorscheme
+						// fieldname;fieldlabel;paletteidtodisplay;extradata;colorscheme
 						// fieldname can also be "--div--" or "--palette--"
 						// the last option colorscheme was dropped with TYPO3 CMS 7
 
@@ -628,8 +628,6 @@ class FormEngine {
 									$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
 									$out_array[$out_sheet] = array();
 									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-									// Register newline for Tab
-									$out_array_meta[$out_sheet]['newline'] = $additionalPalette == 'newline';
 								} else {
 									// Setting alternative title for "General" tab if "--div--" is the very first element.
 									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
@@ -690,7 +688,6 @@ class FormEngine {
 			$parts[$idx] = array(
 				'label' => $out_array_meta[$idx]['title'],
 				'content' => $content,
-				'newline' => $out_array_meta[$idx]['newline']
 			);
 		}
 		if (count($parts) > 1) {
