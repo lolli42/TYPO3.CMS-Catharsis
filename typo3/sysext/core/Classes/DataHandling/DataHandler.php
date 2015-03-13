@@ -384,11 +384,11 @@ class DataHandler {
 	);
 
 	/**
-	 * The list of <table>-<fields> that cannot be edited by user.This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
+	 * The list of <table>-<fields> that cannot be edited by user. This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
 	 *
 	 * @var array
 	 */
-	public $exclude_array;
+	protected $excludedTablesAndFields = array();
 
 	/**
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
@@ -709,7 +709,9 @@ class DataHandler {
 			$this->defaultPermissions['everybody'] = $defaultPermissions['everybody'];
 		}
 		// generates the excludelist, based on TCA/exclude-flag and non_exclude_fields for the user:
-		$this->exclude_array = $this->admin ? array() : $this->getExcludeListArray();
+		if (!$this->admin) {
+			$this->excludedTablesAndFields = array_flip($this->getExcludeListArray());
+		}
 		// Setting the data and cmd arrays
 		if (is_array($data)) {
 			reset($data);
@@ -1320,7 +1322,7 @@ class DataHandler {
 
 	/**
 	 * Filling in the field array
-	 * $this->exclude_array is used to filter fields if needed.
+	 * $this->excludedTablesAndFields is used to filter fields if needed.
 	 *
 	 * @param string $table Table name
 	 * @param int $id Record ID
@@ -1366,7 +1368,7 @@ class DataHandler {
 		// - If the field is nothing of the above and the field is configured in TCA, the fieldvalues are evaluated by ->checkValue
 		// If everything is OK, the field is entered into $fieldArray[]
 		foreach ($incomingFieldArray as $field => $fieldValue) {
-			if (!in_array(($table . '-' . $field), $this->exclude_array, TRUE) && !$this->data_disableFields[$table][$id][$field]) {
+			if (!isset($this->excludedTablesAndFields[$table . '-' . $field]) && !$this->data_disableFields[$table][$id][$field]) {
 				// The field must be editable.
 				// Checking if a value for language can be changed:
 				$languageDeny = $GLOBALS['TCA'][$table]['ctrl']['languageField'] && (string)$GLOBALS['TCA'][$table]['ctrl']['languageField'] === (string)$field && !$this->BE_USER->checkLanguageAccess($fieldValue);
@@ -7197,7 +7199,7 @@ class DataHandler {
 	 * @return void (Will exit on error)
 	 */
 	public function printLogErrorMessages($redirect) {
-		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
+		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND action<256 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
 		while ($row = $this->databaseConnection->sql_fetch_assoc($res_log)) {
 			$log_data = unserialize($row['log_data']);
 			$msg = $row['error'] . ': ' . sprintf($row['details'], $log_data[0], $log_data[1], $log_data[2], $log_data[3], $log_data[4]);

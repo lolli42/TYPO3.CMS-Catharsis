@@ -1624,9 +1624,10 @@ class BackendUtility {
 
 				// Web image
 				if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileReferenceObject->getExtension())) {
-					$imageUrl = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array(
+					$imageUrl = $fileObject->process(ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, array(
 						'width' => $sizeParts[0],
-						'height' => $sizeParts[1]
+						'height' => $sizeParts[1] . 'c',
+						'crop' => $fileReferenceObject->getProperty('crop')
 					))->getPublicUrl(TRUE);
 					$imgTag = '<img src="' . $imageUrl . '" alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
 				} else {
@@ -1938,7 +1939,7 @@ class BackendUtility {
 					foreach ($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'] as $itemConfiguration) {
 						// Loop on all available items
 						// Keep matches and move on to next value
-						if ($aValue == $itemConfiguration[1]) {
+						if ((string)$aValue === (string)$itemConfiguration[1]) {
 							$labels[] = static::getLanguageService()->sL($itemConfiguration[0]);
 							break;
 						}
