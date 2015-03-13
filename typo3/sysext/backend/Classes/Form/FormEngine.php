@@ -599,7 +599,7 @@ class FormEngine {
 							if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
 								$sFieldPal = '';
 								if ($additionalPalette) {
-									$sFieldPal = $this->getPaletteFields($table, $row, $additionalPalette);
+									$sFieldPal = $this->getPaletteFields($table, $row, $additionalPalette, '', '', NULL, $excludeElements);
 								}
 								$sField = $this->getSingleField($table, $theField, $row, $fieldLabel, 0, $extraFieldProcessingData, $additionalPalette);
 								if ($sField) {
@@ -628,9 +628,9 @@ class FormEngine {
 								if ($additionalPalette) {
 									// Render a 'header' if not collapsed
 									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $languageService->sL($fieldLabel));
+										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $languageService->sL($fieldLabel), '', NULL, $excludeElements);
 									} else {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel));
+										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel), $excludeElements);
 									}
 								}
 							}
@@ -709,11 +709,12 @@ class FormEngine {
 	 * @param string $header Header string for the palette (used when in-form). If not set, no header item is made.
 	 * @param string $itemList Optional alternative list of fields for the palette
 	 * @param string $collapsedHeader Optional Link text for activating a palette (when palettes does not have another form element to belong to).
+	 * @param array $excludeElements List of elements that should *not* be displayed
 	 * @return string HTML code.
 	 */
-	public function getPaletteFields($table, $row, $palette, $header = '', $itemList = '', $collapsedHeader = NULL) {
+	public function getPaletteFields($table, $row, $palette, $header = '', $itemList = '', $collapsedHeader = NULL, array $excludeElements = array()) {
 		$out = '';
-		$parts = $this->loadPaletteElements($table, $row, $palette, $itemList);
+		$parts = $this->loadPaletteElements($table, $row, $palette, $itemList, $excludeElements);
 		// Put palette together if there are fields in it:
 		if (count($parts)) {
 			$realFields = 0;
@@ -1284,14 +1285,11 @@ class FormEngine {
 	 * @param array $row The row array
 	 * @param string $palette The palette number/pointer
 	 * @param string $itemList Optional alternative list of fields for the palette
+	 * @param array $excludeElements List of elements that should *not* be displayed
 	 * @return array The palette elements
 	 */
-	public function loadPaletteElements($table, $row, $palette, $itemList = '') {
+	public function loadPaletteElements($table, $row, $palette, $itemList = '', array $excludeElements = array()) {
 		$parts = array();
-		// Getting excludeElements, if any.
-		if (!is_array($this->excludeElements)) {
-			$this->excludeElements = $this->getExcludeElements($table, $row, $this->getRTypeNum($table, $row));
-		}
 		// Load the palette TCEform elements
 		if ($GLOBALS['TCA'][$table] && (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) || $itemList)) {
 			$itemList = $itemList ? $itemList : $GLOBALS['TCA'][$table]['palettes'][$palette]['showitem'];
@@ -1302,7 +1300,7 @@ class FormEngine {
 					$theField = $fieldParts[0];
 					if ($theField === '--linebreak--') {
 						$parts[]['NAME'] = '--linebreak--';
-					} elseif (!in_array($theField, $this->excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
+					} elseif (!in_array($theField, $excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
 						$elem = $this->getSingleField($table, $theField, $row, $fieldParts[1], 1, '', $fieldParts[2]);
 						if (is_array($elem)) {
 							$parts[] = $elem;
