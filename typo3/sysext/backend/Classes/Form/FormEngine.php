@@ -690,17 +690,11 @@ class FormEngine {
 		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row, 1);
 		$editFieldList = array_unique(GeneralUtility::trimExplode(',', $list, TRUE));
 		foreach ($editFieldList as $theFieldC) {
-			list($theField, $palFields) = preg_split('/\\[|\\]/', $theFieldC);
-			$theField = trim($theField);
-			$palFields = trim($palFields);
-			if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
-				$parts = GeneralUtility::trimExplode(';', $types_fieldConfig[$theField]['origString']);
+			if ($GLOBALS['TCA'][$table]['columns'][$theFieldC]) {
+				$parts = GeneralUtility::trimExplode(';', $types_fieldConfig[$theFieldC]['origString']);
 				// Don't sent palette pointer - there are no options anyways for a field-list.
-				$sField = $this->getSingleField($table, $theField, $row, $parts[1], 0, $parts[3], 0);
+				$sField = $this->getSingleField($table, $theFieldC, $row, $parts[1], 0, $parts[3], 0);
 				$out .= $sField;
-			}
-			if ($palFields) {
-				$out .= $this->getPaletteFields($table, $row, '', '', implode(',', GeneralUtility::trimExplode('|', $palFields, TRUE)));
 			}
 		}
 		return $out;
