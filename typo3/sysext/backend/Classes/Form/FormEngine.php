@@ -241,14 +241,6 @@ class FormEngine {
 	public $excludeElements = NULL;
 
 	/**
-	 * During rendering of forms this will keep track of which palettes
-	 * has already been rendered (so they are not rendered twice by mistake)
-	 *
-	 * @var array
-	 */
-	public $palettesRendered = array();
-
-	/**
 	 * This array of fields will be set as hidden-fields instead of rendered normally!
 	 * For instance palette fields edited in the top frame are set as hidden fields
 	 * since the main form has to submit the values.
@@ -552,8 +544,6 @@ class FormEngine {
 		);
 		$out_pointer = 0;
 		$out_sheet = 0;
-		$this->palettesRendered = array();
-		$this->palettesRendered[$this->renderDepth][$table] = array();
 		// Hook: getMainFields_preProcess (requested by Thomas Hempel for use with the "dynaflex" extension)
 		foreach ($this->hookObjectsMainFields as $hookObj) {
 			if (method_exists($hookObj, 'getMainFields_preProcess')) {
@@ -602,16 +592,14 @@ class FormEngine {
 						// fieldname;fieldlabel;paletteidtodisplay;extradata;colorscheme
 						// fieldname can also be "--div--" or "--palette--"
 						// the last option colorscheme was dropped with TYPO3 CMS 7
-
 						list($theField, $fieldLabel, $additionalPalette, $extraFieldProcessingData)  = explode(';', $fieldInfo);
 
 						// Render the field:
 						if (!in_array($theField, $excludeElements)) {
 							if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
 								$sFieldPal = '';
-								if ($additionalPalette && !isset($this->palettesRendered[$this->renderDepth][$table][$additionalPalette])) {
+								if ($additionalPalette) {
 									$sFieldPal = $this->getPaletteFields($table, $row, $additionalPalette);
-									$this->palettesRendered[$this->renderDepth][$table][$additionalPalette] = 1;
 								}
 								$sField = $this->getSingleField($table, $theField, $row, $fieldLabel, 0, $extraFieldProcessingData, $additionalPalette);
 								if ($sField) {
@@ -637,14 +625,13 @@ class FormEngine {
 									}
 								}
 							} elseif ($theField == '--palette--') {
-								if ($additionalPalette && !isset($this->palettesRendered[$this->renderDepth][$table][$additionalPalette])) {
+								if ($additionalPalette) {
 									// Render a 'header' if not collapsed
 									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
 										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $languageService->sL($fieldLabel));
 									} else {
 										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel));
 									}
-									$this->palettesRendered[$this->renderDepth][$table][$additionalPalette] = 1;
 								}
 							}
 						}
@@ -1034,6 +1021,7 @@ class FormEngine {
 			'renderReadonly' => $this->getRenderReadonly(),
 			'disabledWizards' => $this->disableWizards,
 			'returnUrl' => $this->thisReturnUrl(),
+			'palettesCollapsed' => $this->palettesCollapsed,
 			// Inline is handed over temporarily until FormEngine uses a real object tree
 			'inline' => $this->inline,
 		);
@@ -2618,6 +2606,15 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $defaultMultipleSelectorStyle = '';
+
+	/**
+	 * During rendering of forms this will keep track of which palettes
+	 * has already been rendered (so they are not rendered twice by mistake)
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $palettesRendered = array();
 
 	/**
 	 * The name attribute of the form

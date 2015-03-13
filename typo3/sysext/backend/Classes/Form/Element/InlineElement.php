@@ -501,16 +501,9 @@ class InlineElement {
 	protected function renderMainFields($table, array $row, array $overruleTypesArray = array()) {
 		// The current render depth of \TYPO3\CMS\Backend\Form\FormEngine
 		$depth = $this->formEngine->renderDepth;
-		// If there is some information about already rendered palettes of our parent, store this info:
-		if (isset($this->formEngine->palettesRendered[$depth][$table])) {
-			$palettesRendered = $this->formEngine->palettesRendered[$depth][$table];
-		}
 		// Render the form:
 		$content = $this->formEngine->getMainFields($table, $row, $depth, $overruleTypesArray);
 		// If there was some info about rendered palettes stored, write it back for our parent:
-		if (isset($palettesRendered)) {
-			$this->formEngine->palettesRendered[$depth][$table] = $palettesRendered;
-		}
 		return $content;
 	}
 
