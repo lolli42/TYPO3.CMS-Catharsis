@@ -1386,31 +1386,6 @@ class FormEngine {
 	 * Form element helper functions
 	 *
 	 ************************************************************/
-	/**
-	 * Creates style attribute content for optgroup tags in a selector box, primarily setting it
-	 * up to show the icon of an element as background image (works in mozilla).
-	 *
-	 * @param string $iconString Icon string for option item
-	 * @return string Style attribute content, if any
-	 */
-	public function optgroupTagStyle($iconString) {
-		if (!$iconString) {
-			return '';
-		}
-		list($selIconFile, $selIconInfo) = FormEngineUtility::getIcon($iconString);
-		if (empty($selIconFile)) {
-			// Skip background style if image is unavailable
-			return '';
-		}
-		$padLeft = $selIconInfo[0] + 4;
-		if ($padLeft >= 18 && $padLeft <= 24) {
-			// In order to get the same padding for all option tags even if icon sizes differ a little,
-			// set it to 22, if it was between 18 and 24 pixels.
-			$padLeft = 22;
-		}
-		$padTop = MathUtility::forceIntegerInRange(($selIconInfo[1] - 12) / 2, 0);
-		return 'background: #ffffff url(' . $selIconFile . ') 0 0 no-repeat; padding-top: ' . $padTop . 'px; padding-left: ' . $padLeft . 'px;';
-	}
 
 	/**
 	 * Returns the "returnUrl" of the form. Can be set externally or will be taken from "GeneralUtility::linkThisScript()"
@@ -1419,26 +1394,6 @@ class FormEngine {
 	 */
 	public function thisReturnUrl() {
 		return $this->returnUrl ? $this->returnUrl : GeneralUtility::linkThisScript();
-	}
-
-	/**
-	 * Returns the form field for a single HIDDEN field.
-	 * (Not used anywhere...?)
-	 *
-	 * @param string $table Table name
-	 * @param string $field Field name
-	 * @param array $row The row
-	 * @return string The hidden-field <input> tag.
-	 */
-	public function getSingleHiddenField($table, $field, $row) {
-		$item = '';
-		if ($GLOBALS['TCA'][$table]['columns'][$field]) {
-			$uid = $row['uid'];
-			$itemName = $this->prependFormFieldNames . '[' . $table . '][' . $uid . '][' . $field . ']';
-			$itemValue = $row[$field];
-			$item = '<input type="hidden" name="' . $itemName . '" value="' . htmlspecialchars($itemValue) . '" />';
-		}
-		return $item;
 	}
 
 	/**
@@ -1492,25 +1447,6 @@ class FormEngine {
 		$this->paletteFieldTemplate = HtmlParser::getSubpart($template, '###PALETTEFIELDTEMPLATE###');
 		$this->palFieldTemplate = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE###');
 		$this->palFieldTemplateHeader = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE_HEADER###');
-	}
-
-	/**
-	 * This inserts the content of $inArr into the field-template
-	 *
-	 * @param array $inArr Array with key/value pairs to insert in the template.
-	 * @param string $altTemplate Alternative template to use instead of the default.
-	 * @return string
-	 */
-	public function intoTemplate($inArr, $altTemplate = '') {
-		// Put into template_
-		$fieldTemplateParts = explode('###FIELD_', $altTemplate ?: $this->fieldTemplate);
-		$out = current($fieldTemplateParts);
-		foreach ($fieldTemplateParts as $part) {
-			list($key, $val) = explode('###', $part, 2);
-			$out .= $inArr[$key];
-			$out .= $val;
-		}
-		return $out;
 	}
 
 	/**
@@ -1854,17 +1790,6 @@ class FormEngine {
 	 * Various helper functions
 	 *
 	 ********************************************/
-
-	/**
-	 * Returns TRUE if the given $row is new (i.e. has not been saved to the database)
-	 *
-	 * @param string $table
-	 * @param array $row
-	 * @return bool
-	 */
-	protected function isNewRecord($table, $row) {
-		return !MathUtility::canBeInterpretedAsInteger($row['uid']) && GeneralUtility::isFirstPartOfStr($row['uid'], 'NEW');
-	}
 
 	/**
 	 * Return record path (visually formatted, using BackendUtility::getRecordPath() )
@@ -3799,5 +3724,90 @@ class FormEngine {
 		// called directly. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('isPalettesCollapsed() can not be called directly', 1426335224);
 	}
+
+	/**
+	 * Creates style attribute content for optgroup tags in a selector box, primarily setting it
+	 * up to show the icon of an element as background image (works in mozilla).
+	 *
+	 * @param string $iconString Icon string for option item
+	 * @return string Style attribute content, if any
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function optgroupTagStyle($iconString) {
+		GeneralUtility::logDeprecatedFunction();
+		if (!$iconString) {
+			return '';
+		}
+		list($selIconFile, $selIconInfo) = FormEngineUtility::getIcon($iconString);
+		if (empty($selIconFile)) {
+			// Skip background style if image is unavailable
+			return '';
+		}
+		$padLeft = $selIconInfo[0] + 4;
+		if ($padLeft >= 18 && $padLeft <= 24) {
+			// In order to get the same padding for all option tags even if icon sizes differ a little,
+			// set it to 22, if it was between 18 and 24 pixels.
+			$padLeft = 22;
+		}
+		$padTop = MathUtility::forceIntegerInRange(($selIconInfo[1] - 12) / 2, 0);
+		return 'background: #ffffff url(' . $selIconFile . ') 0 0 no-repeat; padding-top: ' . $padTop . 'px; padding-left: ' . $padLeft . 'px;';
+	}
+
+	/**
+	 * Returns the form field for a single HIDDEN field.
+	 * (Not used anywhere...?)
+	 *
+	 * @param string $table Table name
+	 * @param string $field Field name
+	 * @param array $row The row
+	 * @return string The hidden-field <input> tag.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSingleHiddenField($table, $field, $row) {
+		GeneralUtility::logDeprecatedFunction();
+		$item = '';
+		if ($GLOBALS['TCA'][$table]['columns'][$field]) {
+			$uid = $row['uid'];
+			$itemName = $this->prependFormFieldNames . '[' . $table . '][' . $uid . '][' . $field . ']';
+			$itemValue = $row[$field];
+			$item = '<input type="hidden" name="' . $itemName . '" value="' . htmlspecialchars($itemValue) . '" />';
+		}
+		return $item;
+	}
+
+	/**
+	 * This inserts the content of $inArr into the field-template
+	 *
+	 * @param array $inArr Array with key/value pairs to insert in the template.
+	 * @param string $altTemplate Alternative template to use instead of the default.
+	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function intoTemplate($inArr, $altTemplate = '') {
+		GeneralUtility::logDeprecatedFunction();
+		// Put into template_
+		$fieldTemplateParts = explode('###FIELD_', $altTemplate ?: $this->fieldTemplate);
+		$out = current($fieldTemplateParts);
+		foreach ($fieldTemplateParts as $part) {
+			list($key, $val) = explode('###', $part, 2);
+			$out .= $inArr[$key];
+			$out .= $val;
+		}
+		return $out;
+	}
+
+	/**
+	 * Returns TRUE if the given $row is new (i.e. has not been saved to the database)
+	 *
+	 * @param string $table
+	 * @param array $row
+	 * @return bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	protected function isNewRecord($table, $row) {
+		GeneralUtility::logDeprecatedFunction();
+		return !MathUtility::canBeInterpretedAsInteger($row['uid']) && GeneralUtility::isFirstPartOfStr($row['uid'], 'NEW');
+	}
+
 
 }
