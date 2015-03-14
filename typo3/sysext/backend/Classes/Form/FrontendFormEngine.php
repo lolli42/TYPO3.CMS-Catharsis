@@ -46,8 +46,10 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 *
 	 * @param array $paletteArray The palette array to print
 	 * @return string HTML output
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function printPalette(array $paletteArray) {
+		GeneralUtility::logDeprecatedFunction();
 		$out = '';
 		$bgColor = ' bgcolor="#D6DAD0"';
 		foreach ($paletteArray as $content) {
