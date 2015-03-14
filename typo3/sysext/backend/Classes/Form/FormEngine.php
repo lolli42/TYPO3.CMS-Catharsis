@@ -1898,26 +1898,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Returns TRUE, if the palette, $palette, is collapsed (not shown, but found in top-frame) for the table.
-	 *
-	 * @param string $table The table name
-	 * @param int $palette The palette pointer/number
-	 * @return bool
-	 */
-	public function isPalettesCollapsed($table, $palette) {
-		if (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) && $GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']) {
-			return TRUE;
-		}
-		if ($GLOBALS['TCA'][$table]['ctrl']['canNotCollapse']) {
-			return FALSE;
-		}
-		if (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) && $GLOBALS['TCA'][$table]['palettes'][$palette]['canNotCollapse']) {
-			return FALSE;
-		}
-		return $this->palettesCollapsed;
-	}
-
-	/**
 	 * Returns TRUE if descriptions should be loaded always
 	 *
 	 * @param string $table Table for which to check
@@ -3801,9 +3781,23 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function wrapCollapsiblePalette($code, $id, $collapsed) {
-		// printPalette() was moved and is now protected. The method was never meant to be
+		// wrapCollapsiblePalette() was moved and is now protected. The method was never meant to be
 		// called directly. Let's throw a friendly exception if someone still does it.
-		throw new \RuntimeException('printPalette() can not be called directly', 1426335223);
+		throw new \RuntimeException('wrapCollapsiblePalette() can not be called directly', 1426335223);
+	}
+
+	/**
+	 * Returns TRUE, if the palette, $palette, is collapsed (not shown, but found in top-frame) for the table.
+	 *
+	 * @param string $table The table name
+	 * @param int $palette The palette pointer/number
+	 * @return bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function isPalettesCollapsed($table, $palette) {
+		// isPalettesCollapsed() was moved and is now protected. The method was never meant to be
+		// called directly. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('isPalettesCollapsed() can not be called directly', 1426335224);
 	}
 
 }
