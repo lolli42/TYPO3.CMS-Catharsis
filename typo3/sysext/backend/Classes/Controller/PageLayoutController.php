@@ -797,7 +797,6 @@ class PageLayoutController {
 				// Create instance of TCEforms, setting defaults:
 				$tceforms = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\FormEngine::class);
 				$tceforms->initDefaultBEMode();
-				$tceforms->fieldOrder = $this->modTSconfig['properties']['tt_content.']['fieldOrder'];
 				$tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
 				// Render form, wrap it:
 				$panel = '';

@@ -126,15 +126,6 @@ class FormEngine {
 	public $localizationMode = '';
 
 	/**
-	 * Overrule the field order set in TCA[types][showitem], eg for tt_content this value,
-	 * 'bodytext,image', would make first the 'bodytext' field, then the 'image' field (if set for display)...
-	 * and then the rest in the old order.
-	 *
-	 * @var string
-	 */
-	public $fieldOrder = '';
-
-	/**
 	 * When enabled all elements are rendered non-editable
 	 *
 	 * @var bool
@@ -570,9 +561,6 @@ class FormEngine {
 				if ($itemList) {
 					// Explode the field list and possibly rearrange the order of the fields, if configured for
 					$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-					if ($this->fieldOrder) {
-						$fields = $this->rearrange($fields);
-					}
 					// Get excluded fields, added fiels and put it together:
 					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
 					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
@@ -1101,28 +1089,6 @@ class FormEngine {
 		// Force to string. Necessary for eg '-1' to be recognized as a type value.
 		$typeNum = (string)$typeNum;
 		return $typeNum;
-	}
-
-	/**
-	 * Used to adhoc-rearrange the field order normally set in the [types][showitem] list
-	 *
-	 * @param array $fields A [types][showitem] list of fields, exploded by ",
-	 * @return array Returns rearranged version (keys are changed around as well.)
-	 * @see getMainFields()
-	 */
-	public function rearrange($fields) {
-		$fO = array_flip(GeneralUtility::trimExplode(',', $this->fieldOrder, TRUE));
-		$newFields = array();
-		foreach ($fields as $cc => $content) {
-			$cP = GeneralUtility::trimExplode(';', $content);
-			if (isset($fO[$cP[0]])) {
-				$newFields[$fO[$cP[0]]] = $content;
-				unset($fields[$cc]);
-			}
-		}
-		ksort($newFields);
-		$fields = array_merge($newFields, $fields);
-		return $fields;
 	}
 
 	/**
@@ -2413,6 +2379,16 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $commentMessages = array();
+
+	/**
+	 * Overrule the field order set in TCA[types][showitem], eg for tt_content this value,
+	 * 'bodytext,image', would make first the 'bodytext' field, then the 'image' field (if set for display)...
+	 * and then the rest in the old order.
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $fieldOrder = '';
 
 	/**
 	 * Generation of TCEform elements of the type "input"
@@ -3809,5 +3785,27 @@ class FormEngine {
 		return !MathUtility::canBeInterpretedAsInteger($row['uid']) && GeneralUtility::isFirstPartOfStr($row['uid'], 'NEW');
 	}
 
+	/**
+	 * Used to adhoc-rearrange the field order normally set in the [types][showitem] list
+	 *
+	 * @param array $fields A [types][showitem] list of fields, exploded by ",
+	 * @return array Returns rearranged version (keys are changed around as well.)
+	 * @see getMainFields()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function rearrange($fields) {
+		$fO = array_flip(GeneralUtility::trimExplode(',', $this->fieldOrder, TRUE));
+		$newFields = array();
+		foreach ($fields as $cc => $content) {
+			$cP = GeneralUtility::trimExplode(';', $content);
+			if (isset($fO[$cP[0]])) {
+				$newFields[$fO[$cP[0]]] = $content;
+				unset($fields[$cc]);
+			}
+		}
+		ksort($newFields);
+		$fields = array_merge($newFields, $fields);
+		return $fields;
+	}
 
 }
