@@ -51,9 +51,18 @@ class FormEngine {
 	public $disableWizards = FALSE;
 
 	/**
-	 * @var array|NULL
+	 * List of additional preview languages that should be shown to the user. Initialized early.
+	 *
+	 * array(
+	 *   $languageUid => array(
+	 *     'uid' => $languageUid,
+	 *     'ISOcode' => $isoCodeOfLanguage
+	 *   )
+	 * )
+	 *
+	 * @var array
 	 */
-	public $cachedAdditionalPreviewLanguages = NULL;
+	protected $additionalPreviewLanguages = array();
 
 	/**
 	 * @var string
@@ -386,6 +395,7 @@ class FormEngine {
 	 *
 	 */
 	public function __construct() {
+		$this->initializeAdditionalPreviewLanguages();
 		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
 		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], InlineElement::class . '::') !== 0) {
 			$this->inline = GeneralUtility::makeInstance(InlineElement::class);
@@ -961,6 +971,9 @@ class FormEngine {
 			'disabledWizards' => $this->disableWizards,
 			'returnUrl' => $this->thisReturnUrl(),
 			'palettesCollapsed' => $this->palettesCollapsed,
+			'table' => $this->table,
+			'databaseRow' => $this->databaseRow,
+			'additionalPreviewLanguages' => $this->additionalPreviewLanguages,
 			// Inline is handed over temporarily until FormEngine uses a real object tree
 			'inline' => $this->inline,
 		);
@@ -1235,8 +1248,7 @@ class FormEngine {
 				$this->defaultLanguageData_diff[$table . ':' . $rec['uid']] = unserialize($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']]);
 			}
 			// If there are additional preview languages, load information for them also:
-			$prLang = $this->getAdditionalPreviewLanguages();
-			foreach ($prLang as $prL) {
+			foreach ($this->additionalPreviewLanguages as $prL) {
 				/** @var $t8Tools TranslationConfigurationProvider */
 				$t8Tools = GeneralUtility::makeInstance(TranslationConfigurationProvider::class);
 				$tInfo = $t8Tools->translationInfo($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']], $prL['uid']);
@@ -1294,8 +1306,7 @@ class FormEngine {
 						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
 						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 				}
-				$previewLanguages = $this->getAdditionalPreviewLanguages();
-				foreach ($previewLanguages as $previewLanguage) {
+				foreach ($this->additionalPreviewLanguages as $previewLanguage) {
 					$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->additionalPreviewLanguageData[$table . ':' . $row['uid']][$previewLanguage['uid']][$field], 0, 1);
 					if ($defaultLanguageValue !== '') {
 						$item .= '<div class="t3-form-original-language">'
@@ -1868,33 +1879,33 @@ class FormEngine {
 	}
 
 	/**
-	 * Generates and return information about which languages the current user should see in preview, configured by options.additionalPreviewLanguages
+	 * Initialize list of additional preview languages.
+	 * Sets according list in $this->additionalPreviewLanguages
 	 *
-	 * @return array Array of additional languages to preview
+	 * @return void
 	 */
-	public function getAdditionalPreviewLanguages() {
-		if (!isset($this->cachedAdditionalPreviewLanguages)) {
-			$this->cachedAdditionalPreviewLanguages = array();
-			if ($this->getBackendUserAuthentication()->getTSConfigVal('options.additionalPreviewLanguages')) {
-				$uids = GeneralUtility::intExplode(',', $this->getBackendUserAuthentication()->getTSConfigVal('options.additionalPreviewLanguages'));
-				foreach ($uids as $uid) {
-					if ($sys_language_rec = BackendUtility::getRecord('sys_language', $uid)) {
-						$this->cachedAdditionalPreviewLanguages[$uid] = array('uid' => $uid);
-						if (!empty($sys_language_rec['language_isocode'])) {
-							$this->cachedAdditionalPreviewLanguages[$uid]['ISOcode'] = $sys_language_rec['language_isocode'];
-						} elseif ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
-							GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
-							$staticLangRow = BackendUtility::getRecord('static_languages', $sys_language_rec['static_lang_isocode'], 'lg_iso_2');
-							if ($staticLangRow['lg_iso_2']) {
-								$this->cachedAdditionalPreviewLanguages[$uid]['uid'] = $uid;
-								$this->cachedAdditionalPreviewLanguages[$uid]['ISOcode'] = $staticLangRow['lg_iso_2'];
-							}
+	protected function initializeAdditionalPreviewLanguages() {
+		$backendUserAuthentication = $this->getBackendUserAuthentication();
+		$additionalPreviewLanguageListOfUser = $backendUserAuthentication->getTSConfigVal('options.additionalPreviewLanguages');
+		$additionalPreviewLanguages = array();
+		if ($additionalPreviewLanguageListOfUser) {
+			$uids = GeneralUtility::intExplode(',', $additionalPreviewLanguageListOfUser);
+			foreach ($uids as $uid) {
+				if ($sys_language_rec = BackendUtility::getRecord('sys_language', $uid)) {
+					$additionalPreviewLanguages[$uid]['uid'] = $uid;
+					if (!empty($sys_language_rec['language_isocode'])) {
+						$additionalPreviewLanguages[$uid]['ISOcode'] = $sys_language_rec['language_isocode'];
+					} elseif ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
+						GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
+						$staticLangRow = BackendUtility::getRecord('static_languages', $sys_language_rec['static_lang_isocode'], 'lg_iso_2');
+						if ($staticLangRow['lg_iso_2']) {
+							$additionalPreviewLanguages[$uid]['ISOcode'] = $staticLangRow['lg_iso_2'];
 						}
 					}
 				}
 			}
 		}
-		return $this->cachedAdditionalPreviewLanguages;
+		$this->additionalPreviewLanguages = $additionalPreviewLanguages;
 	}
 
 	/**
@@ -2379,6 +2390,13 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $commentMessages = array();
+
+	/**
+	 * Additional preview languages
+	 *
+	 * @var array|NULL
+	 */
+	public $cachedAdditionalPreviewLanguages = NULL;
 
 	/**
 	 * Overrule the field order set in TCA[types][showitem], eg for tt_content this value,
@@ -3807,5 +3825,17 @@ class FormEngine {
 		$fields = array_merge($newFields, $fields);
 		return $fields;
 	}
+
+	/**
+	 * Generates and return information about which languages the current user should see in preview, configured by options.additionalPreviewLanguages
+	 *
+	 * @return array Array of additional languages to preview
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getAdditionalPreviewLanguages() {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->additionalPreviewLanguages;
+	}
+
 
 }

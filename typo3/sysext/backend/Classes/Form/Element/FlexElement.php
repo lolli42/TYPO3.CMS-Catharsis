@@ -518,7 +518,7 @@ class FlexElement extends AbstractFormElement {
 									$defInfo = '';
 								}
 								if (!$PA['_noEditDEF']) {
-									$prLang = $this->formEngine->getAdditionalPreviewLanguages();
+									$prLang = $this->globalOptions['additionalPreviewLanguages'];
 									foreach ($prLang as $prL) {
 										$defInfo .= '<div class="t3-form-original-language">'
 											. FormEngineUtility::getLanguageIcon($table, $row, ('v' . $prL['ISOcode']))
