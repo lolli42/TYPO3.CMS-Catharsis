@@ -14,8 +14,6 @@ namespace TYPO3\CMS\Backend\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
-use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Form\Element\InlineElement;
 use TYPO3\CMS\Backend\Form\Element\NoneElement;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
@@ -35,6 +33,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Form\Container\PaletteContainer;
+use TYPO3\CMS\Backend\Form\Container\EntryContainer;
 
 
 /**
@@ -83,25 +82,6 @@ class FormEngine {
 	 * @var bool
 	 */
 	public $loadMD5_JS = TRUE;
-
-	/**
-	 * Array where records in the default language is stored. (processed by transferdata)
-	 *
-	 * @var array
-	 */
-	public $defaultLanguageData = array();
-
-	/**
-	 * Array where records in the default language is stored (raw without any processing. used for making diff)
-	 *
-	 * @var array
-	 */
-	public $defaultLanguageData_diff = array();
-
-	/**
-	 * @var array
-	 */
-	public $additionalPreviewLanguageData = array();
 
 	/**
 	 * Alternative return URL path (default is \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript())
@@ -199,49 +179,6 @@ class FormEngine {
 	public $totalWrap = '<hr />|<hr />';
 
 	/**
-	 * Field template
-	 *
-	 * @var string
-	 */
-	public $fieldTemplate = '<strong>###FIELD_NAME###</strong><br />###FIELD_ITEM###<hr />';
-
-	/**
-	 * Template subpart for palette fields
-	 *
-	 * @var string
-	 */
-	protected $paletteFieldTemplate = '';
-
-	/**
-	 * Wrapping template code for a section
-	 *
-	 * @var string
-	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
-	 */
-	public $sectionWrap = '';
-
-	/**
-	 * Template for palette headers
-	 *
-	 * @var string
-	 */
-	public $palFieldTemplateHeader = '';
-
-	/**
-	 * Template for palettes
-	 *
-	 * @var string
-	 */
-	public $palFieldTemplate = '';
-
-	/**
-	 * Set to the fields NOT to display, if any
-	 *
-	 * @var array|NULL
-	 */
-	public $excludeElements = NULL;
-
-	/**
 	 * This array of fields will be set as hidden-fields instead of rendered normally!
 	 * For instance palette fields edited in the top frame are set as hidden fields
 	 * since the main form has to submit the values.
@@ -291,14 +228,6 @@ class FormEngine {
 	public $renderDepth = 0;
 
 	/**
-	 * Color scheme buffer
-	 *
-	 * @var array
-	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
-	 */
-	public $savedSchemes = array();
-
-	/**
 	 * holds the path an element is nested in (e.g. required for RTEhtmlarea)
 	 *
 	 * @var array
@@ -312,14 +241,6 @@ class FormEngine {
 	 * @var array
 	 */
 	public $additionalCode_pre = array();
-
-	/**
-	 * Additional JavaScript, printed before the form
-	 *
-	 * @var array
-	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
-	 */
-	public $additionalJS_pre = array();
 
 	/**
 	 * Additional JavaScript printed after the form
@@ -376,6 +297,16 @@ class FormEngine {
 	 * @var string
 	 */
 	public $templateFile = '';
+
+	/**
+	 * @var string The table that is handled
+	 */
+	protected $table = '';
+
+	/**
+	 * @var array Database row data
+	 */
+	protected $databaseRow = array();
 
 	/**
 	 * protected properties which were public
@@ -497,10 +428,17 @@ class FormEngine {
 	 * @see getMainFields()
 	 */
 	public function getSoloField($table, $row, $theFieldToReturn) {
+
+		// @todo: registerDefaultLanguageData missing here?
+		// @todo: all in all useless method? Can't getListedFields used instead?
+
 		if (!isset($GLOBALS['TCA'][$table])) {
 			return '';
 		}
+
+		// @todo
 		$typeNum = $this->getRTypeNum($table, $row);
+
 		if (isset($GLOBALS['TCA'][$table]['types'][$typeNum])) {
 			$itemList = $GLOBALS['TCA'][$table]['types'][$typeNum]['showitem'];
 			if ($itemList) {
@@ -535,6 +473,32 @@ class FormEngine {
 	 * @see getSoloField()
 	 */
 	public function getMainFields($table, array $row, $depth = 0, array $overruleTypesArray = array()) {
+		$this->table = $table;
+		$this->row = $row;
+
+		// Hook: getMainFields_preProcess
+		foreach ($this->hookObjectsMainFields as $hookObj) {
+			if (method_exists($hookObj, 'getMainFields_preProcess')) {
+				$hookObj->getMainFields_preProcess($table, $row, $this);
+			}
+		}
+
+		/** @var EntryContainer $entryContainer */
+		$entryContainer = GeneralUtility::makeInstance(EntryContainer::class);
+		$entryContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
+		$content = $entryContainer->render();
+
+		// Hook: getMainFields_postProcess
+		foreach ($this->hookObjectsMainFields as $hookObj) {
+			if (method_exists($hookObj, 'getMainFields_postProcess')) {
+				$hookObj->getMainFields_postProcess($table, $row, $this);
+			}
+		}
+
+		return $content;
+
+
+
 		$languageService = $this->getLanguageService();
 		$this->renderDepth = $depth;
 		// Init vars:
@@ -544,14 +508,7 @@ class FormEngine {
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalTab'),
 			),
 		);
-		$out_pointer = 0;
 		$out_sheet = 0;
-		// Hook: getMainFields_preProcess (requested by Thomas Hempel for use with the "dynaflex" extension)
-		foreach ($this->hookObjectsMainFields as $hookObj) {
-			if (method_exists($hookObj, 'getMainFields_preProcess')) {
-				$hookObj->getMainFields_preProcess($table, $row, $this);
-			}
-		}
 		$tabIdentString = '';
 		$tabIdentStringMD5 = '';
 		if ($GLOBALS['TCA'][$table]) {
@@ -585,6 +542,7 @@ class FormEngine {
 					}
 					// Traverse the fields to render:
 					$cc = 0;
+					debug($fields);
 					foreach ($fields as $fieldInfo) {
 						// Exploding subparts of the field configuration:
 						// this is documented as this:
@@ -606,7 +564,7 @@ class FormEngine {
 								if ($sField) {
 									$sField .= $sFieldPal;
 								}
-								$out_array[$out_sheet][$out_pointer] .= $sField;
+								$out_array[$out_sheet][0] .= $sField;
 							} elseif ($theField == '--div--') {
 								if ($cc > 0) {
 									// Remove last tab entry from the dynNestedStack:
@@ -631,9 +589,9 @@ class FormEngine {
 									$paletteContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
 									// Render a 'header' if not collapsed
 									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
-										$out_array[$out_sheet][$out_pointer] .= $paletteContainer->render($table, $row, $additionalPalette, $languageService->sL($fieldLabel), '', NULL, $excludeElements);
+										$out_array[$out_sheet][0] .= $paletteContainer->render($table, $row, $additionalPalette, $languageService->sL($fieldLabel), '', NULL, $excludeElements);
 									} else {
-										$out_array[$out_sheet][$out_pointer] .= $paletteContainer->render($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel), $excludeElements);
+										$out_array[$out_sheet][0] .= $paletteContainer->render($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel), $excludeElements);
 									}
 								}
 							}
@@ -641,12 +599,6 @@ class FormEngine {
 						$cc++;
 					}
 				}
-			}
-		}
-		// Hook: getMainFields_postProcess (requested by Thomas Hempel for use with the "dynaflex" extension)
-		foreach ($this->hookObjectsMainFields as $hookObj) {
-			if (method_exists($hookObj, 'getMainFields_postProcess')) {
-				$hookObj->getMainFields_postProcess($table, $row, $this);
 			}
 		}
 		// Return the imploded $out_array:
@@ -689,6 +641,7 @@ class FormEngine {
 		if ($this->doLoadTableDescr($table)) {
 			$this->getLanguageService()->loadSingleTableDescription($table);
 		}
+		$this->registerDefaultLanguageData($table, $row);
 		$out = '';
 		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row, 1);
 		$editFieldList = array_unique(GeneralUtility::trimExplode(',', $list, TRUE));
@@ -701,263 +654,6 @@ class FormEngine {
 			}
 		}
 		return $out;
-	}
-
-	/**
-	 * Returns the form HTML code for a database table field.
-	 *
-	 * @param string $table The table name
-	 * @param string $field The field name
-	 * @param array $row The record to edit from the database table.
-	 * @param string $altName Alternative field name label to show.
-	 * @param bool $palette Set this if the field is on a palette (in top frame), otherwise not. (if set, field will render as a hidden field).
-	 * @param string $extra The "extra" options from "Part 4" of the field configurations found in the "types" "showitem" list. Typically parsed by $this->getSpecConfFromString() in order to get the options as an associative array.
-	 * @param int $pal The palette pointer.
-	 * @return mixed String (normal) or array (palettes)
-	 */
-	public function getSingleField($table, $field, $row, $altName = '', $palette = FALSE, $extra = '', $pal = 0) {
-		$backendUser = $this->getBackendUserAuthentication();
-
-		// Hook: getSingleField_preProcess
-		foreach ($this->hookObjectsSingleField as $hookObj) {
-			if (method_exists($hookObj, 'getSingleField_preProcess')) {
-				$hookObj->getSingleField_preProcess($table, $field, $row, $altName, $palette, $extra, $pal, $this);
-			}
-		}
-		$out = '';
-		$PA = array();
-		$PA['altName'] = $altName;
-		$PA['palette'] = $palette;
-		$PA['extra'] = $extra;
-		$PA['pal'] = $pal;
-		// Get the TCA configuration for the current field:
-		$PA['fieldConf'] = $GLOBALS['TCA'][$table]['columns'][$field];
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
-
-		// Using "form_type" locally in this script
-		$skipThisField = $this->inline->skipField($table, $field, $row, $PA['fieldConf']['config']);
-
-		// Evaluate display condition
-		$displayConditionResult = TRUE;
-		if (is_array($PA['fieldConf']) && $PA['fieldConf']['displayCond'] && is_array($row)) {
-			/** @var $elementConditionMatcher ElementConditionMatcher */
-			$elementConditionMatcher = GeneralUtility::makeInstance(ElementConditionMatcher::class);
-			$displayConditionResult = $elementConditionMatcher->match($PA['fieldConf']['displayCond'], $row);
-		}
-		// Check if this field is configured and editable (according to excludefields + other configuration)
-		if (
-			is_array($PA['fieldConf'])
-			&& !$skipThisField
-			&& (!$PA['fieldConf']['exclude'] || $backendUser->check('non_exclude_fields', $table . ':' . $field))
-			&& $PA['fieldConf']['config']['form_type'] != 'passthrough'
-			&& ($backendUser->isRTE() || !$PA['fieldConf']['config']['showIfRTE'])
-			&& $displayConditionResult
-			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || $PA['fieldConf']['l10n_display'] || ($PA['fieldConf']['l10n_mode'] !== 'exclude') || $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] <= 0)
-			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || !$this->localizationMode || $this->localizationMode === $PA['fieldConf']['l10n_cat'])
-		) {
-			// Fetching the TSconfig for the current table/field. This includes the $row which means that
-			$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($table, $row, $field);
-			// If the field is NOT disabled from TSconfig (which it could have been) then render it
-			if (!$PA['fieldTSConfig']['disabled']) {
-				// Override fieldConf by fieldTSconfig:
-				$PA['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
-				// Init variables:
-				$PA['itemFormElName'] = $this->prependFormFieldNames . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// Form field name, in case of file uploads
-				$PA['itemFormElName_file'] = $this->prependFormFieldNames_file . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// Form field name, to activate elements
-				// If the "eval" list contains "null", elements can be deactivated which results in storing NULL to database
-				$PA['itemFormElNameActive'] = $this->prependFormFieldNamesActive . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// The value to show in the form field.
-				$PA['itemFormElValue'] = $row[$field];
-				$PA['itemFormElID'] = $this->prependFormFieldNames . '_' . $table . '_' . $row['uid'] . '_' . $field;
-				// Set field to read-only if configured for translated records to show default language content as readonly
-				if ($PA['fieldConf']['l10n_display'] && GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'defaultAsReadonly') && $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0) {
-					$PA['fieldConf']['config']['readOnly'] = TRUE;
-					$PA['itemFormElValue'] = $this->defaultLanguageData[$table . ':' . $row['uid']][$field];
-				}
-				if (strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':') === FALSE) {
-					$typeField = $GLOBALS['TCA'][$table]['ctrl']['type'];
-				} else {
-					$typeField = substr($GLOBALS['TCA'][$table]['ctrl']['type'], 0, strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':'));
-				}
-				// Create a JavaScript code line which will ask the user to save/update the form due to changing the element. This is used for eg. "type" fields and others configured with "requestUpdate"
-				if (
-					!empty($GLOBALS['TCA'][$table]['ctrl']['type'])
-					&& $field === $typeField
-					|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
-					&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
-				) {
-					if ($backendUser->jsConfirmation(1)) {
-						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
-					} else {
-						$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
-					}
-				} else {
-					$alertMsgOnChange = '';
-				}
-				// Render as a hidden field?
-				if (in_array($field, $this->hiddenFieldListArr)) {
-					$this->hiddenFieldAccum[] = '<input type="hidden" name="' . $PA['itemFormElName'] . '" value="' . htmlspecialchars($PA['itemFormElValue']) . '" />';
-				} else {
-					$languageService = $this->getLanguageService();
-					// Render as a normal field:
-					$PA['label'] = $PA['altName'] ?: $PA['fieldConf']['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label'] ?: $PA['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label.'][$languageService->lang] ?: $PA['label'];
-					$PA['label'] = $languageService->sL($PA['label']);
-					// JavaScript code for event handlers:
-					$PA['fieldChangeFunc'] = array();
-					$PA['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'TBE_EDITOR.fieldChanged(\'' . $table . '\',\'' . $row['uid'] . '\',\'' . $field . '\',\'' . $PA['itemFormElName'] . '\');';
-					$PA['fieldChangeFunc']['alert'] = $alertMsgOnChange;
-					// If this is the child of an inline type and it is the field creating the label
-					if ($this->inline->isInlineChildAndLabelField($table, $field)) {
-						$inlineObjectId = implode(InlineElement::Structure_Separator, array(
-							$this->inline->inlineNames['object'],
-							$table,
-							$row['uid']
-						));
-						$PA['fieldChangeFunc']['inline'] = 'inline.handleChangedField(\'' . $PA['itemFormElName'] . '\',\'' . $inlineObjectId . '\');';
-					}
-					// Based on the type of the item, call a render function:
-					$item = $this->getSingleField_SW($table, $field, $row, $PA);
-					// Add language + diff
-					if ($PA['fieldConf']['l10n_display'] && (GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'hideDiff') || GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'defaultAsReadonly'))) {
-						$renderLanguageDiff = FALSE;
-					} else {
-						$renderLanguageDiff = TRUE;
-					}
-					if ($renderLanguageDiff) {
-						$item = $this->renderDefaultLanguageContent($table, $field, $row, $item);
-						$item = $this->renderDefaultLanguageDiff($table, $field, $row, $item);
-					}
-					// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in alt_doc.php
-					$label = htmlspecialchars($PA['label'], ENT_COMPAT, 'UTF-8', FALSE);
-					if (MathUtility::canBeInterpretedAsInteger($row['uid']) && $PA['fieldTSConfig']['linkTitleToSelf'] && !GeneralUtility::_GP('columnsOnly')) {
-						$lTTS_url = 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $field . '&returnUrl=' . rawurlencode($this->thisReturnUrl());
-						$label = '<a href="' . htmlspecialchars($lTTS_url) . '">' . $label . '</a>';
-					}
-
-					if (isset($PA['fieldConf']['config']['mode']) && $PA['fieldConf']['config']['mode'] == 'useOrOverridePlaceholder') {
-						$placeholder = $this->getPlaceholderValue($table, $field, $PA['fieldConf']['config'], $row);
-						$onChange = 'typo3form.fieldTogglePlaceholder(' . GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ', !this.checked)';
-						$checked = $PA['itemFormElValue'] === NULL ? '' : ' checked="checked"';
-
-						$this->additionalJS_post[] = 'typo3form.fieldTogglePlaceholder('
-							. GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ', ' . ($checked ? 'false' : 'true') . ');';
-
-						$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this);
-						$noneElementConfiguration = $PA;
-						$noneElementConfiguration['itemFormElValue'] = GeneralUtility::fixed_lgd_cs($placeholder, 30);
-						$noneElementHtml = $noneElement->render('', '', '', $noneElementConfiguration);
-
-						$item = '
-							<input type="hidden" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="0" />
-							<div class="checkbox">
-								<label>
-									<input type="checkbox" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="1" id="tce-forms-textfield-use-override-' . $field . '-' . $row['uid'] . '" onchange="' . htmlspecialchars($onChange) . '"' . $checked . ' />
-									' . sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.placeholder.override'), BackendUtility::getRecordTitlePrep($placeholder, 20)) . '
-								</label>
-							</div>
-							<div class="t3js-formengine-placeholder-placeholder">
-								' . $noneElementHtml . '
-							</div>
-							<div class="t3js-formengine-placeholder-formfield">' . $item . '</div>';
-					}
-
-					// Wrap the label with help text
-					$PA['label'] = ($label = BackendUtility::wrapInHelp($table, $field, $label));
-					// Create output value:
-					if ($PA['fieldConf']['config']['form_type'] == 'user' && $PA['fieldConf']['config']['noTableWrapping']) {
-						$out = $item;
-					} elseif ($PA['palette']) {
-						// Array:
-						$out = array(
-							'NAME' => $label,
-							'ID' => $row['uid'],
-							'FIELD' => $field,
-							'TABLE' => $table,
-							'ITEM' => $item,
-							'ITEM_DISABLED' => ($this->isDisabledNullValueField($table, $field, $row, $PA) ? ' disabled' : ''),
-							'ITEM_NULLVALUE' => $this->renderNullValueWidget($table, $field, $row, $PA),
-						);
-					} else {
-						$out = '
-							<fieldset class="form-section">
-								<!-- getSingleField -->
-								<div class="form-group t3js-formengine-palette-field">
-									<label class="t3js-formengine-label">
-										' . $label . '
-										<img name="req_' . $table . '_' . $row['uid'] . '_' . $field . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />
-									</label>
-									<div class="t3js-formengine-field-item ' . ($this->isDisabledNullValueField($table, $field, $row, $PA) ? ' disabled' : '') . '">
-										<div class="t3-form-field-disable"></div>
-										' . $this->renderNullValueWidget($table, $field, $row, $PA) . '
-										' . $item . '
-									</div>
-								</div>
-							</fieldset>
-						';
-					}
-				}
-			}
-		}
-		// Hook: getSingleField_postProcess
-		foreach ($this->hookObjectsSingleField as $hookObj) {
-			if (method_exists($hookObj, 'getSingleField_postProcess')) {
-				$hookObj->getSingleField_postProcess($table, $field, $row, $out, $PA, $this);
-			}
-		}
-		// Return value (string or array)
-		return $out;
-	}
-
-	/**
-	 * Rendering a single item for the form
-	 *
-	 * @param string $table Table name of record
-	 * @param string $field Fieldname to render
-	 * @param array $row The record
-	 * @param array $PA Parameters array containing a lot of stuff. Value by Reference!
-	 * @return string Returns the item as HTML code to insert
-	 * @access private
-	 * @see getSingleField(), getSingleField_typeFlex_draw()
-	 */
-	public function getSingleField_SW($table, $field, $row, &$PA) {
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
-		// Using "form_type" locally in this script
-		// Hook: getSingleField_beforeRender
-		foreach ($this->hookObjectsSingleField as $hookObject) {
-			if (method_exists($hookObject, 'getSingleField_beforeRender')) {
-				$hookObject->getSingleField_beforeRender($table, $field, $row, $PA);
-			}
-		}
-		$type = $PA['fieldConf']['config']['form_type'];
-		if ($type === 'inline') {
-			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
-		} else {
-			$typeClassNameMapping = array(
-				'input' => 'InputElement',
-				'text' => 'TextElement',
-				'check' => 'CheckboxElement',
-				'radio' => 'RadioElement',
-				'select' => 'SelectElement',
-				'group' => 'GroupElement',
-				'none' => 'NoneElement',
-				'user' => 'UserElement',
-				'flex' => 'FlexElement',
-				'unknown' => 'UnknownElement',
-			);
-			if (!isset($typeClassNameMapping[$type])) {
-				$type = 'unknown';
-			}
-			$formElement = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this);
-			if ($formElement instanceof AbstractFormElement) {
-				$formElement->setGlobalOptions($this->getConfigurationOptionsForChildElements());
-			}
-			$item = $formElement->render($table, $field, $row, $PA);
-		}
-		return $item;
 	}
 
 	/**
@@ -974,388 +670,13 @@ class FormEngine {
 			'table' => $this->table,
 			'databaseRow' => $this->databaseRow,
 			'additionalPreviewLanguages' => $this->additionalPreviewLanguages,
+			'localizationMode' => $this->localizationMode, // @todo: find out the details, Warning, this overlaps with inline behaviour localizationMode
+			'prependFormFieldNames' => $this->prependFormFieldNames,
+			'prependFormFieldNames_file' => $this->prependFormFieldNames_file,
+			'prependFormFieldNamesActive' => $this->prependFormFieldNamesActive,
 			// Inline is handed over temporarily until FormEngine uses a real object tree
 			'inline' => $this->inline,
 		);
-	}
-
-	/**********************************************************
-	 *
-	 * Rendering of each TCEform field type
-	 *
-	 ************************************************************/
-
-	/**
-	 * Renders a view widget to handle and activate NULL values.
-	 * The widget is enabled by using 'null' in the 'eval' TCA definition.
-	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data of the record row
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return string Widget (if any).
-	 */
-	protected function renderNullValueWidget($table, $field, array $row, array $PA) {
-		$widget = '';
-
-		$config = $PA['fieldConf']['config'];
-		if (
-			!empty($config['eval']) && GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
-		) {
-			$checked = $PA['itemFormElValue'] === NULL ? '' : ' checked="checked"';
-			$onChange = htmlspecialchars(
-				'typo3form.fieldSetNull(\'' . $PA['itemFormElName'] . '\', !this.checked)'
-			);
-
-			$widget = '
-				<div class="checkbox">
-					<label>
-						<input type="hidden" name="' . $PA['itemFormElNameActive'] . '" value="0" />
-						<input type="checkbox" name="' . $PA['itemFormElNameActive'] . '" value="1" onchange="' . $onChange . '"' . $checked . ' /> &nbsp;
-					</label>
-				</div>';
-		}
-
-		return $widget;
-	}
-
-	/**
-	 * Determines whether the current field value is considered as NULL value.
-	 * Using NULL values is enabled by using 'null' in the 'eval' TCA definition.
-	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return bool
-	 */
-	protected function isDisabledNullValueField($table, $field, array $row, array $PA) {
-		$result = FALSE;
-
-		$config = $PA['fieldConf']['config'];
-		if ($PA['itemFormElValue'] === NULL && !empty($config['eval'])
-			&& GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')) {
-
-			$result = TRUE;
-		}
-
-		return $result;
-	}
-
-
-	/************************************************************
-	 *
-	 * "Configuration" fetching/processing functions
-	 *
-	 ************************************************************/
-	/**
-	 * Calculate and return the current "types" pointer value for a record
-	 *
-	 * @param string $table The table name. MUST be in $GLOBALS['TCA']
-	 * @param array $row The row from the table, should contain at least the "type" field, if applicable.
-	 * @return string Return the "type" value for this record, ready to pick a "types" configuration from the $GLOBALS['TCA'] array.
-	 * @throws \RuntimeException
-	 */
-	public function getRTypeNum($table, $row) {
-		$typeNum = 0;
-		$field = $GLOBALS['TCA'][$table]['ctrl']['type'];
-		if ($field) {
-			if (strpos($field, ':') !== FALSE) {
-				list($pointerField, $foreignTypeField) = explode(':', $field);
-				$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$pointerField]['config'];
-				$relationType = $fieldConfig['type'];
-				if ($relationType === 'select') {
-					$foreignUid = $row[$pointerField];
-					$foreignTable = $fieldConfig['foreign_table'];
-				} elseif ($relationType === 'group') {
-					$values = FormEngineUtility::extractValuesOnlyFromValueLabelList($row[$pointerField]);
-					list(, $foreignUid) = GeneralUtility::revExplode('_', $values[0], 2);
-					$allowedTables = explode(',', $fieldConfig['allowed']);
-					// Always take the first configured table.
-					$foreignTable = $allowedTables[0];
-				} else {
-					throw new \RuntimeException('TCA Foreign field pointer fields are only allowed to be used with group or select field types.', 1325861239);
-				}
-				if ($foreignUid) {
-					$foreignRow = BackendUtility::getRecord($foreignTable, $foreignUid, $foreignTypeField);
-					$this->registerDefaultLanguageData($foreignTable, $foreignRow);
-					if ($foreignRow[$foreignTypeField]) {
-						$foreignTypeFieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-						$typeNum = $this->getLanguageOverlayRawValue($foreignTable, $foreignRow, $foreignTypeField, $foreignTypeFieldConfig);
-					}
-				}
-			} else {
-				$typeFieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-				$typeNum = $this->getLanguageOverlayRawValue($table, $row, $field, $typeFieldConfig);
-			}
-		}
-		if (empty($typeNum)) {
-			// If that value is an empty string, set it to "0" (zero)
-			$typeNum = 0;
-		}
-		// If current typeNum doesn't exist, set it to 0 (or to 1 for historical reasons, if 0 doesn't exist)
-		if (!$GLOBALS['TCA'][$table]['types'][$typeNum]) {
-			$typeNum = $GLOBALS['TCA'][$table]['types']['0'] ? 0 : 1;
-		}
-		// Force to string. Necessary for eg '-1' to be recognized as a type value.
-		$typeNum = (string)$typeNum;
-		return $typeNum;
-	}
-
-	/**
-	 * Producing an array of field names NOT to display in the form,
-	 * based on settings from subtype_value_field, bitmask_excludelist_bits etc.
-	 * Notice, this list is in NO way related to the "excludeField" flag
-	 *
-	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
-	 * @param array $row A record from table.
-	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
-	 * @return array Array with fieldnames as values. The fieldnames are those which should NOT be displayed "anyways
-	 * @see getMainFields()
-	 */
-	public function getExcludeElements($table, $row, $typeNum) {
-		// Init:
-		$excludeElements = array();
-		// If a subtype field is defined for the type
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
-			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]])) {
-				$excludeElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]], TRUE);
-			}
-		}
-		// If a bitmask-value field has been configured, then find possible fields to exclude based on that:
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field'];
-			$sTValue = MathUtility::forceIntegerInRange($row[$sTfield], 0);
-			if (is_array($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'])) {
-				foreach ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'] as $bitKey => $eList) {
-					$bit = substr($bitKey, 1);
-					if (MathUtility::canBeInterpretedAsInteger($bit)) {
-						$bit = MathUtility::forceIntegerInRange($bit, 0, 30);
-						if ($bitKey[0] === '-' && !($sTValue & pow(2, $bit)) || $bitKey[0] === '+' && $sTValue & pow(2, $bit)) {
-							$excludeElements = array_merge($excludeElements, GeneralUtility::trimExplode(',', $eList, TRUE));
-						}
-					}
-				}
-			}
-		}
-		// Return the array of elements:
-		return $excludeElements;
-	}
-
-	/**
-	 * Finds possible field to add to the form, based on subtype fields.
-	 *
-	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
-	 * @param array $row A record from table.
-	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
-	 * @return array An array containing two values: 1) Another array containing field names to add and 2) the subtype value field.
-	 * @see getMainFields()
-	 */
-	public function getFieldsToAdd($table, $row, $typeNum) {
-		// Init:
-		$addElements = array();
-		// If a subtype field is defined for the type
-		$sTfield = '';
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
-			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]])) {
-				$addElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]], TRUE);
-			}
-		}
-		// Return the return
-		return array($addElements, $sTfield);
-	}
-
-	/**
-	 * Merges the current [types][showitem] array with the array of fields to add for the current subtype field of the "type" value.
-	 *
-	 * @param array $fields A [types][showitem] list of fields, exploded by ",
-	 * @param array $fieldsToAdd The output from getFieldsToAdd()
-	 * @param string $table The table name, if we want to consider it's palettes when positioning the new elements
-	 * @return array Return the modified $fields array.
-	 * @see getMainFields(),getFieldsToAdd()
-	 */
-	public function mergeFieldsWithAddedFields($fields, $fieldsToAdd, $table = '') {
-		if (count($fieldsToAdd[0])) {
-			$c = 0;
-			$found = FALSE;
-			foreach ($fields as $fieldInfo) {
-				list($fieldName, $label, $paletteName) = GeneralUtility::trimExplode(';', $fieldInfo);
-				if ($fieldName === $fieldsToAdd[1]) {
-					$found = TRUE;
-				} elseif ($fieldName === '--palette--' && $paletteName && $table !== '') {
-					// Look inside the palette
-					if (is_array($GLOBALS['TCA'][$table]['palettes'][$paletteName])) {
-						$itemList = $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'];
-						if ($itemList) {
-							$paletteFields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-							foreach ($paletteFields as $info) {
-								$fieldParts = GeneralUtility::trimExplode(';', $info);
-								$theField = $fieldParts[0];
-								if ($theField === $fieldsToAdd[1]) {
-									$found = TRUE;
-									break 1;
-								}
-							}
-						}
-					}
-				}
-				if ($found) {
-					array_splice($fields, $c + 1, 0, $fieldsToAdd[0]);
-					break;
-				}
-				$c++;
-			}
-		}
-		return $fields;
-	}
-
-	/************************************************************
-	 *
-	 * Display of localized content etc.
-	 *
-	 ************************************************************/
-	/**
-	 * Will register data from original language records if the current record is a translation of another.
-	 * The original data is shown with the edited record in the form.
-	 * The information also includes possibly diff-views of what changed in the original record.
-	 * Function called from outside (see alt_doc.php + quick edit) before rendering a form for a record
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param array $rec Record array of the record being edited
-	 * @return void
-	 */
-	public function registerDefaultLanguageData($table, $rec) {
-		// Add default language:
-		if (
-			$GLOBALS['TCA'][$table]['ctrl']['languageField'] && $rec[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0
-			&& $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
-			&& (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] > 0
-		) {
-			$lookUpTable = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']
-				? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']
-				: $table;
-			// Get data formatted:
-			$this->defaultLanguageData[$table . ':' . $rec['uid']] = BackendUtility::getRecordWSOL(
-				$lookUpTable,
-				(int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]
-			);
-			// Get data for diff:
-			if ($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']) {
-				$this->defaultLanguageData_diff[$table . ':' . $rec['uid']] = unserialize($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']]);
-			}
-			// If there are additional preview languages, load information for them also:
-			foreach ($this->additionalPreviewLanguages as $prL) {
-				/** @var $t8Tools TranslationConfigurationProvider */
-				$t8Tools = GeneralUtility::makeInstance(TranslationConfigurationProvider::class);
-				$tInfo = $t8Tools->translationInfo($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']], $prL['uid']);
-				if (is_array($tInfo['translations']) && is_array($tInfo['translations'][$prL['uid']])) {
-					$this->additionalPreviewLanguageData[$table . ':' . $rec['uid']][$prL['uid']] = BackendUtility::getRecordWSOL($table, (int)$tInfo['translations'][$prL['uid']]['uid']);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Creates language-overlay for a field value
-	 * This means the requested field value will be overridden with the data from the default language.
-	 * Can be used to render read only fields for example.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param array $row Record array of the record being edited in current language
-	 * @param string $field Field name represented by $item
-	 * @param array $fieldConf Content of $PA['fieldConf']
-	 * @return string Unprocessed field value merged with default language data if needed
-	 */
-	public function getLanguageOverlayRawValue($table, $row, $field, $fieldConf) {
-		$value = $row[$field];
-		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			if (
-				$fieldConf['l10n_mode'] == 'exclude'
-				|| $fieldConf['l10n_mode'] == 'mergeIfNotBlank' && trim($this->defaultLanguageData[$table . ':' . $row['uid']][$field]) !== ''
-			) {
-				$value = $this->defaultLanguageData[$table . ':' . $row['uid']][$field];
-			}
-		}
-		return $value;
-	}
-
-	/**
-	 * Renders the display of default language record content around current field.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param string $field Field name represented by $item
-	 * @param array $row Record array of the record being edited
-	 * @param string $item HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 */
-	public function renderDefaultLanguageContent($table, $field, $row, $item) {
-		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->defaultLanguageData[$table . ':' . $row['uid']][$field], 0, 1, FALSE, $this->defaultLanguageData[$table . ':' . $row['uid']]['uid']);
-			$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-			// Don't show content if it's for IRRE child records:
-			if ($fieldConfig['config']['type'] != 'inline') {
-				if ($defaultLanguageValue !== '') {
-					$item .= '<div class="t3-form-original-language">' . FormEngineUtility::getLanguageIcon($table, $row, 0)
-						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
-				}
-				foreach ($this->additionalPreviewLanguages as $previewLanguage) {
-					$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->additionalPreviewLanguageData[$table . ':' . $row['uid']][$previewLanguage['uid']][$field], 0, 1);
-					if ($defaultLanguageValue !== '') {
-						$item .= '<div class="t3-form-original-language">'
-							. FormEngineUtility::getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
-							. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
-					}
-				}
-			}
-		}
-		return $item;
-	}
-
-	/**
-	 * Renders the diff-view of default language record content compared with what the record was originally translated from.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param string $field Field name represented by $item
-	 * @param array $row Record array of the record being edited
-	 * @param string  $item HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 */
-	public function renderDefaultLanguageDiff($table, $field, $row, $item) {
-		if (is_array($this->defaultLanguageData_diff[$table . ':' . $row['uid']])) {
-			// Initialize:
-			$dLVal = array(
-				'old' => $this->defaultLanguageData_diff[$table . ':' . $row['uid']],
-				'new' => $this->defaultLanguageData[$table . ':' . $row['uid']]
-			);
-			// There must be diff-data:
-			if (isset($dLVal['old'][$field])) {
-				if ((string)$dLVal['old'][$field] !== (string)$dLVal['new'][$field]) {
-					// Create diff-result:
-					$t3lib_diff_Obj = GeneralUtility::makeInstance(DiffUtility::class);
-					$diffres = $t3lib_diff_Obj->makeDiffDisplay(
-						BackendUtility::getProcessedValue($table, $field, $dLVal['old'][$field], 0, 1),
-						BackendUtility::getProcessedValue($table, $field, $dLVal['new'][$field], 0, 1)
-					);
-					$item .= '<div class="t3-form-original-language-diff">
-						<div class="t3-form-original-language-diffheader">' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . '</div>
-						<div class="t3-form-original-language-diffcontent">' . $diffres . '</div>
-					</div>';
-				}
-			}
-		}
-		return $item;
 	}
 
 	/************************************************************
@@ -1419,11 +740,6 @@ class FormEngine {
 		$template = GeneralUtility::getUrl(PATH_typo3 . $this->templateFile);
 		// Wrapping all table rows for a particular record being edited:
 		$this->totalWrap = HtmlParser::getSubpart($template, '###TOTALWRAP###');
-		// Wrapping a single field:
-		$this->fieldTemplate = HtmlParser::getSubpart($template, '###FIELDTEMPLATE###');
-		$this->paletteFieldTemplate = HtmlParser::getSubpart($template, '###PALETTEFIELDTEMPLATE###');
-		$this->palFieldTemplate = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE###');
-		$this->palFieldTemplateHeader = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE_HEADER###');
 	}
 
 	/**
@@ -1807,75 +1123,6 @@ class FormEngine {
 	 */
 	public function doLoadTableDescr($table) {
 		return $GLOBALS['TCA'][$table]['interface']['always_description'];
-	}
-
-	/**
-	 * Renders an icon to indicate the way the translation and the original is merged (if this is relevant).
-	 *
-	 * If a field is defined as 'mergeIfNotBlank' this is useful information for an editor. He/she can leave the field blank and
-	 * the original value will be used. Without this hint editors are likely to copy the contents even if it is not necessary.
-	 *
-	 * @param string $l10nMode Localization mode from TCA
-	 * @return string
-	 */
-	protected function getMergeBehaviourIcon($l10nMode) {
-		$icon = '';
-		if ($l10nMode === 'mergeIfNotBlank') {
-			$icon = IconUtility::getSpriteIcon('actions-edit-merge-localization', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank')));
-		}
-		return $icon;
-	}
-
-	/**
-	 * Rendering preview output of a field value which is not shown as a form field but just outputted.
-	 *
-	 * @param string $value The value to output
-	 * @param array $config Configuration for field.
-	 * @param string $field Name of field.
-	 * @return string HTML formatted output
-	 */
-	public function previewFieldValue($value, $config, $field = '') {
-		if ($config['config']['type'] === 'group' && ($config['config']['internal_type'] === 'file' || $config['config']['internal_type'] === 'file_reference')) {
-			// Ignore uploadfolder if internal_type is file_reference
-			if ($config['config']['internal_type'] === 'file_reference') {
-				$config['config']['uploadfolder'] = '';
-			}
-			$show_thumbs = TRUE;
-			$table = 'tt_content';
-			// Making the array of file items:
-			$itemArray = GeneralUtility::trimExplode(',', $value, TRUE);
-			// Showing thumbnails:
-			$thumbsnail = '';
-			if ($show_thumbs) {
-				$imgs = array();
-				foreach ($itemArray as $imgRead) {
-					$imgP = explode('|', $imgRead);
-					$imgPath = rawurldecode($imgP[0]);
-					$rowCopy = array();
-					$rowCopy[$field] = $imgPath;
-					// Icon + clickmenu:
-					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
-					$fileInformation = pathinfo($imgPath);
-					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
-					$imgs[] =
-						'<span class="text-nowrap">' .
-							BackendUtility::thumbCode(
-								$rowCopy,
-								$table,
-								$field,
-								'',
-								'thumbs.php',
-								$config['config']['uploadfolder'], 0, ' align="middle"'
-							) .
-							($absFilePath ? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) . $imgPath .
-						'</span>';
-				}
-				$thumbsnail = implode('<br />', $imgs);
-			}
-			return $thumbsnail;
-		} else {
-			return nl2br(htmlspecialchars($value));
-		}
 	}
 
 	/**
@@ -2395,8 +1642,31 @@ class FormEngine {
 	 * Additional preview languages
 	 *
 	 * @var array|NULL
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $cachedAdditionalPreviewLanguages = NULL;
+
+	/**
+	 * Array where records in the default language is stored. (processed by transferdata)
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defaultLanguageData = array();
+
+	/**
+	 * Array where records in the default language is stored (raw without any processing. used for making diff)
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $defaultLanguageData_diff = array();
+
+	/**
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $additionalPreviewLanguageData = array();
 
 	/**
 	 * Overrule the field order set in TCA[types][showitem], eg for tt_content this value,
@@ -2407,6 +1677,70 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $fieldOrder = '';
+
+	/**
+	 * Set to the fields NOT to display, if any
+	 *
+	 * @var array|NULL
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public $excludeElements = NULL;
+
+	/**
+	 * Color scheme buffer
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $savedSchemes = array();
+
+	/**
+	 * Wrapping template code for a section
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $sectionWrap = '';
+
+	/**
+	 * Additional JavaScript, printed before the form
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $additionalJS_pre = array();
+
+	/**
+	 * Field template
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $fieldTemplate = '<strong>###FIELD_NAME###</strong><br />###FIELD_ITEM###<hr />';
+
+	/**
+	 * Template subpart for palette fields
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	protected $paletteFieldTemplate = '';
+
+	/**
+	 * Template for palette headers
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $palFieldTemplateHeader = '';
+
+	/**
+	 * Template for palettes
+	 *
+	 * @var string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $palFieldTemplate = '';
 
 	/**
 	 * Generation of TCEform elements of the type "input"
@@ -3636,7 +2970,7 @@ class FormEngine {
 	 */
 	public function renderWizards($itemKinds, $wizConf, $table, $row, $field, &$PA, $itemName, $specConf, $RTE = FALSE) {
 		// renderWizards() in AbstractFormElement is now protected. The method was never meant to be
-		// called directly. Let's throw a friendly exception if someone still does it.
+		// called externally. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('renderWizards() can not be called directly', 1424031813);
 	}
 
@@ -3673,7 +3007,7 @@ class FormEngine {
 	 */
 	public function loadPaletteElements($table, $row, $palette, $itemList = '', array $excludeElements = array()) {
 		// loadPaletteElements() was moved and is now protected. The method was never meant to be
-		// called directly. Let's throw a friendly exception if someone still does it.
+		// called externally. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('loadPaletteElements() can not be called directly', 1426335221);
 	}
 
@@ -3686,7 +3020,7 @@ class FormEngine {
 	 */
 	public function printPalette($palArr) {
 		// printPalette() was moved and is now protected. The method was never meant to be
-		// called directly. Let's throw a friendly exception if someone still does it.
+		// called externally. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('printPalette() can not be called directly', 1426335222);
 	}
 
@@ -3701,7 +3035,7 @@ class FormEngine {
 	 */
 	public function wrapCollapsiblePalette($code, $id, $collapsed) {
 		// wrapCollapsiblePalette() was moved and is now protected. The method was never meant to be
-		// called directly. Let's throw a friendly exception if someone still does it.
+		// called externally. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('wrapCollapsiblePalette() can not be called directly', 1426335223);
 	}
 
@@ -3715,7 +3049,7 @@ class FormEngine {
 	 */
 	public function isPalettesCollapsed($table, $palette) {
 		// isPalettesCollapsed() was moved and is now protected. The method was never meant to be
-		// called directly. Let's throw a friendly exception if someone still does it.
+		// called externally. Let's throw a friendly exception if someone still does it.
 		throw new \RuntimeException('isPalettesCollapsed() can not be called directly', 1426335224);
 	}
 
@@ -3837,5 +3171,278 @@ class FormEngine {
 		return $this->additionalPreviewLanguages;
 	}
 
+	/**
+	 * Will register data from original language records if the current record is a translation of another.
+	 * The original data is shown with the edited record in the form.
+	 * The information also includes possibly diff-views of what changed in the original record.
+	 * Function called from outside (see alt_doc.php + quick edit) before rendering a form for a record
+	 *
+	 * @param string $table Table name of the record being edited
+	 * @param array $rec Record array of the record being edited
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function registerDefaultLanguageData($table, $rec) {
+		// The method returned void all the time. It is now encapsulated in EntryContainer.
+		// Instead of throwing an exception here, we just return nothing as before, but deprecate.
+		GeneralUtility::logDeprecatedFunction();
+	}
 
+	/**
+	 * Calculate and return the current "types" pointer value for a record
+	 *
+	 * @param string $table The table name. MUST be in $GLOBALS['TCA']
+	 * @param array $row The row from the table, should contain at least the "type" field, if applicable.
+	 * @return string Return the "type" value for this record, ready to pick a "types" configuration from the $GLOBALS['TCA'] array.
+	 * @throws \RuntimeException
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getRTypeNum($table, $row) {
+		// getRTypeNum() was moved and is now protected. The method was never meant to be
+		// called externally. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('getRTypeNum() can not be called directly', 1426364227);
+	}
+
+	/**
+	 * Creates language-overlay for a field value
+	 * This means the requested field value will be overridden with the data from the default language.
+	 * Can be used to render read only fields for example.
+	 *
+	 * @param string $table Table name of the record being edited
+	 * @param array $row Record array of the record being edited in current language
+	 * @param string $field Field name represented by $item
+	 * @param array $fieldConf Content of $PA['fieldConf']
+	 * @return string Unprocessed field value merged with default language data if needed
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getLanguageOverlayRawValue($table, $row, $field, $fieldConf) {
+		// getLanguageOverlayRawValue() was moved and is now protected. The method was never meant to be
+		// called externally. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('getLanguageOverlayRawValue() can not be called directly', 1426364228);
+	}
+
+	/**
+	 * Producing an array of field names NOT to display in the form,
+	 * based on settings from subtype_value_field, bitmask_excludelist_bits etc.
+	 * Notice, this list is in NO way related to the "excludeField" flag
+	 *
+	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
+	 * @param array $row A record from table.
+	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
+	 * @return array Array with fieldnames as values. The fieldnames are those which should NOT be displayed "anyways
+	 * @see getMainFields()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getExcludeElements($table, $row, $typeNum) {
+		GeneralUtility::logDeprecatedFunction();
+		// Init:
+		$excludeElements = array();
+		// If a subtype field is defined for the type
+		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
+			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
+			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]])) {
+				$excludeElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]], TRUE);
+			}
+		}
+		// If a bitmask-value field has been configured, then find possible fields to exclude based on that:
+		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field']) {
+			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field'];
+			$sTValue = MathUtility::forceIntegerInRange($row[$sTfield], 0);
+			if (is_array($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'])) {
+				foreach ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'] as $bitKey => $eList) {
+					$bit = substr($bitKey, 1);
+					if (MathUtility::canBeInterpretedAsInteger($bit)) {
+						$bit = MathUtility::forceIntegerInRange($bit, 0, 30);
+						if ($bitKey[0] === '-' && !($sTValue & pow(2, $bit)) || $bitKey[0] === '+' && $sTValue & pow(2, $bit)) {
+							$excludeElements = array_merge($excludeElements, GeneralUtility::trimExplode(',', $eList, TRUE));
+						}
+					}
+				}
+			}
+		}
+		// Return the array of elements:
+		return $excludeElements;
+	}
+
+	/**
+	 * Finds possible field to add to the form, based on subtype fields.
+	 *
+	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
+	 * @param array $row A record from table.
+	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
+	 * @return array An array containing two values: 1) Another array containing field names to add and 2) the subtype value field.
+	 * @see getMainFields()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getFieldsToAdd($table, $row, $typeNum) {
+		GeneralUtility::logDeprecatedFunction();
+		// Init:
+		$addElements = array();
+		// If a subtype field is defined for the type
+		$sTfield = '';
+		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
+			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
+			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]])) {
+				$addElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]], TRUE);
+			}
+		}
+		// Return the return
+		return array($addElements, $sTfield);
+	}
+
+	/**
+	 * Merges the current [types][showitem] array with the array of fields to add for the current subtype field of the "type" value.
+	 *
+	 * @param array $fields A [types][showitem] list of fields, exploded by ",
+	 * @param array $fieldsToAdd The output from getFieldsToAdd()
+	 * @param string $table The table name, if we want to consider it's palettes when positioning the new elements
+	 * @return array Return the modified $fields array.
+	 * @see getMainFields(),getFieldsToAdd()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function mergeFieldsWithAddedFields($fields, $fieldsToAdd, $table = '') {
+		GeneralUtility::logDeprecatedFunction();
+		if (count($fieldsToAdd[0])) {
+			$c = 0;
+			$found = FALSE;
+			foreach ($fields as $fieldInfo) {
+				list($fieldName, $label, $paletteName) = GeneralUtility::trimExplode(';', $fieldInfo);
+				if ($fieldName === $fieldsToAdd[1]) {
+					$found = TRUE;
+				} elseif ($fieldName === '--palette--' && $paletteName && $table !== '') {
+					// Look inside the palette
+					if (is_array($GLOBALS['TCA'][$table]['palettes'][$paletteName])) {
+						$itemList = $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'];
+						if ($itemList) {
+							$paletteFields = GeneralUtility::trimExplode(',', $itemList, TRUE);
+							foreach ($paletteFields as $info) {
+								$fieldParts = GeneralUtility::trimExplode(';', $info);
+								$theField = $fieldParts[0];
+								if ($theField === $fieldsToAdd[1]) {
+									$found = TRUE;
+									break 1;
+								}
+							}
+						}
+					}
+				}
+				if ($found) {
+					array_splice($fields, $c + 1, 0, $fieldsToAdd[0]);
+					break;
+				}
+				$c++;
+			}
+		}
+		return $fields;
+	}
+
+	/**
+	 * Renders the display of default language record content around current field.
+	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
+	 * depending on registerDefaultLanguageData() being called prior to this.
+	 *
+	 * @param string $table Table name of the record being edited
+	 * @param string $field Field name represented by $item
+	 * @param array $row Record array of the record being edited
+	 * @param string $item HTML of the form field. This is what we add the content to.
+	 * @return string Item string returned again, possibly with the original value added to.
+	 * @see getSingleField(), registerDefaultLanguageData()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function renderDefaultLanguageContent($table, $field, $row, $item) {
+		// renderDefaultLanguageContent() was moved and is now protected. The method was never meant to be
+		// called externally. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('getLanguageOverlayRawValue() can not be called directly', 1426435738);
+	}
+
+	/**
+	 * Rendering preview output of a field value which is not shown as a form field but just outputted.
+	 *
+	 * @param string $value The value to output
+	 * @param array $config Configuration for field.
+	 * @param string $field Name of field.
+	 * @return string HTML formatted output
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function previewFieldValue($value, $config, $field = '') {
+		GeneralUtility::logDeprecatedFunction();
+		if ($config['config']['type'] === 'group' && ($config['config']['internal_type'] === 'file' || $config['config']['internal_type'] === 'file_reference')) {
+			// Ignore uploadfolder if internal_type is file_reference
+			if ($config['config']['internal_type'] === 'file_reference') {
+				$config['config']['uploadfolder'] = '';
+			}
+			$show_thumbs = TRUE;
+			$table = 'tt_content';
+			// Making the array of file items:
+			$itemArray = GeneralUtility::trimExplode(',', $value, TRUE);
+			// Showing thumbnails:
+			$thumbsnail = '';
+			if ($show_thumbs) {
+				$imgs = array();
+				foreach ($itemArray as $imgRead) {
+					$imgP = explode('|', $imgRead);
+					$imgPath = rawurldecode($imgP[0]);
+					$rowCopy = array();
+					$rowCopy[$field] = $imgPath;
+					// Icon + clickmenu:
+					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
+					$fileInformation = pathinfo($imgPath);
+					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
+					$imgs[] =
+						'<span class="text-nowrap">' .
+						BackendUtility::thumbCode(
+							$rowCopy,
+							$table,
+							$field,
+							'',
+							'thumbs.php',
+							$config['config']['uploadfolder'], 0, ' align="middle"'
+						) .
+						($absFilePath ? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) . $imgPath .
+						'</span>';
+				}
+				$thumbsnail = implode('<br />', $imgs);
+			}
+			return $thumbsnail;
+		} else {
+			return nl2br(htmlspecialchars($value));
+		}
+	}
+
+	/**
+	 * Renders the diff-view of default language record content compared with what the record was originally translated from.
+	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
+	 * depending on registerDefaultLanguageData() being called prior to this.
+	 *
+	 * @param string $table Table name of the record being edited
+	 * @param string $field Field name represented by $item
+	 * @param array $row Record array of the record being edited
+	 * @param string  $item HTML of the form field. This is what we add the content to.
+	 * @return string Item string returned again, possibly with the original value added to.
+	 * @see getSingleField(), registerDefaultLanguageData()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function renderDefaultLanguageDiff($table, $field, $row, $item) {
+		// renderDefaultLanguageDiff() was moved and is now protected. The method was never meant to be
+		// called externally. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('renderDefaultLanguageContent() can not be called directly', 1426435738);
+	}
+
+	/**
+	 * Rendering a single item for the form
+	 *
+	 * @param string $table Table name of record
+	 * @param string $field Fieldname to render
+	 * @param array $row The record
+	 * @param array $PA Parameters array containing a lot of stuff. Value by Reference!
+	 * @return string Returns the item as HTML code to insert
+	 * @access private
+	 * @see getSingleField(), getSingleField_typeFlex_draw()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	public function getSingleField_SW($table, $field, $row, &$PA) {
+		// renderDefaultLanguageContent() was moved and is now protected. The method was never meant to be
+		// called externally. Let's throw a friendly exception if someone still does it.
+		throw new \RuntimeException('getSingleField_SW() can not be called directly', 1426435738);
+	}
 }

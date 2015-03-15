@@ -76,11 +76,11 @@ abstract class AbstractFormElement {
 
 	/**
 	 * Constructor function, setting the FormEngine
-	 *
-	 * @param FormEngine $formEngine
 	 */
-	public function __construct(FormEngine $formEngine) {
-		$this->formEngine = $formEngine;
+//	public function __construct(FormEngine $formEngine) {
+	public function __construct() {
+//		$this->formEngine = $formEngine;
+		$this->formEngine = new FormEngine();
 	}
 
 	/**
@@ -176,7 +176,7 @@ abstract class AbstractFormElement {
 		// Manipulate the field name (to be the TRUE form field name) and remove
 		// a suffix-value if the item is a selector box with renderMode "singlebox":
 		$listFlag = '_list';
-		if ($PA['fieldConf']['config']['form_type'] == 'select') {
+		if ($PA['fieldConf']['config']['type'] == 'select') {
 			// Single select situation:
 			if ($PA['fieldConf']['config']['maxitems'] <= 1) {
 				$listFlag = '';

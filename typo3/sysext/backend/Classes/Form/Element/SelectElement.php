@@ -165,7 +165,7 @@ class SelectElement extends AbstractFormElement {
 			$tvP = explode('|', $tv, 2);
 			$evalValue = $tvP[0];
 			$isRemoved = in_array($evalValue, $removeItems)
-				|| $config['form_type'] == 'select' && $config['authMode']
+				|| $config['type'] == 'select' && $config['authMode']
 				&& !$this->getBackendUserAuthentication()->checkAuthMode($table, $field, $evalValue, $config['authMode']);
 			if ($isRemoved && !$PA['fieldTSConfig']['disableNoMatchingValueElement'] && !$config['disableNoMatchingValueElement']) {
 				$tvP[1] = rawurlencode(@sprintf($nMV_label, $evalValue));
@@ -340,7 +340,7 @@ class SelectElement extends AbstractFormElement {
 
 			$authModeDeny = FALSE;
 			if (
-				($config['form_type'] === 'select')
+				($config['type'] === 'select')
 				&& $config['authMode']
 				&& !$beUserAuth->checkAuthMode($table, $fieldName, $selectItem[1], $config['authMode'])
 			) {
@@ -904,7 +904,6 @@ class SelectElement extends AbstractFormElement {
 
 		$PA = array();
 		$PA['fieldConf']['config'] = $fieldConfig;
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
 		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($this->currentTable, $this->currentRow, $fieldName);
 		$PA['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
 		$selectItemArray = $this->getSelectItems($this->currentTable, $fieldName, $this->currentRow, $PA);

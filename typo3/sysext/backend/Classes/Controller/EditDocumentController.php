@@ -920,8 +920,6 @@ class EditDocumentController {
 									if (is_array($this->overrideVals) && is_array($this->overrideVals[$table])) {
 										$this->tceforms->hiddenFieldListArr = array_keys($this->overrideVals[$table]);
 									}
-									// Register default language labels, if any:
-									$this->tceforms->registerDefaultLanguageData($table, $rec);
 									// Create form for the record (either specific list of fields or the whole record):
 									$panel = '';
 									if ($this->columnsOnly) {

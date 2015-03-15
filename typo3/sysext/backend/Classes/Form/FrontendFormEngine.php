@@ -36,8 +36,10 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 *
 	 * @param string $str The string to wrap
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function wrapLabels($str) {
+		GeneralUtility::logDeprecatedFunction();
 		return '<font face="verdana" size="1" color="black">' . $str . '</font>';
 	}
 
@@ -68,24 +70,12 @@ class FrontendFormEngine extends \TYPO3\CMS\Backend\Form\FormEngine {
 	 * Frontend
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function setFancyDesign() {
-		$this->fieldTemplate = '
-	<tr>
-		<td nowrap="nowrap" bgcolor="#F6F2E6">###FIELD_HELP_ICON###<font face="verdana" size="1" color="black"><strong>###FIELD_NAME###</strong></font>###FIELD_HELP_TEXT###</td>
-	</tr>
-	<tr>
-		<td nowrap="nowrap" bgcolor="#ABBBB4"><img name="req_###FIELD_TABLE###_###FIELD_ID###_###FIELD_FIELD###" src="clear.gif" width="10" height="10" alt="" /><font face="verdana" size="1" color="black">###FIELD_ITEM###</font>###FIELD_PAL_LINK_ICON###</td>
-	</tr>	';
-		$this->totalWrap = '<table border="0" cellpadding="1" cellspacing="0" bgcolor="black"><tr><td><table border="0" cellpadding="2" cellspacing="0">|</table></td></tr></table>';
-		$this->palFieldTemplate = '
-	<tr>
-		<td nowrap="nowrap" bgcolor="#ABBBB4"><font face="verdana" size="1" color="black">###FIELD_PALETTE###</font></td>
-	</tr>	';
-		$this->palFieldTemplateHeader = '
-	<tr>
-		<td nowrap="nowrap" bgcolor="#F6F2E6"><font face="verdana" size="1" color="black"><strong>###FIELD_HEADER###</strong></font></td>
-	</tr>	';
+		// This method has set $this->fieldTemplate to something different, but the propertyis not used anymore,
+		// it is safe to just return void here.
+		GeneralUtility::logDeprecatedFunction();
 	}
 
 	/**

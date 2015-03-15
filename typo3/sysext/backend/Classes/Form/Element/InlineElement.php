@@ -387,9 +387,12 @@ class InlineElement {
 		$foreign_selector = $config['foreign_selector'];
 		// Register default localization content:
 		$parent = $this->getStructureLevel(-1);
+
+		// @todo: This is broken until InlineElement is a container
 		if (isset($parent['localizationMode']) && $parent['localizationMode'] != FALSE) {
 			$this->formEngine->registerDefaultLanguageData($foreign_table, $rec);
 		}
+
 		// Send a mapping information to the browser via JSON:
 		// e.g. data[<curTable>][<curId>][<curField>] => data-<pid>-<parentTable>-<parentId>-<parentField>-<curTable>-<curId>-<curField>
 		$this->inlineData['map'][$this->inlineNames['form']] = $this->inlineNames['object'];
@@ -884,8 +887,6 @@ class InlineElement {
 		$foreign_selector = $conf['foreign_selector'];
 		$PA = array();
 		$PA['fieldConf'] = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector];
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
-		// Using "form_type" locally in this script
 		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($foreign_table, array(), $foreign_selector);
 		$config = $PA['fieldConf']['config'];
 		// @todo $disabled is not present - should be read from config?
@@ -1773,7 +1774,7 @@ class InlineElement {
 			foreach ($selItems as $tk => $p) {
 				// Checking languages and authMode:
 				$languageDeny = $tcaTableCtrl['languageField'] && (string)$tcaTableCtrl['languageField'] === $field && !$GLOBALS['BE_USER']->checkLanguageAccess($p[1]);
-				$authModeDeny = $config['form_type'] == 'select' && $config['authMode'] && !$GLOBALS['BE_USER']->checkAuthMode($table, $field, $p[1], $config['authMode']);
+				$authModeDeny = $config['type'] == 'select' && $config['authMode'] && !$GLOBALS['BE_USER']->checkAuthMode($table, $field, $p[1], $config['authMode']);
 				if (in_array($p[1], $removeItems) || $languageDeny || $authModeDeny) {
 					unset($selItems[$tk]);
 				} else {
@@ -2473,8 +2474,6 @@ class InlineElement {
 			if ($PA['fieldConf'] && $conf['foreign_selector_fieldTcaOverride']) {
 				ArrayUtility::mergeRecursiveWithOverrule($PA['fieldConf'], $conf['foreign_selector_fieldTcaOverride']);
 			}
-			$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
-			// Using "form_type" locally in this script
 			$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($foreign_table, array(), $field);
 			$config = $PA['fieldConf']['config'];
 			// Determine type of Selector:

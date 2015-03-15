@@ -29,7 +29,7 @@ class UnknownElement extends AbstractFormElement {
 	 * @return string The HTML code for the TCEform field
 	 */
 	public function render($table, $field, $row, &$additionalInformation) {
-		return 'Unknown type: ' . $additionalInformation['fieldConf']['config']['form_type'] . '<br />';
+		return 'Unknown type: ' . $additionalInformation['fieldConf']['config']['type'] . '<br />';
 	}
 
 }
