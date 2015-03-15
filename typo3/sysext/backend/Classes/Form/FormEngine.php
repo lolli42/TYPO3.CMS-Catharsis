@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -1945,7 +1946,7 @@ class FormEngine {
 		$tCells = array();
 		$pct = round(100 / count($sArr));
 		foreach ($sArr as $sKey => $sheetCfg) {
-			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
+			if ($this->getBackendUserAuthentication()->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
 				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
 					. 'document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
 			} else {

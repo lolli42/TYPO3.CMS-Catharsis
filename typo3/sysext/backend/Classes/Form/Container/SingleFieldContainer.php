@@ -130,7 +130,7 @@ class SingleFieldContainer extends AbstractContainer {
 			|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
 			&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $fieldName)
 		) {
-			if ($backendUser->jsConfirmation(1)) {
+			if ($backendUser->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
 				$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 			} else {
 				$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';

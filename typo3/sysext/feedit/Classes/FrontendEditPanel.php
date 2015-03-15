@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -65,7 +66,7 @@ class FrontendEditPanel {
 		$this->databaseConnection = $databaseConnection ?: $GLOBALS['TYPO3_DB'];
 		$this->frontendController = $frontendController ?: $GLOBALS['TSFE'];
 		$this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
-		$this->cObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$this->cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$this->cObj->start(array());
 	}
 
@@ -252,7 +253,7 @@ class FrontendEditPanel {
 				$out = $this->editPanelLinkWrap_doWrap($string, $adminURL . 'alt_doc.php?edit[' . $rParts[0] . '][' . $nPid . ']=new&noView=' . $nV, $currentRecord);
 			}
 		} else {
-			if ($confirm && $this->backendUser->jsConfirmation(8)) {
+			if ($confirm && $this->backendUser->jsConfirmation(JsConfirmation::FE_EDIT)) {
 				// Gets htmlspecialchared later
 				$cf1 = 'if (confirm(' . GeneralUtility::quoteJSvalue($confirm, TRUE) . ')) {';
 				$cf2 = '}';
