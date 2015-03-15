@@ -204,6 +204,17 @@ class RootlineUtility {
 	 * @return array
 	 */
 	public function get() {
+		/** @var \TYPO3\CMS\Core\Tree\PageTree $pageTree */
+		/*
+		$pageTree = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Tree\PageTree::class);
+
+		$pagesFields = array(
+			't2' => self::$rootlineFields
+		);
+		$tree = $pageTree->getRootline($this->pageUid, $pagesFields);
+
+		return $tree;
+		*/
 		if (!isset(static::$localCache[$this->cacheIdentifier])) {
 			$entry = static::$cache->get($this->cacheIdentifier);
 			if (!$entry) {
