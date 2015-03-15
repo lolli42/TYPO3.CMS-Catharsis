@@ -59,6 +59,72 @@ abstract class ClosureTree {
 	protected $query;
 
 	/**
+	 * Move a node in tree
+	 *
+	 * @param int $nodeIdentifier currently this is the UID
+	 * @param int $newParentNodeIndetifier currently this is the new PID
+	 * @todo implement this method
+	 */
+	public function moveNode($nodeIdentifier, $newParentNodeIndetifier) {
+		$this->rebuildClosureTable();
+	}
+
+	/**
+	 * Delete a node from tree
+	 *
+	 * @param int $nodeIdentifier currently this is the UID
+	 * @todo implement this method
+	 */
+	public function deleteNode($nodeIdentifier) {
+		$this->rebuildClosureTable();
+	}
+
+	/**
+	 * Add a node in tree
+	 *
+	 * @param int $parentNodeIdentifier currently this is the PID
+	 * @param array $data
+	 * @todo implement this method
+	 */
+	public function addNode($parentNodeIdentifier, array $data) {
+		$this->rebuildClosureTable();
+	}
+
+	/**
+	 * Rebuild closure table.
+	 *
+	 * @param int $parentIdentifier
+	 * @param array $rootline
+	 */
+	protected function rebuildClosureTable($parentIdentifier = 0, array $rootline = array()) {
+		$database = $this->getDatabaseConnection();
+		if ($parentIdentifier === 0) {
+			$database->exec_TRUNCATEquery($this->closureTable);
+		}
+		$childsOfThisParent = $database->exec_SELECTgetRows('uid,pid', $this->table, 'pid=' . (int)$parentIdentifier);
+		foreach ($childsOfThisParent as $child) {
+			$rootlineOfThisChild = $rootline;
+			$rootlineOfThisChild[] = $child['uid'];
+			$toInsertRows = array();
+			$maxDepth = count($rootlineOfThisChild) - 1;
+			foreach($rootlineOfThisChild as $depth => $node) {
+				$toInsertRows[] = array(
+					'ancestor' => $node,
+					'descendant' => $child['uid'],
+					'depth' => $maxDepth - $depth,
+				);
+			}
+			$database->exec_INSERTmultipleRows(
+				$this->closureTable,
+				array('ancestor', 'descendant', 'depth'),
+				$toInsertRows,
+				TRUE
+			);
+			$this->rebuildClosureTable($child['uid'], $rootlineOfThisChild);
+		}
+	}
+
+	/**
 	 * @param int $treeRootIdentifier currently this is the UID
 	 * @param array $selectFields e.g. array('tablename' => array('field')), t2 = $table, tc1 = $closureTable, or tablename
 	 * @param int $depth max level
