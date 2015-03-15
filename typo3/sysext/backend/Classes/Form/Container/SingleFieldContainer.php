@@ -295,7 +295,7 @@ class SingleFieldContainer extends AbstractContainer {
 				'group' => 'GroupElement',
 				'none' => 'NoneElement',
 				'user' => 'UserElement',
-				'flex' => 'FlexElement',
+//				'flex' => 'FlexElement',
 				'unknown' => 'UnknownElement',
 			);
 			if (!isset($typeClassNameMapping[$type])) {

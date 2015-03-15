@@ -7,7 +7,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Backend\Form\Container\NoTabsContainer;
 
 class EntryContainer extends AbstractContainer {
 
@@ -43,9 +42,8 @@ class EntryContainer extends AbstractContainer {
 		$table = $this->globalOptions['table'];
 		$row = $this->globalOptions['databaseRow'];
 
-		$content = '';
 		if (!$GLOBALS['TCA'][$table]) {
-			return $content;
+			return '';
 		}
 
 		$languageService = $this->getLanguageService();
@@ -72,9 +70,10 @@ class EntryContainer extends AbstractContainer {
 		}
 
 		$fieldsArray = GeneralUtility::trimExplode(',', $itemList, TRUE);
-		// Get excluded fields, added fields and put it together:
-		$excludeElements = $this->getExcludeElements($table, $row, $recordTypeValue);
+		// Add fields and remove excluded fields
 		$fieldsArray = $this->mergeFieldsWithAddedFields($fieldsArray, $this->getFieldsToAdd($table, $row, $recordTypeValue), $table);
+		$excludeElements = $this->getExcludeElements($table, $row, $recordTypeValue);
+		$fieldsArray = $this->removeExcludeElementsFromFieldArray($fieldsArray, $excludeElements);
 
 		// Streamline the fields array
 		// First, make sure there is always a --div-- definition for the first element
@@ -86,7 +85,7 @@ class EntryContainer extends AbstractContainer {
 		if (!$firstTabHasLabel) {
 			$fieldsArray[0] = '--div--;LLL:EXT:lang/locallang_core.xlf:labels.generalTab';
 		}
-		// If there are at least two --div-- definitions, next container will be a TabContainer, else a NoTabContainer
+		// If there are at least two --div-- definitions, inner container will be a TabContainer, else a NoTabContainer
 		$tabCount = 0;
 		foreach ($fieldsArray as $field) {
 			if (substr($field, 0, 7) === '--div--') {
@@ -102,12 +101,17 @@ class EntryContainer extends AbstractContainer {
 
 		$options = $this->globalOptions;
 		$options['fieldsArray'] = $fieldsArray;
+		// Palettes may contain elements that should be excluded, resolved in PaletteContainer
+		$options['excludeElements'] = $excludeElements;
 		$options['defaultLanguageData'] = $this->defaultLanguageData;
 		$options['defaultLanguageDataDiff'] = $this->defaultLanguageDataDiff;
 		$options['additionalPreviewLanguageData'] = $this->additionalPreviewLanguageData;
 
 		if ($hasTabs) {
-
+			/** @var EntryContainer $TabsContainer */
+			$container = GeneralUtility::makeInstance(TabsContainer::class);
+			$container->setGlobalOptions($options);
+			$content = $container->render();
 		} else {
 			/** @var EntryContainer $NoTabsContainer */
 			$container = GeneralUtility::makeInstance(NoTabsContainer::class);

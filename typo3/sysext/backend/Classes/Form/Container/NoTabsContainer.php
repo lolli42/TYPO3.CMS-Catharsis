@@ -8,10 +8,9 @@ class NoTabsContainer extends AbstractContainer {
 	public function render() {
 		$content = '';
 
-		$fieldArray = $this->globalOptions['fieldsArray'];
-
-		foreach($fieldArray as $fieldString) {
-			$fieldConfiguration = $this->explodeSingleFieldConfiguration($fieldString);
+		$fieldsArray = $this->globalOptions['fieldsArray'];
+		foreach($fieldsArray as $fieldString) {
+			$fieldConfiguration = $this->explodeSingleFieldShowItemConfiguration($fieldString);
 			$fieldName = $fieldConfiguration['fieldName'];
 
 			if ($fieldName === '--palette--') {
@@ -43,24 +42,4 @@ class NoTabsContainer extends AbstractContainer {
 		return '<div class="tab-content">' . implode(LF, $content) . '</div>';
 	}
 
-	/**
-	 * A single field of TCA 'types' 'showitem' can have four semicolon separated configuration options:
-	 *   fieldName: Name of the field to be found in TCA 'columns' section
-	 *   fieldLabel: An alternative field label
-	 *   paletteName: Name of a palette to be found in TCA 'palettes' section that is rendered after this field
-	 *   extra: Special configuration options of this field
-	 *
-	 * @param string $field Semicolon separated field configuration
-	 * @return array
-	 */
-	protected function explodeSingleFieldConfiguration($field) {
-		$fieldArray = GeneralUtility::trimExplode(';', $field, TRUE);
-		// @todo: fieldName is required - throw an exception here if not given?
-		return array(
-			'fieldName' => $fieldArray[0],
-			'fieldLabel' => $fieldArray[1] ?: NULL,
-			'paletteName' => $fieldArray[2] ?: NULL,
-			'fieldExtra' => $fieldArray[3] ?: NULL,
-		);
-	}
 }
