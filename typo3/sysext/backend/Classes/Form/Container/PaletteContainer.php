@@ -20,7 +20,39 @@ class PaletteContainer extends AbstractContainer {
 		$excludeElements = $this->globalOptions['excludeElements'];
 
 		$out = '';
-		$parts = $this->loadPaletteElements($table, $row, $paletteName, $excludeElements);
+
+		// Access the palette definition and render single items
+		if (empty($GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'])) {
+			return '';
+		}
+		$parts = array();
+		$fieldsArray = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'], TRUE);
+		foreach ($fieldsArray as $fieldString) {
+			$fieldArray = $this->explodeSingleFieldShowItemConfiguration($fieldString);
+			$fieldName = $fieldArray['fieldName'];
+			if (in_array($fieldName, $excludeElements) || !is_array($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
+				continue;
+			}
+			if ($fieldName === '--linebreak--') {
+				$parts[]['NAME'] = '--linebreak--';
+			} else {
+				$options = $this->globalOptions;
+				$options['fieldName'] = $fieldName;
+				$options['fieldLabel'] = $fieldArray['fieldLabel'];
+				$options['fieldExtra'] = $fieldArray['fieldExtra'];
+				$options['isInPalette'] = TRUE;
+
+				/** @var SingleFieldContainer $singleFieldContainer */
+				$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
+				$singleFieldContainer->setGlobalOptions($options);
+				$content = $singleFieldContainer->render();
+
+				if (is_array($content)) {
+					$parts[] = $content;
+				}
+			}
+		}
+
 		// Put palette together if there are fields in it:
 		if (count($parts)) {
 			$realFields = 0;
@@ -54,50 +86,6 @@ class PaletteContainer extends AbstractContainer {
 	}
 
 	/**
-	 * Loads the elements of a palette (collection of secondary options) in an array.
-	 *
-	 * @param string $table The table name
-	 * @param array $row The row array
-	 * @param string $palette The palette number/pointer
-	 * @param array $excludeElements List of elements that should *not* be displayed
-	 * @return array The palette elements
-	 */
-	protected function loadPaletteElements($table, $row, $palette, array $excludeElements = array()) {
-		$parts = array();
-		// Load the palette TCEform elements
-		if ($GLOBALS['TCA'][$table] && is_array($GLOBALS['TCA'][$table]['palettes'][$palette])) {
-			$itemList = $GLOBALS['TCA'][$table]['palettes'][$palette]['showitem'];
-			if ($itemList) {
-				$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-				foreach ($fields as $info) {
-					$fieldParts = GeneralUtility::trimExplode(';', $info);
-					$theField = $fieldParts[0];
-					if ($theField === '--linebreak--') {
-						$parts[]['NAME'] = '--linebreak--';
-					} elseif (!in_array($theField, $excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
-
-						$options = $this->globalOptions;
-						$options['fieldName'] = $theField;
-						$options['fieldLabel'] = $fieldParts[1];
-						$options['fieldExtra'] = $fieldParts[2];
-						$options['isInPalette'] = TRUE;
-
-						/** @var SingleFieldContainer $singleFieldContainer */
-						$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
-						$singleFieldContainer->setGlobalOptions($options);
-						$content = $singleFieldContainer->render();
-
-						if (is_array($content)) {
-							$parts[] = $content;
-						}
-					}
-				}
-			}
-		}
-		return $parts;
-	}
-
-	/**
 	 * Creates HTML output for a palette
 	 *
 	 * @param array $palArr The palette array to print
@@ -113,7 +101,6 @@ class PaletteContainer extends AbstractContainer {
 				if (!$lastLineWasLinebreak) {
 					$row++;
 					$groupedFields[$row][] = $field;
-					$row++;
 					$lastLineWasLinebreak = TRUE;
 				}
 			} else {
