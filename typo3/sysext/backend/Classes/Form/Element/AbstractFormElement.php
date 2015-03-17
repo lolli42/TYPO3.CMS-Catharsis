@@ -461,10 +461,13 @@ abstract class AbstractFormElement {
 					if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
 						break;
 					}
+					// @todo: broken
 					/** @var SuggestWizard $suggestWizard */
+					/**
 					$suggestWizard = GeneralUtility::makeInstance(SuggestWizard::class);
 					$otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
 					break;
+					 */
 			}
 
 			// Hide the real form element?

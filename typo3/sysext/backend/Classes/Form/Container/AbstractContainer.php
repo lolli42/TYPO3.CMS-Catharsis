@@ -55,7 +55,7 @@ abstract class AbstractContainer {
 	 * @return array
 	 */
 	protected function explodeSingleFieldShowItemConfiguration($field) {
-		$fieldArray = GeneralUtility::trimExplode(';', $field, TRUE);
+		$fieldArray = GeneralUtility::trimExplode(';', $field, FALSE);
 		if (empty($fieldArray[0])) {
 			throw new \RuntimeException('Field must not be empty', 1426448465);
 		}

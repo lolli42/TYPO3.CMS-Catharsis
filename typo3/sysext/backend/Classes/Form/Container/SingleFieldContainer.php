@@ -221,9 +221,7 @@ class SingleFieldContainer extends AbstractContainer {
 			// Create output value:
 			if ($parameterArray['fieldConf']['config']['type'] == 'user' && $parameterArray['fieldConf']['config']['noTableWrapping']) {
 				$content = $item;
-			} elseif ($parameterArray['palette']) {
-				throw new \Exception('todo', 123);
-/**
+			} elseif ($this->globalOptions['isInPalette']) {
 				// Array:
 				$content = array(
 					'NAME' => $label,
@@ -234,7 +232,6 @@ class SingleFieldContainer extends AbstractContainer {
 					'ITEM_DISABLED' => ($this->isDisabledNullValueField($table, $fieldName, $row, $parameterArray) ? ' disabled' : ''),
 					'ITEM_NULLVALUE' => $this->renderNullValueWidget($table, $fieldName, $row, $parameterArray),
 				);
- */
 			} else {
 				$content = '
 				<fieldset class="form-section">
@@ -257,9 +254,6 @@ class SingleFieldContainer extends AbstractContainer {
 		}
 
 		return $content;
-
-//		$parameterArray['palette'] = $palette;
-//		$parameterArray['pal'] = $pal;
 	}
 
 

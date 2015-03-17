@@ -10,18 +10,17 @@ class PaletteContainer extends AbstractContainer {
 	/**
 	 * Creates a palette (collection of secondary options).
 	 *
-	 * @param string $table The table name
-	 * @param array $row The row array
-	 * @param string $palette The palette number/pointer
-	 * @param string $header Header string for the palette (used when in-form). If not set, no header item is made.
-	 * @param string $itemList Optional alternative list of fields for the palette
-	 * @param string $collapsedHeader Optional Link text for activating a palette (when palettes does not have another form element to belong to).
-	 * @param array $excludeElements List of elements that should *not* be displayed
 	 * @return string HTML code.
 	 */
-	public function render($table, $row, $palette, $header = '', $itemList = '', $collapsedHeader = NULL, array $excludeElements = array()) {
+	public function render() {
+		$table = $this->globalOptions['table'];
+		$row = $this->globalOptions['databaseRow'];
+		$paletteName = $this->globalOptions['paletteName'];
+		$paletteLabel = $this->globalOptions['paletteLabel'];
+		$excludeElements = $this->globalOptions['excludeElements'];
+
 		$out = '';
-		$parts = $this->loadPaletteElements($table, $row, $palette, $itemList, $excludeElements);
+		$parts = $this->loadPaletteElements($table, $row, $paletteName, $excludeElements);
 		// Put palette together if there are fields in it:
 		if (count($parts)) {
 			$realFields = 0;
@@ -34,12 +33,11 @@ class PaletteContainer extends AbstractContainer {
 			if ($realFields > 0) {
 
 				$code = $this->printPalette($parts);
-				$collapsed = $this->isPalettesCollapsed($table, $palette);
-				$isHiddenPalette = !empty($GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']);
+				$collapsed = $this->isPalettesCollapsed($table, $paletteName);
+				$isHiddenPalette = !empty($GLOBALS['TCA'][$table]['palettes'][$paletteName]['isHiddenPalette']);
 
-
-				if ($collapsed && $collapsedHeader !== NULL && !$isHiddenPalette) {
-					$code = $this->wrapCollapsiblePalette($code, 'FORMENGINE_' . $table . '_' . $palette . '_' . $row['uid'], $collapsed);
+				if ($collapsed && $paletteLabel && !$isHiddenPalette) {
+					$code = $this->wrapCollapsiblePalette($code, 'FORMENGINE_' . $table . '_' . $paletteName . '_' . $row['uid'], $collapsed);
 				} else {
 					$code = '<div class="row">' . $code . '</div>';
 				}
@@ -47,8 +45,7 @@ class PaletteContainer extends AbstractContainer {
 				$out = '
 					<!-- getPaletteFields -->
 					<fieldset class="'. ($isHiddenPalette ? 'hide' : 'form-section') . '">
-						' . ($header ? '<h4 class="form-section-headline">' . htmlspecialchars($header) . '</h4>' : '') . '
-						' . ($collapsedHeader ? '<h4 class="form-section-headline">' . htmlspecialchars($collapsedHeader) . '</h4>' : '') . '
+						' . ($paletteLabel ? '<h4 class="form-section-headline">' . htmlspecialchars($paletteLabel) . '</h4>' : '') . '
 						' . $code . '
 					</fieldset>';
 			}
@@ -62,15 +59,14 @@ class PaletteContainer extends AbstractContainer {
 	 * @param string $table The table name
 	 * @param array $row The row array
 	 * @param string $palette The palette number/pointer
-	 * @param string $itemList Optional alternative list of fields for the palette
 	 * @param array $excludeElements List of elements that should *not* be displayed
 	 * @return array The palette elements
 	 */
-	protected function loadPaletteElements($table, $row, $palette, $itemList = '', array $excludeElements = array()) {
+	protected function loadPaletteElements($table, $row, $palette, array $excludeElements = array()) {
 		$parts = array();
 		// Load the palette TCEform elements
-		if ($GLOBALS['TCA'][$table] && (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) || $itemList)) {
-			$itemList = $itemList ? $itemList : $GLOBALS['TCA'][$table]['palettes'][$palette]['showitem'];
+		if ($GLOBALS['TCA'][$table] && is_array($GLOBALS['TCA'][$table]['palettes'][$palette])) {
+			$itemList = $GLOBALS['TCA'][$table]['palettes'][$palette]['showitem'];
 			if ($itemList) {
 				$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
 				foreach ($fields as $info) {
@@ -79,9 +75,20 @@ class PaletteContainer extends AbstractContainer {
 					if ($theField === '--linebreak--') {
 						$parts[]['NAME'] = '--linebreak--';
 					} elseif (!in_array($theField, $excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
-						$elem = $this->formEngine->getSingleField($table, $theField, $row, $fieldParts[1], 1, '', $fieldParts[2]);
-						if (is_array($elem)) {
-							$parts[] = $elem;
+
+						$options = $this->globalOptions;
+						$options['fieldName'] = $theField;
+						$options['fieldLabel'] = $fieldParts[1];
+						$options['fieldExtra'] = $fieldParts[2];
+						$options['isInPalette'] = TRUE;
+
+						/** @var SingleFieldContainer $singleFieldContainer */
+						$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
+						$singleFieldContainer->setGlobalOptions($options);
+						$content = $singleFieldContainer->render();
+
+						if (is_array($content)) {
+							$parts[] = $content;
 						}
 					}
 				}

@@ -40,27 +40,22 @@ class TabsContainer extends AbstractContainer {
 		$tabsContent = array();
 		foreach ($tabsArray as $tabWithLabelAndElements) {
 			$elements = $tabWithLabelAndElements['elements'];
-			$content = array();
-			foreach ($elements as $element) {
-				$fieldName = $element['fieldName'];
-				if ($fieldName === '--palette--') {
-					// @todo: implement a palette definition at 'paletteName'
-				} else {
-					// @todo: same as in NoTabContainer -> method
-					$options = $this->globalOptions;
-					$options['fieldName'] = $element['fieldName'];
-					$options['fieldLabel'] = $element['fieldLabel'];
-					$options['fieldExtra'] = $element['fieldExtra'];
 
-					/** @var SingleFieldContainer $singleFieldContainer */
-					$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
-					$singleFieldContainer->setGlobalOptions($options);
-					$content[] = $singleFieldContainer->render();
-				}
+			// Merge elements of this tab into a single list again and hand over to
+			// palette and single field container to render this group
+			$options = $this->globalOptions;
+			$options['fieldsArray'] = array();
+			foreach($elements as $element) {
+				$options['fieldsArray'][] = implode(';', $element);
 			}
+			/** @var PaletteAndSingleContainer $paletteAndSingleContainer */
+			$paletteAndSingleContainer = GeneralUtility::makeInstance(PaletteAndSingleContainer::class);
+			$paletteAndSingleContainer->setGlobalOptions($options);
+			$content = $paletteAndSingleContainer->render();
+
 			$tabsContent[] = array(
 				'label' => $tabWithLabelAndElements['label'],
-				'content' => implode(LF, $content),
+				'content' => $content,
 			);
 		}
 

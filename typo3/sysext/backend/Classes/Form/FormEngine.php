@@ -467,15 +467,15 @@ class FormEngine {
 	 * should be transformed through this class first.
 	 *
 	 * @param string $table The table name
-	 * @param array $row The record from the table for which to render a field.
+	 * @param array $databaseRow The record from the table for which to render a field.
 	 * @param int $depth Depth level
 	 * @param array $overruleTypesArray Overrule types array. Can be used to override the showitem etc. configuration for the TCA types of the table. Can contain all settings which are possible in the TCA 'types' section. See e.g. $TCA['tt_content']['types'].
 	 * @return string HTML output
 	 * @see getSoloField()
 	 */
-	public function getMainFields($table, array $row, $depth = 0, array $overruleTypesArray = array()) {
+	public function getMainFields($table, array $databaseRow, $depth = 0, array $overruleTypesArray = array()) {
 		$this->table = $table;
-		$this->row = $row;
+		$this->databaseRow = $databaseRow;
 
 		// Hook: getMainFields_preProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
@@ -497,135 +497,6 @@ class FormEngine {
 		}
 
 		return $content;
-
-
-
-		$languageService = $this->getLanguageService();
-		$this->renderDepth = $depth;
-		// Init vars:
-		$out_array = array(array());
-		$out_array_meta = array(
-			array(
-				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalTab'),
-			),
-		);
-		$out_sheet = 0;
-		$tabIdentString = '';
-		$tabIdentStringMD5 = '';
-		if ($GLOBALS['TCA'][$table]) {
-			// Load the description content for the table.
-			if ($this->doLoadTableDescr($table)) {
-				$languageService->loadSingleTableDescription($table);
-			}
-			// Get the current "type" value for the record.
-			$typeNum = $this->getRTypeNum($table, $row);
-			// Find the list of fields to display:
-			if ($GLOBALS['TCA'][$table]['types'][$typeNum]) {
-				$itemList = $GLOBALS['TCA'][$table]['types'][$typeNum]['showitem'];
-				if (is_array($overruleTypesArray) && isset($overruleTypesArray[$typeNum]['showitem'])) {
-					$itemList = $overruleTypesArray[$typeNum]['showitem'];
-				}
-				// If such a list existed...
-				if ($itemList) {
-					// Explode the field list and possibly rearrange the order of the fields, if configured for
-					$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-					// Get excluded fields, added fiels and put it together:
-					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
-					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
-					// If TCEforms will render a tab menu in the next step, push the name to the tab stack:
-					if (strstr($itemList, '--div--') !== FALSE) {
-						$tabIdentString = 'TCEforms:' . $table . ':' . $row['uid'];
-						$tabIdentStringMD5 = $this->getDocumentTemplate()->getDynTabMenuId($tabIdentString);
-						// Remember that were currently working on the general tab:
-						if (isset($fields[0]) && strpos($fields[0], '--div--') !== 0) {
-							$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-1');
-						}
-					}
-					// Traverse the fields to render:
-					$cc = 0;
-					debug($fields);
-					foreach ($fields as $fieldInfo) {
-						// Exploding subparts of the field configuration:
-						// this is documented as this:
-						// fieldname;fieldlabel;paletteidtodisplay;extradata;colorscheme
-						// fieldname can also be "--div--" or "--palette--"
-						// the last option colorscheme was dropped with TYPO3 CMS 7
-						list($theField, $fieldLabel, $additionalPalette, $extraFieldProcessingData)  = explode(';', $fieldInfo);
-
-						// Render the field:
-						if (!in_array($theField, $excludeElements)) {
-							if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
-								$sFieldPal = '';
-								if ($additionalPalette) {
-									$paletteContainer = GeneralUtility::makeInstance(PaletteContainer::class, $this);
-									$paletteContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
-									$sFieldPal = $paletteContainer->render($table, $row, $additionalPalette, '', '', NULL, $excludeElements);
-								}
-								$sField = $this->getSingleField($table, $theField, $row, $fieldLabel, 0, $extraFieldProcessingData, $additionalPalette);
-								if ($sField) {
-									$sField .= $sFieldPal;
-								}
-								$out_array[$out_sheet][0] .= $sField;
-							} elseif ($theField == '--div--') {
-								if ($cc > 0) {
-									// Remove last tab entry from the dynNestedStack:
-									$out_sheet++;
-									// Remove the previous sheet from stack (if any):
-									$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . $out_sheet);
-									// Remember on which sheet we're currently working:
-									$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-									$out_array[$out_sheet] = array();
-									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-								} else {
-									// Setting alternative title for "General" tab if "--div--" is the very first element.
-									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-									// Only add the first tab to the dynNestedStack if there are more tabs:
-									if ($tabIdentString && strpos($itemList, '--div--', strlen($fieldInfo))) {
-										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-1');
-									}
-								}
-							} elseif ($theField == '--palette--') {
-								if ($additionalPalette) {
-									$paletteContainer = GeneralUtility::makeInstance(PaletteContainer::class, $this);
-									$paletteContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
-									// Render a 'header' if not collapsed
-									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
-										$out_array[$out_sheet][0] .= $paletteContainer->render($table, $row, $additionalPalette, $languageService->sL($fieldLabel), '', NULL, $excludeElements);
-									} else {
-										$out_array[$out_sheet][0] .= $paletteContainer->render($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel), $excludeElements);
-									}
-								}
-							}
-						}
-						$cc++;
-					}
-				}
-			}
-		}
-		// Return the imploded $out_array:
-		// Create parts array for the tab menu:
-		$parts = array();
-		foreach ($out_array as $idx => $sheetContent) {
-			$content = implode('', $sheetContent);
-			$parts[$idx] = array(
-				'label' => $out_array_meta[$idx]['title'],
-				'content' => $content,
-			);
-		}
-		if (count($parts) > 1) {
-			// Unset the current level of tab menus:
-			$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-			$output = $this->getDynTabMenu($parts, $tabIdentString);
-		} else {
-			// If there is only one tab/part there is no need to wrap it into the dynTab code
-			$output = isset($parts[0]) ? trim($parts[0]['content']) : '';
-		}
-		// Only one tab, so just implode and wrap the background image (= tab container) around:
-		if ($out_sheet === 0) {
-			$output = '<div class="tab-content">' . $output . '</div>';
-		}
-
-		return $output;
 	}
 
 	/**
