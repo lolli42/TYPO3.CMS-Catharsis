@@ -10,6 +10,7 @@ class TabsContainer extends AbstractContainer {
 	public function render() {
 		$languageService = $this->getLanguageService();
 
+		// All the fields to handle in a flat list
 		$fieldsArray = $this->globalOptions['fieldsArray'];
 
 		// Create a nested array from flat fieldArray list
@@ -22,7 +23,7 @@ class TabsContainer extends AbstractContainer {
 				$currentTabIndex++;
 				if (empty($fieldArray['fieldLabel'])) {
 					throw new \RuntimeException(
-						'A --div-- is missing a label (--div--;fieldLabel) in showitem of ' . implode(',', $fieldsArray),
+						'A --div-- has no label (--div--;fieldLabel) in showitem of ' . implode(',', $fieldsArray),
 						1426454001
 					);
 				}
@@ -35,6 +36,7 @@ class TabsContainer extends AbstractContainer {
 			}
 		}
 
+		// Iterate over the tabs and compile content in $tabsContent array together with label
 		$tabsContent = array();
 		foreach ($tabsArray as $tabWithLabelAndElements) {
 			$elements = $tabWithLabelAndElements['elements'];
@@ -61,22 +63,11 @@ class TabsContainer extends AbstractContainer {
 				'content' => implode(LF, $content),
 			);
 		}
-		$tabId = 'TCEforms:' . $this->globalOptions['table'] . ':' . $this->globalOptions['row']['uid'];
-		return $this->renderTabMenu($tabsContent, $tabId);
-	}
 
-	/**
-	 * Create dynamic tab menu
-	 *
-	 * @param array $menuItems Items for the tab menu, fed to template::getDynTabMenu()
-	 * @param string $identifier ID string for the tab menu
-	 * @return string HTML for the menu
-	 */
-	protected function renderTabMenu($menuItems, $identifier) {
+		// Feed everything to document template for tab rendering
+		$tabId = 'TCEforms:' . $this->globalOptions['table'] . ':' . $this->globalOptions['row']['uid'];
 		$docTemplate = $this->getDocumentTemplate();
-		// @todo: What it that for?
-		$docTemplate->backPath = '';
-		return $docTemplate->getDynamicTabMenu($menuItems, $identifier, 1, FALSE, FALSE);
+		return $docTemplate->getDynamicTabMenu($tabsContent, $tabId, 1, FALSE, FALSE);
 	}
 
 	/**
