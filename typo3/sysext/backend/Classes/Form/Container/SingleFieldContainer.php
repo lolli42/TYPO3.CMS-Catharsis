@@ -150,6 +150,7 @@ class SingleFieldContainer extends AbstractContainer {
 			$parameterArray['label'] = $parameterArray['fieldTSConfig']['label'] ?: $parameterArray['label'];
 			$parameterArray['label'] = $parameterArray['fieldTSConfig']['label.'][$languageService->lang] ?: $parameterArray['label'];
 			$parameterArray['label'] = $languageService->sL($parameterArray['label']);
+			$label = htmlspecialchars($parameterArray['label'], ENT_COMPAT, 'UTF-8', FALSE);
 			// JavaScript code for event handlers:
 			$parameterArray['fieldChangeFunc'] = array();
 			$parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'TBE_EDITOR.fieldChanged(\'' . $table . '\',\'' . $row['uid'] . '\',\'' . $fieldName . '\',\'' . $parameterArray['itemFormElName'] . '\');';
@@ -178,13 +179,6 @@ class SingleFieldContainer extends AbstractContainer {
 			if ($renderLanguageDiff) {
 				$item = $this->renderDefaultLanguageContent($table, $fieldName, $row, $item);
 				$item = $this->renderDefaultLanguageDiff($table, $fieldName, $row, $item);
-			}
-
-			// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in alt_doc.php
-			$label = htmlspecialchars($parameterArray['label'], ENT_COMPAT, 'UTF-8', FALSE);
-			if (MathUtility::canBeInterpretedAsInteger($row['uid']) && $parameterArray['fieldTSConfig']['linkTitleToSelf'] && !GeneralUtility::_GP('columnsOnly')) {
-				$lTTS_url = 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $fieldName . '&returnUrl=' . rawurlencode($this->globalOptions['returnUrl']);
-				$label = '<a href="' . htmlspecialchars($lTTS_url) . '">' . $label . '</a>';
 			}
 
 /**
