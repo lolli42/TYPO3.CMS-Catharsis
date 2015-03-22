@@ -480,7 +480,7 @@ class FormEngine {
 		// Hook: getMainFields_preProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
 			if (method_exists($hookObj, 'getMainFields_preProcess')) {
-				$hookObj->getMainFields_preProcess($table, $row, $this);
+				$hookObj->getMainFields_preProcess($table, $databaseRow, $this);
 			}
 		}
 
@@ -492,7 +492,7 @@ class FormEngine {
 		// Hook: getMainFields_postProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
 			if (method_exists($hookObj, 'getMainFields_postProcess')) {
-				$hookObj->getMainFields_postProcess($table, $row, $this);
+				$hookObj->getMainFields_postProcess($table, $databaseRow, $this);
 			}
 		}
 

@@ -57,7 +57,7 @@ class SingleFieldContainer extends AbstractContainer {
 		$fieldName = $this->globalOptions['fieldName'];
 
 		if (!is_array($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
-			return '';
+			return array();
 		}
 
 		$parameterArray = array();
@@ -74,10 +74,10 @@ class SingleFieldContainer extends AbstractContainer {
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && !$parameterArray['fieldConf']['l10n_display'] && $parameterArray['fieldConf']['l10n_mode'] === 'exclude' && ($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0)
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $this->globalOptions['localizationMode'] && $this->globalOptions['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
 		) {
-			return '';
+			return array();
 		}
 //		if ($this->inline->skipField($table, $fieldName, $row, $parameterArray['fieldConf']['config'])) {
-//			return '';
+//			return array();
 //		}
 		// Evaluate display condition
 		if ($parameterArray['fieldConf']['displayCond'] && is_array($row)) {
@@ -85,16 +85,16 @@ class SingleFieldContainer extends AbstractContainer {
 			/** @var $elementConditionMatcher ElementConditionMatcher */
 			$elementConditionMatcher = GeneralUtility::makeInstance(ElementConditionMatcher::class);
 			if (!$elementConditionMatcher->match($parameterArray['fieldConf']['displayCond'], $row)) {
-				return '';
+				return array();
 			}
 		}
 		// Fetching the TSconfig for the current table/field. This includes the $row which means that
 		$parameterArray['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($table, $row, $fieldName);
 		if ($parameterArray['fieldTSConfig']['disabled']) {
-			return '';
+			return array();
 		}
 
-		$content = '';
+		$content = $this->initializeReturnArray();
 
 		// Override fieldConf by fieldTSconfig:
 		$parameterArray['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($parameterArray['fieldConf']['config'], $parameterArray['fieldTSConfig']);
@@ -143,6 +143,7 @@ class SingleFieldContainer extends AbstractContainer {
 		// @todo
 		$this->hiddenFieldListArr = array();
 		if (in_array($fieldName, $this->hiddenFieldListArr)) {
+// @todo
 //			$this->hiddenFieldAccum[] = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
 		} else {
 			// Render as a normal field:
@@ -214,40 +215,24 @@ class SingleFieldContainer extends AbstractContainer {
 			$parameterArray['label'] = ($label = BackendUtility::wrapInHelp($table, $fieldName, $label));
 			// Create output value:
 			if ($parameterArray['fieldConf']['config']['type'] == 'user' && $parameterArray['fieldConf']['config']['noTableWrapping']) {
-				$content = $item;
-			} elseif ($this->globalOptions['isInPalette']) {
-				// Array:
-				$content = array(
-					'NAME' => $label,
-					'ID' => $row['uid'],
-					'FIELD' => $fieldName,
-					'TABLE' => $table,
-					'ITEM' => $item,
-					'ITEM_DISABLED' => ($this->isDisabledNullValueField($table, $fieldName, $row, $parameterArray) ? ' disabled' : ''),
-					'ITEM_NULLVALUE' => $this->renderNullValueWidget($table, $fieldName, $row, $parameterArray),
-				);
+				// @todo: what about label here?
+				// @todo: set info for upper container that wrap should be omitted?
+				$content['html'] = $item;
 			} else {
-				$content = '
-				<fieldset class="form-section">
-					<!-- getSingleField -->
-					<div class="form-group t3js-formengine-palette-field">
-						<label class="t3js-formengine-label">
-							' . $label . '
-							<img name="req_' . $table . '_' . $row['uid'] . '_' . $fieldName . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />
-						</label>
-						<div class="t3js-formengine-field-item ' . ($this->isDisabledNullValueField($table, $fieldName, $row, $parameterArray) ? ' disabled' : '') . '">
-							<div class="t3-form-field-disable"></div>
-							' . $this->renderNullValueWidget($table, $fieldName, $row, $parameterArray) . '
-							' . $item . '
-						</div>
-					</div>
-				</fieldset>
-			';
+				// @todo: null field and stuff - in upper containe?!
+				$content['html'] = $item;
+				$content['label'] = $label;
 			}
 
 		}
 
 		return $content;
+	}
+
+	protected function initializeReturnArray() {
+		return array(
+			'html' => '',
+		);
 	}
 
 
@@ -297,7 +282,6 @@ class SingleFieldContainer extends AbstractContainer {
 		}
 		return $item;
 	}
-
 
 
 	/**
