@@ -487,7 +487,8 @@ class FormEngine {
 		/** @var EntryContainer $entryContainer */
 		$entryContainer = GeneralUtility::makeInstance(EntryContainer::class);
 		$entryContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
-		$content = $entryContainer->render();
+		$resultArray = $entryContainer->render();
+		$content = $resultArray['html'];
 
 		// Hook: getMainFields_postProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {

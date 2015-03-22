@@ -2,26 +2,9 @@
 namespace TYPO3\CMS\Backend\Form\Container;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Form\AbstractNode;
 
-abstract class AbstractContainer {
-
-	/**
-	 * A list of global options given from FormEngine to child elements.
-	 *
-	 * @var array
-	 */
-	protected $globalOptions = array();
-
-	/**
-	 * Set global options from parent FormEngine instance
-	 *
-	 * @param array $globalOptions Global options like 'readonly' for all elements
-	 * @return AbstractContainer
-	 */
-	public function setGlobalOptions(array $globalOptions) {
-		$this->globalOptions = $globalOptions;
-		return $this;
-	}
+abstract class AbstractContainer extends AbstractNode {
 
 	/**
 	 * Return a list without excluded elements.
@@ -52,6 +35,7 @@ abstract class AbstractContainer {
 	 *   extra: Special configuration options of this field
 	 *
 	 * @param string $field Semicolon separated field configuration
+	 * @throws \RuntimeException
 	 * @return array
 	 */
 	protected function explodeSingleFieldShowItemConfiguration($field) {

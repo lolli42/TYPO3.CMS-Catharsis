@@ -4,6 +4,8 @@ namespace TYPO3\CMS\Backend\Form\Container;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 class PaletteAndSingleContainer extends AbstractContainer {
 
@@ -71,6 +73,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 		$targetStructure = array();
 		$mainStructureCounter = -1;
 		$fieldsArray = $this->globalOptions['fieldsArray'];
+		$finalResultArray = $this->initializeResultArray();
 		foreach ($fieldsArray as $fieldString) {
 			$fieldConfiguration = $this->explodeSingleFieldShowItemConfiguration($fieldString);
 			$fieldName = $fieldConfiguration['fieldName'];
@@ -86,30 +89,32 @@ class PaletteAndSingleContainer extends AbstractContainer {
 					);
 				}
 			} else {
+				if (!is_array($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
+					continue;
+				}
+
 				$options = $this->globalOptions;
 				$options['fieldName'] = $fieldName;
-				// @todo: fieldLabel still needed later?
-				$options['fieldLabel'] = $fieldConfiguration['fieldLabel'];
 				$options['fieldExtra'] = $fieldConfiguration['fieldExtra'];
 
 				/** @var SingleFieldContainer $singleFieldContainer */
 				$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
 				$singleFieldContainer->setGlobalOptions($options);
-				$singleFieldContentArray = $singleFieldContainer->render();
+				$childResultArray = $singleFieldContainer->render();
 
-				if ($singleFieldContentArray) {
+				if ($childResultArray) {
 					$mainStructureCounter ++;
 
 					$targetStructure[$mainStructureCounter] = array(
 						'type' => 'single',
 						'fieldName' => $fieldConfiguration['fieldName'],
-						'fieldLabel' => $singleFieldContentArray['label'],
-						'fieldHtml' => $singleFieldContentArray['html'],
+						'fieldLabel' => $this->getSingleFieldLabel($fieldName, $fieldConfiguration['fieldLabel']),
+						'fieldHtml' => $childResultArray['html'],
 					);
 
 					// If the third part of a show item field is given, this is a name of a palette that should be rendered
 					// below the single field - without palette header and only if single field produced content
-					if ($singleFieldContentArray && !empty($fieldConfiguration['paletteName'])) {
+					if (!empty($childResultArray['html']) && !empty($fieldConfiguration['paletteName'])) {
 						$paletteElementArray = $this->createPaletteContentArray($fieldConfiguration['paletteName']);
 						if (count($paletteElementArray)) {
 							$mainStructureCounter ++;
@@ -123,6 +128,9 @@ class PaletteAndSingleContainer extends AbstractContainer {
 						}
 					}
 				}
+
+				$childResultArray['html'] = '';
+				$finalResultArray = $this->mergeChildReturnIntoExistingResult($finalResultArray, $childResultArray);
 			}
 		}
 
@@ -165,11 +173,17 @@ class PaletteAndSingleContainer extends AbstractContainer {
 
 				$content[] = $this->fieldSetWrap($paletteElementsHtml, $isHiddenPalette, $element['fieldLabel']);
 			} else {
-				$content[] = $this->fieldSetWrap($this->wrapSingleFieldContent($element));
+				// Return raw HTML only in case of user element with no wrapping requested
+				if ($this->isUserNoTableWrappingField($element)) {
+					$content[] = $element['fieldHtml'];
+				} else {
+					$content[] = $this->fieldSetWrap($this->wrapSingleFieldContent($element));
+				}
 			}
 		}
 
-		return implode(LF, $content);
+		$finalResultArray['html'] = implode(LF, $content);
+		return $finalResultArray;
 	}
 
 	protected function createPaletteContentArray($paletteName) {
@@ -197,21 +211,20 @@ class PaletteAndSingleContainer extends AbstractContainer {
 				}
 				$options = $this->globalOptions;
 				$options['fieldName'] = $fieldName;
-				$options['fieldLabel'] = $fieldArray['fieldLabel'];
 				$options['fieldExtra'] = $fieldArray['fieldExtra'];
 
 				/** @var SingleFieldContainer $singleFieldContainer */
 				$singleFieldContainer = GeneralUtility::makeInstance(SingleFieldContainer::class);
 				$singleFieldContainer->setGlobalOptions($options);
-				$content = $singleFieldContainer->render();
+				$singleFieldContentArray = $singleFieldContainer->render();
 
-				if ($content) {
+				if ($singleFieldContentArray) {
 					$foundRealElement = TRUE;
 					$resultStructure[] = array(
 						'type' => 'single',
 						'fieldName' => $fieldName,
-						'fieldLabel' => $content['label'],
-						'fieldHtml' => $content['html'],
+						'fieldLabel' => $this->getSingleFieldLabel($fieldName, $fieldArray['fieldLabel']),
+						'fieldHtml' => $singleFieldContentArray['html'],
 					);
 				}
 			}
@@ -339,6 +352,8 @@ class PaletteAndSingleContainer extends AbstractContainer {
 	}
 
 	protected function wrapSingleFieldContent($element, array $additionalPaletteClasses = array()) {
+		$fieldName = $element['fieldName'];
+
 		$paletteFieldClasses = array(
 			'form-group',
 			't3js-formengine-palette-field',
@@ -346,22 +361,138 @@ class PaletteAndSingleContainer extends AbstractContainer {
 		foreach ($additionalPaletteClasses as $class) {
 			$paletteFieldClasses[] = $class;
 		}
+
+		$fieldItemClasses = array(
+			't3js-formengine-field-item'
+		);
+		$isNullValueField = $this->isDisabledNullValueField($fieldName);
+		if ($isNullValueField) {
+			$fieldItemClasses[] = 'disabled';
+		}
+
+		$label = BackendUtility::wrapInHelp($this->globalOptions['table'], $fieldName, htmlspecialchars($element['fieldLabel']));
+
 		$content = array();
 		$content[] = '<div class="' . implode(' ', $paletteFieldClasses) . '">';
 		$content[] = 	'<label class="t3js-formengine-label">';
-		$content[] = 		$element['fieldLabel']; // @todo: htmlspecialchars?!
-		$content[] = 		'<img name="req_' . $this->globalOptions['table'] . '_' . $this->globalOptions['databaseRow']['uid'] . '_' . $element['fieldName'] . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />';
+		$content[] = 		$label;
+		$content[] = 		'<img name="req_' . $this->globalOptions['table'] . '_' . $this->globalOptions['databaseRow']['uid'] . '_' . $fieldName . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />';
 		$content[] = 	'</label>';
-// @todo
-		$content[] = 	'<div class="t3js-formengine-field-item ' . /** ($this->isDisabledNullValueField($table, $fieldName, $row, $parameterArray) ? ' disabled' : '') .*/ '">';
+		$content[] = 	'<div class="' . implode(' ', $fieldItemClasses) . '">';
 		$content[] = 		'<div class="t3-form-field-disable"></div>';
-// @todo
-//		$content[] = 		$this->renderNullValueWidget($table, $fieldName, $row, $parameterArray);
+		$content[] = 		$this->renderNullValueWidget($fieldName);
 		$content[] = 		$element['fieldHtml'];
 		$content[] = 	'</div>';
 		$content[] = '</div>';
 
 		return implode(LF, $content);
+	}
+
+	/**
+	 * Determine label of a single field (not a palette label)
+	 *
+	 * @param string $fieldName The field name to calculate the label for
+	 * @param string $labelFromShowItem Given label, typically from show item configuration
+	 * @return string Field label
+	 */
+	protected function getSingleFieldLabel($fieldName, $labelFromShowItem) {
+		$languageService = $this->getLanguageService();
+		$table = $this->globalOptions['table'];
+		$label = $labelFromShowItem;
+		if (!empty($GLOBALS['TCA'][$table]['columns'][$fieldName]['label'])) {
+			$label = $GLOBALS['TCA'][$table]['columns'][$fieldName]['label'];
+		}
+		if (!empty($labelFromShowItem)) {
+			$label = $labelFromShowItem;
+		}
+		$fieldTSConfig = FormEngineUtility::getTSconfigForTableRow($table, $this->globalOptions['databaseRow'], $fieldName);
+		if (!empty($fieldTSConfig['label'])) {
+			$label = $fieldTSConfig['label'];
+		}
+		if (!empty($fieldTSConfig['label.'][$languageService->lang])) {
+			$label = $fieldTSConfig['label.'][$languageService->lang];
+		}
+		return $languageService->sL($label);
+	}
+
+	/**
+	 * TRUE if field is of type user and to wrapping is requested
+	 *
+	 * @param array $element Current element from "target structure" array
+	 * @return boolean TRUE if user and noTableWrapping is set
+	 */
+	protected function isUserNoTableWrappingField($element) {
+		$table = $this->globalOptions['table'];
+		$fieldName = $element['fieldName'];
+		if (
+			$GLOBALS['TCA'][$table]['columns'][$fieldName]['config']['type'] === 'user'
+			&& !empty($GLOBALS['TCA'][$table]['columns'][$fieldName]['config']['noTableWrapping'])
+		) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	/**
+	 * Determines whether the current field value is considered as NULL value.
+	 * Using NULL values is enabled by using 'null' in the 'eval' TCA definition.
+	 * If NULL value is possible for a field and additional checkbox next to the element will be rendered.
+	 *
+	 * @param string $fieldName The field to handle
+	 * @return bool
+	 */
+	protected function isDisabledNullValueField($fieldName) {
+		$table = $this->globalOptions['table'];
+		$row = $this->globalOptions['databaseRow'];
+		$config = $GLOBALS['TCA'][$table]['columns'][$fieldName]['config'];
+		$result = FALSE;
+		$value = $row[$fieldName];
+		if (
+			$value === NULL
+			&& !empty($config['eval']) && GeneralUtility::inList($config['eval'], 'null')
+			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
+		) {
+			$result = TRUE;
+		}
+		return $result;
+	}
+
+	/**
+	 * Renders a view widget to handle and activate NULL values.
+	 * The widget is enabled by using 'null' in the 'eval' TCA definition.
+	 *
+	 * @param string $fieldName The field to handle
+	 * @return string
+	 */
+	protected function renderNullValueWidget($fieldName) {
+		$table = $this->globalOptions['table'];
+		$row = $this->globalOptions['databaseRow'];
+		$value = $row[$fieldName];
+		$config = $GLOBALS['TCA'][$table]['columns'][$fieldName]['config'];
+
+		$widget = array();
+		// Checkbox should be rendered if eval null set and no override stuff is done
+		if (
+			!empty($config['eval']) && GeneralUtility::inList($config['eval'], 'null')
+			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
+		) {
+			$checked = $value === NULL ? '' : ' checked="checked"';
+			$formElementName = $this->globalOptions['prependFormFieldNames'] . '[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
+			$formElementNameActive = $this->globalOptions['prependFormFieldNamesActive'] . '[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
+			$onChange = htmlspecialchars(
+				'typo3form.fieldSetNull(\'' . $formElementName . '\', !this.checked)'
+			);
+
+			$widget = array();
+			$widget[] = '<div class="checkbox">';
+			$widget[] = 	'<label>';
+			$widget[] = 		'<input type="hidden" name="' . $formElementNameActive . '" value="0" />';
+			$widget[] = 		'<input type="checkbox" name="' . $formElementNameActive . '" value="1" onchange="' . $onChange . '"' . $checked . ' /> &nbsp;';
+			$widget[] = 	'</label>';
+			$widget[] = '</div>';
+		}
+
+		return implode(LF, $widget);
 	}
 
 	/**

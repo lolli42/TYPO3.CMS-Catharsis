@@ -111,15 +111,15 @@ class EntryContainer extends AbstractContainer {
 			/** @var EntryContainer $TabsContainer */
 			$container = GeneralUtility::makeInstance(TabsContainer::class);
 			$container->setGlobalOptions($options);
-			$content = $container->render();
+			$resultArray = $container->render();
 		} else {
 			/** @var EntryContainer $NoTabsContainer */
 			$container = GeneralUtility::makeInstance(NoTabsContainer::class);
 			$container->setGlobalOptions($options);
-			$content = $container->render();
+			$resultArray = $container->render();
 		}
 
-		return $content;
+		return $resultArray;
 	}
 
 	/**

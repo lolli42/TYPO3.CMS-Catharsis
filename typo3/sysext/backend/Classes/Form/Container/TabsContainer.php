@@ -38,6 +38,7 @@ class TabsContainer extends AbstractContainer {
 
 		// Iterate over the tabs and compile content in $tabsContent array together with label
 		$tabsContent = array();
+		$resultArray = $this->initializeResultArray();
 		foreach ($tabsArray as $tabWithLabelAndElements) {
 			$elements = $tabWithLabelAndElements['elements'];
 
@@ -51,18 +52,23 @@ class TabsContainer extends AbstractContainer {
 			/** @var PaletteAndSingleContainer $paletteAndSingleContainer */
 			$paletteAndSingleContainer = GeneralUtility::makeInstance(PaletteAndSingleContainer::class);
 			$paletteAndSingleContainer->setGlobalOptions($options);
-			$content = $paletteAndSingleContainer->render();
 
+			$childArray = $paletteAndSingleContainer->render();
 			$tabsContent[] = array(
 				'label' => $tabWithLabelAndElements['label'],
-				'content' => $content,
+				'content' => $childArray['html'],
 			);
+			$childArray['html'] = '';
+			$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childArray);
 		}
 
 		// Feed everything to document template for tab rendering
 		$tabId = 'TCEforms:' . $this->globalOptions['table'] . ':' . $this->globalOptions['row']['uid'];
 		$docTemplate = $this->getDocumentTemplate();
-		return $docTemplate->getDynamicTabMenu($tabsContent, $tabId, 1, FALSE, FALSE);
+
+		$resultArray = $this->initializeResultArray();
+		$resultArray['html'] = $docTemplate->getDynamicTabMenu($tabsContent, $tabId, 1, FALSE, FALSE);
+		return $resultArray;
 	}
 
 	/**
@@ -73,6 +79,7 @@ class TabsContainer extends AbstractContainer {
 	}
 
 	/**
+	 * @throws \RuntimeException
 	 * @return DocumentTemplate
 	 */
 	protected function getDocumentTemplate() {

@@ -30,23 +30,17 @@ use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
 use TYPO3\CMS\Backend\Clipboard\Clipboard;
+use TYPO3\CMS\Backend\Form\AbstractNode;
 
 /**
  * Base class for form elements of FormEngine
  */
-abstract class AbstractFormElement {
+abstract class AbstractFormElement extends AbstractNode {
 
 	/**
 	 * @var FormEngine
 	 */
 	protected $formEngine;
-
-	/**
-	 * A list of global options given from FormEngine to child elements
-	 *
-	 * @var array
-	 */
-	protected $globalOptions = array();
 
 	/**
 	 * Default width value for a couple of elements like text
@@ -81,17 +75,6 @@ abstract class AbstractFormElement {
 	public function __construct() {
 //		$this->formEngine = $formEngine;
 		$this->formEngine = new FormEngine();
-	}
-
-	/**
-	 * Set global options from parent FormEngine instance
-	 *
-	 * @param array $globalOptions Global options like 'readonly' for all elements
-	 * @return AbstractFormElement
-	 */
-	public function setGlobalOptions(array $globalOptions) {
-		$this->globalOptions = $globalOptions;
-		return $this;
 	}
 
 	/**

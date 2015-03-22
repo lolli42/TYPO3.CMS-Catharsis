@@ -21,7 +21,6 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @param string $table The table name
 	 * @param string $field The field name
 	 * @param array $row The record to edit from the database table.
-	 * @param string $altName Alternative field name label to show.
 	 * @param bool $palette Set this if the field is on a palette (in top frame), otherwise not. (if set, field will render as a hidden field).
 	 * @param string $extra The "extra" options from "Part 4" of the field configurations found in the "types" "showitem" list. Typically parsed by $this->getSpecConfFromString() in order to get the options as an associative array.
 	 * @param int $pal The palette pointer.
@@ -61,7 +60,6 @@ class SingleFieldContainer extends AbstractContainer {
 		}
 
 		$parameterArray = array();
-		$parameterArray['altName'] = $this->globalOptions['fieldLabel'];
 		$parameterArray['extra'] = $this->globalOptions['fieldExtra'];
 		$parameterArray['fieldConf'] = $GLOBALS['TCA'][$table]['columns'][$fieldName];
 
@@ -94,7 +92,7 @@ class SingleFieldContainer extends AbstractContainer {
 			return array();
 		}
 
-		$content = $this->initializeReturnArray();
+		$content = $this->initializeResultArray();
 
 		// Override fieldConf by fieldTSconfig:
 		$parameterArray['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($parameterArray['fieldConf']['config'], $parameterArray['fieldTSConfig']);
@@ -146,12 +144,6 @@ class SingleFieldContainer extends AbstractContainer {
 // @todo
 //			$this->hiddenFieldAccum[] = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
 		} else {
-			// Render as a normal field:
-			$parameterArray['label'] = $parameterArray['altName'] ?: $parameterArray['fieldConf']['label'];
-			$parameterArray['label'] = $parameterArray['fieldTSConfig']['label'] ?: $parameterArray['label'];
-			$parameterArray['label'] = $parameterArray['fieldTSConfig']['label.'][$languageService->lang] ?: $parameterArray['label'];
-			$parameterArray['label'] = $languageService->sL($parameterArray['label']);
-			$label = htmlspecialchars($parameterArray['label'], ENT_COMPAT, 'UTF-8', FALSE);
 			// JavaScript code for event handlers:
 			$parameterArray['fieldChangeFunc'] = array();
 			$parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'TBE_EDITOR.fieldChanged(\'' . $table . '\',\'' . $row['uid'] . '\',\'' . $fieldName . '\',\'' . $parameterArray['itemFormElName'] . '\');';
@@ -167,9 +159,15 @@ class SingleFieldContainer extends AbstractContainer {
 //				$parameterArray['fieldChangeFunc']['inline'] = 'inline.handleChangedField(\'' . $parameterArray['itemFormElName'] . '\',\'' . $inlineObjectId . '\');';
 //			}
 
+
+
 			// Based on the type of the item, call a render function:
 			$options = $this->globalOptions;
 			$item = $this->getSingleField_SW($table, $fieldName, $row, $parameterArray, $options);
+
+
+
+
 			// Add language + diff
 			$renderLanguageDiff = TRUE;
 			if ($parameterArray['fieldConf']['l10n_display'] && (GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'hideDiff')
@@ -211,30 +209,12 @@ class SingleFieldContainer extends AbstractContainer {
 			}
  */
 
-			// Wrap the label with help text
-			$parameterArray['label'] = ($label = BackendUtility::wrapInHelp($table, $fieldName, $label));
-			// Create output value:
-			if ($parameterArray['fieldConf']['config']['type'] == 'user' && $parameterArray['fieldConf']['config']['noTableWrapping']) {
-				// @todo: what about label here?
-				// @todo: set info for upper container that wrap should be omitted?
-				$content['html'] = $item;
-			} else {
-				// @todo: null field and stuff - in upper containe?!
-				$content['html'] = $item;
-				$content['label'] = $label;
-			}
+			$content['html'] = $item;
 
 		}
 
 		return $content;
 	}
-
-	protected function initializeReturnArray() {
-		return array(
-			'html' => '',
-		);
-	}
-
 
 	/**
 	 * Rendering a single item for the form
@@ -246,7 +226,7 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @param array $options Option array
 	 * @return string Returns the item as HTML code to insert
 	 */
-	protected function getSingleField_SW($table, $field, $row, &$PA, array $options) {
+	protected function getSingleField_SW($table, $field, $row, $PA, array $options) {
 		// Hook: getSingleField_beforeRender
 /**
 		foreach ($this->hookObjectsSingleField as $hookObject) {
@@ -281,61 +261,6 @@ class SingleFieldContainer extends AbstractContainer {
 			$item = $formElement->render($table, $field, $row, $PA);
 		}
 		return $item;
-	}
-
-
-	/**
-	 * Determines whether the current field value is considered as NULL value.
-	 * Using NULL values is enabled by using 'null' in the 'eval' TCA definition.
-	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return bool
-	 */
-	protected function isDisabledNullValueField($table, $field, array $row, array $PA) {
-		$result = FALSE;
-		$config = $PA['fieldConf']['config'];
-		if ($PA['itemFormElValue'] === NULL && !empty($config['eval'])
-			&& GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
-		) {
-			$result = TRUE;
-		}
-		return $result;
-	}
-
-	/**
-	 * Renders a view widget to handle and activate NULL values.
-	 * The widget is enabled by using 'null' in the 'eval' TCA definition.
-	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data of the record row
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return string Widget (if any).
-	 */
-	protected function renderNullValueWidget($table, $field, array $row, array $PA) {
-		$widget = '';
-		$config = $PA['fieldConf']['config'];
-		if (
-			!empty($config['eval']) && GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
-		) {
-			$checked = $PA['itemFormElValue'] === NULL ? '' : ' checked="checked"';
-			$onChange = htmlspecialchars(
-				'typo3form.fieldSetNull(\'' . $PA['itemFormElName'] . '\', !this.checked)'
-			);
-			$widget = '
-				<div class="checkbox">
-					<label>
-						<input type="hidden" name="' . $PA['itemFormElNameActive'] . '" value="0" />
-						<input type="checkbox" name="' . $PA['itemFormElNameActive'] . '" value="1" onchange="' . $onChange . '"' . $checked . ' /> &nbsp;
-					</label>
-				</div>';
-		}
-		return $widget;
 	}
 
 	/**
