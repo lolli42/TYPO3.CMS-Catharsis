@@ -50,13 +50,14 @@ class SingleFieldContainer extends AbstractContainer {
 	protected function singleField() {
 		$backendUser = $this->getBackendUserAuthentication();
 		$languageService = $this->getLanguageService();
+		$resultArray = $this->initializeResultArray();
 
 		$table = $this->globalOptions['table'];
 		$row = $this->globalOptions['databaseRow'];
 		$fieldName = $this->globalOptions['fieldName'];
 
 		if (!is_array($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
-			return array();
+			return $resultArray;
 		}
 
 		$parameterArray = array();
@@ -72,7 +73,7 @@ class SingleFieldContainer extends AbstractContainer {
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && !$parameterArray['fieldConf']['l10n_display'] && $parameterArray['fieldConf']['l10n_mode'] === 'exclude' && ($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0)
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $this->globalOptions['localizationMode'] && $this->globalOptions['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
 		) {
-			return array();
+			return $resultArray;
 		}
 //		if ($this->inline->skipField($table, $fieldName, $row, $parameterArray['fieldConf']['config'])) {
 //			return array();
@@ -83,16 +84,14 @@ class SingleFieldContainer extends AbstractContainer {
 			/** @var $elementConditionMatcher ElementConditionMatcher */
 			$elementConditionMatcher = GeneralUtility::makeInstance(ElementConditionMatcher::class);
 			if (!$elementConditionMatcher->match($parameterArray['fieldConf']['displayCond'], $row)) {
-				return array();
+				return $resultArray;
 			}
 		}
 		// Fetching the TSconfig for the current table/field. This includes the $row which means that
 		$parameterArray['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($table, $row, $fieldName);
 		if ($parameterArray['fieldTSConfig']['disabled']) {
-			return array();
+			return $resultArray;
 		}
-
-		$content = $this->initializeResultArray();
 
 		// Override fieldConf by fieldTSconfig:
 		$parameterArray['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($parameterArray['fieldConf']['config'], $parameterArray['fieldTSConfig']);
@@ -159,25 +158,23 @@ class SingleFieldContainer extends AbstractContainer {
 //				$parameterArray['fieldChangeFunc']['inline'] = 'inline.handleChangedField(\'' . $parameterArray['itemFormElName'] . '\',\'' . $inlineObjectId . '\');';
 //			}
 
-
-
 			// Based on the type of the item, call a render function:
 			$options = $this->globalOptions;
-			$item = $this->getSingleField_SW($table, $fieldName, $row, $parameterArray, $options);
-
-
-
+			$options['parameterArray'] = $parameterArray;
+			$resultArray = $this->getSingleField_SW($options);
+			$html = $resultArray['html'];
 
 			// Add language + diff
 			$renderLanguageDiff = TRUE;
-			if ($parameterArray['fieldConf']['l10n_display'] && (GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'hideDiff')
-					|| GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'defaultAsReadonly'))
+			if (
+				$parameterArray['fieldConf']['l10n_display'] && (GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'hideDiff')
+				|| GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'defaultAsReadonly'))
 			) {
 				$renderLanguageDiff = FALSE;
 			}
 			if ($renderLanguageDiff) {
-				$item = $this->renderDefaultLanguageContent($table, $fieldName, $row, $item);
-				$item = $this->renderDefaultLanguageDiff($table, $fieldName, $row, $item);
+				$html = $this->renderDefaultLanguageContent($table, $fieldName, $row, $html);
+				$html = $this->renderDefaultLanguageDiff($table, $fieldName, $row, $html);
 			}
 
 /**
@@ -209,24 +206,21 @@ class SingleFieldContainer extends AbstractContainer {
 			}
  */
 
-			$content['html'] = $item;
+			$resultArray['html'] = $html;
 
 		}
 
-		return $content;
+		return $resultArray;
 	}
 
 	/**
-	 * Rendering a single item for the form
+	 * Rendering a single item of the form
 	 *
-	 * @param string $table Table name of record
-	 * @param string $field Fieldname to render
-	 * @param array $row The record
-	 * @param array $PA Parameters array containing a lot of stuff. Value by Reference!
-	 * @param array $options Option array
+	 * @param array $options Option array set as global options for childs
+	 * @todo: Maybe push type in here directly?
 	 * @return string Returns the item as HTML code to insert
 	 */
-	protected function getSingleField_SW($table, $field, $row, $PA, array $options) {
+	protected function getSingleField_SW(array $options) {
 		// Hook: getSingleField_beforeRender
 /**
 		foreach ($this->hookObjectsSingleField as $hookObject) {
@@ -235,21 +229,22 @@ class SingleFieldContainer extends AbstractContainer {
 			}
 		}
 */
-		$type = $PA['fieldConf']['config']['type'];
+		$resultArray = $this->initializeResultArray();
+		$type = $options['parameterArray']['fieldConf']['config']['type'];
 		if ($type === 'inline') {
 //			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
 		} else {
 			$typeClassNameMapping = array(
-				'input' => 'InputElement',
-				'text' => 'TextElement',
 				'check' => 'CheckboxElement',
-				'radio' => 'RadioElement',
-				'select' => 'SelectElement',
-				'group' => 'GroupElement',
-				'none' => 'NoneElement',
-				'user' => 'UserElement',
 //				'flex' => 'FlexElement',
+//				'group' => 'GroupElement',
+//				'input' => 'InputElement',
+				'none' => 'NoneElement',
+				'radio' => 'RadioElement',
+//				'select' => 'SelectElement',
+//				'text' => 'TextElement',
 				'unknown' => 'UnknownElement',
+				'user' => 'UserElement',
 			);
 			if (!isset($typeClassNameMapping[$type])) {
 				$type = 'unknown';
@@ -258,9 +253,9 @@ class SingleFieldContainer extends AbstractContainer {
 			if ($formElement instanceof AbstractFormElement) {
 				$formElement->setGlobalOptions($options);
 			}
-			$item = $formElement->render($table, $field, $row, $PA);
+			$resultArray = $formElement->render();
 		}
-		return $item;
+		return $resultArray;
 	}
 
 	/**

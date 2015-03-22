@@ -9,7 +9,7 @@ abstract class AbstractContainer extends AbstractNode {
 	/**
 	 * Return a list without excluded elements.
 	 *
-	 * @param array $fieldsArray Typically coming from types showitem
+	 * @param array $fieldsArray Typically coming from types show item
 	 * @param array $excludeElements Field names to be excluded
 	 * @return array $fieldsArray without excluded elements
 	 */

@@ -71,7 +71,7 @@ class TextElement extends AbstractFormElement {
 		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$config['cols'] = $cols;
 			$config['rows'] = $rows;
-			$noneElement = GeneralUtility::makeInstance(NoneElement::class, $this->formEngine);
+			$noneElement = GeneralUtility::makeInstance(NoneElement::class);
 			$elementConfiguration = array(
 				'fieldConf' => array(
 					'config' => $config,
@@ -207,10 +207,10 @@ class TextElement extends AbstractFormElement {
 
 				// Build the textarea
 				$item .= '<textarea'
-							. $attributeString
-							. $this->formEngine->getPlaceholderAttribute($table, $field, $config, $row)
-							. $additionalInformation['onFocus']
-							. '>' . GeneralUtility::formatForTextarea($additionalInformation['itemFormElValue']) . '</textarea>';
+					. $attributeString
+					. $this->formEngine->getPlaceholderAttribute($table, $field, $config, $row)
+					. $additionalInformation['onFocus']
+					. '>' . GeneralUtility::formatForTextarea($additionalInformation['itemFormElValue']) . '</textarea>';
 
 				// Wrap a wizard around the item?
 				$item = $this->renderWizards(

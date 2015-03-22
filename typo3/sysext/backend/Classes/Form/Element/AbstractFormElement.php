@@ -38,11 +38,6 @@ use TYPO3\CMS\Backend\Form\AbstractNode;
 abstract class AbstractFormElement extends AbstractNode {
 
 	/**
-	 * @var FormEngine
-	 */
-	protected $formEngine;
-
-	/**
 	 * Default width value for a couple of elements like text
 	 *
 	 * @var int
@@ -69,24 +64,11 @@ abstract class AbstractFormElement extends AbstractNode {
 	protected $clipboard = NULL;
 
 	/**
-	 * Constructor function, setting the FormEngine
-	 */
-//	public function __construct(FormEngine $formEngine) {
-	public function __construct() {
-//		$this->formEngine = $formEngine;
-		$this->formEngine = new FormEngine();
-	}
-
-	/**
-	 * Handler for Flex Forms
+	 * Handler for single elements
 	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $additionalInformation An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
+	 * @return array As defined in initializeResultArray() of AbstractNode
 	 */
-	abstract public function render($table, $field, $row, &$additionalInformation);
+	abstract public function render();
 
 	/**
 	 * @return bool TRUE if field is set to read only
@@ -458,10 +440,8 @@ abstract class AbstractFormElement extends AbstractNode {
 				// Setting the item to a hidden-field.
 				$item = $itemKinds[1];
 				if (is_array($wizardConfiguration['hideParent'])) {
-					// NoneElement does not access formEngine properties, use a dummy for decoupling
-					$formEngineDummy = new FormEngine;
 					/** @var NoneElement $noneElement */
-					$noneElement = GeneralUtility::makeInstance(NoneElement::class, $formEngineDummy);
+					$noneElement = GeneralUtility::makeInstance(NoneElement::class);
 					$elementConfiguration = array(
 						'fieldConf' => array(
 							'config' => $wizardConfiguration['hideParent'],
