@@ -195,7 +195,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredFields = array();
+	protected $requiredFields = array();
 
 	/**
 	 * Used to register input-field names, which are required an have additional requirements.
