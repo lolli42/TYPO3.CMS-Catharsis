@@ -242,7 +242,7 @@ class SingleFieldContainer extends AbstractContainer {
 				'none' => 'NoneElement',
 				'radio' => 'RadioElement',
 				'select' => 'SelectElement',
-//				'text' => 'TextElement',
+				'text' => 'TextElement',
 				'unknown' => 'UnknownElement',
 				'user' => 'UserElement',
 			);

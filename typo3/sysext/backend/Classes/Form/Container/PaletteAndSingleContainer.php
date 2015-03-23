@@ -102,7 +102,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 				$singleFieldContainer->setGlobalOptions($options);
 				$childResultArray = $singleFieldContainer->render();
 
-				if ($childResultArray) {
+				if (!empty($childResultArray['html'])) {
 					$mainStructureCounter ++;
 
 					$targetStructure[$mainStructureCounter] = array(
@@ -218,7 +218,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 				$singleFieldContainer->setGlobalOptions($options);
 				$singleFieldContentArray = $singleFieldContainer->render();
 
-				if ($singleFieldContentArray) {
+				if (!empty($singleFieldContentArray['html'])) {
 					$foundRealElement = TRUE;
 					$resultStructure[] = array(
 						'type' => 'single',
