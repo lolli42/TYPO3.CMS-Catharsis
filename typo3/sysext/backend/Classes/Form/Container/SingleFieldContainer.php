@@ -238,7 +238,7 @@ class SingleFieldContainer extends AbstractContainer {
 				'check' => 'CheckboxElement',
 //				'flex' => 'FlexElement',
 				'group' => 'GroupElement',
-//				'input' => 'InputElement',
+				'input' => 'InputElement',
 				'none' => 'NoneElement',
 				'radio' => 'RadioElement',
 				'select' => 'SelectElement',

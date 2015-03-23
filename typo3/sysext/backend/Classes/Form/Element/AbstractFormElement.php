@@ -442,13 +442,15 @@ abstract class AbstractFormElement extends AbstractNode {
 				if (is_array($wizardConfiguration['hideParent'])) {
 					/** @var NoneElement $noneElement */
 					$noneElement = GeneralUtility::makeInstance(NoneElement::class);
-					$elementConfiguration = array(
+					$noneElementOptions = $this->globalOptions;
+					$noneElementOptions['parameterArray'] = array(
 						'fieldConf' => array(
 							'config' => $wizardConfiguration['hideParent'],
 						),
 						'itemFormElValue' => $PA['itemFormElValue'],
 					);
-					$item .= $noneElement->render('', '', '', $elementConfiguration);
+					$noneElementResult = $noneElement->setGlobalOptions($noneElementOptions)->render();
+					$item .= $noneElementResult['html'];
 				}
 			}
 		}

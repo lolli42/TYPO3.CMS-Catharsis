@@ -67,7 +67,7 @@ class FormEngine {
 	/**
 	 * @var string
 	 */
-	public $extJSCODE = '';
+	protected $extJSCODE = '';
 
 	/**
 	 * @var array
@@ -204,7 +204,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredAdditional = array();
+	protected $requiredAdditional = array();
 
 	/**
 	 * Used to register the min and max number of elements
@@ -489,7 +489,9 @@ class FormEngine {
 		$content = $resultArray['html'];
 		$this->requiredElements = $resultArray['requiredElements'];
 		$this->requiredFields = $resultArray['requiredFields'];
+		$this->requiredAdditional = $resultArray['requiredAdditional'];
 		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
+		$this->extJSCODE = $resultArray['extJSCODE'];
 
 		// Hook: getMainFields_postProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
