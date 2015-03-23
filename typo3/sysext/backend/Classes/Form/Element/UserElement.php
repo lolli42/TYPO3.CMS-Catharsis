@@ -25,7 +25,7 @@ class UserElement extends AbstractFormElement {
 	/**
 	 * User defined field type
 	 *
-	 * @return string The HTML code for the TCEform field
+	 * @return array As defined in initializeResultArray() of AbstractNode
 	 */
 	public function render() {
 		$parameterArray = $this->globalOptions['parameterArray'];

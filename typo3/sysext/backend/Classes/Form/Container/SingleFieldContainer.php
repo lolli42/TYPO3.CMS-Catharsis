@@ -237,7 +237,7 @@ class SingleFieldContainer extends AbstractContainer {
 			$typeClassNameMapping = array(
 				'check' => 'CheckboxElement',
 //				'flex' => 'FlexElement',
-//				'group' => 'GroupElement',
+				'group' => 'GroupElement',
 //				'input' => 'InputElement',
 				'none' => 'NoneElement',
 				'radio' => 'RadioElement',

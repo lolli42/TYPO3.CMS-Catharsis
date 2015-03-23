@@ -47,6 +47,8 @@ abstract class AbstractNode {
 	protected function initializeResultArray() {
 		return array(
 			'html' => '',
+			'requiredElements' => array(),
+			'additionalJavaScriptPost' => array(),
 		);
 	}
 
@@ -60,6 +62,12 @@ abstract class AbstractNode {
 	protected function mergeChildReturnIntoExistingResult(array $existing, array $childReturn) {
 		if (!empty($childReturn['html'])) {
 			$existing['html'] .= LF . $childReturn['html'];
+		}
+		foreach ($childReturn['requiredElements'] as $name => $value) {
+			$existing['requiredElements'][$name] = $value;
+		}
+		foreach ($childReturn['additionalJavaScriptPost'] as $value) {
+			$existing['additionalJavaScriptPost'][] = $value;
 		}
 		return $existing;
 	}

@@ -212,7 +212,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredElements = array();
+	protected $requiredElements = array();
 
 	/**
 	 * Used to determine where $requiredFields or $requiredElements are nested (in Tabs or IRRE)
@@ -248,7 +248,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $additionalJS_post = array();
+	protected $additionalJS_post = array();
 
 	/**
 	 * Additional JavaScript executed on submit; If you set "OK" variable it will raise an error
@@ -426,7 +426,6 @@ class FormEngine {
 	 * @param array $row The record from the table for which to render a field.
 	 * @param string $theFieldToReturn The field name to return the TCEform element for.
 	 * @return string HTML output
-	 * @see getMainFields()
 	 */
 	public function getSoloField($table, $row, $theFieldToReturn) {
 
@@ -471,7 +470,6 @@ class FormEngine {
 	 * @param int $depth Depth level
 	 * @param array $overruleTypesArray Overrule types array. Can be used to override the showitem etc. configuration for the TCA types of the table. Can contain all settings which are possible in the TCA 'types' section. See e.g. $TCA['tt_content']['types'].
 	 * @return string HTML output
-	 * @see getSoloField()
 	 */
 	public function getMainFields($table, array $databaseRow, $depth = 0, array $overruleTypesArray = array()) {
 		$this->table = $table;
@@ -489,6 +487,8 @@ class FormEngine {
 		$entryContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
 		$resultArray = $entryContainer->render();
 		$content = $resultArray['html'];
+		$this->requiredElements = $resultArray['requiredElements'];
+		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
 
 		// Hook: getMainFields_postProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
@@ -1057,6 +1057,9 @@ class FormEngine {
 	 * @return void
 	 */
 	public function registerRequiredProperty($type, $name, $value) {
+		throw new \RuntimeException('foo ... called registerRequiredProperty', 123);
+
+
 		if ($type == 'field' && is_string($value)) {
 			$this->requiredFields[$name] = $value;
 			// requiredFields have name/value swapped! For backward compatibility we keep this:
