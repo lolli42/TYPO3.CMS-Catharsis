@@ -66,7 +66,6 @@ class TabsContainer extends AbstractContainer {
 		$tabId = 'TCEforms:' . $this->globalOptions['table'] . ':' . $this->globalOptions['row']['uid'];
 		$docTemplate = $this->getDocumentTemplate();
 
-		$resultArray = $this->initializeResultArray();
 		$resultArray['html'] = $docTemplate->getDynamicTabMenu($tabsContent, $tabId, 1, FALSE, FALSE);
 		return $resultArray;
 	}

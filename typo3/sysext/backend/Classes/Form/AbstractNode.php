@@ -46,9 +46,10 @@ abstract class AbstractNode {
 	 */
 	protected function initializeResultArray() {
 		return array(
-			'html' => '',
 			'requiredElements' => array(),
+			'requiredFields' => array(),
 			'additionalJavaScriptPost' => array(),
+			'html' => '',
 		);
 	}
 
@@ -65,6 +66,9 @@ abstract class AbstractNode {
 		}
 		foreach ($childReturn['requiredElements'] as $name => $value) {
 			$existing['requiredElements'][$name] = $value;
+		}
+		foreach ($childReturn['requiredFields'] as $value => $name) { // Params swapped ?!
+			$existing['requiredFields'][$value] = $name;
 		}
 		foreach ($childReturn['additionalJavaScriptPost'] as $value) {
 			$existing['additionalJavaScriptPost'][] = $value;

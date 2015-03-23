@@ -488,6 +488,7 @@ class FormEngine {
 		$resultArray = $entryContainer->render();
 		$content = $resultArray['html'];
 		$this->requiredElements = $resultArray['requiredElements'];
+		$this->requiredFields = $resultArray['requiredFields'];
 		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
 
 		// Hook: getMainFields_postProcess
