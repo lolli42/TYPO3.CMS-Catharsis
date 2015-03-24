@@ -3,15 +3,17 @@ namespace TYPO3\CMS\Backend\Form\Container;
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Backend\Form\ElementConditionMatcher;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Utility\DiffUtility;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Backend\Form\Container\FlexFormContainer;
 
 class SingleFieldContainer extends AbstractContainer {
 
@@ -158,10 +160,13 @@ class SingleFieldContainer extends AbstractContainer {
 //				$parameterArray['fieldChangeFunc']['inline'] = 'inline.handleChangedField(\'' . $parameterArray['itemFormElName'] . '\',\'' . $inlineObjectId . '\');';
 //			}
 
-			// Based on the type of the item, call a render function:
+			// Based on the type of the item, call a render function on a child element
 			$options = $this->globalOptions;
 			$options['parameterArray'] = $parameterArray;
-			$resultArray = $this->getSingleField_SW($options);
+			/** @var NodeFactory $childFactory */
+			$childFactory = GeneralUtility::makeInstance(NodeFactory::class);
+			$childElement = $childFactory->create($parameterArray['fieldConf']['config']['type']);
+			$resultArray = $childElement->setGlobalOptions($options)->render();
 			$html = $resultArray['html'];
 
 			// Add language + diff
@@ -210,51 +215,6 @@ class SingleFieldContainer extends AbstractContainer {
 
 		}
 
-		return $resultArray;
-	}
-
-	/**
-	 * Rendering a single item of the form
-	 *
-	 * @param array $options Option array set as global options for childs
-	 * @todo: Maybe push type in here directly?
-	 * @return string Returns the item as HTML code to insert
-	 */
-	protected function getSingleField_SW(array $options) {
-		// Hook: getSingleField_beforeRender
-/**
-		foreach ($this->hookObjectsSingleField as $hookObject) {
-			if (method_exists($hookObject, 'getSingleField_beforeRender')) {
-				$hookObject->getSingleField_beforeRender($table, $field, $row, $PA);
-			}
-		}
-*/
-		$resultArray = $this->initializeResultArray();
-		$type = $options['parameterArray']['fieldConf']['config']['type'];
-		if ($type === 'inline') {
-//			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
-		} else {
-			$typeClassNameMapping = array(
-				'check' => 'CheckboxElement',
-//				'flex' => 'FlexElement',
-				'group' => 'GroupElement',
-				'input' => 'InputElement',
-				'none' => 'NoneElement',
-				'radio' => 'RadioElement',
-				'select' => 'SelectElement',
-				'text' => 'TextElement',
-				'unknown' => 'UnknownElement',
-				'user' => 'UserElement',
-			);
-			if (!isset($typeClassNameMapping[$type])) {
-				$type = 'unknown';
-			}
-			$formElement = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this);
-			if ($formElement instanceof AbstractFormElement) {
-				$formElement->setGlobalOptions($options);
-			}
-			$resultArray = $formElement->render();
-		}
 		return $resultArray;
 	}
 
@@ -330,64 +290,6 @@ class SingleFieldContainer extends AbstractContainer {
 	}
 
 	/**
-	 * Rendering preview output of a field value which is not shown as a form field but just outputted.
-	 *
-	 * @param string $value The value to output
-	 * @param array $config Configuration for field.
-	 * @param string $field Name of field.
-	 * @return string HTML formatted output
-	 */
-	protected function previewFieldValue($value, $config, $field = '') {
-		if ($config['config']['type'] === 'group' && ($config['config']['internal_type'] === 'file' || $config['config']['internal_type'] === 'file_reference')) {
-			// Ignore upload folder if internal_type is file_reference
-			if ($config['config']['internal_type'] === 'file_reference') {
-				$config['config']['uploadfolder'] = '';
-			}
-			$show_thumbs = TRUE;
-			$table = 'tt_content';
-			// Making the array of file items:
-			$itemArray = GeneralUtility::trimExplode(',', $value, TRUE);
-			// Showing thumbnails:
-			$thumbnail = '';
-			if ($show_thumbs) {
-				$imgs = array();
-				foreach ($itemArray as $imgRead) {
-					$imgP = explode('|', $imgRead);
-					$imgPath = rawurldecode($imgP[0]);
-					$rowCopy = array();
-					$rowCopy[$field] = $imgPath;
-					// Icon + click menu:
-					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
-					$fileInformation = pathinfo($imgPath);
-					$fileIcon = IconUtility::getSpriteIconForFile(
-						$imgPath,
-						array(
-							'title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))
-						)
-					);
-					$imgs[] =
-						'<span class="text-nowrap">' .
-						BackendUtility::thumbCode(
-							$rowCopy,
-							$table,
-							$field,
-							'',
-							'thumbs.php',
-							$config['config']['uploadfolder'], 0, ' align="middle"'
-						) .
-						($absFilePath ? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) .
-						$imgPath .
-						'</span>';
-				}
-				$thumbnail = implode('<br />', $imgs);
-			}
-			return $thumbnail;
-		} else {
-			return nl2br(htmlspecialchars($value));
-		}
-	}
-
-	/**
 	 * Renders the diff-view of default language record content compared with what the record was originally translated from.
 	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
 	 * depending on registerDefaultLanguageData() being called prior to this.
@@ -438,13 +340,6 @@ class SingleFieldContainer extends AbstractContainer {
 	 */
 	protected function getLanguageService() {
 		return $GLOBALS['LANG'];
-	}
-
-	/**
-	 * @return DocumentTemplate
-	 */
-	protected function getControllerDocumentTemplate() {
-		return $GLOBALS['SOBE']->doc;
 	}
 
 }

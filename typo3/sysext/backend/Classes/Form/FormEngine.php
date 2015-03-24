@@ -801,16 +801,19 @@ class FormEngine {
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
 
+			$pageRenderer->loadRequireJs();
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineFlexForm');
+
 			// If IRRE fields were processed, add the JavaScript functions:
 			if ($this->inline->inlineCount) {
 				// We want to load jQuery-ui inside our js. Enable this using requirejs.
-				$pageRenderer->loadRequireJs();
 				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 				$out .= '
 				inline.setPrependFormFieldNames("' . $this->inline->prependNaming . '");
 				inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
 				';
 			}
+
 			$out .= '
 			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
 			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg('', 'gfx/content_selected.gif', '', 1) . '";

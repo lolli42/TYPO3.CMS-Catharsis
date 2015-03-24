@@ -27,6 +27,13 @@ abstract class AbstractNode {
 	protected $globalOptions = array();
 
 	/**
+	 * Handler for single nodes
+	 *
+	 * @return array As defined in initializeResultArray() of AbstractNode
+	 */
+	abstract public function render();
+
+	/**
 	 * Set global options from parent instance
 	 *
 	 * @param array $globalOptions Global options like 'readonly' for all elements

@@ -64,13 +64,6 @@ abstract class AbstractFormElement extends AbstractNode {
 	protected $clipboard = NULL;
 
 	/**
-	 * Handler for single elements
-	 *
-	 * @return array As defined in initializeResultArray() of AbstractNode
-	 */
-	abstract public function render();
-
-	/**
 	 * @return bool TRUE if field is set to read only
 	 */
 	protected function isGlobalReadonly() {
