@@ -9,6 +9,7 @@ use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Form\Container\FlexFormSectionContainer;
 
 class FlexFormElementContainer extends AbstractContainer {
 
@@ -41,7 +42,27 @@ class FlexFormElementContainer extends AbstractContainer {
 
 			// Section or container
 			if ($flexFormFieldArray['type'] === 'array') {
-				$resultArray['html'] = LF . 'section or container';
+				if (empty($flexFormFieldArray['section'])) {
+					$resultArray['html'] = LF . 'Section expected at ' . $flexFormFieldName . ' but not found';
+					continue;
+				}
+debug($flexFormRowData);
+				/**
+				$options = $this->globalOptions;
+				$options['flexFormDataStructureArray'] = $sheetDataStructure['ROOT']['el'];
+				$options['flexFormRowData'] = $flexFormRowSheetDataSubPart;
+				$options['flexFormFormPrefix'] = '[data][' . $sheetName . '][' . $flexFormCurrentLanguage . ']';
+				 */
+
+				$options = $this->globalOptions;
+				$options['flexFormDataStructureArray'] = $flexFormFieldArray['el'];
+//				$options['flexFormRowData'] =
+
+				/** @var FlexFormSectionContainer $sectionContainer */
+				$sectionContainer = GeneralUtility::makeInstance(FlexFormSectionContainer::class);
+				$sectionContainerResult = $sectionContainer->setGlobalOptions($options)->render();
+//				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $sectionContainerResult);
+				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $this->initializeResultArray());
 			} else {
 				// Single element
 				$vDEFkey = 'vDEF';
