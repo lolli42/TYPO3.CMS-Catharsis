@@ -16,6 +16,7 @@ class FlexFormElementContainer extends AbstractContainer {
 	 * @return array As defined in initializeResultArray() of AbstractNode
 	 */
 	public function render() {
+
 		$table = $this->globalOptions['table'];
 		$row = $this->globalOptions['databaseRow'];
 		$fieldName = $this->globalOptions['fieldName'];
@@ -27,7 +28,6 @@ class FlexFormElementContainer extends AbstractContainer {
 		$parameterArray = $this->globalOptions['parameterArray'];
 
 		$languageService = $this->getLanguageService();
-
 		$resultArray = $this->initializeResultArray();
 		foreach ($flexFormDataStructureArray as $flexFormFieldName => $flexFormFieldArray) {
 			if (

@@ -22,7 +22,6 @@ class FlexFormTabsContainer extends AbstractContainer {
 		$flexFormRowData = $this->globalOptions['flexFormRowData'];
 
 		$resultArray = $this->initializeResultArray();
-
 		$tabsContent = array();
 		foreach ($flexFormDataStructureArray['sheets'] as $sheetName => $sheetDataStructure) {
 			$flexFormRowSheetDataSubPart = $flexFormRowData['data'][$sheetName][$flexFormCurrentLanguage];
@@ -53,9 +52,13 @@ class FlexFormTabsContainer extends AbstractContainer {
 				$parameterArray['_cshKey'] .= '.' . $row[$key];
 			}
 
-			// @todo: next two lines are dummy
-			$childReturn = $this->initializeResultArray();
-			$childReturn['html'] = 'element in sheet';
+			$options = $this->globalOptions;
+			$options['flexFormDataStructureArray'] = $sheetDataStructure['ROOT']['el'];
+			$options['flexFormRowData'] = $flexFormRowSheetDataSubPart;
+			$options['flexFormFormPrefix'] = '[data][' . $sheetName . '][' . $flexFormCurrentLanguage . ']';
+			/** @var FlexFormElementContainer $flexFormElementContainer */
+			$flexFormElementContainer = GeneralUtility::makeInstance(FlexFormElementContainer::class);
+			$childReturn = $flexFormElementContainer->setGlobalOptions($options)->render();
 
 			$tabsContent[] = array(
 				'label' => !empty($sheetDataStructure['ROOT']['TCEforms']['sheetTitle']) ? $languageService->sL($sheetDataStructure['ROOT']['TCEforms']['sheetTitle']) : $sheetName,

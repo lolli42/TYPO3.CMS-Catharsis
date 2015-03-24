@@ -42,7 +42,9 @@ class NodeFactory {
 			/** @var FlexFormContainer $flexContainer */
 			$resultObject = GeneralUtility::makeInstance(FlexFormContainer::class);
 		} elseif ($type === 'inline') {
-			$resultObject = NULL;
+			// @todo
+			$resultObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\UnknownElement');
+			$type = 'unknown';
 //			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
 		} else {
 			$typeClassNameMapping = array(
