@@ -796,7 +796,7 @@ class FormEngine {
 				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
 			}
 
-			// @todo: remove scriptaclous once suggest is moved to RequireJS, see #55575
+			// @todo: remove scriptaclous once suggest & flex form foo is moved to RequireJS, see #55575
 			$pageRenderer->loadScriptaculous();
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');

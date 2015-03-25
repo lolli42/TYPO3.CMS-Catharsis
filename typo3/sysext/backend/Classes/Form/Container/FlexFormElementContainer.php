@@ -46,23 +46,21 @@ class FlexFormElementContainer extends AbstractContainer {
 					$resultArray['html'] = LF . 'Section expected at ' . $flexFormFieldName . ' but not found';
 					continue;
 				}
-debug($flexFormRowData);
-				/**
-				$options = $this->globalOptions;
-				$options['flexFormDataStructureArray'] = $sheetDataStructure['ROOT']['el'];
-				$options['flexFormRowData'] = $flexFormRowSheetDataSubPart;
-				$options['flexFormFormPrefix'] = '[data][' . $sheetName . '][' . $flexFormCurrentLanguage . ']';
-				 */
+
+				$sectionTitle = '';
+				if (!empty($flexFormFieldArray['title'])) {
+					$sectionTitle = $languageService->sL($flexFormFieldArray['title']);
+				}
+				$resultArray['html'] .= '<div class="t3-form-field-label-flexsection"><strong>' . htmlspecialchars($sectionTitle) . '</strong></div>';
 
 				$options = $this->globalOptions;
 				$options['flexFormDataStructureArray'] = $flexFormFieldArray['el'];
-//				$options['flexFormRowData'] =
-
+				$options['flexFormRowData'] = $flexFormRowData[$flexFormFieldName]['el'];
+				$options['flexFormFieldIdentifierPrefix'] = 'ID';
 				/** @var FlexFormSectionContainer $sectionContainer */
 				$sectionContainer = GeneralUtility::makeInstance(FlexFormSectionContainer::class);
 				$sectionContainerResult = $sectionContainer->setGlobalOptions($options)->render();
-//				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $sectionContainerResult);
-				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $this->initializeResultArray());
+				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $sectionContainerResult);
 			} else {
 				// Single element
 				$vDEFkey = 'vDEF';
