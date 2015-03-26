@@ -1749,14 +1749,14 @@ class FormEngine {
 	 * @param string $field The field name which this element is supposed to edit
 	 * @param array $row The record data array where the value(s) for the field can be found
 	 * @param array $PA An array with additional configuration options.
+	 * @throws \RuntimeException
 	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\FlexElement
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
 	 */
 	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
 		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
-			->setGlobalOptions($this->getConfigurationOptionsForChildElements())
-			->render($table, $field, $row, $PA);
+		// getSingleField_typeFlex() was refactored and is now a container.
+		throw new \RuntimeException('getSingleField_typeFlex() can not be called directly', 1427403868);
 	}
 
 	/**

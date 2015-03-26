@@ -68,7 +68,6 @@ return array(
     'TYPO3\\CMS\\Backend\\Form\\ElementConditionMatcher' => $baseDir . '/typo3/sysext/backend/Classes/Form/ElementConditionMatcher.php',
     'TYPO3\\CMS\\Backend\\Form\\Element\\AbstractFormElement' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/AbstractFormElement.php',
     'TYPO3\\CMS\\Backend\\Form\\Element\\CheckboxElement' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/CheckboxElement.php',
-    'TYPO3\\CMS\\Backend\\Form\\Element\\FlexElement' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/FlexElement.php',
     'TYPO3\\CMS\\Backend\\Form\\Element\\GroupElement' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/GroupElement.php',
     'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElement' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/InlineElement.php',
     'TYPO3\\CMS\\Backend\\Form\\Element\\InlineElementHookInterface' => $baseDir . '/typo3/sysext/backend/Classes/Form/Element/InlineElementHookInterface.php',
