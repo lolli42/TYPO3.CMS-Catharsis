@@ -57,6 +57,7 @@ abstract class AbstractNode {
 			'requiredFields' => array(), // value => name
 			'requiredAdditional' => array(), // name => array
 			'additionalJavaScriptPost' => array(),
+			'additionalJavaScriptSubmit' => array(),
 			'extJSCODE' => '',
 			'html' => '',
 		);
@@ -87,6 +88,9 @@ abstract class AbstractNode {
 		}
 		foreach ($childReturn['additionalJavaScriptPost'] as $value) {
 			$existing['additionalJavaScriptPost'][] = $value;
+		}
+		foreach ($childReturn['additionalJavaScriptSubmit'] as $value) {
+			$existing['additionalJavaScriptSubmit'][] = $value;
 		}
 		return $existing;
 	}

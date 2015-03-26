@@ -259,14 +259,6 @@ class FormEngine {
 	public $additionalJS_submit = array();
 
 	/**
-	 * Additional JavaScript executed when section element is deleted.
-	 * This is necessary, for example, to correctly clean up HTMLArea RTE (bug #8232)
-	 *
-	 * @var array
-	 */
-	public $additionalJS_delete = array();
-
-	/**
 	 * @var \TYPO3\CMS\Backend\Form\Element\InlineElement
 	 */
 	public $inline;
@@ -491,6 +483,7 @@ class FormEngine {
 		$this->requiredFields = $resultArray['requiredFields'];
 		$this->requiredAdditional = $resultArray['requiredAdditional'];
 		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
+		$this->additionalJS_submit = $resultArray['additionalJavaScriptSubmit'];
 		$this->extJSCODE = $resultArray['extJSCODE'];
 
 		// Hook: getMainFields_postProcess
@@ -1594,6 +1587,15 @@ class FormEngine {
 	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public $palFieldTemplate = '';
+
+	/**
+	 * Additional JavaScript executed when section element is deleted.
+	 * This is necessary, for example, to correctly clean up HTMLArea RTE (bug #8232)
+	 *
+	 * @var array
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
+	 */
+	public $additionalJS_delete = array();
 
 	/**
 	 * Generation of TCEform elements of the type "input"

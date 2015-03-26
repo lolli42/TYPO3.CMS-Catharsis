@@ -466,7 +466,6 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			$this->TCEform->additionalJS_post[] = $this->registerRTEinJS($this->TCEform->RTEcounter, $table, $row['uid'], $field, $textAreaId);
 			// Set the save option for the RTE
 			$this->TCEform->additionalJS_submit[] = $this->setSaveRTE($this->TCEform->RTEcounter, 'editform', $textAreaId, $PA['itemFormElName']);
-			$this->TCEform->additionalJS_delete[] = $this->setDeleteRTE($this->TCEform->RTEcounter, 'editform', $textAreaId);
 			// Loading ExtJs inline code
 			$this->pageRenderer->enableExtJSQuickTips();
 			// Add TYPO3 notifications JavaScript
@@ -1442,8 +1441,10 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 * @param string $formName: the name of the form
 	 * @param string $textareaId: the id of the textarea
 	 * @return string Javascript code
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8
 	 */
 	public function setDeleteRTE($RTEcounter, $formName, $textareaId) {
+		GeneralUtility::logDeprecatedFunction();
 		return 'if (RTEarea["' . $textareaId . '"]) { RTEarea["' . $textareaId . '"].deleted = true;}';
 	}
 
