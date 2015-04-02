@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Form\Container\FlexFormContainer;
+use TYPO3\CMS\Backend\Form\Container\InlineContainer;
 
 /**
  * Create an element object depending on type
@@ -42,10 +43,7 @@ class NodeFactory {
 			/** @var FlexFormContainer $flexContainer */
 			$resultObject = GeneralUtility::makeInstance(FlexFormContainer::class);
 		} elseif ($type === 'inline') {
-			// @todo
-			$resultObject = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\UnknownElement');
-			$type = 'unknown';
-//			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
+			$resultObject = GeneralUtility::makeInstance(InlineContainer::class);
 		} else {
 			$typeClassNameMapping = array(
 				'check' => 'CheckboxElement',

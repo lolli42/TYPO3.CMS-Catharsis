@@ -113,14 +113,9 @@ class InlineElement {
 	/**
 	 * @var array
 	 */
-	public $inlineStyles = array();
-
-	/**
-	 * How the $this->fObj->prependFormFieldNames should be set ('data' is default)
-	 *
-	 * @var string
-	 */
-	public $prependNaming = 'data';
+	public $inlineStyles = array(
+		'margin-right' => '5'
+	);
 
 	/**
 	 * Reference to $this->fObj->prependFormFieldNames
@@ -149,11 +144,10 @@ class InlineElement {
 	 * @param \TYPO3\CMS\Backend\Form\FormEngine $formEngine Reference to an FormEngine instance
 	 * @return void
 	 */
-	public function init(&$formEngine) {
+	public function init($formEngine) {
 		$this->formEngine = $formEngine;
 		$this->prependFormFieldNames = &$this->formEngine->prependFormFieldNames;
 		$this->prependCmdFieldNames = &$this->formEngine->prependCmdFieldNames;
-		$this->inlineStyles['margin-right'] = '5';
 		$this->initHookObjects();
 	}
 
@@ -829,13 +823,18 @@ class InlineElement {
 			$comboConfig = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector]['config'];
 			// If record does already exist, load it:
 			if ($rec[$foreign_selector] && MathUtility::canBeInterpretedAsInteger($rec[$foreign_selector])) {
-				$comboRecord = $this->getRecord($this->inlineFirstPid, $comboConfig['foreign_table'], $rec[$foreign_selector]);
+				$comboRecord = $this->getRecord($comboConfig['foreign_table'], $rec[$foreign_selector]);
 				$isNewRecord = FALSE;
 			} else {
 				$comboRecord = $this->getNewRecord($this->inlineFirstPid, $comboConfig['foreign_table']);
 				$isNewRecord = TRUE;
 			}
-			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.inline_use_combination'), '', FlashMessage::WARNING);
+			$flashMessage = GeneralUtility::makeInstance(
+				FlashMessage::class,
+				$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:warning.inline_use_combination'),
+				'',
+				FlashMessage::WARNING
+			);
 			$out = $flashMessage->render();
 			// Get the FormEngine interpretation of the TCA of the child table
 			$out .= $this->renderMainFields($comboConfig['foreign_table'], $comboRecord);
@@ -1304,7 +1303,7 @@ class InlineElement {
 			}
 			// Set language of new child record to the language of the parent record:
 			if ($parent['localizationMode'] === 'select') {
-				$parentRecord = $this->getRecord(0, $parent['table'], $parent['uid']);
+				$parentRecord = $this->getRecord($parent['table'], $parent['uid']);
 				$parentLanguageField = $GLOBALS['TCA'][$parent['table']]['ctrl']['languageField'];
 				$childLanguageField = $GLOBALS['TCA'][$current['table']]['ctrl']['languageField'];
 				if ($parentRecord[$parentLanguageField] > 0) {
@@ -1312,7 +1311,7 @@ class InlineElement {
 				}
 			}
 		} else {
-			$record = $this->getRecord($this->inlineFirstPid, $current['table'], $foreignUid);
+			$record = $this->getRecord($current['table'], $foreignUid);
 		}
 		// Now there is a foreign_selector, so there is a new record on the intermediate table, but
 		// this intermediate table holds a field, which is responsible for the foreign_selector, so
@@ -1323,7 +1322,7 @@ class InlineElement {
 			$record[$config['foreign_selector']] = $selConfig['type'] != 'groupdb' ? '' : $selConfig['table'] . '_';
 			$record[$config['foreign_selector']] .= $foreignUid;
 			if ($selConfig['table'] === 'sys_file') {
-				$fileRecord = $this->getRecord(0, $selConfig['table'], $foreignUid);
+				$fileRecord = $this->getRecord($selConfig['table'], $foreignUid);
 				if ($fileRecord !== FALSE && !$this->checkFileTypeAccessForField($selConfig, $fileRecord)) {
 					return $this->getErrorMessageForAJAX('File extension ' . $fileRecord['extension'] . ' is not allowed here!');
 				}
@@ -1402,7 +1401,7 @@ class InlineElement {
 		if (GeneralUtility::inList('localize,synchronize', $type) || MathUtility::canBeInterpretedAsInteger($type)) {
 			// The parent level:
 			$parent = $this->getStructureLevel(-1);
-			$parentRecord = $this->getRecord(0, $parent['table'], $parent['uid']);
+			$parentRecord = $this->getRecord($parent['table'], $parent['uid']);
 			$cmd = array();
 			$cmd[$parent['table']][$parent['uid']]['inlineLocalizeSynchronize'] = $parent['field'] . ',' . $type;
 			/** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
@@ -1442,7 +1441,7 @@ class InlineElement {
 		$expandSingle = isset($config['appearance']['expandSingle']) && $config['appearance']['expandSingle'];
 		// Put the current level also to the dynNestedStack of FormEngine:
 		$this->formEngine->pushToDynNestedStack('inline', $this->inlineNames['object']);
-		$record = $this->getRecord($this->inlineFirstPid, $current['table'], $current['uid']);
+		$record = $this->getRecord($current['table'], $current['uid']);
 		// The HTML-object-id's prefix of the dynamically created record
 		$objectPrefix = $this->inlineNames['object'] . self::Structure_Separator . $current['table'];
 		$objectId = $objectPrefix . self::Structure_Separator . $record['uid'];
@@ -1501,7 +1500,7 @@ class InlineElement {
 		}
 		// Set the items that should be added in the forms view:
 		foreach ($localizedItems as $item) {
-			$row = $this->getRecord($this->inlineFirstPid, $current['table'], $item);
+			$row = $this->getRecord($current['table'], $item);
 			$selectedValue = $foreignSelector ? '\'' . $row[$foreignSelector] . '\'' : 'null';
 			$data .= $this->renderForeignRecord($parent['uid'], $row, $parent['config']);
 			$jsonArrayScriptCall[] = 'inline.memorizeAddRecord(\'' . $nameObjectForeignTable . '\', \'' . $item . '\', null, ' . $selectedValue . ');';
@@ -1586,11 +1585,11 @@ class InlineElement {
 			if ($language > 0 && $transOrigPointer) {
 				// Localization in mode 'keep', isn't a real localization, but keeps the children of the original parent record:
 				if ($localizationMode == 'keep') {
-					$transOrigRec = $this->getRecord(0, $transOrigTable, $transOrigPointer);
+					$transOrigRec = $this->getRecord($transOrigTable, $transOrigPointer);
 					$elements = $transOrigRec[$field];
 					$pid = $transOrigRec['pid'];
 				} elseif ($localizationMode == 'select') {
-					$transOrigRec = $this->getRecord(0, $transOrigTable, $transOrigPointer);
+					$transOrigRec = $this->getRecord($transOrigTable, $transOrigPointer);
 					$pid = $transOrigRec['pid'];
 					$fieldValue = $transOrigRec[$field];
 
@@ -1607,11 +1606,11 @@ class InlineElement {
 						}
 					}
 
-					$recordsOriginal = $this->getRelatedRecordsArray($pid, $foreignTable, $fieldValue);
+					$recordsOriginal = $this->getRelatedRecordsArray($foreignTable, $fieldValue);
 				}
 			}
 		}
-		$records = $this->getRelatedRecordsArray($pid, $foreignTable, $elements);
+		$records = $this->getRelatedRecordsArray($foreignTable, $elements);
 		$relatedRecords = array('records' => $records, 'count' => count($records));
 		// Merge original language with current localization and show differences:
 		if (!empty($recordsOriginal)) {
@@ -1652,18 +1651,17 @@ class InlineElement {
 	/**
 	 * Gets the related records of the embedding item, this could be 1:n, m:n.
 	 *
-	 * @param int $pid The pid of the parent record
 	 * @param string $table The table name of the record
 	 * @param string $itemList The list of related child records
 	 * @return array The records related to the parent item
 	 */
-	protected function getRelatedRecordsArray($pid, $table, $itemList) {
+	protected function getRelatedRecordsArray($table, $itemList) {
 		$records = array();
 		$itemArray = $this->getRelatedRecordsUidArray($itemList);
 		// Perform modification of the selected items array:
 		foreach ($itemArray as $uid) {
 			// Get the records for this uid using \TYPO3\CMS\Backend\Form\DataPreprocessor
-			if ($record = $this->getRecord($pid, $table, $uid)) {
+			if ($record = $this->getRecord($table, $uid)) {
 				$records[$uid] = $record;
 			}
 		}
@@ -1854,13 +1852,12 @@ class InlineElement {
 	 * \TYPO3\CMS\Backend\Form\DataPreprocessor is used for "upgrading" the
 	 * values, especially the relations.
 	 *
-	 * @param int $_ The pid of the page the record should be stored (only relevant for NEW records)
 	 * @param string $table The table to fetch data from (= foreign_table)
 	 * @param string $uid The uid of the record to fetch, or the pid if a new record should be created
 	 * @param string $cmd The command to perform, empty or 'new'
 	 * @return array A record row from the database post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor
 	 */
-	public function getRecord($_, $table, $uid, $cmd = '') {
+	public function getRecord($table, $uid, $cmd = '') {
 		// Fetch workspace version of a record (if any):
 		if ($cmd !== 'new' && $GLOBALS['BE_USER']->workspace !== 0 && BackendUtility::isTableWorkspaceEnabled($table)) {
 			$workspaceVersion = BackendUtility::getWorkspaceVersionOfRecord($GLOBALS['BE_USER']->workspace, $table, $uid, 'uid,t3ver_state');
@@ -1890,7 +1887,7 @@ class InlineElement {
 	 * @return array A record row from the database post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor
 	 */
 	public function getNewRecord($pid, $table) {
-		$rec = $this->getRecord($pid, $table, $pid, 'new');
+		$rec = $this->getRecord($table, $pid, 'new');
 		$rec['uid'] = uniqid('NEW', TRUE);
 		$rec['pid'] = $this->getNewRecordPid($table, $pid);
 		return $rec;
@@ -1964,7 +1961,7 @@ class InlineElement {
 		if ($current !== FALSE) {
 			$this->inlineNames = array(
 				'form' => $this->prependFormFieldNames . $this->getStructureItemName($current, self::Disposal_AttributeName),
-				'object' => $this->prependNaming . self::Structure_Separator . $this->inlineFirstPid . self::Structure_Separator . $this->getStructurePath()
+				'object' => 'data' . self::Structure_Separator . $this->inlineFirstPid . self::Structure_Separator . $this->getStructurePath()
 			);
 		} else {
 			$this->inlineNames = array();
@@ -2084,7 +2081,7 @@ class InlineElement {
 		// Substitute FlexForm addition and make parsing a bit easier
 		$domObjectId = str_replace(self::FlexForm_Separator, self::FlexForm_Substitute, $domObjectId);
 		// The starting pattern of an object identifier (e.g. "data-<firstPidValue>-<anything>)
-		$pattern = '/^' . $this->prependNaming . self::Structure_Separator . '(.+?)' . self::Structure_Separator . '(.+)$/';
+		$pattern = '/^data' . self::Structure_Separator . '(.+?)' . self::Structure_Separator . '(.+)$/';
 
 		if (preg_match($pattern, $domObjectId, $match)) {
 			$this->inlineFirstPid = $match[1];
@@ -2139,6 +2136,7 @@ class InlineElement {
 	 * @return bool If critical configuration errors were found, FALSE is returned
 	 */
 	public function checkConfiguration(&$config) {
+		// @todo: copied / adapted to inlineContainer
 		$foreign_table = $config['foreign_table'];
 		// An inline field must have a foreign_table, if not, stop all further inline actions for this field:
 		if (!$foreign_table || !is_array($GLOBALS['TCA'][$foreign_table])) {

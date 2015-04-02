@@ -796,13 +796,21 @@ class FormEngine {
 
 			$pageRenderer->loadRequireJs();
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineFlexForm');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
+
+			$pageRenderer->addInlineLanguagelabelFile(
+				\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
+				'file_upload'
+			);
 
 			// If IRRE fields were processed, add the JavaScript functions:
+			// @toto: inlineCount is gone ...
 			if ($this->inline->inlineCount) {
 				// We want to load jQuery-ui inside our js. Enable this using requirejs.
 				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 				$out .= '
-				inline.setPrependFormFieldNames("' . $this->inline->prependNaming . '");
+				inline.setPrependFormFieldNames("data");
 				inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
 				';
 			}
