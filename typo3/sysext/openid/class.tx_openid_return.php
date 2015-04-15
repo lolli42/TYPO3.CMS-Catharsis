@@ -17,7 +17,9 @@ if (isset($_GET['login_status'])) {
 }
 define('TYPO3_MOD_PATH', 'sysext/openid/');
 require_once '../../init.php';
-
-$module = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Openid\OpenidReturn::class);
+\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+	'The entry point to the openid return window was moved to an own module. Please use BackendUtility::getModuleUrl(\'openid_return\') to link to class.tx_openid_return.php. This script will be removed in TYPO3 CMS 8.'
+);
 /* @var \TYPO3\CMS\Openid\OpenidReturn $module */
+$module = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Openid\OpenidReturn::class);
 $module->main();

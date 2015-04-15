@@ -18,9 +18,12 @@ use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * Script Class: Drawing the editing form for editing records in TYPO3.
@@ -230,7 +233,7 @@ class EditDocumentController {
 
 	/**
 	 * Return URL script, processed. This contains the script (if any) that we should
-	 * RETURN TO from the alt_doc.php script IF we press the close button. Thus this
+	 * RETURN TO from the FormEngine script IF we press the close button. Thus this
 	 * variable is normally passed along from the calling script so we can properly return if needed.
 	 *
 	 * @var string
@@ -385,6 +388,13 @@ class EditDocumentController {
 	protected $signalSlotDispatcher;
 
 	/**
+	 * Stores information needed to preview the currently saved record
+	 *
+	 * @var array
+	 */
+	protected $previewData = [];
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -439,7 +449,7 @@ class EditDocumentController {
 			$this->defVals = $this->overrideVals;
 		}
 		// Setting return URL
-		$this->retUrl = $this->returnUrl ?: 'dummy.php';
+		$this->retUrl = $this->returnUrl ?: BackendUtility::getModuleUrl('dummy');
 		// Fix $this->editconf if versioning applies to any of the records
 		$this->fixWSversioningInEditConf();
 		// Make R_URL (request url) based on input GETvars:
@@ -452,7 +462,7 @@ class EditDocumentController {
 		$this->dontStoreDocumentRef = 0;
 		$this->storeTitle = '';
 		// Get session data for the module:
-		$this->docDat = $GLOBALS['BE_USER']->getModuleData('alt_doc.php', 'ses');
+		$this->docDat = $GLOBALS['BE_USER']->getModuleData('FormEngine', 'ses');
 		$this->docHandler = $this->docDat[0];
 		// If a request for closing the document has been sent, act accordingly:
 		if ($this->closeDoc > 0) {
@@ -563,7 +573,7 @@ class EditDocumentController {
 								$newEditConf[$tableName][$editId] = 'edit';
 							}
 							// Traverse all new records and forge the content of ->editconf so we can continue to EDIT these records!
-							if ($tableName == 'pages' && $this->retUrl != 'dummy.php' && $this->returnNewPageId) {
+							if ($tableName == 'pages' && $this->retUrl != BackendUtility::getModuleUrl('dummy') && $this->returnNewPageId) {
 								$this->retUrl .= '&id=' . $tce->substNEWwithIDs[$key];
 							}
 						}
@@ -607,6 +617,18 @@ class EditDocumentController {
 				// Re-compile the store* values since editconf changed...
 				$this->compileStoreDat();
 			}
+			// If a preview is requested
+			if (isset($_POST['_savedokview_x'])) {
+				// Get the first table and id of the data array from DataHandler
+				$table = reset(array_keys($this->data));
+				$id = reset(array_keys($this->data[$table]));
+				if (!MathUtility::canBeInterpretedAsInteger($id)) {
+					$id = $tce->substNEWwithIDs[$id];
+				}
+				// Store this information for later use
+				$this->previewData['table'] = $table;
+				$this->previewData['id'] = $id;
+			}
 			$tce->printLogErrorMessages(isset($_POST['_saveandclosedok_x']) || isset($_POST['_translation_savedok_x']) ? $this->retUrl : $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars));
 		}
 		//  || count($tce->substNEWwithIDs)... If any new items has been save, the document is CLOSED
@@ -632,7 +654,7 @@ class EditDocumentController {
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		// Set other internal variables:
 		$this->R_URL_getvars['returnUrl'] = $this->retUrl;
-		$this->R_URI = $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars);
+		$this->R_URI = $this->R_URL_parts['path'] . '?' . ltrim(GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars), '&');
 		// MENU-ITEMS:
 		// If array, then it's a selector box menu
 		// If empty string it's just a variable, that'll be saved.
@@ -646,6 +668,7 @@ class EditDocumentController {
 		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name']);
 		// Create an instance of the document template object
 		$this->doc = $GLOBALS['TBE_TEMPLATE'];
+		$this->doc->getPageRenderer()->addInlineLanguageLabelFile('EXT:lang/locallang_alt_doc.xml');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_doc.html');
 		$this->doc->form = '<form action="' . htmlspecialchars($this->R_URI) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '" name="editform" onsubmit="document.editform._scrollPosition.value=(document.documentElement.scrollTop || document.body.scrollTop); return TBE_EDITOR.checkSubmit(1);">';
@@ -673,15 +696,15 @@ class EditDocumentController {
 				'height' => $popupWindowHeight
 			),
 		);
-		$this->doc->JScode = $this->doc->wrapScriptTags('
-				TYPO3.configuration = ' . json_encode($t3Configuration) . ';
-				// Object: TS:
-				// passwordDummy and decimalSign are used by tbe_editor.js and have to be declared here as
-				// TS object overwrites the object declared in tbe_editor.js
+		$javascript = '
+			TYPO3.configuration = ' . json_encode($t3Configuration) . ';
+			// Object: TS:
+			// passwordDummy and decimalSign are used by tbe_editor.js and have to be declared here as
+			// TS object overwrites the object declared in tbe_editor.js
 			function typoSetup() {	//
 				this.uniqueID = "";
 				this.passwordDummy = "********";
-				this.PATH_typo3 = " ";
+				this.PATH_typo3 = "";
 				this.decimalSign = ".";
 			}
 			var TS = new typoSetup();
@@ -697,18 +720,119 @@ class EditDocumentController {
 			}
 			function deleteRecord(table,id,url) {	//
 				if (
-					' . ($GLOBALS['BE_USER']->jsConfirmation(4) ? 'confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('deleteWarning')) . ')' : '1==1') . '
+					' . ($GLOBALS['BE_USER']->jsConfirmation(JsConfirmation::DELETE) ? 'confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('deleteWarning')) . ')' : '1==1') . '
 				)	{
 					window.location.href = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_db') . '&cmd[') . '+table+"]["+id+"][delete]=1' . BackendUtility::getUrlToken('tceAction') . '&redirect="+escape(url)+"&vC=' . $GLOBALS['BE_USER']->veriCode() . '&prErr=1&uPT=1";
 				}
 				return false;
 			}
-		' . (isset($_POST['_savedokview_x']) && $this->popViewId ? 'if (window.opener) { ' . BackendUtility::viewOnClick($this->popViewId, '', BackendUtility::BEgetRootLine($this->popViewId), '', $this->viewUrl, $this->popViewId_addParams, FALSE) . ' } else { ' . BackendUtility::viewOnClick($this->popViewId, '', BackendUtility::BEgetRootLine($this->popViewId), '', $this->viewUrl, $this->popViewId_addParams) . ' } ' : ''));
+		';
+
+		$previewCode = isset($_POST['_savedokview_x']) && $this->popViewId ? $this->generatePreviewCode() : '';
+
+		$this->doc->JScode = $this->doc->wrapScriptTags($javascript . $previewCode);
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		$this->doc->bodyTagAdditions = 'onload="window.scrollTo(0,' . MathUtility::forceIntegerInRange(GeneralUtility::_GP('_scrollPosition'), 0, 10000) . ');"';
 
 		$this->emitFunctionAfterSignal(__FUNCTION__);
+	}
+
+	/**
+	 * @return string
+	 */
+	protected function generatePreviewCode() {
+		$currentPageId = MathUtility::convertToPositiveInteger($this->popViewId);
+		$table = $this->previewData['table'];
+		$recordId = $this->previewData['id'];
+
+		$pageTsConfig = BackendUtility::getPagesTSconfig($currentPageId);
+		$previewConfiguration = isset($pageTsConfig['TCEMAIN.']['preview.'][$table . '.'])
+			? $pageTsConfig['TCEMAIN.']['preview.'][$table . '.']
+			: array();
+
+		$recordArray = BackendUtility::getRecord($table, $recordId);
+
+		// find the right preview page id
+		$previewPageId = 0;
+		if (isset($previewConfiguration['previewPageId'])) {
+			$previewPageId = $previewConfiguration['previewPageId'];
+		}
+		// if no preview page was configured
+		if (!$previewPageId) {
+			$rootPageData = NULL;
+			$rootLine = BackendUtility::BEgetRootLine($currentPageId);
+			$currentPage = reset($rootLine);
+			if ((int)$currentPage['doktype'] === PageRepository::DOKTYPE_DEFAULT) {
+				// try the current page
+				$previewPageId = $currentPageId;
+			} else {
+				// or search for the root page
+				foreach ($rootLine as $page) {
+					if ($page['is_siteroot']) {
+						$rootPageData = $page;
+						break;
+					}
+				}
+				$previewPageId = isset($rootPageData)
+					? (int)$rootPageData['uid']
+					: $currentPageId;
+			}
+		}
+
+		$linkParameters = [
+			'no_cache' => 1,
+		];
+
+		// language handling
+		$languageField = isset($GLOBALS['TCA'][$table]['ctrl']['languageField'])
+			? $GLOBALS['TCA'][$table]['ctrl']['languageField']
+			: '';
+		if ($languageField && !empty($recordArray[$languageField])) {
+			$l18nPointer = isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])
+				? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
+				: '';
+			if (
+				$l18nPointer && !empty($recordArray[$l18nPointer])
+				&& isset($previewConfiguration['useDefaultLanguageRecord'])
+				&& !$previewConfiguration['useDefaultLanguageRecord']
+			) {
+				// use parent record
+				$recordId = $recordArray[$l18nPointer];
+			}
+			$linkParameters['L'] = $recordArray[$languageField];
+		}
+
+		// map record data to GET parameters
+		if (isset($previewConfiguration['fieldToParameterMap.'])) {
+			foreach ($previewConfiguration['fieldToParameterMap.'] as $field => $parameterName) {
+				$value = $recordArray[$field];
+				if ($field === 'uid') {
+					$value = $recordId;
+				}
+				$linkParameters[$parameterName] = $value;
+			}
+		}
+
+		// add/override parameters by configuration
+		if (isset($previewConfiguration['additionalGetParameters.'])) {
+			$linkParameters = array_replace($linkParameters, $previewConfiguration['additionalGetParameters.']);
+		}
+
+		$this->popViewId = $previewPageId;
+		$this->popViewId_addParams = GeneralUtility::implodeArrayForUrl('', $linkParameters, '', FALSE, TRUE);
+
+		$previewPageRootline = BackendUtility::BEgetRootLine($this->popViewId);
+		return '
+				if (window.opener) {
+				'
+			. BackendUtility::viewOnClick($this->popViewId, '', $previewPageRootline, '', $this->viewUrl, $this->popViewId_addParams, FALSE)
+			. '
+				} else {
+				'
+			. BackendUtility::viewOnClick($this->popViewId, '', $previewPageRootline, '', $this->viewUrl, $this->popViewId_addParams)
+			. '
+				}';
 	}
 
 	/**
@@ -737,7 +861,7 @@ class EditDocumentController {
 				// Checking if the currently open document is stored in the list of "open documents" - if not, then add it:
 				if (($this->docDat[1] !== $this->storeUrlMd5 || !isset($this->docHandler[$this->storeUrlMd5])) && !$this->dontStoreDocumentRef) {
 					$this->docHandler[$this->storeUrlMd5] = array($this->storeTitle, $this->storeArray, $this->storeUrl, $this->firstEl);
-					$GLOBALS['BE_USER']->pushModuleData('alt_doc.php', array($this->docHandler, $this->storeUrlMd5));
+					$GLOBALS['BE_USER']->pushModuleData('FormEngine', array($this->docHandler, $this->storeUrlMd5));
 					BackendUtility::setUpdateSignal('OpendocsController::updateNumber', count($this->docHandler));
 				}
 				// Module configuration
@@ -833,10 +957,10 @@ class EditDocumentController {
 										$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms($calcPRec);
 										if ($table == 'pages') {
 											// If pages:
-											$hasAccess = $CALC_PERMS & 8 ? 1 : 0;
+											$hasAccess = $CALC_PERMS & Permission::PAGE_NEW ? 1 : 0;
 											$this->viewId = 0;
 										} else {
-											$hasAccess = $CALC_PERMS & 16 ? 1 : 0;
+											$hasAccess = $CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
 											$this->viewId = $calcPRec['uid'];
 										}
 									}
@@ -850,14 +974,14 @@ class EditDocumentController {
 								if (is_array($calcPRec)) {
 									if ($table == 'pages') { // If pages:
 										$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms($calcPRec);
-										$hasAccess = $CALC_PERMS & 2 ? 1 : 0;
-										$deleteAccess = $CALC_PERMS & 4 ? 1 : 0;
+										$hasAccess = $CALC_PERMS & Permission::PAGE_EDIT ? 1 : 0;
+										$deleteAccess = $CALC_PERMS & Permission::PAGE_DELETE ? 1 : 0;
 										$this->viewId = $calcPRec['uid'];
 									} else {
 										// Fetching pid-record first
 										$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
-										$hasAccess = $CALC_PERMS & 16 ? 1 : 0;
-										$deleteAccess = $CALC_PERMS & 16 ? 1 : 0;
+										$hasAccess = $CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
+										$deleteAccess = $CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
 										$this->viewId = $calcPRec['pid'];
 										// Adding "&L=xx" if the record being edited has a languageField with a value larger than zero!
 										if ($GLOBALS['TCA'][$table]['ctrl']['languageField'] && $calcPRec[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0) {
@@ -1006,7 +1130,7 @@ class EditDocumentController {
 			}
 		}
 		// CLOSE button:
-		$buttons['close'] = '<a href="#" onclick="document.editform.closeDoc.value=1; document.editform.submit(); return false;" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+		$buttons['close'] = '<a href="#" class="t3js-editform-close" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
 		// DELETE + UNDO buttons:
 		if (!$this->errorC && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly'] && count($this->elementsData) == 1) {
 			if ($this->firstEl['cmd'] != 'new' && MathUtility::canBeInterpretedAsInteger($this->firstEl['uid'])) {
@@ -1122,11 +1246,11 @@ class EditDocumentController {
 	 */
 	public function functionMenus() {
 		if ($GLOBALS['BE_USER']->getTSConfigVal('options.enableShowPalettes')) {
-			// Show palettes:
+			// Show palettes
 
 			return '<div class="checkbox">' .
 				'<label for="checkShowPalettes">' .
-					BackendUtility::getFuncCheck('', 'SET[showPalettes]', $this->MOD_SETTINGS['showPalettes'], 'alt_doc.php', (GeneralUtility::implodeArrayForUrl('', array_merge($this->R_URL_getvars, array('SET' => ''))) . BackendUtility::getUrlToken('editRecord')), 'id="checkShowPalettes"') .
+					BackendUtility::getFuncCheck('', 'SET[showPalettes]', $this->MOD_SETTINGS['showPalettes'], BackendUtility::getModuleUrl('record_edit'), (GeneralUtility::implodeArrayForUrl('', array_merge($this->R_URL_getvars, array('SET' => ''))) . BackendUtility::getUrlToken('editRecord')), 'id="checkShowPalettes"') .
 					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPalettes', TRUE) .
 				'</label>'.
 			'</div>';
@@ -1231,11 +1355,16 @@ class EditDocumentController {
 							$newTranslation = isset($rowsByLang[$lang['uid']]) ? '' : ' [' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.new', TRUE) . ']';
 							// Create url for creating a localized record
 							if ($newTranslation) {
-								$href = $this->doc->issueCommand('&cmd[' . $table . '][' . $rowsByLang[0]['uid'] . '][localize]=' . $lang['uid'], $this->backPath . 'alt_doc.php?justLocalized=' . rawurlencode(($table . ':' . $rowsByLang[0]['uid'] . ':' . $lang['uid'])) . '&returnUrl=' . rawurlencode($this->retUrl) . BackendUtility::getUrlToken('editRecord'));
+								$redirectUrl = BackendUtility::getModuleUrl('record_edit', array(
+									'justLocalized' => rawurlencode(($table . ':' . $rowsByLang[0]['uid'] . ':' . $lang['uid'])),
+									'returnUrl' => rawurlencode($this->retUrl) . BackendUtility::getUrlToken('editRecord')
+								));
+								$href = $this->doc->issueCommand('&cmd[' . $table . '][' . $rowsByLang[0]['uid'] . '][localize]=' . $lang['uid'], $redirectUrl);
 							} else {
-								$href = $this->backPath . 'alt_doc.php?';
-								$href .= '&edit[' . $table . '][' . $rowsByLang[$lang['uid']]['uid'] . ']=edit';
-								$href .= '&returnUrl=' . rawurlencode($this->retUrl) . BackendUtility::getUrlToken('editRecord');
+								$href = BackendUtility::getModuleUrl('record_edit', array(
+									'edit[' . $table . '][' . $rowsByLang[$lang['uid']]['uid'] . ']' => 'edit',
+									'returnUrl' => rawurlencode($this->retUrl) . BackendUtility::getUrlToken('editRecord')
+								));
 							}
 							$langSelItems[$lang['uid']] = '
 								<option value="' . htmlspecialchars($href) . '"' . ($currentLanguage == $lang['uid'] ? ' selected="selected"' : '') . '>' . htmlspecialchars(($lang['title'] . $newTranslation)) . '</option>';
@@ -1255,7 +1384,7 @@ class EditDocumentController {
 	}
 
 	/**
-	 * Redirects to alt_doc with new parameters to edit a just created localized record
+	 * Redirects to FormEngine with new parameters to edit a just created localized record
 	 *
 	 * @param string $justLocalized String passed by GET &justLocalized=
 	 * @return void
@@ -1266,10 +1395,11 @@ class EditDocumentController {
 			$localizedRecord = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('uid', $table, $GLOBALS['TCA'][$table]['ctrl']['languageField'] . '=' . (int)$language . ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . '=' . (int)$orig_uid . BackendUtility::deleteClause($table) . BackendUtility::versioningPlaceholderClause($table));
 			if (is_array($localizedRecord)) {
 				// Create parameters and finally run the classic page module for creating a new page translation
-				$params = '&edit[' . $table . '][' . $localizedRecord['uid'] . ']=edit';
-				$returnUrl = '&returnUrl=' . rawurlencode(GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl')));
-				$location = $GLOBALS['BACK_PATH'] . 'alt_doc.php?' . $params . $returnUrl . BackendUtility::getUrlToken('editRecord');
-				HttpUtility::redirect($location);
+				$location = BackendUtility::getModuleUrl('record_edit', array(
+					'edit[' . $table . '][' . $localizedRecord['uid'] . ']' => 'edit',
+					'returnUrl' => rawurlencode(GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('returnUrl')))
+				));
+				HttpUtility::redirect($location . BackendUtility::getUrlToken('editRecord'));
 			}
 		}
 	}
@@ -1469,16 +1599,17 @@ class EditDocumentController {
 				$this->docHandler = array();
 			}
 			$GLOBALS['BE_USER']->pushModuleData('opendocs::recent', $recentDocs);
-			$GLOBALS['BE_USER']->pushModuleData('alt_doc.php', array($this->docHandler, $this->docDat[1]));
+			$GLOBALS['BE_USER']->pushModuleData('FormEngine', array($this->docHandler, $this->docDat[1]));
 			BackendUtility::setUpdateSignal('OpendocsController::updateNumber', count($this->docHandler));
 		}
 		// If ->returnEditConf is set, then add the current content of editconf to the ->retUrl variable: (used by other scripts, like wizard_add, to know which records was created or so...)
-		if ($this->returnEditConf && $this->retUrl != 'dummy.php') {
+		if ($this->returnEditConf && $this->retUrl != BackendUtility::getModuleUrl('dummy')) {
 			$this->retUrl .= '&returnEditConf=' . rawurlencode(json_encode($this->editconf));
 		}
 		// If code is NOT set OR set to 1, then make a header location redirect to $this->retUrl
 		if (!$code || $code == 1) {
-			HttpUtility::redirect($this->retUrl);
+			// @todo: find out why we need rawurldecode here!
+			HttpUtility::redirect(rawurldecode($this->retUrl));
 		} else {
 			$this->setDocument('', $this->retUrl);
 		}
@@ -1492,8 +1623,8 @@ class EditDocumentController {
 	 * @param string $retUrl Alternative/Default retUrl
 	 * @return void
 	 */
-	public function setDocument($currentDocFromHandlerMD5 = '', $retUrl = 'dummy.php') {
-		if ($retUrl === 'dummy.php') {
+	public function setDocument($currentDocFromHandlerMD5 = '', $retUrl = '') {
+		if ($retUrl === '') {
 			return;
 		}
 		if (!$this->modTSconfig['properties']['disableDocSelector'] && is_array($this->docHandler) && count($this->docHandler)) {

@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Frontend\View;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -402,7 +404,7 @@ class AdminPanelView {
 			$GLOBALS['BE_USER']->extPageInTreeInfo[] = array($GLOBALS['TSFE']->page['uid'], htmlspecialchars($GLOBALS['TSFE']->page['title']), $depth + 1);
 			$GLOBALS['BE_USER']->extGetTreeList($GLOBALS['TSFE']->id, $depth, 0, $GLOBALS['BE_USER']->getPagePermsClause(1));
 			foreach ($GLOBALS['BE_USER']->extPageInTreeInfo as $row) {
-				$outTable .= '<tr>' . '<td><img src="typo3/gfx/clear.gif" width="' . ($depth + 1 - $row[2]) * 18 . '" height="1" alt="" /><img ' . IconUtility::skinImg(TYPO3_mainDir, 'gfx/i/pages.gif', 'width="18" height="16"') . ' align="top" alt="" /> ' . htmlspecialchars($row[1]) . '</td><td>' . $GLOBALS['BE_USER']->extGetNumberOfCachedPages($row[0]) . '</td></tr>';
+				$outTable .= '<tr>' . '<td><img src="typo3/gfx/clear.gif" width="' . ($depth + 1 - $row[2]) * 18 . '" height="1" alt="" />' . IconUtility::getSpriteIcon('apps-pagetree-page-default') . htmlspecialchars($row[1]) . '</td><td>' . $GLOBALS['BE_USER']->extGetNumberOfCachedPages($row[0]) . '</td></tr>';
 			}
 			$outTable = '<br /><table>' . $outTable . '</table>';
 			$outTable .= '<input type="submit" name="TSFE_ADMIN_PANEL[action][clearCache]" value="' . $this->extGetLL('cache_doit') . '" />';
@@ -596,7 +598,7 @@ class AdminPanelView {
 		//  If mod.web_list.newContentWiz.overrideWithExtension is set, use that extension's create new content wizard instead:
 		$tsConfig = BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
 		$tsConfig = $tsConfig['properties']['newContentWiz.']['overrideWithExtension'];
-		$newContentWizScriptPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded($tsConfig) ? \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath($tsConfig) . 'mod1/db_new_content_el.php?' : TYPO3_mainDir . BackendUtility::getModuleUrl('new_content_element') . '&';
+		$newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tsConfig) ? ExtensionManagementUtility::extRelPath($tsConfig) . 'mod1/db_new_content_el.php?' : TYPO3_mainDir . BackendUtility::getModuleUrl('new_content_element') . '&';
 		$perms = $GLOBALS['BE_USER']->calcPerms($GLOBALS['TSFE']->page);
 		$langAllowed = $GLOBALS['BE_USER']->checkLanguageAccess($GLOBALS['TSFE']->sys_language_uid);
 		$id = $GLOBALS['TSFE']->id;
@@ -604,7 +606,7 @@ class AdminPanelView {
 
 		$icon = IconUtility::getSpriteIcon('actions-document-history-open', array('title' => $this->extGetLL('edit_recordHistory', FALSE)));
 		$toolBar = '<a href="' . htmlspecialchars(TYPO3_mainDir . BackendUtility::getModuleUrl('record_history', array('element' => 'pages:' . $id, 'returnUrl' => $returnUrl))) . '#latest">' . $icon . '</a>';
-		if ($perms & 16 && $langAllowed) {
+		if ($perms & Permission::CONTENT_EDIT && $langAllowed) {
 			$params = '';
 			if ($GLOBALS['TSFE']->sys_language_uid) {
 				$params = '&sys_language_uid=' . $GLOBALS['TSFE']->sys_language_uid;
@@ -612,18 +614,22 @@ class AdminPanelView {
 			$icon = IconUtility::getSpriteIcon('actions-document-new', array('title' => $this->extGetLL('edit_newContentElement', FALSE)));
 			$toolBar .= '<a href="' . htmlspecialchars($newContentWizScriptPath . 'id=' . $id . $params . '&returnUrl=' . rawurlencode($returnUrl)) . '">' . $icon . '</a>';
 		}
-		if ($perms & 2) {
+		if ($perms & Permission::PAGE_EDIT) {
 			$icon = IconUtility::getSpriteIcon('actions-document-move', array('title' => $this->extGetLL('edit_move_page', FALSE)));
 			$toolBar .= '<a href="' . htmlspecialchars(TYPO3_mainDir . BackendUtility::getModuleUrl('move_element', ['table' => 'pages', 'uid' => $id, 'returnUrl' => $returnUrl])) . '">' . $icon . '</a>';
 		}
-		if ($perms & 8) {
+		if ($perms & Permission::PAGE_NEW) {
 			$icon = IconUtility::getSpriteIcon('actions-page-new', array('title' => $this->extGetLL('edit_newPage', FALSE)));
 			$toolBar .= '<a href="' . htmlspecialchars(TYPO3_mainDir . BackendUtility::getModuleUrl('db_new', ['id' => $id, 'pagesOnly' => 1, 'returnUrl' => $returnUrl])) . '">' . $icon . '</a>';
 		}
-		if ($perms & 2) {
-			$params = '&edit[pages][' . $id . ']=edit';
+		if ($perms & Permission::PAGE_EDIT) {
 			$icon = IconUtility::getSpriteIcon('actions-document-open', array('title' => $this->extGetLL('edit_editPageProperties', FALSE)));
-			$toolBar .= '<a href="' . htmlspecialchars(TYPO3_mainDir . 'alt_doc.php?' . $params . '&noView=1&returnUrl=' . rawurlencode($returnUrl)) . '">' . $icon . '</a>';
+			$url = BackendUtility::getModuleUrl('record_edit', array(
+				'edit[pages][' . $id . ']' => 'edit',
+				'noView' => 1,
+				'returnUrl' => $returnUrl
+			), FALSE, TRUE);
+			$toolBar .= '<a href="' . htmlspecialchars($url) . '">' . $icon . '</a>';
 			if ($GLOBALS['TSFE']->sys_language_uid && $langAllowed) {
 				$row = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
 					'uid,pid,t3ver_state',
@@ -634,9 +640,13 @@ class AdminPanelView {
 				);
 				$GLOBALS['TSFE']->sys_page->versionOL('pages_language_overlay', $row);
 				if (is_array($row)) {
-					$params = '&edit[pages_language_overlay][' . $row['uid'] . ']=edit';
 					$icon = IconUtility::getSpriteIcon('mimetypes-x-content-page-language-overlay', array('title' => $this->extGetLL('edit_editPageOverlay', FALSE)));
-					$toolBar .= '<a href="' . htmlspecialchars(TYPO3_mainDir . 'alt_doc.php?' . $params . '&noView=1&returnUrl=' . rawurlencode($returnUrl)) . '">' . $icon . '</a>';
+					$url = BackendUtility::getModuleUrl('record_edit', array(
+						'edit[pages_language_overlay][' . $row['uid'] . ']' => 'edit',
+						'noView' => 1,
+						'returnUrl' => $returnUrl
+					), FALSE, TRUE);
+					$toolBar .= '<a href="' . htmlspecialchars($url) . '">' . $icon . '</a>';
 				}
 			}
 		}

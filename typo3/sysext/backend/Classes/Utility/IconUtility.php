@@ -62,9 +62,13 @@ class IconUtility {
 		'png' => 'mimetypes-media-image',
 		'bmp' => 'mimetypes-media-image',
 		'tif' => 'mimetypes-media-image',
+		'tiff' => 'mimetypes-media-image',
 		'tga' => 'mimetypes-media-image',
 		'psd' => 'mimetypes-media-image',
 		'eps' => 'mimetypes-media-image',
+		'ai' => 'mimetypes-media-image',
+		'svg' => 'mimetypes-media-image',
+		'pcx' => 'mimetypes-media-image',
 		'avi' => 'mimetypes-media-video',
 		'mpg' => 'mimetypes-media-video',
 		'mpeg' => 'mimetypes-media-video',
@@ -860,6 +864,9 @@ class IconUtility {
 				}
 				if ($row['module']) {
 					$recordType[4] = 'contains-' . $row['module'];
+				}
+				if ((int)$row['content_from_pid'] > 0) {
+					$recordType[4] = (int)$row['nav_hide'] === 0 ? 'page-contentFromPid' : 'page-contentFromPid-hideinmenu';
 				}
 			}
 			if (is_array($GLOBALS['TCA'][$table]['ctrl']['typeicon_classes'])) {

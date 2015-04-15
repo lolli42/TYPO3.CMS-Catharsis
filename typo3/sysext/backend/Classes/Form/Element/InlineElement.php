@@ -20,6 +20,7 @@ use TYPO3\CMS\Backend\Form\DataPreprocessor;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -456,10 +457,8 @@ class InlineElement {
 					$fields .= '<input type="input" name="' . $this->prependFormFieldNames . $appendFormFieldNames . '[hidden]" value="' . $rec['hidden'] . '" />';
 				}
 			}
-			// If this record should be shown collapsed
-			if (!$isExpanded) {
-				$class = 'panel-collapsed';
-			}
+			// If this record should be shown or collapsed
+			$class = $isExpanded ? 'panel-visible' : 'panel-collapsed';
 		}
 		if ($config['renderFieldsOnly']) {
 			$out = $fields . $combination;
@@ -612,12 +611,19 @@ class InlineElement {
 				} elseif($fileObject) {
 					$imageSetup = $config['appearance']['headerThumbnail'];
 					unset($imageSetup['field']);
+					if (!empty($rec['crop'])) {
+						$imageSetup['crop'] = $rec['crop'];
+					}
 					$imageSetup = array_merge(array('width' => '45', 'height' => '45c'), $imageSetup);
 					$processedImage = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, $imageSetup);
-					// Only use a thumbnail if the processing was successful.
-					if (!$processedImage->usesOriginalFile()) {
+					// Only use a thumbnail if the processing process was successful by checking if image width is set
+					if ($processedImage->getProperty('width')) {
 						$imageUrl = $processedImage->getPublicUrl(TRUE);
-						$thumbnail = '<img src="' . $imageUrl . '" alt="' . htmlspecialchars($altText) . '" title="' . htmlspecialchars($altText) . '">';
+						$thumbnail = '<img src="' . $imageUrl . '" ' .
+									 'width="' . $processedImage->getProperty('width') . '" ' .
+									 'height="' . $processedImage->getProperty('height') . '" ' .
+									 'alt="' . htmlspecialchars($altText) . '" ' .
+									 'title="' . htmlspecialchars($altText) . '">';
 					}
 				}
 			}
@@ -668,7 +674,7 @@ class InlineElement {
 			$localCalcPerms = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $rec['uid']));
 		}
 		// This expresses the edit permissions for this particular element:
-		$permsEdit = $isPagesTable && $localCalcPerms & 2 || !$isPagesTable && $calcPerms & 16;
+		$permsEdit = $isPagesTable && $localCalcPerms & Permission::PAGE_EDIT || !$isPagesTable && $calcPerms & Permission::CONTENT_EDIT;
 		// Controls: Defines which controls should be shown
 		$enabledControls = $config['appearance']['enabledControls'];
 		// Hook: Can disable/enable single controls for specific child records:
@@ -698,7 +704,7 @@ class InlineElement {
 		if (!$tcaTableCtrl['readOnly'] && !$isVirtualRecord) {
 			// "New record after" link (ONLY if the records in the table are sorted by a "sortby"-row or if default values can depend on previous record):
 			if ($enabledControls['new'] && ($enableManualSorting || $tcaTableCtrl['useColumnsForDefaultValues'])) {
-				if (!$isPagesTable && $calcPerms & 16 || $isPagesTable && $calcPerms & 8) {
+				if (!$isPagesTable && $calcPerms & Permission::CONTENT_EDIT || $isPagesTable && $calcPerms & Permission::PAGE_NEW) {
 					$onClick = 'return inline.createNewRecord(\'' . $nameObjectFt . '\',\'' . $rec['uid'] . '\')';
 					if ($config['inline']['inlineNewButtonStyle']) {
 						$style = ' style="' . $config['inline']['inlineNewButtonStyle'] . '"';
@@ -733,11 +739,12 @@ class InlineElement {
 					'sys_file_metadata',
 					'file = ' . (int)substr($rec['uid_local'], 9) . ' AND sys_language_uid = ' . $rec['sys_language_uid']
 				);
-				$editUid = $recordInDatabase['uid'];
 				if ($GLOBALS['BE_USER']->check('tables_modify', 'sys_file_metadata')) {
-					$editOnClick = 'if(top.content.list_frame){top.content.list_frame.location.href=top.TS.PATH_typo3+\'alt_doc.php?returnUrl=\'+top.rawurlencode('
-						. 'top.content.list_frame.document.location' . '.pathname+top.content.list_frame.document.location' . '.search)+'
-						. '\'&edit[sys_file_metadata][' . (int)$editUid . ']=edit\';}';
+					$url = BackendUtility::getModuleUrl('record_edit', array(
+						'edit[sys_file_metadata][' . (int)$recordInDatabase['uid'] . ']' => 'edit'
+					));
+					$editOnClick = 'if(top.content.list_frame){top.content.list_frame.location.href=\'' . $url . '&returnUrl=\'+top.rawurlencode('
+						. 'top.content.list_frame.document.location' . '.pathname+top.content.list_frame.document.location' . '.search);}';
 					$title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata');
 					$cells['editmetadata'] = '
 						<a class="btn btn-default" href="#" class="btn" onclick="' . htmlspecialchars($editOnClick) . '" title="' . htmlspecialchars($title) . '">
@@ -746,7 +753,7 @@ class InlineElement {
 				}
 			}
 			// "Delete" link:
-			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & 4 || !$isPagesTable && $calcPerms & 16)) {
+			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & Permission::PAGE_DELETE || !$isPagesTable && $calcPerms & Permission::CONTENT_EDIT)) {
 				$onClick = 'inline.deleteRecord(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ');';
 				$cells['delete'] = '
 					<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('if (confirm(' . GeneralUtility::quoteJSvalue($languageService->getLL('deleteWarning')) . ')) {	' . $onClick . ' } return false;')) . '">
@@ -991,10 +998,7 @@ class InlineElement {
 		$isDirectFileUploadEnabled = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
 		if ($showUpload && $isDirectFileUploadEnabled) {
 			$folder = $GLOBALS['BE_USER']->getDefaultUploadFolder();
-			if (
-				$folder instanceof \TYPO3\CMS\Core\Resource\Folder
-				&& $folder->checkActionPermission('add')
-			) {
+			if ($folder instanceof \TYPO3\CMS\Core\Resource\Folder) {
 				$maxFileSize = GeneralUtility::getMaxUploadFileSize() * 1024;
 				$item .= ' <a href="#" class="btn btn-default t3-drag-uploader"
 					style="display:none"
@@ -1385,7 +1389,7 @@ class InlineElement {
 				$selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'],
 				TRUE
 			);
-			if (!in_array($fileRecord['extension'], $allowedFileExtensions, TRUE)) {
+			if (!in_array(strtolower($fileRecord['extension']), $allowedFileExtensions, TRUE)) {
 				return FALSE;
 			}
 		}
@@ -2175,7 +2179,7 @@ class InlineElement {
 	}
 
 	/**
-	 * Checks the page access rights (Code for access check mostly taken from alt_doc.php)
+	 * Checks the page access rights (Code for access check mostly taken from EditDocumentController)
 	 * as well as the table access rights of the user.
 	 *
 	 * @param string $cmd The command that should be performed ('new' or 'edit')
@@ -2204,10 +2208,10 @@ class InlineElement {
 				// If pages:
 				if ($table == 'pages') {
 					// Are we allowed to create new subpages?
-					$hasAccess = $CALC_PERMS & 8 ? 1 : 0;
+					$hasAccess = $CALC_PERMS & Permission::PAGE_NEW ? 1 : 0;
 				} else {
 					// Are we allowed to edit content on this page?
-					$hasAccess = $CALC_PERMS & 16 ? 1 : 0;
+					$hasAccess = $CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
 				}
 			} else {
 				$hasAccess = 1;
@@ -2220,11 +2224,11 @@ class InlineElement {
 				// If pages:
 				if ($table == 'pages') {
 					$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms($calcPRec);
-					$hasAccess = $CALC_PERMS & 2 ? 1 : 0;
+					$hasAccess = $CALC_PERMS & Permission::PAGE_EDIT ? 1 : 0;
 				} else {
 					// Fetching pid-record first.
 					$CALC_PERMS = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
-					$hasAccess = $CALC_PERMS & 16 ? 1 : 0;
+					$hasAccess = $CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
 				}
 				// Check internals regarding access:
 				if ($hasAccess) {

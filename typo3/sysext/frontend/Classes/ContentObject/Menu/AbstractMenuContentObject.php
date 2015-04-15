@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
@@ -336,7 +337,7 @@ abstract class AbstractMenuContentObject {
 					}
 					// Add to register:
 					$this->rL_uidRegister[] = 'ITEM:' . $v_rl['uid'] .
-						(count($rl_MParray)
+						(!empty($rl_MParray)
 							? ':' . implode(',', $rl_MParray)
 							: ''
 						);
@@ -349,12 +350,12 @@ abstract class AbstractMenuContentObject {
 			// Set $directoryLevel so the following evalution of the nextActive will not return
 			// an invalid value if .special=directory was set
 			$directoryLevel = 0;
-			if ($this->conf['special'] == 'directory') {
+			if ($this->conf['special'] === 'directory') {
 				$value = isset($this->conf['special.']['value.']) ? $this->parent_cObj->stdWrap(
 					$this->conf['special.']['value'],
 					$this->conf['special.']['value.']
 				) : $this->conf['special.']['value'];
-				if ($value == '') {
+				if ($value === '') {
 					$value = $tsfe->page['uid'];
 				}
 				$directoryLevel = (int)$tsfe->tmpl->getRootlineLevel($value);
@@ -365,7 +366,7 @@ abstract class AbstractMenuContentObject {
 			$currentLevel = $startLevel + $this->menuNumber;
 			if (is_array($this->tmpl->rootLine[$currentLevel])) {
 				$nextMParray = $this->MP_array;
-				if (!count($nextMParray) && !$this->tmpl->rootLine[$currentLevel]['_MOUNT_OL'] && $currentLevel > 0) {
+				if (empty($nextMParray) && !$this->tmpl->rootLine[$currentLevel]['_MOUNT_OL'] && $currentLevel > 0) {
 					// Make sure to slide-down any mount point information (_MP_PARAM) to children records in the rootline
 					// otherwise automatic expansion will not work
 					$parentRecord = $this->tmpl->rootLine[$currentLevel - 1];
@@ -378,7 +379,7 @@ abstract class AbstractMenuContentObject {
 					$nextMParray[] = $this->tmpl->rootLine[$currentLevel]['_MP_PARAM'];
 				}
 				$this->nextActive = $this->tmpl->rootLine[$currentLevel]['uid'] .
-					(count($nextMParray)
+					(!empty($nextMParray)
 						? ':' . implode(',', $nextMParray)
 						: ''
 					);
@@ -482,10 +483,11 @@ abstract class AbstractMenuContentObject {
 		} else {
 			$cacheTimeout = $this->getTypoScriptFrontendController()->get_cache_timeout();
 		}
-		$cachedData = $this->sys_page->getHash($this->hash);
+		$cache = $this->getCache();
+		$cachedData = $cache->get($this->hash);
 		if (!is_array($cachedData)) {
 			$this->generate();
-			$this->sys_page->storeHash($this->hash, $this->result, 'MENUDATA', $cacheTimeout);
+			$cache->set($this->hash, $this->result, array('ident_MENUDATA'), (int)$cacheTimeout);
 		} else {
 			$this->result = $cachedData;
 		}
@@ -648,9 +650,9 @@ abstract class AbstractMenuContentObject {
 			}
 			// Checking if the "disabled" state should be set.
 			if (GeneralUtility::hideIfNotTranslated($tsfe->page['l18n_cfg']) && $sUid &&
-				!count($lRecs) || $tsfe->page['l18n_cfg'] & 1 &&
-				(!$sUid || !count($lRecs)) ||
-				!$this->conf['special.']['normalWhenNoLanguage'] && $sUid && !count($lRecs)
+				empty($lRecs) || $tsfe->page['l18n_cfg'] & 1 &&
+				(!$sUid || empty($lRecs)) ||
+				!$this->conf['special.']['normalWhenNoLanguage'] && $sUid && empty($lRecs)
 			) {
 				$iState = $tsfe->sys_language_uid == $sUid ? 'USERDEF2' : 'USERDEF1';
 			} else {
@@ -719,7 +721,7 @@ abstract class AbstractMenuContentObject {
 						// Using "getPage" is OK since we need the check for enableFields
 						// AND for type 2 of mount pids we DO require a doktype < 200!
 						$mp_row = $this->sys_page->getPage($mount_info['mount_pid']);
-						if (count($mp_row)) {
+						if (!empty($mp_row)) {
 							$row = $mp_row;
 							$row['_MP_PARAM'] = $mount_info['MPvar'];
 						} else {
@@ -767,7 +769,7 @@ abstract class AbstractMenuContentObject {
 				// Using "getPage" is OK since we need the check for enableFields
 				// AND for type 2 of mount pids we DO require a doktype < 200!
 				$mp_row = $this->sys_page->getPage($mount_info['mount_pid']);
-				if (count($mp_row)) {
+				if (!empty($mp_row)) {
 					$row = $mp_row;
 					$row['_MP_PARAM'] = $mount_info['MPvar'];
 					// Overlays should already have their full MPvars calculated
@@ -840,7 +842,6 @@ abstract class AbstractMenuContentObject {
 				$sortField = 'starttime';
 				break;
 			case 'lastUpdated':
-
 			case 'manual':
 				$sortField = 'lastUpdated';
 				break;
@@ -873,6 +874,7 @@ abstract class AbstractMenuContentObject {
 				$menuItems[$row['uid']] = $this->sys_page->getPageOverlay($row);
 			}
 		}
+		$this->getDatabaseConnection()->sql_free_result($res);
 		return $menuItems;
 	}
 
@@ -906,7 +908,6 @@ abstract class AbstractMenuContentObject {
 				$sortField = 'starttime';
 				break;
 			case 'lastUpdated':
-
 			case 'manual':
 				$sortField = 'lastUpdated';
 				break;
@@ -968,6 +969,7 @@ abstract class AbstractMenuContentObject {
 					$menuItems[$row['uid']] = $this->sys_page->getPageOverlay($row);
 				}
 			}
+			$this->getDatabaseConnection()->sql_free_result($res);
 		}
 		return $menuItems;
 	}
@@ -1002,7 +1004,7 @@ abstract class AbstractMenuContentObject {
 			if ($k_rl >= $beginKey && $k_rl <= $endKey) {
 				$temp_key = $k_rl;
 				$menuItems[$temp_key] = $this->sys_page->getPage($v_rl['uid']);
-				if (count($menuItems[$temp_key])) {
+				if (!empty($menuItems[$temp_key])) {
 					// If there are no specific target for the page, put the level specific target on.
 					if (!$menuItems[$temp_key]['target']) {
 						$menuItems[$temp_key]['target'] = $this->conf['special.']['targets.'][$k_rl];
@@ -1087,7 +1089,7 @@ abstract class AbstractMenuContentObject {
 				foreach ($prevnextsection_menu as $k_b => $v_b) {
 					if ($nextActive) {
 						$sectionRec_temp = $this->removeInaccessiblePages($this->sys_page->getMenu($v_b['uid'], '*', $sortingField, $additionalWhere));
-						if (count($sectionRec_temp)) {
+						if (!empty($sectionRec_temp)) {
 							$recArr['nextsection'] = reset($sectionRec_temp);
 							$recArr['nextsection_last'] = end($sectionRec_temp);
 							$nextActive = 0;
@@ -1147,7 +1149,7 @@ abstract class AbstractMenuContentObject {
 	 */
 	protected function analyzeCacheHashRequirements($queryString) {
 		$parameters = GeneralUtility::explodeUrl2Array($queryString);
-		if (count($parameters) > 0) {
+		if (!empty($parameters)) {
 			/** @var CacheHashCalculator $cacheHashCalculator */
 			$cacheHashCalculator = GeneralUtility::makeInstance(CacheHashCalculator::class);
 			$cHashParameters = $cacheHashCalculator->getRelevantParameters($queryString);
@@ -1216,7 +1218,7 @@ abstract class AbstractMenuContentObject {
 						$languageUid = (int)$tsfe->config['config']['sys_language_uid'];
 						if ($languageUid && ($this->conf['protectLvar'] == 'all' || GeneralUtility::hideIfNotTranslated($data['l18n_cfg']))) {
 							$olRec = $tsfe->sys_page->getPageOverlay($data['uid'], $languageUid);
-							if (!count($olRec)) {
+							if (empty($olRec)) {
 								// If no pages_language_overlay record then page can NOT be accessed in
 								// the language pointed to by "&L" and therefore we protect the link by setting "&L=0"
 								$data['_ADD_GETVARS'] .= '&L=0';
@@ -1652,7 +1654,7 @@ abstract class AbstractMenuContentObject {
 			// Using raw record since the record was overlaid and is correct already:
 			$originalPage = $this->sys_page->getRawRecord('pages', $page['uid']);
 
-			if (!empty($originalPage['shortcut'])) {
+			if ($originalPage['shortcut_mode'] === $page['shortcut_mode'] && !empty($originalPage['shortcut'])) {
 				$page['shortcut'] = $originalPage['shortcut'];
 			}
 		}
@@ -1754,7 +1756,7 @@ abstract class AbstractMenuContentObject {
 	 */
 	public function isNext($uid, $MPvar = '') {
 		// Check for always active PIDs:
-		if (count($this->alwaysActivePIDlist) && in_array($uid, $this->alwaysActivePIDlist)) {
+		if (!empty($this->alwaysActivePIDlist) && in_array((int)$uid, $this->alwaysActivePIDlist, TRUE)) {
 			return TRUE;
 		}
 		$testUid = $uid . ($MPvar ? ':' . $MPvar : '');
@@ -1774,11 +1776,11 @@ abstract class AbstractMenuContentObject {
 	 */
 	public function isActive($uid, $MPvar = '') {
 		// Check for always active PIDs:
-		if (count($this->alwaysActivePIDlist) && in_array($uid, $this->alwaysActivePIDlist)) {
+		if (!empty($this->alwaysActivePIDlist) && in_array((int)$uid, $this->alwaysActivePIDlist, TRUE)) {
 			return TRUE;
 		}
 		$testUid = $uid . ($MPvar ? ':' . $MPvar : '');
-		if ($uid && in_array('ITEM:' . $testUid, $this->rL_uidRegister)) {
+		if ($uid && in_array('ITEM:' . $testUid, $this->rL_uidRegister, TRUE)) {
 			return TRUE;
 		}
 		return FALSE;
@@ -2153,6 +2155,13 @@ abstract class AbstractMenuContentObject {
 	 */
 	protected function getTimeTracker() {
 		return $GLOBALS['TT'];
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+	 */
+	protected function getCache() {
+		return GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
 	}
 
 }

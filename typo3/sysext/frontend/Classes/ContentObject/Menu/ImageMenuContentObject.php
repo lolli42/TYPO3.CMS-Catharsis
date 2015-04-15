@@ -80,7 +80,7 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 							if ((int)$theKey && ($theValArr = $val[$theKey . '.'])) {
 								$cObjData = $this->menuArr[$key] ?: array();
 								$gifObjCount++;
-								if ($theValue == 'TEXT') {
+								if ($theValue === 'TEXT') {
 									$waArr[$key]['textNum'] = $gifObjCount;
 									$gifCreator->data = $cObjData;
 									$theValArr = $gifCreator->checkTextObj($theValArr);
@@ -98,10 +98,10 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 										}
 									}
 									// Setting target/url for Image Map:
-									if ($theValArr['imgMap.']['url'] == '') {
+									if ($theValArr['imgMap.']['url'] === '') {
 										$theValArr['imgMap.']['url'] = $LD['totalURL'];
 									}
-									if ($theValArr['imgMap.']['target'] == '') {
+									if ($theValArr['imgMap.']['target'] === '') {
 										$theValArr['imgMap.']['target'] = $LD['target'];
 									}
 									if (is_array($theValArr['imgMap.']['altText.'])) {
@@ -122,11 +122,11 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 									}
 								}
 								// This code goes one level in if the object is an image. If 'file' and/or 'mask' appears to be GIFBUILDER-objects, they are both searched for TEXT objects, and if a textobj is found, it's checked with the currently loaded record!!
-								if ($theValue == 'IMAGE') {
-									if ($theValArr['file'] == 'GIFBUILDER') {
+								if ($theValue === 'IMAGE') {
+									if ($theValArr['file'] === 'GIFBUILDER') {
 										$temp_sKeyArray = TemplateService::sortedKeyList($theValArr['file.']);
 										foreach ($temp_sKeyArray as $temp_theKey) {
-											if ($theValArr['mask.'][$temp_theKey] == 'TEXT') {
+											if ($theValArr['mask.'][$temp_theKey] === 'TEXT') {
 												$gifCreator->data = $this->menuArr[$key] ?: array();
 												$theValArr['mask.'][$temp_theKey . '.'] = $gifCreator->checkTextObj($theValArr['mask.'][$temp_theKey . '.']);
 												// If this is not done it seems that imageMaps will be rendered wrong!!
@@ -134,10 +134,10 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 											}
 										}
 									}
-									if ($theValArr['mask'] == 'GIFBUILDER') {
+									if ($theValArr['mask'] === 'GIFBUILDER') {
 										$temp_sKeyArray = TemplateService::sortedKeyList($theValArr['mask.']);
 										foreach ($temp_sKeyArray as $temp_theKey) {
-											if ($theValArr['mask.'][$temp_theKey] == 'TEXT') {
+											if ($theValArr['mask.'][$temp_theKey] === 'TEXT') {
 												$gifCreator->data = $this->menuArr[$key] ?: array();
 												$theValArr['mask.'][$temp_theKey . '.'] = $gifCreator->checkTextObj($theValArr['mask.'][$temp_theKey . '.']);
 												// if this is not done it seems that imageMaps will be rendered wrong!!
@@ -197,8 +197,9 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 				$gifCreator->createTempSubDir('menu/');
 				$gifFileName = $gifCreator->fileName('menu/');
 				// Gets the ImageMap from the cache...
+				$cache = $this->getCache();
 				$imgHash = md5($gifFileName);
-				$imgMap = $this->sys_page->getHash($imgHash);
+				$imgMap = $cache->get($imgHash);
 				// File exists
 				if ($imgMap && file_exists($gifFileName)) {
 					$info = @getimagesize($gifFileName);
@@ -212,7 +213,7 @@ class ImageMenuContentObject extends AbstractMenuContentObject {
 					$gifCreator->output($gifFileName);
 					$gifCreator->destroy();
 					$imgMap = $gifCreator->map;
-					$this->sys_page->storeHash($imgHash, $imgMap, 'MENUIMAGEMAP');
+					$cache->set($imgHash, $imgMap, array('ident_MENUIMAGEMAP'), 0);
 				}
 				$imgMap .= $this->mconf['imgMapExtras'];
 				$gifFileName = GraphicalFunctions::pngToGifByImagemagick($gifFileName);

@@ -61,7 +61,67 @@ $GLOBALS['TBE_MODULES'] = array(
 	'user' => '',
 	'tools' => '',
 	'system' => '',
-	'help' => ''
+	'help' => '',
+	'_configuration' => array(
+		'web' => array(
+			'labels' => array(
+				'tabs_images' => array('tab' => 'website.gif'),
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_web.xlf'
+			),
+			'configuration' => array(
+				'name' => 'web',
+				'access' => 'user,group'
+			)
+		),
+		'file' => array(
+			'labels' => array(
+				'tabs_images' => array('tab' => 'file.gif'),
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_file.xlf'
+			),
+			'configuration' => array(
+				'name' => 'file',
+				'access' => 'user,group',
+				'workspaces' => 'online,custom'
+			)
+		),
+		'user' => array(
+			'labels' => array(
+				'tabs_images' => array('tab' => 'user.gif'),
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_usertools.xlf'
+			),
+			'configuration' => array(
+				'name' => 'user',
+				'access' => 'user,group'
+			)
+		),
+		'tools' => array(
+			'labels' => array(
+				'tabs_images' => array('tab' => 'tool.gif'),
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_admintools.xlf'
+			),
+			'configuration' => array(
+				'name' => 'tools',
+				'access' => 'admin'
+			)
+		),
+		'system' => array(
+			'labels' => array(
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_system.xlf'
+			),
+			'configuration' => array(
+				'name' => 'system',
+				'access' => 'admin'
+			)
+		),
+		'help' => array(
+			'labels' => array(
+				'll_ref' => 'LLL:EXT:lang/locallang_mod_help.xlf'
+			),
+			'configuration' => array(
+				'name' => 'help'
+			)
+		)
+	)
 );
 
 
@@ -202,8 +262,10 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'actions-document-paste-after',
 	'actions-document-paste-into',
 	'actions-document-save',
+	'actions-document-save-cleartranslationcache',
 	'actions-document-save-close',
 	'actions-document-save-new',
+	'actions-document-save-translation',
 	'actions-document-save-view',
 	'actions-document-select',
 	'actions-document-synchronize',
@@ -338,6 +400,8 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'apps-pagetree-page-backend-users',
 	'apps-pagetree-page-backend-users-hideinmenu',
 	'apps-pagetree-page-backend-users-root',
+	'apps-pagetree-page-content-from-page',
+	'apps-pagetree-page-content-from-page-hideinmenu',
 	'apps-pagetree-page-default',
 	'apps-pagetree-page-domain',
 	'apps-pagetree-page-frontend-user',
@@ -513,8 +577,7 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'treeline-plus',
 	'treeline-plusbottom',
 	'treeline-plusonly',
-	'treeline-stopper',
-	'empty-icon'
+	'treeline-stopper'
 );
 
 

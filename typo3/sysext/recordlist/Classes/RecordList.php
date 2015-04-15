@@ -268,6 +268,7 @@ class RecordList {
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:recordlist/Resources/Private/Templates/db_list.html');
 		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/AjaxDataHandler');
+		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Recordlist/Tooltip');
 		// Loading current page record and checking access:
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		$access = is_array($this->pageinfo) ? 1 : 0;
@@ -300,7 +301,7 @@ class RecordList {
 		/** @var $dblist RecordList\DatabaseRecordList */
 		$dblist = GeneralUtility::makeInstance(RecordList\DatabaseRecordList::class);
 		$dblist->backPath = $GLOBALS['BACK_PATH'];
-		$dblist->script = BackendUtility::getModuleUrl('web_list', array(), '');
+		$dblist->script = BackendUtility::getModuleUrl('web_list');
 		$dblist->calcPerms = $backendUser->calcPerms($this->pageinfo);
 		$dblist->thumbs = $backendUser->uc['thumbnailsByDefault'];
 		$dblist->returnUrl = $this->returnUrl;
@@ -404,7 +405,7 @@ class RecordList {
 				' . $this->doc->redirectUrls($listUrl) . '
 				' . $dblist->CBfunctions() . '
 				function editRecords(table,idList,addParams,CBflag) {	//
-					window.location.href="' . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '&edit["+table+"]["+idList+"]=edit"+addParams;
+					window.location.href="' . BackendUtility::getModuleUrl('record_edit', array('returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI'))) . '&edit["+table+"]["+idList+"]=edit"+addParams;
 				}
 				function editList(table,idList) {	//
 					var list="";

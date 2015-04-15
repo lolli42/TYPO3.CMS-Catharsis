@@ -3,11 +3,21 @@
 	<file t3:id="1420197366" source-language="en" datatype="plaintext" original="messages" date="2015-01-02T11:16:11Z" product-name="backend">
 		<header/>
 		<body>
-			<trans-unit id="no_modules_registered" xml:space="preserve">
+			<trans-unit id="no_modules_registered">
 				<source>No modules have been registered. Please contact your system administrator.</source>
 			</trans-unit>
-			<trans-unit id="show_references" xml:space="preserve">
+			<trans-unit id="show_references">
 				<source>Show references</source>
+			</trans-unit>
+			<trans-unit id="systemmessage.header">
+				<source>Application Information</source>
+			</trans-unit>
+			<trans-unit id="systemmessage.intro">
+				<source><![CDATA[This is a short system overview. For advanced information please head to the <a href="%s">Install Tool</a>.]]></source>
+			</trans-unit>
+			<trans-unit id="systemmessage.allgood" xml:space="preserve">
+				<source>Your system is fully operational.
+Have a nice day.</source>
 			</trans-unit>
 		</body>
 	</file>

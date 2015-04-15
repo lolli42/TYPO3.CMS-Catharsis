@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * TYPO3 Backend Template Class
@@ -277,8 +278,6 @@ function jumpToUrl(URL) {
 	 * @var array
 	 */
 	protected $stylesheetsCore = array(
-		'structure' => 'sysext/backend/Resources/Public/Css/structure/',
-		'visual' => 'sysext/backend/Resources/Public/Css/visual/',
 		'generatedSprites' => '../typo3temp/sprites/'
 	);
 
@@ -304,15 +303,14 @@ function jumpToUrl(URL) {
 	 *
 	 * @var array
 	 */
-	protected $jsFilesNoConcatenation = array(
-		'modernizr' => 'contrib/modernizr/modernizr.min.js'
-	);
+	protected $jsFilesNoConcatenation = array();
 
 	/**
 	 * Will output the parsetime of the scripts in milliseconds (for admin-users).
 	 * Set this to FALSE when releasing TYPO3. Only for dev.
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $parseTimeFlag = FALSE;
 
@@ -548,7 +546,7 @@ function jumpToUrl(URL) {
 	 */
 	public function issueCommand($params, $redirectUrl = '') {
 		$redirectUrl = $redirectUrl ? $redirectUrl : GeneralUtility::getIndpEnv('REQUEST_URI');
-		$commandUrl = BackendUtility::getModuleUrl('tce_db', array(), $this->backPath) . '&' . $params . '&redirect=' . ($redirectUrl == -1 ? '\'+T3_THIS_LOCATION+\'' : rawurlencode($redirectUrl)) . '&vC=' . rawurlencode($GLOBALS['BE_USER']->veriCode()) . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1';
+		$commandUrl = BackendUtility::getModuleUrl('tce_db') . '&' . $params . '&redirect=' . ($redirectUrl == -1 ? '\'+T3_THIS_LOCATION+\'' : rawurlencode($redirectUrl)) . '&vC=' . rawurlencode($GLOBALS['BE_USER']->veriCode()) . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1';
 		return $commandUrl;
 	}
 
@@ -736,8 +734,10 @@ function jumpToUrl(URL) {
 	 * Automatically outputted in page end
 	 *
 	 * @return string HTML formated with <p>-tags
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function parseTime() {
+		GeneralUtility::logDeprecatedFunction();
 		if ($this->parseTimeFlag && $GLOBALS['BE_USER']->isAdmin()) {
 			return '<p>(ParseTime: ' . (GeneralUtility::milliseconds() - $GLOBALS['PARSETIME_START']) . ' ms</p>
 					<p>REQUEST_URI-length: ' . strlen(GeneralUtility::getIndpEnv('REQUEST_URI')) . ')</p>';
@@ -864,10 +864,10 @@ function jumpToUrl(URL) {
 
 		// Load jquery and twbs JS libraries on every backend request
 		$this->pageRenderer->loadJquery();
-		// Note: please do not reference "twbs" outside of the TYPO3 Core (not in your own extensions)
-		// as this is preliminary as long as twbs does not support AMD modules
-		// this logic will be changed once twbs 4 is included
-		$this->pageRenderer->addJsFile($this->backPath . 'contrib/twbs/bootstrap.min.js');
+		// Note: please do not reference "bootstrap" outside of the TYPO3 Core (not in your own extensions)
+		// as this is preliminary as long as Twitter bootstrap does not support AMD modules
+		// this logic will be changed once Twitter bootstrap 4 is included
+		$this->pageRenderer->addJsFile($this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/bootstrap/bootstrap.js');
 
 		// hook for additional headerData
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preHeaderRenderHook'])) {
@@ -901,7 +901,7 @@ function jumpToUrl(URL) {
 	 * @see startPage()
 	 */
 	public function endPage() {
-		$str = $this->sectionEnd() . $this->postCode . $this->wrapScriptTags(BackendUtility::getUpdateSignalCode()) . $this->parseTime() . ($this->form ? '
+		$str = $this->sectionEnd() . $this->postCode . $this->wrapScriptTags(BackendUtility::getUpdateSignalCode()) . ($this->form ? '
 </form>' : '');
 		// If something is in buffer like debug, put it to end of page
 		if (ob_get_contents()) {
@@ -1511,9 +1511,7 @@ function jumpToUrl(URL) {
 	 * @return void
 	 */
 	protected function loadCshJavascript() {
-		$this->pageRenderer->loadExtJS();
-		$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/contexthelp.js');
-		$this->pageRenderer->addExtDirectCode();
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ContextHelp');
 	}
 
 	/**
@@ -1582,6 +1580,33 @@ function jumpToUrl(URL) {
 	}
 
 	/**
+	 * Creates a DYNAMIC tab-menu where the tabs or collapseable are rendered with bootstrap markup
+	 *
+	 * @param array $menuItems Numeric array where each entry is an array in itself with associative keys: "label" contains the label for the TAB, "content" contains the HTML content that goes into the div-layer of the tabs content. "description" contains description text to be shown in the layer. "linkTitle" is short text for the title attribute of the tab-menu link (mouse-over text of tab). "stateIcon" indicates a standard status icon (see ->icon(), values: -1, 1, 2, 3). "icon" is an image tag placed before the text.
+	 * @param string $identString Identification string. This should be unique for every instance of a dynamic menu!
+	 * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
+	 * @param bool $collapseable If set, the tabs are rendered as headers instead over each sheet. Effectively this means there is no tab menu, but rather a foldout/foldin menu.
+	 * @param bool $wrapContent If set, the content is wrapped in div structure which provides a padding and border style. Set this FALSE to get unstyled content pane with fullsize content area.
+	 * @param bool $storeLastActiveTab If set, the last open tab is stored in local storage and will be re-open again. If you don't need this feature, e.g. for wizards like import/export you can disable this behaviour.
+	 * @return string
+	 */
+	public function getDynamicTabMenu(array $menuItems, $identString, $defaultTabIndex = 1, $collapseable = FALSE, $wrapContent = TRUE, $storeLastActiveTab = TRUE) {
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Tabs');
+		$templatePathAndFileName = 'EXT:backend/Resources/Private/Templates/DocumentTemplate/' . ($collapseable ? 'Collapse.html' : 'Tabs.html');
+		$view = GeneralUtility::makeInstance(StandaloneView::class);
+		$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
+		$view->assignMultiple(array(
+			'id' => $this->getDynTabMenuId($identString),
+			'items' => $menuItems,
+			'defaultTabIndex' => $defaultTabIndex,
+			'wrapContent' => $wrapContent,
+			'storeLastActiveTab' => $storeLastActiveTab,
+			'BACK_PATH' => $GLOBALS['BACK_PATH']
+		));
+		return $view->render();
+	}
+
+	/**
 	 * Creates a DYNAMIC tab-menu where the tabs are switched between with DHTML.
 	 * Should work in MSIE, Mozilla, Opera and Konqueror. On Konqueror I did find a serious problem: <textarea> fields loose their content when you switch tabs!
 	 *
@@ -1594,104 +1619,11 @@ function jumpToUrl(URL) {
 	 * @param int $defaultTabIndex Default tab to open (for toggle <=0). Value corresponds to integer-array index + 1 (index zero is "1", index "1" is 2 etc.). A value of zero (or something non-existing) will result in no default tab open.
 	 * @param int $tabBehaviour If set to '1' empty tabs will be remove, If set to '2' empty tabs will be disabled. setting this option to '2' is deprecated since TYPO3 CMS 7, and will be removed iwth CMS 8
 	 * @return string JavaScript section for the HTML header.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getDynTabMenu($menuItems, $identString, $toggle = 0, $foldout = FALSE, $noWrap = TRUE, $fullWidth = FALSE, $defaultTabIndex = 1, $tabBehaviour = 1) {
-		if ($tabBehaviour === 2) {
-			GeneralUtility::deprecationLog('DocumentTemplate::getDynTabMenu parameter $tabBehavior (=2) with showing empty disabled since TYPO3 CMS 7, and will not be supported anymore with CMS 8');
-		}
-		// Load the static code, if not already done with the function below
-		$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tabmenu.js');
-		$content = '';
-		if (is_array($menuItems)) {
-			// Init:
-			$options = array(array());
-			$divs = array();
-			$JSinit = array();
-			$id = $this->getDynTabMenuId($identString);
-
-			// Traverse menu items
-			$c = 0;
-			$tabRows = 0;
-			$titleLenCount = 0;
-			foreach ($menuItems as $index => $def) {
-				// Need to add one so checking for first index in JavaScript
-				// is different than if it is not set at all.
-				$index += 1;
-				// Switch to next tab row if needed
-				if (!$foldout && ($def['newline'] === TRUE && $titleLenCount > 0)) {
-					$titleLenCount = 0;
-					$tabRows++;
-					$options[$tabRows] = array();
-				}
-				if ($toggle == 1) {
-					$onclick = 'DTM_toggle("' . $id . '","' . $index . '"); return false;';
-				} else {
-					$onclick = 'DTM_activate("' . $id . '","' . $index . '", ' . ($toggle < 0 ? 1 : 0) . '); return false;';
-				}
-				$isEmpty = trim($def['content']) === '' && trim($def['icon']) === '';
-				// "Removes" empty tabs
-				if ($isEmpty && $tabBehaviour == 1) {
-					continue;
-				}
-				$requiredIcon = '<img name="' . $id . '-' . $index . '-REQ" src="' . $GLOBALS['BACK_PATH'] . 'gfx/clear.gif" class="t3-TCEforms-reqTabImg" alt="" />';
-				if (!$foldout) {
-					// Create TAB cell:
-					$options[$tabRows][] = '
-							<li class="' . ($isEmpty ? 'disabled' : '') . '" id="' . $id . '-' . $index . '-MENU">' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . $this->icons($def['stateIcon'], 'margin-left: 10px;') . ($isEmpty ? '' : '</a>') . '</li>';
-					$titleLenCount += strlen($def['label']);
-				} else {
-					// Create DIV layer for content:
-					$divs[] = '
-						<div class="' . ($isEmpty ? 'disabled' : '') . '" id="' . $id . '-' . $index . '-MENU">' . ($isEmpty ? '' : '<a href="#" onclick="' . htmlspecialchars($onclick) . '"' . ($def['linkTitle'] ? ' title="' . htmlspecialchars($def['linkTitle']) . '"' : '') . '>') . $def['icon'] . ($def['label'] ? htmlspecialchars($def['label']) : '&nbsp;') . $requiredIcon . ($isEmpty ? '' : '</a>') . '</div>';
-				}
-				// Create DIV layer for content:
-				$divs[] = '
-						<div id="' . $id . '-' . $index . '-DIV" class="tab-pane">' . ($def['description'] ? '<p class="c-descr">' . nl2br(htmlspecialchars($def['description'])) . '</p>' : '') . $def['content'] . '</div>';
-				// Create initialization string:
-				$JSinit[] = '
-						DTM_array["' . $id . '"][' . $c . '] = "' . $id . '-' . $index . '";
-				';
-				// If not empty and we have the toggle option on, check if the tab needs to be expanded
-				if ($toggle == 1 && !$isEmpty) {
-					$JSinit[] = '
-						if (top.DTM_currentTabs["' . $id . '-' . $index . '"]) { DTM_toggle("' . $id . '","' . $index . '",1); }
-					';
-				}
-				$c++;
-			}
-			// Render menu:
-			if (count($options)) {
-				// Tab menu is compiled:
-				if (!$foldout) {
-					$tabContent = '';
-					for ($a = 0; $a <= $tabRows; $a++) {
-						$tabContent .= '
-
-					<!-- Tab menu -->
-					<ul class="nav nav-tabs" role="tablist">
-						' . implode('', $options[$a]) . '
-					</ul>';
-					}
-					$content .= $tabContent;
-				}
-				// Div layers are added:
-				$content .= '
-				<!-- Div layers for tab menu: -->
-				<div class="tab-content' . ($foldout ? ' tab-content-foldout' : '') . '">
-				' . implode('', $divs) . '</div>';
-				// Java Script section added:
-				$content .= '
-				<!-- Initialization JavaScript for the menu -->
-				<script type="text/javascript">
-					DTM_array["' . $id . '"] = new Array();
-					' . implode('', $JSinit) . '
-					' . ($toggle <= 0 ? 'DTM_activate("' . $id . '", top.DTM_currentTabs["' . $id . '"]?top.DTM_currentTabs["' . $id . '"]:' . (int)$defaultTabIndex . ', 0);' : '') . '
-				</script>
-
-				';
-			}
-		}
-		return $content;
+		GeneralUtility::logDeprecatedFunction();
+		return $this->getDynamicTabMenu($menuItems, $identString, $defaultTabIndex, $foldout, $noWrap);
 	}
 
 	/**

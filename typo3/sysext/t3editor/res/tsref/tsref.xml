@@ -5948,15 +5948,6 @@ javascriptLibs {
 
      # includes ExtJS debug file (uncompressed)
    ExtJs.debug = 1
-
-		#load SVG library
-		SVG = 1
-
-		#add SVG debug
-		SVG.debug = 1
-
-		#force render with flash
-		SVG.forceFlash = 1
 }
 ]]></description>
 			<default><![CDATA[
@@ -6419,7 +6410,7 @@ instead.]]></description>
 ]]></default>
 		</property>
 		<property name="alternativeTempPath" type="string">
-			<description><![CDATA[Enter an alternative path to use for temp images. Must be found in the list in TYPO3_CONF_VARS[FE][allowedTempPaths]]]></description>
+			<description><![CDATA[Enter an alternative path to use for temp images.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -6503,7 +6494,7 @@ If you add "m" to either the width or height, the image will be held in proporti
 	</type>
 	<type id="imgResource">
 		<property name="alternativeTempPath" type="string">
-			<description><![CDATA[Enter an alternative path to use for temp images. Must be found in the list in TYPO3_CONF_VARS[FE][allowedTempPaths]]]></description>
+			<description><![CDATA[Enter an alternative path to use for temp images.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>
@@ -7244,7 +7235,7 @@ Set to value "2" the content will be printed in a table - looks nicer.]]></descr
 ]]></default>
 		</property>
 		<property name="editIcons" type="string">
-			<description><![CDATA[If not empty, then insert an icon linking to the typo3/alt_doc.php with some parameters to build and backend user edit form for certain fields.
+			<description><![CDATA[If not empty, then insert an icon linking to the FormEngine with some parameters to build and backend user edit form for certain fields.
 The value of this property is a list of fields from a table to edit. It's assumed that the current record of the cObj is the record to be edited.
 Syntax: optional tablename : comma list of fieldnames[list of pallette-field names separated by | ]
 

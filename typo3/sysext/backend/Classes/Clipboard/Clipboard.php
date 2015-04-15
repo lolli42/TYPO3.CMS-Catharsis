@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Clipboard;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -270,7 +271,7 @@ class Clipboard {
 		// Delete:
 		if ($elCount) {
 			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($rmall_url) . '#clip_head">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE))) . '</a>';
-			if ($this->getBackendUser()->jsConfirmation(4)) {
+			if ($this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)) {
 				$js = '
 			if (confirm(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elCount)) . ')){
 				window.location.href=\'' . $this->deleteUrl(0, ($this->fileMode ? 1 : 0)) . '&redirect=\'+top.rawurlencode(window.location.href);
@@ -361,7 +362,10 @@ class Clipboard {
 								$processedFile = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
 								if ($processedFile) {
 									$thumbUrl = $processedFile->getPublicUrl(TRUE);
-									$thumb .= '<br /><img src="' . htmlspecialchars($thumbUrl) . '" title="' . htmlspecialchars($fileObject->getName()) . '" alt="" />';
+									$thumb .= '<br /><img src="' . htmlspecialchars($thumbUrl) . '" ' .
+											'width="' . $processedFile->getProperty('width') . '" ' .
+											'height="' . $processedFile->getProperty('height') . '" ' .
+											'title="' . htmlspecialchars($fileObject->getName()) . '" alt="" />';
 								}
 							}
 							$lines[] = '
@@ -502,7 +506,7 @@ class Clipboard {
 			if ($this->fileMode) {
 				$str = '<span class="text-muted">' . $str . '</span>';
 			} else {
-				$str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', array('id' => $rec['pid']), $this->backPath)) . '">' . $str . '</a>';
+				$str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_list', array('id' => $rec['pid']))) . '">' . $str . '</a>';
 			}
 		} elseif (file_exists($rec)) {
 			if (!$this->fileMode) {
@@ -565,14 +569,20 @@ class Clipboard {
 	 * @return string
 	 */
 	public function pasteUrl($table, $uid, $setRedirect = TRUE, array $update = NULL) {
-		return ($table == '_FILE' ? BackendUtility::getModuleUrl('tce_file', array(), $this->backPath) : BackendUtility::getModuleUrl('tce_db', array(), $this->backPath)) .
-			($setRedirect ? '&redirect=' . rawurlencode(GeneralUtility::linkThisScript(array('CB' => ''))) : '') .
-			'&vC=' . $this->getBackendUser()->veriCode() .
-			'&prErr=1&uPT=1' .
-			'&CB[paste]=' . rawurlencode($table . '|' . $uid) .
-			'&CB[pad]=' . $this->current .
-			(is_array($update) ? GeneralUtility::implodeArrayForUrl('CB[update]', $update) : '') .
-			BackendUtility::getUrlToken('tceAction');
+		$urlParameters = [
+			'vC' => $this->getBackendUser()->veriCode(),
+			'prErr' => 1,
+			'uPT' => 1,
+			'CB[paste]' => $table . '|' . $uid,
+			'CB[pad]' => $this->current
+		];
+		if ($setRedirect) {
+			$urlParameters['redirect'] = GeneralUtility::linkThisScript(array('CB' => ''));
+		}
+		if (is_array($update)) {
+			$urlParameters['CB[update]'] = $update;
+		}
+		return BackendUtility::getModuleUrl($table === '_FILE' ? 'tce_file' : 'tce_db', $urlParameters) . BackendUtility::getUrlToken('tceAction');
 	}
 
 	/**
@@ -583,28 +593,35 @@ class Clipboard {
 	 * @return string
 	 */
 	public function deleteUrl($setRedirect = 1, $file = 0) {
-		return ($file ? BackendUtility::getModuleUrl('tce_file', array(), $this->backPath) : BackendUtility::getModuleUrl('tce_db', array(), $this->backPath))
-			. ($setRedirect ? '&redirect=' . rawurlencode(GeneralUtility::linkThisScript(array('CB' => ''))) : '') . '&vC=' . $this->getBackendUser()->veriCode()
-			. '&prErr=1&uPT=1' . '&CB[delete]=1' . '&CB[pad]=' . $this->current . BackendUtility::getUrlToken('tceAction');
+		$urlParameters = [
+			'vC' => $this->getBackendUser()->veriCode(),
+			'prErr' => 1,
+			'uPT' => 1,
+			'CB[delete]' => 1,
+			'CB[pad]' => $this->current
+		];
+		if ($setRedirect) {
+			$urlParameters['redirect'] = GeneralUtility::linkThisScript(array('CB' => ''));
+		}
+		return BackendUtility::getModuleUrl($file ? 'tce_file' : 'tce_db', $urlParameters) . BackendUtility::getUrlToken('tceAction');
 	}
 
 	/**
 	 * editUrl of all current elements
 	 * ONLY database
-	 * Links to alt_doc.php
+	 * Links to FormEngine
 	 *
-	 * @return string The URL to alt_doc.php with parameters.
+	 * @return string The URL to FormEngine with parameters.
 	 */
 	public function editUrl() {
+		$parameters = array();
 		// All records
 		$elements = $this->elFromTable('');
-		$editCMDArray = array();
 		foreach ($elements as $tP => $value) {
 			list($table, $uid) = explode('|', $tP);
-			$editCMDArray[] = '&edit[' . $table . '][' . $uid . ']=edit';
+			$parameters['edit[' . $table . '][' . $uid . ']'] = 'edit';
 		}
-		$rU = $this->backPath . 'alt_doc.php?' . implode('', $editCMDArray);
-		return $rU;
+		return BackendUtility::getModuleUrl('record_edit', $parameters);
 	}
 
 	/**
@@ -630,7 +647,7 @@ class Clipboard {
 	 * @return string JavaScript "confirm" message
 	 */
 	public function confirmMsg($table, $rec, $type, $clElements, $columnLabel = '') {
-		if ($this->getBackendUser()->jsConfirmation(2)) {
+		if ($this->getBackendUser()->jsConfirmation(JsConfirmation::COPY_MOVE_PASTE)) {
 			$labelKey = 'LLL:EXT:lang/locallang_core.xlf:mess.' . ($this->currentMode() == 'copy' ? 'copy' : 'move') . ($this->current == 'normal' ? '' : 'cb') . '_' . $type;
 			$msg = $this->getLanguageService()->sL($labelKey . ($columnLabel ? '_colPos': ''));
 			if ($table == '_FILE') {

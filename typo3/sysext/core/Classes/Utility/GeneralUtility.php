@@ -814,20 +814,21 @@ class GeneralUtility {
 	/**
 	 * Splits a reference to a file in 5 parts
 	 *
-	 * @param string $fileref Filename/filepath to be analysed
+	 * @param string $fileNameWithPath File name with path to be analysed (must exist if open_basedir is set)
 	 * @return array Contains keys [path], [file], [filebody], [fileext], [realFileext]
 	 */
-	static public function split_fileref($fileref) {
+	static public function split_fileref($fileNameWithPath) {
 		$reg = array();
-		if (preg_match('/(.*\\/)(.*)$/', $fileref, $reg)) {
+		if (preg_match('/(.*\\/)(.*)$/', $fileNameWithPath, $reg)) {
 			$info['path'] = $reg[1];
 			$info['file'] = $reg[2];
 		} else {
 			$info['path'] = '';
-			$info['file'] = $fileref;
+			$info['file'] = $fileNameWithPath;
 		}
 		$reg = '';
-		if (!is_dir($fileref) && preg_match('/(.*)\\.([^\\.]*$)/', $info['file'], $reg)) {
+		// If open_basedir is set and the fileName was supplied without a path the is_dir check fails
+		if (!is_dir($fileNameWithPath) && preg_match('/(.*)\\.([^\\.]*$)/', $info['file'], $reg)) {
 			$info['filebody'] = $reg[1];
 			$info['fileext'] = strtolower($reg[2]);
 			$info['realFileext'] = $reg[2];
@@ -1251,7 +1252,6 @@ class GeneralUtility {
 			return self::$idnaStringCache[$value];
 		} else {
 			if (!self::$idnaConverter) {
-				require_once PATH_typo3 . 'contrib/idna/idna_convert.class.php';
 				self::$idnaConverter = new \idna_convert(array('idn_version' => 2008));
 			}
 			self::$idnaStringCache[$value] = self::$idnaConverter->encode($value);
@@ -3042,7 +3042,7 @@ Connection: close
 		$phpPostLimit = self::getBytesFromSizeMeasurement(ini_get('post_max_size'));
 		// If the total amount of post data is smaller (!) than the upload_max_filesize directive,
 		// then this is the real limit in PHP
-		$phpUploadLimit = $phpPostLimit < $phpUploadLimit ? $phpPostLimit : $phpUploadLimit;
+		$phpUploadLimit = $phpPostLimit > 0 && $phpPostLimit < $phpUploadLimit ? $phpPostLimit : $phpUploadLimit;
 		// Is the allowed PHP limit (upload_max_filesize) lower than the TYPO3 limit?, also: revert back to KB
 		return floor(($phpUploadLimit < $t3Limit ? $phpUploadLimit : $t3Limit)) / 1024;
 	}
@@ -4951,10 +4951,6 @@ Connection: close
 		}
 		$date = date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] . ': ');
 		if (in_array('file', $log) !== FALSE) {
-			// In case lock is acquired before autoloader was defined:
-			if (class_exists(\TYPO3\CMS\Core\Locking\Locker::class) === FALSE) {
-				require_once ExtensionManagementUtility::extPath('core') . 'Classes/Locking/Locker.php';
-			}
 			// Write a longer message to the deprecation log
 			$destination = static::getDeprecationLogFileName();
 			$file = @fopen($destination, 'a');
@@ -4993,13 +4989,6 @@ Connection: close
 		if (!$GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog']) {
 			return;
 		}
-
-			// This require_once is needed for deprecation calls
-			// thrown early during bootstrap, if the autoloader is
-			// not instantiated yet. This can happen for example if
-			// ext_localconf triggers a deprecation.
-		require_once 'DebugUtility.php';
-
 		$trail = debug_backtrace();
 		if ($trail[1]['type']) {
 			$function = new \ReflectionMethod($trail[1]['class'], $trail[1]['function']);

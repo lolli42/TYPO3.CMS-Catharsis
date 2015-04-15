@@ -66,7 +66,7 @@ class ReviewController extends AbstractController {
 		$this->pageRenderer->addInlineSetting('Workspaces', 'isLiveWorkspace', (int)$GLOBALS['BE_USER']->workspace === 0 ? TRUE : FALSE);
 		$this->pageRenderer->addInlineSetting('Workspaces', 'workspaceTabs', $this->prepareWorkspaceTabs($wsList, $activeWorkspace));
 		$this->pageRenderer->addInlineSetting('Workspaces', 'activeWorkspaceId', $activeWorkspace);
-		$this->pageRenderer->addInlineSetting('Workspaces', 'PATH_typo3', GeneralUtility::getIndpEnv('TYPO3_SITE_PATH') . TYPO3_mainDir);
+		$this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
 		$this->view->assign('performWorkspaceSwitch', $performWorkspaceSwitch);
 		$this->view->assign('workspaceList', $wsList);
 		$this->view->assign('activeWorkspaceUid', $activeWorkspace);
@@ -93,7 +93,6 @@ class ReviewController extends AbstractController {
 
 		$this->pageRenderer->addInlineSetting('Workspaces', 'workspaceTabs', $this->prepareWorkspaceTabs($wsList, WorkspaceService::SELECT_ALL_WORKSPACES));
 		$this->pageRenderer->addInlineSetting('Workspaces', 'activeWorkspaceId', WorkspaceService::SELECT_ALL_WORKSPACES);
-		$this->pageRenderer->addInlineSetting('Workspaces', 'PATH_typo3', GeneralUtility::getIndpEnv('TYPO3_SITE_PATH') . TYPO3_mainDir);
 		$this->view->assign('pageUid', GeneralUtility::_GP('id'));
 		$this->view->assign('showGrid', TRUE);
 		$this->view->assign('showLegend', TRUE);
@@ -150,9 +149,9 @@ class ReviewController extends AbstractController {
 		$this->pageRenderer->addExtDirectCode(array(
 			'TYPO3.Workspaces'
 		));
-		$this->pageRenderer->addJsFile($this->backPath . 'js/extjs/ux/Ext.grid.RowExpander.js');
-		$this->pageRenderer->addJsFile($this->backPath . 'js/extjs/ux/Ext.app.SearchField.js');
-		$this->pageRenderer->addJsFile($this->backPath . 'js/extjs/ux/Ext.ux.FitToParent.js');
+		$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/extjs/ux/Ext.grid.RowExpander.js');
+		$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/extjs/ux/Ext.app.SearchField.js');
+		$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/extjs/ux/Ext.ux.FitToParent.js');
 		$resourcePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('workspaces') . 'Resources/Public/JavaScript/';
 
 		// @todo Integrate additional stylesheet resources

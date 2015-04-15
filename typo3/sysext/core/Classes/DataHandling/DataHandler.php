@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -328,7 +329,7 @@ class DataHandler {
 	 *
 	 * @var array
 	 */
-	public $pagetreeRefreshFieldsFromPages = array('pid', 'sorting', 'deleted', 'hidden', 'title', 'doktype', 'is_siteroot', 'fe_group', 'nav_hide', 'nav_title', 'module', 'starttime', 'endtime');
+	public $pagetreeRefreshFieldsFromPages = array('pid', 'sorting', 'deleted', 'hidden', 'title', 'doktype', 'is_siteroot', 'fe_group', 'nav_hide', 'nav_title', 'module', 'starttime', 'endtime', 'content_from_pid');
 
 	/**
 	 * Indicates whether the pagetree needs a refresh because of important changes
@@ -384,11 +385,11 @@ class DataHandler {
 	);
 
 	/**
-	 * The list of <table>-<fields> that cannot be edited by user.This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
+	 * The list of <table>-<fields> that cannot be edited by user. This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
 	 *
 	 * @var array
 	 */
-	public $exclude_array;
+	protected $excludedTablesAndFields = array();
 
 	/**
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
@@ -652,7 +653,7 @@ class DataHandler {
 	 *
 	 * @var array
 	 */
-	protected static $recordsToClearCacheFor = array();
+	static protected $recordsToClearCacheFor = array();
 
 	/**
 	 * Database layer. Identical to $GLOBALS['TYPO3_DB']
@@ -662,10 +663,25 @@ class DataHandler {
 	protected $databaseConnection;
 
 	/**
+	 * Runtime Cache to store and retrieve data computed for a single request
+	 *
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+	 */
+	protected $runtimeCache = NULL;
+
+	/**
+	 * Prefix for the cache entries of nested element calls since the runtimeCache has a global scope.
+	 *
+	 * @var string
+	 */
+	protected $cachePrefixNestedElementCalls = 'core-datahandler-nestedElementCalls-';
+
+	/**
 	 *
 	 */
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+		$this->runtimeCache = $this->getRuntimeCache();
 	}
 
 	/**
@@ -709,7 +725,9 @@ class DataHandler {
 			$this->defaultPermissions['everybody'] = $defaultPermissions['everybody'];
 		}
 		// generates the excludelist, based on TCA/exclude-flag and non_exclude_fields for the user:
-		$this->exclude_array = $this->admin ? array() : $this->getExcludeListArray();
+		if (!$this->admin) {
+			$this->excludedTablesAndFields = array_flip($this->getExcludeListArray());
+		}
 		// Setting the data and cmd arrays
 		if (is_array($data)) {
 			reset($data);
@@ -1320,7 +1338,7 @@ class DataHandler {
 
 	/**
 	 * Filling in the field array
-	 * $this->exclude_array is used to filter fields if needed.
+	 * $this->excludedTablesAndFields is used to filter fields if needed.
 	 *
 	 * @param string $table Table name
 	 * @param int $id Record ID
@@ -1366,7 +1384,7 @@ class DataHandler {
 		// - If the field is nothing of the above and the field is configured in TCA, the fieldvalues are evaluated by ->checkValue
 		// If everything is OK, the field is entered into $fieldArray[]
 		foreach ($incomingFieldArray as $field => $fieldValue) {
-			if (!in_array(($table . '-' . $field), $this->exclude_array, TRUE) && !$this->data_disableFields[$table][$id][$field]) {
+			if (!isset($this->excludedTablesAndFields[$table . '-' . $field]) && !$this->data_disableFields[$table][$id][$field]) {
 				// The field must be editable.
 				// Checking if a value for language can be changed:
 				$languageDeny = $GLOBALS['TCA'][$table]['ctrl']['languageField'] && (string)$GLOBALS['TCA'][$table]['ctrl']['languageField'] === (string)$field && !$this->BE_USER->checkLanguageAccess($fieldValue);
@@ -1580,7 +1598,7 @@ class DataHandler {
 				$res = $this->checkValue_text($res, $value, $tcaFieldConf, $PP, $field);
 				break;
 			case 'passthrough':
-
+			case 'image_manipulation':
 			case 'user':
 				$res['value'] = $value;
 				break;
@@ -1594,7 +1612,6 @@ class DataHandler {
 				$res = $this->checkValue_radio($res, $value, $tcaFieldConf, $PP);
 				break;
 			case 'group':
-
 			case 'select':
 				$res = $this->checkValue_group_select($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field);
 				break;
@@ -1624,9 +1641,17 @@ class DataHandler {
 	 * @return array Modified $res array
 	 */
 	public function checkValue_text($res, $value, $tcaFieldConf, $PP, $field = '') {
-		$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
-		$res = $this->checkValue_text_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
-		return $res;
+		if (!isset($tcaFieldConf['eval']) || $tcaFieldConf['eval'] === '') {
+			return array('value' => $value);
+		}
+		$cacheId = $this->getFieldEvalCacheIdentifier($tcaFieldConf['eval']);
+		if ($this->runtimeCache->has($cacheId)) {
+			$evalCodesArray = $this->runtimeCache->get($cacheId);
+		} else {
+			$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
+			$this->runtimeCache->set($cacheId, $evalCodesArray);
+		}
+		return $this->checkValue_text_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
 	}
 
 	/**
@@ -1667,19 +1692,33 @@ class DataHandler {
 				$value = $tcaFieldConf['range']['lower'];
 			}
 		}
-		// Process evaluation settings:
-		$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
-		$res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
-		// Process UNIQUE settings:
-		// Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
-		if ($field && $realPid >= 0) {
-			if ($res['value'] && in_array('uniqueInPid', $evalCodesArray, TRUE)) {
-				$res['value'] = $this->getUnique($table, $field, $res['value'], $id, $realPid);
+
+		if (empty($tcaFieldConf['eval'])) {
+			$res = array('value' => $value);
+		} else {
+			// Process evaluation settings:
+			$cacheId = $this->getFieldEvalCacheIdentifier($tcaFieldConf['eval']);
+			if ($this->runtimeCache->has($cacheId)) {
+				$evalCodesArray = $this->runtimeCache->get($cacheId);
+			} else {
+				$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
+				$this->runtimeCache->set($cacheId, $evalCodesArray);
 			}
-			if ($res['value'] && in_array('unique', $evalCodesArray, TRUE)) {
-				$res['value'] = $this->getUnique($table, $field, $res['value'], $id);
+
+			$res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
+
+			// Process UNIQUE settings:
+			// Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
+			if ($field && $realPid >= 0 && !empty($res['value'])) {
+				if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
+					$res['value'] = $this->getUnique($table, $field, $res['value'], $id, $realPid);
+				}
+				if ($res['value'] && in_array('unique', $evalCodesArray, TRUE)) {
+					$res['value'] = $this->getUnique($table, $field, $res['value'], $id);
+				}
 			}
 		}
+
 		// Handle native date/time fields
 		if ($isDateOrDateTimeField) {
 			// Convert the timestamp back to a date/time
@@ -5643,7 +5682,7 @@ class DataHandler {
 	 * @see doesRecordExist()
 	 */
 	public function doesRecordExist_pageLookUp($id, $perms) {
-		return $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$id . $this->deleteClause('pages') . ($perms && !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($perms) : '') . (!$this->admin && $GLOBALS['TCA']['pages']['ctrl']['editlock'] && $perms & 2 + 4 + 16 ? ' AND ' . $GLOBALS['TCA']['pages']['ctrl']['editlock'] . '=0' : ''));
+		return $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$id . $this->deleteClause('pages') . ($perms && !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($perms) : '') . (!$this->admin && $GLOBALS['TCA']['pages']['ctrl']['editlock'] && $perms & Permission::PAGE_EDIT + Permission::PAGE_DELETE + Permission::CONTENT_EDIT ? ' AND ' . $GLOBALS['TCA']['pages']['ctrl']['editlock'] . '=0' : ''));
 	}
 
 	/**
@@ -6629,24 +6668,26 @@ class DataHandler {
 	 * @return void
 	 */
 	public function fixUniqueInPid($table, $uid) {
-		if ($GLOBALS['TCA'][$table]) {
-			$curData = $this->recordInfo($table, $uid, '*');
-			$newData = array();
-			foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
-				if ($conf['config']['type'] == 'input') {
-					$evalCodesArray = GeneralUtility::trimExplode(',', $conf['config']['eval'], TRUE);
-					if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
-						$newV = $this->getUnique($table, $field, $curData[$field], $uid, $curData['pid']);
-						if ((string)$newV !== (string)$curData[$field]) {
-							$newData[$field] = $newV;
-						}
+		if (empty($GLOBALS['TCA'][$table])) {
+			return;
+		}
+
+		$curData = $this->recordInfo($table, $uid, '*');
+		$newData = array();
+		foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
+			if ($conf['config']['type'] === 'input' && (string)$curData[$field] !== '') {
+				$evalCodesArray = GeneralUtility::trimExplode(',', $conf['config']['eval'], TRUE);
+				if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
+					$newV = $this->getUnique($table, $field, $curData[$field], $uid, $curData['pid']);
+					if ((string)$newV !== (string)$curData[$field]) {
+						$newData[$field] = $newV;
 					}
 				}
 			}
-			// IF there are changed fields, then update the database
-			if (count($newData)) {
-				$this->updateDB($table, $uid, $newData);
-			}
+		}
+		// IF there are changed fields, then update the database
+		if (!empty($newData)) {
+			$this->updateDB($table, $uid, $newData);
 		}
 	}
 
@@ -7197,7 +7238,7 @@ class DataHandler {
 	 * @return void (Will exit on error)
 	 */
 	public function printLogErrorMessages($redirect) {
-		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
+		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND action<256 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
 		while ($row = $this->databaseConnection->sql_fetch_assoc($res_log)) {
 			$log_data = unserialize($row['log_data']);
 			$msg = $row['error'] . ': ' . sprintf($row['details'], $log_data[0], $log_data[1], $log_data[2], $log_data[3], $log_data[4]);
@@ -7317,11 +7358,11 @@ class DataHandler {
 	}
 
 	/**
-	 * Gets an instance of the memory cache.
+	 * Gets an instance of the runtime cache.
 	 *
 	 * @return VariableFrontend
 	 */
-	protected function getMemoryCache() {
+	protected function getRuntimeCache() {
 		return $this->getCacheManager()->getCache('cache_runtime');
 	}
 
@@ -7334,7 +7375,7 @@ class DataHandler {
 	 * @return bool
 	 */
 	protected function isNestedElementCallRegistered($table, $id, $identifier) {
-		$nestedElementCalls = (array)$this->getMemoryCache()->get('nestedElementCalls');
+		$nestedElementCalls = (array)$this->runtimeCache->get($this->cachePrefixNestedElementCalls);
 		return isset($nestedElementCalls[$identifier][$table][$id]);
 	}
 
@@ -7348,9 +7389,9 @@ class DataHandler {
 	 * @return void
 	 */
 	protected function registerNestedElementCall($table, $id, $identifier) {
-		$nestedElementCalls = (array)$this->getMemoryCache()->get('nestedElementCalls');
+		$nestedElementCalls = (array)$this->runtimeCache->get($this->cachePrefixNestedElementCalls);
 		$nestedElementCalls[$identifier][$table][$id] = TRUE;
-		$this->getMemoryCache()->set('nestedElementCalls', $nestedElementCalls);
+		$this->runtimeCache->set($this->cachePrefixNestedElementCalls, $nestedElementCalls);
 	}
 
 	/**
@@ -7359,7 +7400,7 @@ class DataHandler {
 	 * @return void
 	 */
 	protected function resetNestedElementCalls() {
-		$this->getMemoryCache()->remove('nestedElementCalls');
+		$this->runtimeCache->remove($this->cachePrefixNestedElementCalls);
 	}
 
 	/**
@@ -7374,7 +7415,7 @@ class DataHandler {
 	 * @see versionizeRecord
 	 */
 	protected function isElementToBeDeleted($table, $id) {
-		$elementsToBeDeleted = (array)$this->getMemoryCache()->get('core-t3lib_TCEmain-elementsToBeDeleted');
+		$elementsToBeDeleted = (array)$this->runtimeCache->get('core-datahandler-elementsToBeDeleted');
 		return isset($elementsToBeDeleted[$table][$id]);
 	}
 
@@ -7385,8 +7426,8 @@ class DataHandler {
 	 * @see process_datamap
 	 */
 	protected function registerElementsToBeDeleted() {
-		$elementsToBeDeleted = (array)$this->getMemoryCache()->get('core-t3lib_TCEmain-elementsToBeDeleted');
-		$this->getMemoryCache()->set('core-t3lib_TCEmain-elementsToBeDeleted', array_merge($elementsToBeDeleted, $this->getCommandMapElements('delete')));
+		$elementsToBeDeleted = (array)$this->runtimeCache->get('core-datahandler-elementsToBeDeleted');
+		$this->runtimeCache->set('core-datahandler-elementsToBeDeleted', array_merge($elementsToBeDeleted, $this->getCommandMapElements('delete')));
 	}
 
 	/**
@@ -7396,7 +7437,7 @@ class DataHandler {
 	 * @see process_datamap
 	 */
 	protected function resetElementsToBeDeleted() {
-		$this->getMemoryCache()->remove('core-t3lib_TCEmain-elementsToBeDeleted');
+		$this->runtimeCache->remove('core-datahandler-elementsToBeDeleted');
 	}
 
 	/**
@@ -7474,6 +7515,16 @@ class DataHandler {
 				$haystack[$key] = NULL;
 			}
 		}
+	}
+
+	/**
+	 * Return the cache entry identifier for field evals
+	 *
+	 * @param string $additionalIdentifier
+	 * @return string
+	 */
+	protected function getFieldEvalCacheIdentifier($additionalIdentifier) {
+		return 'core-datahandler-eval-' . md5($additionalIdentifier);
 	}
 
 	/**

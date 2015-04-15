@@ -24,7 +24,7 @@
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"vendor-dir": "Packages/Libraries",
+		"vendor-dir": "typo3/contrib/vendor",
 		"bin-dir": "bin"
 	},
 	"scripts": {
@@ -36,14 +36,16 @@
 		"ext-pcre": "*",
 		"ext-session": "*",
 		"ext-xml": "*",
-		"helhum/class-alias-loader": "1.0.*@dev",
+		"psr/log": "1.0.*@dev",
+		"pear/http_request2": "2.2.1",
+		"phpwhois/idna-convert": "0.8.2",
+		"swiftmailer/swiftmailer": "5.2.1",
+		"helhum/class-alias-loader": "1.1.*@dev",
 		"typo3/cms-composer-installers": "1.1.*@dev"
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.4.*@dev",
-		"phpunit/phpunit": "~4.5.0",
-		"twbs/bootstrap": "3.3.2",
-		"fortawesome/font-awesome": "4.3.0"
+		"phpunit/phpunit": "~4.5.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -122,7 +124,6 @@
 			"TYPO3\\Flow\\": "typo3/sysext/core/Resources/PHP/TYPO3.Flow/Classes/"
 		},
 		"psr-4": {
-			"Psr\\Log\\": "typo3/contrib/Psr/Log/",
 			"TYPO3\\CMS\\Backend\\": "typo3/sysext/backend/Classes/",
 			"TYPO3\\CMS\\Core\\": "typo3/sysext/core/Classes/",
 			"TYPO3\\CMS\\Cshmanual\\": "typo3/sysext/cshmanual/Classes/",
@@ -165,5 +166,8 @@
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
 			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/"
 		}
-	}
+	},
+	"include-path": [
+		"./typo3/contrib/vendor/pear/http_request2"
+	]
 }

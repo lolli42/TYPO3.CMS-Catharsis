@@ -417,6 +417,7 @@ class Bootstrap {
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class, $classLoader);
 		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
+		$classAliasMap->injectComposerClassLoader($this->getEarlyInstance(\Composer\Autoload\ClassLoader::class));
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
 		$classLoader->injectClassAliasMap($classAliasMap);
 		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);
@@ -495,7 +496,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
-		$this->loadAdditionalConfigurationFromExtensions($allowCaching);
+		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
 		return $this;
 	}
 
@@ -595,9 +596,9 @@ class Bootstrap {
 	 */
 	protected function registerExtDirectComponents() {
 		if (TYPO3_MODE === 'BE') {
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.DataProvider', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class, 'web', 'user,group');
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.Commands', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class, 'web', 'user,group');
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.ContextMenuDataProvider', \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class, 'web', 'user,group');
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.DataProvider', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.Commands', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.ContextMenuDataProvider', \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class);
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.LiveSearchActions.ExtDirect', \TYPO3\CMS\Backend\Search\LiveSearch\ExtDirect\LiveSearchDataProvider::class, 'web_list', 'user,group');
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.BackendUserSettings.ExtDirect', \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class);
 			if (Utility\ExtensionManagementUtility::isLoaded('context_help')) {
@@ -606,7 +607,7 @@ class Bootstrap {
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.ExtDirectStateProvider.ExtDirect', \TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class);
 			Utility\ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.DragAndDrop.CommandController',
-				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class, 'web', 'user,group'
+				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
 			);
 		}
 		return $this;
@@ -781,20 +782,6 @@ class Bootstrap {
 		define('TYPO3_REQUESTTYPE_AJAX', 8);
 		define('TYPO3_REQUESTTYPE_INSTALL', 16);
 		define('TYPO3_REQUESTTYPE', (TYPO3_MODE == 'FE' ? TYPO3_REQUESTTYPE_FE : 0) | (TYPO3_MODE == 'BE' ? TYPO3_REQUESTTYPE_BE : 0) | (defined('TYPO3_cliMode') && TYPO3_cliMode ? TYPO3_REQUESTTYPE_CLI : 0) | (defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript ? TYPO3_REQUESTTYPE_INSTALL : 0) | ($GLOBALS['TYPO3_AJAX'] ? TYPO3_REQUESTTYPE_AJAX : 0));
-		return $this;
-	}
-
-	/**
-	 * Load extension configuration files (ext_localconf.php)
-	 *
-	 * The ext_localconf.php files in extensions are meant to make changes
-	 * to the global $TYPO3_CONF_VARS configuration array.
-	 *
-	 * @param bool $allowCaching
-	 * @return Bootstrap
-	 */
-	protected function loadAdditionalConfigurationFromExtensions($allowCaching = TRUE) {
-		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
 		return $this;
 	}
 

@@ -113,18 +113,16 @@ class BackendController {
 		// Add default BE javascript
 		$this->jsFiles = array(
 			'locallang' => $this->getLocalLangFileName(),
-			'modernizr' => 'contrib/modernizr/modernizr.min.js',
 			'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
 			'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
 			'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
-			'tabclosemenu' => 'js/extjs/ux/ext.ux.tabclosemenu.js',
+			'tabclosemenu' => 'sysext/backend/Resources/Public/JavaScript/extjs/ux/ext.ux.tabclosemenu.js',
 			'notifications' => 'sysext/backend/Resources/Public/JavaScript/notifications.js',
 			'backend' => 'sysext/backend/Resources/Public/JavaScript/backend.js',
-			'debugPanel' => 'js/extjs/debugPanel.js',
-			'viewport' => 'js/extjs/viewport.js',
+			'viewport' => 'sysext/backend/Resources/Public/JavaScript/extjs/viewport.js',
 			'iframepanel' => 'sysext/backend/Resources/Public/JavaScript/iframepanel.js',
-			'backendcontentiframe' => 'js/extjs/backendcontentiframe.js',
-			'viewportConfiguration' => 'js/extjs/viewportConfiguration.js',
+			'backendcontentiframe' => 'sysext/backend/Resources/Public/JavaScript/extjs/backendcontentiframe.js',
+			'viewportConfiguration' => 'sysext/backend/Resources/Public/JavaScript/extjs/viewportConfiguration.js',
 			'util' => 'sysext/backend/Resources/Public/JavaScript/util.js'
 		);
 		if (!$this->debug) {
@@ -134,8 +132,8 @@ class BackendController {
 			}');
 		}
 
-		// load FlashMessages functionality
-		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FlashMessages');
+		// load Notification functionality
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Notification');
 
 		// load Modals
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
@@ -147,6 +145,9 @@ class BackendController {
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Storage', 'function(Storage) {
 			Storage.Persistent.load(' . json_encode($GLOBALS['BE_USER']->uc) . ');
 		}');
+
+		// load debug console
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DebugConsole');
 
 		$this->pageRenderer->addInlineSetting('ShowItem', 'moduleUrl', BackendUtility::getModuleUrl('show_item'));
 
@@ -204,8 +205,24 @@ class BackendController {
 
 		// Prepare the scaffolding, at this point extension may still add javascript and css
 		$view = $this->getFluidTemplateObject($this->templatePath . 'Backend/Main.html');
-		// @todo: kick logo view class and move all logic to Fluid
-		$view->assign('logo', GeneralUtility::makeInstance(\TYPO3\CMS\Backend\View\LogoView::class)->render());
+
+		// Render the TYPO3 logo in the left corner
+		$logoUrl = $GLOBALS['TBE_STYLES']['logo'] ?: 'gfx/typo3-topbar@2x.png';
+		$logoPath = \TYPO3\CMS\Core\Utility\GeneralUtility::resolveBackPath(PATH_typo3 . $logoUrl);
+		list($logoWidth, $logoHeight) = @getimagesize($logoPath);
+
+		// High-resolution?
+		if (strpos($logoUrl, '@2x.') !== FALSE) {
+			$logoWidth = $logoWidth/2;
+			$logoHeight = $logoHeight/2;
+		}
+
+		$view->assign('logoUrl', $logoUrl);
+		$view->assign('logoWidth', $logoWidth);
+		$view->assign('logoHeight', $logoHeight);
+		$view->assign('logoLink', TYPO3_URL_GENERAL);
+		$view->assign('applicationVersion', TYPO3_version);
+		$view->assign('siteName', $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
 		$view->assign('moduleMenu', $this->generateModuleMenu());
 		$view->assign('toolbar', $this->renderToolbar());
 
@@ -248,9 +265,9 @@ class BackendController {
 			TYPO3.Backend = new TYPO3.Viewport(TYPO3.Viewport.configuration);
 			if (typeof console === "undefined") {
 				console = TYPO3.Backend.DebugConsole;
-			}
-			TYPO3.ContextHelpWindow.init(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('help_cshmanual')) . ');';
+			}';
 		$this->pageRenderer->addExtOnReadyCode($extOnReadyCode);
+		$this->pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_cshmanual'));
 		// Set document title:
 		$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ? $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] . ' [TYPO3 CMS ' . TYPO3_version . ']' : 'TYPO3 CMS ' . TYPO3_version;
 		// Renders the module page
@@ -278,7 +295,7 @@ class BackendController {
 			$component = strtolower(substr($info['componentId'], strrpos($info['componentId'], '-') + 1));
 			$componentDirectory = 'components/' . $component . '/';
 			if ($info['isCoreComponent']) {
-				$absoluteComponentPath = PATH_site . 'typo3/js/extjs/' . $componentDirectory;
+				$absoluteComponentPath = PATH_site . 'typo3/sysext/backend/Resources/Public/JavaScript/extjs/' . $componentDirectory;
 				$relativeComponentPath = '../' . str_replace(PATH_site, '', $absoluteComponentPath);
 			} else {
 				$absoluteComponentPath = ExtensionManagementUtility::extPath($info['extKey']) . $componentDirectory;
@@ -306,6 +323,7 @@ class BackendController {
 			}
 			$this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
 			$this->pageRenderer->addInlineSetting('NewRecord', 'moduleUrl', BackendUtility::getModuleUrl('db_new'));
+			$this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
 		}
 	}
 
@@ -463,6 +481,7 @@ class BackendController {
 			'viewPort' => array(
 				'tooltipModuleMenuSplit',
 				'tooltipNavigationContainerSplitDrag',
+				'tooltipNavigationContainerSplitClick',
 				'tooltipDebugPanelSplitDrag'
 			)
 		);

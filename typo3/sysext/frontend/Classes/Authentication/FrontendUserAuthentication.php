@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Frontend\Authentication;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -22,7 +24,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @author René Fritz <r.fritz@colorcube.de>
  */
-class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication {
+class FrontendUserAuthentication extends AbstractUserAuthentication {
 
 	/**
 	 * form field with 0 or 1
@@ -108,6 +110,11 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	protected $sessionDataTimestamp = NULL;
 
 	/**
+	 * @var bool
+	 */
+	protected $loginHidden = FALSE;
+
+	/**
 	 * Default constructor.
 	 */
 	public function __construct() {
@@ -159,7 +166,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * Starts a user session
 	 *
 	 * @return void
-	 * @see \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::start()
+	 * @see AbstractUserAuthentication::start()
 	 */
 	public function start() {
 		if ((int)$this->auth_timeout_field > 0 && (int)$this->auth_timeout_field < $this->lifetime) {
@@ -210,7 +217,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	 * Returns an info array with Login/Logout data submitted by a form or params
 	 *
 	 * @return array
-	 * @see \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::getLoginFormData()
+	 * @see AbstractUserAuthentication::getLoginFormData()
 	 */
 	public function getLoginFormData() {
 		$loginData = parent::getLoginFormData();
@@ -224,7 +231,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 				$isPermanent = $GLOBALS['TYPO3_CONF_VARS']['FE']['permalogin'];
 			} elseif (!$isPermanent) {
 				// To make sure the user gets a session cookie and doesn't keep a possibly existing time based cookie,
-				// we need to force seeting the session cookie here
+				// we need to force setting the session cookie here
 				$this->forceSetCookie = TRUE;
 			}
 			$isPermanent = $isPermanent ? 1 : 0;
@@ -276,9 +283,9 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 		$authInfo = $this->getAuthInfoArray();
 		if ($this->writeDevLog) {
 			if (is_array($this->user)) {
-				GeneralUtility::devLog('Get usergroups for user: ' . GeneralUtility::arrayToLogString($this->user, array($this->userid_column, $this->username_column)), \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class);
+				GeneralUtility::devLog('Get usergroups for user: ' . GeneralUtility::arrayToLogString($this->user, array($this->userid_column, $this->username_column)), __CLASS__);
 			} else {
-				GeneralUtility::devLog('Get usergroups for "anonymous" user', \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class);
+				GeneralUtility::devLog('Get usergroups for "anonymous" user', __CLASS__);
 			}
 		}
 		$groupDataArr = array();
@@ -296,13 +303,13 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			unset($serviceObj);
 		}
 		if ($this->writeDevLog && $serviceChain) {
-			GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class);
+			GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, __CLASS__);
 		}
 		if ($this->writeDevLog && !count($groupDataArr)) {
-			GeneralUtility::devLog('No usergroups found by services', \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class);
+			GeneralUtility::devLog('No usergroups found by services', __CLASS__);
 		}
 		if ($this->writeDevLog && count($groupDataArr)) {
-			GeneralUtility::devLog(count($groupDataArr) . ' usergroup records found by services', \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class);
+			GeneralUtility::devLog(count($groupDataArr) . ' usergroup records found by services', __CLASS__);
 		}
 		// Use 'auth' service to check the usergroups if they are really valid
 		foreach ($groupDataArr as $groupData) {
@@ -316,7 +323,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 				if (!$serviceObj->authGroup($this->user, $groupData)) {
 					$validGroup = FALSE;
 					if ($this->writeDevLog) {
-						GeneralUtility::devLog($subType . ' auth service did not auth group: ' . GeneralUtility::arrayToLogString($groupData, 'uid,title'), \TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication::class, 2);
+						GeneralUtility::devLog($subType . ' auth service did not auth group: ' . GeneralUtility::arrayToLogString($groupData, 'uid,title'), __CLASS__, 2);
 					}
 					break;
 				}
@@ -353,9 +360,9 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 	public function getUserTSconf() {
 		if (!$this->userTSUpdated) {
 			// Parsing the user TS (or getting from cache)
-			$this->TSdataArray = \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::checkIncludeLines_array($this->TSdataArray);
+			$this->TSdataArray = TypoScriptParser::checkIncludeLines_array($this->TSdataArray);
 			$userTS = implode(LF . '[GLOBAL]' . LF, $this->TSdataArray);
-			$parseObj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
+			$parseObj = GeneralUtility::makeInstance(TypoScriptParser::class);
 			$parseObj->parse($userTS);
 			$this->userTS = $parseObj->setup;
 			$this->userTSUpdated = TRUE;
@@ -409,7 +416,7 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 				// Remove session-data
 				$this->removeSessionData();
 				// Remove cookie if not logged in as the session data is removed as well
-				if (empty($this->user['uid']) && $this->isCookieSet()) {
+				if (empty($this->user['uid']) && !$this->loginHidden && $this->isCookieSet()) {
 					$this->removeCookie($this->name);
 				}
 			} elseif ($this->sessionDataTimestamp === NULL) {
@@ -619,6 +626,19 @@ class FrontendUserAuthentication extends \TYPO3\CMS\Core\Authentication\Abstract
 			}
 		}
 		return $count;
+	}
+
+	/**
+	 * Hide the current login
+	 *
+	 * This is used by the fe_login_mode feature for pages.
+	 * A current login is unset, but we remember that there has been one.
+	 *
+	 * @return void
+	 */
+	public function hideActiveLogin() {
+		$this->user = NULL;
+		$this->loginHidden = TRUE;
 	}
 
 }

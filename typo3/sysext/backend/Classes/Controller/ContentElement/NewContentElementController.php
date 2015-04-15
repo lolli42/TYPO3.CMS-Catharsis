@@ -137,7 +137,7 @@ class NewContentElementController {
 	public function main() {
 		if ($this->id && $this->access) {
 			// Init position map object:
-			$posMap = GeneralUtility::makeInstance(\ext_posMap::class);
+			$posMap = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ContentCreationPagePositionMap::class);
 			$posMap->cur_sys_language = $this->sys_language;
 			$posMap->backPath = $GLOBALS['BACK_PATH'];
 			// If a column is pre-set:
@@ -160,7 +160,7 @@ class NewContentElementController {
 			$code = '';
 			$wizardItems = $this->getWizardItems();
 			// Wrapper for wizards
-			$this->elementWrapper['section'] = array('<div class="contentelement-wizard panel panel-tab"><div class="panel-body">', '</div></div>');
+			$this->elementWrapper['section'] = array('', '');
 			// Copy wrapper for tabs
 			$this->elementWrapperForTabs = $this->elementWrapper;
 			// Hook for manipulating wizardItems, wrapper, onClickEvent etc.
@@ -237,7 +237,7 @@ class NewContentElementController {
 			}
 			// Add the wizard table to the content, wrapped in tabs:
 			if ($this->config['renderMode'] == 'tabs') {
-				$code = '<p>' . $GLOBALS['LANG']->getLL('sel1', 1) . '</p>' . $this->doc->getDynTabMenu($menuItems, 'new-content-element-wizard', FALSE, FALSE);
+				$code = '<p>' . $GLOBALS['LANG']->getLL('sel1', 1) . '</p>' . $this->doc->getDynamicTabMenu($menuItems, 'new-content-element-wizard');
 			} else {
 				$code = '<p>' . $GLOBALS['LANG']->getLL('sel1', 1) . '</p>';
 				foreach ($menuItems as $section) {

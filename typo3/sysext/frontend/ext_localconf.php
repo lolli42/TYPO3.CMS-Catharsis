@@ -10,22 +10,12 @@ if (TYPO3_MODE === 'FE' && !isset($_REQUEST['eID'])) {
 	);
 }
 
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript(
-	'frontend',
-	'setup',
-	'config.extTarget = _top'
-);
-
-
 if (TYPO3_MODE === 'FE') {
 
 	// Register eID provider for showpic
 	$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['tx_cms_showpic'] = 'EXT:frontend/Resources/PHP/Eid/ShowPic.php';
 	// Register eID provider for ExtDirect for the frontend
 	$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['ExtDirect'] = 'EXT:frontend/Resources/PHP/Eid/ExtDirect.php';
-
-	// Register the core media wizard provider
-	\TYPO3\CMS\Frontend\MediaWizard\MediaWizardProviderManager::registerMediaWizardProvider(\TYPO3\CMS\Frontend\MediaWizard\MediaWizardProvider::class);
 
 	// Register all available content objects
 	$GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'] = array_merge($GLOBALS['TYPO3_CONF_VARS']['FE']['ContentObjects'], array(
@@ -58,7 +48,6 @@ if (TYPO3_MODE === 'FE') {
 	options.saveDocNew.pages = 0
 	options.saveDocNew.sys_file = 0
 	options.disableDelete.sys_file = 1
-	TCAdefaults.tt_content.imagecols = 2
 ');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
 mod.wizards.newContentElement {

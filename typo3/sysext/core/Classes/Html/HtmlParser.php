@@ -332,7 +332,7 @@ class HtmlParser {
 		$nested = 0;
 		reset($parts);
 		// We skip the first element in foreach loop
-		$partsSliced = array_slice($parts, 1, null, true);
+		$partsSliced = array_slice($parts, 1, NULL, TRUE);
 		foreach ($partsSliced as $v) {
 			$isEndTag = substr($content, $pointer, 2) == '</' ? 1 : 0;
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
@@ -436,7 +436,7 @@ class HtmlParser {
 		$newParts[] = $parts[0];
 		reset($parts);
 		// We skip the first element in foreach loop
-		$partsSliced = array_slice($parts, 1, null, true);
+		$partsSliced = array_slice($parts, 1, NULL, TRUE);
 		foreach ($partsSliced as $v) {
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
 			// Set tag:
@@ -701,7 +701,7 @@ class HtmlParser {
 		$tokArr = explode('<', $content);
 		$newContent[] = $this->processContent(current($tokArr), $hSC, $addConfig);
 		// We skip the first element in foreach loop
-		$tokArrSliced = array_slice($tokArr, 1, null, true);
+		$tokArrSliced = array_slice($tokArr, 1, NULL, TRUE);
 		$c = 1;
 		$tagRegister = array();
 		$tagStack = array();
@@ -864,7 +864,7 @@ class HtmlParser {
 												if ($tagAttrib[0][$attr][0] === '#') {
 													if ($params['prefixLocalAnchors'] == 2) {
 														/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObjectRenderer */
-														$contentObjectRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+														$contentObjectRenderer = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 														$prefix = $contentObjectRenderer->getUrlToCurrentLocation();
 													} else {
 														$prefix = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
@@ -1192,7 +1192,7 @@ class HtmlParser {
 		$tagsArray = GeneralUtility::trimExplode(',', $tagList, TRUE);
 		$contentParts = explode('&lt;', $content);
 		// bypass the first
-		$contentPartsSliced = array_slice($contentParts, 1, null, true);
+		$contentPartsSliced = array_slice($contentParts, 1, NULL, TRUE);
 		foreach ($contentPartsSliced as $k => $tok) {
 			$firstChar = $tok[0];
 			if (trim($firstChar) !== '') {

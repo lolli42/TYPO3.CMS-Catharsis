@@ -23,6 +23,8 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -220,7 +222,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 		// initialize
 		$theOutput = '';
 		if ($existTemplate) {
-			$content = ' <img ' . IconUtility::skinImg($this->getBackPath(), IconUtility::getIcon('sys_template', $tplRow)) . ' align="top" /> <strong>'
+			$content = ' ' . IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . ' <strong>'
 				. $this->pObj->linkWrapTemplateTitle($tplRow['title'], ($bType == 'setup' ? 'config' : 'constants')) . '</strong>'
 				. htmlspecialchars(trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : '');
 			$theOutput .= $this->pObj->doc->section($lang->getLL('currentTemplate'), $content);
@@ -433,8 +435,14 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 					$errMsg[] = $inf[1] . ': &nbsp; &nbsp;' . $inf[0] . $errorLink;
 				}
 				$theOutput .= $this->pObj->doc->spacer(10);
-				$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, implode($errMsg, '<br />'), $lang->getLL('errorsWarnings'), FlashMessage::ERROR);
-				$theOutput .= $flashMessage->render();
+
+				$title = $lang->getLL('errorsWarnings');
+				$message = '<p>' . implode($errMsg, '<br />') . '</p>';
+				// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
+				// A complete refactoring is necessary at this point
+				$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+				$viewHelper = $objectManager->get(InfoboxViewHelper::class);
+				$theOutput .= $viewHelper->render($title, $message, InfoboxViewHelper::STATE_WARNING);
 			}
 
 			if (isset($this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType][$theKey])) {

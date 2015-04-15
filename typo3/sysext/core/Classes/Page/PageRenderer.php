@@ -270,17 +270,17 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * default path to the requireJS library, relative to the typo3/ directory
 	 * @var string
 	 */
-	protected $requireJsPath = 'contrib/requirejs/';
+	protected $requireJsPath = 'sysext/core/Resources/Public/JavaScript/Contrib/';
 
 	/**
 	 * @var string
 	 */
-	protected $prototypePath = 'contrib/prototype/';
+	protected $prototypePath = 'sysext/core/Resources/Public/JavaScript/Contrib/';
 
 	/**
 	 * @var string
 	 */
-	protected $scriptaculousPath = 'contrib/scriptaculous/';
+	protected $scriptaculousPath = 'sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/';
 
 	/**
 	 * @var string
@@ -291,11 +291,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var string
 	 */
 	protected $extJsPath = 'contrib/extjs/';
-
-	/**
-	 * @var string
-	 */
-	protected $svgPath = 'contrib/websvg/';
 
 	/**
 	 * The local directory where one can find jQuery versions and plugins
@@ -458,18 +453,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var string
 	 */
 	protected $endingSlash = '';
-
-	/**
-	 * SVG library
-	 *
-	 * @var bool
-	 */
-	protected $addSvg = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	protected $enableSvgDebug = FALSE;
 
 	/**
 	 * Used by BE modules
@@ -727,16 +710,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->extJsPath = $path;
 	}
 
-	/**
-	 * Sets Path for SVG library (websvg)
-	 *
-	 * @param string $path
-	 * @return void
-	 */
-	public function setSvgPath($path) {
-		$this->svgPath = $path;
-	}
-
 	/*****************************************************/
 	/*                                                   */
 	/*  Public Enablers / Disablers                      */
@@ -883,7 +856,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->enableExtCoreDebug = TRUE;
 		$this->enableExtJsDebug = TRUE;
 		$this->enableJqueryDebug = TRUE;
-		$this->enableSvgDebug = TRUE;
 	}
 
 	/*****************************************************/
@@ -1097,15 +1069,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function getExtJsPath() {
 		return $this->extJsPath;
-	}
-
-	/**
-	 * Gets Path for SVG library (relative to typo3 directory)
-	 *
-	 * @return string
-	 */
-	public function getSvgPath() {
-		return $this->svgPath;
 	}
 
 	/**
@@ -1404,10 +1367,14 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'extDirect_timeoutMessage' => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_misc.xlf:extDirect_timeoutMessage')
 			));
 		}
+
 		$token = ($api = '');
 		if (TYPO3_MODE === 'BE') {
 			$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
 			$token = $formprotection->generateToken('extDirect');
+
+			// Debugger Console strings
+			$this->addInlineLanguageLabelFile('EXT:core/Resources/Private/Language/debugger.xlf');
 		}
 		/** @var $extDirect \TYPO3\CMS\Core\ExtDirect\ExtDirectApi */
 		$extDirect = GeneralUtility::makeInstance(\TYPO3\CMS\Core\ExtDirect\ExtDirectApi::class);
@@ -1458,11 +1425,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 			Ext.Direct.on("exception", function(event) {
 				if (event.code === Ext.Direct.exceptions.TRANSPORT && !event.where) {
-					top.TYPO3.Flashmessage.display(
-						top.TYPO3.Severity.error,
+					top.TYPO3.Notification.error(
 						TYPO3.l10n.localize("extDirect_timeoutHeader"),
-						TYPO3.l10n.localize("extDirect_timeoutMessage"),
-						30
+						TYPO3.l10n.localize("extDirect_timeoutMessage")
 					);
 				} else {
 					var backtrace = "";
@@ -1473,11 +1438,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 							"ExtDirect - Exception"
 						);
 					} else if (event.code === "router") {
-						top.TYPO3.Flashmessage.display(
-							top.TYPO3.Severity.error,
+						top.TYPO3.Notification.error(
 							event.code,
-							event.message,
-							30
+							event.message
 						);
 					} else if (event.where) {
 						backtrace = "<p style=\\"margin-top: 20px;\\">" +
@@ -1626,13 +1589,16 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		if (count($this->requireJsConfig) === 0) {
 			// first, load all paths for the namespaces, and configure contrib libs.
 			$this->requireJsConfig['paths'] = array(
-				'jquery-ui' => $this->backPath . 'contrib/jquery-ui',
+				'jquery-ui' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery-ui',
 				'jquery' => $this->backPath . 'contrib/jquery',
-				'datatables' => $this->backPath . 'contrib/jquery/jquery.dataTables.min',
-				'nprogress' => $this->backPath . 'contrib/nprogress/nprogress',
-				'moment' => $this->backPath . 'contrib/moment/moment.min',
-				'twbs' => $this->backPath . 'contrib/twbs/bootstrap.min',
-				'twbs/bootstrap-datetimepicker' => $this->backPath . 'contrib/twbs/bootstrap-datetimepicker.min',
+				'datatables' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery.dataTables',
+				'nprogress' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/nprogress',
+				'moment' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/moment',
+				'cropper' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/cropper.min',
+				'imagesloaded' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/imagesloaded.pkgd.min',
+				'bootstrap' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/bootstrap/bootstrap',
+				'twbs/bootstrap-datetimepicker' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/bootstrap-datetimepicker',
+				'autosize' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/autosize',
 			);
 			// get all extensions that are loaded
 			$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
@@ -1789,33 +1755,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Call function if you need the SVG library
-	 *
-	 * @return void
-	 */
-	public function loadSvg() {
-		$this->addSvg = TRUE;
-	}
-
-	/**
-	 * Call this function to load debug version of ExtJS. Use this for development only
-	 *
-	 * @return void
-	 */
-	public function enableSvgDebug() {
-		$this->enableSvgDebug = TRUE;
-	}
-
-	/**
-	 * Call this function to force flash usage with SVG library
-	 *
-	 * @return void
-	 */
-	public function svgForceFlash() {
-		$this->addMetaTag('<meta name="svg.render.forceflash" content="true" />');
-	}
-
-	/**
 	 * Call this function to load debug version of ExtJS. Use this for development only
 	 *
 	 * @return void
@@ -1853,9 +1792,16 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Need extJs loaded
 	 *
 	 * @param array $array
+	 * @param bool $parseWithLanguageService
 	 * @return void
 	 */
-	public function addInlineLanguageLabelArray(array $array) {
+	public function addInlineLanguageLabelArray(array $array, $parseWithLanguageService = FALSE) {
+		if ($parseWithLanguageService === TRUE) {
+			foreach ($array as $key => $value) {
+				$array[$key] = $this->getLanguageService()->sL($value);
+			}
+		}
+
 		$this->inlineLanguageLabels = array_merge($this->inlineLanguageLabels, $array);
 	}
 
@@ -2169,7 +2115,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Helper function for render the main JavaScript libraries,
-	 * currently: RequireJS, jQuery, PrototypeJS, Scriptaculous, SVG, ExtJs
+	 * currently: RequireJS, jQuery, PrototypeJS, Scriptaculous, ExtJs
 	 *
 	 * @return string Content with JavaScript libraries
 	 */
@@ -2184,9 +2130,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->requireJsPath . 'require.js')) . '" type="text/javascript"></script>' . LF;
 		}
 
-		if ($this->addSvg) {
-			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->svgPath . 'svg.js')) . '" data-path="' . $this->backPath . $this->svgPath . '"' . ($this->enableSvgDebug ? ' data-debug="true"' : '') . '></script>' . LF;
-		}
 		// Include jQuery Core for each namespace, depending on the version and source
 		if (!empty($this->jQueryVersions)) {
 			foreach ($this->jQueryVersions as $namespace => $jQueryVersion) {
@@ -2247,21 +2190,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			// Remove extjs from JScodeLibArray
 			unset($this->jsFiles[$this->backPath . $this->extJsPath . 'ext-all.js'], $this->jsFiles[$this->backPath . $this->extJsPath . 'ext-all-debug.js']);
 		}
-		if (count($this->inlineLanguageLabelFiles)) {
-			foreach ($this->inlineLanguageLabelFiles as $languageLabelFile) {
-				$this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['errorMode']);
-			}
-		}
-		$this->inlineLanguageLabelFiles = array();
-		// Convert labels/settings back to UTF-8 since json_encode() only works with UTF-8:
-		if ($this->getCharSet() !== 'utf-8') {
-			if ($this->inlineLanguageLabels) {
-				$this->csConvObj->convArray($this->inlineLanguageLabels, $this->getCharSet(), 'utf-8');
-			}
-			if ($this->inlineSettings) {
-				$this->csConvObj->convArray($this->inlineSettings, $this->getCharSet(), 'utf-8');
-			}
-		}
+		$this->loadJavaScriptLanguageStrings();
 		if (TYPO3_MODE === 'BE') {
 			$this->addAjaxUrlsToInlineSettings();
 		}
@@ -2310,9 +2239,33 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				// make sure the global TYPO3 is available
 				$inlineSettings = 'var TYPO3 = TYPO3 || {};' . CRLF . $inlineSettings;
 				$out .= $this->inlineJavascriptWrap[0] . $inlineSettings . $this->inlineJavascriptWrap[1];
+				if (TYPO3_MODE === 'BE') {
+					$this->loadRequireJsModule('TYPO3/CMS/Lang/Lang');
+				}
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Load the language strings into JavaScript
+	 */
+	protected function loadJavaScriptLanguageStrings() {
+		if (count($this->inlineLanguageLabelFiles)) {
+			foreach ($this->inlineLanguageLabelFiles as $languageLabelFile) {
+				$this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['errorMode']);
+			}
+		}
+		$this->inlineLanguageLabelFiles = array();
+		// Convert labels/settings back to UTF-8 since json_encode() only works with UTF-8:
+		if (TYPO3_MODE === 'FE' && $this->getCharSet() !== 'utf-8') {
+			if ($this->inlineLanguageLabels) {
+				$this->csConvObj->convArray($this->inlineLanguageLabels, $this->getCharSet(), 'utf-8');
+			}
+			if ($this->inlineSettings) {
+				$this->csConvObj->convArray($this->inlineSettings, $this->getCharSet(), 'utf-8');
+			}
+		}
 	}
 
 	/**
@@ -2824,6 +2777,15 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				break;
 		}
 		return $filename;
+	}
+
+	/**
+	 * Returns global language service instance
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 	/*****************************************************/

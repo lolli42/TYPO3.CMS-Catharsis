@@ -23,6 +23,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 
 /**
  * Module: TypoScript Tools
@@ -354,8 +356,13 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 
 		$lang = $this->getLanguageService();
 
-		$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('noTemplateDescription') . '<br />' . $lang->getLL('createTemplateToEditConfiguration'), $lang->getLL('noTemplate'), FlashMessage::INFO);
-		$theOutput = $flashMessage->render();
+		$title = $lang->getLL('noTemplate');
+		$message = '<p>' . $lang->getLL('noTemplateDescription') . '<br />' . $lang->getLL('createTemplateToEditConfiguration') . '</p>';
+		// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
+		// A complete refactoring is necessary at this point
+		$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+		$viewHelper = $objectManager->get(InfoboxViewHelper::class);
+		$theOutput = $viewHelper->render($title, $message, InfoboxViewHelper::STATE_INFO);
 
 		// New standard?
 		if ($newStandardTemplate) {

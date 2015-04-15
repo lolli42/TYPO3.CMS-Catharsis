@@ -99,20 +99,23 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function install($extensionKey) {
 		$extension = $this->enrichExtensionWithDetails($extensionKey);
-		$this->importInitialFiles($extension['siteRelPath'], $extensionKey);
-		$this->processDatabaseUpdates($extension);
 		$this->ensureConfiguredDirectoriesExist($extension);
 		if (!$this->isLoaded($extensionKey)) {
 			$this->loadExtension($extensionKey);
 		}
-		$this->reloadCaches();
-		$this->processRuntimeDatabaseUpdates($extensionKey);
-		$this->saveDefaultConfiguration($extension['key']);
 		if (!empty($extension['clearcacheonload']) || !empty($extension['clearCacheOnLoad'])) {
 			$this->cacheManager->flushCaches();
 		} else {
 			$this->cacheManager->flushCachesInGroup('system');
 		}
+		$this->reloadCaches();
+
+		$this->importInitialFiles($extension['siteRelPath'], $extensionKey);
+		$this->processDatabaseUpdates($extension);
+		$this->processRuntimeDatabaseUpdates($extensionKey);
+		$this->saveDefaultConfiguration($extension['key']);
+
+		$this->emitAfterExtensionInstallSignal($extensionKey);
 	}
 
 	/**
@@ -168,6 +171,15 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->packageManager->deactivatePackage($extensionKey);
 		$this->emitAfterExtensionUninstallSignal($extensionKey);
 		$this->cacheManager->flushCachesInGroup('system');
+	}
+
+	/**
+	 * Emits a signal after an extension has been installed
+	 *
+	 * @param string $extensionKey
+	 */
+	protected function emitAfterExtensionInstallSignal($extensionKey) {
+		$this->signalSlotDispatcher->dispatch(__CLASS__, 'afterExtensionInstall', array($extensionKey, $this));
 	}
 
 	/**
@@ -406,29 +418,44 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		return $sqlData;
 	}
 
+
 	/**
-	 * Checks if an update for an extension is available
+	 * Checks if an update for an extension is available which also resolves dependencies.
 	 *
 	 * @internal
 	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData
 	 * @return bool
 	 */
 	public function isUpdateAvailable(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData) {
-		$isUpdateAvailable = FALSE;
+		return (bool)$this->getUpdateableVersion($extensionData);
+	}
+
+	/**
+	 * Returns the updateable version for an extension which also resolves dependencies.
+	 *
+	 * @internal
+	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData
+	 * @return bool|\TYPO3\CMS\Extensionmanager\Domain\Model\Extension FALSE if no update available otherwise latest
+	 *                                                                 possible update
+	 */
+	public function getUpdateableVersion(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData) {
 		// Only check for update for TER extensions
 		$version = $extensionData->getIntegerVersion();
-		/** @var $highestTerVersionExtension \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
-		$highestTerVersionExtension = $this->extensionRepository->findHighestAvailableVersion($extensionData->getExtensionKey());
-		if ($highestTerVersionExtension instanceof \TYPO3\CMS\Extensionmanager\Domain\Model\Extension) {
-			$highestVersion = $highestTerVersionExtension->getIntegerVersion();
-			if ($highestVersion > $version) {
-				$this->dependencyUtility->checkDependencies($highestTerVersionExtension);
+
+		/** @var $extensionUpdates[] \TYPO3\CMS\Extensionmanager\Domain\Model\Extension */
+		$extensionUpdates = $this->extensionRepository->findByVersionRangeAndExtensionKeyOrderedByVersion(
+			$extensionData->getExtensionKey(),
+			$version + 1
+		);
+		if ($extensionUpdates->count() > 0) {
+			foreach ($extensionUpdates as $extensionUpdate) {
+				$this->dependencyUtility->checkDependencies($extensionUpdate);
 				if (!$this->dependencyUtility->hasDependencyErrors()) {
-					$isUpdateAvailable = TRUE;
+					return $extensionUpdate;
 				}
 			}
 		}
-		return $isUpdateAvailable;
+		return FALSE;
 	}
 
 	/**

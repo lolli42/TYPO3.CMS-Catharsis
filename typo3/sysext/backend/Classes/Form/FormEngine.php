@@ -29,6 +29,7 @@ use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -371,7 +372,7 @@ class FormEngine {
 	public $hookObjectsSingleField = array();
 
 	/**
-	 * Rows getting inserted into the alt_doc headers (when called from alt_doc.php)
+	 * Rows getting inserted into the headers (when called from the EditDocumentController)
 	 *
 	 * @var array
 	 */
@@ -876,7 +877,7 @@ class FormEngine {
 					|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
 					&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
 				) {
-					if ($backendUser->jsConfirmation(1)) {
+					if ($backendUser->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
 						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 					} else {
 						$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
@@ -919,10 +920,14 @@ class FormEngine {
 						$item = $this->renderDefaultLanguageContent($table, $field, $row, $item);
 						$item = $this->renderDefaultLanguageDiff($table, $field, $row, $item);
 					}
-					// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in alt_doc.php
+					// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in the EditDocumentController
 					$label = htmlspecialchars($PA['label'], ENT_COMPAT, 'UTF-8', FALSE);
 					if (MathUtility::canBeInterpretedAsInteger($row['uid']) && $PA['fieldTSConfig']['linkTitleToSelf'] && !GeneralUtility::_GP('columnsOnly')) {
-						$lTTS_url = 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $field . '&returnUrl=' . rawurlencode($this->thisReturnUrl());
+						$lTTS_url = BackendUtility::getModuleUrl('record_edit', array(
+							'edit[' . $table . '][' . $row['uid'] . ']' => 'edit',
+							'columnsOnly' => $field,
+							'returnUrl' => $this->thisReturnUrl()
+						));
 						$label = '<a href="' . htmlspecialchars($lTTS_url) . '">' . $label . '</a>';
 					}
 
@@ -1034,6 +1039,7 @@ class FormEngine {
 				'none' => 'NoneElement',
 				'user' => 'UserElement',
 				'flex' => 'FlexElement',
+				'image_manipulation' => 'ImageManipulationElement',
 				'unknown' => 'UnknownElement',
 			);
 			if (!isset($typeClassNameMapping[$type])) {
@@ -1365,7 +1371,7 @@ class FormEngine {
 	 * Will register data from original language records if the current record is a translation of another.
 	 * The original data is shown with the edited record in the form.
 	 * The information also includes possibly diff-views of what changed in the original record.
-	 * Function called from outside (see alt_doc.php + quick edit) before rendering a form for a record
+	 * Function called from outside (see EditDocumentController + quick edit) before rendering a form for a record
 	 *
 	 * @param string $table Table name of the record being edited
 	 * @param array $rec Record array of the record being edited
@@ -1592,12 +1598,12 @@ class FormEngine {
 	/**
 	 * Create dynamic tab menu
 	 *
-	 * @param array $parts Parts for the tab menu, fed to template::getDynTabMenu()
-	 * @param string $idString ID string for the tab menu
+	 * @param array $menuItems Items for the tab menu, fed to template::getDynTabMenu()
+	 * @param string $identString ID string for the tab menu
 	 * @param int $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled, deprecated, and not in use anymore since TYPO3 CMS 7
 	 * @return string HTML for the menu
 	 */
-	public function getDynTabMenu($parts, $idString, $dividersToTabsBehaviour = -1) {
+	public function getDynTabMenu($menuItems, $identString, $dividersToTabsBehaviour = -1) {
 		// if the third (obsolete) parameter is used, throw a deprecation warning
 		if ($dividersToTabsBehaviour !== -1) {
 			GeneralUtility::deprecationLog('The parameter $dividersToTabsBehaviour in FormEngine::getDynTabMenu is deprecated. Please remove this option from your code');
@@ -1605,16 +1611,18 @@ class FormEngine {
 		$docTemplate = $this->getDocumentTemplate();
 		if (is_object($docTemplate)) {
 			$docTemplate->backPath = '';
-			return $docTemplate->getDynTabMenu($parts, $idString, 0, FALSE, 1, FALSE, 1);
+			return $docTemplate->getDynamicTabMenu($menuItems, $identString, 1, FALSE, FALSE);
 		} else {
 			$output = '';
-			foreach ($parts as $singlePad) {
-				$output .= '
-				<h3>' . htmlspecialchars($singlePad['label']) . '</h3>
-				' . ($singlePad['description'] ? '<p class="c-descr">' . nl2br(htmlspecialchars($singlePad['description'])) . '</p>' : '') . '
-				' . $singlePad['content'];
+			foreach ($menuItems as $menuItem) {
+				if (!empty($menuItem['content'])) {
+					$output .= '
+					<h3>' . htmlspecialchars($menuItem['label']) . '</h3>
+					' . ($menuItem['description'] ? '<p>' . nl2br(htmlspecialchars($menuItem['description'])) . '</p>' : '') . '
+					' . $menuItem['content'];
+				}
 			}
-			return '<div class="tab-content">' . $output . '</div>';
+			return $output;
 		}
 	}
 
@@ -1661,7 +1669,7 @@ class FormEngine {
 
 	/**
 	 * Wraps all the table rows into a single table.
-	 * Used externally from scripts like alt_doc.php and db_layout.php (which uses TCEforms...)
+	 * Used externally from scripts like EditDocumentController and PageLayoutController (which uses FormEngine)
 	 *
 	 * @param string $c Code to output between table-parts; table rows
 	 * @param array $rec The record
@@ -1964,7 +1972,7 @@ class FormEngine {
 			// support placeholders for IE9 and lower
 			$clientInfo = GeneralUtility::clientInfo();
 			if ($clientInfo['BROWSER'] == 'msie' && $clientInfo['VERSION'] <= 9) {
-				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
+				$this->loadJavascriptLib('sysext/core/Resources/Public/JavaScript/Contrib/placeholders.jquery.min.js');
 			}
 
 			// @todo: remove scriptaclous once suggest is moved to RequireJS, see #55575
@@ -1984,7 +1992,6 @@ class FormEngine {
 			}
 			$out .= '
 			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
-			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg('', 'gfx/content_selected.gif', '', 1) . '";
 			TBE_EDITOR.images.clear.src = "clear.gif";
 
 			TBE_EDITOR.formname = "' . $formname . '";
@@ -2000,8 +2007,8 @@ class FormEngine {
 			TBE_EDITOR.labels.maxItemsAllowed = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.maxItemsAllowed')) . ';
 			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login')) . ';
 			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.onChangeAlert')) . ';
+			TBE_EDITOR.labels.remainingCharacters = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remainingCharacters')) . ';
 			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
-			TBE_EDITOR.backend_interface = "' . $beUserAuth->uc['interfaceSetup'] . '";
 
 			TBE_EDITOR.customEvalFunctions = {};
 
@@ -2227,7 +2234,7 @@ class FormEngine {
 								$table,
 								$field,
 								'',
-								'thumbs.php',
+								'',
 								$config['config']['uploadfolder'], 0, ' align="middle"'
 							) .
 							($absFilePath ? $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($fileIcon, $absFilePath, 0, 1, '', '+copy,info,edit,view') : $fileIcon) . $imgPath .
@@ -2946,7 +2953,7 @@ class FormEngine {
 		$tCells = array();
 		$pct = round(100 / count($sArr));
 		foreach ($sArr as $sKey => $sheetCfg) {
-			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
+			if ($this->getBackendUserAuthentication()->jsConfirmation(JsConfirmation::TYPE_CHANGE)) {
 				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
 					. 'document.editform[\'' . $elName . '\'].value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
 			} else {

@@ -158,9 +158,16 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$editActionLink = '';
 			// Admins are allowed to edit sys_action records
 			if ($this->getBackendUser()->isAdmin()) {
-				$returnUrl = rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
-				$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[sys_action][' . $actionRow['uid'] . ']=edit';
-				$editActionLink = '<a class="edit" href="' . $link . '">' . '<img class="icon"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/edit2.gif') . ' title="' . $this->getLanguageService()->getLL('edit-sys_action') . '" alt="" />' . $this->getLanguageService()->getLL('edit-sys_action') . '</a>';
+				$link = BackendUtility::getModuleUrl(
+					'record_edit',
+					array(
+						'edit[sys_action][' . $actionRow['uid'] . ']' => 'edit',
+						'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+					),
+					FALSE,
+					TRUE
+				);
+				$editActionLink = '<a class="edit" href="' . $link . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->getLanguageService()->getLL('edit-sys_action'))) . $this->getLanguageService()->getLL('edit-sys_action') . '</a>';
 			}
 			$actionList[] = array(
 				'uid' => $actionRow['uid'],
@@ -193,8 +200,15 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		}
 		// Admin users can create a new action
 		if ($this->getBackendUser()->isAdmin()) {
-			$returnUrl = rawurlencode($this->moduleUrl);
-			$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[sys_action][0]=new';
+			$link = BackendUtility::getModuleUrl(
+				'record_edit',
+				array(
+					'edit[sys_action][0]' => 'new',
+					'returnUrl' => $this->moduleUrl
+				),
+				FALSE,
+				TRUE
+			);
 			$content .= '<p>' .
 				'<a href="' . $link . '" title="' . $this->getLanguageService()->getLL('new-sys_action') . '">' .
 				\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new', array('class' => 'icon', 'title' => $this->getLanguageService()->getLL('new-sys_action'))) .
@@ -609,8 +623,15 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 * @return void Redirect to form to create a record
 	 */
 	protected function viewNewRecord($record) {
-		$returnUrl = rawurlencode($this->moduleUrl);
-		$link = GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . $returnUrl . '&edit[' . $record['t3_tables'] . '][' . (int)$record['t3_listPid'] . ']=new';
+		$link = BackendUtility::getModuleUrl(
+			'record_edit',
+			array(
+				'edit[' . $record['t3_tables'] . '][' . (int)$record['t3_listPid'] . ']' => 'new',
+				'returnUrl' => $this->moduleUrl
+			),
+			FALSE,
+			TRUE
+		);
 		\TYPO3\CMS\Core\Utility\HttpUtility::redirect($link);
 	}
 
@@ -637,11 +658,20 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			if (isset($record['crdate'])) {
 				$description .= ' - ' . BackendUtility::dateTimeAge($record['crdate']);
 			}
+			$link = BackendUtility::getModuleUrl(
+				'record_edit',
+				array(
+					'edit[' . $el['table'] . '][' . $el['id'] . ']' => 'edit',
+					'returnUrl' => $this->moduleUrl
+				),
+				FALSE,
+				TRUE
+			);
 			$actionList[$el['id']] = array(
 				'title' => $title,
 				'description' => BackendUtility::getRecordTitle($el['table'], $dbAnalysis->results[$el['table']][$el['id']]),
 				'descriptionHtml' => $description,
-				'link' => $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '&edit[' . $el['table'] . '][' . $el['id'] . ']=edit',
+				'link' => $link,
 				'icon' => \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord($el['table'], $dbAnalysis->results[$el['table']][$el['id']], array('title' => htmlspecialchars($path)))
 			);
 		}
@@ -702,9 +732,9 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 						. htmlspecialchars(BackendUtility::getModuleUrl('system_dbint')
 							. '&id=' . '&SET[function]=search' . '&SET[search]=query'
 							. '&storeControl[STORE]=-' . $record['uid'] . '&storeControl[LOAD]=1')
-						. '">
-						<img class="icon"' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'],
-						'gfx/edit2.gif') . ' alt="" />' . $this->getLanguageService()->getLL(($queryIsEmpty ? 'action_createQuery'
+						. '">'
+						. \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-info')
+						. $this->getLanguageService()->getLL(($queryIsEmpty ? 'action_createQuery'
 						: 'action_editQuery')) . '</a><br /><br />';
 				}
 				$content .= $this->taskObject->doc->section($this->getLanguageService()->getLL('action_t2_result'), $actionContent, 0, 1);
@@ -787,7 +817,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 
 				' . $dblist->CBfunctions() . '
 				function editRecords(table,idList,addParams,CBflag) {
-					window.location.href="' . $GLOBALS['BACK_PATH'] . 'alt_doc.php?returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI')) . '&edit["+table+"]["+idList+"]=edit"+addParams;
+					window.location.href="' . BackendUtility::getModuleUrl('record_edit', array('returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI'))) . '&edit["+table+"]["+idList+"]=edit"+addParams;
 				}
 				function editList(table,idList) {
 					var list="";

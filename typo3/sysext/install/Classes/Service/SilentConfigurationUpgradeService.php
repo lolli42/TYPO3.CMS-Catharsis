@@ -78,6 +78,10 @@ class SilentConfigurationUpgradeService {
 		'GFX/TTFdpi',
 		// #64872
 		'SYS/useCachingFramework',
+		// #65912
+		'FE/allowedTempPaths',
+		// #66034
+		'FE/activateContentAdapter',
 	);
 
 	/**

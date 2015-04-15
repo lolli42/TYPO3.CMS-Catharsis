@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Frontend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -97,7 +98,7 @@ EOF;
 	/**
 	 * @var string
 	 */
-	protected $imageTag = '<img src="###publicUrl###" alt="###alt###" title="###title###" />';
+	protected $imageTag = '<img src="###publicUrl###" alt="###alt###" title="###title###" width="###width###" height="###height###" />';
 
 	/**
 	 * Init function, setting the input vars in the global space.
@@ -134,9 +135,9 @@ EOF;
 
 		try {
 			if (MathUtility::canBeInterpretedAsInteger($fileUid)) {
-				$this->file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->getFileObject((int)$fileUid);
+				$this->file = ResourceFactory::getInstance()->getFileObject((int)$fileUid);
 			} else {
-				$this->file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($fileUid);
+				$this->file = ResourceFactory::getInstance()->retrieveFileOrFolderObject($fileUid);
 			}
 		} catch (\TYPO3\CMS\Core\Exception $e) {
 			HttpUtility::setResponseCodeAndExit(HttpUtility::HTTP_STATUS_404);
@@ -154,7 +155,9 @@ EOF;
 		$imageTagMarkers = array(
 			'###publicUrl###' => htmlspecialchars($processedImage->getPublicUrl()),
 			'###alt###' => htmlspecialchars($this->file->getProperty('alternative') ?: $this->title),
-			'###title###' => htmlspecialchars($this->file->getProperty('title') ?: $this->title)
+			'###title###' => htmlspecialchars($this->file->getProperty('title') ?: $this->title),
+			'###width###' => $processedImage->getProperty('width'),
+			'###height###' => $processedImage->getProperty('height')
 		);
 		$this->imageTag = str_replace(array_keys($imageTagMarkers), array_values($imageTagMarkers), $this->imageTag);
 		if ($this->wrap !== '|') {

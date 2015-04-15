@@ -2,6 +2,12 @@
 defined('TYPO3_MODE') or die();
 
 if (TYPO3_MODE === 'BE') {
+	// Register record edit module
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'record_edit',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/FormEngine/'
+	);
+
 	// Register record history module
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'record_history',
@@ -18,6 +24,13 @@ if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'logout',
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Logout/'
+	);
+
+	// Register file_navframe
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addCoreNavigationComponent('file', 'file_navframe');
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_navframe',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/FileSystemNavigationFrame/'
 	);
 
 	// Register file_edit
@@ -144,5 +157,11 @@ if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'browser',
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Browser/'
+	);
+
+	// Register dummy window
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'dummy',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Dummy/'
 	);
 }

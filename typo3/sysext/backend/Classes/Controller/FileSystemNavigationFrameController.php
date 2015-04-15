@@ -102,7 +102,7 @@ class FileSystemNavigationFrameController {
 			$GLOBALS['SOBE']->browser->act = $this->scopeData['browser']['act'];
 		} else {
 			$this->foldertree = GeneralUtility::makeInstance(\TYPO3\CMS\Filelist\FileListFolderTree::class);
-			$this->foldertree->thisScript = 'alt_file_navframe.php';
+			$this->foldertree->thisScript = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('file_navframe');
 		}
 
 		$this->foldertree->ext_IconMode = $GLOBALS['BE_USER']->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
@@ -141,7 +141,7 @@ class FileSystemNavigationFrameController {
 		$this->doc->JScode .= $this->doc->wrapScriptTags(($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
 		// Function, loading the list frame from navigation tree:
 		function jumpTo(id, linkObj, highlightID, bank) {
-			var theUrl = top.TS.PATH_typo3 + top.currentSubScript ;
+			var theUrl = top.currentSubScript;
 			if (theUrl.indexOf("?") != -1) {
 				theUrl += "&id=" + id
 			} else {

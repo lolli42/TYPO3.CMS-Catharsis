@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
@@ -52,6 +53,12 @@ class DownloadController extends AbstractController {
 	 * @inject
 	 */
 	protected $downloadUtility;
+
+	/**
+	 * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
+	 * @inject
+	 */
+	protected $configurationUtility;
 
 	/**
 	 * Check extension dependencies
@@ -104,9 +111,11 @@ class DownloadController extends AbstractController {
 	 */
 	public function installFromTerAction(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension, $downloadPath) {
 		list($result, $errorMessages) = $this->installFromTer($extension, $downloadPath);
+		$emConfiguration = $this->configurationUtility->getCurrentConfiguration('extensionmanager');
 		$this->view
 			->assign('result', $result)
 			->assign('extension', $extension)
+			->assign('installationTypeLanguageKey', (bool)$emConfiguration['automaticInstallation']['value'] ? '' : '.downloadOnly')
 			->assign('unresolvedDependencies', $errorMessages);
 	}
 
@@ -181,15 +190,19 @@ class DownloadController extends AbstractController {
 	 */
 	protected function updateExtensionAction() {
 		$extensionKey = $this->request->getArgument('extension');
-		$highestTerVersionExtension = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
+		$version = $this->request->getArgument('version');
+		$extension = $this->extensionRepository->findOneByExtensionKeyAndVersion($extensionKey, $version);
+		if (!$extension instanceof Extension) {
+			$extension = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
+		}
 		try {
-			$this->managementService->downloadMainExtension($highestTerVersionExtension);
+			$this->managementService->downloadMainExtension($extension);
 			$this->addFlashMessage(
 				htmlspecialchars($this->translate('extensionList.updateFlashMessage.body', array($extensionKey))),
 				$this->translate('extensionList.updateFlashMessage.title')
 			);
 		} catch (\Exception $e) {
-			$this->addFlashMessage(htmlspecialchars($e->getMessage()), '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$this->addFlashMessage(htmlspecialchars($e->getMessage()), '', FlashMessage::ERROR);
 		}
 
 		return '';
@@ -204,14 +217,26 @@ class DownloadController extends AbstractController {
 	 */
 	protected function updateCommentForUpdatableVersionsAction() {
 		$extensionKey = $this->request->getArgument('extension');
-		$version = $this->request->getArgument('integerVersion');
+		$versionStart = $this->request->getArgument('integerVersionStart');
+		$versionStop = $this->request->getArgument('integerVersionStop');
 		$updateComments = array();
 		/** @var Extension[] $updatableVersions */
-		$updatableVersions = $this->extensionRepository->findByVersionRangeAndExtensionKeyOrderedByVersion($extensionKey, $version);
+		$updatableVersions = $this->extensionRepository->findByVersionRangeAndExtensionKeyOrderedByVersion(
+			$extensionKey,
+			$versionStart,
+			$versionStop
+		);
+		$highestPossibleVersion = FALSE;
+
 		foreach ($updatableVersions as $updatableVersion) {
+			if ($highestPossibleVersion === FALSE) {
+				$highestPossibleVersion = $updatableVersion->getVersion();
+			}
 			$updateComments[$updatableVersion->getVersion()] = $updatableVersion->getUpdateComment();
 		}
-		$this->view->assign('updateComments', $updateComments)->assign('extensionKey', $extensionKey);
+		$this->view->assign('updateComments', $updateComments)
+			->assign('extensionKey', $extensionKey)
+			->assign('version', $highestPossibleVersion);
 	}
 
 	/**
@@ -227,6 +252,7 @@ class DownloadController extends AbstractController {
 		$errorMessages = array();
 		try {
 			$this->downloadUtility->setDownloadPath($downloadPath);
+			$this->managementService->setAutomaticInstallationEnabled($this->configurationUtility->getCurrentConfiguration('extensionmanager')['automaticInstallation']['value']);
 			if (($result = $this->managementService->installExtension($extension)) === FALSE) {
 				$errorMessages = $this->managementService->getDependencyErrors();
 			}

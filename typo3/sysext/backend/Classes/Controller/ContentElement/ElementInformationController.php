@@ -279,17 +279,19 @@ class ElementInformationController {
 
 			// else check if we can create an Image preview
 			} elseif (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileExtension)) {
-				$thumbUrl = $this->fileObject->process(
+				$processedFile = $this->fileObject->process(
 					ProcessedFile::CONTEXT_IMAGEPREVIEW,
 					array(
 						'width' => '590m',
 						'height' => '400m'
 					)
-				)->getPublicUrl(TRUE);
-
+				);
 				// Create thumbnail image?
-				if ($thumbUrl) {
+				if ($processedFile) {
+					$thumbUrl = $processedFile->getPublicUrl(TRUE);
 					$previewTag .= '<img class="img-responsive img-thumbnail" src="' . $thumbUrl . '" ' .
+						'width="' . $processedFile->getProperty('width') . '" ' .
+						'height="' . $processedFile->getProperty('height') . '" ' .
 						'alt="' . htmlspecialchars(trim($this->fileObject->getName())) . '" ' .
 						'title="' . htmlspecialchars(trim($this->fileObject->getName())) . '" />';
 				}
@@ -545,7 +547,7 @@ class ElementInformationController {
 		}
 
 		// Edit button
-		$editOnClick = BackendUtility::editOnClick('&edit[' . $table . '][' . $uid . ']=edit', $GLOBALS['BACK_PATH']);
+		$editOnClick = BackendUtility::editOnClick('&edit[' . $table . '][' . $uid . ']=edit');
 		$pageActionIcons = '
 			<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($editOnClick) . '">
 				' . IconUtility::getSpriteIcon('actions-document-open') . '
@@ -613,6 +615,7 @@ class ElementInformationController {
 
 		// Compile information for title tag:
 		$infoData = array();
+		$infoDataHeader = '';
 		if (count($rows)) {
 			$infoDataHeader = '
 				<tr>
@@ -635,11 +638,15 @@ class ElementInformationController {
 				}
 			}
 			$record = BackendUtility::getRecord($row['tablename'], $row['recuid']);
-			$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
-			$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
-			$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
-			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['tablename'] . '][' . $row['recuid'] . ']=edit', $GLOBALS['BACK_PATH']);
-			$infoData[] = '
+			if ($record) {
+				$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
+				$parentRecordTitle = is_array($parentRecord)
+					? BackendUtility::getRecordTitle('pages', $parentRecord)
+					: '';
+				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
+				$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
+				$editOnClick = BackendUtility::editOnClick('&edit[' . $row['tablename'] . '][' . $row['recuid'] . ']=edit');
+				$infoData[] = '
 				<tr>
 					<td class="col-icon">
 						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '">
@@ -653,8 +660,8 @@ class ElementInformationController {
 					</td>
 					<td>' . $GLOBALS['LANG']->sL($GLOBALS['TCA'][$row['tablename']]['ctrl']['title'], TRUE) . '</td>
 					<td>
-						<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:page') . ': ' .
-							htmlspecialchars(BackendUtility::getRecordTitle('pages', $parentRecord)) . ' (uid=' . $record['pid'] . ')">
+						<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:page') . ': '
+							. htmlspecialchars($parentRecordTitle) . ' (uid=' . $record['pid'] . ')">
 							' . $record['uid'] . '
 						</span>
 					</td>
@@ -664,6 +671,20 @@ class ElementInformationController {
 					<td>' . htmlspecialchars($row['sorting']) . '</td>
 					<td class="col-control">' . $actions . '</td>
 				</tr>';
+			} else {
+				$infoData[] = '
+				<tr>
+					<td class="col-icon"></td>
+					<td class="col-title">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:show_item.php.missing_record') . ' (uid=' . $row['recuid'] . ')</td>
+					<td>' . htmlspecialchars($GLOBALS['LANG']->sL($GLOBALS['TCA'][$row['tablename']]['ctrl']['title']) ?: $row['tablename']) . '</td>
+					<td></td>
+					<td>' . htmlspecialchars($this->getLabelForTableColumn($row['tablename'], $row['field'])) . '</td>
+					<td>' . htmlspecialchars($row['flexpointer']) . '</td>
+					<td>' . htmlspecialchars($row['softref_key']) . '</td>
+					<td>' . htmlspecialchars($row['sorting']) . '</td>
+					<td class="col-control"></td>
+				</tr>';
+			}
 		}
 		$referenceLine = '';
 		if (count($infoData)) {
@@ -714,7 +735,7 @@ class ElementInformationController {
 			$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
 			$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
 			$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
-			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit', $GLOBALS['BACK_PATH']);
+			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit');
 			$infoData[] = '
 				<tr>
 					<td class="col-icon">

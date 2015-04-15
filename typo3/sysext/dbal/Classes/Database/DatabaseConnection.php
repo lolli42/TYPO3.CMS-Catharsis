@@ -495,7 +495,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$new_id = $this->sql_insert_id();
 					$where = $this->cache_autoIncFields[$table] . '=' . $new_id;
 					foreach ($this->lastQuery[1] as $field => $content) {
-						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table) . ' WHERE ' . $this->quoteWhereClause($where);
+						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table, TRUE) . ' WHERE ' . $this->quoteWhereClause($where);
 						$this->query($stmt);
 					}
 				}
@@ -664,7 +664,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				} else {
 					$sqlResult = $this->query($this->lastQuery[0]);
 					foreach ($this->lastQuery[1] as $field => $content) {
-						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table) . ' WHERE ' . $this->quoteWhereClause($where);
+						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table, TRUE) . ' WHERE ' . $this->quoteWhereClause($where);
 						$this->query($stmt);
 					}
 				}
@@ -1036,7 +1036,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				} elseif ($mt[0] == 'F') {
 					$v = (double) $v;
 				}
-				$nArr[$this->quoteFieldNames($k)] = !in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table) : $v;
+				$nArr[$this->quoteFieldNames($k)] = !in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table, TRUE) : $v;
 			}
 		}
 		if (count($blobFields) || count($clobFields)) {
@@ -1148,7 +1148,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						} elseif ($mt[0] == 'F') {
 							$v = (double) $v;
 						}
-						$nArr[] = $this->quoteFieldNames($k) . '=' . (!in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table) : $v);
+						$nArr[] = $this->quoteFieldNames($k) . '=' . (!in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table, TRUE) : $v);
 					}
 				}
 			}
@@ -3163,6 +3163,28 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function runningADOdbDriver($driver) {
 		return strpos($this->handlerCfg[$this->lastHandlerKey]['config']['driver'], $driver) !== FALSE;
+	}
+
+	/**
+	 * Get the SQL server version
+	 *
+	 * @return string
+	 */
+	public function getServerVersion() {
+		$result = '';
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
+			case 'native':
+				$result = $this->handlerInstance[$this->lastHandlerKey]['link']->server_info;
+				break;
+			case 'adodb':
+			case 'userdefined':
+				if (is_object($this->handlerInstance[$this->lastHandlerKey])) {
+					$serverInfo = $this->handlerInstance[$this->lastHandlerKey]->ServerInfo();
+					$result = $serverInfo['version'];
+				}
+				break;
+		}
+		return $result;
 	}
 
 	/************************************
