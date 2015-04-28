@@ -145,7 +145,7 @@ abstract class AbstractTreeView {
 	 * @see addField()
 	 * @var array
 	 */
-	public $fieldArray = array('uid', 'title');
+	public $fieldArray = array('uid', 'pid', 'title');
 
 	/**
 	 * List of other fields which are ALLOWED to set (here, based on the "pages" table!)
@@ -747,7 +747,8 @@ abstract class AbstractTreeView {
 		$idH = array();
 		// Traverse the records:
 		while ($crazyRecursionLimiter > 0 && ($row = $this->getDataNext($res, $subCSSclass))) {
-			if (!$GLOBALS['BE_USER']->isInWebMount($row['uid'])) {
+			$pageUid = ($this->table === 'pages') ? $row['uid'] : $row['pid'];
+			if (!$GLOBALS['BE_USER']->isInWebMount($pageUid)) {
 				// Current record is not within web mount => skip it
 				continue;
 			}
@@ -756,7 +757,7 @@ abstract class AbstractTreeView {
 			$crazyRecursionLimiter--;
 			$newID = $row['uid'];
 			if ($newID == 0) {
-				throw new \RuntimeException('Endless recursion detected: TYPO3 has detected an error in the database. Please fix it manually (e.g. using phpMyAdmin) and change the UID of ' . $this->table . ':0 to a new value.<br /><br />See <a href="http://forge.typo3.org/issues/16150" target="_blank">forge.typo3.org/issues/16150</a> to get more information about a possible cause.', 1294586383);
+				throw new \RuntimeException('Endless recursion detected: TYPO3 has detected an error in the database. Please fix it manually (e.g. using phpMyAdmin) and change the UID of ' . $this->table . ':0 to a new value. See http://forge.typo3.org/issues/16150 to get more information about a possible cause.', 1294586383);
 			}
 			// Reserve space.
 			$this->tree[] = array();

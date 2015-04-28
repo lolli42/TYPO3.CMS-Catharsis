@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Locking;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Locking\Exception\LockAcquireWouldBlockException;
+use TYPO3\CMS\Core\Locking\Exception\LockCreateException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -47,7 +49,7 @@ class SimpleLockStrategy implements LockingStrategyInterface {
 
 	/**
 	 * @param string $subject ID to identify this lock in the system
-	 * @throws \RuntimeException
+	 * @throws LockCreateException if the lock could not be created
 	 */
 	public function __construct($subject) {
 		// Tests if the directory for simple locks is available.
@@ -59,13 +61,13 @@ class SimpleLockStrategy implements LockingStrategyInterface {
 			// does not exist, this issue should be solved on a different
 			// level of the application.
 			if (!GeneralUtility::mkdir($path)) {
-				throw new \RuntimeException('Cannot create directory ' . $path, 1395140007);
+				throw new LockCreateException('Cannot create directory ' . $path, 1395140007);
 			}
 		}
 		if (!is_writable($path)) {
-			throw new \RuntimeException('Cannot write to directory ' . $path, 1396278700);
+			throw new LockCreateException('Cannot write to directory ' . $path, 1396278700);
 		}
-		$this->filePath = $path . md5((string)$subject);
+		$this->filePath = $path . 'simple_' . md5((string)$subject);
 	}
 
 	/**
@@ -131,7 +133,7 @@ class SimpleLockStrategy implements LockingStrategyInterface {
 	 *
 	 * @param int $mode LOCK_CAPABILITY_EXCLUSIVE or self::LOCK_CAPABILITY_NOBLOCK
 	 * @return bool Returns TRUE if the lock was acquired successfully
-	 * @throws \RuntimeException with code 1428700748 if the acquire would have blocked and NOBLOCK was set
+	 * @throws LockAcquireWouldBlockException
 	 */
 	public function acquire($mode = self::LOCK_CAPABILITY_EXCLUSIVE) {
 		if ($this->isAcquired) {
@@ -165,7 +167,7 @@ class SimpleLockStrategy implements LockingStrategyInterface {
 		}
 
 		if ($mode & self::LOCK_CAPABILITY_NOBLOCK && !$this->isAcquired && $wouldBlock) {
-			throw new \RuntimeException('Failed to acquire lock because the request would block.', 1428700748);
+			throw new LockAcquireWouldBlockException('Failed to acquire lock because the request would block.', 1428700748);
 		}
 
 		return $this->isAcquired;
@@ -175,7 +177,15 @@ class SimpleLockStrategy implements LockingStrategyInterface {
 	 * @return int Returns a priority for the method. 0 to 100, 100 is highest
 	 */
 	static public function getPriority() {
-		return 25;
+		return 50;
 	}
 
+	/**
+	 * Destroys the resource associated with the lock
+	 *
+	 * @return void
+	 */
+	public function destroy() {
+		@unlink($this->filePath);
+	}
 }

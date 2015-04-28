@@ -14,12 +14,18 @@ namespace TYPO3\CMS\Core\Locking;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Locking\Exception\LockAcquireException;
+use TYPO3\CMS\Core\Locking\Exception\LockCreateException;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Semaphore locking
  *
  * @author Markus Klein <klein.t3@reelworx.at>
  */
 class SemaphoreLockStrategy implements LockingStrategyInterface {
+
+	const FILE_LOCK_FOLDER = 'typo3temp/locks/';
 
 	/**
 	 * @var mixed Identifier used for this lock
@@ -32,15 +38,38 @@ class SemaphoreLockStrategy implements LockingStrategyInterface {
 	protected $resource;
 
 	/**
+	 * @var string
+	 */
+	protected $filePath = '';
+
+	/**
 	 * @var bool TRUE if lock is acquired
 	 */
 	protected $isAcquired = FALSE;
 
 	/**
 	 * @param string $subject ID to identify this lock in the system
+	 * @throws LockCreateException
 	 */
 	public function __construct($subject) {
-		$this->id = abs(crc32((string)$subject));
+		$path = PATH_site . self::FILE_LOCK_FOLDER;
+		if (!is_dir($path)) {
+			// Not using mkdir_deep on purpose here, if typo3temp itself
+			// does not exist, this issue should be solved on a different
+			// level of the application.
+			if (!GeneralUtility::mkdir($path)) {
+				throw new LockCreateException('Cannot create directory ' . $path, 1395140007);
+			}
+		}
+		if (!is_writable($path)) {
+			throw new LockCreateException('Cannot write to directory ' . $path, 1396278700);
+		}
+		$this->filePath = $path  . 'sem_' . md5((string)$subject);
+		touch($this->filePath);
+		$this->id = ftok($this->filePath, 'A');
+		if ($this->id === FALSE) {
+			throw new LockCreateException('Cannot create key for semaphore using path ' . $this->filePath, 1396278734);
+		}
 	}
 
 	/**
@@ -50,7 +79,9 @@ class SemaphoreLockStrategy implements LockingStrategyInterface {
 		$this->release();
 		// We do not call sem_remove() since this would remove the resource for other processes,
 		// we leave that to the system. This is not clean, but there's no other way to determine when
-		// a semaphore is no longer needed.
+		// a semaphore is no longer needed as a website is generally running endlessly
+		// and we have no way to detect if there is a process currently waiting on that lock
+		// or if the server is shutdown
 	}
 
 	/**
@@ -90,7 +121,7 @@ class SemaphoreLockStrategy implements LockingStrategyInterface {
 	 *
 	 * @param int $mode LOCK_CAPABILITY_EXCLUSIVE
 	 * @return bool Returns TRUE if the lock was acquired successfully
-	 * @throws \RuntimeException
+	 * @throws LockAcquireException if a semaphore could not be retrieved
 	 */
 	public function acquire($mode = self::LOCK_CAPABILITY_EXCLUSIVE) {
 		if ($this->isAcquired) {
@@ -99,7 +130,7 @@ class SemaphoreLockStrategy implements LockingStrategyInterface {
 
 		$this->resource = sem_get($this->id, 1);
 		if ($this->resource === FALSE) {
-			throw new \RuntimeException('Unable to get semaphore with id ' . $this->id, 1313828196);
+			throw new LockAcquireException('Unable to get semaphore with id ' . $this->id, 1313828196);
 		}
 
 		$this->isAcquired = (bool)sem_acquire($this->resource);
@@ -110,7 +141,19 @@ class SemaphoreLockStrategy implements LockingStrategyInterface {
 	 * @return int Returns a priority for the method. 0 to 100, 100 is highest
 	 */
 	static public function getPriority() {
-		return 75;
+		return 25;
+	}
+
+	/**
+	 * Destroys the resource associated with the lock
+	 *
+	 * @return void
+	 */
+	public function destroy() {
+		if ($this->resource) {
+			sem_remove($this->resource);
+			@unlink($this->filePath);
+		}
 	}
 
 }

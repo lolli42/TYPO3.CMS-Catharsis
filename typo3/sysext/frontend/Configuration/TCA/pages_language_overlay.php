@@ -20,7 +20,6 @@ return array(
 		'transOrigDiffSourceField' => 'l18n_diffsource',
 		'shadowColumnsForNewPlaceholders' => 'title',
 		'languageField' => 'sys_language_uid',
-		'mainpalette' => 1,
 		'type' => 'doktype',
 		'typeicon_classes' => array(
 			'default' => 'mimetypes-x-content-page-language-overlay'
@@ -51,7 +50,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0'
 			)
@@ -62,7 +60,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0',
 				'range' => array(

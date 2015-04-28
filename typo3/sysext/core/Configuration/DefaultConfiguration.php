@@ -268,6 +268,14 @@ return array(
 				'category' => \TYPO3\CMS\Core\Resource\Collection\CategoryBasedFileCollection::class,
 			)
 		),
+		'FileInfo' => array(
+			// Static mapping for file extensions to mime types.
+			// In special cases the mime type is not detected correctly.
+			// Use this array only if the automatic detection does not work correct!
+			'fileExtensionToMimeType' => array(
+				'svg' => 'image/svg+xml'
+			)
+		),
 		'isInitialInstallationInProgress' => FALSE,		// Boolean: If TRUE, the installation is 'in progress'. This value is handled within the install tool step installer internally.
 		'clearCacheSystem' => FALSE,		// Boolean: If set, the toolbar menu entry for clearing system caches (core cache, class cache, etc.) is visible for admin users.
 	),
@@ -613,7 +621,6 @@ return array(
 		'customPermOptions' => array(),						// Array with sets of custom permission options. Syntax is; 'key' => array('header' => 'header string, language splitted', 'items' => array('key' => array('label, language splitted', 'icon reference', 'Description text, language splitted'))). Keys cannot contain ":|," characters.
 		'fileDenyPattern' => FILE_DENY_PATTERN_DEFAULT,		// A perl-compatible regular expression (without delimiters!) that - if it matches a filename - will deny the file upload/rename or whatever in the webspace. For security reasons, files with multiple extensions have to be denied on an Apache environment with mod_alias, if the filename contains a valid php handler in an arbitary position. Also, ".htaccess" files have to be denied. Matching is done case-insensitive. Default value is stored in constant FILE_DENY_PATTERN_DEFAULT
 		'interfaces' => 'backend',							// This determines which interface options is available in the login prompt and in which order (All options: ",backend,frontend")
-		'loginNewsTitle' => '',								// Define alternative header message for the LoginNews. If this var is empty, the default header "Important messages:" is displayed.
 		'notificationPrefix' => '[TYPO3 Note]',				// String: Used to prefix the subject of mails sent in the taskcenter
 		'explicitADmode' => 'explicitDeny',					// Sets the general allow/deny mode for selector box values. Value can be either "explicitAllow" or "explicitDeny", nothing else!
 		'niceFlexFormXMLtags' => TRUE,						// If set, the flexform XML will be stored with meaningful tags which can be validated with DTD schema. If you rely on custom reading of the XML from pre-4.0 versions you should set this to FALSE if you don't like to change your reader code (internally it is insignificant since \TYPO3\CMS\Core\Utility\GeneralUtility::xml2array() doesn't care for the tags if the index-attribute value is set)
@@ -638,19 +645,19 @@ return array(
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::createNewRecord' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '->processAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::getRecordDetails' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '->processAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::synchronizeLocalizeRecords' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '->processAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::setExpandedCollapsedState' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '->processAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_suggest::searchRecord' => array(

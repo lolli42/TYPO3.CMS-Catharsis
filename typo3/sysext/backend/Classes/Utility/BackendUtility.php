@@ -2205,6 +2205,9 @@ class BackendUtility {
 							$rParts = array();
 							if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
 								$whereClause = '';
+								if (!empty($theColConf['foreign_table_field'])) {
+									$whereClause .= ' AND ' . $theColConf['foreign_table_field'] . ' = ' . static::getDatabaseConnection()->fullQuoteStr($table, $theColConf['foreign_table']);
+								}
 								// Add additional where clause if foreign_match_fields are defined
 								$foreignMatchFields = is_array($theColConf['foreign_match_fields']) ? $theColConf['foreign_match_fields'] : array();
 								foreach ($foreignMatchFields as $matchField => $matchValue) {
@@ -3674,18 +3677,18 @@ class BackendUtility {
 
 	/**
 	 * Returns first possible RTE object if available.
-	 * Usage: $RTEobj = &BackendUtility::RTEgetObj();
+	 * Usage: $RTEobj = BackendUtility::RTEgetObj();
 	 *
 	 * @return mixed If available, returns RTE object, otherwise an array of messages from possible RTEs
 	 */
-	static public function &RTEgetObj() {
+	static public function RTEgetObj() {
 		// If no RTE object has been set previously, try to create it:
 		if (!isset($GLOBALS['T3_VAR']['RTEobj'])) {
 			// Set the object string to blank by default:
 			$GLOBALS['T3_VAR']['RTEobj'] = array();
 			// Traverse registered RTEs:
 			if (is_array($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'])) {
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'] as $extKey => $rteObjCfg) {
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'] as $rteObjCfg) {
 					$rteObj = GeneralUtility::getUserObj($rteObjCfg['objRef']);
 					if (is_object($rteObj)) {
 						if ($rteObj->isAvailable()) {

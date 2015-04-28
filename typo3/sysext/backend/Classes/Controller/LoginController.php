@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -224,18 +225,60 @@ class LoginController {
 		// Might set JavaScript in the header to close window.
 		$this->checkRedirect();
 
-		if ($GLOBALS['TBE_STYLES']['logo_login']) {
-			$logo = '<img src="' . htmlspecialchars(($GLOBALS['BACK_PATH'] . $GLOBALS['TBE_STYLES']['logo_login'])) . '" alt="" class="t3-login-logo" />';
-		} else {
-			$logo = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/typo3-transparent@2x.png', 'width="140" height="39"') . ' alt="" class="t3-login-logo t3-default-logo" />';
+		// Extension Configuration
+		$extConf = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['backend']);
+
+		// Background Image
+		if (!empty($extConf['loginBackgroundImage'])) {
+			$backgroundImage = $this->getUriForFileName($extConf['loginBackgroundImage']);
+			$this->getDocumentTemplate()->inDocStylesArray[] = '
+				@media (min-width: 768px){
+					.typo3-login-carousel-control.right,
+					.typo3-login-carousel-control.left,
+					.panel-login { border: 0; }
+					.typo3-login { background-image: url("' . $backgroundImage . '"); }
+				}
+			';
 		}
 
-		$formType = empty($this->getBackendUserAuthentication()->user['uid']) ? 'loginForm' : 'logoutForm';
-		$loginNewsTitle = $GLOBALS['TYPO3_CONF_VARS']['BE']['loginNewsTitle']
-			? $GLOBALS['TYPO3_CONF_VARS']['BE']['loginNewsTitle']
-			: $this->getLanguageService()->getLL('newsheadline');
+		// Add additional css to use the highlight color in the login screen
+		if (!empty($extConf['loginHighlightColor'])) {
+			$this->getDocumentTemplate()->inDocStylesArray[] = '
+				.btn-login.disabled, .btn-login[disabled], fieldset[disabled] .btn-login,
+				.btn-login.disabled:hover, .btn-login[disabled]:hover, fieldset[disabled] .btn-login:hover,
+				.btn-login.disabled:focus, .btn-login[disabled]:focus, fieldset[disabled] .btn-login:focus,
+				.btn-login.disabled.focus, .btn-login[disabled].focus, fieldset[disabled] .btn-login.focus,
+				.btn-login.disabled:active, .btn-login[disabled]:active, fieldset[disabled] .btn-login:active,
+				.btn-login.disabled.active, .btn-login[disabled].active, fieldset[disabled] .btn-login.active,
+				.btn-login:hover, .btn-login:focus, .btn-login:active,
+				.btn-login { background-color: ' . $extConf['loginHighlightColor'] . '; }
+				.panel-login .panel-body { border-color: ' . $extConf['loginHighlightColor'] . '; }
+			';
+		}
+
+		// Logo
+		$logo = '';
+		if (!empty($extConf['loginLogo'])) {
+			$logo = $extConf['loginLogo'];
+		} elseif (!empty($GLOBALS['TBE_STYLES']['logo_login'])) {
+			// Fallback to old TBE_STYLES login logo
+			$logo = $GLOBALS['TBE_STYLES']['logo_login'];
+			GeneralUtility::deprecationLog('$GLOBALS["TBE_STYLES"]["logo_login"] is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8, please head to the backend extension configuration instead.');
+		} else {
+			// Use TYPO3 logo depending on highlight color
+			if (!empty($extConf['loginHighlightColor'])) {
+				$logo = 'EXT:backend/Resources/Public/Images/typo3_black.svg';
+			} else {
+				$logo = 'EXT:backend/Resources/Public/Images/typo3_orange.svg';
+			}
+			$this->getDocumentTemplate()->inDocStylesArray[] = '
+				.typo3-login-logo .typo3-login-image { max-width: 150px; }
+			';
+		}
+		$logo = $this->getUriForFileName($logo);
 
 		// Start form
+		$formType = empty($this->getBackendUserAuthentication()->user['uid']) ? 'loginForm' : 'logoutForm';
 		$view->assignMultiple(array(
 			'formTag' => $this->startForm(),
 			'labelPrefixPath' => 'LLL:EXT:lang/locallang_login.xlf:',
@@ -246,9 +289,12 @@ class LoginController {
 			'presetOpenId' => $this->openIdUrl,
 			'formType' => $formType,
 			'logo' => $logo,
+			'images' => array(
+				'capslock' => $this->getUriForFileName('EXT:backend/Resources/Public/Images/icon_capslock.svg'),
+				'typo3' => $this->getUriForFileName('EXT:backend/Resources/Public/Images/typo3_orange.svg'),
+			),
 			'isOpenIdLoaded' => ExtensionManagementUtility::isLoaded('openid'),
 			'copyright' => BackendUtility::TYPO3_copyRightNotice($GLOBALS['TYPO3_CONF_VARS']['SYS']['loginCopyrightShowVersion']),
-			'loginNewsTitle' => $loginNewsTitle,
 			'loginNewsItems' => $this->getSystemNews()
 		));
 
@@ -310,7 +356,7 @@ class LoginController {
 					 * 26/4 2005: This does not work anymore, because the saving of challenge values
 					 * in $_SESSION means the system will act as if the password was wrong.
 					 */
-					throw new \RuntimeException('Login-error: Yeah, that\'s a classic. No cookies, no TYPO3.<br /><br />' .
+					throw new \RuntimeException('Login-error: Yeah, that\'s a classic. No cookies, no TYPO3. ' .
 						'Please accept cookies from TYPO3 - otherwise you\'ll not be able to use the system.', 1294586846);
 				} else {
 					// try it once again - that might be needed for auto login
@@ -388,10 +434,10 @@ class LoginController {
 							<option value="' . htmlspecialchars($jumpScript[$valueStr]) . '">' . htmlspecialchars($labels[$valueStr]) . '</option>';
 				}
 				$this->interfaceSelector = '
-						<select id="t3-interfaceselector" name="interface" class="form-control t3-interfaces input-lg" tabindex="3">' . $this->interfaceSelector . '
+						<select id="t3-interfaceselector" name="interface" class="form-control input-login t3js-login-interface-field" tabindex="3">' . $this->interfaceSelector . '
 						</select>';
 				$this->interfaceSelector_jump = '
-						<select id="t3-interfaceselector" name="interface" class="form-control t3-interfaces input-lg" tabindex="3" onchange="window.location.href=this.options[this.selectedIndex].value;">' . $this->interfaceSelector_jump . '
+						<select id="t3-interfaceselector" name="interface" class="form-control input-login t3js-login-interface-field" tabindex="3" onchange="window.location.href=this.options[this.selectedIndex].value;">' . $this->interfaceSelector_jump . '
 						</select>';
 			} elseif (!$this->redirect_url) {
 				// If there is only ONE interface value set and no redirect_url is present:
@@ -443,11 +489,36 @@ class LoginController {
 			}
 		}
 		$output .= $form . '<input type="hidden" name="login_status" value="login" />' .
-			'<input type="hidden" id="t3-field-userident" name="userident" value="" />' .
+			'<input type="hidden" id="t3-field-userident" class="t3js-login-userident-field" name="userident" value="" />' .
 			'<input type="hidden" name="redirect_url" value="' . htmlspecialchars($this->redirectToURL) . '" />' .
 			'<input type="hidden" name="loginRefresh" value="' . htmlspecialchars($this->loginRefresh) . '" />' .
 			$this->interfaceSelector_hidden . $this->addFields_hidden;
 		return $output;
+	}
+
+	/**
+	 * Returns the uri of a relative reference, resolves the "EXT:" prefix
+	 * (way of referring to files inside extensions) and checks that the file is inside
+	 * the PATH_site of the TYPO3 installation
+	 *
+	 * @param string $filename The input filename/filepath to evaluate
+	 * @return string Returns the filename of $filename if valid, otherwise blank string.
+	 * @internal
+	 */
+	private function getUriForFileName($filename) {
+		$urlPrefix = '';
+		if (strpos($filename, '://')) {
+			$urlPrefix = '';
+		} elseif (strpos($filename, 'EXT:') === 0) {
+			$absoluteFilename = GeneralUtility::getFileAbsFileName($filename);
+			$filename = '';
+			if ($absoluteFilename !== '') {
+				$filename = PathUtility::getAbsoluteWebPath($absoluteFilename);
+			}
+		} elseif (strpos($filename, '/') !== 0) {
+			$urlPrefix = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
+		}
+		return $urlPrefix . $filename;
 	}
 
 	/**
