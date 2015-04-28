@@ -44,7 +44,7 @@ script:
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
         echo;
         export typo3DatabaseName="typo3";
-        export typo3DatabaseHost="localhost";
+        export typo3DatabaseHost="127.0.0.1";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
         find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
