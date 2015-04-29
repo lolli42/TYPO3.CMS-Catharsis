@@ -49,7 +49,7 @@ script:
         export typo3DatabaseHost="127.0.0.1";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel -P 1 --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
