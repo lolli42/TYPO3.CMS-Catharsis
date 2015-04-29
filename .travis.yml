@@ -26,8 +26,7 @@ notifications:
     on_failure: always
 
 before_script:
-  - sudo echo '[mysqld]' > /etc/mysql/conf.d/travis.cnf
-  - sudo echo 'table_open_cache = 500' >> /etc/mysql/conf.d/travis.cnf
+  - sudo cp travis.cnf /etc/mysql/conf.d/
   - sudo /etc/init.d/mysql restart
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
