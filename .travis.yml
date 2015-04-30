@@ -4,11 +4,16 @@ matrix:
   allow_failures:
     - php: 7
     - php: hhvm-nightly
+    - php: 5.5
+      env: FUNCTIONAL_TESTS=yes
+    - php: 5.6
+      env: FUNCTIONAL_TESTS=yes
+
   include:
     - php: 5.5
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
+      env: UNIT_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
     - php: 5.6
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
+      env: UNIT_TESTS=yes PHP_LINT=yes
     - php: 7
       env: UNIT_TESTS=yes
     - php: hhvm-nightly
@@ -26,8 +31,6 @@ notifications:
     on_failure: always
 
 before_script:
-  - sudo cp travis.cnf /etc/mysql/conf.d/
-  - sudo /etc/init.d/mysql restart
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - sudo apt-get install parallel
@@ -49,7 +52,7 @@ script:
         export typo3DatabaseHost="127.0.0.1";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel -P 1 --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then

@@ -1,2 +1,0 @@
-[mysqld]
-table_open_cache = 500
