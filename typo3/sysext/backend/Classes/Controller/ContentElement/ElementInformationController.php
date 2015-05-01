@@ -125,6 +125,7 @@ class ElementInformationController {
 
 		$this->perms_clause = $GLOBALS['BE_USER']->getPagePermsClause(1);
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
+		$this->doc->divClass = 'container';
 
 		if (isset($GLOBALS['TCA'][$this->table])) {
 			$this->initDatabaseRecord();
@@ -212,6 +213,7 @@ class ElementInformationController {
 			$this->content .= $this->renderPreview();
 			$this->content .= $this->renderPropertiesAsTable();
 			$this->content .= $this->renderReferences();
+			$this->content .= $this->renderBackButton();
 		}
 	}
 
@@ -278,17 +280,19 @@ class ElementInformationController {
 
 			// else check if we can create an Image preview
 			} elseif (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileExtension)) {
-				$thumbUrl = $this->fileObject->process(
+				$processedFile = $this->fileObject->process(
 					ProcessedFile::CONTEXT_IMAGEPREVIEW,
 					array(
 						'width' => '590m',
 						'height' => '400m'
 					)
-				)->getPublicUrl(TRUE);
-
+				);
 				// Create thumbnail image?
-				if ($thumbUrl) {
+				if ($processedFile) {
+					$thumbUrl = $processedFile->getPublicUrl(TRUE);
 					$previewTag .= '<img class="img-responsive img-thumbnail" src="' . $thumbUrl . '" ' .
+						'width="' . $processedFile->getProperty('width') . '" ' .
+						'height="' . $processedFile->getProperty('height') . '" ' .
 						'alt="' . htmlspecialchars(trim($this->fileObject->getName())) . '" ' .
 						'title="' . htmlspecialchars(trim($this->fileObject->getName())) . '" />';
 				}
@@ -328,9 +332,18 @@ class ElementInformationController {
 			$extraFields['crdate'] = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_general.xlf:LGL.creationDate', TRUE);
 			$extraFields['cruser_id'] = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_general.xlf:LGL.creationUserId', TRUE);
 			$extraFields['tstamp'] = $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_general.xlf:LGL.timestamp', TRUE);
+
+			// check if the special fields are defined in the TCA ctrl section of the table
+			foreach ($extraFields as $fieldName => $fieldLabel) {
+				if (isset($GLOBALS['TCA'][$this->table]['ctrl'][$fieldName])) {
+					$extraFields[$GLOBALS['TCA'][$this->table]['ctrl'][$fieldName]] = $fieldLabel;
+				} else {
+					unset($extraFields[$fieldName]);
+				}
+			}
 		}
 
-		foreach ($extraFields as $name => $value) {
+		foreach ($extraFields as $name => $fieldLabel) {
 			$rowValue = '';
 			if (!isset($this->row[$name])) {
 				$resourceObject = $this->fileObject ?: $this->folderObject;
@@ -344,8 +357,9 @@ class ElementInformationController {
 			} else {
 				$rowValue = BackendUtility::getProcessedValueExtra($this->table, $name, $this->row[$name]);
 			}
+			// show the backend username who created the issue
 			if ($name === 'cruser_id' && $rowValue) {
-				$userTemp = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('username, realName', 'be_users', 'uid = ' . (int)$rowValue);
+				$userTemp = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow('username, realName', 'be_users', 'uid = ' . (int)$rowValue);
 				if ($userTemp[0]['username'] !== '') {
 					$rowValue = $userTemp[0]['username'];
 					if ($userTemp[0]['realName'] !== '') {
@@ -355,7 +369,7 @@ class ElementInformationController {
 			}
 			$tableRows[] = '
 				<tr>
-					<th>' . rtrim($value, ':') . '</th>
+					<th>' . rtrim($fieldLabel, ':') . '</th>
 					<td>' . htmlspecialchars($rowValue) . '</td>
 				</tr>';
 		}
@@ -433,6 +447,24 @@ class ElementInformationController {
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Render a back button, if a returnUrl was provided
+	 *
+	 * @return string
+	 */
+	protected function renderBackButton() {
+		$backLink = '';
+		$returnUrl = GeneralUtility::_GET('returnUrl');
+		if ($returnUrl) {
+			$backLink .= '
+				<a class="btn btn-primary" href="' . htmlspecialchars($returnUrl) . '>
+					' . IconUtility::getSpriteIcon('actions-view-go-back') . '
+					' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:back', TRUE) . '
+				</a>';
+		}
+		return $backLink;
 	}
 
 	/**
@@ -516,7 +548,7 @@ class ElementInformationController {
 		}
 
 		// Edit button
-		$editOnClick = BackendUtility::editOnClick('&edit[' . $table . '][' . $uid . ']=edit', $GLOBALS['BACK_PATH']);
+		$editOnClick = BackendUtility::editOnClick('&edit[' . $table . '][' . $uid . ']=edit');
 		$pageActionIcons = '
 			<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($editOnClick) . '">
 				' . IconUtility::getSpriteIcon('actions-document-open') . '
@@ -584,6 +616,7 @@ class ElementInformationController {
 
 		// Compile information for title tag:
 		$infoData = array();
+		$infoDataHeader = '';
 		if (count($rows)) {
 			$infoDataHeader = '
 				<tr>
@@ -601,13 +634,20 @@ class ElementInformationController {
 		foreach ($rows as $row) {
 			if ($row['tablename'] === 'sys_file_reference') {
 				$row = $this->transformFileReferenceToRecordReference($row);
+				if ($row['tablename'] === NULL || $row['recuid'] === NULL) {
+					return '';
+				}
 			}
 			$record = BackendUtility::getRecord($row['tablename'], $row['recuid']);
-			$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
-			$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
-			$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
-			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['tablename'] . '][' . $row['recuid'] . ']=edit', $GLOBALS['BACK_PATH']);
-			$infoData[] = '
+			if ($record) {
+				$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
+				$parentRecordTitle = is_array($parentRecord)
+					? BackendUtility::getRecordTitle('pages', $parentRecord)
+					: '';
+				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
+				$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
+				$editOnClick = BackendUtility::editOnClick('&edit[' . $row['tablename'] . '][' . $row['recuid'] . ']=edit');
+				$infoData[] = '
 				<tr>
 					<td class="col-icon">
 						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '">
@@ -621,8 +661,8 @@ class ElementInformationController {
 					</td>
 					<td>' . $GLOBALS['LANG']->sL($GLOBALS['TCA'][$row['tablename']]['ctrl']['title'], TRUE) . '</td>
 					<td>
-						<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:page') . ': ' .
-							htmlspecialchars(BackendUtility::getRecordTitle('pages', $parentRecord)) . ' (uid=' . $record['pid'] . ')">
+						<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_common.xlf:page') . ': '
+							. htmlspecialchars($parentRecordTitle) . ' (uid=' . $record['pid'] . ')">
 							' . $record['uid'] . '
 						</span>
 					</td>
@@ -632,6 +672,20 @@ class ElementInformationController {
 					<td>' . htmlspecialchars($row['sorting']) . '</td>
 					<td class="col-control">' . $actions . '</td>
 				</tr>';
+			} else {
+				$infoData[] = '
+				<tr>
+					<td class="col-icon"></td>
+					<td class="col-title">' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:show_item.php.missing_record') . ' (uid=' . $row['recuid'] . ')</td>
+					<td>' . htmlspecialchars($GLOBALS['LANG']->sL($GLOBALS['TCA'][$row['tablename']]['ctrl']['title']) ?: $row['tablename']) . '</td>
+					<td></td>
+					<td>' . htmlspecialchars($this->getLabelForTableColumn($row['tablename'], $row['field'])) . '</td>
+					<td>' . htmlspecialchars($row['flexpointer']) . '</td>
+					<td>' . htmlspecialchars($row['softref_key']) . '</td>
+					<td>' . htmlspecialchars($row['sorting']) . '</td>
+					<td class="col-control"></td>
+				</tr>';
+			}
 		}
 		$referenceLine = '';
 		if (count($infoData)) {
@@ -682,7 +736,7 @@ class ElementInformationController {
 			$parentRecord = BackendUtility::getRecord('pages', $record['pid']);
 			$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
 			$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
-			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit', $GLOBALS['BACK_PATH']);
+			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit');
 			$infoData[] = '
 				<tr>
 					<td class="col-icon">

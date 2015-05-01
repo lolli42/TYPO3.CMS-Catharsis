@@ -36,8 +36,12 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 		,backPath: TYPO3.settings.FormEngine.backPath
 		,openedPopupWindow: null
 		,legacyFieldChangedCb: function() { !$.isFunction(TYPO3.settings.FormEngine.legacyFieldChangedCb) || TYPO3.settings.FormEngine.legacyFieldChangedCb(); }
+		,browserUrl: ''
 	};
 
+	FormEngine.setBrowserUrl = function(browserUrl) {
+		FormEngine.browserUrl = browserUrl;
+	};
 
 	// functions to connect the db/file browser with this document and the formfields on it!
 
@@ -50,7 +54,7 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 * @param height height of the window
 	 */
 	FormEngine.openPopupWindow = setFormValueOpenBrowser = function(mode, params, width, height) {
-		var url = FormEngine.backPath + 'browser.php?mode=' + mode + '&bparams=' + params;
+		var url = FormEngine.backPath + FormEngine.browserUrl + '&mode=' + mode + '&bparams=' + params;
 		width = width ? width : top.TYPO3.configuration.PopupWindow.width;
 		height = height ? height : top.TYPO3.configuration.PopupWindow.height;
 		FormEngine.openedPopupWindow = window.open(url, 'Typo3WinBrowser', 'height=' + height + ',width=' + width + ',status=0,menubar=0,resizable=1,scrollbars=1');
@@ -549,11 +553,13 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			}
 		});
 
+		FormEngine.initializeRemainingCharacterViews();
+
 		// in multi-select environments with two (e.g. "Access"), on click the item from the right should go to the left
 		$(document).on('click', '.t3js-formengine-select-itemstoselect', function(evt) {
 			var $el = $(this)
-					,fieldName = $el.data('relatedfieldname')
-					,exclusiveValues = $el.data('exclusivevalues');
+				,fieldName = $el.data('relatedfieldname')
+				,exclusiveValues = $el.data('exclusivevalues');
 
 			if (fieldName) {
 				// try to add each selected field to the "left" select field
@@ -563,6 +569,61 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 				});
 			}
 		});
+	};
+
+	/**
+	 * Initializes the remaining character views based on the fields' maxlength attribute
+	 */
+	FormEngine.initializeRemainingCharacterViews = function() {
+		// all fields with a "maxlength" attribute
+		var $maxlengthElements = $('[maxlength]');
+		$maxlengthElements.on('focus', function(e) {
+			var $field = $(this),
+				$parent = $field.parents('.t3js-formengine-field-item:first'),
+				maxlengthProperties = FormEngine.getCharacterCounterProperties($field);
+
+			// append the counter only at focus to avoid cluttering the DOM
+			$parent.append($('<div />', {'class': 't3js-charcounter'}).append(
+				$('<span />', {'class': maxlengthProperties.labelClass}).text(TBE_EDITOR.labels.remainingCharacters.replace('{0}', maxlengthProperties.remainingCharacters))
+			));
+		}).on('blur', function() {
+			var $field = $(this),
+				$parent = $field.parents('.t3js-formengine-field-item:first');
+			$parent.find('.t3js-charcounter').remove();
+		}).on('keyup', function() {
+			var $field = $(this),
+				$parent = $field.parents('.t3js-formengine-field-item:first'),
+				maxlengthProperties = FormEngine.getCharacterCounterProperties($field);
+
+			// change class and value
+			$parent.find('.t3js-charcounter span').removeClass().addClass(maxlengthProperties.labelClass).text(TBE_EDITOR.labels.remainingCharacters.replace('{0}', maxlengthProperties.remainingCharacters))
+		});
+	};
+
+	/**
+	 * Get the properties required for proper rendering of the character counter
+	 */
+	FormEngine.getCharacterCounterProperties = function($field) {
+		var fieldText = $field.val(),
+			maxlength = $field.attr('maxlength'),
+			currentFieldLength = fieldText.length,
+			numberOfLineBreaks = (fieldText.match(/\n/g)||[]).length, // count line breaks
+			remainingCharacters = maxlength - currentFieldLength - numberOfLineBreaks,
+			threshold = 15, // hard limit of remaining characters when the label class changes
+			labelClass = '';
+
+		if (remainingCharacters < threshold) {
+			labelClass = 'label-danger';
+		} else if(remainingCharacters < threshold * 2) {
+			labelClass = 'label-warning';
+		} else {
+			labelClass = 'label-info';
+		}
+
+		return {
+			remainingCharacters: remainingCharacters,
+			labelClass: 'label ' + labelClass
+		};
 	};
 
 	/**
@@ -632,9 +693,9 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	 */
 	FormEngine.convertTextareasResizable = function() {
 		var $elements = $('.t3js-formengine-textarea');
-		if (TYPO3.settings.Textarea.autosize && $elements.length) {
-			require(['jquery/jquery.autosize.min'], function() {
-				$elements.autosize();
+		if (TYPO3.settings.Textarea && TYPO3.settings.Textarea.autosize && $elements.length) {
+			require(['autosize'], function(autosize) {
+				autosize($elements);
 			});
 		}
 	};
@@ -654,8 +715,54 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 			});
 		}
 		// apply DatePicker to all date time fields
-		require(['TYPO3/CMS/Backend/DateTimePicker']);
+		require(['TYPO3/CMS/Backend/DateTimePicker'], function(DateTimePicker) {
+			DateTimePicker.initialize();
+		});
 		FormEngine.convertTextareasResizable();
+		$(document).on('click', '.t3js-editform-close', function(e) {
+			e.preventDefault();
+			FormEngine.preventExitIfNotSaved();
+		});
+	};
+
+	/**
+	 * Show modal to confirm closing the document without saving
+	 */
+	FormEngine.preventExitIfNotSaved = function() {
+		if ($('.has-change').length > 0) {
+			var title = TYPO3.lang['label.confirm.close_without_save.title'] || 'Do you want to quit without saving?';
+			var content = TYPO3.lang['label.confirm.close_without_save.content'] || 'You have currently unsaved changes. Are you sure that you want to discard all changes?';
+			$modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.warning, [
+				{
+					text: TYPO3.lang['buttons.confirm.close_without_save.no'] || 'No, I will continue editing',
+					active: true,
+					name: 'no'
+				},
+				{
+					text: TYPO3.lang['buttons.confirm.close_without_save.yes'] || 'Yes, discard my changes',
+					btnClass: 'btn-warning',
+					name: 'yes'
+				}
+			]);
+			$modal.on('button.clicked', function(e) {
+				if (e.target.name === 'no') {
+					top.TYPO3.Modal.dismiss();
+				} else if (e.target.name === 'yes') {
+					top.TYPO3.Modal.dismiss();
+					FormEngine.closeDocument();
+				}
+			});
+		} else {
+			FormEngine.closeDocument()
+		}
+	};
+
+	/**
+	 * Close current open document
+	 */
+	FormEngine.closeDocument = function() {
+		document.editform.closeDoc.value=1;
+		document.editform.submit();
 	};
 
 	/**

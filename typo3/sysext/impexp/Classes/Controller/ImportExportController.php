@@ -99,7 +99,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		$this->doc->postCode = $this->doc->wrapScriptTags('if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';');
-		$this->doc->form = '<form action="' . htmlspecialchars($GLOBALS['MCONF']['_']) . '" method="post" enctype="'
+		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('xMOD_tximpexp')) . '" method="post" enctype="'
 			. $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '"><input type="hidden" name="id" value="' . $this->id . '" />';
 		$this->content .= $this->doc->header($this->lang->getLL('title'));
 		$this->content .= $this->doc->spacer(5);
@@ -440,7 +440,8 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 			'stateIcon' => $errors ? 2 : 0
 		);
 		// Add hidden fields and create tabs:
-		$content = $this->doc->getDynTabMenu($menuItems, 'tx_impexp_export', -1);
+
+		$content = $this->doc->getDynamicTabMenu($menuItems, 'tx_impexp_export', 1, FALSE, TRUE, FALSE);
 		$content .= '<input type="hidden" name="tx_impexp[action]" value="export" />';
 		$this->content .= $this->doc->section('', $content, 0, 1);
 		// Output Overview:
@@ -1149,7 +1150,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				'stateIcon' => $errors ? 2 : 0
 			);
 			// Output tabs:
-			$content = $this->doc->getDynTabMenu($menuItems, 'tx_impexp_import', -1);
+			$content = $this->doc->getDynamicTabMenu($menuItems, 'tx_impexp_import', 1, FALSE, TRUE, FALSE);
 			if ($extensionInstallationMessage) {
 				$content = '<div style="border: 1px black solid; margin: 10px 10px 10px 10px; padding: 10px 10px 10px 10px;">'
 					. $this->doc->icons(1) . htmlspecialchars($extensionInstallationMessage) . '</div>' . $content;

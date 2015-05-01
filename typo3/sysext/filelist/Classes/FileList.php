@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Resource\InaccessibleFolder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\Utility\ListUtility;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\FolderInterface;
 
@@ -149,11 +150,6 @@ class FileList extends AbstractRecordList {
 	public $eCounter = 0;
 
 	/**
-	 * @var int
-	 */
-	public $dirCounter = 0;
-
-	/**
 	 * @var string
 	 */
 	public $totalItems = '';
@@ -262,12 +258,12 @@ class FileList extends AbstractRecordList {
 					$addPasteButton = TRUE;
 					foreach ($elFromTable as $element) {
 						$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
-						if ($clipBoardElement instanceof Folder && $this->folderObject->getStorage()->isWithinFolder($clipBoardElement, $folderObject)) {
+						if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $folderObject)) {
 							$addPasteButton = FALSE;
 						}
 					}
 					if ($addPasteButton) {
-						$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+						$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
 					}
 				}
 			}
@@ -310,49 +306,39 @@ class FileList extends AbstractRecordList {
 
 		// Only render the contents of a browsable storage
 		if ($this->folderObject->getStorage()->isBrowsable()) {
-			$folders = $storage->getFolderIdentifiersInFolder($this->folderObject->getIdentifier());
-			$files = $this->folderObject->getFiles();
-			$this->sort = trim($this->sort);
-			if ($this->sort !== '') {
-				$filesToSort = array();
-				/** @var $fileObject File */
-				foreach ($files as $fileObject) {
-					switch ($this->sort) {
-						case 'size':
-							$sortingKey = $fileObject->getSize();
-							break;
-						case 'rw':
-							$sortingKey = ($fileObject->checkActionPermission('read') ? 'R' : '' . $fileObject->checkActionPermission('write')) ? 'W' : '';
-							break;
-						case 'fileext':
-							$sortingKey = $fileObject->getExtension();
-							break;
-						case 'tstamp':
-							$sortingKey = $fileObject->getModificationTime();
-							break;
-						case 'file':
-							$sortingKey = $fileObject->getName();
-							break;
-						default:
-							if ($fileObject->hasProperty($this->sort)) {
-								$sortingKey = $fileObject->getProperty($this->sort);
-							} else {
-								$sortingKey = $fileObject->getName();
-							}
-					}
-					$i = 1000000;
-					while (isset($filesToSort[$sortingKey . $i])) {
-						$i++;
-					}
-					$filesToSort[$sortingKey . $i] = $fileObject;
+			$foldersCount = $storage->countFoldersInFolder($this->folderObject);
+			$filesCount = $storage->countFilesInFolder($this->folderObject);
+
+			if ($foldersCount <= $this->firstElementNumber) {
+				$foldersFrom = FALSE;
+				$foldersNum = FALSE;
+			} else {
+				$foldersFrom = $this->firstElementNumber;
+				if ($this->firstElementNumber + $this->iLimit > $foldersCount) {
+					$foldersNum = $foldersCount - $this->firstElementNumber;
+				} else {
+					$foldersNum = $this->iLimit;
 				}
-				uksort($filesToSort, 'strnatcasecmp');
-				if ((int)$this->sortRev === 1) {
-					$filesToSort = array_reverse($filesToSort);
-				}
-				$files = $filesToSort;
 			}
-			$this->totalItems = count($folders) + count($files);
+			if ($foldersCount >= $this->firstElementNumber + $this->iLimit) {
+				$filesFrom = FALSE;
+				$filesNum  = FALSE;
+			} else {
+				if ($this->firstElementNumber <= $foldersCount) {
+					$filesFrom = 0;
+					$filesNum  = $this->iLimit - $foldersNum;
+				} else {
+					$filesFrom = $this->firstElementNumber - $foldersCount;
+					if ($filesFrom + $this->iLimit > $filesCount) {
+						$filesNum = $filesCount - $filesFrom;
+					} else {
+						$filesNum  = $this->iLimit;
+					}
+				}
+			}
+			$folders = $storage->getFoldersInFolder($this->folderObject, $foldersFrom, $foldersNum, TRUE, FALSE, trim($this->sort), (bool)$this->sortRev);
+			$files = $this->folderObject->getFiles($filesFrom, $filesNum, Folder::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, FALSE, trim($this->sort), (bool)$this->sortRev);
+			$this->totalItems = $foldersCount + $filesCount;
 			// Adds the code of files/dirs
 			$out = '';
 			$titleCol = 'file';
@@ -370,21 +356,29 @@ class FileList extends AbstractRecordList {
 				$this->addElement_tdCssClass['_CONTROL_'] = 'col-control';
 			}
 			$this->fieldArray = explode(',', $rowlist);
-			$folderObjects = array();
-			foreach ($folders as $folder) {
-				$folderObjects[] = $storage->getFolder($folder, TRUE);
-			}
+
 			// Add classes to table cells
 			$this->addElement_tdCssClass[$titleCol] = 'col-title';
 			$this->addElement_tdCssClass['_LOCALIZATION_'] = 'col-localizationa';
 
-			$folderObjects = ListUtility::resolveSpecialFolderNames($folderObjects);
-			uksort($folderObjects, 'strnatcasecmp');
+			$folders = ListUtility::resolveSpecialFolderNames($folders);
 
+			$iOut = '';
 			// Directories are added
-			$iOut = $this->formatDirList($folderObjects);
+			$this->eCounter = $this->firstElementNumber;
+			list($flag, $code) = $this->fwd_rwd_nav();
+			$iOut .= $code;
+
+			$iOut .= $this->formatDirList($folders);
 			// Files are added
-			$iOut .= $this->formatFileList($files, $titleCol);
+			$iOut .= $this->formatFileList($files);
+
+			$this->eCounter = $this->firstElementNumber + $this->iLimit <= $this->totalItems
+				? $this->firstElementNumber + $this->iLimit
+				: $this->totalItems;
+			list($flag, $code) = $this->fwd_rwd_nav();
+			$iOut .= $code;
+
 			// Header line is drawn
 			$theData = array();
 			foreach ($this->fieldArray as $v) {
@@ -396,7 +390,7 @@ class FileList extends AbstractRecordList {
 						$addPasteButton = TRUE;
 						foreach ($elFromTable as $element) {
 							$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
-							if ($clipBoardElement instanceof Folder && $this->folderObject->getStorage()->isWithinFolder($clipBoardElement, $this->folderObject)) {
+							if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $this->folderObject)) {
 								$addPasteButton = FALSE;
 							}
 						}
@@ -404,7 +398,7 @@ class FileList extends AbstractRecordList {
 							$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elFromTable)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', 1) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
 						}
 					}
-					if ($this->clipObj->current != 'normal' && $iOut) {
+					if ($this->clipObj->current !== 'normal' && $iOut) {
 						$cells[] = $this->linkClipboardHeaderIcon(IconUtility::getSpriteIcon('actions-edit-copy', array('title' => $this->getLanguageService()->getLL('clip_selectMarked', TRUE))), $table, 'setCB');
 						$cells[] = $this->linkClipboardHeaderIcon(IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $this->getLanguageService()->getLL('clip_deleteMarked'))), $table, 'delete', $this->getLanguageService()->getLL('clip_deleteMarkedWarning'));
 						$onClick = 'checkOffCB(\'' . implode(',', $this->CBnames) . '\', this); return false;';
@@ -499,66 +493,60 @@ class FileList extends AbstractRecordList {
 				$displayName = htmlspecialchars($folderName);
 			}
 
-			list($flag, $code) = $this->fwd_rwd_nav();
-			$out .= $code;
-			if ($flag) {
-				$isLocked = $folderObject instanceof InaccessibleFolder;
-				$isWritable = $folderObject->checkActionPermission('write');
+			$isLocked = $folderObject instanceof InaccessibleFolder;
+			$isWritable = $folderObject->checkActionPermission('write');
 
-				// Initialization
-				$this->counter++;
+			// Initialization
+			$this->counter++;
 
-				// The icon with link
-				$theIcon = IconUtility::getSpriteIconForResource($folderObject, array('title' => $folderName));
-				if (!$isLocked && $this->clickMenus) {
-					$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $folderObject->getCombinedIdentifier());
-				}
-
-				// Preparing and getting the data-array
-				$theData = array();
-				if ($isLocked) {
-					foreach ($this->fieldArray as $field) {
-						$theData[$field] = '';
-					}
-					$theData['file'] = $displayName;
-				} else {
-					foreach ($this->fieldArray as $field) {
-						switch ($field) {
-							case 'size':
-								$numFiles = $folderObject->getFileCount();
-								$theData[$field] = $numFiles . ' ' . $this->getLanguageService()->getLL(($numFiles === 1 ? 'file' : 'files'), TRUE);
-								break;
-							case 'rw':
-								$theData[$field] = '<strong class="text-danger">' . $this->getLanguageService()->getLL('read', TRUE) . '</strong>' . (!$isWritable ? '' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('write', TRUE) . '</strong>');
-								break;
-							case 'fileext':
-								$theData[$field] = $this->getLanguageService()->getLL('folder', TRUE);
-								break;
-							case 'tstamp':
-								// @todo: FAL: how to get the mtime info -- $theData[$field] = \TYPO3\CMS\Backend\Utility\BackendUtility::date($theFile['tstamp']);
-								$theData[$field] = '-';
-								break;
-							case 'file':
-								$theData[$field] = $this->linkWrapDir($displayName, $folderObject);
-								break;
-							case '_CONTROL_':
-								$theData[$field] = $this->makeEdit($folderObject);
-								break;
-							case '_CLIPBOARD_':
-								$theData[$field] = $this->makeClip($folderObject);
-								break;
-							case '_REF_':
-								$theData[$field] = $this->makeRef($folderObject);
-								break;
-							default:
-								$theData[$field] = GeneralUtility::fixed_lgd_cs($theData[$field], $this->fixedL);
-						}
-					}
-				}
-				$out .= $this->addelement(1, $theIcon, $theData);
+			// The icon with link
+			$theIcon = IconUtility::getSpriteIconForResource($folderObject, array('title' => $folderName));
+			if (!$isLocked && $this->clickMenus) {
+				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $folderObject->getCombinedIdentifier());
 			}
-			$this->eCounter++;
-			$this->dirCounter = $this->eCounter;
+
+			// Preparing and getting the data-array
+			$theData = array();
+			if ($isLocked) {
+				foreach ($this->fieldArray as $field) {
+					$theData[$field] = '';
+				}
+				$theData['file'] = $displayName;
+			} else {
+				foreach ($this->fieldArray as $field) {
+					switch ($field) {
+						case 'size':
+							$numFiles = $folderObject->getFileCount();
+							$theData[$field] = $numFiles . ' ' . $this->getLanguageService()->getLL(($numFiles === 1 ? 'file' : 'files'), TRUE);
+							break;
+						case 'rw':
+							$theData[$field] = '<strong class="text-danger">' . $this->getLanguageService()->getLL('read', TRUE) . '</strong>' . (!$isWritable ? '' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('write', TRUE) . '</strong>');
+							break;
+						case 'fileext':
+							$theData[$field] = $this->getLanguageService()->getLL('folder', TRUE);
+							break;
+						case 'tstamp':
+							// @todo: FAL: how to get the mtime info -- $theData[$field] = \TYPO3\CMS\Backend\Utility\BackendUtility::date($theFile['tstamp']);
+							$theData[$field] = '-';
+							break;
+						case 'file':
+							$theData[$field] = $this->linkWrapDir($displayName, $folderObject);
+							break;
+						case '_CONTROL_':
+							$theData[$field] = $this->makeEdit($folderObject);
+							break;
+						case '_CLIPBOARD_':
+							$theData[$field] = $this->makeClip($folderObject);
+							break;
+						case '_REF_':
+							$theData[$field] = $this->makeRef($folderObject);
+							break;
+						default:
+							$theData[$field] = GeneralUtility::fixed_lgd_cs($theData[$field], $this->fixedL);
+					}
+				}
+			}
+			$out .= $this->addelement(1, $theIcon, $theData);
 		}
 		return $out;
 	}
@@ -582,17 +570,25 @@ class FileList extends AbstractRecordList {
 	}
 
 	/**
-	 * Wraps filenames in links which opens them in a window IF they are in web-path.
+	 * Wraps filenames in links which opens the metadata editor.
 	 *
 	 * @param string $code String to be wrapped in links
 	 * @param File $fileObject File to be linked
 	 * @return string HTML
 	 */
 	public function linkWrapFile($code, File $fileObject) {
-		$fileUrl = $fileObject->getPublicUrl(TRUE);
-		if ($fileUrl) {
-			$aOnClick = 'return top.openUrlInWindow(\'' . $fileUrl . '\', \'WebFile\');';
-			$code = '<a href="#" title="' . htmlspecialchars($code) . '" onclick="' . htmlspecialchars($aOnClick) . '">' . GeneralUtility::fixed_lgd_cs($code, $this->fixedL) . '</a>';
+		try {
+			if ($fileObject instanceof File && $fileObject->isIndexed() && $fileObject->checkActionPermission('write') && $this->getBackendUser()->check('tables_modify', 'sys_file_metadata')) {
+				$metaData = $fileObject->_getMetaData();
+				$data = array(
+					'sys_file_metadata' => array($metaData['uid'] => 'edit')
+				);
+				$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), '', $this->listUrl());
+				$title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata'));
+				$code = '<a href="#" title="' . $title . '" onclick="' . htmlspecialchars($editOnClick) . '">' . GeneralUtility::fixed_lgd_cs($code, $this->fixedL) . '</a>';
+			}
+		} catch (\Exception $e) {
+			// intentional fall-through
 		}
 		return $code;
 	}
@@ -630,116 +626,114 @@ class FileList extends AbstractRecordList {
 		});
 
 		foreach ($files as $fileObject) {
-			list($flag, $code) = $this->fwd_rwd_nav();
-			$out .= $code;
-			if ($flag) {
-				// Initialization
-				$this->counter++;
-				$this->totalbytes += $fileObject->getSize();
-				$ext = $fileObject->getExtension();
-				$fileName = trim($fileObject->getName());
-				// The icon with link
-				$theIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileName . ' [' . (int)$fileObject->getUid() . ']'));
-				if ($this->clickMenus) {
-					$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
-				}
-				// Preparing and getting the data-array
-				$theData = array();
-				foreach ($this->fieldArray as $field) {
-					switch ($field) {
-						case 'size':
-							$theData[$field] = GeneralUtility::formatSize($fileObject->getSize(), $this->getLanguageService()->getLL('byteSizeUnits', TRUE));
-							break;
-						case 'rw':
-							$theData[$field] = '' . (!$fileObject->checkActionPermission('read') ? ' ' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('read', TRUE) . '</strong>') . (!$fileObject->checkActionPermission('write') ? '' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('write', TRUE) . '</strong>');
-							break;
-						case 'fileext':
-							$theData[$field] = strtoupper($ext);
-							break;
-						case 'tstamp':
-							$theData[$field] = BackendUtility::date($fileObject->getModificationTime());
-							break;
-						case '_CONTROL_':
-							$theData[$field] = $this->makeEdit($fileObject);
-							break;
-						case '_CLIPBOARD_':
-							$theData[$field] = $this->makeClip($fileObject);
-							break;
-						case '_LOCALIZATION_':
-							if (!empty($systemLanguages) && $fileObject->isIndexed() && $fileObject->checkActionPermission('write') && $this->getBackendUser()->check('tables_modify', 'sys_file_metadata')) {
-								$metaDataRecord = $fileObject->_getMetaData();
-								$translations = $this->getTranslationsForMetaData($metaDataRecord);
-								$languageCode = '';
-
-								foreach ($systemLanguages as $language) {
-									$languageId = $language['uid'];
-									$flagIcon = $language['flagIcon'];
-									if (array_key_exists($languageId, $translations)) {
-										$flagButtonIcon = IconUtility::getSpriteIcon(
-											'actions-document-open',
-											array('title' => sprintf($GLOBALS['LANG']->getLL('editMetadataForLanguage'), $language['title'])),
-											array($flagIcon . '-overlay' => array()));
-										$data = array(
-											'sys_file_metadata' => array($translations[$languageId]['uid'] => 'edit')
-										);
-										$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), $GLOBALS['BACK_PATH'], $this->listUrl());
-										$languageCode .= '<a href="#" class="btn btn-default" onclick="' . $editOnClick . '">' . $flagButtonIcon . '</a>';
-									} else {
-										$href = $GLOBALS['SOBE']->doc->issueCommand(
-											'&cmd[sys_file_metadata][' . $metaDataRecord['uid'] . '][localize]=' . $languageId,
-											$this->backPath . 'alt_doc.php?justLocalized=' . rawurlencode(('sys_file_metadata:' . $metaDataRecord['uid'] . ':' . $languageId)) .
-											'&returnUrl=' . rawurlencode($this->listURL()) . BackendUtility::getUrlToken('editRecord')
-										);
-										$flagButtonIcon = IconUtility::getSpriteIcon(
-											$flagIcon,
-											array('title' => sprintf($GLOBALS['LANG']->getLL('createMetadataForLanguage'), $language['title'])),
-											array($flagIcon . '-overlay' => array())
-										);
-										$languageCode .= '<a href="' . htmlspecialchars($href) . '" class="btn btn-default">' . $flagButtonIcon . '</a> ';
-									}
-								}
-
-								// Hide flag button bar when not translated yet
-								$theData[$field] = ' <div class="localisationData btn-group" data-fileid="' . $fileObject->getUid() . '"' .
-									(empty($translations) ? ' style="display: none;"' : '') . '>' . $languageCode . '</div>';
-								$theData[$field] .= '<a class="btn btn-default filelist-translationToggler" data-fileid="' . $fileObject->getUid() . '">' .
-									IconUtility::getSpriteIcon(
-										'mimetypes-x-content-page-language-overlay',
-										array(
-											'title' => $GLOBALS['LANG']->getLL('translateMetadata')
-										)
-									) . '</a>';
-							}
-							break;
-						case '_REF_':
-							$theData[$field] = $this->makeRef($fileObject);
-							break;
-						case 'file':
-							$theData[$field] = $this->linkWrapFile(htmlspecialchars($fileName), $fileObject);
-
-							if ($fileObject->isMissing()) {
-								$flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($fileObject);
-								$theData[$field] .= $flashMessage->render();
-								// Thumbnails?
-							} elseif ($this->thumbs && $this->isImage($ext)) {
-								$processedFile = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
-								if ($processedFile) {
-									$thumbUrl = $processedFile->getPublicUrl(TRUE);
-									$theData[$field] .= '<br /><img src="' . $thumbUrl . '" title="' . htmlspecialchars($fileName) . '" alt="" />';
-								}
-							}
-							break;
-						default:
-							$theData[$field] = '';
-							if ($fileObject->hasProperty($field)) {
-								$theData[$field] = htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getProperty($field), $this->fixedL));
-							}
-					}
-				}
-				$out .= $this->addelement(1, $theIcon, $theData);
-
+			// Initialization
+			$this->counter++;
+			$this->totalbytes += $fileObject->getSize();
+			$ext = $fileObject->getExtension();
+			$fileName = trim($fileObject->getName());
+			// The icon with link
+			$theIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileName . ' [' . (int)$fileObject->getUid() . ']'));
+			if ($this->clickMenus) {
+				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
 			}
-			$this->eCounter++;
+			// Preparing and getting the data-array
+			$theData = array();
+			foreach ($this->fieldArray as $field) {
+				switch ($field) {
+					case 'size':
+						$theData[$field] = GeneralUtility::formatSize($fileObject->getSize(), $this->getLanguageService()->getLL('byteSizeUnits', TRUE));
+						break;
+					case 'rw':
+						$theData[$field] = '' . (!$fileObject->checkActionPermission('read') ? ' ' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('read', TRUE) . '</strong>') . (!$fileObject->checkActionPermission('write') ? '' : '<strong class="text-danger">' . $this->getLanguageService()->getLL('write', TRUE) . '</strong>');
+						break;
+					case 'fileext':
+						$theData[$field] = strtoupper($ext);
+						break;
+					case 'tstamp':
+						$theData[$field] = BackendUtility::date($fileObject->getModificationTime());
+						break;
+					case '_CONTROL_':
+						$theData[$field] = $this->makeEdit($fileObject);
+						break;
+					case '_CLIPBOARD_':
+						$theData[$field] = $this->makeClip($fileObject);
+						break;
+					case '_LOCALIZATION_':
+						if (!empty($systemLanguages) && $fileObject->isIndexed() && $fileObject->checkActionPermission('write') && $this->getBackendUser()->check('tables_modify', 'sys_file_metadata')) {
+							$metaDataRecord = $fileObject->_getMetaData();
+							$translations = $this->getTranslationsForMetaData($metaDataRecord);
+							$languageCode = '';
+
+							foreach ($systemLanguages as $language) {
+								$languageId = $language['uid'];
+								$flagIcon = $language['flagIcon'];
+								if (array_key_exists($languageId, $translations)) {
+									$flagButtonIcon = IconUtility::getSpriteIcon(
+										'actions-document-open',
+										array('title' => sprintf($GLOBALS['LANG']->getLL('editMetadataForLanguage'), $language['title'])),
+										array($flagIcon . '-overlay' => array()));
+									$data = array(
+										'sys_file_metadata' => array($translations[$languageId]['uid'] => 'edit')
+									);
+									$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), $GLOBALS['BACK_PATH'], $this->listUrl());
+									$languageCode .= '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '">' . $flagButtonIcon . '</a>';
+								} else {
+									$href = $GLOBALS['SOBE']->doc->issueCommand(
+										'&cmd[sys_file_metadata][' . $metaDataRecord['uid'] . '][localize]=' . $languageId,
+										$this->backPath . 'alt_doc.php?justLocalized=' . rawurlencode(('sys_file_metadata:' . $metaDataRecord['uid'] . ':' . $languageId)) .
+										'&returnUrl=' . rawurlencode($this->listURL()) . BackendUtility::getUrlToken('editRecord')
+									);
+									$flagButtonIcon = IconUtility::getSpriteIcon(
+										$flagIcon,
+										array('title' => sprintf($GLOBALS['LANG']->getLL('createMetadataForLanguage'), $language['title'])),
+										array($flagIcon . '-overlay' => array())
+									);
+									$languageCode .= '<a href="' . htmlspecialchars($href) . '" class="btn btn-default">' . $flagButtonIcon . '</a> ';
+								}
+							}
+
+							// Hide flag button bar when not translated yet
+							$theData[$field] = ' <div class="localisationData btn-group" data-fileid="' . $fileObject->getUid() . '"' .
+								(empty($translations) ? ' style="display: none;"' : '') . '>' . $languageCode . '</div>';
+							$theData[$field] .= '<a class="btn btn-default filelist-translationToggler" data-fileid="' . $fileObject->getUid() . '">' .
+								IconUtility::getSpriteIcon(
+									'mimetypes-x-content-page-language-overlay',
+									array(
+										'title' => $GLOBALS['LANG']->getLL('translateMetadata')
+									)
+								) . '</a>';
+						}
+						break;
+					case '_REF_':
+						$theData[$field] = $this->makeRef($fileObject);
+						break;
+					case 'file':
+						// Edit metadata of file
+						$theData[$field] = $this->linkWrapFile(htmlspecialchars($fileName), $fileObject);
+
+						if ($fileObject->isMissing()) {
+							$flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($fileObject);
+							$theData[$field] .= $flashMessage->render();
+							// Thumbnails?
+						} elseif ($this->thumbs && $this->isImage($ext)) {
+							$processedFile = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
+							if ($processedFile) {
+								$thumbUrl = $processedFile->getPublicUrl(TRUE);
+								$theData[$field] .= '<br /><img src="' . $thumbUrl . '" ' .
+									'width="' . $processedFile->getProperty('width') . '" ' .
+									'height="' . $processedFile->getProperty('height') . '" ' .
+									'title="' . htmlspecialchars($fileName) . '" alt="" />';
+							}
+						}
+						break;
+					default:
+						$theData[$field] = '';
+						if ($fileObject->hasProperty($field)) {
+							$theData[$field] = htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getProperty($field), $this->fixedL));
+						}
+				}
+			}
+			$out .= $this->addelement(1, $theIcon, $theData);
 		}
 		return $out;
 	}
@@ -789,7 +783,7 @@ class FileList extends AbstractRecordList {
 			$sortArrow = '';
 		}
 		$href = GeneralUtility::resolveBackPath(($GLOBALS['BACK_PATH'] . $this->script)) . '&id=' . rawurlencode($folderIdentifier) . $params;
-		return '<a href="' . htmlspecialchars($href) . '">' . $code . $sortArrow . '</a>';
+		return '<a href="' . htmlspecialchars($href) . '">' . $code . ' ' . $sortArrow . '</a>';
 	}
 
 	/**
@@ -824,11 +818,11 @@ class FileList extends AbstractRecordList {
 		}
 		// Display PASTE button, if directory:
 		$elFromTable = $this->clipObj->elFromTable('_FILE');
-		if (is_a($fileOrFolderObject, Folder::class) && count($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
+		if ($fileOrFolderObject instanceof Folder && count($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
 			$addPasteButton = TRUE;
 			foreach ($elFromTable as $element) {
 				$clipBoardElement = $this->resourceFactory->retrieveFileOrFolderObject($element);
-				if ($clipBoardElement instanceof Folder && $fileOrFolderObject->getStorage()->isWithinFolder($clipBoardElement, $fileOrFolderObject)) {
+				if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $fileOrFolderObject)) {
 					$addPasteButton = FALSE;
 				}
 			}
@@ -849,47 +843,41 @@ class FileList extends AbstractRecordList {
 	public function makeEdit($fileOrFolderObject) {
 		$cells = array();
 		$fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
-		// Edit metadata of file
-		try {
-			if (is_a($fileOrFolderObject, File::class) && $fileOrFolderObject->isIndexed() && $fileOrFolderObject->checkActionPermission('write') && $this->getBackendUser()->check('tables_modify', 'sys_file_metadata')) {
-				$metaData = $fileOrFolderObject->_getMetaData();
-				$data = array(
-					'sys_file_metadata' => array($metaData['uid'] => 'edit')
-				);
-				$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), $GLOBALS['BACK_PATH'], $this->listUrl());
-				$title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata'));
-				$cells['editmetadata'] = '<a href="#" class="btn btn-default" onclick="' . $editOnClick . '" title="' . $title . '">'
-					. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
-			} else {
-				$cells['editmetadata'] = $this->spaceIcon;
-			}
-		} catch (\Exception $e) {
-			$cells['editmetadata'] = $this->spaceIcon;
-		}
 		// Edit file content (if editable)
-		if (is_a($fileOrFolderObject, File::class) && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
+		if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
 			$url = BackendUtility::getModuleUrl('file_edit', array('target' => $fullIdentifier));
-			$editOnClick = 'top.content.list_frame.location.href=top.TS.PATH_typo3+' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
+			$editOnClick = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
 			$cells['edit'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
 		} else {
 			$cells['edit'] = $this->spaceIcon;
 		}
+		if ($fileOrFolderObject instanceof File) {
+			$fileUrl = $fileOrFolderObject->getPublicUrl(TRUE);
+			if ($fileUrl) {
+				$aOnClick = 'return top.openUrlInWindow(' . GeneralUtility::quoteJSvalue($fileUrl) . ', \'WebFile\');';
+				$cells['view'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($aOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.view') . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			} else {
+				$cells['view'] = $this->spaceIcon;
+			}
+		} else {
+			$cells['view'] = $this->spaceIcon;
+		}
 		// rename the file
 		if ($fileOrFolderObject->checkActionPermission('rename')) {
 			$url = BackendUtility::getModuleUrl('file_rename', array('target' => $fullIdentifier));
-			$renameOnClick = 'top.content.list_frame.location.href = top.TS.PATH_typo3+' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
+			$renameOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
 			$cells['rename'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($renameOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . IconUtility::getSpriteIcon('actions-edit-rename') . '</a>';
 		} else {
 			$cells['rename'] = $this->spaceIcon;
 		}
 		if ($fileOrFolderObject->checkActionPermission('read')) {
 			$infoOnClick = '';
-			if (is_a($fileOrFolderObject, Folder::class)) {
-				$infoOnClick = 'top.launchView( \'_FOLDER\', \'' . $fullIdentifier . '\');return false;';
-			} elseif (is_a($fileOrFolderObject, File::class)) {
-				$infoOnClick = 'top.launchView( \'_FILE\', \'' . $fullIdentifier . '\');return false;';
+			if ($fileOrFolderObject instanceof Folder) {
+				$infoOnClick = 'top.launchView( \'_FOLDER\', ' . GeneralUtility::quoteJSvalue($fullIdentifier) . ');return false;';
+			} elseif ($fileOrFolderObject instanceof File) {
+				$infoOnClick = 'top.launchView( \'_FILE\', ' . GeneralUtility::quoteJSvalue($fullIdentifier) . ');return false;';
 			}
-			$cells['info'] = '<a href="#" class="btn btn-default" onclick="' . $infoOnClick . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.info') . '">' . IconUtility::getSpriteIcon('status-dialog-information') . '</a>';
+			$cells['info'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($infoOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.info') . '">' . IconUtility::getSpriteIcon('status-dialog-information') . '</a>';
 		} else {
 			$cells['info'] = $this->spaceIcon;
 		}
@@ -903,13 +891,13 @@ class FileList extends AbstractRecordList {
 				$referenceCountText = BackendUtility::referenceCount('sys_file', $fileOrFolderObject->getUid(), ' (There are %s reference(s) to this file!)');
 			}
 
-			if ($this->getBackendUser()->jsConfirmation(4)) {
+			if ($this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)) {
 				$confirmationCheck = 'confirm(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.delete'), $fileOrFolderObject->getName()) . $referenceCountText) . ')';
 			} else {
 				$confirmationCheck = '1 == 1';
 			}
 
-			$removeOnClick = 'if (' . $confirmationCheck . ') { top.content.list_frame.location.href=top.TS.PATH_typo3+\'' . BackendUtility::getModuleUrl('tce_file') .'&file[delete][0][data]=' . rawurlencode($fileOrFolderObject->getCombinedIdentifier()) . '&vC=' . $this->getBackendUser()->veriCode() . BackendUtility::getUrlToken('tceAction') . '&redirect=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);};';
+			$removeOnClick = 'if (' . $confirmationCheck . ') { top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_file') .'&file[delete][0][data]=' . rawurlencode($fileOrFolderObject->getCombinedIdentifier()) . '&vC=' . $this->getBackendUser()->veriCode() . BackendUtility::getUrlToken('tceAction') . '&redirect=') . '+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);};';
 
 			$cells['delete'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($removeOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete') . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
 		} else {

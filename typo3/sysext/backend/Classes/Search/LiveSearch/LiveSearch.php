@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Search\LiveSearch;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -239,15 +240,17 @@ class LiveSearch {
 		$editLink = '';
 		if ($tableName == 'pages') {
 			$localCalcPerms = $GLOBALS['BE_USER']->calcPerms(BackendUtility::getRecord('pages', $row['uid']));
-			$permsEdit = $localCalcPerms & 2;
+			$permsEdit = $localCalcPerms & Permission::PAGE_EDIT;
 		} else {
-			$permsEdit = $calcPerms & 16;
+			$permsEdit = $calcPerms & Permission::CONTENT_EDIT;
 		}
-		// "Edit" link: ( Only if permissions to edit the page-record of the content of the parent page ($this->id)
-		// @todo Is there an existing function to generate this link?
+		// "Edit" link - Only if permissions to edit the page-record of the content of the parent page ($this->id)
 		if ($permsEdit) {
 			$returnUrl = BackendUtility::getModuleUrl('web_list', array('id' => $row['pid']));
-			$editLink = 'alt_doc.php?' . '&edit[' . $tableName . '][' . $row['uid'] . ']=edit&returnUrl=' . rawurlencode($returnUrl);
+			$editLink = BackendUtility::getModuleUrl('record_edit', array(
+				'edit[' . $tableName . '][' . $row['uid'] . ']' => 'edit',
+				'returnUrl' => $returnUrl
+			));
 		}
 		return $editLink;
 	}
@@ -313,7 +316,7 @@ class LiveSearch {
 				if (isset($GLOBALS['TCA'][$tableName]['columns'][$fieldName])) {
 					$fieldConfig = &$GLOBALS['TCA'][$tableName]['columns'][$fieldName]['config'];
 					// Check whether search should be case-sensitive or not
-					$format = 'LCASE(%s) LIKE LCASE(%s)';
+					$format = 'LOWER(%s) LIKE LOWER(%s)';
 					if (is_array($fieldConfig['search'])) {
 						if (in_array('case', $fieldConfig['search'])) {
 							$format = '%s LIKE %s';

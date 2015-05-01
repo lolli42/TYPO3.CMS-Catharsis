@@ -14,9 +14,11 @@ namespace TYPO3\CMS\Feedit;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
@@ -64,7 +66,7 @@ class FrontendEditPanel {
 		$this->databaseConnection = $databaseConnection ?: $GLOBALS['TYPO3_DB'];
 		$this->frontendController = $frontendController ?: $GLOBALS['TSFE'];
 		$this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
-		$this->cObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+		$this->cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$this->cObj->start(array());
 	}
 
@@ -183,15 +185,15 @@ class FrontendEditPanel {
 	}
 
 	/**
-	 * Adds an edit icon to the content string. The edit icon links to alt_doc.php with proper parameters for editing the table/fields of the context.
+	 * Adds an edit icon to the content string. The edit icon links to EditDocumentController with proper parameters for editing the table/fields of the context.
 	 * This implements TYPO3 context sensitive editing facilities. Only backend users will have access (if properly configured as well).
 	 *
 	 * @param string $content The content to which the edit icons should be appended
-	 * @param string $params The parameters defining which table and fields to edit. Syntax is [tablename]:[fieldname],[fieldname],[fieldname],... OR [fieldname],[fieldname],[fieldname],... (basically "[tablename]:" is optional, default table is the one of the "current record" used in the function). The fieldlist is sent as "&columnsOnly=" parameter to alt_doc.php
+	 * @param string $params The parameters defining which table and fields to edit. Syntax is [tablename]:[fieldname],[fieldname],[fieldname],... OR [fieldname],[fieldname],[fieldname],... (basically "[tablename]:" is optional, default table is the one of the "current record" used in the function). The fieldlist is sent as "&columnsOnly=" parameter to EditDocumentController
 	 * @param array $conf TypoScript properties for configuring the edit icons.
 	 * @param string $currentRecord The "table:uid" of the record being shown. If empty string then $this->currentRecord is used. For new records (set by $conf['newRecordFromTable']) it's auto-generated to "[tablename]:NEW
 	 * @param array $dataArr Alternative data array to use. Default is $this->data
-	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to alt_doc.php
+	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to EditDocumentController
 	 * @param string $table
 	 * @param int $editUid
 	 * @param string $fieldList
@@ -200,12 +202,24 @@ class FrontendEditPanel {
 	public function editIcons($content, $params, array $conf = array(), $currentRecord = '', array $dataArr = array(), $addUrlParamStr = '', $table, $editUid, $fieldList) {
 		// Special content is about to be shown, so the cache must be disabled.
 		$this->frontendController->set_no_cache('Display frontend edit icons', TRUE);
-		$style = $conf['styleAttribute'] ? ' style="' . htmlspecialchars($conf['styleAttribute']) . '"' : '';
 		$iconTitle = $this->cObj->stdWrap($conf['iconTitle'], $conf['iconTitle.']);
-		$iconImg = $conf['iconImg'] ? $conf['iconImg'] : '<img  ' . IconUtility::skinImg(TYPO3_mainDir, 'gfx/edit_fe.gif', 'width="11" height="12" border="0" align="top" ') . ' title="' . htmlspecialchars($iconTitle, ENT_COMPAT, 'UTF-8', FALSE) . '"' . $style . ' class="frontEndEditIcons" alt="" />';
+		$optionsArray = array(
+			'title' => htmlspecialchars($iconTitle, ENT_COMPAT, 'UTF-8', FALSE),
+			'class' => 'frontEndEditIcons',
+			'style' => $conf['styleAttribute'] ? htmlspecialchars($conf['styleAttribute']) : ''
+		);
+		$iconImg = $conf['iconImg'] ? $conf['iconImg'] : IconUtility::getSpriteIcon('actions-document-open', $optionsArray);
 		$nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
-		$adminURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir;
-		$icon = $this->editPanelLinkWrap_doWrap($iconImg, $adminURL . 'alt_doc.php?edit[' . $table . '][' . $editUid . ']=edit&columnsOnly=' . rawurlencode($fieldList) . '&noView=' . $nV . $addUrlParamStr);
+
+		$url = BackendUtility::getModuleUrl(
+			'record_edit',
+			array(
+				'edit[' . $table . '][' . $editUid . ']' => 'edit',
+				'columnsOnly' => $fieldList,
+				'noView' => $nV
+			)
+		) . $addUrlParamStr;
+		$icon = $this->editPanelLinkWrap_doWrap($iconImg, $url);
 		if ($conf['beforeLastTag'] < 0) {
 			$content = $icon . $content;
 		} elseif ($conf['beforeLastTag'] > 0) {
@@ -236,22 +250,21 @@ class FrontendEditPanel {
 	 */
 	protected function editPanelLinkWrap($string, $formName, $cmd, $currentRecord = '', $confirm = '', $nPid = '') {
 		$nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
-		$adminURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir;
 		if ($cmd == 'edit') {
 			$rParts = explode(':', $currentRecord);
-			$out = $this->editPanelLinkWrap_doWrap($string, $adminURL . 'alt_doc.php?edit[' . $rParts[0] . '][' . $rParts[1] . ']=edit&noView=' . $nV, $currentRecord);
+			$out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', array('edit[' . $rParts[0] . '][' . $rParts[1] . ']' => 'edit', 'noView=' . $nV)), $currentRecord);
 		} elseif ($cmd == 'new') {
 			$rParts = explode(':', $currentRecord);
 			if ($rParts[0] == 'pages') {
-				$out = $this->editPanelLinkWrap_doWrap($string, $adminURL . 'db_new.php?id=' . $rParts[1] . '&pagesOnly=1', $currentRecord);
+				$out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('db_new', ['id' => $rParts[1], 'pagesOnly' => 1]), $currentRecord);
 			} else {
 				if (!(int)$nPid) {
 					$nPid = MathUtility::canBeInterpretedAsInteger($rParts[1]) ? -$rParts[1] : $this->frontendController->id;
 				}
-				$out = $this->editPanelLinkWrap_doWrap($string, $adminURL . 'alt_doc.php?edit[' . $rParts[0] . '][' . $nPid . ']=new&noView=' . $nV, $currentRecord);
+				$out = $this->editPanelLinkWrap_doWrap($string, BackendUtility::getModuleUrl('record_edit', array('edit[' . $rParts[0] . '][' . $nPid . ']' => 'new', 'noView' => $nV)), $currentRecord);
 			}
 		} else {
-			if ($confirm && $this->backendUser->jsConfirmation(8)) {
+			if ($confirm && $this->backendUser->jsConfirmation(JsConfirmation::FE_EDIT)) {
 				// Gets htmlspecialchared later
 				$cf1 = 'if (confirm(' . GeneralUtility::quoteJSvalue($confirm, TRUE) . ')) {';
 				$cf2 = '}';
@@ -264,7 +277,7 @@ class FrontendEditPanel {
 	}
 
 	/**
-	 * Creates a link to a script (eg. typo3/alt_doc.php or typo3/db_new.php) which either opens in the current frame OR in a pop-up window.
+	 * Creates a link to a script (eg. EditDocumentController or NewRecordController) which either opens in the current frame OR in a pop-up window.
 	 *
 	 * @param string $string The string to wrap in a link, typ. and image used as button in the edit panel.
 	 * @param string $url The URL of the link. Should be absolute if supposed to work with <base> path set.

@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
@@ -348,6 +349,7 @@ class BackendUtility {
 					'uid' => $val['uid'],
 					'pid' => $val['pid'],
 					'title' => $val['title'],
+					'doktype' => $val['doktype'],
 					'TSconfig' => $val['TSconfig'],
 					'is_siteroot' => $val['is_siteroot'],
 					'storage_pid' => $val['storage_pid'],
@@ -382,7 +384,7 @@ class BackendUtility {
 			$row = $getPageForRootline_cache[$ident];
 		} else {
 			$db = static::getDatabaseConnection();
-			$res = $db->exec_SELECTquery('pid,uid,title,TSconfig,is_siteroot,storage_pid,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
+			$res = $db->exec_SELECTquery('pid,uid,title,doktype,TSconfig,is_siteroot,storage_pid,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
 			$row = $db->sql_fetch_assoc($res);
 			if ($row) {
 				$newLocation = FALSE;
@@ -1561,8 +1563,8 @@ class BackendUtility {
 		}
 
 		$fileReferences = array();
-		/** @var $relationHandler \TYPO3\CMS\Core\Database\RelationHandler */
-		$relationHandler = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
+		/** @var $relationHandler RelationHandler */
+		$relationHandler = GeneralUtility::makeInstance(RelationHandler::class);
 		if ($workspaceId !== NULL) {
 			$relationHandler->setWorkspaceId($workspaceId);
 		}
@@ -1624,17 +1626,22 @@ class BackendUtility {
 
 				// Web image
 				if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileReferenceObject->getExtension())) {
-					$imageUrl = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array(
-						'width' => $sizeParts[0],
-						'height' => $sizeParts[1]
-					))->getPublicUrl(TRUE);
-					$imgTag = '<img src="' . $imageUrl . '" alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
+					$processedImage = $fileObject->process(ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, array(
+										'width' => $sizeParts[0],
+										'height' => $sizeParts[1] . 'c',
+										'crop' => $fileReferenceObject->getProperty('crop')
+									));
+					$imageUrl = $processedImage->getPublicUrl(TRUE);
+					$imgTag = '<img src="' . $imageUrl . '" ' .
+							'width="' . $processedImage->getProperty('width') . '" ' .
+							'height="' . $processedImage->getProperty('height') . '" ' .
+							'alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
 				} else {
 					// Icon
 					$imgTag = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
 				}
 				if ($linkInfoPopup) {
-					$onClick = 'top.launchView(\'_FILE\',\'' . $fileObject->getUid() . '\',\'' . $backPath . '\'); return false;';
+					$onClick = 'top.launchView(\'_FILE\',\'' . (int)$fileObject->getUid() . '\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
 					$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $imgTag . '</a> ';
 				} else {
 					$thumbData .= $imgTag;
@@ -1679,7 +1686,7 @@ class BackendUtility {
 						))->getPublicUrl(TRUE);
 						$image = '<img src="' . htmlspecialchars($imageUrl) . '" hspace="2" border="0" title="' . htmlspecialchars($fileObject->getName()) . '"' . $tparams . ' alt="" />';
 						if ($linkInfoPopup) {
-							$onClick = 'top.launchView(\'_FILE\', \'' . $fileName . '\',\'\',\'' . $backPath . '\');return false;';
+							$onClick = 'top.launchView(\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileName) . ',\'\',' . GeneralUtility::quoteJSvalue($backPath) . ');return false;';
 							$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $image . '</a> ';
 						} else {
 							$thumbData .= $image;
@@ -1688,7 +1695,7 @@ class BackendUtility {
 						// Gets the icon
 						$fileIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
 						if ($linkInfoPopup) {
-							$onClick = 'top.launchView(\'_FILE\', \'' . $fileName . '\',\'\',\'' . $backPath . '\'); return false;';
+							$onClick = 'top.launchView(\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileName) . ',\'\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
 							$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $fileIcon . '</a> ';
 						} else {
 							$thumbData .= $fileIcon;
@@ -1708,8 +1715,10 @@ class BackendUtility {
 	 * @param string $tparams The additional attributes for the image tag
 	 * @param string $size The size of the thumbnail send along to thumbs.php
 	 * @return string Image tag
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use the corresponding Resource objects and Processing functionality
 	 */
 	static public function getThumbNail($thumbScript, $theFile, $tparams = '', $size = '') {
+		GeneralUtility::logDeprecatedFunction();
 		$size = trim($size);
 		$check = basename($theFile) . ':' . filemtime($theFile) . ':' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'];
 		$params = '&file=' . rawurlencode($theFile);
@@ -1938,7 +1947,7 @@ class BackendUtility {
 					foreach ($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'] as $itemConfiguration) {
 						// Loop on all available items
 						// Keep matches and move on to next value
-						if ($aValue == $itemConfiguration[1]) {
+						if ((string)$aValue === (string)$itemConfiguration[1]) {
 							$labels[] = static::getLanguageService()->sL($itemConfiguration[0]);
 							break;
 						}
@@ -2161,8 +2170,8 @@ class BackendUtility {
 							}
 							$MMfield = join(',', $MMfields);
 						}
-						/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
-						$dbGroup = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\RelationHandler::class);
+						/** @var $dbGroup RelationHandler */
+						$dbGroup = GeneralUtility::makeInstance(RelationHandler::class);
 						$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
 						$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
 						if (is_array($selectUids) && count($selectUids) > 0) {
@@ -2172,7 +2181,7 @@ class BackendUtility {
 								// Keep sorting of $selectUids
 								$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup ?
 									$MMrow['uid'] :
-									self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+									static::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
 							}
 							$db->sql_free_result($MMres);
 							if (!empty($mmlA)) {
@@ -2196,6 +2205,9 @@ class BackendUtility {
 							$rParts = array();
 							if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
 								$whereClause = '';
+								if (!empty($theColConf['foreign_table_field'])) {
+									$whereClause .= ' AND ' . $theColConf['foreign_table_field'] . ' = ' . static::getDatabaseConnection()->fullQuoteStr($table, $theColConf['foreign_table']);
+								}
 								// Add additional where clause if foreign_match_fields are defined
 								$foreignMatchFields = is_array($theColConf['foreign_match_fields']) ? $theColConf['foreign_match_fields'] : array();
 								foreach ($foreignMatchFields as $matchField => $matchValue) {
@@ -2237,23 +2249,69 @@ class BackendUtility {
 			case 'group':
 				// resolve the titles for DB records
 				if ($theColConf['internal_type'] === 'db') {
-					$finalValues = array();
-					$relationTableName = $theColConf['allowed'];
-					$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
-
-					foreach ($explodedValues as $explodedValue) {
-
-						if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
-							$relationTableNameForField = $relationTableName;
+					if ($theColConf['MM']) {
+						if ($uid) {
+							// Display the title of MM related records in lists
+							if ($noRecordLookup) {
+								$MMfield = $theColConf['foreign_table'] . '.uid';
+							} else {
+								$MMfields = array($theColConf['foreign_table'] . '.' . $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label']);
+								$altLabelFields = explode(',', $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label_alt']);
+								foreach ($altLabelFields as $f) {
+									$f = trim($f);
+									if ($f !== '') {
+										$MMfields[] = $theColConf['foreign_table'] . '.' . $f;
+									}
+								}
+								$MMfield = join(',', $MMfields);
+							}
+							/** @var $dbGroup RelationHandler */
+							$dbGroup = GeneralUtility::makeInstance(RelationHandler::class);
+							$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
+							$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
+							if (!empty($selectUids) && is_array($selectUids)) {
+								$MMres = $db->exec_SELECTquery(
+									'uid, ' . $MMfield,
+									$theColConf['foreign_table'],
+									'uid IN (' . implode(',', $selectUids) . ')' . static::deleteClause($theColConf['foreign_table'])
+								);
+								$mmlA = array();
+								while ($MMrow = $db->sql_fetch_assoc($MMres)) {
+									// Keep sorting of $selectUids
+									$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup
+										? $MMrow['uid']
+										: static::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+								}
+								$db->sql_free_result($MMres);
+								if (!empty($mmlA)) {
+									ksort($mmlA);
+									$l = implode('; ', $mmlA);
+								} else {
+									$l = 'N/A';
+								}
+							} else {
+								$l = 'N/A';
+							}
 						} else {
-							list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
+							$l = 'N/A';
 						}
+					} else {
+						$finalValues = array();
+						$relationTableName = $theColConf['allowed'];
+						$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
 
-						$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
-						$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
+						foreach ($explodedValues as $explodedValue) {
+							if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
+								$relationTableNameForField = $relationTableName;
+							} else {
+								list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
+							}
+
+							$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
+							$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
+						}
+						$l = implode(', ', $finalValues);
 					}
-
-					$l = implode(', ', $finalValues);
 				} else {
 					$l = implode(', ', GeneralUtility::trimExplode(',', $value, TRUE));
 				}
@@ -2504,8 +2562,7 @@ class BackendUtility {
 	 *******************************************/
 	/**
 	 * Returns help-text icon if configured for.
-	 * TCA_DESCR must be loaded prior to this function and static::getBackendUserAuthentication() must
-	 * have 'edit_showFieldHelp' set to 'icon', otherwise nothing is returned
+	 * TCA_DESCR must be loaded prior to this function
 	 *
 	 * Please note: since TYPO3 4.5 the UX team decided to not use CSH in its former way,
 	 * but to wrap the given text (where before the help icon was, and you could hover over it)
@@ -2521,10 +2578,7 @@ class BackendUtility {
 	 */
 	static public function helpTextIcon($table, $field, $BACK_PATH = '', $force = FALSE) {
 		GeneralUtility::logDeprecatedFunction();
-		if (
-			is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])
-			&& (isset(static::getBackendUserAuthentication()->uc['edit_showFieldHelp']) || $force)
-		) {
+		if (is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])) {
 			return self::wrapInHelp($table, $field);
 		}
 		return '';
@@ -2669,22 +2723,23 @@ class BackendUtility {
 	}
 
 	/**
-	 * Returns a JavaScript string (for an onClick handler) which will load the alt_doc.php script that shows the form for editing of the record(s) you have send as params.
+	 * Returns a JavaScript string (for an onClick handler) which will load the EditDocumentController script that shows the form for editing of the record(s) you have send as params.
 	 * REMEMBER to always htmlspecialchar() content in href-properties to ampersands get converted to entities (XHTML requirement and XSS precaution)
 	 *
-	 * @param string $params Parameters sent along to alt_doc.php. This requires a much more details description which you must seek in Inside TYPO3s documentation of the alt_doc.php API. And example could be '&edit[pages][123] = edit' which will show edit form for page record 123.
-	 * @param string $backPath Must point back to the TYPO3_mainDir directory (where alt_doc.php is)
+	 * @param string $params Parameters sent along to EditDocumentController. This requires a much more details description which you must seek in Inside TYPO3s documentation of the FormEngine API. And example could be '&edit[pages][123] = edit' which will show edit form for page record 123.
+	 * @param string $backPath (unused)
 	 * @param string $requestUri An optional returnUrl you can set - automatically set to REQUEST_URI.
 	 *
 	 * @return string
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::issueCommand()
 	 */
 	static public function editOnClick($params, $backPath = '', $requestUri = '') {
-		$returnUrl = $requestUri == -1
-			? '\'+T3_THIS_LOCATION+\''
-			: rawurlencode($requestUri ?: GeneralUtility::getIndpEnv('REQUEST_URI'));
-		$retUrlParam = 'returnUrl=' . $returnUrl;
-		return 'window.location.href=\'' . $backPath . 'alt_doc.php?' . $retUrlParam . $params . '\'; return false;';
+		if ($requestUri == -1) {
+			$returnUrl = 'T3_THIS_LOCATION';
+		} else {
+			$returnUrl = GeneralUtility::quoteJSvalue(rawurlencode($requestUri ?: GeneralUtility::getIndpEnv('REQUEST_URI')));
+		}
+		return 'window.location.href=' . GeneralUtility::quoteJSvalue(self::getModuleUrl('record_edit') . $params . '&returnUrl=') . '+' . $returnUrl . '; return false;';
 	}
 
 	/**
@@ -2725,7 +2780,7 @@ class BackendUtility {
 			$previewUrl = self::createPreviewUrl($pageUid, $rootLine, $anchorSection, $additionalGetVars, $viewScript);
 		}
 
-		$onclickCode = 'var previewWin = window.open(\'' . $previewUrl . '\',\'newTYPO3frontendWindow\');' . ($switchFocus ? 'previewWin.focus();' : '');
+		$onclickCode = 'var previewWin = window.open(' . GeneralUtility::quoteJSvalue($previewUrl) . ',\'newTYPO3frontendWindow\');' . ($switchFocus ? 'previewWin.focus();' : '');
 		return $onclickCode;
 	}
 
@@ -3137,16 +3192,11 @@ class BackendUtility {
 	 *
 	 * @param string $moduleName Name of the module
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
-	 * @param bool|string $backPathOverride backpath that should be used instead of the global $BACK_PATH
+	 * @param bool|string $backPathOverride (unused)
 	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
 	 */
 	static public function getModuleUrl($moduleName, $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
-		if ($backPathOverride === FALSE) {
-			$backPath = isset($GLOBALS['BACK_PATH']) ? $GLOBALS['BACK_PATH'] : '';
-		} else {
-			$backPath = $backPathOverride;
-		}
 		$urlParameters = array(
 			'M' => $moduleName,
 			'moduleToken' => FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
@@ -3155,7 +3205,7 @@ class BackendUtility {
 		if ($returnAbsoluteUrl) {
 			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
 		} else {
-			return $backPath . $url;
+			return PathUtility::getAbsoluteWebPath(PATH_typo3 . $url);
 		}
 	}
 
@@ -3168,17 +3218,12 @@ class BackendUtility {
 	 *
 	 * @param string $ajaxIdentifier Identifier of the AJAX callback
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
-	 * @param bool $backPathOverride Backpath that should be used instead of the global $BACK_PATH
+	 * @param bool $backPathOverride (unused)
 	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
 	 * @internal
 	 */
 	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
-		if ($backPathOverride) {
-			$backPath = $backPathOverride;
-		} else {
-			$backPath = isset($GLOBALS['BACK_PATH']) ? $GLOBALS['BACK_PATH'] : '';
-		}
 		$additionalUrlParameters = array(
 			'ajaxID' => $ajaxIdentifier
 		);
@@ -3189,7 +3234,7 @@ class BackendUtility {
 		if ($returnAbsoluteUrl) {
 			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
 		} else {
-			return $backPath . $url;
+			return PathUtility::getAbsoluteWebPath(PATH_typo3 . $url);
 		}
 	}
 
@@ -3199,15 +3244,10 @@ class BackendUtility {
 	 * @param array $urlParameters URL parameters that should be added as key value pairs
 	 * @param string $linkTitle title for the link tag
 	 * @param string $linkText optional link text after the icon
-	 * @return string A complete link tag or empty string
+	 * @return string A complete <a href=""> tag
 	 */
 	static public function getListViewLink($urlParameters = array(), $linkTitle = '', $linkText = '') {
-		$url = self::getModuleUrl('web_list', $urlParameters);
-		if ($url === FALSE) {
-			return '';
-		} else {
-			return '<a href="' . htmlspecialchars($url) . '" title="' . htmlspecialchars($linkTitle) . '">' . IconUtility::getSpriteIcon('actions-system-list-open') . htmlspecialchars($linkText) . '</a>';
-		}
+		return '<a href="' . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="' . htmlspecialchars($linkTitle) . '">' . IconUtility::getSpriteIcon('actions-system-list-open') . htmlspecialchars($linkText) . '</a>';
 	}
 
 	/**
@@ -3267,7 +3307,7 @@ class BackendUtility {
 	 * @param int $uid Record uid
 	 * @return array
 	 * @internal
-	 * @see class.db_layout.inc, alt_db_navframe.php, alt_doc.php, db_layout.php
+	 * @see class.db_layout.inc, alt_db_navframe.php, EditDocumentController, db_layout.php
 	 */
 	static public function isRecordLocked($table, $uid) {
 		if (!is_array($GLOBALS['LOCKED_RECORDS'])) {
@@ -3638,18 +3678,18 @@ class BackendUtility {
 
 	/**
 	 * Returns first possible RTE object if available.
-	 * Usage: $RTEobj = &BackendUtility::RTEgetObj();
+	 * Usage: $RTEobj = BackendUtility::RTEgetObj();
 	 *
 	 * @return mixed If available, returns RTE object, otherwise an array of messages from possible RTEs
 	 */
-	static public function &RTEgetObj() {
+	static public function RTEgetObj() {
 		// If no RTE object has been set previously, try to create it:
 		if (!isset($GLOBALS['T3_VAR']['RTEobj'])) {
 			// Set the object string to blank by default:
 			$GLOBALS['T3_VAR']['RTEobj'] = array();
 			// Traverse registered RTEs:
 			if (is_array($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'])) {
-				foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'] as $extKey => $rteObjCfg) {
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_reg'] as $rteObjCfg) {
 					$rteObj = GeneralUtility::getUserObj($rteObjCfg['objRef']);
 					if (is_object($rteObj)) {
 						if ($rteObj->isAvailable()) {
@@ -3702,21 +3742,39 @@ class BackendUtility {
 	}
 
 	/**
+	 * Gets an instance of the runtime cache.
+	 *
+	 * @return VariableFrontend
+	 */
+	static protected function getRuntimeCache() {
+		return GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_runtime');
+	}
+
+	/**
 	 * Returns array of soft parser references
 	 *
 	 * @param string $parserList softRef parser list
-	 * @return array Array where the parser key is the key and the value is the parameter string
+	 * @return array|bool Array where the parser key is the key and the value is the parameter string, FALSE if no parsers were found
 	 */
 	static public function explodeSoftRefParserList($parserList) {
+		$runtimeCache = self::getRuntimeCache();
+		$cacheId = 'backend-softRefList-' . md5($parserList);
+		if ($runtimeCache->has($cacheId)) {
+			return $runtimeCache->get($cacheId);
+		}
+
 		// Looking for global parsers:
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL']) && !empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) {
 			GeneralUtility::deprecationLog('The hook softRefParser_GL is deprecated since TYPO3 CMS 7 and will be removed in TYPO3 CMS 8');
 			$parserList = implode(',', array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) . ',' . $parserList;
 		}
+
 		// Return immediately if list is blank:
 		if ($parserList === '') {
+			$runtimeCache->set($cacheId, FALSE);
 			return FALSE;
 		}
+
 		// Otherwise parse the list:
 		$keyList = GeneralUtility::trimExplode(',', $parserList, TRUE);
 		$output = array();
@@ -3728,6 +3786,7 @@ class BackendUtility {
 				$output[$val] = '';
 			}
 		}
+		$runtimeCache->set($cacheId, $output);
 		return $output;
 	}
 

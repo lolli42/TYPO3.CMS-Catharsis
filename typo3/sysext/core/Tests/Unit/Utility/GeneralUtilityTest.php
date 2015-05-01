@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Utility;
 use \org\bovigo\vfs\vfsStream;
 use \org\bovigo\vfs\vfsStreamDirectory;
 use \org\bovigo\vfs\vfsStreamWrapper;
+use TYPO3\CMS\Core\Tests\FileStreamWrapper;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\GeneralUtility
@@ -578,9 +579,16 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'Element at end of list' => array('one,two,removeme', 'one,two'),
 			'One item list' => array('removeme', ''),
 			'Element not contained in list' => array('one,two,three', 'one,two,three'),
+			'Empty element survives' => array('one,,three,,removeme', 'one,,three,'),
+			'Empty element survives at start' => array(',removeme,three,removeme', ',three'),
+			'Empty element survives at end' => array('removeme,three,removeme,', 'three,'),
 			'Empty list' => array('', ''),
-			'List with leading comma is trimmed afterwards' => array(',one,two,removeme', 'one,two'),
-			'List with trailing comma is trimmed afterwards' => array('one,two,removeme,', 'one,two'),
+			'List contains removeme multiple times' => array('removeme,notme,removeme,removeme', 'notme'),
+			'List contains removeme multiple times nothing else' => array('removeme,removeme,removeme', ''),
+			'List contains removeme multiple times nothing else 2x' => array('removeme,removeme', ''),
+			'List contains removeme multiple times nothing else 3x' => array('removeme,removeme,removeme', ''),
+			'List contains removeme multiple times nothing else 4x' => array('removeme,removeme,removeme,removeme', ''),
+			'List contains removeme multiple times nothing else 5x' => array('removeme,removeme,removeme,removeme,removeme', ''),
 		);
 	}
 
@@ -2814,6 +2822,31 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		Utility\GeneralUtility::mkdir_deep(PATH_site, $subDirectory);
 		$this->testFilesToDelete[] = PATH_site . $directory;
 		$this->assertTrue(is_dir(PATH_site . $subDirectory));
+	}
+
+	/**
+	 * Data provider for mkdirDeepCreatesDirectoryWithDoubleSlashes.
+	 * @return array
+	 */
+	public function mkdirDeepCreatesDirectoryWithAndWithoutDoubleSlashesDataProvider() {
+		return array(
+			'no double slash if concatenated with PATH_site' => array('fileadmin/testDir1'),
+			'double slash if concatenated with PATH_site' => array('/fileadmin/testDir2'),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider mkdirDeepCreatesDirectoryWithAndWithoutDoubleSlashesDataProvider
+	 */
+	public function mkdirDeepCreatesDirectoryWithDoubleSlashes($directoryToCreate) {
+		vfsStream::setup();
+		// Load fixture files and folders from disk
+		FileStreamWrapper::init(PATH_site);
+		FileStreamWrapper::registerOverlayPath('fileadmin', 'vfs://root/fileadmin', TRUE);
+		Utility\GeneralUtility::mkdir_deep(PATH_site, $directoryToCreate);
+		$this->assertTrue(is_dir(PATH_site . $directoryToCreate));
+		FileStreamWrapper::destroy();
 	}
 
 	/**

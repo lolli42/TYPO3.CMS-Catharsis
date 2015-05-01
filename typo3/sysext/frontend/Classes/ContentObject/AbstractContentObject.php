@@ -23,14 +23,9 @@ namespace TYPO3\CMS\Frontend\ContentObject;
 abstract class AbstractContentObject {
 
 	/**
-	 * @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @var ContentObjectRenderer
 	 */
 	protected $cObj;
-
-	/**
-	 * @var \TYPO3\CMS\Core\Resource\ResourceFactory
-	 */
-	protected $fileFactory = NULL;
 
 	/**
 	 * Default constructor.
@@ -39,7 +34,6 @@ abstract class AbstractContentObject {
 	 */
 	public function __construct(ContentObjectRenderer $cObj) {
 		$this->cObj = $cObj;
-		$this->fileFactory = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance();
 	}
 
 	/**
@@ -53,7 +47,7 @@ abstract class AbstractContentObject {
 	/**
 	 * Getter for current cObj
 	 *
-	 * @return \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
+	 * @return ContentObjectRenderer
 	 */
 	public function getContentObject() {
 		return $this->cObj;

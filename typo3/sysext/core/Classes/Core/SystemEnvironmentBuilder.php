@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Core;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Class to encapsulate base setup of bootstrap.
  *
@@ -51,6 +53,13 @@ class SystemEnvironmentBuilder {
 	);
 
 	/**
+	 * An array of disabled methods
+	 *
+	 * @var string[]
+	 */
+	static protected $disabledFunctions = NULL;
+
+	/**
 	 * Run base setup.
 	 * This entry method is used in all scopes (FE, BE, eid, ajax, ...)
 	 *
@@ -63,7 +72,6 @@ class SystemEnvironmentBuilder {
 		self::definePaths($relativePathPart);
 		self::checkMainPathsExist();
 		self::handleMagicQuotesGpc();
-		self::addCorePearPathToIncludePath();
 		self::initializeGlobalVariables();
 		self::initializeGlobalTimeTrackingVariables();
 		self::initializeBasicErrorReporting();
@@ -76,8 +84,8 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '7.1.0-dev');
-		define('TYPO3_branch', '7.1');
+		define('TYPO3_version', '7.3-dev');
+		define('TYPO3_branch', '7.3');
 		define('TYPO3_copyright_year', '1998-2015');
 
 		// TYPO3 external links
@@ -195,30 +203,11 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function handleMagicQuotesGpc() {
 		if (!get_magic_quotes_gpc()) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::addSlashesOnArray($_GET);
-			\TYPO3\CMS\Core\Utility\GeneralUtility::addSlashesOnArray($_POST);
+			GeneralUtility::addSlashesOnArray($_GET);
+			GeneralUtility::addSlashesOnArray($_POST);
 			$GLOBALS['HTTP_GET_VARS'] = $_GET;
 			$GLOBALS['HTTP_POST_VARS'] = $_POST;
 		}
-	}
-
-	/**
-	 * Add typo3/contrib/pear/ as first include folder in
-	 * include path, because the shipped PEAR packages use
-	 * relative paths to include their files.
-	 *
-	 * This is required for \TYPO3\CMS\Core\Http\HttpRequest
-	 * to work.
-	 *
-	 * Having the TYPO3 folder first will make sure that the
-	 * shipped version is loaded before any local PEAR package,
-	 * thus avoiding any incompatibilities with newer or older
-	 * versions.
-	 *
-	 * @return void
-	 */
-	static protected function addCorePearPathToIncludePath() {
-		set_include_path(PATH_typo3 . 'contrib/pear/' . PATH_SEPARATOR . get_include_path());
 	}
 
 	/**
@@ -230,7 +219,7 @@ class SystemEnvironmentBuilder {
 		// Unset variable(s) in global scope (security issue #13959)
 		unset($GLOBALS['error']);
 		// Set up base information about browser/user-agent
-		$GLOBALS['CLIENT'] = \TYPO3\CMS\Core\Utility\GeneralUtility::clientInfo();
+		$GLOBALS['CLIENT'] = GeneralUtility::clientInfo();
 		$GLOBALS['TYPO3_MISC'] = array();
 		$GLOBALS['T3_VAR'] = array();
 		$GLOBALS['T3_SERVICES'] = array();
@@ -244,7 +233,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function initializeGlobalTimeTrackingVariables() {
 		// Set PARSETIME_START to the system time in milliseconds.
-		$GLOBALS['PARSETIME_START'] = \TYPO3\CMS\Core\Utility\GeneralUtility::milliseconds();
+		$GLOBALS['PARSETIME_START'] = GeneralUtility::milliseconds();
 		// Microtime of (nearly) script start
 		$GLOBALS['TYPO3_MISC']['microtime_start'] = microtime(TRUE);
 		// EXEC_TIME is set so that the rest of the script has a common value for the script execution time
@@ -280,7 +269,7 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function getTypo3Os() {
 		$typoOs = '';
-		if (!stristr(PHP_OS, 'darwin') && stristr(PHP_OS, 'win')) {
+		if (!stristr(PHP_OS, 'darwin') && !stristr(PHP_OS, 'cygwin') && stristr(PHP_OS, 'win')) {
 			$typoOs = 'WIN';
 		}
 		return $typoOs;
@@ -388,13 +377,13 @@ class SystemEnvironmentBuilder {
 	 * We have two main scenarios for entry points:
 	 * - Directly called documentRoot/index.php (-> FE call or eiD include): index.php sets $relativePathPart to
 	 * empty string to hint this code that the document root is identical to the directory the script is located at.
-	 * - An indirect include of typo3/init.php (-> a backend module, the install tool, or scripts like thumbs.php).
+	 * - An indirect include of typo3/init.php (-> a backend module, the install tool, or scripts like ajax.php).
 	 * If init.php is included we distinguish two cases:
 	 * -- A backend module defines 'TYPO3_MOD_PATH': This is the case for "old" modules that are not called through
 	 * "mod.php" dispatcher, and in the install tool. The TYPO3_MOD_PATH defines the relative path to the typo3/
 	 * directory. This is taken as base to calculate the document root.
 	 * -- A script includes init.php and does not define 'TYPO3_MOD_PATH': This is the case for the mod.php dispatcher
-	 * and other entry scripts like 'cli_dispatch.phpsh' or 'thumbs.php' that are located parallel to init.php. In
+	 * and other entry scripts like 'cli_dispatch.phpsh' or 'ajax.php' that are located parallel to init.php. In
 	 * this case init.php sets 'typo3/' as $relativePathPart as base to calculate the document root.
 	 *
 	 * This basically boils down to the following code:
@@ -478,4 +467,20 @@ class SystemEnvironmentBuilder {
 		die($message);
 	}
 
+	/**
+	 * Check if the given function is disabled in the system
+	 *
+	 * @param string $function
+	 * @return bool
+	 */
+	static public function isFunctionDisabled($function) {
+		if (static::$disabledFunctions === NULL) {
+			static::$disabledFunctions = GeneralUtility::trimExplode(',', ini_get('disable_functions'));
+		}
+		if (!empty(static::$disabledFunctions)) {
+			return in_array($function, static::$disabledFunctions, TRUE);
+		}
+
+		return FALSE;
+	}
 }

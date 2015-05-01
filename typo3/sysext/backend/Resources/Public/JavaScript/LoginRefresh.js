@@ -15,7 +15,7 @@
  * Task that periodically checks if a blocking event in the backend occurred and
  * displays a proper dialog to the user.
  */
-define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
+define('TYPO3/CMS/Backend/LoginRefresh', ['jquery', 'bootstrap'], function($) {
 	var LoginRefresh = {
 		identifier: {
 			loginrefresh: 't3-modal-loginrefresh',
@@ -34,7 +34,8 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 		$timeoutModal: '',
 		$backendLockedModal: '',
 		$loginForm: '',
-		loginFramesetUrl: ''
+		loginFramesetUrl: '',
+		logoutUrl: ''
 	};
 
 	/**
@@ -76,6 +77,13 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 	};
 
 	/**
+	 * Set logout url
+	 */
+	LoginRefresh.setLogoutUrl = function(logoutUrl) {
+		LoginRefresh.logoutUrl = logoutUrl;
+	};
+
+	/**
 	 * Generates the modal displayed on near session time outs
 	 */
 	LoginRefresh.initializeTimeoutModal = function() {
@@ -105,7 +113,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 				});
 			}),
 			$('<button />', {class: 'btn btn-default', 'data-action': 'logout'}).text(TYPO3.LLL.core.refresh_direct_logout_button).on('click', function() {
-				top.location.href = TYPO3.configuration.siteUrl + TYPO3.configuration.TYPO3_mainDir + 'logout.php';
+				top.location.href = TYPO3.configuration.siteUrl + LoginRefresh.logoutUrl;
 			})
 		);
 
@@ -196,7 +204,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 		LoginRefresh.$loginForm.find('.modal-footer').append(
 			$('<button />', {type: 'submit', form: 'beLoginRefresh', class: 'btn btn-default', 'data-action': 'refreshSession'}).text(TYPO3.LLL.core.refresh_login_button),
 			$('<button />', {class: 'btn btn-default', 'data-action': 'logout'}).text(TYPO3.LLL.core.refresh_direct_logout_button).on('click', function() {
-				top.location.href = TYPO3.configuration.siteUrl + TYPO3.configuration.TYPO3_mainDir + 'logout.php';
+				top.location.href = TYPO3.configuration.siteUrl + LoginRefresh.logoutUrl;
 			})
 		);
 
@@ -340,7 +348,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 			passwordFieldValue = $passwordField.val();
 
 		if (passwordFieldValue === '') {
-			top.TYPO3.Flashmessage.display(TYPO3.Severity.error, TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_emptyPassword);
+			top.TYPO3.Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_emptyPassword);
 			$passwordField.focus();
 			return;
 		}
@@ -378,8 +386,7 @@ define('TYPO3/CMS/Backend/LoginRefresh', ['jquery'], function($) {
 					// User is logged in
 					LoginRefresh.hideLoginForm();
 				} else {
-					// TODO: add failure to notification system instead of alert
-					top.TYPO3.Flashmessage.display(TYPO3.Severity.error, TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_failed_message);
+					top.TYPO3.Notification.error(TYPO3.LLL.core.refresh_login_failed, TYPO3.LLL.core.refresh_login_failed_message);
 					$passwordField.focus();
 				}
 			}

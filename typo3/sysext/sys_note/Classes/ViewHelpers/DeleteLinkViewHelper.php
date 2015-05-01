@@ -31,9 +31,9 @@ class DeleteLinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractView
 	 */
 	public function render($id) {
 		$redirectUrl = \TYPO3\CMS\Core\Utility\GeneralUtility::getIndpEnv('REQUEST_URI');
-		$parameters = 'cmd[sys_note][' . $id . '][delete]=1';
-		$url = $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_db') . '&' . $parameters . '&redirect=' . ($redirectUrl == '' ? '\' + T3_THIS_LOCATION + \'' : rawurlencode($redirectUrl)) . BackendUtility::getUrlToken('tceAction');
-		return $url;
+		$urlParameters = ['cmd[sys_note][' . $id . '][delete]' => 1];
+		$url = BackendUtility::getModuleUrl('tce_db', $urlParameters) . '&redirect=' . ($redirectUrl == '' ? '\' + T3_THIS_LOCATION + \'' : rawurlencode($redirectUrl)) . BackendUtility::getUrlToken('tceAction');
+		return htmlspecialchars($url);
 	}
 
 }

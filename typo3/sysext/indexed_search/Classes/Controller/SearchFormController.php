@@ -14,6 +14,7 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -746,7 +747,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 						if (!trim($sectionName)) {
 							$sectionTitleLinked = $this->pi_getLL('unnamedSection', '', TRUE) . ':';
 						} elseif ($this->conf['linkSectionTitles']) {
-							$onclick = 'document.' . $this->prefixId . '[\'' . $this->prefixId . '[_sections]\'].value=\'' . $theRLid . '\';document.' . $this->prefixId . '.submit();return false;';
+							$quotedPrefix = GeneralUtility::quoteJSvalue($this->prefixId);
+							$onclick = 'document.forms[' . $quotedPrefix . '][' . GeneralUtility::quoteJSvalue($this->prefixId . '[_sections]') . '].value=' . GeneralUtility::quoteJSvalue($theRLid) . ';document.forms[' . $quotedPrefix . '].submit();return false;';
 							$sectionTitleLinked = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' . htmlspecialchars($sectionName) . ':</a>';
 						} else {
 							$sectionTitleLinked = htmlspecialchars($sectionName);
@@ -1020,9 +1022,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	}
 
 	/**
-	 * Returns AND statement for selection of langauge
+	 * Returns AND statement for selection of language
 	 *
-	 * @return string AND statement for selection of langauge
+	 * @return string AND statement for selection of language
 	 */
 	public function languageWhere() {
 		if ($this->piVars['lang'] >= 0) {
@@ -1081,8 +1083,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		// Setting up methods of filtering results based on page types, access, etc.
 		$page_join = '';
 		$page_where = '';
-		// Indexing configuration clause:
-		$freeIndexUidClause = $this->freeIndexUidWhere($freeIndexUid);
 		// Calling hook for alternative creation of page ID list
 		if ($hookObj = $this->hookRequest('execFinalQuery_idList')) {
 			$page_where = $hookObj->execFinalQuery_idList($list);
@@ -1102,11 +1102,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			foreach ($siteIdNumbers as $rootId) {
 				$id_list[] = $this->cObj->getTreeList(-1 * $rootId, 9999);
 			}
-			$page_where = ' ISEC.page_id IN (' . implode(',', $id_list) . ')';
+			$page_where = 'ISEC.page_id IN (' . implode(',', $id_list) . ')';
 		} else {
 			// Disable everything... (select all)
-			$page_where = ' 1=1 ';
+			$page_where = '1=1';
 		}
+		// Indexing configuration clause:
+		$freeIndexUidClause = $this->freeIndexUidWhere($freeIndexUid);
 		// If any of the ranking sortings are selected, we must make a join with the word/rel-table again, because we need to calculate ranking based on all search-words found.
 		if (substr($this->piVars['order'], 0, 5) == 'rank_') {
 			switch ($this->piVars['order']) {
@@ -1486,9 +1488,10 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$lines = array();
 			$html = $this->cObj->getSubpart($this->templateCode, '###RESULT_SECTION_LINKS###');
 			$item = $this->cObj->getSubpart($this->templateCode, '###RESULT_SECTION_LINKS_LINK###');
+			$anchorPrefix = $GLOBALS['TSFE']->baseUrl ? substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), strlen(GeneralUtility::getIndpEnv('TYPO3_SITE_URL'))) : '';
 			foreach ($this->resultSections as $id => $dat) {
 				$markerArray = array();
-				$aBegin = '<a href="' . htmlspecialchars(($this->frontendController->anchorPrefix . '#anchor_' . md5($id))) . '">';
+				$aBegin = '<a href="' . htmlspecialchars($anchorPrefix . '#anchor_' . md5($id)) . '">';
 				$aContent = htmlspecialchars((trim($dat[0]) ? trim($dat[0]) : $this->pi_getLL('unnamedSection'))) . ' (' . $dat[1] . ' ' . $this->pi_getLL(($dat[1] > 1 ? 'word_pages' : 'word_page'), '', TRUE) . ')';
 				$aEnd = '</a>';
 				$markerArray['###LINK###'] = $aBegin . $aContent . $aEnd;
@@ -1919,8 +1922,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return string Processed content.
 	 */
 	public function markupSWpartsOfString($str) {
+		$htmlParser = GeneralUtility::makeInstance(HtmlParser::class);
 		// Init:
-		$str = str_replace('&nbsp;', ' ', \TYPO3\CMS\Core\Html\HtmlParser::bidir_htmlspecialchars($str, -1));
+		$str = str_replace('&nbsp;', ' ', $htmlParser->bidir_htmlspecialchars($str, -1));
 		$str = preg_replace('/\\s\\s+/', ' ', $str);
 		$swForReg = array();
 		// Prepare search words for regex:
@@ -2338,4 +2342,32 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 		return $result;
 	}
 
+	/**
+	 * Search type
+	 * e.g. sentence (20), any part of the word (1)
+	 *
+	 * @return int
+	 */
+	public function getSearchType() {
+		return (int)$this->piVars['type'];
+	}
+
+	/**
+	 * A list of integer which should be root-pages to search from
+	 *
+	 * @return int[]
+	 */
+	public function getSearchRootPageIdList() {
+		return \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $this->wholeSiteIdList);
+	}
+
+	/**
+	 * Getter for join_pages flag
+	 * enabled through $this->conf['search.']['skipExtendToSubpagesChecking']
+	 *
+	 * @return bool
+	 */
+	public function getJoinPagesForQuery() {
+		return (bool)$this->join_pages;
+	}
 }

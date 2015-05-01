@@ -16,10 +16,13 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 
 /**
  * Script Class for Web > Layout module
@@ -302,7 +305,6 @@ class PageLayoutController {
 			'tt_content_showHidden' => '',
 			'showPalettes' => '',
 			'showDescriptions' => '',
-			'disableRTE' => '',
 			'function' => array(
 				0 => $GLOBALS['LANG']->getLL('m_function_0'),
 				1 => $GLOBALS['LANG']->getLL('m_function_1'),
@@ -394,11 +396,14 @@ class PageLayoutController {
 			$moduleLoader->load($GLOBALS['TBE_MODULES']);
 			$modules = $moduleLoader->modules;
 			if (is_array($modules['web']['sub']['list'])) {
-				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, '<p>' . $GLOBALS['LANG']->getLL('goToListModuleMessage') . '</p>
-					<p>' . IconUtility::getSpriteIcon('actions-system-list-open') . '<a href="javascript:top.goToModule( \'web_list\',1);">' . $GLOBALS['LANG']->getLL('goToListModule') . '
-						</a>
-					</p>', '', FlashMessage::INFO);
-				$content .= $flashMessage->render();
+				$title = $GLOBALS['LANG']->getLL('goToListModule');
+				$message = '<p>' . $GLOBALS['LANG']->getLL('goToListModuleMessage') . '</p>';
+				$message .= '<a class="btn btn-info" href="javascript:top.goToModule(\'web_list\',1);">' . $GLOBALS['LANG']->getLL('goToListModule') . '</a>';
+				// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
+				// A complete refactoring is necessary at this point
+				$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+				$viewHelper = $objectManager->get(InfoboxViewHelper::class);
+				$content .= $viewHelper->render($title, $message, InfoboxViewHelper::STATE_INFO);
 			}
 		}
 		// If content from different pid is displayed
@@ -450,7 +455,7 @@ class PageLayoutController {
 		if ($this->id && $access) {
 			// Initialize permission settings:
 			$this->CALC_PERMS = $GLOBALS['BE_USER']->calcPerms($this->pageinfo);
-			$this->EDIT_CONTENT = $this->CALC_PERMS & 16 ? 1 : 0;
+			$this->EDIT_CONTENT = $this->CALC_PERMS & Permission::CONTENT_EDIT ? 1 : 0;
 			// Start document template object:
 			$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 			$this->doc->backPath = $GLOBALS['BACK_PATH'];
@@ -478,7 +483,7 @@ class PageLayoutController {
 
 				function deleteRecord(table,id,url) {	//
 					if (confirm(' . GeneralUtility::quoteJSvalue($GLOBALS['LANG']->getLL('deleteWarning')) . ')) {
-						window.location.href = "' . $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_db') . '&cmd["+table+"]["+id+"][delete]=1&redirect="+escape(url)+"&vC=' . $GLOBALS['BE_USER']->veriCode() . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1";
+						window.location.href = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_db') . '&cmd[') . '+table+"]["+id+"][delete]=1&redirect="+escape(url)+"&vC=' . $GLOBALS['BE_USER']->veriCode() . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1";
 					}
 					return false;
 				}
@@ -610,8 +615,14 @@ class PageLayoutController {
 			');
 
 			$body = $this->doc->header($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']);
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('clickAPage_content'), $GLOBALS['LANG']->getLL('clickAPage_header'), FlashMessage::INFO);
-			$body .= $flashMessage->render();
+
+			$title = $GLOBALS['LANG']->getLL('clickAPage_header');
+			$message = $GLOBALS['LANG']->getLL('clickAPage_content');
+			// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
+			// A complete refactoring is necessary at this point
+			$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+			$viewHelper = $objectManager->get(InfoboxViewHelper::class);
+			$body .= $viewHelper->render($title, $message, InfoboxViewHelper::STATE_INFO);
 			// Setting up the buttons and markers for docheader
 			$docHeaderButtons = array(
 				'view' => '',
@@ -651,19 +662,22 @@ class PageLayoutController {
 		// Alternative template
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_layout_quickedit.html');
 		// Alternative form tag; Quick Edit submits its content to tce_db.php.
-		$this->doc->form = '<form action="' . htmlspecialchars($GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_db') . '&prErr=1&uPT=1') . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '" name="editform" onsubmit="return TBE_EDITOR.checkSubmit(1);">';
+		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db', ['prErr' => 1, 'uPT' => 1])) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '" name="editform" onsubmit="return TBE_EDITOR.checkSubmit(1);">';
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		// Set the edit_record value for internal use in this function:
 		$edit_record = $this->edit_record;
-		// If a command to edit all records in a column is issue, then select all those elements, and redirect to alt_doc.php:
+		// If a command to edit all records in a column is issue, then select all those elements, and redirect to FormEngine
 		if (substr($edit_record, 0, 9) == '_EDIT_COL') {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'tt_content', 'pid=' . (int)$this->id . ' AND colPos=' . (int)substr($edit_record, 10) . ' AND sys_language_uid=' . (int)$this->current_sys_language . ($this->MOD_SETTINGS['tt_content_showHidden'] ? '' : BackendUtility::BEenableFields('tt_content')) . BackendUtility::deleteClause('tt_content') . BackendUtility::versioningPlaceholderClause('tt_content'), '', 'sorting');
 			$idListA = array();
 			while ($cRow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				$idListA[] = $cRow['uid'];
 			}
-			$url = $GLOBALS['BACK_PATH'] . 'alt_doc.php?edit[tt_content][' . implode(',', $idListA) . ']=edit&returnUrl=' . rawurlencode($this->local_linkThisScript(array('edit_record' => '')));
+			$url = BackendUtility::getModuleUrl('record_edit', array(
+				'edit[tt_content][' . implode(',', $idListA) . ']' => 'edit',
+				'returnUrl' => $this->local_linkThisScript(array('edit_record' => ''))
+			));
 			\TYPO3\CMS\Core\Utility\HttpUtility::redirect($url);
 		}
 		// If the former record edited was the creation of a NEW record, this will look up the created records uid:
@@ -731,7 +745,7 @@ class PageLayoutController {
 		// Splitting the edit-record cmd value into table/uid:
 		$this->eRParts = explode(':', $edit_record);
 		// Delete-button flag?
-		$this->deleteButton = MathUtility::canBeInterpretedAsInteger($this->eRParts[1]) && $edit_record && ($this->eRParts[0] != 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] == 'pages' && $this->CALC_PERMS & 4);
+		$this->deleteButton = MathUtility::canBeInterpretedAsInteger($this->eRParts[1]) && $edit_record && ($this->eRParts[0] != 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] == 'pages' && $this->CALC_PERMS & Permission::PAGE_DELETE);
 		// If undo-button should be rendered (depends on available items in sys_history)
 		$this->undoButton = 0;
 		$undoRes = $GLOBALS['TYPO3_DB']->exec_SELECTquery('tstamp', 'sys_history', 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($this->eRParts[0], 'sys_history') . ' AND recuid=' . (int)$this->eRParts[1], '', 'tstamp DESC', '1');
@@ -752,13 +766,13 @@ class PageLayoutController {
 			$this->closeUrl = $this->returnUrl;
 		}
 		// Return-url for JavaScript:
-		$retUrlStr = $this->returnUrl ? '+\'&returnUrl=\'+\'' . rawurlencode($this->returnUrl) . '\'' : '';
+		$retUrlStr = $this->returnUrl ? '+\'&returnUrl=\'+' . GeneralUtility::quoteJSvalue(rawurlencode($this->returnUrl)) : '';
 		// Drawing the edit record selectbox
 		$this->editSelect = '<select name="edit_record" onchange="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue(
 			BackendUtility::getModuleUrl('web_layout') . '&id=' . $this->id . '&edit_record='
 		) . '+escape(this.options[this.selectedIndex].value)' . $retUrlStr . ',this);') . '">' . implode('', $opt) . '</select>';
 		// Creating editing form:
-		if ($GLOBALS['BE_USER']->check('tables_modify', $this->eRParts[0]) && $edit_record && ($this->eRParts[0] !== 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] === 'pages' && $this->CALC_PERMS & 1)) {
+		if ($GLOBALS['BE_USER']->check('tables_modify', $this->eRParts[0]) && $edit_record && ($this->eRParts[0] !== 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] === 'pages' && $this->CALC_PERMS & Permission::PAGE_SHOW)) {
 			// Splitting uid parts for special features, if new:
 			list($uidVal, $ex_pid, $ex_colPos) = explode('/', $this->eRParts[1]);
 			// Convert $uidVal to workspace version if any:
@@ -774,7 +788,6 @@ class PageLayoutController {
 				'colPos' => (int)$ex_colPos,
 				'sys_language_uid' => (int)$this->current_sys_language
 			);
-			$trData->disableRTE = $this->MOD_SETTINGS['disableRTE'];
 			$trData->lockRecords = 1;
 			// 'new'
 			$trData->fetchRecord($this->eRParts[0], $uidVal == 'new' ? $this->id : $uidVal, $uidVal);
@@ -798,18 +811,7 @@ class PageLayoutController {
 				// If the record is an array (which it will always be... :-)
 				// Create instance of TCEforms, setting defaults:
 				$tceforms = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\FormEngine::class);
-				$tceforms->backPath = $GLOBALS['BACK_PATH'];
-				$tceforms->initDefaultBEMode();
-				$tceforms->fieldOrder = $this->modTSconfig['properties']['tt_content.']['fieldOrder'];
 				$tceforms->palettesCollapsed = !$this->MOD_SETTINGS['showPalettes'];
-				$tceforms->disableRTE = $this->MOD_SETTINGS['disableRTE'];
-				$tceforms->enableClickMenu = TRUE;
-				$tceforms->enableTabMenu = TRUE;
-				// Clipboard is initialized:
-				// Start clipboard
-				$tceforms->clipObj = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Clipboard\Clipboard::class);
-				// Initialize - reads the clipboard content from the user session
-				$tceforms->clipObj->initializeClipboard();
 				// Render form, wrap it:
 				$panel = '';
 				$panel .= $tceforms->getMainFields($this->eRParts[0], $rec);
@@ -821,7 +823,6 @@ class PageLayoutController {
 				}
 				$theCode .= '
 					<input type="hidden" name="_serialNumber" value="' . md5(microtime()) . '" />
-					<input type="hidden" name="_disableRTE" value="' . $tceforms->disableRTE . '" />
 					<input type="hidden" name="edit_record" value="' . $edit_record . '" />
 					<input type="hidden" name="redirect" value="' . htmlspecialchars(($uidVal == 'new' ? BackendUtility::getModuleUrl(
 						'web_layout',
@@ -875,20 +876,12 @@ class PageLayoutController {
 				'</label>' .
 				'</div>';
 		}
-		if ($GLOBALS['BE_USER']->isRTE()) {
-			$h_func_b .= '<div class="checkbox">' .
-				'<label for="checkDisableRTE">' .
-				BackendUtility::getFuncCheck($this->id, 'SET[disableRTE]', $this->MOD_SETTINGS['disableRTE'], '', '', 'id="checkDisableRTE"') .
-				$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.disableRTE', TRUE) .
-				'</label>' .
-				'</div>';
-		}
 		// Add the function menus to bottom:
 		$content .= $this->doc->section('', $h_func_b, 0, 0);
 		$content .= $this->doc->spacer(10);
 		// Select element matrix:
 		if ($this->eRParts[0] == 'tt_content' && MathUtility::canBeInterpretedAsInteger($this->eRParts[1])) {
-			$posMap = GeneralUtility::makeInstance(\ext_posMap::class);
+			$posMap = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ContentLayoutPagePositionMap::class);
 			$posMap->backPath = $GLOBALS['BACK_PATH'];
 			$posMap->cur_sys_language = $this->current_sys_language;
 			$HTMLcode = '';
@@ -898,14 +891,6 @@ class PageLayoutController {
 			$content .= $this->doc->spacer(20);
 			$content .= $this->doc->section($GLOBALS['LANG']->getLL('CEonThisPage'), $HTMLcode, 0, 1);
 			$content .= $this->doc->spacer(20);
-		}
-		// Finally, if comments were generated in TCEforms object, print these as a HTML comment:
-		if (count($tceforms->commentMessages)) {
-			$content .= '
-	<!-- TCEFORM messages
-	' . htmlspecialchars(implode(LF, $tceforms->commentMessages)) . '
-	-->
-	';
 		}
 		return $content;
 	}
@@ -963,13 +948,6 @@ class PageLayoutController {
 				$dblist->tt_contentConfig['showCommands'] = 1;
 				// Boolean: Display info-marks or not
 				$dblist->tt_contentConfig['showInfo'] = 1;
-				// Boolean: If set, the content of column(s) $this->tt_contentConfig['showSingleCol'] is shown
-				// in the total width of the page
-				$dblist->tt_contentConfig['single'] = 0;
-				if ($this->MOD_SETTINGS['function'] == 4) {
-					// Grid view
-					$dblist->tt_contentConfig['showAsGrid'] = 1;
-				}
 				// Setting up the tt_content columns to show:
 				if (is_array($GLOBALS['TCA']['tt_content']['columns']['colPos']['config']['items'])) {
 					$colList = array();
@@ -983,14 +961,6 @@ class PageLayoutController {
 				}
 				if ($this->colPosList !== '') {
 					$colList = array_intersect(GeneralUtility::intExplode(',', $this->colPosList), $colList);
-				}
-				// If only one column found, display the single-column view.
-				if (count($colList) === 1 && !$this->MOD_SETTINGS['function'] === 4) {
-					// Boolean: If set, the content of column(s) $this->tt_contentConfig['showSingleCol']
-					// is shown in the total width of the page
-					$dblist->tt_contentConfig['single'] = 1;
-					// The column(s) to show if single mode (under each other)
-					$dblist->tt_contentConfig['showSingleCol'] = current($colList);
 				}
 				// The order of the rows: Default is left(1), Normal(0), right(2), margin(3)
 				$dblist->tt_contentConfig['cols'] = implode(',', $colList);
@@ -1121,11 +1091,16 @@ class PageLayoutController {
 		if (!$this->modTSconfig['properties']['disableIconToolbar']) {
 			// Move record
 			if (MathUtility::canBeInterpretedAsInteger($this->eRParts[1])) {
-				$buttons['move_record'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('move_element') . '&table=' . $this->eRParts[0] . '&uid=' . $this->eRParts[1] . '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . '">' . IconUtility::getSpriteIcon(('actions-' . ($this->eRParts[0] == 'tt_content' ? 'document' : 'page') . '-move'), array('class' => 'c-inputButton', 'title' => $GLOBALS['LANG']->getLL(('move_' . ($this->eRParts[0] == 'tt_content' ? 'record' : 'page')), TRUE))) . '</a>';
+				$urlParameters = [
+					'table' => $this->eRParts[0],
+					'uid' => $this->eRParts[1],
+					'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+				];
+				$buttons['move_record'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('move_element', $urlParameters)) . '">' . IconUtility::getSpriteIcon(('actions-' . ($this->eRParts[0] == 'tt_content' ? 'document' : 'page') . '-move'), array('class' => 'c-inputButton', 'title' => $GLOBALS['LANG']->getLL(('move_' . ($this->eRParts[0] == 'tt_content' ? 'record' : 'page')), TRUE))) . '</a>';
 			}
 
 			// Edit page properties and page language overlay icons
-			if ($this->CALC_PERMS & 2) {
+			if ($this->CALC_PERMS & Permission::PAGE_EDIT) {
 
 				// Edit localized page_language_overlay only when one specific language is selected
 				if ($this->MOD_SETTINGS['function'] == 1 && $this->current_sys_language > 0) {
@@ -1142,11 +1117,7 @@ class PageLayoutController {
 						'sys_language_uid'
 					);
 
-					$editLanguageOnClick = htmlspecialchars(
-						BackendUtility::editOnClick(
-						'&edit[pages_language_overlay][' . $overlayRecord['uid'] . ']=edit',
-						$GLOBALS['BACK_PATH'])
-					);
+					$editLanguageOnClick = htmlspecialchars(BackendUtility::editOnClick('&edit[pages_language_overlay][' . $overlayRecord['uid'] . ']=edit'));
 					$buttons['edit_language'] = '<a href="#" ' .
 						'onclick="' . $editLanguageOnClick . '"' .
 						'title="' . $GLOBALS['LANG']->getLL('editPageLanguageOverlayProperties', TRUE) . '">' .
@@ -1156,9 +1127,7 @@ class PageLayoutController {
 
 
 				// Edit page properties
-				$editPageOnClick = htmlspecialchars(
-					BackendUtility::editOnClick('&edit[pages][' . $this->id . ']=edit', $GLOBALS['BACK_PATH'])
-				);
+				$editPageOnClick = htmlspecialchars(BackendUtility::editOnClick('&edit[pages][' . $this->id . ']=edit'));
 				$buttons['edit_page'] = '<a href="#" ' .
 					'onclick="' . $editPageOnClick . '"' .
 					'title="' . $GLOBALS['LANG']->getLL('editPageProperties', TRUE) . '">' .
@@ -1180,10 +1149,10 @@ class PageLayoutController {
 				// Save record and show page
 				$buttons['savedokshow'] = '<a href="#" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-view') . '</a>';
 				// Close record
-				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(unescape(\'' . rawurlencode($this->closeUrl) . '\')); return false;') . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($this->closeUrl) . '); return false;') . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
 				// Delete record
 				if ($this->deleteButton) {
-					$buttons['deletedok'] = '<a href="#" onclick="' . htmlspecialchars('return deleteRecord(\'' . $this->eRParts[0] . '\',\'' . $this->eRParts[1] . '\',\'' . GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?id=' . $this->id . '\');') . '" title="' . $GLOBALS['LANG']->getLL('deleteItem', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+					$buttons['deletedok'] = '<a href="#" onclick="' . htmlspecialchars('return deleteRecord(' . GeneralUtility::quoteJSvalue($this->eRParts[0]) . ',' . GeneralUtility::quoteJSvalue($this->eRParts[1]) . ',' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?id=' . $this->id) . ');') . '" title="' . $GLOBALS['LANG']->getLL('deleteItem', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
 				}
 				if ($this->undoButton) {
 					// Undo button

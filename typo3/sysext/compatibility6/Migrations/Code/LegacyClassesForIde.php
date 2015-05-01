@@ -269,11 +269,6 @@ class t3lib_transferData extends \TYPO3\CMS\Backend\Form\DataPreprocessor {}
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class t3lib_TCEforms_inline extends \TYPO3\CMS\Backend\Form\Element\InlineElement {}
-
-/**
- * @deprecated since 6.0, removed since 7.0
- */
 interface t3lib_tceformsInlineHook extends \TYPO3\CMS\Backend\Form\Element\InlineElementHookInterface {}
 
 /**
@@ -294,12 +289,12 @@ interface t3lib_TCEforms_dbFileIconsHook extends \TYPO3\CMS\Backend\Form\Databas
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class t3lib_TCEforms_Suggest extends \TYPO3\CMS\Backend\Form\Element\SuggestElement {}
+class t3lib_TCEforms_Suggest extends \TYPO3\CMS\Backend\Form\Wizard\SuggestWizard {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class t3lib_TCEforms_Suggest_DefaultReceiver extends \TYPO3\CMS\Backend\Form\Element\SuggestDefaultReceiver {}
+class t3lib_TCEforms_Suggest_DefaultReceiver extends \TYPO3\CMS\Backend\Form\Wizard\SuggestWizardDefaultReceiver {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -309,7 +304,7 @@ class t3lib_TCEforms_Tree extends \TYPO3\CMS\Backend\Form\Element\TreeElement {}
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class t3lib_TCEforms_ValueSlider extends \TYPO3\CMS\Backend\Form\Element\ValueSlider {}
+class t3lib_TCEforms_ValueSlider extends \TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -5365,11 +5360,6 @@ class tx_openid_eID extends \TYPO3\CMS\Openid\OpenidEid {}
  * @deprecated since 6.0, removed since 7.0
  */
 class tx_openid_mod_setup extends \TYPO3\CMS\Openid\OpenidModuleSetup {}
-
-/**
- * @deprecated since 6.0, removed since 7.0
- */
-class tx_openid_return extends \TYPO3\CMS\Openid\OpenidReturn {}
 
 /**
  * @deprecated since 6.0, removed since 7.0

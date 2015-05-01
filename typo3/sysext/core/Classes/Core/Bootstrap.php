@@ -71,6 +71,12 @@ class Bootstrap {
 	protected $activeErrorHandlerClassName;
 
 	/**
+	 * registered request handlers
+	 * @var RequestHandlerInterface[]
+	 */
+	protected $availableRequestHandlers = array();
+
+	/**
 	 * @var bool
 	 */
 	static protected $usesComposerClassLoading = FALSE;
@@ -152,6 +158,41 @@ class Bootstrap {
 	}
 
 	/**
+	 * Main entry point called at every request usually from Global scope. Checks if everthing is correct,
+	 * and sets up the base request information for a regular request, then
+	 * resolves the RequestHandler which handles the request.
+	 *
+	 * @param string $relativePathPart Relative path of entry script back to document root
+	 * @return Bootstrap
+	 */
+	public function run($relativePathPart = '') {
+		$this->baseSetup($relativePathPart);
+
+		// Failsafe minimal setup mode for the install tool
+		if (defined('TYPO3_enterInstallScript')) {
+			$this->startOutputBuffering()
+				->loadConfigurationAndInitialize(FALSE, \TYPO3\CMS\Core\Package\FailsafePackageManager::class);
+		} elseif (!$this->checkIfEssentialConfigurationExists() && !defined('TYPO3_cliMode')) {
+			// Redirect to install tool if base configuration is not found
+			$backPathToSiteRoot = str_repeat('../', count(explode('/', $relativePathPart)) - 1);
+			$this->redirectToInstallTool($backPathToSiteRoot);
+		} else {
+			// Regular request (Frontend, AJAX, Backend, CLI)
+			$this->startOutputBuffering()
+				->loadConfigurationAndInitialize()
+				->loadTypo3LoadedExtAndExtLocalconf(TRUE)
+				->applyAdditionalConfigurationSettings()
+				->initializeTypo3DbGlobal();
+		}
+
+		// Resolve request handler that were registered based on TYPO3_MODE
+		$this->registerRequestHandlers();
+		$requestHandler = $this->resolveRequestHandler();
+		$requestHandler->handleRequest();
+		return $this;
+	}
+
+	/**
 	 * Run the base setup that checks server environment, determines pathes,
 	 * populates base files and sets common configuration.
 	 *
@@ -173,17 +214,19 @@ class Bootstrap {
 	 */
 	static protected function initializeComposerClassLoader() {
 		$possiblePaths = array(
-			'distribution is root package' => __DIR__ . '/../../../../../../Packages/Libraries/autoload.php',
-			'typo3/cms is root package' => __DIR__ . '/../../../../../Packages/Libraries/autoload.php',
+			'distribution' => __DIR__ . '/../../../../../../Packages/Libraries/autoload.php',
+			'fallback' => __DIR__ . '/../../../../contrib/vendor/autoload.php',
 		);
-		foreach ($possiblePaths as $possiblePath) {
+		foreach ($possiblePaths as $autoLoadType => $possiblePath) {
 			if (file_exists($possiblePath)) {
-				self::$usesComposerClassLoading = TRUE;
+				if ($autoLoadType === 'distribution') {
+					self::$usesComposerClassLoading = TRUE;
+				}
 				return include $possiblePath;
 			}
 		}
-		// Committed vendor dir in typo3/contrib
-		return require __DIR__ . '/../../../../contrib/vendor/autoload.php';
+
+		throw new \LogicException('No class loading information found for TYPO3 CMS. Please make sure you installed TYPO3 with composer or the typo3/contrib/vendor folder is present.', 1425153762);
 	}
 
 	/**
@@ -207,22 +250,84 @@ class Bootstrap {
 	}
 
 	/**
+	 * checks if LocalConfiguration.php or PackageStates.php is missing,
+	 * used to see if a redirect to the install tool is needed
+	 *
+	 * @return bool TRUE when the essential configuration is available, otherwise FALSE
+	 */
+	protected function checkIfEssentialConfigurationExists() {
+		$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager;
+		$this->setEarlyInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class, $configurationManager);
+		return (!file_exists($configurationManager->getLocalConfigurationFileLocation()) || !file_exists(PATH_typo3conf . 'PackageStates.php')) ? FALSE : TRUE;
+	}
+
+	/**
 	 * Redirect to install tool if LocalConfiguration.php is missing.
 	 *
 	 * @param string $pathUpToDocumentRoot Can contain '../' if called from a sub directory
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function redirectToInstallTool($pathUpToDocumentRoot = '') {
+		define('TYPO3_enterInstallScript', '1');
+		$this->defineTypo3RequestTypes();
+		Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/sysext/install/Start/Install.php');
+	}
+
+	/**
+	 * Adds available request handlers, which currently hard-coded here based on the TYPO3_MODE. The extensability
+	 * of adding own request handlers would be too complex for now, but can be added later.
+	 *
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function redirectToInstallerIfEssentialConfigurationDoesNotExist($pathUpToDocumentRoot = '') {
-		$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager;
-		$this->setEarlyInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class, $configurationManager);
-		if (!file_exists($configurationManager->getLocalConfigurationFileLocation()) || !file_exists(PATH_typo3conf . 'PackageStates.php')) {
-			define('TYPO3_enterInstallScript', '1');
-			$this->defineTypo3RequestTypes();
-			require_once __DIR__ . '/../Utility/HttpUtility.php';
-			Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/sysext/install/Start/Install.php');
+	protected function registerRequestHandlers() {
+		// Use the install tool handler if in install tool mode
+		if (!$this->checkIfEssentialConfigurationExists() || (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_INSTALL)) {
+			$this->availableRequestHandlers = array(
+				\TYPO3\CMS\Install\RequestHandler::class
+			);
+		} elseif (TYPO3_MODE == 'BE') {
+			$this->availableRequestHandlers = array(
+				\TYPO3\CMS\Backend\RequestHandler::class,
+				\TYPO3\CMS\Backend\BackendModuleRequestHandler::class,
+				\TYPO3\CMS\Backend\AjaxRequestHandler::class,
+				\TYPO3\CMS\Backend\CliRequestHandler::class
+			);
+		} elseif (TYPO3_MODE == 'FE') {
+			$this->availableRequestHandlers = array(
+				\TYPO3\CMS\Frontend\RequestHandler::class,
+				\TYPO3\CMS\Frontend\EidRequestHandler::class
+			);
 		}
 		return $this;
+	}
+
+	/**
+	 * Fetches the request handler that suits the best based on the priority and the interface
+	 * Be sure to always have the constants that are defined in $this->defineTypo3RequestTypes() are set,
+	 * so most RequestHandlers can check if they can handle the request.
+	 *
+	 * @return RequestHandlerInterface
+	 * @throws \TYPO3\CMS\Core\Exception
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function resolveRequestHandler() {
+		$suitableRequestHandlers = array();
+		foreach ($this->availableRequestHandlers as $requestHandlerClassName) {
+			$requestHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($requestHandlerClassName, $this);
+			if ($requestHandler->canHandleRequest()) {
+				$priority = $requestHandler->getPriority();
+				if (isset($suitableRequestHandlers[$priority])) {
+					throw new \TYPO3\CMS\Core\Exception('More than one request handler with the same priority can handle the request, but only one handler may be active at a time!', 1176471352);
+				}
+				$suitableRequestHandlers[$priority] = $requestHandler;
+			}
+		}
+		if (count($suitableRequestHandlers) === 0) {
+			throw new \TYPO3\CMS\Core\Exception('No suitable request handler found.', 1225418233);
+		}
+		ksort($suitableRequestHandlers);
+		return array_pop($suitableRequestHandlers);
 	}
 
 	/**
@@ -308,6 +413,7 @@ class Bootstrap {
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class, $classLoader);
 		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
+		$classAliasMap->injectComposerClassLoader($this->getEarlyInstance(\Composer\Autoload\ClassLoader::class));
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
 		$classLoader->injectClassAliasMap($classAliasMap);
 		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);
@@ -386,7 +492,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
-		$this->loadAdditionalConfigurationFromExtensions($allowCaching);
+		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
 		return $this;
 	}
 
@@ -445,8 +551,10 @@ class Bootstrap {
 	public function disableCoreAndClassesCache() {
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['backend']
 			= \TYPO3\CMS\Core\Cache\Backend\NullBackend::class;
+		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['options']);
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['backend']
 			= \TYPO3\CMS\Core\Cache\Backend\TransientMemoryBackend::class;
+		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['options']);
 		return $this;
 	}
 
@@ -484,9 +592,9 @@ class Bootstrap {
 	 */
 	protected function registerExtDirectComponents() {
 		if (TYPO3_MODE === 'BE') {
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.DataProvider', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class, 'web', 'user,group');
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.Commands', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class, 'web', 'user,group');
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.ContextMenuDataProvider', \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class, 'web', 'user,group');
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.DataProvider', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.Commands', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.ContextMenuDataProvider', \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class);
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.LiveSearchActions.ExtDirect', \TYPO3\CMS\Backend\Search\LiveSearch\ExtDirect\LiveSearchDataProvider::class, 'web_list', 'user,group');
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.BackendUserSettings.ExtDirect', \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class);
 			if (Utility\ExtensionManagementUtility::isLoaded('context_help')) {
@@ -495,7 +603,7 @@ class Bootstrap {
 			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.ExtDirectStateProvider.ExtDirect', \TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class);
 			Utility\ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.DragAndDrop.CommandController',
-				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class, 'web', 'user,group'
+				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
 			);
 		}
 		return $this;
@@ -670,20 +778,6 @@ class Bootstrap {
 		define('TYPO3_REQUESTTYPE_AJAX', 8);
 		define('TYPO3_REQUESTTYPE_INSTALL', 16);
 		define('TYPO3_REQUESTTYPE', (TYPO3_MODE == 'FE' ? TYPO3_REQUESTTYPE_FE : 0) | (TYPO3_MODE == 'BE' ? TYPO3_REQUESTTYPE_BE : 0) | (defined('TYPO3_cliMode') && TYPO3_cliMode ? TYPO3_REQUESTTYPE_CLI : 0) | (defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript ? TYPO3_REQUESTTYPE_INSTALL : 0) | ($GLOBALS['TYPO3_AJAX'] ? TYPO3_REQUESTTYPE_AJAX : 0));
-		return $this;
-	}
-
-	/**
-	 * Load extension configuration files (ext_localconf.php)
-	 *
-	 * The ext_localconf.php files in extensions are meant to make changes
-	 * to the global $TYPO3_CONF_VARS configuration array.
-	 *
-	 * @param bool $allowCaching
-	 * @return Bootstrap
-	 */
-	protected function loadAdditionalConfigurationFromExtensions($allowCaching = TRUE) {
-		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
 		return $this;
 	}
 
@@ -1025,7 +1119,6 @@ class Bootstrap {
 		$backendUser->warningEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
 		$backendUser->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
 		$backendUser->auth_timeout_field = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'];
-		$backendUser->OS = TYPO3_OS;
 		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_CLI) {
 			$backendUser->dontSetCookie = TRUE;
 		}

@@ -31,6 +31,7 @@ use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -742,7 +743,7 @@ class ElementBrowser {
 
 			function launchView(url) {	//
 				var thePreviewWindow="";
-				thePreviewWindow = window.open("' . $GLOBALS['BACK_PATH'] . 'show_item.php?table="+url,"ShowItem",'
+				thePreviewWindow = window.open(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('show_item') . '&table=') . '+url,"ShowItem",'
 				. '"height=300,width=410,status=0,menubar=0,resizable=0,location=0,directories=0,scrollbars=1,toolbar=0");
 				if (thePreviewWindow && thePreviewWindow.focus) {
 					thePreviewWindow.focus();
@@ -854,6 +855,8 @@ class ElementBrowser {
 	public function main_rte($wiz = FALSE) {
 		// Starting content:
 		$content = $this->doc->startPage('RTE link');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 
 		$allowedItems = $this->getAllowedItems('page,file,folder,url,mail,spec');
 
@@ -1459,6 +1462,8 @@ class ElementBrowser {
 		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse"');
 		// Starting content:
 		$content = $this->doc->startPage('TBE file selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$pArr = explode('|', $this->bparams);
 		// The key number 3 of the pArr contains the "allowed" string. Disallowed is not passed to
@@ -1545,8 +1550,6 @@ class ElementBrowser {
 		} else {
 			$files = '';
 		}
-		// Add the FlashMessages if any
-		$content .= $this->doc->getFlashMessages();
 
 		// Putting the parts together, side by side:
 		$content .= '
@@ -1591,6 +1594,8 @@ class ElementBrowser {
 		$this->doc->getDragDropCode('folders', 'Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";');
 		// Starting content:
 		$content = $this->doc->startPage('TBE folder selector');
+		// Add the FlashMessages if any
+		$content .= $this->doc->getFlashMessages();
 		// Init variable:
 		$parameters = explode('|', $this->bparams);
 		if ($this->expandFolder) {
@@ -1760,9 +1765,7 @@ class ElementBrowser {
 				$ATag_e = '</a>';
 			}
 		}
-		$pBicon = $ATag2 ? '<img'
-			. IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/plusbullet2.gif', 'width="18" height="16"')
-			. ' alt="" />' : '';
+		$pBicon = $ATag2 ? IconUtility::getSpriteIcon('actions-edit-add') : '';
 		$pText = htmlspecialchars(GeneralUtility::fixed_lgd_cs($mainPageRec['title'], $titleLen));
 		$out .= $picon . $ATag2 . $pBicon . $ATag_e . $ATag . $pText . $ATag_e . '<br />';
 		// Initialize the record listing:
@@ -1979,16 +1982,20 @@ class ElementBrowser {
 			// Thumbnail/size generation:
 			$imgInfo = array();
 			if (GeneralUtility::inList(strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']), strtolower($fileExtension)) && !$noThumbs) {
-				$imageUrl = $fileObject->process(
+				$processedFile = $fileObject->process(
 					ProcessedFile::CONTEXT_IMAGEPREVIEW,
 					array('width' => 64, 'height' => 64)
-				)->getPublicUrl(TRUE);
+				);
+				$imageUrl = $processedFile->getPublicUrl(TRUE);
 				$imgInfo = array(
 					$fileObject->getProperty('width'),
 					$fileObject->getProperty('height')
 				);
 				$pDim = $imgInfo[0] . 'x' . $imgInfo[1] . ' pixels';
-				$clickIcon = '<img src="' . $imageUrl . '" hspace="5" vspace="5" border="1" />';
+				$clickIcon = '<img src="' . $imageUrl . '" ' .
+							'width="' . $processedFile->getProperty('width') . '" ' .
+							'height="' . $processedFile->getProperty('height') . '" ' .
+							'hspace="5" vspace="5" border="1" />';
 			} else {
 				$clickIcon = '';
 				$pDim = '';
@@ -2033,13 +2040,8 @@ class ElementBrowser {
 				$lines[] = '
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
-						<td>' . ($ATag . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/plusbullet2.gif',
-							'width="18" height="16"') . ' title="' . $lang->getLL('addToList', TRUE)
-							. '" alt="" />' . $ATag_e) . '</td>
-						<td nowrap="nowrap">' . ($ATag2 . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'],
-							'gfx/zoom2.gif', 'width="12" height="12"') . ' title="'
-							. $lang->getLL('info', TRUE) . '" alt="" /> '
-							. $lang->getLL('info', TRUE) . $ATag2_e) . '</td>
+						<td>' . $ATag . IconUtility::getSpriteIcon('actions-edit-add', array('title' =>  $lang->getLL('addToList', TRUE))) . $ATag_e . '</td>
+						<td nowrap="nowrap">' . $ATag2 . IconUtility::getSpriteIcon('actions-document-info', array('title' => $lang->getLL('info', TRUE))) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td nowrap="nowrap">&nbsp;' . $pDim . '</td>
 					</tr>';
 				$lines[] = '
@@ -2050,13 +2052,8 @@ class ElementBrowser {
 				$lines[] = '
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
-						<td>' . ($ATag . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/plusbullet2.gif',
-							'width="18" height="16"') . ' title="' . $lang->getLL('addToList', TRUE)
-							. '" alt="" />' . $ATag_e) . '</td>
-						<td nowrap="nowrap">' . ($ATag2 . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'],
-							'gfx/zoom2.gif', 'width="12" height="12"') . ' title="'
-							. $lang->getLL('info', TRUE) . '" alt="" /> '
-						. $lang->getLL('info', TRUE) . $ATag2_e) . '</td>
+						<td>' . $ATag . IconUtility::getSpriteIcon('actions-edit-add', array('title' =>  $lang->getLL('addToList', TRUE))) . $ATag_e . '</td>
+						<td nowrap="nowrap">' . $ATag2 . IconUtility::getSpriteIcon('actions-document-info', array('title' => $lang->getLL('info', TRUE))) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td>&nbsp;</td>
 					</tr>';
 			}
@@ -2108,8 +2105,7 @@ class ElementBrowser {
 			. ', \'\', \'\',\'\',1);">';
 		// Add the foder icon
 		$folderIcon = $aTag;
-		$folderIcon .= '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif',
-				'width="18" height="16"') . ' alt="" />';
+		$folderIcon .= IconUtility::getSpriteIcon('apps-filetree-folder-default');
 		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($baseFolder->getName(), $titleLength));
 		$folderIcon .= '</a>';
 		$content .= $folderIcon . '<br />';
@@ -2119,10 +2115,8 @@ class ElementBrowser {
 		foreach ($folders as $subFolder) {
 			$subFolderIdentifier = $subFolder->getCombinedIdentifier();
 			// Create folder icon:
-			$icon = '<img src="clear.gif" width="16" height="16" alt="" /><img'
-				. IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif',
-					'width="16" height="16"') . ' title="' . htmlspecialchars($subFolder->getName())
-				. '" class="absmiddle" alt="" />';
+			$icon = '<img src="clear.gif" width="16" height="16" alt="" />';
+			$icon .= IconUtility::getSpriteIcon('apps-filetree-folder-default', array('title' => htmlspecialchars($subFolder->getName())));
 			// Create links for adding the folder:
 			if ($this->P['itemName'] != '' && $this->P['formName'] != '') {
 				$aTag = '<a href="#" onclick="return set_folderpath(' . GeneralUtility::quoteJSvalue($subFolderIdentifier)
@@ -2154,9 +2148,7 @@ class ElementBrowser {
 				$lines[] = '
 					<tr class="bgColor4">
 						<td nowrap="nowrap">' . $foldernameAndIcon . '&nbsp;</td>
-						<td>' . $aTag . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/plusbullet2.gif',
-						'width="18" height="16"') . ' title="' . $lang->getLL('addToList', TRUE)
-					. '" alt="" />' . $aTag_e . ' </td>
+						<td>' . $aTag . IconUtility::getSpriteIcon('actions-edit-add', array('title' =>  $lang->getLL('addToList', TRUE))) . $aTag_e . ' </td>
 						<td>&nbsp;</td>
 					</tr>';
 			}
@@ -2194,7 +2186,7 @@ class ElementBrowser {
 		if (!$folder->getStorage()->isPublic()) {
 			// Print this warning if the folder is NOT a web folder
 			return $this->barheader($lang->getLL('files'))
-				. $this->getMsgBox($lang->getLL('noWebFolder'), 'icon_warning2');
+				. $this->getMsgBox($lang->getLL('noWebFolder'), 'status-dialog-warning');
 		}
 		$out = '';
 
@@ -2204,7 +2196,7 @@ class ElementBrowser {
 
 		$out .= $this->barheader(sprintf($lang->getLL('files') . ' (%s):', count($files)));
 		$titleLen = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
-		$picon = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/i/_icon_webfolders.gif', 'width="18" height="16"') . ' alt="" />';
+		$picon = IconUtility::getSpriteIcon('apps-filetree-folder-default');
 		$picon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($folder->getName()), $titleLen));
 		$out .= $picon . '<br />';
 		// Init row-array:
@@ -2251,9 +2243,8 @@ class ElementBrowser {
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td nowrap="nowrap">' . ($imgInfo[0] != $IW
 						? '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('noLimit' => '1')))
-						. '">' . '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_warning2.gif',
-							'width="18" height="16"') . ' title="'
-						. $lang->getLL('clickToRedrawFullSize', TRUE) . '" alt="" />' . '</a>'
+						. '">' . IconUtility::getSpriteIcon('status-dialog-warning', array('title' => $lang->getLL('clickToRedrawFullSize', TRUE)))
+						. '</a>'
 						: '')
 					. $pDim . '&nbsp;</td>
 					</tr>';
@@ -2304,25 +2295,19 @@ class ElementBrowser {
 	/**
 	 * Displays a message box with the input message
 	 *
-	 * @param string $in_msg Input message to show (will be htmlspecialchars()'ed inside of this function)
-	 * @param string $icon Icon filename body from gfx/ (default is "icon_note") - meant to allow change to warning type icons...
+	 * @param string $inputMessage Input message to show (will be htmlspecialchars()'ed inside of this function)
+	 * @param string $icon Sprite sprite name. Default is 'actions-document-info'.
 	 * @return string HTML for the message (wrapped in a table).
 	 */
-	public function getMsgBox($in_msg, $icon = 'icon_note') {
-		$msg = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/' . $icon . '.gif'), 'width="18" height="16"')
-			. ' alt="" />' . htmlspecialchars($in_msg);
-		$msg = '
-
-			<!--
-				Message box:
-			-->
+	public function getMsgBox($inputMessage, $icon = 'actions-document-info') {
+		return '
+			<!-- Message box -->
 			<table cellspacing="0" class="bgColor4" id="typo3-msgBox">
 				<tr>
-					<td>' . $msg . '</td>
+					<td>' . IconUtility::getSpriteIcon($icon) . htmlspecialchars($inputMessage) . '</td>
 				</tr>
 			</table>
 			';
-		return $msg;
 	}
 
 	/**
@@ -2333,9 +2318,7 @@ class ElementBrowser {
 	 */
 	public function printCurrentUrl($str) {
 		// Output the folder or file identifier, when working with files
-		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)
-			&& ($this->act === 'file' || $this->act === 'folder')
-		) {
+		if (isset($str) && MathUtility::canBeInterpretedAsInteger($str)) {
 			try {
 				$fileObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($str);
 			} catch (Exception\FileDoesNotExistException $e) {
@@ -2377,7 +2360,7 @@ class ElementBrowser {
 			if (count($specialParts) == 2) {
 				$info['value'] = '#_SPECIAL' . $specialParts[1];
 				$info['act'] = 'spec';
-			} elseif (strpos($href, 'file:') !== FALSE) {
+			} elseif (!StringUtility::beginsWith($href, 'file://') && strpos($href, 'file:') !== FALSE) {
 				$rel = substr($href, strpos($href, 'file:') + 5);
 				$rel = rawurldecode($rel);
 				// resolve FAL-api "file:UID-of-sys_file-record" and "file:combined-identifier"
@@ -2391,7 +2374,7 @@ class ElementBrowser {
 				} else {
 					$info['value'] = $rel;
 				}
-			} elseif (GeneralUtility::isFirstPartOfStr($href, $siteUrl)) {
+			} elseif (StringUtility::beginsWith($href, $siteUrl)) {
 				// If URL is on the current frontend website:
 				// URL is a file, which exists:
 				if (file_exists(PATH_site . rawurldecode($href))) {
@@ -2490,7 +2473,7 @@ class ElementBrowser {
 			<!--
 				Form, for uploading files:
 			-->
-			<form action="' . $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_file') . '" method="post" name="editform"'
+			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform"'
 			. ' id="typo3-uplFilesForm" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">
 				<table border="0" cellpadding="0" cellspacing="0" id="typo3-uplFiles">
 					<tr>
@@ -2514,7 +2497,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />';
 		$code .= FormEngine::getHiddenTokenField('tceAction');
 		$code .= '
@@ -2561,7 +2545,7 @@ class ElementBrowser {
 			<!--
 				Form, for creating new folders:
 			-->
-			<form action="' . $GLOBALS['BACK_PATH'] . BackendUtility::getModuleUrl('tce_file') . '" method="post" name="editform2" id="typo3-crFolderForm">
+			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform2" id="typo3-crFolderForm">
 				<table border="0" cellpadding="0" cellspacing="0" id="typo3-crFolder">
 					<tr>
 						<td>' . $this->barheader($lang->sL(
@@ -2581,7 +2565,8 @@ class ElementBrowser {
 		// Make footer of upload form, including the submit button:
 		$redirectValue = $this->getThisScript() . 'act=' . $this->act . '&mode=' . $this->mode
 			. '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())
-			. '&bparams=' . rawurlencode($this->bparams);
+			. '&bparams=' . rawurlencode($this->bparams)
+			. (is_array($this->P) ? GeneralUtility::implodeArrayForUrl('P', $this->P) : '');
 		$code .= '<input type="hidden" name="redirect" value="' . htmlspecialchars($redirectValue) . '" />'
 			. FormEngine::getHiddenTokenField('tceAction')
 			. '<input class="btn btn-default" type="submit" name="submit" value="'
@@ -2610,11 +2595,11 @@ class ElementBrowser {
 		// Getting flag for showing/not showing thumbnails:
 		$noThumbsInEB = $this->getBackendUserAuthentication()->getTSConfigVal('options.noThumbsInEB');
 		$out = $this->doc->spacer(10) . '<div>' . '<a href="#" onclick="BrowseLinks.Selector.handle()">'
-			. '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/import.gif', 'width="12" height="12"')
-			. ' title="' . $labelImportSelection . '" alt="" /> ' . $labelImportSelection . '</a>&nbsp;&nbsp;&nbsp;'
-			. '<a href="#" onclick="BrowseLinks.Selector.toggle()">' . '<img'
-			. IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/clip_select.gif', 'width="12" height="12"')
-			. ' title="' . $labelToggleSelection . '" alt="" /> ' . $labelToggleSelection . '</a>' . '</div>';
+			. IconUtility::getSpriteIcon('actions-document-import-t3d', array('title' => $labelImportSelection))
+			. $labelImportSelection . '</a>&nbsp;&nbsp;&nbsp;'
+			. '<a href="#" onclick="BrowseLinks.Selector.toggle()">'
+			. IconUtility::getSpriteIcon('actions-document-select', array('title' => $labelToggleSelection))
+			. $labelToggleSelection . '</a>' . '</div>';
 		if (!$noThumbsInEB && $this->selectedFolder) {
 			// MENU-ITEMS, fetching the setting for thumbnails from File>List module:
 			$_MOD_MENU = array('displayThumbs' => '');

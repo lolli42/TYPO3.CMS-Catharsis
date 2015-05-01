@@ -285,7 +285,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 	public function getSpecificFileInformationDataProvider() {
 		return array(
 			'size' => array(
-				'expectedValue' => 48,
+				'expectedValue' => filesize(__DIR__ . '/Fixtures/Dummy.html'),
 				'propertyName' => 'size'
 			),
 			'atime' => array(
@@ -675,7 +675,7 @@ class LocalDriverTest extends \TYPO3\CMS\Core\Tests\Unit\Resource\BaseTestCase {
 			array('getMimeTypeOfFile')
 		);
 		$fileList = $subject->getFilesInFolder('/', 0, 0, TRUE);
-		$this->assertEquals(array('/aDir/subdir/file4', '/aDir/file3', '/file1', '/file2'), array_keys($fileList));
+		$this->assertEquals(array('/file1', '/file2', '/aDir/file3', '/aDir/subdir/file4'), array_keys($fileList));
 	}
 
 	/**

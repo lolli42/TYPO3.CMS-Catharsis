@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\View;
 
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\CommandUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -29,6 +30,7 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  * Relative paths MUST BE the first two characters ONLY: eg: '../dir/file.gif', otherwise it is expect to be absolute
  *
  * @author Kasper Skårhøj	<kasperYYYY@typo3.com>
+ * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use the corresponding Resource objects and Processing functionality
  */
 class ThumbnailView {
 
@@ -86,6 +88,7 @@ class ThumbnailView {
 	 * @throws \TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException
 	 */
 	public function init() {
+		GeneralUtility::deprecationLog('The class ThumbnailView is deprecated since TYPO3 CMS 7 and will be removed with TYPO3 CMS 8, use the corresponding Resource objects and Processing functionality');
 		// Setting GPvars:
 		// Only needed for MD5 sum calculation of backwards-compatibility uploads/ files thumbnails.
 		$size = GeneralUtility::_GP('size');
@@ -204,7 +207,7 @@ class ThumbnailView {
 			// Should be - ? 'png' : 'gif' - , but doesn't work (ImageMagick prob.?)
 			// René: png work for me
 			$thmMode = MathUtility::forceIntegerInRange($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails_png'], 0);
-			$outext = $this->image->getExtension() != 'jpg' || $thmMode & 2 ? ($thmMode & 1 ? 'png' : 'gif') : 'jpg';
+			$outext = $this->image->getExtension() != 'jpg' || $thmMode & Permission::PAGE_EDIT ? ($thmMode & 1 ? 'png' : 'gif') : 'jpg';
 			$outfile = 'tmb_' . substr(md5(($this->image->getName() . $this->mtime . $this->size)), 0, 10) . '.' . $outext;
 			$this->output = $outpath . $outfile;
 			if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['im']) {

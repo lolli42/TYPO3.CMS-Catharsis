@@ -14,7 +14,9 @@ namespace TYPO3\CMS\Frontend\ContentObject\Menu;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Collection\AbstractRecordCollection;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Category\Collection\CategoryCollection;
 
 /**
  * Utility class for menus based on category collections of pages.
@@ -54,13 +56,16 @@ class CategoryMenuUtility {
 		// Get the pages for each selected category
 		$selectedCategories = GeneralUtility::intExplode(',', $selectedCategories, TRUE);
 		foreach ($selectedCategories as $aCategory) {
-			$collection = \TYPO3\CMS\Frontend\Category\Collection\CategoryCollection::load(
+			$collection = CategoryCollection::load(
 				$aCategory,
 				TRUE,
 				'pages',
 				$relationField
 			);
-			$categoryUid = $collection->getUid();
+			$categoryUid = 0;
+			if ($collection instanceof AbstractRecordCollection) {
+				$categoryUid = $collection->getUid();
+			}
 			// Loop on the results, overlay each page record found
 			foreach ($collection as $pageItem) {
 				$parentObject->getSysPage()->versionOL('pages', $pageItem, TRUE);
@@ -107,19 +112,19 @@ class CategoryMenuUtility {
 				// Make sure the order property is either "asc" or "desc" (default is "asc")
 				if (!empty($order)) {
 					$order = strtolower($order);
-					if ($order != 'desc') {
+					if ($order !== 'desc') {
 						$order = 'asc';
 					}
 				}
 				uasort(
 					$pages,
 					array(
-						\TYPO3\CMS\Frontend\ContentObject\Menu\CategoryMenuUtility::class,
+						CategoryMenuUtility::class,
 						'sortPagesUtility'
 					)
 				);
 				// If the sort order is descending, reverse the sorted array
-				if ($order == 'desc') {
+				if ($order === 'desc') {
 					$pages = array_reverse($pages, TRUE);
 				}
 			}

@@ -108,6 +108,7 @@ define(['jquery', 'nprogress', 'jquery/jquery.clearable'], function($, NProgress
 
 		Recycler.elements.$reloadAction.on('click', function(e) {
 			e.preventDefault();
+			Recycler.loadAvailableTables();
 			Recycler.loadDeletedElements();
 		});
 
@@ -268,7 +269,7 @@ define(['jquery', 'nprogress', 'jquery/jquery.clearable'], function($, NProgress
 						tableDescription = value[2];
 
 					if (tableDescription === '') {
-						tableDescription = TYPO3.lang['label_alltables'];
+						tableDescription = TYPO3.lang['label_allrecordtypes'];
 					}
 					var optionText = tableDescription + ' (' + deletedRecords + ')';
 					tables.push($('<option />').val(tableName).text(optionText))
@@ -426,8 +427,11 @@ define(['jquery', 'nprogress', 'jquery/jquery.clearable'], function($, NProgress
 				NProgress.start();
 			},
 			success: function(data) {
-				var severity = data.success ? top.TYPO3.Severity.ok : top.TYPO3.Severity.error;
-				top.TYPO3.Flashmessage.display(severity, '', data.message);
+				if (data.success) {
+					top.TYPO3.Notification.success('', data.message);
+				} else {
+					top.TYPO3.Notification.error('', data.message);
+				}
 
 				// reload recycler data
 				Recycler.paging.currentPage = 1;

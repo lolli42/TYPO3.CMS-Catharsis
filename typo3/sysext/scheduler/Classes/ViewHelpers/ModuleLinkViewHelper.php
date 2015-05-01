@@ -14,31 +14,32 @@ namespace TYPO3\CMS\Scheduler\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
+
 /**
  * Create internal link within backend app
- * @TODO: Later I want to be an AbstractTagBasedViewHelper
  * @internal
  */
-class ModuleLinkViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper {
+class ModuleLinkViewHelper extends AbstractViewHelper {
 
 	/**
-	 * Generate module link
+	 * Render module link with command and arguments
 	 *
-	 * @param string $function
-	 * @param string $cms
-	 * @param array $arguments
+	 * @param string $controller The "controller" of scheduler. Possible values are "scheduler", "check", "info"
+	 * @param string $action The action to be called within each controller
+	 * @param array $arguments Arguments for the action
 	 * @return string
 	 */
-	public function render($function = '', $cmd = '', array $arguments = array()) {
-		$link = $GLOBALS['MCONF']['_'] . '&SET[function]=' . $function . '&CMD=' . $cmd;
-
+	public function render($controller, $action, array $arguments = array()) {
+		$moduleArguments = array();
+		$moduleArguments['SET']['function'] = $controller;
+		$moduleArguments['CMD'] = $action;
 		if (!empty($arguments)) {
-			foreach ($arguments as $key => $value) {
-				$link .= '&tx_scheduler[' . $key . ']=' . $value;
-			}
+			$moduleArguments['tx_scheduler'] = $arguments;
 		}
 
-		return htmlspecialchars($link);
+		return BackendUtility::getModuleUrl('system_txschedulerM1', $moduleArguments);
 	}
 
 }

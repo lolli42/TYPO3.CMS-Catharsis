@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Utility;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test case
@@ -225,7 +226,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'      return array(\'title\' => \'Page 1\');' .
 			'    }' .
 			'    if ($called === 2) {' .
-			'      return array(\'header\' => \'Content 2\');' .
+			'      return array(\'header\' => \'Configuration 2\');' .
 			'    }' .
 			'  }' .
 			'  static public function getRecordTitle() {' .
@@ -235,29 +236,125 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'      return \'Page 1\';' .
 			'    }' .
 			'    if ($called === 2) {' .
-			'      return \'Content 2\';' .
+			'      return \'Configuration 2\';' .
 			'    }' .
 			'  }' .
 			'}'
 		);
 
 		$GLOBALS['TCA'] = array(
-			'sys_category' => array(
+			'index_config' => array(
 				'columns' => array(
-					'items' => array(
+					'indexcfgs' => array(
 						'config' => array(
-							'allowed' => '*',
-							'internal_type' => 'db',
-							'MM' => 'sys_category_record_mm',
-							'size' => 10,
 							'type' => 'group',
+							'internal_type' => 'db',
+							'allowed' => 'index_config,pages',
+							'size' => 5,
 						),
 					),
 				),
 			),
 		);
 
-		$this->assertSame('Page 1, Content 2', $subject::getProcessedValue('sys_category', 'items', 'pages_1,tt_content_2'));
+		$this->assertSame('Page 1, Configuration 2', $subject::getProcessedValue('index_config', 'indexcfgs', 'pages_1,index_config_2'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function getProcessedValueForSelectWithMMRelation() {
+		$GLOBALS['TYPO3_DB'] = $this->getMock(\TYPO3\CMS\Core\Database\DatabaseConnection::class, array(), array(), '', FALSE);
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('fullQuoteStr')
+			->will($this->returnCallback(
+				function($quoteStr, $table) {
+					return "'" . $quoteStr . "'";
+				}
+			));
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTquery')->will($this->returnValue(0));
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('sql_free_result');
+		$GLOBALS['TYPO3_DB']->expects($this->any())->method('sql_fetch_assoc')
+			->will($this->returnCallback(
+				function($res) {
+					static $called = 0;
+					++$called;
+					switch ($called) {
+						// SELECT * FROM sys_category_record_mm
+						case 1:
+							return array(
+								'uid_local' => 1,	// uid of a sys_category record
+								'uid_foreign' => 1,	// uid of a pages record
+							);
+						case 2:
+							return array(
+								'uid_local' => 2,	// uid of a sys_category record
+								'uid_foreign' => 1,	// uid of a pages record
+							);
+						case 3:
+							return NULL;
+						// SELECT * FROM sys_catgory
+						case 4:
+							return array(
+								'uid' => 1,
+								'title' => 'Category 1',
+							);
+						case 5:
+							return array(
+								'uid' => 2,
+								'title' => 'Category 2',
+							);
+						case 6:
+							return NULL;
+					}
+				}
+			));
+
+		// Disable getRecordTitle dependency by returning stable results
+		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Backend\Utility\BackendUtility $subject */
+		$className = $this->getUniqueId('BackendUtility');
+		$subject = __NAMESPACE__ . '\\' . $className;
+		eval(
+			'namespace ' . __NAMESPACE__ . ';' .
+			'class ' . $className . ' extends \\TYPO3\\CMS\\Backend\\Utility\\BackendUtility {' .
+			'  static public function getRecordTitle($table, $row) {' .
+			'    return $row["title"];' .
+			'  }' .
+			'}'
+		);
+
+		$GLOBALS['TCA'] = array(
+			'pages' => array(
+				'columns' => array(
+					'categories' => array(
+						'config' => array(
+							'type' => 'select',
+							'foreign_table' => 'sys_category',
+							'MM' => 'sys_category_record_mm',
+							'MM_match_fields' => array(
+								'fieldname' => 'categories',
+								'tablesnames' => 'pages',
+							),
+							'MM_opposite_field' => 'items',
+						),
+					),
+				),
+			),
+			'sys_category' => array(
+				'columns' => array(
+					'items' => array(
+						'config' => array(
+							'type' => 'group',
+							'internal_type' => 'db',
+							'allowed' => '*',
+							'MM' => 'sys_category_record_mm',
+							'MM_oppositeUsage' => array(),
+						)
+					)
+				),
+			),
+		);
+
+		$this->assertSame('Category 1; Category 2', $subject::getProcessedValue('pages', 'categories', '2', 0, FALSE, FALSE, 1));
 	}
 
 	/**
@@ -959,7 +1056,7 @@ class BackendUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		unset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['viewOnClickClass']);
 
 		$alternativeUrl = 'https://typo3.org/about/typo3-the-cms/the-history-of-typo3/#section';
-		$onclickCode = 'var previewWin = window.open(\'' . $alternativeUrl . '\',\'newTYPO3frontendWindow\');';
+		$onclickCode = 'var previewWin = window.open(' . GeneralUtility::quoteJSvalue($alternativeUrl) . ',\'newTYPO3frontendWindow\');';
 		$this->assertStringMatchesFormat(
 			$onclickCode,
 			BackendUtility::viewOnClick(NULL, NULL, NULL, NULL, $alternativeUrl, NULL, FALSE)

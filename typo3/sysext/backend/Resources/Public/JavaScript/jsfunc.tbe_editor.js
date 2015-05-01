@@ -213,7 +213,7 @@ var TBE_EDITOR = {
 
 				} else {
 						// special treatment for file uploads
-					var tempObj = document[TBE_EDITOR.formname][elementName.replace(/^data/, 'data_files')];
+					var tempObj = document[TBE_EDITOR.formname][elementName.replace(/^data/, 'data_files') + '[]'];
 					numberOfElements = form.length;
 
 					if (tempObj && tempObj.type == 'file' && tempObj.value) {
@@ -335,12 +335,7 @@ var TBE_EDITOR = {
 		var $paletteField = $formField.closest('.t3js-formengine-palette-field');
 		$paletteField.addClass('has-change');
 
-		// Set hidden field to value
-		if (document[TBE_EDITOR.formname][theField] && document[TBE_EDITOR.formname][theField].type=="select-one" && document[TBE_EDITOR.formname][theField+"_selIconVal"]) {
-			document[TBE_EDITOR.formname][theField+"_selIconVal"].value = document[TBE_EDITOR.formname][theField].value;
-		}
-
-			// Set required flag:
+		// Set required flag:
 		var imgReqObjName = "req_"+table+"_"+uid+"_"+field;
 		if (TBE_EDITOR.getElement(theRecord,field,'required') && document[TBE_EDITOR.formname][theField]) {
 			if (TBE_EDITOR.checkElements('required', false, theRecord, field)) {
@@ -525,9 +520,12 @@ var TBE_EDITOR = {
 	/**
 	 * Determines backend path to be used for e.g. ajax.php
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8
 	 */
 	getBackendPath: function() {
-		var backendPath = '';
+		if (typeof console != 'undefined') {
+			console.log('TS.getBackendPath() is deprecated since TYPO3 CMS 7, and will be removed in TYPO3 CMS 8.');
+		}
 		if (TYPO3) {
 			if (TYPO3.configuration && TYPO3.configuration.PATH_typo3) {
 				backendPath = TYPO3.configuration.PATH_typo3;

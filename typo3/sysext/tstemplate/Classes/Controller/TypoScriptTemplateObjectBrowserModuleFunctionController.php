@@ -23,6 +23,8 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -220,7 +222,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 		// initialize
 		$theOutput = '';
 		if ($existTemplate) {
-			$content = ' <img ' . IconUtility::skinImg($this->getBackPath(), IconUtility::getIcon('sys_template', $tplRow)) . ' align="top" /> <strong>'
+			$content = ' ' . IconUtility::getSpriteIconForRecord('sys_template', $tplRow) . ' <strong>'
 				. $this->pObj->linkWrapTemplateTitle($tplRow['title'], ($bType == 'setup' ? 'config' : 'constants')) . '</strong>'
 				. htmlspecialchars(trim($tplRow['sitetitle']) ? ' (' . $tplRow['sitetitle'] . ')' : '');
 			$theOutput .= $this->pObj->doc->section($lang->getLL('currentTemplate'), $content);
@@ -334,8 +336,8 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 				$out .= '<input class="btn btn-default" type="submit" name="update_value" value="' . $lang->getLL('updateButton') . '" />';
 				$theOutput .= $this->pObj->doc->section($lang->getLL('editProperty'), $out, 0, 0);
 				// Property
-				$out = '<nobr>' . htmlspecialchars($this->pObj->sObj) . '.';
-				$out .= '<input type="text" name="data[' . htmlspecialchars($this->pObj->sObj) . '][name]"' . $documentTemplate->formWidth(20) . ' /> = </nobr><br />';
+				$out = '<span class="text-nowrap">' . htmlspecialchars($this->pObj->sObj) . '.';
+				$out .= '<input type="text" name="data[' . htmlspecialchars($this->pObj->sObj) . '][name]"' . $documentTemplate->formWidth(20) . ' /> = </span><br />';
 				$out .= '<input type="text" name="data[' . htmlspecialchars($this->pObj->sObj) . '][propertyValue]"' . $documentTemplate->formWidth(40) . ' />';
 				$out .= '<input class="btn btn-default" type="submit" name="add_property" value="' . $lang->getLL('addButton') . '" />';
 				$theOutput .= $this->pObj->doc->spacer(20);
@@ -433,8 +435,14 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 					$errMsg[] = $inf[1] . ': &nbsp; &nbsp;' . $inf[0] . $errorLink;
 				}
 				$theOutput .= $this->pObj->doc->spacer(10);
-				$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, implode($errMsg, '<br />'), $lang->getLL('errorsWarnings'), FlashMessage::ERROR);
-				$theOutput .= $flashMessage->render();
+
+				$title = $lang->getLL('errorsWarnings');
+				$message = '<p>' . implode($errMsg, '<br />') . '</p>';
+				// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
+				// A complete refactoring is necessary at this point
+				$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
+				$viewHelper = $objectManager->get(InfoboxViewHelper::class);
+				$theOutput .= $viewHelper->render($title, $message, InfoboxViewHelper::STATE_WARNING);
 			}
 
 			if (isset($this->pObj->MOD_SETTINGS['ts_browser_TLKeys_' . $bType][$theKey])) {
@@ -466,7 +474,7 @@ class TypoScriptTemplateObjectBrowserModuleFunctionController extends AbstractFu
 				$menu .= BackendUtility::getFuncMenu($this->pObj->id, 'SET[ts_browser_const]', $this->pObj->MOD_SETTINGS['ts_browser_const'], $this->pObj->MOD_MENU['ts_browser_const']);
 			}
 			$menu .= '</div>';
-			$theOutput .= $this->pObj->doc->section($lang->getLL('displayOptions'), '<nobr>' . $menu . '</nobr>', 0, 1);
+			$theOutput .= $this->pObj->doc->section($lang->getLL('displayOptions'), '<span class="text-nowrap">' . $menu . '</span>', 0, 1);
 			// Conditions:
 			if (is_array($templateService->sections) && !empty($templateService->sections)) {
 				$theOutput .= $this->pObj->doc->section($lang->getLL('conditions'), '', 0, 1);

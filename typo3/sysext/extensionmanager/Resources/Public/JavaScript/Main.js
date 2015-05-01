@@ -17,7 +17,7 @@
  * ExtensionManager.Update => Various AJAX functions to display updates
  * ExtensionManager.uploadForm => helper to show the upload form
  */
-define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
+define(['jquery', 'nprogress', 'datatables', 'jquery/jquery.clearable'], function($, NProgress) {
 	var ExtensionManager = {
 		identifier: {
 			extensionlist: '#typo3-extension-list',
@@ -96,23 +96,6 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 				);
 			});
 		});
-
-		$('.t3-icon-system-extension-update').parent().each(function() {
-			var $me = $(this);
-			$me.data('href', $me.attr('href'));
-			$me.attr('href', '#');
-			$me.addClass('transformed');
-			$me.click(function() {
-				$.ajax({
-					url: $(this).data('href'),
-					dataType: 'json',
-					beforeSend: function() {
-						$(ExtensionManager.identifier.extensionManager).mask();
-					},
-					success: ExtensionManager.updateExtension
-				});
-			});
-		});
 	};
 
 	ExtensionManager.removeExtensionFromDisk = function($extension) {
@@ -120,11 +103,17 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 		$extManager.mask();
 		$.ajax({
 			url: $extension.data('href'),
+			beforeSend: function() {
+				NProgress.start();
+			},
 			success: function() {
 				location.reload();
 			},
 			error: function() {
 				$extManager.unmask();
+			},
+			complete: function() {
+				NProgress.done();
 			}
 		});
 	};
@@ -187,12 +176,17 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 	ExtensionManager.updateExtension = function(data) {
 		var message = '<h1>' + TYPO3.lang['extensionList.updateConfirmation.title'] + '</h1>';
 		message += '<h2>' + TYPO3.lang['extensionList.updateConfirmation.message'] + '</h2>';
+		message += '<form>';
+		var i = 0;
 		$.each(data.updateComments, function(version, comment) {
-			message += '<h3>' + version + '</h3>';
+			message += '<h3><input type="radio" ' + (i == 0 ? 'checked="checked" ' : '') + 'name="version" value="' + version + '" /> ' + version + '</h3>';
 			message += '<div>' + comment + '</div>';
+			i++;
 		});
+		message += '</form>';
 
 		var $extManager = $(ExtensionManager.identifier.extensionManager);
+		NProgress.done();
 		$extManager.unmask();
 
 		top.TYPO3.Modal.confirm(
@@ -212,40 +206,18 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 					trigger: function() {
 						$.ajax({
 							url: data.url,
+							data: {
+								tx_extensionmanager_tools_extensionmanagerextensionmanager: {
+									version: $('input:radio[name=version]:checked', top.TYPO3.Modal.currentModal).val()
+								}
+							},
 							dataType: 'json',
 							beforeSend: function() {
 								$extManager.mask();
+								NProgress.start();
 							},
-							success: function(data) {
-								if (data.hasErrors) {
-									top.TYPO3.Flashmessage.display(
-										top.TYPO3.Severity.error,
-										TYPO3.lang['downloadExtension.updateExtension.error'],
-										data.errorMessage,
-										15
-									);
-									$extManager.unmask();
-								} else {
-									top.TYPO3.Flashmessage.display(
-										top.TYPO3.Severity.info,
-										TYPO3.lang['extensionList.updateFlashMessage.title'],
-										TYPO3.lang['extensionList.updateFlashMessage.message'].replace(/\{0\}/g, data.extension),
-										15
-									);
-									location.reload();
-								}
-							},
-							error: function(jqXHR, textStatus, errorThrown) {
-								// Create an error message with diagnosis info.
-								var errorMessage = textStatus + '(' + errorThrown + '): ' + jqXHR.responseText;
-
-								top.TYPO3.Flashmessage.display(
-									top.TYPO3.Severity.error,
-									TYPO3.lang['downloadExtension.updateExtension.error'],
-									errorMessage,
-									15
-								);
-								$extManager.unmask();
+							complete: function() {
+								location.reload();
 							}
 						});
 						top.TYPO3.Modal.dismiss();
@@ -259,43 +231,71 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 	 * configuration properties
 	 */
 	ExtensionManager.configurationFieldSupport = function() {
-		$('.offset').each(function() {
+		$('.t3js-emconf-offset').each(function() {
 			var $me = $(this),
-				$parent = $me.parent();
-			$me.hide();
+				$parent = $me.parent(),
+				id = $me.attr('id'),
+				val = $me.attr('value'),
+				valArr = val.split(',');
 
-			var val = $me.attr('value');
-			var valArr = val.split(',');
+			$me.attr('data-offsetfield-x', '#' + id + '_offset_x')
+				.attr('data-offsetfield-y', '#' + id + '_offset_y')
+				.wrap('<div class="hidden"></div>');
 
-			$me.wrap('<div class="offsetSelector"></div>');
-			$parent.append('x: <input value="' + $.trim(valArr[0]) + '" class="tempOffset1 tempOffset">');
-			$parent.append('<span>, </span>');
-			$parent.append('y: <input value="' + $.trim(valArr[1]) + '" class="tempOffset2 tempOffset">');
+			var elementX = '' +
+				'<div class="form-multigroup-item">' +
+					'<div class="input-group">' +
+						'<div class="input-group-addon">x</div>' +
+						'<input id="' + id + '_offset_x" class="form-control t3js-emconf-offsetfield" data-target="#' + id + '" value="' + $.trim(valArr[0]) + '">' +
+					'</div>' +
+				'</div>';
+			var elementY = '' +
+				'<div class="form-multigroup-item">' +
+					'<div class="input-group">' +
+						'<div class="input-group-addon">y</div>' +
+						'<input id="' + id + '_offset_y" class="form-control t3js-emconf-offsetfield" data-target="#' + id + '" value="' + $.trim(valArr[1]) + '">' +
+					'</div>' +
+				'</div>';
 
-			$me.siblings('.tempOffset').keyup(function() {
-				$me.siblings('.offset').attr(
+			var offsetGroup = '<div class="form-multigroup-wrap">' + elementX + elementY + '</div>';
+			$parent.append(offsetGroup);
+			$parent.find('.t3js-emconf-offset').keyup(function() {
+				var $target = $($(this).data('target'));
+				$target.attr(
 					'value',
-					$parent.children('.tempOffset1').attr('value') + ',' + $parent.children('.tempOffset2').attr('value'));
+					$($target.data('offsetfield-x')).val() + ',' + $($target.data('offsetfield-y')).val()
+				);
 			});
 		});
 
-		$('.wrap').each(function() {
+		$('.t3js-emconf-wrap').each(function() {
 			var $me = $(this),
-				$parent = $me.parent();
-			$me.hide();
+				$parent = $me.parent(),
+				id = $me.attr('id'),
+				val = $me.attr('value'),
+				valArr = val.split('|');
 
-			var val = $me.attr('value');
-			var valArr = val.split('|');
+			$me.attr('data-wrapfield-start', '#' + id + '_wrap_start')
+				.attr('data-wrapfield-end', '#' + id + '_wrap_end')
+				.wrap('<div class="hidden"></div>');
 
-			$me.wrap('<div class="wrapSelector"></div>');
-			$parent.append('<input value="' + $.trim(valArr[0]) + '" class="tempWrap1 tempWrap">');
-			$parent.append('<span>|</span>');
-			$parent.append('<input value="' + $.trim(valArr[1]) + '" class="tempWrap2 tempWrap">');
+			var elementStart = '' +
+				'<div class="form-multigroup-item">' +
+					'<input id="' + id + '_wrap_start" class="form-control t3js-emconf-wrapfield" data-target="#' + id + '" value="' + $.trim(valArr[0]) + '">' +
+				'</div>';
+			var elementEnd = '' +
+				'<div class="form-multigroup-item">' +
+					'<input id="' + id + '_wrap_end" class="form-control t3js-emconf-wrapfield" data-target="#' + id + '" value="' + $.trim(valArr[1]) + '">' +
+				'</div>';
 
-			$me.siblings('.tempWrap').keyup(function() {
-				$me.siblings('.wrap').attr(
+			var wrapGroup = '<div class="form-multigroup-wrap">' + elementStart + elementEnd + '</div>';
+			$parent.append(wrapGroup);
+			$parent.find('.t3js-emconf-wrapfield').keyup(function() {
+				var $target = $($(this).data('target'));
+				$target.attr(
 					'value',
-					$parent.children('.tempWrap1').attr('value') + '|' + $parent.children('.tempWrap2').attr('value'));
+					$($target.data('wrapfield-start')).val() + '|' + $($target.data('wrapfield-end')).val()
+				);
 			});
 		});
 	};
@@ -308,6 +308,8 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 	};
 
 	Repository.initDom = function() {
+		NProgress.configure({parent: '#typo3-docheader', showSpinner: false});
+
 		$('#terTable').DataTable({
 			lengthChange: false,
 			pageLength: 15,
@@ -368,6 +370,7 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 				dataType: 'json',
 				beforeSend: function() {
 					$(Repository.identifier.extensionManager).mask();
+					NProgress.start();
 				},
 				success: Repository.getDependencies
 			});
@@ -376,6 +379,7 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 
 	Repository.getDependencies = function(data) {
 		var $extManager = $(Repository.identifier.extensionManager);
+		NProgress.done();
 		$extManager.unmask();
 		if (data.hasDependencies) {
 			top.TYPO3.Modal.confirm(data.title, data.message, top.TYPO3.Severity.info, [
@@ -396,7 +400,7 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 			]);
 		} else {
 			if(data.hasErrors) {
-				top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, data.title, data.message, 15);
+				top.TYPO3.Notification.error(data.title, data.message, 15);
 			} else {
 				Repository.getResolveDependenciesAndInstallResult(data.url + '&tx_extensionmanager_tools_extensionmanagerextensionmanager[downloadPath]=' + Repository.downloadPath);
 			}
@@ -411,11 +415,11 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 			dataType: 'json',
 			beforeSend: function() {
 				$extManager.mask();
+				NProgress.start();
 			},
 			success: function (data) {
-				$extManager.unmask();
 				if (data.errorCount > 0) {
-					top.TYPO3.Modal.confirm(data.errorTitle, data.errorMessage, top.TYPO3.Severity.warning, [
+					top.TYPO3.Modal.confirm(data.errorTitle, data.errorMessage, top.TYPO3.Severity.error, [
 						{
 							text: TYPO3.lang['button.cancel'],
 							active: true,
@@ -424,15 +428,21 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 							}
 						}, {
 							text: TYPO3.lang['button.resolveDependenciesIgnore'],
-							btnClass: 'btn-warning',
+							btnClass: 'btn-danger disabled t3js-dependencies',
 							trigger: function() {
 								Repository.getResolveDependenciesAndInstallResult(data.skipDependencyUri);
 								top.TYPO3.Modal.dismiss();
 							}
 						}
 					]);
+					top.TYPO3.Modal.currentModal.on('shown.bs.modal', function() {
+						var $actionButton = top.TYPO3.Modal.currentModal.find('.t3js-dependencies');
+						top.TYPO3.jQuery('input[name=unlockDependencyIgnoreButton]').on('change', function() {
+							$actionButton.toggleClass('disabled', !$(this).prop('checked'));
+						});
+					});
 				} else {
-					var successMessage = TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.message'].replace(/\{0\}/g, data.extension) + ' <br />';
+					var successMessage = TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.message' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension) + ' <br />';
 					successMessage += '<br /><h3>' + TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.header'] + ':</h3>';
 					$.each(data.result, function(index, value) {
 						successMessage += TYPO3.lang['extensionList.dependenciesResolveDownloadSuccess.item'] + ' ' + index + ':<br /><ul>';
@@ -441,9 +451,13 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 						});
 						successMessage += '</ul>';
 					});
-					top.TYPO3.Flashmessage.display(top.TYPO3.Severity.info, TYPO3.lang['extensionList.dependenciesResolveFlashMessage.title'].replace(/\{0\}/g, data.extension), successMessage, 15);
+					top.TYPO3.Notification.info(TYPO3.lang['extensionList.dependenciesResolveFlashMessage.title' + data.installationTypeLanguageKey].replace(/\{0\}/g, data.extension), successMessage, 15);
 					top.TYPO3.ModuleMenu.App.refreshMenu();
 				}
+			},
+			complete: function() {
+				NProgress.done();
+				$extManager.unmask();
 			}
 		});
 	};
@@ -514,10 +528,13 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 			url: url,
 			dataType: 'json',
 			cache: false,
+			beforeSend: function() {
+				NProgress.start();
+			},
 			success: function(data) {
 				// Something went wrong, show message
 				if (data.errorMessage.length) {
-					top.TYPO3.Flashmessage.display(top.TYPO3.Severity.warning, TYPO3.lang['extensionList.updateFromTerFlashMessage.title'], data.errorMessage, 10);
+					top.TYPO3.Notification.error(TYPO3.lang['extensionList.updateFromTerFlashMessage.title'], data.errorMessage, 10);
 				}
 
 				// Message with latest updates
@@ -543,14 +560,15 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 				// Create an error message with diagnosis info.
 				var errorMessage = textStatus + '(' + errorThrown + '): ' + jqXHR.responseText;
 
-				top.TYPO3.Flashmessage.display(
-					top.TYPO3.Severity.warning,
+				top.TYPO3.Notification.warning(
 					TYPO3.lang['extensionList.updateFromTerFlashMessage.title'],
 					errorMessage,
 					10
 				);
 			},
 			complete: function() {
+				NProgress.done();
+
 				// Hide loaders
 				$(ExtensionManager.Update.identifier.splashscreen).removeClass('is-shown');
 				$(ExtensionManager.Update.identifier.terTableDataTableWrapper).removeClass('is-loading');
@@ -570,13 +588,17 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 			$me.click(function() {
 				var $terTableWrapper = $(ExtensionManager.Update.identifier.terTableWrapper);
 				$terTableWrapper.mask();
+				NProgress.start();
 				$.ajax({
 					url: $(this).data('href'),
 					dataType: 'json',
 					success: function(data) {
 						$terTableWrapper.html(data);
-						$terTableWrapper.unmask();
 						ExtensionManager.Update.transformPaginatorToAjax();
+					},
+					complete: function() {
+						NProgress.done();
+						$terTableWrapper.unmask();
 					}
 				});
 			});
@@ -621,6 +643,21 @@ define(['jquery', 'datatables', 'jquery/jquery.clearable'], function($) {
 
 			$(document).on('click', '.onClickMaskExtensionManager', function() {
 				$(ExtensionManager.identifier.extensionManager).mask();
+				NProgress.start();
+			}).on('click', 'a[data-action=update-extension]', function(e) {
+				e.preventDefault();
+				$.ajax({
+					url: $(this).attr('href'),
+					dataType: 'json',
+					beforeSend: function() {
+						$(ExtensionManager.identifier.extensionManager).mask();
+						NProgress.start();
+					},
+					success: ExtensionManager.updateExtension
+				});
+			}).on('change', 'input[name=unlockDependencyIgnoreButton]', function() {
+				var $actionButton = TYPO3.jQuery('.t3js-dependencies');
+				$actionButton.toggleClass('disabled', !$(this).prop('checked'));
 			});
 
 			$(ExtensionManager.identifier.searchField).clearable({

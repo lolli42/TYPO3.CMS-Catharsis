@@ -22,8 +22,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * sending the posted data to the object.
  *
  * Used by many smaller forms/links in TYPO3, including the QuickEdit module.
- * Is not used by alt_doc.php though (main form rendering script) - that uses the same class (TCEmain) but makes its own initialization (to save the redirect request).
- * For all other cases than alt_doc.php it is recommended to use this script for submitting your editing forms - but the best solution in any case would probably be to link your application to alt_doc.php, that will give you easy form-rendering as well.
+ * Is not used by FormEngine though (main form rendering script) - that uses the same class (TCEmain) but makes its own initialization (to save the redirect request).
+ * For all other cases than FormEngine it is recommended to use this script for submitting your editing forms - but the best solution in any case would probably be to link your application to FormEngine, that will give you easy form-rendering as well.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
@@ -136,7 +136,6 @@ class SimpleDataHandlerController {
 		$this->cacheCmd = GeneralUtility::_GP('cacheCmd');
 		$this->redirect = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect'));
 		$this->prErr = GeneralUtility::_GP('prErr');
-		$this->_disableRTE = GeneralUtility::_GP('_disableRTE');
 		$this->CB = GeneralUtility::_GP('CB');
 		$this->vC = GeneralUtility::_GP('vC');
 		$this->uPT = GeneralUtility::_GP('uPT');

@@ -70,6 +70,8 @@ class SilentConfigurationUpgradeService {
 		'BE/staticFileEditPath',
 		// #64226
 		'BE/accessListRenderMode',
+		// #66431
+		'BE/loginNewsTitle',
 		// #24900
 		'SYS/compat_version',
 		// #64643
@@ -78,6 +80,10 @@ class SilentConfigurationUpgradeService {
 		'GFX/TTFdpi',
 		// #64872
 		'SYS/useCachingFramework',
+		// #65912
+		'FE/allowedTempPaths',
+		// #66034
+		'FE/activateContentAdapter',
 	);
 
 	/**

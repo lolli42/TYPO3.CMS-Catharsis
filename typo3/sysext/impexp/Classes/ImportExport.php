@@ -1042,12 +1042,8 @@ class ImportExport {
 			} else {
 				$file->checkActionPermission('read');
 			}
-
-		} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException $e) {
-			$this->error('File ' . $file->getPublicUrl() . ': ' . $e->getMessage());
-			return;
-		} catch (\TYPO3\CMS\Core\Resource\Exception\IllegalFileExtensionException $e) {
-			$this->error('File ' . $file->getPublicUrl() . ': ' . $e->getMessage());
+		} catch (\Exception $e) {
+			$this->error('Error when trying to add file ' . $file->getCombinedIdentifier() . ': ' . $e->getMessage());
 			return;
 		}
 		$fileUid = $file->getUid();
@@ -1982,9 +1978,17 @@ class ImportExport {
 				if ($table != 'pages') {
 					foreach ($recs as $uid => $thisRec) {
 						// PID: Set the main $pid, unless a NEW-id is found
-						$setPid = isset($this->import_mapId['pages'][$thisRec['pid']]) ? $this->import_mapId['pages'][$thisRec['pid']] : $pid;
-						if (is_array($GLOBALS['TCA'][$table]) && $GLOBALS['TCA'][$table]['ctrl']['rootLevel']) {
-							$setPid = 0;
+						$setPid = isset($this->import_mapId['pages'][$thisRec['pid']])
+							? (int)$this->import_mapId['pages'][$thisRec['pid']]
+							: (int)$pid;
+						if (is_array($GLOBALS['TCA'][$table]) && isset($GLOBALS['TCA'][$table]['ctrl']['rootLevel'])) {
+							$rootLevelSetting = (int)$GLOBALS['TCA'][$table]['ctrl']['rootLevel'];
+							if ($rootLevelSetting === 1) {
+								$setPid = 0;
+							} elseif ($rootLevelSetting === 0 && $setPid === 0) {
+								$this->error('Error: Record type ' . $table . ' is not allowed on pid 0');
+								continue;
+							}
 						}
 						// Add record:
 						$this->addSingle($table, $uid, $setPid);
@@ -3032,7 +3036,7 @@ class ImportExport {
 
 					if (isset($fieldConfiguration['titleTexts'])) {
 						$titleTextField = $fieldConfiguration['titleTexts'];
-						if ($row[$titleTextField] !== '') {
+						if (isset($row[$titleTextField]) && $row[$titleTextField] !== '') {
 							$titleTextContents = explode(LF, $row[$titleTextField]);
 							$updateData[$table][$uid][$titleTextField] = '';
 						}
@@ -3040,7 +3044,7 @@ class ImportExport {
 
 					if (isset($fieldConfiguration['alternativeTexts'])) {
 						$alternativeTextField = $fieldConfiguration['alternativeTexts'];
-						if ($row[$alternativeTextField] !== '') {
+						if (isset($row[$alternativeTextField]) && $row[$alternativeTextField] !== '') {
 							$alternativeTextContents = explode(LF, $row[$alternativeTextField]);
 							$updateData[$table][$uid][$alternativeTextField] = '';
 						}
@@ -3597,7 +3601,7 @@ class ImportExport {
 				if ($GLOBALS['TCA'][$table]['ctrl']['is_static']) {
 					$pInfo['msg'] .= 'TABLE \'' . $table . '\' is a STATIC TABLE! ';
 				}
-				if ($GLOBALS['TCA'][$table]['ctrl']['rootLevel']) {
+				if ((int)$GLOBALS['TCA'][$table]['ctrl']['rootLevel'] === 1) {
 					$pInfo['msg'] .= 'TABLE \'' . $table . '\' will be inserted on ROOT LEVEL! ';
 				}
 				$diffInverse = FALSE;
@@ -4142,7 +4146,7 @@ class ImportExport {
 			} else {
 				$output = 'Match';
 			}
-			return '<strong class="nobr">[' . htmlspecialchars(($table . ':' . $importRecord['uid'] . ' => ' . $databaseRecord['uid'])) . ']:</strong> ' . $output;
+			return '<strong class="text-nowrap">[' . htmlspecialchars(($table . ':' . $importRecord['uid'] . ' => ' . $databaseRecord['uid'])) . ']:</strong> ' . $output;
 		}
 		return 'ERROR: One of the inputs were not an array!';
 	}

@@ -26,7 +26,6 @@ return array(
 			'1' => 'status-user-admin',
 			'default' => 'status-user-backend'
 		),
-		'mainpalette' => '1',
 		'useColumnsForDefaultValues' => 'usergroup,lockToDomain,options,db_mountpoints,file_mountpoints,file_permissions,userMods',
 		'versioningWS_alwaysAllowLiveEdit' => TRUE,
 		'searchFields' => 'username,email,realName'
@@ -62,6 +61,7 @@ return array(
 				'size' => '5',
 				'maxitems' => '20',
 				'iconsInOptionTags' => 1,
+				'enableMultiSelectFilterTextfield' => TRUE,
 				'wizards' => array(
 					'_VERTICAL' => 1,
 					'edit' => array(
@@ -273,7 +273,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0'
 			)
@@ -283,7 +282,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0',
 				'range' => array(

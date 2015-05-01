@@ -91,19 +91,6 @@ CREATE TABLE be_users (
 );
 
 #
-# Table structure for table 'cache_imagesizes'
-#
-CREATE TABLE cache_imagesizes (
-	md5hash varchar(32) DEFAULT '' NOT NULL,
-	md5filename varchar(32) DEFAULT '' NOT NULL,
-	tstamp int(11) DEFAULT '0' NOT NULL,
-	filename varchar(255) DEFAULT '' NOT NULL,
-	imagewidth mediumint(11) unsigned DEFAULT '0' NOT NULL,
-	imageheight mediumint(11) unsigned DEFAULT '0' NOT NULL,
-	PRIMARY KEY (md5filename)
-) ENGINE=InnoDB;
-
-#
 # Table structure for table 'pages'
 #
 CREATE TABLE pages (
@@ -439,6 +426,7 @@ CREATE TABLE sys_file_reference (
 	alternative tinytext,
 	link varchar(1024) DEFAULT '' NOT NULL,
 	downloadname tinytext,
+	crop varchar(4000) DEFAULT '' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid,deleted),
@@ -715,5 +703,5 @@ CREATE TABLE sys_category_record_mm (
 	sorting_foreign int(11) DEFAULT '0' NOT NULL,
 
 	KEY uid_local_foreign (uid_local,uid_foreign),
-	KEY uid_foreign_tablenames (uid_foreign,tablenames)
+	KEY uid_foreign_tablefield (uid_foreign,tablenames(255),fieldname(255),sorting_foreign)
 );

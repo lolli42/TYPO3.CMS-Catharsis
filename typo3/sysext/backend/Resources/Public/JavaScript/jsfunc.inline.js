@@ -173,7 +173,7 @@ var inline = {
 			if (matches) {
 				title = TYPO3.jQuery('#' + matches[1] + '_records').data('title');
 			}
-			top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, title, message, 5);
+			top.TYPO3.Notification.error(title, message, 5);
 		}
 		return false;
 	},
@@ -192,7 +192,7 @@ var inline = {
 	makeAjaxCall: function (method, params, lock, context) {
 		var url = '', urlParams = '', options = {};
 		if (method && params && params.length && this.lockAjaxMethod(method, lock)) {
-			url = TBE_EDITOR.getBackendPath() + TYPO3.settings.ajaxUrls['t3lib_TCEforms_inline::' + method];
+			url = TYPO3.settings.ajaxUrls['t3lib_TCEforms_inline::' + method];
 			urlParams = '';
 			for (var i = 0, max = params.length; i < max; i++) {
 				urlParams += '&ajax[' + i + ']=' + encodeURIComponent(params[i]);
@@ -273,7 +273,7 @@ var inline = {
 						head.appendChild(element);
 						processedCount++;
 					}
-					json.headData.shift();
+					delete(json.headData[index]);
 				}
 			});
 		}
@@ -352,7 +352,7 @@ var inline = {
 	},
 
 	importElementMultiple: function (objectId, table, uidArray, type) {
-		uidArray.each(function (uid) {
+		TYPO3.jQuery.each(uidArray, function (index, uid) {
 			inline.delayedImportElement(objectId, table, uid, type);
 		});
 	},
@@ -436,12 +436,13 @@ var inline = {
 		var recordObj = document.getElementsByName(this.prependFormFieldNames + '[' + unique.table + '][' + recordUid + '][' + unique.field + ']');
 		var values = this.getValuesFromHashMap(unique.used);
 		if (recordObj.length) {
-					if (recordObj[0].hasOwnProperty('options')) {
-						var selectedValue = recordObj[0].options[recordObj[0].selectedIndex].value;
-						for (var i = 0; i < values.length; i++) {
-							if (values[i] != selectedValue) {
-								this.removeSelectOption(recordObj[0], values[i]);
-							}
+			if (recordObj[0].hasOwnProperty('options')) {
+				var selectedValue = recordObj[0].options[recordObj[0].selectedIndex].value;
+				for (var i = 0; i < values.length; i++) {
+					if (values[i] != selectedValue) {
+						var $recordObject = TYPO3.jQuery(recordObj[0]);
+						this.removeSelectOption($recordObject, values[i]);
+					}
 				}
 			}
 		}
@@ -464,8 +465,9 @@ var inline = {
 				if ($selector.length) {
 					// remove all items from the new select-item which are already used in other children
 					if (recordObj.length) {
+						var $recordObject = TYPO3.jQuery(recordObj[0]);
 						for (var i = 0; i < values.length; i++) {
-							this.removeSelectOption(recordObj[0], values[i]);
+							this.removeSelectOption($recordObject, values[i]);
 						}
 						// set the selected item automatically to the first of the remaining items if no selector is used
 						if (!unique.selector) {
@@ -489,7 +491,8 @@ var inline = {
 					for (var i = 0; i < records.length; i++) {
 						recordObj = document.getElementsByName(this.prependFormFieldNames + '[' + unique.table + '][' + records[i] + '][' + unique.field + ']');
 						if (recordObj.length && records[i] != recordUid) {
-							this.removeSelectOption(TYPO3.jQuery(recordObj[0]), selectedValue);
+							var $recordObject = TYPO3.jQuery(recordObj[0]);
+							this.removeSelectOption($recordObject, selectedValue);
 						}
 					}
 				}
@@ -517,7 +520,7 @@ var inline = {
 		} else {
 			var message = TBE_EDITOR.labels.maxItemsAllowed.replace('{0}', this.data.config[objectPrefix].max);
 			var title = $insertObject.data('title');
-			top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, title, message, 500);
+			top.TYPO3.Notification.error(title, message);
 		}
 	},
 
@@ -584,14 +587,16 @@ var inline = {
 		var result = false;
 		TYPO3.jQuery.each(haystack, function (index, element) {
 			if (element.nodeName.toUpperCase() == needle.name) {
-				var attributesCount = $H(needle.attributes).keys().length;
+				var attributesCount = Object.keys(needle.attributes).length;
 				var attributesFound = 0;
-				$H(needle.attributes).each(function (attribute) {
-					if (element.getAttribute && element.getAttribute(attribute.key) == attribute.value) {
-						attributesFound++;
+				if (element.getAttribute) {
+					for (var attribute in needle.attributes) {
+						if (needle.attributes.hasOwnProperty(attribute) && element.getAttribute(attribute.key) === attribute.value) {
+							attributesFound++;
+						}
 					}
-				});
-				if (attributesFound == attributesCount) {
+				}
+				if (attributesFound === attributesCount) {
 					result = true;
 					return true;
 				}
@@ -846,9 +851,10 @@ var inline = {
 		for (var i = 0; i < records.length; i++) {
 			recordObj = document.getElementsByName(this.prependFormFieldNames + '[' + unique.table + '][' + records[i] + '][' + unique.field + ']');
 			if (recordObj.length && recordObj[0] != srcElement) {
-				this.removeSelectOption(recordObj[0], srcElement.value);
+				var $recordObject = TYPO3.jQuery(recordObj[0]);
+				this.removeSelectOption($recordObject, srcElement.value);
 				if (typeof oldValue != 'undefined') {
-					this.readdSelectOption(recordObj[0], oldValue, unique);
+					this.readdSelectOption($recordObject, oldValue, unique);
 				}
 			}
 		}
@@ -872,7 +878,7 @@ var inline = {
 
 			if (unique.selector == 'select') {
 				if (!isNaN(fieldObj[0].value)) {
-					var $selector = TYPO3.jQuery('#' + objectPrefix + '_selector');
+					var $selector = TYPO3.jQuery('#' + this.escapeObjectId(objectPrefix) + '_selector');
 					this.readdSelectOption($selector, fieldObj[0].value, unique);
 				}
 			}
@@ -893,7 +899,8 @@ var inline = {
 			for (var i = 0; i < records.length; i++) {
 				recordObj = document.getElementsByName(this.prependFormFieldNames + '[' + unique.table + '][' + records[i] + '][' + unique.field + ']');
 				if (recordObj.length) {
-					this.readdSelectOption(recordObj[0], fieldObj[0].value, unique);
+					var $recordObject = TYPO3.jQuery(recordObj[0]);
+					this.readdSelectOption($recordObject, fieldObj[0].value, unique);
 				}
 			}
 		} else if (unique.type == 'groupdb') {

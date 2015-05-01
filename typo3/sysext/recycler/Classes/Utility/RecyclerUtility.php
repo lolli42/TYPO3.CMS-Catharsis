@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Recycler\Utility;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -30,7 +31,7 @@ class RecyclerUtility {
 	 *
 	 ************************************************************/
 	/**
-	 * Checks the page access rights (Code for access check mostly taken from alt_doc.php)
+	 * Checks the page access rights (Code for access check mostly taken from FormEngine)
 	 * as well as the table access rights of the user.
 	 *
 	 * @param string $table The table to check access for
@@ -49,11 +50,11 @@ class RecyclerUtility {
 			if ($table === 'pages') {
 				// If pages:
 				$calculatedPermissions = $backendUser->calcPerms($calcPRec);
-				$hasAccess = $calculatedPermissions & 2 ? TRUE : FALSE;
+				$hasAccess = $calculatedPermissions & Permission::PAGE_EDIT ? TRUE : FALSE;
 			} else {
 				$calculatedPermissions = $backendUser->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
 				// Fetching pid-record first.
-				$hasAccess = $calculatedPermissions & 16 ? TRUE : FALSE;
+				$hasAccess = $calculatedPermissions & Permission::CONTENT_EDIT ? TRUE : FALSE;
 			}
 			// Check internals regarding access:
 			if ($hasAccess) {

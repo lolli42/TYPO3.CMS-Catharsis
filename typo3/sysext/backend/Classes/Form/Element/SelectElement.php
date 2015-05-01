@@ -19,9 +19,15 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Form\DataPreprocessor;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
+use TYPO3\CMS\Backend\Form\InlineStackProcessor;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
  * Generation of TCEform elements of the type "select"
+ *
+ * @todo: This class does way to much and is also misused by FormDataTraverser. It should be split / refactored.
  */
 class SelectElement extends AbstractFormElement {
 
@@ -56,58 +62,77 @@ class SelectElement extends AbstractFormElement {
 	protected $currentTable;
 
 	/**
-	 * This will render a selector box element, or possibly a special construction with two selector boxes.
-	 * That depends on configuration.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $additionalInformation An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
+	 * @var array Result array given returned by render() - This property is a helper until class is properly refactored
 	 */
-	public function render($table, $field, $row, &$additionalInformation) {
+	protected $resultArray = array();
+
+	/**
+	 * This will render a selector box element, or possibly a special construction with two selector boxes.
+	 *
+	 * @return array As defined in initializeResultArray() of AbstractNode
+	 * @todo: This method is more like a container and not a single element ...
+	 */
+	public function render() {
+		$table = $this->globalOptions['table'];
+		$field = $this->globalOptions['fieldName'];
+		$row = $this->globalOptions['databaseRow'];
+		$parameterArray = $this->globalOptions['parameterArray'];
 		// Field configuration from TCA:
-		$config = $additionalInformation['fieldConf']['config'];
+		$config = $parameterArray['fieldConf']['config'];
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
+		$this->resultArray = $this->initializeResultArray();
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist.
-		$specConf = BackendUtility::getSpecConfParts($additionalInformation['extra'], $additionalInformation['fieldConf']['defaultExtras']);
-		$selItems = $this->getSelectItems($table, $field, $row, $additionalInformation);
+		$specConf = BackendUtility::getSpecConfParts($parameterArray['extra'], $parameterArray['fieldConf']['defaultExtras']);
+		$selItems = $this->getSelectItems($table, $field, $row, $parameterArray);
 
 		// Creating the label for the "No Matching Value" entry.
-		$nMV_label = isset($additionalInformation['fieldTSConfig']['noMatchingValue_label'])
-			? $this->getLanguageService()->sL($additionalInformation['fieldTSConfig']['noMatchingValue_label'])
+		$nMV_label = isset($parameterArray['fieldTSConfig']['noMatchingValue_label'])
+			? $this->getLanguageService()->sL($parameterArray['fieldTSConfig']['noMatchingValue_label'])
 			: '[ ' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue') . ' ]';
 		// Prepare some values:
 		$maxitems = (int)$config['maxitems'];
 		// If a SINGLE selector box...
 		if ($maxitems <= 1 && $config['renderMode'] !== 'tree') {
-			$item = $this->getSingleField_typeSelect_single($table, $field, $row, $additionalInformation, $config, $selItems, $nMV_label);
+			$html = $this->getSingleField_typeSelect_single($table, $field, $row, $parameterArray, $config, $selItems, $nMV_label);
 		} elseif ($config['renderMode'] === 'checkbox') {
 			// Checkbox renderMode
-			$item = $this->getSingleField_typeSelect_checkbox($table, $field, $row, $additionalInformation, $config, $selItems, $nMV_label);
+			$html = $this->getSingleField_typeSelect_checkbox($table, $field, $row, $parameterArray, $config, $selItems, $nMV_label);
 		} elseif ($config['renderMode'] === 'singlebox') {
 			// Single selector box renderMode
-			$item = $this->getSingleField_typeSelect_singlebox($table, $field, $row, $additionalInformation, $config, $selItems, $nMV_label);
+			$html = $this->getSingleField_typeSelect_singlebox($table, $field, $row, $parameterArray, $config, $selItems, $nMV_label);
 		} elseif ($config['renderMode'] === 'tree') {
 			// Tree renderMode
-			$treeClass = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TreeElement::class, $this->formEngine);
-			$item = $treeClass->renderField($table, $field, $row, $additionalInformation, $config, $selItems, $nMV_label);
+			$treeClass = GeneralUtility::makeInstance(TreeElement::class);
+			$html = $treeClass->renderField($table, $field, $row, $parameterArray, $config, $selItems);
 			// Register the required number of elements
 			$minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
-			$this->formEngine->registerRequiredProperty('range', $additionalInformation['itemFormElName'], array($minitems, $maxitems, 'imgName' => $table . '_' . $row['uid'] . '_' . $field));
+			$this->resultArray['requiredElements'][$parameterArray['itemFormElName']] = array(
+				$minitems,
+				$maxitems,
+				'imgName' => $table . '_' . $row['uid'] . '_' . $field
+			);
+			$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
+			if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $parameterArray['itemFormElName'], $match)) {
+				array_shift($match);
+				$this->resultArray['requiredNested'][$parameterArray['itemFormElName']] = array(
+					'parts' => $match,
+					'level' => $tabAndInlineStack,
+				);
+			}
 		} else {
 			// Traditional multiple selector box:
-			$item = $this->getSingleField_typeSelect_multiple($table, $field, $row, $additionalInformation, $config, $selItems, $nMV_label);
+			$html = $this->getSingleField_typeSelect_multiple($table, $field, $row, $parameterArray, $config, $selItems, $nMV_label);
 		}
 		// Wizards:
 		if (!$disabled) {
-			$altItem = '<input type="hidden" name="' . $additionalInformation['itemFormElName'] . '" value="' . htmlspecialchars($additionalInformation['itemFormElValue']) . '" />';
-			$item = $this->formEngine->renderWizards(array($item, $altItem), $config['wizards'], $table, $row, $field, $additionalInformation, $additionalInformation['itemFormElName'], $specConf);
+			$altItem = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
+			$html = $this->renderWizards(array($html, $altItem), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
 		}
-		return $item;
+		$this->resultArray['html'] = $html;
+		return $this->resultArray;
 	}
 
 	/**
@@ -128,7 +153,7 @@ class SelectElement extends AbstractFormElement {
 		$languageService = $this->getLanguageService();
 		$item = '';
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Setting this hidden field (as a flag that JavaScript can read out)
@@ -142,7 +167,19 @@ class SelectElement extends AbstractFormElement {
 		}
 		$minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
 		// Register the required number of elements:
-		$this->formEngine->registerRequiredProperty('range', $PA['itemFormElName'], array($minitems, $maxitems, 'imgName' => $table . '_' . $row['uid'] . '_' . $field));
+		$this->resultArray['requiredElements'][$PA['itemFormElName']] = array(
+			$minitems,
+			$maxitems,
+			'imgName' => $table . '_' . $row['uid'] . '_' . $field
+		);
+		$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
+		if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $PA['itemFormElName'], $match)) {
+			array_shift($match);
+			$this->resultArray['requiredNested'][$PA['itemFormElName']] = array(
+				'parts' => $match,
+				'level' => $tabAndInlineStack,
+			);
+		}
 		// Get "removeItems":
 		$removeItems = GeneralUtility::trimExplode(',', $PA['fieldTSConfig']['removeItems'], TRUE);
 		// Get the array with selected items:
@@ -163,7 +200,7 @@ class SelectElement extends AbstractFormElement {
 			$tvP = explode('|', $tv, 2);
 			$evalValue = $tvP[0];
 			$isRemoved = in_array($evalValue, $removeItems)
-				|| $config['form_type'] == 'select' && $config['authMode']
+				|| $config['type'] == 'select' && $config['authMode']
 				&& !$this->getBackendUserAuthentication()->checkAuthMode($table, $field, $evalValue, $config['authMode']);
 			if ($isRemoved && !$PA['fieldTSConfig']['disableNoMatchingValueElement'] && !$config['disableNoMatchingValueElement']) {
 				$tvP[1] = rawurlencode(@sprintf($nMV_label, $evalValue));
@@ -196,7 +233,7 @@ class SelectElement extends AbstractFormElement {
 			$styleAttrValue = '';
 			foreach ($selItems as $p) {
 				if ($config['iconsInOptionTags']) {
-					$styleAttrValue = $this->formEngine->optionTagStyle($p[2]);
+					$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
 				}
 				$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"'
 					. ($styleAttrValue ? ' style="' . htmlspecialchars($styleAttrValue) . '"' : '')
@@ -205,7 +242,7 @@ class SelectElement extends AbstractFormElement {
 			// Put together the selector box:
 			$selector_itemListStyle = isset($config['itemListStyle'])
 				? ' style="' . htmlspecialchars($config['itemListStyle']) . '"'
-				: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"';
+				: '';
 			$size = (int)$config['size'];
 			$size = $config['autoSizeMax']
 				? MathUtility::forceIntegerInRange(count($itemArray) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax'])
@@ -264,7 +301,7 @@ class SelectElement extends AbstractFormElement {
 			'autoSizeMax' => MathUtility::forceIntegerInRange($config['autoSizeMax'], 0),
 			'style' => isset($config['selectedListStyle'])
 				? ' style="' . htmlspecialchars($config['selectedListStyle']) . '"'
-				: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"',
+				: '',
 			'dontShowMoveIcons' => $maxitems <= 1,
 			'maxitems' => $maxitems,
 			'info' => '',
@@ -277,7 +314,7 @@ class SelectElement extends AbstractFormElement {
 			'rightbox' => $itemsToSelect,
 			'readOnly' => $disabled
 		);
-		$item .= $this->formEngine->dbFileIcons($PA['itemFormElName'], '', '', $itemArray, '', $params, $PA['onFocus']);
+		$item .= $this->dbFileIcons($PA['itemFormElName'], '', '', $itemArray, '', $params, $PA['onFocus']);
 		return $item;
 	}
 
@@ -296,10 +333,10 @@ class SelectElement extends AbstractFormElement {
 		$config = $PA['fieldConf']['config'];
 
 		// Getting the selector box items from the system
-		$selectItems = $this->formEngine->addSelectOptionsToItemArray(
-			$this->formEngine->initItemArray($PA['fieldConf']),
+		$selectItems = FormEngineUtility::addSelectOptionsToItemArray(
+			FormEngineUtility::initItemArray($PA['fieldConf']),
 			$PA['fieldConf'],
-			$this->formEngine->setTSconfig($table, $row),
+			FormEngineUtility::getTSconfigForTableRow($table, $row),
 			$fieldName
 		);
 
@@ -313,11 +350,12 @@ class SelectElement extends AbstractFormElement {
 		);
 
 		// Possibly add some items:
-		$selectItems = $this->formEngine->addItems($selectItems, $PA['fieldTSConfig']['addItems.']);
+		$selectItems = FormEngineUtility::addItems($selectItems, $PA['fieldTSConfig']['addItems.']);
 
 		// Process items by a user function:
 		if (isset($config['itemsProcFunc']) && $config['itemsProcFunc']) {
-			$selectItems = $this->formEngine->procItems($selectItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $fieldName);
+			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
+			$selectItems = $dataPreprocessor->procItems($selectItems, $PA['fieldTSConfig']['itemsProcFunc.'], $config, $table, $row, $fieldName);
 		}
 
 		// Possibly remove some items:
@@ -337,7 +375,7 @@ class SelectElement extends AbstractFormElement {
 
 			$authModeDeny = FALSE;
 			if (
-				($config['form_type'] === 'select')
+				($config['type'] === 'select')
 				&& $config['authMode']
 				&& !$beUserAuth->checkAuthMode($table, $fieldName, $selectItem[1], $config['authMode'])
 			) {
@@ -374,18 +412,23 @@ class SelectElement extends AbstractFormElement {
 	 * @param string $noMatchingLabel Label for no-matching-value
 	 * @return string The HTML code for the item
 	 * @see getSingleField_typeSelect()
+	 * @todo: Needs refactoring - somewhere else - own element and make select itself a container?
 	 */
 	public function getSingleField_typeSelect_single($table, $field, $row, &$PA, $config, $selectItems, $noMatchingLabel) {
 
-		// check against inline uniqueness
-		$inlineParent = $this->formEngine->inline->getStructureLevel(-1);
+		// Check against inline uniqueness
+		/** @var InlineStackProcessor $inlineStackProcessor */
+		$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
+		$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+		$inlineParent = $inlineStackProcessor->getStructureLevel(-1);
 		$uniqueIds = NULL;
 		if (is_array($inlineParent) && $inlineParent['uid']) {
+			$inlineObjectName = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+			$inlineFormName = $inlineStackProcessor->getCurrentStructureFormPrefix($this->globalOptions['prependFormFieldNames']);
 			if ($inlineParent['config']['foreign_table'] == $table && $inlineParent['config']['foreign_unique'] == $field) {
-				$uniqueIds = $this->formEngine->inline->inlineData['unique'][$this->formEngine->inline->inlineNames['object']
-				. InlineElement::Structure_Separator . $table]['used'];
-				$PA['fieldChangeFunc']['inlineUnique'] = 'inline.updateUnique(this,\'' . $this->formEngine->inline->inlineNames['object']
-					. InlineElement::Structure_Separator . $table . '\',\'' . $this->formEngine->inline->inlineNames['form']
+				$uniqueIds = $this->globalOptions['inlineData']['unique'][$inlineObjectName . '-' . $table]['used'];
+				$PA['fieldChangeFunc']['inlineUnique'] = 'inline.updateUnique(this,\'' . $inlineObjectName
+					. '-' . $table . '\',\'' . $inlineFormName
 					. '\',\'' . $row['uid'] . '\');';
 			}
 			// hide uid of parent record for symmetric relations
@@ -409,13 +452,21 @@ class SelectElement extends AbstractFormElement {
 		$out = '';
 		$options = '';
 		$disabled = FALSE;
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = TRUE;
 			$onlySelectedIconShown = 1;
 		}
 		// Register as required if minitems is greater than zero
 		if (($minItems = MathUtility::forceIntegerInRange($config['minitems'], 0)) > 0) {
-			$this->formEngine->registerRequiredProperty('field', $table . '_' . $row['uid'] . '_' . $field, $PA['itemFormElName']);
+			$this->resultArray['requiredFields'][$table . '_' . $row['uid'] . '_' . $field] = $PA['itemFormElName'];
+			$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
+			if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $PA['itemFormElName'], $match)) {
+				array_shift($match);
+				$this->resultArray['requiredNested'][$PA['itemFormElName']] = array(
+					'parts' => $match,
+					'level' => $tabAndInlineStack,
+				);
+			}
 		}
 
 		// Icon configuration:
@@ -435,6 +486,7 @@ class SelectElement extends AbstractFormElement {
 		$selectItemGroupCount = 0;
 		$selectItemGroups = array();
 		$selectIcons = array();
+		$selectedValue = '';
 		foreach ($selectItems as $item) {
 			if ($item[1] === '--div--') {
 				// IS OPTGROUP
@@ -443,13 +495,12 @@ class SelectElement extends AbstractFormElement {
 				}
 				$selectItemGroups[$selectItemGroupCount]['header'] = array(
 					'title' => $item[0],
-					'icon' => (!empty($item[2]) ? $this->formEngine->getIconHtml($item[2]) : '')
+					'icon' => (!empty($item[2]) ? FormEngineUtility::getIconHtml($item[2]) : ''),
 				);
 			} else {
 				// IS ITEM
 				$title = htmlspecialchars($item['0'], ENT_COMPAT, 'UTF-8', FALSE);
-				$value = htmlspecialchars($item[1]);
-				$icon = (!empty($item[2]) ? $this->formEngine->getIconHtml($item[2], $title, $title) : '');
+				$icon = !empty($item[2]) ? FormEngineUtility::getIconHtml($item[2], $title, $title) : '';
 				$selected = ((string)$PA['itemFormElValue'] === (string)$item[1] ? 1 : 0);
 				if ($selected) {
 					$selectedIndex = $selectItemCounter;
@@ -459,17 +510,17 @@ class SelectElement extends AbstractFormElement {
 				}
 				$selectItemGroups[$selectItemGroupCount]['items'][] = array(
 					'title' => $title,
-					'value' => $value,
+					'value' => $item[1],
 					'icon' => $icon,
 					'selected' => $selected,
 					'index' => $selectItemCounter
 				);
 				// ICON
 				if ($icon && !$suppressIcons && (!$onlySelectedIconShown || $selected)) {
-					$onClick = $this->formEngine->elName($PA['itemFormElName']) . '.selectedIndex=' . $selectItemCounter . ';';
+					$onClick = 'document.editform[' . GeneralUtility::quoteJSvalue($PA['itemFormElName']) . '].selectedIndex=' . $selectItemCounter . ';';
 					if ($config['iconsInOptionTags']) {
 						$onClick .= 'document.getElementById(\'' . $selectId . '_icon\').innerHTML = '
-							. $this->formEngine->elName($PA['itemFormElName'])
+							. 'document.editform[' . GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ']'
 							. '.options[' . $selectItemCounter . '].getAttribute(\'data-icon\'); ';
 					}
 					$onClick .= implode('', $PA['fieldChangeFunc']);
@@ -538,7 +589,6 @@ class SelectElement extends AbstractFormElement {
 					. '>
 					' . $options . '
 				</select>
-				' . (!$disabled ? '<input type="hidden" name="' . $PA['itemFormElName'] . '_selIconVal" value="' . $selectedValue . '" />' : '') . '
 				' . $append . '
 			</div>';
 
@@ -562,7 +612,7 @@ class SelectElement extends AbstractFormElement {
 					$out .= $selectIcons[$selectIconCount]['icon'];
 					$out .= (!$onlySelectedIconShown ? '</a>' : '');
 				}
-				$out . '</td>';
+				$out .= '</td>';
 			}
 			$out .= '</tr></tbody></table></div>';
 		}
@@ -583,18 +633,19 @@ class SelectElement extends AbstractFormElement {
 	 * @param string $nMV_label Label for no-matching-value
 	 * @return string The HTML code for the item
 	 * @see getSingleField_typeSelect()
+	 * @todo: Needs refactoring - somewhere else - own element and make select itself a container?
 	 */
 	public function getSingleField_typeSelect_checkbox($table, $field, $row, &$PA, $config, $selItems, $nMV_label) {
 		if (empty($selItems)) {
 			return '';
 		}
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
-		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
+		$itemArray = array_flip(FormEngineUtility::extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$output = '';
 
 		// Disabled
 		$disabled = 0;
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = 1;
 		}
 		// Traverse the Array of selector box items:
@@ -610,7 +661,7 @@ class SelectElement extends AbstractFormElement {
 				if ($p[1] === '--div--') {
 					$selIcon = '';
 					if (isset($p[2]) && $p[2] != 'empty-emtpy') {
-						$selIcon = $this->formEngine->getIconHtml($p[2]);
+						$selIcon = FormEngineUtility::getIconHtml($p[2]);
 					}
 					$currentGroup++;
 					$groups[$currentGroup]['header'] = array(
@@ -655,7 +706,7 @@ class SelectElement extends AbstractFormElement {
 						'checked' => $checked,
 						'disabled' => $disabled,
 						'class' => '',
-						'icon' => (!empty($p[2]) ? $this->formEngine->getIconHtml($p[2]) : IconUtility::getSpriteIcon('empty-empty')),
+						'icon' => (!empty($p[2]) ? FormEngineUtility::getIconHtml($p[2]) : IconUtility::getSpriteIcon('empty-empty')),
 						'title' => htmlspecialchars($p[0], ENT_COMPAT, 'UTF-8', FALSE),
 						'help' => $help
 					);
@@ -728,9 +779,9 @@ class SelectElement extends AbstractFormElement {
 							<td>' . $item['help'] . '</td>
 						</tr>
 						';
-					$checkGroup[] = $this->formEngine->elName($item['name']) . '.checked=1;';
-					$uncheckGroup[] = $this->formEngine->elName($item['name']) . '.checked=0;';
-					$resetGroup[] = $this->formEngine->elName($item['name']) . '.checked='.$item['checked'] . ';';
+					$checkGroup[] = 'document.editform[' . GeneralUtility::quoteJSvalue($item['name']) . '].checked=1;';
+					$uncheckGroup[] = 'document.editform[' . GeneralUtility::quoteJSvalue($item['name']) . '].checked=0;';
+					$resetGroup[] = 'document.editform[' . GeneralUtility::quoteJSvalue($item['name']) . '].checked='.$item['checked'] . ';';
 				}
 
 				// Build toggle group checkbox
@@ -788,14 +839,15 @@ class SelectElement extends AbstractFormElement {
 	 * @param string $nMV_label Label for no-matching-value
 	 * @return string The HTML code for the item
 	 * @see getSingleField_typeSelect()
+	 * @todo: Needs refactoring - somewhere else - own element and make select itself a container?
 	 */
 	public function getSingleField_typeSelect_singlebox($table, $field, $row, &$PA, $config, $selItems, $nMV_label) {
 		$languageService = $this->getLanguageService();
 		// Get values in an array (and make unique, which is fine because there can be no duplicates anyway):
-		$itemArray = array_flip($this->formEngine->extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
+		$itemArray = array_flip(FormEngineUtility::extractValuesOnlyFromValueLabelList($PA['itemFormElValue']));
 		$item = '';
 		$disabled = '';
-		if ($this->isRenderReadonly() || $config['readOnly']) {
+		if ($this->isGlobalReadonly() || $config['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// Traverse the Array of selector box items:
@@ -808,7 +860,7 @@ class SelectElement extends AbstractFormElement {
 			$sM = '';
 			if (isset($itemArray[$p[1]])) {
 				$sM = ' selected="selected"';
-				$restoreCmd[] = $this->formEngine->elName(($PA['itemFormElName'] . '[]')) . '.options[' . $c . '].selected=1;';
+				$restoreCmd[] = 'document.editform[' . GeneralUtility::quoteJSvalue($PA['itemFormElName'] . '[]') . '].options[' . $c . '].selected=1;';
 				unset($itemArray[$p[1]]);
 			}
 			// Non-selectable element:
@@ -819,7 +871,7 @@ class SelectElement extends AbstractFormElement {
 			// Icon style for option tag:
 			$styleAttrValue = '';
 			if ($config['iconsInOptionTags']) {
-				$styleAttrValue = $this->formEngine->optionTagStyle($p[2]);
+				$styleAttrValue = FormEngineUtility::optionTagStyle($p[2]);
 			}
 			// Compile <option> tag:
 			$opt[] = '<option value="' . htmlspecialchars($p[1]) . '"' . $sM . $nonSel
@@ -839,7 +891,7 @@ class SelectElement extends AbstractFormElement {
 		$sOnChange = implode('', $PA['fieldChangeFunc']);
 		$selector_itemListStyle = isset($config['itemListStyle'])
 			? ' style="' . htmlspecialchars($config['itemListStyle']) . '"'
-			: ' style="' . $this->formEngine->defaultMultipleSelectorStyle . '"';
+			: '';
 		$size = (int)$config['size'];
 		$cssPrefix = $size === 1 ? 'tceforms-select' : 'tceforms-multiselect';
 		$size = $config['autoSizeMax']
@@ -857,8 +909,8 @@ class SelectElement extends AbstractFormElement {
 			$item .= '<input type="hidden" name="' . htmlspecialchars($PA['itemFormElName']) . '" value="" />';
 		}
 		// Put it all into a table:
-		$onClick = htmlspecialchars($this->formEngine->elName(($PA['itemFormElName'] . '[]')) . '.selectedIndex=-1;' . implode('', $restoreCmd) . ' return false;');
-		$width = $this->formEngine->formMaxWidth($this->formEngine->defaultInputWidth);
+		$onClick = htmlspecialchars('document.editform[' . GeneralUtility::quoteJSvalue($PA['itemFormElName'] . '[]') . '].selectedIndex=-1;' . implode('', $restoreCmd) . ' return false;');
+		$width = $this->formMaxWidth($this->defaultInputWidth);
 		$item .= '
 			<div class="form-control-wrap" ' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
 				<div class="form-wizards-wrap form-wizards-aside">
@@ -889,6 +941,7 @@ class SelectElement extends AbstractFormElement {
 	 * @param string $fieldName The name of the select field.
 	 * @param string $value The current value in the local record, usually a comma separated list of selected values.
 	 * @return array Array of related UIDs.
+	 * @todo: Needs refactoring and probably out of this class
 	 */
 	public function getRelatedSelectFieldUids(array $fieldConfig, $fieldName, $value) {
 		$relatedUids = array();
@@ -902,9 +955,8 @@ class SelectElement extends AbstractFormElement {
 
 		$PA = array();
 		$PA['fieldConf']['config'] = $fieldConfig;
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ? $PA['fieldConf']['config']['form_type'] : $PA['fieldConf']['config']['type'];
-		$PA['fieldTSConfig'] = $this->formEngine->setTSconfig($this->currentTable, $this->currentRow, $fieldName);
-		$PA['fieldConf']['config'] = $this->formEngine->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
+		$PA['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($this->currentTable, $this->currentRow, $fieldName);
+		$PA['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
 		$selectItemArray = $this->getSelectItems($this->currentTable, $fieldName, $this->currentRow, $PA);
 
 		if ($isTraversable && count($selectItemArray)) {
@@ -1006,6 +1058,13 @@ class SelectElement extends AbstractFormElement {
 	 */
 	public function isForceAlternativeFieldValueUse() {
 		return $this->forceAlternativeFieldValueUse;
+	}
+
+	/**
+	 * @return BackendUserAuthentication
+	 */
+	protected function getBackendUserAuthentication() {
+		return $GLOBALS['BE_USER'];
 	}
 
 }

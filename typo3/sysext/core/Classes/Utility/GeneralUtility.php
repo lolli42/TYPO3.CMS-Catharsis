@@ -251,9 +251,7 @@ class GeneralUtility {
 	 * @return string Input string with potential XSS code removed
 	 */
 	static public function removeXSS($string) {
-		require_once PATH_typo3 . 'contrib/RemoveXSS/RemoveXSS.php';
-		$string = \RemoveXSS::process($string);
-		return $string;
+		return \RemoveXSS::process($string);
 	}
 
 	/*************************
@@ -686,19 +684,21 @@ class GeneralUtility {
 	/**
 	 * Removes an item from a comma-separated list of items.
 	 *
+	 * If $element contains a comma, the behaviour of this method is undefined.
+	 * Empty elements in the list are preserved.
+	 *
 	 * @param string $element Element to remove
 	 * @param string $list Comma-separated list of items (string)
 	 * @return string New comma-separated list of items
 	 */
 	static public function rmFromList($element, $list) {
-		return trim(
-			str_replace(
-				',' . $element . ',',
-				',',
-				',' . $list . ','
-			),
-			','
-		);
+		$items = explode(',', $list);
+		foreach ($items as $k => $v) {
+			if ($v == $element) {
+				unset($items[$k]);
+			}
+		}
+		return implode(',', $items);
 	}
 
 	/**
@@ -814,20 +814,21 @@ class GeneralUtility {
 	/**
 	 * Splits a reference to a file in 5 parts
 	 *
-	 * @param string $fileref Filename/filepath to be analysed
+	 * @param string $fileNameWithPath File name with path to be analysed (must exist if open_basedir is set)
 	 * @return array Contains keys [path], [file], [filebody], [fileext], [realFileext]
 	 */
-	static public function split_fileref($fileref) {
+	static public function split_fileref($fileNameWithPath) {
 		$reg = array();
-		if (preg_match('/(.*\\/)(.*)$/', $fileref, $reg)) {
+		if (preg_match('/(.*\\/)(.*)$/', $fileNameWithPath, $reg)) {
 			$info['path'] = $reg[1];
 			$info['file'] = $reg[2];
 		} else {
 			$info['path'] = '';
-			$info['file'] = $fileref;
+			$info['file'] = $fileNameWithPath;
 		}
 		$reg = '';
-		if (!is_dir($fileref) && preg_match('/(.*)\\.([^\\.]*$)/', $info['file'], $reg)) {
+		// If open_basedir is set and the fileName was supplied without a path the is_dir check fails
+		if (!is_dir($fileNameWithPath) && preg_match('/(.*)\\.([^\\.]*$)/', $info['file'], $reg)) {
 			$info['filebody'] = $reg[1];
 			$info['fileext'] = strtolower($reg[2]);
 			$info['realFileext'] = $reg[2];
@@ -1251,7 +1252,6 @@ class GeneralUtility {
 			return self::$idnaStringCache[$value];
 		} else {
 			if (!self::$idnaConverter) {
-				require_once PATH_typo3 . 'contrib/idna/idna_convert.class.php';
 				self::$idnaConverter = new \idna_convert(array('idn_version' => 2008));
 			}
 			self::$idnaStringCache[$value] = self::$idnaConverter->encode($value);
@@ -2723,7 +2723,8 @@ Connection: close
 		if (!is_string($deepDirectory)) {
 			throw new \InvalidArgumentException('The specified directory is of type "' . gettype($deepDirectory) . '" but a string is expected.', 1303662956);
 		}
-		$fullPath = $directory . $deepDirectory;
+		// Ensure there is only one slash
+		$fullPath = rtrim($directory, '/') . '/' . ltrim($deepDirectory, '/');
 		if ($fullPath !== '' && !is_dir($fullPath)) {
 			$firstCreatedPath = self::createDirectoryPath($fullPath);
 			if ($firstCreatedPath !== '') {
@@ -3041,7 +3042,7 @@ Connection: close
 		$phpPostLimit = self::getBytesFromSizeMeasurement(ini_get('post_max_size'));
 		// If the total amount of post data is smaller (!) than the upload_max_filesize directive,
 		// then this is the real limit in PHP
-		$phpUploadLimit = $phpPostLimit < $phpUploadLimit ? $phpPostLimit : $phpUploadLimit;
+		$phpUploadLimit = $phpPostLimit > 0 && $phpPostLimit < $phpUploadLimit ? $phpPostLimit : $phpUploadLimit;
 		// Is the allowed PHP limit (upload_max_filesize) lower than the TYPO3 limit?, also: revert back to KB
 		return floor(($phpUploadLimit < $t3Limit ? $phpUploadLimit : $t3Limit)) / 1024;
 	}
@@ -3975,20 +3976,24 @@ Connection: close
 	}
 
 	/**
-	 * Returns auto-filename for locallang-XML localizations.
+	 * Returns auto-filename for locallang localizations
 	 *
-	 * @param string $fileRef Absolute file reference to locallang-XML file. Must be inside system/global/local extension
+	 * @param string $fileRef Absolute file reference to locallang file
 	 * @param string $language Language key
-	 * @param bool $sameLocation if TRUE, then locallang-XML localization file name will be returned with same directory as $fileRef
-	 * @return string Returns the filename reference for the language unless error occurred (or local mode is used) in which case it will be NULL
+	 * @param bool $sameLocation If TRUE, then locallang localization file name will be returned with same directory as $fileRef
+	 * @return string Returns the filename reference for the language unless error occurred in which case it will be NULL
 	 */
 	static public function llXmlAutoFileName($fileRef, $language, $sameLocation = FALSE) {
-		if ($sameLocation) {
-			$location = 'EXT:';
-		} else {
-			// Default location of translations
-			$location = 'typo3conf/l10n/' . $language . '/';
+		// If $fileRef is already prefixed with "[language key]" then we should return it as is
+		$fileName = basename($fileRef);
+		if (self::isFirstPartOfStr($fileName, $language . '.')) {
+			return $fileRef;
 		}
+
+		if ($sameLocation) {
+			return str_replace($fileName, $language . '.' . $fileName, $fileRef);
+		}
+
 		// Analyse file reference:
 		// Is system:
 		if (self::isFirstPartOfStr($fileRef, PATH_typo3 . 'sysext/')) {
@@ -3999,10 +4004,6 @@ Connection: close
 		} elseif (self::isFirstPartOfStr($fileRef, PATH_typo3conf . 'ext/')) {
 			// Is local:
 			$validatedPrefix = PATH_typo3conf . 'ext/';
-		} elseif (self::isFirstPartOfStr($fileRef, PATH_site . 'tests/')) {
-			// Is test:
-			$validatedPrefix = PATH_site . 'tests/';
-			$location = $validatedPrefix;
 		} else {
 			$validatedPrefix = '';
 		}
@@ -4010,20 +4011,16 @@ Connection: close
 			// Divide file reference into extension key, directory (if any) and base name:
 			list($file_extKey, $file_extPath) = explode('/', substr($fileRef, strlen($validatedPrefix)), 2);
 			$temp = self::revExplode('/', $file_extPath, 2);
-			if (count($temp) == 1) {
+			if (count($temp) === 1) {
 				array_unshift($temp, '');
 			}
 			// Add empty first-entry if not there.
 			list($file_extPath, $file_fileName) = $temp;
-			// If $fileRef is already prefix with "[language key]" then we should return it as this
-			if (substr($file_fileName, 0, strlen($language) + 1) === $language . '.') {
-				return $fileRef;
-			}
 			// The filename is prefixed with "[language key]." because it prevents the llxmltranslate tool from detecting it.
-			return $location . $file_extKey . '/' . ($file_extPath ? $file_extPath . '/' : '') . $language . '.' . $file_fileName;
-		} else {
-			return NULL;
+			$location = 'typo3conf/l10n/' . $language . '/' . $file_extKey . '/' . ($file_extPath ? $file_extPath . '/' : '');
+			return $location . $language . '.' . $file_fileName;
 		}
+		return NULL;
 	}
 
 	/**
@@ -4954,10 +4951,6 @@ Connection: close
 		}
 		$date = date($GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] . ': ');
 		if (in_array('file', $log) !== FALSE) {
-			// In case lock is acquired before autoloader was defined:
-			if (class_exists(\TYPO3\CMS\Core\Locking\Locker::class) === FALSE) {
-				require_once ExtensionManagementUtility::extPath('core') . 'Classes/Locking/Locker.php';
-			}
 			// Write a longer message to the deprecation log
 			$destination = static::getDeprecationLogFileName();
 			$file = @fopen($destination, 'a');
@@ -4996,13 +4989,6 @@ Connection: close
 		if (!$GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog']) {
 			return;
 		}
-
-			// This require_once is needed for deprecation calls
-			// thrown early during bootstrap, if the autoloader is
-			// not instantiated yet. This can happen for example if
-			// ext_localconf triggers a deprecation.
-		require_once 'DebugUtility.php';
-
 		$trail = debug_backtrace();
 		if ($trail[1]['type']) {
 			$function = new \ReflectionMethod($trail[1]['class'], $trail[1]['function']);

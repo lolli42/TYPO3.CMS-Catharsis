@@ -332,7 +332,7 @@ class HtmlParser {
 		$nested = 0;
 		reset($parts);
 		// We skip the first element in foreach loop
-		$partsSliced = array_slice($parts, 1, null, true);
+		$partsSliced = array_slice($parts, 1, NULL, TRUE);
 		foreach ($partsSliced as $v) {
 			$isEndTag = substr($content, $pointer, 2) == '</' ? 1 : 0;
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
@@ -436,7 +436,7 @@ class HtmlParser {
 		$newParts[] = $parts[0];
 		reset($parts);
 		// We skip the first element in foreach loop
-		$partsSliced = array_slice($parts, 1, null, true);
+		$partsSliced = array_slice($parts, 1, NULL, TRUE);
 		foreach ($partsSliced as $v) {
 			$tagLen = strcspn(substr($content, $pointer), '>') + 1;
 			// Set tag:
@@ -701,7 +701,7 @@ class HtmlParser {
 		$tokArr = explode('<', $content);
 		$newContent[] = $this->processContent(current($tokArr), $hSC, $addConfig);
 		// We skip the first element in foreach loop
-		$tokArrSliced = array_slice($tokArr, 1, null, true);
+		$tokArrSliced = array_slice($tokArr, 1, NULL, TRUE);
 		$c = 1;
 		$tagRegister = array();
 		$tagStack = array();
@@ -803,7 +803,7 @@ class HtmlParser {
 									$tagAttrib = $this->get_tag_attributes($tagParts[1]);
 									$tagParts[1] = '';
 									foreach ($tags[$tagName]['fixAttrib'] as $attr => $params) {
-										if ($params['set'] !== '') {
+										if (isset($params['set']) && $params['set'] !== '') {
 											$tagAttrib[0][$attr] = $params['set'];
 										}
 										if (!empty($params['unset'])) {
@@ -864,7 +864,7 @@ class HtmlParser {
 												if ($tagAttrib[0][$attr][0] === '#') {
 													if ($params['prefixLocalAnchors'] == 2) {
 														/** @var \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer $contentObjectRenderer */
-														$contentObjectRenderer = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+														$contentObjectRenderer = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 														$prefix = $contentObjectRenderer->getUrlToCurrentLocation();
 													} else {
 														$prefix = GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL');
@@ -880,7 +880,12 @@ class HtmlParser {
 												}
 											}
 											if ($params['userFunc']) {
-												$tagAttrib[0][$attr] = GeneralUtility::callUserFunction($params['userFunc'], $tagAttrib[0][$attr], $this);
+												if (is_array($params['userFunc.'])) {
+													$params['userFunc.']['attributeValue'] = $tagAttrib[0][$attr];
+												} else {
+													$params['userFunc.'] = $tagAttrib[0][$attr];
+												}
+												$tagAttrib[0][$attr] = GeneralUtility::callUserFunction($params['userFunc'], $params['userFunc.'], $this);
 											}
 										}
 									}
@@ -982,7 +987,9 @@ class HtmlParser {
 				unset($newContent[$pKey]);
 			}
 		}
-		return implode('', $newContent);
+		$newContent = implode('', $newContent);
+		$newContent = $this->stripEmptyTagsIfConfigured($newContent, $addConfig);
+		return $newContent;
 	}
 
 	/**
@@ -1085,7 +1092,7 @@ class HtmlParser {
 		$content = implode('', $parts);
 		// Fix <style> section:
 		$prefix = isset($alternatives['style']) ? $alternatives['style'] : $main_prefix;
-		if ($prefix !== '') {
+		if ((string)$prefix !== '') {
 			$parts = $this->splitIntoBlock('style', $content);
 			foreach ($parts as $k => &$part) {
 				if ($k % 2) {
@@ -1185,7 +1192,7 @@ class HtmlParser {
 		$tagsArray = GeneralUtility::trimExplode(',', $tagList, TRUE);
 		$contentParts = explode('&lt;', $content);
 		// bypass the first
-		$contentPartsSliced = array_slice($contentParts, 1, null, true);
+		$contentPartsSliced = array_slice($contentParts, 1, NULL, TRUE);
 		foreach ($contentPartsSliced as $k => $tok) {
 			$firstChar = $tok[0];
 			if (trim($firstChar) !== '') {
@@ -1410,6 +1417,12 @@ class HtmlParser {
 		if ($TSconfig['xhtml_cleaning']) {
 			$addConfig['xhtml'] = 1;
 		}
+		if (isset($TSconfig['stripEmptyTags'])) {
+			$addConfig['stripEmptyTags'] = $TSconfig['stripEmptyTags'];
+			if (isset($TSconfig['stripEmptyTags.'])) {
+				$addConfig['stripEmptyTags.'] = $TSconfig['stripEmptyTags.'];
+			}
+		}
 		return array(
 			$keepTags,
 			'' . $TSconfig['keepNonMatchedTags'],
@@ -1523,4 +1536,60 @@ class HtmlParser {
 		return $value;
 	}
 
+	/**
+	 * Strips empty tags from HTML.
+	 *
+	 * @param string $content The content to be stripped of empty tags
+	 * @param string $tagList The comma separated list of tags to be stripped.
+	 *                        If empty, all empty tags will be stripped
+	 * @param bool $treatNonBreakingSpaceAsEmpty If TRUE tags containing only &nbsp; entities will be treated as empty.
+	 * @return string the stripped content
+	 */
+	public function stripEmptyTags($content, $tagList = NULL, $treatNonBreakingSpaceAsEmpty = FALSE) {
+		$tagRegEx = '[^ >]+'; // all characters until you reach a > or space;
+		if ($tagList) {
+			$tags = preg_split('/,/', $tagList);
+			$tagRegEx = preg_replace('/ */', '', join('|', $tags));
+		}
+		$count = 1;
+		$nbspRegex = $treatNonBreakingSpaceAsEmpty ? '|(&nbsp;)' : '';
+		while ($count != 0) {
+			$content = preg_replace(sprintf('/<(%s)[^>]*>( %s)*<\/\\1[^>]*>/i', $tagRegEx, $nbspRegex), '', $content, -1, $count);
+		}
+		return $content;
+	}
+
+	/**
+	 * Strips the configured empty tags from the HMTL code.
+	 *
+	 * @param string $value
+	 * @param array $configuration
+	 * @return string
+	 */
+	protected function stripEmptyTagsIfConfigured($value, $configuration) {
+
+		if (isset($configuration['stripEmptyTags']) && $configuration['stripEmptyTags']) {
+
+			$tags = NULL;
+			if (
+				isset($configuration['stripEmptyTags.']['tags'])
+				&& $configuration['stripEmptyTags.']['tags'] !== ''
+			) {
+				$tags = $configuration['stripEmptyTags.']['tags'];
+			}
+
+			$treatNonBreakingSpaceAsEmpty = FALSE;
+			if (
+				isset($configuration['stripEmptyTags.']['treatNonBreakingSpaceAsEmpty'])
+				&& $configuration['stripEmptyTags.']['treatNonBreakingSpaceAsEmpty']
+			) {
+				$treatNonBreakingSpaceAsEmpty = (bool)$configuration['stripEmptyTags.']['treatNonBreakingSpaceAsEmpty'];
+			}
+
+
+			$value = $this->stripEmptyTags($value, $tags, $treatNonBreakingSpaceAsEmpty);
+		}
+
+		return $value;
+	}
 }

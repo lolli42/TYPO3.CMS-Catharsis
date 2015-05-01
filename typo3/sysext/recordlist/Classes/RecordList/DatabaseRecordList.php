@@ -14,9 +14,13 @@ namespace TYPO3\CMS\Recordlist\RecordList;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\RecordList\RecordListGetTableHookInterface;
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -238,23 +242,23 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			}
 			// New record
 			if (!$module->modTSconfig['properties']['noCreateRecordsLink']) {
-				$onClick = htmlspecialchars(('return jumpExt(\'' . $this->backPath . 'db_new.php?id=' . $this->id . '\');'));
+				$onClick = htmlspecialchars('return jumpExt(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['id' => $this->id])) . ');');
 				$buttons['new_record'] = '<a href="#" onclick="' . $onClick . '" title="'
 					. $lang->getLL('newRecordGeneral', TRUE) . '">'
 					. IconUtility::getSpriteIcon('actions-document-new') . '</a>';
 			}
 			// If edit permissions are set, see
 			// \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
-			if ($localCalcPerms & 2 && !empty($this->id)) {
+			if ($localCalcPerms & Permission::PAGE_EDIT && !empty($this->id)) {
 				// Edit
 				$params = '&edit[pages][' . $this->pageRow['uid'] . ']=edit';
-				$onClick = htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1));
+				$onClick = htmlspecialchars(BackendUtility::editOnClick($params, '', -1));
 				$buttons['edit'] = '<a href="#" onclick="' . $onClick . '" title="'
 					. $lang->getLL('editPage', TRUE) . '">'
 					. IconUtility::getSpriteIcon('actions-page-open') . '</a>';
 			}
 			// Paste
-			if ($localCalcPerms & 8 || $localCalcPerms & 16) {
+			if ($localCalcPerms & Permission::PAGE_NEW || $localCalcPerms & Permission::CONTENT_EDIT) {
 				$elFromTable = $this->clipObj->elFromTable('');
 				if (count($elFromTable)) {
 					$onClick = htmlspecialchars(('return ' . $this->clipObj->confirmMsg('pages', $this->pageRow, 'into', $elFromTable)));
@@ -892,8 +896,8 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 						// The "edit marked" link:
 						$editIdList = implode(',', $currentIdList);
 						$editIdList = '\'+editList(\'' . $table . '\',\'' . $editIdList . '\')+\'';
-						$params = '&edit[' . $table . '][' . $editIdList . ']=edit&disHelp=1';
-						$onClick = htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1));
+						$params = '&edit[' . $table . '][' . $editIdList . ']=edit';
+						$onClick = htmlspecialchars(BackendUtility::editOnClick($params, '', -1));
 						$cells['edit'] = '<a class="btn btn-default" href="#" onclick="' . $onClick . '" title="'
 							. $lang->getLL('clip_editMarked', TRUE) . '">'
 							. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
@@ -945,22 +949,22 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 								$tmpTSc = $tmpTSc['properties']['newContentWiz.']['overrideWithExtension'];
 								$newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tmpTSc)
 									? $this->backPath . ExtensionManagementUtility::extRelPath($tmpTSc) . 'mod1/db_new_content_el.php?id=' . $this->id
-									: BackendUtility::getModuleUrl('new_content_element', array('id' => $this->id), $this->backPath);
+									: BackendUtility::getModuleUrl('new_content_element', array('id' => $this->id));
 
 								$onClick = 'return jumpExt(' . GeneralUtility::quoteJSvalue($newContentWizScriptPath) . ');';
-								$icon = '<a class="btn btn-success" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
+								$icon = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
 									. $lang->getLL('new', TRUE) . '">' . $spriteIcon . '</a>';
 							} elseif ($table == 'pages' && $this->newWizards) {
-								$href = $this->backPath . 'db_new.php?id=' . $this->id
-									. '&pagesOnly=1&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
-								$icon = '<a class="btn success" href="' . htmlspecialchars($href) . '" title="' . $lang->getLL('new', TRUE) . '">'
+								$parameters = ['id' => $this->id, 'pagesOnly' => 1, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')];
+								$href = BackendUtility::getModuleUrl('db_new', $parameters);
+								$icon = '<a class="btn btn-default" href="' . htmlspecialchars($href) . '" title="' . $lang->getLL('new', TRUE) . '">'
 									. $spriteIcon . '</a>';
 							} else {
 								$params = '&edit[' . $table . '][' . $this->id . ']=new';
 								if ($table == 'pages_language_overlay') {
 									$params .= '&overrideVals[pages_language_overlay][doktype]=' . (int)$this->pageRow['doktype'];
 								}
-								$icon = '<a class="btn btn-success" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1))
+								$icon = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 									. '" title="' . $lang->getLL('new', TRUE) . '">' . $spriteIcon . '</a>';
 							}
 						}
@@ -970,8 +974,8 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 							if ($this->clipNumPane()) {
 								$editIdList = '\'+editList(\'' . $table . '\',\'' . $editIdList . '\')+\'';
 							}
-							$params = '&edit[' . $table . '][' . $editIdList . ']=edit&columnsOnly=' . implode(',', $this->fieldArray) . '&disHelp=1';
-							$icon .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1))
+							$params = '&edit[' . $table . '][' . $editIdList . ']=edit&columnsOnly=' . implode(',', $this->fieldArray);
+							$icon .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 								. '" title="' . $lang->getLL('editShownColumns', TRUE) . '">'
 								. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 							$icon = '<div class="btn-group" role="group">' . $icon . '</div>';
@@ -1010,9 +1014,9 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 							if ($this->clipNumPane()) {
 								$editIdList = '\'+editList(\'' . $table . '\',\'' . $editIdList . '\')+\'';
 							}
-							$params = '&edit[' . $table . '][' . $editIdList . ']=edit&columnsOnly=' . $fCol . '&disHelp=1';
+							$params = '&edit[' . $table . '][' . $editIdList . ']=edit&columnsOnly=' . $fCol;
 							$iTitle = sprintf($lang->getLL('editThisColumn'), $sortLabel);
-							$theData[$fCol] .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1))
+							$theData[$fCol] .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 								. '" title="' . htmlspecialchars($iTitle) . '">'
 								. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 						}
@@ -1184,7 +1188,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			$localCalcPerms = $this->getBackendUserAuthentication()->calcPerms(BackendUtility::getRecord('pages', $row['uid']));
 		}
 		// This expresses the edit permissions for this particular element:
-		$permsEdit = $table === 'pages' && $localCalcPerms & 2 || $table !== 'pages' && $this->calcPerms & 16;
+		$permsEdit = $table === 'pages' && $localCalcPerms & Permission::PAGE_EDIT || $table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT;
 		// "Show" link (only pages and tt_content elements)
 		if ($table == 'pages' || $table == 'tt_content') {
 			$viewAction = '<a class="btn btn-default" href="#" onclick="'
@@ -1203,7 +1207,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		if ($permsEdit) {
 			$params = '&edit[' . $table . '][' . $row['uid'] . ']=edit';
 			$spriteIcon = ($GLOBALS['TCA'][$table]['ctrl']['readOnly'] ? 'actions-document-open-read-only' : 'actions-document-open');
-			$editAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1))
+			$editAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 				. '" title="' . $this->getLanguageService()->getLL('edit', TRUE) . '">' . IconUtility::getSpriteIcon($spriteIcon) . '</a>';
 			$this->addActionToCellGroup($cells, $editAction, 'edit');
 		}
@@ -1258,10 +1262,10 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			// "New record after" link (ONLY if the records in the table are sorted by a "sortby"-row
 			// or if default values can depend on previous record):
 			if ($GLOBALS['TCA'][$table]['ctrl']['sortby'] || $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']) {
-				if ($table !== 'pages' && $this->calcPerms & 16 || $table === 'pages' && $this->calcPerms & 8) {
+				if ($table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT || $table === 'pages' && $this->calcPerms & Permission::PAGE_NEW) {
 					if ($this->showNewRecLink($table)) {
 						$params = '&edit[' . $table . '][' . -($row['_MOVE_PLH'] ? $row['_MOVE_PLH_uid'] : $row['uid']) . ']=new';
-						$newAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, $this->backPath, -1))
+						$newAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 							. '" title="' . $this->getLanguageService()->getLL('new' . ($table == 'pages ' ? 'Page' : 'Record'), TRUE) . '">'
 							. ($table == 'pages' ? IconUtility::getSpriteIcon('actions-page-new') : IconUtility::getSpriteIcon('actions-document-new')) . '</a>';
 						$this->addActionToCellGroup($cells, $newAction, 'new');
@@ -1301,23 +1305,27 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				&& (!$GLOBALS['TCA'][$table]['columns'][$hiddenField]['exclude']
 					|| $this->getBackendUserAuthentication()->check('non_exclude_fields', $table . ':' . $hiddenField))
 			) {
-				if ($row[$hiddenField]) {
-					$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=0';
-					$hideAction = '<a class="btn btn-default t3js-record-hide" data-state="hidden" href="#"'
-						. ' data-params="' . htmlspecialchars($params) . '"'
-						. ' title="' . $this->getLanguageService()->getLL(('unHide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
-						. IconUtility::getSpriteIcon('actions-edit-unhide') . '</a>';
+				if ($this->isRecordCurrentBackendUser($table, $row)) {
+					$hideAction = '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
 				} else {
-					$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=1';
-					$hideAction = '<a class="btn btn-default t3js-record-hide" data-state="visible" href="#"'
-						. ' data-params="' . htmlspecialchars($params) . '"'
-						. ' title="' . $this->getLanguageService()->getLL(('hide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
-						. IconUtility::getSpriteIcon('actions-edit-hide') . '</a>';
+					if ($row[$hiddenField]) {
+						$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=0';
+						$hideAction = '<a class="btn btn-default t3js-record-hide" data-state="hidden" href="#"'
+									  . ' data-params="' . htmlspecialchars($params) . '"'
+									  . ' title="' . $this->getLanguageService()->getLL(('unHide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
+									  . IconUtility::getSpriteIcon('actions-edit-unhide') . '</a>';
+					} else {
+						$params = 'data[' . $table . '][' . $rowUid . '][' . $hiddenField . ']=1';
+						$hideAction = '<a class="btn btn-default t3js-record-hide" data-state="visible" href="#"'
+									  . ' data-params="' . htmlspecialchars($params) . '"'
+									  . ' title="' . $this->getLanguageService()->getLL(('hide' . ($table == 'pages' ? 'Page' : '')), TRUE) . '">'
+									  . IconUtility::getSpriteIcon('actions-edit-hide') . '</a>';
+					}
 				}
 				$this->addActionToCellGroup($cells, $hideAction, 'hide');
 			}
 			// "Delete" link:
-			if ($table === 'pages' && $localCalcPerms & 4 || $table !== 'pages' && $this->calcPerms & 16) {
+			if ($table === 'pages' && $localCalcPerms & Permission::PAGE_DELETE || $table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT) {
 				// Check if the record version is in "deleted" state, because that will switch the action to "restore"
 				if ($this->getBackendUserAuthentication()->workspace > 0 && isset($row['t3ver_state']) && (int)$row['t3ver_state'] === 2) {
 					$actionName = 'restore';
@@ -1333,24 +1341,28 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 					);
 				}
 
-				$titleOrig = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
-				$title = GeneralUtility::slashJS(GeneralUtility::fixed_lgd_cs($titleOrig, $this->fixedL), TRUE);
-				$warningText = $this->getLanguageService()->getLL($actionName . 'Warning') . ' "' . $title . '" ' . '[' . $table . ':' . $row['uid'] . ']' . $refCountMsg;
+				if ($this->isRecordCurrentBackendUser($table, $row)) {
+					$deleteAction = '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+				} else {
+					$titleOrig = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
+					$title = GeneralUtility::slashJS(GeneralUtility::fixed_lgd_cs($titleOrig, $this->fixedL), TRUE);
+					$warningText = $this->getLanguageService()->getLL($actionName . 'Warning') . ' "' . $title . '" ' . '[' . $table . ':' . $row['uid'] . ']' . $refCountMsg;
 
-				$params = 'cmd[' . $table . '][' . $row['uid'] . '][delete]=1';
-				$icon = IconUtility::getSpriteIcon('actions-edit-' . $actionName);
-				$linkTitle = $this->getLanguageService()->getLL($actionName, TRUE);
-				$deleteAction = '<a class="btn btn-default t3js-record-delete" href="#" '
-					. ' data-l10parent="' . htmlspecialchars($row['l10n_parent']) . '"'
-					. ' data-params="' . htmlspecialchars($params) . '" data-title="' . htmlspecialchars($titleOrig) . '"'
-					. ' data-message="' . htmlspecialchars($warningText) . '" title="' . $linkTitle . '"'
-					. '>' . $icon . '</a>';
+					$params = 'cmd[' . $table . '][' . $row['uid'] . '][delete]=1';
+					$icon = IconUtility::getSpriteIcon('actions-edit-' . $actionName);
+					$linkTitle = $this->getLanguageService()->getLL($actionName, TRUE);
+					$deleteAction = '<a class="btn btn-default t3js-record-delete" href="#" '
+									. ' data-l10parent="' . htmlspecialchars($row['l10n_parent']) . '"'
+									. ' data-params="' . htmlspecialchars($params) . '" data-title="' . htmlspecialchars($titleOrig) . '"'
+									. ' data-message="' . htmlspecialchars($warningText) . '" title="' . $linkTitle . '"'
+									. '>' . $icon . '</a>';
+				}
 				$this->addActionToCellGroup($cells, $deleteAction, 'delete');
 			}
 			// "Levels" links: Moving pages into new levels...
 			if ($permsEdit && $table == 'pages' && !$this->searchLevels) {
 				// Up (Paste as the page right after the current parent page)
-				if ($this->calcPerms & 8) {
+				if ($this->calcPerms & Permission::PAGE_NEW) {
 					$params = '&cmd[' . $table . '][' . $row['uid'] . '][move]=' . -$this->id;
 					$moveLeftAction = '<a class="btn btn-default" href="#" onclick="'
 						. htmlspecialchars('return jumpToUrl(\'' . $module->doc->issueCommand($params, -1) . '\');')
@@ -1361,7 +1373,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				// Down (Paste as subpage to the page right above)
 				if ($this->currentTable['prevUid'][$row['uid']]) {
 					$localCalcPerms = $this->getBackendUserAuthentication()->calcPerms(BackendUtility::getRecord('pages', $this->currentTable['prevUid'][$row['uid']]));
-					if ($localCalcPerms & 8) {
+					if ($localCalcPerms & Permission::PAGE_NEW) {
 						$params = '&cmd[' . $table . '][' . $row['uid'] . '][move]=' . $this->currentTable['prevUid'][$row['uid']];
 						$moveRightAction = '<a class="btn btn-default" href="#" onclick="'
 							. htmlspecialchars('return jumpToUrl(\'' . $module->doc->issueCommand($params, -1) . '\');')
@@ -1680,7 +1692,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		if ($warning) {
 			$onClickEvent = 'if (confirm(' . GeneralUtility::quoteJSvalue($warning) . ')){' . $onClickEvent . '}';
 		}
-		return '<a class="btn" href="#" onclick="' . htmlspecialchars(($onClickEvent . 'return false;')) . '">' . $string . '</a>';
+		return '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(($onClickEvent . 'return false;')) . '">' . $string . '</a>';
 	}
 
 	/**
@@ -1869,6 +1881,17 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		$classification = in_array($actionKey, $cellsMap['primary']) ? 'primary' : 'secondary';
 		$cells[$classification][$actionKey] = $action;
 		unset($cells[$actionKey]);
+	}
+
+	/**
+	 * Check if the record represents the current backend user
+	 *
+	 * @param string $table
+	 * @param array $row
+	 * @return bool
+	 */
+	protected function isRecordCurrentBackendUser($table, $row) {
+		return $table === 'be_users' && (int)$row['uid'] === $this->getBackendUserAuthentication()->user['uid'];
 	}
 
 	/**

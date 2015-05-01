@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Form;
  */
 
 use TYPO3\CMS\Core\Tests\UnitTestCase;
+use TYPO3\CMS\Backend\Form\FormEngine;
 
 /**
  * Test case
@@ -22,240 +23,40 @@ use TYPO3\CMS\Core\Tests\UnitTestCase;
 class FormEngineTest extends UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Backend\Form\FormEngine|\PHPUnit_Framework_MockObject_MockObject
-	 */
-	protected $subject;
-
-	/**
-	 * Sets up this test case.
-	 */
-	protected function setUp() {
-		$this->subject = $this->getMock(\TYPO3\CMS\Backend\Form\FormEngine::class, array('dummy'), array(), '', FALSE);
-	}
-
-	/**
-	 * @return array
-	 */
-	public function formatValueDataProvider() {
-		return array(
-			'format with empty format configuration' => array(
-				array(
-					'format' => '',
-				),
-				'',
-				'',
-			),
-			'format to date' => array(
-				array(
-					'format' => 'date',
-				),
-				'1412358894',
-				'03-10-2014'
-			),
-			'format to date with empty timestamp' => array(
-				array(
-					'format' => 'date',
-				),
-				'0',
-				''
-			),
-			'format to date with blank timestamp' => array(
-				array(
-					'format' => 'date',
-				),
-				'',
-				''
-			),
-			'format to date with option strftime' => array(
-				array(
-					'format' => 'date',
-					'format.' => array(
-						'option' => '%d-%m',
-						'strftime' => TRUE,
-					),
-				),
-				'1412358894',
-				'03-10'
-			),
-			'format to date with option' => array(
-				array(
-					'format' => 'date',
-					'format.' => array(
-						'option' => 'd-m',
-					),
-				),
-				'1412358894',
-				'03-10'
-			),
-			'format to datetime' => array(
-				array(
-					'format' => 'datetime',
-				),
-				'1412358894',
-				'17:54 03-10-2014'
-			),
-			'format to datetime with empty value' => array(
-				array(
-					'format' => 'datetime',
-				),
-				'',
-				''
-			),
-			'format to time' => array(
-				array(
-					'format' => 'time',
-				),
-				'1412358894',
-				'17:54'
-			),
-			'format to time with empty value' => array(
-				array(
-					'format' => 'time',
-				),
-				'',
-				''
-			),
-			'format to timesec' => array(
-				array(
-					'format' => 'timesec',
-				),
-				'1412358894',
-				'17:54:54'
-			),
-			'format to timesec with empty value' => array(
-				array(
-					'format' => 'timesec',
-				),
-				'',
-				''
-			),
-			'format to year' => array(
-				array(
-					'format' => 'year',
-				),
-				'1412358894',
-				'2014'
-			),
-			'format to int' => array(
-				array(
-					'format' => 'int',
-				),
-				'123.00',
-				'123'
-			),
-			'format to int with base' => array(
-				array(
-					'format' => 'int',
-					'format.' => array(
-						'base' => 'oct',
-					),
-				),
-				'123',
-				'173'
-			),
-			'format to int with empty value' => array(
-				array(
-					'format' => 'int',
-				),
-				'',
-				'0'
-			),
-			'format to float' => array(
-				array(
-					'format' => 'float',
-				),
-				'123',
-				'123.00'
-			),
-			'format to float with precision' => array(
-				array(
-					'format' => 'float',
-					'format.' => array(
-						'precision' => '4',
-					),
-				),
-				'123',
-				'123.0000'
-			),
-			'format to float with empty value' => array(
-				array(
-					'format' => 'float',
-				),
-				'',
-				'0.00'
-			),
-			'format to number' => array(
-				array(
-					'format' => 'number',
-					'format.' => array(
-						'option' => 'b',
-					),
-				),
-				'123',
-				'1111011'
-			),
-			'format to number with empty option' => array(
-				array(
-					'format' => 'number',
-				),
-				'123',
-				''
-			),
-			'format to md5' => array(
-				array(
-					'format' => 'md5',
-				),
-				'joh316',
-				'bacb98acf97e0b6112b1d1b650b84971'
-			),
-			'format to md5 with empty value' => array(
-				array(
-					'format' => 'md5',
-				),
-				'',
-				'd41d8cd98f00b204e9800998ecf8427e'
-			),
-			'format to filesize' => array(
-				array(
-					'format' => 'filesize',
-				),
-				'100000',
-				'98 K'
-			),
-			'format to filesize with empty value' => array(
-				array(
-					'format' => 'filesize',
-				),
-				'',
-				'0 '
-			),
-			'format to filesize with option appendByteSize' => array(
-				array(
-					'format' => 'filesize',
-					'format.' => array(
-						'appendByteSize' => TRUE,
-					),
-				),
-				'100000',
-				'98 K (100000)'
-			),
-		);
-	}
-
-	/**
-	 * @param array $config
-	 * @param string $itemValue
-	 * @param string $expectedResult
-	 * @dataProvider formatValueDataProvider
+	 * Checks if the given file type may be uploaded without *ANY* limit to file types being given
+	 *
 	 * @test
 	 */
-	public function formatValueWithGivenConfiguration($config, $itemValue, $expectedResult) {
-		$timezoneBackup = date_default_timezone_get();
-		date_default_timezone_set('UTC');
-		$result = $this->subject->formatValue($config, $itemValue);
-		date_default_timezone_set($timezoneBackup);
-
-		$this->assertEquals($expectedResult, $result);
+	public function checkInlineFileTypeAccessForFieldForFieldNoFiletypesReturnsTrue(){
+		$selectorData = array();
+		$fileData['extension'] = 'png';
+		$mockObject = $this->getAccessibleMock(FormEngine::class, array('dummy'), array(), '', FALSE);
+		$mayUploadFile = $mockObject->_call('checkInlineFileTypeAccessForField', $selectorData, $fileData);
+		$this->assertTrue($mayUploadFile);
 	}
 
+	/**
+	 * Checks if the given file type may be uploaded and the given file type is *NOT* in the list of allowed files
+	 *
+	 * @test
+	 */
+	public function checkInlineFileTypeAccessForFieldFiletypesSetRecordTypeNotInListReturnsFalse(){
+		$selectorData['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'] = 'doc, png, jpg, tiff';
+		$fileData['extension'] = 'php';
+		$mockObject = $this->getAccessibleMock(FormEngine::class, array('dummy'), array(), '', FALSE);
+		$mayUploadFile = $mockObject->_call('checkInlineFileTypeAccessForField', $selectorData, $fileData);
+		$this->assertFalse($mayUploadFile);
+	}
+
+	/**
+	 * Checks if the given file type may be uploaded and the given file type *is* in the list of allowed files
+	 * @test
+	 */
+	public function checkInlineFileTypeAccessForFieldFiletypesSetRecordTypeInListReturnsTrue(){
+		$selectorData['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'] = 'doc, png, jpg, tiff';
+		$fileData['extension'] = 'png';
+		$mockObject = $this->getAccessibleMock(FormEngine::class, array('dummy'), array(), '', FALSE);
+		$mayUploadFile = $mockObject->_call('checkInlineFileTypeAccessForField', $selectorData, $fileData);
+		$this->assertTrue($mayUploadFile);
+	}
 }

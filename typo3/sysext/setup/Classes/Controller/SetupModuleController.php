@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Setup\Controller;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
 
 /**
  * Script class for the Setup module
@@ -24,6 +25,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SetupModuleController {
+
+	const PASSWORD_NOT_UPDATED = 0;
+	const PASSWORD_UPDATED = 1;
+	const PASSWORD_NOT_THE_SAME = 2;
+	const PASSWORD_OLD_WRONG = 3;
 
 	/**
 	 * @var array
@@ -83,9 +89,9 @@ class SetupModuleController {
 	protected $saveData = FALSE;
 
 	/**
-	 * @var bool
+	 * @var int
 	 */
-	protected $passwordIsUpdated = FALSE;
+	protected $passwordIsUpdated = self::PASSWORD_NOT_UPDATED;
 
 	/**
 	 * @var bool
@@ -158,29 +164,30 @@ class SetupModuleController {
 		// First check if something is submitted in the data-array from POST vars
 		$d = GeneralUtility::_POST('data');
 		$columns = $GLOBALS['TYPO3_USER_SETTINGS']['columns'];
-		$beUserId = $GLOBALS['BE_USER']->user['uid'];
+		$beUser = $this->getBackendUser();
+		$beUserId = $beUser->user['uid'];
 		$storeRec = array();
 		$fieldList = $this->getFieldsFromShowItem();
 		if (is_array($d) && $this->formProtection->validateToken((string)GeneralUtility::_POST('formToken'), 'BE user setup', 'edit')) {
 			// UC hashed before applying changes
-			$save_before = md5(serialize($GLOBALS['BE_USER']->uc));
+			$save_before = md5(serialize($beUser->uc));
 			// PUT SETTINGS into the ->uc array:
 			// Reload left frame when switching BE language
-			if (isset($d['lang']) && $d['lang'] != $GLOBALS['BE_USER']->uc['lang']) {
+			if (isset($d['lang']) && $d['lang'] != $beUser->uc['lang']) {
 				$this->languageUpdate = TRUE;
 			}
 			// Reload pagetree if the title length is changed
-			if (isset($d['titleLen']) && $d['titleLen'] !== $GLOBALS['BE_USER']->uc['titleLen']) {
+			if (isset($d['titleLen']) && $d['titleLen'] !== $beUser->uc['titleLen']) {
 				$this->pagetreeNeedsRefresh = TRUE;
 			}
 			if ($d['setValuesToDefault']) {
 				// If every value should be default
-				$GLOBALS['BE_USER']->resetUC();
+				$beUser->resetUC();
 				$this->settingsAreResetToDefault = TRUE;
 			} elseif ($d['clearSessionVars']) {
-				foreach ($GLOBALS['BE_USER']->uc as $key => $value) {
+				foreach ($beUser->uc as $key => $value) {
 					if (!isset($columns[$key])) {
-						unset($GLOBALS['BE_USER']->uc[$key]);
+						unset($beUser->uc[$key]);
 					}
 				}
 				$this->tempDataIsCleared = TRUE;
@@ -191,22 +198,22 @@ class SetupModuleController {
 						continue;
 					}
 					if ($config['table']) {
-						if ($config['table'] === 'be_users' && !in_array($field, array('password', 'password2', 'email', 'realName', 'admin'))) {
-							if (!isset($config['access']) || $this->checkAccess($config) && $GLOBALS['BE_USER']->user[$field] !== $d['be_users'][$field]) {
+						if ($config['table'] === 'be_users' && !in_array($field, array('password', 'password2', 'passwordCurrent', 'email', 'realName', 'admin'))) {
+							if (!isset($config['access']) || $this->checkAccess($config) && $beUser->user[$field] !== $d['be_users'][$field]) {
 								if ($config['type'] === 'check') {
 									$fieldValue = isset($d['be_users'][$field]) ? 1 : 0;
 								} else {
 									$fieldValue = $d['be_users'][$field];
 								}
 								$storeRec['be_users'][$beUserId][$field] = $fieldValue;
-								$GLOBALS['BE_USER']->user[$field] = $fieldValue;
+								$beUser->user[$field] = $fieldValue;
 							}
 						}
 					}
 					if ($config['type'] === 'check') {
-						$GLOBALS['BE_USER']->uc[$field] = isset($d[$field]) ? 1 : 0;
+						$beUser->uc[$field] = isset($d[$field]) ? 1 : 0;
 					} else {
-						$GLOBALS['BE_USER']->uc[$field] = htmlspecialchars($d[$field]);
+						$beUser->uc[$field] = htmlspecialchars($d[$field]);
 					}
 				}
 				// Personal data for the users be_user-record (email, name, password...)
@@ -222,48 +229,59 @@ class SetupModuleController {
 				$this->passwordIsSubmitted = (string)$be_user_data['password'] !== '';
 				$passwordIsConfirmed = $this->passwordIsSubmitted && $be_user_data['password'] === $be_user_data['password2'];
 				// Update the real name:
-				if ($be_user_data['realName'] !== $GLOBALS['BE_USER']->user['realName']) {
-					$GLOBALS['BE_USER']->user['realName'] = ($storeRec['be_users'][$beUserId]['realName'] = substr($be_user_data['realName'], 0, 80));
+				if ($be_user_data['realName'] !== $beUser->user['realName']) {
+					$beUser->user['realName'] = ($storeRec['be_users'][$beUserId]['realName'] = substr($be_user_data['realName'], 0, 80));
 				}
 				// Update the email address:
-				if ($be_user_data['email'] !== $GLOBALS['BE_USER']->user['email']) {
-					$GLOBALS['BE_USER']->user['email'] = ($storeRec['be_users'][$beUserId]['email'] = substr($be_user_data['email'], 0, 80));
+				if ($be_user_data['email'] !== $beUser->user['email']) {
+					$beUser->user['email'] = ($storeRec['be_users'][$beUserId]['email'] = substr($be_user_data['email'], 0, 80));
 				}
 				// Update the password:
 				if ($passwordIsConfirmed) {
-					$storeRec['be_users'][$beUserId]['password'] = $be_user_data['password2'];
-					$this->passwordIsUpdated = TRUE;
+					$currentPasswordHashed = $GLOBALS['BE_USER']->user['password'];
+					$saltFactory = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance($currentPasswordHashed);
+					if ($saltFactory->checkPassword($be_user_data['passwordCurrent'], $currentPasswordHashed)) {
+						$this->passwordIsUpdated = self::PASSWORD_UPDATED;
+						$storeRec['be_users'][$beUserId]['password'] = $be_user_data['password'];
+					} else {
+						$this->passwordIsUpdated = self::PASSWORD_OLD_WRONG;
+					}
+				} else {
+					$this->passwordIsUpdated = self::PASSWORD_NOT_THE_SAME;
 				}
 				$this->saveData = TRUE;
 			}
 			// Inserts the overriding values.
-			$GLOBALS['BE_USER']->overrideUC();
-			$save_after = md5(serialize($GLOBALS['BE_USER']->uc));
+			$beUser->overrideUC();
+			$save_after = md5(serialize($beUser->uc));
 			// If something in the uc-array of the user has changed, we save the array...
 			if ($save_before != $save_after) {
-				$GLOBALS['BE_USER']->writeUC($GLOBALS['BE_USER']->uc);
-				$GLOBALS['BE_USER']->writelog(254, 1, 0, 1, 'Personal settings changed', array());
+				$beUser->writeUC($beUser->uc);
+				$beUser->writelog(254, 1, 0, 1, 'Personal settings changed', array());
 				$this->setupIsUpdated = TRUE;
 			}
 			// If the temporary data has been cleared, lets make a log note about it
 			if ($this->tempDataIsCleared) {
-				$GLOBALS['BE_USER']->writelog(254, 1, 0, 1, $GLOBALS['LANG']->getLL('tempDataClearedLog'), array());
+				$beUser->writelog(254, 1, 0, 1, $this->getLanguageService()->getLL('tempDataClearedLog'), array());
 			}
 			// Persist data if something has changed:
 			if (count($storeRec) && $this->saveData) {
 				// Make instance of TCE for storing the changes.
 				$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 				$tce->stripslashes_values = 0;
-				$tce->start($storeRec, array(), $GLOBALS['BE_USER']);
 				// This is so the user can actually update his user record.
-				$tce->admin = 1;
+				$isAdmin = $beUser->user['admin'];
+				$beUser->user['admin'] = 1;
+				$tce->start($storeRec, array(), $beUser);
 				// This is to make sure that the users record can be updated even if in another workspace. This is tolerated.
 				$tce->bypassWorkspaceRestrictions = TRUE;
 				$tce->process_datamap();
 				unset($tce);
-				if (!$this->passwordIsUpdated || count($storeRec['be_users'][$beUserId]) > 1) {
+				if ($this->passwordIsUpdated === self::PASSWORD_NOT_UPDATED || count($storeRec['be_users'][$beUserId]) > 1) {
 					$this->setupIsUpdated = TRUE;
 				}
+				// Restore admin status after processing
+				$beUser->user['admin'] = $isAdmin;
 			}
 		}
 	}
@@ -279,19 +297,20 @@ class SetupModuleController {
 	 * @return void
 	 */
 	public function init() {
-		$GLOBALS['LANG']->includeLLFile('EXT:setup/mod/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:setup/mod/locallang.xlf');
 
 		// Returns the script user - that is the REAL logged in user! ($GLOBALS[BE_USER] might be another user due to simulation!)
 		$scriptUser = $this->getRealScriptUserObj();
 
 		$this->isAdmin = $scriptUser->isAdmin();
 		// Getting the 'override' values as set might be set in User TSconfig
-		$this->overrideConf = $GLOBALS['BE_USER']->getTSConfigProp('setup.override');
+		$this->overrideConf = $this->getBackendUser()->getTSConfigProp('setup.override');
 		// Getting the disabled fields might be set in User TSconfig (eg setup.fields.password.disabled=1)
-		$this->tsFieldConf = $GLOBALS['BE_USER']->getTSConfigProp('setup.fields');
+		$this->tsFieldConf = $this->getBackendUser()->getTSConfigProp('setup.fields');
 		// id password is disabled, disable repeat of password too (password2)
 		if (isset($this->tsFieldConf['password.']) && $this->tsFieldConf['password.']['disabled']) {
 			$this->tsFieldConf['password2.']['disabled'] = 1;
+			$this->tsFieldConf['passwordCurrent.']['disabled'] = 1;
 		}
 		// Create instance of object for output of data
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
@@ -344,35 +363,44 @@ class SetupModuleController {
 		$this->loadModules = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
 		$this->loadModules->observeWorkspaces = TRUE;
 		$this->loadModules->load($GLOBALS['TBE_MODULES']);
-		$this->content .= $this->doc->header($GLOBALS['LANG']->getLL('UserSettings'));
+		$this->content .= $this->doc->header($this->getLanguageService()->getLL('UserSettings'));
 		// Show if setup was saved
 		if ($this->setupIsUpdated && !$this->tempDataIsCleared && !$this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('setupWasUpdated'), $GLOBALS['LANG']->getLL('UserSettings'));
+			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('setupWasUpdated'), $this->getLanguageService()->getLL('UserSettings'));
 			$this->content .= $flashMessage->render();
 		}
 		// Show if temporary data was cleared
 		if ($this->tempDataIsCleared) {
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('tempDataClearedFlashMessage'), $GLOBALS['LANG']->getLL('tempDataCleared'));
+			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('tempDataClearedFlashMessage'), $this->getLanguageService()->getLL('tempDataCleared'));
 			$this->content .= $flashMessage->render();
 		}
 		// Show if temporary data was cleared
 		if ($this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('settingsAreReset'), $GLOBALS['LANG']->getLL('resetConfiguration'));
+			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('settingsAreReset'), $this->getLanguageService()->getLL('resetConfiguration'));
 			$this->content .= $flashMessage->render();
 		}
 		// Notice
 		if ($this->setupIsUpdated || $this->settingsAreResetToDefault) {
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('activateChanges'), '', \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
+			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('activateChanges'), '', FlashMessage::INFO);
 			$this->content .= $flashMessage->render();
 		}
 		// If password is updated, output whether it failed or was OK.
 		if ($this->passwordIsSubmitted) {
-			if ($this->passwordIsUpdated) {
-				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('newPassword_ok'), $GLOBALS['LANG']->getLL('newPassword'));
-			} else {
-				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $GLOBALS['LANG']->getLL('newPassword_failed'), $GLOBALS['LANG']->getLL('newPassword'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$flashMessage = NULL;
+			switch ($this->passwordIsUpdated) {
+				case self::PASSWORD_OLD_WRONG:
+					$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('oldPassword_failed'), $this->getLanguageService()->getLL('newPassword'), FlashMessage::ERROR);
+					break;
+				case self::PASSWORD_NOT_THE_SAME:
+					$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('newPassword_failed'), $this->getLanguageService()->getLL('newPassword'), FlashMessage::ERROR);
+					break;
+				case self::PASSWORD_UPDATED:
+					$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('newPassword_ok'), $this->getLanguageService()->getLL('newPassword'));
+					break;
 			}
-			$this->content .= $flashMessage->render();
+			if ($flashMessage) {
+				$this->content .= $flashMessage->render();
+			}
 		}
 
 		// Render user switch
@@ -380,7 +408,7 @@ class SetupModuleController {
 
 		// Render the menu items
 		$menuItems = $this->renderUserSetup();
-		$this->content .= $this->doc->getDynTabMenu($menuItems, 'user-setup', FALSE, FALSE, 1, FALSE, 1, 1);
+		$this->content .= $this->doc->getDynamicTabMenu($menuItems, 'user-setup', 1, FALSE, FALSE);
 		$formToken = $this->formProtection->generateToken('BE user setup', 'edit');
 		$this->content .= $this->doc->section('', '<input type="hidden" name="simUser" value="' . $this->simUser . '" />
 			<input type="hidden" name="formToken" value="' . $formToken . '" />
@@ -396,7 +424,7 @@ class SetupModuleController {
 		// Build the <body> for the module
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
 		// Renders the module page
-		$this->content = $this->doc->render($GLOBALS['LANG']->getLL('UserSettings'), $this->content);
+		$this->content = $this->doc->render($this->getLanguageService()->getLL('UserSettings'), $this->content);
 	}
 
 	/**
@@ -420,8 +448,8 @@ class SetupModuleController {
 			'shortcut' => ''
 		);
 		$buttons['csh'] = BackendUtility::cshItem('_MOD_user_setup', '');
-		$buttons['save'] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="data[save]" class="c-inputButton" src="clear.gif" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
-		if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
+		$buttons['save'] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="data[save]" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+		if ($this->getBackendUser()->mayMakeShortcut()) {
 			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', '', $this->moduleName);
 		}
 		return $buttons;
@@ -492,7 +520,7 @@ class SetupModuleController {
 			if (isset($this->overrideConf[$fieldName])) {
 				$more .= ' disabled="disabled"';
 			}
-			$value = $config['table'] === 'be_users' ? $GLOBALS['BE_USER']->user[$fieldName] : $GLOBALS['BE_USER']->uc[$fieldName];
+			$value = $config['table'] === 'be_users' ? $this->getBackendUser()->user[$fieldName] : $this->getBackendUser()->uc[$fieldName];
 			if (!$value && isset($config['default'])) {
 				$value = $config['default'];
 			}
@@ -591,7 +619,7 @@ class SetupModuleController {
 	 * @return BackendUserAuthentication The REAL user is returned - the one logged in.
 	 */
 	protected function getRealScriptUserObj() {
-		return is_object($this->OLD_BE_USER) ? $this->OLD_BE_USER : $GLOBALS['BE_USER'];
+		return is_object($this->OLD_BE_USER) ? $this->OLD_BE_USER : $this->getBackendUser();
 	}
 
 	/**
@@ -602,8 +630,8 @@ class SetupModuleController {
 	public function renderLanguageSelect($params, $pObj) {
 		$languageOptions = array();
 		// Compile the languages dropdown
-		$langDefault = $GLOBALS['LANG']->getLL('lang_default', TRUE);
-		$languageOptions[$langDefault] = '<option value=""' . ($GLOBALS['BE_USER']->uc['lang'] === '' ? ' selected="selected"' : '') . '>' . $langDefault . '</option>';
+		$langDefault = $this->getLanguageService()->getLL('lang_default', TRUE);
+		$languageOptions[$langDefault] = '<option value=""' . ($this->getBackendUser()->uc['lang'] === '' ? ' selected="selected"' : '') . '>' . $langDefault . '</option>';
 		// Traverse the number of languages
 		/** @var $locales \TYPO3\CMS\Core\Localization\Locales */
 		$locales = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\Locales::class);
@@ -611,14 +639,14 @@ class SetupModuleController {
 		foreach ($languages as $locale => $name) {
 			if ($locale !== 'default') {
 				$defaultName = isset($GLOBALS['LOCAL_LANG']['default']['lang_' . $locale]) ? $GLOBALS['LOCAL_LANG']['default']['lang_' . $locale][0]['source'] : $name;
-				$localizedName = $GLOBALS['LANG']->getLL('lang_' . $locale, TRUE);
+				$localizedName = $this->getLanguageService()->getLL('lang_' . $locale, TRUE);
 				if ($localizedName === '') {
 					$localizedName = htmlspecialchars($name);
 				}
 				$localLabel = '  -  [' . htmlspecialchars($defaultName) . ']';
 				$available = is_dir(PATH_typo3conf . 'l10n/' . $locale) ? TRUE : FALSE;
 				if ($available) {
-					$languageOptions[$defaultName] = '<option value="' . $locale . '"' . ($GLOBALS['BE_USER']->uc['lang'] === $locale ? ' selected="selected"' : '') . '>' . $localizedName . $localLabel . '</option>';
+					$languageOptions[$defaultName] = '<option value="' . $locale . '"' . ($this->getBackendUser()->uc['lang'] === $locale ? ' selected="selected"' : '') . '>' . $localizedName . $localLabel . '</option>';
 				}
 			}
 		}
@@ -626,9 +654,9 @@ class SetupModuleController {
 		$languageCode = '
 				<select id="field_lang" name="data[lang]" class="form-control">' . implode('', $languageOptions) . '
 				</select>';
-		if ($GLOBALS['BE_USER']->uc['lang'] && !@is_dir((PATH_typo3conf . 'l10n/' . $GLOBALS['BE_USER']->uc['lang']))) {
-			$languageUnavailableWarning = 'The selected language "' . $GLOBALS['LANG']->getLL(('lang_' . $GLOBALS['BE_USER']->uc['lang']), TRUE) . '" is not available before the language files are installed.<br />' . ($GLOBALS['BE_USER']->isAdmin() ? 'You can use the Language module to easily download new language files.' : 'Please ask your system administrator to do this.');
-			$languageUnavailableMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $languageUnavailableWarning, '', \TYPO3\CMS\Core\Messaging\FlashMessage::WARNING);
+		if ($this->getBackendUser()->uc['lang'] && !@is_dir((PATH_typo3conf . 'l10n/' . $this->getBackendUser()->uc['lang']))) {
+			$languageUnavailableWarning = 'The selected language "' . $this->getLanguageService()->getLL(('lang_' . $this->getBackendUser()->uc['lang']), TRUE) . '" is not available before the language files are installed.<br />' . ($this->getBackendUser()->isAdmin() ? 'You can use the Language module to easily download new language files.' : 'Please ask your system administrator to do this.');
+			$languageUnavailableMessage = GeneralUtility::makeInstance(FlashMessage::class, $languageUnavailableWarning, '', FlashMessage::WARNING);
 			$languageCode = $languageUnavailableMessage->render() . $languageCode;
 		}
 		return $languageCode;
@@ -641,17 +669,17 @@ class SetupModuleController {
 	 */
 	public function renderStartModuleSelect($params, $pObj) {
 		// Start module select
-		if (empty($GLOBALS['BE_USER']->uc['startModule'])) {
-			$GLOBALS['BE_USER']->uc['startModule'] = $GLOBALS['BE_USER']->uc_default['startModule'];
+		if (empty($this->getBackendUser()->uc['startModule'])) {
+			$this->getBackendUser()->uc['startModule'] = $this->getBackendUser()->uc_default['startModule'];
 		}
 		$startModuleSelect = '<option value=""></option>';
 		foreach ($pObj->loadModules->modules as $mainMod => $modData) {
 			if (isset($modData['sub']) && is_array($modData['sub'])) {
-				$startModuleSelect .= '<option disabled="disabled">' . $GLOBALS['LANG']->moduleLabels['tabs'][($mainMod . '_tab')] . '</option>';
+				$startModuleSelect .= '<option disabled="disabled">' . $this->getLanguageService()->moduleLabels['tabs'][($mainMod . '_tab')] . '</option>';
 				foreach ($modData['sub'] as $subKey => $subData) {
 					$modName = $subData['name'];
-					$startModuleSelect .= '<option value="' . $modName . '"' . ($GLOBALS['BE_USER']->uc['startModule'] == $modName ? ' selected="selected"' : '') . '>';
-					$startModuleSelect .= ' - ' . $GLOBALS['LANG']->moduleLabels['tabs'][($modName . '_tab')] . '</option>';
+					$startModuleSelect .= '<option value="' . $modName . '"' . ($this->getBackendUser()->uc['startModule'] == $modName ? ' selected="selected"' : '') . '>';
+					$startModuleSelect .= ' - ' . $this->getLanguageService()->moduleLabels['tabs'][($modName . '_tab')] . '</option>';
 				}
 			}
 		}
@@ -669,13 +697,13 @@ class SetupModuleController {
 		$this->simUser = 0;
 		$this->simulateSelector = '';
 		unset($this->OLD_BE_USER);
-		if ($GLOBALS['BE_USER']->isAdmin()) {
+		if ($this->getBackendUser()->isAdmin()) {
 			$this->simUser = (int)GeneralUtility::_GP('simUser');
 			// Make user-selector:
 			$users = BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,realName', BackendUtility::BEenableFields('be_users'));
 			$opt = array();
 			foreach ($users as $rr) {
-				if ($rr['uid'] != $GLOBALS['BE_USER']->user['uid']) {
+				if ($rr['uid'] != $this->getBackendUser()->user['uid']) {
 					$label = htmlspecialchars(($rr['username'] . ($rr['realName'] ? ' (' . $rr['realName'] . ')' : '')));
 					$opt[] = '<option value="' . $rr['uid'] . '"' . ($this->simUser == $rr['uid'] ? ' selected="selected"' : '') . '>' . $label . '</option>';
 				}
@@ -687,12 +715,11 @@ class SetupModuleController {
 		// This can only be set if the previous code was executed.
 		if ($this->simUser > 0) {
 			// Save old user...
-			$this->OLD_BE_USER = $GLOBALS['BE_USER'];
+			$this->OLD_BE_USER = $this->getBackendUser();
 			unset($GLOBALS['BE_USER']);
 			// Unset current
 			// New backend user object
 			$BE_USER = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
-			$BE_USER->OS = TYPO3_OS;
 			$BE_USER->setBeUserByUid($this->simUser);
 			$BE_USER->fetchGroupData();
 			$BE_USER->backendSetUC();
@@ -713,7 +740,7 @@ class SetupModuleController {
 
 		return '<p>' .
 			'<label for="field_simulate" style="margin-right: 20px;">' .
-			$GLOBALS['LANG']->sL('LLL:EXT:setup/mod/locallang.xlf:simulate') .
+			$this->getLanguageService()->sL('LLL:EXT:setup/mod/locallang.xlf:simulate') .
 			'</label>' .
 			$this->simulateSelector .
 			'</p>';
@@ -750,7 +777,7 @@ class SetupModuleController {
 	 */
 	protected function getLabel($str, $key = '', $addLabelTag = TRUE, $altLabelTagId = '') {
 		if (substr($str, 0, 4) === 'LLL:') {
-			$out = $GLOBALS['LANG']->sL($str);
+			$out = $this->getLanguageService()->sL($str);
 		} else {
 			$out = htmlspecialchars($str);
 		}
@@ -797,6 +824,24 @@ class SetupModuleController {
 		}
 		$fieldArray = GeneralUtility::trimExplode(',', $fieldList, TRUE);
 		return $fieldArray;
+	}
+
+	/**
+	 * Returns the current BE user.
+	 *
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * Returns LanguageService
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 }

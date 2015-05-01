@@ -56,7 +56,9 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 		$modules = new \SplObjectStorage();
 		foreach ($this->moduleStorage->getEntries() as $moduleGroup) {
 			if (!in_array($moduleGroup->getName(), $excludeGroupNames, TRUE)) {
-				$modules->attach($moduleGroup);
+				if ($moduleGroup->getChildren()->count() > 0) {
+					$modules->attach($moduleGroup);
+				}
 			}
 		}
 
@@ -230,7 +232,7 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 
 		// Unset modules that are meant to be hidden from the menu.
 		$loadedModules = $this->removeHiddenModules($loadedModules);
-
+		$dummyScript = BackendUtility::getModuleUrl('dummy');
 		foreach ($loadedModules as $moduleName => $moduleData) {
 			$moduleLink = '';
 			if (!is_array($moduleData['sub'])) {
@@ -242,17 +244,17 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 			$modules[$moduleKey] = array(
 				'name' => $moduleName,
 				'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$moduleName . '_tab'],
-				'onclick' => 'top.goToModule(\'' . $moduleName . '\');',
+				'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName) . ');',
 				'icon' => $moduleIcon,
 				'link' => $moduleLink,
 				'description' => $GLOBALS['LANG']->moduleLabels['labels'][$moduleKey . 'label']
 			);
-			if (!is_array($moduleData['sub']) && $moduleData['script'] !== 'dummy.php') {
+			if (!is_array($moduleData['sub']) && $moduleData['script'] !== $dummyScript) {
 				// Work around for modules with own main entry, but being self the only submodule
 				$modules[$moduleKey]['subitems'][$moduleKey] = array(
 					'name' => $moduleName,
 					'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$moduleName . '_tab'],
-					'onclick' => 'top.goToModule(\'' . $moduleName . '\');',
+					'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName) . ');',
 					'icon' => $this->getModuleIcon($moduleName . '_tab'),
 					'link' => $moduleLink,
 					'originalLink' => $moduleLink,
@@ -285,7 +287,7 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 					$modules[$moduleKey]['subitems'][$submoduleKey] = array(
 						'name' => $moduleName . '_' . $submoduleName,
 						'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$submoduleKey],
-						'onclick' => 'top.goToModule(\'' . $moduleName . '_' . $submoduleName . '\');',
+						'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName . '_' . $submoduleName) . ');',
 						'icon' => $submoduleIcon,
 						'link' => $submoduleLink,
 						'originalLink' => $originalLink,

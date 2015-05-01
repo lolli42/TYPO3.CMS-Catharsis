@@ -173,9 +173,9 @@ T3editor.prototype = {
 				this.textModified = false;
 			} else {
 				if (typeof returnedData.exceptionMessage != 'undefined') {
-					top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, T3editor.lang.errorWhileSaving[0]['target'], returnedData.exceptionMessage);
+					top.TYPO3.Notification.error(T3editor.lang.errorWhileSaving[0]['target'], returnedData.exceptionMessage);
 				} else {
-					top.TYPO3.Flashmessage.display(top.TYPO3.Severity.error, T3editor.lang.errorWhileSaving[0]['target']);
+					top.TYPO3.Notification.error(T3editor.lang.errorWhileSaving[0]['target'], '');
 				}
 			}
 			this.modalOverlay.hide();
@@ -320,12 +320,11 @@ if (!Prototype.Browser.MobileSafari) {
 						}, event.memo.parameters);
 
 						new Ajax.Request(
-							T3editor.URL_typo3 + TYPO3.settings.ajaxUrls['T3Editor::saveCode'], {
+							TYPO3.settings.ajaxUrls['T3Editor::saveCode'], {
 								parameters: params,
 								onComplete: function(ajaxrequest) {
-									var wasSuccessful = ajaxrequest.status == 200
-									&& ajaxrequest.headerJSON.result == true;
-									event.memo.t3editor.saveFunctionComplete(wasSuccessful,ajaxrequest.headerJSON);
+									var wasSuccessful = ajaxrequest.status === 200 && ajaxrequest.responseJSON.result === true;
+									event.memo.t3editor.saveFunctionComplete(wasSuccessful,ajaxrequest.responseJSON);
 								}
 							}
 						);

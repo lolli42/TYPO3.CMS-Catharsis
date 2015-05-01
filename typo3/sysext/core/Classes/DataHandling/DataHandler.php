@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -88,6 +89,7 @@ class DataHandler {
 	 * unescaped data array instead. This switch may totally disappear in future versions of this class!
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $stripslashes_values = TRUE;
 
@@ -327,7 +329,7 @@ class DataHandler {
 	 *
 	 * @var array
 	 */
-	public $pagetreeRefreshFieldsFromPages = array('pid', 'sorting', 'deleted', 'hidden', 'title', 'doktype', 'is_siteroot', 'fe_group', 'nav_hide', 'nav_title', 'module', 'starttime', 'endtime');
+	public $pagetreeRefreshFieldsFromPages = array('pid', 'sorting', 'deleted', 'hidden', 'title', 'doktype', 'is_siteroot', 'fe_group', 'nav_hide', 'nav_title', 'module', 'starttime', 'endtime', 'content_from_pid');
 
 	/**
 	 * Indicates whether the pagetree needs a refresh because of important changes
@@ -383,11 +385,11 @@ class DataHandler {
 	);
 
 	/**
-	 * The list of <table>-<fields> that cannot be edited by user.This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
+	 * The list of <table>-<fields> that cannot be edited by user. This is compiled from TCA/exclude-flag combined with non_exclude_fields for the user.
 	 *
 	 * @var array
 	 */
-	public $exclude_array;
+	protected $excludedTablesAndFields = array();
 
 	/**
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
@@ -651,7 +653,7 @@ class DataHandler {
 	 *
 	 * @var array
 	 */
-	protected static $recordsToClearCacheFor = array();
+	static protected $recordsToClearCacheFor = array();
 
 	/**
 	 * Database layer. Identical to $GLOBALS['TYPO3_DB']
@@ -661,10 +663,25 @@ class DataHandler {
 	protected $databaseConnection;
 
 	/**
+	 * Runtime Cache to store and retrieve data computed for a single request
+	 *
+	 * @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+	 */
+	protected $runtimeCache = NULL;
+
+	/**
+	 * Prefix for the cache entries of nested element calls since the runtimeCache has a global scope.
+	 *
+	 * @var string
+	 */
+	protected $cachePrefixNestedElementCalls = 'core-datahandler-nestedElementCalls-';
+
+	/**
 	 *
 	 */
 	public function __construct() {
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
+		$this->runtimeCache = $this->getRuntimeCache();
 	}
 
 	/**
@@ -708,7 +725,9 @@ class DataHandler {
 			$this->defaultPermissions['everybody'] = $defaultPermissions['everybody'];
 		}
 		// generates the excludelist, based on TCA/exclude-flag and non_exclude_fields for the user:
-		$this->exclude_array = $this->admin ? array() : $this->getExcludeListArray();
+		if (!$this->admin) {
+			$this->excludedTablesAndFields = array_flip($this->getExcludeListArray());
+		}
 		// Setting the data and cmd arrays
 		if (is_array($data)) {
 			reset($data);
@@ -1319,7 +1338,7 @@ class DataHandler {
 
 	/**
 	 * Filling in the field array
-	 * $this->exclude_array is used to filter fields if needed.
+	 * $this->excludedTablesAndFields is used to filter fields if needed.
 	 *
 	 * @param string $table Table name
 	 * @param int $id Record ID
@@ -1365,13 +1384,17 @@ class DataHandler {
 		// - If the field is nothing of the above and the field is configured in TCA, the fieldvalues are evaluated by ->checkValue
 		// If everything is OK, the field is entered into $fieldArray[]
 		foreach ($incomingFieldArray as $field => $fieldValue) {
-			if (!in_array(($table . '-' . $field), $this->exclude_array, TRUE) && !$this->data_disableFields[$table][$id][$field]) {
+			if (!isset($this->excludedTablesAndFields[$table . '-' . $field]) && !$this->data_disableFields[$table][$id][$field]) {
 				// The field must be editable.
 				// Checking if a value for language can be changed:
 				$languageDeny = $GLOBALS['TCA'][$table]['ctrl']['languageField'] && (string)$GLOBALS['TCA'][$table]['ctrl']['languageField'] === (string)$field && !$this->BE_USER->checkLanguageAccess($fieldValue);
 				if (!$languageDeny) {
 					// Stripping slashes - will probably be removed the day $this->stripslashes_values is removed as an option...
+					// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 					if ($this->stripslashes_values) {
+						GeneralUtility::deprecationLog(
+							'The option stripslash_values is typically set to FALSE as data should be properly prepared before sending to DataHandler. Do not rely on DataHandler removing extra slashes. The option will be removed in TYPO3 CMS 8.'
+						);
 						if (is_array($fieldValue)) {
 							GeneralUtility::stripSlashesOnArray($fieldValue);
 						} else {
@@ -1453,7 +1476,7 @@ class DataHandler {
 		}
 		// Checking for RTE-transformations of fields:
 		$types_fieldConfig = BackendUtility::getTCAtypes($table, $currentRecord);
-		$theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
+		$theTypeString = NULL;
 		if (is_array($types_fieldConfig)) {
 			foreach ($types_fieldConfig as $vconf) {
 				// RTE transformations:
@@ -1462,6 +1485,9 @@ class DataHandler {
 						// Look for transformation flag:
 						switch ((string)$incomingFieldArray[('_TRANSFORM_' . $vconf['field'])]) {
 							case 'RTE':
+								if ($theTypeString === NULL) {
+									$theTypeString = BackendUtility::getTCAtypeValue($table, $currentRecord);
+								}
 								$RTEsetup = $this->BE_USER->getTSConfig('RTE', BackendUtility::getPagesTSconfig($tscPID));
 								$thisConfig = BackendUtility::RTEsetup($RTEsetup['properties'], $table, $vconf['field'], $theTypeString);
 								// Get RTE object, draw form and set flag:
@@ -1497,12 +1523,13 @@ class DataHandler {
 	 * @param string $id The record-uid, mainly - but not exclusively - used for logging
 	 * @param string $status 'update' or 'new' flag
 	 * @param int $realPid The real PID value of the record. For updates, this is just the pid of the record. For new records this is the PID of the page where it is inserted. If $realPid is -1 it means that a new version of the record is being inserted.
-	 * @param int $tscPID tscPID
+	 * @param int $tscPID TSconfig PID
 	 * @return array Returns the evaluated $value as key "value" in this array. Can be checked with isset($res['value']) ...
 	 */
 	public function checkValue($table, $field, $value, $id, $status, $realPid, $tscPID) {
 		// Result array
 		$res = array();
+
 		// Processing special case of field pages.doktype
 		if (($table === 'pages' || $table === 'pages_language_overlay') && $field === 'doktype') {
 			// If the user may not use this specific doktype, we issue a warning
@@ -1524,6 +1551,7 @@ class DataHandler {
 				}
 			}
 		}
+
 		$curValue = NULL;
 		if ((int)$id !== 0) {
 			// Get current value:
@@ -1532,10 +1560,21 @@ class DataHandler {
 				$curValue = $curValueRec[$field];
 			}
 		}
+
 		// Getting config for the field
 		$tcaFieldConf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
-		$recFID = $table . ':' . $id . ':' . $field;
-		// Preform processing:
+
+		// Create $recFID only for those types that need it
+		if (
+			$tcaFieldConf['type'] === 'flex'
+			|| $tcaFieldConf['type'] === 'group' && ($tcaFieldConf['internal_type'] === 'file' || $tcaFieldConf['internal_type'] === 'file_reference')
+		) {
+			$recFID = $table . ':' . $id . ':' . $field;
+		} else {
+			$recFID = NULL;
+		}
+
+		// Perform processing:
 		$res = $this->checkValue_SW($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $field, $this->uploadedFileArray[$table][$id][$field], $tscPID);
 		return $res;
 	}
@@ -1566,37 +1605,35 @@ class DataHandler {
 			return $res;
 		}
 
-		$PP = array($table, $id, $curValue, $status, $realPid, $recFID, $tscPID);
 		switch ($tcaFieldConf['type']) {
 			case 'text':
-				$res = $this->checkValue_text($res, $value, $tcaFieldConf, $PP, $field);
+				$res = $this->checkValueForText($value, $tcaFieldConf);
 				break;
 			case 'passthrough':
-
+			case 'imageManipulation':
 			case 'user':
 				$res['value'] = $value;
 				break;
 			case 'input':
-				$res = $this->checkValue_input($res, $value, $tcaFieldConf, $PP, $field);
+				$res = $this->checkValueForInput($value, $tcaFieldConf, $table, $id, $realPid, $field);
 				break;
 			case 'check':
-				$res = $this->checkValue_check($res, $value, $tcaFieldConf, $PP, $field);
+				$res = $this->checkValueForCheck($res, $value, $tcaFieldConf, $table, $id, $realPid, $field);
 				break;
 			case 'radio':
-				$res = $this->checkValue_radio($res, $value, $tcaFieldConf, $PP);
+				$res = $this->checkValueForRadio($res, $value, $tcaFieldConf);
 				break;
 			case 'group':
-
 			case 'select':
-				$res = $this->checkValue_group_select($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field);
+				$res = $this->checkValueForGroupSelect($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $recFID, $uploadedFiles, $field);
 				break;
 			case 'inline':
-				$res = $this->checkValue_inline($res, $value, $tcaFieldConf, $PP, $field, $additionalData);
+				$res = $this->checkValueForInline($res, $value, $tcaFieldConf, $table, $id, $status, $field, $additionalData);
 				break;
 			case 'flex':
 				// FlexForms are only allowed for real fields.
 				if ($field) {
-					$res = $this->checkValue_flex($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field);
+					$res = $this->checkValueForFlex($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $tscPID, $uploadedFiles, $field);
 				}
 				break;
 			default:
@@ -1614,11 +1651,32 @@ class DataHandler {
 	 * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
 	 * @param string $field Field name
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_text($res, $value, $tcaFieldConf, $PP, $field = '') {
-		$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
-		$res = $this->checkValue_text_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
-		return $res;
+		GeneralUtility::logDeprecatedFunction();
+		return $this->checkValueForText($value, $tcaFieldConf);
+	}
+
+	/**
+	 * Evaluate "text" type values.
+	 *
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @return array $res The result array. The processed value (if any!) is set in the "value" key.
+	 */
+	protected function checkValueForText($value, $tcaFieldConf) {
+		if (!isset($tcaFieldConf['eval']) || $tcaFieldConf['eval'] === '') {
+			return array('value' => $value);
+		}
+		$cacheId = $this->getFieldEvalCacheIdentifier($tcaFieldConf['eval']);
+		if ($this->runtimeCache->has($cacheId)) {
+			$evalCodesArray = $this->runtimeCache->get($cacheId);
+		} else {
+			$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
+			$this->runtimeCache->set($cacheId, $evalCodesArray);
+		}
+		return $this->checkValue_text_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
 	}
 
 	/**
@@ -1630,11 +1688,30 @@ class DataHandler {
 	 * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
 	 * @param string $field Field name
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_input($res, $value, $tcaFieldConf, $PP, $field = '') {
-		list($table, $id, $curValue, $status, $realPid, $recFID) = $PP;
+		GeneralUtility::logDeprecatedFunction();
+		list($table, $id, , , $realPid) = $PP;
+		return $this->checkValueForInput($value, $tcaFieldConf, $table, $id, $realPid, $field);
+	}
+
+	/**
+	 * Evaluate "input" type values.
+	 *
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @param string $table Table name
+	 * @param int $id UID of record
+	 * @param int $realPid The real PID value of the record. For updates, this is just the pid of the record. For new records this is the PID of the page where it is inserted. If $realPid is -1 it means that a new version of the record is being inserted.
+	 * @param string $field Field name
+	 * @return array $res The result array. The processed value (if any!) is set in the "value" key.
+	 */
+	protected function checkValueForInput($value, $tcaFieldConf, $table, $id, $realPid, $field) {
 		// Handle native date/time fields
 		$isDateOrDateTimeField = FALSE;
+		$format = '';
+		$emptyValue = '';
 		if (isset($tcaFieldConf['dbType']) && ($tcaFieldConf['dbType'] === 'date' || $tcaFieldConf['dbType'] === 'datetime')) {
 			$isDateOrDateTimeField = TRUE;
 			$dateTimeFormats = $this->databaseConnection->getDateTimeFormats($table);
@@ -1659,19 +1736,33 @@ class DataHandler {
 				$value = $tcaFieldConf['range']['lower'];
 			}
 		}
-		// Process evaluation settings:
-		$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
-		$res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
-		// Process UNIQUE settings:
-		// Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
-		if ($field && $realPid >= 0) {
-			if ($res['value'] && in_array('uniqueInPid', $evalCodesArray, TRUE)) {
-				$res['value'] = $this->getUnique($table, $field, $res['value'], $id, $realPid);
+
+		if (empty($tcaFieldConf['eval'])) {
+			$res = array('value' => $value);
+		} else {
+			// Process evaluation settings:
+			$cacheId = $this->getFieldEvalCacheIdentifier($tcaFieldConf['eval']);
+			if ($this->runtimeCache->has($cacheId)) {
+				$evalCodesArray = $this->runtimeCache->get($cacheId);
+			} else {
+				$evalCodesArray = GeneralUtility::trimExplode(',', $tcaFieldConf['eval'], TRUE);
+				$this->runtimeCache->set($cacheId, $evalCodesArray);
 			}
-			if ($res['value'] && in_array('unique', $evalCodesArray, TRUE)) {
-				$res['value'] = $this->getUnique($table, $field, $res['value'], $id);
+
+			$res = $this->checkValue_input_Eval($value, $evalCodesArray, $tcaFieldConf['is_in']);
+
+			// Process UNIQUE settings:
+			// Field is NOT set for flexForms - which also means that uniqueInPid and unique is NOT available for flexForm fields! Also getUnique should not be done for versioning and if PID is -1 ($realPid<0) then versioning is happening...
+			if ($field && $realPid >= 0 && !empty($res['value'])) {
+				if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
+					$res['value'] = $this->getUnique($table, $field, $res['value'], $id, $realPid);
+				}
+				if ($res['value'] && in_array('unique', $evalCodesArray, TRUE)) {
+					$res['value'] = $this->getUnique($table, $field, $res['value'], $id);
+				}
 			}
 		}
+
 		// Handle native date/time fields
 		if ($isDateOrDateTimeField) {
 			// Convert the timestamp back to a date/time
@@ -1689,9 +1780,27 @@ class DataHandler {
 	 * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
 	 * @param string $field Field name
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_check($res, $value, $tcaFieldConf, $PP, $field = '') {
-		list($table, $id, $curValue, $status, $realPid, $recFID) = $PP;
+		GeneralUtility::logDeprecatedFunction();
+		list($table, $id, , , $realPid) = $PP;
+		return $this->checkValueForCheck($res, $value, $tcaFieldConf, $table, $id, $realPid, $field);
+	}
+
+	/**
+	 * Evaluates 'check' type values.
+	 *
+	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @param string $table Table name
+	 * @param int $id UID of record
+	 * @param int $realPid The real PID value of the record. For updates, this is just the pid of the record. For new records this is the PID of the page where it is inserted. If $realPid is -1 it means that a new version of the record is being inserted.
+	 * @param string $field Field name
+	 * @return array Modified $res array
+	 */
+	protected function checkValueForCheck($res, $value, $tcaFieldConf, $table, $id, $realPid, $field) {
 		$itemC = count($tcaFieldConf['items']);
 		if (!$itemC) {
 			$itemC = 1;
@@ -1735,8 +1844,22 @@ class DataHandler {
 	 * @param array $tcaFieldConf Field configuration from TCA
 	 * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_radio($res, $value, $tcaFieldConf, $PP) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->checkValueForRadio($res, $value, $tcaFieldConf);
+	}
+
+	/**
+	 * Evaluates 'radio' type values.
+	 *
+	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @return array Modified $res array
+	 */
+	protected function checkValueForRadio($res, $value, $tcaFieldConf) {
 		if (is_array($tcaFieldConf['items'])) {
 			foreach ($tcaFieldConf['items'] as $set) {
 				if ((string)$set[1] === (string)$value) {
@@ -1758,9 +1881,30 @@ class DataHandler {
 	 * @param array $uploadedFiles
 	 * @param string $field Field name
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_group_select($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field) {
-		list($table, $id, $curValue, $status, $realPid, $recFID) = $PP;
+		GeneralUtility::logDeprecatedFunction();
+		list($table, $id, $curValue, $status, , $recFID) = $PP;
+		return $this->checkValueForGroupSelect($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $recFID, $uploadedFiles, $field);
+	}
+
+	/**
+	 * Evaluates 'group' or 'select' type values.
+	 *
+	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @param string $table Table name
+	 * @param int $id UID of record
+	 * @param mixed $curValue Current value of the field
+	 * @param string $status 'update' or 'new' flag
+	 * @param string $recFID Field identifier [table:uid:field] for flexforms
+	 * @param array $uploadedFiles
+	 * @param string $field Field name
+	 * @return array Modified $res array
+	 */
+	protected function checkValueForGroupSelect($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $recFID, $uploadedFiles, $field) {
 		// Detecting if value sent is an array and if so, implode it around a comma:
 		if (is_array($value)) {
 			$value = implode(',', $value);
@@ -1814,6 +1958,7 @@ class DataHandler {
 			}
 		}
 		// For select types which has a foreign table attached:
+		$unsetResult = FALSE;
 		if ($tcaFieldConf['type'] == 'select' && $tcaFieldConf['foreign_table']) {
 			// check, if there is a NEW... id in the value, that should be substituted later
 			if (strpos($value, 'NEW') !== FALSE) {
@@ -1873,10 +2018,10 @@ class DataHandler {
 	 * @param array $tcaFieldConf Configuration array from TCA of the field
 	 * @param string $curValue Current value of the field
 	 * @param array $uploadedFileArray Array of uploaded files, if any
-	 * @param string $status Status ("update" or ?)
+	 * @param string $status 'update' or 'new' flag
 	 * @param string $table tablename of record
 	 * @param int $id UID of record
-	 * @param string $recFID Field identifier ([table:uid:field:....more for flexforms?]
+	 * @param string $recFID Field identifier [table:uid:field] for flexforms
 	 * @return array Modified value array
 	 * @see checkValue_group_select()
 	 */
@@ -2149,15 +2294,38 @@ class DataHandler {
 	 * Evaluates 'flex' type values.
 	 *
 	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
-	 * @param string $value The value to set.
+	 * @param string|array $value The value to set.
 	 * @param array $tcaFieldConf Field configuration from TCA
 	 * @param array $PP Additional parameters in a numeric array: $table,$id,$curValue,$status,$realPid,$recFID
 	 * @param array $uploadedFiles Uploaded files for the field
 	 * @param string $field Field name
 	 * @return array Modified $res array
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function checkValue_flex($res, $value, $tcaFieldConf, $PP, $uploadedFiles, $field) {
-		list($table, $id, $curValue, $status, $realPid, $recFID) = $PP;
+		GeneralUtility::logDeprecatedFunction();
+		list($table, $id, $curValue, $status, $realPid, $recFID, $tscPID) = $PP;
+		$this->checkValueForFlex($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $tscPID, $uploadedFiles, $field);
+	}
+
+	/**
+	 * Evaluates 'flex' type values.
+	 *
+	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+	 * @param string|array $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @param string $table Table name
+	 * @param int $id UID of record
+	 * @param mixed $curValue Current value of the field
+	 * @param string $status 'update' or 'new' flag
+	 * @param int $realPid The real PID value of the record. For updates, this is just the pid of the record. For new records this is the PID of the page where it is inserted. If $realPid is -1 it means that a new version of the record is being inserted.
+	 * @param string $recFID Field identifier [table:uid:field] for flexforms
+	 * @param int $tscPID TSconfig PID
+	 * @param array $uploadedFiles Uploaded files for the field
+	 * @param string $field Field name
+	 * @return array Modified $res array
+	 */
+	protected function checkValueForFlex($res, $value, $tcaFieldConf, $table, $id, $curValue, $status, $realPid, $recFID, $tscPID, $uploadedFiles, $field) {
 
 		if (is_array($value)) {
 			// This value is necessary for flex form processing to happen on flexform fields in page records when they are copied.
@@ -2176,7 +2344,7 @@ class DataHandler {
 			}
 			// Remove all old meta for languages...
 			// Evaluation of input values:
-			$value['data'] = $this->checkValue_flex_procInData($value['data'], $currentValueArray['data'], $uploadedFiles['data'], $dataStructArray, $PP);
+			$value['data'] = $this->checkValue_flex_procInData($value['data'], $currentValueArray['data'], $uploadedFiles['data'], $dataStructArray, array($table, $id, $curValue, $status, $realPid, $recFID, $tscPID));
 			// Create XML from input value:
 			$xmlValue = $this->checkValue_flexArray2Xml($value, TRUE);
 
@@ -2275,7 +2443,25 @@ class DataHandler {
 	 * @return array Modified $res array
 	 */
 	public function checkValue_inline($res, $value, $tcaFieldConf, $PP, $field, array $additionalData = NULL) {
-		list($table, $id, $curValue, $status, $realPid, $recFID) = $PP;
+		list($table, $id, , $status) = $PP;
+		$this->checkValueForInline($res, $value, $tcaFieldConf, $table, $id, $status, $field, $additionalData);
+	}
+
+	/**
+	 * Evaluates 'inline' type values.
+	 * (partly copied from the select_group function on this issue)
+	 *
+	 * @param array $res The result array. The processed value (if any!) is set in the 'value' key.
+	 * @param string $value The value to set.
+	 * @param array $tcaFieldConf Field configuration from TCA
+	 * @param string $table Table name
+	 * @param int $id UID of record
+	 * @param string $status 'update' or 'new' flag
+	 * @param string $field Field name
+	 * @param array $additionalData Additional data to be forwarded to sub-processors
+	 * @return array Modified $res array
+	 */
+	public function checkValueForInline($res, $value, $tcaFieldConf, $table, $id, $status, $field, array $additionalData = NULL) {
 		if (!$tcaFieldConf['foreign_table']) {
 			// Fatal error, inline fields should always have a foreign_table defined
 			return FALSE;
@@ -5279,6 +5465,11 @@ class DataHandler {
 	 */
 	protected function updateFlexFormData($flexFormId, array $modifications) {
 		list ($table, $uid, $field) = explode(':', $flexFormId, 3);
+
+		if (!MathUtility::canBeInterpretedAsInteger($uid) && !empty($this->substNEWwithIDs[$uid])) {
+			$uid = $this->substNEWwithIDs[$uid];
+		}
+
 		$record = $this->recordInfo($table, $uid, '*');
 
 		if (!$table || !$uid || !$field || !is_array($record)) {
@@ -5630,7 +5821,7 @@ class DataHandler {
 	 * @see doesRecordExist()
 	 */
 	public function doesRecordExist_pageLookUp($id, $perms) {
-		return $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$id . $this->deleteClause('pages') . ($perms && !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($perms) : '') . (!$this->admin && $GLOBALS['TCA']['pages']['ctrl']['editlock'] && $perms & 2 + 4 + 16 ? ' AND ' . $GLOBALS['TCA']['pages']['ctrl']['editlock'] . '=0' : ''));
+		return $this->databaseConnection->exec_SELECTquery('uid', 'pages', 'uid=' . (int)$id . $this->deleteClause('pages') . ($perms && !$this->admin ? ' AND ' . $this->BE_USER->getPagePermsClause($perms) : '') . (!$this->admin && $GLOBALS['TCA']['pages']['ctrl']['editlock'] && $perms & Permission::PAGE_EDIT + Permission::PAGE_DELETE + Permission::CONTENT_EDIT ? ' AND ' . $GLOBALS['TCA']['pages']['ctrl']['editlock'] . '=0' : ''));
 	}
 
 	/**
@@ -6616,24 +6807,26 @@ class DataHandler {
 	 * @return void
 	 */
 	public function fixUniqueInPid($table, $uid) {
-		if ($GLOBALS['TCA'][$table]) {
-			$curData = $this->recordInfo($table, $uid, '*');
-			$newData = array();
-			foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
-				if ($conf['config']['type'] == 'input') {
-					$evalCodesArray = GeneralUtility::trimExplode(',', $conf['config']['eval'], TRUE);
-					if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
-						$newV = $this->getUnique($table, $field, $curData[$field], $uid, $curData['pid']);
-						if ((string)$newV !== (string)$curData[$field]) {
-							$newData[$field] = $newV;
-						}
+		if (empty($GLOBALS['TCA'][$table])) {
+			return;
+		}
+
+		$curData = $this->recordInfo($table, $uid, '*');
+		$newData = array();
+		foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $conf) {
+			if ($conf['config']['type'] === 'input' && (string)$curData[$field] !== '') {
+				$evalCodesArray = GeneralUtility::trimExplode(',', $conf['config']['eval'], TRUE);
+				if (in_array('uniqueInPid', $evalCodesArray, TRUE)) {
+					$newV = $this->getUnique($table, $field, $curData[$field], $uid, $curData['pid']);
+					if ((string)$newV !== (string)$curData[$field]) {
+						$newData[$field] = $newV;
 					}
 				}
 			}
-			// IF there are changed fields, then update the database
-			if (count($newData)) {
-				$this->updateDB($table, $uid, $newData);
-			}
+		}
+		// IF there are changed fields, then update the database
+		if (!empty($newData)) {
+			$this->updateDB($table, $uid, $newData);
 		}
 	}
 
@@ -7184,7 +7377,7 @@ class DataHandler {
 	 * @return void (Will exit on error)
 	 */
 	public function printLogErrorMessages($redirect) {
-		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
+		$res_log = $this->databaseConnection->exec_SELECTquery('*', 'sys_log', 'type=1 AND action<256 AND userid=' . (int)$this->BE_USER->user['uid'] . ' AND tstamp=' . (int)$GLOBALS['EXEC_TIME'] . '	AND error<>0');
 		while ($row = $this->databaseConnection->sql_fetch_assoc($res_log)) {
 			$log_data = unserialize($row['log_data']);
 			$msg = $row['error'] . ': ' . sprintf($row['details'], $log_data[0], $log_data[1], $log_data[2], $log_data[3], $log_data[4]);
@@ -7304,11 +7497,11 @@ class DataHandler {
 	}
 
 	/**
-	 * Gets an instance of the memory cache.
+	 * Gets an instance of the runtime cache.
 	 *
 	 * @return VariableFrontend
 	 */
-	protected function getMemoryCache() {
+	protected function getRuntimeCache() {
 		return $this->getCacheManager()->getCache('cache_runtime');
 	}
 
@@ -7321,7 +7514,7 @@ class DataHandler {
 	 * @return bool
 	 */
 	protected function isNestedElementCallRegistered($table, $id, $identifier) {
-		$nestedElementCalls = (array)$this->getMemoryCache()->get('nestedElementCalls');
+		$nestedElementCalls = (array)$this->runtimeCache->get($this->cachePrefixNestedElementCalls);
 		return isset($nestedElementCalls[$identifier][$table][$id]);
 	}
 
@@ -7335,9 +7528,9 @@ class DataHandler {
 	 * @return void
 	 */
 	protected function registerNestedElementCall($table, $id, $identifier) {
-		$nestedElementCalls = (array)$this->getMemoryCache()->get('nestedElementCalls');
+		$nestedElementCalls = (array)$this->runtimeCache->get($this->cachePrefixNestedElementCalls);
 		$nestedElementCalls[$identifier][$table][$id] = TRUE;
-		$this->getMemoryCache()->set('nestedElementCalls', $nestedElementCalls);
+		$this->runtimeCache->set($this->cachePrefixNestedElementCalls, $nestedElementCalls);
 	}
 
 	/**
@@ -7346,7 +7539,7 @@ class DataHandler {
 	 * @return void
 	 */
 	protected function resetNestedElementCalls() {
-		$this->getMemoryCache()->remove('nestedElementCalls');
+		$this->runtimeCache->remove($this->cachePrefixNestedElementCalls);
 	}
 
 	/**
@@ -7361,7 +7554,7 @@ class DataHandler {
 	 * @see versionizeRecord
 	 */
 	protected function isElementToBeDeleted($table, $id) {
-		$elementsToBeDeleted = (array)$this->getMemoryCache()->get('core-t3lib_TCEmain-elementsToBeDeleted');
+		$elementsToBeDeleted = (array)$this->runtimeCache->get('core-datahandler-elementsToBeDeleted');
 		return isset($elementsToBeDeleted[$table][$id]);
 	}
 
@@ -7372,8 +7565,8 @@ class DataHandler {
 	 * @see process_datamap
 	 */
 	protected function registerElementsToBeDeleted() {
-		$elementsToBeDeleted = (array)$this->getMemoryCache()->get('core-t3lib_TCEmain-elementsToBeDeleted');
-		$this->getMemoryCache()->set('core-t3lib_TCEmain-elementsToBeDeleted', array_merge($elementsToBeDeleted, $this->getCommandMapElements('delete')));
+		$elementsToBeDeleted = (array)$this->runtimeCache->get('core-datahandler-elementsToBeDeleted');
+		$this->runtimeCache->set('core-datahandler-elementsToBeDeleted', array_merge($elementsToBeDeleted, $this->getCommandMapElements('delete')));
 	}
 
 	/**
@@ -7383,7 +7576,7 @@ class DataHandler {
 	 * @see process_datamap
 	 */
 	protected function resetElementsToBeDeleted() {
-		$this->getMemoryCache()->remove('core-t3lib_TCEmain-elementsToBeDeleted');
+		$this->runtimeCache->remove('core-datahandler-elementsToBeDeleted');
 	}
 
 	/**
@@ -7461,6 +7654,16 @@ class DataHandler {
 				$haystack[$key] = NULL;
 			}
 		}
+	}
+
+	/**
+	 * Return the cache entry identifier for field evals
+	 *
+	 * @param string $additionalIdentifier
+	 * @return string
+	 */
+	protected function getFieldEvalCacheIdentifier($additionalIdentifier) {
+		return 'core-datahandler-eval-' . md5($additionalIdentifier);
 	}
 
 	/**

@@ -102,16 +102,17 @@ class ModuleMenuView {
 		$data = array('success' => TRUE, 'root' => array());
 		$rawModuleData = $this->getRawModuleData();
 		$index = 0;
+		$dummyLink = BackendUtility::getModuleUrl('dummy');
 		foreach ($rawModuleData as $moduleKey => $moduleData) {
 			$key = substr($moduleKey, 8);
 			$num = count($data['root']);
-			if ($moduleData['link'] != 'dummy.php' || $moduleData['link'] == 'dummy.php' && is_array($moduleData['subitems'])) {
+			if ($moduleData['link'] != $dummyLink || $moduleData['link'] == $dummyLink && is_array($moduleData['subitems'])) {
 				$data['root'][$num]['key'] = $key;
 				$data['root'][$num]['menuState'] = $GLOBALS['BE_USER']->uc['moduleData']['menuState'][$moduleKey];
 				$data['root'][$num]['label'] = $moduleData['title'];
 				$data['root'][$num]['subitems'] = is_array($moduleData['subitems']) ? count($moduleData['subitems']) : 0;
 				if ($moduleData['link'] && $this->linkModules) {
-					$data['root'][$num]['link'] = 'top.goToModule(\'' . $moduleData['name'] . '\')';
+					$data['root'][$num]['link'] = 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleData['name']) . ')';
 				}
 				// Traverse submodules
 				if (is_array($moduleData['subitems'])) {
@@ -201,7 +202,7 @@ class ModuleMenuView {
 
 		// Unset modules that are meant to be hidden from the menu.
 		$this->unsetHiddenModules();
-
+		$dummyScript = BackendUtility::getModuleUrl('dummy');
 		foreach ($this->loadedModules as $moduleName => $moduleData) {
 			$moduleLink = '';
 			if (!is_array($moduleData['sub'])) {
@@ -213,17 +214,17 @@ class ModuleMenuView {
 			$modules[$moduleKey] = array(
 				'name' => $moduleName,
 				'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$moduleName . '_tab'],
-				'onclick' => 'top.goToModule(\'' . $moduleName . '\');',
+				'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName) . ');',
 				'icon' => $moduleIcon,
 				'link' => $moduleLink,
 				'description' => $GLOBALS['LANG']->moduleLabels['labels'][$moduleKey . 'label']
 			);
-			if (!is_array($moduleData['sub']) && $moduleData['script'] != 'dummy.php') {
+			if (!is_array($moduleData['sub']) && $moduleData['script'] != $dummyScript) {
 				// Work around for modules with own main entry, but being self the only submodule
 				$modules[$moduleKey]['subitems'][$moduleKey] = array(
 					'name' => $moduleName,
 					'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$moduleName . '_tab'],
-					'onclick' => 'top.goToModule(\'' . $moduleName . '\');',
+					'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName) . ');',
 					'icon' => $this->getModuleIcon($moduleName . '_tab'),
 					'link' => $moduleLink,
 					'originalLink' => $moduleLink,
@@ -256,7 +257,7 @@ class ModuleMenuView {
 					$modules[$moduleKey]['subitems'][$submoduleKey] = array(
 						'name' => $moduleName . '_' . $submoduleName,
 						'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$submoduleKey],
-						'onclick' => 'top.goToModule(\'' . $moduleName . '_' . $submoduleName . '\');',
+						'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName . '_' . $submoduleName) . ');',
 						'icon' => $submoduleIcon,
 						'link' => $submoduleLink,
 						'originalLink' => $originalLink,
@@ -357,7 +358,7 @@ class ModuleMenuView {
 	public function renderLogoutButton() {
 		$buttonLabel = $GLOBALS['BE_USER']->user['ses_backuserid'] ? 'LLL:EXT:lang/locallang_core.xlf:buttons.exit' : 'LLL:EXT:lang/locallang_core.xlf:buttons.logout';
 		$buttonForm = '
-		<form action="logout.php" target="_top">
+		<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('logout')) . '" target="_top">
 			<input class="btn btn-default" type="submit" id="logout-submit-button" value="' . $GLOBALS['LANG']->sL($buttonLabel, TRUE) . '" />
 		</form>';
 		return $buttonForm;

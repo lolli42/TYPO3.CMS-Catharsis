@@ -19,6 +19,10 @@
  */
 require __DIR__ . '/init.php';
 
+\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+	'The entry point to the file/record browser window was moved to an own module. Please use BackendUtility::getModuleUrl(\'browser\') to link to browser.php. This script will be removed in TYPO3 CMS 8.'
+);
+
 $elementBrowserFramesetController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Recordlist\Controller\ElementBrowserFramesetController::class);
 $elementBrowserFramesetController->main();
 $elementBrowserFramesetController->printContent();

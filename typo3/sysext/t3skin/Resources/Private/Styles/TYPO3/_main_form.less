@@ -1,4 +1,14 @@
 //
+// Disable ms-clear pseudo-element globally to avoid confusion with the
+// existing clearable integration in TYPO3
+//
+// https://msdn.microsoft.com/en-us/library/windows/apps/hh465740.aspx
+//
+*::-ms-clear {
+	display: none;
+}
+
+//
 // Form
 //
 #typo3-docbody form {
@@ -8,16 +18,16 @@
 //
 // Go back A-tags
 //
-a.typo3-goBack img {
-	margin-right: 5px;
-	vertical-align: middle;
+a.typo3-goBack {
+	font-weight: bold;
+	img {
+		margin-right: 5px;
+		vertical-align: middle;
+	}
 }
 span.typo3-moduleHeader img {
 	margin-right: 4px;
 	vertical-align: middle;
-}
-a.typo3-goBack {
-	font-weight: bold;
 }
 
 //
@@ -25,6 +35,10 @@ a.typo3-goBack {
 //
 .has-change {
 	.form-control-validation(@state-info-text; @state-info-text; @state-info-bg);
+
+	.thumbnail-status {
+		border: 1px solid @state-info-text;
+	}
 }
 
 //
@@ -37,6 +51,9 @@ a.typo3-goBack {
 		width: auto;
 		max-height: 18px;
 	}
+}
+.input-group-addon {
+	min-width: 2.5em;
 }
 
 //
@@ -51,6 +68,16 @@ a.typo3-goBack {
 }
 .form-control-wrap {
 	margin: 9px 0;
+}
+.form-control-holder {
+	position: relative;
+}
+.row {
+	> .form-group {
+		> .form-control-wrap {
+			margin-bottom: 0;
+		}
+	}
 }
 
 //
@@ -115,16 +142,44 @@ select {
 }
 
 //
+// Styles for the "capslock" jquery plugin.
+//
+.form-notice-capslock {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	margin-top: -10px;
+	height: 20px;
+	width: 20px;
+	padding: 3px;
+	z-index: 10;
+	background-color: #fff;
+	> img {
+		display: block;
+		opacity: 0.5;
+	}
+}
+
+//
 // Form Inline adjustments
 //
 .form-inline-spaced {
 	margin: 0 -0.5em @line-height-computed;
 	.form-group {
-		margin: 0.5em;
-		margin-bottom: 0;
+		margin: 0.5em 0.5em 0;
 		label {
 			margin-right: 0.5em;
 		}
+	}
+}
+
+//
+// Form group additions
+//
+.form-group-dashed {
+	& + .form-group-dashed {
+		padding-top: 15px;
+		border-top: 1px dashed #ccc;
 	}
 }
 
@@ -145,7 +200,7 @@ select {
 	}
 }
 .form-section-headline {
-	margin-top: 0px;
+	margin-top: 0;
 	margin-bottom: 10px;
 }
 
@@ -192,11 +247,7 @@ select {
 .form-irre-header {
 	display: table;
 	margin: -5px;
-	-moz-user-select: -moz-none;
-	-khtml-user-select: none;
-	-webkit-user-select: none;
-	-o-user-select: none;
-	user-select: none;
+	.user-select(none);
 }
 .form-irre-header-cell {
 	display: table-cell;
@@ -213,15 +264,12 @@ select {
 	}
 }
 .form-irre-header-icon {
-	padding-right: 0px;
+	padding-right: 0;
 }
 .form-irre-header-control {
 	cursor: auto;
 	.btn-group > .btn {
 		float: none;
-		+ .btn {
-			margin-left: -5px;
-		}
 	}
 }
 

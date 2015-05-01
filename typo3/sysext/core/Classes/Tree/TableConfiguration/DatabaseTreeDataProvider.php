@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\Tree\TableConfiguration;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -241,12 +242,8 @@ class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvide
 			$node->setExpanded(TRUE);
 			$node->setLabel($GLOBALS['LANG']->sL($GLOBALS['TCA'][$this->tableName]['ctrl']['title']));
 		} else {
-			$row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL($this->tableName, $basicNode->getId(), '*', '', FALSE);
-			if ($this->getLabelField() !== '') {
-				$node->setLabel($row[$this->getLabelField()]);
-			} else {
-				$node->setLabel($basicNode->getId());
-			}
+			$row = BackendUtility::getRecordWSOL($this->tableName, $basicNode->getId(), '*', '', FALSE);
+			$node->setLabel(BackendUtility::getRecordTitle($this->tableName, $row) ?: $basicNode->getId());
 			$node->setSelected(GeneralUtility::inList($this->getSelectedList(), $basicNode->getId()));
 			$node->setExpanded($this->isExpanded($basicNode));
 		}
@@ -437,10 +434,40 @@ class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvide
 	 * @return void
 	 */
 	protected function emitPostProcessTreeDataSignal() {
-		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Tree\TableConfiguration\TableConfiguration\DatabaseTreeDataProvider::class,
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Tree\TableConfiguration\DatabaseTreeDataProvider::class,
 			self::SIGNAL_PostProcessTreeData,
 			array($this, $this->treeData)
 		);
+		$this->emitDeprecatedPostProcessTreeDataSignal();
+	}
+
+	/**
+	 * A wrong signal name was introduced with https://review.typo3.org/#/c/34855/
+	 * This function handles the old signal name and logs a deprecation warning.
+	 *
+	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 */
+	protected function emitDeprecatedPostProcessTreeDataSignal() {
+		$deprecatedSlots = $this->getSignalSlotDispatcher()->getSlots(
+			'TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfiguration\\DatabaseTreeDataProvider',
+			self::SIGNAL_PostProcessTreeData
+		);
+		if (!empty($deprecatedSlots)) {
+			foreach ($deprecatedSlots as $slotInformation) {
+				$slotClassNameOrObject = $slotInformation['object'] ? get_class($slotInformation['object']) : $slotInformation['class'];
+				GeneralUtility::deprecationLog(
+					'Signal "TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfiguration\\DatabaseTreeDataProvider" ' .
+					'is deprecated but used by "' . $slotClassNameOrObject . '". ' .
+					'Please update signal name to "' . self::class . '".'
+				);
+			}
+			$this->getSignalSlotDispatcher()->dispatch(
+				'TYPO3\\CMS\\Core\\Tree\\TableConfiguration\\TableConfiguration\\DatabaseTreeDataProvider',
+				self::SIGNAL_PostProcessTreeData,
+				array($this, $this->treeData)
+			);
+		}
 	}
 
 	/**

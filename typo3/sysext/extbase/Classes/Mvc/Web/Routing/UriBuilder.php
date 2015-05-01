@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Extbase\Mvc\Web\Routing;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\Request;
+use TYPO3\CMS\Extbase\Mvc\Web\Request as WebRequest;
 
 /**
  * An URI Builder
@@ -45,7 +47,7 @@ class UriBuilder {
 	protected $contentObject;
 
 	/**
-	 * @var \TYPO3\CMS\Extbase\Mvc\Web\Request
+	 * @var Request
 	 */
 	protected $request;
 
@@ -144,16 +146,16 @@ class UriBuilder {
 	/**
 	 * Sets the current request
 	 *
-	 * @param \TYPO3\CMS\Extbase\Mvc\Request $request
+	 * @param Request $request
 	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder the current UriBuilder to allow method chaining
 	 */
-	public function setRequest(\TYPO3\CMS\Extbase\Mvc\Request $request) {
+	public function setRequest(Request $request) {
 		$this->request = $request;
 		return $this;
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Extbase\Mvc\Web\Request
+	 * @return Request
 	 */
 	public function getRequest() {
 		return $this->request;
@@ -510,6 +512,9 @@ class UriBuilder {
 		if ($pluginName === NULL) {
 			$pluginName = $this->request->getPluginName();
 		}
+
+		$this->disableCacheHashForNonCacheableAction($controllerArguments);
+
 		if ($this->environmentService->isEnvironmentInFrontendMode() && $this->configurationManager->isFeatureEnabled('skipDefaultArguments')) {
 			$controllerArguments = $this->removeDefaultControllerAndAction($controllerArguments, $extensionName, $pluginName);
 		}
@@ -527,6 +532,26 @@ class UriBuilder {
 		}
 		ArrayUtility::mergeRecursiveWithOverrule($this->arguments, $prefixedControllerArguments);
 		return $this->build();
+	}
+
+	/**
+	 * Disable cache hash if the action is not cacheable
+	 * and pointed to from an already uncached request
+	 *
+	 * @param array $controllerArguments the current controller arguments
+	 * @return void
+	 */
+	protected function disableCacheHashForNonCacheableAction(array $controllerArguments) {
+		if (isset($controllerArguments['action']) && $this->getUseCacheHash()) {
+			$actionIsCacheable = $this->extensionService->isActionCacheable(
+				NULL,
+				NULL,
+				$controllerArguments['controller'],
+				$controllerArguments['action']
+			);
+			$isRequestCached = $this->request instanceof WebRequest && $this->request->isCached();
+			$this->setUseCacheHash($isRequestCached || $actionIsCacheable);
+		}
 	}
 
 	/**
@@ -616,12 +641,13 @@ class UriBuilder {
 		$this->lastArguments = $arguments;
 		$moduleName = $arguments['M'];
 		unset($arguments['M'], $arguments['moduleToken']);
-		$uri = BackendUtility::getModuleUrl($moduleName, $arguments, '');
+		if ($this->request instanceof WebRequest && $this->createAbsoluteUri) {
+			$uri = BackendUtility::getModuleUrl($moduleName, $arguments, NULL, TRUE);
+		} else {
+			$uri = BackendUtility::getModuleUrl($moduleName, $arguments);
+		}
 		if ($this->section !== '') {
 			$uri .= '#' . $this->section;
-		}
-		if ($this->createAbsoluteUri === TRUE) {
-			$uri = $this->request->getBaseUri() . $uri;
 		}
 		return $uri;
 	}

@@ -4,7 +4,7 @@
 	"description": "TYPO3 Core",
 	"homepage": "http://typo3.org",
 	"license": ["GPL-2.0+"],
-	"version": "7.1.0",
+	"version": "7.3.0",
 
 	"require": {
 		"php" : ">=5.5.0"
@@ -27,7 +27,8 @@
 		},
 		"psr-0": {
 			"TYPO3\\Flow\\": "Resources/PHP/TYPO3.Flow/Classes/"
-		}
+		},
+		"classmap": ["Resources/PHP/RemoveXSS.php"]
 	},
 	"autoload-dev": {
 		"psr-4": {

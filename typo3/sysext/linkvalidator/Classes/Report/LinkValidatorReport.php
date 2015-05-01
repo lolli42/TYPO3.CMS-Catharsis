@@ -213,7 +213,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			);
 		}
 
-		return $this->doc->getDynTabMenu($menuItems, 'ident');
+		return $this->doc->getDynamicTabMenu($menuItems, 'report-linkvalidator');
 	}
 
 	/**
@@ -468,7 +468,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$actionLink = '<a href="#" onclick="';
 		$actionLink .= htmlspecialchars(BackendUtility::editOnClick(
 			'&edit[' . $table . '][' . $row['record_uid'] . ']=edit',
-			$GLOBALS['BACK_PATH'],
+			'',
 			$requestUri
 		));
 		$actionLink .= '" title="' . $this->getLanguageService()->getLL('list.edit') . '">';
@@ -553,7 +553,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 						$translation = $this->getLanguageService()->getLL('hooks.' . $type) ?: $type;
 						$hookSectionMarker['option'] = '<input type="checkbox"' . $additionalAttr . ' id="' . $prefix . 'SET_' . $type . '" name="' . $prefix
 							. 'SET[' . $type . ']" value="1"' . ($this->pObj->MOD_SETTINGS[$type] ? ' checked="checked"' : '') . '/>' . '<label for="'
-							. $prefix . 'SET[' . $type . ']">' . htmlspecialchars($translation) . '</label>';
+							. $prefix . 'SET_' . $type . '">' . htmlspecialchars($translation) . '</label>';
 
 						$hookSectionContent .= HtmlParser::substituteMarkerArray(
 							$hookSectionTemplate,

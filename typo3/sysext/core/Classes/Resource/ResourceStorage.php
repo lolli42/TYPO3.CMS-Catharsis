@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderWritePermissionsException;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -653,12 +652,11 @@ class ResourceStorage implements ResourceStorageInterface {
 		$fileName = $this->driver->sanitizeFileName($fileName);
 		$isAllowed = GeneralUtility::verifyFilenameAgainstDenyPattern($fileName);
 		if ($isAllowed) {
-			$fileInfo = GeneralUtility::split_fileref($fileName);
+			$fileExtension = strtolower(PathUtility::pathinfo($fileName, PATHINFO_EXTENSION));
 			// Set up the permissions for the file extension
 			$fileExtensionPermissions = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace'];
 			$fileExtensionPermissions['allow'] = GeneralUtility::uniqueList(strtolower($fileExtensionPermissions['allow']));
 			$fileExtensionPermissions['deny'] = GeneralUtility::uniqueList(strtolower($fileExtensionPermissions['deny']));
-			$fileExtension = strtolower($fileInfo['fileext']);
 			if ($fileExtension !== '') {
 				// If the extension is found amongst the allowed types, we return TRUE immediately
 				if ($fileExtensionPermissions['allow'] === '*' || GeneralUtility::inList($fileExtensionPermissions['allow'], $fileExtension)) {
@@ -1071,17 +1069,22 @@ class ResourceStorage implements ResourceStorageInterface {
 	/**
 	 * Updates a processed file with a new file from the local filesystem.
 	 *
-	 * @param $localFilePath
+	 * @param string $localFilePath
 	 * @param ProcessedFile $processedFile
+	 * @param Folder $processingFolder
 	 * @return FileInterface
 	 * @throws \InvalidArgumentException
 	 * @internal use only
 	 */
-	public function updateProcessedFile($localFilePath, ProcessedFile $processedFile) {
+	public function updateProcessedFile($localFilePath, ProcessedFile $processedFile, Folder $processingFolder = NULL) {
 		if (!file_exists($localFilePath)) {
 			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552746);
 		}
-		$fileIdentifier = $this->driver->addFile($localFilePath, $this->getProcessingFolder()->getIdentifier(), $processedFile->getName());
+		if ($processingFolder === NULL) {
+			$processingFolder = $this->getProcessingFolder();
+		}
+		$fileIdentifier = $this->driver->addFile($localFilePath, $processingFolder->getIdentifier(), $processedFile->getName());
+
 		// @todo check if we have to update the processed file other then the identifier
 		$processedFile->setIdentifier($fileIdentifier);
 		return $processedFile;
@@ -1213,7 +1216,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @return FileInterface
 	 */
 	public function getFile($identifier) {
-		$file =  $this->getFileFactory()->getFileObjectByStorageAndIdentifier($this->getUid(), $identifier);
+		$file = $this->getFileFactory()->getFileObjectByStorageAndIdentifier($this->getUid(), $identifier);
 		if (!$this->driver->fileExists($identifier)) {
 			$file->setMissing(TRUE);
 		}
@@ -1301,23 +1304,25 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param int $maxNumberOfItems
 	 * @param bool $useFilters
 	 * @param bool $recursive
+	 * @param string $sort Property name used to sort the items.
+	 *                     Among them may be: '' (empty, no sorting), name,
+	 *                     fileext, size, tstamp and rw.
+	 *                     If a driver does not support the given property, it
+	 *                     should fall back to "name".
+	 * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
 	 * @return File[]
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
-	public function getFilesInFolder(Folder $folder, $start = 0, $maxNumberOfItems = 0, $useFilters = TRUE, $recursive = FALSE) {
+	public function getFilesInFolder(Folder $folder, $start = 0, $maxNumberOfItems = 0, $useFilters = TRUE, $recursive = FALSE, $sort = '', $sortRev = FALSE) {
 		$this->assureFolderReadPermission($folder);
 
 		$rows = $this->getFileIndexRepository()->findByFolder($folder);
 
 		$filters = $useFilters == TRUE ? $this->fileAndFolderNameFilters : array();
-		$fileIdentifiers = array_values($this->driver->getFilesInFolder($folder->getIdentifier(), $start, $maxNumberOfItems, $recursive, $filters));
-		$fileIdentifiersCount = count($fileIdentifiers);
+		$fileIdentifiers = array_values($this->driver->getFilesInFolder($folder->getIdentifier(), $start, $maxNumberOfItems, $recursive, $filters, $sort, $sortRev));
+
 		$items = array();
-		if ($maxNumberOfItems === 0) {
-			$maxNumberOfItems = $fileIdentifiersCount;
-		}
-		$end = min($fileIdentifiersCount, $start + $maxNumberOfItems);
-		for ($i = $start; $i < $end; $i++) {
-			$identifier = $fileIdentifiers[$i];
+		foreach ($fileIdentifiers as $identifier) {
 			if (isset($rows[$identifier])) {
 				$fileObject = $this->getFileFactory()->getFileObject($rows[$identifier]['uid'], $rows[$identifier]);
 			} else {
@@ -1331,7 +1336,6 @@ class ResourceStorage implements ResourceStorageInterface {
 				$items[$key] = $fileObject;
 			}
 		}
-		uksort($items, 'strnatcasecmp');
 
 		return $items;
 	}
@@ -1340,7 +1344,6 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $folderIdentifier
 	 * @param bool $useFilters
 	 * @param bool $recursive
-	 *
 	 * @return array
 	 */
 	public function getFileIdentifiersInFolder($folderIdentifier, $useFilters = TRUE, $recursive = FALSE) {
@@ -1349,10 +1352,21 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * @param Folder $folder
+	 * @param bool $useFilters
+	 * @param bool $recursive
+	 * @return int Number of files in folder
+	 */
+	public function countFilesInFolder(Folder $folder, $useFilters = TRUE, $recursive = FALSE) {
+		$this->assureFolderReadPermission($folder);
+		$filters = $useFilters ? $this->fileAndFolderNameFilters : array();
+		return $this->driver->countFilesInFolder($folder->getIdentifier(), $recursive, $filters);
+	}
+
+	/**
 	 * @param string $folderIdentifier
 	 * @param bool $useFilters
 	 * @param bool $recursive
-	 *
 	 * @return array
 	 */
 	public function getFolderIdentifiersInFolder($folderIdentifier, $useFilters = TRUE, $recursive = FALSE) {
@@ -1360,23 +1374,59 @@ class ResourceStorage implements ResourceStorageInterface {
 		return $this->driver->getFoldersInFolder($folderIdentifier, 0, 0, $recursive, $filters);
 	}
 
-
 	/**
-	 * Returns TRUE if the specified file exists.
+	 * Returns TRUE if the specified file exists
 	 *
 	 * @param string $identifier
 	 * @return bool
 	 */
 	public function hasFile($identifier) {
 		// Allow if identifier is in processing folder
-		if (!$this->driver->isWithin($this->getProcessingFolder()->getIdentifier(), $identifier)) {
+		if (!$this->isWithinProcessingFolder($identifier)) {
 			$this->assureFolderReadPermission();
 		}
 		return $this->driver->fileExists($identifier);
 	}
 
 	/**
-	 * Checks if the queried file in the given folder exists.
+	 * Get all processing folders that live in this storage
+	 *
+	 * @return Folder[]
+	 */
+	public function getProcessingFolders() {
+		$processingFolders = array();
+
+		/** @var $storageRepository StorageRepository */
+		$storageRepository = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\StorageRepository::class);
+		$allStorages = $storageRepository->findAll();
+		foreach ($allStorages as $storage) {
+			if ($storage->getProcessingFolder()->getStorage() === $this) {
+				$processingFolders[] = $storage->getProcessingFolder();
+			}
+		}
+		return $processingFolders;
+	}
+
+	/**
+	 * Returns TRUE if folder that is in current storage  is set as
+	 * processing folder for one of the existing storages
+	 *
+	 * @param Folder $folder
+	 * @return bool
+	 */
+	public function isProcessingFolder(Folder $folder) {
+		$isProcessingFolder = FALSE;
+		foreach ($this->getProcessingFolders() as $processingFolder) {
+			if ($folder->getCombinedIdentifier() === $processingFolder->getCombinedIdentifier()) {
+				$isProcessingFolder = TRUE;
+				break;
+			}
+		}
+		return $isProcessingFolder;
+	}
+
+	/**
+	 * Checks if the queried file in the given folder exists
 	 *
 	 * @param string $fileName
 	 * @param Folder $folder
@@ -1704,10 +1754,12 @@ class ResourceStorage implements ResourceStorageInterface {
 			foreach ($folder->getSubfolders() as $subfolder) {
 				$folderQueue[] = $subfolder;
 			}
-			foreach ($folder->getFiles() as $file) { /** @var FileInterface $file */
+			foreach ($folder->getFiles() as $file) {
+				/** @var FileInterface $file */
 				$files[$file->getIdentifier()] = $file;
 			}
 		}
+
 		return $files;
 	}
 
@@ -1718,7 +1770,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param Folder $folderToMove The folder to move.
 	 * @param Folder $targetParentFolder The target parent folder
 	 * @param string $newFolderName
-	 * @param string $conflictMode  How to handle conflicts; one of "overrideExistingFile", "renameNewFolder", "cancel
+	 * @param string $conflictMode How to handle conflicts; one of "overrideExistingFile", "renameNewFolder", "cancel
 	 *
 	 * @throws \Exception|\TYPO3\CMS\Core\Exception
 	 * @throws \InvalidArgumentException
@@ -1782,7 +1834,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param FolderInterface $folderToCopy The folder to copy
 	 * @param FolderInterface $targetParentFolder The target folder
 	 * @param string $newFolderName
-	 * @param string $conflictMode  "overrideExistingFolder", "renameNewFolder", "cancel
+	 * @param string $conflictMode "overrideExistingFolder", "renameNewFolder", "cancel
 	 * @return Folder The new (copied) folder object
 	 * @throws InvalidTargetFolderException
 	 */
@@ -1905,22 +1957,43 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param int $maxNumberOfItems
 	 * @param bool $useFilters
 	 * @param bool $recursive
-	 *
+	 * @param string $sort Property name used to sort the items.
+	 *                     Among them may be: '' (empty, no sorting), name,
+	 *                     fileext, size, tstamp and rw.
+	 *                     If a driver does not support the given property, it
+	 *                     should fall back to "name".
+	 * @param bool $sortRev TRUE to indicate reverse sorting (last to first)
 	 * @return Folder[]
 	 */
-	public function getFoldersInFolder(Folder $folder, $start = 0, $maxNumberOfItems = 0, $useFilters = TRUE, $recursive = FALSE) {
+	public function getFoldersInFolder(Folder $folder, $start = 0, $maxNumberOfItems = 0, $useFilters = TRUE, $recursive = FALSE, $sort = '', $sortRev = FALSE) {
 		$filters = $useFilters == TRUE ? $this->fileAndFolderNameFilters : array();
-		$folderIdentifiers = $this->driver->getFoldersInFolder($folder->getIdentifier(), $start, $maxNumberOfItems, $recursive, $filters);
 
-		$processingIdentifier = $this->getProcessingFolder()->getIdentifier();
-		if (isset($folderIdentifiers[$processingIdentifier])) {
-			unset($folderIdentifiers[$processingIdentifier]);
+		$folderIdentifiers = $this->driver->getFoldersInFolder($folder->getIdentifier(), $start, $maxNumberOfItems, $recursive, $filters, $sort, $sortRev);
+
+		// Exclude processing folders
+		foreach ($this->getProcessingFolders() as $processingFolder) {
+			$processingIdentifier = $processingFolder->getIdentifier();
+			if (isset($folderIdentifiers[$processingIdentifier])) {
+				unset($folderIdentifiers[$processingIdentifier]);
+			}
 		}
 		$folders = array();
 		foreach ($folderIdentifiers as $folderIdentifier) {
 			$folders[$folderIdentifier] = $this->getFolder($folderIdentifier, TRUE);
 		}
 		return $folders;
+	}
+
+	/**
+	 * @param Folder  $folder
+	 * @param bool $useFilters
+	 * @param bool $recursive
+	 * @return integer Number of subfolders
+	 */
+	public function countFoldersInFolder(Folder $folder, $useFilters = TRUE, $recursive = FALSE) {
+		$this->assureFolderReadPermission($folder);
+		$filters = $useFilters ? $this->fileAndFolderNameFilters : array();
+		return $this->driver->countFoldersInFolder($folder->getIdentifier(), $recursive, $filters);
 	}
 
 	/**
@@ -2021,11 +2094,20 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * Returns TRUE if the specified file is in a folder that is set a processing for a storage
+	 *
 	 * @param string $identifier
 	 * @return bool
 	 */
 	public function isWithinProcessingFolder($identifier) {
-		return $this->driver->isWithin($this->getProcessingFolder()->getIdentifier(), $identifier);
+		$inProcessingFolder = FALSE;
+		foreach ($this->getProcessingFolders() as $processingFolder) {
+			if ($this->driver->isWithin($processingFolder->getIdentifier(), $identifier)) {
+				$inProcessingFolder = TRUE;
+				break;
+			}
+		}
+		return $inProcessingFolder;
 	}
 
 	/**
@@ -2354,16 +2436,15 @@ class ResourceStorage implements ResourceStorageInterface {
 	protected function getUniqueName(Folder $folder, $theFile, $dontCheckForUnique = FALSE) {
 		static $maxNumber = 99, $uniqueNamePrefix = '';
 		// Fetches info about path, name, extension of $theFile
-		$origFileInfo = GeneralUtility::split_fileref($theFile);
+		$origFileInfo = PathUtility::pathinfo($theFile);
 		// Adds prefix
 		if ($uniqueNamePrefix) {
-			$origFileInfo['file'] = $uniqueNamePrefix . $origFileInfo['file'];
-			$origFileInfo['filebody'] = $uniqueNamePrefix . $origFileInfo['filebody'];
+			$origFileInfo['basename'] = $uniqueNamePrefix . $origFileInfo['basename'];
+			$origFileInfo['filename'] = $uniqueNamePrefix . $origFileInfo['filename'];
 		}
 		// Check if the file exists and if not - return the fileName...
-		$fileInfo = $origFileInfo;
 		// The destinations file
-		$theDestFile = $fileInfo['file'];
+		$theDestFile = $origFileInfo['basename'];
 		// If the file does NOT exist we return this fileName
 		if (!$this->driver->fileExistsInFolder($theDestFile, $folder->getIdentifier()) || $dontCheckForUnique) {
 			return $theDestFile;
@@ -2371,8 +2452,8 @@ class ResourceStorage implements ResourceStorageInterface {
 		// Well the fileName in its pure form existed. Now we try to append
 		// numbers / unique-strings and see if we can find an available fileName
 		// This removes _xx if appended to the file
-		$theTempFileBody = preg_replace('/_[0-9][0-9]$/', '', $origFileInfo['filebody']);
-		$theOrigExt = $origFileInfo['realFileext'] ? '.' . $origFileInfo['realFileext'] : '';
+		$theTempFileBody = preg_replace('/_[0-9][0-9]$/', '', $origFileInfo['filename']);
+		$theOrigExt = $origFileInfo['extension'] ? '.' . $origFileInfo['extension'] : '';
 		for ($a = 1; $a <= $maxNumber + 1; $a++) {
 			// First we try to append numbers
 			if ($a <= $maxNumber) {
@@ -2458,8 +2539,7 @@ class ResourceStorage implements ResourceStorageInterface {
 				$folderRole = FolderInterface::ROLE_USER_MOUNT;
 			}
 		}
-
-		if ($identifier === $this->getProcessingFolder()->getIdentifier()) {
+		if ($folder instanceof Folder && $this->isProcessingFolder($folder)) {
 			$folderRole = FolderInterface::ROLE_PROCESSING;
 		}
 
@@ -2479,13 +2559,17 @@ class ResourceStorage implements ResourceStorageInterface {
 				$processingFolder = $this->storageRecord['processingfolder'];
 			}
 			try {
-				if ($this->driver->folderExists($processingFolder) === FALSE) {
-					$this->processingFolder = $this->createFolder($processingFolder);
+				if (strpos($processingFolder, ':') !== FALSE) {
+					$this->processingFolder = ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($processingFolder);
 				} else {
-					$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
-					$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
+					if ($this->driver->folderExists($processingFolder) === FALSE) {
+						$this->processingFolder = $this->createFolder($processingFolder);
+					} else {
+						$data = $this->driver->getFolderInfoByIdentifier($processingFolder);
+						$this->processingFolder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
+					}
 				}
-			} catch(InsufficientFolderWritePermissionsException $e) {
+			} catch(Exception\InsufficientFolderWritePermissionsException $e) {
 				$this->processingFolder = GeneralUtility::makeInstance(
 					InaccessibleFolder::class, $this, $processingFolder, $processingFolder
 				);

@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Core\FrontendEditing;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -102,15 +103,15 @@ class FrontendEditingController {
 	}
 
 	/**
-	 * Adds an edit icon to the content string. The edit icon links to alt_doc.php with proper parameters for editing the table/fields of the context.
+	 * Adds an edit icon to the content string. The edit icon links to FormEngine with proper parameters for editing the table/fields of the context.
 	 * This implements TYPO3 context sensitive editing facilities. Only backend users will have access (if properly configured as well).
 	 *
 	 * @param string $content The content to which the edit icons should be appended
-	 * @param string $params The parameters defining which table and fields to edit. Syntax is [tablename]:[fieldname],[fieldname],[fieldname],... OR [fieldname],[fieldname],[fieldname],... (basically "[tablename]:" is optional, default table is the one of the "current record" used in the function). The fieldlist is sent as "&columnsOnly=" parameter to alt_doc.php
+	 * @param string $params The parameters defining which table and fields to edit. Syntax is [tablename]:[fieldname],[fieldname],[fieldname],... OR [fieldname],[fieldname],[fieldname],... (basically "[tablename]:" is optional, default table is the one of the "current record" used in the function). The fieldlist is sent as "&columnsOnly=" parameter to FormEngine
 	 * @param array $conf TypoScript properties for configuring the edit icons.
 	 * @param string $currentRecord The "table:uid" of the record being shown. If empty string then $this->currentRecord is used. For new records (set by $conf['newRecordFromTable']) it's auto-generated to "[tablename]:NEW
 	 * @param array $dataArray Alternative data array to use. Default is $this->data
-	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to alt_doc.php
+	 * @param string $addUrlParamStr Additional URL parameters for the link pointing to FormEngine
 	 * @return string The input content string, possibly with edit icons added (not necessarily in the end but just after the last string of normal content.
 	 */
 	public function displayEditIcons($content, $params, array $conf = array(), $currentRecord = '', array $dataArray = array(), $addUrlParamStr = '') {
@@ -483,7 +484,7 @@ class FrontendEditingController {
 						$mayEdit = TRUE;
 					}
 				} else {
-					$mayEdit = count($allow) && $perms & 16;
+					$mayEdit = count($allow) && $perms & Permission::CONTENT_EDIT;
 				}
 			}
 		}
@@ -516,15 +517,15 @@ class FrontendEditingController {
 					unset($allow['hide']);
 					unset($allow['delete']);
 				}
-				if (!($perms & 2)) {
+				if (!($perms & Permission::PAGE_EDIT)) {
 					unset($allow['edit']);
 					unset($allow['move']);
 					unset($allow['hide']);
 				}
-				if (!($perms & 4)) {
+				if (!($perms & Permission::PAGE_DELETE)) {
 					unset($allow['delete']);
 				}
-				if (!($perms & 8)) {
+				if (!($perms & Permission::PAGE_NEW)) {
 					unset($allow['new']);
 				}
 			}

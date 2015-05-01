@@ -163,7 +163,7 @@ class PagePositionMap {
 				if ($prev_dat['row']['uid'] == $id) {
 					// 1) It must be allowed to create a new page and 2) If there are subpages there is no need to render a subpage icon here - it'll be done over the subpages...
 					if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($id) && !($prev_dat['invertedDepth'] > $t3lib_pageTree->tree[$cc]['invertedDepth'])) {
-						$code .= '<span class="nobr">' . $this->insertQuadLines($dat['blankLineCode']) . '<img src="clear.gif" width="18" height="8" align="top" alt="" />' . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id, 1)) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImgSubpage' . $cc . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImgSubpage' . $cc . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord_marker_d.gif', 'width="281" height="8"') . ' name="mImgSubpage' . $cc . '" border="0" align="top" title="' . $this->insertlabel() . '" alt="" />' . '</a></span><br />';
+						$code .= '<span class="text-nowrap">' . $this->insertQuadLines($dat['blankLineCode']) . '<img src="clear.gif" width="18" height="8" align="top" alt="" />' . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($id, $id, 1)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgSubpage' . $cc . '" title="' . $this->insertlabel() . '"></i>' . '</a></span><br />';
 					}
 				}
 				// If going down
@@ -174,7 +174,7 @@ class PagePositionMap {
 					// First of all the previous level should have an icon:
 					if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($prev_dat['row']['pid'])) {
 						$prevPid = -$prev_dat['row']['uid'];
-						$code .= '<span class="nobr">' . $this->insertQuadLines($dat['blankLineCode']) . '<img src="clear.gif" width="18" height="1" align="top" alt="" />' . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $prev_dat['row']['pid'], 2)) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImgAfter' . $cc . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImgAfter' . $cc . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord_marker_d.gif', 'width="281" height="8"') . ' name="mImgAfter' . $cc . '" border="0" align="top" title="' . $this->insertlabel() . '" alt="" />' . '</a></span><br />';
+						$code .= '<span class="text-nowrap">' . $this->insertQuadLines($dat['blankLineCode']) . '<img src="clear.gif" width="18" height="1" align="top" alt="" />' . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $prev_dat['row']['pid'], 2)) . '"">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgAfter' . $cc . '" title="' . $this->insertlabel() . '"></i>' . '</a></span><br />';
 					}
 					// Then set the current prevPid
 					$prevPid = -$prev_dat['row']['pid'];
@@ -187,24 +187,24 @@ class PagePositionMap {
 				$prevPid = $dat['row']['pid'];
 			}
 			if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($dat['row']['pid'])) {
-				$code .= '<span class="nobr">' . $this->insertQuadLines($dat['blankLineCode']) . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 3)) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImg' . $cc . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImg' . $cc . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord_marker_d.gif', 'width="281" height="8"') . ' name="mImg' . $cc . '" border="0" align="top" title="' . $this->insertlabel() . '" alt="" />' . '</a></span><br />';
+				$code .= '<span class="text-nowrap">' . $this->insertQuadLines($dat['blankLineCode']) . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 3)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImg' . $cc . '" title="' . $this->insertlabel() . '"></i></a></span><br />';
 			}
 			// The line with the icon and title:
-			$t_code = '<span class="nobr">' . $dat['HTML'] . $this->linkPageTitle($this->boldTitle(htmlspecialchars(GeneralUtility::fixed_lgd_cs($dat['row']['title'], $GLOBALS['BE_USER']->uc['titleLen'])), $dat, $id), $dat['row']) . '</span><br />';
+			$t_code = '<span class="text-nowrap">' . $dat['HTML'] . $this->linkPageTitle($this->boldTitle(htmlspecialchars(GeneralUtility::fixed_lgd_cs($dat['row']['title'], $GLOBALS['BE_USER']->uc['titleLen'])), $dat, $id), $dat['row']) . '</span><br />';
 			$code .= $t_code;
 		}
 		// If the current page was the last in the tree:
 		$prev_dat = end($t3lib_pageTree->tree);
 		if ($prev_dat['row']['uid'] == $id) {
 			if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($id)) {
-				$code .= '<span class="nobr">' . $this->insertQuadLines($saveLatestUid[$latestInvDepth]['blankLineCode'], 1) . '<img src="clear.gif" width="18" height="8" align="top" alt="" />' . '<a href="#" onclick="' . $this->onClickEvent($id, $id, 4) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImgSubpage' . $cc . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImgSubpage' . $cc . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord_marker_d.gif', 'width="281" height="8"') . ' name="mImgSubpage' . $cc . '" border="0" align="top" title="' . $this->insertlabel() . '" alt="" />' . '</a></span><br />';
+				$code .= '<span class="text-nowrap">' . $this->insertQuadLines($saveLatestUid[$latestInvDepth]['blankLineCode'], 1) . '<img src="clear.gif" width="18" height="8" align="top" alt="" />' . '<a href="#" onclick="' . $this->onClickEvent($id, $id, 4) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgSubpage' . $cc . '" title="' . $this->insertlabel() . '"></i>' . '</a></span><br />';
 			}
 		}
 		for ($a = $latestInvDepth; $a <= $this->depth; $a++) {
 			$dat = $saveLatestUid[$a];
 			$prevPid = -$dat['row']['uid'];
 			if (!$this->dontPrintPageInsertIcons && $this->checkNewPageInPid($dat['row']['pid'])) {
-				$code .= '<span class="nobr">' . $this->insertQuadLines($dat['blankLineCode'], 1) . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 5)) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImgEnd' . $a . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImgEnd' . $a . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord_marker_d.gif', 'width="281" height="8"') . ' name="mImgEnd' . $a . '" border="0" align="top" title="' . $this->insertlabel() . '" alt="" />' . '</a></span><br />';
+				$code .= '<span class="text-nowrap">' . $this->insertQuadLines($dat['blankLineCode'], 1) . '<a href="#" onclick="' . htmlspecialchars($this->onClickEvent($prevPid, $dat['row']['pid'], 5)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgEnd' . $cc . '" title="' . $this->insertlabel() . '"></i>' . '</a></span><br />';
 			}
 		}
 		return $code;
@@ -215,8 +215,10 @@ class PagePositionMap {
 	 *
 	 * @param string $prefix Insert record image prefix.
 	 * @return string <script> section
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function JSimgFunc($prefix = '') {
+		GeneralUtility::logDeprecatedFunction();
 		$code = $GLOBALS['TBE_TEMPLATE']->wrapScriptTags('
 
 			var img_newrecord_marker=new Image();
@@ -267,7 +269,7 @@ class PagePositionMap {
 		$TSconfigProp = $this->getModConfig($newPagePID);
 		if ($TSconfigProp['overrideWithExtension']) {
 			if (ExtensionManagementUtility::isLoaded($TSconfigProp['overrideWithExtension'])) {
-				$onclick = 'window.location.href=\'' . ExtensionManagementUtility::extRelPath($TSconfigProp['overrideWithExtension']) . 'mod1/index.php?cmd=crPage&positionPid=' . $pid . '\';';
+				$onclick = 'window.location.href=' . GeneralUtility::quoteJSvalue(ExtensionManagementUtility::extRelPath($TSconfigProp['overrideWithExtension']) . 'mod1/index.php?cmd=crPage&positionPid=' . $pid) . ';';
 				return $onclick;
 			}
 		}
@@ -390,12 +392,11 @@ class PagePositionMap {
 	 * @return string HTML
 	 */
 	public function printRecordMap($lines, $colPosArray, $pid = 0) {
-		$row1 = '';
-		$row2 = '';
 		$count = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange(count($colPosArray), 1);
 		$backendLayout = GeneralUtility::callUserFunction(\TYPO3\CMS\Backend\View\BackendLayoutView::class . '->getSelectedBackendLayout', $pid, $this);
 		if (isset($backendLayout['__config']['backend_layout.'])) {
-			$table = '<div class="t3-gridContainer"><table border="0" cellspacing="0" cellpadding="0" id="typo3-ttContentList">';
+			$GLOBALS['LANG']->includeLLFile('EXT:cms/layout/locallang.xlf');
+			$table = '<div class="table-fit"><table class="table table-condensed table-bordered table-vertical-top">';
 			$colCount = (int)$backendLayout['__config']['backend_layout.']['colCount'];
 			$rowCount = (int)$backendLayout['__config']['backend_layout.']['rowCount'];
 			$table .= '<colgroup>';
@@ -403,6 +404,7 @@ class PagePositionMap {
 				$table .= '<col style="width:' . 100 / $colCount . '%"></col>';
 			}
 			$table .= '</colgroup>';
+			$table .= '<tbody>';
 			$tcaItems = GeneralUtility::callUserFunction(\TYPO3\CMS\Backend\View\BackendLayoutView::class . '->getColPosListItemsParsed', $pid, $this);
 			// Cycle through rows
 			for ($row = 1; $row <= $rowCount; $row++) {
@@ -425,41 +427,65 @@ class PagePositionMap {
 						}
 					}
 					// Render the grid cell
-					$table .= '<td valign="top"' . (isset($columnConfig['colspan']) ? ' colspan="' . $columnConfig['colspan'] . '"' : '') . (isset($columnConfig['rowspan']) ? ' rowspan="' . $columnConfig['rowspan'] . '"' : '') . ' class="t3-gridCell t3-page-column t3-page-column-' . $columnKey . (!isset($columnConfig['colPos']) ? ' t3-gridCell-unassigned' : '') . (isset($columnConfig['colPos']) && !$head ? ' t3-gridCell-restricted' : '') . (isset($columnConfig['colspan']) ? ' t3-gridCell-width' . $columnConfig['colspan'] : '') . (isset($columnConfig['rowspan']) ? ' t3-gridCell-height' . $columnConfig['rowspan'] : '') . '">';
-					$table .= '<div class="t3-page-colHeader t3-row-header">';
+					$table .= '<td'
+						. (isset($columnConfig['colspan']) ? ' colspan="' . $columnConfig['colspan'] . '"' : '')
+						. (isset($columnConfig['rowspan']) ? ' rowspan="' . $columnConfig['rowspan'] . '"' : '')
+						. ' class="col-nowrap col-min'
+						. (!isset($columnConfig['colPos']) ? ' warning' : '')
+						. (isset($columnConfig['colPos']) && !$head ? ' danger' : '') . '">';
+					// Render header
+					$table .= '<p>';
 					if (isset($columnConfig['colPos']) && $head) {
-						$table .= $this->wrapColumnHeader($head, '', '') . '</div>' . implode('<br />', $lines[$columnKey]);
+						$table .= '<strong>' . $this->wrapColumnHeader($head, '', '') . '</strong>';
 					} elseif ($columnConfig['colPos']) {
-						$table .= $this->wrapColumnHeader($GLOBALS['LANG']->getLL('noAccess'), '', '') . '</div>';
-					} elseif ($columnConfig['name']) {
-						$table .= $this->wrapColumnHeader($columnConfig['name'], '', '') . '</div>';
+						$table .= '<em>' . $this->wrapColumnHeader($GLOBALS['LANG']->getLL('noAccess'), '', '') . '</em>';
 					} else {
-						$table .= $this->wrapColumnHeader($GLOBALS['LANG']->getLL('notAssigned'), '', '') . '</div>';
+						$table .= '<em>' . $this->wrapColumnHeader(($columnConfig['name']?: '') . ' (' . $GLOBALS['LANG']->getLL('notAssigned') . ')', '', '') . '</em>';
+					}
+					$table .= '</p>';
+					// Render lines
+					if (isset($columnConfig['colPos']) && $head && !empty($lines[$columnKey])) {
+						$table .= '<ul class="list-unstyled">';
+						foreach ($lines[$columnKey] as $line) {
+							$table .= '<li>' . $line . '</li>';
+						}
+						$table .= '</ul>';
 					}
 					$table .= '</td>';
 				}
 				$table .= '</tr>';
 			}
+			$table .= '</tbody>';
 			$table .= '</table></div>';
 		} else {
 			// Traverse the columns here:
+			$row = '';
 			foreach ($colPosArray as $kk => $vv) {
-				$row1 .= '<td align="center" width="' . round(100 / $count) . '%"><div class="t3-page-colHeader t3-row-header">' . $this->wrapColumnHeader($GLOBALS['LANG']->sL(BackendUtility::getLabelFromItemlist('tt_content', 'colPos', $vv, $pid), TRUE), $vv) . '</div></td>';
-				$row2 .= '<td valign="top" nowrap="nowrap">' . implode('<br />', $lines[$vv]) . '</td>';
+				$row .= '<td class="col-nowrap col-min" width="' . round(100 / $count) . '%">';
+				$row .= '<p><strong>' . $this->wrapColumnHeader($GLOBALS['LANG']->sL(BackendUtility::getLabelFromItemlist('tt_content', 'colPos', $vv, $pid), TRUE), $vv) . '</strong></p>';
+				if (!empty($lines[$vv])) {
+					$row .= '<ul class="list-unstyled">';
+					foreach ($lines[$vv] as $line) {
+						$row .= '<li>' . $line . '</li>';
+					}
+					$row .= '</ul>';
+				}
+				$row .= '</td>';
 			}
 			$table = '
 
 			<!--
 				Map of records in columns:
 			-->
-			<table border="0" cellpadding="0" cellspacing="0" id="typo3-ttContentList">
-				<tr>' . $row1 . '</tr>
-				<tr>' . $row2 . '</tr>
-			</table>
+			<div class="table-fit">
+				<table class="table table-condensed table-bordered table-vertical-top">
+					<tr>' . $row . '</tr>
+				</table>
+			</div>
 
 			';
 		}
-		return $this->JSimgFunc('2') . $table;
+		return $table;
 	}
 
 	/**
@@ -494,7 +520,7 @@ class PagePositionMap {
 			$uid = '';
 		}
 		$cc = hexdec(substr(md5($uid . '-' . $vv . '-' . $kk), 0, 4));
-		return '<a href="#" onclick="' . htmlspecialchars($this->onClickInsertRecord($row, $vv, $moveUid, $pid, $this->cur_sys_language)) . '" onmouseover="' . htmlspecialchars(('changeImg(\'mImg' . $cc . '\',0);')) . '" onmouseout="' . htmlspecialchars(('changeImg(\'mImg' . $cc . '\',1);')) . '">' . '<img' . IconUtility::skinImg($this->backPath, 'gfx/newrecord2_marker_d.gif', 'width="100" height="8"') . ' name="mImg' . $cc . '" border="0" align="top" title="' . $GLOBALS['LANG']->getLL($this->l_insertNewRecordHere, 1) . '" alt="" />' . '</a>';
+		return '<a href="#" onclick="' . htmlspecialchars($this->onClickInsertRecord($row, $vv, $moveUid, $pid, $this->cur_sys_language)) . '">' . '<i class="t3-icon fa fa-long-arrow-left" name="mImgEnd' . $cc . '" title="' . $GLOBALS['LANG']->getLL($this->l_insertNewRecordHere, 1) . '"></i></a>';
 	}
 
 	/**
@@ -517,7 +543,7 @@ class PagePositionMap {
 		}
 		$location .= '&redirect=' . rawurlencode($this->R_URI);
 		// returns to prev. page
-		return 'window.location.href=\'' . $location . '\';return false;';
+		return 'window.location.href=' . GeneralUtility::quoteJSvalue($location) . ';return false;';
 	}
 
 	/**

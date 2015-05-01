@@ -22,6 +22,10 @@
 require_once 'init.php';
 \TYPO3\CMS\Backend\Utility\BackendUtility::lockRecords();
 
+\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+	'The entry point to FormEngine was moved to an own module. Please use BackendUtility::getModuleUrl(\'record_edit\') to link to alt_doc.php. This script will be removed in TYPO3 CMS 8.'
+);
+
 /* @var $editDocumentController \TYPO3\CMS\Backend\Controller\EditDocumentController */
 $editDocumentController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\EditDocumentController::class);
 

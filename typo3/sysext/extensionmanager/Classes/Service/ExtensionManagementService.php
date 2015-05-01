@@ -14,6 +14,9 @@ namespace TYPO3\CMS\Extensionmanager\Service;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Extbase\SignalSlot\Dispatcher;
 use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
@@ -58,6 +61,11 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @inject
 	 */
 	protected $downloadUtility;
+
+	/**
+	 * @var bool
+	 */
+	protected $automaticInstallationEnabled = TRUE;
 
 	/**
 	 * @var bool
@@ -124,6 +132,13 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
+	 * @param bool $automaticInstallationEnabled
+	 */
+	public function setAutomaticInstallationEnabled($automaticInstallationEnabled) {
+		$this->automaticInstallationEnabled = (bool)$automaticInstallationEnabled;
+	}
+
+	/**
 	 * Install the extension
 	 *
 	 * @param Extension $extension
@@ -131,7 +146,6 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function installExtension(Extension $extension) {
 		$this->downloadExtension($extension);
-
 		if (!$this->checkDependencies($extension)) {
 			return FALSE;
 		}
@@ -148,15 +162,17 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 		if (array_key_exists('download', $queue)) {
 			$downloadedDependencies = $this->downloadDependencies($queue['download']);
 		}
-		if (array_key_exists('update', $queue)) {
-			$this->downloadDependencies($queue['update']);
-			$updatedDependencies = $this->uninstallDependenciesToBeUpdated($queue['update']);
-		}
-		// add extension at the end of the download queue
-		$this->downloadQueue->addExtensionToInstallQueue($extension->getExtensionKey());
-		$installQueue = $this->downloadQueue->getExtensionInstallStorage();
-		if (count($installQueue) > 0) {
-			$installedDependencies = $this->installDependencies($installQueue);
+		if ($this->automaticInstallationEnabled) {
+			if (array_key_exists('update', $queue)) {
+				$this->downloadDependencies($queue['update']);
+				$updatedDependencies = $this->uninstallDependenciesToBeUpdated($queue['update']);
+			}
+			// add extension at the end of the download queue
+			$this->downloadQueue->addExtensionToInstallQueue($extension->getExtensionKey());
+			$installQueue = $this->downloadQueue->getExtensionInstallStorage();
+			if (count($installQueue) > 0) {
+				$installedDependencies = $this->installDependencies($installQueue);
+			}
 		}
 		return array_merge($downloadedDependencies, $updatedDependencies, $installedDependencies);
 	}
@@ -217,8 +233,8 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 		$installPaths = Extension::returnAllowedInstallPaths();
 		foreach ($copyQueue as $extensionKey => $sourceFolder) {
 			$destination = $installPaths['Local'] . $extensionKey;
-			\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($destination);
-			\TYPO3\CMS\Core\Utility\GeneralUtility::copyDirectory($sourceFolder . $extensionKey, $destination);
+			GeneralUtility::mkdir($destination);
+			GeneralUtility::copyDirectory($sourceFolder . $extensionKey, $destination);
 			$this->markExtensionForInstallation($extensionKey);
 			$this->downloadQueue->removeExtensionFromCopyQueue($extensionKey);
 		}
@@ -329,12 +345,12 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Get the SignalSlot dispatcher
 	 *
-	 * @return \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 * @return Dispatcher
 	 */
 	protected function getSignalSlotDispatcher() {
 		if (!isset($this->signalSlotDispatcher)) {
-			$this->signalSlotDispatcher = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class)
-				->get(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class);
+			$this->signalSlotDispatcher = GeneralUtility::makeInstance(ObjectManager::class)
+				->get(Dispatcher::class);
 		}
 		return $this->signalSlotDispatcher;
 	}

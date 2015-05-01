@@ -26,7 +26,6 @@
 }
 
 .x-panel-tbar {
-	border-bottom: 1px solid #cdcdcd;
 }
 
 .x-panel-body {
@@ -1741,6 +1740,10 @@ a.x-menu-item {
 
 .x-resizable-pinned .x-combo-list-inner {
 	border-bottom-color:#bcbcbc;
+}
+
+.x-combo-list-inner {
+	background-color: #EFEFEF;
 }
 
 .x-panel {

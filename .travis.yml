@@ -2,12 +2,24 @@ language: php
 
 matrix:
   allow_failures:
+    - php: 7
     - php: hhvm-nightly
+    - php: 5.5
+      env: FUNCTIONAL_TESTS=yes
+    - php: 5.6
+      env: FUNCTIONAL_TESTS=yes
+
   include:
     - php: 5.5
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
+      env: UNIT_TESTS=yes PHP_LINT=yes XLF_CHECK=yes
+    - php: 5.5
+      env: FUNCTIONAL_TESTS=yes
     - php: 5.6
-      env: UNIT_TESTS=yes FUNCTIONAL_TESTS=yes PHP_LINT=yes
+      env: UNIT_TESTS=yes PHP_LINT=yes
+    - php: 5.6
+      env: FUNCTIONAL_TESTS=yes
+    - php: 7
+      env: UNIT_TESTS=yes
     - php: hhvm-nightly
       env: UNIT_TESTS=yes
 
@@ -20,7 +32,7 @@ notifications:
     recipients:
       - lolli@schwarzbu.ch
     on_success: change
-    on_failure: change
+    on_failure: always
 
 before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
@@ -41,7 +53,7 @@ script:
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
         echo;
         export typo3DatabaseName="typo3";
-        export typo3DatabaseHost="localhost";
+        export typo3DatabaseHost="127.0.0.1";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
         find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
@@ -50,12 +62,7 @@ script:
     if [[ "$PHP_LINT" == "yes" ]]; then
         echo;
         echo "Running php lint";
-        /bin/bash -c "
-            if ! find typo3/ -name \*.php | parallel --gnu 'php -l {}' > /tmp/errors 2>&1; then
-                grep -v \"No syntax errors detected in\" /tmp/errors;
-                exit 99;
-            fi
-        "
+        find typo3/ -name \*.php -not -path "typo3/contrib/vendor/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
     fi
   - >
     if [[ "$XLF_CHECK" == "yes" ]]; then

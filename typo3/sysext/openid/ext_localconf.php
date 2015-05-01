@@ -3,7 +3,7 @@ defined('TYPO3_MODE') or die();
 
 // Register OpenID processing service with TYPO3
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addService(
-	$_EXTKEY,
+	'openid',
 	'auth',
 	'tx_openid_service_process',
 	array(
@@ -22,7 +22,7 @@ defined('TYPO3_MODE') or die();
 
 // Register OpenID authentication service with TYPO3
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addService(
-	$_EXTKEY,
+	'openid',
 	'auth',
 	'tx_openid_service',
 	array(
@@ -42,5 +42,6 @@ defined('TYPO3_MODE') or die();
 // Register eID script that performs final FE user authentication. It will be called by the OpenID provider
 $GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['tx_openid'] = 'EXT:openid/class.tx_openid_eid.php';
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['setup']['accessLevelCheck'][\TYPO3\CMS\Openid\OpenidModuleSetup::class] = '';
+
 // Use popup window to refresh login instead of the AJAX relogin:
 $GLOBALS['TYPO3_CONF_VARS']['BE']['showRefreshLoginPopup'] = 1;

@@ -533,32 +533,11 @@ abstract class AbstractUserAuthentication {
 	/**
 	 * Get the value of a specified cookie.
 	 *
-	 * Uses HTTP_COOKIE, if available, to avoid a IE8 bug where multiple
-	 * cookies with the same name might be returned if the user accessed
-	 * the site without "www." first and switched to "www." later:
-	 * Cookie: fe_typo_user=AAA; fe_typo_user=BBB
-	 * In this case PHP will set _COOKIE as the first cookie, when we
-	 * would need the last one (which is what this function then returns).
-	 *
 	 * @param string $cookieName The cookie ID
 	 * @return string The value stored in the cookie
 	 */
 	protected function getCookie($cookieName) {
-		$cookieValue = '';
-		if (isset($_SERVER['HTTP_COOKIE'])) {
-			$cookies = GeneralUtility::trimExplode(';', $_SERVER['HTTP_COOKIE']);
-			foreach ($cookies as $cookie) {
-				list($name, $value) = GeneralUtility::trimExplode('=', $cookie);
-				if (trim($name) === (string)$cookieName) {
-					// Use the last one
-					$cookieValue = urldecode($value);
-				}
-			}
-		} else {
-			// Fallback if there is no HTTP_COOKIE, use original method:
-			$cookieValue = isset($_COOKIE[$cookieName]) ? stripslashes($_COOKIE[$cookieName]) : '';
-		}
-		return $cookieValue;
+		return isset($_COOKIE[$cookieName]) ? stripslashes($_COOKIE[$cookieName]) : '';
 	}
 
 	/**
@@ -630,9 +609,9 @@ abstract class AbstractUserAuthentication {
 			if ($this->formfield_status && $loginData['uident'] && $loginData['uname']) {
 				$httpHost = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
 				if (!$this->getMethodEnabled && ($httpHost != $authInfo['refInfo']['host'] && !$GLOBALS['TYPO3_CONF_VARS']['SYS']['doNotCheckReferer'])) {
-					throw new \RuntimeException('TYPO3 Fatal Error: Error: This host address ("' . $httpHost . '") and the referer host ("' . $authInfo['refInfo']['host'] . '") mismatches!<br />
-						It\'s possible that the environment variable HTTP_REFERER is not passed to the script because of a proxy.<br />
-						The site administrator can disable this check in the "All Configuration" section of the Install Tool (flag: TYPO3_CONF_VARS[SYS][doNotCheckReferer]).', 1270853930);
+					throw new \RuntimeException('TYPO3 Fatal Error: Error: This host address ("' . $httpHost . '") and the referer host ("' . $authInfo['refInfo']['host'] . '") mismatches! ' .
+						'It is possible that the environment variable HTTP_REFERER is not passed to the script because of a proxy. ' .
+						'The site administrator can disable this check in the "All Configuration" section of the Install Tool (flag: TYPO3_CONF_VARS[SYS][doNotCheckReferer]).', 1270853930);
 				}
 				// Delete old user session if any
 				$this->logoff();

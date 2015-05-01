@@ -53,7 +53,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				FALSE,
 				array(
-					'<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+					'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 					'<meta name="author" content="Markus Klein">',
 				)
 			),
@@ -63,7 +63,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				TRUE,
 				array(
-					'<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS" />',
+					'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '" />',
 					'<meta name="author" content="Markus Klein" />',
 				)
 			),
@@ -74,7 +74,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				FALSE,
 				array(
-					'<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+					'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 					'<meta name="author" content="Markus Klein">',
 				)
 			),
@@ -85,7 +85,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				FALSE,
 			    array(
-				    '<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+				    '<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 					'<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">'
 			    )
 			),
@@ -96,7 +96,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				TRUE,
 				array(
-					'<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS" />',
+					'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '" />',
 					'<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />'
 				)
 		    ),
@@ -106,7 +106,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				FALSE,
 				array(
-					'<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+					'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 					'<meta http-equiv="refresh" content="10">',
 				)
 			),
@@ -116,7 +116,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			    ),
 			    FALSE,
 			    array(
-				    '<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+				    '<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 				    '<meta name="DC.author" content="Markus Klein">',
 			    )
 		    ),
@@ -126,7 +126,7 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			    ),
 			    FALSE,
 			    array(
-				    '<meta name="generator" content="TYPO3 ' . TYPO3_branch . ' CMS">',
+				    '<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '">',
 				    '<meta name="OG:title" content="Magic Tests">',
 			    )
 		    ),
@@ -146,4 +146,57 @@ class PageGeneratorTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertSame($expectedTags, $result);
 	}
 
+	/**
+	 * @return array
+	 */
+	public function initializeSearchWordDataInTsfeBuildsCorrectRegexDataProvider() {
+		return array(
+			'one simple search word' => array(
+				array('test'),
+				FALSE,
+				'test',
+			),
+			'one simple search word with standalone words' => array(
+				array('test'),
+				TRUE,
+				'[[:space:]]test[[:space:]]',
+			),
+			'two simple search words' => array(
+				array('test', 'test2'),
+				FALSE,
+				'test|test2',
+			),
+			'two simple search words with standalone words' => array(
+				array('test', 'test2'),
+				TRUE,
+				'[[:space:]]test[[:space:]]|[[:space:]]test2[[:space:]]',
+			),
+			'word with regex chars' => array(
+				array('A \\ word with / a bunch of [] regex () chars .*'),
+				FALSE,
+				'A  word with \\/ a bunch of \\[\\] regex \\(\\) chars \\.\\*',
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider initializeSearchWordDataInTsfeBuildsCorrectRegexDataProvider
+	 *
+	 * @param array $searchWordGetParameters The values that should be loaded in the sword_list GET parameter.
+	 * @param bool $enableStandaloneSearchWords If TRUE the sword_standAlone option will be enabled.
+	 * @param string $expectedRegex The expected regex after processing the search words.
+	 */
+	public function initializeSearchWordDataInTsfeBuildsCorrectRegex(array $searchWordGetParameters, $enableStandaloneSearchWords, $expectedRegex) {
+
+		$_GET['sword_list'] = $searchWordGetParameters;
+
+		$GLOBALS['TSFE'] = new \stdClass();
+		if ($enableStandaloneSearchWords) {
+			$GLOBALS['TSFE']->config = array('config' => array('sword_standAlone' => 1));
+		}
+
+		$this->pageGeneratorFixture->callInitializeSearchWordDataInTsfe();
+		$this->assertEquals($GLOBALS['TSFE']->sWordRegEx, $expectedRegex);
+	}
 }

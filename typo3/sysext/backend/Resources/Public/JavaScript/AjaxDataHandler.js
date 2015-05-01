@@ -14,7 +14,7 @@
 /**
  * AjaxDataHandler - Javascript functions to work with AJAX and interacting with tce_db.php
  */
-define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/FlashMessages', 'TYPO3/CMS/Backend/Modal'], function ($) {
+define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/Notification', 'TYPO3/CMS/Backend/Modal'], function ($) {
 	var AjaxDataHandler = {};
 
 	/**
@@ -84,23 +84,26 @@ define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/FlashM
 		$(document).on('click', '.t3js-record-delete', function(evt) {
 			evt.preventDefault();
 			var $anchorElement = $(this);
-			TYPO3.Modal.confirm($anchorElement.data('title'), $anchorElement.data('message'), TYPO3.Severity.error, [
+			var $modal = top.TYPO3.Modal.confirm($anchorElement.data('title'), $anchorElement.data('message'), top.TYPO3.Severity.warning, [
 				{
-					text: TYPO3.lang['button.cancel'],
+					text: $(this).data('button-close-text') || TYPO3.lang['button.cancel'] || 'Cancel',
 					active: true,
-					trigger: function() {
-						TYPO3.Modal.dismiss();
-					}
+					name: 'cancel'
 				},
 				{
-					text: TYPO3.lang['button.delete'],
-					btnClass: 'btn-danger',
-					trigger: function() {
-						TYPO3.Modal.dismiss();
-						AjaxDataHandler.deleteRecord($anchorElement);
-					}
+					text: $(this).data('button-ok-text') || TYPO3.lang['button.delete'] || 'Delete',
+					btnClass: 'btn-warning',
+					name: 'delete'
 				}
 			]);
+			$modal.on('button.clicked', function(e) {
+				if (e.target.name === 'cancel') {
+					top.TYPO3.Modal.dismiss();
+				} else if (e.target.name === 'delete') {
+					top.TYPO3.Modal.dismiss();
+					AjaxDataHandler.deleteRecord($anchorElement);
+				}
+			});
 		});
 	};
 
@@ -166,7 +169,7 @@ define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/FlashM
 	 */
 	AjaxDataHandler.handleErrors = function(result) {
 		$.each(result.messages, function(position, message) {
-			top.TYPO3.Flashmessage.display(message.severity, message.title, message.message);
+			top.TYPO3.Notification.error(message.title, message.message);
 		});
 	};
 

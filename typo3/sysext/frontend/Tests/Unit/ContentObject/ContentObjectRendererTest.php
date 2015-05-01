@@ -74,11 +74,6 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		'RESTORE_REGISTER' => \TYPO3\CMS\Frontend\ContentObject\RestoreRegisterContentObject::class,
 		'TEMPLATE'         => \TYPO3\CMS\Frontend\ContentObject\TemplateContentObject::class,
 		'FLUIDTEMPLATE'    => \TYPO3\CMS\Frontend\ContentObject\FluidTemplateContentObject::class,
-		'MULTIMEDIA'       => \TYPO3\CMS\Frontend\ContentObject\MultimediaContentObject::class,
-		'MEDIA'            => \TYPO3\CMS\Frontend\ContentObject\MediaContentObject::class,
-		'SWFOBJECT'        => \TYPO3\CMS\Frontend\ContentObject\ShockwaveFlashObjectContentObject::class,
-		'FLOWPLAYER'       => \TYPO3\CMS\Frontend\ContentObject\FlowPlayerContentObject::class,
-		'QTOBJECT'         => \TYPO3\CMS\Frontend\ContentObject\QuicktimeObjectContentObject::class,
 		'SVG'              => \TYPO3\CMS\Frontend\ContentObject\ScalableVectorGraphicsContentObject::class,
 		'EDITPANEL'        => \TYPO3\CMS\Frontend\ContentObject\EditPanelContentObject::class
 	);
@@ -1513,6 +1508,82 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
+	 * Data provider for the stdWrap_strtotime test
+	 *
+	 * @return array
+	 * @see stdWrap_strtotime
+	 */
+	public function stdWrap_strtotimeReturnsTimestampDataProvider() {
+		return array(
+			'date from content' => array(
+				'2014-12-04',
+				array(
+					'strtotime' => '1',
+				),
+				1417651200,
+			),
+			'manipulation of date from content' => array(
+				'2014-12-04',
+				array(
+					'strtotime' => '+ 2 weekdays',
+				),
+				1417996800,
+			),
+			'date from configuration' => array(
+				'',
+				array(
+					'strtotime' => '2014-12-04',
+				),
+				1417651200,
+			),
+			'manipulation of date from configuration' => array(
+				'',
+				array(
+					'strtotime' => '2014-12-04 + 2 weekdays',
+				),
+				1417996800,
+			),
+			'empty input' => array(
+				'',
+				array(
+					'strtotime' => '1',
+				),
+				FALSE,
+			),
+			'date from content and configuration' => array(
+				'2014-12-04',
+				array(
+					'strtotime' => '2014-12-05',
+				),
+				FALSE,
+			),
+		);
+	}
+
+	/**
+	 * @param string|NULL $content
+	 * @param array $configuration
+	 * @param integer $expected
+	 * @dataProvider stdWrap_strtotimeReturnsTimestampDataProvider
+	 * @test
+	 */
+	public function stdWrap_strtotimeReturnsTimestamp($content, $configuration, $expected) {
+		// Set exec_time to a hard timestamp
+		$GLOBALS['EXEC_TIME'] = 1417392000;
+		// Save current timezone and set to UTC to make the system under test behave
+		// the same in all server timezone settings
+		$timezoneBackup = date_default_timezone_get();
+		date_default_timezone_set('UTC');
+
+		$result = $this->subject->stdWrap_strtotime($content, $configuration);
+
+		// Reset timezone
+		date_default_timezone_set($timezoneBackup);
+
+		$this->assertEquals($expected, $result);
+	}
+
+	/**
 	 * @param string|NULL $content
 	 * @param array $configuration
 	 * @param string $expected
@@ -2058,7 +2129,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			1 => array('uid' => 2, 'title' => 'title2'),
 			2 => array('uid' => 3, 'title' => ''),
 		);
-		$expectedResult = '0uid1titletitle11uid2titletitle22uid3title';
+		$expectedResult = 'array(3items)0=>array(2items)uid=>1(integer)title=>"title1"(6chars)1=>array(2items)uid=>2(integer)title=>"title2"(6chars)2=>array(2items)uid=>3(integer)title=>""(0chars)';
 		$GLOBALS['TSFE']->tmpl->rootLine = $rootline;
 
 		$result = $this->subject->getData('debug:rootLine');
@@ -2082,7 +2153,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			1 => array('uid' => 2, 'title' => 'title2'),
 			2 => array('uid' => 3, 'title' => ''),
 		);
-		$expectedResult = '0uid1titletitle11uid2titletitle22uid3title';
+		$expectedResult = 'array(3items)0=>array(2items)uid=>1(integer)title=>"title1"(6chars)1=>array(2items)uid=>2(integer)title=>"title2"(6chars)2=>array(2items)uid=>3(integer)title=>""(0chars)';
 		$GLOBALS['TSFE']->rootLine = $rootline;
 
 		$result = $this->subject->getData('debug:fullRootLine');
@@ -2105,7 +2176,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$value = $this->getUniqueId('someValue');
 		$this->subject->data = array($key => $value);
 
-		$expectedResult = $key . $value;
+		$expectedResult = 'array(1item)' . $key . '=>"' . $value . '"(' . strlen($value) . 'chars)';
 
 		$result = $this->subject->getData('debug:data');
 		$cleanedResult = strip_tags($result);
@@ -2127,7 +2198,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$value = $this->getUniqueId('someValue');
 		$GLOBALS['TSFE']->register = array($key => $value);
 
-		$expectedResult = $key . $value;
+		$expectedResult = 'array(1item)' . $key . '=>"' . $value . '"(' . strlen($value) . 'chars)';
 
 		$result = $this->subject->getData('debug:register');
 		$cleanedResult = strip_tags($result);
@@ -2148,7 +2219,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$uid = rand();
 		$GLOBALS['TSFE']->page = array('uid' => $uid);
 
-		$expectedResult = 'uid' . $uid;
+		$expectedResult = 'array(1item)uid=>' . $uid . '(integer)';
 
 		$result = $this->subject->getData('debug:page');
 		$cleanedResult = strip_tags($result);
@@ -2927,6 +2998,217 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 
 		$this->assertEquals($expected, $this->subject->_call('forceAbsoluteUrl', $url, $configuration));
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getLibParseFunc_RTE() {
+		return array(
+			'parseFunc' => '',
+			'parseFunc.' => array(
+				'allowTags' => 'a, abbr, acronym, address, article, aside, b, bdo, big, blockquote, br, caption, center, cite, code, col, colgroup, dd, del, dfn, dl, div, dt, em, font, footer, header, h1, h2, h3, h4, h5, h6, hr, i, img, ins, kbd, label, li, link, meta, nav, ol, p, pre, q, samp, sdfield, section, small, span, strike, strong, style, sub, sup, table, thead, tbody, tfoot, td, th, tr, title, tt, u, ul, var',
+				'constants' => '1',
+				'denyTags' => '*',
+				'externalBlocks' => 'article, aside, blockquote, div, dd, dl, footer, header, nav, ol, section, table, ul',
+				'externalBlocks.' => array(
+					'article.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'aside.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'blockquote.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'dd.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'div.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'dl.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'footer.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'header.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'nav.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'ol.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'section.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+					'table.' => array(
+						'HTMLtableCells' => '1',
+						'HTMLtableCells.' => array(
+							'addChr10BetweenParagraphs' => '1',
+							'default.' => array(
+								'stdWrap.' => array(
+									'parseFunc' => '=< lib.parseFunc_RTE',
+									'parseFunc.' => array(
+										'nonTypoTagStdWrap.' => array(
+											'encapsLines.' => array(
+												'nonWrappedTag' => '',
+											),
+										),
+									),
+								),
+							),
+						),
+						'stdWrap.' => array(
+							'HTMLparser' => '1',
+							'HTMLparser.' => array(
+								'keepNonMatchedTags' => '1',
+								'tags.' => array(
+									'table.' => array(
+										'fixAttrib.' => array(
+											'class.' => array(
+												'always' => '1',
+												'default' => 'contenttable',
+												'list' => 'contenttable',
+											),
+										),
+									),
+								),
+							),
+						),
+						'stripNL' => '1',
+					),
+					'ul.' => array(
+						'callRecursive' => '1',
+						'stripNL' => '1',
+					),
+				),
+				'makelinks' => '1',
+				'makelinks.' => array(
+					'http.' => array(
+						'extTarget.' =>  array(
+							'override' => '_blank',
+							'override.' => array(
+								'if.' => array(
+									'isTrue.' => array(
+										'data' => 'TSFE:dtdAllowsFrames',
+									),
+								),
+							),
+						),
+						'keep' => 'path',
+					),
+				),
+				'nonTypoTagStdWrap.' => array(
+					'encapsLines.' => array(
+						'addAttributes.' => array(
+							'P.' => array(
+								'class' => 'bodytext',
+								'class.' => array(
+									'setOnly' => 'blank',
+								),
+							),
+						),
+						'encapsTagList' => 'p,pre,h1,h2,h3,h4,h5,h6,hr,dt,li',
+						'innerStdWrap_all.' => array(
+							'ifBlank' => '&nbsp;',
+						),
+						'nonWrappedTag' => 'P',
+						'remapTag.' => array(
+							'DIV' => 'P',
+						),
+					),
+					'HTMLparser' => '1',
+					'HTMLparser.' => array(
+						'htmlSpecialChars' => '2',
+						'keepNonMatchedTags' => '1',
+					),
+				),
+				'sword' => '<span class="csc-sword">|</span>',
+				'tags.' => array(
+					'link' => 'TEXT',
+					'link.' => array(
+						'current' => '1',
+						'parseFunc.' => array(
+							'constants' => '1',
+						),
+						'typolink.' => array(
+							'extTarget.' =>  array(
+								'override' => '',
+								'override.' => array(
+									'if.' => array(
+										'isTrue.' => array(
+											'data' => 'TSFE:dtdAllowsFrames',
+										),
+									),
+								),
+							),
+							'parameter.' => array(
+								'data' => 'parameters : allParams',
+							),
+							'target.' =>  array(
+								'override' => '',
+								'override.' => array(
+									'if.' => array(
+										'isTrue.' => array(
+											'data' => 'TSFE:dtdAllowsFrames',
+										),
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function _parseFuncReturnsCorrectHtmlDataProvider() {
+		return array(
+			'Text without tag is wrapped with <p> tag' => array(
+				'Text without tag',
+				$this->getLibParseFunc_RTE(),
+				'<p class="bodytext">Text without tag</p>',
+			),
+			'Text wrapped with <p> tag remains the same' => array(
+				'<p class="myclass">Text with &lt;p&gt; tag</p>',
+				$this->getLibParseFunc_RTE(),
+				'<p class="myclass">Text with &lt;p&gt; tag</p>',
+			),
+			'Text with absolute external link' => array(
+				'Text with <link http://example.com/foo/>external link</link>',
+				$this->getLibParseFunc_RTE(),
+				'<p class="bodytext">Text with <a href="http://example.com/foo/">external link</a></p>',
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @dataProvider _parseFuncReturnsCorrectHtmlDataProvider
+	 * @param string $value
+	 * @param array $configuration
+	 * @param string $expectedResult
+	 */
+	public function stdWrap_parseFuncReturnsParsedHtml($value, $configuration, $expectedResult) {
+		$this->assertEquals($expectedResult, $this->subject->stdWrap_parseFunc($value, $configuration));
 	}
 
 }

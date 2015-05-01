@@ -41,7 +41,6 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$favouriteIcon = 'http://google.com/favicon.ico';
 		$subject->setFavIcon($favouriteIcon);
 		$expectedFavouriteIconPartOne = '<link rel="shortcut icon" href="' . $favouriteIcon . '" />';
-		$expectedFavouriteIconPartTwo = '<link rel="icon" href="' . $favouriteIcon . '" />';
 
 		$baseUrl = 'http://google.com/';
 		$subject->setBaseUrl($baseUrl);
@@ -79,14 +78,14 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$subject->addCssInlineBlock('general2', 'body {margin:20px;}');
 		$subject->addCssInlineBlock('general3', 'h1 {margin:20px;}', NULL, TRUE);
 
-		$expectedLoadPrototypeRegExp = '#<script src="contrib/prototype/prototype\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedLoadPrototypeRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/prototype\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$subject->loadPrototype();
 
 		$subject->loadScriptaculous('slider,controls');
-		$expectedScriptaculousMain = '<script src="contrib/scriptaculous/scriptaculous.js" type="text/javascript"></script>';
-		$expectedScriptaculousEffects = '<script src="contrib/scriptaculous/effects.js" type="text/javascript"></script>';
-		$expectedScriptaculousControls = '<script src="contrib/scriptaculous/controls.js" type="text/javascript"></script>';
-		$expectedScriptaculousSlider  = '<script src="contrib/scriptaculous/slider.js" type="text/javascript"></script>';
+		$expectedScriptaculousMain = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/scriptaculous.js" type="text/javascript"></script>';
+		$expectedScriptaculousEffects = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/effects.js" type="text/javascript"></script>';
+		$expectedScriptaculousControls = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/controls.js" type="text/javascript"></script>';
+		$expectedScriptaculousSlider  = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/slider.js" type="text/javascript"></script>';
 
 		$subject->loadJquery();
 		$expectedJqueryRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
@@ -104,7 +103,6 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertContains($expectedTitleString, $renderedString);
 		$this->assertContains($expectedCharsetString, $renderedString);
 		$this->assertContains($expectedFavouriteIconPartOne, $renderedString);
-		$this->assertContains($expectedFavouriteIconPartTwo, $renderedString);
 		$this->assertContains($expectedBaseUrlString, $renderedString);
 		$this->assertContains($expectedMetaTagString, $renderedString);
 		$this->assertContains($expectedInlineCommentString, $renderedString);

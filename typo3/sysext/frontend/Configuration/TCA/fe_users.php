@@ -48,6 +48,7 @@ return array(
 				'type' => 'select',
 				'foreign_table' => 'fe_groups',
 				'foreign_table_where' => 'ORDER BY fe_groups.title',
+				'enableMultiSelectFilterTextfield' => TRUE,
 				'size' => '6',
 				'minitems' => '1',
 				'maxitems' => '50'
@@ -231,7 +232,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0'
 			)
@@ -242,7 +242,6 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '13',
-				'max' => '20',
 				'eval' => 'datetime',
 				'default' => '0',
 				'range' => array(

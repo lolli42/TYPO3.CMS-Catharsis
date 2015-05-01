@@ -113,7 +113,7 @@ class ProcessedFile extends AbstractFile {
 	 */
 	public function __construct(File $originalFile, $taskType, array $processingConfiguration, array $databaseRow = NULL) {
 		$this->originalFile = $originalFile;
-		$this->storage = $originalFile->getStorage();
+		$this->storage = $originalFile->getStorage()->getProcessingFolder()->getStorage();
 		$this->taskType = $taskType;
 		$this->processingConfiguration = $processingConfiguration;
 		if (is_array($databaseRow)) {
@@ -177,8 +177,8 @@ class ProcessedFile extends AbstractFile {
 		if ($this->identifier === NULL) {
 			throw new \RuntimeException('Cannot update original file!', 1350582054);
 		}
-		// @todo this should be more generic (in fact it only works for local file paths)
-		$addedFile = $this->storage->updateProcessedFile($filePath, $this);
+		$processingFolder = $this->originalFile->getStorage()->getProcessingFolder();
+		$addedFile = $this->storage->updateProcessedFile($filePath, $this, $processingFolder);
 
 		// Update some related properties
 		$this->identifier = $addedFile->getIdentifier();
@@ -336,8 +336,10 @@ class ProcessedFile extends AbstractFile {
 			unset($properties['pid']);
 			unset($properties['identifier']);
 			unset($properties['name']);
-			unset($properties['width']);
-			unset($properties['height']);
+
+			// Use width + height set in processed file
+			$properties['width'] = $this->properties['width'];
+			$properties['height'] = $this->properties['height'];
 		} else {
 			$properties = $this->properties;
 			$properties['identifier'] = $this->getIdentifier();
@@ -362,7 +364,7 @@ class ProcessedFile extends AbstractFile {
 	 * @return bool
 	 */
 	protected function isUnchanged() {
-		return $this->identifier == NULL || $this->identifier === $this->originalFile->getIdentifier();
+		return !$this->properties['width'] && $this->usesOriginalFile();
 	}
 
 	/**
@@ -379,7 +381,7 @@ class ProcessedFile extends AbstractFile {
 	 * @return bool
 	 */
 	public function usesOriginalFile() {
-		return $this->isUnchanged();
+		return $this->identifier == NULL || $this->identifier === $this->originalFile->getIdentifier();
 	}
 
 	/**
@@ -401,7 +403,12 @@ class ProcessedFile extends AbstractFile {
 		if (!$force && $this->isUnchanged()) {
 			return FALSE;
 		}
-		return parent::delete();
+		// Only delete file when original isn't used
+		if (!$this->usesOriginalFile()) {
+			return parent::delete();
+		} else {
+			return TRUE;
+		}
 	}
 
 	/**
@@ -449,7 +456,7 @@ class ProcessedFile extends AbstractFile {
 		}
 
 		// hash does not match
-		if (array_key_exists('checksum', $this->properties) && $this->calculateChecksum() !== $this->properties['checksum'])  {
+		if (array_key_exists('checksum', $this->properties) && $this->calculateChecksum() !== $this->properties['checksum']) {
 			$fileMustBeRecreated = TRUE;
 		}
 

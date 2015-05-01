@@ -19,6 +19,7 @@ use TYPO3\CMS\Backend\Tree\View\PageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -512,32 +513,30 @@ class AbstractDatabaseRecordList extends AbstractRecordList {
 		// Table with the search box:
 		$content = '<div class="db_list-searchbox-form db_list-searchbox-toolbar" id="db_list-searchbox-toolbar" style="display: ' . ($this->searchString == '' ? 'none' : 'block') . ';">
 			' . $formElements[0] . '
-				<div id="typo3-dblist-search" class="container">
-					<div class="row">
-						<div class="col-xs-3 col-md-3 col-lg-3">
-							<div class="input-group">
-								<label class="pull-left" for="search_field">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.searchString', TRUE) . ': </label>
-								<input class="form-control" type="search" placeholder="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.enterSearchString', TRUE) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchString', TRUE) . '" name="search_field" id="search_field" value="' . htmlspecialchars($this->searchString) . '" />
-							</div>
-						</div>
-						<div class="col-xs-3 col-md-3 col-lg-3">
-							<div class="input-group">
-								<label class="pull-left" for="search_levels">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.search_levels', TRUE) . ': </label>
-								' . $lMenu . '
-							</div>
-						</div>
-						<div class="col-xs-3 col-md-3 col-lg-3">
-							<div class="input-group">
-								<label class="pull-left" for="showLimit">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.limit', TRUE) . ': </label>
-								<input class="form-control" type="number" min="0" max="10000" placeholder="10" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.limit', TRUE) . '" name="showLimit" id="showLimit" value="' . htmlspecialchars(($this->showLimit ? $this->showLimit : '')) . '" />
-							</div>
-						</div>
-						<div class="col-xs-3 col-md-3 col-lg-3">
-							<div class="input-group">
-								<input type="submit" class="btn btn-default btn-block" name="search" value="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search', TRUE) . '" />
+				<div id="typo3-dblist-search">
+					<div class="panel panel-default">
+						<div class="panel-body">
+							<div class="form-inline form-inline-spaced">
+								<div class="form-group">
+									<input class="form-control" type="search" placeholder="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.enterSearchString', TRUE) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchString', TRUE) . '" name="search_field" id="search_field" value="' . htmlspecialchars($this->searchString) . '" />
+								</div>
+								<div class="form-group">
+									<label for="search_levels">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.search_levels', TRUE) . ': </label>
+									' . $lMenu . '
+								</div>
+								<div class="form-group">
+									<label for="showLimit">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.label.limit', TRUE) . ': </label>
+									<input class="form-control" type="number" min="0" max="10000" placeholder="10" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.limit', TRUE) . '" name="showLimit" id="showLimit" value="' . htmlspecialchars(($this->showLimit ? $this->showLimit : '')) . '" />
+								</div>
+								<div class="form-group">
+									<button type="submit" class="btn btn-default" name="search" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.search', TRUE) . '">
+										<i class="fa fa-search"></i> ' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.search', TRUE) . '
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
+				</div>
 			' . $formElements[1] . '</div></div>';
 		return $content;
 	}
@@ -698,7 +697,7 @@ class AbstractDatabaseRecordList extends AbstractRecordList {
 					foreach ($searchableFields as $fieldName) {
 						if (isset($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
 							$fieldConfig = &$GLOBALS['TCA'][$table]['columns'][$fieldName]['config'];
-							$format = 'LCASE(%s) LIKE LCASE(%s)';
+							$format = 'LOWER(%s) LIKE LOWER(%s)';
 							if (is_array($fieldConfig['search'])) {
 								if (in_array('case', $fieldConfig['search'])) {
 									$format = '%s LIKE %s';
@@ -796,15 +795,14 @@ class AbstractDatabaseRecordList extends AbstractRecordList {
 				// If the listed table is 'pages' we have to request the permission settings for each page:
 				if ($table == 'pages') {
 					$localCalcPerms = $this->getBackendUserAuthentication()->calcPerms(BackendUtility::getRecord('pages', $row['uid']));
-					$permsEdit = $localCalcPerms & 2;
+					$permsEdit = $localCalcPerms & Permission::PAGE_EDIT;
 				} else {
-					$permsEdit = $this->calcPerms & 16;
+					$permsEdit = $this->calcPerms & Permission::CONTENT_EDIT;
 				}
 				// "Edit" link: ( Only if permissions to edit the page-record of the content of the parent page ($this->id)
 				if ($permsEdit) {
 					$params = '&edit[' . $table . '][' . $row['uid'] . ']=edit';
-					$code = '<a href="#" onclick="' . htmlspecialchars(
-							BackendUtility::editOnClick($params, $this->backPath, -1)) . '" title="' . $lang->getLL('edit', TRUE) . '">' . $code . '</a>';
+					$code = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1)) . '" title="' . $lang->getLL('edit', TRUE) . '">' . $code . '</a>';
 				}
 				break;
 			case 'show':
@@ -999,7 +997,7 @@ class AbstractDatabaseRecordList extends AbstractRecordList {
 	}
 
 	/**
-	 * Redirects to TCEforms (alt_doc) if a record is just localized.
+	 * Redirects to FormEngine if a record is just localized.
 	 *
 	 * @param string $justLocalized String with table, orig uid and language separated by ":
 	 * @return void
@@ -1011,10 +1009,14 @@ class AbstractDatabaseRecordList extends AbstractRecordList {
 			if (is_array($localizedRecord)) {
 				// Create parameters and finally run the classic page module for creating a new page translation
 				$url = substr($this->listURL(), strlen($this->backPath));
-				$params = '&edit[' . $table . '][' . $localizedRecord['uid'] . ']=edit';
-				$returnUrl = '&returnUrl=' . rawurlencode($url);
-				$location = $GLOBALS['BACK_PATH'] . 'alt_doc.php?' . $params . $returnUrl;
-				HttpUtility::redirect($location);
+				$editUserAccountUrl = BackendUtility::getModuleUrl(
+					'record_edit',
+					array(
+						'edit[' . $table . '][' . $localizedRecord['uid'] . ']' => 'edit',
+						'returnUrl' => $url
+					)
+				);
+				HttpUtility::redirect($editUserAccountUrl);
 			}
 		}
 	}

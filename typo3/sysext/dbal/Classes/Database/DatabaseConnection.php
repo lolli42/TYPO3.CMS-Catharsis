@@ -495,7 +495,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$new_id = $this->sql_insert_id();
 					$where = $this->cache_autoIncFields[$table] . '=' . $new_id;
 					foreach ($this->lastQuery[1] as $field => $content) {
-						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table) . ' WHERE ' . $this->quoteWhereClause($where);
+						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table, TRUE) . ' WHERE ' . $this->quoteWhereClause($where);
 						$this->query($stmt);
 					}
 				}
@@ -509,7 +509,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						if ($table != 'tx_dbal_debuglog') {
 							$this->handlerInstance[$this->lastHandlerKey]->last_insert_id = $new_id;
 						}
-					} else {
+					} elseif (!$this->handlerInstance[$this->lastHandlerKey]->hasInsertID) {
+						// The table does not support auto-incremented fields, fall back to
+						// using a sequence table to simulate the auto-increment
 						$new_id = $this->handlerInstance[$this->lastHandlerKey]->GenID($table . '_' . $this->cache_autoIncFields[$table], $this->handlerInstance[$this->lastHandlerKey]->sequenceStart);
 						$fields_values[$this->cache_autoIncFields[$table]] = $new_id;
 						if ($table != 'tx_dbal_debuglog') {
@@ -524,6 +526,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$this->handlerInstance[$this->lastHandlerKey]->StartTrans();
 					if ($this->lastQuery[0] !== '') {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery[0], FALSE);
+						if ($this->handlerInstance[$this->lastHandlerKey]->hasInsertID) {
+							// The table is able to retrieve the ID of the last insert, use it to update the blob below
+							$new_id = $this->handlerInstance[$this->lastHandlerKey]->Insert_ID($table, $this->cache_autoIncFields[$table]);
+						}
 					}
 					if (is_array($this->lastQuery[1])) {
 						foreach ($this->lastQuery[1] as $field => $content) {
@@ -664,7 +670,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				} else {
 					$sqlResult = $this->query($this->lastQuery[0]);
 					foreach ($this->lastQuery[1] as $field => $content) {
-						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table) . ' WHERE ' . $this->quoteWhereClause($where);
+						$stmt = 'UPDATE ' . $this->quoteFromTables($table) . ' SET ' . $this->quoteFromTables($field) . '=' . $this->fullQuoteStr($content, $table, TRUE) . ' WHERE ' . $this->quoteWhereClause($where);
 						$this->query($stmt);
 					}
 				}
@@ -1036,7 +1042,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				} elseif ($mt[0] == 'F') {
 					$v = (double) $v;
 				}
-				$nArr[$this->quoteFieldNames($k)] = !in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table) : $v;
+				$nArr[$this->quoteFieldNames($k)] = !in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table, TRUE) : $v;
 			}
 		}
 		if (count($blobFields) || count($clobFields)) {
@@ -1148,7 +1154,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						} elseif ($mt[0] == 'F') {
 							$v = (double) $v;
 						}
-						$nArr[] = $this->quoteFieldNames($k) . '=' . (!in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table) : $v);
+						$nArr[] = $this->quoteFieldNames($k) . '=' . (!in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table, TRUE) : $v);
 					}
 				}
 			}
@@ -3163,6 +3169,28 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function runningADOdbDriver($driver) {
 		return strpos($this->handlerCfg[$this->lastHandlerKey]['config']['driver'], $driver) !== FALSE;
+	}
+
+	/**
+	 * Get the SQL server version
+	 *
+	 * @return string
+	 */
+	public function getServerVersion() {
+		$result = '';
+		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
+			case 'native':
+				$result = $this->handlerInstance[$this->lastHandlerKey]['link']->server_info;
+				break;
+			case 'adodb':
+			case 'userdefined':
+				if (is_object($this->handlerInstance[$this->lastHandlerKey])) {
+					$serverInfo = $this->handlerInstance[$this->lastHandlerKey]->ServerInfo();
+					$result = $serverInfo['version'];
+				}
+				break;
+		}
+		return $result;
 	}
 
 	/************************************

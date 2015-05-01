@@ -14,36 +14,28 @@ namespace TYPO3\CMS\Backend\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
-use TYPO3\CMS\Backend\Form\Element\InlineElement;
+use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Html\HtmlParser;
-use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Http\AjaxRequestHandler;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Form\Container\FullRecordContainer;
+use TYPO3\CMS\Backend\Form\Container\SoloFieldContainer;
+use TYPO3\CMS\Backend\Form\Container\InlineRecordContainer;
+use TYPO3\CMS\Backend\Form\Container\ListOfFieldsContainer;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 
 /**
- * 'TCEforms' - Class for creating the backend editing forms.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @coauthor René Fritz <r.fritz@colorcube.de>
+ * This is form engine - Class for creating the backend editing forms.
  */
 class FormEngine {
-
-	/**
-	 * @var array
-	 */
-	public $palFieldArr = array();
 
 	/**
 	 * @var bool
@@ -51,60 +43,28 @@ class FormEngine {
 	public $disableWizards = FALSE;
 
 	/**
-	 * @var bool
-	 */
-	public $isPalettedoc = FALSE;
-
-	/**
-	 * @var int
-	 */
-	public $paletteMargin = 1;
-
-	/**
-	 * @var string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defStyle = '';
-
-	/**
+	 * List of additional preview languages that should be shown to the user. Initialized early.
+	 *
+	 * array(
+	 *   $languageUid => array(
+	 *     'uid' => $languageUid,
+	 *     'ISOcode' => $isoCodeOfLanguage
+	 *   )
+	 * )
+	 *
 	 * @var array
 	 */
-	public $cachedTSconfig = array();
-
-	/**
-	 * @var array
-	 */
-	public $cachedTSconfig_fieldLevel = array();
-
-	/**
-	 * @var array
-	 */
-	public $cachedLanguageFlag = array();
-
-	/**
-	 * @var array|NULL
-	 */
-	public $cachedAdditionalPreviewLanguages = NULL;
-
-	/**
-	 * @var array
-	 */
-	public $transformedRow = array();
+	protected $additionalPreviewLanguages = array();
 
 	/**
 	 * @var string
 	 */
-	public $extJSCODE = '';
+	protected $extJSCODE = '';
 
 	/**
-	 * @var array
+	 * @var array HTML of additional hidden fields rendered by sub containers
 	 */
-	public $printNeededJS = array();
-
-	/**
-	 * @var array
-	 */
-	public $hiddenFieldAccum = array();
+	protected $hiddenFieldAccum = array();
 
 	/**
 	 * @var string
@@ -115,33 +75,6 @@ class FormEngine {
 	 * @var bool
 	 */
 	public $loadMD5_JS = TRUE;
-
-	/**
-	 * Array where records in the default language is stored. (processed by transferdata)
-	 *
-	 * @var array
-	 */
-	public $defaultLanguageData = array();
-
-	/**
-	 * Array where records in the default language is stored (raw without any processing. used for making diff)
-	 *
-	 * @var array
-	 */
-	public $defaultLanguageData_diff = array();
-
-	/**
-	 * @var array
-	 */
-	public $additionalPreviewLanguageData = array();
-
-	/**
-	 * Set this to the 'backPath' pointing back to the typo3 admin directory
-	 * from the script where this form is displayed.
-	 *
-	 * @var string
-	 */
-	public $backPath = '';
 
 	/**
 	 * Alternative return URL path (default is \TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript())
@@ -168,20 +101,6 @@ class FormEngine {
 	public $palettesCollapsed = FALSE;
 
 	/**
-	 * If set, the RTE is disabled (from form display, eg. by checkbox in the bottom of the page!)
-	 *
-	 * @var bool
-	 */
-	public $disableRTE = FALSE;
-
-	/**
-	 * If FALSE, then all CSH will be disabled, regardless of settings in $this->edit_showFieldHelp
-	 *
-	 * @var bool
-	 */
-	public $globalShowHelp = TRUE;
-
-	/**
 	 * If this evaluates to TRUE, the forms are rendering only localization relevant fields of the records.
 	 *
 	 * @var string
@@ -189,116 +108,11 @@ class FormEngine {
 	public $localizationMode = '';
 
 	/**
-	 * Overrule the field order set in TCA[types][showitem], eg for tt_content this value,
-	 * 'bodytext,image', would make first the 'bodytext' field, then the 'image' field (if set for display)...
-	 * and then the rest in the old order.
-	 *
-	 * @var string
-	 */
-	public $fieldOrder = '';
-
-	/**
-	 * If set to FALSE, palettes will NEVER be rendered.
-	 *
-	 * @var bool
-	 */
-	public $doPrintPalette = TRUE;
-
-	/**
-	 * Set to initialized clipboard object;
-	 * Then the element browser will offer a link to paste in records from clipboard.
-	 *
-	 * @var \TYPO3\CMS\Backend\Clipboard\Clipboard|NULL
-	 */
-	public $clipObj = NULL;
-
-	/**
-	 * Enable click menu on reference icons.
-	 *
-	 * @var bool
-	 */
-	public $enableClickMenu = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	public $enableTabMenu = FALSE;
-
-	/**
-	 * When enabled all fields are rendered non-editable
+	 * When enabled all elements are rendered non-editable
 	 *
 	 * @var bool
 	 */
 	protected $renderReadonly = FALSE;
-
-	/**
-	 * Form field width compensation: Factor of "size=12" to "style="width: 12*12px"
-	 * for form field widths of style-aware browsers
-	 *
-	 * @var float
-	 */
-	public $form_rowsToStylewidth = 12;
-
-	/**
-	 * Value that gets added for style="width: ...px" for textareas compared to input fields.
-	 *
-	 * @var int
-	 */
-	protected $form_additionalTextareaStyleWidth = 23;
-
-	/**
-	 * Form field width compensation: Compensation for large documents, doc-tab (editing)
-	 *
-	 * @var float
-	 */
-	public $form_largeComp = 1.33;
-
-	/**
-	 * The number of chars expected per row when the height of a text area field is
-	 * automatically calculated based on the number of characters found in the field content.
-	 *
-	 * @var int
-	 */
-	public $charsPerRow = 40;
-
-	/**
-	 * The maximum abstract value for textareas
-	 *
-	 * @var int
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $maxTextareaWidth = 48;
-
-	/**
-	 * The default abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @internal
-	 */
-	public $defaultInputWidth = 30;
-
-	/**
-	 * The minimum abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @internal
-	 */
-	public $minimumInputWidth = 10;
-
-	/**
-	 * The maximum abstract value for input and textarea elements
-	 *
-	 * @var int
-	 * @internal
-	 */
-	public $maxInputWidth = 50;
-
-	/**
-	 * Default style for the selector boxes used for multiple items in "select" and "group" types.
-	 *
-	 * @var string
-	 */
-	public $defaultMultipleSelectorStyle = '';
 
 	// INTERNAL, static
 	/**
@@ -330,19 +144,14 @@ class FormEngine {
 	protected $prependFormFieldNamesActive = 'control[active]';
 
 	/**
-	 * The name attribute of the form
-	 *
-	 * @var string
+	 * @var InlineStackProcessor
 	 */
-	public $formName = 'editform';
+	protected $inlineStackProcessor;
 
 	/**
-	 * Whitelist that allows TCA field configuration to be overridden by TSconfig
-	 *
-	 * @see overrideFieldConf()
-	 * @var array
+	 * @var array Data array from IRRE pushed to frontend as json array
 	 */
-	public $allowOverrideMatrix = array();
+	protected $inlineData = array();
 
 	/**
 	 * Set by readPerms()  (caching)
@@ -359,165 +168,24 @@ class FormEngine {
 	public $perms_clause_set = FALSE;
 
 	/**
-	 * Used to indicate the mode of CSH (Context Sensitive Help),
-	 * whether it should be icons-only ('icon') or not at all (blank).
-	 *
-	 * @var bool
-	 */
-	public $edit_showFieldHelp = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	public $edit_docModuleUpload = FALSE;
-
-	/**
-	 * Loaded with info about the browser when class is instantiated
-	 *
-	 * @var array
-	 */
-	public $clientInfo = array();
-
-	/**
-	 * TRUE, if RTE is possible for the current user (based on result from BE_USER->isRTE())
-	 *
-	 * @var bool
-	 */
-	public $RTEenabled = FALSE;
-
-	/**
-	 * If $this->RTEenabled was FALSE, you can find the reasons listed in this array
-	 * which is filled with reasons why the RTE could not be loaded)
-	 *
-	 * @var string
-	 */
-	public $RTEenabled_notReasons = '';
-
-	/**
 	 * Counter that is incremented before an RTE is created. Can be used for unique ids etc.
+	 * @todo: Free the code from using this global state keeping counter.
 	 *
 	 * @var int
 	 */
-	public $RTEcounter = 0;
-
-	/**
-	 * Contains current color scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $colorScheme = array();
-
-	/**
-	 * Contains current class scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $classScheme = array();
-
-	/**
-	 * Contains the default color scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defColorScheme = array();
-
-	/**
-	 * Contains the default class scheme
-	 *
-	 * @var array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $defClassScheme = array();
-
-	/**
-	 * Contains field style values
-	 *
-	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $fieldStyle = NULL;
-
-	/**
-	 * Contains border style values
-	 *
-	 * @var array|NULL
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public $borderStyle = NULL;
-
-	/**
-	 * An accumulation of messages from the class
-	 *
-	 * @var array
-	 */
-	public $commentMessages = array();
+	static public $RTEcounter = 0;
 
 	/**
 	 * Total wrapping for the table rows
 	 *
 	 * @var string
+	 * @todo: This is overwritten in __construct
 	 */
 	public $totalWrap = '<hr />|<hr />';
 
 	/**
-	 * Field template
-	 *
-	 * @var string
-	 */
-	public $fieldTemplate = '<strong>###FIELD_NAME###</strong><br />###FIELD_ITEM###<hr />';
-
-	/**
-	 * Template subpart for palette fields
-	 *
-	 * @var string
-	 */
-	protected $paletteFieldTemplate = '';
-
-	/**
-	 * Wrapping template code for a section
-	 *
-	 * @var string
-	 * @deprecatd since TYPO3 CMS 7, will be removed in CMS 8
-	 */
-	public $sectionWrap = '';
-
-	/**
-	 * Template for palette headers
-	 *
-	 * @var string
-	 */
-	public $palFieldTemplateHeader = '';
-
-	/**
-	 * Template for palettes
-	 *
-	 * @var string
-	 */
-	public $palFieldTemplate = '';
-
-	/**
-	 * Set to the fields NOT to display, if any
-	 *
-	 * @var array|NULL
-	 */
-	public $excludeElements = NULL;
-
-	/**
-	 * During rendering of forms this will keep track of which palettes
-	 * has already been rendered (so they are not rendered twice by mistake)
-	 *
-	 * @var array
-	 */
-	public $palettesRendered = array();
-
-	/**
 	 * This array of fields will be set as hidden-fields instead of rendered normally!
-	 * For instance palette fields edited in the top frame are set as hidden fields
-	 * since the main form has to submit the values.
-	 * The top frame actually just sets the value in the main form!
+	 * This is used by EditDocumentController to force some field values if set as "overrideVals" in _GP
 	 *
 	 * @var array
 	 */
@@ -529,7 +197,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredFields = array();
+	protected $requiredFields = array();
 
 	/**
 	 * Used to register input-field names, which are required an have additional requirements.
@@ -538,7 +206,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredAdditional = array();
+	protected $requiredAdditional = array();
 
 	/**
 	 * Used to register the min and max number of elements
@@ -546,7 +214,7 @@ class FormEngine {
 	 *
 	 * @var array
 	 */
-	public $requiredElements = array();
+	protected $requiredElements = array();
 
 	/**
 	 * Used to determine where $requiredFields or $requiredElements are nested (in Tabs or IRRE)
@@ -554,27 +222,6 @@ class FormEngine {
 	 * @var array
 	 */
 	public $requiredNested = array();
-
-	/**
-	 * Keeps track of the rendering depth of nested records
-	 *
-	 * @var int
-	 */
-	public $renderDepth = 0;
-
-	/**
-	 * Color scheme buffer
-	 *
-	 * @var array
-	 */
-	public $savedSchemes = array();
-
-	/**
-	 * holds the path an element is nested in (e.g. required for RTEhtmlarea)
-	 *
-	 * @var array
-	 */
-	public $dynNestedStack = array();
 
 	// Internal, registers for user defined functions etc.
 	/**
@@ -585,18 +232,11 @@ class FormEngine {
 	public $additionalCode_pre = array();
 
 	/**
-	 * Additional JavaScript, printed before the form
-	 *
-	 * @var array
-	 */
-	public $additionalJS_pre = array();
-
-	/**
 	 * Additional JavaScript printed after the form
 	 *
 	 * @var array
 	 */
-	public $additionalJS_post = array();
+	protected $additionalJS_post = array();
 
 	/**
 	 * Additional JavaScript executed on submit; If you set "OK" variable it will raise an error
@@ -607,19 +247,6 @@ class FormEngine {
 	public $additionalJS_submit = array();
 
 	/**
-	 * Additional JavaScript executed when section element is deleted.
-	 * This is necessary, for example, to correctly clean up HTMLArea RTE (bug #8232)
-	 *
-	 * @var array
-	 */
-	public $additionalJS_delete = array();
-
-	/**
-	 * @var \TYPO3\CMS\Backend\Form\Element\InlineElement
-	 */
-	public $inline;
-
-	/**
 	 * Array containing hook class instances called once for a form
 	 *
 	 * @var array
@@ -627,14 +254,7 @@ class FormEngine {
 	public $hookObjectsMainFields = array();
 
 	/**
-	 * Array containing hook class instances called for each field
-	 *
-	 * @var array
-	 */
-	public $hookObjectsSingleField = array();
-
-	/**
-	 * Rows getting inserted into the alt_doc headers (when called from alt_doc.php)
+	 * Rows getting inserted into the headers (when called from the EditDocumentController)
 	 *
 	 * @var array
 	 */
@@ -648,51 +268,22 @@ class FormEngine {
 	public $templateFile = '';
 
 	/**
-	 * @var \TYPO3\CMS\Backend\Form\Element\SuggestElement
+	 * @var string The table that is handled
 	 */
-	protected $suggest;
+	protected $table = '';
 
 	/**
-	 * protected properties which were public
-	 * use old property name as key and new property name as value
-	 * e.g. 'foo_BarName' => 'fooBarName'
-	 *
-	 * For each property a getter and setter method must be implemented!
-	 * @see __set() and __get()
-	 * @var array
+	 * @var array Database row data
 	 */
-	protected $protectedProperties = array(
-		'renderReadonly' => 'renderReadonly'
-	);
+	protected $databaseRow = array();
 
 	/**
 	 * Constructor function, setting internal variables, loading the styles used.
 	 *
 	 */
 	public function __construct() {
-		$this->clientInfo = GeneralUtility::clientInfo();
-		$this->RTEenabled = $this->getBackendUserAuthentication()->isRTE();
-		if (!$this->RTEenabled) {
-			$this->RTEenabled_notReasons = implode(LF, $this->getBackendUserAuthentication()->RTE_errors);
-			$this->commentMessages[] = 'RTE NOT ENABLED IN SYSTEM due to:' . LF . $this->RTEenabled_notReasons;
-		}
-		// Define whitelist that allows TCA field configuration to be overridden by TSconfig, @see overrideFieldConf():
-		$this->allowOverrideMatrix = array(
-			'input' => array('size', 'max', 'readOnly'),
-			'text' => array('cols', 'rows', 'wrap', 'readOnly'),
-			'check' => array('cols', 'showIfRTE', 'readOnly'),
-			'select' => array('size', 'autoSizeMax', 'maxitems', 'minitems', 'readOnly', 'treeConfig'),
-			'group' => array('size', 'autoSizeMax', 'max_size', 'show_thumbs', 'maxitems', 'minitems', 'disable_controls', 'readOnly'),
-			'inline' => array('appearance', 'behaviour', 'foreign_label', 'foreign_selector', 'foreign_unique', 'maxitems', 'minitems', 'size', 'autoSizeMax', 'symmetric_label', 'readOnly')
-		);
-		// Create instance of InlineElement only if this a non-IRRE-AJAX call:
-		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\InlineElement::class . '::') !== 0) {
-			$this->inline = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InlineElement::class);
-		}
-		// Create instance of \TYPO3\CMS\Backend\Form\Element\SuggestElement only if this a non-Suggest-AJAX call:
-		if (!isset($GLOBALS['ajaxID']) || strpos($GLOBALS['ajaxID'], \TYPO3\CMS\Backend\Form\Element\SuggestElement::class . '::') !== 0) {
-			$this->suggest = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SuggestElement::class);
-		}
+		$this->inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
+		$this->initializeAdditionalPreviewLanguages();
 		// Prepare user defined objects (if any) for hooks which extend this function:
 		$this->hookObjectsMainFields = array();
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['getMainFieldsClass'])) {
@@ -700,48 +291,10 @@ class FormEngine {
 				$this->hookObjectsMainFields[] = GeneralUtility::getUserObj($classRef);
 			}
 		}
-		$this->hookObjectsSingleField = array();
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['getSingleFieldClass'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['getSingleFieldClass'] as $classRef) {
-				$this->hookObjectsSingleField[] = GeneralUtility::getUserObj($classRef);
-			}
-		}
 		$this->templateFile = 'sysext/backend/Resources/Private/Templates/FormEngine.html';
-	}
-
-	/**
-	 * Fallback method to protect public properties
-	 * This is only a temporary solution and will be removed in TYPO3 CMS 8
-	 *
-	 * @param string $name name of the property
-	 * @param mixed $value value of the property
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function __set($name, $value) {
-		if (array_key_exists($name, $this->protectedProperties)) {
-			$method = 'set' . ucfirst($this->protectedProperties[$name]);
-			if (is_callable(array($this, $method))) {
-				GeneralUtility::deprecationLog('direct access to "FormEngine::$' . $name . '" is deprecated, use "FormEngine::' . $method . '()" instead.');
-				call_user_func_array(array($this, $method), array($value));
-			}
-		}
-	}
-
-	/**
-	 * Fallback method to protect public properties
-	 * This is only a temporary solution and will be removed in TYPO3 CMS 8
-	 *
-	 * @param string $name name of the property
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function __get($name) {
-		if (array_key_exists($name, $this->protectedProperties)) {
-			$method = 'get' . ucfirst($this->protectedProperties[$name]);
-			if (is_callable(array($this, $method))) {
-				GeneralUtility::deprecationLog('direct access to "FormEngine::$' . $name . '" is deprecated, use "FormEngine::' . $method . '()" instead.');
-				call_user_func(array($this, $method));
-			}
-		}
+		$template = GeneralUtility::getUrl(PATH_typo3 . $this->templateFile);
+		// Wrapping all table rows for a particular record being edited:
+		$this->totalWrap = HtmlParser::getSubpart($template, '###TOTALWRAP###');
 	}
 
 	/**
@@ -753,70 +306,11 @@ class FormEngine {
 		$this->renderReadonly = (bool)$value;
 	}
 
-	/**
-	 * Get render readonly flag
-	 *
-	 * @return bool
-	 */
-	public function getRenderReadonly() {
-		return $this->renderReadonly;
-	}
-
-	/**
-	 * Initialize various internal variables.
-	 *
-	 * @return void
-	 */
-	public function initDefaultBEmode() {
-		$this->prependFormFieldNames = 'data';
-		$this->formName = 'editform';
-		$this->setNewBEDesign();
-		$this->edit_showFieldHelp = (bool)$this->getBackendUserAuthentication()->uc['edit_showFieldHelp'];
-		$this->edit_docModuleUpload = (bool)$this->getBackendUserAuthentication()->uc['edit_docModuleUpload'];
-		$this->inline->init($this);
-		$this->suggest->init($this);
-	}
-
 	/*******************************************************
 	 *
 	 * Rendering the forms, fields etc
 	 *
 	 *******************************************************/
-	/**
-	 * Will return the TCEform element for just a single field from a record.
-	 * The field must be listed in the currently displayed fields (as found in [types][showitem]) for the record.
-	 * This also means that the $table/$row supplied must be complete so the list of fields to show can be found correctly
-	 *
-	 * @param string $table The table name
-	 * @param array $row The record from the table for which to render a field.
-	 * @param string $theFieldToReturn The field name to return the TCEform element for.
-	 * @return string HTML output
-	 * @see getMainFields()
-	 */
-	public function getSoloField($table, $row, $theFieldToReturn) {
-		if (!isset($GLOBALS['TCA'][$table])) {
-			return '';
-		}
-		$typeNum = $this->getRTypeNum($table, $row);
-		if (isset($GLOBALS['TCA'][$table]['types'][$typeNum])) {
-			$itemList = $GLOBALS['TCA'][$table]['types'][$typeNum]['showitem'];
-			if ($itemList) {
-				$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-				$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
-				foreach ($fields as $fieldInfo) {
-					$parts = explode(';', $fieldInfo);
-					$theField = trim($parts[0]);
-					if (!in_array($theField, $excludeElements) && (string)$theField === (string)$theFieldToReturn) {
-						if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
-							$sField = $this->getSingleField($table, $theField, $row, $parts[1], 1, $parts[3], $parts[2]);
-							return $sField['ITEM'];
-						}
-					}
-				}
-			}
-		}
-		return '';
-	}
 
 	/**
 	 * Based on the $table and $row of content, this displays the complete TCEform for the record.
@@ -825,2318 +319,836 @@ class FormEngine {
 	 * should be transformed through this class first.
 	 *
 	 * @param string $table The table name
-	 * @param array $row The record from the table for which to render a field.
-	 * @param int $depth Depth level
-	 * @param array $overruleTypesArray Overrule types array. Can be used to override the showitem etc. configuration for the TCA types of the table. Can contain all settings which are possible in the TCA 'types' section. See e.g. $TCA['tt_content']['types'].
+	 * @param array $databaseRow The record from the table for which to render a field.
 	 * @return string HTML output
-	 * @see getSoloField()
 	 */
-	public function getMainFields($table, array $row, $depth = 0, array $overruleTypesArray = array()) {
-		$languageService = $this->getLanguageService();
-		$this->renderDepth = $depth;
-		// Init vars:
-		$out_array = array(array());
-		$out_array_meta = array(
-			array(
-				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalTab'),
-			),
-		);
-		$out_pointer = 0;
-		$out_sheet = 0;
-		$this->palettesRendered = array();
-		$this->palettesRendered[$this->renderDepth][$table] = array();
-		// Hook: getMainFields_preProcess (requested by Thomas Hempel for use with the "dynaflex" extension)
+	public function getMainFields($table, array $databaseRow) {
+		$this->table = $table;
+		$this->databaseRow = $databaseRow;
+
+		// Hook: getMainFields_preProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
 			if (method_exists($hookObj, 'getMainFields_preProcess')) {
-				$hookObj->getMainFields_preProcess($table, $row, $this);
+				$hookObj->getMainFields_preProcess($table, $databaseRow, $this);
 			}
 		}
-		$tabIdentString = '';
-		$tabIdentStringMD5 = '';
-		if ($GLOBALS['TCA'][$table]) {
-			// Load the description content for the table.
-			if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
-				$languageService->loadSingleTableDescription($table);
-			}
-			// Get the current "type" value for the record.
-			$typeNum = $this->getRTypeNum($table, $row);
-			// Find the list of fields to display:
-			if ($GLOBALS['TCA'][$table]['types'][$typeNum]) {
-				$itemList = $GLOBALS['TCA'][$table]['types'][$typeNum]['showitem'];
-				if (is_array($overruleTypesArray) && isset($overruleTypesArray[$typeNum]['showitem'])) {
-					$itemList = $overruleTypesArray[$typeNum]['showitem'];
-				}
-				// If such a list existed...
-				if ($itemList) {
-					// Explode the field list and possibly rearrange the order of the fields, if configured for
-					$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-					if ($this->fieldOrder) {
-						$fields = $this->rearrange($fields);
-					}
-					// Get excluded fields, added fiels and put it together:
-					$excludeElements = ($this->excludeElements = $this->getExcludeElements($table, $row, $typeNum));
-					$fields = $this->mergeFieldsWithAddedFields($fields, $this->getFieldsToAdd($table, $row, $typeNum), $table);
-					// If TCEforms will render a tab menu in the next step, push the name to the tab stack:
-					if (strstr($itemList, '--div--') !== FALSE && $this->enableTabMenu) {
-						$tabIdentString = 'TCEforms:' . $table . ':' . $row['uid'];
-						$tabIdentStringMD5 = $this->getDocumentTemplate()->getDynTabMenuId($tabIdentString);
-						// Remember that were currently working on the general tab:
-						if (isset($fields[0]) && strpos($fields[0], '--div--') !== 0) {
-							$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-1');
-						}
-					}
-					// Traverse the fields to render:
-					$cc = 0;
-					foreach ($fields as $fieldInfo) {
-						// Exploding subparts of the field configuration:
-						// this is documented as this:
-						// fieldname;fieldlabel;paletteidorlinebreaktodisplay;extradata;colorscheme
-						// fieldname can also be "--div--" or "--palette--"
-						// the last option colorscheme was dropped with TYPO3 CMS 7
 
-						list($theField, $fieldLabel, $additionalPalette, $extraFieldProcessingData)  = explode(';', $fieldInfo);
+		/** @var FullRecordContainer $entryContainer */
+		$entryContainer = GeneralUtility::makeInstance(FullRecordContainer::class);
+		$entryContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
+		$resultArray = $entryContainer->render();
+		$content = $resultArray['html'];
+		$this->requiredElements = $resultArray['requiredElements'];
+		$this->requiredFields = $resultArray['requiredFields'];
+		$this->requiredAdditional = $resultArray['requiredAdditional'];
+		$this->requiredNested = $resultArray['requiredNested'];
+		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
+		$this->additionalJS_submit = $resultArray['additionalJavaScriptSubmit'];
+		$this->extJSCODE = $resultArray['extJSCODE'];
+		$this->inlineData = $resultArray['inlineData'];
+		$this->hiddenFieldAccum = $resultArray['additionalHiddenFields'];
+		$this->additionalCode_pre = $resultArray['additionalHeadTags'];
 
-						// Render the field:
-						if (!in_array($theField, $excludeElements)) {
-							if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
-								$sFieldPal = '';
-								if ($additionalPalette && !isset($this->palettesRendered[$this->renderDepth][$table][$additionalPalette])) {
-									$sFieldPal = $this->getPaletteFields($table, $row, $additionalPalette);
-									$this->palettesRendered[$this->renderDepth][$table][$additionalPalette] = 1;
-								}
-								$sField = $this->getSingleField($table, $theField, $row, $fieldLabel, 0, $extraFieldProcessingData, $additionalPalette);
-								if ($sField) {
-									$sField .= $sFieldPal;
-								}
-								$out_array[$out_sheet][$out_pointer] .= $sField;
-							} elseif ($theField == '--div--') {
-								if ($cc > 0) {
-									if ($this->enableTabMenu) {
-										// Remove last tab entry from the dynNestedStack:
-										$out_sheet++;
-										// Remove the previous sheet from stack (if any):
-										$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . $out_sheet);
-										// Remember on which sheet we're currently working:
-										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-										$out_array[$out_sheet] = array();
-										$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-										// Register newline for Tab
-										$out_array_meta[$out_sheet]['newline'] = $additionalPalette == 'newline';
-									}
-								} else {
-									// Setting alternative title for "General" tab if "--div--" is the very first element.
-									$out_array_meta[$out_sheet]['title'] = $languageService->sL($fieldLabel);
-									// Only add the first tab to the dynNestedStack if there are more tabs:
-									if ($tabIdentString && strpos($itemList, '--div--', strlen($fieldInfo))) {
-										$this->pushToDynNestedStack('tab', $tabIdentStringMD5 . '-1');
-									}
-								}
-							} elseif ($theField == '--palette--') {
-								if ($additionalPalette && !isset($this->palettesRendered[$this->renderDepth][$table][$additionalPalette])) {
-									// Render a 'header' if not collapsed
-									if ($GLOBALS['TCA'][$table]['palettes'][$additionalPalette]['canNotCollapse'] && $fieldLabel) {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, $languageService->sL($fieldLabel));
-									} else {
-										$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $additionalPalette, '', '', $languageService->sL($fieldLabel));
-									}
-									$this->palettesRendered[$this->renderDepth][$table][$additionalPalette] = 1;
-								}
-							}
-						}
-						$cc++;
-					}
-				}
-			}
-		}
-		// Hook: getMainFields_postProcess (requested by Thomas Hempel for use with the "dynaflex" extension)
+		// Hook: getMainFields_postProcess
 		foreach ($this->hookObjectsMainFields as $hookObj) {
 			if (method_exists($hookObj, 'getMainFields_postProcess')) {
-				$hookObj->getMainFields_postProcess($table, $row, $this);
+				$hookObj->getMainFields_postProcess($table, $databaseRow, $this);
 			}
 		}
-		// Rendering Main palettes, if any
-		$mParr = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['mainpalette']);
-		$i = 0;
-		if (count($mParr)) {
-			foreach ($mParr as $mP) {
-				if (!isset($this->palettesRendered[$this->renderDepth][$table][$mP])) {
-					$temp_palettesCollapsed = $this->palettesCollapsed;
-					$this->palettesCollapsed = FALSE;
-					$label = $i == 0
-						? $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions')
-						: $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.generalOptions_more');
-					$out_array[$out_sheet][$out_pointer] .= $this->getPaletteFields($table, $row, $mP, $label);
-					$this->palettesCollapsed = $temp_palettesCollapsed;
-					$this->palettesRendered[$this->renderDepth][$table][$mP] = 1;
-				}
-				$i++;
-				if ($this->renderDepth) {
-					$this->renderDepth--;
-				}
-			}
-		}
-		// Return the imploded $out_array:
-		// Create parts array for the tab menu:
-		$parts = array();
-		foreach ($out_array as $idx => $sheetContent) {
-			$content = implode('', $sheetContent);
-			$parts[$idx] = array(
-				'label' => $out_array_meta[$idx]['title'],
-				'content' => $content,
-				'newline' => $out_array_meta[$idx]['newline']
-			);
-		}
-		if (count($parts) > 1) {
-			// Unset the current level of tab menus:
-			$this->popFromDynNestedStack('tab', $tabIdentStringMD5 . '-' . ($out_sheet + 1));
-			$output = $this->getDynTabMenu($parts, $tabIdentString);
-		} else {
-			// If there is only one tab/part there is no need to wrap it into the dynTab code
-			$output = isset($parts[0]) ? trim($parts[0]['content']) : '';
-		}
-		// Only one tab, so just implode and wrap the background image (= tab container) around:
-		if ($out_sheet === 0) {
-			$output = '<div class="tab-content">' . $output . '</div>';
-		}
-		$output = $output;
 
-		return $output;
+		return $content;
+	}
+
+	/**
+	 * Will return the TCEform element for just a single field from a record.
+	 * The field must be listed in the currently displayed fields (as found in [types][showitem]) for the record.
+	 * This also means that the $table/$row supplied must be complete so the list of fields to show can be found correctly
+	 * This method is used by "full screen RTE". Difference to getListedFields() is basically that no wrapper html is rendered around the element.
+	 *
+	 * @param string $table The table name
+	 * @param array $databaseRow The record from the table for which to render a field.
+	 * @param string $theFieldToReturn The field name to return the TCEform element for.
+	 * @return string HTML output
+	 */
+	public function getSoloField($table, $databaseRow, $theFieldToReturn) {
+		$this->table = $table;
+		$this->databaseRow = $databaseRow;
+
+		$options = $this->getConfigurationOptionsForChildElements();
+		$options['singleFieldToRender'] = $theFieldToReturn;
+		/** @var SoloFieldContainer $soloFieldContainer */
+		$soloFieldContainer = GeneralUtility::makeInstance(SoloFieldContainer::class);
+		$soloFieldContainer->setGlobalOptions($options);
+		$resultArray = $soloFieldContainer->render();
+		$html = $resultArray['html'];
+
+		$this->requiredElements = $resultArray['requiredElements'];
+		$this->requiredFields = $resultArray['requiredFields'];
+		$this->requiredAdditional = $resultArray['requiredAdditional'];
+		$this->requiredNested = $resultArray['requiredNested'];
+		$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
+		$this->additionalJS_submit = $resultArray['additionalJavaScriptSubmit'];
+		$this->extJSCODE = $resultArray['extJSCODE'];
+		$this->inlineData = $resultArray['inlineData'];
+		$this->hiddenFieldAccum = $resultArray['additionalHiddenFields'];
+		$this->additionalCode_pre = $resultArray['additionalHeadTags'];
+
+		return $html;
 	}
 
 	/**
 	 * Will return the TCEform elements for a pre-defined list of fields.
-	 * Notice that this will STILL use the configuration found in the list [types][showitem] for those fields which are found there. So ideally the list of fields given as argument to this function should also be in the current [types][showitem] list of the record.
+	 * Notice that this will STILL use the configuration found in the list [types][showitem] for those fields which are found there.
+	 * So ideally the list of fields given as argument to this function should also be in the current [types][showitem] list of the record.
 	 * Used for displaying forms for the frontend edit icons for instance.
 	 *
+	 * @todo: The list module calls this method multiple times on the same class instance if single fields
+	 * @todo: of multiple records are edited. This is why the properties are accumulated here.
+	 *
 	 * @param string $table The table name
-	 * @param array $row The record array.
+	 * @param array $databaseRow The record array.
 	 * @param string $list Commalist of fields from the table. These will be shown in the specified order in a form.
 	 * @return string TCEform elements in a string.
 	 */
-	public function getListedFields($table, $row, $list) {
-		if ($this->edit_showFieldHelp || $this->doLoadTableDescr($table)) {
-			$this->getLanguageService()->loadSingleTableDescription($table);
+	public function getListedFields($table, $databaseRow, $list) {
+		$this->table = $table;
+		$this->databaseRow = $databaseRow;
+
+		$options = $this->getConfigurationOptionsForChildElements();
+		$options['fieldListToRender'] = $list;
+		/** @var ListOfFieldsContainer $listOfFieldsContainer */
+		$listOfFieldsContainer = GeneralUtility::makeInstance(ListOfFieldsContainer::class);
+		$listOfFieldsContainer->setGlobalOptions($options);
+		$resultArray = $listOfFieldsContainer->render();
+		$html = $resultArray['html'];
+
+		foreach ($resultArray['requiredElements'] as $element) {
+			$this->requiredElements[] = $element;
 		}
-		$out = '';
-		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row, 1);
-		$editFieldList = array_unique(GeneralUtility::trimExplode(',', $list, TRUE));
-		foreach ($editFieldList as $theFieldC) {
-			list($theField, $palFields) = preg_split('/\\[|\\]/', $theFieldC);
-			$theField = trim($theField);
-			$palFields = trim($palFields);
-			if ($GLOBALS['TCA'][$table]['columns'][$theField]) {
-				$parts = GeneralUtility::trimExplode(';', $types_fieldConfig[$theField]['origString']);
-				// Don't sent palette pointer - there are no options anyways for a field-list.
-				$sField = $this->getSingleField($table, $theField, $row, $parts[1], 0, $parts[3], 0);
-				$out .= $sField;
-			}
-			if ($palFields) {
-				$out .= $this->getPaletteFields($table, $row, '', '', implode(',', GeneralUtility::trimExplode('|', $palFields, TRUE)));
-			}
+		foreach ($resultArray['requiredFields'] as $element) {
+			$this->requiredFields[] = $element;
 		}
-		return $out;
+		foreach ($resultArray['requiredAdditional'] as $element) {
+			$this->requiredAdditional[] = $element;
+		}
+		foreach ($resultArray['requiredNested'] as $element) {
+			$this->requiredNested[] = $element;
+		}
+		foreach ($resultArray['additionalJavaScriptPost'] as $element) {
+			$this->additionalJS_post[] = $element;
+		}
+		foreach ($resultArray['additionalJavaScriptSubmit'] as $element) {
+			$this->additionalJS_submit[] = $element;
+		}
+		$this->extJSCODE = $this->extJSCODE . $resultArray['extJSCODE'];
+		$this->inlineData = $resultArray['inlineData'];
+		foreach ($resultArray['additionalHiddenFields'] as $element) {
+			$this->hiddenFieldAccum[] = $element;
+		}
+		foreach ($resultArray['additionalHeadTags'] as $element) {
+			$this->additionalCode_pre[] = $element;
+		}
+
+		return $html;
 	}
 
 	/**
-	 * Creates a palette (collection of secondary options).
+	 * Returns an array of global form settings to be given to child elements.
 	 *
-	 * @param string $table The table name
-	 * @param array $row The row array
-	 * @param string $palette The palette number/pointer
-	 * @param string $header Header string for the palette (used when in-form). If not set, no header item is made.
-	 * @param string $itemList Optional alternative list of fields for the palette
-	 * @param string $collapsedHeader Optional Link text for activating a palette (when palettes does not have another form element to belong to).
-	 * @return string HTML code.
+	 * @return array
 	 */
-	public function getPaletteFields($table, $row, $palette, $header = '', $itemList = '', $collapsedHeader = NULL) {
-		if (!$this->doPrintPalette) {
-			return '';
-		}
-		$out = '';
-		$parts = $this->loadPaletteElements($table, $row, $palette, $itemList);
-		// Put palette together if there are fields in it:
-		if (count($parts)) {
-			$realFields = 0;
-			foreach ($parts as $part) {
-				if ($part['NAME'] !== '--linebreak--') {
-					$realFields++;
+	protected function getConfigurationOptionsForChildElements() {
+		return array(
+			'renderReadonly' => $this->renderReadonly,
+			'disabledWizards' => $this->disableWizards,
+			'returnUrl' => $this->thisReturnUrl(),
+			'palettesCollapsed' => $this->palettesCollapsed,
+			'table' => $this->table,
+			'databaseRow' => $this->databaseRow,
+			'additionalPreviewLanguages' => $this->additionalPreviewLanguages,
+			'localizationMode' => $this->localizationMode, // @todo: find out the details, Warning, this overlaps with inline behaviour localizationMode
+			'prependFormFieldNames' => $this->prependFormFieldNames,
+			'prependFormFieldNames_file' => $this->prependFormFieldNames_file,
+			'prependFormFieldNamesActive' => $this->prependFormFieldNamesActive,
+			'prependCmdFieldNames' => $this->prependCmdFieldNames,
+			'tabAndInlineStack' => array(),
+			'inlineFirstPid' => $this->getInlineFirstPid(),
+			'inlineExpandCollapseStateArray' => $this->getInlineExpandCollapseStateArrayForTableUid($this->table, $this->databaseRow['uid']),
+			'inlineData' => $this->inlineData,
+			'inlineStructure' => $this->inlineStackProcessor->getStructure(),
+			'overruleTypesArray' => array(),
+			'hiddenFieldListArray' => $this->hiddenFieldListArr,
+			'isAjaxContext' => FALSE,
+			'flexFormFieldIdentifierPrefix' => 'ID',
+		);
+	}
+
+	/**
+	 * General processor for AJAX requests concerning IRRE.
+	 *
+	 * @param array $_ Additional parameters (not used here)
+	 * @param AjaxRequestHandler $ajaxObj The AjaxRequestHandler object of this request
+	 * @throws \RuntimeException
+	 * @return void
+	 */
+	public function processInlineAjaxRequest($_, AjaxRequestHandler $ajaxObj) {
+		$ajaxArguments = GeneralUtility::_GP('ajax');
+		$ajaxIdParts = explode('::', $GLOBALS['ajaxID'], 2);
+		if (isset($ajaxArguments) && is_array($ajaxArguments) && count($ajaxArguments)) {
+			$ajaxMethod = $ajaxIdParts[1];
+			$ajaxObj->setContentFormat('jsonbody');
+			// Construct runtime environment for Inline Relational Record Editing
+			$this->setUpRuntimeEnvironmentForAjaxRequests();
+			// @todo: ajaxArguments[2] is "returnUrl" in the first 3 calls - still needed?
+			switch ($ajaxMethod) {
+				case 'synchronizeLocalizeRecords':
+					// Set $this->RTEcounter to the current situation on client-side
+					$this->RTEcounter = $ajaxArguments[0];
+					$domObjectId = $ajaxArguments[1];
+					$type = $ajaxArguments[2];
+					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
+					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
+					$this->inlineStackProcessor->injectAjaxConfiguration($ajaxArguments['context']);
+					$inlineFirstPid = FormEngineUtility::getInlineFirstPidFromDomObjectId($domObjectId);
+					$ajaxObj->setContent($this->renderInlineSynchronizeLocalizeRecords($type, $inlineFirstPid));
 					break;
-				}
-			}
-			if ($realFields > 0) {
-
-				$code = $this->printPalette($parts);
-				$collapsed = $this->isPalettesCollapsed($table, $palette);
-				$isHiddenPalette = !empty($GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']);
-
-
-				if ($collapsed && $collapsedHeader !== NULL && !$isHiddenPalette) {
-					$code = $this->wrapCollapsiblePalette($code, 'FORMENGINE_' . $table . '_' . $palette . '_' . $row['uid'], $collapsed);
-				} else {
-					$code = '<div class="row">' . $code . '</div>';
-				}
-
-				$out = '
-					<!-- getPaletteFields -->
-					<fieldset class="form-section">
-						' . ($header ? '<h4 class="form-section-headline">' . htmlspecialchars($header) . '</h4>' : '') . '
-						' . ($collapsedHeader ? '<h4 class="form-section-headline">' . htmlspecialchars($collapsedHeader) . '</h4>' : '') . '
-						' . $code . '
-					</fieldset>';
+				case 'createNewRecord':
+					// Set $this->RTEcounter to the current situation on client-side
+					$this->RTEcounter = $ajaxArguments[0];
+					$domObjectId = $ajaxArguments[1];
+					$createAfterUid = 0;
+					if (isset($ajaxArguments[2])) {
+						$createAfterUid = $ajaxArguments[2];
+					}
+					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
+					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
+					$this->inlineStackProcessor->injectAjaxConfiguration($ajaxArguments['context']);
+					$ajaxObj->setContent($this->renderInlineNewChildRecord($domObjectId, $createAfterUid));
+					break;
+				case 'getRecordDetails':
+					// Set $this->RTEcounter to the current situation on client-side
+					$this->RTEcounter = $ajaxArguments[0];
+					$domObjectId = $ajaxArguments[1];
+					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
+					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
+					$this->inlineStackProcessor->injectAjaxConfiguration($ajaxArguments['context']);
+					$ajaxObj->setContent($this->renderInlineChildRecord($domObjectId));
+					break;
+				case 'setExpandedCollapsedState':
+					$domObjectId = $ajaxArguments[0];
+					// Parse the DOM identifier (string), add the levels to the structure stack (array), don't load TCA config
+					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId, FALSE);
+					$expand = $ajaxArguments[1];
+					$collapse = $ajaxArguments[2];
+					$this->setInlineExpandedCollapsedState($expand, $collapse);
+					break;
+				default:
+					throw new \RuntimeException('Not a valid ajax identifier', 1428227862);
 			}
 		}
-		return $out;
 	}
 
 	/**
-	 * Returns the form HTML code for a database table field.
+	 * Handle AJAX calls to dynamically load the form fields of a given inline record.
 	 *
-	 * @param string $table The table name
-	 * @param string $field The field name
-	 * @param array $row The record to edit from the database table.
-	 * @param string $altName Alternative field name label to show.
-	 * @param bool $palette Set this if the field is on a palette (in top frame), otherwise not. (if set, field will render as a hidden field).
-	 * @param string $extra The "extra" options from "Part 4" of the field configurations found in the "types" "showitem" list. Typically parsed by $this->getSpecConfFromString() in order to get the options as an associative array.
-	 * @param int $pal The palette pointer.
-	 * @return mixed String (normal) or array (palettes)
+	 * @param string $domObjectId The calling object in hierarchy, that requested a new record.
+	 * @return array An array to be used for JSON
 	 */
-	public function getSingleField($table, $field, $row, $altName = '', $palette = FALSE, $extra = '', $pal = 0) {
-		// Hook: getSingleField_preProcess
-		foreach ($this->hookObjectsSingleField as $hookObj) {
-			if (method_exists($hookObj, 'getSingleField_preProcess')) {
-				$hookObj->getSingleField_preProcess($table, $field, $row, $altName, $palette, $extra, $pal, $this);
-			}
+	protected function renderInlineChildRecord($domObjectId) {
+		// The current table - for this table we should add/import records
+		$current = $this->inlineStackProcessor->getUnstableStructure();
+		// The parent table - this table embeds the current table
+		$parent = $this->inlineStackProcessor->getStructureLevel(-1);
+		$config = $parent['config'];
+
+		if (empty($config['foreign_table']) || !is_array($GLOBALS['TCA'][$config['foreign_table']])) {
+			return $this->getErrorMessageForAJAX('Wrong configuration in table ' . $parent['table']);
 		}
-		$out = '';
-		$PA = array();
-		$PA['altName'] = $altName;
-		$PA['palette'] = $palette;
-		$PA['extra'] = $extra;
-		$PA['pal'] = $pal;
-		// Get the TCA configuration for the current field:
-		$PA['fieldConf'] = $GLOBALS['TCA'][$table]['columns'][$field];
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
 
-		// Using "form_type" locally in this script
-		$skipThisField = $this->inline->skipField($table, $field, $row, $PA['fieldConf']['config']);
+		$config = FormEngineUtility::mergeInlineConfiguration($config);
 
-		// Evaluate display condition
-		$displayConditionResult = TRUE;
-		if (is_array($PA['fieldConf']) && $PA['fieldConf']['displayCond'] && is_array($row)) {
-			/** @var $elementConditionMatcher \TYPO3\CMS\Backend\Form\ElementConditionMatcher */
-			$elementConditionMatcher = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\ElementConditionMatcher::class);
-			$displayConditionResult = $elementConditionMatcher->match($PA['fieldConf']['displayCond'], $row);
+		// Set flag in config so that only the fields are rendered
+		$config['renderFieldsOnly'] = TRUE;
+		$collapseAll = isset($config['appearance']['collapseAll']) && $config['appearance']['collapseAll'];
+		$expandSingle = isset($config['appearance']['expandSingle']) && $config['appearance']['expandSingle'];
+
+		$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
+		$record = $inlineRelatedRecordResolver->getRecord($current['table'], $current['uid']);
+
+		$inlineFirstPid = FormEngineUtility::getInlineFirstPidFromDomObjectId($domObjectId);
+		// The HTML-object-id's prefix of the dynamically created record
+		$objectPrefix = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($inlineFirstPid) . '-' . $current['table'];
+		$objectId = $objectPrefix . '-' . $record['uid'];
+
+		$options = $this->getConfigurationOptionsForChildElements();
+		$options['databaseRow'] = array('uid' => $parent['uid']);
+		$options['inlineFirstPid'] = $inlineFirstPid;
+		$options['inlineRelatedRecordToRender'] = $record;
+		$options['inlineRelatedRecordConfig'] = $config;
+		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
+		$options['isAjaxContext'] = TRUE;
+
+		/** @var InlineRecordContainer $inlineRecordContainer */
+		$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
+		$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+
+		if ($childArray === FALSE) {
+			return $this->getErrorMessageForAJAX('Access denied');
 		}
-		// Check if this field is configured and editable (according to excludefields + other configuration)
-		if (
-			is_array($PA['fieldConf'])
-			&& !$skipThisField
-			&& (!$PA['fieldConf']['exclude'] || $this->getBackendUserAuthentication()->check('non_exclude_fields', $table . ':' . $field))
-			&& $PA['fieldConf']['config']['form_type'] != 'passthrough'
-			&& ($this->RTEenabled || !$PA['fieldConf']['config']['showIfRTE'])
-			&& $displayConditionResult
-			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || $PA['fieldConf']['l10n_display'] || ($PA['fieldConf']['l10n_mode'] !== 'exclude') || $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] <= 0)
-			&& (!$GLOBALS['TCA'][$table]['ctrl']['languageField'] || !$this->localizationMode || $this->localizationMode === $PA['fieldConf']['l10n_cat'])
-		) {
-			// Fetching the TSconfig for the current table/field. This includes the $row which means that
-			$PA['fieldTSConfig'] = $this->setTSconfig($table, $row, $field);
-			// If the field is NOT disabled from TSconfig (which it could have been) then render it
-			if (!$PA['fieldTSConfig']['disabled']) {
-				// Override fieldConf by fieldTSconfig:
-				$PA['fieldConf']['config'] = $this->overrideFieldConf($PA['fieldConf']['config'], $PA['fieldTSConfig']);
-				// Init variables:
-				$PA['itemFormElName'] = $this->prependFormFieldNames . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// Form field name, in case of file uploads
-				$PA['itemFormElName_file'] = $this->prependFormFieldNames_file . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// Form field name, to activate elements
-				// If the "eval" list contains "null", elements can be deactivated which results in storing NULL to database
-				$PA['itemFormElNameActive'] = $this->prependFormFieldNamesActive . '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-				// The value to show in the form field.
-				$PA['itemFormElValue'] = $row[$field];
-				$PA['itemFormElID'] = $this->prependFormFieldNames . '_' . $table . '_' . $row['uid'] . '_' . $field;
-				// Set field to read-only if configured for translated records to show default language content as readonly
-				if ($PA['fieldConf']['l10n_display'] && GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'defaultAsReadonly') && $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0) {
-					$PA['fieldConf']['config']['readOnly'] = TRUE;
-					$PA['itemFormElValue'] = $this->defaultLanguageData[$table . ':' . $row['uid']][$field];
-				}
-				if (strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':') === FALSE) {
-					$typeField = $GLOBALS['TCA'][$table]['ctrl']['type'];
-				} else {
-					$typeField = substr($GLOBALS['TCA'][$table]['ctrl']['type'], 0, strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':'));
-				}
-				// Create a JavaScript code line which will ask the user to save/update the form due to changing the element. This is used for eg. "type" fields and others configured with "requestUpdate"
-				if (
-					!empty($GLOBALS['TCA'][$table]['ctrl']['type'])
-					&& $field === $typeField
-					|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
-					&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $field)
-				) {
-					if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
-						$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
-					} else {
-						$alertMsgOnChange = 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
-					}
-				} else {
-					$alertMsgOnChange = '';
-				}
-				// Render as a hidden field?
-				if (in_array($field, $this->hiddenFieldListArr)) {
-					$this->hiddenFieldAccum[] = '<input type="hidden" name="' . $PA['itemFormElName'] . '" value="' . htmlspecialchars($PA['itemFormElValue']) . '" />';
-				} else {
-					$languageService = $this->getLanguageService();
-					// Render as a normal field:
-					// onFocus attribute to add to the field:
-					$PA['onFocus'] = $palJSfunc && !$this->getBackendUserAuthentication()->uc['dontShowPalettesOnFocusInAB'] ? ' onfocus="' . htmlspecialchars($palJSfunc) . '"' : '';
-					$PA['label'] = $PA['altName'] ?: $PA['fieldConf']['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label'] ?: $PA['label'];
-					$PA['label'] = $PA['fieldTSConfig']['label.'][$languageService->lang] ?: $PA['label'];
-					$PA['label'] = $languageService->sL($PA['label']);
-					// JavaScript code for event handlers:
-					$PA['fieldChangeFunc'] = array();
-					$PA['fieldChangeFunc']['TBE_EDITOR_fieldChanged'] = 'TBE_EDITOR.fieldChanged(\'' . $table . '\',\'' . $row['uid'] . '\',\'' . $field . '\',\'' . $PA['itemFormElName'] . '\');';
-					$PA['fieldChangeFunc']['alert'] = $alertMsgOnChange;
-					// If this is the child of an inline type and it is the field creating the label
-					if ($this->inline->isInlineChildAndLabelField($table, $field)) {
-						$inlineObjectId = implode(InlineElement::Structure_Separator, array(
-							$this->inline->inlineNames['object'],
-							$table,
-							$row['uid']
-						));
-						$PA['fieldChangeFunc']['inline'] = 'inline.handleChangedField(\'' . $PA['itemFormElName'] . '\',\'' . $inlineObjectId . '\');';
-					}
-					// Based on the type of the item, call a render function:
-					$item = $this->getSingleField_SW($table, $field, $row, $PA);
-					// Add language + diff
-					if ($PA['fieldConf']['l10n_display'] && (GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'hideDiff') || GeneralUtility::inList($PA['fieldConf']['l10n_display'], 'defaultAsReadonly'))) {
-						$renderLanguageDiff = FALSE;
-					} else {
-						$renderLanguageDiff = TRUE;
-					}
-					if ($renderLanguageDiff) {
-						$item = $this->renderDefaultLanguageContent($table, $field, $row, $item);
-						$item = $this->renderDefaultLanguageDiff($table, $field, $row, $item);
-					}
-					// If the record has been saved and the "linkTitleToSelf" is set, we make the field name into a link, which will load ONLY this field in alt_doc.php
-					$label = htmlspecialchars($PA['label'], ENT_COMPAT, 'UTF-8', FALSE);
-					if (MathUtility::canBeInterpretedAsInteger($row['uid']) && $PA['fieldTSConfig']['linkTitleToSelf'] && !GeneralUtility::_GP('columnsOnly')) {
-						$lTTS_url = $this->backPath . 'alt_doc.php?edit[' . $table . '][' . $row['uid'] . ']=edit&columnsOnly=' . $field . '&returnUrl=' . rawurlencode($this->thisReturnUrl());
-						$label = '<a href="' . htmlspecialchars($lTTS_url) . '">' . $label . '</a>';
-					}
 
-					if (isset($PA['fieldConf']['config']['mode']) && $PA['fieldConf']['config']['mode'] == 'useOrOverridePlaceholder') {
-						$placeholder = $this->getPlaceholderValue($table, $field, $PA['fieldConf']['config'], $row);
-						$onChange = 'typo3form.fieldTogglePlaceholder(' . GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ', !this.checked)';
-						$checked = $PA['itemFormElValue'] === NULL ? '' : ' checked="checked"';
+		// @todo: Refactor this mess ... see other methods like getMainFields, too
+		$this->requiredElements = $childArray['requiredElements'];
+		$this->requiredFields = $childArray['requiredFields'];
+		$this->requiredAdditional = $childArray['requiredAdditional'];
+		$this->requiredNested = $childArray['requiredNested'];
+		$this->additionalJS_post = $childArray['additionalJavaScriptPost'];
+		$this->additionalJS_submit = $childArray['additionalJavaScriptSubmit'];
+		$this->extJSCODE = $childArray['extJSCODE'];
+		$this->inlineData = $childArray['inlineData'];
+		$this->hiddenFieldAccum = $childArray['additionalHiddenFields'];
+		$this->additionalCode_pre = $childArray['additionalHeadTags'];
 
-						$this->additionalJS_post[] = 'typo3form.fieldTogglePlaceholder('
-							. GeneralUtility::quoteJSvalue($PA['itemFormElName']) . ', ' . ($checked ? 'false' : 'true') . ');';
-
-						$item = '
-							<input type="hidden" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="0" />
-							<div class="checkbox">
-								<label>
-									<input type="checkbox" name="' . htmlspecialchars($PA['itemFormElNameActive']) . '" value="1" id="tce-forms-textfield-use-override-' . $field . '-' . $row['uid'] . '" onchange="' . htmlspecialchars($onChange) . '"' . $checked . ' />
-									' . sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.placeholder.override'), BackendUtility::getRecordTitlePrep($placeholder, 20)) . '
-								</label>
-							</div>
-							<div class="t3js-formengine-placeholder-placeholder">
-								' . $this->getSingleField_typeNone_render($PA['fieldConf']['config'], GeneralUtility::fixed_lgd_cs($placeholder, 30)) . '
-							</div>
-							<div class="t3js-formengine-placeholder-formfield">' . $item . '</div>';
-					}
-
-					// Wrap the label with help text
-					$PA['label'] = ($label = BackendUtility::wrapInHelp($table, $field, $label));
-					// Create output value:
-					if ($PA['fieldConf']['config']['form_type'] == 'user' && $PA['fieldConf']['config']['noTableWrapping']) {
-						$out = $item;
-					} elseif ($PA['palette']) {
-						// Array:
-						$out = array(
-							'NAME' => $label,
-							'ID' => $row['uid'],
-							'FIELD' => $field,
-							'TABLE' => $table,
-							'ITEM' => $item,
-							'ITEM_DISABLED' => ($this->isDisabledNullValueField($table, $field, $row, $PA) ? ' disabled' : ''),
-							'ITEM_NULLVALUE' => $this->renderNullValueWidget($table, $field, $row, $PA),
-						);
-					} else {
-						$out = '
-							<fieldset class="form-section">
-								<!-- getSingleField -->
-								<div class="form-group t3js-formengine-palette-field">
-									<label class="t3js-formengine-label">
-										' . $label . '
-										<img name="req_' . $table . '_' . $row['uid'] . '_' . $field . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />
-									</label>
-									<div class="t3js-formengine-field-item ' . ($this->isDisabledNullValueField($table, $field, $row, $PA) ? ' disabled' : '') . '">
-										<div class="t3-form-field-disable"></div>
-										' . $this->renderNullValueWidget($table, $field, $row, $PA) . '
-										' . $item . '
-									</div>
-								</div>
-							</fieldset>
-						';
-					}
-				}
-			} else {
-				$this->commentMessages[] = $this->prependFormFieldNames . '[' . $table . '][' . $row['uid'] . '][' . $field . ']: Disabled by TSconfig';
-			}
+		$jsonArray = array(
+			'data' => $childArray['html'],
+			'scriptCall' => array(),
+		);
+		$jsonArray['scriptCall'][] = 'inline.domAddRecordDetails(' . GeneralUtility::quoteJSvalue($domObjectId) . ',' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . ($expandSingle ? '1' : '0') . ',json.data);';
+		if ($config['foreign_unique']) {
+			$jsonArray['scriptCall'][] = 'inline.removeUsed(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\');';
 		}
-		// Hook: getSingleField_postProcess
-		foreach ($this->hookObjectsSingleField as $hookObj) {
-			if (method_exists($hookObj, 'getSingleField_postProcess')) {
-				$hookObj->getSingleField_postProcess($table, $field, $row, $out, $PA, $this);
-			}
+
+		$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $config, $inlineFirstPid);
+
+		// Collapse all other records if requested:
+		if (!$collapseAll && $expandSingle) {
+			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(\'' . $objectId . '\',\'' . $objectPrefix . '\',\'' . $record['uid'] . '\');';
 		}
-		// Return value (string or array)
-		return $out;
+
+		return $jsonArray;
 	}
 
 	/**
-	 * Rendering a single item for the form
+	 * Handle AJAX calls to show a new inline-record of the given table.
 	 *
-	 * @param string $table Table name of record
-	 * @param string $field Fieldname to render
-	 * @param array $row The record
-	 * @param array $PA Parameters array containing a lot of stuff. Value by Reference!
-	 * @return string Returns the item as HTML code to insert
-	 * @access private
-	 * @see getSingleField(), getSingleField_typeFlex_draw()
+	 * @param string $domObjectId The calling object in hierarchy, that requested a new record.
+	 * @param string|int $foreignUid If set, the new record should be inserted after that one.
+	 * @return array An array to be used for JSON
 	 */
-	public function getSingleField_SW($table, $field, $row, &$PA) {
-		$PA['fieldConf']['config']['form_type'] = $PA['fieldConf']['config']['form_type'] ?: $PA['fieldConf']['config']['type'];
-		// Using "form_type" locally in this script
-		// Hook: getSingleField_beforeRender
-		foreach ($this->hookObjectsSingleField as $hookObject) {
-			if (method_exists($hookObject, 'getSingleField_beforeRender')) {
-				$hookObject->getSingleField_beforeRender($table, $field, $row, $PA);
-			}
+	protected function renderInlineNewChildRecord($domObjectId, $foreignUid) {
+		// The current table - for this table we should add/import records
+		$current = $this->inlineStackProcessor->getUnstableStructure();
+		// The parent table - this table embeds the current table
+		$parent = $this->inlineStackProcessor->getStructureLevel(-1);
+		$config = $parent['config'];
+
+		if (empty($config['foreign_table']) || !is_array($GLOBALS['TCA'][$config['foreign_table']])) {
+			return $this->getErrorMessageForAJAX('Wrong configuration in table ' . $parent['table']);
 		}
-		$type = $PA['fieldConf']['config']['form_type'];
-		if ($type === 'inline') {
-			$item = $this->inline->getSingleField_typeInline($table, $field, $row, $PA);
+
+		$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
+
+		$config = FormEngineUtility::mergeInlineConfiguration($config);
+
+		$collapseAll = isset($config['appearance']['collapseAll']) && $config['appearance']['collapseAll'];
+		$expandSingle = isset($config['appearance']['expandSingle']) && $config['appearance']['expandSingle'];
+
+		$inlineFirstPid = FormEngineUtility::getInlineFirstPidFromDomObjectId($domObjectId);
+
+		// Dynamically create a new record using \TYPO3\CMS\Backend\Form\DataPreprocessor
+		if (!$foreignUid || !MathUtility::canBeInterpretedAsInteger($foreignUid) || $config['foreign_selector']) {
+			$record = $inlineRelatedRecordResolver->getNewRecord($inlineFirstPid, $current['table']);
+			// Set default values for new created records
+			if (isset($config['foreign_record_defaults']) && is_array($config['foreign_record_defaults'])) {
+				$foreignTableConfig = $GLOBALS['TCA'][$current['table']];
+				// The following system relevant fields can't be set by foreign_record_defaults
+				$notSettableFields = array(
+					'uid', 'pid', 't3ver_oid', 't3ver_id', 't3ver_label', 't3ver_wsid', 't3ver_state', 't3ver_stage',
+					't3ver_count', 't3ver_tstamp', 't3ver_move_id'
+				);
+				$configurationKeysForNotSettableFields = array(
+					'crdate', 'cruser_id', 'delete', 'origUid', 'transOrigDiffSourceField', 'transOrigPointerField',
+					'tstamp'
+				);
+				foreach ($configurationKeysForNotSettableFields as $configurationKey) {
+					if (isset($foreignTableConfig['ctrl'][$configurationKey])) {
+						$notSettableFields[] = $foreignTableConfig['ctrl'][$configurationKey];
+					}
+				}
+				foreach ($config['foreign_record_defaults'] as $fieldName => $defaultValue) {
+					if (isset($foreignTableConfig['columns'][$fieldName]) && !in_array($fieldName, $notSettableFields)) {
+						$record[$fieldName] = $defaultValue;
+					}
+				}
+			}
+			// Set language of new child record to the language of the parent record:
+			if ($parent['localizationMode'] === 'select') {
+				$parentRecord = $inlineRelatedRecordResolver->getRecord($parent['table'], $parent['uid']);
+				$parentLanguageField = $GLOBALS['TCA'][$parent['table']]['ctrl']['languageField'];
+				$childLanguageField = $GLOBALS['TCA'][$current['table']]['ctrl']['languageField'];
+				if ($parentRecord[$parentLanguageField] > 0) {
+					$record[$childLanguageField] = $parentRecord[$parentLanguageField];
+				}
+			}
 		} else {
-			$typeClassNameMapping = array(
-				'input' => 'InputElement',
-				'text' => 'TextElement',
-				'check' => 'CheckboxElement',
-				'radio' => 'RadioElement',
-				'select' => 'SelectElement',
-				'group' => 'GroupElement',
-				'none' => 'NoneElement',
-				'user' => 'UserElement',
-				'flex' => 'FlexElement',
-				'unknown' => 'UnknownElement',
-			);
-			if (!isset($typeClassNameMapping[$type])) {
-				$type = 'unknown';
+			// @todo: Check this: Else also hits if $foreignUid = 0?
+			$record = $inlineRelatedRecordResolver->getRecord($current['table'], $foreignUid);
+		}
+		// Now there is a foreign_selector, so there is a new record on the intermediate table, but
+		// this intermediate table holds a field, which is responsible for the foreign_selector, so
+		// we have to set this field to the uid we get - or if none, to a new uid
+		if ($config['foreign_selector'] && $foreignUid) {
+			$selConfig = FormEngineUtility::getInlinePossibleRecordsSelectorConfig($config, $config['foreign_selector']);
+			// For a selector of type group/db, prepend the tablename (<tablename>_<uid>):
+			$record[$config['foreign_selector']] = $selConfig['type'] != 'groupdb' ? '' : $selConfig['table'] . '_';
+			$record[$config['foreign_selector']] .= $foreignUid;
+			if ($selConfig['table'] === 'sys_file') {
+				$fileRecord = $inlineRelatedRecordResolver->getRecord($selConfig['table'], $foreignUid);
+				if ($fileRecord !== FALSE && !$this->checkInlineFileTypeAccessForField($selConfig, $fileRecord)) {
+					return $this->getErrorMessageForAJAX('File extension ' . $fileRecord['extension'] . ' is not allowed here!');
+				}
 			}
-			$formElement = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Form\\Element\\' . $typeClassNameMapping[$type], $this);
-			if ($formElement instanceof AbstractFormElement) {
-				$formElement->setRenderReadonly($this->getRenderReadonly());
-			}
-			$item = $formElement->render($table, $field, $row, $PA);
 		}
-		return $item;
+		// The HTML-object-id's prefix of the dynamically created record
+		$objectName = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($inlineFirstPid);
+		$objectPrefix = $objectName . '-' . $current['table'];
+		$objectId = $objectPrefix . '-' . $record['uid'];
+
+		$options = $this->getConfigurationOptionsForChildElements();
+		$options['databaseRow'] = array('uid' => $parent['uid']);
+		$options['inlineFirstPid'] = $inlineFirstPid;
+		$options['inlineRelatedRecordToRender'] = $record;
+		$options['inlineRelatedRecordConfig'] = $config;
+		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
+		$options['isAjaxContext'] = TRUE;
+
+		/** @var InlineRecordContainer $inlineRecordContainer */
+		$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
+		$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+
+		if ($childArray === FALSE) {
+			return $this->getErrorMessageForAJAX('Access denied');
+		}
+
+		// @todo: Refactor this mess ... see other methods like getMainFields, too
+		$this->requiredElements = $childArray['requiredElements'];
+		$this->requiredFields = $childArray['requiredFields'];
+		$this->requiredAdditional = $childArray['requiredAdditional'];
+		$this->requiredNested = $childArray['requiredNested'];
+		$this->additionalJS_post = $childArray['additionalJavaScriptPost'];
+		$this->additionalJS_submit = $childArray['additionalJavaScriptSubmit'];
+		$this->extJSCODE = $childArray['extJSCODE'];
+		$this->inlineData = $childArray['inlineData'];
+		$this->hiddenFieldAccum = $childArray['additionalHiddenFields'];
+		$this->additionalCode_pre = $childArray['additionalHeadTags'];
+
+		$jsonArray = array(
+			'data' => $childArray['html'],
+			'scriptCall' => array(),
+		);
+
+		if (!$current['uid']) {
+			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'bottom\',\'' . $objectName . '_records\',\'' . $objectPrefix . '\',json.data);';
+			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\',null,\'' . $foreignUid . '\');';
+		} else {
+			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'after\',\'' . $domObjectId . '_div' . '\',\'' . $objectPrefix . '\',json.data);';
+			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\',\'' . $current['uid'] . '\',\'' . $foreignUid . '\');';
+		}
+
+		$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $config, $inlineFirstPid);
+
+		// Collapse all other records if requested:
+		if (!$collapseAll && $expandSingle) {
+			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(\'' . $objectId . '\', \'' . $objectPrefix . '\', \'' . $record['uid'] . '\');';
+		}
+		// Tell the browser to scroll to the newly created record
+
+		$jsonArray['scriptCall'][] = 'Element.scrollTo(\'' . $objectId . '_div\');';
+		// Fade out and fade in the new record in the browser view to catch the user's eye
+		$jsonArray['scriptCall'][] = 'inline.fadeOutFadeIn(\'' . $objectId . '_div\');';
+
+		return $jsonArray;
 	}
 
-	/**********************************************************
-	 *
-	 * Rendering of each TCEform field type
-	 *
-	 ************************************************************/
 	/**
-	 * Generation of TCEform elements of the type "input"
-	 * This will render a single-line input form field, possibly with various control/validation features
+	 * Handle AJAX calls to localize all records of a parent, localize a single record or to synchronize with the original language parent.
 	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\InputElement
+	 * @param string $type Defines the type 'localize' or 'synchronize' (string) or a single uid to be localized (int)
+	 * @param int $inlineFirstPid Inline first pid
+	 * @return array An array to be used for JSON
 	 */
-	public function getSingleField_typeInput($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\InputElement::class, $this)
-			->render($table, $field, $row, $PA);
-	}
+	protected function renderInlineSynchronizeLocalizeRecords($type, $inlineFirstPid) {
+		$jsonArray = FALSE;
+		if (GeneralUtility::inList('localize,synchronize', $type) || MathUtility::canBeInterpretedAsInteger($type)) {
+			$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
+			// The parent level:
+			$parent = $this->inlineStackProcessor->getStructureLevel(-1);
+			$current = $this->inlineStackProcessor->getUnstableStructure();
+			$parentRecord = $inlineRelatedRecordResolver->getRecord($parent['table'], $parent['uid']);
 
-	/**
-	 * Renders a view widget to handle and activate NULL values.
-	 * The widget is enabled by using 'null' in the 'eval' TCA definition.
-	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data of the record row
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return string Widget (if any).
-	 */
-	protected function renderNullValueWidget($table, $field, array $row, array $PA) {
-		$widget = '';
+			$cmd = array();
+			$cmd[$parent['table']][$parent['uid']]['inlineLocalizeSynchronize'] = $parent['field'] . ',' . $type;
+			/** @var $tce \TYPO3\CMS\Core\DataHandling\DataHandler */
+			$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
+			$tce->stripslashes_values = FALSE;
+			$tce->start(array(), $cmd);
+			$tce->process_cmdmap();
 
-		$config = $PA['fieldConf']['config'];
-		if (
-			!empty($config['eval']) && GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')
-		) {
-			$checked = $PA['itemFormElValue'] === NULL ? '' : ' checked="checked"';
-			$onChange = htmlspecialchars(
-				'typo3form.fieldSetNull(\'' . $PA['itemFormElName'] . '\', !this.checked)'
+			$oldItemList = $parentRecord[$parent['field']];
+			$newItemList = $tce->registerDBList[$parent['table']][$parent['uid']][$parent['field']];
+
+			$jsonArray = array(
+				'scriptCall' => array(),
 			);
+			$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($inlineFirstPid);
+			$nameObjectForeignTable = $nameObject . '-' . $current['table'];
+			// Get the name of the field pointing to the original record:
+			$transOrigPointerField = $GLOBALS['TCA'][$current['table']]['ctrl']['transOrigPointerField'];
+			// Get the name of the field used as foreign selector (if any):
+			$foreignSelector = isset($parent['config']['foreign_selector']) && $parent['config']['foreign_selector'] ? $parent['config']['foreign_selector'] : FALSE;
+			// Convert lists to array with uids of child records:
+			$oldItems = FormEngineUtility::getInlineRelatedRecordsUidArray($oldItemList);
+			$newItems = FormEngineUtility::getInlineRelatedRecordsUidArray($newItemList);
+			// Determine the items that were localized or localized:
+			$removedItems = array_diff($oldItems, $newItems);
+			$localizedItems = array_diff($newItems, $oldItems);
+			// Set the items that should be removed in the forms view:
+			foreach ($removedItems as $item) {
+				$jsonArray['scriptCall'][] = 'inline.deleteRecord(\'' . $nameObjectForeignTable . '-' . $item . '\', {forceDirectRemoval: true});';
+			}
+			// Set the items that should be added in the forms view:
+			$html = '';
+			$resultArray = NULL;
+			// @todo: This should be another container ...
+			foreach ($localizedItems as $item) {
+				$row = $inlineRelatedRecordResolver->getRecord($current['table'], $item);
+				$selectedValue = $foreignSelector ? '\'' . $row[$foreignSelector] . '\'' : 'null';
 
-			$widget = '
-				<div class="checkbox">
-					<label>
-						<input type="hidden" name="' . $PA['itemFormElNameActive'] . '" value="0" />
-						<input type="checkbox" name="' . $PA['itemFormElNameActive'] . '" value="1" onchange="' . $onChange . '"' . $checked . ' /> &nbsp;
-					</label>
-				</div>';
+				$options = $this->getConfigurationOptionsForChildElements();
+				$options['databaseRow'] = array('uid' => $parent['uid']);
+				$options['inlineFirstPid'] = $inlineFirstPid;
+				$options['inlineRelatedRecordToRender'] = $row;
+				$options['inlineRelatedRecordConfig'] = $parent['config'];
+				$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
+				$options['isAjaxContext'] = TRUE;
+
+				/** @var InlineRecordContainer $inlineRecordContainer */
+				$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
+				$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+				$html .= $childArray['html'];
+				$childArray['html'] = '';
+
+				// @todo: Obsolete if a container and copied from AbstractContainer for now
+				if ($resultArray === NULL) {
+					$resultArray = $childArray;
+				} else {
+					if (!empty($childArray['extJSCODE'])) {
+						$resultArray['extJSCODE'] .= LF . $childArray['extJSCODE'];
+					}
+					foreach ($childArray['requiredElements'] as $name => $value) {
+						$resultArray['requiredElements'][$name] = $value;
+					}
+					foreach ($childArray['requiredFields'] as $value => $name) { // Params swapped ?!
+						$resultArray['requiredFields'][$value] = $name;
+					}
+					foreach ($childArray['requiredAdditional'] as $name => $subArray) {
+						$resultArray['requiredAdditional'][$name] = $subArray;
+					}
+					foreach ($childArray['requiredNested'] as $value => $name) {
+						$resultArray['requiredNested'][$value] = $name;
+					}
+					foreach ($childArray['additionalJavaScriptPost'] as $value) {
+						$resultArray['additionalJavaScriptPost'][] = $value;
+					}
+					foreach ($childArray['additionalJavaScriptSubmit'] as $value) {
+						$resultArray['additionalJavaScriptSubmit'][] = $value;
+					}
+					if (!empty($childArray['inlineData'])) {
+						$resultArrayInlineData = $resultArray['inlineData'];
+						$childInlineData = $childArray['inlineData'];
+						ArrayUtility::mergeRecursiveWithOverrule($resultArrayInlineData, $childInlineData);
+						$resultArray['inlineData'] = $resultArrayInlineData;
+					}
+				}
+
+				$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $nameObjectForeignTable . '\', \'' . $item . '\', null, ' . $selectedValue . ');';
+				// Remove possible virtual records in the form which showed that a child records could be localized:
+				if (isset($row[$transOrigPointerField]) && $row[$transOrigPointerField]) {
+					$jsonArray['scriptCall'][] = 'inline.fadeAndRemove(\'' . $nameObjectForeignTable . '-' . $row[$transOrigPointerField] . '_div' . '\');';
+				}
+			}
+			if (!empty($html)) {
+				$jsonArray['data'] = $html;
+				array_unshift($jsonArray['scriptCall'], 'inline.domAddNewRecord(\'bottom\', \'' . $nameObject . '_records\', \'' . $nameObjectForeignTable . '\', json.data);');
+			}
+
+			// @todo: Refactor this mess ... see other methods like getMainFields, too
+			$this->requiredElements = $resultArray['requiredElements'];
+			$this->requiredFields = $resultArray['requiredFields'];
+			$this->requiredAdditional = $resultArray['requiredAdditional'];
+			$this->requiredNested = $resultArray['requiredNested'];
+			$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
+			$this->additionalJS_submit = $resultArray['additionalJavaScriptSubmit'];
+			$this->extJSCODE = $resultArray['extJSCODE'];
+			$this->inlineData = $resultArray['inlineData'];
+			$this->hiddenFieldAccum = $resultArray['additionalHiddenFields'];
+			$this->additionalCode_pre = $resultArray['additionalHeadTags'];
+
+			$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $parent['config'], $inlineFirstPid);
 		}
-
-		return $widget;
+		return $jsonArray;
 	}
 
 	/**
-	 * Determines whether the current field value is considered as NULL value.
-	 * Using NULL values is enabled by using 'null' in the 'eval' TCA definition.
+	 * Save the expanded/collapsed state of a child record in the BE_USER->uc.
 	 *
-	 * @param string $table Name of the table
-	 * @param string $field Name of the field
-	 * @param array $row Accordant data
-	 * @param array $PA Parameters array with rendering instructions
-	 * @return bool
+	 * @param string $expand Whether this record is expanded.
+	 * @param string $collapse Whether this record is collapsed.
+	 * @return void
 	 */
-	protected function isDisabledNullValueField($table, $field, array $row, array $PA) {
-		$result = FALSE;
-
-		$config = $PA['fieldConf']['config'];
-		if ($PA['itemFormElValue'] === NULL && !empty($config['eval'])
-			&& GeneralUtility::inList($config['eval'], 'null')
-			&& (empty($config['mode']) || $config['mode'] !== 'useOrOverridePlaceholder')) {
-
-			$result = TRUE;
+	protected function setInlineExpandedCollapsedState($expand, $collapse) {
+		$backendUser = $this->getBackendUserAuthentication();
+		// The current table - for this table we should add/import records
+		$currentTable = $this->inlineStackProcessor->getUnstableStructure();
+		$currentTable = $currentTable['table'];
+		// The top parent table - this table embeds the current table
+		$top = $this->inlineStackProcessor->getStructureLevel(0);
+		$topTable = $top['table'];
+		$topUid = $top['uid'];
+		$inlineView = $this->getInlineExpandCollapseStateArray();
+		// Only do some action if the top record and the current record were saved before
+		if (MathUtility::canBeInterpretedAsInteger($topUid)) {
+			$expandUids = GeneralUtility::trimExplode(',', $expand);
+			$collapseUids = GeneralUtility::trimExplode(',', $collapse);
+			// Set records to be expanded
+			foreach ($expandUids as $uid) {
+				$inlineView[$topTable][$topUid][$currentTable][] = $uid;
+			}
+			// Set records to be collapsed
+			foreach ($collapseUids as $uid) {
+				$inlineView[$topTable][$topUid][$currentTable] = $this->removeFromArray($uid, $inlineView[$topTable][$topUid][$currentTable]);
+			}
+			// Save states back to database
+			if (is_array($inlineView[$topTable][$topUid][$currentTable])) {
+				$inlineView[$topTable][$topUid][$currentTable] = array_unique($inlineView[$topTable][$topUid][$currentTable]);
+				$backendUser->uc['inlineView'] = serialize($inlineView);
+				$backendUser->writeUC();
+			}
 		}
+	}
 
+	/**
+	 * Construct runtime environment for Inline Relational Record Editing.
+	 * - creates an anonymous \TYPO3\CMS\Backend\Controller\EditDocumentController in $GLOBALS['SOBE']
+	 * - sets $this to $GLOBALS['SOBE']->tceforms
+	 * -
+	 * @return void
+	 */
+	protected function setUpRuntimeEnvironmentForAjaxRequests() {
+		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_alt_doc.xlf');
+		// Create a new anonymous object:
+		$GLOBALS['SOBE'] = new \stdClass();
+		$GLOBALS['SOBE']->MOD_MENU = array(
+			'showPalettes' => '',
+			'showDescriptions' => '',
+		);
+		// Setting virtual document name
+		$GLOBALS['SOBE']->MCONF['name'] = 'xMOD_alt_doc.php';
+		// CLEANSE SETTINGS
+		$GLOBALS['SOBE']->MOD_SETTINGS = BackendUtility::getModuleData($GLOBALS['SOBE']->MOD_MENU, GeneralUtility::_GP('SET'), $GLOBALS['SOBE']->MCONF['name']);
+		// Create an instance of the document template object
+		// @todo: resolve clash getDocumentTemplate() / getControllerDocumenttemplate()
+		$GLOBALS['SOBE']->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
+		$GLOBALS['SOBE']->doc->backPath = $GLOBALS['BACK_PATH'];
+		// Initialize FormEngine (rendering the forms)
+		// @todo: check what of this part is still needed, simplify
+		$this->palettesCollapsed = !$GLOBALS['SOBE']->MOD_SETTINGS['showPalettes'];
+		$GLOBALS['SOBE']->tceforms = $this;
+	}
+
+	/**
+	 * Return expand / collapse state array for a given table / uid combination
+	 *
+	 * @param string $table Handled table
+	 * @param integer $uid Handled uid
+	 * @return array
+	 */
+	protected function getInlineExpandCollapseStateArrayForTableUid($table, $uid) {
+		$inlineView = $this->getInlineExpandCollapseStateArray();
+		$result = array();
+		if (MathUtility::canBeInterpretedAsInteger($uid)) {
+			if (!empty($inlineView[$table][$uid])) {
+				$result = $inlineView[$table][$uid];
+			}
+		}
 		return $result;
 	}
 
 	/**
-	 * Generation of TCEform elements of the type "text"
-	 * This will render a <textarea> OR RTE area form field, possibly with various control/validation features
+	 * Get expand / collapse state of inline items
 	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\TextElement
-	 */
-	public function getSingleField_typeText($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\TextElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "check"
-	 * This will render a check-box OR an array of checkboxes
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\CheckboxElement
-	 */
-	public function getSingleField_typeCheck($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\CheckboxElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "radio"
-	 * This will render a series of radio buttons.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\RadioElement
-	 */
-	public function getSingleField_typeRadio($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\RadioElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "select"
-	 * This will render a selector box element, or possibly a special construction with two selector boxes.
-	 * That depends on configuration.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\SelectElement
-	 */
-	public function getSingleField_typeSelect($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\SelectElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "group"
-	 * This will render a selectorbox into which elements from either the file system or database can be inserted. Relations.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since 7.0 - will be removed two versions later; Use \TYPO3\CMS\Backend\Form\Element\GroupElement
-	 */
-	public function getSingleField_typeGroup($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\GroupElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Generation of TCEform elements of the type "none"
-	 * This will render a non-editable display of the content of the field.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\NoneElement
-	 */
-	public function getSingleField_typeNone($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\NoneElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * HTML rendering of a value which is not editable.
-	 *
-	 * @param array $config Configuration for the display
-	 * @param string $itemValue The value to display
-	 * @return string The HTML code for the display
-	 * @see getSingleField_typeNone();
-	 */
-	public function getSingleField_typeNone_render($config, $itemValue) {
-		if ($config['format']) {
-			$itemValue = $this->formatValue($config, $itemValue);
-		}
-		if (!$config['pass_content']) {
-			$itemValue = htmlspecialchars($itemValue);
-		}
-
-		$rows = (int)$config['rows'];
-		// Render as textarea
-		if ($rows > 1 || $config['type'] === 'text') {
-			if (!$config['pass_content']) {
-				$itemValue = nl2br($itemValue);
-			}
-			$cols = MathUtility::forceIntegerInRange($config['cols'] ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formMaxWidth($cols);
-			$item = '
-				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
-					<textarea class="form-control" rows="' . $rows . '" disabled>' . $itemValue . '</textarea>
-				</div>';
-		} else {
-			$cols = $config['cols'] ?: ($config['size'] ?: $this->defaultInputWidth);
-			$size = MathUtility::forceIntegerInRange($cols ?: $this->defaultInputWidth, 5, $this->maxInputWidth);
-			$width = $this->formMaxWidth($size);
-			$item = '
-				<div class="form-control-wrap"' . ($width ? ' style="max-width: ' . $width . 'px"' : '') . '>
-					<input class="form-control" value="'. $itemValue .'" type="text" disabled>
-				</div>
-				' . ((string)$itemValue !== '' ? '<p class="help-block">' . $itemValue . '</p>' : '');
-		}
-		return $item;
-	}
-
-	/**
-	 * Handler for Flex Forms
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\FlexElement
-	 */
-	public function getSingleField_typeFlex($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\FlexElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * Creates the language menu for FlexForms:
-	 *
-	 * @param array $languages
-	 * @param string $elName
-	 * @param array $selectedLanguage
-	 * @param bool $multi
-	 * @return string HTML for menu
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSingleField_typeFlex_langMenu($languages, $elName, $selectedLanguage, $multi = TRUE) {
-		GeneralUtility::logDeprecatedFunction();
-		$opt = array();
-		foreach ($languages as $lArr) {
-			$opt[] = '<option value="' . htmlspecialchars($lArr['ISOcode']) . '"'
-				. (in_array($lArr['ISOcode'], $selectedLanguage) ? ' selected="selected"' : '') . '>'
-				. htmlspecialchars($lArr['title']) . '</option>';
-		}
-		$output = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE))
-			. ' class="tceforms-select tceforms-multiselect tceforms-flexlangmenu" name="' . $elName . '[]"'
-			. ($multi ? ' multiple="multiple" size="' . count($languages) . '"' : '') . '>' . implode('', $opt)
-			. '</select>';
-		return $output;
-	}
-
-	/**
-	 * Creates the menu for selection of the sheets:
-	 *
-	 * @param array $sArr Sheet array for which to render the menu
-	 * @param string $elName Form element name of the field containing the sheet pointer
-	 * @param string $sheetKey Current sheet key
-	 * @return string HTML for menu
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSingleField_typeFlex_sheetMenu($sArr, $elName, $sheetKey) {
-		GeneralUtility::logDeprecatedFunction();
-		$tCells = array();
-		$pct = round(100 / count($sArr));
-		foreach ($sArr as $sKey => $sheetCfg) {
-			if ($this->getBackendUserAuthentication()->jsConfirmation(1)) {
-				$onClick = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){'
-					. $this->elName($elName) . '.value=\'' . $sKey . '\'; TBE_EDITOR.submitForm()};';
-			} else {
-				$onClick = 'if(TBE_EDITOR.checkSubmit(-1)){ ' . $this->elName($elName) . '.value=\'' . $sKey . '\'; TBE_EDITOR.submitForm();}';
-			}
-			$tCells[] = '<td width="' . $pct . '%" style="'
-				. ($sKey == $sheetKey ? 'background-color: #9999cc; font-weight: bold;' : 'background-color: #aaaaaa;')
-				. ' cursor: hand;" onclick="' . htmlspecialchars($onClick) . '" align="center">'
-				. ($sheetCfg['ROOT']['TCEforms']['sheetTitle'] ? $this->getLanguageService()->sL($sheetCfg['ROOT']['TCEforms']['sheetTitle']) : $sKey)
-				. '</td>';
-		}
-		return '<table border="0" cellpadding="0" cellspacing="2" class="typo3-TCEforms-flexForm-sheetMenu"><tr>' . implode('', $tCells) . '</tr></table>';
-	}
-
-	/**
-	 * Handler for unknown types.
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UnknownElement
-	 */
-	public function getSingleField_typeUnknown($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UnknownElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/**
-	 * User defined field type
-	 *
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return string The HTML code for the TCEform field
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. Use \TYPO3\CMS\Backend\Form\Element\UserElement
-	 */
-	public function getSingleField_typeUser($table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $item = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\UserElement::class, $this)
-			->setRenderReadonly($this->getRenderReadonly())
-			->render($table, $field, $row, $PA);
-	}
-
-	/************************************************************
-	 *
-	 * Field content processing
-	 *
-	 ************************************************************/
-	/**
-	 * Format field content of various types if $config['format'] is set to date, filesize, ..., user
-	 * This is primarily for the field type none but can be used for user field types for example
-	 *
-	 * @param array $config Configuration for the display
-	 * @param string $itemValue The value to display
-	 * @return string Formatted Field content
-	 */
-	public function formatValue($config, $itemValue) {
-		$format = trim($config['format']);
-		switch ($format) {
-			case 'date':
-				if ($itemValue) {
-					$option = trim($config['format.']['option']);
-					if ($option) {
-						if ($config['format.']['strftime']) {
-							$value = strftime($option, $itemValue);
-						} else {
-							$value = date($option, $itemValue);
-						}
-					} else {
-						$value = date('d-m-Y', $itemValue);
-					}
-				} else {
-					$value = '';
-				}
-				if ($config['format.']['appendAge']) {
-					$age = BackendUtility::calcAge(
-						$GLOBALS['EXEC_TIME'] - $itemValue,
-						$this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')
-					);
-					$value .= ' (' . $age . ')';
-				}
-				$itemValue = $value;
-				break;
-			case 'datetime':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i d-m-Y', (int)$itemValue);
-				}
-				break;
-			case 'time':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i', (int)$itemValue);
-				}
-				break;
-			case 'timesec':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('H:i:s', (int)$itemValue);
-				}
-				break;
-			case 'year':
-				// compatibility with "eval" (type "input")
-				if ($itemValue !== '') {
-					$itemValue = date('Y', (int)$itemValue);
-				}
-				break;
-			case 'int':
-				$baseArr = array('dec' => 'd', 'hex' => 'x', 'HEX' => 'X', 'oct' => 'o', 'bin' => 'b');
-				$base = trim($config['format.']['base']);
-				$format = $baseArr[$base] ?: 'd';
-				$itemValue = sprintf('%' . $format, $itemValue);
-				break;
-			case 'float':
-				$precision = MathUtility::forceIntegerInRange($config['format.']['precision'], 1, 10, 2);
-				$itemValue = sprintf('%.' . $precision . 'f', $itemValue);
-				break;
-			case 'number':
-				$format = trim($config['format.']['option']);
-				$itemValue = sprintf('%' . $format, $itemValue);
-				break;
-			case 'md5':
-				$itemValue = md5($itemValue);
-				break;
-			case 'filesize':
-				// We need to cast to int here, otherwise empty values result in empty output,
-				// but we expect zero.
-				$value = GeneralUtility::formatSize((int)$itemValue);
-				if ($config['format.']['appendByteSize']) {
-					$value .= ' (' . $itemValue . ')';
-				}
-				$itemValue = $value;
-				break;
-			case 'user':
-				$func = trim($config['format.']['userFunc']);
-				if ($func) {
-					$params = array(
-						'value' => $itemValue,
-						'args' => $config['format.']['userFunc'],
-						'config' => $config,
-						'pObj' => &$this
-					);
-					$itemValue = GeneralUtility::callUserFunction($func, $params, $this);
-				}
-				break;
-			default:
-				// Do nothing e.g. when $format === ''
-		}
-		return $itemValue;
-	}
-
-	/************************************************************
-	 *
-	 * "Configuration" fetching/processing functions
-	 *
-	 ************************************************************/
-	/**
-	 * Calculate and return the current "types" pointer value for a record
-	 *
-	 * @param string $table The table name. MUST be in $GLOBALS['TCA']
-	 * @param array $row The row from the table, should contain at least the "type" field, if applicable.
-	 * @return string Return the "type" value for this record, ready to pick a "types" configuration from the $GLOBALS['TCA'] array.
-	 * @throws \RuntimeException
-	 */
-	public function getRTypeNum($table, $row) {
-		$typeNum = 0;
-		$field = $GLOBALS['TCA'][$table]['ctrl']['type'];
-		if ($field) {
-			if (strpos($field, ':') !== FALSE) {
-				list($pointerField, $foreignTypeField) = explode(':', $field);
-				$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$pointerField]['config'];
-				$relationType = $fieldConfig['type'];
-				if ($relationType === 'select') {
-					$foreignUid = $row[$pointerField];
-					$foreignTable = $fieldConfig['foreign_table'];
-				} elseif ($relationType === 'group') {
-					$values = $this->extractValuesOnlyFromValueLabelList($row[$pointerField]);
-					list(, $foreignUid) = GeneralUtility::revExplode('_', $values[0], 2);
-					$allowedTables = explode(',', $fieldConfig['allowed']);
-					// Always take the first configured table.
-					$foreignTable = $allowedTables[0];
-				} else {
-					throw new \RuntimeException('TCA Foreign field pointer fields are only allowed to be used with group or select field types.', 1325861239);
-				}
-				if ($foreignUid) {
-					$foreignRow = BackendUtility::getRecord($foreignTable, $foreignUid, $foreignTypeField);
-					$this->registerDefaultLanguageData($foreignTable, $foreignRow);
-					if ($foreignRow[$foreignTypeField]) {
-						$foreignTypeFieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-						$typeNum = $this->getLanguageOverlayRawValue($foreignTable, $foreignRow, $foreignTypeField, $foreignTypeFieldConfig);
-					}
-				}
-			} else {
-				$typeFieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-				$typeNum = $this->getLanguageOverlayRawValue($table, $row, $field, $typeFieldConfig);
-			}
-		}
-		if (empty($typeNum)) {
-			// If that value is an empty string, set it to "0" (zero)
-			$typeNum = 0;
-		}
-		// If current typeNum doesn't exist, set it to 0 (or to 1 for historical reasons, if 0 doesn't exist)
-		if (!$GLOBALS['TCA'][$table]['types'][$typeNum]) {
-			$typeNum = $GLOBALS['TCA'][$table]['types']['0'] ? 0 : 1;
-		}
-		// Force to string. Necessary for eg '-1' to be recognized as a type value.
-		$typeNum = (string)$typeNum;
-		return $typeNum;
-	}
-
-	/**
-	 * Used to adhoc-rearrange the field order normally set in the [types][showitem] list
-	 *
-	 * @param array $fields A [types][showitem] list of fields, exploded by ",
-	 * @return array Returns rearranged version (keys are changed around as well.)
-	 * @see getMainFields()
-	 */
-	public function rearrange($fields) {
-		$fO = array_flip(GeneralUtility::trimExplode(',', $this->fieldOrder, TRUE));
-		$newFields = array();
-		foreach ($fields as $cc => $content) {
-			$cP = GeneralUtility::trimExplode(';', $content);
-			if (isset($fO[$cP[0]])) {
-				$newFields[$fO[$cP[0]]] = $content;
-				unset($fields[$cc]);
-			}
-		}
-		ksort($newFields);
-		$fields = array_merge($newFields, $fields);
-		return $fields;
-	}
-
-	/**
-	 * Producing an array of field names NOT to display in the form,
-	 * based on settings from subtype_value_field, bitmask_excludelist_bits etc.
-	 * Notice, this list is in NO way related to the "excludeField" flag
-	 *
-	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
-	 * @param array $row A record from table.
-	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
-	 * @return array Array with fieldnames as values. The fieldnames are those which should NOT be displayed "anyways
-	 * @see getMainFields()
-	 */
-	public function getExcludeElements($table, $row, $typeNum) {
-		// Init:
-		$excludeElements = array();
-		// If a subtype field is defined for the type
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
-			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]])) {
-				$excludeElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_excludelist'][$row[$sTfield]], TRUE);
-			}
-		}
-		// If a bitmask-value field has been configured, then find possible fields to exclude based on that:
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_value_field'];
-			$sTValue = MathUtility::forceIntegerInRange($row[$sTfield], 0);
-			if (is_array($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'])) {
-				foreach ($GLOBALS['TCA'][$table]['types'][$typeNum]['bitmask_excludelist_bits'] as $bitKey => $eList) {
-					$bit = substr($bitKey, 1);
-					if (MathUtility::canBeInterpretedAsInteger($bit)) {
-						$bit = MathUtility::forceIntegerInRange($bit, 0, 30);
-						if ($bitKey[0] === '-' && !($sTValue & pow(2, $bit)) || $bitKey[0] === '+' && $sTValue & pow(2, $bit)) {
-							$excludeElements = array_merge($excludeElements, GeneralUtility::trimExplode(',', $eList, TRUE));
-						}
-					}
-				}
-			}
-		}
-		// Return the array of elements:
-		return $excludeElements;
-	}
-
-	/**
-	 * Finds possible field to add to the form, based on subtype fields.
-	 *
-	 * @param string $table Table name, MUST be in $GLOBALS['TCA']
-	 * @param array $row A record from table.
-	 * @param string $typeNum A "type" pointer value, probably the one calculated based on the record array.
-	 * @return array An array containing two values: 1) Another array containing field names to add and 2) the subtype value field.
-	 * @see getMainFields()
-	 */
-	public function getFieldsToAdd($table, $row, $typeNum) {
-		// Init:
-		$addElements = array();
-		// If a subtype field is defined for the type
-		$sTfield = '';
-		if ($GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field']) {
-			$sTfield = $GLOBALS['TCA'][$table]['types'][$typeNum]['subtype_value_field'];
-			if (trim($GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]])) {
-				$addElements = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['types'][$typeNum]['subtypes_addlist'][$row[$sTfield]], TRUE);
-			}
-		}
-		// Return the return
-		return array($addElements, $sTfield);
-	}
-
-	/**
-	 * Merges the current [types][showitem] array with the array of fields to add for the current subtype field of the "type" value.
-	 *
-	 * @param array $fields A [types][showitem] list of fields, exploded by ",
-	 * @param array $fieldsToAdd The output from getFieldsToAdd()
-	 * @param string $table The table name, if we want to consider it's palettes when positioning the new elements
-	 * @return array Return the modified $fields array.
-	 * @see getMainFields(),getFieldsToAdd()
-	 */
-	public function mergeFieldsWithAddedFields($fields, $fieldsToAdd, $table = '') {
-		if (count($fieldsToAdd[0])) {
-			$c = 0;
-			$found = FALSE;
-			foreach ($fields as $fieldInfo) {
-				list($fieldName, $label, $paletteName) = GeneralUtility::trimExplode(';', $fieldInfo);
-				if ($fieldName === $fieldsToAdd[1]) {
-					$found = TRUE;
-				} elseif ($fieldName === '--palette--' && $paletteName && $table !== '') {
-					// Look inside the palette
-					if (is_array($GLOBALS['TCA'][$table]['palettes'][$paletteName])) {
-						$itemList = $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'];
-						if ($itemList) {
-							$paletteFields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-							foreach ($paletteFields as $info) {
-								$fieldParts = GeneralUtility::trimExplode(';', $info);
-								$theField = $fieldParts[0];
-								if ($theField === $fieldsToAdd[1]) {
-									$found = TRUE;
-									break 1;
-								}
-							}
-						}
-					}
-				}
-				if ($found) {
-					array_splice($fields, $c + 1, 0, $fieldsToAdd[0]);
-					break;
-				}
-				$c++;
-			}
-		}
-		return $fields;
-	}
-
-	/**
-	 * Returns TSconfig for table/row
-	 * Multiple requests to this function will return cached content so there is no performance loss in calling
-	 * this many times since the information is looked up only once.
-	 *
-	 * @param string $table The table name
-	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
-	 * @param string $field Optionally you can specify the field name as well. In that case the TSconfig for the field is returned.
-	 * @return mixed The TSconfig values (probably in an array)
-	 * @see BackendUtility::getTCEFORM_TSconfig()
-	 */
-	public function setTSconfig($table, $row, $field = '') {
-		$mainKey = $table . ':' . $row['uid'];
-		if (!isset($this->cachedTSconfig[$mainKey])) {
-			$this->cachedTSconfig[$mainKey] = BackendUtility::getTCEFORM_TSconfig($table, $row);
-		}
-		if ($field) {
-			return $this->cachedTSconfig[$mainKey][$field];
-		} else {
-			return $this->cachedTSconfig[$mainKey];
-		}
-	}
-
-	/**
-	 * Overrides the TCA field configuration by TSconfig settings.
-	 *
-	 * Example TSconfig: TCEform.<table>.<field>.config.appearance.useSortable = 1
-	 * This overrides the setting in $GLOBALS['TCA'][<table>]['columns'][<field>]['config']['appearance']['useSortable'].
-	 *
-	 * @param array $fieldConfig $GLOBALS['TCA'] field configuration
-	 * @param array $TSconfig TSconfig
-	 * @return array Changed TCA field configuration
-	 */
-	public function overrideFieldConf($fieldConfig, $TSconfig) {
-		if (is_array($TSconfig)) {
-			$TSconfig = GeneralUtility::removeDotsFromTS($TSconfig);
-			$type = $fieldConfig['type'];
-			if (is_array($TSconfig['config']) && is_array($this->allowOverrideMatrix[$type])) {
-				// Check if the keys in TSconfig['config'] are allowed to override TCA field config:
-				foreach ($TSconfig['config'] as $key => $_) {
-					if (!in_array($key, $this->allowOverrideMatrix[$type], TRUE)) {
-						unset($TSconfig['config'][$key]);
-					}
-				}
-				// Override $GLOBALS['TCA'] field config by remaining TSconfig['config']:
-				if (count($TSconfig['config'])) {
-					ArrayUtility::mergeRecursiveWithOverrule($fieldConfig, $TSconfig['config']);
-				}
-			}
-		}
-		return $fieldConfig;
-	}
-
-	/**
-	 * Returns the "special" configuration (from the "types" "showitem" list) for a fieldname based on input table/record
-	 * (Not used anywhere...?)
-	 *
-	 * @param string $table The table name
-	 * @param array $row The table row (Should at least contain the "uid" value, even if "NEW..." string. The "pid" field is important as well, and negative values will be intepreted as pointing to a record from the same table.)
-	 * @param string $field Specify the field name.
-	 * @return array|NULL
-	 * @see getSpecConfFromString(), BackendUtility::getTCAtypes()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSpecConfForField($table, $row, $field) {
-		GeneralUtility::logDeprecatedFunction();
-		// Finds the current "types" configuration for the table/row:
-		$types_fieldConfig = BackendUtility::getTCAtypes($table, $row);
-		// If this is an array, then traverse it:
-		if (is_array($types_fieldConfig)) {
-			foreach ($types_fieldConfig as $vconf) {
-				// If the input field name matches one found in the 'types' list, then return the 'special' configuration.
-				if ($vconf['field'] == $field) {
-					return $vconf['spec'];
-				}
-			}
-		}
-		return NULL;
-	}
-
-	/**
-	 * Returns the "special" configuration of an "extra" string (non-parsed)
-	 *
-	 * @param string $extraString The "Part 4" of the fields configuration in "types" "showitem" lists.
-	 * @param string $defaultExtras The ['defaultExtras'] value from field configuration
-	 * @return array An array with the special options in.
-	 * @see getSpecConfForField(), BackendUtility::getSpecConfParts()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getSpecConfFromString($extraString, $defaultExtras) {
-		GeneralUtility::logDeprecatedFunction();
-		return BackendUtility::getSpecConfParts($extraString, $defaultExtras);
-	}
-
-	/**
-	 * Loads the elements of a palette (collection of secondary options) in an array.
-	 *
-	 * @param string $table The table name
-	 * @param array $row The row array
-	 * @param string $palette The palette number/pointer
-	 * @param string $itemList Optional alternative list of fields for the palette
-	 * @return array The palette elements
-	 */
-	public function loadPaletteElements($table, $row, $palette, $itemList = '') {
-		$parts = array();
-		// Getting excludeElements, if any.
-		if (!is_array($this->excludeElements)) {
-			$this->excludeElements = $this->getExcludeElements($table, $row, $this->getRTypeNum($table, $row));
-		}
-		// Load the palette TCEform elements
-		if ($GLOBALS['TCA'][$table] && (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) || $itemList)) {
-			$itemList = $itemList ? $itemList : $GLOBALS['TCA'][$table]['palettes'][$palette]['showitem'];
-			if ($itemList) {
-				$fields = GeneralUtility::trimExplode(',', $itemList, TRUE);
-				foreach ($fields as $info) {
-					$fieldParts = GeneralUtility::trimExplode(';', $info);
-					$theField = $fieldParts[0];
-					if ($theField === '--linebreak--') {
-						$parts[]['NAME'] = '--linebreak--';
-					} elseif (!in_array($theField, $this->excludeElements) && $GLOBALS['TCA'][$table]['columns'][$theField]) {
-						$this->palFieldArr[$palette][] = $theField;
-						$elem = $this->getSingleField($table, $theField, $row, $fieldParts[1], 1, '', $fieldParts[2]);
-						if (is_array($elem)) {
-							$parts[] = $elem;
-						}
-					}
-				}
-			}
-		}
-		return $parts;
-	}
-
-	/************************************************************
-	 *
-	 * Display of localized content etc.
-	 *
-	 ************************************************************/
-	/**
-	 * Will register data from original language records if the current record is a translation of another.
-	 * The original data is shown with the edited record in the form.
-	 * The information also includes possibly diff-views of what changed in the original record.
-	 * Function called from outside (see alt_doc.php + quick edit) before rendering a form for a record
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param array $rec Record array of the record being edited
-	 * @return void
-	 */
-	public function registerDefaultLanguageData($table, $rec) {
-		// Add default language:
-		if (
-			$GLOBALS['TCA'][$table]['ctrl']['languageField'] && $rec[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0
-			&& $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
-			&& (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] > 0
-		) {
-			$lookUpTable = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']
-				? $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable']
-				: $table;
-			// Get data formatted:
-			$this->defaultLanguageData[$table . ':' . $rec['uid']] = BackendUtility::getRecordWSOL(
-				$lookUpTable,
-				(int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']]
-			);
-			// Get data for diff:
-			if ($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']) {
-				$this->defaultLanguageData_diff[$table . ':' . $rec['uid']] = unserialize($rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']]);
-			}
-			// If there are additional preview languages, load information for them also:
-			$prLang = $this->getAdditionalPreviewLanguages();
-			foreach ($prLang as $prL) {
-				/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
-				$t8Tools = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
-				$tInfo = $t8Tools->translationInfo($lookUpTable, (int)$rec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']], $prL['uid']);
-				if (is_array($tInfo['translations']) && is_array($tInfo['translations'][$prL['uid']])) {
-					$this->additionalPreviewLanguageData[$table . ':' . $rec['uid']][$prL['uid']] = BackendUtility::getRecordWSOL($table, (int)$tInfo['translations'][$prL['uid']]['uid']);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Creates language-overlay for a field value
-	 * This means the requested field value will be overridden with the data from the default language.
-	 * Can be used to render read only fields for example.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param array $row Record array of the record being edited in current language
-	 * @param string $field Field name represented by $item
-	 * @param array $fieldConf Content of $PA['fieldConf']
-	 * @return string Unprocessed field value merged with default language data if needed
-	 */
-	public function getLanguageOverlayRawValue($table, $row, $field, $fieldConf) {
-		$value = $row[$field];
-		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			if (
-				$fieldConf['l10n_mode'] == 'exclude'
-				|| $fieldConf['l10n_mode'] == 'mergeIfNotBlank' && trim($this->defaultLanguageData[$table . ':' . $row['uid']][$field]) !== ''
-			) {
-				$value = $this->defaultLanguageData[$table . ':' . $row['uid']][$field];
-			}
-		}
-		return $value;
-	}
-
-	/**
-	 * Renders the display of default language record content around current field.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param string $field Field name represented by $item
-	 * @param array $row Record array of the record being edited
-	 * @param string $item HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 */
-	public function renderDefaultLanguageContent($table, $field, $row, $item) {
-		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->defaultLanguageData[$table . ':' . $row['uid']][$field], 0, 1, FALSE, $this->defaultLanguageData[$table . ':' . $row['uid']]['uid']);
-			$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
-			// Don't show content if it's for IRRE child records:
-			if ($fieldConfig['config']['type'] != 'inline') {
-				if ($defaultLanguageValue !== '') {
-					$item .= '<div class="t3-form-original-language">' . $this->getLanguageIcon($table, $row, 0)
-						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
-				}
-				$previewLanguages = $this->getAdditionalPreviewLanguages();
-				foreach ($previewLanguages as $previewLanguage) {
-					$defaultLanguageValue = BackendUtility::getProcessedValue($table, $field, $this->additionalPreviewLanguageData[$table . ':' . $row['uid']][$previewLanguage['uid']][$field], 0, 1);
-					if ($defaultLanguageValue !== '') {
-						$item .= '<div class="t3-form-original-language">'
-							. $this->getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
-							. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
-							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
-					}
-				}
-			}
-		}
-		return $item;
-	}
-
-	/**
-	 * Renders the diff-view of default language record content compared with what the record was originally translated from.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
-	 *
-	 * @param string $table Table name of the record being edited
-	 * @param string $field Field name represented by $item
-	 * @param array $row Record array of the record being edited
-	 * @param string  $item HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 */
-	public function renderDefaultLanguageDiff($table, $field, $row, $item) {
-		if (is_array($this->defaultLanguageData_diff[$table . ':' . $row['uid']])) {
-			// Initialize:
-			$dLVal = array(
-				'old' => $this->defaultLanguageData_diff[$table . ':' . $row['uid']],
-				'new' => $this->defaultLanguageData[$table . ':' . $row['uid']]
-			);
-			// There must be diff-data:
-			if (isset($dLVal['old'][$field])) {
-				if ((string)$dLVal['old'][$field] !== (string)$dLVal['new'][$field]) {
-					// Create diff-result:
-					$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
-					$diffres = $t3lib_diff_Obj->makeDiffDisplay(
-						BackendUtility::getProcessedValue($table, $field, $dLVal['old'][$field], 0, 1),
-						BackendUtility::getProcessedValue($table, $field, $dLVal['new'][$field], 0, 1)
-					);
-					$item .= '<div class="t3-form-original-language-diff">
-						<div class="t3-form-original-language-diffheader">' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . '</div>
-						<div class="t3-form-original-language-diffcontent">' . $diffres . '</div>
-					</div>';
-				}
-			}
-		}
-		return $item;
-	}
-
-	/**
-	 * Renders the diff-view of vDEF fields in flexforms
-	 *
-	 * @param array $vArray Record array of the record being edited
-	 * @param string $vDEFkey HTML of the form field. This is what we add the content to.
-	 * @return string Item string returned again, possibly with the original value added to.
-	 * @see getSingleField(), registerDefaultLanguageData()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function renderVDEFDiff($vArray, $vDEFkey) {
-		GeneralUtility::logDeprecatedFunction();
-		$item = NULL;
-		if (
-			$GLOBALS['TYPO3_CONF_VARS']['BE']['flexFormXMLincludeDiffBase'] && isset($vArray[$vDEFkey . '.vDEFbase'])
-			&& (string)$vArray[$vDEFkey . '.vDEFbase'] !== (string)$vArray['vDEF']
-		) {
-			// Create diff-result:
-			$t3lib_diff_Obj = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
-			$diffres = $t3lib_diff_Obj->makeDiffDisplay($vArray[$vDEFkey . '.vDEFbase'], $vArray['vDEF']);
-			$item = '<div class="typo3-TCEforms-diffBox">' . '<div class="typo3-TCEforms-diffBox-header">'
-				. htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.changeInOrig')) . ':</div>' . $diffres . '</div>';
-		}
-		return $item;
-	}
-
-	/************************************************************
-	 *
-	 * Form element helper functions
-	 *
-	 ************************************************************/
-	/**
-	 * Prints the selector box form-field for the db/file/select elements (multiple)
-	 *
-	 * @param string $fName Form element name
-	 * @param string $mode Mode "db", "file" (internal_type for the "group" type) OR blank (then for the "select" type)
-	 * @param string $allowed Commalist of "allowed
-	 * @param array $itemArray The array of items. For "select" and "group"/"file" this is just a set of value. For "db" its an array of arrays with table/uid pairs.
-	 * @param string $selector Alternative selector box.
-	 * @param array $params An array of additional parameters, eg: "size", "info", "headers" (array with "selector" and "items"), "noBrowser", "thumbnails
-	 * @param string $onFocus On focus attribute string
-	 * @param string $table (optional) Table name processing for
-	 * @param string $field (optional) Field of table name processing for
-	 * @param string $uid (optional) uid of table record processing for
-	 * @param array $config (optional) The TCA field config
-	 * @return string The form fields for the selection.
-	 * @throws \UnexpectedValueException
-	 */
-	public function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = array(), $onFocus = '', $table = '', $field = '', $uid = '', $config = array()) {
-		$languageService = $this->getLanguageService();
-		$disabled = '';
-		if ($this->getRenderReadonly() || $params['readOnly']) {
-			$disabled = ' disabled="disabled"';
-		}
-		// Sets a flag which means some JavaScript is included on the page to support this element.
-		$this->printNeededJS['dbFileIcons'] = 1;
-		// INIT
-		$uidList = array();
-		$opt = array();
-		$itemArrayC = 0;
-		// Creating <option> elements:
-		if (is_array($itemArray)) {
-			$itemArrayC = count($itemArray);
-			switch ($mode) {
-				case 'db':
-					foreach ($itemArray as $pp) {
-						$pRec = BackendUtility::getRecordWSOL($pp['table'], $pp['id']);
-						if (is_array($pRec)) {
-							$pTitle = BackendUtility::getRecordTitle($pp['table'], $pRec, FALSE, TRUE);
-							$pUid = $pp['table'] . '_' . $pp['id'];
-							$uidList[] = $pUid;
-							$title = htmlspecialchars($pTitle);
-							$opt[] = '<option value="' . htmlspecialchars($pUid) . '" title="' . $title . '">' . $title . '</option>';
-						}
-					}
-					break;
-				case 'file_reference':
-
-				case 'file':
-					foreach ($itemArray as $item) {
-						$itemParts = explode('|', $item);
-						$uidList[] = ($pUid = ($pTitle = $itemParts[0]));
-						$title = htmlspecialchars(rawurldecode($itemParts[1]));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($itemParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-					}
-					break;
-				case 'folder':
-					foreach ($itemArray as $pp) {
-						$pParts = explode('|', $pp);
-						$uidList[] = ($pUid = ($pTitle = $pParts[0]));
-						$title = htmlspecialchars(rawurldecode($pParts[0]));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($pParts[0])) . '" title="' . $title . '">' . $title . '</option>';
-					}
-					break;
-				default:
-					foreach ($itemArray as $pp) {
-						$pParts = explode('|', $pp, 2);
-						$uidList[] = ($pUid = $pParts[0]);
-						$pTitle = $pParts[1];
-						$title = htmlspecialchars(rawurldecode($pTitle));
-						$opt[] = '<option value="' . htmlspecialchars(rawurldecode($pUid)) . '" title="' . $title . '">' . $title . '</option>';
-					}
-			}
-		}
-		// Create selector box of the options
-		$sSize = $params['autoSizeMax']
-			? MathUtility::forceIntegerInRange($itemArrayC + 1, MathUtility::forceIntegerInRange($params['size'], 1), $params['autoSizeMax'])
-			: $params['size'];
-		if (!$selector) {
-			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
-			$selector = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE)) . '" '
-				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" class="form-control tceforms-multiselect"')
-				. ($isMultiple ? ' multiple="multiple"' : '')
-				. ' name="' . $fName . '_list" ' . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
-				. '</select>';
-		}
-		$icons = array(
-			'L' => array(),
-			'R' => array()
-		);
-		$rOnClickInline = '';
-		if (!$params['readOnly'] && !$params['noList']) {
-			if (!$params['noBrowser']) {
-				// Check against inline uniqueness
-				$inlineParent = $this->inline->getStructureLevel(-1);
-				$aOnClickInline = '';
-				if (is_array($inlineParent) && $inlineParent['uid']) {
-					if ($inlineParent['config']['foreign_table'] == $table && $inlineParent['config']['foreign_unique'] == $field) {
-						$objectPrefix = $this->inline->inlineNames['object'] . InlineElement::Structure_Separator . $table;
-						$aOnClickInline = $objectPrefix . '|inline.checkUniqueElement|inline.setUniqueElement';
-						$rOnClickInline = 'inline.revertUnique(\'' . $objectPrefix . '\',null,\'' . $uid . '\');';
-					}
-				}
-				if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserType'])) {
-					$elementBrowserType = $config['appearance']['elementBrowserType'];
-				} else {
-					$elementBrowserType = $mode;
-				}
-				if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserAllowed'])) {
-					$elementBrowserAllowed = $config['appearance']['elementBrowserAllowed'];
-				} else {
-					$elementBrowserAllowed = $allowed;
-				}
-				$aOnClick = 'setFormValueOpenBrowser(\'' . $elementBrowserType . '\',\''
-					. ($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline) . '\'); return false;';
-				$icons['R'][] = '
-					<a href="#"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						class="btn btn-default"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file'))) . '">
-						' . IconUtility::getSpriteIcon('actions-insert-record') . '
-					</a>';
-			}
-			if (!$params['dontShowMoveIcons']) {
-				if ($sSize >= 5) {
-					$icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3-btn-moveoption-top"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-top') . '
-						</a>';
-
-				}
-				$icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3-btn-moveoption-up"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-up') . '
-					</a>';
-				$icons['L'][] = '
-					<a href="#"
-						class="btn btn-default t3-btn-moveoption-down"
-						data-fieldname="' . $fName . '"
-						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-down') . '
-					</a>';
-				if ($sSize >= 5) {
-					$icons['L'][] = '
-						<a href="#"
-							class="btn btn-default t3-btn-moveoption-bottom"
-							data-fieldname="' . $fName . '"
-							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-bottom') . '
-						</a>';
-				}
-			}
-			$clipElements = $this->getClipboardElements($allowed, $mode);
-			if (count($clipElements)) {
-				$aOnClick = '';
-				foreach ($clipElements as $elValue) {
-					if ($mode == 'db') {
-						list($itemTable, $itemUid) = explode('|', $elValue);
-						$recordTitle = BackendUtility::getRecordTitle($itemTable, BackendUtility::getRecordWSOL($itemTable, $itemUid));
-						$itemTitle = GeneralUtility::quoteJSvalue($recordTitle);
-						$elValue = $itemTable . '_' . $itemUid;
-					} else {
-						// 'file', 'file_reference' and 'folder' mode
-						$itemTitle = 'unescape(\'' . rawurlencode(basename($elValue)) . '\')';
-					}
-					$aOnClick .= 'setFormValueFromBrowseWin(\'' . $fName . '\',unescape(\''
-						. rawurlencode(str_replace('%20', ' ', $elValue)) . '\'),' . $itemTitle . ',' . $itemTitle . ');';
-				}
-				$aOnClick .= 'return false;';
-				$icons['R'][] = '
-					<a href="#"
-						onclick="' . htmlspecialchars($aOnClick) . '"
-						title="' . htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements))) . '">
-						' . IconUtility::getSpriteIcon('actions-document-paste-into') . '
-					</a>';
-			}
-		}
-		if (!$params['readOnly'] && !$params['noDelete']) {
-			$icons['L'][] = '
-				<a href="#"
-					class="btn btn-default t3-btn-removeoption"
-					onClick="' . $rOnClickInline . '"
-					data-fieldname="' . $fName . '"
-					title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected')) . '">
-					' . IconUtility::getSpriteIcon('actions-selection-delete') . '
-				</a>';
-
-		}
-
-
-		// Thumbnails
-		$imagesOnly = FALSE;
-		if ($params['thumbnails'] && $params['allowed']) {
-			// In case we have thumbnails, check if only images are allowed.
-			// In this case, render them below the field, instead of to the right
-			$allowedExtensionList = $params['allowed'];
-			$imageExtensionList = GeneralUtility::trimExplode(',', strtolower($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']), TRUE);
-			$imagesOnly = TRUE;
-			foreach ($allowedExtensionList as $allowedExtension) {
-				if (!ArrayUtility::inArray($imageExtensionList, $allowedExtension)) {
-					$imagesOnly = FALSE;
-					break;
-				}
-			}
-		}
-		$thumbnails = '';
-		if (is_array($params['thumbnails']) && !empty($params['thumbnails'])) {
-			if ($imagesOnly) {
-				$thumbnails .= '<ul class="list-inline">';
-				foreach ($params['thumbnails'] as $thumbnail) {
-					$thumbnails .= '<li><span class="thumbnail">' . $thumbnail['image'] . '</span></li>';
-				}
-				$thumbnails .= '</ul>';
-			} else {
-				$thumbnails .= '<div class="table-fit"><table class="table table-white"><tbody>';
-				foreach ($params['thumbnails'] as $thumbnail) {
-					$thumbnails .= '
-						<tr>
-							<td class="col-icon">
-								' . ($config['internal_type'] === 'db'
-									? $this->getClickMenu($thumbnail['image'], $thumbnail['table'], $thumbnail['uid'])
-									: $thumbnail['image']) . '
-							</td>
-							<td class="col-title">
-								' . ($config['internal_type'] === 'db'
-									? $this->getClickMenu($thumbnail['name'], $thumbnail['table'], $thumbnail['uid'])
-									: $thumbnail['name']) . '
-								' . ($config['internal_type'] === 'db' ? '' : ' <span class="text-muted">[' . $thumbnail['uid'] . ']</span>') . '
-							</td>
-						</tr>
-						';
-				}
-				$thumbnails .= '</tbody></table></div>';
-			}
-		}
-
-		// Allowed Tables
-		$allowedTables = '';
-		if (is_array($params['allowedTables']) && !empty($params['allowedTables'])) {
-			$allowedTables .= '<div class="help-block">';
-			foreach ($params['allowedTables'] as $key => $item) {
-				if (is_array($item)) {
-					$allowedTables .= '<a href="#" onClick="' . htmlspecialchars($item['onClick']) . '" class="btn btn-default">' . $item['icon'] . ' ' . htmlspecialchars($item['name']) . '</a> ';
-				} elseif($key === 'name') {
-					$allowedTables .= '<span>' . htmlspecialchars($item) . '</span> ';
-				}
-			}
-			$allowedTables .= '</div>';
-		}
-		// Allowed
-		$allowedList = '';
-		if (is_array($params['allowed']) && !empty($params['allowed'])) {
-			foreach ($params['allowed'] as $item) {
-				$allowedList .= '<span class="label label-success">' . strtoupper($item) . '</span> ';
-			}
-		}
-		// Disallowed
-		$disallowedList = '';
-		if (is_array($params['disallowed']) && !empty($params['disallowed'])) {
-			foreach ($params['disallowed'] as $item) {
-				$disallowedList .= '<span class="label label-danger">' . strtoupper($item) . '</span> ';
-			}
-		}
-		// Rightbox
-		$rightbox = ($params['rightbox'] ?: '');
-
-		// Hook: dbFileIcons_postProcess (requested by FAL-team for use with the "fal" extension)
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'])) {
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms.php']['dbFileIcons'] as $classRef) {
-				$hookObject = GeneralUtility::getUserObj($classRef);
-				if (!$hookObject instanceof DatabaseFileIconsHookInterface) {
-					throw new \UnexpectedValueException('$hookObject must implement interface ' . \TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface::class, 1290167704);
-				}
-				$additionalParams = array(
-					'mode' => $mode,
-					'allowed' => $allowed,
-					'itemArray' => $itemArray,
-					'onFocus' => $onFocus,
-					'table' => $table,
-					'field' => $field,
-					'uid' => $uid,
-					'config' => $GLOBALS['TCA'][$table]['columns'][$field]
-				);
-				$hookObject->dbFileIcons_postProcess($params, $selector, $thumbnails, $icons, $rightbox, $fName, $uidList, $additionalParams, $this);
-			}
-		}
-
-		// Output
-		$str = '
-			' . ($params['headers']['selector'] ? '<label>' . $params['headers']['selector'] . '</label>' : '') . '
-			<div class="form-wizards-wrap form-wizards-aside">
-				<div class="form-wizards-element">
-					' . $selector . '
-					' . (!$params['noList'] && !empty($allowedTables) ? $allowedTables : '') . '
-					' . (!$params['noList'] && (!empty($allowedList) || !empty($disallowedList))
-						? '<div class="help-block">' . $allowedList . $disallowedList . ' </div>'
-						: '') . '
-				</div>
-				' . (!empty($icons['L']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['L']) . '</div></div>' : '' ) . '
-				' . (!empty($icons['R']) ? '<div class="form-wizards-items"><div class="btn-group-vertical">' . implode('', $icons['R']) . '</div></div>' : '' ) . '
-			</div>
-			';
-		if ($rightbox) {
-			$str = '
-				<div class="form-multigroup-wrap t3js-formengine-field-group">
-					<div class="form-multigroup-item form-multigroup-element">' . $str . '</div>
-					<div class="form-multigroup-item form-multigroup-element">
-						' . ($params['headers']['items'] ? '<label>' . $params['headers']['items'] . '</label>' : '') . '
-						' . ($params['headers']['selectorbox'] ? '<div class="form-multigroup-item-wizard">' . $params['headers']['selectorbox'] . '</div>' : '') . '
-						' . $rightbox . '
-					</div>
-				</div>
-				';
-		}
-		$str .= $thumbnails;
-
-		// Creating the hidden field which contains the actual value as a comma list.
-		$str .= '<input type="hidden" name="' . $fName . '" value="' . htmlspecialchars(implode(',', $uidList)) . '" />';
-		return $str;
-	}
-
-	/**
-	 * Returns array of elements from clipboard to insert into GROUP element box.
-	 *
-	 * @param string $allowed Allowed elements, Eg "pages,tt_content", "gif,jpg,jpeg,png
-	 * @param string $mode Mode of relations: "db" or "file
-	 * @return array Array of elements in values (keys are insignificant), if none found, empty array.
-	 */
-	public function getClipboardElements($allowed, $mode) {
-		$output = array();
-		if (is_object($this->clipObj)) {
-			switch ($mode) {
-				case 'file_reference':
-
-				case 'file':
-					$elFromTable = $this->clipObj->elFromTable('_FILE');
-					$allowedExts = GeneralUtility::trimExplode(',', $allowed, TRUE);
-					// If there are a set of allowed extensions, filter the content:
-					if ($allowedExts) {
-						foreach ($elFromTable as $elValue) {
-							$pI = pathinfo($elValue);
-							$ext = strtolower($pI['extension']);
-							if (in_array($ext, $allowedExts)) {
-								$output[] = $elValue;
-							}
-						}
-					} else {
-						// If all is allowed, insert all: (This does NOT respect any disallowed extensions,
-						// but those will be filtered away by the backend TCEmain)
-						$output = $elFromTable;
-					}
-					break;
-				case 'db':
-					$allowedTables = GeneralUtility::trimExplode(',', $allowed, TRUE);
-					// All tables allowed for relation:
-					if (trim($allowedTables[0]) === '*') {
-						$output = $this->clipObj->elFromTable('');
-					} else {
-						// Only some tables, filter them:
-						foreach ($allowedTables as $tablename) {
-							$elFromTable = $this->clipObj->elFromTable($tablename);
-							$output = array_merge($output, $elFromTable);
-						}
-					}
-					$output = array_keys($output);
-					break;
-			}
-		}
-		return $output;
-	}
-
-	/**
-	 * Wraps the icon of a relation item (database record or file) in a link opening the context menu for the item.
-	 * Icons will be wrapped only if $this->enableClickMenu is set. This must be done only if a global SOBE object
-	 * exists and if the necessary JavaScript for displaying the context menus has been added to the page properties.
-	 *
-	 * @param string $str The icon HTML to wrap
-	 * @param string $table Table name (eg. "pages" or "tt_content") OR the absolute path to the file
-	 * @param int $uid The uid of the record OR if file, just blank value.
-	 * @return string HTML
-	 */
-	public function getClickMenu($str, $table, $uid = 0) {
-		if ($this->enableClickMenu) {
-			return $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($str, $table, $uid, 1, '', '+copy,info,edit,view');
-		}
-		return '';
-	}
-
-	/**
-	 * Rendering wizards for form fields.
-	 *
-	 * @param array $itemKinds Array with the real item in the first value, and an alternative item in the second value.
-	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
-	 * @param string $table Table name
-	 * @param array $row The record array
-	 * @param string $field The field name
-	 * @param array $PA Additional configuration array. (passed by reference!)
-	 * @param string $itemName The field name
-	 * @param array $specConf Special configuration if available.
-	 * @param bool $RTE Whether the RTE could have been loaded.
-	 * @return string The new item value.
-	 */
-	public function renderWizards($itemKinds, $wizConf, $table, $row, $field, &$PA, $itemName, $specConf, $RTE = FALSE) {
-		// Init:
-		$fieldChangeFunc = $PA['fieldChangeFunc'];
-		$item = $itemKinds[0];
-		$outArr = array(
-			'buttons' => '',
-			'additional' => ''
-		);
-		$colorBoxLinks = array();
-		$fName = '[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-		$md5ID = 'ID' . GeneralUtility::shortmd5($itemName);
-		$listFlag = '_list';
-		$fieldConfig = $PA['fieldConf']['config'];
-		$prefixOfFormElName = 'data[' . $table . '][' . $row['uid'] . '][' . $field . ']';
-		$flexFormPath = '';
-		if (GeneralUtility::isFirstPartOfStr($PA['itemFormElName'], $prefixOfFormElName)) {
-			$flexFormPath = str_replace('][', '/', substr($PA['itemFormElName'], strlen($prefixOfFormElName) + 1, -1));
-		}
-		// Manipulate the field name (to be the TRUE form field name) and remove
-		// a suffix-value if the item is a selector box with renderMode "singlebox":
-		if ($PA['fieldConf']['config']['form_type'] == 'select') {
-			// Single select situation:
-			if ($PA['fieldConf']['config']['maxitems'] <= 1) {
-				$listFlag = '';
-			} elseif ($PA['fieldConf']['config']['renderMode'] == 'singlebox') {
-				$itemName .= '[]';
-				$listFlag = '';
-			}
-		}
-		// Traverse wizards:
-		if (is_array($wizConf) && !$this->disableWizards) {
-			$parametersOfWizards = &$specConf['wizards']['parameters'];
-			foreach ($wizConf as $wid => $wConf) {
-				if (
-					$wid[0] !== '_' && (!$wConf['enableByTypeConfig']
-					|| is_array($parametersOfWizards) && in_array($wid, $parametersOfWizards)) && ($RTE || !$wConf['RTEonly'])
-				) {
-					// Title / icon:
-					$iTitle = htmlspecialchars($this->getLanguageService()->sL($wConf['title']));
-					if ($wConf['icon']) {
-						$icon = $this->getIconHtml($wConf['icon'], $iTitle, $iTitle);
-					} else {
-						$icon = $iTitle;
-					}
-					switch ((string)$wConf['type']) {
-						case 'userFunc':
-
-						case 'script':
-
-						case 'popup':
-
-						case 'colorbox':
-
-						case 'slider':
-							if (!$wConf['notNewRecords'] || MathUtility::canBeInterpretedAsInteger($row['uid'])) {
-								// Setting &P array contents:
-								$params = array();
-								// Including the full fieldConfig from TCA may produce too long an URL
-								if ($wid != 'RTE') {
-									$params['fieldConfig'] = $fieldConfig;
-								}
-								$params['params'] = $wConf['params'];
-								$params['exampleImg'] = $wConf['exampleImg'];
-								$params['table'] = $table;
-								$params['uid'] = $row['uid'];
-								$params['pid'] = $row['pid'];
-								$params['field'] = $field;
-								$params['flexFormPath'] = $flexFormPath;
-								$params['md5ID'] = $md5ID;
-								$params['returnUrl'] = $this->thisReturnUrl();
-
-								$wScript = '';
-								// Resolving script filename and setting URL.
-								if (isset($wConf['module']['name'])) {
-									$urlParameters = array();
-									if (isset($wConf['module']['urlParameters']) && is_array($wConf['module']['urlParameters'])) {
-										$urlParameters = $wConf['module']['urlParameters'];
-									}
-									$wScript = BackendUtility::getModuleUrl($wConf['module']['name'], $urlParameters, $this->backPath);
-								} elseif (in_array($wConf['type'], array('script', 'colorbox', 'popup'), TRUE)) {
-									// Illegal configuration, fail silently
-									break;
-								}
-								$url = ($wScript ?: $this->backPath) . (strstr($wScript, '?') ? '' : '?');
-								// If "script" type, create the links around the icon:
-								if ((string)$wConf['type'] === 'script') {
-									$aUrl = $url . GeneralUtility::implodeArrayForUrl('', array('P' => $params));
-									$outArr['buttons'][] = ' <a class="btn btn-default" href="' . htmlspecialchars($aUrl) . '" onclick="this.blur(); return !TBE_EDITOR.isFormChanged();">' . $icon . '</a>';
-								} else {
-									// ... else types "popup", "colorbox" and "userFunc" will need additional parameters:
-									$params['formName'] = $this->formName;
-									$params['itemName'] = $itemName;
-									$params['hmac'] = GeneralUtility::hmac($params['formName'] . $params['itemName'], 'wizard_js');
-									$params['fieldChangeFunc'] = $fieldChangeFunc;
-									$params['fieldChangeFuncHash'] = GeneralUtility::hmac(serialize($fieldChangeFunc));
-									switch ((string)$wConf['type']) {
-										case 'popup':
-										case 'colorbox':
-											// Current form value is passed as P[currentValue]!
-											$addJS = $wConf['popup_onlyOpenIfSelected']
-												? 'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){alert('
-													. GeneralUtility::quoteJSvalue($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit'))
-													. '); return false;}'
-												: '';
-											$curSelectedValues = '+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')';
-											$aOnClick = 'this.blur();' . $addJS . 'vHWin=window.open(\'' . $url
-												. GeneralUtility::implodeArrayForUrl('', array('P' => $params))
-												. '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode('
-												. $this->elName($itemName) . '.value,200)' . $curSelectedValues
-												. ',\'popUp' . $md5ID . '\',\'' . $wConf['JSopenParams'] . '\');'
-												. 'vHWin.focus();return false;';
-											// Setting "colorBoxLinks" - user LATER to wrap around the color box as well:
-											$colorBoxLinks = array('<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">', '</a>');
-											if ((string)$wConf['type'] == 'popup') {
-												$outArr['buttons'][] = $colorBoxLinks[0] . $icon . $colorBoxLinks[1];
-											}
-											break;
-										case 'userFunc':
-											// Reference set!
-											$params['item'] = &$item;
-											$params['icon'] = $icon;
-											$params['iTitle'] = $iTitle;
-											$params['wConf'] = $wConf;
-											$params['row'] = $row;
-											$outArr['additional'][] = GeneralUtility::callUserFunction($wConf['userFunc'], $params, $this);
-											break;
-										case 'slider':
-											// Prevent vertical alignment
-											$verticalAlignmentIsPossible = FALSE;
-
-											// Reference set!
-											$params['item'] = &$item;
-											$params['icon'] = $icon;
-											$params['iTitle'] = $iTitle;
-											$params['wConf'] = $wConf;
-											$params['row'] = $row;
-											$wizard = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\Element\ValueSlider::class);
-											$outArr['additional'][] = call_user_func_array(array(&$wizard, 'renderWizard'), array(&$params, &$this));
-											break;
-									}
-								}
-								// Hide the real form element?
-								if (is_array($wConf['hideParent']) || $wConf['hideParent']) {
-									// Setting the item to a hidden-field.
-									$item = $itemKinds[1];
-									if (is_array($wConf['hideParent'])) {
-										$item .= $this->getSingleField_typeNone_render($wConf['hideParent'], $PA['itemFormElValue']);
-									}
-								}
-							}
-							break;
-						case 'select':
-							$fieldValue = array('config' => $wConf);
-							$TSconfig = $this->setTSconfig($table, $row);
-							$TSconfig[$field] = $TSconfig[$field]['wizards.'][$wid . '.'];
-							$selItems = $this->addSelectOptionsToItemArray($this->initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
-							// Process items by a user function:
-							if (!empty($wConf['itemsProcFunc'])) {
-								$funcConfig = !empty($wConf['itemsProcFunc.']) ? $wConf['itemsProcFunc.'] : array();
-								$selItems = $this->procItems($selItems, $funcConfig, $wConf, $table, $row, $field);
-							}
-							$opt = array();
-							$opt[] = '<option>' . $iTitle . '</option>';
-							foreach ($selItems as $p) {
-								$opt[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
-							}
-							if ($wConf['mode'] == 'append') {
-								$assignValue = $this->elName($itemName) . '.value=\'\'+this.options[this.selectedIndex].value+' . $this->elName($itemName) . '.value';
-							} elseif ($wConf['mode'] == 'prepend') {
-								$assignValue = $this->elName($itemName) . '.value+=\'\'+this.options[this.selectedIndex].value';
-							} else {
-								$assignValue = $this->elName($itemName) . '.value=this.options[this.selectedIndex].value';
-							}
-							$sOnChange = $assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc);
-							$outArr['additional'][] = '<select id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE))
-								. '" class="form-control tceforms-select tceforms-wizardselect" name="_WIZARD' . $fName . '" onchange="'
-								. htmlspecialchars($sOnChange) . '">' . implode('', $opt) . '</select>';
-							break;
-						case 'suggest':
-							if (!empty($PA['fieldTSConfig']['suggest.']['default.']['hide'])) {
-								break;
-							}
-							$outArr['additional'][] = $this->suggest->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
-							break;
-					}
-					// Color wizard colorbox:
-					if ((string)$wConf['type'] === 'colorbox') {
-						$dim = GeneralUtility::intExplode('x', $wConf['dim']);
-						$dX = MathUtility::forceIntegerInRange($dim[0], 1, 200, 20);
-						$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
-						$color = $PA['itemFormElValue'] ? ' bgcolor="' . htmlspecialchars($PA['itemFormElValue']) . '"' : '';
-						$skinImg = IconUtility::skinImg(
-							$this->backPath,
-							$color === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
-							'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
-						);
-						$outArr['additional'][] = '<table border="0" cellpadding="0" cellspacing="0" id="' . $md5ID . '"' . $color
-							. ' style="' . htmlspecialchars($wConf['tableStyle']) . '">
-									<tr>
-										<td>' . $colorBoxLinks[0] . '<img ' . $skinImg . '>' . $colorBoxLinks[1] . '</td>
-									</tr>
-								</table>';
-					}
-				}
-			}
-			// For each rendered wizard, put them together around the item.
-			if (count($outArr['buttons']) || count($outArr['additional'])) {
-				if ($wizConf['_HIDDENFIELD']) {
-					$item = $itemKinds[1];
-				}
-
-				$outStr = '';
-				if (!empty($outArr['buttons'])) {
-					$outStr .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $outArr['buttons']) . '</div>';
-				}
-				if (!empty($outArr['additional'])) {
-					$outStr .= implode(' ', $outArr['additional']);
-				}
-
-				// Position
-				$class = array();
-				if ($wizConf['_POSITION'] === 'left') {
-					$class[] = 'form-wizards-aside';
-					$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
-				} elseif ($wizConf['_POSITION'] === 'top') {
-					$class[] = 'form-wizards-top';
-					$outStr = '<div class="form-wizards-items">' . $outStr . '</div><div class="form-wizards-element">' . $item . '</div>';
-				} elseif ($wizConf['_POSITION'] === 'bottom') {
-					$class[] = 'form-wizards-bottom';
-					$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
-				} else {
-					$class[] = 'form-wizards-aside';
-					$outStr = '<div class="form-wizards-element">' . $item . '</div><div class="form-wizards-items">' . $outStr . '</div>';
-				}
-				$item = '
-					<!-- renderWizards -->
-					<div class="form-wizards-wrap ' . (!empty($class) ? implode(' ', $class) : '' ) . '">
-						' . $outStr . '
-					</div>';
-			}
-		}
-		return $item;
-	}
-
-	/**
-	 * Get icon (for example for selector boxes)
-	 *
-	 * @param string $icon Icon reference
-	 * @return array Array with two values; the icon file reference (relative to PATH_typo3 minus backPath), the icon file information array (getimagesize())
-	 */
-	public function getIcon($icon) {
-		$selIconInfo = FALSE;
-		if (substr($icon, 0, 4) == 'EXT:') {
-			$file = GeneralUtility::getFileAbsFileName($icon);
-			if ($file) {
-				$file = PathUtility::stripPathSitePrefix($file);
-				$selIconFile = $this->backPath . '../' . $file;
-				$selIconInfo = @getimagesize((PATH_site . $file));
-			} else {
-				$selIconFile = '';
-			}
-		} elseif (substr($icon, 0, 3) == '../') {
-			$selIconFile = $this->backPath . GeneralUtility::resolveBackPath($icon);
-			if (is_file(PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3)))) {
-				$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
-			}
-		} elseif (substr($icon, 0, 4) == 'ext/' || substr($icon, 0, 7) == 'sysext/') {
-			$selIconFile = $this->backPath . $icon;
-			if (is_file(PATH_typo3 . $icon)) {
-				$selIconInfo = getimagesize(PATH_typo3 . $icon);
-			}
-		} else {
-			$selIconFile = IconUtility::skinImg($this->backPath, 'gfx/' . $icon, '', 1);
-			$iconPath = substr($selIconFile, strlen($this->backPath));
-			if (is_file(PATH_typo3 . $iconPath)) {
-				$selIconInfo = getimagesize(PATH_typo3 . $iconPath);
-			}
-		}
-		if ($selIconInfo === FALSE) {
-			// Unset to empty string if icon is not available
-			$selIconFile = '';
-		}
-		return array($selIconFile, $selIconInfo);
-	}
-
-	/**
-	 * Renders the $icon, supports a filename for skinImg or sprite-icon-name
-	 *
-	 * @param string $icon The icon passed, could be a file-reference or a sprite Icon name
-	 * @param string $alt Alt attribute of the icon returned
-	 * @param string $title Title attribute of the icon return
-	 * @return string A tag representing to show the asked icon
-	 */
-	public function getIconHtml($icon, $alt = '', $title = '') {
-		$iconArray = $this->getIcon($icon);
-		if (!empty($iconArray[0]) && is_file(GeneralUtility::resolveBackPath(PATH_typo3 . PATH_typo3_mod . $iconArray[0]))) {
-			return '<img src="' . $iconArray[0] . '" alt="' . $alt . '" ' . ($title ? 'title="' . $title . '"' : '') . ' />';
-		} else {
-			return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));
-		}
-	}
-
-	/**
-	 * Creates style attribute content for option tags in a selector box, primarily setting
-	 * it up to show the icon of an element as background image (works in mozilla)
-	 *
-	 * @param string $iconString Icon string for option item
-	 * @return string Style attribute content, if any
-	 */
-	public function optionTagStyle($iconString) {
-		if (!$iconString) {
-			return '';
-		}
-		list($selIconFile, $selIconInfo) = $this->getIcon($iconString);
-		if (empty($selIconFile)) {
-			// Skip background style if image is unavailable
-			return '';
-		}
-		$padLeft = $selIconInfo[0] + 4;
-		if ($padLeft >= 18 && $padLeft <= 24) {
-			// In order to get the same padding for all option tags even if icon sizes differ a little,
-			// set it to 22 if it was between 18 and 24 pixels
-			$padLeft = 22;
-		}
-		$padTop = MathUtility::forceIntegerInRange(($selIconInfo[1] - 12) / 2, 0);
-		$styleAttr = 'background: #fff url(' . $selIconFile . ') 0% 50% no-repeat; height: '
-			. MathUtility::forceIntegerInRange(($selIconInfo[1] + 2 - $padTop), 0)
-			. 'px; padding-top: ' . $padTop . 'px; padding-left: ' . $padLeft . 'px;';
-		return $styleAttr;
-	}
-
-	/**
-	 * Creates style attribute content for optgroup tags in a selector box, primarily setting it
-	 * up to show the icon of an element as background image (works in mozilla).
-	 *
-	 * @param string $iconString Icon string for option item
-	 * @return string Style attribute content, if any
-	 */
-	public function optgroupTagStyle($iconString) {
-		if (!$iconString) {
-			return '';
-		}
-		list($selIconFile, $selIconInfo) = $this->getIcon($iconString);
-		if (empty($selIconFile)) {
-			// Skip background style if image is unavailable
-			return '';
-		}
-		$padLeft = $selIconInfo[0] + 4;
-		if ($padLeft >= 18 && $padLeft <= 24) {
-			// In order to get the same padding for all option tags even if icon sizes differ a little,
-			// set it to 22, if it was between 18 and 24 pixels.
-			$padLeft = 22;
-		}
-		$padTop = MathUtility::forceIntegerInRange(($selIconInfo[1] - 12) / 2, 0);
-		return 'background: #ffffff url(' . $selIconFile . ') 0 0 no-repeat; padding-top: ' . $padTop . 'px; padding-left: ' . $padLeft . 'px;';
-	}
-
-	/**
-	 * Extracting values from a value/label list (as made by transferData class)
-	 *
-	 * @param array $itemFormElValue Values in an array
-	 * @return array Input string exploded with comma and for each value only the label part is set in the array. Keys are numeric
-	 */
-	public function extractValuesOnlyFromValueLabelList($itemFormElValue) {
-		// Get values of selected items:
-		$itemArray = GeneralUtility::trimExplode(',', $itemFormElValue, TRUE);
-		foreach ($itemArray as $tk => $tv) {
-			$tvP = explode('|', $tv, 2);
-			$tvP[0] = rawurldecode($tvP[0]);
-			$itemArray[$tk] = $tvP[0];
-		}
-		return $itemArray;
-	}
-
-	/**
-	 * Add the id and the style property to the field palette
-	 *
-	 * @param string $code Palette Code
-	 * @param string $id Collapsible ID
-	 * @param string $collapsed Collapsed status
-	 * @return bool Is collapsed
-	 */
-	public function wrapCollapsiblePalette($code, $id, $collapsed) {
-		$display = $collapsed ? '' : ' in';
-		$id = str_replace('.', '', $id);
-		$out = '
-			<!-- wrapCollapsiblePalette -->
-			<p>
-				<button class="btn btn-default" type="button" data-toggle="collapse" data-target="#' . $id . '" aria-expanded="false" aria-controls="' . $id . '">
-					' . IconUtility::getSpriteIcon('actions-system-options-view') . '
-					' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.moreOptions')) . '
-				</button>
-			</p>
-			<div id="' . $id . '" class="form-section-collapse collapse' . $display . '">
-				<div class="row">' . $code . '</div>
-			</div>';
-		return $out;
-	}
-
-
-	/**
-	 * Wraps a string with a link to the palette.
-	 *
-	 * @param string $header The string to wrap in an A-tag
-	 * @param string $table The table name for which to open the palette.
-	 * @param array $row The palette pointer.
-	 * @param int $palette The record array
-	 * @param mixed $retFunc Not used
 	 * @return array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
-	public function wrapOpenPalette($header, $table, $row, $palette, $retFunc) {
-		GeneralUtility::logDeprecatedFunction();
-		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
-		$res = '<a href="#" onclick="TBE_EDITOR.toggle_display_states(\'' . $id . '\',\'block\',\'none\'); return false;" >' . $header . '</a>';
-		return array($res, '');
+	protected function getInlineExpandCollapseStateArray() {
+		$backendUser = $this->getBackendUserAuthentication();
+		$inlineView = unserialize($backendUser->uc['inlineView']);
+		if (!is_array($inlineView)) {
+			$inlineView = array();
+		}
+		return $inlineView;
 	}
 
 	/**
-	 * Add the id and the style property to the field palette
+	 * The "entry" pid for inline records. Nested inline records can potentially hang around on different
+	 * pid's, but the entry pid is needed for AJAX calls, so that they would know where the action takes place on the page structure.
 	 *
-	 * @param string $code Palette Code
-	 * @param string $table The table name for which to open the palette.
-	 * @param string $row Palette ID
-	 * @param string $palette The record array
-	 * @param bool $collapsed TRUE if collapsed
-	 * @return bool Is collapsed
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 * @return integer
 	 */
-	public function wrapPaletteField($code, $table, $row, $palette, $collapsed) {
-		GeneralUtility::logDeprecatedFunction();
-		$display = $collapsed ? 'none' : 'block';
-		$id = 'TCEFORMS_' . $table . '_' . $palette . '_' . $row['uid'];
-		$code = '<div id="' . $id . '" style="display:' . $display . ';" >' . $code . '</div>';
-		return $code;
+	protected function getInlineFirstPid() {
+		$table = $this->table;
+		$row = $this->databaseRow;
+		// If the parent is a page, use the uid(!) of the (new?) page as pid for the child records:
+		if ($table == 'pages') {
+			$liveVersionId = BackendUtility::getLiveVersionIdOfRecord('pages', $row['uid']);
+			$pid = is_null($liveVersionId) ? $row['uid'] : $liveVersionId;
+		} elseif ($row['pid'] < 0) {
+			$prevRec = BackendUtility::getRecord($table, abs($row['pid']));
+			$pid = $prevRec['pid'];
+		} else {
+			$pid = $row['pid'];
+		}
+		return $pid;
 	}
 
 	/**
-	 * Returns element reference for form element name
+	 * Checks if a record selector may select a certain file type
 	 *
-	 * @param string $itemName Form element name
-	 * @return string Form element reference (JS)
+	 * @param array $selectorConfiguration
+	 * @param array $fileRecord
+	 * @return bool
 	 */
-	public function elName($itemName) {
-		return 'document.' . $this->formName . '[\'' . $itemName . '\']';
+	protected function checkInlineFileTypeAccessForField(array $selectorConfiguration, array $fileRecord) {
+		if (!empty($selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'])) {
+			$allowedFileExtensions = GeneralUtility::trimExplode(
+				',',
+				$selectorConfiguration['PA']['fieldConf']['config']['appearance']['elementBrowserAllowed'],
+				TRUE
+			);
+			if (!in_array(strtolower($fileRecord['extension']), $allowedFileExtensions, TRUE)) {
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
+	/**
+	 * Remove an element from an array.
+	 *
+	 * @param mixed $needle The element to be removed.
+	 * @param array $haystack The array the element should be removed from.
+	 * @param mixed $strict Search elements strictly.
+	 * @return array The array $haystack without the $needle
+	 */
+	protected function removeFromArray($needle, $haystack, $strict = NULL) {
+		$pos = array_search($needle, $haystack, $strict);
+		if ($pos !== FALSE) {
+			unset($haystack[$pos]);
+		}
+		return $haystack;
+	}
+
+	/**
+	 * Generates an error message that transferred as JSON for AJAX calls
+	 *
+	 * @param string $message The error message to be shown
+	 * @return array The error message in a JSON array
+	 */
+	protected function getErrorMessageForAJAX($message) {
+		$jsonArray = array(
+			'data' => $message,
+			'scriptCall' => array(
+				'alert("' . $message . '");'
+			)
+		);
+		return $jsonArray;
+	}
+
+	/**
+	 * Determines and sets several script calls to a JSON array, that would have been executed if processed in non-AJAX mode.
+	 *
+	 * @param array &$jsonArray Reference of the array to be used for JSON
+	 * @param array $config The configuration of the IRRE field of the parent record
+	 * @param integer $inlineFirstPid Inline first pid
+	 * @return array Modified array
+	 * @todo: Basically, this methods shouldn't be there at all ...
+	 */
+	protected function getInlineAjaxCommonScriptCalls($jsonArray, $config, $inlineFirstPid) {
+		// Add data that would have been added at the top of a regular FormEngine call:
+		if ($headTags = $this->getInlineHeadTags()) {
+			$jsonArray['headData'] = $headTags;
+		}
+		// Add the JavaScript data that would have been added at the bottom of a regular FormEngine call:
+		$jsonArray['scriptCall'][] = $this->JSbottom('editform', TRUE);
+		// If script.aculo.us Sortable is used, update the Observer to know the record:
+		if ($config['appearance']['useSortable']) {
+			$inlineObjectName = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($inlineFirstPid);
+			$jsonArray['scriptCall'][] = 'inline.createDragAndDropSorting(\'' . $inlineObjectName . '_records\');';
+		}
+		// If FormEngine has some JavaScript code to be executed, just do it
+		// @todo: this is done by JSBottom() already?!
+		if ($this->extJSCODE) {
+			$jsonArray['scriptCall'][] = $this->extJSCODE;
+		}
+		// activate "enable tabs" for textareas
+		$jsonArray['scriptCall'][] = 'changeTextareaElements();';
+		return $jsonArray;
+	}
+
+	/**
+	 * Parses the HTML tags that would have been inserted to the <head> of a HTML document and returns the found tags as multidimensional array.
+	 *
+	 * @return array The parsed tags with their attributes and innerHTML parts
+	 * @todo: WTF?
+	 */
+	protected function getInlineHeadTags() {
+		$headTags = array();
+		$headDataRaw = $this->JStop() . $this->getJavaScriptAndStyleSheetsOfPageRenderer();
+		if ($headDataRaw) {
+			// Create instance of the HTML parser:
+			$parseObj = GeneralUtility::makeInstance(HtmlParser::class);
+			// Removes script wraps:
+			$headDataRaw = str_replace(array('/*<![CDATA[*/', '/*]]>*/'), '', $headDataRaw);
+			// Removes leading spaces of a multi-line string:
+			$headDataRaw = trim(preg_replace('/(^|\\r|\\n)( |\\t)+/', '$1', $headDataRaw));
+			// Get script and link tags:
+			$tags = array_merge($parseObj->getAllParts($parseObj->splitTags('link', $headDataRaw)), $parseObj->getAllParts($parseObj->splitIntoBlock('script', $headDataRaw)));
+			foreach ($tags as $tagData) {
+				$tagAttributes = $parseObj->get_tag_attributes($parseObj->getFirstTag($tagData), TRUE);
+				$headTags[] = array(
+					'name' => $parseObj->getFirstTagName($tagData),
+					'attributes' => $tagAttributes[0],
+					'innerHTML' => $parseObj->removeFirstAndLastTag($tagData)
+				);
+			}
+		}
+		return $headTags;
+	}
+
+	/**
+	 * Gets the JavaScript of the pageRenderer.
+	 * This can be used to extract newly added files which have been added
+	 * during an AJAX request. Due to the spread possibilities of the pageRenderer
+	 * to add JavaScript rendering and extracting seems to be the easiest way.
+	 *
+	 * @return string
+	 * @todo: aaaargs ...
+	 */
+	protected function getJavaScriptAndStyleSheetsOfPageRenderer() {
+		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
+		$pageRenderer = clone $GLOBALS['SOBE']->doc->getPageRenderer();
+		$pageRenderer->setCharSet($this->getLanguageService()->charSet);
+		$pageRenderer->setTemplateFile('EXT:backend/Resources/Private/Templates/helper_javascript_css.html');
+		$javaScriptAndStyleSheets = $pageRenderer->render();
+		return $javaScriptAndStyleSheets;
 	}
 
 	/**
@@ -3144,577 +1156,8 @@ class FormEngine {
 	 *
 	 * @return string Return URL of current script
 	 */
-	public function thisReturnUrl() {
+	protected function thisReturnUrl() {
 		return $this->returnUrl ? $this->returnUrl : GeneralUtility::linkThisScript();
-	}
-
-	/**
-	 * Returns the form field for a single HIDDEN field.
-	 * (Not used anywhere...?)
-	 *
-	 * @param string $table Table name
-	 * @param string $field Field name
-	 * @param array $row The row
-	 * @return string The hidden-field <input> tag.
-	 */
-	public function getSingleHiddenField($table, $field, $row) {
-		$item = '';
-		if ($GLOBALS['TCA'][$table]['columns'][$field]) {
-			$uid = $row['uid'];
-			$itemName = $this->prependFormFieldNames . '[' . $table . '][' . $uid . '][' . $field . ']';
-			$itemValue = $row[$field];
-			$item = '<input type="hidden" name="' . $itemName . '" value="' . htmlspecialchars($itemValue) . '" />';
-		}
-		return $item;
-	}
-
-	/**
-	 * Returns the max-width in pixels for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @return int max-width in pixels
-	 * @internal
-	 */
-	public function formMaxWidth($size = 48) {
-		$size = round($size * $this->form_largeComp);
-		$width = ceil($size * $this->form_rowsToStylewidth);
-		return $width;
-	}
-
-	/**
-	 * Returns parameters to set the width for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @param bool $textarea If this is for a text area.
-	 * @return string Either a "style" attribute string or "cols"/"size" attribute string.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formWidth($size = 48, $textarea = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		$fieldWidthAndStyle = $this->formWidthAsArray($size, $textarea);
-		// Setting width by style-attribute. 'cols' MUST be avoided with NN6+
-		$widthAndStyleAttributes = ' style="' . htmlspecialchars($fieldWidthAndStyle['style']) . '"';
-		if ($fieldWidthAndStyle['class']) {
-			$widthAndStyleAttributes .= ' class="' . htmlspecialchars($fieldWidthAndStyle['class']) . '"';
-		}
-		return $widthAndStyleAttributes;
-	}
-
-	/**
-	 * Returns parameters to set the width for a <input>/<textarea>-element
-	 *
-	 * @param int $size The abstract size value (1-48)
-	 * @param bool $textarea If set, calculates sizes for a text area.
-	 * @return array An array containing style, class, and width attributes.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formWidthAsArray($size = 48, $textarea = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		$fieldWidthAndStyle = array('style' => '', 'class' => '', 'width' => '');
-		$widthInPixels = $this->formMaxWidth($size);
-		$fieldWidthAndStyle['style'] = 'width: ' . $widthInPixels . 'px; ';
-		$fieldWidthAndStyle['class'] = 'formfield-' . ($textarea ? 'text' : 'input');
-		return $fieldWidthAndStyle;
-	}
-
-	/**
-	 * Get style CSS values for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @return string CSS attributes
-	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElStyle($type) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->formElStyleClassValue($type);
-	}
-
-	/**
-	 * Get class attribute value for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @return string CSS attributes
-	 * @see formElStyleClassValue()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElClass($type) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->formElStyleClassValue($type, TRUE);
-	}
-
-	/**
-	 * Get style CSS values for the current field type.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @param bool $class If set, will return value only if prefixed with CLASS, otherwise must not be prefixed "CLASS
-	 * @return string CSS attributes
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function formElStyleClassValue($type, $class = FALSE) {
-		GeneralUtility::logDeprecatedFunction();
-		// Get value according to field:
-		if (isset($this->fieldStyle[$type])) {
-			$style = trim($this->fieldStyle[$type]);
-		} else {
-			$style = trim($this->fieldStyle['all']);
-		}
-		// Check class prefixed:
-		if (substr($style, 0, 6) == 'CLASS:') {
-			$out = $class ? trim(substr($style, 6)) : '';
-		} else {
-			$out = !$class ? $style : '';
-		}
-		return $out;
-	}
-
-	/**
-	 * Return default "style" / "class" attribute line.
-	 *
-	 * @param string $type Field type (eg. "check", "radio", "select")
-	 * @param string $additionalClass Additional class(es) to be added
-	 * @return string CSS attributes
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function insertDefStyle($type, $additionalClass = '') {
-		GeneralUtility::logDeprecatedFunction();
-		$cssClasses = trim('t3-formengine-field-' . $type . ' ' . $additionalClass);
-		return 'class="' . htmlspecialchars($cssClasses) . '"';
-	}
-
-	/**
-	 * Create dynamic tab menu
-	 *
-	 * @param array $parts Parts for the tab menu, fed to template::getDynTabMenu()
-	 * @param string $idString ID string for the tab menu
-	 * @param int $dividersToTabsBehaviour If set to '1' empty tabs will be removed, If set to '2' empty tabs will be disabled, deprecated, and not in use anymore since TYPO3 CMS 7
-	 * @return string HTML for the menu
-	 */
-	public function getDynTabMenu($parts, $idString, $dividersToTabsBehaviour = -1) {
-		// if the third (obsolete) parameter is used, throw a deprecation warning
-		if ($dividersToTabsBehaviour !== -1) {
-			GeneralUtility::deprecationLog('The parameter $dividersToTabsBehaviour in FormEngine::getDynTabMenu is deprecated. Please remove this option from your code');
-		}
-		$docTemplate = $this->getDocumentTemplate();
-		if (is_object($docTemplate)) {
-			$docTemplate->backPath = $this->backPath;
-			return $docTemplate->getDynTabMenu($parts, $idString, 0, FALSE, 1, FALSE, 1);
-		} else {
-			$output = '';
-			foreach ($parts as $singlePad) {
-				$output .= '
-				<h3>' . htmlspecialchars($singlePad['label']) . '</h3>
-				' . ($singlePad['description'] ? '<p class="c-descr">' . nl2br(htmlspecialchars($singlePad['description'])) . '</p>' : '') . '
-				' . $singlePad['content'];
-			}
-			return '<div class="tab-content">' . $output . '</div>';
-		}
-	}
-
-	/************************************************************
-	 *
-	 * Item-array manipulation functions (check/select/radio)
-	 *
-	 ************************************************************/
-	/**
-	 * Initialize item array (for checkbox, selectorbox, radio buttons)
-	 * Will resolve the label value.
-	 *
-	 * @param array $fieldValue The "columns" array for the field (from TCA)
-	 * @return array An array of arrays with three elements; label, value, icon
-	 */
-	public function initItemArray($fieldValue) {
-		$languageService = $this->getLanguageService();
-		$items = array();
-		if (is_array($fieldValue['config']['items'])) {
-			foreach ($fieldValue['config']['items'] as $itemValue) {
-				$items[] = array($languageService->sL($itemValue[0]), $itemValue[1], $itemValue[2]);
-			}
-		}
-		return $items;
-	}
-
-	/**
-	 * Merges items into an item-array, optionally with an icon
-	 * example:
-	 * TCEFORM.pages.doktype.addItems.13 = My Label
-	 * TCEFORM.pages.doktype.addItems.13.icon = EXT:t3skin/icons/gfx/i/pages.gif
-	 *
-	 * @param array $items The existing item array
-	 * @param array $iArray An array of items to add. NOTICE: The keys are mapped to values, and the values and mapped to be labels. No possibility of adding an icon.
-	 * @return array The updated $item array
-	 */
-	public function addItems($items, $iArray) {
-		$languageService = $this->getLanguageService();
-		if (is_array($iArray)) {
-			foreach ($iArray as $value => $label) {
-				// if the label is an array (that means it is a subelement
-				// like "34.icon = mylabel.png", skip it (see its usage below)
-				if (is_array($label)) {
-					continue;
-				}
-				// check if the value "34 = mylabel" also has a "34.icon = myimage.png"
-				if (isset($iArray[$value . '.']) && $iArray[$value . '.']['icon']) {
-					$icon = $iArray[$value . '.']['icon'];
-				} else {
-					$icon = '';
-				}
-				$items[] = array($languageService->sL($label), $value, $icon);
-			}
-		}
-		return $items;
-	}
-
-	/**
-	 * Perform user processing of the items arrays of checkboxes, selectorboxes and radio buttons.
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $iArray The "itemsProcFunc." from fieldTSconfig of the field.
-	 * @param array $config The config array for the field.
-	 * @param string $table Table name
-	 * @param array $row Record row
-	 * @param string $field Field name
-	 * @return array The modified $items array
-	 */
-	public function procItems($items, $iArray, $config, $table, $row, $field) {
-		$languageService = $this->getLanguageService();
-		$params = array();
-		$params['items'] = &$items;
-		$params['config'] = $config;
-		$params['TSconfig'] = $iArray;
-		$params['table'] = $table;
-		$params['row'] = $row;
-		$params['field'] = $field;
-		// The itemsProcFunc method may throw an exception.
-		// If it does display an error message and return items unchanged.
-		try {
-			GeneralUtility::callUserFunction($config['itemsProcFunc'], $params, $this);
-		} catch (\Exception $exception) {
-			$fieldLabel = $field;
-			if (isset($GLOBALS['TCA'][$table]['columns'][$field]['label'])) {
-				$fieldLabel = $languageService->sL($GLOBALS['TCA'][$table]['columns'][$field]['label']);
-			}
-			$message = sprintf(
-				$languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.items_proc_func_error'),
-				$fieldLabel,
-				$exception->getMessage()
-			);
-			/** @var $flashMessage FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance(
-				FlashMessage::class,
-				htmlspecialchars($message),
-				'',
-				FlashMessage::ERROR,
-				TRUE
-			);
-			/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-			$defaultFlashMessageQueue->enqueue($flashMessage);
-		}
-		return $items;
-	}
-
-	/**
-	 * Add selector box items of more exotic kinds.
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $fieldValue The "columns" array for the field (from TCA)
-	 * @param array $TSconfig TSconfig for the table/row
-	 * @param string $field The fieldname
-	 * @return array The $items array modified.
-	 */
-	public function addSelectOptionsToItemArray($items, $fieldValue, $TSconfig, $field) {
-		// Values from foreign tables:
-		if ($fieldValue['config']['foreign_table']) {
-			$items = $this->foreignTable($items, $fieldValue, $TSconfig, $field);
-			if ($fieldValue['config']['neg_foreign_table']) {
-				$items = $this->foreignTable($items, $fieldValue, $TSconfig, $field, 1);
-			}
-		}
-		// Values from a file folder:
-		if ($fieldValue['config']['fileFolder']) {
-			$fileFolder = GeneralUtility::getFileAbsFileName($fieldValue['config']['fileFolder']);
-			if (@is_dir($fileFolder)) {
-				// Configurations:
-				$extList = $fieldValue['config']['fileFolder_extList'];
-				$recursivityLevels = isset($fieldValue['config']['fileFolder_recursions'])
-					? MathUtility::forceIntegerInRange($fieldValue['config']['fileFolder_recursions'], 0, 99)
-					: 99;
-				// Get files:
-				$fileFolder = rtrim($fileFolder, '/') . '/';
-				$fileArr = GeneralUtility::getAllFilesAndFoldersInPath(array(), $fileFolder, $extList, 0, $recursivityLevels);
-				$fileArr = GeneralUtility::removePrefixPathFromList($fileArr, $fileFolder);
-				foreach ($fileArr as $fileRef) {
-					$fI = pathinfo($fileRef);
-					$icon = GeneralUtility::inList('gif,png,jpeg,jpg', strtolower($fI['extension']))
-						? '../' . PathUtility::stripPathSitePrefix($fileFolder) . $fileRef
-						: '';
-					$items[] = array(
-						$fileRef,
-						$fileRef,
-						$icon
-					);
-				}
-			}
-		}
-		// If 'special' is configured:
-		if ($fieldValue['config']['special']) {
-			$languageService = $this->getLanguageService();
-			switch ($fieldValue['config']['special']) {
-				case 'tables':
-					foreach ($GLOBALS['TCA'] as $theTableNames => $_) {
-						if (!$GLOBALS['TCA'][$theTableNames]['ctrl']['adminOnly']) {
-							// Icon:
-							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTableNames, array());
-							// Add help text
-							$helpText = array();
-							$languageService->loadSingleTableDescription($theTableNames);
-							$helpTextArray = $GLOBALS['TCA_DESCR'][$theTableNames]['columns'][''];
-							if (!empty($helpTextArray['description'])) {
-								$helpText['description'] = $helpTextArray['description'];
-							}
-							// Item configuration:
-							$items[] = array(
-								$languageService->sL($GLOBALS['TCA'][$theTableNames]['ctrl']['title']),
-								$theTableNames,
-								$icon,
-								$helpText
-							);
-						}
-					}
-					break;
-				case 'pagetypes':
-					$theTypes = $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'];
-					foreach ($theTypes as $theTypeArrays) {
-						// Icon:
-						$icon = 'empty-emtpy';
-						if ($theTypeArrays[1] != '--div--') {
-							$icon = IconUtility::mapRecordTypeToSpriteIconName('pages', array('doktype' => $theTypeArrays[1]));
-						}
-						// Item configuration:
-						$items[] = array(
-							$languageService->sL($theTypeArrays[0]),
-							$theTypeArrays[1],
-							$icon
-						);
-					}
-					break;
-				case 'exclude':
-					$theTypes = BackendUtility::getExcludeFields();
-					foreach ($theTypes as $theTypeArrays) {
-						list($theTable, $theFullField) = explode(':', $theTypeArrays[1]);
-						// If the field comes from a FlexForm, the syntax is more complex
-						$theFieldParts = explode(';', $theFullField);
-						$theField = array_pop($theFieldParts);
-						// Add header if not yet set for table:
-						if (!array_key_exists($theTable, $items)) {
-							$icon = IconUtility::mapRecordTypeToSpriteIconName($theTable, array());
-							$items[$theTable] = array(
-								$languageService->sL($GLOBALS['TCA'][$theTable]['ctrl']['title']),
-								'--div--',
-								$icon
-							);
-						}
-						// Add help text
-						$helpText = array();
-						$languageService->loadSingleTableDescription($theTable);
-						$helpTextArray = $GLOBALS['TCA_DESCR'][$theTable]['columns'][$theFullField];
-						if (!empty($helpTextArray['description'])) {
-							$helpText['description'] = $helpTextArray['description'];
-						}
-						// Item configuration:
-						$items[] = array(
-							rtrim($languageService->sL($GLOBALS['TCA'][$theTable]['columns'][$theField]['label']), ':') . ' (' . $theField . ')',
-							$theTypeArrays[1],
-							'empty-empty',
-							$helpText
-						);
-					}
-					break;
-				case 'explicitValues':
-					$theTypes = BackendUtility::getExplicitAuthFieldValues();
-					// Icons:
-					$icons = array(
-						'ALLOW' => 'status-status-permission-granted',
-						'DENY' => 'status-status-permission-denied'
-					);
-					// Traverse types:
-					foreach ($theTypes as $tableFieldKey => $theTypeArrays) {
-						if (is_array($theTypeArrays['items'])) {
-							// Add header:
-							$items[] = array(
-								$theTypeArrays['tableFieldLabel'],
-								'--div--'
-							);
-							// Traverse options for this field:
-							foreach ($theTypeArrays['items'] as $itemValue => $itemContent) {
-								// Add item to be selected:
-								$items[] = array(
-									'[' . $itemContent[2] . '] ' . $itemContent[1],
-									$tableFieldKey . ':' . preg_replace('/[:|,]/', '', $itemValue) . ':' . $itemContent[0],
-									$icons[$itemContent[0]]
-								);
-							}
-						}
-					}
-					break;
-				case 'languages':
-					$items = array_merge($items, BackendUtility::getSystemLanguages());
-					break;
-				case 'custom':
-					// Initialize:
-					$customOptions = $GLOBALS['TYPO3_CONF_VARS']['BE']['customPermOptions'];
-					if (is_array($customOptions)) {
-						foreach ($customOptions as $coKey => $coValue) {
-							if (is_array($coValue['items'])) {
-								// Add header:
-								$items[] = array(
-									$languageService->sL($coValue['header']),
-									'--div--'
-								);
-								// Traverse items:
-								foreach ($coValue['items'] as $itemKey => $itemCfg) {
-									// Icon:
-									if ($itemCfg[1]) {
-										list($icon) = $this->getIcon($itemCfg[1]);
-									} else {
-										$icon = 'empty-empty';
-									}
-									// Add help text
-									$helpText = array();
-									if (!empty($itemCfg[2])) {
-										$helpText['description'] = $languageService->sL($itemCfg[2]);
-									}
-									// Add item to be selected:
-									$items[] = array(
-										$languageService->sL($itemCfg[0]),
-										$coKey . ':' . preg_replace('/[:|,]/', '', $itemKey),
-										$icon,
-										$helpText
-									);
-								}
-							}
-						}
-					}
-					break;
-				case 'modListGroup':
-
-				case 'modListUser':
-					$loadModules = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
-					$loadModules->load($GLOBALS['TBE_MODULES']);
-					$modList = $fieldValue['config']['special'] == 'modListUser' ? $loadModules->modListUser : $loadModules->modListGroup;
-					if (is_array($modList)) {
-						foreach ($modList as $theMod) {
-							// Icon:
-							$icon = $languageService->moduleLabels['tabs_images'][$theMod . '_tab'];
-							if ($icon) {
-								$icon = '../' . PathUtility::stripPathSitePrefix($icon);
-							}
-							// Add help text
-							$helpText = array(
-								'title' => $languageService->moduleLabels['labels'][$theMod . '_tablabel'],
-								'description' => $languageService->moduleLabels['labels'][$theMod . '_tabdescr']
-							);
-							// Item configuration:
-							$items[] = array(
-								$this->addSelectOptionsToItemArray_makeModuleData($theMod),
-								$theMod,
-								$icon,
-								$helpText
-							);
-						}
-					}
-					break;
-			}
-		}
-		// Return the items:
-		return $items;
-	}
-
-	/**
-	 * Creates value/label pair for a backend module (main and sub)
-	 *
-	 * @param string $value The module key
-	 * @return string The rawurlencoded 2-part string to transfer to interface
-	 * @access private
-	 * @see addSelectOptionsToItemArray()
-	 */
-	public function addSelectOptionsToItemArray_makeModuleData($value) {
-		$label = '';
-		// Add label for main module:
-		$pp = explode('_', $value);
-		if (count($pp) > 1) {
-			$label .= $this->getLanguageService()->moduleLabels['tabs'][($pp[0] . '_tab')] . '>';
-		}
-		// Add modules own label now:
-		$label .= $this->getLanguageService()->moduleLabels['tabs'][$value . '_tab'];
-		return $label;
-	}
-
-	/**
-	 * Adds records from a foreign table (for selector boxes)
-	 *
-	 * @param array $items The array of items (label,value,icon)
-	 * @param array $fieldValue The 'columns' array for the field (from TCA)
-	 * @param array $TSconfig TSconfig for the table/row
-	 * @param string $field The fieldname
-	 * @param bool $pFFlag If set, then we are fetching the 'neg_' foreign tables.
-	 * @return array The $items array modified.
-	 * @see addSelectOptionsToItemArray(), BackendUtility::exec_foreign_table_where_query()
-	 */
-	public function foreignTable($items, $fieldValue, $TSconfig, $field, $pFFlag = FALSE) {
-		$languageService = $this->getLanguageService();
-		// Init:
-		$pF = $pFFlag ? 'neg_' : '';
-		$f_table = $fieldValue['config'][$pF . 'foreign_table'];
-		$uidPre = $pFFlag ? '-' : '';
-		// Exec query:
-		$res = BackendUtility::exec_foreign_table_where_query($fieldValue, $field, $TSconfig, $pF);
-		// Perform error test
-		$db = $this->getDatabaseConnection();
-		if ($db->sql_error()) {
-			$msg = htmlspecialchars($db->sql_error());
-			$msg .= '<br />' . LF;
-			$msg .= $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch');
-			$msgTitle = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:error.database_schema_mismatch_title');
-			/** @var $flashMessage FlashMessage */
-			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $msg, $msgTitle, FlashMessage::ERROR, TRUE);
-			/** @var $flashMessageService FlashMessageService */
-			$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
-			/** @var $defaultFlashMessageQueue FlashMessageQueue */
-			$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-			$defaultFlashMessageQueue->enqueue($flashMessage);
-			return array();
-		}
-		// Get label prefix.
-		$lPrefix = $languageService->sL($fieldValue['config'][$pF . 'foreign_table_prefix']);
-		// Get icon field + path if any:
-		$iField = $GLOBALS['TCA'][$f_table]['ctrl']['selicon_field'];
-		$iPath = trim($GLOBALS['TCA'][$f_table]['ctrl']['selicon_field_path']);
-		// Traverse the selected rows to add them:
-		while ($row = $db->sql_fetch_assoc($res)) {
-			BackendUtility::workspaceOL($f_table, $row);
-			if (is_array($row)) {
-				// Prepare the icon if available:
-				if ($iField && $iPath && $row[$iField]) {
-					$iParts = GeneralUtility::trimExplode(',', $row[$iField], TRUE);
-					$icon = '../' . $iPath . '/' . trim($iParts[0]);
-				} elseif (GeneralUtility::inList('singlebox,checkbox', $fieldValue['config']['renderMode'])) {
-					$icon = IconUtility::mapRecordTypeToSpriteIconName($f_table, $row);
-				} else {
-					$icon = '';
-				}
-				// Add the item:
-				$items[] = array(
-					$lPrefix . htmlspecialchars(BackendUtility::getRecordTitle($f_table, $row)),
-					$uidPre . $row['uid'],
-					$icon
-				);
-			}
-		}
-		$db->sql_free_result($res);
-		return $items;
 	}
 
 	/********************************************
@@ -3723,61 +1166,8 @@ class FormEngine {
 	 *
 	 ********************************************/
 	/**
-	 * Sets the design to the backend design.
-	 * Backend
-	 *
-	 * @return void
-	 */
-	public function setNewBEDesign() {
-		$template = GeneralUtility::getUrl(PATH_typo3 . $this->templateFile);
-		// Wrapping all table rows for a particular record being edited:
-		$this->totalWrap = HtmlParser::getSubpart($template, '###TOTALWRAP###');
-		// Wrapping a single field:
-		$this->fieldTemplate = HtmlParser::getSubpart($template, '###FIELDTEMPLATE###');
-		$this->paletteFieldTemplate = HtmlParser::getSubpart($template, '###PALETTEFIELDTEMPLATE###');
-		$this->palFieldTemplate = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE###');
-		$this->palFieldTemplateHeader = HtmlParser::getSubpart($template, '###PALETTE_FIELDTEMPLATE_HEADER###');
-	}
-
-	/**
-	 * This inserts the content of $inArr into the field-template
-	 *
-	 * @param array $inArr Array with key/value pairs to insert in the template.
-	 * @param string $altTemplate Alternative template to use instead of the default.
-	 * @return string
-	 */
-	public function intoTemplate($inArr, $altTemplate = '') {
-		// Put into template_
-		$fieldTemplateParts = explode('###FIELD_', $altTemplate ?: $this->fieldTemplate);
-		$out = current($fieldTemplateParts);
-		foreach ($fieldTemplateParts as $part) {
-			list($key, $val) = explode('###', $part, 2);
-			$out .= $inArr[$key];
-			$out .= $val;
-		}
-		return $out;
-	}
-
-	/**
-	 * Overwrite this function in own extended class to add own markers for output
-	 *
-	 * @param array $marker Array with key/value pairs to insert in the template.
-	 * @param string $table The table name of the record
-	 * @param string $field The field name which this element is supposed to edit
-	 * @param array $row The record data array where the value(s) for the field can be found
-	 * @param array $PA An array with additional configuration options.
-	 * @return array Marker array for template output
-	 * @see function intoTemplate()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function addUserTemplateMarkers($marker, $table, $field, $row, &$PA) {
-		GeneralUtility::logDeprecatedFunction();
-		return $marker;
-	}
-
-	/**
 	 * Wraps all the table rows into a single table.
-	 * Used externally from scripts like alt_doc.php and db_layout.php (which uses TCEforms...)
+	 * Used externally from scripts like EditDocumentController and PageLayoutController (which uses FormEngine)
 	 *
 	 * @param string $c Code to output between table-parts; table rows
 	 * @param array $rec The record
@@ -3786,7 +1176,7 @@ class FormEngine {
 	 */
 	public function wrapTotal($c, $rec, $table) {
 		$parts = $this->replaceTableWrap(explode('|', $this->totalWrap, 2), $rec, $table);
-		return $parts[0] . $c . $parts[1] . implode('', $this->hiddenFieldAccum);
+		return $parts[0] . $c . $parts[1] . implode(LF, $this->hiddenFieldAccum);
 	}
 
 	/**
@@ -3797,7 +1187,7 @@ class FormEngine {
 	 * @return string A complete input field
 	 */
 	static public function getHiddenTokenField($formName = 'securityToken', $tokenName = 'formToken') {
-		$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
+		$formprotection = FormProtectionFactory::get();
 		return '<input type="hidden" name="' . $tokenName . '" value="' . $formprotection->generateToken($formName) . '" />';
 	}
 
@@ -3859,7 +1249,7 @@ class FormEngine {
 					$pageTitle = sprintf($label, $tableTitle, $pageTitle);
 				}
 			}
-			$icon = $this->getClickMenu($icon, $table, $rec['uid']);
+			$icon = $this->getControllerDocumentTemplate()->wrapClickMenuOnIcon($icon, $table, $rec['uid'], 1, '', '+copy,info,edit,view');
 		}
 		foreach ($arr as $k => $v) {
 			// Make substitutions:
@@ -3884,241 +1274,6 @@ class FormEngine {
 		return $arr;
 	}
 
-	/**
-	 * Wraps an element in the $out_array with the template row for a "section" ($this->sectionWrap)
-	 *
-	 * @param array $out_array The array with form elements stored in (passed by reference and changed!)
-	 * @param int $out_pointer The pointer to the entry in the $out_array  (passed by reference and incremented!)
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, not in use anymore
-	 */
-	public function wrapBorder(&$out_array, &$out_pointer) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($this->sectionWrap && $out_array[$out_pointer]) {
-			$tableAttribs = 'border="0" cellspacing="0" cellpadding="0" width="100%" class="table table-border"';
-			$out_array[$out_pointer] = str_replace('###CONTENT###', $out_array[$out_pointer], str_replace('###TABLE_ATTRIBS###', $tableAttribs, $this->sectionWrap));
-			$out_pointer++;
-		}
-	}
-
-	/**
-	 * Replaces colorscheme markers in the template string
-	 *
-	 * @param string $inTemplate Template string with markers to be substituted.
-	 * @return string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function rplColorScheme($inTemplate) {
-		GeneralUtility::logDeprecatedFunction();
-		return str_replace(
-			array(
-				// Colors:
-				'###BGCOLOR###',
-				'###BGCOLOR_HEAD###',
-				'###FONTCOLOR_HEAD###',
-				// Classes:
-				'###CLASSATTR_1###',
-				'###CLASSATTR_2###',
-				'###CLASSATTR_4###'
-			),
-			array(
-				// Colors:
-				$this->colorScheme[0] ? ' bgcolor="' . $this->colorScheme[0] . '"' : '',
-				$this->colorScheme[1] ? ' bgcolor="' . $this->colorScheme[1] . '"' : '',
-				$this->colorScheme[3],
-				// Classes:
-				$this->classScheme[0] ? ' class="' . $this->classScheme[0] . '"' : '',
-				$this->classScheme[1] ? ' class="' . $this->classScheme[1] . '"' : '',
-				$this->classScheme[3] ? ' class="' . $this->classScheme[3] . '"' : ''
-			),
-			$inTemplate
-		);
-	}
-
-	/**
-	 * Returns divider.
-	 * Currently not implemented and returns only blank value.
-	 *
-	 * @return string Empty string
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getDivider() {
-		GeneralUtility::logDeprecatedFunction();
-		return '';
-	}
-
-	/**
-	 * Creates HTML output for a palette
-	 *
-	 * @param array $palArr The palette array to print
-	 * @return string HTML output
-	 */
-	public function printPalette($palArr) {
-
-		// GROUP FIELDS
-		$groupedFields = array();
-		$row = 0;
-		$lastLineWasLinebreak = TRUE;
-		foreach ($palArr as $field){
-			if ($field['NAME'] === '--linebreak--') {
-				if (!$lastLineWasLinebreak) {
-					$row++;
-					$groupedFields[$row][] = $field;
-					$row++;
-					$lastLineWasLinebreak = TRUE;
-				}
-			} else {
-				$lastLineWasLinebreak = FALSE;
-				$groupedFields[$row][] = $field;
-			}
-		}
-
-		$out = '';
-		// PROCESS FIELDS
-		foreach ($groupedFields as $fields) {
-
-			$numberOfItems = count($fields);
-			$cols = $numberOfItems;
-			$colWidth = (int)floor(12 / $cols);
-
-			// COLS
-			$colClass = "col-md-12";
-			$colClear = array();
-			if ($colWidth == 6) {
-				$colClass = "col-sm-6";
-				$colClear = array(
-					2 => 'visible-sm-block visible-md-block visible-lg-block',
-				);
-			} elseif ($colWidth === 4) {
-				$colClass = "col-sm-4";
-				$colClear = array(
-					3 => 'visible-sm-block visible-md-block visible-lg-block',
-				);
-			} elseif ($colWidth === 3) {
-				$colClass = "col-sm-6 col-md-3";
-				$colClear = array(
-					2 => 'visible-sm-block',
-					4 => 'visible-md-block visible-lg-block',
-				);
-			} elseif ($colWidth <= 2) {
-				$colClass = "checkbox-column col-sm-6 col-md-3 col-lg-2";
-				$colClear = array(
-					2 => 'visible-sm-block',
-					4 => 'visible-md-block',
-					6 => 'visible-lg-block'
-				);
-			}
-
-			// RENDER FIELDS
-			for ($counter = 0; $counter < $numberOfItems; $counter++) {
-				$content = $fields[$counter];
-				if ($content['NAME'] === '--linebreak--') {
-					if ($counter !== $numberOfItems) {
-						$out .= '<div class="clearfix"></div>';
-					}
-				} else {
-
-					// ITEM
-					$out .= '
-						<!-- printPalette -->
-						<div class="form-group t3js-formengine-palette-field ' . $colClass . '">
-							<label class="t3js-formengine-label">
-								' . $content['NAME'] . '
-								<img name="req_' . $content['TABLE'] . '_' . $content['ID'] . '_' . $content['FIELD'] . '" src="clear.gif" class="t3js-formengine-field-required" alt="" />
-							</label>
-							' . $content['ITEM_NULLVALUE'] . '
-							<div class="t3js-formengine-field-item ' . $content['ITEM_DISABLED'] . '">
-								<div class="t3-form-field-disable"></div>
-								' . $content['ITEM'] . '
-							</div>
-						</div>';
-
-					// BREAKPOINTS
-					if ($counter + 1 < $numberOfItems && !empty($colClear)) {
-						foreach ($colClear as $rowBreakAfter => $clearClass) {
-							if (($counter + 1) % $rowBreakAfter === 0) {
-								$out .= '<div class="clearfix '. $clearClass . '"></div>';
-							}
-						}
-					}
-				}
-			}
-		}
-		return $out;
-	}
-
-	/**
-	 * Setting the current color scheme ($this->colorScheme) based on $this->defColorScheme plus input string.
-	 *
-	 * @param string $scheme A color scheme string.
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function setColorScheme($scheme) {
-		GeneralUtility::logDeprecatedFunction();
-		$this->colorScheme = $this->defColorScheme;
-		$this->classScheme = $this->defClassScheme;
-		$parts = GeneralUtility::trimExplode(',', $scheme);
-		foreach ($parts as $key => $col) {
-			// Split for color|class:
-			list($color, $class) = GeneralUtility::trimExplode('|', $col);
-			// Handle color values:
-			if ($color) {
-				$this->colorScheme[$key] = $color;
-			}
-			if ($color == '-') {
-				$this->colorScheme[$key] = '';
-			}
-			// Handle class values:
-			if ($class) {
-				$this->classScheme[$key] = $class;
-			}
-			if ($class == '-') {
-				$this->classScheme[$key] = '';
-			}
-		}
-	}
-
-	/**
-	 * Reset color schemes.
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function resetSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->setColorScheme($GLOBALS['TBE_STYLES']['colorschemes'][0]);
-		$this->fieldStyle = $GLOBALS['TBE_STYLES']['styleschemes'][0];
-		$this->borderStyle = $GLOBALS['TBE_STYLES']['borderschemes'][0];
-	}
-
-	/**
-	 * Store current color scheme
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function storeSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->savedSchemes['classScheme'] = $this->classScheme;
-		$this->savedSchemes['colorScheme'] = $this->colorScheme;
-		$this->savedSchemes['fieldStyle'] = $this->fieldStyle;
-		$this->savedSchemes['borderStyle'] = $this->borderStyle;
-	}
-
-	/**
-	 * Restore the saved color scheme
-	 *
-	 * @return void
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function restoreSchemes() {
-		GeneralUtility::logDeprecatedFunction();
-		$this->classScheme = $this->savedSchemes['classScheme'];
-		$this->colorScheme = $this->savedSchemes['colorScheme'];
-		$this->fieldStyle = $this->savedSchemes['fieldStyle'];
-		$this->borderStyle = $this->savedSchemes['borderStyle'];
-	}
 
 	/********************************************
 	 *
@@ -4139,28 +1294,6 @@ class FormEngine {
 				<!-- NEXT: -->
 			', $this->additionalCode_pre);
 		}
-		// Additional top JavaScript
-		if (count($this->additionalJS_pre)) {
-			$out .= '
-
-
-		<!--
-			JavaScript in top of page (before form):
-		-->
-
-		<script type="text/javascript">
-			/*<![CDATA[*/
-
-			' . implode('
-
-					// NEXT:
-			', $this->additionalJS_pre) . '
-
-			/*]]>*/
-		</script>
-			';
-		}
-		// Return result:
 		return $out;
 	}
 
@@ -4215,7 +1348,9 @@ class FormEngine {
 			}
 			$pageRenderer = $this->getPageRenderer();
 			// load the main module for FormEngine with all important JS functions
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine', 'function(FormEngine) {
+				FormEngine.setBrowserUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('browser')) . ');
+			}');
 			$pageRenderer->loadPrototype();
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
@@ -4228,64 +1363,67 @@ class FormEngine {
 
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tbe_editor.js');
+			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/ValueSlider.js');
 			// Needed for FormEngine manipulation (date picker)
 			$dateFormat = ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? array('MM-DD-YYYY', 'HH:mm MM-DD-YYYY') : array('DD-MM-YYYY', 'HH:mm DD-MM-YYYY'));
 			$pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
 
 			// support placeholders for IE9 and lower
-			if ($this->clientInfo['BROWSER'] == 'msie' && $this->clientInfo['VERSION'] <= 9) {
-				$this->loadJavascriptLib('contrib/placeholdersjs/placeholders.jquery.min.js');
+			$clientInfo = GeneralUtility::clientInfo();
+			if ($clientInfo['BROWSER'] == 'msie' && $clientInfo['VERSION'] <= 9) {
+				$this->loadJavascriptLib('sysext/core/Resources/Public/JavaScript/Contrib/placeholders.jquery.min.js');
 			}
 
+			// @todo: remove scriptaclous once suggest & flex form foo is moved to RequireJS, see #55575
+			$pageRenderer->loadScriptaculous();
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
-			// If IRRE fields were processed, add the JavaScript functions:
-			if ($this->inline->inlineCount) {
-				$pageRenderer->loadScriptaculous();
-				// We want to load jQuery-ui inside our js. Enable this using requirejs.
-				$pageRenderer->loadRequireJs();
-				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
-				$out .= '
-				inline.setPrependFormFieldNames("' . $this->inline->prependNaming . '");
-				inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
-				';
-				// Always include JS functions for Suggest fields as we don't know what will come
-				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
-			} else {
-				// If Suggest fields were processed, add the JS functions
-				if ($this->suggest->suggestCount > 0) {
-					$pageRenderer->loadScriptaculous();
-					$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
-				}
-			}
+			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
+
+			$pageRenderer->loadRequireJs();
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineFlexForm');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
+
+			$pageRenderer->addInlineLanguagelabelFile(
+				\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
+				'file_upload'
+			);
+
+			// We want to load jQuery-ui inside our js. Enable this using requirejs.
+			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 			$out .= '
-			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg($this->backPath, 'gfx/required_h.gif', '', 1) . '";
-			TBE_EDITOR.images.sel.src = "' . IconUtility::skinImg($this->backPath, 'gfx/content_selected.gif', '', 1) . '";
-			TBE_EDITOR.images.clear.src = "' . $this->backPath . 'clear.gif";
+			inline.setPrependFormFieldNames("data");
+			inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
+			';
+
+			$out .= '
+			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
+			TBE_EDITOR.images.clear.src = "clear.gif";
 
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
-			TBE_EDITOR.backPath = "' . addslashes($this->backPath) . '";
+			TBE_EDITOR.backPath = "";
 			TBE_EDITOR.prependFormFieldNames = "' . $this->prependFormFieldNames . '";
 			TBE_EDITOR.prependFormFieldNamesUENC = "' . rawurlencode($this->prependFormFieldNames) . '";
 			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
-			TBE_EDITOR.isPalettedoc = ' . ($this->isPalettedoc ? addslashes($this->isPalettedoc) : 'null') . ';
+			TBE_EDITOR.isPalettedoc = null;
 			TBE_EDITOR.doSaveFieldName = "' . ($this->doSaveFieldName ? addslashes($this->doSaveFieldName) : '') . '";
 			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';
 			TBE_EDITOR.labels.fieldsMissing = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsMissing')) . ';
 			TBE_EDITOR.labels.maxItemsAllowed = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.maxItemsAllowed')) . ';
 			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login')) . ';
 			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.onChangeAlert')) . ';
+			TBE_EDITOR.labels.remainingCharacters = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remainingCharacters')) . ';
 			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
-			TBE_EDITOR.backend_interface = "' . $beUserAuth->uc['interfaceSetup'] . '";
 
 			TBE_EDITOR.customEvalFunctions = {};
 
 			';
 		}
 		// Add JS required for inline fields
-		if (count($this->inline->inlineData)) {
+		if (!empty($this->inlineData)) {
 			$out .= '
-			inline.addToDataArray(' . json_encode($this->inline->inlineData) . ');
+			inline.addToDataArray(' . json_encode($this->inlineData) . ');
 			';
 		}
 		// Registered nested elements for tabs or inline levels:
@@ -4330,15 +1468,13 @@ class FormEngine {
 		$pageRenderer = $this->getControllerDocumentTemplate()->getPageRenderer();
 
 		// set variables to be accessible for JS
-		$pageRenderer->addInlineSetting('FormEngine', 'formName', $this->formName);
-		$pageRenderer->addInlineSetting('FormEngine', 'backPath', $this->backPath);
+		$pageRenderer->addInlineSetting('FormEngine', 'formName', 'editform');
+		$pageRenderer->addInlineSetting('FormEngine', 'backPath', '');
 
 		// Integrate JS functions for the element browser if such fields or IRRE fields were processed
-		if ($this->printNeededJS['dbFileIcons'] || $this->inline->inlineCount > 0 || $this->suggest->suggestCount > 0) {
-			$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
-		}
+		$pageRenderer->addInlineSetting('FormEngine', 'legacyFieldChangedCb', 'function() { ' . $this->TBE_EDITOR_fieldChanged_func . ' };');
 
-		return $this->JSbottom($this->formName);
+		return $this->JSbottom('editform');
 	}
 
 	/**
@@ -4347,7 +1483,7 @@ class FormEngine {
 	 * @return string
 	 */
 	public function printNeededJSFunctions_top() {
-		return $this->JStop($this->formName);
+		return $this->JStop('editform');
 	}
 
 	/**
@@ -4362,67 +1498,11 @@ class FormEngine {
 		$this->getControllerDocumentTemplate()->loadJavascriptLib($lib);
 	}
 
-	/**
-	 * Wrapper for access to the current page renderer object
-	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
-	 */
-	protected function getPageRenderer() {
-		return $this->getControllerDocumentTemplate()->getPageRenderer();
-	}
-
 	/********************************************
 	 *
 	 * Various helper functions
 	 *
 	 ********************************************/
-	/**
-	 * Gets default record. Maybe not used anymore. FE-editor?
-	 *
-	 * @param string $table Database Tablename
-	 * @param int $pid PID value (positive / negative)
-	 * @return array|NULL "default" row.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getDefaultRecord($table, $pid = 0) {
-		GeneralUtility::logDeprecatedFunction();
-		if ($GLOBALS['TCA'][$table]) {
-			$row = array();
-			if ($pid < 0 && $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']) {
-				// Fetches the previous record:
-				$db = $this->getDatabaseConnection();
-				$res = $db->exec_SELECTquery('*', $table, 'uid=' . abs($pid) . BackendUtility::deleteClause($table));
-				if ($drow = $db->sql_fetch_assoc($res)) {
-					// Gets the list of fields to copy from the previous record.
-					$fArr = explode(',', $GLOBALS['TCA'][$table]['ctrl']['useColumnsForDefaultValues']);
-					foreach ($fArr as $theF) {
-						if ($GLOBALS['TCA'][$table]['columns'][$theF]) {
-							$row[$theF] = $drow[$theF];
-						}
-					}
-				}
-				$db->sql_free_result($res);
-			}
-			foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $info) {
-				if (isset($info['config']['default'])) {
-					$row[$field] = $info['config']['default'];
-				}
-			}
-			return $row;
-		}
-		return NULL;
-	}
-
-	/**
-	 * Returns TRUE if the given $row is new (i.e. has not been saved to the database)
-	 *
-	 * @param string $table
-	 * @param array $row
-	 * @return bool
-	 */
-	protected function isNewRecord($table, $row) {
-		return !MathUtility::canBeInterpretedAsInteger($row['uid']) && GeneralUtility::isFirstPartOfStr($row['uid'], 'NEW');
-	}
 
 	/**
 	 * Return record path (visually formatted, using BackendUtility::getRecordPath() )
@@ -4456,78 +1536,6 @@ class FormEngine {
 	}
 
 	/**
-	 * Fetches language label for key
-	 *
-	 * @param string $str Language label reference, eg. 'LLL:EXT:lang/locallang_core.xlf:labels.blablabla'
-	 * @return string The value of the label, fetched for the current backend language.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function sL($str) {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getLanguageService()->sL($str);
-	}
-
-	/**
-	 * Returns language label from locallang_core.xlf
-	 * Labels must be prefixed with either "l_" or "m_".
-	 * The prefix "l_" maps to the prefix "labels." inside locallang_core.xlf
-	 * The prefix "m_" maps to the prefix "mess." inside locallang_core.xlf
-	 *
-	 * @param string $str The label key
-	 * @return string The value of the label, fetched for the current backend language.
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getLL($str) {
-		GeneralUtility::logDeprecatedFunction();
-		$content = '';
-		switch (substr($str, 0, 2)) {
-			case 'l_':
-				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.' . substr($str, 2));
-				break;
-			case 'm_':
-				$content = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.' . substr($str, 2));
-				break;
-		}
-		return $content;
-	}
-
-	/**
-	 * Returns TRUE, if the palette, $palette, is collapsed (not shown, but found in top-frame) for the table.
-	 *
-	 * @param string $table The table name
-	 * @param int $palette The palette pointer/number
-	 * @return bool
-	 */
-	public function isPalettesCollapsed($table, $palette) {
-		if (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) && $GLOBALS['TCA'][$table]['palettes'][$palette]['isHiddenPalette']) {
-			return TRUE;
-		}
-		if ($GLOBALS['TCA'][$table]['ctrl']['canNotCollapse']) {
-			return FALSE;
-		}
-		if (is_array($GLOBALS['TCA'][$table]['palettes'][$palette]) && $GLOBALS['TCA'][$table]['palettes'][$palette]['canNotCollapse']) {
-			return FALSE;
-		}
-		return $this->palettesCollapsed;
-	}
-
-	/**
-	 * Return TSCpid (cached)
-	 * Using BackendUtility::getTSCpid()
-	 *
-	 * @param string $table Tablename
-	 * @param string $uid UID value
-	 * @param string $pid PID value
-	 * @return array Array of two integers; first is the real PID of a record, second is the PID value for TSconfig.
-	 * @see BackendUtility::getTSCpid()
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
-	 */
-	public function getTSCpid($table, $uid, $pid) {
-		GeneralUtility::logDeprecatedFunction();
-		return BackendUtility::getTSCpidCached($table, $uid, $pid);
-	}
-
-	/**
 	 * Returns TRUE if descriptions should be loaded always
 	 *
 	 * @param string $table Table for which to check
@@ -4538,316 +1546,33 @@ class FormEngine {
 	}
 
 	/**
-	 * Returns an array of available languages (to use for FlexForms)
+	 * Initialize list of additional preview languages.
+	 * Sets according list in $this->additionalPreviewLanguages
 	 *
-	 * @param bool $onlyIsoCoded If set, only languages which are paired with a static_info_table / static_language record will be returned.
-	 * @param bool $setDefault If set, an array entry for a default language is set.
-	 * @return array
-	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
+	 * @return void
 	 */
-	public function getAvailableLanguages($onlyIsoCoded = TRUE, $setDefault = TRUE) {
-		GeneralUtility::logDeprecatedFunction();
-		$isL = ExtensionManagementUtility::isLoaded('static_info_tables');
-		// Find all language records in the system:
-		$db = $this->getDatabaseConnection();
-		$res = $db->exec_SELECTquery('language_isocode,static_lang_isocode,title,uid', 'sys_language', 'pid=0 AND hidden=0' . BackendUtility::deleteClause('sys_language'), '', 'title');
-		// Traverse them:
-		$output = array();
-		if ($setDefault) {
-			$output[0] = array(
-				'uid' => 0,
-				'title' => 'Default language',
-				'ISOcode' => 'DEF'
-			);
-		}
-		while ($row = $db->sql_fetch_assoc($res)) {
-			$output[$row['uid']] = $row;
-			if (!empty($row['language_isocode'])) {
-				$output[$row['uid']]['ISOcode'] = $row['language_isocode'];
-			} elseif ($isL && $row['static_lang_isocode']) {
-				\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
-				$rr = BackendUtility::getRecord('static_languages', $row['static_lang_isocode'], 'lg_iso_2');
-				if ($rr['lg_iso_2']) {
-					$output[$row['uid']]['ISOcode'] = $rr['lg_iso_2'];
-				}
-			}
-			if ($onlyIsoCoded && !$output[$row['uid']]['ISOcode']) {
-				unset($output[$row['uid']]);
-			}
-		}
-		$db->sql_free_result($res);
-		return $output;
-	}
-
-	/**
-	 * Initializes language icons etc.
-	 *
-	 * @param string $table Table name
-	 * @param array $row Record
-	 * @param string $sys_language_uid Sys language uid OR ISO language code prefixed with "v", eg. "vDA
-	 * @return string
-	 */
-	public function getLanguageIcon($table, $row, $sys_language_uid) {
-		$mainKey = $table . ':' . $row['uid'];
-		if (!isset($this->cachedLanguageFlag[$mainKey])) {
-			BackendUtility::fixVersioningPid($table, $row);
-			list($tscPID) = BackendUtility::getTSCpidCached($table, $row['uid'], $row['pid']);
-			/** @var $t8Tools \TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider */
-			$t8Tools = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
-			$this->cachedLanguageFlag[$mainKey] = $t8Tools->getSystemLanguages($tscPID);
-		}
-		// Convert sys_language_uid to sys_language_uid if input was in fact a string (ISO code expected then)
-		if (!MathUtility::canBeInterpretedAsInteger($sys_language_uid)) {
-			foreach ($this->cachedLanguageFlag[$mainKey] as $rUid => $cD) {
-				if ('v' . $cD['ISOcode'] === $sys_language_uid) {
-					$sys_language_uid = $rUid;
-				}
-			}
-		}
-		$out = '';
-		if ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] && $this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon'] != 'empty-empty') {
-			$out .= IconUtility::getSpriteIcon($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['flagIcon']);
-			$out .= '&nbsp;';
-		} elseif ($this->cachedLanguageFlag[$mainKey][$sys_language_uid]['title']) {
-			$out .= '[' . $this->cachedLanguageFlag[$mainKey][$sys_language_uid]['title'] . ']';
-			$out .= '&nbsp;';
-		}
-		return $out;
-	}
-
-	/**
-	 * Renders an icon to indicate the way the translation and the original is merged (if this is relevant).
-	 *
-	 * If a field is defined as 'mergeIfNotBlank' this is useful information for an editor. He/she can leave the field blank and
-	 * the original value will be used. Without this hint editors are likely to copy the contents even if it is not necessary.
-	 *
-	 * @param string $l10nMode Localization mode from TCA
-	 * @return string
-	 */
-	protected function getMergeBehaviourIcon($l10nMode) {
-		$icon = '';
-		if ($l10nMode === 'mergeIfNotBlank') {
-			$icon = IconUtility::getSpriteIcon('actions-edit-merge-localization', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank')));
-		}
-		return $icon;
-	}
-
-	/**
-	 * Rendering preview output of a field value which is not shown as a form field but just outputted.
-	 *
-	 * @param string $value The value to output
-	 * @param array $config Configuration for field.
-	 * @param string $field Name of field.
-	 * @return string HTML formatted output
-	 */
-	public function previewFieldValue($value, $config, $field = '') {
-		if ($config['config']['type'] === 'group' && ($config['config']['internal_type'] === 'file' || $config['config']['internal_type'] === 'file_reference')) {
-			// Ignore uploadfolder if internal_type is file_reference
-			if ($config['config']['internal_type'] === 'file_reference') {
-				$config['config']['uploadfolder'] = '';
-			}
-			$show_thumbs = TRUE;
-			$table = 'tt_content';
-			// Making the array of file items:
-			$itemArray = GeneralUtility::trimExplode(',', $value, TRUE);
-			// Showing thumbnails:
-			$thumbsnail = '';
-			if ($show_thumbs) {
-				$imgs = array();
-				foreach ($itemArray as $imgRead) {
-					$imgP = explode('|', $imgRead);
-					$imgPath = rawurldecode($imgP[0]);
-					$rowCopy = array();
-					$rowCopy[$field] = $imgPath;
-					// Icon + clickmenu:
-					$absFilePath = GeneralUtility::getFileAbsFileName($config['config']['uploadfolder'] ? $config['config']['uploadfolder'] . '/' . $imgPath : $imgPath);
-					$fileInformation = pathinfo($imgPath);
-					$fileIcon = IconUtility::getSpriteIconForFile($imgPath, array('title' => htmlspecialchars($fileInformation['basename'] . ($absFilePath && @is_file($absFilePath) ? ' (' . GeneralUtility::formatSize(filesize($absFilePath)) . 'bytes)' : ' - FILE NOT FOUND!'))));
-					$imgs[] = '<span class="nobr">' . BackendUtility::thumbCode($rowCopy, $table, $field, $this->backPath, 'thumbs.php', $config['config']['uploadfolder'], 0, ' align="middle"') . ($absFilePath ? $this->getClickMenu($fileIcon, $absFilePath) : $fileIcon) . $imgPath . '</span>';
-				}
-				$thumbsnail = implode('<br />', $imgs);
-			}
-			return $thumbsnail;
-		} else {
-			return nl2br(htmlspecialchars($value));
-		}
-	}
-
-	/**
-	 * Generates and return information about which languages the current user should see in preview, configured by options.additionalPreviewLanguages
-	 *
-	 * @return array Array of additional languages to preview
-	 */
-	public function getAdditionalPreviewLanguages() {
-		if (!isset($this->cachedAdditionalPreviewLanguages)) {
-			$this->cachedAdditionalPreviewLanguages = array();
-			if ($this->getBackendUserAuthentication()->getTSConfigVal('options.additionalPreviewLanguages')) {
-				$uids = GeneralUtility::intExplode(',', $this->getBackendUserAuthentication()->getTSConfigVal('options.additionalPreviewLanguages'));
-				foreach ($uids as $uid) {
-					if ($sys_language_rec = BackendUtility::getRecord('sys_language', $uid)) {
-						$this->cachedAdditionalPreviewLanguages[$uid] = array('uid' => $uid);
-						if (!empty($sys_language_rec['language_isocode'])) {
-							$this->cachedAdditionalPreviewLanguages[$uid]['ISOcode'] = $sys_language_rec['language_isocode'];
-						} elseif ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
-							\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
-							$staticLangRow = BackendUtility::getRecord('static_languages', $sys_language_rec['static_lang_isocode'], 'lg_iso_2');
-							if ($staticLangRow['lg_iso_2']) {
-								$this->cachedAdditionalPreviewLanguages[$uid]['uid'] = $uid;
-								$this->cachedAdditionalPreviewLanguages[$uid]['ISOcode'] = $staticLangRow['lg_iso_2'];
-							}
+	protected function initializeAdditionalPreviewLanguages() {
+		$backendUserAuthentication = $this->getBackendUserAuthentication();
+		$additionalPreviewLanguageListOfUser = $backendUserAuthentication->getTSConfigVal('options.additionalPreviewLanguages');
+		$additionalPreviewLanguages = array();
+		if ($additionalPreviewLanguageListOfUser) {
+			$uids = GeneralUtility::intExplode(',', $additionalPreviewLanguageListOfUser);
+			foreach ($uids as $uid) {
+				if ($sys_language_rec = BackendUtility::getRecord('sys_language', $uid)) {
+					$additionalPreviewLanguages[$uid]['uid'] = $uid;
+					if (!empty($sys_language_rec['language_isocode'])) {
+						$additionalPreviewLanguages[$uid]['ISOcode'] = $sys_language_rec['language_isocode'];
+					} elseif ($sys_language_rec['static_lang_isocode'] && ExtensionManagementUtility::isLoaded('static_info_tables')) {
+						GeneralUtility::deprecationLog('Usage of the field "static_lang_isocode" is discouraged, and will stop working with CMS 8. Use the built-in language field "language_isocode" in your sys_language records.');
+						$staticLangRow = BackendUtility::getRecord('static_languages', $sys_language_rec['static_lang_isocode'], 'lg_iso_2');
+						if ($staticLangRow['lg_iso_2']) {
+							$additionalPreviewLanguages[$uid]['ISOcode'] = $staticLangRow['lg_iso_2'];
 						}
 					}
 				}
 			}
 		}
-		return $this->cachedAdditionalPreviewLanguages;
-	}
-
-	/**
-	 * Push a new element to the dynNestedStack. Thus, every object know, if it's
-	 * nested in a tab or IRRE level and in which order this was processed.
-	 *
-	 * @param string $type Type of the level, e.g. "tab" or "inline
-	 * @param string $ident Identifier of the level
-	 * @return void
-	 */
-	public function pushToDynNestedStack($type, $ident) {
-		$this->dynNestedStack[] = array($type, $ident);
-	}
-
-	/**
-	 * Remove an element from the dynNestedStack. If $type and $ident
-	 * are set, the last element will only be removed, if it matches
-	 * what is expected to be removed.
-	 *
-	 * @param string $type Type of the level, e.g. "tab" or "inline
-	 * @param string $ident Identifier of the level
-	 * @return void
-	 */
-	public function popFromDynNestedStack($type = NULL, $ident = NULL) {
-		if ($type != NULL && $ident != NULL) {
-			$last = end($this->dynNestedStack);
-			if ($type == $last[0] && $ident == $last[1]) {
-				array_pop($this->dynNestedStack);
-			}
-		} else {
-			array_pop($this->dynNestedStack);
-		}
-	}
-
-	/**
-	 * Get the dynNestedStack as associative array.
-	 * The result is e.g. ['tab','DTM-ABCD-1'], ['inline','data[13][table][uid][field]'], ['tab','DTM-DEFG-2'], ...
-	 *
-	 * @param bool $json Return a JSON string instead of an array - default: FALSE
-	 * @param bool $skipFirst Skip the first element in the dynNestedStack - default: FALSE
-	 * @return mixed Returns an associative array by default. If $json is TRUE, it will be returned as JSON string.
-	 */
-	public function getDynNestedStack($json = FALSE, $skipFirst = FALSE) {
-		$result = $this->dynNestedStack;
-		if ($skipFirst) {
-			array_shift($result);
-		}
-		return $json ? json_encode($result) : $result;
-	}
-
-	/**
-	 * Takes care of registering properties in requiredFields and requiredElements.
-	 * The current hierarchy of IRRE and/or Tabs is stored. Thus, it is possible to determine,
-	 * which required field/element was filled incorrectly and show it, even if the Tab or IRRE
-	 * level is hidden.
-	 *
-	 * @param string $type Type of requirement ('field' or 'range')
-	 * @param string $name The name of the form field
-	 * @param mixed $value For type 'field' string, for type 'range' array
-	 * @return void
-	 */
-	public function registerRequiredProperty($type, $name, $value) {
-		if ($type == 'field' && is_string($value)) {
-			$this->requiredFields[$name] = $value;
-			// requiredFields have name/value swapped! For backward compatibility we keep this:
-			$itemName = $value;
-		} elseif ($type == 'range' && is_array($value)) {
-			$this->requiredElements[$name] = $value;
-			$itemName = $name;
-		} else {
-			$itemName = '';
-		}
-		// Set the situation of nesting for the current field:
-		$this->registerNestedElement($itemName);
-	}
-
-	/**
-	 * Sets the current situation of nested tabs and inline levels for a given element.
-	 *
-	 * @param string $itemName The element the nesting should be stored for
-	 * @param bool $setLevel Set the reverse level lookup - default: TRUE
-	 * @return void
-	 */
-	protected function registerNestedElement($itemName, $setLevel = TRUE) {
-		$dynNestedStack = $this->getDynNestedStack();
-		if (count($dynNestedStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $itemName, $match)) {
-			array_shift($match);
-			$this->requiredNested[$itemName] = array(
-				'parts' => $match,
-				'level' => $dynNestedStack
-			);
-		}
-	}
-
-	/**
-	 * Return the placeholder attribute for an input field.
-	 *
-	 * @param string $table
-	 * @param string $field
-	 * @param array $config
-	 * @param array $row
-	 * @return string
-	 */
-	public function getPlaceholderAttribute($table, $field, array $config, array $row) {
-		$value = $this->getPlaceholderValue($table, $field, $config, $row);
-
-		// Cleanup the string and support 'LLL:'
-		$value = htmlspecialchars(trim($this->getLanguageService()->sL($value)));
-		return empty($value) ? '' : ' placeholder="' . $value . '" ';
-	}
-
-	/**
-	 * Determine and get the value for the placeholder for an input field.
-	 *
-	 * @param string $table
-	 * @param string $field
-	 * @param array $config
-	 * @param array $row
-	 * @return mixed
-	 */
-	protected function getPlaceholderValue($table, $field, array $config, array $row) {
-		$value = trim($config['placeholder']);
-		if (!$value) {
-			return '';
-		}
-		// Check if we have a reference to another field value from the current record
-		if (substr($value, 0, 6) === '__row|') {
-			/** @var \TYPO3\CMS\Backend\Form\FormDataTraverser $traverser */
-			$traverseFields = GeneralUtility::trimExplode('|', substr($value, 6));
-			$traverser = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\FormDataTraverser::class, $this);
-			$value = $traverser->getTraversedFieldValue($traverseFields, $table, $row);
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Insert additional style sheet link
-	 *
-	 * @param string $key Some key identifying the style sheet
-	 * @param string $href Uri to the style sheet file
-	 * @param string $title Value for the title attribute of the link element
-	 * @param string $relation Value for the rel attribute of the link element
-	 * @return void
-	 */
-	public function addStyleSheet($key, $href, $title = '', $relation = 'stylesheet') {
-		$this->getControllerDocumentTemplate()->addStyleSheet($key, $href, $title, $relation);
+		$this->additionalPreviewLanguages = $additionalPreviewLanguages;
 	}
 
 	/**
@@ -4867,13 +1592,6 @@ class FormEngine {
 	}
 
 	/**
-	 * @return DatabaseConnection
-	 */
-	protected function getDatabaseConnection() {
-		return $GLOBALS['TYPO3_DB'];
-	}
-
-	/**
 	 * @return LanguageService
 	 */
 	protected function getLanguageService() {
@@ -4881,10 +1599,12 @@ class FormEngine {
 	}
 
 	/**
-	 * @return DocumentTemplate
+	 * Wrapper for access to the current page renderer object
+	 *
+	 * @return \TYPO3\CMS\Core\Page\PageRenderer
 	 */
-	protected function getDocumentTemplate() {
-		return $GLOBALS['TBE_TEMPLATE'];
+	protected function getPageRenderer() {
+		return $this->getControllerDocumentTemplate()->getPageRenderer();
 	}
 
 }
