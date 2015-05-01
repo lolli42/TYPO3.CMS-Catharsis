@@ -1608,6 +1608,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				$fullJsPath = \TYPO3\CMS\Core\Utility\PathUtility::getRelativePath(PATH_typo3, $fullJsPath);
 				$fullJsPath = rtrim($fullJsPath, '/');
 				if ($fullJsPath) {
+					if (strncmp('typo3/cms-', $packageName, 10) === 0) {
+						$packageName = str_replace('-', '_', substr($packageName, 10));
+					}
 					$this->requireJsConfig['paths']['TYPO3/CMS/' . GeneralUtility::underscoredToUpperCamelCase($packageName)] = $this->backPath . $fullJsPath;
 				}
 			}

@@ -1200,7 +1200,7 @@ function jumpToUrl(URL) {
 		// merge default css directories ($this->stylesheetsSkin) with additional ones and include them
 		if (is_array($GLOBALS['TBE_STYLES']['skins'])) {
 			// loop over all registered skins
-			foreach ($GLOBALS['TBE_STYLES']['skins'] as $skinExtKey => $skin) {
+				foreach ($GLOBALS['TBE_STYLES']['skins'] as $skinExtKey => $skin) {
 				$skinStylesheetDirs = $this->stylesheetsSkins;
 				// Skins can add custom stylesheetDirectories using
 				// $GLOBALS['TBE_STYLES']['skins'][$_EXTKEY]['stylesheetDirectories']
@@ -1211,9 +1211,18 @@ function jumpToUrl(URL) {
 				foreach ($skinStylesheetDirs as $stylesheetDir) {
 					// for EXT:myskin/stylesheets/ syntax
 					if (substr($stylesheetDir, 0, 4) === 'EXT:') {
-						list($extKey, $path) = explode('/', substr($stylesheetDir, 4), 2);
-						if (!empty($extKey) && ExtensionManagementUtility::isLoaded($extKey) && !empty($path)) {
-							$stylesheetDirectories[] = ExtensionManagementUtility::extRelPath($extKey) . $path;
+						list($vendor, $packageName, $local) = explode('/', substr($stylesheetDir, 4), 3);
+						$path = '';
+						if ((string)$vendor !== '' && ExtensionManagementUtility::isLoaded($vendor) && (string)$packageName !== '') {
+							$path = ExtensionManagementUtility::extRelPath($vendor) . $packageName;
+							if ((string)$local !== '') {
+								$path .= '/' . $local;
+							}
+						} elseif ((string)$vendor !== '' && (string)$packageName !== '' && ExtensionManagementUtility::isLoaded($vendor . '/' . $packageName) && (string)$local !== '') {
+							$path = ExtensionManagementUtility::extRelPath($vendor . '/' . $packageName) . $local;
+						}
+						if (!empty($path)) {
+							$stylesheetDirectories[] = $path;
 						}
 					} else {
 						// For relative paths

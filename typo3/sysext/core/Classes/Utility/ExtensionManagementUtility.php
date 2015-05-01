@@ -59,7 +59,7 @@ class ExtensionManagementUtility {
 			$path = PATH_typo3conf . 'PackageList.php';
 		}
 		static::$packageList = require $path;
-		$GLOBALS['TYPO3_LOADED_EXT'] &= static::$packageList['packages'];
+		$GLOBALS['TYPO3_LOADED_EXT'] = &static::$packageList['packages'];
 	}
 
 	/**
@@ -1527,7 +1527,7 @@ tt_content.' . $key . $suffix . ' {
 				// $_EXTKEY and $_EXTCONF are available in ext_localconf.php
 				// and are explicitly set in cached file as well
 				$_EXTCONF = isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$_EXTKEY]) ? $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$_EXTKEY] : NULL;
-				require $extensionInformation['ext_localconf.php'];
+				require PATH_site . $extensionInformation['ext_localconf.php'];
 			}
 		}
 	}
@@ -1538,7 +1538,6 @@ tt_content.' . $key . $suffix . ' {
 	 * @return void
 	 */
 	static protected function createExtLocalconfCacheEntry() {
-		$extensionInformation = $GLOBALS['TYPO3_LOADED_EXT'];
 		$phpCodeToCache = array();
 		// Set same globals as in loadSingleExtLocalconfFiles()
 		$phpCodeToCache[] = '/**';
@@ -1548,7 +1547,7 @@ tt_content.' . $key . $suffix . ' {
 		$phpCodeToCache[] = 'global $TYPO3_CONF_VARS, $T3_SERVICES, $T3_VAR;';
 		$phpCodeToCache[] = '';
 		// Iterate through loaded extensions and add ext_localconf content
-		foreach ($extensionInformation as $extensionKey => $extensionDetails) {
+		foreach (static::$packageList['packages'] as $extensionKey => $extensionDetails) {
 			if (isset($extensionDetails['ext_localconf.php']) && $extensionDetails['ext_localconf.php']) {
 				// Include a header per extension to make the cache file more readable
 				$phpCodeToCache[] = '/**';
@@ -1561,7 +1560,7 @@ tt_content.' . $key . $suffix . ' {
 				$phpCodeToCache[] = '$_EXTCONF = $GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'extConf\'][$_EXTKEY];';
 				$phpCodeToCache[] = '';
 				// Add ext_localconf.php content of extension
-				$phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_localconf.php']));
+				$phpCodeToCache[] = trim(GeneralUtility::getUrl(PATH_site . $extensionDetails['ext_localconf.php']));
 				$phpCodeToCache[] = '';
 				$phpCodeToCache[] = '';
 			}
@@ -1753,7 +1752,7 @@ tt_content.' . $key . $suffix . ' {
 				// $_EXTKEY and $_EXTCONF are available in ext_tables.php
 				// and are explicitly set in cached file as well
 				$_EXTCONF = $GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf'][$_EXTKEY];
-				require $extensionInformation['ext_tables.php'];
+				require PATH_site . $extensionInformation['ext_tables.php'];
 				static::loadNewTcaColumnsConfigFiles();
 			}
 		}
@@ -1791,7 +1790,7 @@ tt_content.' . $key . $suffix . ' {
 				$phpCodeToCache[] = '$_EXTCONF = $GLOBALS[\'TYPO3_CONF_VARS\'][\'EXT\'][\'extConf\'][$_EXTKEY];';
 				$phpCodeToCache[] = '';
 				// Add ext_tables.php content of extension
-				$phpCodeToCache[] = trim(GeneralUtility::getUrl($extensionDetails['ext_tables.php']));
+				$phpCodeToCache[] = trim(GeneralUtility::getUrl(PATH_site . $extensionDetails['ext_tables.php']));
 				$phpCodeToCache[] = '';
 				$phpCodeToCache[] = ExtensionManagementUtility::class . '::loadNewTcaColumnsConfigFiles();';
 				$phpCodeToCache[] = '';

@@ -3681,10 +3681,15 @@ Connection: close
 
 		// Extension
 		if (strpos($filename, 'EXT:') === 0) {
-			list($extKey, $local) = explode('/', substr($filename, 4), 2);
+			list($vendor, $packageName, $local) = explode('/', substr($filename, 4), 3);
 			$filename = '';
-			if ((string)$extKey !== '' && ExtensionManagementUtility::isLoaded($extKey) && (string)$local !== '') {
-				$filename = ExtensionManagementUtility::extPath($extKey) . $local;
+			if ((string)$vendor !== '' && ExtensionManagementUtility::isLoaded($vendor) && (string)$packageName !== '') {
+				$filename = ExtensionManagementUtility::extPath($vendor) . $packageName;
+				if ((string)$local !== '') {
+					$filename .= '/' . $local;
+				}
+			} elseif ((string)$vendor !== '' && (string)$packageName !== '' && ExtensionManagementUtility::isLoaded($vendor . '/' . $packageName) && (string)$local !== '') {
+				$filename = ExtensionManagementUtility::extPath($vendor . '/' . $packageName) . $local;
 			}
 		} elseif (!self::isAbsPath($filename)) {
 			// relative. Prepended with $relPathPrefix
