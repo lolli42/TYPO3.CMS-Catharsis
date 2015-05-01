@@ -20,5 +20,5 @@ namespace TYPO3\CMS\Backend;
  * which usually uses the BackendModuleRequestHandler
  */
 define('TYPO3_MODE', 'BE');
-require __DIR__ . '/sysext/core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run('typo3/')->shutdown();
+
+require 'init.php';

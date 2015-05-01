@@ -114,12 +114,11 @@ class Bootstrap {
 	 */
 	static public function getInstance() {
 		if (is_null(static::$instance)) {
-			$composerClassLoader = self::initializeComposerClassLoader();
 			$applicationContext = getenv('TYPO3_CONTEXT') ?: (getenv('REDIRECT_TYPO3_CONTEXT') ?: 'Production');
 			self::$instance = new static($applicationContext);
 			// Establish an alias for Flow/Package interoperability
 			class_alias(get_class(static::$instance), \TYPO3\Flow\Core\Bootstrap::class);
-			self::$instance->setEarlyInstance(\Composer\Autoload\ClassLoader::class, $composerClassLoader);
+			self::$instance->setEarlyInstance(\Composer\Autoload\ClassLoader::class, $GLOBALS['composerClassLoader']);
 		}
 		return static::$instance;
 	}

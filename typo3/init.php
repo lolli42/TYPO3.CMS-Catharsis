@@ -42,5 +42,6 @@
  */
 define('TYPO3_MODE', 'BE');
 
-require __DIR__ . '/sysext/core/Classes/Core/Bootstrap.php';
+$composerClassLoader = require __DIR__ . '/contrib/vendor/autoload.php';
+
 \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run('typo3/');

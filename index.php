@@ -29,5 +29,6 @@ if (version_compare(PHP_VERSION, '5.5.0', '<')) {
 
 define('TYPO3_MODE', 'FE');
 
-require __DIR__ . '/typo3/sysext/core/Classes/Core/Bootstrap.php';
+$composerClassLoader = require __DIR__ . '/typo3/contrib/vendor/autoload.php';
+
 \TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run()->shutdown();
