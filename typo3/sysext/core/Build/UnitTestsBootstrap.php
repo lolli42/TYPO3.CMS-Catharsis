@@ -201,7 +201,7 @@ class UnitTestsBootstrap {
 	 */
 	protected function finishCoreBootstrap() {
 		Bootstrap::getInstance()
-			->disableCoreAndClassesCache()
+			->disableCoreCache()
 			->initializeCachingFramework()
 			->initializeClassLoaderCaches()
 			->initializePackageManagement(\TYPO3\CMS\Core\Package\UnitTestPackageManager::class);

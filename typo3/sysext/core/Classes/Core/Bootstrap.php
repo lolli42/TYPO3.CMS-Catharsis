@@ -79,7 +79,7 @@ class Bootstrap {
 	/**
 	 * @var bool
 	 */
-	static protected $usesComposerClassLoading = FALSE;
+	protected $inComposerMode;
 
 	/**
 	 * Disable direct creation of this object.
@@ -90,13 +90,6 @@ class Bootstrap {
 	protected function __construct($applicationContext) {
 		$this->requestId = substr(md5(uniqid('', TRUE)), 0, 13);
 		$this->applicationContext = new ApplicationContext($applicationContext);
-	}
-
-	/**
-	 * @return bool
-	 */
-	static public function usesComposerClassLoading() {
-		return self::$usesComposerClassLoading;
 	}
 
 	/**
@@ -142,6 +135,15 @@ class Bootstrap {
 	 */
 	public function getApplicationContext() {
 		return $this->applicationContext;
+	}
+
+	/**
+	 * Returns true if the system runs in composer mode
+	 *
+	 * @return bool
+	 */
+	public function isInComposerMode() {
+		return $this->inComposerMode;
 	}
 
 	/**
@@ -203,29 +205,17 @@ class Bootstrap {
 	 */
 	public function baseSetup($relativePathPart = '') {
 		SystemEnvironmentBuilder::run($relativePathPart);
+		$this->detectComposerMode();
 		$this->addDynamicClassAliasMapsToComposerClassLoader();
 		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
 	}
 
 	/**
-	 * @return \Composer\Autoload\ClassLoader|\Helhum\ClassAliasLoader\Composer\ClassAliasLoader
+	 * Tests wheter the system runs in composer mode, or in classic extension mode
 	 */
-	static protected function initializeComposerClassLoader() {
-		$possiblePaths = array(
-			'distribution' => __DIR__ . '/../../../../../../Packages/Libraries/autoload.php',
-			'fallback' => __DIR__ . '/../../../../contrib/vendor/autoload.php',
-		);
-		foreach ($possiblePaths as $autoLoadType => $possiblePath) {
-			if (file_exists($possiblePath)) {
-				if ($autoLoadType === 'distribution') {
-					self::$usesComposerClassLoading = TRUE;
-				}
-				return include $possiblePath;
-			}
-		}
-
-		throw new \LogicException('No class loading information found for TYPO3 CMS. Please make sure you installed TYPO3 with composer or the typo3/contrib/vendor folder is present.', 1425153762);
+	protected function detectComposerMode() {
+		$this->inComposerMode = file_exists(PATH_site . 'composer.json');
 	}
 
 	/**
@@ -235,7 +225,8 @@ class Bootstrap {
 	 * @throws \TYPO3\CMS\Core\Exception
 	 */
 	protected function addDynamicClassAliasMapsToComposerClassLoader() {
-		if (self::$usesComposerClassLoading) {
+		$composerClassLoader = $this->getEarlyInstance(\Composer\Autoload\ClassLoader::class);
+		if ($composerClassLoader instanceof ClassAliasLoader) {
 			return;
 		}
 		$dynamicClassAliasMapFile = PATH_site . 'typo3conf/autoload_classaliasmap.php';
@@ -374,16 +365,13 @@ class Bootstrap {
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function loadConfigurationAndInitialize($allowCaching = TRUE, $packageManagerClassName = \TYPO3\CMS\Core\Package\PackageManager::class) {
-		$this->initializeClassLoader()
-			->populateLocalConfiguration();
+	public function loadConfigurationAndInitialize($allowCaching = TRUE) {
+		$this->populateLocalConfiguration();
 		if (!$allowCaching) {
-			$this->disableCoreAndClassesCache();
+			$this->disableCoreCache();
 		}
 		$this->initializeCachingFramework()
-			->initializeClassLoaderCaches()
-			->initializePackageManagement($packageManagerClassName)
-			->initializeRuntimeActivatedPackagesFromConfiguration();
+			->loadPackageList();
 
 		$this->defineDatabaseConstants()
 			->defineUserAgentConstant()
@@ -408,13 +396,8 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function initializeClassLoader() {
-		$classLoader = new ClassLoader($this->applicationContext);
+		$classLoader = new ClassLoader();
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class, $classLoader);
-		$classAliasMap = new ClassAliasMap();
-		$classAliasMap->injectClassLoader($classLoader);
-		$classAliasMap->injectComposerClassLoader($this->getEarlyInstance(\Composer\Autoload\ClassLoader::class));
-		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
-		$classLoader->injectClassAliasMap($classAliasMap);
 		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);
 		return $this;
 	}
@@ -432,54 +415,13 @@ class Bootstrap {
 	}
 
 	/**
-	 * Initialize class loader cache.
-	 *
+	 * Initializes the list of available packages
+
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function initializeClassLoaderCaches() {
-		/** @var $classLoader ClassLoader */
-		$classLoader = $this->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class);
-		$classLoader->injectCoreCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core'));
-		$classLoader->injectClassesCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_classes'));
-		return $this;
-	}
-
-	/**
-	 * Initializes the package system and loads the package configuration and settings
-	 * provided by the packages.
-	 *
-	 * @param string $packageManagerClassName Define an alternative package manager implementation (usually for the installer)
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializePackageManagement($packageManagerClassName) {
-		/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
-		$packageManager = new $packageManagerClassName();
-		$this->setEarlyInstance(\TYPO3\Flow\Package\PackageManager::class, $packageManager);
-		Utility\ExtensionManagementUtility::setPackageManager($packageManager);
-		$packageManager->injectClassLoader($this->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class));
-		$packageManager->injectCoreCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core'));
-		$packageManager->injectDependencyResolver(Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Package\DependencyResolver::class));
-		$packageManager->initialize($this);
-		Utility\GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
-		return $this;
-	}
-
-	/**
-	 * Activates a package during runtime. This is used in AdditionalConfiguration.php
-	 * to enable extensions under conditions.
-	 *
-	 * @return Bootstrap
-	 */
-	protected function initializeRuntimeActivatedPackagesFromConfiguration() {
-		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']) && is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'])) {
-			/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
-			$packageManager = $this->getEarlyInstance(\TYPO3\Flow\Package\PackageManager::class);
-			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'] as $runtimeAddedPackageKey) {
-				$packageManager->activatePackageDuringRuntime($runtimeAddedPackageKey);
-			}
-		}
+	public function loadPackageList() {
+		Utility\ExtensionManagementUtility::loadPackageList();
 		return $this;
 	}
 
@@ -547,13 +489,10 @@ class Bootstrap {
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function disableCoreAndClassesCache() {
+	public function disableCoreCache() {
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['backend']
 			= \TYPO3\CMS\Core\Cache\Backend\NullBackend::class;
 		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['options']);
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['backend']
-			= \TYPO3\CMS\Core\Cache\Backend\TransientMemoryBackend::class;
-		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['options']);
 		return $this;
 	}
 

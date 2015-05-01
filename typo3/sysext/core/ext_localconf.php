@@ -40,25 +40,6 @@ $signalSlotDispatcher->connect(
 	'cleanupProcessedFilesPostFileReplace'
 );
 
-if (!\TYPO3\CMS\Core\Core\Bootstrap::usesComposerClassLoading()) {
-	$bootstrap = \TYPO3\CMS\Core\Core\Bootstrap::getInstance();
-	$classAliasMap = $bootstrap->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class);
-	$signalSlotDispatcher->connect(
-		\TYPO3\CMS\Extensionmanager\Service\ExtensionManagementService::class,
-		'hasInstalledExtensions',
-		$classAliasMap,
-		'buildStaticMappingFile'
-	);
-
-	$signalSlotDispatcher->connect(
-		\TYPO3\CMS\Extensionmanager\Utility\InstallUtility::class,
-		'afterExtensionUninstall',
-		$classAliasMap,
-		'buildStaticMappingFile'
-	);
-	unset($bootstrap, $classAliasMap);
-}
-
 unset($signalSlotDispatcher);
 
 $GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['dumpFile'] = 'EXT:core/Resources/PHP/FileDumpEID.php';

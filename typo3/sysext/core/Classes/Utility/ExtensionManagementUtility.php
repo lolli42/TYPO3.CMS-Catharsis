@@ -45,19 +45,21 @@ class ExtensionManagementUtility {
 	static protected $extTablesWasReadFromCacheOnce = FALSE;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Package\PackageManager
+	 * @var array
 	 */
-	static protected $packageManager;
+	static protected $packageList;
 
 	/**
-	 * Sets the package manager for all that backwards compatibility stuff,
-	 * so it doesn't have to be fetched through the bootstap.
+	 * Loads the package list from the file
 	 *
-	 * @param \TYPO3\CMS\Core\Package\PackageManager $packageManager
 	 * @internal
 	 */
-	static public function setPackageManager(PackageManager $packageManager) {
-		static::$packageManager = $packageManager;
+	static public function loadPackageList($path = null) {
+		if ($path === NULL) {
+			$path = PATH_typo3conf . 'PackageList.php';
+		}
+		static::$packageList = require $path;
+		$GLOBALS['TYPO3_LOADED_EXT'] &= static::$packageList['packages'];
 	}
 
 	/**
@@ -108,11 +110,25 @@ class ExtensionManagementUtility {
 	 * @throws \BadFunctionCallException
 	 */
 	static public function isLoaded($key, $exitOnError = FALSE) {
-		$isLoaded = static::$packageManager->isPackageActive($key);
+		$key = static::canonicalizePackageName($key);
+		$isLoaded = isset(static::$packageList['packages'][$key]);
 		if ($exitOnError && !$isLoaded) {
 			throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension "' . $key . '" is not loaded!', 1270853910);
 		}
 		return $isLoaded;
+	}
+
+	/**
+	 * Resolves aliases
+	 *
+	 * @param string $packageName
+	 * @return string
+	 */
+	static public function canonicalizePackageName($packageName) {
+		while (isset(static::$packageList['aliases'][$packageName])) {
+			$packageName = static::$packageList['aliases'][$packageName];
+		}
+		return $packageName;
 	}
 
 	/**
@@ -124,10 +140,11 @@ class ExtensionManagementUtility {
 	 * @return string
 	 */
 	static public function extPath($key, $script = '') {
-		if (!static::$packageManager->isPackageActive($key)) {
+		$key = static::canonicalizePackageName($key);
+		if (!isset(static::$packageList['packages'][$key])) {
 			throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension key "' . $key . '" is NOT loaded!', 1365429656);
 		}
-		return static::$packageManager->getPackage($key)->getPackagePath() . $script;
+		return PATH_site . static::$packageList['packages'][$key]['siteRelPath'] . $script;
 	}
 
 	/**
@@ -141,16 +158,11 @@ class ExtensionManagementUtility {
 	 * @return string
 	 */
 	static public function extRelPath($key) {
-		if (!static::$packageManager->isPackageActive($key)) {
+		$key = static::canonicalizePackageName($key);
+		if (!isset(static::$packageList['packages'][$key])) {
 			throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension key "' . $key . '" is NOT loaded!', 1365429673);
 		}
-		$relativePathToSiteRoot = self::siteRelPath($key);
-		if (substr($relativePathToSiteRoot, 0, $typo3MainDirLength = strlen(TYPO3_mainDir)) === TYPO3_mainDir) {
-			$relativePathToSiteRoot = substr($relativePathToSiteRoot, $typo3MainDirLength);
-		} else {
-			$relativePathToSiteRoot = '../' . $relativePathToSiteRoot;
-		}
-		return $relativePathToSiteRoot;
+		return static::$packageList['packages'][$key]['typo3RelPath'];
 	}
 
 	/**
@@ -162,7 +174,11 @@ class ExtensionManagementUtility {
 	 * @return string
 	 */
 	static public function siteRelPath($key) {
-		return PathUtility::stripPathSitePrefix(self::extPath($key));
+		$key = static::canonicalizePackageName($key);
+		if (!isset(static::$packageList['packages'][$key])) {
+			throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension key "' . $key . '" is NOT loaded!', 1430500167);
+		}
+		return static::$packageList['packages'][$key]['siteRelPath'];
 	}
 
 	/**
@@ -1607,11 +1623,9 @@ tt_content.' . $key . $suffix . ' {
 	static protected function buildBaseTcaFromSingleFiles() {
 		$GLOBALS['TCA'] = array();
 
-		$activePackages = static::$packageManager->getActivePackages();
-
 		// First load "full table" files from Configuration/TCA
-		foreach ($activePackages as $package) {
-			$tcaConfigurationDirectory = $package->getPackagePath() . 'Configuration/TCA';
+		foreach (static::$packageList['packages'] as $package) {
+			$tcaConfigurationDirectory = PATH_site . $package['siteRelPath'] . 'Configuration/TCA';
 			if (is_dir($tcaConfigurationDirectory)) {
 				$files = scandir($tcaConfigurationDirectory);
 				foreach ($files as $file) {
@@ -1636,8 +1650,8 @@ tt_content.' . $key . $suffix . ' {
 		CategoryRegistry::getInstance()->applyTcaForPreRegisteredTables();
 
 		// Execute override files from Configuration/TCA/Overrides
-		foreach ($activePackages as $package) {
-			$tcaOverridesPathForPackage = $package->getPackagePath() . 'Configuration/TCA/Overrides';
+		foreach (static::$packageList['packages'] as $package) {
+			$tcaOverridesPathForPackage =  PATH_site . $package['siteRelPath']  . 'Configuration/TCA/Overrides';
 			if (is_dir($tcaOverridesPathForPackage)) {
 				$files = scandir($tcaOverridesPathForPackage);
 				foreach ($files as $file) {
@@ -1863,7 +1877,7 @@ tt_content.' . $key . $suffix . ' {
 	 * @return array Loaded extensions
 	 */
 	static public function getLoadedExtensionListArray() {
-		return array_keys(static::$packageManager->getActivePackages());
+		return array_keys(static::$packageList['packages']);
 	}
 
 	/**

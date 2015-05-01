@@ -4351,7 +4351,7 @@ Connection: close
 				$className = static::getImplementationForClass($className);
 			}
 		}
-		return ClassLoader::getClassNameForAlias($className);
+		return $className;
 	}
 
 	/**

@@ -1,7 +1,8 @@
 <?php
 defined('TYPO3_MODE') or die();
 
-if (TYPO3_MODE === 'BE') {
+$bootstrap = \TYPO3\CMS\Core\Core\Bootstrap::getInstance();
+if (TYPO3_MODE === 'BE' && !$bootstrap->isInComposerMode()) {
 	\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
 		'TYPO3.CMS.Extensionmanager',
 		'tools',
@@ -26,6 +27,7 @@ if (TYPO3_MODE === 'BE') {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['reports']['tx_reports']['status']['providers']['Extension Manager'][] =
 		\TYPO3\CMS\Extensionmanager\Report\ExtensionStatus::class;
 }
+unset($bootstrap);
 
 // Register specific icon for update script button
 \TYPO3\CMS\Backend\Sprite\SpriteManager::addSingleIcons(
