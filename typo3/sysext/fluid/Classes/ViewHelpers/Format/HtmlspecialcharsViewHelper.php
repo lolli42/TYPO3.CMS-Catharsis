@@ -11,6 +11,8 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Format;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+
 
 /**
  * Applies htmlspecialchars() escaping to a value
