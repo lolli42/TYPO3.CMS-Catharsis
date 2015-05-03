@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Func\Controller;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 
 /**
@@ -102,11 +103,14 @@ class PageFunctionsController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			// If no access or if ID == zero
 			$title = $this->getLanguageService()->getLL('title');
 			$message = $this->getLanguageService()->getLL('clickAPage_content');
-			// @todo Usage of InfoboxViewHelper this way is pretty ugly, but the best way at the moment
-			// A complete refactoring is necessary at this point
-			$objectManager = GeneralUtility::makeInstance(ObjectManager::class);
-			$viewHelper = $objectManager->get(InfoboxViewHelper::class);
-			$this->content = $viewHelper->render($title, $message, InfoboxViewHelper::STATE_INFO);
+			$view = GeneralUtility::makeInstance(StandaloneView::class);
+			$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName('EXT:func/Resources/Private/Templates/InfoBox.html'));
+			$view->assignMultiple(array(
+				'title' => $title,
+				'message' => $message,
+				'state' => InfoboxViewHelper::STATE_INFO
+			));
+			$this->content = $view->render();
 
 			// Setting up the buttons and markers for docheader
 			$docHeaderButtons = $this->getButtons();
