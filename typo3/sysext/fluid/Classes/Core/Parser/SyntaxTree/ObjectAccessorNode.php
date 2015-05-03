@@ -79,6 +79,9 @@ class ObjectAccessorNode extends \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\Abstrac
 	static public function getPropertyPath($subject, $propertyPath, \TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface $renderingContext) {
 		$propertyPathSegments = explode('.', $propertyPath);
 		foreach ($propertyPathSegments as $pathSegment) {
+			if ($subject === NULL || is_scalar($subject)) {
+				return NULL;
+			}
 			$propertyExists = FALSE;
 			$propertyValue = \TYPO3\CMS\Extbase\Reflection\ObjectAccess::getPropertyInternal($subject, $pathSegment, FALSE, $propertyExists);
 			if ($propertyExists !== TRUE && (is_array($subject) || $subject instanceof \ArrayAccess) && isset($subject[$pathSegment])) {
@@ -86,12 +89,7 @@ class ObjectAccessorNode extends \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\Abstrac
 			} else {
 				$subject = $propertyValue;
 			}
-
-			if ($subject instanceof \TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\RenderingContextAwareInterface) {
-				$subject->setRenderingContext($renderingContext);
-			}
 		}
 		return $subject;
 	}
-
 }

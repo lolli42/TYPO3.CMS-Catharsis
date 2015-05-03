@@ -20,6 +20,12 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
+use TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper;
+
 /**
  * View helper which returns a button icon
  *
@@ -44,41 +50,56 @@ namespace TYPO3\CMS\Fluid\ViewHelpers\Be\Buttons;
  * Here the "actions-document-new" icon is returned, but without link.
  * </output>
  */
-class IconViewHelper extends \TYPO3\CMS\Fluid\ViewHelpers\Be\AbstractBackendViewHelper {
-
-	/**
-	 * Initialize arguments
-	 *
-	 * @return void
-	 * @api
-	 */
-	public function initializeArguments() {
-		$this->registerArgument('additionalAttributes', 'array', 'Additional tag attributes. They will be added directly to the resulting HTML tag.', FALSE);
-	}
+class IconViewHelper extends AbstractBackendViewHelper implements CompilableInterface {
 
 	/**
 	 * Renders a linked icon as known from the TYPO3 backend.
 	 *
 	 * If the URI is left empty, the icon is rendered without link.
 	 *
-	 * @param string $uri The target URI for the link. If you want to execute JavaScript here, prefix the URI with "javascript:". Leave empty to render just an icon.
+	 * @param string $uri The target URI for the link. If you want to execute JavaScript here, prefix the URI with
+	 *     "javascript:". Leave empty to render just an icon.
 	 * @param string $icon Icon to be used.
 	 * @param string $title Title attribute of the icon construct
+	 * @param array $additionalAttributes Additional tag attributes. They will be added directly to the resulting HTML tag.
+	 *
 	 * @return string The rendered icon with or without link
 	 */
-	public function render($uri = '', $icon = 'actions-document-close', $title = '') {
-		$additionalAttributes = '';
-		if ($this->hasArgument('additionalAttributes') && is_array($this->arguments['additionalAttributes'])) {
-			foreach ($this->arguments['additionalAttributes'] as $argumentKey => $argumentValue) {
-				$additionalAttributes .= ' ' . $argumentKey . '="' . htmlspecialchars($argumentValue) . '"';
-			}
-		}
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($icon, array('title' => $title));
-		if (empty($uri)) {
-			return $icon;
-		} else {
-			return '<a href="' . $uri . '"' . $additionalAttributes . '>' . $icon . '</a>';
-		}
+	public function render($uri = '', $icon = 'actions-document-close', $title = '', $additionalAttributes = array()) {
+		return self::renderStatic(
+			array(
+				'uri' => $uri,
+				'icon' => $icon,
+				'title' => $title,
+				'additionalAttributes' => $additionalAttributes
+			),
+			$this->buildRenderChildrenClosure(),
+			$this->renderingContext
+		);
 	}
 
+	/**
+	 * @param array $arguments
+	 * @param callable $renderChildrenClosure
+	 * @param RenderingContextInterface $renderingContext
+	 * @return string
+	 */
+	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
+		$uri = $arguments['uri'];
+		$icon = $arguments['icon'];
+		$title = $arguments['title'];
+		$additionalAttributes = $arguments['additionalAttributes'];
+		$additionalTagAttributes = '';
+		$icon = IconUtility::getSpriteIcon($icon, array('title' => $title));
+		if (empty($uri)) {
+			return $icon;
+		}
+
+		if ($additionalAttributes) {
+			foreach ($additionalAttributes as $argumentKey => $argumentValue) {
+				$additionalTagAttributes .= ' ' . $argumentKey . '="' . htmlspecialchars($argumentValue) . '"';
+			}
+		}
+		return '<a href="' . $uri . '"' . $additionalTagAttributes . '>' . $icon . '</a>';
+	}
 }
