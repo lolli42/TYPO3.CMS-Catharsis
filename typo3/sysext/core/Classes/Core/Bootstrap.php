@@ -181,7 +181,10 @@ class Bootstrap {
 			$this->startOutputBuffering()
 				->loadConfigurationAndInitialize()
 				->loadTypo3LoadedExtAndExtLocalconf(TRUE)
-				->applyAdditionalConfigurationSettings()
+				->initializeExceptionHandling()
+				->setFinalCachingFrameworkCacheConfiguration()
+				->defineLoggingAndExceptionConstants()
+				->unsetReservedGlobalVariables()
 				->initializeTypo3DbGlobal();
 		}
 
@@ -474,7 +477,7 @@ class Bootstrap {
 	 * @return Bootstrap
 	 */
 	protected function initializeRuntimeActivatedPackagesFromConfiguration() {
-		if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']) && is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'])) {
+		if (!empty($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']) && is_array($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'])) {
 			/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
 			$packageManager = $this->getEarlyInstance(\TYPO3\Flow\Package\PackageManager::class);
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages'] as $runtimeAddedPackageKey) {
@@ -493,20 +496,6 @@ class Bootstrap {
 	 */
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
 		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
-		return $this;
-	}
-
-	/**
-	 * Sets up additional configuration applied in all scopes
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function applyAdditionalConfigurationSettings() {
-		$this->initializeExceptionHandling()
-			->setFinalCachingFrameworkCacheConfiguration()
-			->defineLoggingAndExceptionConstants()
-			->unsetReservedGlobalVariables();
 		return $this;
 	}
 
@@ -592,15 +581,32 @@ class Bootstrap {
 	 */
 	protected function registerExtDirectComponents() {
 		if (TYPO3_MODE === 'BE') {
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.DataProvider', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.Commands', \TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.Components.PageTree.ContextMenuDataProvider', \TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.LiveSearchActions.ExtDirect', \TYPO3\CMS\Backend\Search\LiveSearch\ExtDirect\LiveSearchDataProvider::class, 'web_list', 'user,group');
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.BackendUserSettings.ExtDirect', \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class);
-			if (Utility\ExtensionManagementUtility::isLoaded('context_help')) {
-				Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.CSH.ExtDirect', \TYPO3\CMS\ContextHelp\ExtDirect\ContextHelpDataProvider::class);
-			}
-			Utility\ExtensionManagementUtility::registerExtDirectComponent('TYPO3.ExtDirectStateProvider.ExtDirect', \TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.Components.PageTree.DataProvider',
+				\TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class
+			);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.Components.PageTree.Commands',
+				\TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class
+			);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.Components.PageTree.ContextMenuDataProvider',
+				\TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class
+			);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.LiveSearchActions.ExtDirect',
+				\TYPO3\CMS\Backend\Search\LiveSearch\ExtDirect\LiveSearchDataProvider::class,
+				'web_list',
+				'user,group'
+			);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.BackendUserSettings.ExtDirect',
+				\TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class
+			);
+			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+				'TYPO3.ExtDirectStateProvider.ExtDirect',
+				\TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class
+			);
 			Utility\ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.DragAndDrop.CommandController',
 				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
@@ -788,8 +794,9 @@ class Bootstrap {
 	 * to change the exception and error handler configuration.
 	 *
 	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function initializeExceptionHandling() {
+	public function initializeExceptionHandling() {
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'])) {
 			if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'])) {
 				if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'] !== $this->activeErrorHandlerClassName) {
@@ -820,8 +827,9 @@ class Bootstrap {
 	 * global cache array to the manager again at this point
 	 *
 	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function setFinalCachingFrameworkCacheConfiguration() {
+	public function setFinalCachingFrameworkCacheConfiguration() {
 		$this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
 		return $this;
 	}
@@ -830,8 +838,9 @@ class Bootstrap {
 	 * Define logging and exception constants
 	 *
 	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function defineLoggingAndExceptionConstants() {
+	public function defineLoggingAndExceptionConstants() {
 		define('TYPO3_DLOG', $GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_DLOG']);
 		define('TYPO3_ERROR_DLOG', $GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_errorDLOG']);
 		define('TYPO3_EXCEPTION_DLOG', $GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_exceptionDLOG']);
@@ -843,8 +852,9 @@ class Bootstrap {
 	 * Those are set in "ext:core/ext_tables.php" file:
 	 *
 	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function unsetReservedGlobalVariables() {
+	public function unsetReservedGlobalVariables() {
 		unset($GLOBALS['PAGES_TYPES']);
 		unset($GLOBALS['TCA']);
 		unset($GLOBALS['TBE_MODULES']);

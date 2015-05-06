@@ -46,10 +46,29 @@ class AllConfiguration extends Action\AbstractAction {
 			$this->view->assign('configurationValuesSaved', TRUE);
 			$this->view->assign('savedConfigurationValueMessages', $this->updateLocalConfigurationValues());
 		} else {
+			$this->view->assign('sections', $this->getSpeakingSectionNames());
 			$this->view->assign('data', $this->setUpConfigurationData());
 		}
 
 		return $this->view->render();
+	}
+
+	/**
+	 * Returns an array of available sections and their description
+	 *
+	 * @return string[]
+	 */
+	protected function getSpeakingSectionNames() {
+		return array(
+			'BE' => 'Backend',
+			'DB' => 'Database',
+			'EXT' => 'Extension Installation',
+			'FE' => 'Frontend',
+			'GFX' => 'Image Processing',
+			'HTTP' => 'Connection',
+			'MAIL' => 'Mail',
+			'SYS' => 'System'
+		);
 	}
 
 	/**
@@ -145,7 +164,7 @@ class AllConfiguration extends Action\AbstractAction {
 								$configurationPathValuePairs[$section . '/' . $valueKey] = $value;
 								/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
 								$status = $this->objectManager->get(\TYPO3\CMS\Install\Status\OkStatus::class);
-								$status->setTitle('$TYPO3_CONF_VARS[\'' . $section . '\'][\'' . $valueKey . '\']');
+								$status->setTitle('$GLOBALS[\'TYPO3_CONF_VARS\'][\'' . $section . '\'][\'' . $valueKey . '\']');
 								$status->setMessage('New value = ' . $value);
 								$statusObjects[] = $status;
 							}

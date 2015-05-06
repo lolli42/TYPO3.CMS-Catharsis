@@ -1,5 +1,5 @@
 <?php
-namespace TYPO3\CMS\Install\ViewHelpers\File;
+namespace TYPO3\CMS\Install\ViewHelpers\Object;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -14,34 +14,40 @@ namespace TYPO3\CMS\Install\ViewHelpers\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Install\ViewHelpers\Exception;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 
 /**
- * Get file path relative to PATH_site from absolute path
+ * View helper which allows you to access a key in an array.
  *
  * = Examples =
  *
  * <code title="Defaults">
- * <f:file.relativePath>/var/www/typo3/instance/typo3temp/foo.jpg</f:file.relativePath>
+ * <i:object.key array="{array}" key="{key}" />
  * </code>
  * <output>
- * typo3temp/foo.jpg
+ * The key in the array, if it exists, otherwise an empty string.
  * </output>
  *
  * @internal
  */
-class RelativePathViewHelper extends AbstractViewHelper implements CompilableInterface {
+class ArrayValueByKeyViewHelper extends AbstractViewHelper implements CompilableInterface {
 
 	/**
-	 * Get relative path
+	 * Get the value of an key in an array.
 	 *
-	 * @return string Relative path
+	 * @param array $array The array being processed
+	 * @param mixed $key The key being accessed
+	 * @return string
 	 */
-	public function render() {
+	public function render(array $array, $key) {
 		return self::renderStatic(
-			array(),
+			array(
+				'array' => $array,
+				'key' => $key,
+			),
 			$this->buildRenderChildrenClosure(),
 			$this->renderingContext
 		);
@@ -53,10 +59,22 @@ class RelativePathViewHelper extends AbstractViewHelper implements CompilableInt
 	 * @param RenderingContextInterface $renderingContext
 	 *
 	 * @return string
+	 * @throws Exception
 	 */
 	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
-		$absolutePath = $renderChildrenClosure();
-		return \TYPO3\CMS\Core\Utility\PathUtility::stripPathSitePrefix($absolutePath);
+		$array = $arguments['array'];
+		$key = $arguments['key'];
+		$result = '';
+		if (isset($array[$key])) {
+			$result = $array[$key];
+		}
+		if (!is_scalar($result)) {
+			throw new Exception(
+				'Only scalar return values (string, int, float or double) are supported.',
+				1430852128
+			);
+		}
+		return (string)$result;
 	}
 
 }

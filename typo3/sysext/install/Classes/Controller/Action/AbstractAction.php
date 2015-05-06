@@ -247,7 +247,9 @@ abstract class AbstractAction implements ActionInterface {
 	protected function loadExtLocalconfDatabaseAndExtTables() {
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
 			->loadTypo3LoadedExtAndExtLocalconf(FALSE)
-			->applyAdditionalConfigurationSettings()
+			->initializeExceptionHandling()
+			->defineLoggingAndExceptionConstants()
+			->unsetReservedGlobalVariables()
 			->initializeTypo3DbGlobal()
 			->loadExtensionTables(FALSE);
 	}
@@ -261,6 +263,31 @@ abstract class AbstractAction implements ActionInterface {
 	protected function getHashedPassword($password) {
 		$saltFactory = \TYPO3\CMS\Saltedpasswords\Salt\SaltFactory::getSaltingInstance(NULL, 'BE');
 		return $saltFactory->getHashedPassword($password);
+	}
+
+	/**
+	 * Prepare status messages used in extension compatibility view template
+	 *
+	 * @return \TYPO3\CMS\Install\Status\StatusInterface[]
+	 */
+	protected function getExtensionCompatibilityTesterMessages() {
+		$extensionCompatibilityTesterMessages = array();
+
+		/** @var $message \TYPO3\CMS\Install\Status\StatusInterface */
+		$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\LoadingStatus::class);
+		$message->setTitle('Loading...');
+		$extensionCompatibilityTesterMessages[] = $message;
+
+		$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\ErrorStatus::class);
+		$message->setTitle('Incompatible extension found!');
+		$message->setMessage('Something went wrong and no protocol was written.');
+		$extensionCompatibilityTesterMessages[] = $message;
+
+		$message = $this->objectManager->get(\TYPO3\CMS\Install\Status\OkStatus::class);
+		$message->setTitle('All local extensions can be loaded!');
+		$extensionCompatibilityTesterMessages[] = $message;
+
+		return $extensionCompatibilityTesterMessages;
 	}
 
 }
