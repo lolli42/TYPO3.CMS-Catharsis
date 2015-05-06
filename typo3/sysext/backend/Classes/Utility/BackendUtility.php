@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Backend\Utility;
  */
 
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
@@ -1521,7 +1522,7 @@ class BackendUtility {
 		}
 
 		$fileReferences = array();
-		/** @var $relationHandler \TYPO3\CMS\Core\Database\RelationHandler */
+		/** @var $relationHandler RelationHandler */
 		$relationHandler = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 		if ($workspaceId !== NULL) {
 			$relationHandler->setWorkspaceId($workspaceId);
@@ -2114,7 +2115,7 @@ class BackendUtility {
 								}
 								$MMfield = join(',', $MMfields);
 							}
-							/** @var $dbGroup \TYPO3\CMS\Core\Database\RelationHandler */
+							/** @var $dbGroup RelationHandler */
 							$dbGroup = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
 							$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
 							$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
@@ -2125,7 +2126,7 @@ class BackendUtility {
 									// Keep sorting of $selectUids
 									$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup ?
 										$MMrow['uid'] :
-										self::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+										static::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
 								}
 								$GLOBALS['TYPO3_DB']->sql_free_result($MMres);
 								if (!empty($mmlA)) {
@@ -2149,6 +2150,9 @@ class BackendUtility {
 								$rParts = array();
 								if ($uid && isset($theColConf['foreign_field']) && $theColConf['foreign_field'] !== '') {
 									$whereClause = '';
+									if (!empty($theColConf['foreign_table_field'])) {
+										$whereClause .= ' AND ' . $theColConf['foreign_table_field'] . ' = ' . $GLOBALS['TYPO3_DB']->fullQuoteStr($table, $theColConf['foreign_table']);
+									}
 									// Add additional where clause if foreign_match_fields are defined
 									$foreignMatchFields = is_array($theColConf['foreign_match_fields']) ? $theColConf['foreign_match_fields'] : array();
 									foreach ($foreignMatchFields as $matchField => $matchValue) {
@@ -2190,23 +2194,71 @@ class BackendUtility {
 				case 'group':
 					// resolve the titles for DB records
 					if ($theColConf['internal_type'] === 'db') {
-						$finalValues = array();
-						$relationTableName = $theColConf['allowed'];
-						$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
-
-						foreach ($explodedValues as $explodedValue) {
-
-							if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
-								$relationTableNameForField = $relationTableName;
+						if ($theColConf['MM']) {
+							if ($uid) {
+								// Display the title of MM related records in lists
+								if ($noRecordLookup) {
+									$MMfield = $theColConf['foreign_table'] . '.uid';
+								} else {
+									$MMfields = array($theColConf['foreign_table'] . '.' . $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label']);
+									$altLabelFields = explode(',', $GLOBALS['TCA'][$theColConf['foreign_table']]['ctrl']['label_alt']);
+									foreach ($altLabelFields as $f) {
+										$f = trim($f);
+										if ($f !== '') {
+											$MMfields[] = $theColConf['foreign_table'] . '.' . $f;
+										}
+									}
+									$MMfield = join(',', $MMfields);
+								}
+								/** @var $dbGroup RelationHandler */
+								$dbGroup = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\RelationHandler');
+								$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
+								$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
+								if (!empty($selectUids) && is_array($selectUids)) {
+									$MMres = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+										'uid, ' . $MMfield,
+										$theColConf['foreign_table'],
+										'uid IN (' . implode(',', $selectUids) . ')' . static::deleteClause($theColConf['foreign_table'])
+									);
+									$mmlA = array();
+									while ($MMrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($MMres)) {
+										// Keep sorting of $selectUids
+										$mmlA[array_search($MMrow['uid'], $selectUids)] = $noRecordLookup
+											? $MMrow['uid']
+											: static::getRecordTitle($theColConf['foreign_table'], $MMrow, FALSE, $forceResult);
+									}
+									$GLOBALS['TYPO3_DB']->sql_free_result($MMres);
+									if (!empty($mmlA)) {
+										ksort($mmlA);
+										$l = implode('; ', $mmlA);
+									} else {
+										$l = 'N/A';
+									}
+								} else {
+									$l = 'N/A';
+								}
 							} else {
-								list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
+								$l = 'N/A';
+							}
+						} else {
+							$finalValues = array();
+							$relationTableName = $theColConf['allowed'];
+							$explodedValues = GeneralUtility::trimExplode(',', $value, TRUE);
+
+							foreach ($explodedValues as $explodedValue) {
+
+								if (MathUtility::canBeInterpretedAsInteger($explodedValue)) {
+									$relationTableNameForField = $relationTableName;
+								} else {
+									list($relationTableNameForField, $explodedValue) = self::splitTable_Uid($explodedValue);
+								}
+
+								$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
+								$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
 							}
 
-							$relationRecord = static::getRecordWSOL($relationTableNameForField, $explodedValue);
-							$finalValues[] = static::getRecordTitle($relationTableNameForField, $relationRecord);
+							$l = implode(', ', $finalValues);
 						}
-
-						$l = implode(', ', $finalValues);
 					} else {
 						$l = implode(', ', GeneralUtility::trimExplode(',', $value, TRUE));
 					}
@@ -3598,20 +3650,38 @@ class BackendUtility {
 	}
 
 	/**
+	 * Gets an instance of the runtime cache.
+	 *
+	 * @return VariableFrontend
+	 */
+	static protected function getRuntimeCache() {
+		return GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager')->getCache('cache_runtime');
+	}
+
+	/**
 	 * Returns array of soft parser references
 	 *
 	 * @param string $parserList softRef parser list
-	 * @return array Array where the parser key is the key and the value is the parameter string
+	 * @return array|bool Array where the parser key is the key and the value is the parameter string, FALSE if no parsers were found
 	 */
 	static public function explodeSoftRefParserList($parserList) {
+		$runtimeCache = self::getRuntimeCache();
+		$cacheId = 'backend-softRefList-' . md5($parserList);
+		if ($runtimeCache->has($cacheId)) {
+			return $runtimeCache->get($cacheId);
+		}
+
 		// Looking for global parsers:
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL']) && !empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) {
 			$parserList = implode(',', array_keys($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'])) . ',' . $parserList;
 		}
+
 		// Return immediately if list is blank:
-		if (!strlen($parserList)) {
+		if ($parserList === '') {
+			$runtimeCache->set($cacheId, FALSE);
 			return FALSE;
 		}
+
 		// Otherwise parse the list:
 		$keyList = GeneralUtility::trimExplode(',', $parserList, TRUE);
 		$output = array();
@@ -3623,6 +3693,7 @@ class BackendUtility {
 				$output[$val] = '';
 			}
 		}
+		$runtimeCache->set($cacheId, $output);
 		return $output;
 	}
 

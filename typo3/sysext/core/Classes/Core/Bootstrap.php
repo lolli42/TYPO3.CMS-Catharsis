@@ -150,7 +150,8 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function baseSetup($relativePathPart = '') {
-		$this->initializeComposerClassLoader();
+		$composerClassLoader = $this->initializeComposerClassLoader();
+		$this->setEarlyInstance('Composer\\Autoload\\ClassLoader', $composerClassLoader);
 		SystemEnvironmentBuilder::run($relativePathPart);
 		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
@@ -162,10 +163,10 @@ class Bootstrap {
 	protected function initializeComposerClassLoader() {
 		$respectComposerPackagesForClassLoading = getenv('TYPO3_COMPOSER_AUTOLOAD') ?: (getenv('REDIRECT_TYPO3_COMPOSER_AUTOLOAD') ?: NULL);
 		$possiblePaths = array();
-		$possiblePaths['fallback'] = __DIR__ . '/../../../../contrib/vendor/autoload.php';
 		if (!empty($respectComposerPackagesForClassLoading)) {
 			$possiblePaths['distribution'] = __DIR__ . '/../../../../../../Packages/Libraries/autoload.php';
 		}
+		$possiblePaths['fallback'] = __DIR__ . '/../../../../contrib/vendor/autoload.php';
 		foreach ($possiblePaths as $possiblePath) {
 			if (file_exists($possiblePath)) {
 				return include $possiblePath;
@@ -280,6 +281,7 @@ class Bootstrap {
 		$classLoader->setRuntimeClassLoadingInformationFromAutoloadRegistry((array) include __DIR__ . '/../../ext_autoload.php');
 		$classAliasMap = new ClassAliasMap();
 		$classAliasMap->injectClassLoader($classLoader);
+		$classAliasMap->injectComposerClassLoader($this->getEarlyInstance('Composer\\Autoload\\ClassLoader'));
 		$this->setEarlyInstance('TYPO3\\CMS\\Core\\Core\\ClassAliasMap', $classAliasMap);
 		$classLoader->injectClassAliasMap($classAliasMap);
 		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);

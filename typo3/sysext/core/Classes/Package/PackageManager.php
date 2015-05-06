@@ -82,6 +82,8 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	 * Constructor
 	 */
 	public function __construct() {
+		// The order of paths is crucial for allowing overriding of system extension by local extensions.
+		// Pay attention if you change order of the paths here.
 		$this->packagesBasePaths = array(
 			'local'     => PATH_typo3conf . 'ext',
 			'global'    => PATH_typo3 . 'ext',
@@ -154,19 +156,6 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 		if (!$loadedFromCache) {
 			$this->saveToPackageCache();
 		}
-	}
-
-	/**
-	 * Updates the class loader with currently active packages.
-	 * This method is currently a slot that monitors the after
-	 * extension is installed signal to make the class loader
-	 * populate its caches again.
-	 * Maybe we find a better solution in the future, but as of now
-	 * we have to do this as all caches are flushed after an extension
-	 * is installed and the current request might fail otherwise.
-	 */
-	public function updatePackagesForClassLoader() {
-		$this->classLoader->setPackages($this->activePackages);
 	}
 
 	/**
@@ -357,7 +346,8 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			$this->scanPackagesInPath($packagesBasePath, $packagePaths);
 		}
 
-		foreach ($packagePaths as $packagePath => $composerManifestPath) {
+		foreach ($packagePaths as $composerManifestPath) {
+			$packagePath = $composerManifestPath;
 			$packagesBasePath = PATH_site;
 			foreach ($this->packagesBasePaths as $basePath) {
 				if (strpos($packagePath, $basePath) === 0) {
@@ -415,8 +405,11 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 				$filename = $fileInfo->getFilename();
 				if ($filename[0] !== '.') {
 					$currentPath = \TYPO3\Flow\Utility\Files::getUnixStylePath($fileInfo->getPathName()) . '/';
-					if (file_exists($currentPath . 'ext_emconf.php')) {
-						$collectedExtensionPaths[$currentPath] = $currentPath;
+					// Only add the extension if we have an EMCONF and the extension is not yet registered.
+					// This is crucial in order to allow overriding of system extension by local extensions
+					// and strongly depends on the order of paths defined in $this->packagesBasePaths.
+					if (file_exists($currentPath . 'ext_emconf.php') && !isset($collectedExtensionPaths[$filename])) {
+						$collectedExtensionPaths[$filename] = $currentPath;
 					}
 				}
 			}
@@ -446,6 +439,7 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 	 * @throws \TYPO3\Flow\Package\Exception\CorruptPackageException
 	 */
 	protected function registerPackagesFromConfiguration($registerOnlyNewPackages = FALSE) {
+		$packageStatesHasChanged = FALSE;
 		foreach ($this->packageStatesConfiguration['packages'] as $packageKey => $stateConfiguration) {
 
 			if ($registerOnlyNewPackages && $this->isPackageAvailable($packageKey)) {
@@ -460,9 +454,11 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 				$package = $this->getPackageFactory()->create($this->packagesBasePath, $packagePath, $packageKey, $classesPath, $manifestPath);
 			} catch (\TYPO3\Flow\Package\Exception\InvalidPackagePathException $exception) {
 				$this->unregisterPackageByPackageKey($packageKey);
+				$packageStatesHasChanged = TRUE;
 				continue;
 			} catch (\TYPO3\Flow\Package\Exception\InvalidPackageKeyException $exception) {
 				$this->unregisterPackageByPackageKey($packageKey);
+				$packageStatesHasChanged = TRUE;
 				continue;
 			}
 
@@ -476,6 +472,9 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			if ($stateConfiguration['state'] === 'active') {
 				$this->activePackages[$packageKey] = $this->packages[$packageKey];
 			}
+		}
+		if ($packageStatesHasChanged) {
+			$this->sortAndSavePackageStates();
 		}
 	}
 
@@ -514,7 +513,9 @@ class PackageManager extends \TYPO3\Flow\Package\PackageManager implements \TYPO
 			}
 		} catch (\TYPO3\Flow\Package\Exception\UnknownPackageException $e) {
 		}
-		parent::unregisterPackageByPackageKey($packageKey);
+		unset($this->packages[$packageKey]);
+		unset($this->packageKeys[strtolower($packageKey)]);
+		unset($this->packageStatesConfiguration['packages'][$packageKey]);
 	}
 
 	/**

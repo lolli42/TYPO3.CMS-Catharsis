@@ -14,7 +14,10 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 use TYPO3\CMS\Core\Package\PackageInterface;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
  * Utility for dealing with extension list related functions
@@ -69,7 +72,7 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$extensions = array();
 		foreach ($this->packageManager->getAvailablePackages() as $package) {
 			// Only TYPO3 related packages could be handled by the extension manager
-			// Composer packages from "Packages" folder will be instanciated as \TYPO3\Flow\Package\Package
+			// Composer packages from "Packages" folder will be instantiated as \TYPO3\Flow\Package\Package
 			if (!($package instanceof \TYPO3\CMS\Core\Package\PackageInterface)) {
 				continue;
 			}
@@ -78,10 +81,19 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 				'siteRelPath' => str_replace(PATH_site, '', $package->getPackagePath()),
 				'type' => $installationType,
 				'key' => $package->getPackageKey(),
-				'ext_icon' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getExtensionIcon($package->getPackagePath()),
+				'ext_icon' => ExtensionManagementUtility::getExtensionIcon($package->getPackagePath()),
 			);
 		}
 		return $extensions;
+	}
+
+	/**
+	 * @param string $extensionKey
+	 * @return \TYPO3\Flow\Package\PackageInterface
+	 * @throws \TYPO3\Flow\Package\Exception\UnknownPackageException if the specified package is unknown
+	 */
+	public function getExtension($extensionKey) {
+		return $this->packageManager->getPackage($extensionKey);
 	}
 
 	/**
@@ -98,7 +110,7 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return string
 	 */
 	protected function getInstallTypeForPackage(PackageInterface $package) {
-		foreach (\TYPO3\CMS\Extensionmanager\Domain\Model\Extension::returnInstallPaths() as $installType => $installPath) {
+		foreach (Extension::returnInstallPaths() as $installType => $installPath) {
 			if (GeneralUtility::isFirstPartOfStr($package->getPackagePath(), $installPath)) {
 				return $installType;
 			}
@@ -132,16 +144,72 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			$emconf = $this->emConfUtility->includeEmConf($properties);
 			if ($emconf) {
 				$extensions[$extensionKey] = array_merge($emconf, $properties);
-				$terObject = $this->extensionRepository->findOneByExtensionKeyAndVersion($extensionKey, $extensions[$extensionKey]['version']);
-				if ($terObject instanceof \TYPO3\CMS\Extensionmanager\Domain\Model\Extension) {
+				$terObject = $this->getExtensionTerData($extensionKey, $extensions[$extensionKey]['version']);
+				if ($terObject !== NULL) {
 					$extensions[$extensionKey]['terObject'] = $terObject;
-					$extensions[$extensionKey]['updateAvailable'] = $this->installUtility->isUpdateAvailable($terObject);
-					$extensions[$extensionKey]['updateToVersion'] = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
+					$extensions[$extensionKey]['updateAvailable'] = FALSE;
+					$extensions[$extensionKey]['updateToVersion'] = NULL;
+					$extensionToUpdate = $this->installUtility->getUpdateableVersion($terObject);
+					if ($extensionToUpdate !== FALSE) {
+						$extensions[$extensionKey]['updateAvailable'] = TRUE;
+						$extensions[$extensionKey]['updateToVersion'] = $extensionToUpdate;
+					}
 				}
 			} else {
 				unset($extensions[$extensionKey]);
 			}
 		}
+		return $extensions;
+	}
+
+	/**
+	 * Tries to find given extension with given version in TER data.
+	 * If extension is found but not the given version, we return TER data from highest version with version data set to
+	 * given one.
+	 *
+	 * @param string $extensionKey Key of the extension
+	 * @param string $version String representation of version number
+	 * @return Extension|NULL Extension TER object or NULL if nothing found
+	 */
+	protected function getExtensionTerData($extensionKey, $version) {
+		$terObject = $this->extensionRepository->findOneByExtensionKeyAndVersion($extensionKey, $version);
+		if (!$terObject instanceof Extension) {
+			// Version unknown in TER data, try to find extension
+			$terObject = $this->extensionRepository->findHighestAvailableVersion($extensionKey);
+			if ($terObject instanceof Extension) {
+				// Found in TER now, set version information to the known ones, so we can look if there is a newer one
+				// Use a cloned object, otherwise wrong information is stored in persistenceManager
+				$terObject = clone $terObject;
+				$terObject->setVersion($version);
+				$terObject->setIntegerVersion(
+					VersionNumberUtility::convertVersionNumberToInteger($terObject->getVersion())
+				);
+			} else {
+				$terObject = NULL;
+			}
+		}
+
+		return $terObject;
+	}
+
+	/**
+	 * Adds information about icon size to the extension information
+	 *
+	 * @param array $extensions
+	 * @return array
+	 */
+	public function enrichExtensionsWithIconInformation(array $extensions) {
+		foreach ($extensions as &$properties) {
+			$iInfo = @getimagesize(PATH_site . $properties['siteRelPath'] . $properties['ext_icon']);
+			if ($iInfo !== FALSE) {
+				$properties['ext_icon_width'] = $iInfo[0];
+				$properties['ext_icon_height'] = $iInfo[1];
+			} else {
+				$properties['ext_icon_width'] = 0;
+				$properties['ext_icon_height'] = 0;
+			}
+		}
+		unset($properties);
 		return $extensions;
 	}
 

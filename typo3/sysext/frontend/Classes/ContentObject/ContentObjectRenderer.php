@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Frontend\Imaging\GifBuilder;
 
@@ -1310,7 +1311,8 @@ class ContentObjectRenderer {
 		if ($linkWrap) {
 			$theValue = $this->linkWrap($theValue, $linkWrap);
 		} elseif ($conf['imageLinkWrap']) {
-			$theValue = $this->imageLinkWrap($theValue, $info['originalFile'], $conf['imageLinkWrap.']);
+			$originalFile = !empty($info['originalFile']) ? $info['originalFile'] : $info['origFile'];
+			$theValue = $this->imageLinkWrap($theValue, $originalFile, $conf['imageLinkWrap.']);
 		}
 		$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
 		if ($wrap) {
@@ -4883,7 +4885,7 @@ class ContentObjectRenderer {
 				// tags
 				$len = strcspn(substr($theValue, $pointer), '>') + 1;
 				$data = substr($theValue, $pointer, $len);
-				if (substr($data, -2) === '/>') {
+				if (StringUtility::isLastPartOfString($data, '/>') && !GeneralUtility::isFirstPartOfStr($data, '<link ')) {
 					$tagContent = substr($data, 1, -2);
 				} else {
 					$tagContent = substr($data, 1, -1);
@@ -5232,6 +5234,9 @@ class ContentObjectRenderer {
 	 * @see IMG_RESOURCE(), cImage(), \TYPO3\CMS\Frontend\Imaging\GifBuilder
 	 */
 	public function getImgResource($file, $fileArray) {
+		if (empty($file) && empty($fileArray)) {
+			return NULL;
+		}
 		if (!is_array($fileArray)) {
 			$fileArray = (array) $fileArray;
 		}
@@ -5246,6 +5251,7 @@ class ContentObjectRenderer {
 				$theImage = $gifCreator->gifBuild();
 			}
 			$imageResource = $gifCreator->getImageDimensions($theImage);
+			$imageResource['origFile'] = $theImage;
 		} else {
 			if ($file instanceof \TYPO3\CMS\Core\Resource\File) {
 				$fileObject = $file;
@@ -5603,7 +5609,7 @@ class ContentObjectRenderer {
 					return $fileObject->getPublicUrl();
 					break;
 				case 'localPath':
-					return $fileObject->getForLocalProcessing();
+					return $fileObject->getForLocalProcessing(FALSE);
 					break;
 				default:
 					// Generic alternative here
@@ -6243,6 +6249,12 @@ class ContentObjectRenderer {
 					$urlParts['scheme'] = 'http';
 					$urlParts['host'] = $this->getEnvironmentVariable('HTTP_HOST');
 					$urlParts['path'] = '/' . ltrim($urlParts['path'], '/');
+					// absRefPrefix has been prepended to $url beforehand
+					// so we only modify the path if no absRefPrefix has been set
+					// otherwise we would destroy the path
+					if ($GLOBALS['TSFE']->absRefPrefix === '') {
+						$urlParts['path'] = $this->getEnvironmentVariable('TYPO3_SITE_PATH') . ltrim($urlParts['path'], '/');
+					}
 					$isUrlModified = TRUE;
 				}
 				// Override scheme:

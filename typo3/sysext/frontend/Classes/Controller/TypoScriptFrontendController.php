@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\Controller;
  */
 
 use TYPO3\CMS\Core\Error\Http\PageNotFoundException;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -1122,6 +1123,7 @@ class TypoScriptFrontendController {
 					$_SERVER['HTTP_COOKIE'] .= ';' . $cookieName . '=' . $fe_sParts[0];
 				}
 				$this->fe_user->forceSetCookie = 1;
+				$this->fe_user->dontSetCookie = FALSE;
 				unset($cookieName);
 			}
 		}
@@ -1408,7 +1410,7 @@ class TypoScriptFrontendController {
 			if ($this->isUserOrGroupSet()) {
 				if ($this->loginAllowedInBranch_mode == 'all') {
 					// Clear out user and group:
-					unset($this->fe_user->user);
+					$this->fe_user->hideActiveLogin();
 					$this->gr_list = '0,-1';
 				} else {
 					$this->gr_list = '0,-2';
@@ -2423,6 +2425,12 @@ class TypoScriptFrontendController {
 					$this->cacheContentFlag = TRUE;
 					$this->cacheExpires = $row['expires'];
 
+					// Restore page title information, this is needed to generate the page title for
+					// partially cached pages.
+					$this->page['title'] = $row['pageTitleInfo']['title'];
+					$this->altPageTitle = $row['pageTitleInfo']['altPageTitle'];
+					$this->indexedDocTitle = $row['pageTitleInfo']['indexedDocTitle'];
+
 					if (isset($this->config['config']['debug'])) {
 						$debugCacheTime = (bool)$this->config['config']['debug'];
 					} else {
@@ -3346,7 +3354,12 @@ class TypoScriptFrontendController {
 			'temp_content' => $this->tempContent,
 			'cache_data' => $data,
 			'expires' => $expirationTstamp,
-			'tstamp' => $GLOBALS['EXEC_TIME']
+			'tstamp' => $GLOBALS['EXEC_TIME'],
+			'pageTitleInfo' => array(
+				'title' => $this->page['title'],
+				'altPageTitle' => $this->altPageTitle,
+				'indexedDocTitle' => $this->indexedDocTitle
+			)
 		);
 		$this->cacheExpires = $expirationTstamp;
 		$this->pageCacheTags[] = 'pageId_' . $cacheData['page_id'];
@@ -3607,12 +3620,16 @@ class TypoScriptFrontendController {
 		$this->JSImgCode = $this->additionalHeaderData['JSImgCode'];
 		$this->divSection = '';
 		if (!empty($this->config['INTincScript_ext']['pageRenderer'])) {
-			$this->setPageRenderer(unserialize($this->config['INTincScript_ext']['pageRenderer']));
+			/** @var PageRenderer $pageRenderer */
+			$pageRenderer = unserialize($this->config['INTincScript_ext']['pageRenderer']);
+			$this->setPageRenderer($pageRenderer);
 		}
+
 		$this->recursivelyReplaceIntPlaceholdersInContent();
 		$GLOBALS['TT']->push('Substitute header section');
 		$this->INTincScript_loadJSCode();
 		$this->regeneratePageTitle();
+
 		$this->content = str_replace(
 			array(
 				'<!--HD_' . $this->config['INTincScript_ext']['divKey'] . '-->',
@@ -3896,7 +3913,6 @@ if (version == "n3") {
 		if ($doCache && !$this->beUserLogin && !$this->doWorkspacePreview() && $loginsDeniedCfg) {
 			// Build headers:
 			$headers = array(
-				'Last-Modified: ' . gmdate('D, d M Y H:i:s T', $this->register['SYS_LASTCHANGED']),
 				'Expires: ' . gmdate('D, d M Y H:i:s T', $this->cacheExpires),
 				'ETag: "' . md5($this->content) . '"',
 				'Cache-Control: max-age=' . ($this->cacheExpires - $GLOBALS['EXEC_TIME']),
@@ -4240,7 +4256,6 @@ if (version == "n3") {
 			'"' . TYPO3_mainDir . 'contrib/',
 			'"' . TYPO3_mainDir . 'ext/',
 			'"' . TYPO3_mainDir . 'sysext/',
-			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
 			'"' . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
 		);
 		$replace = array(
@@ -4249,9 +4264,18 @@ if (version == "n3") {
 			'"' . $this->absRefPrefix . TYPO3_mainDir . 'contrib/',
 			'"' . $this->absRefPrefix . TYPO3_mainDir . 'ext/',
 			'"' . $this->absRefPrefix . TYPO3_mainDir . 'sysext/',
-			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'],
 			'"' . $this->absRefPrefix . $GLOBALS['TYPO3_CONF_VARS']['BE']['RTE_imageStorageDir']
 		);
+		/** @var $storageRepository StorageRepository */
+		$storageRepository = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Resource\\StorageRepository');
+		$storages = $storageRepository->findAll();
+		foreach ($storages as $storage) {
+			if ($storage->getDriverType() === 'Local' && $storage->isPublic() && $storage->isOnline()) {
+				$folder = $storage->getPublicUrl($storage->getRootLevelFolder(), TRUE);
+				$search[] = '"' . $folder;
+				$replace[] = '"' . $this->absRefPrefix . $folder;
+			}
+		}
 		// Process additional directories
 		$directories = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['additionalAbsRefPrefixDirectories'], TRUE);
 		foreach ($directories as $directory) {

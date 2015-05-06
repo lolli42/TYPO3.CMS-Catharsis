@@ -447,10 +447,7 @@ class ReferenceIndex {
 							switch ((string) $el['subst']['type']) {
 								case 'db':
 									list($tableName, $recordId) = explode(':', $el['subst']['recordRef']);
-									// Prevent double references for files and file relations
-									if ($tableName !== 'sys_file' && $tableName !== 'sys_file_reference') {
-										$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
-									}
+									$this->relations[] = $this->createEntryData($table, $uid, $fieldname, $flexpointer, $deleted, $tableName, $recordId, '', -1, $spKey, $subKey);
 									break;
 								case 'file_reference':
 									// not used (see getRelations()), but fallback to file
@@ -522,6 +519,10 @@ class ReferenceIndex {
 						);
 					}
 				}
+				// Add a softref definition for link fields if the TCA does not specify one already
+				if ($conf['type'] === 'input' && isset($conf['wizards']['link']) && empty($conf['softref'])) {
+					$conf['softref'] = 'typolink';
+				}
 				// Add DB:
 				$resultsFromDatabase = $this->getRelations_procDB($value, $conf, $uid, $table, $field);
 				if (!empty($resultsFromDatabase)) {
@@ -554,21 +555,24 @@ class ReferenceIndex {
 					}
 				}
 				// Soft References:
-				if (strlen($value) && ($softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']))) {
+				if ((string)$value !== '') {
 					$softRefValue = $value;
-					foreach ($softRefs as $spKey => $spParams) {
-						$softRefObj = BackendUtility::softRefParserObj($spKey);
-						if (is_object($softRefObj)) {
-							$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams);
-							if (is_array($resultArray)) {
-								$outRow[$field]['softrefs']['keys'][$spKey] = $resultArray['elements'];
-								if (strlen($resultArray['content'])) {
-									$softRefValue = $resultArray['content'];
+					$softRefs = BackendUtility::explodeSoftRefParserList($conf['softref']);
+					if ($softRefs !== FALSE) {
+						foreach ($softRefs as $spKey => $spParams) {
+							$softRefObj = BackendUtility::softRefParserObj($spKey);
+							if (is_object($softRefObj)) {
+								$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams);
+								if (is_array($resultArray)) {
+									$outRow[$field]['softrefs']['keys'][$spKey] = $resultArray['elements'];
+									if ((string)$resultArray['content'] !== '') {
+										$softRefValue = $resultArray['content'];
+									}
 								}
 							}
 						}
 					}
-					if (is_array($outRow[$field]['softrefs']) && count($outRow[$field]['softrefs']) && (string)$value !== (string)$softRefValue && strstr($softRefValue, '{softref:')) {
+					if (!empty($outRow[$field]['softrefs']) && (string)$value !== (string)$softRefValue && strpos($softRefValue, '{softref:') !== FALSE) {
 						$outRow[$field]['softrefs']['tokenizedContent'] = $softRefValue;
 					}
 				}
@@ -622,28 +626,35 @@ class ReferenceIndex {
 				$this->temp_flexRelations['db'][$structurePath] = $dbResultsFromFiles;
 			}
 		}
+		// Add a softref definition for link fields if the TCA does not specify one already
+		if ($dsConf['type'] === 'input' && isset($dsConf['wizards']['link']) && empty($dsConf['softref'])) {
+			$dsConf['softref'] = 'typolink';
+		}
 		// Add DB:
-		$resultsFromDatabase = $this->getRelations_procDB($dataValue, $dsConf, $uid, $field);
+		$resultsFromDatabase = $this->getRelations_procDB($dataValue, $dsConf, $uid, $table, $field);
 		if (!empty($resultsFromDatabase)) {
 			// Create an entry for the field with all DB relations:
 			$this->temp_flexRelations['db'][$structurePath] = $resultsFromDatabase;
 		}
 		// Soft References:
-		if ((is_array($dataValue) || strlen($dataValue)) && $softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref'])) {
+		if (is_array($dataValue) || (string)$dataValue !== '') {
 			$softRefValue = $dataValue;
-			foreach ($softRefs as $spKey => $spParams) {
-				$softRefObj = BackendUtility::softRefParserObj($spKey);
-				if (is_object($softRefObj)) {
-					$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams, $structurePath);
-					if (is_array($resultArray) && is_array($resultArray['elements'])) {
-						$this->temp_flexRelations['softrefs'][$structurePath]['keys'][$spKey] = $resultArray['elements'];
-						if (strlen($resultArray['content'])) {
-							$softRefValue = $resultArray['content'];
+			$softRefs = BackendUtility::explodeSoftRefParserList($dsConf['softref']);
+			if ($softRefs !== FALSE) {
+				foreach ($softRefs as $spKey => $spParams) {
+					$softRefObj = BackendUtility::softRefParserObj($spKey);
+					if (is_object($softRefObj)) {
+						$resultArray = $softRefObj->findRef($table, $field, $uid, $softRefValue, $spKey, $spParams, $structurePath);
+						if (is_array($resultArray) && is_array($resultArray['elements'])) {
+							$this->temp_flexRelations['softrefs'][$structurePath]['keys'][$spKey] = $resultArray['elements'];
+							if ((string)$resultArray['content'] !== '') {
+								$softRefValue = $resultArray['content'];
+							}
 						}
 					}
 				}
 			}
-			if (count($this->temp_flexRelations['softrefs']) && (string)$dataValue !== (string)$softRefValue) {
+			if (!empty($this->temp_flexRelations['softrefs']) && (string)$dataValue !== (string)$softRefValue) {
 				$this->temp_flexRelations['softrefs'][$structurePath]['tokenizedContent'] = $softRefValue;
 			}
 		}
@@ -750,20 +761,6 @@ class ReferenceIndex {
 				);
 			}
 			return $fileArray;
-		} elseif ($conf['type'] == 'input' && isset($conf['wizards']['link']) && $value !== NULL && GeneralUtility::isFirstPartOfStr($value, 'file:')) {
-			try {
-				$file = \TYPO3\CMS\Core\Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($value);
-			} catch (\Exception $e) {
-
-			}
-			if ($file instanceof \TYPO3\CMS\Core\Resource\FileInterface) {
-				return array(
-					0 => array(
-						'table' => 'sys_file',
-						'id' => $file->getUid()
-					)
-				);
-			}
 		}
 	}
 
@@ -1116,10 +1113,13 @@ class ReferenceIndex {
 		}
 		// Traverse all tables:
 		foreach ($GLOBALS['TCA'] as $tableName => $cfg) {
+			if (isset(static::$nonRelationTables[$tableName])) {
+				continue;
+			}
 			// Traverse all records in tables, including deleted records:
 			$fieldNames = (BackendUtility::isTableWorkspaceEnabled($tableName) ? 'uid,t3ver_wsid' : 'uid');
-			$allRecs = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows($fieldNames, $tableName, '1=1');
-			if (!is_array($allRecs)) {
+			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($fieldNames, $tableName, '1=1');
+			if ($GLOBALS['TYPO3_DB']->sql_error()) {
 				// Table exists in $TCA but does not exist in the database
 				GeneralUtility::sysLog(sprintf('Table "%s" exists in $TCA but does not exist in the database. You should run the Database Analyzer in the Install Tool to fix this.', $tableName), 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				continue;
@@ -1127,7 +1127,7 @@ class ReferenceIndex {
 			$tableNames[] = $tableName;
 			$tableCount++;
 			$uidList = array(0);
-			foreach ($allRecs as $recdat) {
+			while ($recdat = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
 				/** @var $refIndexObj ReferenceIndex */
 				$refIndexObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Database\\ReferenceIndex');
 				if (isset($recdat['t3ver_wsid'])) {
@@ -1144,6 +1144,8 @@ class ReferenceIndex {
 					}
 				}
 			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+
 			// Searching lost indexes for this table:
 			$where = 'tablename=' . $GLOBALS['TYPO3_DB']->fullQuoteStr($tableName, 'sys_refindex') . ' AND recuid NOT IN (' . implode(',', $uidList) . ')';
 			$lostIndexes = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('hash', 'sys_refindex', $where);
