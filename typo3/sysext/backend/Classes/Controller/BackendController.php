@@ -116,7 +116,6 @@ class BackendController {
 			'md5' => 'sysext/backend/Resources/Public/JavaScript/md5.js',
 			'modulemenu' => 'sysext/backend/Resources/Public/JavaScript/modulemenu.js',
 			'evalfield' => 'sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js',
-			'tabclosemenu' => 'sysext/backend/Resources/Public/JavaScript/extjs/ux/ext.ux.tabclosemenu.js',
 			'notifications' => 'sysext/backend/Resources/Public/JavaScript/notifications.js',
 			'backend' => 'sysext/backend/Resources/Public/JavaScript/backend.js',
 			'viewport' => 'sysext/backend/Resources/Public/JavaScript/extjs/viewport.js',
@@ -201,6 +200,35 @@ class BackendController {
 	 * @return void
 	 */
 	public function render() {
+		// Needed for the hooks below, as they previously were located in the global scope
+		// Caution: do not use the global variable anymore but only reference "$this", or use the "renderPreProcess"
+		$GLOBALS['TYPO3backend'] = $TYPO3backend = $this;
+		// Include extensions which may add css, javascript or toolbar items
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['typo3/backend.php']['additionalBackendItems'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['typo3/backend.php']['additionalBackendItems'] as $additionalBackendItem) {
+				include_once $additionalBackendItem;
+			}
+		}
+
+		// Process ExtJS module js and css
+		if (is_array($GLOBALS['TBE_MODULES']['_configuration'])) {
+			foreach ($GLOBALS['TBE_MODULES']['_configuration'] as $moduleConfig) {
+				if (is_array($moduleConfig['cssFiles'])) {
+					foreach ($moduleConfig['cssFiles'] as $cssFileName => $cssFile) {
+						$files = array(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($cssFile));
+						$files = \TYPO3\CMS\Core\Utility\GeneralUtility::removePrefixPathFromList($files, PATH_site);
+						$this->addCssFile($cssFileName, '../' . $files[0]);
+					}
+				}
+				if (is_array($moduleConfig['jsFiles'])) {
+					foreach ($moduleConfig['jsFiles'] as $jsFile) {
+						$files = array(\TYPO3\CMS\Core\Utility\GeneralUtility::getFileAbsFileName($jsFile));
+						$files = \TYPO3\CMS\Core\Utility\GeneralUtility::removePrefixPathFromList($files, PATH_site);
+						$this->addJavascriptFile('../' . $files[0]);
+					}
+				}
+			}
+		}
 		$this->executeHook('renderPreProcess');
 
 		// Prepare the scaffolding, at this point extension may still add javascript and css

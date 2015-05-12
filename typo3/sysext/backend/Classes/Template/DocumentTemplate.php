@@ -810,11 +810,7 @@ function jumpToUrl(URL) {
 
 		$languageCode = $this->pageRenderer->getLanguage() === 'default' ? 'en' : $this->pageRenderer->getLanguage();
 		$this->pageRenderer->setHtmlTag('<html lang="' . $languageCode . '">');
-		// This loads the tabulator-in-textarea feature. It automatically modifies
-		// every textarea which is found.
-		if (!$GLOBALS['BE_USER']->uc['disableTabInTextarea']) {
-			$this->pageRenderer->addJsFile($this->backPath . 'sysext/backend/Resources/Public/JavaScript/tab.js');
-		}
+
 		// Include the JS for the Context Sensitive Help
 		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
 		// the extension. The core provides a API for adding help, and rendering help, but the rendering
@@ -1915,9 +1911,9 @@ function jumpToUrl(URL) {
 		$hasSave = $saveStatePointer ? TRUE : FALSE;
 		$collapsedStyle = ($collapsedClass = '');
 		if ($hasSave) {
-			/** @var $settings \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider */
-			$settings = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider::class);
-			$value = $settings->get($saveStatePointer . '.' . $id);
+			/** @var $userSettingsController \TYPO3\CMS\Backend\Controller\UserSettingsController */
+			$userSettingsController = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\UserSettingsController::class);
+			$value = $userSettingsController->process('get', $saveStatePointer . '.' . $id);
 			if ($value) {
 				$collapsedStyle = ' style="display: none"';
 				$collapsedClass = ' collapsed';
@@ -1952,7 +1948,7 @@ function jumpToUrl(URL) {
 					}
 					if (saveKey) {
 						try {
-							top.TYPO3.BackendUserSettings.ExtDirect.set(saveKey + "." + tag.id, state, function(response) {});
+							top.TYPO3.Storage.Persistent.set(saveKey + "." + tag.id, state);
 						} catch(e) {}
 					}
 				});
