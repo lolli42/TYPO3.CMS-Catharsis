@@ -8,6 +8,9 @@ matrix:
     - 5.6
       env: SUBMODULE_TEST=yes
 
+env:
+  - DB=mysql
+
 services:
   - memcached
   - redis-server
