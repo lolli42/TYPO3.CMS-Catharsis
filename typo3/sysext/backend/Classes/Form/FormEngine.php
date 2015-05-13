@@ -114,35 +114,6 @@ class FormEngine {
 	 */
 	protected $renderReadonly = FALSE;
 
-	// INTERNAL, static
-	/**
-	 * The string to prepend formfield names with.
-	 *
-	 * @var string
-	 */
-	public $prependFormFieldNames = 'data';
-
-	/**
-	 * The string to prepend commands for tcemain::process_cmdmap with
-	 *
-	 * @var string
-	 */
-	public $prependCmdFieldNames = 'cmd';
-
-	/**
-	 * The string to prepend FILE form field names with
-	 *
-	 * @var string
-	 */
-	public $prependFormFieldNames_file = 'data_files';
-
-	/**
-	 * The string to prepend form field names that are active (not NULL)
-	 *
-	 * @var string
-	 */
-	protected $prependFormFieldNamesActive = 'control[active]';
-
 	/**
 	 * @var InlineStackProcessor
 	 */
@@ -166,14 +137,6 @@ class FormEngine {
 	 * @var bool
 	 */
 	public $perms_clause_set = FALSE;
-
-	/**
-	 * Counter that is incremented before an RTE is created. Can be used for unique ids etc.
-	 * @todo: Free the code from using this global state keeping counter.
-	 *
-	 * @var int
-	 */
-	static public $RTEcounter = 0;
 
 	/**
 	 * Total wrapping for the table rows
@@ -467,10 +430,7 @@ class FormEngine {
 			'databaseRow' => $this->databaseRow,
 			'additionalPreviewLanguages' => $this->additionalPreviewLanguages,
 			'localizationMode' => $this->localizationMode, // @todo: find out the details, Warning, this overlaps with inline behaviour localizationMode
-			'prependFormFieldNames' => $this->prependFormFieldNames,
-			'prependFormFieldNames_file' => $this->prependFormFieldNames_file,
-			'prependFormFieldNamesActive' => $this->prependFormFieldNamesActive,
-			'prependCmdFieldNames' => $this->prependCmdFieldNames,
+			'elementBaseName' => '',
 			'tabAndInlineStack' => array(),
 			'inlineFirstPid' => $this->getInlineFirstPid(),
 			'inlineExpandCollapseStateArray' => $this->getInlineExpandCollapseStateArrayForTableUid($this->table, $this->databaseRow['uid']),
@@ -502,10 +462,8 @@ class FormEngine {
 			// @todo: ajaxArguments[2] is "returnUrl" in the first 3 calls - still needed?
 			switch ($ajaxMethod) {
 				case 'synchronizeLocalizeRecords':
-					// Set $this->RTEcounter to the current situation on client-side
-					$this->RTEcounter = $ajaxArguments[0];
-					$domObjectId = $ajaxArguments[1];
-					$type = $ajaxArguments[2];
+					$domObjectId = $ajaxArguments[0];
+					$type = $ajaxArguments[1];
 					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
 					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
 					$this->inlineStackProcessor->injectAjaxConfiguration($ajaxArguments['context']);
@@ -513,12 +471,10 @@ class FormEngine {
 					$ajaxObj->setContent($this->renderInlineSynchronizeLocalizeRecords($type, $inlineFirstPid));
 					break;
 				case 'createNewRecord':
-					// Set $this->RTEcounter to the current situation on client-side
-					$this->RTEcounter = $ajaxArguments[0];
-					$domObjectId = $ajaxArguments[1];
+					$domObjectId = $ajaxArguments[0];
 					$createAfterUid = 0;
-					if (isset($ajaxArguments[2])) {
-						$createAfterUid = $ajaxArguments[2];
+					if (isset($ajaxArguments[1])) {
+						$createAfterUid = $ajaxArguments[1];
 					}
 					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
 					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
@@ -526,9 +482,7 @@ class FormEngine {
 					$ajaxObj->setContent($this->renderInlineNewChildRecord($domObjectId, $createAfterUid));
 					break;
 				case 'getRecordDetails':
-					// Set $this->RTEcounter to the current situation on client-side
-					$this->RTEcounter = $ajaxArguments[0];
-					$domObjectId = $ajaxArguments[1];
+					$domObjectId = $ajaxArguments[0];
 					// Parse the DOM identifier (string), add the levels to the structure stack (array), load the TCA config:
 					$this->inlineStackProcessor->initializeByParsingDomObjectIdString($domObjectId);
 					$this->inlineStackProcessor->injectAjaxConfiguration($ajaxArguments['context']);
@@ -1098,8 +1052,6 @@ class FormEngine {
 		if ($this->extJSCODE) {
 			$jsonArray['scriptCall'][] = $this->extJSCODE;
 		}
-		// activate "enable tabs" for textareas
-		$jsonArray['scriptCall'][] = 'changeTextareaElements();';
 		return $jsonArray;
 	}
 
@@ -1298,17 +1250,7 @@ class FormEngine {
 	}
 
 	/**
-	 * JavaScript code used for input-field evaluation.
-	 *
-	 * Example use:
-	 *
-	 * $msg .= 'Distribution time (hh:mm dd-mm-yy):<br /><input type="text" name="send_mail_datetime_hr"'
-	 *         . ' onchange="typo3form.fieldGet(\'send_mail_datetime\', \'datetime\', \'\', 0,0);"'
-	 *         . $this->getTBE()->formWidth(20) . ' /><input type="hidden" value="' . $GLOBALS['EXEC_TIME']
-	 *         . '" name="send_mail_datetime" /><br />';
-	 * $this->extJSCODE .= 'typo3form.fieldSet("send_mail_datetime", "datetime", "", 0,0);';
-	 *
-	 * ... and then include the result of this function after the form
+	 * JavaScript bottom code
 	 *
 	 * @param string $formname The identification of the form on the page.
 	 * @param bool $update Just extend/update existing settings, e.g. for AJAX call
@@ -1392,7 +1334,6 @@ class FormEngine {
 			// We want to load jQuery-ui inside our js. Enable this using requirejs.
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 			$out .= '
-			inline.setPrependFormFieldNames("data");
 			inline.setNoTitleString("' . addslashes(BackendUtility::getNoRecordTitle(TRUE)) . '");
 			';
 
@@ -1403,9 +1344,6 @@ class FormEngine {
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
 			TBE_EDITOR.backPath = "";
-			TBE_EDITOR.prependFormFieldNames = "' . $this->prependFormFieldNames . '";
-			TBE_EDITOR.prependFormFieldNamesUENC = "' . rawurlencode($this->prependFormFieldNames) . '";
-			TBE_EDITOR.prependFormFieldNamesCnt = ' . substr_count($this->prependFormFieldNames, '[') . ';
 			TBE_EDITOR.isPalettedoc = null;
 			TBE_EDITOR.doSaveFieldName = "' . ($this->doSaveFieldName ? addslashes($this->doSaveFieldName) : '') . '";
 			TBE_EDITOR.labels.fieldsChanged = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.fieldsChanged')) . ';

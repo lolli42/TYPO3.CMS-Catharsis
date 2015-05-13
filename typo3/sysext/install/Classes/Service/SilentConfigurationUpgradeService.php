@@ -84,6 +84,10 @@ class SilentConfigurationUpgradeService {
 		'FE/allowedTempPaths',
 		// #66034
 		'FE/activateContentAdapter',
+		// #66902
+		'SYS/loginCopyrightShowVersion',
+		// #66903
+		'BE/RTEenabled'
 	);
 
 	/**

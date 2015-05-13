@@ -579,11 +579,6 @@ class t3lib_pageTree extends \TYPO3\CMS\Backend\Tree\View\PageTreeView {}
 /**
  * @deprecated since 6.0, removed since 7.0
  */
-class extDirect_DataProvider_BackendUserSettings extends \TYPO3\CMS\Backend\User\ExtDirect\BackendUserSettingsDataProvider {}
-
-/**
- * @deprecated since 6.0, removed since 7.0
- */
 class t3lib_BEfunc extends \TYPO3\CMS\Backend\Utility\BackendUtility {}
 
 /**
@@ -645,11 +640,6 @@ class t3lib_extjs_ExtDirectApi extends \TYPO3\CMS\Core\ExtDirect\ExtDirectApi {}
  * @deprecated since 6.0, removed since 7.0
  */
 class t3lib_extjs_ExtDirectDebug extends \TYPO3\CMS\Core\ExtDirect\ExtDirectDebug {}
-
-/**
- * @deprecated since 6.0, removed since 7.0
- */
-class extDirect_DataProvider_ContextHelp extends \TYPO3\CMS\ContextHelp\ExtDirect\ContextHelpDataProvider {}
 
 /**
  * @deprecated since 6.0, removed since 7.0
@@ -2110,11 +2100,6 @@ class Tx_Extbase_Persistence_Exception_UnsupportedRelation extends \TYPO3\CMS\Ex
  * @deprecated since 6.0, removed since 7.0
  */
 class Tx_Extbase_Persistence_Generic_Exception_InconsistentQuerySettings extends \TYPO3\CMS\Extbase\Persistence\Generic\Exception\InconsistentQuerySettingsException {}
-
-/**
- * @deprecated since 6.0, removed since 7.0
- */
-class Tx_Extbase_Persistence_IdentityMap extends \TYPO3\CMS\Extbase\Persistence\Generic\IdentityMap {}
 
 /**
  * @deprecated since 6.0, removed since 7.0

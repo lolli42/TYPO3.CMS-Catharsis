@@ -788,10 +788,6 @@ class ExtensionManagementUtility {
 	 * This method is called from \TYPO3\CMS\Backend\Module\ModuleLoader::checkMod
 	 * and it replaces old conf.php.
 	 *
-	 * The original function for is called
-	 * typo3/sysext/extbase/Classes/Utility/ExtensionUtility.php::configureModule
-	 * the referred function can be deprecated now
-	 *
 	 * @param string $moduleSignature The module name
 	 * @param string $modulePath Absolute path to module (not used by Extbase currently)
 	 * @return array Configuration of the module
@@ -1562,7 +1558,7 @@ tt_content.' . $key . $suffix . ' {
 	 * @return string
 	 */
 	static protected function getExtLocalconfCacheIdentifier() {
-		return 'ext_localconf_' . sha1((TYPO3_version . PATH_site . 'extLocalconf'));
+		return 'ext_localconf_' . sha1(TYPO3_version . PATH_site . 'extLocalconf' . serialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']));
 	}
 
 	/**
@@ -1689,7 +1685,7 @@ tt_content.' . $key . $suffix . ' {
 	 * @return string
 	 */
 	static protected function getBaseTcaCacheIdentifier() {
-		return 'tca_base_' . sha1((TYPO3_version . PATH_site . 'tca'));
+		return 'tca_base_' . sha1(TYPO3_version . PATH_site . 'tca' . serialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']));
 	}
 
 	/**
@@ -1835,7 +1831,7 @@ tt_content.' . $key . $suffix . ' {
 	 * @return string
 	 */
 	static protected function getExtTablesCacheIdentifier() {
-		return 'ext_tables_' . sha1((TYPO3_version . PATH_site . 'extTables'));
+		return 'ext_tables_' . sha1(TYPO3_version . PATH_site . 'extTables' . serialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']));
 	}
 
 	/**

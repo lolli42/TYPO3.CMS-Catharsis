@@ -668,19 +668,18 @@ class SetupModuleController {
 	 * @return string Complete select as HTML string
 	 */
 	public function renderStartModuleSelect($params, $pObj) {
-		// Start module select
-		if (empty($this->getBackendUser()->uc['startModule'])) {
-			$this->getBackendUser()->uc['startModule'] = $this->getBackendUser()->uc_default['startModule'];
-		}
-		$startModuleSelect = '<option value=""></option>';
+		$startModuleSelect = '<option value="">' . $this->getLanguageService()->getLL('startModule.firstInMenu', TRUE) . '</option>';
 		foreach ($pObj->loadModules->modules as $mainMod => $modData) {
-			if (isset($modData['sub']) && is_array($modData['sub'])) {
-				$startModuleSelect .= '<option disabled="disabled">' . $this->getLanguageService()->moduleLabels['tabs'][($mainMod . '_tab')] . '</option>';
-				foreach ($modData['sub'] as $subKey => $subData) {
+			if (!empty($modData['sub']) && is_array($modData['sub'])) {
+				$modules = '';
+				foreach ($modData['sub'] as $subData) {
 					$modName = $subData['name'];
-					$startModuleSelect .= '<option value="' . $modName . '"' . ($this->getBackendUser()->uc['startModule'] == $modName ? ' selected="selected"' : '') . '>';
-					$startModuleSelect .= ' - ' . $this->getLanguageService()->moduleLabels['tabs'][($modName . '_tab')] . '</option>';
+					$modules .= '<option value="' . htmlspecialchars($modName) . '"';
+					$modules .= $this->getBackendUser()->uc['startModule'] === $modName ? ' selected="selected"' : '';
+					$modules .=  '>' . $this->getLanguageService()->moduleLabels['tabs'][$modName . '_tab'] . '</option>';
 				}
+				$groupLabel = $this->getLanguageService()->moduleLabels['tabs'][$mainMod . '_tab'];
+				$startModuleSelect .= '<optgroup label="' . htmlspecialchars($groupLabel) . '">' . $modules . '</optgroup>';
 			}
 		}
 		return '<select id="field_startModule" name="data[startModule]" class="form-control">' . $startModuleSelect . '</select>';
@@ -700,15 +699,14 @@ class SetupModuleController {
 		if ($this->getBackendUser()->isAdmin()) {
 			$this->simUser = (int)GeneralUtility::_GP('simUser');
 			// Make user-selector:
-			$users = BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,realName', BackendUtility::BEenableFields('be_users'));
+			$where = 'AND username NOT LIKE "_cli_%" AND uid <> ' . (int)$this->getBackendUser()->user['uid'] . BackendUtility::BEenableFields('be_users');
+			$users = BackendUtility::getUserNames('username,usergroup,usergroup_cached_list,uid,realName', $where);
 			$opt = array();
 			foreach ($users as $rr) {
-				if ($rr['uid'] != $this->getBackendUser()->user['uid']) {
-					$label = htmlspecialchars(($rr['username'] . ($rr['realName'] ? ' (' . $rr['realName'] . ')' : '')));
-					$opt[] = '<option value="' . $rr['uid'] . '"' . ($this->simUser == $rr['uid'] ? ' selected="selected"' : '') . '>' . $label . '</option>';
-				}
+				$label = htmlspecialchars(($rr['username'] . ($rr['realName'] ? ' (' . $rr['realName'] . ')' : '')));
+				$opt[] = '<option value="' . $rr['uid'] . '"' . ($this->simUser == $rr['uid'] ? ' selected="selected"' : '') . '>' . $label . '</option>';
 			}
-			if (count($opt)) {
+			if (!empty($opt)) {
 				$this->simulateSelector = '<select id="field_simulate" name="simulateUser" onchange="window.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('user_setup') . '&simUser=') . '+this.options[this.selectedIndex].value;"><option></option>' . implode('', $opt) . '</select>';
 			}
 		}
@@ -817,13 +815,7 @@ class SetupModuleController {
 	 * @return array Array with fieldnames visible in form
 	 */
 	protected function getFieldsFromShowItem() {
-		$fieldList = $GLOBALS['TYPO3_USER_SETTINGS']['showitem'];
-		// Disable fields depended on settings
-		if (!$GLOBALS['TYPO3_CONF_VARS']['BE']['RTEenabled']) {
-			$fieldList = GeneralUtility::rmFromList('edit_RTE', $fieldList);
-		}
-		$fieldArray = GeneralUtility::trimExplode(',', $fieldList, TRUE);
-		return $fieldArray;
+		return GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_USER_SETTINGS']['showitem'], TRUE);
 	}
 
 	/**

@@ -248,9 +248,9 @@ lib.stdheader {
 	# HTML5 subheader
 	20 = CASE
 	20 {
-		key {
-			field = header_layout
-		}
+		key.field = header_layout
+		key.ifEmpty = {$content.defaultHeaderType}
+		key.ifEmpty.override.data = register: defaultHeaderType
 
 		default = TEXT
 		default {
@@ -419,6 +419,7 @@ tt_content.stdWrap {
 					space = before
 					constant = {$content.spaceBefore}
 					classStdWrap {
+						required = 1
 						noTrimWrap = |csc-space-before-| |
 					}
 				}
@@ -429,6 +430,7 @@ tt_content.stdWrap {
 					space = after
 					constant = {$content.spaceAfter}
 					classStdWrap {
+						required = 1
 						noTrimWrap = |csc-space-after-| |
 					}
 				}
@@ -504,6 +506,7 @@ tt_content.stdWrap {
 					space = before
 					constant = {$content.spaceBefore}
 					classStdWrap {
+						required = 1
 						wrap = csc-space-before-|
 					}
 				}

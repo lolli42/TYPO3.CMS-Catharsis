@@ -69,7 +69,6 @@ return array(
 		'USdateFormat' => FALSE,				// Boolean: If TRUE, dates entered in the TCEforms of the backend will be formatted mm-dd-yyyy
 		'loginCopyrightWarrantyProvider' => '',	// String: If you provide warranty for TYPO3 to your customers insert you (company) name here. It will appear in the login-dialog as the warranty provider. (You must also set URL below).
 		'loginCopyrightWarrantyURL' => '',		// String: Add the URL where you explain the extend of the warranty you provide. This URL is displayed in the login dialog as the place where people can learn more about the conditions of your warranty. Must be set (more than 10 chars) in addition with the 'loginCopyrightWarrantyProvider' message.
-		'loginCopyrightShowVersion' => FALSE,	// Boolean: If set, the current TYPO3 version is shown.
 		'curlUse' => FALSE,						// Boolean: If set, try to use cURL to fetch external URLs
 		'curlProxyNTLM' => FALSE,					// Boolean: Proxy NTLM authentication support.
 		/**
@@ -301,6 +300,7 @@ return array(
 				),
 			)),
 		),
+		'runtimeActivatedPackages' => array(),
 	),
 	'BE' => array(
 		// Backend Configuration.
@@ -310,7 +310,6 @@ return array(
 		'unzip_path' => '',								// Path to "unzip". Only specify the path here, do not include the program name, it is expected to be called "unzip".
 		'diff_path' => 'diff',							// Path to "diff" including the program name. Example: /somepath/specialdiff<br />For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
 		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site, DefaultStorage will be created with that configuration, do not access manually but ResourceFactory::getDefaultStorage()
-		'RTEenabled' => TRUE,							// Boolean: If set, the Rich Text editor will be an option in the backend. Notice that the editor must be enabled per-user and options are configurable. See admin guide.
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
 		'RTE_reg' => array(),							// Contains arrays of possible RTEs available (keys=extKey, values=cfg-array). Each array contains a key, "objRef", which contains a user function call with prefixed script path and instanciating a persistent global object. This can report back if browser requirements are OK, draw the RTE and do the transformations needed.
 		'lockRootPath' => '',							// This path is used to evaluate if paths outside of PATH_site should be allowed. Ending slash required!
