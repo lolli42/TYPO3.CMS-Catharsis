@@ -30,6 +30,7 @@ use TYPO3\CMS\Backend\Form\DatabaseFileIconsHookInterface;
 use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Backend\Form\AbstractNode;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
  * Base class for form elements of FormEngine. Contains several helper methods used by single elements.
@@ -281,7 +282,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					if (isset($wizardConfiguration['popup_onlyOpenIfSelected']) && $wizardConfiguration['popup_onlyOpenIfSelected']) {
 						$notSelectedText = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.noSelItemForEdit');
 						$onlyIfSelectedJS =
-							'if (!TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\')){' .
+							'if (!TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . ')){' .
 								'alert(' . GeneralUtility::quoteJSvalue($notSelectedText) . ');' .
 								'return false;' .
 							'}';
@@ -289,13 +290,12 @@ abstract class AbstractFormElement extends AbstractNode {
 					$aOnClick =
 						'this.blur();' .
 						$onlyIfSelectedJS .
-						'vHWin=window.open(' .
-							'\'' . $url  . '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
-								'document.editform[\'' . $itemName . '\'].value,200' .
+						'vHWin=window.open(' . GeneralUtility::quoteJSvalue($url) . '+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
+								'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value,200' .
 							')' .
-							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\'),' .
-							'\'popUp' . $md5ID . '\',' .
-							'\'' . $wizardConfiguration['JSopenParams'] . '\'' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . '),' .
+							GeneralUtility::quoteJSvalue('popUp' . $md5ID) . ',' .
+							GeneralUtility::quoteJSvalue($wizardConfiguration['JSopenParams']) .
 						');' .
 						'vHWin.focus();' .
 						'return false;';
@@ -335,13 +335,12 @@ abstract class AbstractFormElement extends AbstractNode {
 
 					$aOnClick =
 						'this.blur();' .
-						'vHWin=window.open(' .
-							'\'' . $url  . '\'+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
+						'vHWin=window.open('. GeneralUtility::quoteJSvalue($url) . '+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
 							'document.editform[\'' . $itemName . '\'].value,200' .
 							')' .
-							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(\'' . $itemName . $listFlag . '\'),' .
-							'\'popUp' . $md5ID . '\',' .
-							'\'' . $wizardConfiguration['JSopenParams'] . '\'' .
+							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . '),' .
+							GeneralUtility::quoteJSvalue('popUp' . $md5ID) . ',' .
+							GeneralUtility::quoteJSvalue($wizardConfiguration['JSopenParams']) .
 						');' .
 						'vHWin.focus();' .
 						'return false;';
@@ -398,11 +397,11 @@ abstract class AbstractFormElement extends AbstractNode {
 						$options[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
 					}
 					if ($wizardConfiguration['mode'] == 'append') {
-						$assignValue = 'document.editform[\'' . $itemName . '\'].value=\'\'+this.options[this.selectedIndex].value+document.editform[\'' . $itemName . '\'].value';
+						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value=\'\'+this.options[this.selectedIndex].value+document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value';
 					} elseif ($wizardConfiguration['mode'] == 'prepend') {
-						$assignValue = 'document.editform[\'' . $itemName . '\'].value+=\'\'+this.options[this.selectedIndex].value';
+						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value+=\'\'+this.options[this.selectedIndex].value';
 					} else {
-						$assignValue = 'document.editform[\'' . $itemName . '\'].value=this.options[this.selectedIndex].value';
+						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value=this.options[this.selectedIndex].value';
 					}
 					$otherWizards[] =
 						'<select' .
@@ -429,16 +428,17 @@ abstract class AbstractFormElement extends AbstractNode {
 				// Setting the item to a hidden-field.
 				$item = $itemKinds[1];
 				if (is_array($wizardConfiguration['hideParent'])) {
-					/** @var NoneElement $noneElement */
-					$noneElement = GeneralUtility::makeInstance(NoneElement::class);
-					$noneElementOptions = $this->globalOptions;
-					$noneElementOptions['parameterArray'] = array(
+					$options = $this->globalOptions;
+					$options['parameterArray'] = array(
 						'fieldConf' => array(
 							'config' => $wizardConfiguration['hideParent'],
 						),
 						'itemFormElValue' => $PA['itemFormElValue'],
 					);
-					$noneElementResult = $noneElement->setGlobalOptions($noneElementOptions)->render();
+					$options['type'] = 'none';
+					/** @var NodeFactory $nodeFactory */
+					$nodeFactory = $this->globalOptions['nodeFactory'];
+					$noneElementResult = $nodeFactory->create($options)->render();
 					$item .= $noneElementResult['html'];
 				}
 			}
@@ -580,7 +580,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					if ($inlineParent['config']['foreign_table'] == $table && $inlineParent['config']['foreign_unique'] == $field) {
 						$objectPrefix = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']) . '-' . $table;
 						$aOnClickInline = $objectPrefix . '|inline.checkUniqueElement|inline.setUniqueElement';
-						$rOnClickInline = 'inline.revertUnique(\'' . $objectPrefix . '\',null,\'' . $uid . '\');';
+						$rOnClickInline = 'inline.revertUnique(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',null,' . GeneralUtility::quoteJSvalue($uid) . ');';
 					}
 				}
 				if (is_array($config['appearance']) && isset($config['appearance']['elementBrowserType'])) {
@@ -593,8 +593,8 @@ abstract class AbstractFormElement extends AbstractNode {
 				} else {
 					$elementBrowserAllowed = $allowed;
 				}
-				$aOnClick = 'setFormValueOpenBrowser(\'' . $elementBrowserType . '\',\''
-					. ($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline) . '\'); return false;';
+				$aOnClick = 'setFormValueOpenBrowser(' . GeneralUtility::quoteJSvalue($elementBrowserType) . ','
+					. GeneralUtility::quoteJSvalue(($fName . '|||' . $elementBrowserAllowed . '|' . $aOnClickInline)) . '); return false;';
 				$icons['R'][] = '
 					<a href="#"
 						onclick="' . htmlspecialchars($aOnClick) . '"
@@ -649,10 +649,10 @@ abstract class AbstractFormElement extends AbstractNode {
 						$elValue = $itemTable . '_' . $itemUid;
 					} else {
 						// 'file', 'file_reference' and 'folder' mode
-						$itemTitle = 'unescape(\'' . rawurlencode(basename($elValue)) . '\')';
+						$itemTitle = 'unescape(' . GeneralUtility::quoteJSvalue(rawurlencode(basename($elValue))) . ')';
 					}
-					$aOnClick .= 'setFormValueFromBrowseWin(\'' . $fName . '\',unescape(\''
-						. rawurlencode(str_replace('%20', ' ', $elValue)) . '\'),' . $itemTitle . ',' . $itemTitle . ');';
+					$aOnClick .= 'setFormValueFromBrowseWin(' . GeneralUtility::quoteJSvalue($fName) . ',unescape('
+						. GeneralUtility::quoteJSvalue(rawurlencode(str_replace('%20', ' ', $elValue))) . '),' . $itemTitle . ',' . $itemTitle . ');';
 				}
 				$aOnClick .= 'return false;';
 				$icons['R'][] = '

@@ -241,6 +241,11 @@ class FormEngine {
 	protected $databaseRow = array();
 
 	/**
+	 * @var NodeFactory Factory taking care of creating appropriate sub container and elements
+	 */
+	protected $nodeFactory;
+
+	/**
 	 * Constructor function, setting internal variables, loading the styles used.
 	 *
 	 */
@@ -258,6 +263,7 @@ class FormEngine {
 		$template = GeneralUtility::getUrl(PATH_typo3 . $this->templateFile);
 		// Wrapping all table rows for a particular record being edited:
 		$this->totalWrap = HtmlParser::getSubpart($template, '###TOTALWRAP###');
+		$this->nodeFactory = GeneralUtility::makeInstance(NodeFactory::class);
 	}
 
 	/**
@@ -296,10 +302,10 @@ class FormEngine {
 			}
 		}
 
-		/** @var FullRecordContainer $entryContainer */
-		$entryContainer = GeneralUtility::makeInstance(FullRecordContainer::class);
-		$entryContainer->setGlobalOptions($this->getConfigurationOptionsForChildElements());
-		$resultArray = $entryContainer->render();
+		$options = $this->getConfigurationOptionsForChildElements();
+		$options['type'] = 'fullRecordContainer';
+		$resultArray = $this->nodeFactory->create($options)->render();
+
 		$content = $resultArray['html'];
 		$this->requiredElements = $resultArray['requiredElements'];
 		$this->requiredFields = $resultArray['requiredFields'];
@@ -339,10 +345,8 @@ class FormEngine {
 
 		$options = $this->getConfigurationOptionsForChildElements();
 		$options['singleFieldToRender'] = $theFieldToReturn;
-		/** @var SoloFieldContainer $soloFieldContainer */
-		$soloFieldContainer = GeneralUtility::makeInstance(SoloFieldContainer::class);
-		$soloFieldContainer->setGlobalOptions($options);
-		$resultArray = $soloFieldContainer->render();
+		$options['type'] = 'soloFieldContainer';
+		$resultArray = $this->nodeFactory->create($options)->render();
 		$html = $resultArray['html'];
 
 		$this->requiredElements = $resultArray['requiredElements'];
@@ -379,10 +383,8 @@ class FormEngine {
 
 		$options = $this->getConfigurationOptionsForChildElements();
 		$options['fieldListToRender'] = $list;
-		/** @var ListOfFieldsContainer $listOfFieldsContainer */
-		$listOfFieldsContainer = GeneralUtility::makeInstance(ListOfFieldsContainer::class);
-		$listOfFieldsContainer->setGlobalOptions($options);
-		$resultArray = $listOfFieldsContainer->render();
+		$options['type'] = 'listOfFieldsContainer';
+		$resultArray = $this->nodeFactory->create($options)->render();
 		$html = $resultArray['html'];
 
 		foreach ($resultArray['requiredElements'] as $element) {
@@ -440,6 +442,7 @@ class FormEngine {
 			'hiddenFieldListArray' => $this->hiddenFieldListArr,
 			'isAjaxContext' => FALSE,
 			'flexFormFieldIdentifierPrefix' => 'ID',
+			'nodeFactory' => $this->nodeFactory,
 		);
 	}
 
@@ -542,9 +545,8 @@ class FormEngine {
 		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
 		$options['isAjaxContext'] = TRUE;
 
-		/** @var InlineRecordContainer $inlineRecordContainer */
-		$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
-		$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+		$options['type'] = 'inlineRecordContainer';
+		$childArray = $this->nodeFactory->create($options)->render();
 
 		if ($childArray === FALSE) {
 			return $this->getErrorMessageForAJAX('Access denied');
@@ -568,14 +570,14 @@ class FormEngine {
 		);
 		$jsonArray['scriptCall'][] = 'inline.domAddRecordDetails(' . GeneralUtility::quoteJSvalue($domObjectId) . ',' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . ($expandSingle ? '1' : '0') . ',json.data);';
 		if ($config['foreign_unique']) {
-			$jsonArray['scriptCall'][] = 'inline.removeUsed(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\');';
+			$jsonArray['scriptCall'][] = 'inline.removeUsed(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . GeneralUtility::quoteJSvalue($record['uid']) . ');';
 		}
 
 		$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $config, $inlineFirstPid);
 
 		// Collapse all other records if requested:
 		if (!$collapseAll && $expandSingle) {
-			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(\'' . $objectId . '\',\'' . $objectPrefix . '\',\'' . $record['uid'] . '\');';
+			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(' . GeneralUtility::quoteJSvalue($objectId) . ',' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . GeneralUtility::quoteJSvalue($record['uid']) . ');';
 		}
 
 		return $jsonArray;
@@ -675,9 +677,8 @@ class FormEngine {
 		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
 		$options['isAjaxContext'] = TRUE;
 
-		/** @var InlineRecordContainer $inlineRecordContainer */
-		$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
-		$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+		$options['type'] = 'inlineRecordContainer';
+		$childArray = $this->nodeFactory->create($options)->render();
 
 		if ($childArray === FALSE) {
 			return $this->getErrorMessageForAJAX('Access denied');
@@ -701,24 +702,24 @@ class FormEngine {
 		);
 
 		if (!$current['uid']) {
-			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'bottom\',\'' . $objectName . '_records\',\'' . $objectPrefix . '\',json.data);';
-			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\',null,\'' . $foreignUid . '\');';
+			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'bottom\',' . GeneralUtility::quoteJSvalue($objectName . '_records') . ',' . GeneralUtility::quoteJSvalue($objectPrefix) . ',json.data);';
+			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . GeneralUtility::quoteJSvalue($record['uid']) . ',null,' . GeneralUtility::quoteJSvalue($foreignUid) . ');';
 		} else {
-			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'after\',\'' . $domObjectId . '_div' . '\',\'' . $objectPrefix . '\',json.data);';
-			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $objectPrefix . '\',\'' . $record['uid'] . '\',\'' . $current['uid'] . '\',\'' . $foreignUid . '\');';
+			$jsonArray['scriptCall'][] = 'inline.domAddNewRecord(\'after\',' . GeneralUtility::quoteJSvalue($domObjectId . '_div') . ',' . GeneralUtility::quoteJSvalue($objectPrefix) . ',json.data);';
+			$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',' . GeneralUtility::quoteJSvalue($record['uid']) . ',' . GeneralUtility::quoteJSvalue($current['uid']) . ',' . GeneralUtility::quoteJSvalue($foreignUid) . ');';
 		}
 
 		$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $config, $inlineFirstPid);
 
 		// Collapse all other records if requested:
 		if (!$collapseAll && $expandSingle) {
-			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(\'' . $objectId . '\', \'' . $objectPrefix . '\', \'' . $record['uid'] . '\');';
+			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(' . GeneralUtility::quoteJSvalue($objectId) . ', ' . GeneralUtility::quoteJSvalue($objectPrefix) . ', ' . GeneralUtility::quoteJSvalue($record['uid']) . ');';
 		}
 		// Tell the browser to scroll to the newly created record
 
-		$jsonArray['scriptCall'][] = 'Element.scrollTo(\'' . $objectId . '_div\');';
+		$jsonArray['scriptCall'][] = 'Element.scrollTo(' . GeneralUtility::quoteJSvalue($objectId . '_div') . ');';
 		// Fade out and fade in the new record in the browser view to catch the user's eye
-		$jsonArray['scriptCall'][] = 'inline.fadeOutFadeIn(\'' . $objectId . '_div\');';
+		$jsonArray['scriptCall'][] = 'inline.fadeOutFadeIn(' . GeneralUtility::quoteJSvalue($objectId . '_div') . ');';
 
 		return $jsonArray;
 	}
@@ -767,7 +768,7 @@ class FormEngine {
 			$localizedItems = array_diff($newItems, $oldItems);
 			// Set the items that should be removed in the forms view:
 			foreach ($removedItems as $item) {
-				$jsonArray['scriptCall'][] = 'inline.deleteRecord(\'' . $nameObjectForeignTable . '-' . $item . '\', {forceDirectRemoval: true});';
+				$jsonArray['scriptCall'][] = 'inline.deleteRecord(' . GeneralUtility::quoteJSvalue($nameObjectForeignTable . '-' . $item) . ', {forceDirectRemoval: true});';
 			}
 			// Set the items that should be added in the forms view:
 			$html = '';
@@ -775,7 +776,7 @@ class FormEngine {
 			// @todo: This should be another container ...
 			foreach ($localizedItems as $item) {
 				$row = $inlineRelatedRecordResolver->getRecord($current['table'], $item);
-				$selectedValue = $foreignSelector ? '\'' . $row[$foreignSelector] . '\'' : 'null';
+				$selectedValue = $foreignSelector ? GeneralUtility::quoteJSvalue($row[$foreignSelector]) : 'null';
 
 				$options = $this->getConfigurationOptionsForChildElements();
 				$options['databaseRow'] = array('uid' => $parent['uid']);
@@ -785,9 +786,8 @@ class FormEngine {
 				$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
 				$options['isAjaxContext'] = TRUE;
 
-				/** @var InlineRecordContainer $inlineRecordContainer */
-				$inlineRecordContainer = GeneralUtility::makeInstance(InlineRecordContainer::class);
-				$childArray = $inlineRecordContainer->setGlobalOptions($options)->render();
+				$options['type'] = 'inlineRecordContainer';
+				$childArray = $this->nodeFactory->create($options)->render();
 				$html .= $childArray['html'];
 				$childArray['html'] = '';
 
@@ -824,15 +824,15 @@ class FormEngine {
 					}
 				}
 
-				$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(\'' . $nameObjectForeignTable . '\', \'' . $item . '\', null, ' . $selectedValue . ');';
+				$jsonArray['scriptCall'][] = 'inline.memorizeAddRecord(' . GeneralUtility::quoteJSvalue($nameObjectForeignTable) . ', ' . GeneralUtility::quoteJSvalue($item) . ', null, ' . $selectedValue . ');';
 				// Remove possible virtual records in the form which showed that a child records could be localized:
 				if (isset($row[$transOrigPointerField]) && $row[$transOrigPointerField]) {
-					$jsonArray['scriptCall'][] = 'inline.fadeAndRemove(\'' . $nameObjectForeignTable . '-' . $row[$transOrigPointerField] . '_div' . '\');';
+					$jsonArray['scriptCall'][] = 'inline.fadeAndRemove(' . GeneralUtility::quoteJSvalue($nameObjectForeignTable . '-' . $row[$transOrigPointerField] . '_div') . ');';
 				}
 			}
 			if (!empty($html)) {
 				$jsonArray['data'] = $html;
-				array_unshift($jsonArray['scriptCall'], 'inline.domAddNewRecord(\'bottom\', \'' . $nameObject . '_records\', \'' . $nameObjectForeignTable . '\', json.data);');
+				array_unshift($jsonArray['scriptCall'], 'inline.domAddNewRecord(\'bottom\', ' . GeneralUtility::quoteJSvalue($nameObject . '_records') . ', ' . GeneralUtility::quoteJSvalue($nameObjectForeignTable) . ', json.data);');
 			}
 
 			// @todo: Refactor this mess ... see other methods like getMainFields, too
@@ -1045,7 +1045,7 @@ class FormEngine {
 		// If script.aculo.us Sortable is used, update the Observer to know the record:
 		if ($config['appearance']['useSortable']) {
 			$inlineObjectName = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($inlineFirstPid);
-			$jsonArray['scriptCall'][] = 'inline.createDragAndDropSorting(\'' . $inlineObjectName . '_records\');';
+			$jsonArray['scriptCall'][] = 'inline.createDragAndDropSorting(' . GeneralUtility::quoteJSvalue($inlineObjectName . '_records') . ');';
 		}
 		// If FormEngine has some JavaScript code to be executed, just do it
 		// @todo: this is done by JSBottom() already?!
@@ -1305,7 +1305,7 @@ class FormEngine {
 
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tbe_editor.js');
-			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/ValueSlider.js');
+			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ValueSlider');
 			// Needed for FormEngine manipulation (date picker)
 			$dateFormat = ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? array('MM-DD-YYYY', 'HH:mm MM-DD-YYYY') : array('DD-MM-YYYY', 'HH:mm DD-MM-YYYY'));
 			$pageRenderer->addInlineSetting('DateTimePicker', 'DateFormat', $dateFormat);
@@ -1321,7 +1321,6 @@ class FormEngine {
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
 
-			$pageRenderer->loadRequireJs();
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineFlexForm');
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');

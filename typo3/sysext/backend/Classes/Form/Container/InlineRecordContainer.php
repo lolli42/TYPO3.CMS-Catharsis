@@ -30,6 +30,7 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
  * Render a single inline record relation.
@@ -216,9 +217,10 @@ class InlineRecordContainer extends AbstractContainer {
 			$domObjectId . '-' . $table . '-' . $row['uid'],
 		);
 		$options['overruleTypesArray'] = $overruleTypesArray;
-		/** @var FullRecordContainer $entryContainer */
-		$entryContainer = GeneralUtility::makeInstance(FullRecordContainer::class);
-		return $entryContainer->setGlobalOptions($options)->render();
+		$options['type'] = 'fullRecordContainer';
+		/** @var NodeFactory $nodeFactory */
+		$nodeFactory = $this->globalOptions['nodeFactory'];
+		return $nodeFactory->create($options)->render();
 	}
 
 	/**
@@ -486,14 +488,14 @@ class InlineRecordContainer extends AbstractContainer {
 			// "Up/Down" links
 			if ($enabledControls['sort'] && $permsEdit && $enableManualSorting) {
 				// Up
-				$onClick = 'return inline.changeSorting(\'' . $nameObjectFtId . '\', \'1\')';
+				$onClick = 'return inline.changeSorting(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ', \'1\')';
 				$style = $config['inline']['first'] == $rec['uid'] ? 'style="visibility: hidden;"' : '';
 				$cells['sort.up'] = '
 					<a class="btn btn-default sortingUp" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . '>
 						' . IconUtility::getSpriteIcon('actions-move-up', array('title' => $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:moveUp', TRUE))) . '
 					</a>';
 				// Down
-				$onClick = 'return inline.changeSorting(\'' . $nameObjectFtId . '\', \'-1\')';
+				$onClick = 'return inline.changeSorting(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ', \'-1\')';
 				$style = $config['inline']['last'] == $rec['uid'] ? 'style="visibility: hidden;"' : '';
 				$cells['sort.down'] = '
 					<a class="btn btn-default sortingDown" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . '>
