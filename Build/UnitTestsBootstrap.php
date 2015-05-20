@@ -27,12 +27,12 @@ use TYPO3\CMS\Core\Core\Bootstrap;
  *
  *  * Call whole unit test suite, example:
  * - cd /var/www/t3master/foo  # Document root of TYPO3 CMS instance (location of index.php)
- * - typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+ * - ./bin/phpunit -c Build/UnitTests.xml
  *
  * Call single test case, example:
  * - cd /var/www/t3master/foo  # Document root of TYPO3 CMS instance (location of index.php)
- * - typo3conf/ext/phpunit/Composer/vendor/bin/phpunit \
- *     --bootstrap typo3/sysext/core/Build/UnitTestsBootstrap.php \
+ * - ./bin/phpunit \
+ *     --bootstrap Build/UnitTestsBootstrap.php \
  *     typo3/sysext/core/Tests/Uinit/DataHandling/DataHandlerTest.php
  */
 class UnitTestsBootstrap {
