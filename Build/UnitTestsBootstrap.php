@@ -77,7 +77,7 @@ class UnitTestsBootstrap {
 		array_shift($_SERVER['argv']);
 		$flatArguments = implode(' ', $_SERVER['argv']);
 		echo 'Please run the unit tests using the following command:' . chr(10) .
-			sprintf('typo3conf/ext/phpunit/Composer/vendor/bin/phpunit %s', $flatArguments) . chr(10) .
+			sprintf('./bin/phpunit %s', $flatArguments) . chr(10) .
 			chr(10);
 
 		exit(1);
