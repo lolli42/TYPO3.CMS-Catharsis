@@ -136,6 +136,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 		$classInfo = $this->getClassInfo($className);
 		$object = $this->getInstantiator()->instantiate($className);
 		$this->injectDependencies($object, $classInfo);
+		$this->initializeObject($object, $classInfo);
 		return $object;
 	}
 
@@ -180,9 +181,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$instance = $this->instanciateObject($classInfo, $givenConstructorArguments);
 		$this->injectDependencies($instance, $classInfo);
-		if ($classInfo->getIsInitializeable() && is_callable(array($instance, 'initializeObject'))) {
-			$instance->initializeObject();
-		}
+		$this->initializeObject($instance, $classInfo);
 		if (!$classIsSingleton) {
 			unset($this->prototypeObjectsWhichAreCurrentlyInstanciated[$className]);
 		}
@@ -243,6 +242,18 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 
 			$propertyReflection->setAccessible(TRUE);
 			$propertyReflection->setValue($instance, $instanceToInject);
+		}
+	}
+
+	/**
+	 * Initialize $instance after injecting all dependencies
+	 *
+	 * @param object $instance
+	 * @param \TYPO3\CMS\Extbase\Object\Container\ClassInfo $classInfo
+	 */
+	protected function initializeObject($instance, \TYPO3\CMS\Extbase\Object\Container\ClassInfo $classInfo) {
+		if ($classInfo->getIsInitializeable() && is_callable(array($instance, 'initializeObject'))) {
+			$instance->initializeObject();
 		}
 	}
 
