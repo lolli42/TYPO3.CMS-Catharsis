@@ -1120,7 +1120,7 @@ class DataHandler {
 											$this->pagetreeNeedsRefresh = TRUE;
 
 											/** @var $tce DataHandler */
-											$tce = GeneralUtility::makeInstance(self::class);
+											$tce = GeneralUtility::makeInstance(__CLASS__);
 											$tce->stripslashes_values = 0;
 											// Setting up command for creating a new version of the record:
 											$cmd = array();
@@ -2959,7 +2959,7 @@ class DataHandler {
 										// Calculating/Retrieving some values here:
 										list(, , $recFieldName) = explode(':', $CVrecFID);
 										$theTypeString = BackendUtility::getTCAtypeValue($CVtable, $this->checkValue_currentRecord);
-										$specConf = BackendUtility::getSpecConfParts('', $dsConf['TCEforms']['defaultExtras']);
+										$specConf = BackendUtility::getSpecConfParts($dsConf['TCEforms']['defaultExtras']);
 										// Find, thisConfig:
 										$RTEsetup = $this->BE_USER->getTSConfig('RTE', BackendUtility::getPagesTSconfig($CVtscPID));
 										$thisConfig = BackendUtility::RTEsetup($RTEsetup['properties'], $CVtable, $recFieldName, $theTypeString);
@@ -4397,7 +4397,7 @@ class DataHandler {
 						// Remove child records (if synchronization requested it):
 						if (is_array($removeArray) && count($removeArray)) {
 							/** @var DataHandler $tce */
-							$tce = GeneralUtility::makeInstance(self::class);
+							$tce = GeneralUtility::makeInstance(__CLASS__);
 							$tce->stripslashes_values = FALSE;
 							$tce->start(array(), $removeArray);
 							$tce->process_cmdmap();
@@ -4743,7 +4743,7 @@ class DataHandler {
 						)
 					)
 				);
-				$dataHandler = GeneralUtility::makeInstance(self::class);
+				$dataHandler = GeneralUtility::makeInstance(__CLASS__);
 				$dataHandler->stripslashes_values = FALSE;
 				$dataHandler->neverHideAtCopy = TRUE;
 				$dataHandler->start(array(), $command);
@@ -5167,7 +5167,7 @@ class DataHandler {
 	 * @return DataHandler
 	 */
 	protected function getLocalTCE($stripslashesValues = FALSE, $dontProcessTransformations = TRUE) {
-		$copyTCE = GeneralUtility::makeInstance(self::class);
+		$copyTCE = GeneralUtility::makeInstance(__CLASS__);
 		$copyTCE->stripslashes_values = $stripslashesValues;
 		$copyTCE->copyTree = $this->copyTree;
 		// Copy forth the cached TSconfig

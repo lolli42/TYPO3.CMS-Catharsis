@@ -4670,7 +4670,7 @@ class ContentObjectRenderer {
 	 * @param array $conf TypoScript properties for "split
 	 * @return string Compiled result
 	 * @access private
-	 * @see stdWrap(), t3lib_menu::procesItemStates()
+	 * @see stdWrap(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::procesItemStates()
 	 */
 	public function splitObj($value, $conf) {
 		$conf['token'] = isset($conf['token.']) ? $this->stdWrap($conf['token'], $conf['token.']) : $conf['token'];
@@ -5963,7 +5963,7 @@ class ContentObjectRenderer {
 		if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && (string)$linkHandlerValue !== '') {
 			$linkHandlerObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword]);
 			if (method_exists($linkHandlerObj, 'main')) {
-				return $linkHandlerObj->main($linkText, $configuration, $linkHandlerKeyword, $linkHandlerValue, $linkParameterParts, $this);
+				return $linkHandlerObj->main($linkText, $configuration, $linkHandlerKeyword, $linkHandlerValue, $mixedLinkParameter, $this);
 			}
 		}
 

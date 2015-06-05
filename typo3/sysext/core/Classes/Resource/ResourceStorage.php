@@ -1961,6 +1961,10 @@ class ResourceStorage implements ResourceStorageInterface {
 
 		$this->emitPreFolderDeleteSignal($folderObject);
 
+		foreach ($this->getFilesInFolder($folderObject, 0, 0, FALSE, $deleteRecursively) as $file) {
+			$this->deleteFile($file);
+		}
+
 		$result = $this->driver->deleteFolder($folderObject->getIdentifier(), $deleteRecursively);
 
 		$this->emitPostFolderDeleteSignal($folderObject);
@@ -2147,12 +2151,14 @@ class ResourceStorage implements ResourceStorageInterface {
 
 	/**
 	 * Returns the folders on the root level of the storage
-	 * or the first mount point of this storage for this user.
+	 * or the first mount point of this storage for this user
+	 * if $respectFileMounts is set.
 	 *
+	 * @param bool $respectFileMounts
 	 * @return Folder
 	 */
-	public function getRootLevelFolder() {
-		if (count($this->fileMounts)) {
+	public function getRootLevelFolder($respectFileMounts = TRUE) {
+		if ($respectFileMounts && count($this->fileMounts)) {
 			$mount = reset($this->fileMounts);
 			return $mount['folder'];
 		} else {

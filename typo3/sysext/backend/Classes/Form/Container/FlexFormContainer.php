@@ -38,7 +38,7 @@ class FlexFormContainer extends AbstractContainer {
 
 		$table = $this->globalOptions['table'];
 		$row = $this->globalOptions['databaseRow'];
-		$field = $this->globalOptions['field'];
+		$field = $this->globalOptions['fieldName'];
 		$parameterArray = $this->globalOptions['parameterArray'];
 
 		// Data Structure
@@ -77,7 +77,7 @@ class FlexFormContainer extends AbstractContainer {
 		$options = $this->globalOptions;
 		$options['flexFormDataStructureArray'] = $flexFormDataStructureArray;
 		$options['flexFormRowData'] = $flexFormRowData;
-		$options['type'] = 'flexFormLanguageContainer';
+		$options['renderType'] = 'flexFormLanguageContainer';
 		/** @var NodeFactory $nodeFactory */
 		$nodeFactory = $this->globalOptions['nodeFactory'];
 		return $nodeFactory->create($options)->render();

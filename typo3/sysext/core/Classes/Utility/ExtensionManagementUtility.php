@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\Utility;
 
 use TYPO3\CMS\Core\Category\CategoryRegistry;
 use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Migrations\TcaMigration;
 
 /**
  * Extension Management functions
@@ -274,7 +275,7 @@ class ExtensionManagementUtility {
 	 * @param string $table Table name
 	 * @param string $newFieldsString Field list to add.
 	 * @param string $typeList List of specific types to add the field list to. (If empty, all type entries are affected)
-	 * @param string $position Insert fields before (default) or after one
+	 * @param string $position Insert fields before (default) or after one, or replace a field
 	 * @return void
 	 */
 	static public function addToAllTCAtypes($table, $newFieldsString, $typeList = '', $position = '') {
@@ -297,17 +298,16 @@ class ExtensionManagementUtility {
 
 			$fieldExists = FALSE;
 			$newPosition = '';
-			$paletteNames = array();
 			if (is_array($GLOBALS['TCA'][$table]['palettes'])) {
 				// Get the palette names used in current showitem
 				$paletteCount = preg_match_all('/(?:^|,)                    # Line start or a comma
 					(?:
 					    \\s*\\-\\-palette\\-\\-;[^;]*;([^,$]*)|              # --palette--;label;paletteName
-					    \\s*\\b[^;,]+\\b(?:;[^;]*;([^;,]+);?[^;,]*;?)?[^,]*  # field;label;paletteName[;options[;colors]]
+					    \\s*\\b[^;,]+\\b(?:;[^;]*;([^;,]+);?[^;,]*;?)?[^,]*  # @deprecated since TYPO3 CMS 7: field;label;paletteName[;options[;colors]]
 					)/x', $typeDetails['showitem'], $paletteMatches);
 				if ($paletteCount > 0) {
 					$paletteNames = array_filter(array_merge($paletteMatches[1], $paletteMatches[2]));
-					if (count($paletteNames)) {
+					if (!empty($paletteNames)) {
 						foreach ($paletteNames as $paletteName) {
 							$palette = $GLOBALS['TCA'][$table]['palettes'][$paletteName];
 							switch ($positionIdentifier) {
@@ -592,7 +592,11 @@ class ExtensionManagementUtility {
 	static protected function executePositionedStringInsertion($list, $insertionList, $insertionPosition = '') {
 		$list = $newList = trim($list, ", \t\n\r\0\x0B");
 
-		$insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
+		list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
+
+		if ($location !== 'replace') {
+			$insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
+		}
 
 		if ($insertionList === '') {
 			return $list;
@@ -604,7 +608,6 @@ class ExtensionManagementUtility {
 			return $list . ', ' . $insertionList;
 		}
 
-		list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
 		// The $insertPosition may be a palette: after:--palette--;;title
 		// In the $list the palette may contain a LLL string in between the ;;
 		// Adjust the regex to match that
@@ -1426,11 +1429,12 @@ tt_content.' . $key . $suffix . ' {
 
 ' . $content;
 			if ($afterStaticUid) {
-				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$afterStaticUid] .= $content;
 				// If 'content (default)' is targeted (static uid 43),
 				// the content is added after typoscript of type contentRendering, eg. css_styled_content, see EXT:frontend/TemplateService for more information on how the code is parsed
 				if ($afterStaticUid === 'defaultContentRendering' || $afterStaticUid == 43) {
 					$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.']['defaultContentRendering'] .= $content;
+				} else {
+					$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$afterStaticUid] .= $content;
 				}
 			} else {
 				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type] .= $content;
@@ -1647,6 +1651,19 @@ tt_content.' . $key . $suffix . ' {
 					}
 				}
 			}
+		}
+
+		// TCA migration
+		// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8. This can be removed *if* no additional TCA migration is added with CMS 8, see class TcaMigration
+		$tcaMigration = GeneralUtility::makeInstance(TcaMigration::class);
+		$GLOBALS['TCA'] = $tcaMigration->migrate($GLOBALS['TCA']);
+		$messages = $tcaMigration->getMessages();
+		if (!empty($messages)) {
+			$context = 'Automatic TCA migration done during boostrap. Please adapt TCA accordingly, these migrations'
+				. ' will be removed with TYPO3 CMS 8. The backend module "Configuration -> TCA" shows the modified values.'
+				. ' Please adapt these areas:';
+			array_unshift($messages, $context);
+			GeneralUtility::deprecationLog(implode(LF, $messages));
 		}
 
 		static::emitTcaIsBeingBuiltSignal($GLOBALS['TCA']);

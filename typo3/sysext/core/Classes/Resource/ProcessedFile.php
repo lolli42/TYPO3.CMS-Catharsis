@@ -113,6 +113,7 @@ class ProcessedFile extends AbstractFile {
 	 */
 	public function __construct(File $originalFile, $taskType, array $processingConfiguration, array $databaseRow = NULL) {
 		$this->originalFile = $originalFile;
+		$this->originalFileSha1 = $this->originalFile->getSha1();
 		$this->storage = $originalFile->getStorage()->getProcessingFolder()->getStorage();
 		$this->taskType = $taskType;
 		$this->processingConfiguration = $processingConfiguration;
@@ -257,7 +258,7 @@ class ProcessedFile extends AbstractFile {
 	 * @return bool
 	 */
 	public function isProcessed() {
-		return ($this->isPersisted() && !$this->needsReprocessing()) || $this->updated;
+		return $this->updated || ($this->isPersisted() && !$this->needsReprocessing());
 	}
 
 	/**
