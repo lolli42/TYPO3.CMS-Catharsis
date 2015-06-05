@@ -912,7 +912,7 @@ The conditions for allowing client caching are:
 page was cachedNo *_INT or *_EXT objects were on the page (eg. USER_INT)No frontend user is logged inNo backend user is logged in
 
 If these conditions are met, the headers sent are:
-Last-Modified [SYS_LASTCHANGED of page id]Expires [expire time of page cache]Etag [md5 of content]Cache-Control: max-age: [seconds til expiretime]Pragma: public
+Last-Modified [SYS_LASTCHANGED of page id]Expires [expire time of page cache]ETag [md5 of content]Cache-Control: max-age: [seconds til expiretime]Pragma: public
 
 In case caching is not allowed, these headers are sent to avoid client caching:
 Cache-Control: private
@@ -3449,11 +3449,6 @@ Applies to GMENU, TMENU, GMENU_LAYERS, TMENU_LAYERS and GMENU_FOLDOUT on >= 2nd 
 		</property>
 		<property name="wrap" type="wrap">
 			<description><![CDATA[Wraps only if there were items in the menu!]]></description>
-			<default><![CDATA[
-]]></default>
-		</property>
-		<property name="wrapItemAndSub" type="stdWrap">Wrap/stdWrap
-			<description><![CDATA[Wraps the whole item and any submenu concatenated to it.]]></description>
 			<default><![CDATA[
 ]]></default>
 		</property>

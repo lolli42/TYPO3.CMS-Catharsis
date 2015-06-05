@@ -268,7 +268,7 @@ class ExtensionManagementUtility {
 	 * @param string $table Table name
 	 * @param string $newFieldsString Field list to add.
 	 * @param string $typeList List of specific types to add the field list to. (If empty, all type entries are affected)
-	 * @param string $position Insert fields before (default) or after one
+	 * @param string $position Insert fields before (default) or after one, or replace a field
 	 * @return void
 	 */
 	static public function addToAllTCAtypes($table, $newFieldsString, $typeList = '', $position = '') {
@@ -291,7 +291,6 @@ class ExtensionManagementUtility {
 
 			$fieldExists = FALSE;
 			$newPosition = '';
-			$paletteNames = array();
 			if (is_array($GLOBALS['TCA'][$table]['palettes'])) {
 				// Get the palette names used in current showitem
 				$paletteCount = preg_match_all('/(?:^|,)                    # Line start or a comma
@@ -301,7 +300,7 @@ class ExtensionManagementUtility {
 					)/x', $typeDetails['showitem'], $paletteMatches);
 				if ($paletteCount > 0) {
 					$paletteNames = array_filter(array_merge($paletteMatches[1], $paletteMatches[2]));
-					if (count($paletteNames)) {
+					if (!empty($paletteNames)) {
 						foreach ($paletteNames as $paletteName) {
 							$palette = $GLOBALS['TCA'][$table]['palettes'][$paletteName];
 							switch ($positionIdentifier) {
@@ -586,7 +585,11 @@ class ExtensionManagementUtility {
 	static protected function executePositionedStringInsertion($list, $insertionList, $insertionPosition = '') {
 		$list = $newList = trim($list, ", \t\n\r\0\x0B");
 
-		$insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
+		list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
+
+		if ($location !== 'replace') {
+			$insertionList = self::removeDuplicatesForInsertion($insertionList, $list);
+		}
 
 		if ($insertionList === '') {
 			return $list;
@@ -598,7 +601,6 @@ class ExtensionManagementUtility {
 			return $list . ', ' . $insertionList;
 		}
 
-		list($location, $positionName) = GeneralUtility::trimExplode(':', $insertionPosition);
 		// The $insertPosition may be a palette: after:--palette--;;title
 		// In the $list the palette may contain a LLL string in between the ;;
 		// Adjust the regex to match that
@@ -1312,10 +1314,16 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * Add PlugIn to Static Template #43
+	 * Add PlugIn to the default template rendering (previously called "Static Template #43")
 	 *
 	 * When adding a frontend plugin you will have to add both an entry to the TCA definition of tt_content table AND to the TypoScript template which must initiate the rendering.
-	 * Since the static template with uid 43 is the "content.default" and practically always used for rendering the content elements it's very useful to have this function automatically adding the necessary TypoScript for calling your plugin. It will also work for the extension "css_styled_content"
+	 *
+	 * The naming of #43 has historic reason and is rooted inside code which is now put into a TER extension called
+	 * "statictemplates". Since the static template with uid 43 is the "content.default" and practically always used
+	 * for rendering the content elements it's very useful to have this function automatically adding the necessary
+	 * TypoScript for calling your plugin. It will also work for the extension "css_styled_content".
+	 * The logic is now generalized and called "defaultContentRendering", see addTypoScript() as well.
+	 *
 	 * $type determines the type of frontend plugin:
 	 * + list_type (default) - the good old "Insert plugin" entry
 	 * + menu_type - a "Menu/Sitemap" entry
@@ -1346,7 +1354,7 @@ plugin.' . $cN . $prefix . ' {
 		self::addTypoScript($key, 'setup', '
 # Setting ' . $key . ' plugin TypoScript
 ' . $pluginContent);
-		// After ST43
+		// Add after defaultContentRendering
 		switch ($type) {
 			case 'list_type':
 				$addLine = 'tt_content.list.20.' . $key . $prefix . ' = < plugin.' . $cN . $prefix;
@@ -1376,7 +1384,7 @@ tt_content.' . $key . $prefix . ' {
 			self::addTypoScript($key, 'setup', '
 # Setting ' . $key . ' plugin TypoScript
 ' . $addLine . '
-', 43);
+', 'defaultContentRendering');
 		}
 	}
 
@@ -1434,7 +1442,8 @@ tt_content.' . $key . $prefix . ' {
 	 * possible that a first extension like css_styled_content registers a "contentRendering" template (= a template that defines default content rendering TypoScript)
 	 * by adding itself to $TYPO3_CONF_VARS[FE][contentRenderingTemplates][] = 'myext/Configuration/TypoScript'.
 	 * An extension calling addTypoScript('myext', 'setup', $typoScript, 'defaultContentRendering') will add its TypoScript directly after;
-	 * For now, "43" and "defaultContentRendering" can be used, but defaultContentRendering is more descriptive and should be used in the future
+	 * For now, "43" and "defaultContentRendering" can be used, but "defaultContentRendering" is more descriptive and
+	 * should be used in the future.
 	 *
 	 * @param string $key Is the extension key (informative only).
 	 * @param string $type Is either "setup" or "constants" and obviously determines which kind of TypoScript code we are adding.
@@ -1454,11 +1463,12 @@ tt_content.' . $key . $prefix . ' {
 
 ' . $content;
 			if ($afterStaticUid) {
-				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$afterStaticUid] .= $content;
 				// If 'content (default)' is targeted (static uid 43),
-				// the content is added after typoscript of type contentRendering, eg. css_styled_content, see EXT:frontend/TemplateService for that
-				if ($afterStaticUid == 43 || $afterStaticUid === 'defaultContentRendering') {
+				// the content is added after typoscript of type contentRendering, eg. css_styled_content, see EXT:frontend/TemplateService for more information on how the code is parsed
+				if ($afterStaticUid === 'defaultContentRendering' || $afterStaticUid == 43) {
 					$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.']['defaultContentRendering'] .= $content;
+				} else {
+					$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type . '.'][$afterStaticUid] .= $content;
 				}
 			} else {
 				$GLOBALS['TYPO3_CONF_VARS']['FE']['defaultTypoScript_' . $type] .= $content;
