@@ -226,6 +226,14 @@ class ContainerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
+	public function getEmptyObjectInitializesObjects() {
+		$object = $this->container->getEmptyObject('t3lib_object_tests_initializable');
+		$this->assertTrue($object->isInitialized(), 't3lib_object_tests_initializable was not completely initialized');
+	}
+
+	/**
+	 * @test
+	 */
 	public function test_canGetChildClass() {
 		$object = $this->container->getInstance('t3lib_object_tests_b_child');
 		$this->assertInstanceOf('t3lib_object_tests_b_child', $object);
