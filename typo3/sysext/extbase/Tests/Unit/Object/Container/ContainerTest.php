@@ -181,14 +181,6 @@ class ContainerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * @test
-	 */
-	public function getInstanceInitializesObjects() {
-		$instance = $this->container->getInstance('t3lib_object_tests_initializable');
-		$this->assertTrue($instance->isInitialized(), 't3lib_object_tests_initializable was not completely initialized');
-	}
-
-	/**
 	 * Callback for getInstanceUsesClassNameSha1AsCacheKey
 	 *
 	 * @param string $id
@@ -221,14 +213,6 @@ class ContainerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getEmptyObjectReturnsInstanceOfClassImplementingSerializable() {
 		$object = $this->container->getEmptyObject('t3lib_object_tests_serializable');
 		$this->assertInstanceOf('t3lib_object_tests_serializable', $object);
-	}
-
-	/**
-	 * @test
-	 */
-	public function getEmptyObjectInitializesObjects() {
-		$object = $this->container->getEmptyObject('t3lib_object_tests_initializable');
-		$this->assertTrue($object->isInitialized(), 't3lib_object_tests_initializable was not completely initialized');
 	}
 
 	/**
