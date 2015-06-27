@@ -19,6 +19,10 @@ cache:
   directories:
     - $HOME/.composer/cache
 
+env:
+  global:
+    secure: rIsY51ZUrqlySRVH3RZughD7V5P5gndvdShYpnnvd+DOoHKAdDU3GwMP0NGZXQj8lo8pL+F0ysEWuT5dhTE5HXj7ZsTLz5o3pDJzark64ymmOmzVlakccLecvatpZ+gv3K5c14huzUF7yn7TZ7rEoUBxK3kxbW8UrqLIbhCel5o=
+
 services:
   - memcached
   - redis-server
@@ -35,6 +39,7 @@ before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - rm -rf typo3/sysext/compatibility6
+  - composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH
   - composer install
 
 script:
