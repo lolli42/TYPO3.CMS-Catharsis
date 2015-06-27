@@ -39,7 +39,7 @@ before_script:
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - if [ -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]; then echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi
   - rm -rf typo3/sysext/compatibility6
-  - composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH
+  - if [ "$GITHUB_COMPOSER_AUTH" ]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
   - composer install
 
 script:
