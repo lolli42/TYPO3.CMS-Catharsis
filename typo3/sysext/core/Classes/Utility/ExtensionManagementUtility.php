@@ -292,7 +292,7 @@ class ExtensionManagementUtility {
 				continue;
 			}
 			// skip if fields were already added
-			if (strpos($typeDetails['showitem'], $newFieldsString) !== FALSE) {
+			if (!isset($typeDetails['showitem']) || strpos($typeDetails['showitem'], $newFieldsString) !== FALSE) {
 				continue;
 			}
 
@@ -350,9 +350,41 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * Adds new fields to all palettes of an existing field.
-	 * If the field does not have a palette yet, it's created automatically and
-	 * gets called "generatedFor-$field".
+	 * Adds new fields to all palettes that is defined after an existing field.
+	 * If the field does not have a following palette yet, it's created automatically
+	 * and gets called "generatedFor-$field".
+	 *
+	 * See unit tests for more examples and edge cases.
+	 *
+	 * Example:
+	 *
+	 * 'aTable' => array(
+	 * 	'types' => array(
+	 * 		'aType' => array(
+	 * 			'showitem' => 'aField, --palette--;;aPalette',
+	 * 		),
+	 * 	),
+	 * 	'palettes' => array(
+	 * 		'aPallete' => array(
+	 * 			'showitem' => 'fieldB, fieldC',
+	 * 		),
+	 * 	),
+	 * ),
+	 *
+	 * Calling addFieldsToAllPalettesOfField('aTable', 'aField', 'newA', 'before: fieldC') results in:
+	 *
+	 * 'aTable' => array(
+	 * 	'types' => array(
+	 * 		'aType' => array(
+	 * 			'showitem' => 'aField, --palette--;;aPalette',
+	 * 		),
+	 * 	),
+	 * 	'palettes' => array(
+	 * 		'aPallete' => array(
+	 * 			'showitem' => 'fieldB, newA, fieldC',
+	 * 		),
+	 * 	),
+	 * ),
 	 *
 	 * @param string $table Name of the table
 	 * @param string $field Name of the field that has the palette to be extended
@@ -361,35 +393,44 @@ class ExtensionManagementUtility {
 	 * @return void
 	 */
 	static public function addFieldsToAllPalettesOfField($table, $field, $addFields, $insertionPosition = '') {
-		$generatedPalette = '';
-		$processedPalettes = array();
-		if (isset($GLOBALS['TCA'][$table]['columns'][$field])) {
-			$types = &$GLOBALS['TCA'][$table]['types'];
-			if (is_array($types)) {
-				// Iterate through all types and search for the field that defines the palette to be extended:
-				foreach ($types as $type => $_) {
-					$items = self::explodeItemList($types[$type]['showitem']);
-					if (isset($items[$field])) {
-						// If the field already has a palette, extend it:
-						if ($items[$field]['details']['palette']) {
-							$palette = $items[$field]['details']['palette'];
-							if (!isset($processedPalettes[$palette])) {
-								self::addFieldsToPalette($table, $palette, $addFields, $insertionPosition);
-								$processedPalettes[$palette] = TRUE;
-							}
-						} else {
-							if ($generatedPalette) {
-								$palette = $generatedPalette;
-							} else {
-								$palette = ($generatedPalette = 'generatedFor-' . $field);
-								self::addFieldsToPalette($table, $palette, $addFields, $insertionPosition);
-							}
-							$items[$field]['details']['palette'] = $palette;
-							$types[$type]['showitem'] = self::generateItemList($items);
-						}
-					}
+		if (!isset($GLOBALS['TCA'][$table]['columns'][$field])) {
+			return;
+		}
+		if (!is_array($GLOBALS['TCA'][$table]['types'])) {
+			return;
+		}
+
+		// Iterate through all types and search for the field that defines the palette to be extended
+		foreach ($GLOBALS['TCA'][$table]['types'] as $typeName => $typeArray) {
+			// Continue if types has no showitem at all or if requested field is not in it
+			if (!isset($typeArray['showitem']) || strpos($typeArray['showitem'], $field) === FALSE) {
+				continue;
+			}
+			$fieldArrayWithOptions = GeneralUtility::trimExplode(',', $typeArray['showitem']);
+			// Find the field we're handling
+			$newFieldStringArray = array();
+			foreach ($fieldArrayWithOptions as $fieldNumber => $fieldString) {
+				$newFieldStringArray[] = $fieldString;
+				$fieldArray = GeneralUtility::trimExplode(';', $fieldString);
+				if ($fieldArray[0] !== $field) {
+					continue;
+				}
+				if (
+					isset($fieldArrayWithOptions[$fieldNumber + 1])
+					&& StringUtility::beginsWith($fieldArrayWithOptions[$fieldNumber + 1],  '--palette--')
+				) {
+					// Match for $field and next field is a palette - add fields to this one
+					$paletteName = GeneralUtility::trimExplode(';', $fieldArrayWithOptions[$fieldNumber + 1]);
+					$paletteName = $paletteName[2];
+					self::addFieldsToPalette($table, $paletteName, $addFields, $insertionPosition);
+				} else {
+					// Match for $field but next field is no palette - create a new one
+					$newPaletteName = 'generatedFor-' . $field;
+					self::addFieldsToPalette($table, 'generatedFor-' . $field, $addFields, $insertionPosition);
+					$newFieldStringArray[] = '--palette--;;' . $newPaletteName;
 				}
 			}
+			$GLOBALS['TCA'][$table]['types'][$typeName]['showitem'] = implode(', ', $newFieldStringArray);
 		}
 	}
 
@@ -695,14 +736,12 @@ class ExtensionManagementUtility {
 			if (!isset($items[$key])) {
 				$items[$key] = array(
 					'rawData' => $itemPart,
-					'details' => array(
-						'field' => $itemDetails[0],
-						'label' => $itemDetails[1],
-						'palette' => $itemDetails[2],
-						'special' => $itemDetails[3],
-						'styles' => $itemDetails[4]
-					)
+					'details' => array()
 				);
+				$details = array(0 => 'field', 1 => 'label', 2 => 'palette');
+				foreach ($details as $id => $property) {
+					$items[$key]['details'][$property] = isset($itemDetails[$id]) ? $itemDetails[$id] : '';
+				}
 			}
 		}
 		return $items;
@@ -726,7 +765,19 @@ class ExtensionManagementUtility {
 			if ($useRawData) {
 				$itemParts[] = $itemDetails['rawData'];
 			} else {
-				$itemParts[] = count($itemDetails['details']) > 1 ? implode(';', $itemDetails['details']) : $item;
+				if (count($itemDetails['details']) > 1) {
+					$details = array('palette', 'label', 'field');
+					$elements = array();
+					$addEmpty = FALSE;
+					foreach ($details as $property) {
+						if ($itemDetails['details'][$property] !== '' || $addEmpty) {
+							$addEmpty = TRUE;
+							array_unshift($elements, $itemDetails['details'][$property]);
+						}
+					}
+					$item = implode(';', $elements);
+				}
+				$itemParts[] = $item;
 			}
 		}
 		return implode(', ', $itemParts);
@@ -1744,7 +1795,7 @@ tt_content.' . $key . $suffix . ' {
 		// scope, but we can not prohibit this without breaking backwards compatibility
 		global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
 		global $TBE_MODULES, $TBE_MODULES_EXT, $TCA;
-		global $PAGES_TYPES, $TBE_STYLES, $FILEICONS;
+		global $PAGES_TYPES, $TBE_STYLES;
 		global $_EXTKEY;
 		// Load each ext_tables.php file of loaded extensions
 		foreach ($GLOBALS['TYPO3_LOADED_EXT'] as $_EXTKEY => $extensionInformation) {
@@ -1773,7 +1824,7 @@ tt_content.' . $key . $suffix . ' {
 		$phpCodeToCache[] = '';
 		$phpCodeToCache[] = 'global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;';
 		$phpCodeToCache[] = 'global $TBE_MODULES, $TBE_MODULES_EXT, $TCA;';
-		$phpCodeToCache[] = 'global $PAGES_TYPES, $TBE_STYLES, $FILEICONS;';
+		$phpCodeToCache[] = 'global $PAGES_TYPES, $TBE_STYLES;';
 		$phpCodeToCache[] = 'global $_EXTKEY;';
 		$phpCodeToCache[] = '';
 		// Iterate through loaded extensions and add ext_tables content

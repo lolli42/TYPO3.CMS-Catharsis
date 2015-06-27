@@ -301,7 +301,6 @@ class BackendUserAuthentication extends \TYPO3\CMS\Core\Authentication\AbstractU
 		'titleLen' => 50,
 		'edit_RTE' => '1',
 		'edit_docModuleUpload' => '1',
-		'navFrameWidth' => '',
 		// Default is 245 pixels
 		'navFrameResizable' => 0,
 		'resizeTextareas' => 1,
@@ -2264,14 +2263,15 @@ This is a dump of the failures:
 	 * access lists of all kind, further check IP, set the ->uc array and send login-notification email if required.
 	 * If no user is logged in the default behaviour is to exit with an error message,
 	 * but this will happen ONLY if the constant TYPO3_PROCEED_IF_NO_USER is set TRUE.
-	 * This function is called right after ->start() in fx. init.php
+	 * This function is called right after ->start() in fx. the TYPO3 CMS bootsrap
 	 *
+	 * @param bool $proceedIfNoUserIsLoggedIn if this option is set, then there won't be a redirect to the login screen of the Backend - used for areas in the backend which do not need user rights like the login page.
 	 * @throws \RuntimeException
 	 * @return void
 	 */
-	public function backendCheckLogin() {
+	public function backendCheckLogin($proceedIfNoUserIsLoggedIn = FALSE) {
 		if (empty($this->user['uid'])) {
-			if (!defined('TYPO3_PROCEED_IF_NO_USER') || !TYPO3_PROCEED_IF_NO_USER) {
+			if ($proceedIfNoUserIsLoggedIn === FALSE) {
 				\TYPO3\CMS\Core\Utility\HttpUtility::redirect($GLOBALS['BACK_PATH']);
 			}
 		} else {

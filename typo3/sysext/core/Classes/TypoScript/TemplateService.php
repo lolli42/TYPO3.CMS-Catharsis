@@ -659,19 +659,21 @@ class TemplateService {
 		if (trim($row['basedOn'])) {
 			// Normal Operation, which is to include the "based-on" sys_templates,
 			// if they are not already included, and maintaining the sorting of the templates
-			$basedOnIds = GeneralUtility::intExplode(',', $row['basedOn']);
+			$basedOnIds = GeneralUtility::intExplode(',', $row['basedOn'], TRUE);
 			// skip template if it's already included
 			foreach ($basedOnIds as $key => $basedOnId) {
 				if (GeneralUtility::inList($idList, 'sys_' . $basedOnId)) {
 					unset($basedOnIds[$key]);
 				}
 			}
-			$subTemplates = $this->getDatabaseConnection()->exec_SELECTgetRows('*', 'sys_template', 'uid IN (' . implode(',', $basedOnIds) . ') ' . $this->whereClause, '', '', '', 'uid');
-			// Traversing list again to ensure the sorting of the templates
-			foreach ($basedOnIds as $id) {
-				if (is_array($subTemplates[$id])) {
-					$this->versionOL($subTemplates[$id]);
-					$this->processTemplate($subTemplates[$id], $idList . ',sys_' . $id, $pid, 'sys_' . $id, $templateID);
+			if (!empty($basedOnIds)) {
+				$subTemplates = $this->getDatabaseConnection()->exec_SELECTgetRows('*', 'sys_template', 'uid IN (' . implode(',', $basedOnIds) . ') ' . $this->whereClause, '', '', '', 'uid');
+				// Traversing list again to ensure the sorting of the templates
+				foreach ($basedOnIds as $id) {
+					if (is_array($subTemplates[$id])) {
+						$this->versionOL($subTemplates[$id]);
+						$this->processTemplate($subTemplates[$id], $idList . ',sys_' . $id, $pid, 'sys_' . $id, $templateID);
+					}
 				}
 			}
 		}
@@ -788,8 +790,8 @@ class TemplateService {
 						if (@is_dir($ISF_filePath)) {
 							$mExtKey = str_replace('_', '', $ISF_extKey . '/' . $ISF_localPath);
 							$subrow = array(
-								'constants' => @file_exists(($ISF_filePath . 'constants.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'constants.txt') : '',
-								'config' => @file_exists(($ISF_filePath . 'setup.txt')) ? GeneralUtility::getUrl($ISF_filePath . 'setup.txt') : '',
+								'constants' => $this->getTypoScriptSourceFileContent($ISF_filePath, 'constants'),
+								'config' => $this->getTypoScriptSourceFileContent($ISF_filePath, 'setup'),
 								'include_static' => @file_exists(($ISF_filePath . 'include_static.txt')) ? implode(',', array_unique(GeneralUtility::intExplode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static.txt')))) : '',
 								'include_static_file' => @file_exists(($ISF_filePath . 'include_static_file.txt')) ? implode(',', array_unique(explode(',', GeneralUtility::getUrl($ISF_filePath . 'include_static_file.txt')))) : '',
 								'title' => $ISF_file,
@@ -819,6 +821,25 @@ class TemplateService {
 				GeneralUtility::callUserFunction($_funcRef, $_params, $this);
 			}
 		}
+	}
+
+	/**
+	 * Retrieves the content of the first existing file by extension order.
+	 * Returns the empty string if no file is found.
+	 *
+	 * @param string $filePath The location of the file.
+	 * @param string $baseName The base file name. "constants" or "setup".
+	 * @return string
+	 */
+	protected function getTypoScriptSourceFileContent($filePath, $baseName) {
+		$extensions = array('.ts', '.txt');
+		foreach ($extensions as $extension) {
+			$fileName = $filePath . $baseName . $extension;
+			if (@file_exists($fileName)) {
+				return GeneralUtility::getUrl($fileName);
+			}
+		}
+		return '';
 	}
 
 	/**

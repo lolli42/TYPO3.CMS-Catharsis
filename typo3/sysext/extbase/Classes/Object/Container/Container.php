@@ -160,7 +160,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 		if ($className === \TYPO3\CMS\Core\Package\PackageManager::class) {
 			return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Package\PackageManager::class);
 		}
-		$className = \TYPO3\CMS\Core\Core\ClassLoader::getClassNameForAlias($className);
+		$className = \TYPO3\CMS\Core\Core\ClassLoadingInformation::getClassNameForAlias($className);
 		if (isset($this->singletonInstances[$className])) {
 			if (count($givenConstructorArguments) > 0) {
 				throw new \TYPO3\CMS\Extbase\Object\Exception('Object "' . $className . '" fetched from singleton cache, thus, explicit constructor arguments are not allowed.', 1292857934);
@@ -242,7 +242,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Initialize $instance after injecting all dependencies
+	 * Call object initializer if present in object
 	 *
 	 * @param object $instance
 	 * @param \TYPO3\CMS\Extbase\Object\Container\ClassInfo $classInfo
@@ -358,4 +358,5 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 	public function isPrototype($className) {
 		return !$this->isSingleton($className);
 	}
+
 }

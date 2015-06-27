@@ -156,7 +156,7 @@ class Bootstrap {
 	}
 
 	/**
-	 * Main entry point called at every request usually from Global scope. Checks if everthing is correct,
+	 * Main entry point called at every request usually from Global scope. Checks if everything is correct,
 	 * and sets up the base request information for a regular request, then
 	 * resolves the RequestHandler which handles the request.
 	 *
@@ -172,8 +172,7 @@ class Bootstrap {
 				->loadConfigurationAndInitialize(FALSE, \TYPO3\CMS\Core\Package\FailsafePackageManager::class);
 		} elseif (!$this->checkIfEssentialConfigurationExists() && !defined('TYPO3_cliMode')) {
 			// Redirect to install tool if base configuration is not found
-			$backPathToSiteRoot = str_repeat('../', count(explode('/', $relativePathPart)) - 1);
-			$this->redirectToInstallTool($backPathToSiteRoot);
+			$this->redirectToInstallTool($relativePathPart);
 		} else {
 			// Regular request (Frontend, AJAX, Backend, CLI)
 			$this->startOutputBuffering()
@@ -205,7 +204,9 @@ class Bootstrap {
 	 */
 	public function baseSetup($relativePathPart = '') {
 		SystemEnvironmentBuilder::run($relativePathPart);
-		$this->addDynamicClassAliasMapsToComposerClassLoader();
+		if (!self::$usesComposerClassLoading) {
+			ClassLoadingInformation::registerClassLoadingInformation();
+		}
 		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
 	}
@@ -231,26 +232,6 @@ class Bootstrap {
 	}
 
 	/**
-	 * Includes an alias mapping file if present.
-	 * The file is generated during extension install.
-	 *
-	 * @throws \TYPO3\CMS\Core\Exception
-	 */
-	protected function addDynamicClassAliasMapsToComposerClassLoader() {
-		if (self::$usesComposerClassLoading) {
-			return;
-		}
-		$dynamicClassAliasMapFile = PATH_site . 'typo3conf/autoload_classaliasmap.php';
-		if (file_exists($dynamicClassAliasMapFile)) {
-			$composerClassLoader = $this->getEarlyInstance(\Composer\Autoload\ClassLoader::class);
-			$classAliasMap = require $dynamicClassAliasMapFile;
-			if (is_array($classAliasMap) && !empty($classAliasMap['aliasToClassNameMapping']) && !empty($classAliasMap['classNameToAliasMapping'])) {
-				$composerClassLoader->addAliasMap($classAliasMap);
-			}
-		}
-	}
-
-	/**
 	 * checks if LocalConfiguration.php or PackageStates.php is missing,
 	 * used to see if a redirect to the install tool is needed
 	 *
@@ -265,13 +246,12 @@ class Bootstrap {
 	/**
 	 * Redirect to install tool if LocalConfiguration.php is missing.
 	 *
-	 * @param string $pathUpToDocumentRoot Can contain '../' if called from a sub directory
+	 * @param string $relativePathPart Can contain '../' if called from a sub directory
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function redirectToInstallTool($pathUpToDocumentRoot = '') {
-		define('TYPO3_enterInstallScript', '1');
-		$this->defineTypo3RequestTypes();
-		Utility\HttpUtility::redirect($pathUpToDocumentRoot . 'typo3/sysext/install/Start/Install.php');
+	public function redirectToInstallTool($relativePathPart = '') {
+		$backPathToSiteRoot = str_repeat('../', count(explode('/', $relativePathPart)) - 1);
+		header('Location: ' . $backPathToSiteRoot . 'typo3/sysext/install/Start/Install.php');
 	}
 
 	/**
@@ -377,17 +357,14 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadConfigurationAndInitialize($allowCaching = TRUE, $packageManagerClassName = \TYPO3\CMS\Core\Package\PackageManager::class) {
-		$this->initializeClassLoader()
-			->populateLocalConfiguration();
+		$this->populateLocalConfiguration();
 		if (!$allowCaching) {
-			$this->disableCoreAndClassesCache();
+			$this->disableCoreCache();
 		}
 		$this->initializeCachingFramework()
-			->initializeClassLoaderCaches()
 			->initializePackageManagement($packageManagerClassName)
-			->initializeRuntimeActivatedPackagesFromConfiguration();
-
-		$this->defineDatabaseConstants()
+			->initializeRuntimeActivatedPackagesFromConfiguration()
+			->defineDatabaseConstants()
 			->defineUserAgentConstant()
 			->registerExtDirectComponents()
 			->transferDeprecatedCurlSettings()
@@ -400,50 +377,9 @@ class Bootstrap {
 			->initializeExceptionHandling()
 			->setMemoryLimit()
 			->defineTypo3RequestTypes();
-		return $this;
-	}
-
-	/**
-	 * Initializes the Class Loader
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeClassLoader() {
-		$classLoader = new ClassLoader($this->applicationContext);
-		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class, $classLoader);
-		$classAliasMap = new ClassAliasMap();
-		$classAliasMap->injectClassLoader($classLoader);
-		$classAliasMap->injectComposerClassLoader($this->getEarlyInstance(\Composer\Autoload\ClassLoader::class));
-		$this->setEarlyInstance(\TYPO3\CMS\Core\Core\ClassAliasMap::class, $classAliasMap);
-		$classLoader->injectClassAliasMap($classAliasMap);
-		spl_autoload_register(array($classLoader, 'loadClass'), TRUE, FALSE);
-		return $this;
-	}
-
-	/**
-	 * Unregister class loader
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function unregisterClassLoader() {
-		$currentClassLoader = $this->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class);
-		spl_autoload_unregister(array($currentClassLoader, 'loadClass'));
-		return $this;
-	}
-
-	/**
-	 * Initialize class loader cache.
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeClassLoaderCaches() {
-		/** @var $classLoader ClassLoader */
-		$classLoader = $this->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class);
-		$classLoader->injectCoreCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core'));
-		$classLoader->injectClassesCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_classes'));
+		if ($allowCaching) {
+			$this->ensureClassLoadingInformationExists();
+		}
 		return $this;
 	}
 
@@ -460,11 +396,24 @@ class Bootstrap {
 		$packageManager = new $packageManagerClassName();
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
 		Utility\ExtensionManagementUtility::setPackageManager($packageManager);
-		$packageManager->injectClassLoader($this->getEarlyInstance(\TYPO3\CMS\Core\Core\ClassLoader::class));
 		$packageManager->injectCoreCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core'));
 		$packageManager->injectDependencyResolver(Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Package\DependencyResolver::class));
 		$packageManager->initialize($this);
 		Utility\GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
+		return $this;
+	}
+
+	/**
+	 * Writes class loading information if not yet present
+	 *
+	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function ensureClassLoadingInformationExists() {
+		if (!self::$usesComposerClassLoading && !ClassLoadingInformation::classLoadingInformationExists()) {
+			ClassLoadingInformation::writeClassLoadingInformation();
+			ClassLoadingInformation::registerClassLoadingInformation();
+		}
 		return $this;
 	}
 
@@ -530,18 +479,15 @@ class Bootstrap {
 	}
 
 	/**
-	 * Set cache_core to null backend, effectively disabling eg. the autoloader cache
+	 * Set cache_core to null backend, effectively disabling eg. the cache for ext_localconf and PackageManager etc.
 	 *
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function disableCoreAndClassesCache() {
+	public function disableCoreCache() {
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['backend']
 			= \TYPO3\CMS\Core\Cache\Backend\NullBackend::class;
 		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_core']['options']);
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['backend']
-			= \TYPO3\CMS\Core\Cache\Backend\TransientMemoryBackend::class;
-		unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_classes']['options']);
 		return $this;
 	}
 
@@ -785,7 +731,7 @@ class Bootstrap {
 	/**
 	 * Initialize exception handling
 	 * This method is called twice. First when LocalConfiguration has been loaded
-	 * and a second time after extension ext_loclconf.php have been included to allow extensions
+	 * and a second time after extension ext_localconf.php have been included to allow extensions
 	 * to change the exception and error handler configuration.
 	 *
 	 * @return Bootstrap
@@ -854,8 +800,6 @@ class Bootstrap {
 		unset($GLOBALS['TCA']);
 		unset($GLOBALS['TBE_MODULES']);
 		unset($GLOBALS['TBE_STYLES']);
-		unset($GLOBALS['FILEICONS']);
-		// Those set in init.php:
 		unset($GLOBALS['BE_USER']);
 		// Those set otherwise:
 		unset($GLOBALS['TBE_MODULES_EXT']);
@@ -930,25 +874,22 @@ class Bootstrap {
 	 * to an URL in file typo3conf/LOCK_BACKEND or exit the script
 	 *
 	 * @throws \RuntimeException
+	 * @param bool $forceProceeding if this option is set, the bootstrap will proceed even if the user is logged in (usually only needed for special AJAX cases, see AjaxRequestHandler)
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function checkLockedBackendAndRedirectOrDie() {
+	public function checkLockedBackendAndRedirectOrDie($forceProceeding = FALSE) {
 		if ($GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'] < 0) {
 			throw new \RuntimeException('TYPO3 Backend locked: Backend and Install Tool are locked for maintenance. [BE][adminOnly] is set to "' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'] . '".', 1294586847);
 		}
-		if (@is_file((PATH_typo3conf . 'LOCK_BACKEND'))) {
-			if (TYPO3_PROCEED_IF_NO_USER === 2) {
-
+		if (@is_file(PATH_typo3conf . 'LOCK_BACKEND') && $forceProceeding === FALSE) {
+			$fileContent = Utility\GeneralUtility::getUrl(PATH_typo3conf . 'LOCK_BACKEND');
+			if ($fileContent) {
+				header('Location: ' . $fileContent);
 			} else {
-				$fileContent = Utility\GeneralUtility::getUrl(PATH_typo3conf . 'LOCK_BACKEND');
-				if ($fileContent) {
-					header('Location: ' . $fileContent);
-				} else {
-					throw new \RuntimeException('TYPO3 Backend locked: Browser backend is locked for maintenance. Remove lock by removing the file "typo3conf/LOCK_BACKEND" or use CLI-scripts.', 1294586848);
-				}
-				die;
+				throw new \RuntimeException('TYPO3 Backend locked: Browser backend is locked for maintenance. Remove lock by removing the file "typo3conf/LOCK_BACKEND" or use CLI-scripts.', 1294586848);
 			}
+			die;
 		}
 		return $this;
 	}
@@ -1071,7 +1012,7 @@ class Bootstrap {
 		// can not prohibit this without breaking backwards compatibility
 		global $T3_SERVICES, $T3_VAR, $TYPO3_CONF_VARS;
 		global $TBE_MODULES, $TBE_MODULES_EXT, $TCA;
-		global $PAGES_TYPES, $TBE_STYLES, $FILEICONS;
+		global $PAGES_TYPES, $TBE_STYLES;
 		global $_EXTKEY;
 		// Load additional ext tables script if the file exists
 		$extTablesFile = PATH_typo3conf . TYPO3_extTableDef_script;
@@ -1140,11 +1081,12 @@ class Bootstrap {
 	 * Initializes and ensures authenticated access
 	 *
 	 * @internal This is not a public API method, do not use in own extensions
+	 * @param bool $proceedIfNoUserIsLoggedIn if set to TRUE, no forced redirect to the login page will be done
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 */
-	public function initializeBackendAuthentication() {
+	public function initializeBackendAuthentication($proceedIfNoUserIsLoggedIn = FALSE) {
 		$GLOBALS['BE_USER']->checkCLIuser();
-		$GLOBALS['BE_USER']->backendCheckLogin();
+		$GLOBALS['BE_USER']->backendCheckLogin($proceedIfNoUserIsLoggedIn);
 		return $this;
 	}
 

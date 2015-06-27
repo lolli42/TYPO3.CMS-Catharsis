@@ -10,6 +10,7 @@ namespace TYPO3\CMS\Fluid\Core\ViewHelper;
  *                                                                        *
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
+
 use TYPO3\CMS\Fluid\ViewHelpers\ThenViewHelper;
 use TYPO3\CMS\Fluid\ViewHelpers\ElseViewHelper;
 use TYPO3\CMS\Fluid\Core\Parser\SyntaxTree\ViewHelperNode;
@@ -118,7 +119,7 @@ abstract class AbstractConditionViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHel
 	 * @param bool $hasEvaluated Can be used to check if the "then" child was actually evaluated by this method.
 	 * @return string
 	 */
-	protected static function renderStaticThenChild($arguments, &$hasEvaluated) {
+	static protected function renderStaticThenChild($arguments, &$hasEvaluated) {
 		if (isset($arguments['then'])) {
 			return $arguments['then'];
 		}
@@ -166,7 +167,7 @@ abstract class AbstractConditionViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHel
 	 * @param bool $hasEvaluated Can be used to check if the "else" child was actually evaluated by this method.
 	 * @return string
 	 */
-	protected static function renderStaticElseChild($arguments, &$hasEvaluated) {
+	static protected function renderStaticElseChild($arguments, &$hasEvaluated) {
 		if (isset($arguments['else'])) {
 			return $arguments['else'];
 		}
@@ -248,4 +249,5 @@ abstract class AbstractConditionViewHelper extends \TYPO3\CMS\Fluid\Core\ViewHel
 	static protected function evaluateCondition($arguments = NULL) {
 		return (isset($arguments['condition']) && $arguments['condition']);
 	}
+
 }

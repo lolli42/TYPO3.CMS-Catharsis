@@ -69,7 +69,7 @@ class FileIndexRepository implements SingletonInterface {
 	 *
 	 * @return FileIndexRepository
 	 */
-	public static function getInstance() {
+	static public function getInstance() {
 		return GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class);
 	}
 
@@ -309,6 +309,7 @@ class FileIndexRepository implements SingletonInterface {
 	 */
 	public function markFileAsMissing($fileUid) {
 		$this->getDatabaseConnection()->exec_UPDATEquery($this->table, 'uid = ' . (int)$fileUid, array('missing' => 1));
+		$this->emitRecordMarkedAsMissingSignal($fileUid);
 	}
 
 	/**
@@ -405,6 +406,16 @@ class FileIndexRepository implements SingletonInterface {
 	 */
 	protected function emitRecordDeletedSignal($fileUid) {
 		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class, 'recordDeleted', array($fileUid));
+	}
+
+	/**
+	 * Signal that is called after an IndexRecord is marked as missing
+	 *
+	 * @param int $fileUid
+	 * @signal
+	 */
+	protected function emitRecordMarkedAsMissingSignal($fileUid) {
+		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\Index\FileIndexRepository::class, 'recordMarkedAsMissing', array($fileUid));
 	}
 
 }

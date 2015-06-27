@@ -770,9 +770,9 @@ class BackendUtility {
 			foreach ($fieldList as $k => $v) {
 				list($pFieldName, $pAltTitle, $pPalette) = GeneralUtility::trimExplode(';', $v);
 				$defaultExtras = '';
-				if (!empty($typesConf['columnsOverrides'][$pFieldName]['config']['defaultExtras'])) {
+				if (!empty($typesConf['columnsOverrides'][$pFieldName]['defaultExtras'])) {
 					// Use defaultExtras from columnsOverrides if given
-					$defaultExtras = $typesConf['columnsOverrides'][$pFieldName]['config']['defaultExtras'];
+					$defaultExtras = $typesConf['columnsOverrides'][$pFieldName]['defaultExtras'];
 				} elseif (!empty($GLOBALS['TCA'][$table]['columns'][$pFieldName]['defaultExtras'])) {
 					// Use defaultExtras from columns if given
 					$defaultExtras = $GLOBALS['TCA'][$table]['columns'][$pFieldName]['defaultExtras'];
@@ -2448,16 +2448,6 @@ class BackendUtility {
 	}
 
 	/**
-	 * Returns file icon name (from $FILEICONS) for the fileextension $ext
-	 *
-	 * @param string $ext File extension, lowercase
-	 * @return string File icon filename
-	 */
-	static public function getFileIcon($ext) {
-		return $GLOBALS['FILEICONS'][$ext] ?: $GLOBALS['FILEICONS']['default'];
-	}
-
-	/**
 	 * Returns fields for a table, $table, which would typically be interesting to select
 	 * This includes uid, the fields defined for title, icon-field.
 	 * Returned as a list ready for query ($prefix can be set to eg. "pages." if you are selecting from the pages table and want the table name prefixed)
@@ -3017,7 +3007,7 @@ class BackendUtility {
 	 * @param string $script The script to send the &id to, if empty it's automatically found
 	 * @return string The completes script URL
 	 */
-	protected static function buildScriptUrl($mainParams, $addParams, $script = '') {
+	static protected function buildScriptUrl($mainParams, $addParams, $script = '') {
 		if (!is_array($mainParams)) {
 			$mainParams = array('id' => $mainParams);
 		}

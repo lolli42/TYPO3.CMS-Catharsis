@@ -167,51 +167,6 @@ $extraContentColumns = array(
 			)
 		)
 	),
-	'image_frames' => array(
-		'exclude' => TRUE,
-		'label' => 'LLL:EXT:cms/locallang_ttc.xlf:image_frames',
-		'config' => array(
-			'type' => 'select',
-			'items' => array(
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.0',
-					0
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.1',
-					1
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.2',
-					2
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.3',
-					3
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.4',
-					4
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.5',
-					5
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.6',
-					6
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.7',
-					7
-				),
-				array(
-					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.8',
-					8
-				)
-			)
-		)
-	),
 	'image_noRows' => array(
 		'exclude' => TRUE,
 		'label' => 'LLL:EXT:cms/locallang_ttc.xlf:image_noRows',
@@ -463,7 +418,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				--linebreak--,
 				header_link;LLL:EXT:cms/locallang_ttc.xlf:header_link_formlabel
 			',
-			'canNotCollapse' => 1
 		),
 		'headers' => array(
 			'showitem' => '
@@ -477,19 +431,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				--linebreak--,
 				subheader;LLL:EXT:cms/locallang_ttc.xlf:subheader_formlabel
 			',
-			'canNotCollapse' => 1
-		),
-		'image_settings' => array(
-			'showitem' => '
-				imagewidth;LLL:EXT:cms/locallang_ttc.xlf:imagewidth_formlabel,
-				imageheight;LLL:EXT:cms/locallang_ttc.xlf:imageheight_formlabel,
-				imageborder;LLL:EXT:cms/locallang_ttc.xlf:imageborder_formlabel,
-				--linebreak--,
-				image_compression;LLL:EXT:cms/locallang_ttc.xlf:image_compression_formlabel,
-				image_effects;LLL:EXT:cms/locallang_ttc.xlf:image_effects_formlabel,
-				image_frames;LLL:EXT:cms/locallang_ttc.xlf:image_frames_formlabel
-			',
-			'canNotCollapse' => 1
 		),
 		'imageblock' => array(
 			'showitem' => '
@@ -499,7 +440,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				image_noRows;LLL:EXT:cms/locallang_ttc.xlf:image_noRows_formlabel,
 				imagecaption_position;LLL:EXT:cms/locallang_ttc.xlf:imagecaption_position_formlabel
 			',
-			'canNotCollapse' => 1
 		),
 		'tablelayout' => array(
 			'showitem' => '
@@ -508,7 +448,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				table_cellspacing;LLL:EXT:cms/locallang_ttc.xlf:table_cellspacing_formlabel,
 				table_cellpadding;LLL:EXT:cms/locallang_ttc.xlf:table_cellpadding_formlabel
 			',
-			'canNotCollapse' => 1
 		),
 		'visibility' => array(
 			'showitem' => '
@@ -516,7 +455,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				sectionIndex;LLL:EXT:cms/locallang_ttc.xlf:sectionIndex_formlabel,
 				linkToTop;LLL:EXT:cms/locallang_ttc.xlf:linkToTop_formlabel
 			',
-			'canNotCollapse' => 1
 		),
 		'frames' => array(
 			'showitem' => '
@@ -525,9 +463,19 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				spaceAfter;LLL:EXT:cms/locallang_ttc.xlf:spaceAfter_formlabel,
 				section_frame;LLL:EXT:cms/locallang_ttc.xlf:section_frame_formlabel
 			',
-			'canNotCollapse' => 1
 		)
 	)
+);
+
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addFieldsToPalette(
+	'tt_content',
+	'image_settings',
+	'imagewidth;LLL:EXT:cms/locallang_ttc.xlf:imagewidth_formlabel,
+		imageheight;LLL:EXT:cms/locallang_ttc.xlf:imageheight_formlabel,
+		imageborder;LLL:EXT:cms/locallang_ttc.xlf:imageborder_formlabel,
+		--linebreak--,
+		image_compression;LLL:EXT:cms/locallang_ttc.xlf:image_compression_formlabel,
+		image_effects;LLL:EXT:cms/locallang_ttc.xlf:image_effects_formlabel,'
 );
 
 // Field arrangement for CE "header"
@@ -547,7 +495,6 @@ $GLOBALS['TCA']['tt_content']['types']['text']['showitem'] = '
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.general;general,
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.header;header,
 		bodytext;LLL:EXT:cms/locallang_ttc.xlf:bodytext_formlabel,
-		rte_enabled;LLL:EXT:cms/locallang_ttc.xlf:rte_enabled_formlabel,
 	--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.appearance,
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.frames;frames,
 	--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.access,
@@ -565,14 +512,13 @@ $baseDefaultExtrasOfBodytext = '';
 if (!empty($GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'])) {
 	$baseDefaultExtrasOfBodytext = $GLOBALS['TCA']['tt_content']['columns']['bodytext']['defaultExtras'] . ':';
 }
-$GLOBALS['TCA']['tt_content']['types']['text']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[flag=rte_enabled|mode=ts_css]';
+$GLOBALS['TCA']['tt_content']['types']['text']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[mode=ts_css]';
 
 // Field arrangement for CE "textpic"
 $GLOBALS['TCA']['tt_content']['types']['textpic']['showitem'] = '
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.general;general,
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.header;header,
 		bodytext;Text,
-		rte_enabled;LLL:EXT:cms/locallang_ttc.xlf:rte_enabled_formlabel,
 	--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.images,
 		image,
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.imagelinks;imagelinks,
@@ -591,7 +537,7 @@ if (!is_array($GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverride
 if (!is_array($GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext'])) {
 	$GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext'] = array();
 }
-$GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[flag=rte_enabled|mode=ts_css]';
+$GLOBALS['TCA']['tt_content']['types']['textpic']['columnsOverrides']['bodytext']['defaultExtras'] = $baseDefaultExtrasOfBodytext . 'richtext:rte_transform[mode=ts_css]';
 
 // Field arrangement for CE "image"
 $GLOBALS['TCA']['tt_content']['types']['image']['showitem'] = '
@@ -635,7 +581,7 @@ $GLOBALS['TCA']['tt_content']['types']['table']['showitem'] = '
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.general;general,
 		--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.header;header,
 	--div--;LLL:EXT:cms/locallang_ttc.xlf:CType.I.5,
-		layout;;10,
+		layout, --palette--;;10,
 		cols,
 		bodytext,
 		pi_flexform,

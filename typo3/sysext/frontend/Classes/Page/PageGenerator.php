@@ -167,42 +167,6 @@ class PageGenerator {
 	}
 
 	/**
-	 * Returns an array with files to include. These files are the ones set up in TypoScript config.
-	 *
-	 * @return array Files to include. Paths are relative to PATH_site.
-	 */
-	static public function getIncFiles() {
-		/** @var TypoScriptFrontendController $tsfe */
-		$tsfe = $GLOBALS['TSFE'];
-		$incFilesArray = array();
-		// Get files from config.includeLibrary
-		$includeLibrary = trim('' . $tsfe->config['config']['includeLibrary']);
-		if ($includeLibrary) {
-			$incFile = $tsfe->tmpl->getFileName($includeLibrary);
-			if ($incFile) {
-				$incFilesArray[] = $incFile;
-			}
-		}
-		if (is_array($tsfe->pSetup['includeLibs.'])) {
-			$incLibs = $tsfe->pSetup['includeLibs.'];
-		} else {
-			$incLibs = array();
-		}
-		if (is_array($tsfe->tmpl->setup['includeLibs.'])) {
-			// toplevel 'includeLibs' is added to the PAGE.includeLibs. In that way, PAGE-libs get first priority, because if the key already exist, it's not altered. (Due to investigation by me)
-			$incLibs += $tsfe->tmpl->setup['includeLibs.'];
-		}
-		if (count($incLibs)) {
-			foreach ($incLibs as $theLib) {
-				if (!is_array($theLib) && ($incFile = $tsfe->tmpl->getFileName($theLib))) {
-					$incFilesArray[] = $incFile;
-				}
-			}
-		}
-		return $incFilesArray;
-	}
-
-	/**
 	 * Processing JavaScript handlers
 	 *
 	 * @return array Array with a) a JavaScript section with event handlers and variables set and b) an array with attributes for the body tag.
@@ -1185,7 +1149,7 @@ class PageGenerator {
 		$endingSlash = $xhtml ? ' /' : '';
 
 		$metaTags = array(
-			'<meta name="generator" content="TYPO3 CMS ' . TYPO3_branch . '"' . $endingSlash . '>'
+			'<meta name="generator" content="TYPO3 CMS"' . $endingSlash . '>'
 		);
 
 		/** @var TypoScriptService $typoScriptService */
@@ -1195,15 +1159,28 @@ class PageGenerator {
 			if (is_array($properties)) {
 				$nodeValue = isset($properties['_typoScriptNodeValue']) ? $properties['_typoScriptNodeValue'] : '';
 				$value = trim($cObj->stdWrap($nodeValue, $metaTagTypoScript[$key . '.']));
+				if ($value === '' && !empty($properties['value'])) {
+					$value = $properties['value'];
+				}
 			} else {
 				$value = $properties;
 			}
-			if ($value !== '') {
-				$attribute = 'name';
-				if ( (is_array($properties) && !empty($properties['httpEquivalent'])) || strtolower($key) === 'refresh') {
-					$attribute = 'http-equiv';
+
+			$attribute = 'name';
+			if ((is_array($properties) && !empty($properties['httpEquivalent'])) || strtolower($key) === 'refresh') {
+				$attribute = 'http-equiv';
+			}
+			if (is_array($properties) && !empty($properties['attribute'])) {
+				$attribute = $properties['attribute'];
+			}
+
+			if (!is_array($value)) {
+				$value = (array)$value;
+			}
+			foreach ($value as $subValue) {
+				if (trim($subValue) !== '') {
+					$metaTags[] = '<meta ' . $attribute . '="' . $key . '" content="' . htmlspecialchars($subValue) . '"' . $endingSlash . '>';
 				}
-				$metaTags[] = '<meta ' . $attribute . '="' . $key . '" content="' . htmlspecialchars($value) . '"' . $endingSlash . '>';
 			}
 		}
 		return $metaTags;

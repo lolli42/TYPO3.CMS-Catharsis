@@ -30,7 +30,6 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  *
  * Notes:
  * These functions are strongly related to the interface of TYPO3.
- * The class is included in eg. init.php
  * Static class, functions called without making a class instance.
  *
  * @author Kasper Skårhøj <kasperYYYY@typo3.com>
@@ -128,8 +127,10 @@ class IconUtility {
 	 * @param array $row The table row ("enablefields" are at least needed for correct icon display and for pages records some more fields in addition!)
 	 * @param bool $shaded If set, the icon will be grayed/shaded
 	 * @return string Icon filename
+	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use IconUtility::getSpriteIcon() instead
 	 */
 	static public function getIcon($table, $row = array(), $shaded = FALSE) {
+		GeneralUtility::logDeprecatedFunction();
 		// Flags
 		// If set, then the usergroup number will NOT be printed unto the icon. NOTICE.
 		// The icon is generated only if a default icon for groups is not found... So effectively this is ineffective.
@@ -458,7 +459,7 @@ class IconUtility {
 					return $iconfile;
 				}
 			} else {
-				return $GLOBALS['BACK_PATH'] . 'gfx/fileicons/default.gif';
+				return $GLOBALS['BACK_PATH'] . 'gfx/default.gif';
 			}
 		}
 	}

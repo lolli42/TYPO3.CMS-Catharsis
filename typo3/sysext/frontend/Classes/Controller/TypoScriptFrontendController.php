@@ -117,10 +117,11 @@ class TypoScriptFrontendController {
 
 	/**
 	 * Gets set when we are processing a page of type shortcut in the early stages
-	 * opf init.php when we do not know about languages yet, used later in init.php
+	 * of the request when we do not know about languages yet, used later in the request
 	 * to determine the correct shortcut in case a translation changes the shortcut
 	 * target
 	 * @var array|NULL
+	 * @see checkTranslatedShortcut()
 	 */
 	protected $originalShortcutPage = NULL;
 
@@ -2802,23 +2803,9 @@ class TypoScriptFrontendController {
 	 * @return void
 	 */
 	public function setExternalJumpUrl() {
-		if ($extUrl = $this->sys_page->getExtURL($this->page, $this->config['config']['disablePageExternalUrl'])) {
+		if ((bool)$this->config['config']['disablePageExternalUrl'] === FALSE && $extUrl = $this->sys_page->getExtURL($this->page)) {
 			$this->jumpurl = $extUrl;
 			GeneralUtility::_GETset(GeneralUtility::hmac($this->jumpurl, 'jumpurl'), 'juHash');
-		}
-	}
-
-	/**
-	 * Check the jumpUrl referer if required
-	 *
-	 * @return void
-	 */
-	public function checkJumpUrlReferer() {
-		if ($this->jumpurl !== '' && !$this->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
-			$referer = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
-			if (isset($referer['host']) && !($referer['host'] == GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'))) {
-				unset($this->jumpurl);
-			}
 		}
 	}
 
@@ -3612,6 +3599,11 @@ class TypoScriptFrontendController {
 		// Set header for charset-encoding unless disabled
 		if (empty($this->config['config']['disableCharsetHeader'])) {
 			$headLine = 'Content-Type: ' . $this->contentType . '; charset=' . trim($this->metaCharset);
+			header($headLine);
+		}
+		// Set header for content language unless disabled
+		if (empty($this->config['config']['disableLanguageHeader']) && !empty($this->sys_language_isocode)) {
+			$headLine = 'Content-Language: ' . trim($this->sys_language_isocode);
 			header($headLine);
 		}
 		// Set cache related headers to client (used to enable proxy / client caching!)

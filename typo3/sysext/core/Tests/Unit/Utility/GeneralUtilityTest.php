@@ -15,6 +15,11 @@ namespace TYPO3\CMS\Core\Tests\Unit\Utility;
  */
 
 use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\GeneralUtilityMinifyJavaScriptFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\OriginalClassFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\OtherReplacementClassFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\ReplacementClassFixture;
+use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\TwoParametersConstructorFixture;
 use TYPO3\CMS\Core\Utility;
 use \org\bovigo\vfs\vfsStream;
 use \org\bovigo\vfs\vfsStreamDirectory;
@@ -727,8 +732,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 * @dataProvider formatSizeDataProvider
 	 */
-	public function formatSizeTranslatesBytesToHigherOrderRepresentation($size, $label, $expected) {
-		$this->assertEquals($expected, Utility\GeneralUtility::formatSize($size, $label));
+	public function formatSizeTranslatesBytesToHigherOrderRepresentation($size, $labels, $base, $expected) {
+		$this->assertEquals($expected, Utility\GeneralUtility::formatSize($size, $labels, $base));
 	}
 
 	/**
@@ -738,18 +743,39 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function formatSizeDataProvider() {
 		return array(
-			'Bytes keep beeing bytes (min)' => array(1, '', '1 '),
-			'Bytes keep beeing bytes (max)' => array(899, '', '899 '),
-			'Kilobytes are detected' => array(1024, '', '1.0 K'),
-			'Megabytes are detected' => array(1048576, '', '1.0 M'),
-			'Gigabytes are detected' => array(1073741824, '', '1.0 G'),
-			'Decimal is omitted for large kilobytes' => array(31080, '', '30 K'),
-			'Decimal is omitted for large megabytes' => array(31458000, '', '30 M'),
-			'Decimal is omitted for large gigabytes' => array(32212254720, '', '30 G'),
-			'Label for bytes can be exchanged' => array(1, ' Foo|||', '1 Foo'),
-			'Label for kilobytes can be exchanged' => array(1024, '| Foo||', '1.0 Foo'),
-			'Label for megabyes can be exchanged' => array(1048576, '|| Foo|', '1.0 Foo'),
-			'Label for gigabytes can be exchanged' => array(1073741824, '||| Foo', '1.0 Foo')
+			'IEC Bytes stay bytes (min)' => array(1, '', 0, '1 '),
+			'IEC Bytes stay bytes (max)' => array(921, '', 0, '921 '),
+			'IEC Kilobytes are used (min)' => array(922, '', 0, '0.90 Ki'),
+			'IEC Kilobytes are used (max)' => array(943718, '', 0, '922 Ki'),
+			'IEC Megabytes are used (min)' => array(943719, '', 0, '0.90 Mi'),
+			'IEC Megabytes are used (max)' => array(966367641, '', 0, '922 Mi'),
+			'IEC Gigabytes are used (min)' => array(966367642, '', 0, '0.90 Gi'),
+			'IEC Gigabytes are used (max)' => array(989560464998, '', 0, '922 Gi'),
+			'IEC Decimal is omitted for large kilobytes' => array(31080, '', 0, '30 Ki'),
+			'IEC Decimal is omitted for large megabytes' => array(31458000, '', 0, '30 Mi'),
+			'IEC Decimal is omitted for large gigabytes' => array(32212254720, '', 0, '30 Gi'),
+			'SI Bytes stay bytes (min)' => array(1, 'si', 0, '1 '),
+			'SI Bytes stay bytes (max)' => array(899, 'si', 0, '899 '),
+			'SI Kilobytes are used (min)' => array(901, 'si', 0, '0.90 k'),
+			'SI Kilobytes are used (max)' => array(900000, 'si', 0, '900 k'),
+			'SI Megabytes are used (min)' => array(900001, 'si', 0, '0.90 M'),
+			'SI Megabytes are used (max)' => array(900000000, 'si', 0, '900 M'),
+			'SI Gigabytes are used (min)' => array(900000001, 'si', 0, '0.90 G'),
+			'SI Gigabytes are used (max)' => array(900000000000, 'si', 0, '900 G'),
+			'SI Decimal is omitted for large kilobytes' => array(30000, 'si', 0, '30 k'),
+			'SI Decimal is omitted for large megabytes' => array(30000000, 'si', 0, '30 M'),
+			'SI Decimal is omitted for large gigabytes' => array(30000000000, 'si', 0, '30 G'),
+			'Label for bytes can be exchanged (binary unit)' => array(1, ' Foo|||', 0, '1 Foo'),
+			'Label for kilobytes can be exchanged (binary unit)' => array(1024, '| Foo||', 0, '1.00 Foo'),
+			'Label for megabyes can be exchanged (binary unit)' => array(1048576, '|| Foo|', 0, '1.00 Foo'),
+			'Label for gigabytes can be exchanged (binary unit)' => array(1073741824, '||| Foo', 0, '1.00 Foo'),
+			'Label for bytes can be exchanged (decimal unit)' => array(1, ' Foo|||', 1000, '1 Foo'),
+			'Label for kilobytes can be exchanged (decimal unit)' => array(1000, '| Foo||', 1000, '1.00 Foo'),
+			'Label for megabyes can be exchanged (decimal unit)' => array(1000000, '|| Foo|', 1000, '1.00 Foo'),
+			'Label for gigabytes can be exchanged (decimal unit)' => array(1000000000, '||| Foo', 1000, '1.00 Foo'),
+			'IEC Base is ignored' => array(1024, 'iec', 1000, '1.00 Ki'),
+			'SI Base is ignored' => array(1000, 'si', 1024, '1.00 k'),
+			'Use binary base for unexpected base' => array(2048, '| Bar||', 512, '2.00 Bar')
 		);
 	}
 
@@ -2493,7 +2519,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function minifyJavaScriptCallsRegisteredHookWithInputString() {
 		$hookClassName = $this->getUniqueId('tx_coretest');
 		$minifyHookMock = $this->getMock('stdClass', array('minify'), array(), $hookClassName);
-		$functionName = '&' . $hookClassName . '->minify';
+		$functionName = $hookClassName . '->minify';
 		$GLOBALS['T3_VAR']['callUserFunction'][$functionName] = array();
 		$GLOBALS['T3_VAR']['callUserFunction'][$functionName]['obj'] = $minifyHookMock;
 		$GLOBALS['T3_VAR']['callUserFunction'][$functionName]['method'] = 'minify';
@@ -2543,9 +2569,6 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function minifyJavaScriptWritesExceptionMessageToDevLog() {
-		$t3libDivMock = $this->getUniqueId('GeneralUtility');
-		eval('namespace ' . __NAMESPACE__ . '; class ' . $t3libDivMock . ' extends \\TYPO3\\CMS\\Core\\Utility\\GeneralUtility {' . '  public static function devLog($errorMessage) {' . '    if (!($errorMessage === \'Error minifying java script: foo\')) {' . '      throw new \\UnexpectedValue(\'broken\');' . '    }' . '    throw new \\RuntimeException();' . '  }' . '}');
-		$t3libDivMock = __NAMESPACE__ . '\\' . $t3libDivMock;
 		$hookClassName = $this->getUniqueId('tx_coretest');
 		$minifyHookMock = $this->getMock('stdClass', array('minify'), array(), $hookClassName);
 		$functionName = '&' . $hookClassName . '->minify';
@@ -2555,7 +2578,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_div.php']['minifyJavaScript'][] = $functionName;
 		$minifyHookMock->expects($this->any())->method('minify')->will($this->returnCallback(array($this, 'minifyJavaScriptErroneousCallback')));
 		$this->setExpectedException('\\RuntimeException');
-		$t3libDivMock::minifyJavaScript('string to compress');
+		GeneralUtilityMinifyJavaScriptFixture::minifyJavaScript('string to compress');
 	}
 
 	/**
@@ -3772,11 +3795,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function makeInstancePassesParametersToConstructor() {
-		$className = $this->getUniqueId('testingClass');
-		if (!class_exists($className, FALSE)) {
-			eval('class ' . $className . ' {' . '  public $constructorParameter1;' . '  public $constructorParameter2;' . '  public function __construct($parameter1, $parameter2) {' . '    $this->constructorParameter1 = $parameter1;' . '    $this->constructorParameter2 = $parameter2;' . '  }' . '}');
-		}
-		$instance = Utility\GeneralUtility::makeInstance($className, 'one parameter', 'another parameter');
+		$instance = Utility\GeneralUtility::makeInstance(TwoParametersConstructorFixture::class, 'one parameter', 'another parameter');
 		$this->assertEquals('one parameter', $instance->constructorParameter1, 'The first constructor parameter has not been set.');
 		$this->assertEquals('another parameter', $instance->constructorParameter2, 'The second constructor parameter has not been set.');
 	}
@@ -3785,22 +3804,19 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function makeInstanceInstanciatesConfiguredImplementation() {
-		$classNameOriginal = get_class($this->getMock($this->getUniqueId('foo')));
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][$classNameOriginal] = array('className' => $classNameOriginal . 'Other');
-		eval('class ' . $classNameOriginal . 'Other extends ' . $classNameOriginal . ' {}');
-		$this->assertInstanceOf($classNameOriginal . 'Other', Utility\GeneralUtility::makeInstance($classNameOriginal));
+		GeneralUtilityFixture::resetFinalClassNameCache();
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][OriginalClassFixture::class] = array('className' => ReplacementClassFixture::class);
+		$this->assertInstanceOf(ReplacementClassFixture::class, Utility\GeneralUtility::makeInstance(OriginalClassFixture::class));
 	}
 
 	/**
 	 * @test
 	 */
 	public function makeInstanceResolvesConfiguredImplementationsRecursively() {
-		$classNameOriginal = get_class($this->getMock($this->getUniqueId('foo')));
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][$classNameOriginal] = array('className' => $classNameOriginal . 'Other');
-		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][$classNameOriginal . 'Other'] = array('className' => $classNameOriginal . 'OtherOther');
-		eval('class ' . $classNameOriginal . 'Other extends ' . $classNameOriginal . ' {}');
-		eval('class ' . $classNameOriginal . 'OtherOther extends ' . $classNameOriginal . 'Other {}');
-		$this->assertInstanceOf($classNameOriginal . 'OtherOther', Utility\GeneralUtility::makeInstance($classNameOriginal));
+		GeneralUtilityFixture::resetFinalClassNameCache();
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][OriginalClassFixture::class] = array('className' => ReplacementClassFixture::class);
+		$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][ReplacementClassFixture::class] = array('className' => OtherReplacementClassFixture::class);
+		$this->assertInstanceOf(OtherReplacementClassFixture::class, Utility\GeneralUtility::makeInstance(OriginalClassFixture::class));
 	}
 
 	/**
@@ -4128,26 +4144,14 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		if (TYPO3_OS == 'WIN') {
 			$this->markTestSkipped('deprecationLogFixesPermissionsOnLogFile() test not available on Windows.');
 		}
-		// Create extending class and let getDeprecationLogFileName return something within typo3temp/
-		$className = $this->getUniqueId('GeneralUtility');
-		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Utility\GeneralUtility $subject */
-		$subject = __NAMESPACE__ . '\\' . $className;
-		eval(
-			'namespace ' . __NAMESPACE__ . ';' .
-			'class ' . $className . ' extends \\TYPO3\\CMS\\Core\\Utility\\GeneralUtility {' .
-			'  static public function getDeprecationLogFileName() {' .
-			'    return PATH_site . \'typo3temp/test_deprecation/test.log\';' .
-			'  }' .
-			'}'
-		);
-		$filePath = PATH_site . 'typo3temp/test_deprecation/';
-		@mkdir($filePath);
+		$filePath = PATH_site . GeneralUtilityFixture::DEPRECATION_LOG_PATH;
+		@mkdir(dirname($filePath));
 		$this->testFilesToDelete[] = $filePath;
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['enableDeprecationLog'] = TRUE;
 		$GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'] = '0777';
-		$subject::deprecationLog('foo');
+		GeneralUtilityFixture::deprecationLog('foo');
 		clearstatcache();
-		$resultFilePermissions = substr(decoct(fileperms($filePath . 'test.log')), 2);
+		$resultFilePermissions = substr(decoct(fileperms($filePath)), 2);
 		$this->assertEquals('0777', $resultFilePermissions);
 	}
 
@@ -4202,9 +4206,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function callUserFunctionCanCallFunction() {
-		$functionName = create_function('', 'return "Worked fine";');
 		$inputData = array('foo' => 'bar');
-		$result = Utility\GeneralUtility::callUserFunction($functionName, $inputData, $this, '');
+		$result = Utility\GeneralUtility::callUserFunction(function() { return "Worked fine"; }, $inputData, $this, '');
 		$this->assertEquals('Worked fine', $result);
 	}
 
@@ -4213,7 +4216,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function callUserFunctionCanCallMethod() {
 		$inputData = array('foo' => 'bar');
-		$result = Utility\GeneralUtility::callUserFunction(\TYPO3\CMS\Core\Tests\Unit\Utility\GeneralUtilityTest::class . '->user_calledUserFunction', $inputData, $this);
+		$result = Utility\GeneralUtility::callUserFunction(GeneralUtilityTest::class . '->user_calledUserFunction', $inputData, $this);
 		$this->assertEquals('Worked fine', $result);
 	}
 

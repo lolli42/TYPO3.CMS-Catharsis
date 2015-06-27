@@ -45,6 +45,7 @@ use TYPO3\CMS\Frontend\Imaging\GifBuilder;
 use TYPO3\CMS\Frontend\ContentObject\Exception\ExceptionHandlerInterface;
 use TYPO3\CMS\Frontend\Page\CacheHashCalculator;
 use TYPO3\CMS\Frontend\Page\PageRepository;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * This class contains all main TypoScript features.
@@ -1729,7 +1730,13 @@ class ContentObjectRenderer {
 					$JSwindowExpand = isset($conf['JSwindow.']['expand.']) ? $this->stdWrap($conf['JSwindow.']['expand'], $conf['JSwindow.']['expand.']) : $conf['JSwindow.']['expand'];
 					$offset = GeneralUtility::intExplode(',', $JSwindowExpand . ',');
 					$newWindow = isset($conf['JSwindow.']['newWindow.']) ? $this->stdWrap($conf['JSwindow.']['newWindow'], $conf['JSwindow.']['newWindow.']) : $conf['JSwindow.']['newWindow'];
-					$a1 = '<a href="' . htmlspecialchars($url) . '" onclick="' . htmlspecialchars(('openPic(\'' . $GLOBALS['TSFE']->baseUrlWrap($url) . '\',\'' . ($newWindow ? md5($url) : 'thePicture') . '\',\'width=' . ($processedFile->getProperty('width') + $offset[0]) . ',height=' . ($processedFile->getProperty('height') + $offset[1]) . ',status=0,menubar=0\'); return false;')) . '"' . $target . $GLOBALS['TSFE']->ATagParams . '>';
+					$onClick = 'openPic('
+						. GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($url)) . ','
+						. '\'' . ($newWindow ? md5($url) : 'thePicture') . '\','
+						. GeneralUtility::quoteJSvalue('width=' . ($processedFile->getProperty('width') + $offset[0])
+							. ',height=' . ($processedFile->getProperty('height') + $offset[1]) . ',status=0,menubar=0')
+						. '); return false;';
+					$a1 = '<a href="' . htmlspecialchars($url) . '" onclick="' . htmlspecialchars($onClick) . '"' . $target . $GLOBALS['TSFE']->ATagParams . '>';
 					$a2 = '</a>';
 					$GLOBALS['TSFE']->setJS('openPic');
 				} else {
@@ -4478,7 +4485,7 @@ class ContentObjectRenderer {
 			$fI = GeneralUtility::split_fileref($theFile);
 			if ($conf['icon']) {
 				$conf['icon.']['path'] = isset($conf['icon.']['path.']) ? $this->stdWrap($conf['icon.']['path'], $conf['icon.']['path.']) : $conf['icon.']['path'];
-				$iconP = !empty($conf['icon.']['path']) ? $conf['icon.']['path'] : TYPO3_mainDir . '/gfx/fileicons/';
+				$iconP = !empty($conf['icon.']['path']) ? $conf['icon.']['path'] : ExtensionManagementUtility::siteRelPath('frontend') . 'Resources/Public/Icons/FileIcons/';
 				$conf['icon.']['ext'] = isset($conf['icon.']['ext.']) ? $this->stdWrap($conf['icon.']['ext'], $conf['icon.']['ext.']) : $conf['icon.']['ext'];
 				$iconExt = !empty($conf['icon.']['ext']) ? '.' . $conf['icon.']['ext'] : '.gif';
 				$icon = @is_file(($iconP . $fI['fileext'] . $iconExt)) ? $iconP . $fI['fileext'] . $iconExt : $iconP . 'default' . $iconExt;
@@ -4489,7 +4496,7 @@ class ContentObjectRenderer {
 					if ($conf['iconCObject']) {
 						$icon = $this->cObjGetSingle($conf['iconCObject'], $conf['iconCObject.'], 'iconCObject');
 					} else {
-						$notFoundThumb = TYPO3_mainDir . 'gfx/fileicons/notfound_thumb.gif';
+						$notFoundThumb = TYPO3_mainDir . 'gfx/notfound_thumb.gif';
 						$sizeParts = array(64, 64);
 						if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['thumbnails']) {
 							// using the File Abstraction Layer to generate a preview image
@@ -5471,7 +5478,8 @@ class ContentObjectRenderer {
 					}
 
 					if (MathUtility::canBeInterpretedAsInteger($file)) {
-						if (!empty($fileArray['treatIdAsReference'])) {
+						$treatIdAsReference = isset($fileArray['treatIdAsReference.']) ? $this->stdWrap($fileArray['treatIdAsReference'], $fileArray['treatIdAsReference.']) : $fileArray['treatIdAsReference'];
+						if (!empty($treatIdAsReference)) {
 							$fileReference = $this->getResourceFactory()->getFileReferenceObject($file);
 							$fileObject = $fileReference->getOriginalFile();
 							if (!isset($fileArray['crop'])) {
@@ -6760,7 +6768,7 @@ class ContentObjectRenderer {
 				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii') {
 					$mailToUrl = $GLOBALS['TSFE']->encryptEmail($mailToUrl);
 				} else {
-					$mailToUrl = 'javascript:linkTo_UnCryptMailto(\'' . $GLOBALS['TSFE']->encryptEmail($mailToUrl) . '\');';
+					$mailToUrl = 'javascript:linkTo_UnCryptMailto(' . GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->encryptEmail($mailToUrl)) . ');';
 				}
 				if ($GLOBALS['TSFE']->config['config']['spamProtectEmailAddresses_atSubst']) {
 					$atLabel = trim($GLOBALS['TSFE']->config['config']['spamProtectEmailAddresses_atSubst']);

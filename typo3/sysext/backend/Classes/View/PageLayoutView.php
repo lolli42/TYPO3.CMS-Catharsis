@@ -909,17 +909,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		return $out;
 	}
 
-	/**
-	 * Get backend layout configuration
-	 *
-	 * @return array
-	 * @deprecated since TYPO3 CMS 6.2, will be removed two versions later
-	 */
-	public function getBackendLayoutConfiguration() {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->getBackendLayoutView()->getSelectedBackendLayout($this->id);
-	}
-
 	/**********************************
 	 *
 	 * Generic listing of items
@@ -1486,17 +1475,18 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					break;
 				case 'uploads':
 					if ($row['media']) {
-						$out .= $this->thumbCode($row, 'tt_content', 'media') . '<br />';
+						$out .= $this->linkEditContent($this->getThumbCodeUnlinked($row, 'tt_content', 'media'), $row) . '<br />';
 					}
 					break;
 				case 'menu':
 					$contentType = $this->CType_labels[$row['CType']];
-					$out .= '<strong>' . htmlspecialchars($contentType) . '</strong><br />';
+					$out .= $this->linkEditContent('<strong>' . htmlspecialchars($contentType) . '</strong>', $row) . '<br />';
 					// Add Menu Type
 					$menuTypeLabel = $this->getLanguageService()->sL(
 						BackendUtility::getLabelFromItemListMerged($row['pid'], 'tt_content', 'menu_type', $row['menu_type'])
 					);
-					$out .= $menuTypeLabel !== '' ? $menuTypeLabel : 'invalid menu type';
+					$menuTypeLabel = $menuTypeLabel ?: 'invalid menu type';
+					$out .= $this->linkEditContent($menuTypeLabel, $row);
 					if ($row['menu_type'] !== '2' && ($row['pages'] || $row['selected_categories'])) {
 						// Show pages if menu type is not "Sitemap"
 						$out .= ':' . $this->linkEditContent($this->generateListForCTypeMenu($row), $row) . '<br />';
@@ -1540,7 +1530,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					} elseif (!empty($row['list_type'])) {
 						$label = BackendUtility::getLabelFromItemListMerged($row['pid'], 'tt_content', 'list_type', $row['list_type']);
 						if (!empty($label)) {
-							$out .=  '<strong>' . $this->getLanguageService()->sL($label, TRUE) . '</strong><br />';
+							$out .=  $this->linkEditContent('<strong>' . $this->getLanguageService()->sL($label, TRUE) . '</strong>', $row) . '<br />';
 						} else {
 							$message = sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noMatchingValue'), $row['list_type']);
 							$out .= GeneralUtility::makeInstance(
@@ -1565,12 +1555,12 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					$contentType = $this->CType_labels[$row['CType']];
 
 					if (isset($contentType)) {
-						$out .= '<strong>' . htmlspecialchars($contentType) . '</strong><br />';
+						$out .= $this->linkEditContent('<strong>' . htmlspecialchars($contentType) . '</strong>', $row) . '<br />';
 						if ($row['bodytext']) {
 							$out .= $this->linkEditContent($this->renderText($row['bodytext']), $row) . '<br />';
 						}
 						if ($row['image']) {
-							$out .= $this->thumbCode($row, 'tt_content', 'image') . '<br />';
+							$out .= $this->linkEditContent($this->getThumbCodeUnlinked($row, 'tt_content', 'image'), $row) . '<br />';
 						}
 					} else {
 						$message = sprintf(
@@ -1675,7 +1665,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			$params .= '&cmd[tt_content][' . $uidVal . '][localize]=' . $lP;
 		}
 		// Copy for language:
-		$onClick = 'window.location.href=' . $this->getPageLayoutController()->doc->issueCommand($params, -1) . '; return false;';
+		$onClick = 'window.location.href=' . GeneralUtility::quoteJSvalue($this->getPageLayoutController()->doc->issueCommand($params)) . '; return false;';
 		$theNewButton = '<div class="t3-page-lang-copyce">' .
 			$this->getPageLayoutController()->doc->t3Button(
 				$onClick,
@@ -1994,29 +1984,6 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	}
 
 	/**
-	 * Will perform "word-wrapping" on the input string. What it does is to split by space or line break,
-	 * then find any word longer than $max and if found, a hyphen is inserted.
-	 * Works well on normal texts, little less well when HTML is involved (since much HTML will have
-	 * long strings that will be broken).
-	 *
-	 * @param string $content Content to word-wrap.
-	 * @param int $max Max number of chars in a word before it will be wrapped.
-	 * @param string $char Character to insert when wrapping.
-	 * @return string Processed output.
-	 * @deprecated since 6.2 - will be removed two versions later; use CSS instead (word-break: break-all;)
-	 */
-	public function wordWrapper($content, $max = 50, $char = ' -') {
-		GeneralUtility::logDeprecatedFunction();
-		$array = preg_split('/[ ' . LF . ']/', $content);
-		foreach ($array as $val) {
-			if (strlen($val) > $max) {
-				$content = str_replace($val, substr(chunk_split($val, $max, $char), 0, -1), $content);
-			}
-		}
-		return $content;
-	}
-
-	/**
 	 * Returns icon for "no-edit" of a record.
 	 * Basically, the point is to signal that this record could have had an edit link if
 	 * the circumstances were right. A placeholder for the regular edit icon...
@@ -2184,6 +2151,18 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 			</table>';
 		// Return the content:
 		return $out;
+	}
+
+	/**
+	 * Create thumbnail code for record/field but not linked
+	 *
+	 * @param mixed[] $row Record array
+	 * @param string $table Table (record is from)
+	 * @param string $field Field name for which thumbnail are to be rendered.
+	 * @return string HTML for thumbnails, if any.
+	 */
+	public function getThumbCodeUnlinked($row, $table, $field) {
+		return BackendUtility::thumbCode($row, $table, $field, $this->backPath, '', NULL, 0, '', '', FALSE);
 	}
 
 	/**

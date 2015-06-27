@@ -33,8 +33,6 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
  * Finally this file includes the language class for TYPO3's backend.
  *
  * After this file $LANG and $TBE_TEMPLATE are global variables / instances of their respective classes.
- * This file is typically included right after the init.php file,
- * if language and layout is needed.
  *
  * Please refer to Inside TYPO3 for a discussion of how to use this API.
  *
@@ -678,25 +676,6 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * This function is dedicated to textareas, which has the wrapping on/off option to observe.
-	 * EXAMPLE:
-	 * <textarea rows="10" wrap="off" '.$GLOBALS["TBE_TEMPLATE"]->formWidthText(48, "", "off").'>
-	 * or
-	 * <textarea rows="10" wrap="virtual" '.$GLOBALS["TBE_TEMPLATE"]->formWidthText(48, "", "virtual").'>
-	 *
-	 * @param int $size A relative number which multiplied with approx. 10 will lead to the width in pixels
-	 * @param string $styleOverride A string which will be returned as attribute-value for style="" instead of the calculated width (if CSS is enabled)
-	 * @param string $wrap Pass on the wrap-attribute value you use in your <textarea>! This will be used to make sure that some browsers will detect wrapping alright.
-	 * @return string Tag attributes for an <input> tag (regarding width)
-	 * @see formWidth()
-	 * @deprecated since TYPO3 CMS 6.2, remove two versions later, as this is function is not needed anymore, use formWidth()
-	 */
-	public function formWidthText($size = 48, $styleOverride = '', $wrap = '') {
-		GeneralUtility::logDeprecatedFunction();
-		return $this->formWidth($size, TRUE, $styleOverride);
-	}
-
-	/**
 	 * Returns JavaScript variables setting the returnUrl and thisScript location for use by JavaScript on the page.
 	 * Used in fx. db_list.php (Web>List)
 	 *
@@ -1239,7 +1218,7 @@ function jumpToUrl(URL) {
 	 * @return string <meta> tag with name "generator
 	 */
 	public function generator() {
-		$str = 'TYPO3 ' . TYPO3_branch . ', ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
+		$str = 'TYPO3 CMS, ' . TYPO3_URL_GENERAL . ', &#169; Kasper Sk&#229;rh&#248;j ' . TYPO3_copyright_year . ', extensions are copyright of their respective owners.';
 		return '<meta name="generator" content="' . $str . '" />';
 	}
 
@@ -1767,11 +1746,7 @@ function jumpToUrl(URL) {
 		$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 		/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
 		$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-		$flashMessages = $defaultFlashMessageQueue->renderFlashMessages();
-		if (!empty($flashMessages)) {
-			$flashMessages = '<div id="typo3-messages">' . $flashMessages . '</div>';
-		}
-		return $flashMessages;
+		return $defaultFlashMessageQueue->renderFlashMessages();
 	}
 
 	/**

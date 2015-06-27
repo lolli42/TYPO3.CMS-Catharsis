@@ -1,6 +1,15 @@
 <?php
 defined('TYPO3_MODE') or die();
 
+// unserializing the configuration so we can use it here:
+$_EXTCONF = unserialize($_EXTCONF);
+if (!$_EXTCONF || $_EXTCONF['setPageTSconfig']) {
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
+		# Removes obsolete type values and fields from "Content Element" table "tt_content"
+		TCEFORM.tt_content.image_frames.disabled = 1
+	');
+}
+
 // TCA migration if TCA registration still happened in ext_tables.php
 if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'])) {
 	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'] = array();
@@ -42,7 +51,7 @@ if (TYPO3_MODE === 'FE') {
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
 mod.wizards.newContentElement.wizardItems.forms {
 	elements.mailform {
-		icon = gfx/c_wiz/mailform.gif
+		icon = EXT:frontend/Resources/Public/Icons/ContentElementWizard/mailform.gif
 		title = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_mail_title
 		description = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_mail_description
 		tt_content_defValues {
@@ -82,7 +91,7 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cms/layout/class.tx_cms_layout.php'][
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('
 mod.wizards.newContentElement.wizardItems.forms {
 	elements.search {
-		icon = gfx/c_wiz/searchform.gif
+		icon = EXT:frontend/Resources/Public/Icons/ContentElementWizard/searchform.gif
 		title = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_search_title
 		description = LLL:EXT:cms/layout/locallang_db_new_content_el.xlf:forms_search_description
 		tt_content_defValues.CType = search

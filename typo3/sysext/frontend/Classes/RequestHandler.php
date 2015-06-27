@@ -180,7 +180,6 @@ class RequestHandler implements RequestHandlerInterface {
 
 		// Check JumpUrl
 		$this->controller->setExternalJumpUrl();
-		$this->controller->checkJumpUrlReferer();
 
 		$this->controller->handleDataSubmission();
 
@@ -200,11 +199,6 @@ class RequestHandler implements RequestHandlerInterface {
 				PageGenerator::pagegenInit();
 				// Global content object
 				$this->controller->newCObj();
-				// LIBRARY INCLUSION, TypoScript
-				$temp_incFiles = PageGenerator::getIncFiles();
-				foreach ($temp_incFiles as $temp_file) {
-					include_once './' . $temp_file;
-				}
 				// Content generation
 				if (!$this->controller->isINTincScript()) {
 					PageGenerator::renderContent();
@@ -216,11 +210,6 @@ class RequestHandler implements RequestHandlerInterface {
 			PageGenerator::pagegenInit();
 			// Global content object
 			$this->controller->newCObj();
-			// LIBRARY INCLUSION, TypoScript
-			$temp_incFiles = PageGenerator::getIncFiles();
-			foreach ($temp_incFiles as $temp_file) {
-				include_once './' . $temp_file;
-			}
 		}
 		$this->controller->releaseLocks();
 		$this->timeTracker->pull();

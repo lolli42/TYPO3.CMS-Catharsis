@@ -18,14 +18,12 @@ use TYPO3\CMS\Backend\Exception;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\FormProtection\BackendFormProtection;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
-use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Script Class for rendering the login form
@@ -239,13 +237,16 @@ class LoginController {
 	 * @throws \UnexpectedValueException
 	 */
 	protected function checkRedirect() {
-		if (empty($this->getBackendUserAuthentication()->user['uid']) && $this->isLoginInProgress()) {
-			// Wrong password, wait for 5 seconds
-			sleep(5);
-			return;
-		}
-		if (!$this->isLoginInProgress() && !$this->loginRefresh) {
-			return;
+		if (empty($this->getBackendUserAuthentication()->user['uid'])) {
+			// a) if either the login is just done (isLoginInProgress) or
+			if ($this->isLoginInProgress()) {
+				// Wrong password, wait for 5 seconds
+				sleep(5);
+				return;
+			// b) a loginRefresh is done
+			} elseif (!$this->loginRefresh) {
+				return;
+			}
 		}
 		/*
 		 * If no cookie has been set previously, we tell people that this is a problem.
@@ -479,7 +480,9 @@ class LoginController {
 	}
 
 	/**
-	 * @return LanguageService
+	 * Returns LanguageService
+	 *
+	 * @return \TYPO3\CMS\Lang\LanguageService
 	 */
 	protected function getLanguageService() {
 		return $GLOBALS['LANG'];
@@ -493,16 +496,21 @@ class LoginController {
 	}
 
 	/**
-	 * @return DatabaseConnection
+	 * Returns the database connection
+	 *
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
 	}
 
 	/**
+	 * Returns an instance of DocumentTemplate
+	 *
 	 * @return \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 */
 	protected function getDocumentTemplate() {
 		return $GLOBALS['TBE_TEMPLATE'];
 	}
+
 }

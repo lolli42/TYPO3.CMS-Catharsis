@@ -70,7 +70,7 @@
 				<source>Sorry, you didn't have proper permissions to perform this change.</source>
 			</trans-unit>
 			<trans-unit id="labels.fieldsMissing">
-				<source>The fields marked with a yellow exclamation mark are not yet correctly filled in. Please complete them properly.</source>
+				<source>The fields marked with an exclamation mark are not yet correctly filled in. Please complete them properly.</source>
 			</trans-unit>
 			<trans-unit id="labels.fieldsChanged" xml:space="preserve">
 				<source>There are unsaved changes in the form!
@@ -85,11 +85,13 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="labels.noRTEfound">
 				<source>Notice: This field can only be edited with a Rich Text Editor. No editor is currently available or enabled.</source>
 			</trans-unit>
-			<trans-unit id="labels.showPalettes">
+			<trans-unit id="labels.showPalettes" deprecated="Unused since CMS 7">
 				<source>Show secondary options (palettes)</source>
+				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
 			</trans-unit>
-			<trans-unit id="labels.showDescriptions">
+			<trans-unit id="labels.showDescriptions" deprecated="Unused since CMS 7">
 				<source>Show field descriptions</source>
+				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
 			</trans-unit>
 			<trans-unit id="labels.disableRTE">
 				<source>Disable Rich Text Editor (RTE)</source>
@@ -283,8 +285,9 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="labels.allTables">
 				<source>[All tables]</source>
 			</trans-unit>
-			<trans-unit id="labels.moreOptions">
+			<trans-unit id="labels.moreOptions" deprecated="Unused since CMS 7">
 				<source>More options...</source>
+				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
 			</trans-unit>
 			<trans-unit id="labels.noMatchingValue">
 				<source>INVALID VALUE ("%s")</source>

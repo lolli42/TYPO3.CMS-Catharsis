@@ -63,7 +63,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement {
 
 		// Wizards:
 		if (!$disabled) {
-			$altItem = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
+			$altItem = '<input type="hidden" class="t3js-select-hidden-field" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
 			$html = $this->renderWizards(array($html, $altItem), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
 		}
 		$this->resultArray['html'] = $html;
@@ -97,21 +97,6 @@ class SelectMultipleSideBySideElement extends AbstractFormElement {
 		$maxitems = MathUtility::forceIntegerInRange($config['maxitems'], 0);
 		if (!$maxitems) {
 			$maxitems = 100000;
-		}
-		$minitems = MathUtility::forceIntegerInRange($config['minitems'], 0);
-		// Register the required number of elements:
-		$this->resultArray['requiredElements'][$parameterArray['itemFormElName']] = array(
-			$minitems,
-			$maxitems,
-			'imgName' => $table . '_' . $row['uid'] . '_' . $field
-		);
-		$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
-		if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $parameterArray['itemFormElName'], $match)) {
-			array_shift($match);
-			$this->resultArray['requiredNested'][$parameterArray['itemFormElName']] = array(
-				'parts' => $match,
-				'level' => $tabAndInlineStack,
-			);
 		}
 		// Get "removeItems":
 		$removeItems = GeneralUtility::trimExplode(',', $parameterArray['fieldTSConfig']['removeItems'], TRUE);
@@ -156,10 +141,18 @@ class SelectMultipleSideBySideElement extends AbstractFormElement {
 			}
 			$itemArray[$tk] = implode('|', $tvP);
 		}
+
+		// size must be at least two, as there are always maxitems > 1 (see parent function)
+		if (isset($config['size'])) {
+			$size = (int)$config['size'];
+		} else {
+			$size = 2;
+		}
+		$size = $config['autoSizeMax'] ? MathUtility::forceIntegerInRange(count($itemArray) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax']) : $size;
+
 		$itemsToSelect = '';
 		$filterTextfield = '';
 		$filterSelectbox = '';
-		$size = 0;
 		if (!$disabled) {
 			// Create option tags:
 			$opt = array();
@@ -176,10 +169,6 @@ class SelectMultipleSideBySideElement extends AbstractFormElement {
 			$selector_itemListStyle = isset($config['itemListStyle'])
 				? ' style="' . htmlspecialchars($config['itemListStyle']) . '"'
 				: '';
-			$size = (int)$config['size'];
-			$size = $config['autoSizeMax']
-				? MathUtility::forceIntegerInRange(count($itemArray) + 1, MathUtility::forceIntegerInRange($size, 1), $config['autoSizeMax'])
-				: $size;
 			$sOnChange = implode('', $parameterArray['fieldChangeFunc']);
 
 			$multiSelectId = str_replace('.', '', uniqid('tceforms-multiselect-', TRUE));
@@ -188,7 +177,7 @@ class SelectMultipleSideBySideElement extends AbstractFormElement {
 				. htmlspecialchars($config['exclusiveKeys']) . '" id="' . $multiSelectId . '" name="' . htmlspecialchars($parameterArray['itemFormElName']) . '_sel" '
 				. ' class="form-control t3js-formengine-select-itemstoselect" '
 				. ($size ? ' size="' . $size . '"' : '') . ' onchange="' . htmlspecialchars($sOnChange) . '"'
-				. $parameterArray['onFocus'] . $selector_itemListStyle . '>
+				. $parameterArray['onFocus'] . $this->getValidationDataAsDataAttribute($config) . $selector_itemListStyle . '>
 					' . implode('
 					', $opt) . '
 				</select>';

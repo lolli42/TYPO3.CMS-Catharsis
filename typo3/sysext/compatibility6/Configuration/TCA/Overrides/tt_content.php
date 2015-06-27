@@ -71,6 +71,51 @@ $extraContentColumns = array(
 			'softref' => 'typolink[linkList]'
 		)
 	),
+	'image_frames' => array(
+		'exclude' => TRUE,
+		'label' => 'LLL:EXT:cms/locallang_ttc.xlf:image_frames',
+		'config' => array(
+			'type' => 'select',
+			'items' => array(
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.0',
+					0
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.1',
+					1
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.2',
+					2
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.3',
+					3
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.4',
+					4
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.5',
+					5
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.6',
+					6
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.7',
+					7
+				),
+				array(
+					'LLL:EXT:cms/locallang_ttc.xlf:image_frames.I.8',
+					8
+				)
+			)
+		)
+	),
 	'longdescURL' => array(
 		'exclude' => TRUE,
 		'label' => 'LLL:EXT:cms/locallang_ttc.xlf:image_longdescURL',
@@ -165,7 +210,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				image_link,
 				image_zoom
 			',
-			'canNotCollapse' => 1
 		),
 		'8' => array(
 			'showitem' => '
@@ -186,7 +230,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				image_effects,
 				image_frames
 			',
-			'canNotCollapse' => 1
 		),
 		'12' => array(
 			'showitem' => '
@@ -198,7 +241,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				imagewidth,
 				imageheight
 			',
-			'canNotCollapse' => 1
 		),
 		'14' => array(
 			'showitem' => '
@@ -214,7 +256,6 @@ $GLOBALS['TCA']['tt_content']['palettes'] = array_replace(
 				--linebreak--,
 				longdescURL;LLL:EXT:cms/locallang_ttc.xlf:longdescURL_formlabel
 			',
-			'canNotCollapse' => 1
 		)
 	)
 );
@@ -230,7 +271,6 @@ if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('css_styled_co
 					sectionIndex;LLL:EXT:cms/locallang_ttc.xlf:sectionIndex_formlabel,
 					linkToTop;LLL:EXT:cms/locallang_ttc.xlf:linkToTop_formlabel
 				',
-				'canNotCollapse' => 1
 			),
 			'frames' => array(
 				'showitem' => '
@@ -239,11 +279,12 @@ if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('css_styled_co
 					spaceAfter;LLL:EXT:cms/locallang_ttc.xlf:spaceAfter_formlabel,
 					section_frame;LLL:EXT:cms/locallang_ttc.xlf:section_frame_formlabel
 				',
-				'canNotCollapse' => 1
 			)
 		)
 	);
 }
+
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addFieldsToPalette('tt_content', 'image_settings', 'image_frames;LLL:EXT:cms/locallang_ttc.xlf:image_frames_formlabel');
 
 /**
  * CType "search"
@@ -265,7 +306,6 @@ $GLOBALS['TCA']['tt_content']['types']['search'] = array(
 
 $GLOBALS['TCA']['tt_content']['palettes']['searchform'] = array(
 	'showitem' => 'pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.searchform',
-	'canNotCollapse' => 1
 );
 
 // check if there is already a forms tab and add the item after that, otherwise
@@ -362,5 +402,4 @@ $GLOBALS['TCA']['tt_content']['types']['mailform']['columnsOverrides']['bodytext
 
 $GLOBALS['TCA']['tt_content']['palettes']['mailform'] = array(
 	'showitem' => 'pages;LLL:EXT:cms/locallang_ttc.xlf:pages.ALT.mailform, --linebreak--, subheader;LLL:EXT:cms/locallang_ttc.xlf:subheader.ALT.mailform_formlabel',
-	'canNotCollapse' => 1
 );

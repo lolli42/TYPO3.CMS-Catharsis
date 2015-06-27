@@ -160,25 +160,18 @@ class PageRepository {
 	 */
 	public function init($show_hidden) {
 		$this->where_groupAccess = '';
-		$this->where_hid_del = ' AND pages.deleted=0 ';
-		if (!$show_hidden) {
-			$this->where_hid_del .= 'AND pages.hidden=0 ';
-		}
-		$this->where_hid_del .= 'AND pages.starttime<=' . $GLOBALS['SIM_ACCESS_TIME'] . ' AND (pages.endtime=0 OR pages.endtime>' . $GLOBALS['SIM_ACCESS_TIME'] . ') ';
-		// Filter out new/deleted place-holder pages in case we are NOT in a
-		// versioning preview (that means we are online!)
-		if (!$this->versioningPreview) {
-			$this->where_hid_del .= ' AND NOT pages.t3ver_state>' . new VersionState(VersionState::DEFAULT_STATE);
-		} else {
+
+		if ($this->versioningPreview) {
 			// For version previewing, make sure that enable-fields are not
 			// de-selecting hidden pages - we need versionOL() to unset them only
 			// if the overlay record instructs us to.
-			// Copy where_hid_del to other variable (used in relation to versionOL())
-			$this->versioningPreview_where_hid_del = $this->where_hid_del;
-			// Clear where_hid_del
-			$this->where_hid_del = ' AND pages.deleted=0 ';
-			// Restrict to live and current workspaces
-			$this->where_hid_del .= ' AND (pages.t3ver_wsid=0 OR pages.t3ver_wsid=' . (int)$this->versioningWorkspaceId . ')';
+			// Clear where_hid_del and restrict to live and current workspaces
+			$this->where_hid_del = ' AND pages.deleted=0 AND (pages.t3ver_wsid=0 OR pages.t3ver_wsid=' . (int)$this->versioningWorkspaceId . ')';
+		} else {
+			// add starttime / endtime, and check for hidden/deleted
+			// Filter out new/deleted place-holder pages in case we are NOT in a
+			// versioning preview (that means we are online!)
+			$this->where_hid_del = $this->enableFields('pages', $show_hidden, array('fe_group' => TRUE), TRUE);
 		}
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][PageRepository::class]['init'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS'][PageRepository::class]['init'] as $classRef) {
@@ -717,12 +710,16 @@ class PageRepository {
 	 * disabled.
 	 *
 	 * @param array $pagerow The page row to return URL type for
-	 * @param bool $disable A flag to simply disable any output from here.
+	 * @param bool $disable A flag to simply disable any output from here. - deprecated - don't use anymore.
 	 * @return string The URL type from $this->urltypes array. False if not found or disabled.
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::setExternalJumpUrl()
 	 */
-	public function getExtURL($pagerow, $disable = 0) {
-		if ((int)$pagerow['doktype'] === self::DOKTYPE_LINK && !$disable) {
+	public function getExtURL($pagerow, $disable = FALSE) {
+		if ($disable !== FALSE) {
+			GeneralUtility::deprecationLog('The disable option of PageRepository::getExtUrl() is deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8.');
+			return FALSE;
+		}
+		if ((int)$pagerow['doktype'] === self::DOKTYPE_LINK) {
 			$redirectTo = $this->urltypes[$pagerow['urltype']] . $pagerow['url'];
 			// If relative path, prefix Site URL:
 			$uI = parse_url($redirectTo);
@@ -849,9 +846,7 @@ class PageRepository {
 	 */
 	public function getRawRecord($table, $uid, $fields = '*', $noWSOL = FALSE) {
 		$uid = (int)$uid;
-		// Excluding pages here so we can ask the function BEFORE TCA gets initialized.
-		// Support for this is followed up in deleteClause()...
-		if ((is_array($GLOBALS['TCA'][$table]) || $table === 'pages') && $uid > 0) {
+		if (isset($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]) && $uid > 0) {
 			$res = $this->getDatabaseConnection()->exec_SELECTquery($fields, $table, 'uid = ' . $uid . $this->deleteClause($table));
 			$row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
 			$this->getDatabaseConnection()->sql_free_result($res);
@@ -949,13 +944,7 @@ class PageRepository {
 	 * @see enableFields()
 	 */
 	public function deleteClause($table) {
-		// Hardcode for pages because TCA might not be loaded yet (early frontend
-		// initialization)
-		if ($table === 'pages') {
-			return ' AND pages.deleted=0';
-		} else {
-			return $GLOBALS['TCA'][$table]['ctrl']['delete'] ? ' AND ' . $table . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'] . '=0' : '';
-		}
+		return $GLOBALS['TCA'][$table]['ctrl']['delete'] ? ' AND ' . $table . '.' . $GLOBALS['TCA'][$table]['ctrl']['delete'] . '=0' : '';
 	}
 
 	/**
@@ -997,15 +986,13 @@ class PageRepository {
 					// Filter out placeholder records (new/moved/deleted items)
 					// in case we are NOT in a versioning preview (that means we are online!)
 					$query .= ' AND ' . $table . '.t3ver_state<=' . new VersionState(VersionState::DEFAULT_STATE);
-				} else {
-					if ($table !== 'pages') {
-						// show only records of live and of the current workspace
-						// in case we are in a versioning preview
-						$query .= ' AND (' .
-									$table . '.t3ver_wsid=0 OR ' .
-									$table . '.t3ver_wsid=' . (int)$this->versioningWorkspaceId .
-									')';
-					}
+				} elseif ($table !== 'pages') {
+					// show only records of live and of the current workspace
+					// in case we are in a versioning preview
+					$query .= ' AND (' .
+								$table . '.t3ver_wsid=0 OR ' .
+								$table . '.t3ver_wsid=' . (int)$this->versioningWorkspaceId .
+								')';
 				}
 
 				// Filter out versioned records
@@ -1107,7 +1094,7 @@ class PageRepository {
 	 * @see BackendUtility::fixVersioningPid(), versionOL(), getRootLine()
 	 */
 	public function fixVersioningPid($table, &$rr) {
-		if ($this->versioningPreview && is_array($rr) && (int)$rr['pid'] === -1 && ($table === 'pages' || $GLOBALS['TCA'][$table]['ctrl']['versioningWS'])) {
+		if ($this->versioningPreview && is_array($rr) && (int)$rr['pid'] === -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
 			// Have to hardcode it for "pages" table since TCA is not loaded at this moment!
 			// Check values for t3ver_oid and t3ver_wsid:
 			if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
@@ -1238,10 +1225,8 @@ class PageRepository {
 	 * @see BackendUtility::movePlhOl()
 	 */
 	public function movePlhOL($table, &$row) {
-		if (
-			($table === 'pages'
-				|| (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2
-			) && (int)VersionState::cast($row['t3ver_state'])->equals(VersionState::MOVE_PLACEHOLDER)
+		if ((int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2
+			&& (int)VersionState::cast($row['t3ver_state'])->equals(VersionState::MOVE_PLACEHOLDER)
 		) {
 			// Only for WS ver 2... (moving)
 			// If t3ver_move_id is not found, then find it (but we like best if it is here)
@@ -1277,7 +1262,7 @@ class PageRepository {
 	public function getMovePlaceholder($table, $uid, $fields = '*') {
 		if ($this->versioningPreview) {
 			$workspace = (int)$this->versioningWorkspaceId;
-			if (($table === 'pages' || (int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2) && $workspace !== 0) {
+			if ((int)$GLOBALS['TCA'][$table]['ctrl']['versioningWS'] >= 2 && $workspace !== 0) {
 				// Select workspace version of record:
 				$row = $this->getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid<>-1 AND
 						t3ver_state=' . new VersionState(VersionState::MOVE_PLACEHOLDER) . ' AND
@@ -1306,13 +1291,8 @@ class PageRepository {
 		if ($workspace !== 0 && !empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS'])) {
 			$workspace = (int)$workspace;
 			$uid = (int)$uid;
-			// Have to hardcode it for "pages" table since TCA is not loaded at this moment!
-			// Setting up enableFields for version record:
-			if ($table === 'pages') {
-				$enFields = $this->versioningPreview_where_hid_del;
-			} else {
-				$enFields = $this->enableFields($table, -1, array(), TRUE);
-			}
+			// Setting up enableFields for version record
+			$enFields = $this->enableFields($table, -1, array(), TRUE);
 			// Select workspace version of record, only testing for deleted.
 			$newrow = $this->getDatabaseConnection()->exec_SELECTgetSingleRow($fields, $table, 'pid=-1 AND
 					t3ver_oid=' . $uid . ' AND

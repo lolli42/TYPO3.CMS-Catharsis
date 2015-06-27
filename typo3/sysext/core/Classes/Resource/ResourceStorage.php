@@ -697,10 +697,17 @@ class ResourceStorage implements ResourceStorageInterface {
 	 */
 	protected function assureFolderReadPermission(Folder $folder = NULL) {
 		if (!$this->checkFolderActionPermission('read', $folder)) {
-			throw new Exception\InsufficientFolderAccessPermissionsException(
-				'You are not allowed to access the given folder: "' . $folder->getName() . '"',
-				1375955684
-			);
+			if ($folder === NULL) {
+				throw new Exception\InsufficientFolderAccessPermissionsException(
+					'You are not allowed to read folders',
+					1430657869
+				);
+			} else {
+				throw new Exception\InsufficientFolderAccessPermissionsException(
+					'You are not allowed to access the given folder: "' . $folder->getName() . '"',
+					1375955684
+				);
+			}
 		}
 	}
 
@@ -911,7 +918,7 @@ class ResourceStorage implements ResourceStorageInterface {
 		}
 		// Check if user is allowed to rename
 		if (!$this->checkFileActionPermission('rename', $file)) {
-			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files. File given."' . $file . '"', 1319219351);
+			throw new Exception\InsufficientUserPermissionsException('You are not allowed to rename files. File given: "' . $file->getName() . '"', 1319219351);
 		}
 		// Check if the user is allowed to write to folders
 		// Although it would be good to check, we cannot check here if the folder actually is writable
@@ -1306,6 +1313,18 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * Get file from folder
+	 *
+	 * @param string $fileName
+	 * @param Folder $folder
+	 * @return NULL|File|ProcessedFile
+	 */
+	public function getFileInFolder($fileName, Folder $folder) {
+		$identifier = $this->driver->getFileInFolder($fileName, $folder->getIdentifier());
+		return $this->getFileFactory()->getFileObjectByStorageAndIdentifier($this->getUid(), $identifier);
+	}
+
+	/**
 	 * @param Folder $folder
 	 * @param int $start
 	 * @param int $maxNumberOfItems
@@ -1363,6 +1382,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param bool $useFilters
 	 * @param bool $recursive
 	 * @return int Number of files in folder
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function countFilesInFolder(Folder $folder, $useFilters = TRUE, $recursive = FALSE) {
 		$this->assureFolderReadPermission($folder);
@@ -1552,9 +1572,11 @@ class ResourceStorage implements ResourceStorageInterface {
 
 		$this->emitPreFileDeleteSignal($fileObject);
 
-		$result = $this->driver->deleteFile($fileObject->getIdentifier());
-		if ($result === FALSE) {
-			throw new Exception\FileOperationErrorException('Deleting the file "' . $fileObject->getIdentifier() . '\' failed.', 1329831691);
+		if ($this->driver->fileExists($fileObject->getIdentifier())) {
+			$result = $this->driver->deleteFile($fileObject->getIdentifier());
+			if (!$result) {
+				throw new Exception\FileOperationErrorException('Deleting the file "' . $fileObject->getIdentifier() . '\' failed.', 1329831691);
+			}
 		}
 		// Mark the file object as deleted
 		if ($fileObject instanceof File) {
@@ -1748,9 +1770,14 @@ class ResourceStorage implements ResourceStorageInterface {
 		if ($targetFileName === NULL) {
 			$targetFileName = $uploadedFileData['name'];
 		}
-		// Handling $conflictMode is delegated to addFile()
+
 		$this->assureFileUploadPermissions($localFilePath, $targetFolder, $targetFileName, $uploadedFileData['size']);
-		$resultObject = $this->addFile($localFilePath, $targetFolder, $targetFileName, $conflictMode);
+		if ($this->hasFileInFolder($targetFileName, $targetFolder) && $conflictMode === 'replace') {
+			$file = $this->getFileInFolder($targetFileName, $targetFolder);
+			$resultObject = $this->replaceFile($file, $localFilePath);
+		} else {
+			$resultObject = $this->addFile($localFilePath, $targetFolder, $targetFileName, $conflictMode);
+		}
 		return $resultObject;
 	}
 
@@ -1973,6 +2000,21 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * Returns the Identifier for a folder within a given folder.
+	 *
+	 * @param string $folderName The name of the target folder
+	 * @param Folder $parentFolder
+	 * @param bool $returnInaccessibleFolderObject
+	 * @return Folder|InaccessibleFolder
+	 * @throws \Exception
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
+	 */
+	public function getFolderInFolder($folderName, Folder $parentFolder, $returnInaccessibleFolderObject = FALSE) {
+		$folderIdentifier = $this->driver->getFolderInFolder($folderName, $parentFolder->getIdentifier());
+		return $this->getFolder($folderIdentifier, $returnInaccessibleFolderObject);
+	}
+
+	/**
 	 * @param Folder $folder
 	 * @param int $start
 	 * @param int $maxNumberOfItems
@@ -2010,6 +2052,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param bool $useFilters
 	 * @param bool $recursive
 	 * @return integer Number of subfolders
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function countFoldersInFolder(Folder $folder, $useFilters = TRUE, $recursive = FALSE) {
 		$this->assureFolderReadPermission($folder);
@@ -2085,7 +2128,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $identifier
 	 * @param bool $returnInaccessibleFolderObject
 	 *
-	 * @return Folder
+	 * @return Folder|InaccessibleFolder
 	 * @throws \Exception
 	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */

@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Core\Utility;
  */
 
 use TYPO3\CMS\Core\Core\ApplicationContext;
-use TYPO3\CMS\Core\Core\ClassLoader;
+use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -329,7 +329,7 @@ class GeneralUtility {
 	static public function fixed_lgd_cs($string, $chars, $appendString = '...') {
 		if (is_object($GLOBALS['LANG'])) {
 			return $GLOBALS['LANG']->csConvObj->crop($GLOBALS['LANG']->charSet, $string, $chars, $appendString);
-		} elseif (is_object($GLOBALS['TSFE'])) {
+		} elseif (is_object($GLOBALS['TSFE']) && is_object($GLOBALS['TSFE']->csConvObj)) {
 			$charSet = $GLOBALS['TSFE']->renderCharset != '' ? $GLOBALS['TSFE']->renderCharset : $GLOBALS['TSFE']->defaultCharSet;
 			return $GLOBALS['TSFE']->csConvObj->crop($charSet, $string, $chars, $appendString);
 		} else {
@@ -905,46 +905,48 @@ class GeneralUtility {
 	 * Formats the input integer $sizeInBytes as bytes/kilobytes/megabytes (-/K/M)
 	 *
 	 * @param int $sizeInBytes Number of bytes to format.
-	 * @param string $labels Labels for bytes, kilo, mega and giga separated by vertical bar (|) and possibly encapsulated in "". Eg: " | K| M| G" (which is the default value)
+	 * @param string $labels Binary unit name "iec", decimal unit name "si" or labels for bytes, kilo, mega, giga, and so on separated by vertical bar (|) and possibly encapsulated in "". Eg: " | K| M| G". Defaults to "iec".
+	 * @param int $base The unit base if not using a unit name. Defaults to 1024.
 	 * @return string Formatted representation of the byte number, for output.
 	 */
-	static public function formatSize($sizeInBytes, $labels = '') {
-		// Set labels:
-		if ($labels === '') {
-			$labels = ' | K| M| G';
-		} else {
-			$labels = str_replace('"', '', $labels);
+	static public function formatSize($sizeInBytes, $labels = '', $base = 0) {
+		$defaultFormats = array(
+			'iec' => array('base' => 1024, 'labels' => array(' ', ' Ki', ' Mi', ' Gi', ' Ti', ' Pi', ' Ei', ' Zi', ' Yi')),
+			'si' => array('base' => 1000, 'labels' => array(' ', ' k', ' M', ' G', ' T', ' P', ' E', ' Z', ' Y')),
+		);
+		// Set labels and base:
+		if (empty($labels)) {
+			$labels = 'iec';
 		}
-		$labelArr = explode('|', $labels);
-		// Find size:
-		if ($sizeInBytes > 900) {
-			// @todo find out which locale is used for current BE user to cover the BE case as well
-			$locale = is_object($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
-			$oldLocale = setlocale(LC_NUMERIC, 0);
-			if ($locale) {
-				setlocale(LC_NUMERIC, $locale);
-			}
-			$localeInfo = localeconv();
-			if ($locale) {
-				setlocale(LC_NUMERIC, $oldLocale);
-			}
-			// GB
-			if ($sizeInBytes > 900000000) {
-				$val = $sizeInBytes / (1024 * 1024 * 1024);
-				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[3];
-			} elseif ($sizeInBytes > 900000) {
-				// MB
-				$val = $sizeInBytes / (1024 * 1024);
-				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[2];
-			} else {
-				// KB
-				$val = $sizeInBytes / 1024;
-				return number_format($val, ($val < 20 ? 1 : 0), $localeInfo['decimal_point'], '') . $labelArr[1];
-			}
+		if (isset($defaultFormats[$labels])) {
+			$base = $defaultFormats[$labels]['base'];
+			$labelArr = $defaultFormats[$labels]['labels'];
 		} else {
-			// Bytes
-			return $sizeInBytes . $labelArr[0];
+			$base = (int)$base;
+			if ($base !== 1000 && $base !== 1024) {
+				$base = 1024;
+			}
+			$labelArr = explode('|', str_replace('"', '', $labels));
 		}
+		// @todo find out which locale is used for current BE user to cover the BE case as well
+		$oldLocale = setlocale(LC_NUMERIC, 0);
+		$newLocale = is_object($GLOBALS['TSFE']) ? $GLOBALS['TSFE']->config['config']['locale_all'] : '';
+		if ($newLocale) {
+			setlocale(LC_NUMERIC, $newLocale);
+		}
+		$localeInfo = localeconv();
+		if ($newLocale) {
+			setlocale(LC_NUMERIC, $oldLocale);
+		}
+		$sizeInBytes = max($sizeInBytes, 0);
+		$multiplier = floor(($sizeInBytes ? log($sizeInBytes) : 0) / log($base));
+		$sizeInUnits = $sizeInBytes / pow($base, $multiplier);
+		if ($sizeInUnits > ($base * .9)) {
+			$multiplier++;
+		}
+		$multiplier = min($multiplier, count($labelArr) - 1);
+		$sizeInUnits = $sizeInBytes / pow($base, $multiplier);
+		return number_format($sizeInUnits, (($multiplier > 0) && ($sizeInUnits < 20)) ? 2 : 0, $localeInfo['decimal_point'], '') . $labelArr[$multiplier];
 	}
 
 	/**
@@ -1153,13 +1155,12 @@ class GeneralUtility {
 		if (!isset($bytes[($bytesToReturn - 1)])) {
 			if (TYPO3_OS === 'WIN') {
 				// Openssl seems to be deadly slow on Windows, so try to use mcrypt
-				// Windows PHP versions have a bug when using urandom source (see #24410)
-				$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate, MCRYPT_RAND);
+				$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
 			} else {
 				// Try to use native PHP functions first, precedence has openssl
 				$bytes .= self::generateRandomBytesOpenSsl($bytesToGenerate);
 				if (!isset($bytes[($bytesToReturn - 1)])) {
-					$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate, MCRYPT_DEV_URANDOM);
+					$bytes .= self::generateRandomBytesMcrypt($bytesToGenerate);
 				}
 				// If openssl and mcrypt failed, try /dev/urandom
 				if (!isset($bytes[($bytesToReturn - 1)])) {
@@ -1195,14 +1196,13 @@ class GeneralUtility {
 	 * Generate random bytes using mcrypt if available
 	 *
 	 * @param $bytesToGenerate
-	 * @param $randomSource
 	 * @return string
 	 */
-	static protected function generateRandomBytesMcrypt($bytesToGenerate, $randomSource) {
+	static protected function generateRandomBytesMcrypt($bytesToGenerate) {
 		if (!function_exists('mcrypt_create_iv')) {
 			return '';
 		}
-		return (string)(@mcrypt_create_iv($bytesToGenerate, $randomSource));
+		return (string)(@mcrypt_create_iv($bytesToGenerate, MCRYPT_DEV_URANDOM));
 	}
 
 	/**
@@ -1514,7 +1514,7 @@ class GeneralUtility {
 	 * array('cc' => array('fifth', 'sixth'),
 	 * );
 	 * $keepItems = array('third');
-	 * $getValueFunc = create_function('$value', 'return $value[0];');
+	 * $getValueFunc = function($value) { return $value[0]; }
 	 *
 	 * Returns:
 	 * array(
@@ -2489,7 +2489,7 @@ Connection: close
 			$content = @file_get_contents($url, FALSE, $ctx);
 			if ($content === FALSE && isset($report)) {
 				$report['error'] = -1;
-				$report['message'] = 'Couldn\'t get URL: ' . implode(LF, $http_response_header);
+				$report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
 			}
 		} else {
 			if (isset($report)) {
@@ -2498,7 +2498,7 @@ Connection: close
 			$content = @file_get_contents($url);
 			if ($content === FALSE && isset($report)) {
 				$report['error'] = -1;
-				$report['message'] = 'Couldn\'t get URL: ' . implode(LF, $http_response_header);
+				$report['message'] = 'Couldn\'t get URL: ' . (isset($http_response_header) ? implode(LF, $http_response_header) : $url);
 			}
 		}
 		return $content;
@@ -2810,14 +2810,16 @@ Connection: close
 	 *
 	 * @param string $directory The directory to be renamed and flushed
 	 * @param bool $keepOriginalDirectory Whether to only empty the directory and not remove it
+	 * @param bool $flushOpcodeCache Also flush the opcode cache right after renaming the directory.
 	 * @return bool Whether the action was successful
 	 */
-	static public function flushDirectory($directory, $keepOriginalDirectory = FALSE) {
+	static public function flushDirectory($directory, $keepOriginalDirectory = FALSE, $flushOpcodeCache = FALSE) {
 		$result = FALSE;
 
 		if (is_dir($directory)) {
 			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove', TRUE) . '/';
 			if (rename($directory, $temporaryDirectory)) {
+				$flushOpcodeCache && OpcodeCacheUtility::clearAllActive($directory);
 				if ($keepOriginalDirectory) {
 					self::mkdir($directory);
 				}
@@ -3089,7 +3091,7 @@ Connection: close
 	 *
 	 * @param string $file Relative path to file including all potential query parameters (not htmlspecialchared yet)
 	 * @param bool $forceQueryString If settings would suggest to embed in filename, this parameter allows us to force the versioning to occur in the query string. This is needed for scriptaculous.js which cannot have a different filename in order to load its modules (?load=...)
-	 * @return Relative path with version filename including the timestamp
+	 * @return string Relative path with version filename including the timestamp
 	 */
 	static public function createVersionNumberedFilename($file, $forceQueryString = FALSE) {
 		$lookupFile = explode('?', $file);
@@ -3763,7 +3765,7 @@ Connection: close
 	 * @param string $source Path to source directory, relative to document root or absolute
 	 * @param string $destination Path to destination directory, relative to document root or absolute
 	 */
-	public static function copyDirectory($source, $destination) {
+	static public function copyDirectory($source, $destination) {
 		if (strpos($source, PATH_site) === FALSE) {
 			$source = PATH_site . $source;
 		}
@@ -4190,9 +4192,10 @@ Connection: close
 	 * This function can return an object reference if you like.
 	 * Just prefix the function call with "&": "$objRef = &\TYPO3\CMS\Core\Utility\GeneralUtility::getUserObj('EXT:myext/class.tx_myext_myclass.php:&tx_myext_myclass');".
 	 * This will work ONLY if you prefix the class name with "&" as well. See description of function arguments.
+	 * Please note that the reference functionality is deprecated as of TYPO3 CMS 7, and will be removed with TYPO3 CMS 8, let the class use the SingletonInterface of TYPO3 instead.
 	 *
 	 * @todo Deprecate the whole method in several steps:
-	 *      1. Deprecated singleton pattern,
+	 *      1. Deprecated singleton pattern, (will be removed in TYPO3 CMS 8)
 	 *      2. Deprecate file prefix/ require file,
 	 *      3. Deprecate usage without valid class name.
 	 *      4. The last step should be to deprecate the method itself.
@@ -4218,6 +4221,11 @@ Connection: close
 			}
 			// Check for persistent object token, "&"
 			if ($class[0] === '&') {
+				self::deprecationLog(
+					'The persistent functionality of getUserObj(), prepending the class name with & is deprecated since'
+					. ' TYPO3 CMS 7 and will be removed in TYPO3 CMS 8. To allow this functionality, implement '
+					. ' the \\TYPO3\\CMS\\Core\\SingletonInterface in the class "' . $classRef . '" instead.'
+				);
 				$class = substr($class, 1);
 				$storePersistentObject = TRUE;
 			} else {
@@ -4298,7 +4306,7 @@ Connection: close
 	 * @param array $arguments Arguments passed to self::makeInstance() thus the first one with index 0 holds the requested class name
 	 * @return mixed
 	 */
-	protected static function instantiateClass($className, $arguments) {
+	static protected function instantiateClass($className, $arguments) {
 		switch (count($arguments)) {
 			case 1:
 				$instance = new $className();
@@ -4351,7 +4359,7 @@ Connection: close
 				$className = static::getImplementationForClass($className);
 			}
 		}
-		return ClassLoader::getClassNameForAlias($className);
+		return ClassLoadingInformation::getClassNameForAlias($className);
 	}
 
 	/**

@@ -90,17 +90,6 @@ class TextElement extends AbstractFormElement {
 		}
 
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
-		if (in_array('required', $evalList, TRUE)) {
-			$resultArray['requiredFields'][$table . '_' . $row['uid'] . '_' . $fieldName] = $parameterArray['itemFormElName'];
-			$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
-			if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $parameterArray['itemFormElName'], $match)) {
-				array_shift($match);
-				$resultArray['requiredNested'][$parameterArray['itemFormElName']] = array(
-					'parts' => $match,
-					'level' => $tabAndInlineStack,
-				);
-			}
-		}
 		// "Extra" configuration; Returns configuration for the field based on settings found in the "types" fieldlist. Traditionally, this is where RTE configuration has been found.
 		$specialConfiguration = BackendUtility::getSpecConfParts($parameterArray['fieldConf']['defaultExtras']);
 		// Setting up the altItem form field, which is a hidden field containing the value
@@ -111,18 +100,26 @@ class TextElement extends AbstractFormElement {
 		if ($specialConfiguration['rte_only']) {
 			$html = '<p><em>' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.noRTEfound')) . '</em></p>';
 		} else {
+			$attributes = array();
 			// validation
 			foreach ($evalList as $func) {
 				if ($func === 'required') {
-					$resultArray['requiredFields'][$table . '_' . $row['uid'] . '_' . $fieldName] = $parameterArray['itemFormElName'];
+					$attributes['data-formengine-validation-rules'] = $this->getValidationDataAsJsonString(array('required' => TRUE));
 				} else {
-					// Hint: There is a similar hook for "evaluateFieldValue" in DataHandler
-					$evalObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$func] . ':&' . $func);
-					if (is_object($evalObj) && method_exists($evalObj, 'deevaluateFieldValue')) {
-						$_params = array(
-							'value' => $parameterArray['itemFormElValue']
-						);
-						$parameterArray['itemFormElValue'] = $evalObj->deevaluateFieldValue($_params);
+					// @todo: This is ugly: The code should find out on it's own whether a eval definition is a
+					// @todo: keyword like "date", or a class reference. The global registration could be dropped then
+					// Pair hook to the one in \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue_input_Eval()
+					// There is a similar hook for "evaluateFieldValue" in DataHandler and InputElement
+					if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$func])) {
+						if (class_exists($func)) {
+							$evalObj = GeneralUtility::makeInstance($func);
+							if (method_exists($evalObj, 'deevaluateFieldValue')) {
+								$_params = array(
+									'value' => $parameterArray['itemFormElValue']
+								);
+								$parameterArray['itemFormElValue'] = $evalObj->deevaluateFieldValue($_params);
+							}
+						}
 					}
 				}
 			}
@@ -147,7 +144,6 @@ class TextElement extends AbstractFormElement {
 			}
 
 			// calculate attributes
-			$attributes = array();
 			$attributes['id'] = str_replace('.', '', uniqid('formengine-textarea-', TRUE));
 			$attributes['name'] = $parameterArray['itemFormElName'];
 			if (!empty($styles)) {

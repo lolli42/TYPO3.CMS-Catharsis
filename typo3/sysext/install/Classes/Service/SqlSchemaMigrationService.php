@@ -176,7 +176,7 @@ class SqlSchemaMigrationService {
 		$total = array();
 		$tempKeys = array();
 		$tempKeysPrefix = array();
-		$GLOBALS['TYPO3_DB']->sql_select_db();
+		$GLOBALS['TYPO3_DB']->connectDB();
 		echo $GLOBALS['TYPO3_DB']->sql_error();
 		$tables = $GLOBALS['TYPO3_DB']->admin_get_tables();
 		foreach ($tables as $tableName => $tableStatus) {
@@ -261,6 +261,9 @@ class SqlSchemaMigrationService {
 							if (is_array($info[$theKey])) {
 								foreach ($info[$theKey] as $fieldN => $fieldC) {
 									$fieldN = str_replace('`', '', $fieldN);
+									if ($this->isDbalEnabled() && $fieldN === 'ENGINE') {
+										continue;
+									}
 									if ($fieldN == 'COLLATE') {
 										// @todo collation support is currently disabled (needs more testing)
 										continue;
@@ -272,18 +275,20 @@ class SqlSchemaMigrationService {
 
 										// Lowercase the field type to surround false-positive schema changes to be
 										// reported just because of different caseing of characters
-										// The regex does just trigger for the first word followed by round brackets
+										// The regex does just trigger for the first word followed by parentheses
 										// that contain a length. It does not trigger for e.g. "PRIMARY KEY" because
 										// "PRIMARY KEY" is being returned from the DB in upper case.
 										$fieldC = preg_replace_callback(
-											'/^([a-zA-Z0-9]+\(.*\))(\s)(.*)/',
-											create_function(
-												'$matches',
-												'return strtolower($matches[1]) . $matches[2] . $matches[3];'
-											),
+											'/^([a-zA-Z0-9]+)(\([^)]*\)\s.*)/',
+											function($matches) { return strtolower($matches[1]) . $matches[2]; },
 											$fieldC
 										);
 
+										// Ignore nonstandard MySQL numeric field attributes UNSIGNED and ZEROFILL
+										if ($this->isDbalEnabled() && preg_match('/^(TINYINT|SMALLINT|MEDIUMINT|INT|INTEGER|BIGINT|REAL|DOUBLE|FLOAT|DECIMAL|NUMERIC)\([^\)]+\)\s+(UNSIGNED|ZEROFILL)/i', $fieldC)) {
+											$fieldC = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $fieldC);
+											$FDcomp[$table][$theKey][$fieldN] = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $FDcomp[$table][$theKey][$fieldN]);
+										}
 										if ($ignoreNotNullWhenComparing) {
 											$fieldC = str_replace(' NOT NULL', '', $fieldC);
 											$FDcomp[$table][$theKey][$fieldN] = str_replace(' NOT NULL', '', $FDcomp[$table][$theKey][$fieldN]);
@@ -636,6 +641,15 @@ class SqlSchemaMigrationService {
 		}
 		unset($value);
 		return $whichTables;
+	}
+
+	/**
+	 * Checks if DBAL is enabled for the database connection
+	 *
+	 * @return bool
+	 */
+	protected function isDbalEnabled() {
+		return \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal');
 	}
 
 }

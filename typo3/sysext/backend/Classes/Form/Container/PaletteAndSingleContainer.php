@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Backend\Form\Container;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Form\NodeFactory;
@@ -62,7 +61,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 				'elements' => array(
 					0 => array(
 						'type' => 'single',
-						'fieldName' => 'palettenName',
+						'fieldName' => 'paletteName',
 						'fieldLabel' => 'element1',
 						'fieldHtml' => 'element1',
 					),
@@ -71,23 +70,22 @@ class PaletteAndSingleContainer extends AbstractContainer {
 					),
 					2 => array(
 						'type' => 'single',
-						'fieldName' => 'palettenName',
+						'fieldName' => 'paletteName',
 						'fieldLabel' => 'element2',
 						'fieldHtml' => 'element2',
 					),
 				),
 			),
-			1 => array( // has 2 as "additional palette"
+			1 => array(
 				'type' => 'single',
 				'fieldName' => 'element3',
 				'fieldLabel' => 'element3',
 				'fieldHtml' => 'element3',
 			),
-			2 => array( // do only if 1 had result
+			2 => array(
 				'type' => 'palette2',
 				'fieldName' => 'palette2',
-				'fieldLabel' => '', // label missing because label of 1 is displayed only
-				'canNotCollapse' => TRUE, // An "additional palette" can not be collapsed
+				'fieldLabel' => '', // Palettes may not have a label
 				'elements' => array(
 					0 => array(
 						'type' => 'single',
@@ -150,22 +148,6 @@ class PaletteAndSingleContainer extends AbstractContainer {
 						'fieldLabel' => $this->getSingleFieldLabel($fieldName, $fieldConfiguration['fieldLabel']),
 						'fieldHtml' => $childResultArray['html'],
 					);
-
-					// If the third part of a show item field is given, this is a name of a palette that should be rendered
-					// below the single field - without palette header and only if single field produced content
-					if (!empty($childResultArray['html']) && !empty($fieldConfiguration['paletteName'])) {
-						$paletteElementArray = $this->createPaletteContentArray($fieldConfiguration['paletteName']);
-						if (!empty($paletteElementArray)) {
-							$mainStructureCounter ++;
-							$targetStructure[$mainStructureCounter] = array(
-								'type' => 'palette',
-								'fieldName' => $fieldConfiguration['paletteName'],
-								'fieldLabel' => '', // An "additional palette" has no show label
-								'canNotCollapse' => TRUE,
-								'elements' => $paletteElementArray,
-							);
-						}
-					}
 				}
 
 				$childResultArray['html'] = '';
@@ -182,34 +164,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 
 				$isHiddenPalette = !empty($GLOBALS['TCA'][$table]['palettes'][$paletteName]['isHiddenPalette']);
 
-				$renderUnCollapseButtonWrapper = TRUE;
-				// No button if the palette is hidden
-				if ($isHiddenPalette) {
-					$renderUnCollapseButtonWrapper = FALSE;
-				}
-				// No button if palette can not collapse on ctrl level
-				if (!empty($GLOBALS['TCA'][$table]['ctrl']['canNotCollapse'])) {
-					$renderUnCollapseButtonWrapper = FALSE;
-				}
-				// No button if palette can not collapse on palette definition level
-				if (!empty($GLOBALS['TCA'][$table]['palettes'][$paletteName]['canNotCollapse'])) {
-					$renderUnCollapseButtonWrapper = FALSE;
-				}
-				// No button if palettes are not collapsed - this is the checkbox at the end of the form
-				if (!$this->globalOptions['palettesCollapsed']) {
-					$renderUnCollapseButtonWrapper = FALSE;
-				}
-				// No button if palette is set to no collapse on element level - this is the case if palette is an "additional palette" after a casual field
-				if (!empty($element['canNotCollapse'])) {
-					$renderUnCollapseButtonWrapper = FALSE;
-				}
-
-				if ($renderUnCollapseButtonWrapper) {
-					$cssId = 'FORMENGINE_' . $this->globalOptions['table'] . '_' . $paletteName . '_' . $this->globalOptions['databaseRow']['uid'];
-					$paletteElementsHtml = $this->wrapPaletteWithCollapseButton($paletteElementsHtml, $cssId);
-				} else {
-					$paletteElementsHtml = '<div class="row">' . $paletteElementsHtml . '</div>';
-				}
+				$paletteElementsHtml = '<div class="row">' . $paletteElementsHtml . '</div>';
 
 				$content[] = $this->fieldSetWrap($paletteElementsHtml, $isHiddenPalette, $element['fieldLabel']);
 			} else {
@@ -369,27 +324,6 @@ class PaletteAndSingleContainer extends AbstractContainer {
 	}
 
 	/**
-	 * Add a "collapsible" button around given content
-	 *
-	 * @param string $elementHtml HTML of handled palette content
-	 * @param string $cssId A css id to be added
-	 * @return string Wrapped content
-	 */
-	protected function wrapPaletteWithCollapseButton($elementHtml, $cssId) {
-		$content = array();
-		$content[] = '<p>';
-		$content[] = 	'<button class="btn btn-default" type="button" data-toggle="collapse" data-target="#' . $cssId . '" aria-expanded="false" aria-controls="' . $cssId . '">';
-		$content[] = 		IconUtility::getSpriteIcon('actions-system-options-view');
-		$content[] = 		htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.moreOptions'));
-		$content[] = 	'</button>';
-		$content[] = '</p>';
-		$content[] = '<div id="' . $cssId . '" class="form-section-collapse collapse">';
-		$content[] = 	'<div class="row">' . $elementHtml . '</div>';
-		$content[] = '</div>';
-		return implode(LF, $content);
-	}
-
-	/**
 	 * Wrap content in a field set
 	 *
 	 * @param string $content Incoming content
@@ -427,6 +361,7 @@ class PaletteAndSingleContainer extends AbstractContainer {
 
 		$paletteFieldClasses = array(
 			'form-group',
+			't3js-formengine-validation-marker',
 			't3js-formengine-palette-field',
 		);
 		foreach ($additionalPaletteClasses as $class) {

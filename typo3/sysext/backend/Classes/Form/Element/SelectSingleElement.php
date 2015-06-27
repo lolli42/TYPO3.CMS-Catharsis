@@ -126,18 +126,6 @@ class SelectSingleElement extends AbstractFormElement {
 			$disabled = TRUE;
 			$onlySelectedIconShown = 1;
 		}
-		// Register as required if minitems is greater than zero
-		if (($minItems = MathUtility::forceIntegerInRange($config['minitems'], 0)) > 0) {
-			$this->resultArray['requiredFields'][$table . '_' . $row['uid'] . '_' . $field] = $parameterArray['itemFormElName'];
-			$tabAndInlineStack = $this->globalOptions['tabAndInlineStack'];
-			if (!empty($tabAndInlineStack) && preg_match('/^(.+\\])\\[(\\w+)\\]$/', $parameterArray['itemFormElName'], $match)) {
-				array_shift($match);
-				$this->resultArray['requiredNested'][$parameterArray['itemFormElName']] = array(
-					'parts' => $match,
-					'level' => $tabAndInlineStack,
-				);
-			}
-		}
 
 		// Icon configuration:
 		if ($config['suppress_icons'] === 'IF_VALUE_FALSE') {
@@ -215,6 +203,11 @@ class SelectSingleElement extends AbstractFormElement {
 
 		// Process groups
 		foreach ($selectItemGroups as $selectItemGroup) {
+			// suppress groups without items
+			if (empty($selectItemGroup['items'])) {
+				continue;
+			}
+
 			$optionGroup = is_array($selectItemGroup['header']);
 			$options .= ($optionGroup ? '<optgroup label="' . htmlspecialchars($selectItemGroup['header']['title'], ENT_COMPAT, 'UTF-8', FALSE) . '">' : '');
 			if (is_array($selectItemGroup['items'])) {
@@ -249,6 +242,7 @@ class SelectSingleElement extends AbstractFormElement {
 				<select'
 					. ' id="' . $selectId . '"'
 					. ' name="' . htmlspecialchars($parameterArray['itemFormElName']) . '"'
+					. $this->getValidationDataAsDataAttribute($config)
 					. ' class="form-control form-control-adapt"'
 					. ($size ? ' size="' . $size . '"' : '')
 					. ' onchange="' . htmlspecialchars($sOnChange) . '"'

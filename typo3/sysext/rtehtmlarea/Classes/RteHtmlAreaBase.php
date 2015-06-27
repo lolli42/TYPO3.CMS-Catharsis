@@ -325,9 +325,10 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 * @param int $thePidValue PID value of record (true parent page id)
 	 * @param array $globalOptions Global options like 'readonly' for all elements. This is a hack until RTE is an own type
 	 * @param array $resultArray Initialized final result array that is returned later filled with content. This is a hack until RTE is an own type
+	 * @param string $validatationDataAttribute the validation data attribute.
 	 * @return string HTML code for RTE!
 	 */
-	public function drawRTE($_, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue, $globalOptions, $resultArray) {
+	public function drawRTE($_, $table, $field, $row, $PA, $specConf, $thisConfig, $RTEtypeVal, $RTErelPath, $thePidValue, $globalOptions, $resultArray, $validatationDataAttribute = '') {
 		$languageService = $this->getLanguageService();
 		$backendUser = $this->getBackendUserAuthentication();
 		$database = $this->getDatabaseConnection();
@@ -492,7 +493,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 		$item = $this->triggerField($PA['itemFormElName']) . '
 			<div id="pleasewait' . $textAreaId . '" class="pleasewait" style="display: block;" >' . $languageService->getLL('Please wait') . '</div>
 			<div id="editorWrap' . $textAreaId . '" class="editorWrap" style="visibility: hidden; width:' . $editorWrapWidth . '; height:' . $editorWrapHeight . ';">
-			<textarea id="RTEarea' . $textAreaId . '" name="' . htmlspecialchars($PA['itemFormElName']) . '" rows="0" cols="0" style="' . htmlspecialchars($this->RTEdivStyle, ENT_COMPAT, 'UTF-8', FALSE) . '">' . GeneralUtility::formatForTextarea($value) . '</textarea>
+			<textarea id="RTEarea' . $textAreaId . '" ' . $validatationDataAttribute . ' name="' . htmlspecialchars($PA['itemFormElName']) . '" rows="0" cols="0" style="' . htmlspecialchars($this->RTEdivStyle, ENT_COMPAT, 'UTF-8', FALSE) . '">' . GeneralUtility::formatForTextarea($value) . '</textarea>
 			</div>' . LF;
 
 		$resultArray['html'] = $item;
@@ -548,7 +549,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 	 */
 	protected function addSkin(array $resultArray) {
 		// Get skin file name from Page TSConfig if any
-		$skinFilename = trim($this->thisConfig['skin']) ?: 'EXT:' . $this->ID . '/Resources/Public/Css/Skin/htmlarea.css';
+		$skinFilename = trim($this->thisConfig['skin']) ?: 'EXT:rtehtmlarea/Resources/Public/Css/Skin/htmlarea.css';
 		$this->editorCSS = $this->getFullFileName($skinFilename);
 		$skinDir = dirname($this->editorCSS);
 		// Editing area style sheet
@@ -894,7 +895,6 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 				RTEarea[0] = new Object();
 				RTEarea[0].version = "' . $GLOBALS['TYPO3_CONF_VARS']['EXTCONF'][$this->ID]['version'] . '";
 				RTEarea[0].editorUrl = "' . $this->extHttpPath . '";
-				RTEarea[0].editorCSS = "' . GeneralUtility::createVersionNumberedFilename($this->editorCSS) . '";
 				RTEarea[0].editorSkin = "' . dirname($this->editorCSS) . '/";
 				RTEarea[0].editedContentCSS = "' . GeneralUtility::createVersionNumberedFilename($this->editedContentCSS) . '";
 				RTEarea[0].hostUrl = "' . $this->hostURL . '";
@@ -986,19 +986,9 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 			RTEarea[editornumber].userUid = "' . $this->userUid . '";';
 		}
 		// Setting the plugin flags
-		$configureRTEInJavascriptString .= '
-			RTEarea[editornumber].plugin = new Object();
-			RTEarea[editornumber].pathToPluginDirectory = new Object();';
+		$configureRTEInJavascriptString .= LF . 'RTEarea[editornumber].plugin = new Object();';
 		foreach ($this->pluginEnabledArray as $pluginId) {
-			$configureRTEInJavascriptString .= '
-			RTEarea[editornumber].plugin.' . $pluginId . ' = true;';
-			if (is_object($this->registeredPlugins[$pluginId])) {
-				$pathToPluginDirectory = $this->registeredPlugins[$pluginId]->getPathToPluginDirectory();
-				if ($pathToPluginDirectory) {
-					$configureRTEInJavascriptString .= '
-			RTEarea[editornumber].pathToPluginDirectory.' . $pluginId . ' = "' . $pathToPluginDirectory . '";';
-				}
-			}
+			$configureRTEInJavascriptString .= LF . 'RTEarea[editornumber].plugin.' . $pluginId . ' = true;';
 		}
 		// Setting the buttons configuration
 		$configureRTEInJavascriptString .= '
@@ -1038,16 +1028,7 @@ class RteHtmlAreaBase extends \TYPO3\CMS\Backend\Rte\AbstractRte {
 		}
 		$configureRTEInJavascriptString .= '
 			RTEarea[editornumber].pageStyle = ["' . implode('","', $versionNumberedFileNames) . '"];';
-		// Process classes configuration
-		$classesConfigurationRequired = FALSE;
-		foreach ($this->registeredPlugins as $pluginId => $plugin) {
-			if ($this->isPluginEnabled($pluginId)) {
-				$classesConfigurationRequired = $classesConfigurationRequired || $plugin->requiresClassesConfiguration();
-			}
-		}
-		if ($classesConfigurationRequired) {
-			$configureRTEInJavascriptString .= $this->buildJSClassesConfig();
-		}
+		$configureRTEInJavascriptString .= $this->buildJSClassesConfig();
 		// Add Javascript configuration for registered plugins
 		foreach ($this->registeredPlugins as $pluginId => $plugin) {
 			if ($this->isPluginEnabled($pluginId)) {

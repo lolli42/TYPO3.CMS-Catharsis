@@ -49,7 +49,6 @@ class Clipboard {
 	 * or 'C:/www/htdocs/typo3/32/dummy/fileadmin/sem1_3_examples/alternative_index.php'
 	 *
 	 * 'current' pointer to current tab (among the above...)
-	 * '_setThumb'	boolean: If set, file thumbnails are shown.
 	 *
 	 * The virtual tablename '_FILE' will always indicate files/folders. When checking for elements from eg. 'all tables'
 	 * (by using an empty string) '_FILE' entries are excluded (so in effect only DB elements are counted)
@@ -109,9 +108,8 @@ class Clipboard {
 		for ($a = 1; $a <= $this->numberTabs; $a++) {
 			$this->clipData['tab_' . $a] = is_array($clipData['tab_' . $a]) ? $clipData['tab_' . $a] : array();
 		}
-		// Setting the current pad pointer ($this->current) and _setThumb (which determines whether or not do show file thumbnails)
+		// Setting the current pad pointer ($this->current))
 		$this->clipData['current'] = ($this->current = isset($this->clipData[$clipData['current']]) ? $clipData['current'] : 'normal');
-		$this->clipData['_setThumb'] = $clipData['_setThumb'];
 	}
 
 	/**
@@ -169,11 +167,6 @@ class Clipboard {
 		// Set copy mode of the tab
 		if (isset($cmd['setCopyMode'])) {
 			$this->clipData[$this->current]['mode'] = $this->isElements() ? ($cmd['setCopyMode'] ? 'copy' : '') : '';
-			$this->changed = 1;
-		}
-		// Toggle thumbnail display for files on/off
-		if (isset($cmd['setThumb'])) {
-			$this->clipData['_setThumb'] = $cmd['setThumb'];
 			$this->changed = 1;
 		}
 	}
@@ -243,50 +236,69 @@ class Clipboard {
 	 */
 	public function printClipboard() {
 		$out = array();
-		$elCount = count($this->elFromTable($this->fileMode ? '_FILE' : ''));
+		$elementCount = count($this->elFromTable($this->fileMode ? '_FILE' : ''));
 		// Button/menu header:
-		$thumb_url = GeneralUtility::linkThisScript(array('CB' => array('setThumb' => $this->clipData['_setThumb'] ? 0 : 1)));
-		$rmall_url = GeneralUtility::linkThisScript(array('CB' => array('removeAll' => $this->current)));
+		$removeAllUrl = GeneralUtility::linkThisScript(array('CB' => array('removeAll' => $this->current)));
 		// Copymode Selector menu
-		$copymode_url = GeneralUtility::linkThisScript();
+		$copymodeUrl = GeneralUtility::linkThisScript();
 		$moveLabel = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:moveElements'));
 		$copyLabel = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:copyElements'));
-		$opt = array();
-		$opt[] = '<option style="padding-left: 20px; background-image: url(\'' . IconUtility::skinImg($this->backPath, 'gfx/clip_cut.gif', '', 1) . '\'); background-repeat: no-repeat;" value="" ' . ($this->currentMode() == 'copy' ? '' : 'selected="selected"') . '>' . $moveLabel . '</option>';
-		$opt[] = '<option style="padding-left: 20px; background-image: url(\'' . IconUtility::skinImg($this->backPath, 'gfx/clip_copy.gif', '', 1) . '\'); background-repeat: no-repeat;" value="1" ' . ($this->currentMode() == 'copy' ? 'selected="selected"' : '') . '>' . $copyLabel . '</option>';
-		$copymode_selector = ' <select name="CB[setCopyMode]" onchange="this.form.method=\'POST\'; this.form.action=' . htmlspecialchars(GeneralUtility::quoteJSvalue($copymode_url . '&CB[setCopyMode]=')) . '+(this.options[this.selectedIndex].value); this.form.submit(); return true;" >' . implode('', $opt) . '</select>';
+
+		$copymodeSelector = '
+			<div class="btn-group">
+				<button class="btn btn-default dropdown-toggle" type="button" id="copymodeSelector" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+					' . ($this->currentMode() === 'copy' ? $copyLabel : $moveLabel) . '
+					<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu" aria-labelledby="copymodeSelector">
+					<li><a href="#" onclick="document.getElementById(\'clipboard_form\').method=\'POST\'; document.getElementById(\'clipboard_form\').action=' . htmlspecialchars(GeneralUtility::quoteJSvalue($copymodeUrl . '&CB[setCopyMode]=')) . '; document.getElementById(\'clipboard_form\').submit(); return true;">' . $moveLabel . '</a></li>
+					<li><a href="#" onclick="document.getElementById(\'clipboard_form\').method=\'POST\'; document.getElementById(\'clipboard_form\').action=' . htmlspecialchars(GeneralUtility::quoteJSvalue($copymodeUrl . '&CB[setCopyMode]=1')) . '; document.getElementById(\'clipboard_form\').submit(); return true;">' . $copyLabel . '</a></li>
+				</ul>
+			</div>
+			';
+
 		// Selector menu + clear button
-		$opt = array();
-		$opt[] = '<option value="" selected="selected">' . $this->clLabel('menu', 'rm') . '</option>';
+		$optionArray = array();
 		// Import / Export link:
-		if ($elCount && ExtensionManagementUtility::isLoaded('impexp')) {
+		if ($elementCount && ExtensionManagementUtility::isLoaded('impexp')) {
 			$url = BackendUtility::getModuleUrl('xMOD_tximpexp', $this->exportClipElementParameters());
-			$opt[] = '<option value="' . htmlspecialchars(('window.location.href=' . GeneralUtility::quoteJSvalue($url) . ';')) . '">' . $this->clLabel('export', 'rm') . '</option>';
+			$optionArray[] = '<li><a href="#" onclick="' . htmlspecialchars(('window.location.href=' . GeneralUtility::quoteJSvalue($url) . ';')) . '">' . $this->clLabel('export', 'rm') . '</a></li>';
 		}
 		// Edit:
-		if (!$this->fileMode && $elCount) {
-			$opt[] = '<option value="' . htmlspecialchars(('window.location.href=' . GeneralUtility::quoteJSvalue($this->editUrl() . '&returnUrl=') . '+top.rawurlencode(window.location.href);')) . '">' . $this->clLabel('edit', 'rm') . '</option>';
+		if (!$this->fileMode && $elementCount) {
+			$optionArray[] = '<li><a href="#" onclick="' . htmlspecialchars(('window.location.href=' . GeneralUtility::quoteJSvalue($this->editUrl() . '&returnUrl=') . '+top.rawurlencode(window.location.href);')) . '">' . $this->clLabel('edit', 'rm') . '</a></li>';
 		}
 		$deleteLink = '';
 		// Delete:
-		if ($elCount) {
-			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($rmall_url) . '#clip_head">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE))) . '</a>';
+		if ($elementCount) {
+			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($removeAllUrl) . '#clip_head">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE))) . '</a>';
 			if ($this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)) {
 				$js = '
-			if (confirm(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elCount)) . ')){
+			if (confirm(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elementCount)) . ')){
 				window.location.href=' . GeneralUtility::quoteJSvalue($this->deleteUrl(0, ($this->fileMode ? 1 : 0)) . '&redirect=') . '+top.rawurlencode(window.location.href);
 			}
 					';
 			} else {
 				$js = ' window.location.href=' . GeneralUtility::quoteJSvalue($this->deleteUrl(0, ($this->fileMode ? 1 : 0)) . '&redirect=') . '+top.rawurlencode(window.location.href); ';
 			}
-			$opt[] = '<option value="' . htmlspecialchars($js) . '">' . $this->clLabel('delete', 'rm') . '</option>';
+			$optionArray[] = '<li><a href="#" onclick="' . htmlspecialchars($js) . '">' . $this->clLabel('delete', 'rm') . '</a></li>';
 		}
-		$selector_menu = '<select name="_clipMenu" onchange="eval(this.options[this.selectedIndex].value);this.selectedIndex=0;">' . implode('', $opt) . '</select>';
+
+		$menuSelector = '
+			<div class="btn-group">
+				<button class="btn btn-default dropdown-toggle" type="button" id="menuSelector" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+					' . $this->clLabel('menu', 'rm') . '
+					<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu" aria-labelledby="menuSelector">
+					' . implode('', $optionArray) . '
+				</ul>
+			</div>
+			';
+
 		$out[] = '
 			<tr>
-				<td nowrap="nowrap" class="col-icon">' . '<a href="' . htmlspecialchars($thumb_url) . '#clip_head">' . '<img' . IconUtility::skinImg($this->backPath, ('gfx/thumb_' . ($this->clipData['_setThumb'] ? 's' : 'n') . '.gif'), 'width="21" height="16"') . ' vspace="2" border="0" title="' . $this->clLabel('thumbmode_clip') . '" alt="" />' . '</a>' . '</td>
-				<td nowrap="nowrap" width="95%">' . $copymode_selector . ' ' . $selector_menu . '</td>
+				<td colspan="2" nowrap="nowrap" width="95%">' . $copymodeSelector . ' ' . $menuSelector . '</td>
 				<td nowrap="nowrap" class="col-control">' . $deleteLink . '</td>
 			</tr>';
 		// Print header and content for the NORMAL tab:
@@ -320,7 +332,7 @@ class Clipboard {
 				TYPO3 Clipboard:
 			-->
 			<div class="row">
-				<div class="col-sm-6">
+				<div class="col-sm-12">
 					<div class="panel panel-default">
 						<div class="panel-heading">' . BackendUtility::wrapInHelp('xMOD_csh_corebe', 'list_clipboard', $this->clLabel('clipboard', 'buttons')) . '</div>
 						<table class="table">
@@ -331,7 +343,7 @@ class Clipboard {
 			</div>
 		';
 		// Wrap in form tag:
-		$output = '<form action="">' . $output . '</form>';
+		$output = '<form action="" id="clipboard_form">' . $output . '</form>';
 		// Return the accumulated content:
 		return $output;
 	}
@@ -357,12 +369,12 @@ class Clipboard {
 							$thumb = '';
 							$folder = $fileObject instanceof \TYPO3\CMS\Core\Resource\Folder;
 							$size = $folder ? '' : '(' . GeneralUtility::formatSize($fileObject->getSize()) . 'bytes)';
-							$icon = IconUtility::getSpriteIconForResource($fileObject, array('style' => 'margin: 0 20px;', 'title' => $fileObject->getName() . ' ' . $size));
-							if (!$folder && $this->clipData['_setThumb'] && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileObject->getExtension())) {
+							$icon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName() . ' ' . $size));
+							if (!$folder && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileObject->getExtension())) {
 								$processedFile = $fileObject->process(\TYPO3\CMS\Core\Resource\ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
 								if ($processedFile) {
 									$thumbUrl = $processedFile->getPublicUrl(TRUE);
-									$thumb .= '<br /><img src="' . htmlspecialchars($thumbUrl) . '" ' .
+									$thumb = '<br /><img src="' . htmlspecialchars($thumbUrl) . '" ' .
 											'width="' . $processedFile->getProperty('width') . '" ' .
 											'height="' . $processedFile->getProperty('height') . '" ' .
 											'title="' . htmlspecialchars($fileObject->getName()) . '" alt="" />';

@@ -39,7 +39,7 @@ class PluginHook {
 	 * The example reverses the order of elements in the ranking selector box. You can modify other values like this or add / remove items.
 	 *
 	 * This hook is activated by this key / value pair in ext_localconf.php
-	 * 'initialize_postProc' => 'EXT:indexed_search/example/class.pihook.php:&tx_indexedsearch_pihook',
+	 * 'initialize_postProc' => \TYPO3\CMS\IndexedSearch\Example\PluginHook::class,
 	 *
 	 * @return void
 	 */
@@ -61,9 +61,9 @@ class PluginHook {
 	 * Example of how the content displayed in the result rows can be post processed before rendered into HTML.
 	 * This example simply shows how the description field is wrapped in italics and the path is hidden by setting it blank.
 	 *
-	 * @param array Template Content (generated from result row) being processed.
-	 * @param array Result row
-	 * @param bool If set, the result row is a sub-row.
+	 * @param array $tmplContent Template Content (generated from result row) being processed.
+	 * @param array $row Result row
+	 * @param bool $headerOnly If set, the result row is a sub-row.
 	 * @return array Template Content returned.
 	 */
 	public function prepareResultRowTemplateData_postProc($tmplContent, $row, $headerOnly) {
