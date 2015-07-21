@@ -22,8 +22,6 @@ use TYPO3\CMS\Extensionmanager\Exception;
 
 /**
  * Utility for dealing with dependencies
- *
- * @author Susanne Moog <susanne.moog@typo3.org>
  */
 class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -75,7 +73,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var bool
 	 */
-	protected $skipSystemDependencyCheck = FALSE;
+	protected $skipDependencyCheck = FALSE;
 
 	/**
 	 * @param string $localExtensionStorage
@@ -96,11 +94,11 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * @param bool $skipSpecialDependencyCheck
+	 * @param bool $skipDependencyCheck
 	 * @return void
 	 */
-	public function setSkipSystemDependencyCheck($skipSpecialDependencyCheck) {
-		$this->skipSystemDependencyCheck = $skipSpecialDependencyCheck;
+	public function setSkipDependencyCheck($skipDependencyCheck) {
+		$this->skipDependencyCheck = $skipDependencyCheck;
 	}
 
 	/**
@@ -117,7 +115,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			$identifier = strtolower($dependency->getIdentifier());
 			try {
 				if (in_array($identifier, Dependency::$specialDependencies)) {
-					if (!$this->skipSystemDependencyCheck) {
+					if (!$this->skipDependencyCheck) {
 						$methodName = 'check' . ucfirst($identifier) . 'Dependency';
 						$this->{$methodName}($dependency);
 					}
@@ -240,7 +238,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$extensionIsLoaded = $this->isDependentExtensionLoaded($extensionKey);
 		if ($extensionIsLoaded === TRUE) {
 			$isLoadedVersionCompatible = $this->isLoadedVersionCompatible($dependency);
-			if ($isLoadedVersionCompatible === TRUE) {
+			if ($isLoadedVersionCompatible === TRUE || $this->skipDependencyCheck) {
 				return TRUE;
 			}
 			$extension = $this->listUtility->getExtension($extensionKey);
@@ -277,18 +275,22 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 						try {
 							$this->getExtensionFromRepository($extensionKey, $dependency);
 						} catch (Exception\MissingExtensionDependencyException $e) {
-							throw new Exception\MissingVersionDependencyException(
-								'The extension ' . $extensionKey . ' is available in version ' . $availableVersion
+							if (!$this->skipDependencyCheck) {
+								throw new Exception\MissingVersionDependencyException(
+									'The extension ' . $extensionKey . ' is available in version ' . $availableVersion
 									. ' but is needed in version ' . $dependency->getLowestVersion() . ' - ' . $dependency->getHighestVersion() . ' and could not be fetched from TER',
-								1430560390
-							);
+									1430560390
+								);
+							}
 						}
 					} else {
-						throw new Exception\MissingVersionDependencyException(
-							'The extension ' . $extensionKey . ' is available in version ' . $availableVersion
+						if (!$this->skipDependencyCheck) {
+							throw new Exception\MissingVersionDependencyException(
+								'The extension ' . $extensionKey . ' is available in version ' . $availableVersion
 								. ' but is needed in version ' . $dependency->getLowestVersion() . ' - ' . $dependency->getHighestVersion(),
-							1430562374
-						);
+								1430562374
+							);
+						}
 					}
 				}
 			} else {
@@ -297,6 +299,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 				$this->dependencyErrors = array_merge($unresolvedDependencyErrors, $this->dependencyErrors);
 			}
 		}
+
 		return FALSE;
 	}
 
@@ -310,7 +313,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @throws Exception\UnresolvedDependencyException
 	 */
 	protected function getExtensionFromRepository($extensionKey, Dependency $dependency) {
-		if (!$this->getExtensionFromInExtensionRepository($extensionKey, $dependency)) {
+		if (!$this->getExtensionFromInExtensionRepository($extensionKey)) {
 			$this->getExtensionFromTer($extensionKey, $dependency);
 		}
 	}
@@ -345,7 +348,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function getExtensionFromTer($extensionKey, Dependency $dependency) {
 		$isExtensionDownloadableFromTer = $this->isExtensionDownloadableFromTer($extensionKey);
 		if (!$isExtensionDownloadableFromTer) {
-			if (!$this->skipSystemDependencyCheck) {
+			if (!$this->skipDependencyCheck) {
 				if ($this->extensionRepository->countAll() > 0) {
 					throw new Exception\MissingExtensionDependencyException(
 						'The extension ' . $extensionKey . ' is not available from TER.',
@@ -363,7 +366,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 		$isDownloadableVersionCompatible = $this->isDownloadableVersionCompatible($dependency);
 		if (!$isDownloadableVersionCompatible) {
-			if (!$this->skipSystemDependencyCheck) {
+			if (!$this->skipDependencyCheck) {
 				throw new Exception\MissingVersionDependencyException(
 					'No compatible version found for extension ' . $extensionKey,
 					1399161284
@@ -374,7 +377,7 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 		$latestCompatibleExtensionByIntegerVersionDependency = $this->getLatestCompatibleExtensionByIntegerVersionDependency($dependency);
 		if (!$latestCompatibleExtensionByIntegerVersionDependency instanceof Extension) {
-			if (!$this->skipSystemDependencyCheck) {
+			if (!$this->skipDependencyCheck) {
 				throw new Exception\MissingExtensionDependencyException(
 					'Could not resolve dependency for "' . $dependency->getIdentifier() . '"',
 					1399161302
@@ -504,6 +507,10 @@ class DependencyUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		);
 	}
 
+	/**
+	 * @param string $extensionKey
+	 * @return array
+	 */
 	public function findInstalledExtensionsThatDependOnMe($extensionKey) {
 		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
 		$dependentExtensions = array();

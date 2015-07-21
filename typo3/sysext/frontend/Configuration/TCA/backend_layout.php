@@ -1,8 +1,9 @@
 <?php
 return array(
 	'ctrl' => array(
-		'title' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout',
+		'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout',
 		'label' => 'title',
+		'descriptionColumn' => 'description',
 		'tstamp' => 'tstamp',
 		'crdate' => 'crdate',
 		'cruser_id' => 'cruser_id',
@@ -23,7 +24,7 @@ return array(
 	),
 	'columns' => array(
 		'title' => array(
-			'label' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout.title',
+			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.title',
 			'config' => array(
 				'type' => 'input',
 				'size' => '25',
@@ -32,7 +33,7 @@ return array(
 			)
 		),
 		'description' => array(
-			'label' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout.description',
+			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.description',
 			'config' => array(
 				'type' => 'text',
 				'rows' => '5',
@@ -40,14 +41,14 @@ return array(
 			)
 		),
 		'config' => array(
-			'label' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout.config',
+			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.config',
 			'config' => array(
 				'type' => 'text',
 				'rows' => '5',
 				'cols' => '25',
 				'wizards' => array(
 					0 => array(
-						'title' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout.wizard',
+						'title' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.wizard',
 						'type' => 'popup',
 						'icon' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('frontend') . 'Resources/Public/Images/wizard_backend_layout.png',
 						'module' => array(
@@ -67,7 +68,7 @@ return array(
 			)
 		),
 		'icon' => array(
-			'label' => 'LLL:EXT:cms/locallang_tca.xlf:backend_layout.icon',
+			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:backend_layout.icon',
 			'exclude' => 1,
 			'config' => array(
 				'type' => 'group',

@@ -15,13 +15,12 @@ namespace TYPO3\CMS\Form\Utility;
  */
 
 use TYPO3\CMS\Form\Domain\Model\Json\AbstractJsonElement;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Typoscript to JSON converter
  *
  * Takes the incoming Typoscript and converts it to Json
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class TypoScriptToJsonConverter {
 
@@ -55,7 +54,7 @@ class TypoScriptToJsonConverter {
 		$className = 'TYPO3\\CMS\\Form\\Domain\\Model\Json\\' . ucfirst($class) . 'JsonElement';
 		$this->addValidationRules($arguments);
 		/** @var $object AbstractJsonElement */
-		$object = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className);
+		$object = ObjectFactory::createFormObject($className);
 		$object->setParameters($arguments);
 		if ($object->childElementsAllowed()) {
 			$this->getChildElementsByIntegerKey($object, $arguments);

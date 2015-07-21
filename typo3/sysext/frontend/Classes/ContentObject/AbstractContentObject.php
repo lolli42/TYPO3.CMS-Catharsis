@@ -14,11 +14,11 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Contains an abstract class for all tslib content class implementations.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 abstract class AbstractContentObject {
 
@@ -26,6 +26,11 @@ abstract class AbstractContentObject {
 	 * @var ContentObjectRenderer
 	 */
 	protected $cObj;
+
+	/**
+	 * @var PageRenderer
+	 */
+	protected $pageRenderer = NULL;
 
 	/**
 	 * Default constructor.
@@ -51,6 +56,17 @@ abstract class AbstractContentObject {
 	 */
 	public function getContentObject() {
 		return $this->cObj;
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		if ($this->pageRenderer === NULL) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

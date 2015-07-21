@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Resource\Filter;
 
 /**
  * Utility methods for filtering filenames
- *
- * @author Ingmar Schlecht <ingmar.schlecht@typo3.org>
  */
 class FileExtensionFilter {
 
@@ -72,7 +70,7 @@ class FileExtensionFilter {
 	}
 
 	/**
-	 * Entry method for use as file list filter.
+	 * Entry method for use as filelist filter.
 	 *
 	 * We have to use -1 as the „don't include“ return value, as call_user_func() will return FALSE
 	 * if calling the method failed and thus we can't use that as a return value.
@@ -109,11 +107,11 @@ class FileExtensionFilter {
 		$result = TRUE;
 		$fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 		// Check allowed file extensions
-		if ($this->allowedFileExtensions !== NULL && count($this->allowedFileExtensions) > 0 && !in_array($fileExt, $this->allowedFileExtensions)) {
+		if ($this->allowedFileExtensions !== NULL && !empty($this->allowedFileExtensions) && !in_array($fileExt, $this->allowedFileExtensions)) {
 			$result = FALSE;
 		}
 		// Check disallowed file extensions
-		if ($this->disallowedFileExtensions !== NULL && count($this->disallowedFileExtensions) > 0 && in_array($fileExt, $this->disallowedFileExtensions)) {
+		if ($this->disallowedFileExtensions !== NULL && !empty($this->disallowedFileExtensions) && in_array($fileExt, $this->disallowedFileExtensions)) {
 			$result = FALSE;
 		}
 		return $result;

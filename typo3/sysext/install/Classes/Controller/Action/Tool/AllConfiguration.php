@@ -96,8 +96,8 @@ class AllConfiguration extends Action\AbstractAction {
 				}
 
 				$description = trim($commentArray[$sectionName][$key]);
-				$isTextarea = preg_match('/^(<.*?>)?string \\(textarea\\)/i', $description) ? TRUE : FALSE;
-				$doNotRender = preg_match('/^(<.*?>)?string \\(exclude\\)/i', $description) ? TRUE : FALSE;
+				$isTextarea = (bool)preg_match('/^(<.*?>)?string \\(textarea\\)/i', $description);
+				$doNotRender = (bool)preg_match('/^(<.*?>)?string \\(exclude\\)/i', $description);
 
 				if (!is_array($value) && !$doNotRender && (!preg_match('/[' . LF . CR . ']/', $value) || $isTextarea)) {
 					$itemData = array();
@@ -172,7 +172,7 @@ class AllConfiguration extends Action\AbstractAction {
 					}
 				}
 			}
-			if (count($statusObjects)) {
+			if (!empty($statusObjects)) {
 				/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
 				$configurationManager = $this->objectManager->get(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class);
 				$configurationManager->setLocalConfigurationValuesByPathValuePairs($configurationPathValuePairs);

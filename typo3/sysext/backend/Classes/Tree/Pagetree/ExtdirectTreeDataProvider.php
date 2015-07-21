@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Data Provider of the Page Tree
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTree {
 
@@ -170,9 +168,9 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 				'dropZoneElementRestored' => $GLOBALS['LANG']->sL($file . 'tree.dropZoneElementRestored', TRUE),
 				'searchTermInfo' => $GLOBALS['LANG']->sL($file . 'tree.searchTermInfo', TRUE),
 				'temporaryMountPointIndicatorInfo' => $GLOBALS['LANG']->sl($file . 'labels.temporaryDBmount', TRUE),
-				'deleteDialogTitle' => $GLOBALS['LANG']->sL('LLL:EXT:cms/layout/locallang.xlf:deleteItem', TRUE),
-				'deleteDialogMessage' => $GLOBALS['LANG']->sL('LLL:EXT:cms/layout/locallang.xlf:deleteWarning', TRUE),
-				'recursiveDeleteDialogMessage' => $GLOBALS['LANG']->sL('LLL:EXT:cms/layout/locallang.xlf:recursiveDeleteWarning', TRUE)
+				'deleteDialogTitle' => $GLOBALS['LANG']->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:deleteItem', TRUE),
+				'deleteDialogMessage' => $GLOBALS['LANG']->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:deleteWarning', TRUE),
+				'recursiveDeleteDialogMessage' => $GLOBALS['LANG']->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:recursiveDeleteWarning', TRUE)
 			),
 			'Configuration' => array(
 				'hideFilter' => $GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.hideFilter'),

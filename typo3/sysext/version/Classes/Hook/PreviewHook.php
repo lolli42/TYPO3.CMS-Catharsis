@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Hook for checking if the preview mode is activated
  * preview mode = show a page of a workspace without having to log in
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -122,7 +120,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Looking for a ADMCMD_prev code, looks it up if found and returns configuration data.
+	 * Looking for an ADMCMD_prev code, looks it up if found and returns configuration data.
 	 * Background: From the backend a request to the frontend to show a page, possibly with
 	 * workspace preview can be "recorded" and associated with a keyword.
 	 * When the frontend is requested with this keyword the associated request parameters are
@@ -166,7 +164,7 @@ class PreviewHook implements \TYPO3\CMS\Core\SingletonInterface {
 			// - Make sure to remove fe/be cookies (temporarily);
 			// BE already done in ADMCMD_preview_postInit()
 			if (is_array($previewData)) {
-				if (!count(GeneralUtility::_POST())) {
+				if (empty(GeneralUtility::_POST())) {
 					// Unserialize configuration:
 					$previewConfig = unserialize($previewData['config']);
 					// For full workspace preview we only ADD a get variable

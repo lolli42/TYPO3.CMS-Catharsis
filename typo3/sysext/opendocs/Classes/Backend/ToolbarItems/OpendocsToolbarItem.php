@@ -16,13 +16,11 @@ namespace TYPO3\CMS\Opendocs\Backend\ToolbarItems;
 
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Alist of all open documents
- *
- * @author Benjamin Mack <benni@typo3.org>
- * @author Ingo Renner <ingo@typo3.org>
  */
 class OpendocsToolbarItem implements ToolbarItemInterface {
 
@@ -93,7 +91,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 		$openDocuments = $this->openDocs;
 		$recentDocuments = $this->recentDocs;
 		$entries = array();
-		if (count($openDocuments)) {
+		if (!empty($openDocuments)) {
 			$entries[] = '<li class="dropdown-header">' . $languageService->getLL('open_docs', TRUE) . '</li>';
 			$i = 0;
 			foreach ($openDocuments as $md5sum => $openDocument) {
@@ -103,7 +101,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 			$entries[] = '<li class="divider"></li>';
 		}
 		// If there are "recent documents" in the list, add them
-		if (count($recentDocuments)) {
+		if (!empty($recentDocuments)) {
 			$entries[] = '<li class="dropdown-header">' . $languageService->getLL('recent_docs', TRUE) . '</li>';
 			$i = 0;
 			foreach ($recentDocuments as $md5sum => $recentDocument) {
@@ -111,7 +109,7 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 				$entries[] = $this->renderMenuEntry($recentDocument, $md5sum, TRUE, $i == 1);
 			}
 		}
-		if (count($entries)) {
+		if (!empty($entries)) {
 			$content = '<ul class="dropdown-list">' . implode('', $entries) . '</ul>';
 		} else {
 			$content = '<p>' . $languageService->getLL('no_docs', TRUE) . '</p>';
@@ -262,12 +260,10 @@ class OpendocsToolbarItem implements ToolbarItemInterface {
 	/**
 	 * Returns current PageRenderer
 	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 * @return PageRenderer
 	 */
 	protected function getPageRenderer() {
-		/** @var  \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
-		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
-		return $documentTemplate->getPageRenderer();
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 
 	/**

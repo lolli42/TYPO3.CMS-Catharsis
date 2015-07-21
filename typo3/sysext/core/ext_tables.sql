@@ -20,7 +20,7 @@ CREATE TABLE be_groups (
 	file_mountpoints text,
 	file_permissions text,
 	hidden tinyint(1) unsigned DEFAULT '0' NOT NULL,
-	description text,
+	description varchar(2000) DEFAULT '' NOT NULL,
 	lockToDomain varchar(50) DEFAULT '' NOT NULL,
 	deleted tinyint(1) unsigned DEFAULT '0' NOT NULL,
 	TSconfig text,
@@ -56,6 +56,8 @@ CREATE TABLE be_users (
 	pid int(11) unsigned DEFAULT '0' NOT NULL,
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	username varchar(50) DEFAULT '' NOT NULL,
+	description varchar(2000) DEFAULT '' NOT NULL,
+	avatar int(11) unsigned NOT NULL default '0',
 	password varchar(100) DEFAULT '' NOT NULL,
 	admin tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	usergroup varchar(255) DEFAULT '' NOT NULL,
@@ -121,7 +123,6 @@ CREATE TABLE pages (
 	title varchar(255) DEFAULT '' NOT NULL,
 	doktype int(11) unsigned DEFAULT '0' NOT NULL,
 	TSconfig text,
-	storage_pid int(11) DEFAULT '0' NOT NULL,
 	is_siteroot tinyint(4) DEFAULT '0' NOT NULL,
 	php_tree_stop tinyint(4) DEFAULT '0' NOT NULL,
 	tx_impexp_origuid int(11) DEFAULT '0' NOT NULL,
@@ -461,6 +462,7 @@ CREATE TABLE sys_file_collection (
 	# for type=folder:
 	storage int(11) DEFAULT '0' NOT NULL,
 	folder text NOT NULL,
+	recursive tinyint(4) DEFAULT '0' NOT NULL,
 
 	# for type=category:
 	category int(11) DEFAULT '0' NOT NULL,

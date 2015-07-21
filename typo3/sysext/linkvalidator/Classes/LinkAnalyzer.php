@@ -21,9 +21,6 @@ use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * This class provides Processing plugin implementation
- *
- * @author Michael Miousse <michael.miousse@infoglobe.ca>
- * @author Jochen Rieger <j.rieger@connecta.ag>
  */
 class LinkAnalyzer {
 
@@ -133,7 +130,7 @@ class LinkAnalyzer {
 	 */
 	public function getLinkStatistics($checkOptions = array(), $considerHidden = FALSE) {
 		$results = array();
-		if (count($checkOptions) > 0) {
+		if (!empty($checkOptions)) {
 			$checkKeys = array_keys($checkOptions);
 			$checkLinkTypeCondition = ' AND link_type IN (\'' . implode('\',\'', $checkKeys) . '\')';
 			$this->getDatabaseConnection()->exec_DELETEquery(

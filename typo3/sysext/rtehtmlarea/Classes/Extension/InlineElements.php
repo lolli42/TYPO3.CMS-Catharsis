@@ -19,8 +19,6 @@ use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
  * InlineElements plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class InlineElements extends RteHtmlAreaApi {
 
@@ -30,13 +28,6 @@ class InlineElements extends RteHtmlAreaApi {
 	 * @var string
 	 */
 	protected $pluginName = 'InlineElements';
-
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = 'extensions/InlineElements/locallang.xlf';
 
 	/**
 	 * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
@@ -149,15 +140,13 @@ class InlineElements extends RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
 	 * @return string JS configuration for registered plugins
 	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
-		$registerRTEinJavascriptString = '';
+	public function buildJavascriptConfiguration() {
+		$jsArray = array();
 		if (in_array('formattext', $this->toolbar)) {
-			if (!is_array($this->thisConfig['buttons.']) || !is_array($this->thisConfig['buttons.']['formattext.'])) {
-				$registerRTEinJavascriptString .= '
-			RTEarea[' . $rteNumberPlaceholder . '].buttons.formattext = new Object();';
+			if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.']['formattext.'])) {
+				$jsArray[] = 'RTEarea[editornumber].buttons.formattext = new Object();';
 			}
 			// Default inline elements
 			$hideItems = array();
@@ -166,41 +155,39 @@ class InlineElements extends RteHtmlAreaApi {
 			$prefixLabelWithTag = FALSE;
 			$postfixLabelWithTag = FALSE;
 			// Processing PageTSConfig
-			if (is_array($this->thisConfig['buttons.']) && is_array($this->thisConfig['buttons.']['formattext.'])) {
+			if (is_array($this->configuration['thisConfig']['buttons.']) && is_array($this->configuration['thisConfig']['buttons.']['formattext.'])) {
 				// Removing elements
-				if ($this->thisConfig['buttons.']['formattext.']['removeItems']) {
-					$hideItems = GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList($this->thisConfig['buttons.']['formattext.']['removeItems']), TRUE);
+				if ($this->configuration['thisConfig']['buttons.']['formattext.']['removeItems']) {
+					$hideItems = GeneralUtility::trimExplode(',', $this->cleanList($this->configuration['thisConfig']['buttons.']['formattext.']['removeItems']), TRUE);
 				}
 				// Restriction clause
-				if ($this->thisConfig['buttons.']['formattext.']['restrictTo']) {
-					$restrictTo = GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList('none,' . $this->thisConfig['buttons.']['formattext.']['restrictTo']), TRUE);
-				} elseif ($this->thisConfig['buttons.']['formattext.']['restrictToItems']) {
-					$restrictTo = GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList('none,' . $this->thisConfig['buttons.']['formattext.']['restrictToItems']), TRUE);
+				if ($this->configuration['thisConfig']['buttons.']['formattext.']['restrictTo']) {
+					$restrictTo = GeneralUtility::trimExplode(',', $this->cleanList('none,' . $this->configuration['thisConfig']['buttons.']['formattext.']['restrictTo']), TRUE);
+				} elseif ($this->configuration['thisConfig']['buttons.']['formattext.']['restrictToItems']) {
+					$restrictTo = GeneralUtility::trimExplode(',', $this->cleanList('none,' . $this->configuration['thisConfig']['buttons.']['formattext.']['restrictToItems']), TRUE);
 				}
 				// Elements order
-				if ($this->thisConfig['buttons.']['formattext.']['orderItems']) {
-					$inlineElementsOrder = 'none,' . $this->thisConfig['buttons.']['formattext.']['orderItems'];
+				if ($this->configuration['thisConfig']['buttons.']['formattext.']['orderItems']) {
+					$inlineElementsOrder = 'none,' . $this->configuration['thisConfig']['buttons.']['formattext.']['orderItems'];
 				}
-				$prefixLabelWithTag = $this->thisConfig['buttons.']['formattext.']['prefixLabelWithTag'] ? TRUE : $prefixLabelWithTag;
-				$postfixLabelWithTag = $this->thisConfig['buttons.']['formattext.']['postfixLabelWithTag'] ? TRUE : $postfixLabelWithTag;
+				$prefixLabelWithTag = $this->configuration['thisConfig']['buttons.']['formattext.']['prefixLabelWithTag'] ? TRUE : $prefixLabelWithTag;
+				$postfixLabelWithTag = $this->configuration['thisConfig']['buttons.']['formattext.']['postfixLabelWithTag'] ? TRUE : $postfixLabelWithTag;
 			}
-			$inlineElementsOrder = array_diff(GeneralUtility::trimExplode(',', $this->htmlAreaRTE->cleanList($inlineElementsOrder), TRUE), $hideItems);
+			$inlineElementsOrder = array_diff(GeneralUtility::trimExplode(',', $this->cleanList($inlineElementsOrder), TRUE), $hideItems);
 			if (!in_array('*', $restrictTo)) {
 				$inlineElementsOrder = array_intersect($inlineElementsOrder, $restrictTo);
 			}
 			// Localizing the options
 			$inlineElementsOptions = array();
 			foreach ($inlineElementsOrder as $item) {
-				if ($this->htmlAreaRTE->is_FE()) {
-					$inlineElementsOptions[$this->buttonToInlineElement[$item]] = $GLOBALS['TSFE']->getLLL($this->defaultInlineElements[$this->buttonToInlineElement[$item]], $this->LOCAL_LANG);
-				} else {
-					$inlineElementsOptions[$this->buttonToInlineElement[$item]] = $GLOBALS['LANG']->getLL($this->defaultInlineElements[$this->buttonToInlineElement[$item]]);
-				}
+				$inlineElementsOptions[$this->buttonToInlineElement[$item]] = $this->getLanguageService()->sL(
+					'LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/InlineElements/locallang.xlf:' . $this->defaultInlineElements[$this->buttonToInlineElement[$item]]
+				);
 				$inlineElementsOptions[$this->buttonToInlineElement[$item]] = ($prefixLabelWithTag && $item != 'none' ? $this->buttonToInlineElement[$item] . ' - ' : '') . $inlineElementsOptions[$this->buttonToInlineElement[$item]] . ($postfixLabelWithTag && $item != 'none' ? ' - ' . $this->buttonToInlineElement[$item] : '');
 			}
 			$first = array_shift($inlineElementsOptions);
 			// Sorting the options
-			if (!is_array($this->thisConfig['buttons.']) || !is_array($this->thisConfig['buttons.']['formattext.']) || !$this->thisConfig['buttons.']['formattext.']['orderItems']) {
+			if (!is_array($this->configuration['thisConfig']['buttons.']) || !is_array($this->configuration['thisConfig']['buttons.']['formattext.']) || !$this->configuration['thisConfig']['buttons.']['formattext.']['orderItems']) {
 				asort($inlineElementsOptions);
 			}
 			// Generating the javascript options
@@ -209,13 +196,9 @@ class InlineElements extends RteHtmlAreaApi {
 			foreach ($inlineElementsOptions as $item => $label) {
 				$JSInlineElements[] = array($label, $item);
 			}
-			if ($this->htmlAreaRTE->is_FE()) {
-				$GLOBALS['TSFE']->csConvObj->convArray($JSInlineElements, $this->htmlAreaRTE->OutputCharset, 'utf-8');
-			}
-			$registerRTEinJavascriptString .= '
-			RTEarea[' . $rteNumberPlaceholder . '].buttons.formattext.options = ' . json_encode($JSInlineElements) . ';';
+			$jsArray[] = 'RTEarea[editornumber].buttons.formattext.options = ' . json_encode($JSInlineElements) . ';';
 		}
-		return $registerRTEinJavascriptString;
+		return implode(LF, $jsArray);
 	}
 
 }

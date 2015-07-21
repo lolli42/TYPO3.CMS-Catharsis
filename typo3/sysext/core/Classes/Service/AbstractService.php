@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Service;
 
 /**
  * Parent class for "Services" classes
- *
- * @author René Fritz <r.fritz@colorcube.de>
  */
 abstract class AbstractService {
 
@@ -183,7 +181,7 @@ abstract class AbstractService {
 	public function getLastError() {
 		// Means all is ok - no error
 		$lastError = TRUE;
-		if (count($this->error)) {
+		if (!empty($this->error)) {
 			$error = end($this->error);
 			$lastError = $error['nr'];
 		}
@@ -197,7 +195,7 @@ abstract class AbstractService {
 	 */
 	public function getLastErrorMsg() {
 		$lastErrorMessage = '';
-		if (count($this->error)) {
+		if (!empty($this->error)) {
 			$error = end($this->error);
 			$lastErrorMessage = $error['msg'];
 		}
@@ -211,7 +209,7 @@ abstract class AbstractService {
 	 */
 	public function getErrorMsgArray() {
 		$errArr = array();
-		if (count($this->error)) {
+		if (!empty($this->error)) {
 			foreach ($this->error as $error) {
 				$errArr[] = $error['msg'];
 			}

@@ -160,7 +160,7 @@ class Task extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	 */
 	public function getAdditionalInformation() {
 		$label = $this->commandIdentifier;
-		if (count($this->arguments) > 0) {
+		if (!empty($this->arguments)) {
 			$arguments = array();
 			foreach ($this->arguments as $argumentName => $argumentValue) {
 				if ($argumentValue != $this->defaults[$argumentName]) {
@@ -176,7 +176,7 @@ class Task extends \TYPO3\CMS\Scheduler\Task\AbstractTask {
 	 * @param \Exception $e
 	 */
 	protected function logException(\Exception $e) {
-		\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($e->getMessage(), $this->commandIdentifier, 3);
+		\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog($e->getMessage(), $this->commandIdentifier, \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
 	}
 
 }

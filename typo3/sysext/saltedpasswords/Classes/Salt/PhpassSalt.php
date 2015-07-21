@@ -22,8 +22,6 @@ namespace TYPO3\CMS\Saltedpasswords\Salt;
  * original license: GNU General Public License (GPL)
  *
  * PHPass should work on every system.
- *
- * @author Marcus Krause <marcus#exp2009@t3sec.info>
  * @see http://drupal.org/node/29706/
  * @see http://www.openwall.com/phpass/
  */
@@ -337,7 +335,7 @@ class PhpassSalt extends AbstractSalt implements SaltInterface {
 	 */
 	public function isValidSaltedPW($saltedPW) {
 		$isValid = FALSE;
-		$isValid = !strncmp($this->getSetting(), $saltedPW, strlen($this->getSetting())) ? TRUE : FALSE;
+		$isValid = !strncmp($this->getSetting(), $saltedPW, strlen($this->getSetting()));
 		if ($isValid) {
 			$isValid = $this->isValidSalt($saltedPW);
 		}

@@ -25,8 +25,6 @@ use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Script Class for rendering the Table Wizard
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class TableController extends AbstractWizardController {
 
@@ -148,7 +146,7 @@ class TableController extends AbstractWizardController {
 		if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
 			$this->content .= $this->doc->section($this->getLanguageService()->getLL('table_title'), $this->tableWizard(), 0, 1);
 		} else {
-			$this->content .= $this->doc->section($this->getLanguageService()->getLL('table_title'), '<span class="typo3-red">' . $this->getLanguageService()->getLL('table_noData', TRUE) . '</span>', 0, 1);
+			$this->content .= $this->doc->section($this->getLanguageService()->getLL('table_title'), '<span class="text-danger">' . $this->getLanguageService()->getLL('table_noData', TRUE) . '</span>', 0, 1);
 		}
 		// Setting up the buttons and markers for docHeader
 		$docHeaderButtons = $this->getButtons();
@@ -192,11 +190,11 @@ class TableController extends AbstractWizardController {
 			// Close
 			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
 			// Save
-			$buttons['save'] = '<input type="image" class="c-inputButton" name="savedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/savedok.gif') . ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />';
+			$buttons['save'] = '<button class="c-inputButton" name="savedok">' . IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE))) . '</button>';
 			// Save & Close
-			$buttons['save_close'] = '<input type="image" class="c-inputButton" name="saveandclosedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/saveandclosedok.gif') . ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />';
+			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok">' . IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE))) . '</button>';
 			// Reload
-			$buttons['reload'] = '<input type="image" class="c-inputButton" name="_refresh"' . IconUtility::skinImg($this->doc->backPath, 'gfx/refresh_n.gif') . ' title="' . $this->getLanguageService()->getLL('forms_refresh', TRUE) . '" />';
+			$buttons['reload'] = '<button class="c-inputButton" name="_refresh">' . IconUtility::getSpriteIcon('actions-system-refresh', array('title' => $this->getLanguageService()->getLL('forms_refresh', TRUE))) . '</button>';
 		}
 		return $buttons;
 	}
@@ -315,7 +313,7 @@ class TableController extends AbstractWizardController {
 						$cells[] = '<input class="form-control" type="text"' . $this->doc->formWidth(20) . ' name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']" value="' . htmlspecialchars($cellContent) . '" />';
 					} else {
 						$cellContent = preg_replace('/<br[ ]?[\\/]?>/i', LF, $cellContent);
-						$cells[] = '<textarea class="form-control" ' . $this->doc->formWidth(20) . ' rows="6" name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']">' . GeneralUtility::formatForTextarea($cellContent) . '</textarea>';
+						$cells[] = '<textarea class="form-control" ' . $this->doc->formWidth(20) . ' rows="6" name="TABLE[c][' . ($k + 1) * 2 . '][' . ($a + 1) * 2 . ']">' . htmlspecialchars($cellContent) . '</textarea>';
 					}
 					// Increment counter:
 					$a++;

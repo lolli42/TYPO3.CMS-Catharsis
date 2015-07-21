@@ -15,14 +15,12 @@ namespace TYPO3\CMS\Core\Page;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Localization\LocalizationFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * TYPO3 pageRender class (new in TYPO3 4.3.0)
  * This class render the HTML of a webpage, usable for BE and FE
- *
- * @author Steffen Kamper <info@sk-typo3.de>
- * @author Kai Vogel <kai.vogel@speedprogs.de>
  */
 class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -30,12 +28,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const PART_COMPLETE = 0;
 	const PART_HEADER = 1;
 	const PART_FOOTER = 2;
-	// Available adapters for extJs
-	const EXTJS_ADAPTER_JQUERY = 'jquery';
-	const EXTJS_ADAPTER_PROTOTYPE = 'prototype';
-	const EXTJS_ADAPTER_YUI = 'yui';
 	// jQuery Core version that is shipped with TYPO3
-	const JQUERY_VERSION_LATEST = '1.11.2';
+	const JQUERY_VERSION_LATEST = '1.11.3';
 	// jQuery namespace options
 	const JQUERY_NAMESPACE_NONE = 'none';
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
@@ -262,7 +256,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var array
 	 */
-	protected $jsLibraryNames = array('prototype', 'scriptaculous', 'extjs');
+	protected $jsLibraryNames = array('extjs');
 
 	// Paths to contibuted libraries
 
@@ -275,29 +269,14 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var string
 	 */
-	protected $prototypePath = 'sysext/core/Resources/Public/JavaScript/Contrib/';
-
-	/**
-	 * @var string
-	 */
-	protected $scriptaculousPath = 'sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/';
-
-	/**
-	 * @var string
-	 */
-	protected $extCorePath = 'contrib/extjs/';
-
-	/**
-	 * @var string
-	 */
-	protected $extJsPath = 'contrib/extjs/';
+	protected $extJsPath = 'sysext/core/Resources/Public/JavaScript/Contrib/extjs/';
 
 	/**
 	 * The local directory where one can find jQuery versions and plugins
 	 *
 	 * @var string
 	 */
-	protected $jQueryPath = 'contrib/jquery/';
+	protected $jQueryPath = 'sysext/core/Resources/Public/JavaScript/Contrib/jquery/';
 
 	// Internal flags for JS-libraries
 	/**
@@ -325,10 +304,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var array
 	 */
 	protected $availableLocalJqueryVersions = array(
-		'1.8.2',	// jquery version shipped with TYPO3 6.0, still available in the contrib/ directory
-		'1.9.1',
-		'1.11.0',
-		'1.11.1',
 		self::JQUERY_VERSION_LATEST
 	);
 
@@ -358,32 +333,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var bool
 	 */
-	protected $addPrototype = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	protected $addScriptaculous = FALSE;
-
-	/**
-	 * @var array
-	 */
-	protected $addScriptaculousModules = array('builder' => FALSE, 'effects' => FALSE, 'dragdrop' => FALSE, 'controls' => FALSE, 'slider' => FALSE);
-
-	/**
-	 * @var bool
-	 */
 	protected $addExtJS = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	protected $addExtCore = FALSE;
-
-	/**
-	 * @var string
-	 */
-	protected $extJSadapter = 'ext/ext-base.js';
 
 	/**
 	 * @var bool
@@ -394,11 +344,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var bool
 	 */
 	protected $enableExtJsDebug = FALSE;
-
-	/**
-	 * @var bool
-	 */
-	protected $enableExtCoreDebug = FALSE;
 
 	/**
 	 * @var bool
@@ -414,11 +359,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var bool
 	 */
 	protected $extJScss = TRUE;
-
-	/**
-	 * @var bool
-	 */
-	protected $enableExtJSQuickTips = FALSE;
 
 	/**
 	 * @var array
@@ -671,36 +611,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Sets path to prototype library (relative to typo3 directory)
-	 *
-	 * @param string $path Path to prototype library
-	 * @return void
-	 */
-	public function setPrototypePath($path) {
-		$this->prototypePath = $path;
-	}
-
-	/**
-	 * Sets Path for scriptaculous library (relative to typo3 directory)
-	 *
-	 * @param string $path
-	 * @return void
-	 */
-	public function setScriptaculousPath($path) {
-		$this->scriptaculousPath = $path;
-	}
-
-	/**
-	 * Sets Path for Ext Core library (relative to typo3 directory)
-	 *
-	 * @param string $path
-	 * @return void
-	 */
-	public function setExtCorePath($path) {
-		$this->extCorePath = $path;
-	}
-
-	/**
 	 * Sets Path for ExtJs library (relative to typo3 directory)
 	 *
 	 * @param string $path
@@ -853,7 +763,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->compressCss = FALSE;
 		$this->concatenateFiles = FALSE;
 		$this->removeLineBreaksFromTemplate = FALSE;
-		$this->enableExtCoreDebug = TRUE;
 		$this->enableExtJsDebug = TRUE;
 		$this->enableJqueryDebug = TRUE;
 	}
@@ -1033,33 +942,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function getBodyContent() {
 		return $this->bodyContent;
-	}
-
-	/**
-	 * Gets Path for prototype library (relative to typo3 directory)
-	 *
-	 * @return string
-	 */
-	public function getPrototypePath() {
-		return $this->prototypePath;
-	}
-
-	/**
-	 * Gets Path for scriptaculous library (relative to typo3 directory)
-	 *
-	 * @return string
-	 */
-	public function getScriptaculousPath() {
-		return $this->scriptaculousPath;
-	}
-
-	/**
-	 * Gets Path for Ext Core library (relative to typo3 directory)
-	 *
-	 * @return string
-	 */
-	public function getExtCorePath() {
-		return $this->extCorePath;
 	}
 
 	/**
@@ -1355,7 +1237,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			return;
 		}
 		$this->extDirectCodeAdded = TRUE;
-		if (count($filterNamespaces) === 0) {
+		if (empty($filterNamespaces)) {
 			$filterNamespaces = array('TYPO3');
 		}
 		// @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
@@ -1594,11 +1476,17 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	public function loadRequireJs() {
 
 		// load all paths to map to package names / namespaces
-		if (count($this->requireJsConfig) === 0) {
+		if (empty($this->requireJsConfig)) {
+			// In order to avoid browser caching of JS files, adding a GET parameter to the files loaded via requireJS
+			if (GeneralUtility::getApplicationContext()->isDevelopment()) {
+				$this->requireJsConfig['urlArgs'] = 'bust=' . $GLOBALS['EXEC_TIME'];
+			} else {
+				$this->requireJsConfig['urlArgs'] = 'bust=' . GeneralUtility::shortMD5(TYPO3_version);
+			}
 			// first, load all paths for the namespaces, and configure contrib libs.
 			$this->requireJsConfig['paths'] = array(
 				'jquery-ui' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery-ui',
-				'jquery' => $this->backPath . 'contrib/jquery',
+				'jquery' => $this->backPath . rtrim($this->jQueryPath, '/'),
 				'datatables' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery.dataTables',
 				'nprogress' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/nprogress',
 				'moment' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/moment',
@@ -1609,6 +1497,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				'autosize' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/autosize',
 				'taboverride' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/taboverride.min',
 				'twbs/bootstrap-slider' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/bootstrap-slider.min',
+				'jquery/autocomplete' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery.autocomplete',
 			);
 			// get all extensions that are loaded
 			$loadedExtensions = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getLoadedExtensionListArray();
@@ -1638,10 +1527,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * To add another path mapping deliver the following configuration:
 	 * 		'paths' => array(
-     *			'EXTERN/mybootstrapjs' => 'contrib/twbs/bootstrap.min',
+     *			'EXTERN/mybootstrapjs' => 'sysext/.../twbs/bootstrap.min',
 	 *      ),
-	 *
-	 * @author Daniel Siepmann <daniel.siepmann@typo3.org>
 	 *
 	 * @param array $configuration The configuration that will be merged with existing one.
 	 * @return void
@@ -1651,7 +1538,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * includes a AMD-compatible JS file by resolving the ModuleName, and then requires the file via a requireJS request,
+	 * includes an AMD-compatible JS file by resolving the ModuleName, and then requires the file via a requireJS request,
 	 * additionally allowing to execute JavaScript code afterwards
 	 *
 	 * this function only works for AMD-ready JS modules, used like "define('TYPO3/CMS/Backend/FormEngine..."
@@ -1682,86 +1569,18 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->addJsInlineCode('RequireJS-Module-' . $inlineCodeKey, $javaScriptCode);
 	}
 
-	/**
-	 * Call function if you need the prototype library
-	 *
-	 * @return void
-	 */
-	public function loadPrototype() {
-		$this->addPrototype = TRUE;
-	}
-
-	/**
-	 * Call function if you need the Scriptaculous library
-	 *
-	 * @param string $modules Add modules you need. use "all" if you need complete modules
-	 * @return void
-	 */
-	public function loadScriptaculous($modules = 'all') {
-		// Scriptaculous require prototype, so load prototype too.
-		$this->addPrototype = TRUE;
-		$this->addScriptaculous = TRUE;
-		if ($modules) {
-			if ($modules == 'all') {
-				foreach ($this->addScriptaculousModules as $key => $value) {
-					$this->addScriptaculousModules[$key] = TRUE;
-				}
-			} else {
-				$mods = GeneralUtility::trimExplode(',', $modules);
-				foreach ($mods as $mod) {
-					if (isset($this->addScriptaculousModules[strtolower($mod)])) {
-						$this->addScriptaculousModules[strtolower($mod)] = TRUE;
-					}
-				}
-			}
-		}
-	}
 
 	/**
 	 * call this function if you need the extJS library
 	 *
 	 * @param bool $css Flag, if set the ext-css will be loaded
 	 * @param bool $theme Flag, if set the ext-theme "grey" will be loaded
-	 * @param string $adapter Choose alternative adapter, possible values: yui, prototype, jquery
 	 * @return void
 	 */
-	public function loadExtJS($css = TRUE, $theme = TRUE, $adapter = '') {
-		if ($adapter) {
-			// Empty $adapter will always load the ext adapter
-			switch (GeneralUtility::strtolower(trim($adapter))) {
-				case self::EXTJS_ADAPTER_YUI:
-					$this->extJSadapter = 'yui/ext-yui-adapter.js';
-					break;
-				case self::EXTJS_ADAPTER_PROTOTYPE:
-					$this->extJSadapter = 'prototype/ext-prototype-adapter.js';
-					break;
-				case self::EXTJS_ADAPTER_JQUERY:
-					$this->extJSadapter = 'jquery/ext-jquery-adapter.js';
-					break;
-			}
-		}
+	public function loadExtJS($css = TRUE, $theme = TRUE) {
 		$this->addExtJS = TRUE;
 		$this->extJStheme = $theme;
 		$this->extJScss = $css;
-	}
-
-	/**
-	 * Enables ExtJs QuickTips
-	 * Need extJs loaded
-	 *
-	 * @return void
-	 */
-	public function enableExtJSQuickTips() {
-		$this->enableExtJSQuickTips = TRUE;
-	}
-
-	/**
-	 * Call function if you need the ExtCore library
-	 *
-	 * @return void
-	 */
-	public function loadExtCore() {
-		$this->addExtCore = TRUE;
 	}
 
 	/**
@@ -1771,15 +1590,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function enableExtJsDebug() {
 		$this->enableExtJsDebug = TRUE;
-	}
-
-	/**
-	 * Call this function to load debug version of ExtCore. Use this for development only
-	 *
-	 * @return void
-	 */
-	public function enableExtCoreDebug() {
-		$this->enableExtCoreDebug = TRUE;
 	}
 
 	/**
@@ -2125,7 +1935,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Helper function for render the main JavaScript libraries,
-	 * currently: RequireJS, jQuery, PrototypeJS, Scriptaculous, ExtJs
+	 * currently: RequireJS, jQuery, ExtJS
 	 *
 	 * @return string Content with JavaScript libraries
 	 */
@@ -2146,39 +1956,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				$out .= $this->renderJqueryScriptTag($jQueryVersion['version'], $jQueryVersion['source'], $namespace);
 			}
 		}
-		if ($this->addPrototype) {
-			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->prototypePath . 'prototype.js')) . '" type="text/javascript"></script>' . LF;
-			unset($this->jsFiles[$this->backPath . $this->prototypePath . 'prototype.js']);
-		}
-		if ($this->addScriptaculous) {
-			$mods = array();
-			foreach ($this->addScriptaculousModules as $key => $value) {
-				if ($this->addScriptaculousModules[$key]) {
-					$mods[] = $key;
-				}
-			}
-			// Resolve dependencies
-			if (in_array('dragdrop', $mods) || in_array('controls', $mods)) {
-				$mods = array_merge(array('effects'), $mods);
-			}
-			if (count($mods)) {
-				foreach ($mods as $module) {
-					$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->scriptaculousPath . $module . '.js')) . '" type="text/javascript"></script>' . LF;
-					unset($this->jsFiles[$this->backPath . $this->scriptaculousPath . $module . '.js']);
-				}
-			}
-			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->scriptaculousPath . 'scriptaculous.js')) . '" type="text/javascript"></script>' . LF;
-			unset($this->jsFiles[$this->backPath . $this->scriptaculousPath . 'scriptaculous.js']);
-		}
-		// Include extCore, but only if ExtJS is not included
-		if ($this->addExtCore && !$this->addExtJS) {
-			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->extCorePath . 'ext-core' . ($this->enableExtCoreDebug ? '-debug' : '') . '.js')) . '" type="text/javascript"></script>' . LF;
-			unset($this->jsFiles[$this->backPath . $this->extCorePath . 'ext-core' . ($this->enableExtCoreDebug ? '-debug' : '') . '.js']);
-		}
 		// Include extJS
 		if ($this->addExtJS) {
 			// Use the base adapter all the time
-			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->extJsPath . 'adapter/' . ($this->enableExtJsDebug ? str_replace('.js', '-debug.js', $this->extJSadapter) : $this->extJSadapter))) . '" type="text/javascript"></script>' . LF;
+			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->extJsPath . 'adapter/ext-base' . ($this->enableExtJsDebug ? '-debug' : '') . '.js')) . '" type="text/javascript"></script>' . LF;
 			$out .= '<script src="' . $this->processJsFile(($this->backPath . $this->extJsPath . 'ext-all' . ($this->enableExtJsDebug ? '-debug' : '') . '.js')) . '" type="text/javascript"></script>' . LF;
 			// Add extJS localization
 			// Load standard ISO mapping and modify for use with ExtJS
@@ -2206,10 +1987,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$inlineSettings = $this->inlineLanguageLabels ? 'TYPO3.lang = ' . json_encode($this->inlineLanguageLabels) . ';' : '';
 		$inlineSettings .= $this->inlineSettings ? 'TYPO3.settings = ' . json_encode($this->inlineSettings) . ';' : '';
-		if ($this->addExtCore || $this->addExtJS) {
+		if ($this->addExtJS) {
 			// Set clear.gif, move it on top, add handler code
 			$code = '';
-			if (count($this->extOnReadyCode)) {
+			if (!empty($this->extOnReadyCode)) {
 				foreach ($this->extOnReadyCode as $block) {
 					$code .= $block;
 				}
@@ -2220,7 +2001,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				Ext.SSL_SECURE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF
 				. $inlineSettings
 				. 'Ext.onReady(function() {'
-					. ($this->enableExtJSQuickTips ? 'Ext.QuickTips.init();' . LF : '')
 					. $code
 				. ' });'
 				. $this->inlineJavascriptWrap[1];
@@ -2261,7 +2041,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Load the language strings into JavaScript
 	 */
 	protected function loadJavaScriptLanguageStrings() {
-		if (count($this->inlineLanguageLabelFiles)) {
+		if (!empty($this->inlineLanguageLabelFiles)) {
 			foreach ($this->inlineLanguageLabelFiles as $languageLabelFile) {
 				$this->includeLanguageFileForInline($languageLabelFile['fileRef'], $languageLabelFile['selectionPrefix'], $languageLabelFile['stripFromSelectionName'], $languageLabelFile['errorMode']);
 			}
@@ -2342,7 +2122,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function renderCssLibraries() {
 		$cssFiles = '';
-		if (count($this->cssLibs)) {
+		if (!empty($this->cssLibs)) {
 			foreach ($this->cssLibs as $file => $properties) {
 				$file = GeneralUtility::resolveBackPath($file);
 				$file = GeneralUtility::createVersionNumberedFilename($file);
@@ -2373,7 +2153,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function renderCssFiles() {
 		$cssFiles = '';
-		if (count($this->cssFiles)) {
+		if (!empty($this->cssFiles)) {
 			foreach ($this->cssFiles as $file => $properties) {
 				$file = GeneralUtility::resolveBackPath($file);
 				$file = GeneralUtility::createVersionNumberedFilename($file);
@@ -2404,7 +2184,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function renderCssInline() {
 		$cssInline = '';
-		if (count($this->cssInline)) {
+		if (!empty($this->cssInline)) {
 			foreach ($this->cssInline as $name => $properties) {
 				$cssCode = '/*' . htmlspecialchars($name) . '*/' . LF . $properties['code'] . LF;
 				if ($properties['forceOnTop']) {
@@ -2426,7 +2206,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function renderAdditionalJavaScriptLibraries() {
 		$jsLibs = '';
 		$jsFooterLibs = '';
-		if (count($this->jsLibs)) {
+		if (!empty($this->jsLibs)) {
 			foreach ($this->jsLibs as $properties) {
 				$properties['file'] = GeneralUtility::resolveBackPath($properties['file']);
 				$properties['file'] = GeneralUtility::createVersionNumberedFilename($properties['file']);
@@ -2468,7 +2248,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function renderJavaScriptFiles() {
 		$jsFiles = '';
 		$jsFooterFiles = '';
-		if (count($this->jsFiles)) {
+		if (!empty($this->jsFiles)) {
 			foreach ($this->jsFiles as $file => $properties) {
 				$file = GeneralUtility::resolveBackPath($file);
 				$file = GeneralUtility::createVersionNumberedFilename($file);
@@ -2510,7 +2290,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function renderInlineJavaScript() {
 		$jsInline = '';
 		$jsFooterInline = '';
-		if (count($this->jsInline)) {
+		if (!empty($this->jsInline)) {
 			foreach ($this->jsInline as $name => $properties) {
 				$jsCode = '/*' . htmlspecialchars($name) . '*/' . LF . $properties['code'] . LF;
 				if ($properties['forceOnTop']) {
@@ -2587,6 +2367,9 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array Returns the $LOCAL_LANG array found in the file. If no array found, returns empty array.
 	 */
 	protected function readLLfile($fileRef, $errorMode = 0) {
+		/** @var $languageFactory LocalizationFactory */
+		$languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
+
 		if ($this->lang !== 'default') {
 			$languages = array_reverse($this->languageDependencies);
 			// At least we need to have English
@@ -2599,7 +2382,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 
 		$localLanguage = array();
 		foreach ($languages as $language) {
-			$tempLL = GeneralUtility::readLLfile($fileRef, $language, $this->charSet, $errorMode);
+			$tempLL = $languageFactory->getParsedData($fileRef, $language, $this->charSet, $errorMode);
+
 			$localLanguage['default'] = $tempLL['default'];
 			if (!isset($localLanguage[$this->lang])) {
 				$localLanguage[$this->lang] = $localLanguage['default'];
@@ -2667,6 +2451,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				// use external concatenation routine
 				$params = array(
 					'cssFiles' => &$this->cssFiles,
+					'cssLibs' => &$this->cssLibs,
 					'headerData' => &$this->headerData,
 					'footerData' => &$this->footerData
 				);
@@ -2676,6 +2461,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				if (TYPO3_MODE === 'BE') {
 					$cssOptions = array('baseDirectories' => $GLOBALS['TBE_TEMPLATE']->getSkinStylesheetDirectories());
 				}
+				$this->cssLibs = $this->getCompressor()->concatenateCssFiles($this->cssLibs, $cssOptions);
 				$this->cssFiles = $this->getCompressor()->concatenateCssFiles($this->cssFiles, $cssOptions);
 			}
 		}
@@ -2698,17 +2484,18 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	protected function doCompressCss() {
 		if ($this->compressCss) {
-			// Use external compression routine
-			$params = array(
-				'cssInline' => &$this->cssInline,
-				'cssFiles' => &$this->cssFiles,
-				'headerData' => &$this->headerData,
-				'footerData' => &$this->footerData
-			);
 			if (!empty($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['cssCompressHandler'])) {
-				// use external concatenation routine
+				// Use external compression routine
+				$params = array(
+					'cssInline' => &$this->cssInline,
+					'cssFiles' => &$this->cssFiles,
+					'cssLibs' => &$this->cssLibs,
+					'headerData' => &$this->headerData,
+					'footerData' => &$this->footerData
+				);
 				GeneralUtility::callUserFunction($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['cssCompressHandler'], $params, $this);
 			} else {
+				$this->cssLibs = $this->getCompressor()->compressCssFiles($this->cssLibs);
 				$this->cssFiles = $this->getCompressor()->compressCssFiles($this->cssFiles);
 			}
 		}
@@ -2735,7 +2522,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				GeneralUtility::callUserFunction($GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['jsCompressHandler'], $params, $this);
 			} else {
 				// Traverse the arrays, compress files
-				if (count($this->jsInline)) {
+				if (!empty($this->jsInline)) {
 					foreach ($this->jsInline as $name => $properties) {
 						if ($properties['compress']) {
 							$error = '';

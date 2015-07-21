@@ -19,9 +19,6 @@ namespace TYPO3\CMS\Backend\Tree;
  *
  * Note: This collection works only with integers as offset keys and not
  * with much datasets. You have been warned!
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
 class SortedTreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollection {
 
@@ -93,7 +90,7 @@ class SortedTreeNodeCollection extends \TYPO3\CMS\Backend\Tree\TreeNodeCollectio
 	 * @param \TYPO3\CMS\Backend\Tree\TreeNode $node
 	 * @return void
 	 */
-	public function append(\TYPO3\CMS\Backend\Tree\TreeNode $node) {
+	public function append($node) {
 		parent::append($node);
 		$this->asort();
 		$this->normalize();

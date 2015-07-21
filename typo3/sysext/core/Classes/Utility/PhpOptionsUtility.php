@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Utility;
 
 /**
  * Class to handle php environment specific options / functions
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class PhpOptionsUtility {
 
@@ -31,7 +29,7 @@ class PhpOptionsUtility {
 	}
 
 	/**
-	 * Cast a on/off php ini value to boolean
+	 * Cast an on/off php ini value to boolean
 	 *
 	 * @param string $configOption
 	 * @return bool TRUE if the given option is enabled, FALSE if disabled

@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
@@ -46,14 +47,14 @@ use TYPO3\CMS\Lang\LanguageService;
  * comment above.
  *
  * EXAMPLE: One level.
- * This can be seen in the extension 'cms' where the info module have a
+ * This can be seen in the extension 'frontend' where the info module have a
  * function added. In 'ext_tables.php' this is done by this function call:
  *
  * \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::insertModuleFunction(
  * 'web_info',
  * \TYPO3\CMS\Frontend\Controller\PageInformationController::class,
  * NULL,
- * 'LLL:EXT:cms/locallang_tca.xlf:mod_tx_cms_webinfo_page'
+ * 'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:mod_tx_cms_webinfo_page'
  * );
  *
  * EXAMPLE: Two levels.
@@ -100,8 +101,6 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * The two level-2 sub-module "wizard_crpages" and "wizard_sortpages"
  * are totally normal "submodules".
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @see \TYPO3\CMS\Backend\Module\BaseScriptClass
  * @see \TYPO3\CMS\FuncWizards\Controller\WebFunctionWizardsBaseController
  * @see \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
@@ -155,6 +154,11 @@ abstract class AbstractFunctionModule {
 	 * @var string
 	 */
 	public $function_key = '';
+
+	/**
+	 * @var PageRenderer
+	 */
+	protected $pageRenderer = NULL;
 
 	/**
 	 * Initialize the object
@@ -285,6 +289,17 @@ abstract class AbstractFunctionModule {
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		if ($this->pageRenderer === NULL) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

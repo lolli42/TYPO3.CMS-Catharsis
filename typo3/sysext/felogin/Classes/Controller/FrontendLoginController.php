@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Plugin 'Website User Login' for the 'felogin' extension.
- *
- * @author Steffen Kamper <info@sk-typo3.de>
  */
 class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 
@@ -138,6 +136,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 				$this->spid = $this->conf['storagePid'];
 			}
 		} else {
+			GeneralUtility::deprecationLog('Extension "felogin" must have a storagePid set via TypoScript or the plugin configuration.');
 			$pids = $this->frontendController->getStorageSiterootPids();
 			$this->spid = $pids['_STORAGE_PID'];
 		}
@@ -161,7 +160,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 		// Redirect
 		if ($this->conf['redirectMode'] && !$this->conf['redirectDisable'] && !$this->noRedirect && !$this->conf['showLogoutFormAfterLogin']) {
 			$redirectUrl = $this->processRedirect();
-			if (count($redirectUrl)) {
+			if (!empty($redirectUrl)) {
 				$this->redirectUrl = $this->conf['redirectFirstMethod'] ? array_shift($redirectUrl) : array_pop($redirectUrl);
 			} else {
 				$this->redirectUrl = '';
@@ -374,10 +373,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 				}
 				if (!$done) {
 					// Change password form
-					$markerArray['###ACTION_URI###'] = $this->pi_getPageLink($this->frontendController->id, '', array(
+					$markerArray['###ACTION_URI###'] = $this->getPageLink('', array(
 						$this->prefixId . '[user]' => $user['uid'],
 						$this->prefixId . '[forgothash]' => $piHash
-					));
+					), TRUE);
 					$markerArray['###LEGEND###'] = $this->pi_getLL('change_password', '', TRUE);
 					$markerArray['###NEWPASSWORD1_LABEL###'] = $this->pi_getLL('newpassword_label1', '', TRUE);
 					$markerArray['###NEWPASSWORD2_LABEL###'] = $this->pi_getLL('newpassword_label2', '', TRUE);
@@ -573,10 +572,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 				$extraHiddenAr[] = $hid;
 			}
 		}
-		if (count($onSubmitAr)) {
+		if (!empty($onSubmitAr)) {
 			$onSubmit = implode('; ', $onSubmitAr) . '; return true;';
 		}
-		if (count($extraHiddenAr)) {
+		if (!empty($extraHiddenAr)) {
 			$extraHidden = implode(LF, $extraHiddenAr);
 		}
 		if (!$gpRedirectUrl && $this->redirectUrl) {
@@ -755,11 +754,10 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 			}
 		}
 		// Remove empty values
-		if (count($redirect_url)) {
+		if (!empty($redirect_url)) {
 			return GeneralUtility::trimExplode(',', implode(',', $redirect_url), TRUE);
-		} else {
-			return array();
 		}
+		return array();
 	}
 
 	/**
@@ -833,7 +831,7 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 	 */
 	protected function getPageLink($label, $piVars, $returnUrl = FALSE) {
 		$additionalParams = '';
-		if (count($piVars)) {
+		if (!empty($piVars)) {
 			foreach ($piVars as $key => $val) {
 				$additionalParams .= '&' . $key . '=' . $val;
 			}
@@ -884,8 +882,6 @@ class FrontendLoginController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin 
 
 	/**
 	 * Is used by forgot password - function with md5 option.
-	 *
-	 * @author Bernhard Kraft
 	 * @param int $len Length of new password
 	 * @return string New password
 	 */

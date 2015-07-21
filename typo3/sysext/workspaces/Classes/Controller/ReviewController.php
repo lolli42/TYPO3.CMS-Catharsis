@@ -20,8 +20,6 @@ use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
 /**
  * Review controller.
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class ReviewController extends AbstractController {
 
@@ -63,7 +61,7 @@ class ReviewController extends AbstractController {
 				}
 			}
 		}
-		$this->pageRenderer->addInlineSetting('Workspaces', 'isLiveWorkspace', (int)$GLOBALS['BE_USER']->workspace === 0 ? TRUE : FALSE);
+		$this->pageRenderer->addInlineSetting('Workspaces', 'isLiveWorkspace', (int)$GLOBALS['BE_USER']->workspace === 0);
 		$this->pageRenderer->addInlineSetting('Workspaces', 'workspaceTabs', $this->prepareWorkspaceTabs($wsList, $activeWorkspace));
 		$this->pageRenderer->addInlineSetting('Workspaces', 'activeWorkspaceId', $activeWorkspace);
 		$this->pageRenderer->addInlineSetting('FormEngine', 'moduleUrl', BackendUtility::getModuleUrl('record_edit'));
@@ -142,7 +140,6 @@ class ReviewController extends AbstractController {
 			$defaultFlashMessageQueue->enqueue($flashMessage);
 		}
 		$this->pageRenderer->loadExtJS();
-		$this->pageRenderer->enableExtJSQuickTips();
 		$states = $GLOBALS['BE_USER']->uc['moduleData']['Workspaces']['States'];
 		$this->pageRenderer->addInlineSetting('Workspaces', 'States', $states);
 		// Load  JavaScript:
@@ -191,6 +188,9 @@ class ReviewController extends AbstractController {
 
 		foreach ($javaScriptFiles as $javaScriptFile) {
 			$this->pageRenderer->addJsFile($javaScriptFile);
+		}
+		foreach ($this->getAdditionalResourceService()->getLocalizationResources() as $localizationResource) {
+			$this->pageRenderer->addInlineLanguageLabelFile($localizationResource);
 		}
 		$this->pageRenderer->addInlineSetting('RecordHistory', 'moduleUrl', BackendUtility::getModuleUrl('record_history'));
 	}

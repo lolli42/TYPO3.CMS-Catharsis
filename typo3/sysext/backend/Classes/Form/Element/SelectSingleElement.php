@@ -65,8 +65,7 @@ class SelectSingleElement extends AbstractFormElement {
 
 		// Wizards:
 		if (!$disabled) {
-			$altItem = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
-			$html = $this->renderWizards(array($html, $altItem), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
+			$html = $this->renderWizards(array($html), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
 		}
 		$this->resultArray['html'] = $html;
 		return $this->resultArray;
@@ -255,7 +254,7 @@ class SelectSingleElement extends AbstractFormElement {
 			</div>';
 
 		// Create icon table:
-		if (count($selectIcons) && !$config['noIconsBelowSelect']) {
+		if (!empty($selectIcons) && !$config['noIconsBelowSelect']) {
 			$selectIconColumns = (int)$config['selicon_cols'];
 			if (!$selectIconColumns) {
 				$selectIconColumns = count($selectIcons);
@@ -264,7 +263,8 @@ class SelectSingleElement extends AbstractFormElement {
 			$selectIconRows = ceil(count($selectIcons) / $selectIconColumns);
 			$selectIcons = array_pad($selectIcons, $selectIconRows * $selectIconColumns, '');
 			$out .= '<div class="table-fit table-fit-inline-block"><table class="table table-condensed table-white table-center"><tbody><tr>';
-			for ($selectIconCount = 0; $selectIconCount < count($selectIcons); $selectIconCount++) {
+			$selectIconTotalCount = count($selectIcons);
+			for ($selectIconCount = 0; $selectIconCount < $selectIconTotalCount; $selectIconCount++) {
 				if ($selectIconCount % $selectIconColumns === 0 && $selectIconCount !== 0) {
 					$out .= '</tr><tr>';
 				}

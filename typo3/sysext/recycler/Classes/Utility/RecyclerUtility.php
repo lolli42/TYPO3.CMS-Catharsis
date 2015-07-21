@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Helper class for the 'recycler' extension.
- *
- * @author Julian Kleinhans <typo3@kj187.de>
  */
 class RecyclerUtility {
 
@@ -50,11 +48,11 @@ class RecyclerUtility {
 			if ($table === 'pages') {
 				// If pages:
 				$calculatedPermissions = $backendUser->calcPerms($calcPRec);
-				$hasAccess = $calculatedPermissions & Permission::PAGE_EDIT ? TRUE : FALSE;
+				$hasAccess = (bool)($calculatedPermissions & Permission::PAGE_EDIT);
 			} else {
 				$calculatedPermissions = $backendUser->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
 				// Fetching pid-record first.
-				$hasAccess = $calculatedPermissions & Permission::CONTENT_EDIT ? TRUE : FALSE;
+				$hasAccess = (bool)($calculatedPermissions & Permission::CONTENT_EDIT);
 			}
 			// Check internals regarding access:
 			if ($hasAccess) {

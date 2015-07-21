@@ -18,8 +18,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * A utility resolving and Caching the Rootline generation
- *
- * @author Steffen Ritter <steffen.ritter@typo3.org>
  */
 class RootlineUtility {
 
@@ -86,7 +84,6 @@ class RootlineUtility {
 		'extendToSubpages',
 		'doktype',
 		'TSconfig',
-		'storage_pid',
 		'is_siteroot',
 		'mount_pid',
 		'mount_pid_ol',
@@ -365,7 +362,7 @@ class RootlineUtility {
 		$cacheTags = array('pageId_' . $page['uid']);
 		if ($parentUid > 0) {
 			// Get rootline of (and including) parent page
-			$mountPointParameter = count($this->parsedMountPointParameters) > 0 ? $this->mountPointParameter : '';
+			$mountPointParameter = !empty($this->parsedMountPointParameters) ? $this->mountPointParameter : '';
 			/** @var $rootline \TYPO3\CMS\Core\Utility\RootlineUtility */
 			$rootline = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\RootlineUtility::class, $parentUid, $mountPointParameter, $this->pageContext);
 			$rootline = $rootline->get();

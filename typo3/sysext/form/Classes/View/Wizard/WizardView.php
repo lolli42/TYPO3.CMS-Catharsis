@@ -16,13 +16,12 @@ namespace TYPO3\CMS\Form\View\Wizard;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * The form wizard view
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 
@@ -36,7 +35,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 	public $doc;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 * @var PageRenderer
 	 */
 	protected $pageRenderer;
 
@@ -59,10 +58,9 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:form/Resources/Private/Templates/Wizard.html');
-		$this->pageRenderer = $this->doc->getPageRenderer();
-		$this->pageRenderer->enableConcatenateFiles();
-		$this->pageRenderer->enableCompressCss();
-		$this->pageRenderer->enableCompressJavascript();
+		$this->getPageRenderer()->enableConcatenateFiles();
+		$this->getPageRenderer()->enableCompressCss();
+		$this->getPageRenderer()->enableCompressJavascript();
 	}
 
 	/**
@@ -211,8 +209,7 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			'Viewport/Left/Form/PostProcessors/Mail.js',
 			'Viewport/Left/Form/PostProcessors/Redirect.js'
 		);
-		// Load ExtJS and prototype
-		$this->pageRenderer->loadPrototype();
+		// Load ExtJS
 		$this->pageRenderer->loadExtJS();
 		// Load the wizards javascript
 		$baseUrl = ExtensionManagementUtility::extRelPath('form') . 'Resources/Public/JavaScript/Wizard/';
@@ -353,6 +350,17 @@ class WizardView extends \TYPO3\CMS\Form\View\Wizard\AbstractWizardView {
 			$bodyContent = $flashMessage->render();
 		}
 		return $bodyContent;
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		if (!isset($this->pageRenderer)) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

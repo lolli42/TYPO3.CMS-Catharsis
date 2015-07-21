@@ -18,9 +18,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides a textarea to save personal notes
- *
- * @author Kasper Skårhøj <kasper@typo3.com>
- * @author Georg Ringer <typo3@ringerge.org>
  */
 class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 
@@ -36,7 +33,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 */
 	public function __construct(\TYPO3\CMS\Taskcenter\Controller\TaskModuleController $taskObject) {
 		$this->taskObject = $taskObject;
-		$GLOBALS['LANG']->includeLLFile('EXT:impexp/locallang_csh.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:impexp/Resources/Private/Language/locallang_csh.xlf');
 	}
 
 	/**
@@ -95,7 +92,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 					$configuration = unserialize($presetCfg['preset_data']);
 					$thumbnailFile = $thumbnails[$configuration['meta']['thumbnail']];
 					$title = strlen($presetCfg['title']) ? $presetCfg['title'] : '[' . $presetCfg['uid'] . ']';
-					$icon = 'EXT:impexp/export.gif';
+					$icon = 'EXT:impexp/Resources/Public/Images/export.gif';
 					$description = array();
 					// Is public?
 					if ($presetCfg['public']) {
@@ -131,7 +128,7 @@ class ImportExportTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 						'icon' => $icon,
 						'title' => $title,
 						'descriptionHtml' => implode('<br />', $description),
-						'link' => BackendUtility::getModuleUrl('user_task') . '&SET[function]=impexp.tx_impexp_task&display=' . $presetCfg['uid']
+						'link' => BackendUtility::getModuleUrl('user_task') . '&SET[function]=impexp.TYPO3\\CMS\\Impexp\\Task\\ImportExportTask&display=' . $presetCfg['uid']
 					);
 				}
 				// Render preset list

@@ -29,8 +29,6 @@ use TYPO3\CMS\Lang\LanguageService;
  * Typically instantiated like this:
  * $this->loadModules = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Module\ModuleLoader::class);
  * $this->loadModules->load($TBE_MODULES);
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @internal
  */
 class ModuleLoader {
@@ -113,9 +111,9 @@ class ModuleLoader {
 		 */
 		$this->absPathArray = $modulesArray['_PATHS'];
 		unset($modulesArray['_PATHS']);
-		// Unset the array for calling external backend module dispatchers in typo3/mod.php
+		// Unset the array for calling external backend module dispatchers in typo3/index.php
 		unset($modulesArray['_dispatcher']);
-		// Unset the array for calling backend modules based on external backend module dispatchers in typo3/mod.php
+		// Unset the array for calling backend modules based on external backend module dispatchers in typo3/index.php
 		unset($modulesArray['_configuration']);
 		$this->navigationComponents = $modulesArray['_navigationComponents'];
 		unset($modulesArray['_navigationComponents']);
@@ -272,11 +270,17 @@ class ModuleLoader {
 				$altIconAbsPath = is_array($GLOBALS['TBE_STYLES']['skinImg'][$altIconKey]) ? GeneralUtility::resolveBackPath(PATH_typo3 . $GLOBALS['TBE_STYLES']['skinImg'][$altIconKey][0]) : '';
 				// Setting icon, either default or alternative:
 				if ($altIconAbsPath && @is_file($altIconAbsPath)) {
-					$defaultLabels['tabs_images']['tab'] = $this->getRelativePath(PATH_typo3, $altIconAbsPath);
+					$defaultLabels['tabs_images']['tab'] = $altIconAbsPath;
 				} else {
-					// Setting default icon:
-					$defaultLabels['tabs_images']['tab'] = $this->getRelativePath(PATH_typo3, $fullPath . '/' . $defaultLabels['tabs_images']['tab']);
+					if (\TYPO3\CMS\Core\Utility\StringUtility::beginsWith($defaultLabels['tabs_images']['tab'], 'EXT:')) {
+						list($extensionKey, $relativePath) = explode('/', substr($defaultLabels['tabs_images']['tab'], 4), 2);
+						$defaultLabels['tabs_images']['tab'] = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
+					} else {
+						$defaultLabels['tabs_images']['tab'] = $fullPath . '/' . $defaultLabels['tabs_images']['tab'];
+					}
 				}
+
+				$defaultLabels['tabs_images']['tab'] = $this->getRelativePath(PATH_typo3, $defaultLabels['tabs_images']['tab']);
 
 				// Finally, setting the icon with correct path:
 				if (substr($defaultLabels['tabs_images']['tab'], 0, 3) === '../') {
@@ -470,7 +474,7 @@ class ModuleLoader {
 	}
 
 	/**
-	 * Parses the moduleArray ($TBE_MODULES) into a internally useful structure.
+	 * Parses the moduleArray ($TBE_MODULES) into an internally useful structure.
 	 * Returns an array where the keys are names of the module and the values may be TRUE (only module) or an array (of submodules)
 	 *
 	 * @param array $arr ModuleArray ($TBE_MODULES)

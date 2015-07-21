@@ -44,8 +44,6 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * Call ALL methods without making an object!
  * Eg. to get a page-record 51 do this: '\TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('pages',51)'
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BackendUtility {
 
@@ -196,7 +194,7 @@ class BackendUtility {
 				$rows[] = $row;
 			}
 			$db->sql_free_result($res);
-			if (count($rows)) {
+			if (!empty($rows)) {
 				return $rows;
 			}
 		}
@@ -352,7 +350,6 @@ class BackendUtility {
 					'doktype' => $val['doktype'],
 					'TSconfig' => $val['TSconfig'],
 					'is_siteroot' => $val['is_siteroot'],
-					'storage_pid' => $val['storage_pid'],
 					't3ver_oid' => $val['t3ver_oid'],
 					't3ver_wsid' => $val['t3ver_wsid'],
 					't3ver_state' => $val['t3ver_state'],
@@ -384,7 +381,7 @@ class BackendUtility {
 			$row = $getPageForRootline_cache[$ident];
 		} else {
 			$db = static::getDatabaseConnection();
-			$res = $db->exec_SELECTquery('pid,uid,title,doktype,TSconfig,is_siteroot,storage_pid,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
+			$res = $db->exec_SELECTquery('pid,uid,title,doktype,TSconfig,is_siteroot,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
 			$row = $db->sql_fetch_assoc($res);
 			if ($row) {
 				$newLocation = FALSE;
@@ -542,7 +539,7 @@ class BackendUtility {
 				}
 			}
 			// Sort fields by the translated value
-			if (count($excludeArrayTable) > 0) {
+			if (!empty($excludeArrayTable)) {
 				usort($excludeArrayTable, array(\TYPO3\CMS\Backend\Form\FlexFormsHelper::class, 'compareArraysByFirstValue'));
 				$finalExcludeArray = array_merge($finalExcludeArray, $excludeArrayTable);
 			}
@@ -810,7 +807,7 @@ class BackendUtility {
 	 * Note: This method is very similar to \TYPO3\CMS\Backend\Form\FormEngine::getRTypeNum(),
 	 * however, it has two differences:
 	 * 1) The method in TCEForms also takes care of localization (which is difficult to do here as the whole infrastructure for language overlays is only in TCEforms).
-	 * 2) The $rec array looks different in TCEForms, as in there it's not the raw record but the \TYPO3\CMS\Backend\Form\DataPreprocessor version of it, which changes e.g. how "select"
+	 * 2) The $row array looks different in TCEForms, as in there it's not the raw record but the \TYPO3\CMS\Backend\Form\DataPreprocessor version of it, which changes e.g. how "select"
 	 * and "group" field values are stored, which makes different processing of the "foreign pointer field" type field variant necessary.
 	 *
 	 * @param string $table Table name present in TCA
@@ -867,7 +864,7 @@ class BackendUtility {
 
 	/**
 	 * Parses "defaultExtras" of $GLOBALS['TCA'] columns config section to an array.
-	 * Elements are splitted by ":" and within those parts, parameters are splitted by "|".
+	 * Elements are split by ":" and within those parts, parameters are split by "|".
 	 *
 	 * See unit tests for details.
 	 *
@@ -912,7 +909,7 @@ class BackendUtility {
 		if (is_array($pArr)) {
 			foreach ($pArr as $k => $v) {
 				$parts = explode('=', $v, 2);
-				if (count($parts) == 2) {
+				if (count($parts) === 2) {
 					$out[trim($parts[0])] = trim($parts[1]);
 				} else {
 					$out[$k] = $v;
@@ -963,7 +960,7 @@ class BackendUtility {
 				// Up to two pointer fields can be specified in a comma separated list.
 				$pointerFields = GeneralUtility::trimExplode(',', $ds_pointerField);
 				// If we have two pointer fields, the array keys should contain both field values separated by comma. The asterisk "*" catches all values. For backwards compatibility, it's also possible to specify only the value of the first defined ds_pointerField.
-				if (count($pointerFields) == 2) {
+				if (count($pointerFields) === 2) {
 					if ($ds_array[$row[$pointerFields[0]] . ',' . $row[$pointerFields[1]]]) {
 						// Check if we have a DS for the combination of both pointer fields values
 						$srcPointer = $row[$pointerFields[0]] . ',' . $row[$pointerFields[1]];
@@ -1844,9 +1841,10 @@ class BackendUtility {
 		if ($table == 'pages') {
 			$out = self::titleAttribForPages($row, '', 0);
 		} else {
+			$out = !empty(trim($GLOBALS['TCA'][$table]['ctrl']['descriptionColumn'])) ? $row[$GLOBALS['TCA'][$table]['ctrl']['descriptionColumn']] . ' ' : '';
 			$ctrl = $GLOBALS['TCA'][$table]['ctrl']['enablecolumns'];
 			// Uid is added
-			$out = 'id=' . $row['uid'];
+			$out .= '(id=' . $row['uid'] . ')';
 			if ($table == 'pages' && $row['alias']) {
 				$out .= ' / ' . $row['alias'];
 			}
@@ -1945,26 +1943,45 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name, present in TCA
 	 * @param string $column Field name
-	 * @param string $key Key or comma-separated list of keys.
+	 * @param string $keyList Key or comma-separated list of keys.
+	 * @param array $columnTsConfig page TSConfig for $column (TCEMAIN.<table>.<column>)
 	 * @return string Comma-separated list of localized labels
 	 */
-	static public function getLabelsFromItemsList($table, $column, $key) {
+	static public function getLabelsFromItemsList($table, $column, $keyList, array $columnTsConfig = array()) {
+		// Check if there is an "items" array
+		if (
+			!isset($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'])
+			|| !is_array($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'])
+			|| $keyList === ''
+		) {
+			return '';
+		}
+
+		$keys = GeneralUtility::trimExplode(',', $keyList, TRUE);
 		$labels = array();
-		$values = GeneralUtility::trimExplode(',', $key, TRUE);
-		if (count($values) > 0) {
-			// Check if there is an "items" array
-			if (is_array($GLOBALS['TCA'][$table]) && is_array($GLOBALS['TCA'][$table]['columns'][$column]) && is_array($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'])) {
-				// Loop on all selected values
-				foreach ($values as $aValue) {
-					foreach ($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'] as $itemConfiguration) {
-						// Loop on all available items
-						// Keep matches and move on to next value
-						if ((string)$aValue === (string)$itemConfiguration[1]) {
-							$labels[] = static::getLanguageService()->sL($itemConfiguration[0]);
-							break;
-						}
+		// Loop on all selected values
+		foreach ($keys as $key) {
+			$label = NULL;
+			if ($columnTsConfig) {
+				// Check if label has been defined or redefined via pageTsConfig
+				if (isset($columnTsConfig['addItems.'][$key])) {
+					$label = $columnTsConfig['addItems.'][$key];
+				} elseif (isset($columnTsConfig['altLabels.'][$key])) {
+					$label = $columnTsConfig['altLabels.'][$key];
+				}
+			}
+			if ($label === NULL) {
+				// Otherwise lookup the label in TCA items list
+				foreach ($GLOBALS['TCA'][$table]['columns'][$column]['config']['items'] as $itemConfiguration) {
+					list($currentLabel, $currentKey) = $itemConfiguration;
+					if ((string)$key === (string)$currentKey) {
+						$label = $currentLabel;
+						break;
 					}
 				}
+			}
+			if ($label !== NULL) {
+				$labels[] = static::getLanguageService()->sL($label);
 			}
 		}
 		return implode(', ', $labels);
@@ -2137,9 +2154,11 @@ class BackendUtility {
 	 * @param bool $noRecordLookup If set, no records will be looked up, UIDs are just shown.
 	 * @param int $uid Uid of the current record
 	 * @param bool $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
+	 * @param int $pid Optional page uid is used to evaluate page TSConfig for the given field
+	 * @throws \InvalidArgumentException
 	 * @return string|NULL
 	 */
-	static public function getProcessedValue($table, $col, $value, $fixed_lgd_chars = 0, $defaultPassthrough = FALSE, $noRecordLookup = FALSE, $uid = 0, $forceResult = TRUE) {
+	static public function getProcessedValue($table, $col, $value, $fixed_lgd_chars = 0, $defaultPassthrough = FALSE, $noRecordLookup = FALSE, $uid = 0, $forceResult = TRUE, $pid = 0) {
 		if ($col === 'uid') {
 			// uid is not in TCA-array
 			return $value;
@@ -2186,7 +2205,7 @@ class BackendUtility {
 						$dbGroup = GeneralUtility::makeInstance(RelationHandler::class);
 						$dbGroup->start($value, $theColConf['foreign_table'], $theColConf['MM'], $uid, $table, $theColConf);
 						$selectUids = $dbGroup->tableArray[$theColConf['foreign_table']];
-						if (is_array($selectUids) && count($selectUids) > 0) {
+						if (is_array($selectUids) && !empty($selectUids)) {
 							$MMres = $db->exec_SELECTquery('uid, ' . $MMfield, $theColConf['foreign_table'], 'uid IN (' . implode(',', $selectUids) . ')' . self::deleteClause($theColConf['foreign_table']));
 							$mmlA = array();
 							while ($MMrow = $db->sql_fetch_assoc($MMres)) {
@@ -2209,7 +2228,14 @@ class BackendUtility {
 						$l = 'N/A';
 					}
 				} else {
-					$l = self::getLabelsFromItemsList($table, $col, $value);
+					$columnTsConfig = array();
+					if ($pid) {
+						$pageTsConfig = self::getPagesTSconfig($pid);
+						if (isset($pageTsConfig['TCEFORM.'][$table . '.'][$col . '.']) && is_array($pageTsConfig['TCEFORM.'][$table . '.'][$col . '.'])) {
+							$columnTsConfig = $pageTsConfig['TCEFORM.'][$table . '.'][$col . '.'];
+						}
+					}
+					$l = self::getLabelsFromItemsList($table, $col, $value, $columnTsConfig);
 					if ($theColConf['foreign_table'] && !$l && $GLOBALS['TCA'][$theColConf['foreign_table']]) {
 						if ($noRecordLookup) {
 							$l = $value;
@@ -2329,7 +2355,7 @@ class BackendUtility {
 				}
 				break;
 			case 'check':
-				if (!is_array($theColConf['items']) || count($theColConf['items']) == 1) {
+				if (!is_array($theColConf['items']) || count($theColConf['items']) === 1) {
 					$l = $value ? $lang->sL('LLL:EXT:lang/locallang_common.xlf:yes') : $lang->sL('LLL:EXT:lang/locallang_common.xlf:no');
 				} else {
 					$lA = array();
@@ -2427,11 +2453,12 @@ class BackendUtility {
 	 * @param int $fixed_lgd_chars The max amount of characters the value may occupy
 	 * @param int $uid Uid of the current record
 	 * @param bool $forceResult If BackendUtility::getRecordTitle is used to process the value, this parameter is forwarded.
+	 * @param int $pid Optional page uid is used to evaluate page TSConfig for the given field
 	 * @return string
 	 * @see getProcessedValue()
 	 */
-	static public function getProcessedValueExtra($table, $fN, $fV, $fixed_lgd_chars = 0, $uid = 0, $forceResult = TRUE) {
-		$fVnew = self::getProcessedValue($table, $fN, $fV, $fixed_lgd_chars, 1, 0, $uid, $forceResult);
+	static public function getProcessedValueExtra($table, $fN, $fV, $fixed_lgd_chars = 0, $uid = 0, $forceResult = TRUE, $pid = 0) {
+		$fVnew = self::getProcessedValue($table, $fN, $fV, $fixed_lgd_chars, 1, 0, $uid, $forceResult, $pid);
 		if (!isset($fVnew)) {
 			if (is_array($GLOBALS['TCA'][$table])) {
 				if ($fN == $GLOBALS['TCA'][$table]['ctrl']['tstamp'] || $fN == $GLOBALS['TCA'][$table]['ctrl']['crdate']) {
@@ -2664,14 +2691,14 @@ class BackendUtility {
 		$helpText = '';
 		$abbrClassAdd = '';
 		$wrappedText = $text;
-		$hasHelpTextOverload = count($overloadHelpText) > 0;
+		$hasHelpTextOverload = !empty($overloadHelpText);
 		// Get the help text that should be shown on hover
 		if (!$hasHelpTextOverload) {
 			$helpText = self::helpText($table, $field);
 		}
 		// If there's a help text or some overload information, proceed with preparing an output
 		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
-		// the extension. The core provides a API for adding help, and rendering help, but the rendering
+		// the extension. The core provides an API for adding help and rendering help, but the rendering
 		// should be up to the extension itself
 		if ((!empty($helpText) || $hasHelpTextOverload) && ExtensionManagementUtility::isLoaded('cshmanual')) {
 			// If no text was given, just use the regular help icon
@@ -2812,7 +2839,7 @@ class BackendUtility {
 			// Traverse the view order, match first occurrence:
 			$languageOrder = GeneralUtility::intExplode(',', $viewLanguageOrder);
 			foreach ($languageOrder as $langUid) {
-				if (is_array($allowedLanguages) && count($allowedLanguages)) {
+				if (is_array($allowedLanguages) && !empty($allowedLanguages)) {
 					// Choose if set.
 					if (isset($allowedLanguages[$langUid])) {
 						$suffix = '&L=' . $langUid;
@@ -2849,7 +2876,6 @@ class BackendUtility {
 	 * @param int $pageId The page ID to use, must be > 0
 	 * @param array|NULL $rootLine The root line structure to use
 	 * @return string The full domain including the protocol http:// or https://, but without the trailing '/'
-	 * @author Michael Klapper <michael.klapper@aoemedia.de>
 	 */
 	static public function getViewDomain($pageId, $rootLine = NULL) {
 		$domain = rtrim(GeneralUtility::getIndpEnv('TYPO3_SITE_URL'), '/');
@@ -2857,7 +2883,7 @@ class BackendUtility {
 			$rootLine = self::BEgetRootLine($pageId);
 		}
 		// Checks alternate domains
-		if (count($rootLine) > 0) {
+		if (!empty($rootLine)) {
 			$urlParts = parse_url($domain);
 			/** @var PageRepository $sysPage */
 			$sysPage = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\Page\PageRepository::class);
@@ -2937,7 +2963,7 @@ class BackendUtility {
 		foreach ($menuItems as $value => $label) {
 			$options[] = '<option value="' . htmlspecialchars($value) . '"' . ((string)$currentValue === (string)$value ? ' selected="selected"' : '') . '>' . htmlspecialchars($label, ENT_COMPAT, 'UTF-8', FALSE) . '</option>';
 		}
-		if (count($options)) {
+		if (!empty($options)) {
 			$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+this.options[this.selectedIndex].value,this);';
 			return '
 
@@ -2946,6 +2972,43 @@ class BackendUtility {
 					' . implode('
 					', $options) . '
 				</select>
+						';
+		}
+		return '';
+	}
+
+	/**
+	 * Returns a selector box to switch the view
+	 * Requires the JS function jumpToUrl() to be available
+	 * Based on BackendUtility::getFuncMenu() but done as new function because it has another purpose.
+	 * Mingling with getFuncMenu would harm the docHeader Menu.
+	 *
+	 * @param mixed $mainParams The "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
+	 * @param string $elementName The form elements name, probably something like "SET[...]
+	 * @param string $currentValue The value to be selected currently.
+	 * @param array $menuItems An array with the menu items for the selector box
+	 * @param string $script The script to send the &id to, if empty it's automatically found
+	 * @param string $addParams Additional parameters to pass to the script.
+	 * @return string HTML code for selector box
+	 */
+	static public function getDropdownMenu($mainParams, $elementName, $currentValue, $menuItems, $script = '', $addParams = '') {
+		if (!is_array($menuItems) || count($menuItems) <= 1) {
+			return '';
+		}
+		$scriptUrl = self::buildScriptUrl($mainParams, $addParams, $script);
+		$options = array();
+		foreach ($menuItems as $value => $label) {
+			$options[] = '<option value="' . htmlspecialchars($value) . '"' . ((string)$currentValue === (string)$value ? ' selected="selected"' : '') . '>' . htmlspecialchars($label, ENT_COMPAT, 'UTF-8', FALSE) . '</option>';
+		}
+		if (!empty($options)) {
+			$onChange = 'jumpToUrl(' . GeneralUtility::quoteJSvalue($scriptUrl . '&' . $elementName . '=') . '+this.options[this.selectedIndex].value,this);';
+			return '
+			<div class="form-group">
+				<!-- Function Menu of module -->
+				<select class="form-control input-sm" name="' . htmlspecialchars($elementName) . '" onchange="' . htmlspecialchars($onChange) . '">
+					' . implode(LF, $options) . '
+				</select>
+			</div>
 						';
 		}
 		return '';
@@ -2982,7 +3045,7 @@ class BackendUtility {
 
 	/**
 	 * Input field function menu
-	 * Works like ->getFuncMenu() / ->getFuncCheck() but displays a input field instead which updates the script "onchange"
+	 * Works like ->getFuncMenu() / ->getFuncCheck() but displays an input field instead which updates the script "onchange"
 	 *
 	 * @param mixed $mainParams $id is the "&id=" parameter value to be sent to the module, but it can be also a parameter array which will be passed instead of the &id=...
 	 * @param string $elementName The form elements name, probably something like "SET[...]
@@ -3014,7 +3077,7 @@ class BackendUtility {
 		if (!$script) {
 			$script = basename(PATH_thisScript);
 		}
-		if ($script === 'mod.php' && GeneralUtility::_GET('M')) {
+		if ($script === 'index.php' && GeneralUtility::_GET('M')) {
 			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addParams;
 		} else {
 			$scriptUrl = $script . '?' . GeneralUtility::implodeArrayForUrl('', $mainParams) . $addParams;
@@ -3080,7 +3143,7 @@ class BackendUtility {
 	static public function getUpdateSignalCode() {
 		$signals = array();
 		$modData = static::getBackendUserAuthentication()->getModuleData(\TYPO3\CMS\Backend\Utility\BackendUtility::class . '::getUpdateSignal', 'ses');
-		if (!count($modData)) {
+		if (empty($modData)) {
 			return '';
 		}
 		// Hook: Allows to let TYPO3 execute your JS code
@@ -3207,7 +3270,7 @@ class BackendUtility {
 			'M' => $moduleName,
 			'moduleToken' => FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
 		) + $urlParameters;
-		$url = 'mod.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', TRUE, TRUE), '&');
+		$url = 'index.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', TRUE, TRUE), '&');
 		if ($returnAbsoluteUrl) {
 			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
 		} else {
@@ -3236,7 +3299,7 @@ class BackendUtility {
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxIdentifier]['csrfTokenCheck'])) {
 			$additionalUrlParameters['ajaxToken'] = FormProtectionFactory::get()->generateToken('ajaxCall', $ajaxIdentifier);
 		}
-		$url = 'ajax.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', ($additionalUrlParameters + $urlParameters), '', TRUE, TRUE), '&');
+		$url = 'index.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', ($additionalUrlParameters + $urlParameters), '', TRUE, TRUE), '&');
 		if ($returnAbsoluteUrl) {
 			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
 		} else {
@@ -3313,7 +3376,6 @@ class BackendUtility {
 	 * @param int $uid Record uid
 	 * @return array
 	 * @internal
-	 * @see class.db_layout.inc, alt_db_navframe.php, EditDocumentController, db_layout.php
 	 */
 	static public function isRecordLocked($table, $uid) {
 		if (!is_array($GLOBALS['LOCKED_RECORDS'])) {
@@ -3568,8 +3630,7 @@ class BackendUtility {
 	 * @internal
 	 */
 	static public function getPidForModTSconfig($table, $uid, $pid) {
-		$retVal = $table == 'pages' && MathUtility::canBeInterpretedAsInteger($uid) ? $uid : $pid;
-		return $retVal;
+		return $table === 'pages' && MathUtility::canBeInterpretedAsInteger($uid) ? $uid : $pid;
 	}
 
 	/**
@@ -3605,7 +3666,8 @@ class BackendUtility {
 	 * @param string $table Table name
 	 * @param int $uid Record uid
 	 * @param int $pid Record pid
-	 * @return array Array of two ints; first is the REAL PID of a record and if its a new record negative values are resolved to the true PID, second value is the PID value for TSconfig (uid if table is pages, otherwise the pid)
+	 * @return array Array of two ints; first is the REAL PID of a record and if its a new record negative values are resolved to the true PID,
+	 * second value is the PID value for TSconfig (uid if table is pages, otherwise the pid)
 	 * @internal
 	 * @see \TYPO3\CMS\Core\DataHandling\DataHandler::setHistory(), \TYPO3\CMS\Core\DataHandling\DataHandler::process_datamap()
 	 */
@@ -3660,7 +3722,8 @@ class BackendUtility {
 	}
 
 	/**
-	 * Returns overlayered RTE setup from an array with TSconfig. Used in TCEforms and TCEmain
+	 * Returns processed RTE setup from an array with TSconfig.
+	 * Merges table and type specific RTE configuration into 'default.'
 	 *
 	 * @param array $RTEprop The properties of Page TSconfig in the key "RTE.
 	 * @param string $table Table name
@@ -3687,8 +3750,10 @@ class BackendUtility {
 	 * Usage: $RTEobj = BackendUtility::RTEgetObj();
 	 *
 	 * @return mixed If available, returns RTE object, otherwise an array of messages from possible RTEs
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function RTEgetObj() {
+		GeneralUtility::logDeprecatedFunction();
 		// If no RTE object has been set previously, try to create it:
 		if (!isset($GLOBALS['T3_VAR']['RTEobj'])) {
 			// Set the object string to blank by default:
@@ -3707,7 +3772,7 @@ class BackendUtility {
 					}
 				}
 			}
-			if (!count($GLOBALS['T3_VAR']['RTEobj'])) {
+			if (empty($GLOBALS['T3_VAR']['RTEobj'])) {
 				$GLOBALS['T3_VAR']['RTEobj'][] = 'No RTEs configured at all';
 			}
 		}
@@ -3737,7 +3802,7 @@ class BackendUtility {
 				$objRef = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['softRefParser_GL'][$spKey];
 			}
 			if ($objRef) {
-				$softRefParserObj = GeneralUtility::getUserObj($objRef, '');
+				$softRefParserObj = GeneralUtility::getUserObj($objRef);
 				if (is_object($softRefParserObj)) {
 					$GLOBALS['T3_VAR']['softRefParser'][$spKey] = $softRefParserObj;
 				}
@@ -4185,8 +4250,10 @@ class BackendUtility {
 	 * @param int $workspace Workspace ID
 	 * @param int $pageId Page ID
 	 * @return array Overview of records
+	 * @deprecated since TYPO3 CMS 7. Will be removed with TYPO3 CMS 8. Please use \TYPO3\CMS\Workspaces\Service\WorkspaceService::hasPageRecordVersions to check for record versions.
 	 */
 	static public function countVersionsOfRecordsOnPage($workspace, $pageId) {
+		GeneralUtility::logDeprecatedFunction();
 		if ((int)$workspace === 0) {
 			return array();
 		}
@@ -4209,7 +4276,7 @@ class BackendUtility {
 						. ' AND A.t3ver_wsid=' . (int)$workspace . ' AND ' . $joinStatement
 						. self::deleteClause($tableName, 'A') . self::deleteClause($tableName, 'B')
 				);
-				if (!is_array($output[$tableName]) || !count($output[$tableName])) {
+				if (!is_array($output[$tableName]) || empty($output[$tableName])) {
 					unset($output[$tableName]);
 				}
 			}
@@ -4314,7 +4381,7 @@ class BackendUtility {
 	}
 
 	/**
-	 * Creates ADMCMD parameters for the "viewpage" extension / "cms" frontend
+	 * Creates ADMCMD parameters for the "viewpage" extension / frontend
 	 *
 	 * @param array $pageInfo Page record
 	 * @return string Query-parameters
@@ -4371,9 +4438,8 @@ class BackendUtility {
 				$script = '../.';
 				break;
 			case 'backend':
-
 			default:
-				$script = 'backend.php';
+				$script = self::getModuleUrl('main');
 		}
 		return $script;
 	}

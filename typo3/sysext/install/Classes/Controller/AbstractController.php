@@ -61,10 +61,10 @@ class AbstractController {
 	 */
 	protected function outputInstallToolNotEnabledMessageIfNeeded() {
 		if (!$this->isInstallToolAvailable()) {
-			if (!EnableFileService::isFirstInstallAllowed() && !is_dir(PATH_typo3conf)) {
+			if (!EnableFileService::isFirstInstallAllowed() && !\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->checkIfEssentialConfigurationExists()) {
 				/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $action */
-				$action = $this->objectManager->get(\TYPO3\CMS\Install\Controller\Action\Common\AccessNotAllowedAction::class);
-				$action->setAction('accessNotAllowed');
+				$action = $this->objectManager->get(\TYPO3\CMS\Install\Controller\Action\Common\FirstInstallAction::class);
+				$action->setAction('firstInstall');
 			} else {
 				/** @var \TYPO3\CMS\Install\Controller\Action\ActionInterface $action */
 				$action = $this->objectManager->get(\TYPO3\CMS\Install\Controller\Action\Common\InstallToolDisabledAction::class);
@@ -102,7 +102,7 @@ class AbstractController {
 	protected function checkSessionToken() {
 		$postValues = $this->getPostValues();
 		$tokenOk = FALSE;
-		if (count($postValues) > 0) {
+		if (!empty($postValues)) {
 			// A token must be given as soon as there is POST data
 			if (isset($postValues['token'])) {
 				/** @var $formProtection \TYPO3\CMS\Core\FormProtection\InstallToolFormProtection */

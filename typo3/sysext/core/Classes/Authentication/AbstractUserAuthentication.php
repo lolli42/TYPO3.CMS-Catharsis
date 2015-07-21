@@ -25,9 +25,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * In both cases this class is a parent class to BackendUserAuthentication and FrontenUserAuthentication
  *
  * See Inside TYPO3 for more information about the API of the class and internal variables.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author René Fritz <r.fritz@colorcube.de>
  */
 abstract class AbstractUserAuthentication {
 
@@ -506,7 +503,7 @@ abstract class AbstractUserAuthentication {
 				$match = array();
 				$matchCnt = @preg_match($cookieDomain, GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'), $match);
 				if ($matchCnt === FALSE) {
-					GeneralUtility::sysLog('The regular expression for the cookie domain (' . $cookieDomain . ') contains errors. The session is not shared across sub-domains.', 'Core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+					GeneralUtility::sysLog('The regular expression for the cookie domain (' . $cookieDomain . ') contains errors. The session is not shared across sub-domains.', 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				} elseif ($matchCnt) {
 					$result = $match[0];
 				}
@@ -618,7 +615,7 @@ abstract class AbstractUserAuthentication {
 		if (!$this->newSessionID) {
 			// Read user session
 			$authInfo['userSession'] = $this->fetchUserSession($skipSessionUpdate);
-			$haveSession = is_array($authInfo['userSession']) ? TRUE : FALSE;
+			$haveSession = is_array($authInfo['userSession']);
 		}
 		if ($this->writeDevLog) {
 			if ($haveSession) {
@@ -661,15 +658,15 @@ abstract class AbstractUserAuthentication {
 			if ($this->writeDevLog && $serviceChain) {
 				GeneralUtility::devLog($subType . ' auth services called: ' . $serviceChain, \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class);
 			}
-			if ($this->writeDevLog && !count($tempuserArr)) {
+			if ($this->writeDevLog && empty($tempuserArr)) {
 				GeneralUtility::devLog('No user found by services', \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class);
 			}
-			if ($this->writeDevLog && count($tempuserArr)) {
+			if ($this->writeDevLog && !empty($tempuserArr)) {
 				GeneralUtility::devLog(count($tempuserArr) . ' user records found by services', \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class);
 			}
 		}
 		// If no new user was set we use the already found user session
-		if (!count($tempuserArr) && $haveSession) {
+		if (empty($tempuserArr) && $haveSession) {
 			$tempuserArr[] = $authInfo['userSession'];
 			$tempuser = $authInfo['userSession'];
 			// User is authenticated because we found a user session
@@ -686,7 +683,7 @@ abstract class AbstractUserAuthentication {
 			}
 		}
 		// Authenticate the user if needed
-		if (count($tempuserArr) && !$authenticated) {
+		if (!empty($tempuserArr) && !$authenticated) {
 			foreach ($tempuserArr as $tempuser) {
 				// Use 'auth' service to authenticate the user
 				// If one service returns FALSE then authentication failed
@@ -746,6 +743,9 @@ abstract class AbstractUserAuthentication {
 			} elseif ($haveSession) {
 				$this->user = $authInfo['userSession'];
 			}
+			if ($activeLogin && !$this->newSessionID) {
+				$this->regenerateSessionId();
+			}
 			// User logged in - write that to the log!
 			if ($this->writeStdLog && $activeLogin) {
 				$this->writelog(255, 1, 0, 1, 'User %s logged in from %s (%s)', array($tempuser[$this->username_column], GeneralUtility::getIndpEnv('REMOTE_ADDR'), GeneralUtility::getIndpEnv('REMOTE_HOST')), '', '', '', -1, '', $tempuser['uid']);
@@ -770,12 +770,12 @@ abstract class AbstractUserAuthentication {
 					\TYPO3\CMS\Core\Utility\HttpUtility::redirect('http://' . $server . '/' . $address . TYPO3_mainDir . $backendScript);
 				}
 			}
-		} elseif ($activeLogin || count($tempuserArr)) {
+		} elseif ($activeLogin || !empty($tempuserArr)) {
 			$this->loginFailure = TRUE;
-			if ($this->writeDevLog && !count($tempuserArr) && $activeLogin) {
+			if ($this->writeDevLog && empty($tempuserArr) && $activeLogin) {
 				GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($loginData), \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class, 2);
 			}
-			if ($this->writeDevLog && count($tempuserArr)) {
+			if ($this->writeDevLog && !empty($tempuserArr)) {
 				GeneralUtility::devLog('Login failed: ' . GeneralUtility::arrayToLogString($tempuser, array($this->userid_column, $this->username_column)), \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class, 2);
 			}
 		}
@@ -784,6 +784,21 @@ abstract class AbstractUserAuthentication {
 			if ($this->writeDevLog) {
 				GeneralUtility::devLog('Call checkLogFailures: ' . GeneralUtility::arrayToLogString(array('warningEmail' => $this->warningEmail, 'warningPeriod' => $this->warningPeriod, 'warningMax' => $this->warningMax)), \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class, -1);
 			}
+
+			// Hook to implement login failure tracking methods
+			if (
+				!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'])
+				&& is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'])
+			) {
+				$_params = array();
+				foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_userauth.php']['postLoginFailureProcessing'] as $_funcRef) {
+					GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+				}
+			} else {
+				// If no hook is implemented, wait for 5 seconds
+				sleep(5);
+			}
+
 			$this->checkLogFailures($this->warningEmail, $this->warningPeriod, $this->warningMax);
 		}
 	}
@@ -795,6 +810,24 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function createSessionId() {
 		return GeneralUtility::getRandomHexString($this->hash_length);
+	}
+
+	/**
+	 * Regenerate the session ID and transfer the session to new ID
+	 * Call this method whenever a user proceeds to a higher authorization level
+	 * e.g. when an anonymous session is now authenticated.
+	 */
+	protected function regenerateSessionId() {
+		$oldSessionId = $this->id;
+		$this->id = $this->createSessionId();
+		// Update session record with new ID
+		$this->db->exec_UPDATEquery(
+			$this->session_table,
+			'ses_id = ' . $this->db->fullQuoteStr($oldSessionId, $this->session_table)
+				. ' AND ses_name = ' . $this->db->fullQuoteStr($this->name, $this->session_table),
+			array('ses_id' => $this->id)
+		);
+		$this->newSessionID = TRUE;
 	}
 
 	/*************************
@@ -824,7 +857,7 @@ abstract class AbstractUserAuthentication {
 		$inserted = (bool)$this->db->exec_INSERTquery($this->session_table, $insertFields);
 		if (!$inserted) {
 			$message = 'Session data could not be written to DB. Error: ' . $this->db->sql_error();
-			GeneralUtility::sysLog($message, 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+			GeneralUtility::sysLog($message, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 			if ($this->writeDevLog) {
 				GeneralUtility::devLog($message, \TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::class, 2);
 			}
@@ -855,7 +888,8 @@ abstract class AbstractUserAuthentication {
 			'ses_iplock' => $tempuser['disableIPlock'] ? '[DISABLED]' : $this->ipLockClause_remoteIPNumber($this->lockIP),
 			'ses_hashlock' => $this->hashLockClause_getHashInt(),
 			'ses_userid' => $tempuser[$this->userid_column],
-			'ses_tstamp' => $GLOBALS['EXEC_TIME']
+			'ses_tstamp' => $GLOBALS['EXEC_TIME'],
+			'ses_data' => ''
 		);
 	}
 
@@ -968,7 +1002,7 @@ abstract class AbstractUserAuthentication {
 		$statement->execute(array(':ses_id' => $id));
 		$row = $statement->fetch(\TYPO3\CMS\Core\Database\PreparedStatement::FETCH_NUM);
 		$statement->free();
-		return $row[0] ? TRUE : FALSE;
+		return (bool)$row[0];
 	}
 
 	/**
@@ -999,22 +1033,6 @@ abstract class AbstractUserAuthentication {
 	protected function fetchUserSessionFromDB() {
 		$statement = NULL;
 		$ipLockClause = $this->ipLockClause();
-		if ($GLOBALS['CLIENT']['BROWSER'] == 'flash') {
-			// If on the flash client, the veri code is valid, then the user session is fetched
-			// from the DB without the hashLock clause
-			if (GeneralUtility::_GP('vC') == $this->veriCode()) {
-				$statement = $this->db->prepare_SELECTquery('*', $this->session_table . ',' . $this->user_table, $this->session_table . '.ses_id = :ses_id
-						AND ' . $this->session_table . '.ses_name = :ses_name
-						AND ' . $this->session_table . '.ses_userid = ' . $this->user_table . '.' . $this->userid_column . '
-						' . $ipLockClause['where'] . '
-						' . $this->user_where_clause());
-				$statement->bindValues(array(
-					':ses_id' => $this->id,
-					':ses_name' => $this->name
-				));
-				$statement->bindValues($ipLockClause['parameters']);
-			}
-		} else {
 			$statement = $this->db->prepare_SELECTquery('*', $this->session_table . ',' . $this->user_table, $this->session_table . '.ses_id = :ses_id
 					AND ' . $this->session_table . '.ses_name = :ses_name
 					AND ' . $this->session_table . '.ses_userid = ' . $this->user_table . '.' . $this->userid_column . '
@@ -1026,7 +1044,6 @@ abstract class AbstractUserAuthentication {
 				':ses_name' => $this->name
 			));
 			$statement->bindValues($ipLockClause['parameters']);
-		}
 		return $statement;
 	}
 
@@ -1205,7 +1222,7 @@ abstract class AbstractUserAuthentication {
 	 * @return mixed The module data if available: $this->uc['moduleData'][$module];
 	 */
 	public function getModuleData($module, $type = '') {
-		if ($type != 'ses' || $this->uc['moduleSessionID'][$module] == $this->id) {
+		if ($type != 'ses' || (isset($this->uc['moduleSessionID'][$module]) && $this->uc['moduleSessionID'][$module] == $this->id)) {
 			return $this->uc['moduleData'][$module];
 		}
 		return NULL;
@@ -1254,12 +1271,11 @@ abstract class AbstractUserAuthentication {
 	 */
 	public function getLoginFormData() {
 		$loginData = array();
+		$loginData['status'] = GeneralUtility::_GP($this->formfield_status);
 		if ($this->getMethodEnabled) {
-			$loginData['status'] = GeneralUtility::_GP($this->formfield_status);
 			$loginData['uname'] = GeneralUtility::_GP($this->formfield_uname);
 			$loginData['uident'] = GeneralUtility::_GP($this->formfield_uident);
 		} else {
-			$loginData['status'] = GeneralUtility::_POST($this->formfield_status);
 			$loginData['uname'] = GeneralUtility::_POST($this->formfield_uname);
 			$loginData['uident'] = GeneralUtility::_POST($this->formfield_uident);
 		}

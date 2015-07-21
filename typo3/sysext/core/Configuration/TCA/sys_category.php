@@ -2,6 +2,7 @@
 return array(
 	'ctrl' => array(
 		'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_category',
+		'descriptionColumn' => 'description',
 		'label' => 'title',
 		'tstamp' => 'tstamp',
 		'crdate' => 'crdate',
@@ -35,7 +36,7 @@ return array(
 		'1' => array(
 			'showitem' => 'title, --palette--;;1, parent, description,
 				--div--;LLL:EXT:lang/locallang_tca.xlf:sys_category.tabs.items, items,
-				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.access, starttime, endtime',
+				--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access, starttime, endtime',
 		),
 	),
 	'palettes' => array(

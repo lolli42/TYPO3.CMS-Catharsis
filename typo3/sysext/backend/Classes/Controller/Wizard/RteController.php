@@ -24,8 +24,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script class for rendering the full screen RTE display
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class RteController extends AbstractWizardController {
 
@@ -100,7 +98,7 @@ class RteController extends AbstractWizardController {
 		// Need to NOT have the page wrapped in DIV since if we do that we destroy
 		// the feature that the RTE spans the whole height of the page!!!
 		$this->doc->divClass = '';
-		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db')) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '" name="editform" onsubmit="return TBE_EDITOR.checkSubmit(1);">';
+		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db')) . '" method="post" enctype="multipart/form-data" name="editform" onsubmit="return TBE_EDITOR.checkSubmit(1);">';
 	}
 
 	/**
@@ -143,12 +141,6 @@ class RteController extends AbstractWizardController {
 			$formEngine = GeneralUtility::makeInstance(FormEngine::class);
 			// SPECIAL: Disables all wizards - we are NOT going to need them.
 			$formEngine->disableWizards = 1;
-			// Initialize style for RTE object:
-			// Getting reference to the RTE object used to render the field!
-			$RTEObject = BackendUtility::RTEgetObj();
-			if ($RTEObject->ID === 'rte') {
-				$RTEObject->RTEdivStyle = 'position:relative; left:0px; top:0px; height:100%; width:100%; border:solid 0px;';
-			}
 			// Fetching content of record:
 			/** @var DataPreprocessor $dataPreprocessor */
 			$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
@@ -183,7 +175,7 @@ class RteController extends AbstractWizardController {
 			$this->content .= $formEngine->printNeededJSFunctions_top() . $formContent . $formEngine->printNeededJSFunctions();
 		} else {
 			// ERROR:
-			$this->content .= $this->doc->section($this->getLanguageService()->getLL('forms_title'), '<span class="typo3-red">' . $this->getLanguageService()->getLL('table_noData', TRUE) . '</span>', 0, 1);
+			$this->content .= $this->doc->section($this->getLanguageService()->getLL('forms_title'), '<span class="text-danger">' . $this->getLanguageService()->getLL('table_noData', TRUE) . '</span>', 0, 1);
 		}
 		// Setting up the buttons and markers for docHeader
 		$docHeaderButtons = $this->getButtons();

@@ -23,11 +23,11 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Tree\View\PagePositionMap;
 use TYPO3\CMS\Backend\Tree\View\NewRecordPageTreeView;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Frontend\Page\PageRepository;
+
 
 /**
  * Script class for 'db_new'
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class NewRecordController {
 
@@ -292,7 +292,7 @@ class NewRecordController {
 		if (!$this->pagesOnly) {
 			// New page
 			if ($this->showNewRecLink('pages')) {
-				$buttons['new_page'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:cms/layout/locallang.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
+				$buttons['new_page'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
 			}
 			// CSH
 			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'new_regular');
@@ -307,7 +307,16 @@ class NewRecordController {
 		}
 		if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
 			// View
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $this->doc->backPath, BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$pagesTSconfig = BackendUtility::getPagesTSconfig($this->pageinfo['uid']);
+			if (isset($pagesTSconfig['TCEMAIN.']['preview.']['disableButtonForDokType'])) {
+				$excludeDokTypes = GeneralUtility::intExplode(',', $pagesTSconfig['TCEMAIN.']['preview.']['disableButtonForDokType'], TRUE);
+			} else {
+				// exclude sysfolders and recycler by default
+				$excludeDokTypes = array(PageRepository::DOKTYPE_RECYCLER, PageRepository::DOKTYPE_SYSFOLDER, PageRepository::DOKTYPE_SPACER);
+			}
+			if (!in_array((int)$this->pageinfo['doktype'], $excludeDokTypes, TRUE)) {
+				$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $this->doc->backPath, BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			}
 		}
 		return $buttons;
 	}
@@ -413,7 +422,7 @@ class NewRecordController {
 						$thisTitle = '';
 						// Create new link for record:
 						$newLink = $this->linkWrap($newRecordIcon . $lang->sL($v['ctrl']['title'], TRUE), $table, $this->id);
-						// If the table is 'tt_content' (from "cms" extension), create link to wizard
+						// If the table is 'tt_content', create link to wizard
 						if ($table == 'tt_content') {
 							$groupName = $lang->getLL('createNewContent');
 							$rowContent = $newContentIcon . '<strong>' . $lang->getLL('createNewContent') . '</strong><ul>';
@@ -511,7 +520,7 @@ class NewRecordController {
 	 * @return int -1 for lower, 0 for equal, 1 for greater
 	 */
 	public function sortNewRecordsByConfig($a, $b) {
-		if (count($this->newRecordSortList)) {
+		if (!empty($this->newRecordSortList)) {
 			if (in_array($a, $this->newRecordSortList) && in_array($b, $this->newRecordSortList)) {
 				// Both are in the list, return relative to position in array
 				$sub = array_search($a, $this->newRecordSortList) - array_search($b, $this->newRecordSortList);
@@ -582,7 +591,7 @@ class NewRecordController {
 		if (!($allowedTableList = $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'])) {
 			$allowedTableList = $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
 		}
-		// If all tables or the table is listed as a allowed type, return TRUE
+		// If all tables or the table is listed as an allowed type, return TRUE
 		if (strstr($allowedTableList, '*') || GeneralUtility::inList($allowedTableList, $checkTable)) {
 			return TRUE;
 		}
@@ -612,13 +621,11 @@ class NewRecordController {
 		$allowedNewTables = $allowedNewTables ?: $this->allowedNewTables;
 		$deniedNewTables = $deniedNewTables ?: $this->deniedNewTables;
 		// No deny/allow tables are set:
-		if (!count($allowedNewTables) && !count($deniedNewTables)) {
+		if (empty($allowedNewTables) && empty($deniedNewTables)) {
 			return TRUE;
-		} elseif (!in_array($table, $deniedNewTables) && (!count($allowedNewTables) || in_array($table, $allowedNewTables))) {
-			return TRUE;
-		} else {
-			return FALSE;
 		}
+
+		return !in_array($table, $deniedNewTables) && (empty($allowedNewTables) || in_array($table, $allowedNewTables));
 	}
 
 	/**

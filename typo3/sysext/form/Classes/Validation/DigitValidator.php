@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Form\Validation;
 
 /**
  * Digit rule
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class DigitValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 
@@ -43,8 +41,7 @@ class DigitValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 		if ($this->requestHandler->has($this->fieldName)) {
 			$value = $this->requestHandler->getByMethod($this->fieldName);
 			if ($this->filter === NULL) {
-				$className = \TYPO3\CMS\Form\Filter\DigitFilter::class;
-				$this->filter = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className);
+				$this->filter = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Form\Filter\DigitFilter::class);
 			}
 			if ($this->filter->filter($value) !== $value) {
 				return FALSE;

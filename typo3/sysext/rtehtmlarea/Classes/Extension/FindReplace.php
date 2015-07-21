@@ -18,8 +18,6 @@ use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
  * Find Replace plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class FindReplace extends RteHtmlAreaApi {
 
@@ -49,10 +47,9 @@ class FindReplace extends RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
 	 * @return string JS configuration for registered plugins
 	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
+	public function buildJavascriptConfiguration() {
 		return '';
 	}
 

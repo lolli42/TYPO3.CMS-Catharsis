@@ -18,14 +18,13 @@ use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Typoscript factory for form
  *
  * Takes the incoming Typoscipt and adds all the necessary form objects
  * according to the configuration.
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class TypoScriptFactory implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -132,7 +131,7 @@ class TypoScriptFactory implements \TYPO3\CMS\Core\SingletonInterface {
 				$typoscriptParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser::class);
 				$oldArguments = $arguments;
 				list($class, $arguments) = $typoscriptParser->getVal($key, $this->frontendController->tmpl->setup);
-				if (is_array($oldArguments) && count($oldArguments)) {
+				if (is_array($oldArguments) && !empty($oldArguments)) {
 					$arguments = array_replace_recursive($arguments, $oldArguments);
 				}
 				$this->timeTracker->incStackPointer();
@@ -184,7 +183,7 @@ class TypoScriptFactory implements \TYPO3\CMS\Core\SingletonInterface {
 			$className = 'TYPO3\\CMS\\Form\\Domain\\Model\\Element\\' . ucfirst($class) . 'Element';
 		}
 		/* @var $object AbstractElement */
-		$object = GeneralUtility::makeInstance($className);
+		$object = ObjectFactory::createFormObject($className);
 		if ($object->getElementType() === AbstractElement::ELEMENT_TYPE_CONTENT) {
 			$object->setData($arguments['cObj'], $arguments['cObj.']);
 		} elseif ($object->getElementType() === AbstractElement::ELEMENT_TYPE_PLAIN) {

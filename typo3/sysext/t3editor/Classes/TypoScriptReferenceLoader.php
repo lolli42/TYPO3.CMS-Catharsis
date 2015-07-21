@@ -16,9 +16,6 @@ namespace TYPO3\CMS\T3editor;
 
 /**
  * Loads TSref information from a XML file an responds to an AJAX call.
- *
- * @author Stephan Petzl <spetzl@gmx.at>
- * @author Christian Kartnig <office@hahnepeter.de>
  */
 class TypoScriptReferenceLoader {
 
@@ -36,7 +33,7 @@ class TypoScriptReferenceLoader {
 	 * Default constructor
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:t3editor/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:t3editor/Resources/Private/Language/locallang.xlf');
 	}
 
 	/**
@@ -46,12 +43,11 @@ class TypoScriptReferenceLoader {
 	 * @param array $params Additional parameters (not used here)
 	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj The AjaxRequestHandler object of this request
 	 * @return void
-	 * @author Oliver Hader <oliver@typo3.org>
 	 */
 	public function processAjaxRequest($params, \TYPO3\CMS\Core\Http\AjaxRequestHandler &$ajaxObj) {
 		$this->ajaxObj = $ajaxObj;
 		// Load the TSref XML information:
-		$this->loadFile(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('t3editor') . 'res/tsref/tsref.xml');
+		$this->loadFile(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('t3editor') . 'Resources/Private/tsref.xml');
 		$ajaxIdParts = explode('::', $ajaxObj->getAjaxID(), 2);
 		$ajaxMethod = $ajaxIdParts[1];
 		$response = array();

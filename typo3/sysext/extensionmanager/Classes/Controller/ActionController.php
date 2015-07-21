@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
 /**
  * Controller for handling extension related actions like
  * installing, removing, downloading of data or files
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
 class ActionController extends AbstractController {
 
@@ -81,7 +79,7 @@ class ActionController extends AbstractController {
 	 * @return void
 	 */
 	public function installExtensionWithoutSystemDependencyCheckAction($extensionKey) {
-		$this->managementService->setSkipSystemDependencyCheck(TRUE);
+		$this->managementService->setSkipDependencyCheck(TRUE);
 		$this->forward('toggleExtensionInstallationState', NULL, NULL, array('extensionKey' => $extensionKey));
 	}
 
@@ -104,6 +102,8 @@ class ActionController extends AbstractController {
 				)
 			);
 		} catch (\TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException $e) {
+			$this->addFlashMessage($e->getMessage(), '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+		} catch (\TYPO3\CMS\Core\Package\Exception $e) {
 			$this->addFlashMessage($e->getMessage(), '', \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 		}
 

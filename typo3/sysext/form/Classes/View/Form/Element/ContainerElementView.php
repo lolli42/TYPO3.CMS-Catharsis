@@ -14,11 +14,10 @@ namespace TYPO3\CMS\Form\View\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Abstract class for the form element containers (FORM and FIELDSET) view
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class ContainerElementView extends \TYPO3\CMS\Form\View\Form\Element\AbstractElementView {
 
@@ -73,7 +72,7 @@ class ContainerElementView extends \TYPO3\CMS\Form\View\Form\Element\AbstractEle
 		$class = \TYPO3\CMS\Form\Utility\FormUtility::getInstance()->getLastPartOfClassName($modelChild);
 		$className = 'TYPO3\\CMS\\Form\\View\\Form\\Element\\' . ucfirst($class) . 'ElementView';
 		if (class_exists($className)) {
-			$childElement = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $modelChild);
+			$childElement = ObjectFactory::createFormObject($className, $modelChild);
 		}
 		return $childElement;
 	}

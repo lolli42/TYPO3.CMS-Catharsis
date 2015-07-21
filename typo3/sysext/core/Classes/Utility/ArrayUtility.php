@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Utility;
 
 /**
  * Class with helper functions for array handling
- *
- * @author Susanne Moog <typo3@susanne-moog.de>
  */
 class ArrayUtility {
 
@@ -27,7 +25,7 @@ class ArrayUtility {
 	 * Comparison is type strict:
 	 * - For a given needle of type string, integer, array or boolean,
 	 * value and value type must match to occur in result array
-	 * - For a given object, a object within the array must be a reference to
+	 * - For a given object, an object within the array must be a reference to
 	 * the same object to match (not just different instance of same class)
 	 *
 	 * Example:
@@ -64,7 +62,7 @@ class ArrayUtility {
 				($resultArray[$key] = $value);
 			} elseif (is_array($value)) {
 				($subArrayMatches = static::filterByValueRecursive($needle, $value));
-				if (count($subArrayMatches) > 0) {
+				if (!empty($subArrayMatches)) {
 					($resultArray[$key] = $subArrayMatches);
 				}
 			}
@@ -317,7 +315,7 @@ class ArrayUtility {
 				$lines .= is_int($key) ? $key . ' => ' : '\'' . $key . '\' => ';
 			}
 			if (is_array($value)) {
-				if (count($value) > 0) {
+				if (!empty($value)) {
 					$lines .= self::arrayExport($value, $level);
 				} else {
 					$lines .= 'array(),' . LF;
@@ -614,7 +612,7 @@ class ArrayUtility {
 				$getValueFunc = NULL;
 			}
 			// Do the filtering:
-			if (is_array($keepItems) && count($keepItems)) {
+			if (is_array($keepItems) && !empty($keepItems)) {
 				foreach ($array as $key => $value) {
 					// Get the value to compare by using the callback function:
 					$keepValue = isset($getValueFunc) ? call_user_func($getValueFunc, $value) : $value;

@@ -14,12 +14,15 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Exception;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\FormProtection\BackendFormProtection;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
@@ -27,11 +30,8 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Script Class for rendering the login form
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Frank Nägler <typo3@naegler.net>
  */
-class LoginController {
+class LoginController implements \TYPO3\CMS\Core\Http\ControllerInterface {
 
 	/**
 	 * The URL to redirect to after login.
@@ -41,7 +41,7 @@ class LoginController {
 	protected $redirectUrl;
 
 	/**
-	 * Set to the redirect URL of the form (may be redirect_url or "backend.php")
+	 * Set to the redirect URL of the form (may be redirect_url or "index.php?M=main")
 	 *
 	 * @var string
 	 */
@@ -109,8 +109,8 @@ class LoginController {
 
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_login.xlf');
 
-		// Setting the redirect URL to "backend.php" if no alternative input is given
-		$this->redirectToURL = $this->redirectUrl ?: 'backend.php';
+		// Setting the redirect URL to "index.php?M=main" if no alternative input is given
+		$this->redirectToURL = $this->redirectUrl ?: BackendUtility::getModuleUrl('main');
 
 		// If "L" is "OUT", then any logged in is logged out. If redirect_url is given, we redirect to it
 		if (GeneralUtility::_GP('L') === 'OUT' && is_object($this->getBackendUserAuthentication())) {
@@ -122,14 +122,30 @@ class LoginController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 * This will be split up in an abstract controller once proper routing/dispatcher is in place.
+	 *
+	 * @param ServerRequestInterface $request
+	 * @return \Psr\Http\Message\ResponseInterface $response
+	 */
+	public function processRequest(ServerRequestInterface $request) {
+		$content = $this->main();
+		/** @var Response $response */
+		$response = GeneralUtility::makeInstance(Response::class);
+		$response->getBody()->write($content);
+		return $response;
+	}
+
+	/**
 	 * Main function - creating the login/logout form
 	 *
 	 * @throws Exception
-	 * @return void
+	 * @return string The content to output
 	 */
 	public function main() {
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $this->getDocumentTemplate()->getPageRenderer();
+		/** @var $pageRenderer PageRenderer */
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Login');
 
 		// support placeholders for IE9 and lower
@@ -221,7 +237,7 @@ class LoginController {
 		$content .= $this->view->render();
 		$content .= $this->getDocumentTemplate()->endPage();
 
-		echo $content;
+		return $content;
 	}
 
 	/**
@@ -237,17 +253,13 @@ class LoginController {
 	 * @throws \UnexpectedValueException
 	 */
 	protected function checkRedirect() {
-		if (empty($this->getBackendUserAuthentication()->user['uid'])) {
-			// a) if either the login is just done (isLoginInProgress) or
-			if ($this->isLoginInProgress()) {
-				// Wrong password, wait for 5 seconds
-				sleep(5);
-				return;
-			// b) a loginRefresh is done
-			} elseif (!$this->loginRefresh) {
-				return;
-			}
+		if (
+			empty($this->getBackendUserAuthentication()->user['uid'])
+			&& ($this->isLoginInProgress() || !$this->loginRefresh)
+		) {
+			return;
 		}
+
 		/*
 		 * If no cookie has been set previously, we tell people that this is a problem.
 		 * This assumes that a cookie-setting script (like this one) has been hit at
@@ -277,7 +289,7 @@ class LoginController {
 					break;
 				case 'backend':
 					$interface = 'backend';
-					$this->redirectToURL = 'backend.php';
+					$this->redirectToURL = BackendUtility::getModuleUrl('main');
 					break;
 				default:
 					$interface = '';
@@ -323,7 +335,7 @@ class LoginController {
 				$interfaces = array(
 					'backend' => array(
 						'label' => $this->getLanguageService()->getLL('interface.backend'),
-						'jumpScript' => 'backend.php',
+						'jumpScript' => BackendUtility::getModuleUrl('main'),
 						'interface' => 'backend'
 					),
 					'frontend' => array(
@@ -468,7 +480,7 @@ class LoginController {
 			reset($this->loginProviders);
 			$loginProvider = key($this->loginProviders);
 		}
-		setcookie('be_lastLoginProvider', $loginProvider);
+		setcookie('be_lastLoginProvider', $loginProvider, $GLOBALS['EXEC_TIME'] + 7776000); // 90 days
 		return $loginProvider;
 	}
 

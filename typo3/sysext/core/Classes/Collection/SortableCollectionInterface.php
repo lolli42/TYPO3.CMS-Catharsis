@@ -21,9 +21,7 @@ namespace TYPO3\CMS\Core\Collection;
  * your own sorting method and explicitly move an item from one position
  * to another.
  *
- * This assumes that entries are sortable and therefore a index can be assigned
- *
- * @author Steffen Ritter <typo3steffen-ritter.net>
+ * This assumes that entries are sortable and therefore an index can be assigned
  */
 interface SortableCollectionInterface {
 

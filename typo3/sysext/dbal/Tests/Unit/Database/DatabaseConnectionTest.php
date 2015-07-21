@@ -49,6 +49,9 @@ class DatabaseConnectionTest extends AbstractTestCase {
 		$installerSqlMock->expects($this->any())->method('getFieldDefinitions_fileContent')->will($this->returnValue(array()));
 		$subject->_set('installerSql', $installerSqlMock);
 
+		// Inject DBMS specifics
+		$subject->_set('dbmsSpecifics', GeneralUtility::makeInstance(\TYPO3\CMS\Dbal\Database\Specifics\NullSpecifics::class));
+
 		$subject->initialize();
 		$subject->lastHandlerKey = '_DEFAULT';
 
@@ -112,6 +115,21 @@ class DatabaseConnectionTest extends AbstractTestCase {
 		$this->assertFalse($subject->_call('map_needMapping', 'cf_cache_pages'));
 		$cfCacheHashNeedsMapping = $subject->_call('map_needMapping', 'cf_cache_hash');
 		$this->assertEquals('cf_cache_hash', $cfCacheHashNeedsMapping[0]['table']);
+	}
+
+	/**
+	 * @test
+	 * @see https://forge.typo3.org/issues/67067
+	 */
+	public function adminGetTablesReturnsArrayWithNameKey() {
+		$handlerMock = $this->getMock('\ADODB_mock', array('MetaTables'), array(), '', FALSE);
+		$handlerMock->expects($this->any())->method('MetaTables')->will($this->returnValue(array('cf_cache_hash')));
+		$this->subject->handlerCfg['_DEFAULT']['type'] = 'adodb';
+		$this->subject->handlerInstance['_DEFAULT'] = $handlerMock;
+
+		$actual = $this->subject->admin_get_tables();
+		$expected = array('cf_cache_hash' => array('Name' => 'cf_cache_hash'));
+		$this->assertSame($expected, $actual);
 	}
 
 	/**
@@ -266,4 +284,28 @@ class DatabaseConnectionTest extends AbstractTestCase {
 		$this->assertEquals($expectedParameterValues, $parameters);
 	}
 
+	///////////////////////////////////////
+	// Tests concerning indexes
+	///////////////////////////////////////
+	/**
+	 * @test
+	 * @param string $indexSQL
+	 * @param string $expected
+	 * @dataProvider equivalentIndexDefinitionDataProvider
+	 */
+	public function equivalentIndexDefinitionRemovesLengthInformation($indexSQL, $expected) {
+		$result = $this->subject->getEquivalentIndexDefinition($indexSQL);
+		$this->assertSame($expected, $result);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function equivalentIndexDefinitionDataProvider() {
+		return array(
+			array('KEY (foo,bar(199))', 'KEY (foo,bar)'),
+			array('KEY (foo(199), bar)', 'KEY (foo, bar)'),
+			array('KEY (foo(199),bar(199))', 'KEY (foo,bar)'),
+		);
+	}
 }

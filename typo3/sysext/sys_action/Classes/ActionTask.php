@@ -19,9 +19,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides a task for the taskcenter
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Georg Ringer <typo3@ringerge.org>
  */
 class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 
@@ -50,7 +47,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	public function __construct(\TYPO3\CMS\Taskcenter\Controller\TaskModuleController $taskObject) {
 		$this->moduleUrl = BackendUtility::getModuleUrl('user_task');
 		$this->taskObject = $taskObject;
-		$this->getLanguageService()->includeLLFile('EXT:sys_action/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:sys_action/Resources/Private/Language/locallang.xlf');
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['sys_action']['tx_sysaction_task'] as $classRef) {
 				$this->hookObjects[] = GeneralUtility::getUserObj($classRef);
@@ -78,7 +75,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		} else {
 			$record = BackendUtility::getRecord('sys_action', $show);
 			// If the action is not found
-			if (count($record) == 0) {
+			if (empty($record)) {
 				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $this->getLanguageService()->getLL('action_error-not-found', TRUE), $this->getLanguageService()->getLL('action_error'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 				$content .= $flashMessage->render();
 			} else {
@@ -124,7 +121,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		$content = '<p>' . $this->getLanguageService()->getLL('description') . '</p>';
 		// Get the actions
 		$actionList = $this->getActions();
-		if (count($actionList) > 0) {
+		if (!empty($actionList)) {
 			$items = '';
 			// Render a single action menu item
 			foreach ($actionList as $action) {
@@ -174,7 +171,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				'title' => $actionRow['title'],
 				'description' => $actionRow['description'],
 				'descriptionHtml' => nl2br(htmlspecialchars($actionRow['description'])) . $editActionLink,
-				'link' => $this->moduleUrl . '&SET[function]=sys_action.tx_sysaction_task&show=' . $actionRow['uid']
+				'link' => $this->moduleUrl . '&SET[function]=sys_action.TYPO3\\CMS\\SysAction\\ActionTask&show=' . $actionRow['uid']
 			);
 		}
 		$this->getDatabaseConnection()->sql_free_result($res);
@@ -191,7 +188,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		// Get the sys_action records
 		$actionList = $this->getActions();
 		// If any actions are found for the current users
-		if (count($actionList) > 0) {
+		if (!empty($actionList)) {
 			$content .= $this->taskObject->renderListMenu($actionList);
 		} else {
 			$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $this->getLanguageService()->getLL('action_not-found-description', TRUE), $this->getLanguageService()->getLL('action_not-found'), \TYPO3\CMS\Core\Messaging\FlashMessage::INFO);
@@ -255,7 +252,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				}
 			}
 			// Show errors if there are any
-			if (count($errors) > 0) {
+			if (!empty($errors)) {
 				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, implode('<br />', $errors), $this->getLanguageService()->getLL('action_error'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 				$content .= $flashMessage->render() . '<br />';
 			} else {
@@ -381,7 +378,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		}
 		$this->getDatabaseConnection()->sql_free_result($res);
 		// If any records found
-		if (count($userList)) {
+		if (!empty($userList)) {
 			$content .= '<br />' . $this->taskObject->doc->section($this->getLanguageService()->getLL('action_t1_listOfUsers'), implode('<br />', $userList));
 		}
 		return $content;
@@ -401,7 +398,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			$username .= ' (' . $realName . ')';
 		}
 		// Link to update the user record
-		$href = $this->moduleUrl . '&SET[function]=sys_action.tx_sysaction_task&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
+		$href = $this->moduleUrl . '&SET[function]=sys_action.TYPO3\\CMS\\SysAction\\ActionTask&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
 		$link = '<a href="' . htmlspecialchars($href) . '">' . htmlspecialchars($username) . '</a>';
 		// Link to delete the user record
 		$onClick = ' onClick="return confirm(' . GeneralUtility::quoteJSvalue($this->getLanguageService()->getLL('lDelete_warning')) . ');"';
@@ -493,7 +490,11 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	 * @return string Combined username
 	 */
 	protected function fixUsername($username, $prefix) {
-		return trim($prefix) . trim($username);
+		$prefix = trim($prefix);
+		if (substr($username, 0, strlen($prefix)) === $prefix) {
+			$username = substr($username, strlen($prefix));
+		}
+		return $prefix . $username;
 	}
 
 	/**

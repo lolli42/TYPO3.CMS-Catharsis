@@ -18,11 +18,51 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Generate a page-tree, browsable.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @coauthor René Fritz <r.fritz@colorcube.de>
  */
-class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
+class BrowseTreeView extends AbstractTreeView {
+
+	/**
+	 * @var array
+	 */
+	public $fieldArray = array(
+		'uid',
+		'pid',
+		'title',
+		'doktype',
+		'nav_title',
+		'mount_pid',
+		'php_tree_stop',
+		't3ver_id',
+		't3ver_state',
+		'hidden',
+		'starttime',
+		'endtime',
+		'fe_group',
+		'module',
+		'extendToSubpages',
+		'nav_hide',
+		't3ver_wsid',
+		't3ver_move_id',
+		'is_siteroot'
+	);
+
+	/**
+	 * override to use this treeName
+	 * @var string
+	 */
+	public $treeName = 'browsePages';
+
+	/**
+	 * override to use this table
+	 * @var string
+	 */
+	public $table = 'pages';
+
+	/**
+	 * override to use this domIdPrefix
+	 * @var string
+	 */
+	public $domIdPrefix = 'pages';
 
 	/**
 	 * Initialize, setting what is necessary for browsing pages.
@@ -42,10 +82,6 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 		}
 		// This is very important for making trees of pages: Filtering out deleted pages, pages with no access to and sorting them correctly:
 		parent::init(' AND ' . $GLOBALS['BE_USER']->getPagePermsClause(1) . ' ' . $clause . $clauseExcludePidList, 'sorting');
-		$this->table = 'pages';
-		$this->setTreeName('browsePages');
-		$this->domIdPrefix = 'pages';
-		$this->iconName = '';
 		$this->title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 		$this->MOUNTS = $GLOBALS['BE_USER']->returnWebmounts();
 		if ($pidList) {
@@ -53,8 +89,6 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 			$hideList = explode(',', $pidList);
 			$this->MOUNTS = array_diff($this->MOUNTS, $hideList);
 		}
-		$this->fieldArray = array_merge($this->fieldArray, array('doktype', 'php_tree_stop', 't3ver_id', 't3ver_state', 't3ver_wsid', 't3ver_move_id'));
-		$this->fieldArray = array_merge($this->fieldArray, array('hidden', 'starttime', 'endtime', 'fe_group', 'module', 'extendToSubpages', 'is_siteroot', 'nav_hide'));
 	}
 
 	/**
@@ -77,14 +111,13 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * @access private
 	 */
 	public function wrapIcon($icon, $row) {
-		// Add title attribute to input icon tag
-		$theIcon = $this->addTagAttributes($icon, $this->titleAttrib ? $this->titleAttrib . '="' . $this->getTitleAttrib($row) . '"' : '');
 		// Wrap icon in click-menu link.
+		$theIcon = '';
 		if (!$this->ext_IconMode) {
-			$theIcon = $GLOBALS['TBE_TEMPLATE']->wrapClickMenuOnIcon($theIcon, $this->treeName, $this->getId($row), 0);
+			$theIcon = $GLOBALS['TBE_TEMPLATE']->wrapClickMenuOnIcon($icon, $this->treeName, $this->getId($row), 0);
 		} elseif ($this->ext_IconMode === 'titlelink') {
 			$aOnClick = 'return jumpTo(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getJumpToParam($row)) . ',this,' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->domIdPrefix . $this->getId($row)) . ',' . $this->bank . ');';
-			$theIcon = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $theIcon . '</a>';
+			$theIcon = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
 		}
 		return $theIcon;
 	}
@@ -101,28 +134,11 @@ class BrowseTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 		$title = parent::getTitleStr($row, $titleLen);
 		if (isset($row['is_siteroot']) && $row['is_siteroot'] != 0 && $GLOBALS['BE_USER']->getTSConfigVal('options.pageTree.showDomainNameWithTitle')) {
 			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('domainName,sorting', 'sys_domain', 'pid=' . $GLOBALS['TYPO3_DB']->quoteStr(($row['uid'] . BackendUtility::deleteClause('sys_domain') . BackendUtility::BEenableFields('sys_domain')), 'sys_domain'), '', 'sorting', 1);
-			if (is_array($rows) && count($rows) > 0) {
+			if (is_array($rows) && !empty($rows)) {
 				$title = sprintf('%s [%s]', $title, htmlspecialchars($rows[0]['domainName']));
 			}
 		}
 		return $title;
-	}
-
-	/**
-	 * Adds a red "+" to the input string, $str, if the field "php_tree_stop" in the $row (pages) is set
-	 *
-	 * @param string $str Input string, like a page title for the tree
-	 * @param array $row Record row with "php_tree_stop" field
-	 * @return string Modified string
-	 * @access private
-	 */
-	public function wrapStop($str, $row) {
-		if ($row['php_tree_stop']) {
-			$str .= '<span class="typo3-red">
-								<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisScript(array('setTempDBmount' => $row['uid']))) . '" class="typo3-red">+</a>
-							</span>';
-		}
-		return $str;
 	}
 
 }

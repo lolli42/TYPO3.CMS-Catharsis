@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Sprite generator
- *
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
 class SpriteGenerator {
 
@@ -525,7 +523,7 @@ class SpriteGenerator {
 		foreach ($subFolders as $folder) {
 			if ($folder !== '.svn') {
 				$icons = GeneralUtility::getFilesInDir(PATH_site . $directoryPath . $folder . '/', 'gif,png,jpg');
-				if (!in_array($folder, $this->spriteBases) && count($icons) && $folder !== '') {
+				if (!in_array($folder, $this->spriteBases) && !empty($icons) && $folder !== '') {
 					$this->spriteBases[] = $folder;
 				}
 				foreach ($icons as $icon) {

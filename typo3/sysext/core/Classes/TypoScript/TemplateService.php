@@ -30,8 +30,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * Template object that is responsible for generating the TypoScript template based on template records.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @see \TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser
  * @see \TYPO3\CMS\Core\Configuration\TypoScript\ConditionMatching\AbstractConditionMatcher
  */
@@ -382,7 +380,6 @@ class TemplateService {
 			'typo3temp/',
 			TYPO3_mainDir . 'ext/',
 			TYPO3_mainDir . 'sysext/',
-			TYPO3_mainDir . 'contrib/',
 			'typo3conf/ext/'
 		);
 		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['addAllowedPaths']) {
@@ -729,7 +726,7 @@ class TemplateService {
 	 * @throws \RuntimeException If the given $fullRootLine does not contain all pages that are in the current template rootline
 	 */
 	public function updateRootlineData($fullRootLine) {
-		if (!is_array($this->rootLine) || count($this->rootLine) === 0) {
+		if (!is_array($this->rootLine) || empty($this->rootLine)) {
 			return;
 		}
 
@@ -1546,7 +1543,7 @@ class TemplateService {
 		}
 		// Finding MP var for Page ID:
 		if ($pageId) {
-			if (is_array($this->MPmap[$pageId]) && count($this->MPmap[$pageId])) {
+			if (is_array($this->MPmap[$pageId]) && !empty($this->MPmap[$pageId])) {
 				return implode(',', $this->MPmap[$pageId]);
 			}
 		}

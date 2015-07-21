@@ -194,7 +194,7 @@ var inline = {
 				urlParams += '&ajax[' + i + ']=' + encodeURIComponent(params[i]);
 			}
 			if (context) {
-				urlParams += '&ajax[context]=' + encodeURIComponent(Object.toJSON(context));
+				urlParams += '&ajax[context]=' + encodeURIComponent(JSON.stringify(context));
 			}
 			options = {
 				type: 'POST',
@@ -385,7 +385,7 @@ var inline = {
 				return true;
 			}
 
-			// for group/db: table and uid is stored in a assoc array
+			// for group/db: table and uid is stored in an assoc array
 		} else if (unique.type == 'groupdb') {
 			for (var i = values.length - 1; i >= 0; i--) {
 				// if the pair table:uid is already used:
@@ -1200,6 +1200,10 @@ var inline = {
 	},
 
 	readdSelectOption: function ($selectObj, value, unique) {
+		if (!$selectObj.length) {
+			return;
+		}
+
 		var index = null;
 		var optionsHash = this.getOptionsHash($selectObj);
 		var possibleValues = this.getKeysFromHashMap(unique.possible);
@@ -1314,20 +1318,6 @@ var inline = {
 		return escapedSelectorObjectId;
 	}
 };
-
-Object.extend(Array.prototype, {
-	diff: function (current) {
-		var diff = [];
-		if (this.length == current.length) {
-			for (var i = 0; i < this.length; i++) {
-				if (this[i] !== current[i]) {
-					diff.push(i);
-				}
-			}
-		}
-		return diff;
-	}
-});
 
 /*]]>*/
 (function ($) {

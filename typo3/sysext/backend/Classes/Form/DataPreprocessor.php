@@ -24,8 +24,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessageService;
 
 /**
  * Class for getting and transforming data for display in backend forms (TCEforms)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class DataPreprocessor {
 
@@ -405,7 +403,7 @@ class DataPreprocessor {
 			if ($GLOBALS['TCA'][$fieldConfig['config']['foreign_table']]) {
 				// Getting the data
 				$dataIds = $this->getDataIdList($elements, $fieldConfig, $row, $table);
-				if (!count($dataIds)) {
+				if (empty($dataIds)) {
 					$dataIds = array(0);
 				}
 				$dataAcc[] = $dataIds[0];

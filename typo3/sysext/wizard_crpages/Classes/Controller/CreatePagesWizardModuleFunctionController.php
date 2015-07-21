@@ -22,8 +22,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
  * Creates the "Create pages" wizard
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class CreatePagesWizardModuleFunctionController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
 
@@ -57,7 +55,7 @@ class CreatePagesWizardModuleFunctionController extends \TYPO3\CMS\Backend\Modul
 	 * @return string HTML content for the module, actually a "section" made through the parent object in $this->pObj
 	 */
 	public function main() {
-		$this->getLanguageService()->includeLLFile('EXT:wizard_crpages/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:wizard_crpages/Resources/Private/Language/locallang.xlf');
 		$theCode = '';
 		$this->tsConfig = BackendUtility::getPagesTSconfig($this->pObj->id);
 		$this->pagesTsConfig = isset($this->tsConfig['TCEFORM.']['pages.']) ? $this->tsConfig['TCEFORM.']['pages.'] : array();
@@ -163,13 +161,11 @@ class CreatePagesWizardModuleFunctionController extends \TYPO3\CMS\Backend\Modul
 						<input class="btn btn-default" type="reset" value="' . $this->getLanguageService()->getLL('wiz_newPages_lReset') . '" />
 					</div>';
 
-				/** @var \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer */
-				$pageRenderer = $GLOBALS['TBE_TEMPLATE']->getPageRenderer();
-				$pageRenderer->loadJquery();
-				$pageRenderer->loadRequireJsModule('TYPO3/CMS/WizardCrpages/WizardCreatePages');
+				$this->getPageRenderer()->loadJquery();
+				$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/WizardCrpages/WizardCreatePages');
 				// Add inline code
 				$inlineJavaScriptCode = 'var tpl = "' . addslashes(str_replace(array(LF, TAB), array('', ''), $this->getFormLine('#'))) . '", i, line, div, bg, label;';
-				$pageRenderer->addJsInlineCode('wizard_crpages', $inlineJavaScriptCode);
+				$this->getPageRenderer()->addJsInlineCode('wizard_crpages', $inlineJavaScriptCode);
 			}
 		} else {
 			$theCode .= GeneralUtility::makeInstance(FlashMessage::class, '', $this->getLanguageService()->getLL('wiz_newPages_errorMsg1'), FlashMessage::ERROR)->render();

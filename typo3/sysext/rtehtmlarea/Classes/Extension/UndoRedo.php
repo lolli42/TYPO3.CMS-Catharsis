@@ -18,8 +18,6 @@ use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
  * Undo Redo plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class UndoRedo extends RteHtmlAreaApi {
 
@@ -50,10 +48,9 @@ class UndoRedo extends RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
 	 * @return string JS configuration for registered plugins
 	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
+	public function buildJavascriptConfiguration() {
 		return '';
 	}
 

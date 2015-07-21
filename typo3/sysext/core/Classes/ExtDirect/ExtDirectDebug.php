@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\ExtDirect;
 
 /**
  * Ext Direct Debug
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 class ExtDirectDebug {
 
@@ -57,7 +55,7 @@ class ExtDirectDebug {
 	 */
 	public function toString() {
 		$messagesAsString = '';
-		if (count($this->debugMessages)) {
+		if (!empty($this->debugMessages)) {
 			$messagesAsString = \TYPO3\CMS\Core\Utility\DebugUtility::viewArray($this->debugMessages);
 		}
 		return $messagesAsString;

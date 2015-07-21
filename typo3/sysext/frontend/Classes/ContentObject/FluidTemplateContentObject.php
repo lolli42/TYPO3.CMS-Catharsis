@@ -14,7 +14,6 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Service\TypoScriptService;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -71,9 +70,10 @@ class FluidTemplateContentObject extends AbstractContentObject {
 		$this->setPartialRootPath($conf);
 		$this->setExtbaseVariables($conf);
 		$this->assignSettings($conf);
-		$this->assignContentObjectVariables($conf);
-		$this->processData($conf);
-		$this->assignContentObjectDataAndCurrent();
+		$variables = $this->getContentObjectVariables($conf);
+		$variables = $this->processData($conf, $variables);
+
+		$this->view->assignMultiple($variables);
 
 		$content = $this->renderFluidView();
 		$content = $this->applyStandardWrapToRenderedContent($content, $conf);
@@ -107,7 +107,11 @@ class FluidTemplateContentObject extends AbstractContentObject {
 		if (!empty($conf['templateName']) && !empty($conf['templateRootPaths.']) && is_array($conf['templateRootPaths.'])) {
 			$templateRootPaths = array();
 			foreach ($conf['templateRootPaths.'] as $key => $path) {
-				$templateRootPaths[$key] = GeneralUtility::getFileAbsFileName($path);
+				if (strpos($key, '.') === FALSE) {
+						$templateRootPaths[$key] = isset($conf['templateRootPaths.'][$key . '.']) ?
+							GeneralUtility::getFileAbsFileName($this->cObj->stdWrap($conf['templateRootPaths.'][$key], $conf['templateRootPaths.'][$key . '.'])) :
+							GeneralUtility::getFileAbsFileName($path);
+				}
 			}
 			$this->view->setTemplateRootPaths($templateRootPaths);
 			$templateName = isset($conf['templateName.']) ? $this->cObj->stdWrap($conf['templateName'], $conf['templateName.']) : $conf['templateName'];
@@ -143,7 +147,12 @@ class FluidTemplateContentObject extends AbstractContentObject {
 		}
 		if (isset($conf['layoutRootPaths.'])) {
 			foreach ($conf['layoutRootPaths.'] as $key => $path) {
-				$layoutPaths[$key] = GeneralUtility::getFileAbsFileName($path);
+				if (strpos($key, '.') === FALSE) {
+					$layoutPaths[$key] = isset($conf['layoutRootPaths.'][$key . '.']) ?
+						GeneralUtility::getFileAbsFileName($this->cObj->stdWrap($conf['layoutRootPaths.'][$key], $conf['layoutRootPaths.'][$key . '.'])) :
+						GeneralUtility::getFileAbsFileName($path);
+				}
+
 			}
 		}
 		if (!empty($layoutPaths)) {
@@ -167,7 +176,11 @@ class FluidTemplateContentObject extends AbstractContentObject {
 		}
 		if (isset($conf['partialRootPaths.'])) {
 			foreach ($conf['partialRootPaths.'] as $key => $path) {
-				$partialPaths[$key] = GeneralUtility::getFileAbsFileName($path);
+				if (strpos($key, '.') === FALSE) {
+					$partialPaths[$key] = isset($conf['partialRootPaths.'][$key . '.']) ?
+						GeneralUtility::getFileAbsFileName($this->cObj->stdWrap($conf['partialRootPaths.'][$key], $conf['partialRootPaths.'][$key . '.'])) :
+						GeneralUtility::getFileAbsFileName($path);
+				}
 			}
 		}
 		if (!empty($partialPaths)) {
@@ -218,61 +231,61 @@ class FluidTemplateContentObject extends AbstractContentObject {
 	 * Check for the availability of processors, defined in TypoScript, and use them for data processing
 	 *
 	 * @param array $configuration Configuration array
-	 * @return void
+	 * @param array $variables the variables to be processed
+	 * @return array the processed data and variables as key/value store
 	 * @throws \UnexpectedValueException
 	 */
-	protected function processData(array $configuration) {
+	protected function processData(array $configuration, array $variables) {
 		if (
 			!empty($configuration['dataProcessing.'])
 			&& is_array($configuration['dataProcessing.'])
 		) {
 			$processors = $configuration['dataProcessing.'];
+			$processorKeys = \TYPO3\CMS\Core\TypoScript\TemplateService::sortedKeyList($processors);
 
-			foreach ($processors as $key => $className) {
-				if (strpos($key, '.') === FALSE && !empty($className)) {
-					$processor = GeneralUtility::makeInstance($className);
+			foreach ($processorKeys as $key) {
+				$className = $processors[$key];
+				$processor = GeneralUtility::makeInstance($className);
 
-					if (!$processor instanceof FluidTemplateDataProcessorInterface) {
-						throw new \UnexpectedValueException(
-							'$processor with class name "' . $className . '" ' .
-							'must implement interface "' . FluidTemplateDataProcessorInterface::class . '"',
-							1427455377
-						);
-					}
-
-					$processorConfiguration = isset($processors[$key . '.']) ? $processors[$key . '.'] : array();
-
-					$processor->process(
-						$this->cObj->data,
-						$processorConfiguration,
-						$configuration,
-						$this->view
+				if (!$processor instanceof DataProcessorInterface) {
+					throw new \UnexpectedValueException(
+						'$processor with class name "' . $className . '" ' .
+						'must implement interface "' . DataProcessorInterface::class . '"',
+						1427455377
 					);
 				}
+
+				$processorConfiguration = isset($processors[$key . '.']) ? $processors[$key . '.'] : array();
+
+				$variables = $processor->process(
+					$this->cObj,
+					$configuration,
+					$processorConfiguration,
+					$variables
+				);
 			}
 		}
+		return $variables;
 	}
 
 	/**
-	 * Assign rendered content objects in variables array to view
+	 * Compile rendered content objects in variables array ready to assign to the view
 	 *
 	 * @param array $conf Configuration array
-	 * @return void
+	 * @return array the variables to be assigned
 	 * @throws \InvalidArgumentException
 	 */
-	protected function assignContentObjectVariables(array $conf) {
+	protected function getContentObjectVariables(array $conf) {
+		$variables = array();
 		$reservedVariables = array('data', 'current');
-		// Accumulate the variables to be replaced and loop them through cObjGetSingle
-		$variables = (array)$conf['variables.'];
-		foreach ($variables as $variableName => $cObjType) {
+		// Accumulate the variables to be process and loop them through cObjGetSingle
+		$variablesToProcess = (array)$conf['variables.'];
+		foreach ($variablesToProcess as $variableName => $cObjType) {
 			if (is_array($cObjType)) {
 				continue;
 			}
 			if (!in_array($variableName, $reservedVariables)) {
-				$this->view->assign(
-					$variableName,
-					$this->cObj->cObjGetSingle($cObjType, $variables[$variableName . '.'])
-				);
+				$variables[$variableName] = $this->cObj->cObjGetSingle($cObjType, $variablesToProcess[$variableName . '.']);
 			} else {
 				throw new \InvalidArgumentException(
 					'Cannot use reserved name "' . $variableName . '" as variable name in FLUIDTEMPLATE.',
@@ -280,6 +293,9 @@ class FluidTemplateContentObject extends AbstractContentObject {
 				);
 			}
 		}
+		$variables['data'] = $this->cObj->data;
+		$variables['current'] = $this->cObj->data[$this->cObj->currentValKey];
+		return $variables;
 	}
 
 	/**
@@ -296,16 +312,6 @@ class FluidTemplateContentObject extends AbstractContentObject {
 			$settings = $typoScriptService->convertTypoScriptArrayToPlainArray($conf['settings.']);
 			$this->view->assign('settings', $settings);
 		}
-	}
-
-	/**
-	 * Assign content object renderer data and current to view
-	 *
-	 * @return void
-	 */
-	protected function assignContentObjectDataAndCurrent() {
-		$this->view->assign('data', $this->cObj->data);
-		$this->view->assign('current', $this->cObj->data[$this->cObj->currentValKey]);
 	}
 
 	/**

@@ -59,9 +59,8 @@ class FailsafePackageManager extends PackageManager {
 	 * Requires and registers all packages which were defined in packageStatesConfiguration
 	 *
 	 * @return void
-	 * @throws \TYPO3\CMS\Core\Package\Exception\CorruptPackageException
 	 */
-	protected function registerPackagesFromConfiguration() {
+	protected function registerPackagesFromConfiguration($registerOnlyNewPackages = FALSE) {
 		$this->packageStatesConfiguration['packages']['install']['state'] = 'active';
 		parent::registerPackagesFromConfiguration();
 	}
@@ -85,4 +84,5 @@ class FailsafePackageManager extends PackageManager {
 	public function forceSortAndSavePackageStates() {
 		parent::sortAndSavePackageStates();
 	}
+
 }

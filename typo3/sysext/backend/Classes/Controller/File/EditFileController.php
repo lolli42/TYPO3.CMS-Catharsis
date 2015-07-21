@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for rendering the file editing screen
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class EditFileController {
 
@@ -161,7 +159,7 @@ class EditFileController {
 			// Edit textarea:
 			$code .= '
 				<div id="c-edit">
-					<textarea rows="30" name="file[editfile][0][data]" wrap="off" ' . $this->doc->formWidth(48, TRUE, 'width:98%;height:80%') . ' class="text-monospace t3js-enable-tab">' . GeneralUtility::formatForTextarea($fileContent) . '</textarea>
+					<textarea rows="30" name="file[editfile][0][data]" wrap="off" ' . $this->doc->formWidth(48, TRUE, 'width:98%;height:80%') . ' class="text-monospace t3js-enable-tab">' . htmlspecialchars($fileContent) . '</textarea>
 					<input type="hidden" name="file[editfile][0][target]" value="' . $this->fileObject->getUid() . '" />
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($hValue) . '" />
 					' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '

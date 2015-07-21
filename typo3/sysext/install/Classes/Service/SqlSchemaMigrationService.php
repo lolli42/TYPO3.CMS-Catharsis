@@ -93,7 +93,7 @@ class SqlSchemaMigrationService {
 							// Note: Keywords "DEFAULT CHARSET" and "CHARSET" are the same, so "DEFAULT" can just be ignored
 							$charset = $tcharset[2];
 						} else {
-							$charset = $GLOBALS['TYPO3_DB']->default_charset;
+							$charset = $this->getDatabaseConnection()->default_charset;
 						}
 						$total[$table]['extra']['COLLATE'] = $this->getCollationForCharset($charset);
 					}
@@ -152,9 +152,10 @@ class SqlSchemaMigrationService {
 	 */
 	public function getCollationForCharset($charset) {
 		// Load character sets, if not cached already
-		if (!count($this->character_sets)) {
-			if (method_exists($GLOBALS['TYPO3_DB'], 'admin_get_charsets')) {
-				$this->character_sets = $GLOBALS['TYPO3_DB']->admin_get_charsets();
+		if (empty($this->character_sets)) {
+			$databaseConnection = $this->getDatabaseConnection();
+			if (method_exists($databaseConnection, 'admin_get_charsets')) {
+				$this->character_sets = $databaseConnection->admin_get_charsets();
 			} else {
 				// Add empty element to avoid that the check will be repeated
 				$this->character_sets[$charset] = array();
@@ -176,17 +177,18 @@ class SqlSchemaMigrationService {
 		$total = array();
 		$tempKeys = array();
 		$tempKeysPrefix = array();
-		$GLOBALS['TYPO3_DB']->connectDB();
-		echo $GLOBALS['TYPO3_DB']->sql_error();
-		$tables = $GLOBALS['TYPO3_DB']->admin_get_tables();
+		$databaseConnection = $this->getDatabaseConnection();
+		$databaseConnection->connectDB();
+		echo $databaseConnection->sql_error();
+		$tables = $databaseConnection->admin_get_tables();
 		foreach ($tables as $tableName => $tableStatus) {
 			// Fields
-			$fieldInformation = $GLOBALS['TYPO3_DB']->admin_get_fields($tableName);
+			$fieldInformation = $databaseConnection->admin_get_fields($tableName);
 			foreach ($fieldInformation as $fN => $fieldRow) {
 				$total[$tableName]['fields'][$fN] = $this->assembleFieldDefinition($fieldRow);
 			}
 			// Keys
-			$keyInformation = $GLOBALS['TYPO3_DB']->admin_get_keys($tableName);
+			$keyInformation = $databaseConnection->admin_get_keys($tableName);
 			foreach ($keyInformation as $keyRow) {
 				$keyName = $keyRow['Key_name'];
 				$colName = $keyRow['Column_name'];
@@ -224,7 +226,7 @@ class SqlSchemaMigrationService {
 			}
 		}
 		// Compile key information:
-		if (count($tempKeys)) {
+		if (!empty($tempKeys)) {
 			foreach ($tempKeys as $table => $keyInf) {
 				foreach ($keyInf as $kName => $index) {
 					ksort($index);
@@ -284,10 +286,24 @@ class SqlSchemaMigrationService {
 											$fieldC
 										);
 
-										// Ignore nonstandard MySQL numeric field attributes UNSIGNED and ZEROFILL
-										if ($this->isDbalEnabled() && preg_match('/^(TINYINT|SMALLINT|MEDIUMINT|INT|INTEGER|BIGINT|REAL|DOUBLE|FLOAT|DECIMAL|NUMERIC)\([^\)]+\)\s+(UNSIGNED|ZEROFILL)/i', $fieldC)) {
-											$fieldC = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $fieldC);
-											$FDcomp[$table][$theKey][$fieldN] = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $FDcomp[$table][$theKey][$fieldN]);
+										if ($this->isDbalEnabled()) {
+											// Ignore nonstandard MySQL numeric field attributes UNSIGNED and ZEROFILL
+											if (preg_match('/^(TINYINT|SMALLINT|MEDIUMINT|INT|INTEGER|BIGINT|REAL|DOUBLE|FLOAT|DECIMAL|NUMERIC)\([^\)]+\)\s+(UNSIGNED|ZEROFILL)/i', $fieldC)) {
+												$fieldC = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $fieldC);
+												$FDcomp[$table][$theKey][$fieldN] = str_ireplace(array(' UNSIGNED', ' ZEROFILL'), '', $FDcomp[$table][$theKey][$fieldN]);
+											}
+
+											// Replace field and index definitions with functionally equivalent statements
+											if ($fieldC !== $FDcomp[$table][$theKey][$fieldN]) {
+												switch($theKey) {
+													case 'fields':
+														$fieldC = $this->getDatabaseConnection()->getEquivalentFieldDefinition($fieldC);
+														break;
+													case 'keys':
+														$fieldC = $this->getDatabaseConnection()->getEquivalentIndexDefinition($fieldC);
+														break;
+												}
+											}
 										}
 										if ($ignoreNotNullWhenComparing) {
 											$fieldC = str_replace(' NOT NULL', '', $fieldC);
@@ -413,7 +429,7 @@ class SqlSchemaMigrationService {
 									if ($fN == 'CLEAR') {
 										// Truncate table must happen later, not now
 										// Valid values for CLEAR: 1=only clear if keys are missing, 2=clear anyway (force)
-										if (count($info['keys']) || $fV == 2) {
+										if (!empty($info['keys']) || $fV == 2) {
 											$clear_table = TRUE;
 										}
 										continue;
@@ -428,7 +444,7 @@ class SqlSchemaMigrationService {
 							$statement = 'TRUNCATE TABLE ' . $table . ';';
 							$statements['clear_table'][md5($statement)] = $statement;
 						}
-						if (count($extras)) {
+						if (!empty($extras)) {
 							$statement = 'ALTER TABLE ' . $table . ' ' . implode(' ', $extras) . ';';
 							$statements['change'][md5($statement)] = $statement;
 							$statements['change_currentValue'][md5($statement)] = implode(' ', $extras_currentValue);
@@ -446,7 +462,7 @@ class SqlSchemaMigrationService {
 								$statements['drop_table'][md5($statement)] = $statement;
 							}
 							// Count
-							$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows('*', $table);
+							$count = $this->getDatabaseConnection()->exec_SELECTcountRows('*', $table);
 							$statements['tables_count'][md5($statement)] = $count ? 'Records in table: ' . $count : '';
 						} else {
 							$statement = 'CREATE TABLE ' . $table . ' (
@@ -610,18 +626,19 @@ class SqlSchemaMigrationService {
 	public function performUpdateQueries($arr, $keyArr) {
 		$result = array();
 		if (is_array($arr)) {
+			$databaseConnection = $this->getDatabaseConnection();
 			foreach ($arr as $key => $string) {
 				if (isset($keyArr[$key]) && $keyArr[$key]) {
-					$res = $GLOBALS['TYPO3_DB']->admin_query($string);
+					$res = $databaseConnection->admin_query($string);
 					if ($res === FALSE) {
-						$result[$key] = $GLOBALS['TYPO3_DB']->sql_error();
+						$result[$key] = $databaseConnection->sql_error();
 					} elseif (is_resource($res) || is_a($res, '\\mysqli_result')) {
-						$GLOBALS['TYPO3_DB']->sql_free_result($res);
+						$databaseConnection->sql_free_result($res);
 					}
 				}
 			}
 		}
-		if (count($result) > 0) {
+		if (!empty($result)) {
 			return $result;
 		} else {
 			return TRUE;
@@ -635,7 +652,7 @@ class SqlSchemaMigrationService {
 	 * @see \TYPO3\CMS\Core\Database\DatabaseConnection::admin_get_tables()
 	 */
 	public function getListOfTables() {
-		$whichTables = $GLOBALS['TYPO3_DB']->admin_get_tables(TYPO3_db);
+		$whichTables = $this->getDatabaseConnection()->admin_get_tables(TYPO3_db);
 		foreach ($whichTables as $key => &$value) {
 			$value = $key;
 		}
@@ -650,6 +667,13 @@ class SqlSchemaMigrationService {
 	 */
 	protected function isDbalEnabled() {
 		return \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('dbal');
+	}
+
+	/**
+	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection|\TYPO3\CMS\Dbal\Database\DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
 	}
 
 }

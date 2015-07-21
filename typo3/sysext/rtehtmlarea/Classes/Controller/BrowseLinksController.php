@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
 
 /**
  * Script class for the Element Browser window.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BrowseLinksController {
 
@@ -31,8 +29,8 @@ class BrowseLinksController {
 	 * Initialize language files
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/mod3/locallang.xlf');
-		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/htmlarea/locallang_dialogs.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_browselinkscontroller.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_dialogs.xlf');
 	}
 	/**
 	 * Main function, rendering the element browser in RTE mode.

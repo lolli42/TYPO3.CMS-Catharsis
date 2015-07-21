@@ -42,8 +42,6 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
  * $theImage = $gifCreator->gifBuild();
  * }
  * return $gifCreator->getImageDimensions($theImage);
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 
@@ -815,7 +813,7 @@ class GifBuilder extends \TYPO3\CMS\Core\Imaging\GraphicalFunctions {
 	 */
 	protected function calculateMaximum($string) {
 		$parts = GeneralUtility::trimExplode(',', $this->calcOffset($string), TRUE);
-		$maximum = count($parts) ? max($parts) : 0;
+		$maximum = !empty($parts) ? max($parts) : 0;
 		return $maximum;
 	}
 

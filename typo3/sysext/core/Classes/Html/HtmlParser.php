@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Functions for parsing HTML.
  * You are encouraged to use this class in your own applications
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class HtmlParser {
 
@@ -200,7 +198,7 @@ class HtmlParser {
 					// use strtr instead of strtoupper to avoid locale problems with Turkish
 					$marker = strtr($marker, 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 				}
-				if (count($wrapArr) > 0) {
+				if (!empty($wrapArr)) {
 					$marker = $wrapArr[0] . $marker . $wrapArr[1];
 				}
 				$search[] = $marker;
@@ -273,7 +271,7 @@ class HtmlParser {
 				// Use strtr instead of strtoupper to avoid locale problems with Turkish
 				$subpartMarker = strtr($subpartMarker, 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 			}
-			if (count($wraps) > 0) {
+			if (!empty($wraps)) {
 				$subpartMarker = $wraps[0] . $subpartMarker . $wraps[1];
 			}
 			$subTemplates[$subpartMarker] = self::getSubpart($content, $subpartMarker);
@@ -285,10 +283,10 @@ class HtmlParser {
 				// use strtr instead of strtoupper to avoid locale problems with Turkish
 				$completeMarker = strtr($completeMarker, 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 			}
-			if (count($wraps) > 0) {
+			if (!empty($wraps)) {
 				$completeMarker = $wraps[0] . $completeMarker . $wraps[1];
 			}
-			if (count($markersAndSubparts[$subpartMarker]) > 0) {
+			if (!empty($markersAndSubparts[$subpartMarker])) {
 				foreach ($markersAndSubparts[$subpartMarker] as $partialMarkersAndSubparts) {
 					$subpartSubstitutes[$completeMarker] .= self::substituteMarkerAndSubpartArrayRecursive($subTemplates[$completeMarker],
 						$partialMarkersAndSubparts, $wrap, $uppercase, $deleteUnused);
@@ -523,7 +521,7 @@ class HtmlParser {
 
 	/**
 	 * Returns an array with all attributes as keys. Attributes are only lowercase a-z
-	 * If a attribute is empty (shorthand), then the value for the key is empty. You can check if it existed with isset()
+	 * If an attribute is empty (shorthand), then the value for the key is empty. You can check if it existed with isset()
 	 *
 	 * @param string $tag Tag: $tag is either a whole tag (eg '<TAG OPTION ATTRIB=VALUE>') or the parameterlist (ex ' OPTION ATTRIB=VALUE>')
 	 * @param bool $deHSC If set, the attribute values are de-htmlspecialchar'ed. Should actually always be set!
@@ -843,7 +841,7 @@ class HtmlParser {
 															$newClasses[] = $class;
 														}
 													}
-													if (count($newClasses)) {
+													if (!empty($newClasses)) {
 														$tagAttrib[0][$attr] = implode(' ', $newClasses);
 													} else {
 														$tagAttrib[0][$attr] = '';
@@ -924,7 +922,7 @@ class HtmlParser {
 											$lastEl = end($tagStack);
 											if ($tagName !== $lastEl) {
 												if (in_array($tagName, $tagStack)) {
-													while (count($tagStack) && $tagName !== $lastEl) {
+													while (!empty($tagStack) && $tagName !== $lastEl) {
 														$elPos = end($tagRegister[$lastEl]);
 														unset($newContent[$elPos]);
 														array_pop($tagRegister[$lastEl]);
@@ -937,7 +935,7 @@ class HtmlParser {
 												}
 											}
 										}
-										if (!count($tagRegister[$tagName]) || !$correctTag) {
+										if (empty($tagRegister[$tagName]) || !$correctTag) {
 											$setTag = 0;
 										} else {
 											array_pop($tagRegister[$tagName]);
@@ -1155,7 +1153,7 @@ class HtmlParser {
 					$newAttribs[] = 'color="' . $attribArray['color'] . '"';
 				}
 				$innerContent = $this->cleanFontTags($this->removeFirstAndLastTag($v), $keepFace, $keepSize, $keepColor);
-				if (count($newAttribs)) {
+				if (!empty($newAttribs)) {
 					$fontSplit[$k] = '<font ' . implode(' ', $newAttribs) . '>' . $innerContent . '</font>';
 				} else {
 					$fontSplit[$k] = $innerContent;
@@ -1358,6 +1356,9 @@ class HtmlParser {
 					}
 					unset($tagC['fixAttrib.']);
 					unset($tagC['fixAttrib']);
+					if (isset($tagC['rmTagIfNoAttrib']) && $tagC['rmTagIfNoAttrib'] && empty($tagC['nesting'])) {
+						$tagC['nesting'] = 1;
+					}
 					$keepTags[$key] = array_merge($keepTags[$key], $tagC);
 				}
 			}
@@ -1367,6 +1368,9 @@ class HtmlParser {
 			$lN = GeneralUtility::trimExplode(',', strtolower($TSconfig['localNesting']), TRUE);
 			foreach ($lN as $tn) {
 				if (isset($keepTags[$tn])) {
+					if (!is_array($keepTags[$tn])) {
+						$keepTags[$tn] = array();
+					}
 					$keepTags[$tn]['nesting'] = 1;
 				}
 			}
@@ -1390,6 +1394,9 @@ class HtmlParser {
 						$keepTags[$tn] = array();
 					}
 					$keepTags[$tn]['rmTagIfNoAttrib'] = 1;
+					if (empty($keepTags[$tn]['nesting'])) {
+						$keepTags[$tn]['nesting'] = 1;
+					}
 				}
 			}
 		}
@@ -1475,7 +1482,7 @@ class HtmlParser {
 	 */
 	public function processTag($value, $conf, $endTag, $protected = 0) {
 		// Return immediately if protected or no parameters
-		if ($protected || !count($conf)) {
+		if ($protected || empty($conf)) {
 			return $value;
 		}
 		// OK then, begin processing for XHTML output:

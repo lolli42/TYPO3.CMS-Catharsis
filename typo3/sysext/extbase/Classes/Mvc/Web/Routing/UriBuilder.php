@@ -598,7 +598,7 @@ class UriBuilder {
 
 	/**
 	 * Builds the URI, backend flavour
-	 * The resulting URI is relative and starts with "mod.php".
+	 * The resulting URI is relative and starts with "index.php".
 	 * The settings pageUid, pageType, noCache, useCacheHash & linkAccessRestrictedPages
 	 * will be ignored in the backend.
 	 *
@@ -685,14 +685,14 @@ class UriBuilder {
 			$targetPageType = $this->extensionService->getTargetPageTypeByFormat($this->request->getControllerExtensionName(), $this->format);
 			$typolinkConfiguration['parameter'] .= ',' . $targetPageType;
 		}
-		if (count($this->arguments) > 0) {
+		if (!empty($this->arguments)) {
 			$arguments = $this->convertDomainObjectsToIdentityArrays($this->arguments);
 			$this->lastArguments = $arguments;
 			$typolinkConfiguration['additionalParams'] = GeneralUtility::implodeArrayForUrl(NULL, $arguments);
 		}
 		if ($this->addQueryString === TRUE) {
 			$typolinkConfiguration['addQueryString'] = 1;
-			if (count($this->argumentsToBeExcludedFromQueryString) > 0) {
+			if (!empty($this->argumentsToBeExcludedFromQueryString)) {
 				$typolinkConfiguration['addQueryString.'] = array(
 					'exclude' => implode(',', $this->argumentsToBeExcludedFromQueryString)
 				);

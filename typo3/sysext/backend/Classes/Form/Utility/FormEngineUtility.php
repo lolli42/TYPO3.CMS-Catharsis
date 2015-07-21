@@ -86,7 +86,7 @@ class FormEngineUtility {
 					}
 				}
 				// Override $GLOBALS['TCA'] field config by remaining TSconfig['config']:
-				if (count($TSconfig['config'])) {
+				if (!empty($TSconfig['config'])) {
 					ArrayUtility::mergeRecursiveWithOverrule($fieldConfig, $TSconfig['config']);
 				}
 			}
@@ -227,7 +227,7 @@ class FormEngineUtility {
 	 */
 	static public function getIconHtml($icon, $alt = '', $title = '') {
 		$iconArray = static::getIcon($icon);
-		if (!empty($iconArray[0]) && is_file(GeneralUtility::resolveBackPath(PATH_typo3 . PATH_typo3_mod . $iconArray[0]))) {
+		if (!empty($iconArray[0]) && is_file(GeneralUtility::resolveBackPath(PATH_typo3 . $iconArray[0]))) {
 			return '<img src="' . $iconArray[0] . '" alt="' . $alt . '" ' . ($title ? 'title="' . $title . '"' : '') . ' />';
 		} else {
 			return IconUtility::getSpriteIcon($icon, array('alt' => $alt, 'title' => $title));

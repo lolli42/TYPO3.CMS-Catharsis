@@ -25,8 +25,6 @@ use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Main script class for the Import / Export facility
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
@@ -89,18 +87,18 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @return void
 	 */
 	public function main() {
-		$this->lang->includeLLFile('EXT:impexp/app/locallang.xlf');
+		$this->lang->includeLLFile('EXT:impexp/Resources/Private/Language/locallang.xlf');
 		// Start document template object:
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->bodyTagId = 'imp-exp-mod';
-		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('impexp') . '/app/template.html');
+		$this->doc->setModuleTemplate(\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('impexp') . '/Resources/Private/Templates/template.html');
 		$this->pageinfo = BackendUtility::readPageAccess($this->id, $this->perms_clause);
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		$this->doc->postCode = $this->doc->wrapScriptTags('if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';');
-		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('xMOD_tximpexp')) . '" method="post" enctype="'
-			. $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '"><input type="hidden" name="id" value="' . $this->id . '" />';
+		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('xMOD_tximpexp')) . '" method="post" enctype="multipart/form-data">'
+			. '<input type="hidden" name="id" value="' . $this->id . '" />';
 		$this->content .= $this->doc->header($this->lang->getLL('title'));
 		$this->content .= $this->doc->spacer(5);
 		// Input data grabbed:
@@ -276,7 +274,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 			// Based on click-expandable tree
 			$idH = NULL;
 			if ($inData['pagetree']['levels'] == -1) {
-				$pagetree = GeneralUtility::makeInstance(\TYPO3\CMS\Impexp\LocalPageTree::class);
+				$pagetree = GeneralUtility::makeInstance(\TYPO3\CMS\Impexp\View\ExportPageTreeView::class);
 				$tree = $pagetree->ext_tree($inData['pagetree']['id'], $this->filterPageIds($this->export->excludeMap));
 				$this->treeHTML = $pagetree->printTree($tree);
 				$idH = $pagetree->buffer_idH;
@@ -306,10 +304,10 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					}
 					$idH = array();
 					$idH[$pid]['uid'] = $pid;
-					if (count($tree->buffer_idH)) {
+					if (!empty($tree->buffer_idH)) {
 						$idH[$pid]['subrow'] = $tree->buffer_idH;
 					}
-					$pagetree = GeneralUtility::makeInstance(\TYPO3\CMS\Impexp\LocalPageTree::class);
+					$pagetree = GeneralUtility::makeInstance(\TYPO3\CMS\Impexp\View\ExportPageTreeView::class);
 					$this->treeHTML = $pagetree->printTree($tree->tree);
 				}
 			}
@@ -327,7 +325,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		// After adding ALL records we set relations:
 		for ($a = 0; $a < 10; $a++) {
 			$addR = $this->export->export_addDBRelations($a);
-			if (!count($addR)) {
+			if (empty($addR)) {
 				break;
 			}
 		}
@@ -650,7 +648,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$excludeHiddenFields .= '<input type="hidden" name="tx_impexp[exclude][' . $key . ']" value="1" />';
 			}
 		}
-		if (count($inData['exclude'])) {
+		if (!empty($inData['exclude'])) {
 			$excludedElements = '<em>' . implode(', ', array_keys($inData['exclude'])) . '</em><hr/><label for="checkExclude">'
 				. $this->lang->getLL('makeconfig_clearAllExclusions', TRUE)
 				. '</label> <input type="checkbox" name="tx_impexp[exclude]" id="checkExclude" value="1" />';
@@ -808,7 +806,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 							' . $this->lang->getLL('makesavefo_description', TRUE) . ' <br/>
 							<input type="text" name="tx_impexp[meta][description]" value="' . htmlspecialchars($inData['meta']['description']) . '"' . $this->doc->formWidth(30) . ' /><br/>
 							' . $this->lang->getLL('makesavefo_notes', TRUE) . ' <br/>
-							<textarea name="tx_impexp[meta][notes]"' . $this->doc->formWidth(30, 1) . '>' . GeneralUtility::formatForTextarea($inData['meta']['notes']) . '</textarea><br/>
+							<textarea name="tx_impexp[meta][notes]"' . $this->doc->formWidth(30, 1) . '>' . htmlspecialchars($inData['meta']['notes']) . '</textarea><br/>
 							' . (!empty($thumbnailFiles) ? '
 							' . $this->lang->getLL('makesavefo_thumbnail', TRUE) . '<br/>
 							' . $this->renderSelectBox('tx_impexp[meta][thumbnail]', $inData['meta']['thumbnail'], $thumbnailFiles) : '') . '<br/>
@@ -910,7 +908,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					<th colspan="2">' . $this->lang->getLL('importdata_selectFileToImport', TRUE) . '</th>
 				</tr>';
 			$noCompressorAvailable = !$import->compress
-				? '<br /><span class="typo3-red">' . $this->lang->getLL('importdata_noteNoDecompressorAvailable', TRUE) . '</span>'
+				? '<br /><span class="text-danger">' . $this->lang->getLL('importdata_noteNoDecompressorAvailable', TRUE) . '</span>'
 				: '';
 			$row[] = '
 				<tr>
@@ -960,7 +958,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					<br/>
 					<input type="checkbox" name="tx_impexp[force_all_UIDS]" id="checkForce_all_UIDS" value="1"'
 						. ($inData['force_all_UIDS'] ? ' checked="checked"' : '') . ' />
-					<label for="checkForce_all_UIDS"><span class="typo3-red">'
+					<label for="checkForce_all_UIDS"><span class="text-danger">'
 						. $this->lang->getLL('importdata_force_all_UIDS', TRUE) . '</span></label><br/>
 					<em>(' . $this->lang->getLL('importdata_force_all_UIDS_descr', TRUE) . ')</em>'
 				: '';
@@ -1042,7 +1040,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				if (GeneralUtility::_POST('_upload')) {
 					$noFileUploaded = $this->fileProcessor->internalUploadMap[1]
 						? $this->lang->getLL('importdata_success', TRUE) . ' ' . $this->uploadedFiles[0]->getName()
-						: '<span class="typo3-red">' . $this->lang->getLL('importdata_failureNoFileUploaded', TRUE) . '</span>';
+						: '<span class="text-danger">' . $this->lang->getLL('importdata_failureNoFileUploaded', TRUE) . '</span>';
 					$row[] = '<tr class="bgColor4">
 							<td>' . $this->lang->getLL('importdata_uploadStatus', TRUE) . '</td>
 							<td>' . $noFileUploaded . '</td>
@@ -1074,12 +1072,12 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 							}
 						}
 					}
-					if (count($extKeysToInstall)) {
+					if (!empty($extKeysToInstall)) {
 						$extensionInstallationMessage = 'Before you can install this T3D file you need to install the extensions "'
 							. implode('", "', $extKeysToInstall) . '".';
 					}
 					if ($inData['import_file']) {
-						if (!count($extKeysToInstall)) {
+						if (empty($extKeysToInstall)) {
 							$import->importData($this->id);
 							BackendUtility::setUpdateSignal('updatePageTree');
 						}
@@ -1181,7 +1179,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$msg = '';
 		// Save preset
 		$beUser = $this->getBackendUser();
-		// cast public checkbox to int, since this is a int field and NULL is not allowed
+		// cast public checkbox to int, since this is an int field and NULL is not allowed
 		$inData['preset']['public'] = (int)$inData['preset']['public'];
 		if (isset($presetData['save'])) {
 			$preset = $this->getPreset($presetData['select']);
@@ -1320,7 +1318,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$this->fileProcessor = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\File\ExtendedFileUtility::class);
 		$this->fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 		$this->fileProcessor->setActionPermissions();
-		$this->fileProcessor->dontCheckForUnique = GeneralUtility::_GP('overwriteExistingFiles') ? 1 : 0;
+		$this->fileProcessor->setExistingFilesConflictMode((int)GeneralUtility::_GP('overwriteExistingFiles') === 1 ? 'replace' : 'cancel');
 		// Checking referer / executing:
 		$refInfo = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
 		$httpHost = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
@@ -1442,7 +1440,7 @@ class ImportExportController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 			}
 		}
 		// Add to clause:
-		if (count($pageIds)) {
+		if (!empty($pageIds)) {
 			return ' AND uid NOT IN (' . implode(',', $pageIds) . ')';
 		}
 		return '';

@@ -15,12 +15,9 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
-use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase;
 
 /**
  * EditorMode plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class EditorMode extends RteHtmlAreaApi {
 
@@ -57,11 +54,11 @@ class EditorMode extends RteHtmlAreaApi {
 	/**
 	 * Returns TRUE if the plugin is available and correctly initialized
 	 *
-	 * @param RteHtmlAreaBase $parentObject parent object
+	 * @param array $configuration Configuration array given from calling object down to the single plugins
 	 * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
 	 */
-	public function main($parentObject) {
-		parent::main($parentObject);
+	public function main(array $configuration) {
+		parent::main($configuration);
 		// Do not disable this plugin even if the chMode button is disabled
 		$this->pluginAddsButtons = FALSE;
 		return TRUE;

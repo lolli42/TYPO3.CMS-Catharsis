@@ -19,9 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * User defined content for htmlArea RTE
- *
- * @author Kasper Skårhøj <kasper@typo3.com>
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class UserElementsController {
 
@@ -56,8 +53,8 @@ class UserElementsController {
 	 * Initialize language files
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/mod5/locallang.xlf');
-		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/htmlarea/locallang_dialogs.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_userelementscontroller.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_dialogs.xlf');
 	}
 
 	/**
@@ -275,7 +272,7 @@ class UserElementsController {
 				} else {
 					$title = $GLOBALS['LANG']->sL($title, TRUE);
 				}
-				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl($GLOBALS['MCONF']['name'], array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/ol/' . ($openKeys[$openK] ? 'minus' : 'plus') . 'bullet.gif'), 'width="18" height="16"') . ' title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" /><strong>' . $title . '</strong></a></td></tr>';
+				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl($GLOBALS['MCONF']['name'], array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><i class="fa fa-caret-square-o-' . ($openKeys[$openK] ? 'left' : 'right') . '" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '"></i><strong>' . $title . '</strong></a></td></tr>';
 				$lines[] = $v;
 			}
 			$content .= '<table border="0" cellpadding="1" cellspacing="1">' . implode('', $lines) . '</table>';

@@ -19,9 +19,6 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 
 /**
  * Contains IMGTEXT content object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
 
@@ -213,7 +210,7 @@ class ImageTextContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractC
 					$maxW = 0;
 				}
 				if ($maxW) {
-					if (count($colMaxW)) {
+					if (!empty($colMaxW)) {
 						$imgConf['file.']['maxW'] = $colMaxW[$a % $colCount];
 					} else {
 						$imgConf['file.']['maxW'] = $maxW;

@@ -19,9 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Browse pages in Web module
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Benjamin Mack <bmack@xnos.org>
  */
 class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 
@@ -100,21 +97,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	}
 
 	/**
-	 * Adds a red "+" to the input string, $str, if the field "php_tree_stop" in the $row (pages) is set
-	 *
-	 * @param string $str Input string, like a page title for the tree
-	 * @param array $row Record row with "php_tree_stop" field
-	 * @return string Modified string
-	 * @access private
-	 */
-	public function wrapStop($str, $row) {
-		if ($row['php_tree_stop']) {
-			$str .= '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('setTempDBmount' => $row['uid']))) . '" class="typo3-red">+</a> ';
-		}
-		return $str;
-	}
-
-	/**
 	 * Wrapping $title in a-tags.
 	 *
 	 * @param string $title Title string
@@ -151,10 +133,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 		if (!is_array($treeArr)) {
 			$treeArr = $this->tree;
 		}
-		$out = '
-			<!-- TYPO3 tree structure. -->
-			<ul class="tree" id="treeRoot">
-		';
+		$out = '<ul class="list-tree list-tree-root">';
 		// -- evaluate AJAX request
 		// IE takes anchor as parameter
 		$PM = GeneralUtility::_GP('PM');
@@ -162,7 +141,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 			$PM = substr($PM, 0, $PMpos);
 		}
 		$PM = explode('_', $PM);
-		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX && is_array($PM) && count($PM) == 4 && $PM[2] != 0) {
+		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX && is_array($PM) && count($PM) === 4 && $PM[2] != 0) {
 			if ($PM[1]) {
 				$expandedPageUid = $PM[2];
 				$ajaxOutput = '';
@@ -177,38 +156,35 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 		// We need to count the opened <ul>'s every time we dig into another level,
 		// so we know how many we have to close when all children are done rendering
 		$closeDepth = array();
-		foreach ($treeArr as $k => $v) {
-			$classAttr = $v['row']['_CSSCLASS'];
-			$uid = $v['row']['uid'];
-			$idAttr = htmlspecialchars($this->domIdPrefix . $this->getId($v['row']) . '_' . $v['bank']);
+		foreach ($treeArr as $k => $treeItem) {
+			$classAttr = $treeItem['row']['_CSSCLASS'];
+			$uid = $treeItem['row']['uid'];
+			$idAttr = htmlspecialchars($this->domIdPrefix . $this->getId($treeItem['row']) . '_' . $treeItem['bank']);
 			$itemHTML = '';
 			// If this item is the start of a new level,
 			// then a new level <ul> is needed, but not in ajax mode
-			if ($v['isFirst'] && !$doCollapse && !($doExpand && $expandedPageUid == $uid)) {
-				$itemHTML = '<ul>';
+			if ($treeItem['isFirst'] && !$doCollapse && !($doExpand && $expandedPageUid == $uid)) {
+				$itemHTML = '<ul class="list-tree">';
 			}
+
 			// Add CSS classes to the list item
-			if ($v['hasSub']) {
-				$classAttr .= $classAttr ? ' expanded' : 'expanded';
+			if ($treeItem['hasSub']) {
+				$classAttr .= ' list-tree-control-open';
 			}
-			if ($v['isLast']) {
-				$classAttr .= $classAttr ? ' last' : 'last';
-			}
-			$itemHTML .= '
-				<li id="' . $idAttr . '"' . ($classAttr ? ' class="' . $classAttr . '"' : '') . '><div class="treeLinkItem">' . $v['HTML'] . $this->wrapTitle($this->getTitleStr($v['row'], $titleLen), $v['row'], $v['bank']) . '</div>
-';
-			if (!$v['hasSub']) {
+			$itemHTML .= '<li id="' . $idAttr . '" ' . ($classAttr ? ' class="' . trim($classAttr) . '"' : '') . '><span class="list-tree-group">' . $treeItem['HTML'] . $this->wrapTitle($this->getTitleStr($treeItem['row'], $titleLen), $treeItem['row'], $treeItem['bank']) . '</span>';
+			if (!$treeItem['hasSub']) {
 				$itemHTML .= '</li>';
 			}
+
 			// We have to remember if this is the last one
 			// on level X so the last child on level X+1 closes the <ul>-tag
-			if ($v['isLast'] && !($doExpand && $expandedPageUid == $uid)) {
-				$closeDepth[$v['invertedDepth']] = 1;
+			if ($treeItem['isLast'] && !($doExpand && $expandedPageUid == $uid)) {
+				$closeDepth[$treeItem['invertedDepth']] = 1;
 			}
 			// If this is the last one and does not have subitems, we need to close
 			// the tree as long as the upper levels have last items too
-			if ($v['isLast'] && !$v['hasSub'] && !$doCollapse && !($doExpand && $expandedPageUid == $uid)) {
-				for ($i = $v['invertedDepth']; $closeDepth[$i] == 1; $i++) {
+			if ($treeItem['isLast'] && !$treeItem['hasSub'] && !$doCollapse && !($doExpand && $expandedPageUid == $uid)) {
+				for ($i = $treeItem['invertedDepth']; $closeDepth[$i] == 1; $i++) {
 					$closeDepth[$i] = 0;
 					$itemHTML .= '</ul></li>';
 				}
@@ -221,9 +197,9 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 			// ajax request: expand
 			if ($doExpand && $expandedPageUid == $uid) {
 				$ajaxOutput .= $itemHTML;
-				$invertedDepthOfAjaxRequestedItem = $v['invertedDepth'];
+				$invertedDepthOfAjaxRequestedItem = $treeItem['invertedDepth'];
 			} elseif ($invertedDepthOfAjaxRequestedItem) {
-				if ($v['invertedDepth'] < $invertedDepthOfAjaxRequestedItem) {
+				if ($treeItem['invertedDepth'] < $invertedDepthOfAjaxRequestedItem) {
 					$ajaxOutput .= $itemHTML;
 				} else {
 					$this->ajaxStatus = TRUE;
@@ -254,9 +230,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 	 * @see \TYPO3\CMS\Backend\Tree\View\PageTreeView::PMicon()
 	 */
 	public function PMicon($row, $a, $c, $nextCount, $exp) {
-		$PM = $nextCount ? ($exp ? 'minus' : 'plus') : 'join';
-		$BTM = $a == $c ? 'bottom' : '';
-		$icon = '<img' . IconUtility::skinImg($this->backPath, ('gfx/ol/' . $PM . $BTM . '.gif'), 'width="18" height="16"') . ' alt="" />';
+		$icon = '';
 		if ($nextCount) {
 			$cmd = $this->bank . '_' . ($exp ? '0_' : '1_') . $row['uid'] . '_' . $this->treeName;
 			$icon = $this->PMiconATagWrap($icon, $cmd, !$exp);
@@ -276,7 +250,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 		if ($this->thisScript) {
 			// Activate dynamic ajax-based tree
 			$js = htmlspecialchars('Tree.load(' . GeneralUtility::quoteJSvalue($cmd) . ', ' . (int)$isExpand . ', this);');
-			return '<a class="pm" onclick="' . $js . '">' . $icon . '</a>';
+			return '<a class="list-tree-control' . (!$isExpand ? ' list-tree-control-open' : ' list-tree-control-closed') . '" onclick="' . $js . '"><i class="fa"></i></a>';
 		} else {
 			return $icon;
 		}
@@ -303,12 +277,11 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 			$curIds = $this->ids;
 			$this->reset();
 			$this->ids = $curIds;
-			// Set PM icon for root of mount:
-			$cmd = $this->bank . '_' . ($isOpen ? '0_' : '1_') . $uid . '_' . $this->treeName;
 			// Only, if not for uid 0
 			if ($uid) {
-				$icon = '<img' . IconUtility::skinImg($this->backPath, ('gfx/ol/' . ($isOpen ? 'minus' : 'plus') . 'only.gif')) . ' alt="" />';
-				$firstHtml = $this->PMiconATagWrap($icon, $cmd, !$isOpen);
+				// Set PM icon for root of mount:
+				$cmd = $this->bank . '_' . ($isOpen ? '0_' : '1_') . $uid . '_' . $this->treeName;
+				$firstHtml = '<a class="list-tree-control list-tree-control-' . ($isOpen ? 'open' : 'closed') . '" href="' . htmlspecialchars($this->getThisScript() . 'PM=' . $cmd) . '"><i class="fa"></i></a>';
 			}
 			// Preparing rootRec for the mount
 			if ($uid) {
@@ -330,122 +303,13 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\BrowseTreeView {
 					if ($this->addSelfId) {
 						$this->ids[] = $uid;
 					}
-					$this->getTree($uid, 999, '', $rootRec['_SUBCSSCLASS']);
+					$this->getTree($uid);
 				}
 				// Add tree:
 				$treeArr = array_merge($treeArr, $this->tree);
 			}
 		}
 		return $this->printTree($treeArr);
-	}
-
-	/**
-	 * Fetches the data for the tree
-	 *
-	 * @param int $uid Item id for which to select subitems (parent id)
-	 * @param int $depth Max depth (recursivity limit)
-	 * @param string $blankLineCode ? (internal)
-	 * @param string $subCSSclass
-	 * @return int The count of items on the level
-	 */
-	public function getTree($uid, $depth = 999, $blankLineCode = '', $subCSSclass = '') {
-		// Buffer for id hierarchy is reset:
-		$this->buffer_idH = array();
-		// Init vars
-		$depth = (int)$depth;
-		$HTML = '';
-		$a = 0;
-		$res = $this->getDataInit($uid, $subCSSclass);
-		$c = $this->getDataCount($res);
-		$crazyRecursionLimiter = 999;
-		$inMenuPages = array();
-		$outOfMenuPages = array();
-		$outOfMenuPagesTextIndex = array();
-		while ($crazyRecursionLimiter > 0 && ($row = $this->getDataNext($res, $subCSSclass))) {
-			$crazyRecursionLimiter--;
-			// Not in menu:
-			if ($this->ext_separateNotinmenuPages && ($row['doktype'] == \TYPO3\CMS\Frontend\Page\PageRepository::DOKTYPE_BE_USER_SECTION || $row['doktype'] >= 200 || $row['nav_hide'])) {
-				$outOfMenuPages[] = $row;
-				$outOfMenuPagesTextIndex[] = ($row['doktype'] >= 200 ? 'zzz' . $row['doktype'] . '_' : '') . $row['title'];
-			} else {
-				$inMenuPages[] = $row;
-			}
-		}
-		$label_shownAlphabetically = '';
-		if (count($outOfMenuPages)) {
-			// Sort out-of-menu pages:
-			$outOfMenuPages_alphabetic = array();
-			if ($this->ext_alphasortNotinmenuPages) {
-				asort($outOfMenuPagesTextIndex);
-				$label_shownAlphabetically = ' (alphabetic)';
-			}
-			foreach ($outOfMenuPagesTextIndex as $idx => $txt) {
-				$outOfMenuPages_alphabetic[] = $outOfMenuPages[$idx];
-			}
-			// Merge:
-			$outOfMenuPages_alphabetic[0]['_FIRST_NOT_IN_MENU'] = TRUE;
-			$allRows = array_merge($inMenuPages, $outOfMenuPages_alphabetic);
-		} else {
-			$allRows = $inMenuPages;
-		}
-		// Traverse the records:
-		foreach ($allRows as $row) {
-			$a++;
-			$newID = $row['uid'];
-			// Reserve space.
-			$this->tree[] = array();
-			end($this->tree);
-			// Get the key for this space
-			$treeKey = key($this->tree);
-			$LN = $a == $c ? 'blank' : 'line';
-			// If records should be accumulated, do so
-			if ($this->setRecs) {
-				$this->recs[$row['uid']] = $row;
-			}
-			// Accumulate the id of the element in the internal arrays
-			$this->ids[] = ($idH[$row['uid']]['uid'] = $row['uid']);
-			$this->ids_hierarchy[$depth][] = $row['uid'];
-			// Make a recursive call to the next level
-			if ($depth > 1 && $this->expandNext($newID) && !$row['php_tree_stop']) {
-				$nextCount = $this->getTree($newID, $depth - 1, $blankLineCode . ',' . $LN, $row['_SUBCSSCLASS']);
-				if (count($this->buffer_idH)) {
-					$idH[$row['uid']]['subrow'] = $this->buffer_idH;
-				}
-				// Set "did expand" flag
-				$exp = 1;
-			} else {
-				$nextCount = $this->getCount($newID);
-				// Clear "did expand" flag
-				$exp = 0;
-			}
-			// Set HTML-icons, if any:
-			if ($this->makeHTML) {
-				if ($row['_FIRST_NOT_IN_MENU']) {
-					$HTML = '<img' . IconUtility::skinImg($this->backPath, 'gfx/ol/line.gif') . ' alt="" /><br/><img' . IconUtility::skinImg($this->backPath, 'gfx/ol/line.gif') . ' alt="" /><i>Not shown in menu' . $label_shownAlphabetically . ':</i><br>';
-				} else {
-					$HTML = '';
-				}
-				$HTML .= $this->PMicon($row, $a, $c, $nextCount, $exp);
-				$HTML .= $this->wrapStop($this->getIcon($row), $row);
-			}
-			// Finally, add the row/HTML content to the ->tree array in the reserved key.
-			$this->tree[$treeKey] = array(
-				'row' => $row,
-				'HTML' => $HTML,
-				'hasSub' => $nextCount && $this->expandNext($newID),
-				'isFirst' => $a == 1,
-				'isLast' => FALSE,
-				'invertedDepth' => $depth,
-				'blankLineCode' => $blankLineCode,
-				'bank' => $this->bank
-			);
-		}
-		if ($a) {
-			$this->tree[$treeKey]['isLast'] = TRUE;
-		}
-		$this->getDataFree($res);
-		$this->buffer_idH = $idH;
-		return $c;
 	}
 
 }

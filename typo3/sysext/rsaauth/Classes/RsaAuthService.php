@@ -14,23 +14,21 @@ namespace TYPO3\CMS\Rsaauth;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * Service "RSA authentication" for the "rsaauth" extension. This service will
  * authenticate a user using hos password encoded with one time public key. It
  * uses the standard TYPO3 service to do all dirty work. Firsts, it will decode
  * the password and then pass it to the parent service ('sv'). This ensures that it
  * always works, even if other TYPO3 internals change.
- *
- * @author Dmitry Dulepov <dmitry@typo3.org>
  */
 class RsaAuthService extends \TYPO3\CMS\Sv\AuthenticationService {
 
 	/**
-	 * An RSA backend.
-	 *
-	 * @var \TYPO3\CMS\Rsaauth\Backend\AbstractBackend
+	 * @var RsaEncryptionDecoder
 	 */
-	protected $backend = NULL;
+	protected $rsaEncryptionDecoder = NULL;
 
 	/**
 	 * Standard extension key for the service
@@ -54,7 +52,7 @@ class RsaAuthService extends \TYPO3\CMS\Sv\AuthenticationService {
 	 *
 	 * @var string
 	 */
-	public $scriptRelPath = 'sv1/class.tx_rsaauth_sv1.php';
+	public $scriptRelPath = 'Classes/RsaAuthService.php';
 
 	/**
 	 * Process the submitted credentials.
@@ -67,27 +65,20 @@ class RsaAuthService extends \TYPO3\CMS\Sv\AuthenticationService {
 	public function processLoginData(array &$loginData, $passwordTransmissionStrategy) {
 		$isProcessed = FALSE;
 		if ($passwordTransmissionStrategy === 'rsa') {
-			$storage = \TYPO3\CMS\Rsaauth\Storage\StorageFactory::getStorage();
-			/** @var $storage \TYPO3\CMS\Rsaauth\Storage\AbstractStorage */
-			// Decrypt the password
 			$password = $loginData['uident'];
-			$key = $storage->get();
-			if ($key !== NULL && substr($password, 0, 4) === 'rsa:') {
-				// Decode password and store it in loginData
-				$decryptedPassword = $this->backend->decrypt($key, substr($password, 4));
-				if ($decryptedPassword !== NULL) {
+			if (substr($password, 0, 4) === 'rsa:') {
+				$decryptedPassword = $this->getRsaEncryptionDecoder()->decrypt($password);
+				if ($decryptedPassword !== $password) {
 					$loginData['uident_text'] = $decryptedPassword;
 					$isProcessed = TRUE;
 				} else {
 					if ($this->pObj->writeDevLog) {
-						\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Process login data: Failed to RSA decrypt password', \TYPO3\CMS\Rsaauth\RsaAuthService::class);
+						GeneralUtility::devLog('Process login data: Failed to RSA decrypt password', RsaAuthService::class);
 					}
 				}
-				// Remove the key
-				$storage->put(NULL);
 			} else {
 				if ($this->pObj->writeDevLog) {
-					\TYPO3\CMS\Core\Utility\GeneralUtility::devLog('Process login data: passwordTransmissionStrategy has been set to "rsa" but no rsa encrypted password has been found.', \TYPO3\CMS\Rsaauth\RsaAuthService::class);
+					GeneralUtility::devLog('Process login data: passwordTransmissionStrategy has been set to "rsa" but no rsa encrypted password has been found.', RsaAuthService::class);
 				}
 			}
 		}
@@ -100,15 +91,18 @@ class RsaAuthService extends \TYPO3\CMS\Sv\AuthenticationService {
 	 * @return bool
 	 */
 	public function init() {
-		$available = parent::init();
-		if ($available) {
-			// Get the backend
-			$this->backend = \TYPO3\CMS\Rsaauth\Backend\BackendFactory::getBackend();
-			if ($this->backend === NULL) {
-				$available = FALSE;
-			}
+		return parent::init() && $this->getRsaEncryptionDecoder()->isAvailable();
+	}
+
+	/**
+	 * @return RsaEncryptionDecoder
+	 */
+	protected function getRsaEncryptionDecoder() {
+		if ($this->rsaEncryptionDecoder === NULL) {
+			$this->rsaEncryptionDecoder = GeneralUtility::makeInstance(RsaEncryptionDecoder::class);
 		}
-		return $available;
+
+		return $this->rsaEncryptionDecoder;
 	}
 
 }

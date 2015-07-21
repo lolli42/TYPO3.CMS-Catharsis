@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Database;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * Soft Reference processing class
@@ -65,8 +66,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * - 'TStemplate' : freetext references to "fileadmin/" files.
  * - 'email' : Email highlight
  * - 'url' : URL highlights (with a scheme)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SoftReferenceIndex {
 
@@ -215,7 +214,7 @@ class SoftReferenceIndex {
 			}
 		}
 		// Return result:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => implode('', $splitContent),
 				'elements' => $elements
@@ -250,7 +249,7 @@ class SoftReferenceIndex {
 			$linkElement[$k] = $this->setTypoLinkPartsElement($tLP, $elements, $typolinkValue, $k);
 		}
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => implode(',', $linkElement),
 				'elements' => $elements
@@ -282,7 +281,7 @@ class SoftReferenceIndex {
 			}
 		}
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => implode('', $linkTags),
 				'elements' => $elements
@@ -355,7 +354,7 @@ class SoftReferenceIndex {
 		// Process free fileadmin/ references as well:
 		$content = $this->fileadminReferences($content, $elements);
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => $content,
 				'elements' => $elements
@@ -377,7 +376,7 @@ class SoftReferenceIndex {
 		// Process free fileadmin/ references from TSconfig
 		$content = $this->fileadminReferences($content, $elements);
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => $content,
 				'elements' => $elements
@@ -413,7 +412,7 @@ class SoftReferenceIndex {
 			}
 		}
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => substr(implode('', $parts), 1, -1),
 				'elements' => $elements
@@ -452,7 +451,7 @@ class SoftReferenceIndex {
 			}
 		}
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => substr(implode('', $parts), 1, -1),
 				'elements' => $elements
@@ -480,7 +479,7 @@ class SoftReferenceIndex {
 			}
 		}
 		// Return output:
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$resultArray = array(
 				'content' => substr(implode('', $parts), 1, -1),
 				'elements' => $elements
@@ -542,35 +541,12 @@ class SoftReferenceIndex {
 	 * @see \TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::typolink(), setTypoLinkPartsElement()
 	 */
 	public function getTypoLinkParts($typolinkValue) {
-		$finalTagParts = array();
-		$browserTarget = '';
-		$cssClass = '';
-		$titleAttribute = '';
-		$additionalParams = '';
-		// Split into link / target / class / title / additionalParams
-		$linkParameter = GeneralUtility::unQuoteFilenames($typolinkValue, TRUE);
-		// Link parameter value
-		$link_param = trim($linkParameter[0]);
-		// Target value
-		if (isset($linkParameter[1])) {
-			$browserTarget = trim($linkParameter[1]);
-		}
-		// Link class
-		if (isset($linkParameter[2])) {
-			$cssClass = trim($linkParameter[2]);
-		}
-		// Title value
-		if (isset($linkParameter[3])) {
-			$titleAttribute = trim($linkParameter[3]);
-		}
-		if (isset($linkParameter[4]) && trim($linkParameter[4]) !== '') {
-			$additionalParams = trim($linkParameter[4]);
-		}
-		// set all tag parts because setTypoLinkPartsElement() rely on them
-		$finalTagParts['target'] = $browserTarget;
-		$finalTagParts['class'] = $cssClass;
-		$finalTagParts['title'] = $titleAttribute;
-		$finalTagParts['additionalParams'] = $additionalParams;
+
+		$finalTagParts = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($typolinkValue);
+
+		$link_param = $finalTagParts['url'];
+		// we define various keys below, "url" might be misleading
+		unset($finalTagParts['url']);
 
 		// Parse URL:
 		$pU = @parse_url($link_param);
@@ -781,18 +757,9 @@ class SoftReferenceIndex {
 				}
 		}
 		// Finally, for all entries that was rebuild with tokens, add target, class, title and additionalParams in the end:
-		if ($content !== '' && isset($tLP['target']) && $tLP['target'] !== '') {
-			$content .= ' ' . $tLP['target'];
-			if (isset($tLP['class']) && $tLP['class'] !== '') {
-				$content .= ' "' . $tLP['class'] . '"';
-				if (isset($tLP['title']) && $tLP['title'] !== '') {
-					$content .= ' "' . $tLP['title'] . '"';
-					if (isset($tLP['additionalParams']) && $tLP['additionalParams'] !== '') {
-						$content .= ' ' . $tLP['additionalParams'];
-					}
-				}
-			}
-		}
+		$tLP['url'] = $content;
+		$content = GeneralUtility::makeInstance(TypoLinkCodecService::class)->encode($tLP);
+
 		// Return rebuilt typolink value:
 		return $content;
 	}

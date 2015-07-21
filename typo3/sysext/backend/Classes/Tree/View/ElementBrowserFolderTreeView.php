@@ -49,7 +49,7 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 			$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())) . ');';
 			return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $title . '</a>';
 		} else {
-			return '<span class="typo3-dimmed">' . $title . '</span>';
+			return '<span class="text-muted">' . $title . '</span>';
 		}
 	}
 
@@ -57,10 +57,10 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	 * Returns TRUE if the input "record" contains a folder which can be linked.
 	 *
 	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject Object with information about the folder element. Contains keys like title, uid, path, _title
-	 * @return bool TRUE is returned if the path is found in the web-part of the server and is NOT a recycler or temp folder
+	 * @return bool TRUE is returned if the path is found in the web-part of the server and is NOT a recycler or temp folder AND if ->ext_noTempRecyclerDirs is not set.
 	 */
 	public function ext_isLinkable(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
-		if (strstr($folderObject->getIdentifier(), '_recycler_') || strstr($folderObject->getIdentifier(), '_temp_')) {
+		if ($this->ext_noTempRecyclerDirs && (substr($folderObject->getIdentifier(), -7) === '_temp_/' || substr($folderObject->getIdentifier(), -11) === '_recycler_/')) {
 			return FALSE;
 		} else {
 			return TRUE;
@@ -72,11 +72,12 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param bool $bMark If set, the link will have a anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool $bMark If set, the link will have an anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool $isOpen check if the item has children
 	 * @return string Link-wrapped input string
 	 * @access private
 	 */
-	public function PM_ATagWrap($icon, $cmd, $bMark = '') {
+	public function PM_ATagWrap($icon, $cmd, $bMark = '', $isOpen = FALSE) {
 		$name = $anchor = '';
 		if ($bMark) {
 			$anchor = '#' . $bMark;

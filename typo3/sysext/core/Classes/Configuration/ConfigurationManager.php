@@ -16,7 +16,7 @@ namespace TYPO3\CMS\Core\Configuration;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
-use TYPO3\CMS\Core\Utility\OpcodeCacheUtility;
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
 
 /**
  * Handle loading and writing of global and local (instance specific)
@@ -31,8 +31,6 @@ use TYPO3\CMS\Core\Utility\OpcodeCacheUtility;
  *   This class is intended for internal core use ONLY.
  *   Extensions should usually use the resulting $GLOBALS['TYPO3_CONF_VARS'] array,
  *   do not try to modify settings in LocalConfiguration.php with an extension.
- *
- * @author Helge Funk <helge.funk@e-net.info>
  * @internal
  */
 class ConfigurationManager {
@@ -315,7 +313,7 @@ class ConfigurationManager {
 			TRUE
 		);
 
-		OpcodeCacheUtility::clearAllActive($localConfigurationFile);
+		GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive($localConfigurationFile);
 
 		return $result;
 	}

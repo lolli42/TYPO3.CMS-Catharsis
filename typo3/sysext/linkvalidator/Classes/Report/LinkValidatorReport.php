@@ -25,9 +25,6 @@ use TYPO3\CMS\Linkvalidator\LinkAnalyzer;
 
 /**
  * Module 'Linkvalidator' for the 'linkvalidator' extension
- *
- * @author Michael Miousse <michael.miousse@infoglobe.ca>
- * @author Jochen Rieger <j.rieger@connecta.ag>
  */
 class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
 
@@ -168,7 +165,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$this->initialize();
 
 		// Localization
-		$this->doc->getPageRenderer()->addInlineLanguageLabelFile(
+		$this->getPageRenderer()->addInlineLanguageLabelFile(
 			ExtensionManagementUtility::extPath('linkvalidator', 'Resources/Private/Language/Module/locallang.xlf')
 		);
 
@@ -237,9 +234,9 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			$this->isAccessibleForCurrentUser = TRUE;
 		}
 
-		$this->doc->addStyleSheet('module', 'sysext/linkvalidator/Resources/Public/Styles/styles.css');
-		$this->doc->getPageRenderer()->loadJquery();
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Linkvalidator/Linkvalidator');
+		$this->doc->addStyleSheet('module', 'sysext/linkvalidator/Resources/Public/Css/styles.css');
+		$this->getPageRenderer()->loadJquery();
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Linkvalidator/Linkvalidator');
 
 		// Don't access in workspace
 		if ($this->getBackendUser()->workspace !== 0) {

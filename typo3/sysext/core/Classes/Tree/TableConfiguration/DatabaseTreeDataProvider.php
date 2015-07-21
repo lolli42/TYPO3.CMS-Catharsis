@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * TCA tree data provider
- *
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
 class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvider {
 
@@ -317,7 +315,7 @@ class DatabaseTreeDataProvider extends AbstractTableConfigurationTreeDataProvide
 		}
 		$storage = NULL;
 		$children = $this->getRelatedRecords($nodeData);
-		if (count($children)) {
+		if (!empty($children)) {
 			/** @var $storage \TYPO3\CMS\Backend\Tree\TreeNodeCollection */
 			$storage = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\TreeNodeCollection::class);
 			foreach ($children as $child) {

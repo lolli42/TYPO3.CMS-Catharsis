@@ -19,8 +19,6 @@ use TYPO3\CMS\Backend\Utility\IconUtility;
  * Frontend Timetracking functions
  *
  * Is used to register how much time is used with operations in TypoScript
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class TimeTracker {
 
@@ -186,9 +184,9 @@ class TimeTracker {
 	public function setTSlogMessage($content, $num = 0) {
 		end($this->currentHashPointer);
 		$k = current($this->currentHashPointer);
-		// Enlarge the "details" column by adding a wide clear.gif
+		// Enlarge the "details" column by adding a span
 		if (strlen($content) > 30) {
-			$placeholder = '<br /><img src="' . TYPO3_mainDir . 'clear.gif" width="300" height="1" alt="" />';
+			$placeholder = '<br /><span style="width: 300px; height: 1px; display: inline-block;"></span>';
 		}
 		$this->tsStackLog[$k]['message'][] = IconUtility::getSpriteIcon($this->wrapIcon[$num]) . $this->wrapError[$num][0] . htmlspecialchars($content) . $this->wrapError[$num][1] . $placeholder;
 	}
@@ -300,7 +298,7 @@ class TimeTracker {
 			$out .= '
 				<th><strong>' . $row . '</strong></th>';
 		}
-		$out = '<tr>' . $out . '</tr>';
+		$out = '<tr class="typo3-adminPanel-itemRow">' . $out . '</tr>';
 		$flag_tree = $this->printConf['flag_tree'];
 		$flag_messages = $this->printConf['flag_messages'];
 		$flag_content = $this->printConf['flag_content'];
@@ -316,6 +314,7 @@ class TimeTracker {
 			} else {
 				$logRowClass = $c % 2 ? 'line-odd' : 'line-even';
 			}
+			$logRowClass .= ' typo3-adminPanel-section-content-title';
 			$item = '';
 			// If first...
 			if (!$c) {
@@ -333,7 +332,7 @@ class TimeTracker {
 				array_pop($temp);
 				$temp = array_reverse($temp);
 				array_pop($temp);
-				if (count($temp)) {
+				if (!empty($temp)) {
 					$keyLabel = '<br /><span style="color:#999999;">' . implode($temp, '<br />') . '</span>';
 				}
 			}
@@ -380,14 +379,14 @@ class TimeTracker {
 				}
 				$msgArr[] = '<span style="color:#000066;">' . nl2br($data['content']) . '</span>';
 			}
-			if (count($msgArr)) {
+			if (!empty($msgArr)) {
 				$msg = implode($msgArr, '<hr />');
 			}
 			$item .= '<td valign="top" class="' . $logRowClass . '" style="text-align:left;">' . $this->fw($msg) . '</td>';
-			$out .= '<tr>' . $item . '</tr>';
+			$out .= '<tr class="typo3-adminPanel-itemRow">' . $item . '</tr>';
 			$c++;
 		}
-		$out = '<table class="admin-panel-table typo3-adminPanel-tsLog">' . $out . '</table>';
+		$out = '<table class="typo3-adminPanel-table typo3-adminPanel-tsLog">' . $out . '</table>';
 		return $out;
 	}
 
@@ -416,16 +415,17 @@ class TimeTracker {
 			if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($k)) {
 				$c++;
 				$deeper = is_array($arr[$k . '.']) ? 1 : 0;
-				$PM = 'join';
 				$LN = $ac == $c ? 'blank' : 'line';
+
 				$BTM = $ac == $c ? 'bottom' : '';
-				$PM = is_array($arr[$k . '.']) ? ($deeper ? 'minus' : 'plus') : 'join';
-				$this->tsStackLog[$v]['icons'] = $depthData . ($first ? '' : '<img src="' . TYPO3_mainDir . 'gfx/ol/' . $PM . $BTM . '.gif" width="18" height="16" align="top" border="0" alt="" />');
+				$PM = is_array($arr[$k . '.']) ? '<i class="fa fa-' . ($deeper ? 'minus' : 'plus') . '-square-o"></i>' : '<span class="treeline-icon treeline-icon-join' . ($BTM ? 'bottom' : '') . '"></span>';
+
+				$this->tsStackLog[$v]['icons'] = $depthData . ($first ? '' : $PM);
 				if ($this->tsStackLog[$v]['content'] !== '') {
 					$content = str_replace($this->tsStackLog[$v]['content'], $v, $content);
 				}
 				if (is_array($arr[$k . '.'])) {
-					$this->tsStackLog[$v]['content'] = $this->fixContent($arr[$k . '.'], $this->tsStackLog[$v]['content'], $depthData . ($first ? '' : '<img src="' . TYPO3_mainDir . 'gfx/ol/' . $LN . '.gif" width="18" height="16" align="top" border="0" alt="" />'), 0, $v);
+					$this->tsStackLog[$v]['content'] = $this->fixContent($arr[$k . '.'], $this->tsStackLog[$v]['content'], $depthData . ($first ? '' : '<span class="treeline-icon treeline-icon-' . $LN . '"></span>'), 0, $v);
 				} else {
 					$this->tsStackLog[$v]['content'] = $this->fixCLen($this->tsStackLog[$v]['content'], $this->tsStackLog[$v]['value']);
 					$this->tsStackLog[$v]['subtime'] = '';

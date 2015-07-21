@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Dbal\RecordList;
 
 /**
  * Child class for rendering of Web > List (not the final class)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Karsten Dambekalns <k.dambekalns@fishfarm.de>
  */
 class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList {
 
@@ -60,7 +57,7 @@ class DatabaseRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecord
 					}
 				}
 				// If search-fields were defined (and there always are) we create the query:
-				if (count($sfields)) {
+				if (!empty($sfields)) {
 					$like = ' LIKE \'%' . $GLOBALS['TYPO3_DB']->quoteStr($this->searchString, $table) . '%\'';
 					// Free-text
 					$queryPart .= implode(($like . ' OR '), $sfields) . $like;

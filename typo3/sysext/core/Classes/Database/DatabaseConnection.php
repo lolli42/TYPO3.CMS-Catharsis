@@ -40,8 +40,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * USE:
  * In all TYPO3 scripts the global variable $TYPO3_DB is an instance of this class. Use that.
  * Eg. $GLOBALS['TYPO3_DB']->sql_fetch_assoc()
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class DatabaseConnection {
 
@@ -491,7 +489,7 @@ class DatabaseConnection {
 	public function INSERTquery($table, $fields_values, $no_quote_fields = FALSE) {
 		// Table and fieldnames should be "SQL-injection-safe" when supplied to this
 		// function (contrary to values in the arrays which may be insecure).
-		if (!is_array($fields_values) || count($fields_values) === 0) {
+		if (!is_array($fields_values) || empty($fields_values)) {
 			return NULL;
 		}
 		foreach ($this->preProcessHookObjects as $hookObject) {
@@ -520,7 +518,7 @@ class DatabaseConnection {
 	public function INSERTmultipleRows($table, array $fields, array $rows, $no_quote_fields = FALSE) {
 		// Table and fieldnames should be "SQL-injection-safe" when supplied to this
 		// function (contrary to values in the arrays which may be insecure).
-		if (count($rows) === 0) {
+		if (empty($rows)) {
 			return NULL;
 		}
 		foreach ($this->preProcessHookObjects as $hookObject) {
@@ -563,7 +561,7 @@ class DatabaseConnection {
 				$hookObject->UPDATEquery_preProcessAction($table, $where, $fields_values, $no_quote_fields, $this);
 			}
 			$fields = array();
-			if (is_array($fields_values) && count($fields_values)) {
+			if (is_array($fields_values) && !empty($fields_values)) {
 				// Quote and escape values
 				$nArr = $this->fullQuoteArray($fields_values, $table, $no_quote_fields, TRUE);
 				foreach ($nArr as $k => $v) {
@@ -1202,7 +1200,7 @@ class DatabaseConnection {
 			if ($this->link->set_charset($this->connectionCharset) === FALSE) {
 				GeneralUtility::sysLog(
 					'Error setting connection charset to "' . $this->connectionCharset . '"',
-					'Core',
+					'core',
 					GeneralUtility::SYSLOG_SEVERITY_ERROR
 				);
 			}
@@ -1211,7 +1209,7 @@ class DatabaseConnection {
 				if ($this->query($command) === FALSE) {
 					GeneralUtility::sysLog(
 						'Could not initialize DB connection with query "' . $command . '": ' . $this->sql_error(),
-						'Core',
+						'core',
 						GeneralUtility::SYSLOG_SEVERITY_ERROR
 					);
 				}
@@ -1224,7 +1222,7 @@ class DatabaseConnection {
 			$this->link = NULL;
 			GeneralUtility::sysLog(
 				'Could not connect to MySQL server ' . $host . ' with user ' . $this->databaseUsername . ': ' . $error_msg,
-				'Core',
+				'core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
 		}
@@ -1246,7 +1244,7 @@ class DatabaseConnection {
 				$this->sql_query($query);
 				GeneralUtility::sysLog(
 					'NO_BACKSLASH_ESCAPES could not be removed from SQL mode: ' . $this->sql_error(),
-					'Core',
+					'core',
 					GeneralUtility::SYSLOG_SEVERITY_ERROR
 				);
 			}
@@ -1267,7 +1265,7 @@ class DatabaseConnection {
 		if (!$ret) {
 			GeneralUtility::sysLog(
 				'Could not select MySQL database ' . $this->databaseName . ': ' . $this->sql_error(),
-				'Core',
+				'core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
 		}
@@ -1617,7 +1615,7 @@ class DatabaseConnection {
 		if ($sessionResult === FALSE) {
 			GeneralUtility::sysLog(
 				'Error while retrieving the current charset session variables from the database: ' . $this->sql_error(),
-				'Core',
+				'core',
 				GeneralUtility::SYSLOG_SEVERITY_ERROR
 			);
 			throw new \RuntimeException(
@@ -1647,7 +1645,7 @@ class DatabaseConnection {
 			if (empty($charsetVariables[$variableName])) {
 				GeneralUtility::sysLog(
 					'A required session variable is missing in the current MySQL connection: ' . $variableName,
-					'Core',
+					'core',
 					GeneralUtility::SYSLOG_SEVERITY_ERROR
 				);
 				throw new \RuntimeException(
@@ -1765,7 +1763,7 @@ class DatabaseConnection {
 		$msg .= ': function TYPO3\\CMS\\Core\\Database\\DatabaseConnection->' . $trace[0]['function'] . ' called from file ' . substr($trace[0]['file'], (strlen(PATH_site) + 2)) . ' in line ' . $trace[0]['line'];
 		GeneralUtility::sysLog(
 			$msg . '. Use a devLog extension to get more details.',
-			'Core/t3lib_db',
+			'core',
 			GeneralUtility::SYSLOG_SEVERITY_ERROR
 		);
 		// Send to devLog if enabled
@@ -1857,10 +1855,10 @@ class DatabaseConnection {
 				if ($error) {
 					$data['error'] = $error;
 				}
-				if (count($explain_output)) {
+				if (!empty($explain_output)) {
 					$data['explain'] = $explain_output;
 				}
-				if (count($indices_output)) {
+				if (!empty($indices_output)) {
 					$data['indices'] = $indices_output;
 				}
 				if ($explainMode == 1) {

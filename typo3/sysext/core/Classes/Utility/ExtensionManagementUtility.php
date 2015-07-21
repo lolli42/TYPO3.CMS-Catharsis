@@ -17,14 +17,13 @@ namespace TYPO3\CMS\Core\Utility;
 use TYPO3\CMS\Core\Category\CategoryRegistry;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Migrations\TcaMigration;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Extension Management functions
  *
  * This class is never instantiated, rather the methods inside is called as functions like
  * \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('my_extension');
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ExtensionManagementUtility {
 
@@ -146,7 +145,8 @@ class ExtensionManagementUtility {
 			throw new \BadFunctionCallException('TYPO3 Fatal Error: Extension key "' . $key . '" is NOT loaded!', 1365429673);
 		}
 		$relativePathToSiteRoot = self::siteRelPath($key);
-		if (substr($relativePathToSiteRoot, 0, $typo3MainDirLength = strlen(TYPO3_mainDir)) === TYPO3_mainDir) {
+		$typo3MainDirLength = strlen(TYPO3_mainDir);
+		if (substr($relativePathToSiteRoot, 0, $typo3MainDirLength) === TYPO3_mainDir) {
 			$relativePathToSiteRoot = substr($relativePathToSiteRoot, $typo3MainDirLength);
 		} else {
 			$relativePathToSiteRoot = '../' . $relativePathToSiteRoot;
@@ -468,7 +468,7 @@ class ExtensionManagementUtility {
 	 * - $table = 'tt_content'
 	 * - $field = 'CType'
 	 * - $item = array(
-	 * 'LLL:EXT:cms/locallang_ttc.xlf:CType.I.10',
+	 * 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.10',
 	 * 'login',
 	 * 'i/tt_content_login.gif',
 	 * ),
@@ -508,7 +508,7 @@ class ExtensionManagementUtility {
 		if ($relativePosition !== '') {
 			// Insert at specified position
 			$matchedPosition = ArrayUtility::filterByValueRecursive($relativeToField, $GLOBALS['TCA'][$table]['columns'][$field]['config']['items']);
-			if (count($matchedPosition) > 0) {
+			if (!empty($matchedPosition)) {
 				$relativeItemKey = key($matchedPosition);
 				if ($relativePosition === 'replace') {
 					$GLOBALS['TCA'][$table]['columns'][$field]['config']['items'][$relativeItemKey] = $item;
@@ -796,7 +796,7 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * Adds a ExtJS module (main or sub) to the backend interface
+	 * Adds an ExtJS module (main or sub) to the backend interface
 	 * FOR USE IN ext_tables.php FILES
 	 *
 	 * @static
@@ -815,7 +815,7 @@ class ExtensionManagementUtility {
 		$extensionName = str_replace(' ', '', ucwords(str_replace('_', ' ', $extensionName)));
 		$defaultModuleConfiguration = array(
 			'access' => 'admin',
-			'icon' => 'gfx/typo3.png',
+			'icon' => 'sysext/backend/Resources/Public/Images/Logo.png',
 			'labels' => '',
 			'extRelPath' => self::extRelPath($extensionKey) . 'Classes/'
 		);
@@ -916,11 +916,16 @@ class ExtensionManagementUtility {
 		$fullModuleSignature = $main . ($sub ? '_' . $sub : '');
 		// Adding path:
 		if ($path) {
+			if (\TYPO3\CMS\Core\Utility\StringUtility::beginsWith($path, 'EXT:')) {
+				list($extensionKey, $relativePath) = explode('/', substr($path, 4), 2);
+				$path = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
+			}
+
 			$GLOBALS['TBE_MODULES']['_PATHS'][$fullModuleSignature] = $path;
 		}
 
 		// add additional configuration
-		if (is_array($moduleConfiguration) && count($moduleConfiguration) > 0) {
+		if (is_array($moduleConfiguration) && !empty($moduleConfiguration)) {
 			$GLOBALS['TBE_MODULES']['_configuration'][$fullModuleSignature] = $moduleConfiguration;
 		}
 	}
@@ -957,9 +962,9 @@ class ExtensionManagementUtility {
 	}
 
 	/**
-	 * Adds a module path to $GLOBALS['TBE_MODULES'] for used with the module dispatcher, mod.php
+	 * Adds a module path to $GLOBALS['TBE_MODULES'] for used with the module dispatcher, index.php
 	 * Used only for modules that are not placed in the main/sub menu hierarchy by the traditional mechanism of addModule()
-	 * Examples for this is context menu functionality (like import/export) which runs as an independent module through mod.php
+	 * Examples for this is context menu functionality (like import/export) which runs as an independent module through index.php
 	 * FOR USE IN ext_tables.php FILES
 	 * Example:  \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath('xMOD_tximpexp', \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY).'app/');
 	 *
@@ -968,6 +973,10 @@ class ExtensionManagementUtility {
 	 * @return void
 	 */
 	static public function addModulePath($name, $path) {
+		if (StringUtility::beginsWith($path, 'EXT:')) {
+			list($extensionKey, $relativePath) = explode('/', substr($path, 4), 2);
+			$path = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
+		}
 		$GLOBALS['TBE_MODULES']['_PATHS'][$name] = $path;
 	}
 
@@ -1043,7 +1052,7 @@ class ExtensionManagementUtility {
 	/**
 	 * Adds a reference to a locallang file with $GLOBALS['TCA_DESCR'] labels
 	 * FOR USE IN ext_tables.php FILES
-	 * eg. \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages', 'EXT:lang/locallang_csh_pages.xlf'); for the pages table or \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_web_layout', 'EXT:cms/locallang_csh_weblayout.php'); for the Web > Page module.
+	 * eg. \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('pages', 'EXT:lang/locallang_csh_pages.xlf'); for the pages table or \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_web_layout', 'EXT:frontend/Resources/Private/Language/locallang_csh_weblayout.xlf'); for the Web > Page module.
 	 *
 	 * @param string $tca_descr_key Description key. Typically a database table (like "pages") but for applications can be other strings, but prefixed with "_MOD_")
 	 * @param string $file_ref File reference to locallang file, eg. "EXT:lang/locallang_csh_pages.xlf" (or ".xml")
@@ -1256,7 +1265,6 @@ class ExtensionManagementUtility {
 	/**************************************
 	 *
 	 *	 Adding FRONTEND features
-	 *	 (related specifically to "cms" extension)
 	 *
 	 ***************************************/
 	/**
@@ -1653,7 +1661,7 @@ tt_content.' . $key . $suffix . ' {
 	 * the file should return an array with content of a specific table.
 	 *
 	 * @return void
-	 * @see Extension core, cms, extensionmanager and others for examples.
+	 * @see Extension core, extensionmanager and others for examples.
 	 */
 	static protected function buildBaseTcaFromSingleFiles() {
 		$GLOBALS['TCA'] = array();

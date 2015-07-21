@@ -85,14 +85,6 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="labels.noRTEfound">
 				<source>Notice: This field can only be edited with a Rich Text Editor. No editor is currently available or enabled.</source>
 			</trans-unit>
-			<trans-unit id="labels.showPalettes" deprecated="Unused since CMS 7">
-				<source>Show secondary options (palettes)</source>
-				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
-			</trans-unit>
-			<trans-unit id="labels.showDescriptions" deprecated="Unused since CMS 7">
-				<source>Show field descriptions</source>
-				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
-			</trans-unit>
 			<trans-unit id="labels.disableRTE">
 				<source>Disable Rich Text Editor (RTE)</source>
 			</trans-unit>
@@ -285,10 +277,6 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="labels.allTables">
 				<source>[All tables]</source>
 			</trans-unit>
-			<trans-unit id="labels.moreOptions" deprecated="Unused since CMS 7">
-				<source>More options...</source>
-				<note from="developer">This label is deprecated (not used anymore) since CMS 7</note>
-			</trans-unit>
 			<trans-unit id="labels.noMatchingValue">
 				<source>INVALID VALUE ("%s")</source>
 			</trans-unit>
@@ -297,9 +285,6 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="labels.copymode">
 				<source>Copy items instead of moving them</source>
-			</trans-unit>
-			<trans-unit id="labels.clipNoEl">
-				<source>No elements</source>
 			</trans-unit>
 			<trans-unit id="labels.normal">
 				<source>Normal (single record mode)</source>
@@ -520,6 +505,57 @@ Do you want to continue WITHOUT saving?</source>
 			<trans-unit id="file_upload.overwriteExistingFiles">
 				<source>Shall existing files be overwritten?</source>
 			</trans-unit>
+			<trans-unit id="file_upload.header.originalFile">
+				<source>Original file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.header.uploadedFile">
+				<source>Uploaded file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.header.action">
+				<source>Action</source>
+			</trans-unit>
+			<trans-unit id="file_upload.existingfiles.title">
+				<source>Some files exist already</source>
+			</trans-unit>
+			<trans-unit id="file_upload.existingfiles.description">
+				<source>Some files you wanted to upload exist already on the system. Please select what you want to do with each file.</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.skip">
+				<source>Skip the file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.rename">
+				<source>Rename</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.override">
+				<source>Overwrite</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.use_existing">
+				<source>Use existing file</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.label">
+				<source>Alternatively, choose a mass action:</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.empty">
+				<source>Please choose</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.skip">
+				<source>Skip all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.rename">
+				<source>Rename all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.override">
+				<source>Overwrite all files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.actions.all.use_existing">
+				<source>Use existing files</source>
+			</trans-unit>
+			<trans-unit id="file_upload.button.cancel">
+				<source>Cancel</source>
+			</trans-unit>
+			<trans-unit id="file_upload.button.continue">
+				<source>Continue with selected actions</source>
+			</trans-unit>
 			<trans-unit id="file_upload.php.number_of_files">
 				<source>Number of files:</source>
 			</trans-unit>
@@ -528,6 +564,21 @@ Do you want to continue WITHOUT saving?</source>
 			</trans-unit>
 			<trans-unit id="file_rename.php.submit">
 				<source>Rename</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.pagetitle">
+				<source>Replace</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.selectfile">
+				<source>Select new file</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.keepfiletitle">
+				<source>Keep the current filename?</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.browse">
+				<source>Browse</source>
+			</trans-unit>
+			<trans-unit id="file_replace.php.submit">
+				<source>Replace</source>
 			</trans-unit>
 			<trans-unit id="file_edit.php.pagetitle">
 				<source>Edit</source>
@@ -634,6 +685,15 @@ Do you want to refresh it now?</source>
 			</trans-unit>
 			<trans-unit id="mess.login_about_to_expire">
 				<source>Your TYPO3 login is about to expire. Please confirm that you want to stay logged in.</source>
+			</trans-unit>
+			<trans-unit id="mess.refresh_login_abort_button">
+				<source>Abort</source>
+			</trans-unit>
+			<trans-unit id="mess.refresh_login_confirm_button">
+				<source>Log me out</source>
+			</trans-unit>
+			<trans-unit id="mess.login_refresh_about_to_expire">
+				<source>Your TYPO3 login is about to expire. Please confirm that you want to be logged out.</source>
 			</trans-unit>
 			<trans-unit id="mess.login_about_to_expire_title">
 				<source>TYPO3 login expiration notice</source>
@@ -886,6 +946,9 @@ Would you like to save now in order to refresh the display?</source>
 			<trans-unit id="cm.rename">
 				<source>Rename</source>
 			</trans-unit>
+			<trans-unit id="cm.replace">
+				<source>Replace</source>
+			</trans-unit>
 			<trans-unit id="cm.open">
 				<source>Open</source>
 			</trans-unit>
@@ -996,6 +1059,9 @@ Would you like to save now in order to refresh the display?</source>
 			</trans-unit>
 			<trans-unit id="warning.install_enabled_cmd">
 				<source>Click to remove the file now!</source>
+			</trans-unit>
+			<trans-unit id="warning.install_trustedhosts">
+				<source>The trusted hosts pattern check is disabled. Please define the allowed hosts in the [SYS][trustedHostsPattern] section of the Install Tool.</source>
 			</trans-unit>
 			<trans-unit id="warning.install_encryption">
 				<source>The encryption key is not set. Set it in the %sBasic Configuration section%s of the Install Tool.</source>
@@ -1154,6 +1220,12 @@ Check also the following points:\n
 			</trans-unit>
 			<trans-unit id="error.invalidEmail">
 				<source>"%s" is not a valid e-mail address.</source>
+			</trans-unit>
+			<trans-unit id="error.backendUserGroupListTypeError.header">
+				<source>Possible misconfiguration detected</source>
+			</trans-unit>
+			<trans-unit id="error.backendUserGroupListTypeError.message">
+				<source>Editing of at least one plugin was enabled but editing the page content type "Insert Plugin" is still disallowed. Group members won't be able to edit plugins unless you activate editing for the content type.</source>
 			</trans-unit>
 		</body>
 	</file>

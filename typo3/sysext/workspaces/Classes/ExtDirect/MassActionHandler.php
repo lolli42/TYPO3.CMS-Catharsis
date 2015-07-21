@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Workspaces\ExtDirect;
 
 /**
  * Class encapsulates all actions which are triggered for all elements within the current workspace.
- *
- * @author Kasper Skårhøj (kasperYYYY@typo3.com)
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class MassActionHandler extends AbstractHandler {
 
@@ -197,19 +194,18 @@ class MassActionHandler extends AbstractHandler {
 			$tce->start(array(), $limitedCmd);
 			$tce->process_cmdmap();
 			$errors = $tce->errorLog;
-			if (count($errors) > 0) {
+			if (!empty($errors)) {
 				throw new \Exception(implode(', ', $errors));
-			} else {
-				// Unset processed records
-				foreach ($limitedCmd as $table => $recs) {
-					foreach ($recs as $key => $value) {
-						$recordsProcessed++;
-						unset($processData[$table][$key]);
-					}
-				}
-				$GLOBALS['BE_USER']->setAndSaveSessionData('workspaceMassAction', $processData);
-				$GLOBALS['BE_USER']->setAndSaveSessionData('workspaceMassAction_processed', $recordsProcessed);
 			}
+			// Unset processed records
+			foreach ($limitedCmd as $table => $recs) {
+				foreach ($recs as $key => $value) {
+					$recordsProcessed++;
+					unset($processData[$table][$key]);
+				}
+			}
+			$GLOBALS['BE_USER']->setAndSaveSessionData('workspaceMassAction', $processData);
+			$GLOBALS['BE_USER']->setAndSaveSessionData('workspaceMassAction_processed', $recordsProcessed);
 		}
 		return $recordsProcessed;
 	}

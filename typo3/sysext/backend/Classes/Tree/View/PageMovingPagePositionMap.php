@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Backend\Tree\View;
 /**
  * Position map class for moving pages,
  * previously resided in typo3/move_el.php
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class PageMovingPagePositionMap extends PagePositionMap {
 
@@ -32,7 +30,7 @@ class PageMovingPagePositionMap extends PagePositionMap {
 	 *
 	 * @var string
 	 */
-	protected $pageTreeClassName = MoveElementPageTreeView::class;
+	protected $pageTreeClassName = PageTreeView::class;
 
 	/**
 	 * Creates the onclick event for the insert-icons.

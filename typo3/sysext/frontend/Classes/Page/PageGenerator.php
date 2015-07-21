@@ -29,8 +29,6 @@ use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
  *
  * The class is not instantiated as an objects but called directly with the "::" operator.
  * eg: \TYPO3\CMS\Frontend\Page\PageGenerator::pagegenInit()
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class PageGenerator {
 
@@ -157,12 +155,12 @@ class PageGenerator {
 					$tsfe->xhtmlVersion = 200;
 					break;
 				default:
-					$tsfe->getPageRenderer()->setRenderXhtml(FALSE);
+					static::getPageRenderer()->setRenderXhtml(FALSE);
 					$tsfe->xhtmlDoctype = '';
 					$tsfe->xhtmlVersion = 0;
 			}
 		} else {
-			$tsfe->getPageRenderer()->setRenderXhtml(FALSE);
+			static::getPageRenderer()->setRenderXhtml(FALSE);
 		}
 	}
 
@@ -177,7 +175,7 @@ class PageGenerator {
 		$setEvents = array();
 		$setBody = array();
 		foreach ($GLOBALS['TSFE']->JSeventFuncCalls as $event => $handlers) {
-			if (count($handlers)) {
+			if (!empty($handlers)) {
 				GeneralUtility::deprecationLog('The usage of $GLOBALS[\'TSFE\']->JSeventFuncCalls is deprecated as of TYPO3 CMS 7. Use Javascript directly.');
 				$functions[] = '	function T3_' . $event . 'Wrapper(e) {	' . implode('   ', $handlers) . '	}';
 				$setEvents[] = '	document.' . $event . '=T3_' . $event . 'Wrapper;';
@@ -187,7 +185,7 @@ class PageGenerator {
 				}
 			}
 		}
-		return array(count($functions) ? implode(LF, $functions) . LF . implode(LF, $setEvents) : '', $setBody);
+		return array(!empty($functions) ? implode(LF, $functions) . LF . implode(LF, $setEvents) : '', $setBody);
 	}
 
 	/**
@@ -236,7 +234,7 @@ class PageGenerator {
 		/** @var TimeTracker $timeTracker */
 		$timeTracker = $GLOBALS['TT'];
 
-		$pageRenderer = $tsfe->getPageRenderer();
+		$pageRenderer = static::getPageRenderer();
 		if ($tsfe->config['config']['moveJsFromHeaderToFooter']) {
 			$pageRenderer->enableMoveJsFromHeaderToFooter();
 		}
@@ -363,7 +361,7 @@ class PageGenerator {
 			$docTypeParts = array_reverse($docTypeParts);
 		}
 		// Adding doctype parts:
-		if (count($docTypeParts)) {
+		if (!empty($docTypeParts)) {
 			$pageRenderer->setXmlPrologAndDocType(implode(LF, $docTypeParts));
 		}
 		// Begin header section:
@@ -427,7 +425,7 @@ class PageGenerator {
 					}
 				}
 			}
-			if (count($temp_styleLines)) {
+			if (!empty($temp_styleLines)) {
 				if ($tsfe->config['config']['inlineStyle2TempFile']) {
 					$pageRenderer->addCssFile(self::inline2TempFile(implode(LF, $temp_styleLines), 'css'));
 				} else {
@@ -458,7 +456,7 @@ class PageGenerator {
 								// To fix MSIE 6 that cannot handle these as relative paths (according to Ben v Ende)
 								$ss = GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . $ss;
 							}
-							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), $cssFileConfig['forceOnTop'] ? TRUE : FALSE, '');
+							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), (bool)$cssFileConfig['forceOnTop'], '');
 						} else {
 							$pageRenderer->addCssFile(
 								$ss,
@@ -466,9 +464,9 @@ class PageGenerator {
 								$cssFileConfig['media'] ?: 'all',
 								$cssFileConfig['title'] ?: '',
 								empty($cssFileConfig['disableCompression']),
-								$cssFileConfig['forceOnTop'] ? TRUE : FALSE,
+								(bool)$cssFileConfig['forceOnTop'],
 								$cssFileConfig['allWrap'],
-								$cssFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+								(bool)$cssFileConfig['excludeFromConcatenation'],
 								$cssFileConfig['allWrap.']['splitChar']
 							);
 							unset($cssFileConfig);
@@ -491,7 +489,7 @@ class PageGenerator {
 								// To fix MSIE 6 that cannot handle these as relative paths (according to Ben v Ende)
 								$ss = GeneralUtility::dirname(GeneralUtility::getIndpEnv('SCRIPT_NAME')) . '/' . $ss;
 							}
-							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), $cssFileConfig['forceOnTop'] ? TRUE : FALSE, '');
+							$pageRenderer->addCssInlineBlock('import_' . $key, '@import url("' . htmlspecialchars($ss) . '") ' . htmlspecialchars($cssFileConfig['media']) . ';', empty($cssFileConfig['disableCompression']), (bool)$cssFileConfig['forceOnTop'], '');
 						} else {
 							$pageRenderer->addCssLibrary(
 								$ss,
@@ -499,9 +497,9 @@ class PageGenerator {
 								$cssFileConfig['media'] ?: 'all',
 								$cssFileConfig['title'] ?: '',
 								empty($cssFileConfig['disableCompression']),
-								$cssFileConfig['forceOnTop'] ? TRUE : FALSE,
+								(bool)$cssFileConfig['forceOnTop'],
 								$cssFileConfig['allWrap'],
-								$cssFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+								(bool)$cssFileConfig['excludeFromConcatenation'],
 								$cssFileConfig['allWrap.']['splitChar']
 							);
 							unset($cssFileConfig);
@@ -566,19 +564,6 @@ class PageGenerator {
 		}
 		// Javascript Libraries
 		if (is_array($tsfe->pSetup['javascriptLibs.'])) {
-			if ($tsfe->pSetup['javascriptLibs.']['Prototype']) {
-				$pageRenderer->loadPrototype();
-			}
-			if ($tsfe->pSetup['javascriptLibs.']['Scriptaculous']) {
-				$modules = $tsfe->pSetup['javascriptLibs.']['Scriptaculous.']['modules'] ?: '';
-				$pageRenderer->loadScriptaculous($modules);
-			}
-			if ($tsfe->pSetup['javascriptLibs.']['ExtCore']) {
-				$pageRenderer->loadExtCore();
-				if ($tsfe->pSetup['javascriptLibs.']['ExtCore.']['debug']) {
-					$pageRenderer->enableExtCoreDebug();
-				}
-			}
 			// Include jQuery into the page renderer
 			if (!empty($tsfe->pSetup['javascriptLibs.']['jQuery'])) {
 				$jQueryTS = $tsfe->pSetup['javascriptLibs.']['jQuery.'];
@@ -599,15 +584,11 @@ class PageGenerator {
 				$pageRenderer->loadJQuery($version, $source, $namespace);
 			}
 			if ($tsfe->pSetup['javascriptLibs.']['ExtJs']) {
-				$css = $tsfe->pSetup['javascriptLibs.']['ExtJs.']['css'] ? TRUE : FALSE;
-				$theme = $tsfe->pSetup['javascriptLibs.']['ExtJs.']['theme'] ? TRUE : FALSE;
-				$adapter = $tsfe->pSetup['javascriptLibs.']['ExtJs.']['adapter'] ?: '';
-				$pageRenderer->loadExtJs($css, $theme, $adapter);
+				$css = (bool)$tsfe->pSetup['javascriptLibs.']['ExtJs.']['css'];
+				$theme = (bool)$tsfe->pSetup['javascriptLibs.']['ExtJs.']['theme'];
+				$pageRenderer->loadExtJs($css, $theme);
 				if ($tsfe->pSetup['javascriptLibs.']['ExtJs.']['debug']) {
 					$pageRenderer->enableExtJsDebug();
-				}
-				if ($tsfe->pSetup['javascriptLibs.']['ExtJs.']['quickTips']) {
-					$pageRenderer->enableExtJSQuickTips();
 				}
 			}
 		}
@@ -616,7 +597,7 @@ class PageGenerator {
 			if (!is_array($tsfe->pSetup['includeJSlibs.'])) {
 				$tsfe->pSetup['includeJSlibs.'] = array();
 			} else {
-				GeneralUtility::deprecationLog('The property page.includeJSlibs is marked for deprecation and will be removed in TYPO3 CMS 8. Please use page.includeJSLibs (with a uppercase L) instead.');
+				GeneralUtility::deprecationLog('The property page.includeJSlibs is marked for deprecation and will be removed in TYPO3 CMS 8. Please use page.includeJSLibs (with an uppercase L) instead.');
 			}
 			if (!is_array($tsfe->pSetup['includeJSLibs.'])) {
 				$tsfe->pSetup['includeJSLibs.'] = array();
@@ -644,11 +625,11 @@ class PageGenerator {
 							$ss,
 							$type,
 							empty($jsFileConfig['disableCompression']),
-							$jsFileConfig['forceOnTop'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['forceOnTop'],
 							$jsFileConfig['allWrap'],
-							$jsFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['excludeFromConcatenation'],
 							$jsFileConfig['allWrap.']['splitChar'],
-							$jsFileConfig['async'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['async'],
 							$jsFileConfig['integrity']
 						);
 						unset($jsFileConfig);
@@ -674,11 +655,11 @@ class PageGenerator {
 							$ss,
 							$type,
 							empty($jsFileConfig['disableCompression']),
-							$jsFileConfig['forceOnTop'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['forceOnTop'],
 							$jsFileConfig['allWrap'],
-							$jsFileConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['excludeFromConcatenation'],
 							$jsFileConfig['allWrap.']['splitChar'],
-							$jsFileConfig['async'] ? TRUE : FALSE,
+							(bool)$jsFileConfig['async'],
 							$jsFileConfig['integrity']
 						);
 						unset($jsFileConfig);
@@ -704,11 +685,11 @@ class PageGenerator {
 							$ss,
 							$type,
 							empty($jsConfig['disableCompression']),
-							$jsConfig['forceOnTop'] ? TRUE : FALSE,
+							(bool)$jsConfig['forceOnTop'],
 							$jsConfig['allWrap'],
-							$jsConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+							(bool)$jsConfig['excludeFromConcatenation'],
 							$jsConfig['allWrap.']['splitChar'],
-							$jsConfig['async'] ? TRUE : FALSE,
+							(bool)$jsConfig['async'],
 							$jsConfig['integrity']
 						);
 						unset($jsConfig);
@@ -733,11 +714,11 @@ class PageGenerator {
 							$ss,
 							$type,
 							empty($jsConfig['disableCompression']),
-							$jsConfig['forceOnTop'] ? TRUE : FALSE,
+							(bool)$jsConfig['forceOnTop'],
 							$jsConfig['allWrap'],
-							$jsConfig['excludeFromConcatenation'] ? TRUE : FALSE,
+							(bool)$jsConfig['excludeFromConcatenation'],
 							$jsConfig['allWrap.']['splitChar'],
-							$jsConfig['async'] ? TRUE : FALSE,
+							(bool)$jsConfig['async'],
 							$jsConfig['integrity']
 						);
 						unset($jsConfig);
@@ -975,7 +956,7 @@ class PageGenerator {
 				$bodyTag = preg_replace('/>$/', '', trim($bodyTag)) . ' ' . trim($tsfe->pSetup['bodyTagAdd']) . '>';
 			}
 			// Event functions
-			if (count($JSef[1])) {
+			if (!empty($JSef[1])) {
 				$bodyTag = preg_replace('/>$/', '', trim($bodyTag)) . ' ' . trim(implode(' ', $JSef[1])) . '>';
 			}
 		}
@@ -1132,7 +1113,7 @@ class PageGenerator {
 			$titleTagContent = $tsfe->cObj->stdWrap($titleTagContent, $tsfe->config['config']['pageTitle.']);
 		}
 		if ($titleTagContent !== '' && (int)$tsfe->config['config']['noPageTitle'] !== self::NO_PAGE_TITLE) {
-			$tsfe->getPageRenderer()->setTitle($titleTagContent);
+			static::getPageRenderer()->setTitle($titleTagContent);
 		}
 	}
 
@@ -1208,5 +1189,12 @@ class PageGenerator {
 			}
 			$tsfe->sWordRegEx = rtrim($tsfe->sWordRegEx, '|');
 		}
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	static protected function getPageRenderer() {
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 }

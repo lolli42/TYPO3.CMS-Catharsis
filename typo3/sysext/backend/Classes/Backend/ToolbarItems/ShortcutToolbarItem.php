@@ -14,19 +14,18 @@ namespace TYPO3\CMS\Backend\Backend\ToolbarItems;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Module\ModuleLoader;
+use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
-use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
-use TYPO3\CMS\Backend\Module\ModuleLoader;
-use TYPO3\CMS\Core\Http\AjaxRequestHandler;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Class to render the shortcut menu
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class ShortcutToolbarItem implements ToolbarItemInterface {
 
@@ -172,7 +171,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		}
 		$shortcutMenu[] = '</ul>';
 
-		if (count($shortcutMenu) == 2) {
+		if (count($shortcutMenu) === 2) {
 			// No shortcuts added yet, show a small help message how to add shortcuts
 			$title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE);
 			$icon = IconUtility::getSpriteIcon('actions-system-shortcut-new', array(
@@ -259,13 +258,13 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 			}
 			// Check for module access
 			$moduleName = $row['M_module_name'] ?: $row['module_name'];
-			$pageId = $this->getLinkedPageId($row['url']);
 			if (!$backendUser->isAdmin()) {
 				if (!isset($this->getLanguageService()->moduleLabels['tabs_images'][$moduleName . '_tab'])) {
 					// Nice hack to check if the user has access to this module
 					// - otherwise the translation label would not have been loaded :-)
 					continue;
 				}
+				$pageId = $this->getLinkedPageId($row['url']);
 				if (MathUtility::canBeInterpretedAsInteger($pageId)) {
 					// Check for webmount access
 					if (!$backendUser->isInWebMount($pageId)) {
@@ -301,7 +300,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 	}
 
 	/**
-	 * Adds the correct token, if the url is a mod.php script
+	 * Adds the correct token, if the url is an index.php script
 	 *
 	 * @param string $url
 	 * @return string
@@ -314,7 +313,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		if (isset($parameters['returnUrl'])) {
 			$parsedReturnUrl = parse_url($parameters['returnUrl']);
 			parse_str($parsedReturnUrl['query'], $returnUrlParameters);
-			if (strpos($parsedReturnUrl['path'], 'mod.php') !== FALSE && isset($returnUrlParameters['M'])) {
+			if (strpos($parsedReturnUrl['path'], 'index.php') !== FALSE && isset($returnUrlParameters['M'])) {
 				$module = $returnUrlParameters['M'];
 				$returnUrl = BackendUtility::getModuleUrl($module, $returnUrlParameters);
 				$parameters['returnUrl'] = $returnUrl;
@@ -322,7 +321,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 			}
 		}
 
-		if (strpos($parsedUrl['path'], 'mod.php') !== FALSE && isset($parameters['M'])) {
+		if (strpos($parsedUrl['path'], 'index.php') !== FALSE && isset($parameters['M'])) {
 			$module = $parameters['M'];
 			$url = BackendUtility::getModuleUrl($module, $parameters);
 		}
@@ -372,7 +371,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		$backendUser = $this->getBackendUser();
 		// Groups from TSConfig
 		$bookmarkGroups = $backendUser->getTSConfigProp('options.bookmarkGroups');
-		if (is_array($bookmarkGroups) && count($bookmarkGroups)) {
+		if (is_array($bookmarkGroups) && !empty($bookmarkGroups)) {
 			foreach ($bookmarkGroups as $groupId => $label) {
 				if (!empty($label)) {
 					$this->shortcutGroups[$groupId] = (string)$label;
@@ -382,7 +381,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 			}
 		}
 		// Generate global groups, all global groups have negative IDs.
-		if (count($this->shortcutGroups)) {
+		if (!empty($this->shortcutGroups)) {
 			$groups = $this->shortcutGroups;
 			foreach ($groups as $groupId => $groupLabel) {
 				$this->shortcutGroups[$groupId * -1] = $groupLabel;
@@ -504,6 +503,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 			if (is_array($queryParameters['edit'])) {
 				$shortcut['table'] = key($queryParameters['edit']);
 				$shortcut['recordid'] = key($queryParameters['edit'][$shortcut['table']]);
+				$shortcut['pid'] = BackendUtility::getRecord($shortcut['table'], $shortcut['recordid'])['pid'];
 				if ($queryParameters['edit'][$shortcut['table']][$shortcut['recordid']] == 'edit') {
 					$shortcut['type'] = 'edit';
 					$shortcutNamePrepend = $languageService->getLL('shortcut_edit', TRUE);
@@ -513,14 +513,17 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 				}
 			} else {
 				$shortcut['type'] = 'other';
+				$shortcut['table'] = '';
+				$shortcut['recordid'] = 0;
 			}
 			// Lookup the title of this page and use it as default description
-			$pageId = $shortcut['recordid'] ? $shortcut['recordid'] : $this->getLinkedPageId($url);
-			if (MathUtility::canBeInterpretedAsInteger($pageId)) {
+
+			$pageId = (int)($shortcut['pid'] ?: ($shortcut['recordid'] ?: $this->getLinkedPageId($url)));
+			if ($pageId) {
 				$page = BackendUtility::getRecord('pages', $pageId);
-				if (count($page)) {
+				if (!empty($page)) {
 					// Set the name to the title of the page
-					if ($shortcut['type'] == 'other') {
+					if ($shortcut['type'] === 'other') {
 						$shortcutName = $page['title'];
 					} else {
 						$shortcutName = $shortcutNamePrepend . ' ' . $languageService->sL($GLOBALS['TCA'][$shortcut['table']]['ctrl']['title']) . ' (' . $page['title'] . ')';
@@ -537,6 +540,9 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 			}
 			// adding the shortcut
 			if ($module && $url) {
+				if ($shortcutName === 'Shortcut' && !empty($languageService->moduleLabels['labels'][$module . '_tablabel'])) {
+					$shortcutName = $languageService->moduleLabels['labels'][$module . '_tablabel'];
+				}
 				$fieldValues = array(
 					'userid' => $this->getBackendUser()->user['uid'],
 					'module_name' => $module . '|' . $motherModule,
@@ -567,23 +573,21 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		$shortcutId = (int)GeneralUtility::_POST('shortcutId');
 		$shortcutName = strip_tags(GeneralUtility::_POST('shortcutTitle'));
 		$shortcutGroupId = (int)GeneralUtility::_POST('shortcutGroup');
-		if ($shortcutGroupId > 0 || $backendUser->isAdmin()) {
-			// Users can delete only their own shortcuts (except admins)
-			$addUserWhere = !$backendUser->isAdmin() ? ' AND userid=' . (int)$backendUser->user['uid'] : '';
-			$fieldValues = array(
-				'description' => $shortcutName,
-				'sc_group' => $shortcutGroupId
-			);
-			if ($fieldValues['sc_group'] < 0 && !$backendUser->isAdmin()) {
-				$fieldValues['sc_group'] = 0;
-			}
-			$databaseConnection->exec_UPDATEquery('sys_be_shortcuts', 'uid=' . $shortcutId . $addUserWhere, $fieldValues);
-			$affectedRows = $databaseConnection->sql_affected_rows();
-			if ($affectedRows == 1) {
-				$ajaxObj->addContent('shortcut', $shortcutName);
-			} else {
-				$ajaxObj->addContent('shortcut', 'failed');
-			}
+		// Users can only modify their own shortcuts (except admins)
+		$addUserWhere = !$backendUser->isAdmin() ? ' AND userid=' . (int)$backendUser->user['uid'] : '';
+		$fieldValues = array(
+			'description' => $shortcutName,
+			'sc_group' => $shortcutGroupId
+		);
+		if ($fieldValues['sc_group'] < 0 && !$backendUser->isAdmin()) {
+			$fieldValues['sc_group'] = 0;
+		}
+		$databaseConnection->exec_UPDATEquery('sys_be_shortcuts', 'uid=' . $shortcutId . $addUserWhere, $fieldValues);
+		$affectedRows = $databaseConnection->sql_affected_rows();
+		if ($affectedRows == 1) {
+			$ajaxObj->addContent('shortcut', $shortcutName);
+		} else {
+			$ajaxObj->addContent('shortcut', 'failed');
 		}
 		$ajaxObj->setContentFormat('plain');
 	}
@@ -759,12 +763,10 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 	/**
 	 * Returns current PageRenderer
 	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 * @return PageRenderer
 	 */
 	protected function getPageRenderer() {
-		/** @var  \TYPO3\CMS\Backend\Template\DocumentTemplate $documentTemplate */
-		$documentTemplate = $GLOBALS['TBE_TEMPLATE'];
-		return $documentTemplate->getPageRenderer();
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 
 	/**

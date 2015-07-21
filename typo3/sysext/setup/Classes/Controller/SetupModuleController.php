@@ -14,16 +14,20 @@ namespace TYPO3\CMS\Setup\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script class for the Setup module
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SetupModuleController {
 
@@ -142,7 +146,7 @@ class SetupModuleController {
 	 * Instantiate the form protection before a simulated user is initialized.
 	 */
 	public function __construct() {
-		$this->formProtection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
+		$this->formProtection = FormProtectionFactory::get();
 	}
 
 	/**
@@ -199,7 +203,7 @@ class SetupModuleController {
 						continue;
 					}
 					if ($config['table']) {
-						if ($config['table'] === 'be_users' && !in_array($field, array('password', 'password2', 'passwordCurrent', 'email', 'realName', 'admin'))) {
+						if ($config['table'] === 'be_users' && !in_array($field, array('password', 'password2', 'passwordCurrent', 'email', 'realName', 'admin', 'avatar'))) {
 							if (!isset($config['access']) || $this->checkAccess($config) && $beUser->user[$field] !== $d['be_users'][$field]) {
 								if ($config['type'] === 'check') {
 									$fieldValue = isset($d['be_users'][$field]) ? 1 : 0;
@@ -250,6 +254,9 @@ class SetupModuleController {
 				} else {
 					$this->passwordIsUpdated = self::PASSWORD_NOT_THE_SAME;
 				}
+
+				$this->setAvatarFileUid($beUserId, $be_user_data['avatar'], $storeRec);
+
 				$this->saveData = TRUE;
 			}
 			// Inserts the overriding values.
@@ -266,17 +273,18 @@ class SetupModuleController {
 				$beUser->writelog(254, 1, 0, 1, $this->getLanguageService()->getLL('tempDataClearedLog'), array());
 			}
 			// Persist data if something has changed:
-			if (count($storeRec) && $this->saveData) {
+			if (!empty($storeRec) && $this->saveData) {
 				// Make instance of TCE for storing the changes.
-				$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
-				$tce->stripslashes_values = 0;
+				/** @var DataHandler $dataHandler */
+				$dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+				$dataHandler->stripslashes_values = FALSE;
 				// This is so the user can actually update his user record.
 				$isAdmin = $beUser->user['admin'];
 				$beUser->user['admin'] = 1;
-				$tce->start($storeRec, array(), $beUser);
+				$dataHandler->start($storeRec, array(), $beUser);
 				// This is to make sure that the users record can be updated even if in another workspace. This is tolerated.
-				$tce->bypassWorkspaceRestrictions = TRUE;
-				$tce->process_datamap();
+				$dataHandler->bypassWorkspaceRestrictions = TRUE;
+				$dataHandler->process_datamap();
 				unset($tce);
 				if ($this->passwordIsUpdated === self::PASSWORD_NOT_UPDATED || count($storeRec['be_users'][$beUserId]) > 1) {
 					$this->setupIsUpdated = TRUE;
@@ -298,7 +306,7 @@ class SetupModuleController {
 	 * @return void
 	 */
 	public function init() {
-		$this->getLanguageService()->includeLLFile('EXT:setup/mod/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:setup/Resources/Private/Language/locallang.xlf');
 
 		// Returns the script user - that is the REAL logged in user! ($GLOBALS[BE_USER] might be another user due to simulation!)
 		$scriptUser = $this->getRealScriptUserObj();
@@ -317,8 +325,8 @@ class SetupModuleController {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:setup/Resources/Private/Templates/setup.html');
-		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="application/x-www-form-urlencoded">';
-		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Styles/styles.css');
+		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="multipart/form-data">';
+		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Css/styles.css');
 		$this->doc->JScode .= $this->getJavaScript();
 	}
 
@@ -370,21 +378,25 @@ class SetupModuleController {
 			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('setupWasUpdated'), $this->getLanguageService()->getLL('UserSettings'));
 			$this->content .= $flashMessage->render();
 		}
+
 		// Show if temporary data was cleared
 		if ($this->tempDataIsCleared) {
 			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('tempDataClearedFlashMessage'), $this->getLanguageService()->getLL('tempDataCleared'));
 			$this->content .= $flashMessage->render();
 		}
+
 		// Show if temporary data was cleared
 		if ($this->settingsAreResetToDefault) {
 			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('settingsAreReset'), $this->getLanguageService()->getLL('resetConfiguration'));
 			$this->content .= $flashMessage->render();
 		}
+
 		// Notice
 		if ($this->setupIsUpdated || $this->settingsAreResetToDefault) {
 			$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $this->getLanguageService()->getLL('activateChanges'), '', FlashMessage::INFO);
 			$this->content .= $flashMessage->render();
 		}
+
 		// If password is updated, output whether it failed or was OK.
 		if ($this->passwordIsSubmitted) {
 			$flashMessage = NULL;
@@ -449,7 +461,7 @@ class SetupModuleController {
 			'shortcut' => ''
 		);
 		$buttons['csh'] = BackendUtility::cshItem('_MOD_user_setup', '');
-		$buttons['save'] = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="data[save]" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+		$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="data[save]" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
 		if ($this->getBackendUser()->mayMakeShortcut()) {
 			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', '', $this->moduleName);
 		}
@@ -533,11 +545,12 @@ class SetupModuleController {
 			switch ($type) {
 				case 'text':
 				case 'email':
-				case 'password': {
+				case 'password':
 					$noAutocomplete = '';
 					if ($type === 'password') {
 						$value = '';
 						$noAutocomplete = 'autocomplete="off" ';
+						$more .= ' data-rsa-encryption=""';
 					}
 					$html = '<input id="field_' . $fieldName . '"
 						type="' . $type . '"
@@ -547,8 +560,7 @@ class SetupModuleController {
 						$more .
 						' />';
 					break;
-				}
-				case 'check': {
+				case 'check':
 					$html = $label . '<div class="checkbox"><label><input id="field_' . $fieldName . '"
 						type="checkbox"
 						name="data' . $dataAdd . '[' . $fieldName . ']"' .
@@ -557,8 +569,7 @@ class SetupModuleController {
 						' /></label></div>';
 					$label = '';
 					break;
-				}
-				case 'select': {
+				case 'select':
 					if ($config['itemsProcFunc']) {
 						$html = GeneralUtility::callUserFunction($config['itemsProcFunc'], $config, $this, '');
 					} else {
@@ -571,12 +582,10 @@ class SetupModuleController {
 						$html .= '</select>';
 					}
 					break;
-				}
-				case 'user': {
+				case 'user':
 					$html = GeneralUtility::callUserFunction($config['userFunc'], $config, $this, '');
 					break;
-				}
-				case 'button': {
+				case 'button':
 					if ($config['onClick']) {
 						$onClick = $config['onClick'];
 						if ($config['onClickLabels']) {
@@ -590,7 +599,29 @@ class SetupModuleController {
 							onclick="' . $onClick . '" />';
 					}
 					break;
-				}
+				case 'avatar':
+					// Get current avatar image
+					$html = '<br>';
+					$avatarFileUid = $this->getAvatarFileUid($this->getBackendUser()->user['uid']);
+
+					if ($avatarFileUid) {
+						$avatar = GeneralUtility::makeInstance(Avatar::class);
+						$icon = $avatar->render();
+						$html .= '<span class="pull-left" style="padding-right: 10px" id="image_' . $fieldName . '">' . $icon . ' </span>';
+					}
+					$html .= '<input id="field_' . $fieldName . '" type="hidden" ' .
+							'name="data' . $dataAdd . '[' . $fieldName . ']"' . $more .
+							' value="' . $avatarFileUid . '" />';
+
+					$html .= '<div class="btn-group">';
+					if ($avatarFileUid) {
+						$html .= '<a id="clear_button_' . $fieldName . '" onclick="clearExistingImage(); return false;" class="btn btn-default"><span class="t3-icon fa t3-icon fa fa-remove"> </span></a>';
+					}
+					$html .= '<a id="add_button_' . $fieldName . '" class="btn btn-default btn-add-avatar" onclick="openFileBrowser();return false;"><span class="t3-icon t3-icon-actions t3-icon-actions-insert t3-icon-insert-record"> </span></a>' .
+							'</div>';
+
+					$this->addAvatarButtonJs($fieldName);
+					break;
 				default:
 					$html = '';
 			}
@@ -645,7 +676,7 @@ class SetupModuleController {
 					$localizedName = htmlspecialchars($name);
 				}
 				$localLabel = '  -  [' . htmlspecialchars($defaultName) . ']';
-				$available = is_dir(PATH_typo3conf . 'l10n/' . $locale) ? TRUE : FALSE;
+				$available = is_dir(PATH_typo3conf . 'l10n/' . $locale);
 				if ($available) {
 					$languageOptions[$defaultName] = '<option value="' . $locale . '"' . ($this->getBackendUser()->uc['lang'] === $locale ? ' selected="selected"' : '') . '>' . $localizedName . $localLabel . '</option>';
 				}
@@ -720,7 +751,7 @@ class SetupModuleController {
 			unset($GLOBALS['BE_USER']);
 			// Unset current
 			// New backend user object
-			$BE_USER = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+			$BE_USER = GeneralUtility::makeInstance(BackendUserAuthentication::class);
 			$BE_USER->setBeUserByUid($this->simUser);
 			$BE_USER->fetchGroupData();
 			$BE_USER->backendSetUC();
@@ -741,7 +772,7 @@ class SetupModuleController {
 
 		return '<p>' .
 			'<label for="field_simulate" style="margin-right: 20px;">' .
-			$this->getLanguageService()->sL('LLL:EXT:setup/mod/locallang.xlf:simulate') .
+			$this->getLanguageService()->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:simulate') .
 			'</label>' .
 			$this->simulateSelector .
 			'</p>';
@@ -826,6 +857,108 @@ class SetupModuleController {
 	}
 
 	/**
+	 * Get Avatar fileUid
+	 *
+	 * @param int $beUserId
+	 * @return int
+	 */
+	protected function getAvatarFileUid($beUserId) {
+		$file = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+			'uid_local',
+			'sys_file_reference',
+			'tablenames = \'be_users\' AND fieldname = \'avatar\' AND ' .
+			'table_local = \'sys_file\' AND uid_foreign = ' . (int)$beUserId .
+			BackendUtility::BEenableFields('sys_file_reference') . BackendUtility::deleteClause('sys_file_reference')
+		);
+		return $file ? $file['uid_local'] : 0;
+	}
+
+	/**
+	 * Set avatar fileUid for backend user
+	 *
+	 * @param int $beUserId
+	 * @param int $fileUid
+	 * @param array $storeRec
+	 */
+	protected function setAvatarFileUid($beUserId, $fileUid, array &$storeRec) {
+
+		// Update is only needed when new fileUid is set
+		if ((int)$fileUid === $this->getAvatarFileUid($beUserId)) {
+			return;
+		}
+
+		// Delete old file reference
+		$this->getDatabaseConnection()->exec_DELETEquery(
+			'sys_file_reference',
+			'tablenames = \'be_users\' AND fieldname = \'avatar\' AND ' .
+			'table_local = \'sys_file\' AND uid_foreign = ' . (int)$beUserId
+		);
+
+		// Create new reference
+		if ($fileUid) {
+
+			// Get file object
+			try {
+				$file = ResourceFactory::getInstance()->getFileObject($fileUid);
+			} catch (FileDoesNotExistException $e) {
+				$file = FALSE;
+			}
+
+			// Check if user is allowed to use the image (only when not in simulation mode)
+			if ($file && $this->simUser === 0 && !$file->getStorage()->checkFileActionPermission('read', $file)) {
+				$file = FALSE;
+			}
+
+			// Check if extension is allowed
+			if ($file && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $file->getExtension())) {
+
+				// Create new file reference
+				$storeRec['sys_file_reference']['NEW1234'] = array(
+					'uid_local' => $fileUid,
+					'uid_foreign' => $beUserId,
+					'tablenames' => 'be_users',
+					'fieldname' => 'avatar',
+					'pid' => 0,
+					'table_local' => 'sys_file',
+				);
+				$storeRec['be_users'][(int)$beUserId] = array('avatar' => 'NEW1234');
+			}
+		}
+	}
+
+	/**
+	 * Add JavaScript to for browse files button
+	 *
+	 * @param sting $fieldName
+	 */
+	protected function addAvatarButtonJs($fieldName) {
+		$this->doc->JScodeArray['avatar-button'] = '
+			var browserWin="";
+
+			function openFileBrowser() {
+				var url = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('wizard_element_browser', ['mode' => 'file', 'bparams' => '||||dummy|setFileUid'])) .';
+				browserWin = window.open(url,"Typo3WinBrowser","height=650,width=800,status=0,menubar=0,resizable=1,scrollbars=1");
+				browserWin.focus();
+			}
+
+			function clearExistingImage() {
+				TYPO3.jQuery(\'#image_' . $fieldName . '\').hide();
+				TYPO3.jQuery(\'#clear_button_' . $fieldName . '\').hide();
+				TYPO3.jQuery(\'#field_' . $fieldName . '\').val(\'\');
+			}
+
+			function setFileUid(field, value, fileUid) {
+				clearExistingImage();
+				TYPO3.jQuery(\'#field_' . $fieldName . '\').val(fileUid);
+				TYPO3.jQuery(\'#add_button_' . $fieldName . '\').removeClass(\'btn-default\').addClass(\'btn-info\');
+
+				browserWin.close();
+			}
+		';
+
+	}
+
+	/**
 	 * Returns the current BE user.
 	 *
 	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
@@ -849,5 +982,5 @@ class SetupModuleController {
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
 	}
-
 }
+

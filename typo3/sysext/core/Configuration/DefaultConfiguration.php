@@ -15,8 +15,6 @@
 /**
  * This file contains the default array definition that is
  * later populated as $GLOBALS['TYPO3_CONF_VARS']
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 return array(
 	'GFX' => array(
@@ -87,7 +85,6 @@ return array(
 		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlTimeout' => 0,						// Integer: Timeout value for cURL requests in seconds. 0 means to wait indefinitely. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
-		'form_enctype' => 'multipart/form-data',// String: This is the default form encoding type for most forms in TYPO3. It allows for file uploads to be in the form. However if file-upload is disabled for your PHP version even ordinary data sent with this encryption will not get to the server. So if you have file_upload disabled, you will have to change this to eg. 'application/x-www-form-urlencoded'
 		'textfile_ext' => 'txt,ts,html,htm,css,tmpl,js,sql,xml,csv,xlf',		// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
 		'binPath' => '',						// String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
 		'binSetup' => '',						// String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
@@ -223,7 +220,7 @@ return array(
 			),
 		),
 		'defaultCategorizedTables' => 'pages,tt_content,sys_file_metadata', // List of comma separated tables that are categorizable by default.
-		'displayErrors' => -1,		// <p>Integer (-1, 0, 1, 2). Configures whether PHP errors or Exceptions should be displayed.</p><dl><dt>0</dt><dd>Do not display any PHP error message. Sets PHP "display_errors" setting to 0. Overrides the value of [SYS][exceptionalErrors] and sets it to 0 (= no errors are turned into exceptions). The configured [SYS][productionExceptionHandler] is used as exception handler.</dd><dt>1</dt><dd>Display error messages with the registered [SYS][errorHandler]. Sets PHP "display_errors" setting to 1. The configured [SYS][debugExceptionHandler] is used as exception handler.</dd><dt>2</dt><dd>Lets the [SYS][devIPmask] decide if this setting shall be "1" (user's IP matches) or "0" (IP does not match).</dd><dt>-1</dt><dd>Default setting. TYPO3 CMS does not touch the PHP "display_errors" setting. If [SYS][devIPmask] matches the user's IP address, the configured [SYS][debugExceptionHandler] is used instead of the [SYS][productionExceptionHandler] to handle exceptions.</dd></dl>
+		'displayErrors' => -1,		// <p>Integer (-1, 0, 1). Configures whether PHP errors or Exceptions should be displayed.</p><dl><dt>0</dt><dd>Do not display any PHP error message. Sets PHP "display_errors" setting to 0. Overrides the value of [SYS][exceptionalErrors] and sets it to 0 (= no errors are turned into exceptions). The configured [SYS][productionExceptionHandler] is used as exception handler.</dd><dt>1</dt><dd>Display error messages with the registered [SYS][errorHandler]. Sets PHP "display_errors" setting to 1. The configured [SYS][debugExceptionHandler] is used as exception handler.</dd><dt>-1</dt><dd>Default setting. TYPO3 CMS does not touch the PHP "display_errors" setting. If [SYS][devIPmask] matches the user's IP address, the configured [SYS][debugExceptionHandler] is used instead of the [SYS][productionExceptionHandler] to handle exceptions.</dd></dl>
 		'productionExceptionHandler' => \TYPO3\CMS\Core\Error\ProductionExceptionHandler::class,		// String: Classname to handle exceptions that might happen in the TYPO3-code. Leave empty to disable exception handling. Default: "TYPO3\\CMS\\Core\\Error\\ProductionExceptionHandler". This exception handler displays a nice error message when something went wrong. The error message is logged to the configured logs. Note: The configured "productionExceptionHandler" is used if [SYS][displayErrors] is set to "0" or is set to "-1" and [SYS][devIPmask] doesn't match the user's IP.
 		'debugExceptionHandler' => \TYPO3\CMS\Core\Error\DebugExceptionHandler::class,		// String: Classname to handle exceptions that might happen in the TYPO3-code. Leave empty to disable exception handling. Default: "TYPO3\\CMS\\Core\\Error\\DebugExceptionHandler". This exception handler displays the complete stack trace of any encountered exception. The error message and the stack trace is logged to the configured logs. Note: The configured "debugExceptionHandler" is used if [SYS][displayErrors] is set to "1" or is set to "-1" or "2" and the [SYS][devIPmask] matches the user's IP.
 		'errorHandler' => \TYPO3\CMS\Core\Error\ErrorHandler::class,		// String: Classname to handle PHP errors. E.g.: TYPO3\CMS\Core\Error\ErrorHandler. This class displays and logs all errors that are registered as [SYS][errorHandlerErrors]. Leave empty to disable error handling. Errors can be logged to syslog (see: [SYS][systemLog]), to the installed developer log and to the "syslog" table. If an error is registered in [SYS][exceptionalErrors] it will be turned into an exception to be handled by the configured exceptionHandler.
@@ -269,6 +266,7 @@ return array(
 				'svg' => 'image/svg+xml'
 			)
 		),
+		'livesearch' => array(),	// Array: keywords used for commands to search for specific tables
 		'isInitialInstallationInProgress' => FALSE,		// Boolean: If TRUE, the installation is 'in progress'. This value is handled within the install tool step installer internally.
 		'clearCacheSystem' => FALSE,		// Boolean: If set, the toolbar menu entry for clearing system caches (core cache, class cache, etc.) is visible for admin users.
 		'formEngine' => array(
@@ -279,8 +277,8 @@ return array(
 	'EXT' => array( // Options related to the Extension Management
 		'allowGlobalInstall' => FALSE,		// Boolean: If set, global extensions in typo3/ext/ are allowed to be installed, updated and deleted etc.
 		'allowLocalInstall' => TRUE,		// Boolean: If set, local extensions in typo3conf/ext/ are allowed to be installed, updated and deleted etc.
-		'allowSystemInstall' => FALSE,		// Boolean: If set, you can install extensions in the sysext/ dir. Use this to upgrade the 'cms' and 'lang' extensions.
-		'excludeForPackaging' => '(CVS|\\..*|.*~|.*\\.bak)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
+		'allowSystemInstall' => FALSE,		// Boolean: If set, you can install extensions in the sysext/ dir.
+		'excludeForPackaging' => '(?:\\..*|.*~|.*\\.swp|.*\\.bak)',		// String: List of directories and files which will not be packaged into extensions nor taken into account otherwise by the Extension Manager. Perl regular expression syntax!
 		'extConf' => array(
 			'saltedpasswords' => serialize(array(
 				'BE.' => array(
@@ -309,7 +307,6 @@ return array(
 		'diff_path' => 'diff',							// Path to "diff" including the program name. Example: /somepath/specialdiff<br />For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
 		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site, DefaultStorage will be created with that configuration, do not access manually but ResourceFactory::getDefaultStorage()
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
-		'RTE_reg' => array(),							// Contains arrays of possible RTEs available (keys=extKey, values=cfg-array). Each array contains a key, "objRef", which contains a user function call with prefixed script path and instanciating a persistent global object. This can report back if browser requirements are OK, draw the RTE and do the transformations needed.
 		'lockRootPath' => '',							// This path is used to evaluate if paths outside of PATH_site should be allowed. Ending slash required!
 		'userHomePath' => '',							// Combined folder identifier of the directory where TYPO3 backend-users have their home-dirs. A combined folder identifier looks like this: [storageUid]:[folderIdentifier]. Eg. '2:users/'. A home for backend user 2 would be: '2:users/2/'. Ending slash required!
 		'groupHomePath' => '',							// Combined folder identifier of the directory where TYPO3 backend-groups have their home-dirs. A combined folder identifier looks like this: [storageUid]:[folderIdentifier]. Eg. '2:groups/'. A home for backend group 1 would be: '2:groups/1/'. Ending slash required!
@@ -585,6 +582,20 @@ return array(
 		'defaultPageTSconfig' => 'mod.web_list.enableDisplayBigControlPanel=selectable
 			mod.web_list.enableClipBoard=selectable
 			mod.web_list.enableLocalizationView=selectable
+			mod.web_list.tableDisplayOrder {
+				be_users.after = be_groups
+				sys_filemounts.after = be_users
+				sys_file_storage.after = sys_filemounts
+				sys_language.after = sys_file_storage
+				pages_language_overlay.before = pages
+				fe_users.after = fe_groups
+				fe_users.before = pages
+				sys_template.after = pages
+				backend_layout.after = pages
+				sys_domain.after = sys_template
+				tt_content.after = pages,backend_layout,sys_template
+				sys_category.after = tt_content
+			}
 			mod.wizards.newRecord.pages.show.pageInside=1
 			mod.wizards.newRecord.pages.show.pageAfter=1
 			mod.wizards.newRecord.pages.show.pageSelectPosition=1
@@ -638,6 +649,10 @@ return array(
 			),
 			'TYPO3_tcefile::process' => array(
 				'callbackMethod' => \TYPO3\CMS\Backend\Controller\File\FileController::class . '->processAjaxRequest',
+				'csrfTokenCheck' => TRUE
+			),
+			'TYPO3_tcefile::fileExists' => array(
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\File\FileController::class . '->fileExistsAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::createNewRecord' => array(
@@ -737,6 +752,10 @@ return array(
 			'ImageManipulationWizard::getHtmlForImageManipulationWizard' => array(
 				'callbackMethod' => \TYPO3\CMS\Backend\Form\Wizard\ImageManipulationWizard::class . '->getHtmlForImageManipulationWizard',
 				'csrfTokenCheck' => TRUE
+			),
+			'LiveSearch' => array(
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\LiveSearchController::class . '->liveSearchAction',
+				'csrfTokenCheck' => TRUE
 			)
 		),
 		'toolbarItems' => array(), // Array: Registered toolbar items classes
@@ -833,7 +852,7 @@ return array(
 	),
 	'LOG' => array(
 		'writerConfiguration' => array(
-			\TYPO3\CMS\Core\Log\LogLevel::DEBUG => array(
+			\TYPO3\CMS\Core\Log\LogLevel::WARNING => array(
 				\TYPO3\CMS\Core\Log\Writer\FileWriter::class => array(
 					'logFile' => 'typo3temp/logs/typo3.log'
 				)

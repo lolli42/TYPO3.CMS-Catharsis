@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Utility;
 
 /**
  * Class with helper functions for file paths.
- *
- * @author Oliver Hader <oliver.hader@typo3.org>
  */
 class PathUtility {
 
@@ -35,8 +33,8 @@ class PathUtility {
 	/**
 	 * Creates an absolute URL out of really any input path, removes '../' parts for the targetPath
 	 *
-	 * @param string $targetPath can be "../../typo3/contrib/myfile.js" or "/myfile.js"
-	 * @return string something like "/mysite/typo3/sysext/backend.js"
+	 * @param string $targetPath can be "../typo3conf/ext/myext/myfile.js" or "/myfile.js"
+	 * @return string something like "/mysite/typo3conf/ext/myext/myfile.js"
 	 */
 	static public function getAbsoluteWebPath($targetPath) {
 		if (self::isAbsolutePath($targetPath)) {
@@ -90,7 +88,7 @@ class PathUtility {
 
 	/**
 	 * Gets the common path prefix out of many paths.
-	 * + /var/www/domain.com/typo3/sysext/cms/
+	 * + /var/www/domain.com/typo3/sysext/frontend/
 	 * + /var/www/domain.com/typo3/sysext/em/
 	 * + /var/www/domain.com/typo3/sysext/file/
 	 * = /var/www/domain.com/typo3/sysext/

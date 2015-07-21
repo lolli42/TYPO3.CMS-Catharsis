@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Extensionmanager\Domain\Model;
 
 /**
  * Main extension model
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
 class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
@@ -216,7 +214,7 @@ class Extension extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	}
 
 	/**
-	 * Returns category index from a given string or a integer.
+	 * Returns category index from a given string or an integer.
 	 * Fallback to 4 - 'misc' in case string is not found or integer ist out of range.
 	 *
 	 * @param string|int $category Category string or integer

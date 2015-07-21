@@ -18,8 +18,6 @@ use TYPO3\CMS\Reports\Status as ReportStatus;
 
 /**
  * Performs basic checks about the TYPO3 install
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class Typo3Status implements \TYPO3\CMS\Reports\StatusProviderInterface {
 
@@ -87,7 +85,7 @@ class Typo3Status implements \TYPO3\CMS\Reports\StatusProviderInterface {
 				}
 			}
 		}
-		if (count($xclassFoundArray) > 0) {
+		if (!empty($xclassFoundArray)) {
 			$value = $GLOBALS['LANG']->getLL('status_xclassUsageFound');
 			$message = $GLOBALS['LANG']->getLL('status_xclassUsageFound_message') . '<br />';
 			$message .= '<ol>';

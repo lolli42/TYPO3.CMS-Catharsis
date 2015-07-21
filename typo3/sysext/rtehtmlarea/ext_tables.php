@@ -11,13 +11,13 @@ defined('TYPO3_MODE') or die();
 // Add contextual help files
 $htmlAreaRteContextHelpFiles = array(
 	'General' => 'EXT:rtehtmlarea/locallang_csh.xlf',
-	'Abbreviation' => 'EXT:rtehtmlarea/extensions/Abbreviation/locallang_csh.xlf',
-	'EditElement' => 'EXT:rtehtmlarea/extensions/EditElement/locallang_csh.xlf',
-	'Language' => 'EXT:rtehtmlarea/extensions/Language/locallang_csh.xlf',
-	'MicrodataSchema' => 'EXT:rtehtmlarea/extensions/MicrodataSchema/locallang_csh.xlf',
-	'PlainText' => 'EXT:rtehtmlarea/extensions/PlainText/locallang_csh.xlf',
-	'RemoveFormat' => 'EXT:rtehtmlarea/extensions/RemoveFormat/locallang_csh.xlf',
-	'TableOperations' => 'EXT:rtehtmlarea/extensions/TableOperations/locallang_csh.xlf'
+	'Abbreviation' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/Abbreviation/locallang_csh.xlf',
+	'EditElement' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/EditElement/locallang_csh.xlf',
+	'Language' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/Language/locallang_csh.xlf',
+	'MicrodataSchema' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/MicrodataSchema/locallang_csh.xlf',
+	'PlainText' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/PlainText/locallang_csh.xlf',
+	'RemoveFormat' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/RemoveFormat/locallang_csh.xlf',
+	'TableOperations' => 'EXT:rtehtmlarea/Resources/Private/Language/Plugins/TableOperations/locallang_csh.xlf'
 );
 foreach ($htmlAreaRteContextHelpFiles as $key => $file) {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('xEXT_rtehtmlarea_' . $key, $file);
@@ -49,11 +49,11 @@ if (TYPO3_MODE === 'BE' && \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::i
 		),
 		'rteCleanPasteBehaviour' => array(
 			'type' => 'select',
-			'label' => 'LLL:EXT:rtehtmlarea/htmlarea/plugins/PlainText/locallang.xlf:rteCleanPasteBehaviour',
+			'label' => 'LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/PlainText/locallang_js.xlf:rteCleanPasteBehaviour',
 			'items' => array(
-				'plainText' => 'LLL:EXT:rtehtmlarea/htmlarea/plugins/PlainText/locallang.xlf:plainText',
-				'pasteStructure' => 'LLL:EXT:rtehtmlarea/htmlarea/plugins/PlainText/locallang.xlf:pasteStructure',
-				'pasteFormat' => 'LLL:EXT:rtehtmlarea/htmlarea/plugins/PlainText/locallang.xlf:pasteFormat'
+				'plainText' => 'LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/PlainText/locallang_js.xlf:plainText',
+				'pasteStructure' => 'LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/PlainText/locallang_js.xlf:pasteStructure',
+				'pasteFormat' => 'LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/PlainText/locallang_js.xlf:pasteFormat'
 			),
 			'csh' => 'xEXT_rtehtmlarea_PlainText:behaviour'
 		)

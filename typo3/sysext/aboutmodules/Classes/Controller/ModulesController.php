@@ -25,9 +25,6 @@ use TYPO3\CMS\Lang\LanguageService;
  * 'About modules' script - the default start-up module.
  * Will display the list of main- and sub-modules available to the user.
  * Each module will be show with description and a link to the module.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class ModulesController extends ActionController {
 
@@ -62,7 +59,7 @@ class ModulesController extends ActionController {
 				}
 			}
 		}
-		if (count($warnings)) {
+		if (!empty($warnings)) {
 			if (count($warnings) > 1) {
 				$securityWarnings = '<ul><li>' . implode('</li><li>', $warnings) . '</li></ul>';
 			} else {
@@ -105,7 +102,7 @@ class ModulesController extends ActionController {
 			$moduleKey = $moduleName . '_tab';
 			$mainModuleData['name'] = $moduleName;
 			$mainModuleData['label'] = $this->languageService->moduleLabels['tabs'][$moduleKey];
-			if (is_array($moduleInfo['sub']) && count($moduleInfo['sub']) > 0) {
+			if (is_array($moduleInfo['sub']) && !empty($moduleInfo['sub'])) {
 				$mainModuleData['subModules'] = $this->getSubModuleData($moduleName, $moduleInfo['sub']);
 			}
 			$mainModulesData[] = $mainModuleData;

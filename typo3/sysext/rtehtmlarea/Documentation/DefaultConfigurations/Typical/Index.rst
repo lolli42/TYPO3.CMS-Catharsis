@@ -32,15 +32,15 @@ frame scheme from CSS Styled Content extension
 
    RTE.classes {
            align-left {
-                   name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifyleft
+                   name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifyleft
                    value = text-align: left;
            }
            align-center {
-                   name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifycenter
+                   name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifycenter
                    value = text-align: center;
            }
            align-right {
-                   name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifyright
+                   name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifyright
                    value = text-align: right;
            }
            csc-frame-frame1 {
@@ -249,7 +249,6 @@ following for the specified tags:
    RTE.default.FE.showStatusBar = 0
    RTE.default.FE.hideButtons = chMode, blockstyle, textstyle, underline, strikethrough, subscript, superscript, lefttoright, righttoleft, left, center, right, justifyfull, table, inserttag, findreplace, removeformat, copy, cut, paste
    RTE.default.FE.userElements >
-   RTE.default.FE.userLinks >
 
 ## tt\_content TCEFORM configuration
 

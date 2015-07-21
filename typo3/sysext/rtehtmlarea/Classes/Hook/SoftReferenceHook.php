@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Rtehtmlarea\Hook;
 
 /**
  * Class for processing of the FAL soft references on img tags inserted in RTE content
- *
- * @author Stanislas Rolland <stanislas.rolland@typo3.org>
  */
 class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 
@@ -87,7 +85,7 @@ class SoftReferenceHook extends \TYPO3\CMS\Core\Database\SoftReferenceIndex {
 			}
 		}
 		// Assemble result array
-		if (count($elements)) {
+		if (!empty($elements)) {
 			$retVal = array(
 				'content' => implode('', $imgTags),
 				'elements' => $elements

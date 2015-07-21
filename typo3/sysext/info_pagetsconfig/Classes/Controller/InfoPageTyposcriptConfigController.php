@@ -21,8 +21,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Page TSconfig viewer
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
 
@@ -30,7 +28,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->getLanguageService()->includeLLFile('EXT:info_pagetsconfig/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:info_pagetsconfig/Resources/Private/Language/locallang.xlf');
 	}
 
 	/**
@@ -91,8 +89,10 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 				1
 			);
 		} else {
-			$menu = BackendUtility::getFuncMenu($this->pObj->id, 'SET[tsconf_parts]', $this->pObj->MOD_SETTINGS['tsconf_parts'], $this->pObj->MOD_MENU['tsconf_parts']);
+			$menu = '<div class="form-inline form-inline-spaced">';
+			$menu .= BackendUtility::getDropdownMenu($this->pObj->id, 'SET[tsconf_parts]', $this->pObj->MOD_SETTINGS['tsconf_parts'], $this->pObj->MOD_MENU['tsconf_parts']);
 			$menu .= '<div class="checkbox"><label for="checkTsconf_alphaSort">' . BackendUtility::getFuncCheck($this->pObj->id, 'SET[tsconf_alphaSort]', $this->pObj->MOD_SETTINGS['tsconf_alphaSort'], '', '', 'id="checkTsconf_alphaSort"') . $this->getLanguageService()->getLL('sort_alphabetic', TRUE) . '</label></div>';
+			$menu .= '</div>';
 			$theOutput = $this->pObj->doc->header($this->getLanguageService()->getLL('tsconf_title'));
 
 			if ($this->pObj->MOD_SETTINGS['tsconf_parts'] == 99) {
@@ -124,7 +124,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 						';
 					}
 				}
-				if (count($pUids)) {
+				if (!empty($pUids)) {
 					$params = '&edit[pages][' . implode(',', $pUids) . ']=edit&columnsOnly=TSconfig';
 					$onclickUrl = BackendUtility::editOnClick($params);
 					$editIcon = '<a href="#" onclick="' . htmlspecialchars($onclickUrl) . '" title="' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '<strong>' . $this->getLanguageService()->getLL('editTSconfig_all', TRUE) . '</strong>' . '</a>';
@@ -253,7 +253,7 @@ class InfoPageTyposcriptConfigController extends \TYPO3\CMS\Backend\Module\Abstr
 		$currentElement = current($rootlineArray);
 		$hierarchicArray[$currentElement['uid']] = htmlspecialchars($currentElement['title']);
 		array_shift($rootlineArray);
-		if (count($rootlineArray)) {
+		if (!empty($rootlineArray)) {
 			if (!isset($hierarchicArray[($currentElement['uid'] . '.')])) {
 				$hierarchicArray[$currentElement['uid'] . '.'] = array();
 			}

@@ -21,8 +21,6 @@ use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
  * Service class for managing multiple step processes (dependencies for example)
- *
- * @author Susanne Moog <susanne.moog@typo3.org>
  */
 class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -70,7 +68,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * @var bool
 	 */
-	protected $skipSystemDependencyCheck = FALSE;
+	protected $skipDependencyCheck = FALSE;
 
 	/**
 	 * @param string $extensionKey
@@ -124,10 +122,10 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Enables or disables the dependency check for system environment (PHP, TYPO3) before extension installation
 	 *
-	 * @param bool $skipSystemDependencyCheck
+	 * @param bool $skipDependencyCheck
 	 */
-	public function setSkipSystemDependencyCheck($skipSystemDependencyCheck) {
-		$this->skipSystemDependencyCheck = $skipSystemDependencyCheck;
+	public function setSkipDependencyCheck($skipDependencyCheck) {
+		$this->skipDependencyCheck = $skipDependencyCheck;
 	}
 
 	/**
@@ -154,7 +152,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 		$queue = $this->downloadQueue->getExtensionQueue();
 		$copyQueue = $this->downloadQueue->getExtensionCopyStorage();
 
-		if (count($copyQueue) > 0) {
+		if (!empty($copyQueue)) {
 			$this->copyDependencies($copyQueue);
 		}
 		$downloadedDependencies = array();
@@ -169,7 +167,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 			// add extension at the end of the download queue
 			$this->downloadQueue->addExtensionToInstallQueue($extension);
 			$installQueue = $this->downloadQueue->getExtensionInstallStorage();
-			if (count($installQueue) > 0) {
+			if (!empty($installQueue)) {
 				$installedDependencies = $this->installDependencies($installQueue);
 			}
 		}
@@ -223,7 +221,7 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return bool Returns TRUE if all dependencies can be resolved, otherwise FALSE
 	 */
 	protected function checkDependencies(Extension $extension) {
-		$this->dependencyUtility->setSkipSystemDependencyCheck($this->skipSystemDependencyCheck);
+		$this->dependencyUtility->setSkipDependencyCheck($this->skipDependencyCheck);
 		$this->dependencyUtility->checkDependencies($extension);
 
 		return !$this->dependencyUtility->hasDependencyErrors();
@@ -323,10 +321,10 @@ class ExtensionManagementService implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return array
 	 */
 	public function getAndResolveDependencies(Extension $extension) {
-		$this->dependencyUtility->setSkipSystemDependencyCheck($this->skipSystemDependencyCheck);
+		$this->dependencyUtility->setSkipDependencyCheck($this->skipDependencyCheck);
 		$this->dependencyUtility->checkDependencies($extension);
 		$installQueue = $this->downloadQueue->getExtensionInstallStorage();
-		if (is_array($installQueue) && count($installQueue) > 0) {
+		if (is_array($installQueue) && !empty($installQueue)) {
 			$installQueue = array('install' => $installQueue);
 		}
 		return array_merge($this->downloadQueue->getExtensionQueue(), $installQueue);

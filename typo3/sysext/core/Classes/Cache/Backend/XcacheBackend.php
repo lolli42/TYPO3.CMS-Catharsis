@@ -35,8 +35,6 @@ use TYPO3\CMS\Core\Cache\Exception;
  * - MD5 of script path and filename and SAPI name
  * This prefix makes sure that keys from the different installations do not
  * conflict.
- *
- * @author Philipp Gampe <philipp.gampe@typo3.org>
  */
 class XcacheBackend extends AbstractBackend implements TaggableBackendInterface {
 
@@ -270,7 +268,7 @@ class XcacheBackend extends AbstractBackend implements TaggableBackendInterface 
 			// anywhere.
 			if (($key = array_search($entryIdentifier, $identifiers)) !== FALSE) {
 				unset($identifiers[$key]);
-				if (count($identifiers)) {
+				if (!empty($identifiers)) {
 					xcache_set($this->identifierPrefix . 'tag_' . $tag, $identifiers);
 				} else {
 					xcache_unset($this->identifierPrefix . 'tag_' . $tag);

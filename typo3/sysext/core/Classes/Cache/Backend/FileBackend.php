@@ -13,15 +13,13 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
 
 /**
  * A caching backend which stores cache entries in files
  *
  * This file is a backport from FLOW3
- *
- * @author Robert Lemke <robert@typo3.org>
- * @author Christian Kuhn <lolli@schwarzbu.ch>
- * @author Karsten Dambekalns <karsten@typo3.org>
  * @api
  */
 class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implements \TYPO3\CMS\Core\Cache\Backend\PhpCapableBackendInterface, \TYPO3\CMS\Core\Cache\Backend\FreezableBackendInterface, \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface {
@@ -166,7 +164,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 			throw new \TYPO3\CMS\Core\Cache\Exception('The cache file "' . $cacheEntryPathAndFilename . '" could not be written.', 1222361632);
 		}
 		if ($this->cacheEntryFileExtension === '.php') {
-			\TYPO3\CMS\Core\Utility\OpcodeCacheUtility::clearAllActive($cacheEntryPathAndFilename);
+			GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive($cacheEntryPathAndFilename);
 		}
 	}
 
@@ -235,7 +233,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 		if (file_exists($pathAndFilename) === FALSE) {
 			return FALSE;
 		}
-		if (unlink($pathAndFilename) === FALSE) {
+		if (@unlink($pathAndFilename) === FALSE) {
 			return FALSE;
 		}
 		return TRUE;
@@ -297,7 +295,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 	 */
 	public function flushByTag($tag) {
 		$identifiers = $this->findIdentifiersByTag($tag);
-		if (count($identifiers) === 0) {
+		if (empty($identifiers)) {
 			return;
 		}
 		foreach ($identifiers as $entryIdentifier) {
@@ -358,7 +356,7 @@ class FileBackend extends \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend implem
 	protected function findCacheFilesByIdentifier($entryIdentifier) {
 		$pattern = $this->cacheDirectory . $entryIdentifier;
 		$filesFound = glob($pattern);
-		if ($filesFound === FALSE || count($filesFound) === 0) {
+		if ($filesFound === FALSE || empty($filesFound)) {
 			return FALSE;
 		}
 		return $filesFound;

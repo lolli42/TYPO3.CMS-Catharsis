@@ -46,7 +46,6 @@ class FunctionalTestCaseBootstrapUtility {
 		'core',
 		'backend',
 		'frontend',
-		'cms',
 		'lang',
 		'extbase',
 		'install',
@@ -425,15 +424,12 @@ class FunctionalTestCaseBootstrapUtility {
 		define('TYPO3_MODE', 'BE');
 		define('TYPO3_cliMode', TRUE);
 
-		require_once $this->instancePath . '/typo3/sysext/core/Classes/Core/CliBootstrap.php';
-		\TYPO3\CMS\Core\Core\CliBootstrap::checkEnvironmentOrDie();
-
-		require_once $this->instancePath . '/typo3/sysext/core/Classes/Core/Bootstrap.php';
+		$classLoader = require $this->instancePath . '/typo3/vendor/autoload.php';
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()
+			->initializeClassLoader($classLoader)
 			->baseSetup('')
 			->loadConfigurationAndInitialize(TRUE)
 			->loadTypo3LoadedExtAndExtLocalconf(TRUE)
-			->initializeExceptionHandling()
 			->setFinalCachingFrameworkCacheConfiguration()
 			->defineLoggingAndExceptionConstants()
 			->unsetReservedGlobalVariables();
@@ -673,7 +669,7 @@ class FunctionalTestCaseBootstrapUtility {
 				$lines .= is_int($key) ? $key . ' => ' : '\'' . $key . '\' => ';
 			}
 			if (is_array($value)) {
-				if (count($value) > 0) {
+				if (!empty($value)) {
 					$lines .= $this->arrayExport($value, $level);
 				} else {
 					$lines .= 'array(),' . chr(10);

@@ -14,13 +14,13 @@ namespace TYPO3\CMS\Frontend\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
 
 /**
  * Contains CONTENT class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 class ContentContentObject extends AbstractContentObject {
 
@@ -35,12 +35,13 @@ class ContentContentObject extends AbstractContentObject {
 			return '';
 		}
 
+		$frontendController = $this->getFrontendController();
 		$theValue = '';
-		$originalRec = $GLOBALS['TSFE']->currentRecord;
+		$originalRec = $frontendController->currentRecord;
 		// If the currentRecord is set, we register, that this record has invoked this function.
 		// It's should not be allowed to do this again then!!
 		if ($originalRec) {
-			++$GLOBALS['TSFE']->recordRegister[$originalRec];
+			++$frontendController->recordRegister[$originalRec];
 		}
 		$conf['table'] = isset($conf['table.']) ? trim($this->cObj->stdWrap($conf['table'], $conf['table.'])) : trim($conf['table']);
 		$renderObjName = $conf['renderObj'] ?: '<' . $conf['table'];
@@ -55,62 +56,47 @@ class ContentContentObject extends AbstractContentObject {
 			$slideCollect = 0;
 		}
 		$slideCollectReverse = isset($conf['slide.']['collectReverse.']) ? (int)$this->cObj->stdWrap($conf['slide.']['collectReverse'], $conf['slide.']['collectReverse.']) : (int)$conf['slide.']['collectReverse'];
-		$slideCollectReverse = $slideCollectReverse ? TRUE : FALSE;
-		$slideCollectFuzzy = isset($conf['slide.']['collectFuzzy.']) ? (int)$this->cObj->stdWrap($conf['slide.']['collectFuzzy'], $conf['slide.']['collectFuzzy.']) : (int)$conf['slide.']['collectFuzzy'];
-		if ($slideCollectFuzzy) {
-			$slideCollectFuzzy = TRUE;
-		} else {
-			$slideCollectFuzzy = FALSE;
-		}
+		$slideCollectReverse = (bool)$slideCollectReverse;
+		$slideCollectFuzzy = isset($conf['slide.']['collectFuzzy.'])
+			? (bool)$this->cObj->stdWrap($conf['slide.']['collectFuzzy'], $conf['slide.']['collectFuzzy.'])
+			: (bool)$conf['slide.']['collectFuzzy'];
 		if (!$slideCollect) {
 			$slideCollectFuzzy = TRUE;
 		}
 		$again = FALSE;
 		$tmpValue = '';
+		$cobjValue = '';
+
 		do {
-			$res = $this->cObj->exec_getQuery($conf['table'], $conf['select.']);
-			if ($error = $GLOBALS['TYPO3_DB']->sql_error()) {
-				$GLOBALS['TT']->setTSlogMessage($error, 3);
-			} else {
-				$this->cObj->currentRecordTotal = $GLOBALS['TYPO3_DB']->sql_num_rows($res);
-				$GLOBALS['TT']->setTSlogMessage('NUMROWS: ' . $GLOBALS['TYPO3_DB']->sql_num_rows($res));
+			$records = $this->cObj->getRecords($conf);
+			if (!empty($records)) {
+				$this->cObj->currentRecordTotal = count($records);
+				$this->getTimeTracker()->setTSlogMessage('NUMROWS: ' .  count($records));
+
 				/** @var $cObj ContentObjectRenderer */
 				$cObj = GeneralUtility::makeInstance(ContentObjectRenderer::class);
 				$cObj->setParent($this->cObj->data, $this->cObj->currentRecord);
 				$this->cObj->currentRecordNumber = 0;
 				$cobjValue = '';
-				while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-					// Versioning preview:
-					$GLOBALS['TSFE']->sys_page->versionOL($conf['table'], $row, TRUE);
-					// Language overlay:
-					if (is_array($row) && $GLOBALS['TSFE']->sys_language_contentOL) {
-						if ($conf['table'] == 'pages') {
-							$row = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
-						} else {
-							$row = $GLOBALS['TSFE']->sys_page->getRecordOverlay($conf['table'], $row, $GLOBALS['TSFE']->sys_language_content, $GLOBALS['TSFE']->sys_language_contentOL);
+
+				foreach ($records as $row) {
+					// Call hook for possible manipulation of database row for cObj->data
+					if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content_content.php']['modifyDBRow'])) {
+						foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content_content.php']['modifyDBRow'] as $_classRef) {
+							$_procObj = GeneralUtility::getUserObj($_classRef);
+							$_procObj->modifyDBRow($row, $conf['table']);
 						}
 					}
-					// Might be unset in the sys_language_contentOL
-					if (is_array($row)) {
-						// Call hook for possible manipulation of database row for cObj->data
-						if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content_content.php']['modifyDBRow'])) {
-							foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content_content.php']['modifyDBRow'] as $_classRef) {
-								$_procObj = GeneralUtility::getUserObj($_classRef);
-								$_procObj->modifyDBRow($row, $conf['table']);
-							}
-						}
-						if (!$GLOBALS['TSFE']->recordRegister[($conf['table'] . ':' . $row['uid'])]) {
-							$this->cObj->currentRecordNumber++;
-							$cObj->parentRecordNumber = $this->cObj->currentRecordNumber;
-							$GLOBALS['TSFE']->currentRecord = $conf['table'] . ':' . $row['uid'];
-							$this->cObj->lastChanged($row['tstamp']);
-							$cObj->start($row, $conf['table']);
-							$tmpValue = $cObj->cObjGetSingle($renderObjName, $renderObjConf, $renderObjKey);
-							$cobjValue .= $tmpValue;
-						}
+					if (!$frontendController->recordRegister[($conf['table'] . ':' . $row['uid'])]) {
+						$this->cObj->currentRecordNumber++;
+						$cObj->parentRecordNumber = $this->cObj->currentRecordNumber;
+						$frontendController->currentRecord = $conf['table'] . ':' . $row['uid'];
+						$this->cObj->lastChanged($row['tstamp']);
+						$cObj->start($row, $conf['table']);
+						$tmpValue = $cObj->cObjGetSingle($renderObjName, $renderObjConf, $renderObjKey);
+						$cobjValue .= $tmpValue;
 					}
 				}
-				$GLOBALS['TYPO3_DB']->sql_free_result($res);
 			}
 			if ($slideCollectReverse) {
 				$theValue = $cobjValue . $theValue;
@@ -140,11 +126,38 @@ class ContentContentObject extends AbstractContentObject {
 			$theValue = $this->cObj->stdWrap($theValue, $conf['stdWrap.']);
 		}
 		// Restore
-		$GLOBALS['TSFE']->currentRecord = $originalRec;
+		$frontendController->currentRecord = $originalRec;
 		if ($originalRec) {
-			--$GLOBALS['TSFE']->recordRegister[$originalRec];
+			--$frontendController->recordRegister[$originalRec];
 		}
 		return $theValue;
+	}
+
+	/**
+	 * Returns the database connection
+	 *
+	 * @return DatabaseConnection
+	 */
+	protected function getDatabaseConnection() {
+		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * Returns the frontend controller
+	 *
+	 * @return TypoScriptFrontendController
+	 */
+	protected function getFrontendController() {
+		return $GLOBALS['TSFE'];
+	}
+
+	/**
+	 * Returns Time Tracker
+	 *
+	 * @return TimeTracker
+	 */
+	protected function getTimeTracker() {
+		return $GLOBALS['TT'];
 	}
 
 }

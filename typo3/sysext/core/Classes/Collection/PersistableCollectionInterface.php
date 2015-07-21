@@ -21,15 +21,13 @@ namespace TYPO3\CMS\Core\Collection;
  * of data values (f.e. strings, records, relations) in a
  * common and generic way, while the class manages the storage
  * in an appropriate way itself
- *
- * @author Steffen Ritter <typo3steffen-ritter.net>
  */
 interface PersistableCollectionInterface {
 
 	/**
 	 * Get the identifier of the collection
 	 *
-	 * For database stored collections, this will be a integer,
+	 * For database stored collections, this will be an integer,
 	 * session stored, registry stored or other collections might
 	 * use a string as well
 	 *

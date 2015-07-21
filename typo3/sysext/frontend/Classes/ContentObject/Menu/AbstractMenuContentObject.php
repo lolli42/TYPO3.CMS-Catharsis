@@ -33,8 +33,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  * The HMENU content object uses this (or more precisely one of the extension classes).
  * Among others the class generates an array of menu items. Thereafter functions from the subclasses are called.
  * The class is always used through extension classes (like GraphicalMenuContentObject or TextMenuContentObject).
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 abstract class AbstractMenuContentObject {
 
@@ -710,10 +708,11 @@ abstract class AbstractMenuContentObject {
 				$id = $mount_info['mount_pid'];
 			}
 			// Get sub-pages:
-			$res = $this->parent_cObj->exec_getQuery('pages', array('pidInList' => $id, 'orderBy' => $sortingField));
+			$res = $this->getDatabaseConnection()->exec_SELECTquery('uid', 'pages', 'pid=' . intval($id) . $this->sys_page->where_hid_del, '', $sortingField);
 			while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+				$row = $this->sys_page->getPage($row['uid']);
 				$tsfe->sys_page->versionOL('pages', $row, TRUE);
-				if (is_array($row)) {
+				if (!empty($row)) {
 					// Keep mount point?
 					$mount_info = $this->sys_page->getMountPointInfo($row['uid'], $row);
 					// There is a valid mount point.
@@ -731,11 +730,11 @@ abstract class AbstractMenuContentObject {
 						}
 					}
 					// Add external MP params, then the row:
-					if (isset($row)) {
+					if (!empty($row)) {
 						if ($MP) {
 							$row['_MP_PARAM'] = $MP . ($row['_MP_PARAM'] ? ',' . $row['_MP_PARAM'] : '');
 						}
-						$menuItems[$row['uid']] = $this->sys_page->getPageOverlay($row);
+						$menuItems[$row['uid']] = $row;
 					}
 				}
 			}
@@ -754,11 +753,15 @@ abstract class AbstractMenuContentObject {
 		if ($specialValue == '') {
 			$specialValue = $this->id;
 		}
+		$skippedEnableFields = array();
+		if (!empty($this->mconf['showAccessRestrictedPages'])) {
+			$skippedEnableFields = array('fe_group' => 1);
+		}
 		/** @var RelationHandler $loadDB*/
 		$loadDB = GeneralUtility::makeInstance(RelationHandler::class);
 		$loadDB->setFetchAllFields(TRUE);
 		$loadDB->start($specialValue, 'pages');
-		$loadDB->additionalWhere['pages'] = $this->parent_cObj->enableFields('pages');
+		$loadDB->additionalWhere['pages'] = $this->parent_cObj->enableFields('pages', FALSE, $skippedEnableFields);
 		$loadDB->getFromDB();
 		foreach ($loadDB->itemArray as $val) {
 			$MP = $this->tmpl->getFromMPmap($val['id']);
@@ -1098,7 +1101,7 @@ abstract class AbstractMenuContentObject {
 					if ($v_b['uid'] == $value_rec['pid']) {
 						if ($lastKey) {
 							$sectionRec_temp = $this->removeInaccessiblePages($this->sys_page->getMenu($prevnextsection_menu[$lastKey]['uid'], '*', $sortingField, $additionalWhere));
-							if (count($sectionRec_temp)) {
+							if (!empty($sectionRec_temp)) {
 								$recArr['prevsection'] = reset($sectionRec_temp);
 								$recArr['prevsection_last'] = end($sectionRec_temp);
 							}
@@ -1704,7 +1707,7 @@ abstract class AbstractMenuContentObject {
 	public function subMenu($uid, $objSuffix = '') {
 		// Setting alternative menu item array if _SUB_MENU has been defined in the current ->menuArr
 		$altArray = '';
-		if (is_array($this->menuArr[$this->I['key']]['_SUB_MENU']) && count($this->menuArr[$this->I['key']]['_SUB_MENU'])) {
+		if (is_array($this->menuArr[$this->I['key']]['_SUB_MENU']) && !empty($this->menuArr[$this->I['key']]['_SUB_MENU'])) {
 			$altArray = $this->menuArr[$this->I['key']]['_SUB_MENU'];
 		}
 		// Make submenu if the page is the next active

@@ -21,7 +21,7 @@ use TYPO3\CMS\Extbase\Validation\Exception\NoSuchValidatorException;
 use TYPO3\CMS\Extbase\Validation\Validator\ConjunctionValidator;
 
 /**
- * Validator resolver to automatically find a appropriate validator for a given subject
+ * Validator resolver to automatically find an appropriate validator for a given subject
  */
 class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -143,7 +143,7 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 		if ($methodParameters === NULL) {
 			$methodParameters = $this->reflectionService->getMethodParameters($className, $methodName);
 		}
-		if (count($methodParameters) === 0) {
+		if (empty($methodParameters)) {
 			return $validatorConjunctions;
 		}
 
@@ -273,7 +273,7 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 						$objectValidator->addPropertyValidator($classPropertyName, $collectionValidator);
 					} elseif (class_exists($propertyTargetClassName) && !TypeHandlingUtility::isCoreType($propertyTargetClassName) && $this->objectManager->isRegistered($propertyTargetClassName) && $this->objectManager->getScope($propertyTargetClassName) === \TYPO3\CMS\Extbase\Object\Container\Container::SCOPE_PROTOTYPE) {
 						$validatorForProperty = $this->getBaseValidatorConjunction($propertyTargetClassName, $validationGroups);
-						if (count($validatorForProperty) > 0) {
+						if (!empty($validatorForProperty)) {
 							$objectValidator->addPropertyValidator($classPropertyName, $validatorForProperty);
 						}
 					}
@@ -305,7 +305,7 @@ class ValidatorResolver implements \TYPO3\CMS\Core\SingletonInterface {
 				}
 			}
 
-			if (count($objectValidator->getPropertyValidators()) > 0) {
+			if (!empty($objectValidator->getPropertyValidators())) {
 				$conjunctionValidator->addValidator($objectValidator);
 			}
 		}

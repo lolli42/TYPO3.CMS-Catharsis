@@ -25,8 +25,6 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * Base for class listing of database records and files in the
  * modules Web>List and File>Filelist
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  * @see typo3/db_list.php
  * @see typo3/sysext/filelist/mod1/index.php
  */
@@ -195,7 +193,7 @@ abstract class AbstractRecordList {
 	 * Returns a table-row with the content from the fields in the input data array.
 	 * OBS: $this->fieldArray MUST be set! (represents the list of fields to display)
 	 *
-	 * @param int $h Is an integer >=0 and denotes how tall a element is. Set to '0' makes a halv line, -1 = full line, set to 1 makes a 'join' and above makes 'line'
+	 * @param int $h Is an integer >=0 and denotes how tall an element is. Set to '0' makes a halv line, -1 = full line, set to 1 makes a 'join' and above makes 'line'
 	 * @param string $icon Is the <img>+<a> of the record. If not supplied the first 'join'-icon will be a 'line' instead
 	 * @param array $data Is the dataarray, record with the fields. Notice: These fields are (currently) NOT htmlspecialchar'ed before being wrapped in <td>-tags
 	 * @param string $rowParams Is insert in the <tr>-tags. Must carry a ' ' as first character
@@ -236,8 +234,14 @@ abstract class AbstractRecordList {
 		$lastKey = '';
 		$c = 0;
 		$ccount = 0;
+		// __label is used as the label key to circumvent problems with uid used as label (see #67756)
+		// as it was introduced later on, check if it really exists before using it
+		$fields = $this->fieldArray;
+		if ($colType === 'td' && array_key_exists('__label', $data)) {
+			$fields[0] = '__label';
+		}
 		// Traverse field array which contains the data to present:
-		foreach ($this->fieldArray as $vKey) {
+		foreach ($fields as $vKey) {
 			if (isset($data[$vKey])) {
 				if ($lastKey) {
 					$cssClass = $this->addElement_tdCssClass[$lastKey];

@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Scheduler\Task;
 
 /**
  * Additional BE fields for sys log table garbage collection task.
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface {
 
@@ -100,7 +98,7 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 			$options[] = '<option value="" selected="selected"></option>';
 		}
 		foreach ($tableConfiguration as $tableName => $configuration) {
-			if ($parentObject->CMD === 'add' && count($options) === 0) {
+			if ($parentObject->CMD === 'add' && empty($options)) {
 				// Select first table by default if adding a new task
 				$options[] = '<option value="' . $tableName . '" selected="selected">' . $tableName . '</option>';
 			} elseif ($task->table === $tableName) {
@@ -130,7 +128,7 @@ class TableGarbageCollectionAdditionalFieldProvider implements \TYPO3\CMS\Schedu
 	}
 
 	/**
-	 * Add a input field to get the number of days.
+	 * Add an input field to get the number of days.
 	 *
 	 * @param array $taskInfo Reference to the array containing the info used in the add/edit form
 	 * @param AbstractTask|NULL $task When editing, reference to the current task. NULL when adding.

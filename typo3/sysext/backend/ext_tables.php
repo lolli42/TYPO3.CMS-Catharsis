@@ -2,6 +2,12 @@
 defined('TYPO3_MODE') or die();
 
 if (TYPO3_MODE === 'BE') {
+	// Main module
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'main',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Main/'
+	);
+
 	// Register record edit module
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'record_edit',
@@ -49,6 +55,11 @@ if (TYPO3_MODE === 'BE') {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
 		'file_rename',
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Rename/'
+	);
+
+	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
+		'file_replace',
+		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/File/Replace/'
 	);
 
 	// Register file_rename
@@ -122,9 +133,9 @@ if (TYPO3_MODE === 'BE') {
 			'name' => 'web_layout',
 			'labels' => array(
 				'tabs_images' => array(
-					'tab' => '../../Resources/Public/Icons/module-page.png',
+					'tab' => '../../Resources/Public/Icons/module-page.svg',
 				),
-				'll_ref' => 'LLL:EXT:cms/layout/locallang_mod.xlf',
+				'll_ref' => 'LLL:EXT:backend/Resources/Private/Language/locallang_mod.xlf',
 			),
 		)
 	);
@@ -164,4 +175,7 @@ if (TYPO3_MODE === 'BE') {
 		'dummy',
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($_EXTKEY) . 'Modules/Dummy/'
 	);
+
+	// Register BackendLayoutDataProvider for PageTs
+	$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['BackendLayoutDataProvider']['pagets'] = \TYPO3\CMS\Backend\Provider\PageTsBackendLayoutDataProvider::class;
 }

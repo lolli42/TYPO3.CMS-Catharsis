@@ -46,6 +46,7 @@ use TYPO3\CMS\Frontend\ContentObject\Exception\ExceptionHandlerInterface;
 use TYPO3\CMS\Frontend\Page\CacheHashCalculator;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * This class contains all main TypoScript features.
@@ -55,8 +56,6 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
  * There are lots of functions you can use from your include-scripts.
  * The class is normally instantiated and referred to as "cObj".
  * When you call your own PHP-code typically through a USER or USER_INT cObject then it is this class that instantiates the object and calls the main method. Before it does so it will set (if you are using classes) a reference to itself in the internal variable "cObj" of the object. Thus you can access all functions and data from this class by $this->cObj->... from within you classes written to be USER or USER_INT content objects.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ContentObjectRenderer {
 
@@ -891,7 +890,8 @@ class ContentObjectRenderer {
 	 ********************************************/
 
 	/**
-	 * Renders a content object by taking exception handling into consideration
+	 * Renders a content object by taking exception and cache handling
+	 * into consideration
 	 *
 	 * @param AbstractContentObject $contentObject Content object instance
 	 * @param array $configuration Array of TypoScript properties
@@ -902,6 +902,18 @@ class ContentObjectRenderer {
 	 */
 	public function render(AbstractContentObject $contentObject, $configuration = array()) {
 		$content = '';
+
+		// Evaluate possible cache and return
+		$cacheConfiguration = isset($configuration['cache.']) ? $configuration['cache.'] : NULL;
+		if ($cacheConfiguration !== NULL) {
+			unset($configuration['cache.']);
+			$cache = $this->getFromCache($cacheConfiguration);
+			if ($cache !== FALSE) {
+				return $cache;
+			}
+		}
+
+		// Render content
 		try {
 			$content .= $contentObject->render($configuration);
 		} catch (ContentRenderingException $exception) {
@@ -916,6 +928,19 @@ class ContentObjectRenderer {
 				$content = $exceptionHandler->handle($exception, $contentObject, $configuration);
 			}
 		}
+
+		// Store cache
+		if ($cacheConfiguration !== NULL) {
+			$key = $this->calculateCacheKey($cacheConfiguration);
+			if (!empty($key)) {
+				/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
+				$cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
+				$tags = $this->calculateCacheTags($cacheConfiguration);
+				$lifetime = $this->calculateCacheLifetime($cacheConfiguration);
+				$cacheFrontend->set($key, $content, $tags, $lifetime);
+			}
+		}
+
 		return $content;
 	}
 
@@ -1309,8 +1334,6 @@ class ContentObjectRenderer {
 	 *
 	 * @param array $conf Array of TypoScript properties
 	 * @return string the HTML output
-	 * @author Steffen Ritter <info@steffen-ritter.net>
-	 * @author Benjamin Mack <benni@typo3.org>
 	 * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use $cObj->cObjGetSingle('FLUIDTEMPLATE', $conf) instead
 	 */
 	protected function FLUIDTEMPLATE(array $conf) {
@@ -1406,7 +1429,7 @@ class ContentObjectRenderer {
 				continue;
 			}
 			if (isset($value['el'])) {
-				if (is_array($value['el']) && count($value['el']) > 0) {
+				if (is_array($value['el']) && !empty($value['el'])) {
 					foreach ($value['el'] as $ekey => $element) {
 						if (isset($element['vDEF'])) {
 							$conf[$ekey] = $element['vDEF'];
@@ -1446,7 +1469,7 @@ class ContentObjectRenderer {
 			$listArr = $this->checkPidArray($listArr);
 		}
 		$pidList = array();
-		if (is_array($listArr) && count($listArr)) {
+		if (is_array($listArr) && !empty($listArr)) {
 			foreach ($listArr as $uid) {
 				$page = $GLOBALS['TSFE']->sys_page->getPage($uid);
 				if (!$page['is_siteroot']) {
@@ -2037,7 +2060,7 @@ class ContentObjectRenderer {
 		$sPkeys = array_keys($subpartContentArray);
 		$wPkeys = array_keys($wrappedSubpartContentArray);
 		$aKeys = array_merge(array_keys($markContentArray), $sPkeys, $wPkeys);
-		if (!count($aKeys)) {
+		if (empty($aKeys)) {
 			$GLOBALS['TT']->pull();
 			return $content;
 		}
@@ -2356,15 +2379,11 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_cacheRead($content = '', $conf = array()) {
-		if (!empty($conf['cache.']['key'])) {
-			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
-			if ($cacheFrontend && $cacheFrontend->has($conf['cache.']['key'])) {
-				$content = $cacheFrontend->get($conf['cache.']['key']);
-				$this->stopRendering[$this->stdWrapRecursionLevel] = TRUE;
-			}
+		if (!isset($conf['cache.'])) {
+			return $content;
 		}
-		return $content;
+		$result = $this->getFromCache($conf['cache.']);
+		return $result === FALSE ? $content : $result;
 	}
 
 	/**
@@ -2468,7 +2487,7 @@ class ContentObjectRenderer {
 
 	/**
 	 * cObject
-	 * Will replace the content with the value of a any official TypoScript cObject
+	 * Will replace the content with the value of an official TypoScript cObject
 	 * like TEXT, COA, HMENU
 	 *
 	 * @param string $content Input value undergoing processing in this function.
@@ -3623,38 +3642,29 @@ class ContentObjectRenderer {
 	 * @return string The processed input value
 	 */
 	public function stdWrap_cacheStore($content = '', $conf = array()) {
-		if (!empty($conf['cache.']['key'])) {
-			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
-			$cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
-			if ($cacheFrontend) {
-				$tags = !empty($conf['cache.']['tags']) ? GeneralUtility::trimExplode(',', $conf['cache.']['tags']) : array();
-				if (strtolower($conf['cache.']['lifetime']) == 'unlimited') {
-					// unlimited
-					$lifetime = 0;
-				} elseif (strtolower($conf['cache.']['lifetime']) == 'default') {
-					// default lifetime
-					$lifetime = NULL;
-				} elseif ((int)$conf['cache.']['lifetime'] > 0) {
-					// lifetime in seconds
-					$lifetime = (int)$conf['cache.']['lifetime'];
-				} else {
-					// default lifetime
-					$lifetime = NULL;
-				}
-				if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'])) {
-					foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'] as $_funcRef) {
-						$params = array(
-							'key' => $conf['cache.']['key'],
-							'content' => $content,
-							'lifetime' => $lifetime,
-							'tags' => $tags
-						);
-						GeneralUtility::callUserFunction($_funcRef, $params, $this);
-					}
-				}
-				$cacheFrontend->set($conf['cache.']['key'], $content, $tags, $lifetime);
+		if (!isset($conf['cache.'])) {
+			return $content;
+		}
+		$key = $this->calculateCacheKey($conf['cache.']);
+		if (empty($key)) {
+			return $content;
+		}
+		/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
+		$cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
+		$tags = $this->calculateCacheTags($conf['cache.']);
+		$lifetime = $this->calculateCacheLifetime($conf['cache.']);
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'])) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['stdWrap_cacheStore'] as $_funcRef) {
+				$params = array(
+					'key' => $key,
+					'content' => $content,
+					'lifetime' => $lifetime,
+					'tags' => $tags
+				);
+				GeneralUtility::callUserFunction($_funcRef, $params, $this);
 			}
 		}
+		$cacheFrontend->set($key, $content, $tags, $lifetime);
 		return $content;
 	}
 
@@ -3904,14 +3914,14 @@ class ContentObjectRenderer {
 					$d->close();
 				}
 				// Sort if required
-				if (count($items['sorting'])) {
+				if (!empty($items['sorting'])) {
 					if (strtolower(trim($data_arr[3])) != 'r') {
 						asort($items['sorting']);
 					} else {
 						arsort($items['sorting']);
 					}
 				}
-				if (count($items['files'])) {
+				if (!empty($items['files'])) {
 					// Make list
 					reset($items['sorting']);
 					$fullPath = trim($data_arr[4]);
@@ -4096,7 +4106,7 @@ class ContentObjectRenderer {
 		$chars = (int)$options[0];
 		$absChars = abs($chars);
 		$replacementForEllipsis = trim($options[1]);
-		$crop2space = trim($options[2]) === '1' ? TRUE : FALSE;
+		$crop2space = trim($options[2]) === '1';
 		// Split $content into an array(even items in the array are outside the tags, odd numbers are tag-blocks).
 		$tags = 'a|b|blockquote|body|div|em|font|form|h1|h2|h3|h4|h5|h6|i|li|map|ol|option|p|pre|sub|sup|select|span|strong|table|thead|tbody|tfoot|td|textarea|tr|u|ul|br|hr|img|input|area|link';
 		// @todo We should not crop inside <script> tags.
@@ -4190,7 +4200,6 @@ class ContentObjectRenderer {
 				if ($tagName !== NULL) {
 					// Seek for the closing (or opening) tag.
 					$seekingTagName = '';
-					$countSplittedContent = count($splittedContent);
 					for ($seekingOffset = $offset + 2; $seekingOffset < $countSplittedContent; $seekingOffset = $seekingOffset + 2) {
 						preg_match($chars < 0 ? $openingTagRegEx : $closingTagRegEx, $splittedContent[$seekingOffset], $matches);
 						$seekingTagName = isset($matches[1]) ? $matches[1] : NULL;
@@ -4226,8 +4235,6 @@ class ContentObjectRenderer {
 	 * @param string $text Input string to be cleaned.
 	 * @param array $conf TypoScript configuration.
 	 * @return string Return string
-	 * @author Thomas Bley (all from moregroupware cvs code / readmessage.inc.php, published under gpl by Thomas)
-	 * @author Kasper Skårhøj
 	 */
 	public function removeBadHTML($text, $conf) {
 		// Copyright 2002-2003 Thomas Bley
@@ -4684,46 +4691,56 @@ class ContentObjectRenderer {
 		if ($conf['token'] === '') {
 			return $value;
 		}
+		$valArr = explode($conf['token'], $value);
+
+		// return value directly by returnKey. No further processing
+		if (!empty($valArr) && (MathUtility::canBeInterpretedAsInteger($conf['returnKey']) || $conf['returnKey.'])) {
+			$key = isset($conf['returnKey.']) ? (int)$this->stdWrap($conf['returnKey'], $conf['returnKey.']) : (int)$conf['returnKey'];
+			return isset($valArr[$key]) ? $valArr[$key] : '';
+		}
+
+		// return the amount of elements. No further processing
+		if (!empty($valArr) && ($conf['returnCount'] || $conf['returnCount.'])) {
+			$returnCount = isset($conf['returnCount.']) ? (bool)$this->stdWrap($conf['returnCount'], $conf['returnCount.']) : (bool)$conf['returnCount'];
+			return $returnCount ? count($valArr) : 0;
+		}
+
+		// start further processing of the values
 		$conf['max'] = isset($conf['max.']) ? (int)$this->stdWrap($conf['max'], $conf['max.']) : (int)$conf['max'];
 		$conf['min'] = isset($conf['min.']) ? (int)$this->stdWrap($conf['min'], $conf['min.']) : (int)$conf['min'];
-		$valArr = explode($conf['token'], $value);
-		if (count($valArr) && (MathUtility::canBeInterpretedAsInteger($conf['returnKey']) || $conf['returnKey.'])) {
-			$key = isset($conf['returnKey.']) ? (int)$this->stdWrap($conf['returnKey'], $conf['returnKey.']) : (int)$conf['returnKey'];
-			$content = isset($valArr[$key]) ? $valArr[$key] : '';
-		} else {
-			// calculate splitCount
-			$splitCount = count($valArr);
-			$max = isset($conf['max.']) ? $this->stdWrap($conf['max'], $conf['max.']) : $conf['max'];
-			if ($max && $splitCount > $max) {
-				$splitCount = $max;
+
+		// calculate splitCount
+		$splitCount = count($valArr);
+		$max = isset($conf['max.']) ? $this->stdWrap($conf['max'], $conf['max.']) : $conf['max'];
+		if ($max && $splitCount > $max) {
+			$splitCount = $max;
+		}
+		$min = isset($conf['min.']) ? $this->stdWrap($conf['min'], $conf['min.']) : $conf['min'];
+		if ($min && $splitCount < $min) {
+			$splitCount = $min;
+		}
+		$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
+		$cObjNum = isset($conf['cObjNum.']) ? $this->stdWrap($conf['cObjNum'], $conf['cObjNum.']) : $conf['cObjNum'];
+		$splitArr = array();
+		if ($wrap || $cObjNum) {
+			$splitArr['wrap'] = $wrap;
+			$splitArr['cObjNum'] = $cObjNum;
+			$splitArr = $GLOBALS['TSFE']->tmpl->splitConfArray($splitArr, $splitCount);
+		}
+		$content = '';
+		for ($a = 0; $a < $splitCount; $a++) {
+			$GLOBALS['TSFE']->register['SPLIT_COUNT'] = $a;
+			$value = '' . $valArr[$a];
+			$this->data[$this->currentValKey] = $value;
+			if ($splitArr[$a]['cObjNum']) {
+				$objName = (int)$splitArr[$a]['cObjNum'];
+				$value = isset($conf[$objName . '.']) ? $this->stdWrap($this->cObjGet($conf[$objName . '.'], $objName . '.'), $conf[$objName . '.']) : $this->cObjGet($conf[$objName . '.'], $objName . '.');
 			}
-			$min = isset($conf['min.']) ? $this->stdWrap($conf['min'], $conf['min.']) : $conf['min'];
-			if ($min && $splitCount < $min) {
-				$splitCount = $min;
+			$wrap = isset($splitArr[$a]['wrap.']) ? $this->stdWrap($splitArr[$a]['wrap'], $splitArr[$a]['wrap.']) : $splitArr[$a]['wrap'];
+			if ($wrap) {
+				$value = $this->wrap($value, $wrap);
 			}
-			$wrap = isset($conf['wrap.']) ? $this->stdWrap($conf['wrap'], $conf['wrap.']) : $conf['wrap'];
-			$cObjNum = isset($conf['cObjNum.']) ? $this->stdWrap($conf['cObjNum'], $conf['cObjNum.']) : $conf['cObjNum'];
-			if ($wrap || $cObjNum) {
-				$splitArr = array();
-				$splitArr['wrap'] = $wrap;
-				$splitArr['cObjNum'] = $cObjNum;
-				$splitArr = $GLOBALS['TSFE']->tmpl->splitConfArray($splitArr, $splitCount);
-			}
-			$content = '';
-			for ($a = 0; $a < $splitCount; $a++) {
-				$GLOBALS['TSFE']->register['SPLIT_COUNT'] = $a;
-				$value = '' . $valArr[$a];
-				$this->data[$this->currentValKey] = $value;
-				if ($splitArr[$a]['cObjNum']) {
-					$objName = (int)$splitArr[$a]['cObjNum'];
-					$value = isset($conf[$objName . '.']) ? $this->stdWrap($this->cObjGet($conf[$objName . '.'], $objName . '.'), $conf[$objName . '.']) : $this->cObjGet($conf[$objName . '.'], $objName . '.');
-				}
-				$wrap = isset($splitArr[$a]['wrap.']) ? $this->stdWrap($splitArr[$a]['wrap'], $splitArr[$a]['wrap.']) : $splitArr[$a]['wrap'];
-				if ($wrap) {
-					$value = $this->wrap($value, $wrap);
-				}
-				$content .= $value;
-			}
+			$content .= $value;
 		}
 		return $content;
 	}
@@ -4861,8 +4878,7 @@ class ContentObjectRenderer {
 	/**
 	 * Implements the stdWrap property, "parseFunc".
 	 * This is a function with a lot of interesting uses. In classic TypoScript this is used to process text
-	 * from the bodytext field; This included highlighting of search words, changing http:// and mailto: prefixed strings into links,
-	 * parsing <typolist>, <typohead> and <typocode> tags etc.
+	 * from the bodytext field; This included highlighting of search words, changing http:// and mailto: prefixed strings into etc.
 	 * It is still a very important function for processing of bodytext which is normally stored in the database
 	 * in a format which is not fully ready to be outputted.
 	 * This situation has not become better by having a RTE around...
@@ -5964,10 +5980,10 @@ class ContentObjectRenderer {
 		$linkParameter = NULL;
 
 		// Link parameter value = first part
-		$linkParameterParts = GeneralUtility::unQuoteFilenames($mixedLinkParameter, TRUE);
+		$linkParameterParts = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($mixedLinkParameter);
 
 		// Check for link-handler keyword:
-		list($linkHandlerKeyword, $linkHandlerValue) = explode(':', trim($linkParameterParts[0]), 2);
+		list($linkHandlerKeyword, $linkHandlerValue) = explode(':', $linkParameterParts['url'], 2);
 		if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword] && (string)$linkHandlerValue !== '') {
 			$linkHandlerObj = GeneralUtility::getUserObj($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tslib/class.tslib_content.php']['typolinkLinkHandler'][$linkHandlerKeyword]);
 			if (method_exists($linkHandlerObj, 'main')) {
@@ -5976,7 +5992,7 @@ class ContentObjectRenderer {
 		}
 
 		// Resolve FAL-api "file:UID-of-sys_file-record" and "file:combined-identifier"
-		if ($linkHandlerKeyword === 'file' && !StringUtility::beginsWith($linkParameterParts[0], 'file://')) {
+		if ($linkHandlerKeyword === 'file' && !StringUtility::beginsWith($linkParameterParts['url'], 'file://')) {
 			try {
 				$fileOrFolderObject = $this->getResourceFactory()->retrieveFileOrFolderObject($linkHandlerValue);
 				// Link to a folder or file
@@ -5993,46 +6009,21 @@ class ContentObjectRenderer {
 				return $linkText;
 			}
 		} else {
-			$linkParameter = trim($linkParameterParts[0]);
-		}
-
-		// Target value = second Part (overriding the default target)
-		$linkTarget = trim($linkParameterParts[1]);
-		// The '-' character means 'no target'. Necessary in order to
-		// specify a class as third parameter without setting the target!
-		if ($linkTarget == '-') {
-			$linkTarget = '';
-		}
-
-		// Link class
-		$linkClass = trim($linkParameterParts[2]);
-
-		// The '-' character means 'no class'. Necessary in order to specify a
-		// title as fourth parameter without setting the target or class!
-		if ($linkClass == '-') {
-			$linkClass = '';
-		}
-
-		// Title value
-		$forceTitle = trim($linkParameterParts[3]);
-		// The '-' character means 'no title'. Necessary in order to specify
-		// further parameters without setting the title!
-		if ($forceTitle == '-') {
-			$forceTitle = '';
+			$linkParameter = $linkParameterParts['url'];
 		}
 
 		// additional parameters that need to be set
-		if (isset($linkParameterParts[4]) && trim($linkParameterParts[4]) !== "") {
-			$forceParams = trim($linkParameterParts[4]);
+		if ($linkParameterParts['additionalParams'] !== '') {
+			$forceParams = $linkParameterParts['additionalParams'];
 			// params value
 			$configuration['additionalParams'] .= $forceParams[0] == '&' ? $forceParams : '&' . $forceParams;
 		}
 
 		return array(
 			'href'   => $linkParameter,
-			'target' => $linkTarget,
-			'class'  => $linkClass,
-			'title'  => $forceTitle
+			'target' => $linkParameterParts['target'],
+			'class'  => $linkParameterParts['class'],
+			'title'  => $linkParameterParts['title']
 		);
 	}
 
@@ -6064,7 +6055,7 @@ class ContentObjectRenderer {
 		$urlChar = intval(strpos($linkParameter, '.'));
 
 		// Firsts, test if $linkParameter is numeric and page with such id exists. If yes, do not attempt to link to file
-		if (!MathUtility::canBeInterpretedAsInteger($linkParameter) || count($GLOBALS['TSFE']->sys_page->getPage_noCheck($linkParameter)) == 0) {
+		if (!MathUtility::canBeInterpretedAsInteger($linkParameter) || empty($GLOBALS['TSFE']->sys_page->getPage_noCheck($linkParameter))) {
 			// Detects if a file is found in site-root and if so it will be treated like a normal file.
 			list($rootFileDat) = explode('?', rawurldecode($linkParameter));
 			$containsSlash = (strpos($rootFileDat, '/') !== FALSE);
@@ -6189,7 +6180,7 @@ class ContentObjectRenderer {
 						$target = $forceTarget;
 					}
 					if ($linktxt == '') {
-						$linktxt = $linkParameter;
+						$linktxt = $this->parseFunc($linkParameter, array('makelinks' => 0), '< lib.parseFunc');
 					}
 					// Parse URL:
 					$urlParts = parse_url($linkParameter);
@@ -6221,7 +6212,7 @@ class ContentObjectRenderer {
 					// check if the file exists or if a / is contained (same check as in detectLinkType)
 					if (file_exists(rawurldecode($splitLinkParam[0])) || strpos($linkParameter, '/') !== FALSE) {
 						if ($linktxt == '') {
-							$linktxt = rawurldecode($linkParameter);
+							$linktxt = $this->parseFunc(rawurldecode($linkParameter), array('makelinks' => 0), '< lib.parseFunc');
 						}
 						if ($GLOBALS['TSFE']->config['config']['jumpurl_enable'] || $conf['jumpurl']) {
 							$theFileEnc = str_replace('%2F', '/', rawurlencode(rawurldecode($linkParameter)));
@@ -6261,7 +6252,7 @@ class ContentObjectRenderer {
 					if ($conf['no_cache.']) {
 						$conf['no_cache'] = $this->stdWrap($conf['no_cache'], $conf['no_cache.']);
 					}
-					// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/parameters triplet
+					// Splitting the parameter by ',' and if the array counts more than 1 element it's an id/type/parameters triplet
 					$pairParts = GeneralUtility::trimExplode(',', $linkParameter, TRUE);
 					$linkParameter = $pairParts[0];
 					$link_params_parts = explode('#', $linkParameter);
@@ -6296,7 +6287,7 @@ class ContentObjectRenderer {
 					}
 					// Looking up the page record to verify its existence:
 					$page = $GLOBALS['TSFE']->sys_page->getPage($linkParameter, $disableGroupAccessCheck);
-					if (count($page)) {
+					if (!empty($page)) {
 						// MointPoints, look for closest MPvar:
 						$MPvarAcc = array();
 						if (!$GLOBALS['TSFE']->config['config']['MP_disableTypolinkClosestMPvalue']) {
@@ -6309,7 +6300,7 @@ class ContentObjectRenderer {
 						$mount_info = $GLOBALS['TSFE']->sys_page->getMountPointInfo($page['uid'], $page);
 						if (is_array($mount_info) && $mount_info['overlay']) {
 							$page = $GLOBALS['TSFE']->sys_page->getPage($mount_info['mount_pid'], $disableGroupAccessCheck);
-							if (!count($page)) {
+							if (empty($page)) {
 								$GLOBALS['TT']->setTSlogMessage('typolink(): Mount point \'' . $mount_info['mount_pid'] . '\' was not available, so \'' . $linktxt . '\' was not linked.', 1);
 								return $linktxt;
 							}
@@ -6317,7 +6308,7 @@ class ContentObjectRenderer {
 						}
 						// Setting title if blank value to link:
 						if ($linktxt == '') {
-							$linktxt = $page['title'];
+							$linktxt = $this->parseFunc($page['title'], array('makelinks' => 0), '< lib.parseFunc');
 						}
 						// Query Params:
 						$addQueryParams = $conf['addQueryString'] ? $this->getQueryArguments($conf['addQueryString.']) : '';
@@ -6339,7 +6330,7 @@ class ContentObjectRenderer {
 						$targetDomain = '';
 						$currentDomain = $this->getEnvironmentVariable('HTTP_HOST');
 						// Mount pages are always local and never link to another domain
-						if (count($MPvarAcc)) {
+						if (!empty($MPvarAcc)) {
 							// Add "&MP" var:
 							$addQueryParams .= '&MP=' . rawurlencode(implode(',', $MPvarAcc));
 						} elseif (strpos($addQueryParams, '&MP=') === FALSE && $GLOBALS['TSFE']->config['config']['typolinkCheckRootline']) {
@@ -6358,7 +6349,7 @@ class ContentObjectRenderer {
 									$page = $GLOBALS['TSFE']->sys_page->getPage($page['shortcut'], $disableGroupAccessCheck);
 									$maxLoopCount--;
 								}
-								if (count($page) == 0 || $maxLoopCount == 0) {
+								if (empty($page) || $maxLoopCount == 0) {
 									// We revert if shortcut is broken or maximum number of loops is exceeded (indicates endless loop)
 									$page = $page2;
 								}
@@ -6443,12 +6434,12 @@ class ContentObjectRenderer {
 								unset($URLparamsArray['id']);
 								unset($URLparamsArray['type']);
 								// If there are no parameters left.... set the new url.
-								if (!count($URLparamsArray)) {
+								if (empty($URLparamsArray)) {
 									$this->lastTypoLinkUrl = $sectionMark;
 								}
 							}
 						}
-						// If link is to a access restricted page which should be redirected, then find new URL:
+						// If link is to an access restricted page which should be redirected, then find new URL:
 						if (empty($conf['linkAccessRestrictedPages']) && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] && $GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages'] !== 'NONE' && !$GLOBALS['TSFE']->checkPageGroupAccess($page)) {
 							$thePage = $GLOBALS['TSFE']->sys_page->getPage($GLOBALS['TSFE']->config['config']['typolinkLinkAccessRestrictedPages']);
 							$addParams = str_replace(
@@ -6492,14 +6483,14 @@ class ContentObjectRenderer {
 					$target = '';
 				}
 				$onClick = 'vHWin=window.open(' . GeneralUtility::quoteJSvalue($GLOBALS['TSFE']->baseUrlWrap($finalTagParts['url']), TRUE) . ',\'FEopenLink\',' . GeneralUtility::quoteJSvalue($JSwindowParams) . ');vHWin.focus();return false;';
-				$finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . $title . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
+				$finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"' . $target . ' onclick="' . htmlspecialchars($onClick) . '"' . ($title ? ' title="' . htmlspecialchars($title) . '"' : '') . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			} else {
 				if ($GLOBALS['TSFE']->spamProtectEmailAddresses === 'ascii' && $linkType === 'mailto') {
 					$finalAnchorTag = '<a href="' . $finalTagParts['url'] . '"';
 				} else {
 					$finalAnchorTag = '<a href="' . htmlspecialchars($finalTagParts['url']) . '"';
 				}
-				$finalAnchorTag .= ($title ? ' title="' . $title . '"' : '') . $finalTagParts['targetParams'] . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
+				$finalAnchorTag .= ($title ? ' title="' . htmlspecialchars($title) . '"' : '') . $finalTagParts['targetParams'] . ($linkClass ? ' class="' . $linkClass . '"' : '') . $finalTagParts['aTagParams'] . '>';
 			}
 
 			// Call user function:
@@ -6624,7 +6615,7 @@ class ContentObjectRenderer {
 			$conf['fileTarget'] = $target;
 		}
 		if (is_array($urlParameters)) {
-			if (count($urlParameters)) {
+			if (!empty($urlParameters)) {
 				$conf['additionalParams'] .= GeneralUtility::implodeArrayForUrl('', $urlParameters);
 			}
 		} else {
@@ -6731,7 +6722,7 @@ class ContentObjectRenderer {
 						// If two PIDs matches and this is NOT the site root, start accumulation of MP data (on the next level):
 						// (The check for site root is done so links to branches outsite the site but sharing the site roots PID
 						// is NOT detected as within the branch!)
-						if ($tCR_data['pid'] == $invTmplRLRec['pid'] && count($inverseTmplRootline) != $rlKey + 1) {
+						if ($tCR_data['pid'] == $invTmplRLRec['pid'] && count($inverseTmplRootline) !== $rlKey + 1) {
 							$startMPaccu = TRUE;
 						}
 					}
@@ -6740,7 +6731,7 @@ class ContentObjectRenderer {
 						break;
 					}
 				}
-				if (count($rl_mpArray)) {
+				if (!empty($rl_mpArray)) {
 					$MP = implode(',', array_reverse($rl_mpArray));
 				}
 			}
@@ -6898,14 +6889,14 @@ class ContentObjectRenderer {
 				if ($useDivTag) {
 					$content = '<div class="content-spacer spacer-before" style="height:' . $wrapBefore . 'px;"></div>' . $content;
 				} else {
-					$content = '<img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="1" height="' . $wrapBefore . '"' . $this->getBorderAttr(' border="0"') . ' class="spacer-gif" alt="" title="" /><br />' . $content;
+					$content = '<span style="width: 1px; height: ' . $wrapBefore . 'px; display: inline-block;"></span><br />' . $content;
 				}
 			}
 			if ($wrapAfter) {
 				if ($useDivTag) {
 					$content .= '<div class="content-spacer spacer-after" style="height:' . $wrapAfter . 'px;"></div>';
 				} else {
-					$content .= '<img src="' . $GLOBALS['TSFE']->absRefPrefix . 'clear.gif" width="1" height="' . $wrapAfter . '"' . $this->getBorderAttr(' border="0"') . ' class="spacer-gif" alt="" title="" /><br />';
+					$content .= '<span style="width: 1px; height: ' . $wrapAfter . 'px; display: inline-block;"></span><br />';
 				}
 			}
 		}
@@ -6925,7 +6916,7 @@ class ContentObjectRenderer {
 	public function callUserFunction($funcName, $conf, $content) {
 		// Split parts
 		$parts = explode('->', $funcName);
-		if (count($parts) == 2) {
+		if (count($parts) === 2) {
 			// Class
 			// Check whether class is available and try to reload includeLibs if possible:
 			if ($this->isClassAvailable($parts[0], $conf)) {
@@ -7068,7 +7059,7 @@ class ContentObjectRenderer {
 			$labels = str_replace('"', '', $labels);
 		}
 		$labelArr = explode('|', $labels);
-		if (count($labelArr) == 4) {
+		if (count($labelArr) === 4) {
 			$labelArr = array_merge($labelArr, $labelArr);
 		}
 		$absSeconds = abs($seconds);
@@ -7115,7 +7106,7 @@ class ContentObjectRenderer {
 		}
 		$mail->setFrom($sender);
 		$parsedReplyTo = MailUtility::parseAddresses($replyTo);
-		if (count($parsedReplyTo) > 0) {
+		if (!empty($parsedReplyTo)) {
 			$mail->setReplyTo($parsedReplyTo);
 		}
 		$message = trim($message);
@@ -7125,17 +7116,17 @@ class ContentObjectRenderer {
 			$subject = trim($messageParts[0]);
 			$plainMessage = trim($messageParts[1]);
 			$parsedRecipients = MailUtility::parseAddresses($recipients);
-			if (count($parsedRecipients) > 0) {
+			if (!empty($parsedRecipients)) {
 				$mail->setTo($parsedRecipients)
 					->setSubject($subject)
 					->setBody($plainMessage);
 				$mail->send();
 			}
 			$parsedCc = MailUtility::parseAddresses($cc);
-			if (count($parsedCc) > 0) {
+			if (!empty($parsedCc)) {
 				/** @var $mail MailMessage */
 				$mail = GeneralUtility::makeInstance(MailMessage::class);
-				if (count($parsedReplyTo) > 0) {
+				if (!empty($parsedReplyTo)) {
 					$mail->setReplyTo($parsedReplyTo);
 				}
 				$mail->setFrom($sender)
@@ -7189,7 +7180,6 @@ class ContentObjectRenderer {
 	 * @param array $confArr The TypoScript array
 	 * @param string $prop The property name: If this value is a reference (eg. " < plugins.tx_something") then the reference will be retrieved and inserted at that position (into the properties only, not the value...) AND overlaid with the old properties if any.
 	 * @return array The modified TypoScript array
-	 * @see user_plaintext::typolist(),user_plaintext::typohead()
 	 */
 	public function mergeTSRef($confArr, $prop) {
 		if ($confArr[$prop][0] === '<') {
@@ -7198,7 +7188,7 @@ class ContentObjectRenderer {
 			// $name and $conf is loaded with the referenced values.
 			$old_conf = $confArr[$prop . '.'];
 			list($name, $conf) = $cF->getVal($key, $GLOBALS['TSFE']->tmpl->setup);
-			if (is_array($old_conf) && count($old_conf)) {
+			if (is_array($old_conf) && !empty($old_conf)) {
 				$conf = is_array($conf) ? array_replace_recursive($conf, $old_conf) : $old_conf;
 			}
 			$confArr[$prop . '.'] = $conf;
@@ -7400,12 +7390,11 @@ class ContentObjectRenderer {
 			if ($GLOBALS['TCA'][$table]['ctrl']['tstamp']) {
 				$updateFields[$GLOBALS['TCA'][$table]['ctrl']['tstamp']] = $GLOBALS['EXEC_TIME'];
 			}
-			if (count($updateFields)) {
+			if (!empty($updateFields)) {
 				if ($doExec) {
 					return $GLOBALS['TYPO3_DB']->exec_UPDATEquery($table, 'uid=' . $uid, $updateFields);
-				} else {
-					return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . $uid, $updateFields);
 				}
+				return $GLOBALS['TYPO3_DB']->UPDATEquery($table, 'uid=' . $uid, $updateFields);
 			}
 		}
 	}
@@ -7546,7 +7535,7 @@ class ContentObjectRenderer {
 			$OR_arr[] = 'uid=' . (int)$feUserRow['uid'];
 		}
 		$whereDef = ' AND 1=0';
-		if (count($OR_arr)) {
+		if (!empty($OR_arr)) {
 			$whereDef = ' AND (' . implode(' OR ', $OR_arr) . ')';
 			if ($GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock']) {
 				$whereDef .= ' AND ' . $GLOBALS['TCA'][$table]['ctrl']['fe_admin_lock'] . '=0';
@@ -7823,7 +7812,7 @@ class ContentObjectRenderer {
 						$where_p[] = $prefixTableName . $field . ' LIKE \'%' . $val . '%\'';
 					}
 				}
-				if (count($where_p)) {
+				if (!empty($where_p)) {
 					$where .= ' AND (' . implode(' OR ', $where_p) . ')';
 				}
 			}
@@ -7843,6 +7832,52 @@ class ContentObjectRenderer {
 	public function exec_getQuery($table, $conf) {
 		$queryParts = $this->getQuery($table, $conf, TRUE);
 		return $GLOBALS['TYPO3_DB']->exec_SELECT_queryArray($queryParts);
+	}
+
+	/**
+	 * Executes a SELECT query for records from $table and with conditions based on the configuration in the $conf array
+	 * and overlays with translation and version if available
+	 *
+	 * @param array $configuration The TypoScript configuration properties
+	 * @return array The records
+	 */
+	public function getRecords(array $configuration) {
+		$records = [];
+
+		$res = $this->exec_getQuery($configuration['table'], $configuration['select.']);
+
+		if ($error = $GLOBALS['TYPO3_DB']->sql_error()) {
+			$GLOBALS['TT']->setTSlogMessage($error, 3);
+
+		} else {
+			while (($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) !== FALSE) {
+
+				// Versioning preview:
+				$GLOBALS['TSFE']->sys_page->versionOL($configuration['table'], $row, TRUE);
+
+				// Language overlay:
+				if (is_array($row) && $GLOBALS['TSFE']->sys_language_contentOL) {
+					if ($configuration['table'] === 'pages') {
+						$row = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
+					} else {
+						$row = $GLOBALS['TSFE']->sys_page->getRecordOverlay(
+							$configuration['table'],
+							$row,
+							$GLOBALS['TSFE']->sys_language_content,
+							$GLOBALS['TSFE']->sys_language_contentOL
+						);
+					}
+				}
+
+				// Might be unset in the sys_language_contentOL
+				if (is_array($row)) {
+					$records[] = $row;
+				}
+			}
+			$GLOBALS['TYPO3_DB']->sql_free_result($res);
+		}
+
+		return $records;
 	}
 
 	/**
@@ -8053,7 +8088,7 @@ class ContentObjectRenderer {
 				$listArr[] = -1;
 				$enableFieldsIgnore['pid'] = TRUE;
 			}
-			if (count($listArr)) {
+			if (!empty($listArr)) {
 				$query .= ' AND ' . $table . '.pid IN (' . implode(',', array_map('intval', $listArr)) . ')';
 				$pid_uid_flag++;
 			} else {
@@ -8069,18 +8104,25 @@ class ContentObjectRenderer {
 		if ($where) {
 			$query .= ' AND ' . $where;
 		}
-		if ($conf['languageField']) {
+
+		// Check if the table is translatable, and set the language field by default from the TCA information
+		$languageField = '';
+		if (!empty($conf['languageField']) || !isset($conf['languageField'])) {
+			if (isset($conf['languageField']) && !empty($GLOBALS['TCA'][$table]['columns'][$conf['languageField']])) {
+				$languageField = $conf['languageField'];
+			} elseif (!empty($GLOBALS['TCA'][$table]['ctrl']['languageField']) && !empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])) {
+				$languageField = $table . '.' . $GLOBALS['TCA'][$table]['ctrl']['languageField'];
+			}
+		}
+
+		if (!empty($languageField)) {
 			// The sys_language record UID of the content of the page
 			$sys_language_content = (int)$GLOBALS['TSFE']->sys_language_content;
 
-			if ($GLOBALS['TSFE']->sys_language_contentOL
-				&& isset($GLOBALS['TCA'][$table])
-				&& !empty($GLOBALS['TCA'][$table]['ctrl']['languageField'])
-				&& !empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])
-			) {
+			if ($GLOBALS['TSFE']->sys_language_contentOL && !empty($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])) {
 				// Sys language content is set to zero/-1 - and it is expected that whatever routine processes the output will
 				// OVERLAY the records with localized versions!
-				$languageQuery = $conf['languageField'] . ' IN (0,-1)';
+				$languageQuery = $languageField . ' IN (0,-1)';
 				// Use this option to include records that don't have a default translation
 				// (originalpointerfield is 0 and the language field contains the requested language)
 				$includeRecordsWithoutDefaultTranslation = isset($conf['includeRecordsWithoutDefaultTranslation.']) ?
@@ -8088,10 +8130,10 @@ class ContentObjectRenderer {
 					$conf['includeRecordsWithoutDefaultTranslation'];
 				if (!empty(trim($includeRecordsWithoutDefaultTranslation))) {
 					$languageQuery .= ' OR (' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . ' = 0 AND ' .
-						$conf['languageField'] . ' = ' . $sys_language_content . ')';
+						$languageField . ' = ' . $sys_language_content . ')';
 				}
 			} else {
-				$languageQuery = $conf['languageField'] . ' = ' . $sys_language_content;
+				$languageQuery = $languageField . ' = ' . $sys_language_content;
 			}
 			$query .= ' AND (' . $languageQuery . ')';
 		}
@@ -8115,6 +8157,7 @@ class ContentObjectRenderer {
 		// GROUP BY
 		if (trim($conf['groupBy'])) {
 			$queryParts['GROUPBY'] = isset($conf['groupBy.']) ? trim($this->stdWrap($conf['groupBy'], $conf['groupBy.'])) : trim($conf['groupBy']);
+			$query .= ' GROUP BY ' . $queryParts['GROUPBY'];
 		}
 		// ORDER BY
 		if (trim($conf['orderBy'])) {
@@ -8172,7 +8215,7 @@ class ContentObjectRenderer {
 	 */
 	public function checkPidArray($listArr) {
 		$outArr = array();
-		if (is_array($listArr) && count($listArr)) {
+		if (is_array($listArr) && !empty($listArr)) {
 			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery('uid', 'pages', 'uid IN (' . implode(',', $listArr) . ')' . $this->enableFields('pages') . ' AND doktype NOT IN (' . $this->checkPid_badDoktypeList . ')');
 			if ($error = $GLOBALS['TYPO3_DB']->sql_error()) {
 				$GLOBALS['TT']->setTSlogMessage($error . ': ' . $GLOBALS['TYPO3_DB']->debug_lastBuiltQuery, 3);
@@ -8294,7 +8337,7 @@ class ContentObjectRenderer {
 			if (!$currentRecord) {
 				$currentRecord = $this->currentRecord;
 			}
-			if (!count($dataArr)) {
+			if (empty($dataArr)) {
 				$dataArr = $this->data;
 			}
 			// Delegate rendering of the edit panel to the frontend edit
@@ -8320,7 +8363,7 @@ class ContentObjectRenderer {
 			if (!$currentRecord) {
 				$currentRecord = $this->currentRecord;
 			}
-			if (!count($dataArr)) {
+			if (empty($dataArr)) {
 				$dataArr = $this->data;
 			}
 			// Delegate rendering of the edit panel to frontend edit class.
@@ -8362,6 +8405,76 @@ class ContentObjectRenderer {
 	 */
 	protected function getEnvironmentVariable($key) {
 		return GeneralUtility::getIndpEnv($key);
+	}
+
+	/**
+	 * Fetches content from cache
+	 *
+	 * @param array $configuration Array
+	 * @return string|bool FALSE on cache miss
+	 * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
+	 */
+	protected function getFromCache(array $configuration) {
+		$content = FALSE;
+
+		$cacheKey = $this->calculateCacheKey($configuration);
+		if (!empty($cacheKey)) {
+			/** @var $cacheFrontend \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend */
+			$cacheFrontend = GeneralUtility::makeInstance(CacheManager::class)
+				->getCache('cache_hash');
+			$content = $cacheFrontend->get($cacheKey);
+		}
+		return $content;
+	}
+
+	/**
+	 * Calculates the lifetime of a cache entry based on the given configuration
+	 *
+	 * @param array $configuration
+	 * @return int|null
+	 */
+	protected function calculateCacheLifetime(array $configuration) {
+		$lifetimeConfiguration = isset($configuration['lifetime'])
+			? $configuration['lifetime']
+			: '';
+		$lifetimeConfiguration = isset($configuration['lifetime.'])
+			? $this->stdWrap($lifetimeConfiguration, $configuration['lifetime.'])
+			: $lifetimeConfiguration;
+
+		$lifetime = NULL; // default lifetime
+		if (strtolower($lifetimeConfiguration) === 'unlimited') {
+			$lifetime = 0; // unlimited
+		} elseif ($lifetimeConfiguration > 0) {
+			$lifetime = (int)$lifetimeConfiguration; // lifetime in seconds
+		}
+		return $lifetime;
+	}
+
+	/**
+	 * Calculates the tags for a cache entry bases on the given configuration
+	 *
+	 * @param array $configuration
+	 * @return array
+	 */
+	protected function calculateCacheTags(array $configuration) {
+		$tags = isset($configuration['tags']) ? $configuration['tags'] : '';
+		$tags = isset($configuration['tags.'])
+			? $this->stdWrap($tags, $configuration['tags.'])
+			: $tags;
+		return empty($tags) ? [] : GeneralUtility::trimExplode(',', $tags);
+	}
+
+	/**
+	 * Applies stdWrap to the cache key
+	 *
+	 * @param array $configuration
+	 * @return string
+	 */
+	protected function calculateCacheKey(array $configuration) {
+		$key = isset($configuration['key']) ? $configuration['key'] : '';
+		return isset($configuration['key.'])
+			? $this->stdWrap($key, $configuration['key.'])
+			: $key;
 	}
 
 }

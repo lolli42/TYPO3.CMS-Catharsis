@@ -19,11 +19,10 @@ use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Taskcenter\TaskInterface;
 
 /**
  * This class provides a taskcenter for BE users
- *
- * @author Georg Ringer <typo3@ringerge.org>
  */
 class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
@@ -41,11 +40,9 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
 	/**
 	 * Initializes the Module
-	 *
-	 * @return void
 	 */
 	public function __construct() {
-		$this->getLanguageService()->includeLLFile('EXT:taskcenter/task/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:taskcenter/Resources/Private/Language/locallang_task.xlf');
 		$this->MCONF = array(
 			'name' => $this->moduleName
 		);
@@ -54,8 +51,8 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate(ExtensionManagementUtility::extPath('taskcenter') . 'Resources/Private/Templates/mod_template.html');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->getPageRenderer()->loadJquery();
-		$this->doc->addStyleSheet('tx_taskcenter', '../' . ExtensionManagementUtility::siteRelPath('taskcenter') . 'Resources/Public/Styles/styles.css');
+		$this->getPageRenderer()->loadJquery();
+		$this->doc->addStyleSheet('tx_taskcenter', '../' . ExtensionManagementUtility::siteRelPath('taskcenter') . 'Resources/Public/Css/styles.css');
 	}
 
 	/**
@@ -65,8 +62,8 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 */
 	public function menuConfig() {
 		$this->MOD_MENU = array('mode' => array());
-		$this->MOD_MENU['mode']['information'] = $this->getLanguageService()->sL('LLL:EXT:taskcenter/locallang.xlf:task_overview');
-		$this->MOD_MENU['mode']['tasks'] =  $this->getLanguageService()->sL('LLL:EXT:taskcenter/locallang.xlf:task_tasks');
+		$this->MOD_MENU['mode']['information'] = $this->getLanguageService()->sL('LLL:EXT:taskcenter/Resources/Private/Language/locallang.xlf:task_overview');
+		$this->MOD_MENU['mode']['tasks'] =  $this->getLanguageService()->sL('LLL:EXT:taskcenter/Resources/Private/Language/locallang.xlf:task_tasks');
 		/* Copied from parent::menuConfig, because parent is hardcoded to menu.function,
 		 * however menu.function is already used for the individual tasks.
 		 * Therefore we use menu.mode here.
@@ -97,7 +94,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 			$this->renderModuleContent();
 		}
 		// Compile document
-		$markers['FUNC_MENU'] = \TYPO3\CMS\Backend\Utility\BackendUtility::getFuncMenu(0, 'SET[mode]', $this->MOD_SETTINGS['mode'], $this->MOD_MENU['mode']);
+		$markers['FUNC_MENU'] = BackendUtility::getFuncMenu(0, 'SET[mode]', $this->MOD_SETTINGS['mode'], $this->MOD_MENU['mode']);
 		$markers['CONTENT'] = $this->content;
 		// Build the <body> for the module
 		$this->content = $this->doc->moduleBody($this->pageinfo, $docHeaderButtons, $markers);
@@ -120,18 +117,17 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @return void
 	 */
 	protected function renderModuleContent() {
-		$title = ($content = ($actionContent = ''));
 		$chosenTask = (string)$this->MOD_SETTINGS['function'];
 		// Render the taskcenter task as default
 		if (empty($chosenTask) || $chosenTask == 'index') {
 			$chosenTask = 'taskcenter.tasks';
 		}
 		// Render the task
+		$actionContent = '';
 		list($extKey, $taskClass) = explode('.', $chosenTask, 2);
-		$title = $this->getLanguageService()->sL($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter'][$extKey][$taskClass]['title']);
 		if (class_exists($taskClass)) {
 			$taskInstance = GeneralUtility::makeInstance($taskClass, $this);
-			if ($taskInstance instanceof \TYPO3\CMS\Taskcenter\TaskInterface) {
+			if ($taskInstance instanceof TaskInterface) {
 				// Check if the task is restricted to admins only
 				if ($this->checkAccess($extKey, $taskClass)) {
 					$actionContent .= $taskInstance->getTask();
@@ -148,7 +144,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				// Error if the task is not an instance of \TYPO3\CMS\Taskcenter\TaskInterface
 				$flashMessage = GeneralUtility::makeInstance(
 					FlashMessage::class,
-					sprintf($this->getLanguageService()->getLL('error_no-instance', TRUE), $taskClass, \TYPO3\CMS\Taskcenter\TaskInterface::class),
+					sprintf($this->getLanguageService()->getLL('error_no-instance', TRUE), $taskClass, TaskInterface::class),
 					$this->getLanguageService()->getLL('error_header'),
 					FlashMessage::ERROR
 				);
@@ -157,8 +153,8 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		} else {
 			$flashMessage = GeneralUtility::makeInstance(
 				FlashMessage::class,
-				$this->getLanguageService()->sL('LLL:EXT:taskcenter/task/locallang_mod.xlf:mlang_labels_tabdescr'),
-				$this->getLanguageService()->sL('LLL:EXT:taskcenter/task/locallang_mod.xlf:mlang_tabs_tab'),
+				$this->getLanguageService()->sL('LLL:EXT:taskcenter/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tabdescr'),
+				$this->getLanguageService()->sL('LLL:EXT:taskcenter/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
 				FlashMessage::INFO
 			);
 			$actionContent .= $flashMessage->render();
@@ -177,7 +173,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	 * @return void
 	 */
 	protected function renderInformationContent() {
-		$content = $this->description($this->getLanguageService()->getLL('mlang_tabs_tab'), $this->getLanguageService()->sL('LLL:EXT:taskcenter/task/locallang_mod.xlf:mlang_labels_tabdescr'));
+		$content = $this->description($this->getLanguageService()->getLL('mlang_tabs_tab'), $this->getLanguageService()->sL('LLL:EXT:taskcenter/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tabdescr'));
 		$content .= $this->getLanguageService()->getLL('taskcenter-about');
 		if ($this->getBackendUser()->isAdmin()) {
 			$content .= '<br /><br />' . $this->description($this->getLanguageService()->getLL('taskcenter-adminheader'), $this->getLanguageService()->getLL('taskcenter-admin'));
@@ -220,7 +216,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		$count = 0;
 		// Change the sorting of items to the user's one
 		if ($mainMenu) {
-			$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Taskcenter/Taskcenter');
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Taskcenter/Taskcenter');
 			$userSorting = unserialize($this->getBackendUser()->uc['taskcenter']['sorting']);
 			if (is_array($userSorting)) {
 				$newSorting = array();
@@ -233,7 +229,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$items = $newSorting + $items;
 			}
 		}
-		if (is_array($items) && count($items) > 0) {
+		if (is_array($items) && !empty($items)) {
 			foreach ($items as $item) {
 				$title = htmlspecialchars($item['title']);
 				$icon = ($additionalClass = ($collapsedStyle = ''));
@@ -247,7 +243,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 							$icon = '<img src="' . $icon . '" title="' . $title . '" alt="' . $title . '" />';
 						}
 						if (@is_file($icon)) {
-							$icon = '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], $icon, 'width="16" height="16"') . ' title="' . $title . '" alt="' . $title . '" />';
+							$icon = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], $icon, 'width="16" height="16"') . ' title="' . $title . '" alt="' . $title . '" />';
 						}
 					} else {
 						$icon = $item['icon'];
@@ -272,10 +268,12 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$active = (string)$this->MOD_SETTINGS['function'] == $item['uid'] ? ' active-task' : '';
 				// Main menu: Render additional syntax to sort tasks
 				if ($mainMenu) {
-					$dragIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-move', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
+					$dragIcon = IconUtility::getSpriteIcon('actions-document-move', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
 					$section = '<div class="down">&nbsp;</div>
 								<div class="drag">' . $dragIcon . '</div>';
 					$backgroundClass = 't3-row-header ';
+				} else {
+					$backgroundClass = '';
 				}
 				$content .= '<li class="' . $additionalClass . $active . '" id="el_' . $id . '">
 								' . $section . '
@@ -299,9 +297,9 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	protected function indexAction() {
 		$content = '';
 		$tasks = array();
-		$icon = ExtensionManagementUtility::extRelPath('taskcenter') . 'Resources/Public/Icons/module-taskcenter.png';
+		$icon = ExtensionManagementUtility::extRelPath('taskcenter') . 'Resources/Public/Icons/module-taskcenter.svg';
 		// Render the tasks only if there are any available
-		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter']) && count($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter']) > 0) {
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter']) && !empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['taskcenter'] as $extKey => $extensionReports) {
 				foreach ($extensionReports as $taskClass => $task) {
 					if (!$this->checkAccess($extKey, $taskClass)) {
@@ -316,7 +314,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 					}
 					if (class_exists($taskClass)) {
 						$taskInstance = GeneralUtility::makeInstance($taskClass, $this);
-						if ($taskInstance instanceof \TYPO3\CMS\Taskcenter\TaskInterface) {
+						if ($taskInstance instanceof TaskInterface) {
 							$taskDescriptionHtml = $taskInstance->getOverview();
 						}
 					}
@@ -402,7 +400,7 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 	}
 
 	/**
-	 * Create a unique key from a string which can be used in Prototype's Sortable
+	 * Create a unique key from a string which can be used in JS for sorting
 	 * Therefore '_' are replaced
 	 *
 	 * @param string $string string which is used to generate the identifier

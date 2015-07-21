@@ -14,22 +14,21 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\View\PageTreeView;
-use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Workspaces\Service\WorkspaceService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
 /**
  * Main script class for the page tree navigation frame
  * This is the class for rendering the "page tree" navigation frame without ExtJS, used prior to TYPO3 CMS 4.5.
  * This functionality is deprecated since TYPO3 CMS 7, and will be removed with TYPO3 CMS 8
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class PageTreeNavigationController {
 
@@ -156,8 +155,8 @@ class PageTreeNavigationController {
 		// Adding javascript code for drag&drop and the pagetree as well as the click menu code
 		$this->doc->getDragDropCode('pages', $dragDropCode);
 		$this->doc->getContextMenuCode();
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $this->doc->getPageRenderer();
+		/** @var $pageRenderer PageRenderer */
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadExtJS();
 		$this->doc->JScode .= $this->doc->wrapScriptTags(($this->currentSubScript ? 'top.currentSubScript=unescape("' . rawurlencode($this->currentSubScript) . '");' : '') . '
 		// Function, loading the list frame from navigation tree:
@@ -234,7 +233,7 @@ class PageTreeNavigationController {
 		);
 		// New Page
 		$onclickNewPageWizard = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['pagesOnly' => 1, 'id' => ''])) . '+Tree.pageID;';
-		$buttons['new_page'] = '<a href="#" onclick="' . $onclickNewPageWizard . '" title="' . $this->getLanguageService()->sL('LLL:EXT:cms/layout/locallang.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
+		$buttons['new_page'] = '<a href="#" onclick="' . $onclickNewPageWizard . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
 		// Refresh
 		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.refresh', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
 		// CSH

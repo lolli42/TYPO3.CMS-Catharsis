@@ -19,8 +19,6 @@ use TYPO3\CMS\Install\Service\Exception;
 
 /**
  * Secure session handling for the install tool.
- *
- * @author Ernesto Baschny <ernst@cron-it.de>
  */
 class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -130,7 +128,20 @@ class SessionService implements \TYPO3\CMS\Core\SingletonInterface {
 					1294587484
 				);
 			}
-			GeneralUtility::writeFile($sessionSavePath . '/.htaccess', 'Order deny, allow' . LF . 'Deny from all');
+			$htaccessContent = '
+# Apache < 2.3
+<IfModule !mod_authz_core.c>
+	Order allow,deny
+	Deny from all
+	Satisfy All
+</IfModule>
+
+# Apache ≥ 2.3
+<IfModule mod_authz_core.c>
+	Require all denied
+</IfModule>
+			';
+			GeneralUtility::writeFile($sessionSavePath . '/.htaccess', $htaccessContent);
 			$indexContent = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">';
 			$indexContent .= '<HTML><HEAD<TITLE></TITLE><META http-equiv=Refresh Content="0; Url=../../">';
 			$indexContent .= '</HEAD></HTML>';

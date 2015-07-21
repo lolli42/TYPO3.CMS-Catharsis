@@ -75,6 +75,7 @@ class SingleFieldContainer extends AbstractContainer {
 		if (
 			$parameterArray['fieldConf']['exclude'] && !$backendUser->check('non_exclude_fields', $table . ':' . $fieldName)
 			|| $parameterArray['fieldConf']['config']['type'] === 'passthrough'
+			// @todo: Drop option "showIfRTE" ?
 			|| !$backendUser->isRTE() && $parameterArray['fieldConf']['config']['showIfRTE']
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && !$parameterArray['fieldConf']['l10n_display'] && $parameterArray['fieldConf']['l10n_mode'] === 'exclude' && ($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0)
 			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $this->globalOptions['localizationMode'] && $this->globalOptions['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
@@ -262,7 +263,7 @@ class SingleFieldContainer extends AbstractContainer {
 				$resultArray['additionalJavaScriptPost'][] = 'typo3form.fieldTogglePlaceholder('
 					. GeneralUtility::quoteJSvalue($parameterArray['itemFormElName']) . ', ' . ($checked ? 'false' : 'true') . ');';
 
-				// Renders a input or textarea field depending on type of "parent"
+				// Renders an input or textarea field depending on type of "parent"
 				$options = array();
 				$options['databaseRow'] = array();
 				$options['table'] = '';
@@ -420,7 +421,7 @@ class SingleFieldContainer extends AbstractContainer {
 	}
 
 	/**
-	 * Checks if the $table is the child of a inline type AND the $field is the label field of this table.
+	 * Checks if the $table is the child of an inline type AND the $field is the label field of this table.
 	 * This function is used to dynamically update the label while editing. This has no effect on labels,
 	 * that were processed by a FormEngine-hook on saving.
 	 *
@@ -438,7 +439,7 @@ class SingleFieldContainer extends AbstractContainer {
 		} else {
 			$label = $GLOBALS['TCA'][$table]['ctrl']['label'];
 		}
-		return $level['config']['foreign_table'] === $table && $label == $field ? TRUE : FALSE;
+		return $level['config']['foreign_table'] === $table && $label === $field;
 	}
 
 	/**
@@ -533,7 +534,7 @@ class SingleFieldContainer extends AbstractContainer {
 	protected function arrayCompareComplex($subjectArray, $searchArray, $type = '') {
 		$localMatches = 0;
 		$localEntries = 0;
-		if (is_array($searchArray) && count($searchArray)) {
+		if (is_array($searchArray) && !empty($searchArray)) {
 			// If no type was passed, try to determine
 			if (!$type) {
 				reset($searchArray);
@@ -577,7 +578,7 @@ class SingleFieldContainer extends AbstractContainer {
 			}
 		}
 		// Return the result for '%AND' (if nothing was checked, TRUE is returned)
-		return $localEntries == $localMatches ? TRUE : FALSE;
+		return $localEntries === $localMatches;
 	}
 
 	/**
@@ -587,7 +588,7 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @return bool Returns TRUE, if the object is an associative array
 	 */
 	protected function isAssociativeArray($object) {
-		return is_array($object) && count($object) && array_keys($object) !== range(0, sizeof($object) - 1) ? TRUE : FALSE;
+		return is_array($object) && !empty($object) && array_keys($object) !== range(0, sizeof($object) - 1);
 	}
 
 	/**

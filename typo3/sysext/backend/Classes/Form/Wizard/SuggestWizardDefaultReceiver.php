@@ -24,9 +24,6 @@ use TYPO3\CMS\Lang\LanguageService;
  *
  * Normally other implementations should be inherited from this one.
  * queryTable() should not be overwritten under normal circumstances.
- *
- * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
- * @author Benjamin Mack <benni@typo3.org>
  */
 class SuggestWizardDefaultReceiver {
 
@@ -209,7 +206,7 @@ class SuggestWizardDefaultReceiver {
 	 * @return void
 	 */
 	protected function prepareSelectStatement() {
-		$searchWholePhrase = $this->config['searchWholePhrase'];
+		$searchWholePhrase = !isset($this->config['searchWholePhrase']) || $this->config['searchWholePhrase'];
 		$searchString = $this->params['value'];
 		$searchUid = (int)$searchString;
 		if ($searchString !== '') {
@@ -231,9 +228,9 @@ class SuggestWizardDefaultReceiver {
 		if (isset($GLOBALS['TCA'][$this->table]['ctrl']['delete'])) {
 			$this->selectClause .= ' AND ' . $GLOBALS['TCA'][$this->table]['ctrl']['delete'] . ' = 0';
 		}
-		if (count($this->allowedPages)) {
+		if (!empty($this->allowedPages)) {
 			$pidList = $GLOBALS['TYPO3_DB']->cleanIntArray($this->allowedPages);
-			if (count($pidList)) {
+			if (!empty($pidList)) {
 				$this->selectClause .= ' AND pid IN (' . implode(', ', $pidList) . ') ';
 			}
 		}
@@ -261,7 +258,7 @@ class SuggestWizardDefaultReceiver {
 			++$level;
 			$pidList = $GLOBALS['TYPO3_DB']->cleanIntArray($pageIds);
 			$rows = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('uid', 'pages', 'pid IN (' . implode(', ', $pidList) . ')', '', '', '', 'uid');
-			if (count($rows) > 0) {
+			if (!empty($rows)) {
 				$pageIds = array_keys($rows);
 				$pages = array_merge($pages, $pageIds);
 			} else {

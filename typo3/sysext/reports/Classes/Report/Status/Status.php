@@ -20,8 +20,6 @@ use TYPO3\CMS\Reports\StatusProviderInterface;
 
 /**
  * The status report
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class Status implements ReportInterface {
 
@@ -35,7 +33,7 @@ class Status implements ReportInterface {
 	 */
 	public function __construct() {
 		$this->getStatusProviders();
-		$GLOBALS['LANG']->includeLLFile('EXT:reports/reports/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:reports/Resources/Private/Language/locallang_reports.xlf');
 	}
 
 	/**

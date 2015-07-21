@@ -19,9 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Controller class for frontend editing.
- *
- * @author Jeff Segars <jeff@webempoweredchurch.org>
- * @author David Slayback <dave@webempoweredchurch.org>
  */
 class FrontendEditingController {
 
@@ -92,7 +89,7 @@ class FrontendEditingController {
 		if ($GLOBALS['TSFE']->displayEditIcons && $table && $this->allowedToEdit($table, $dataArray, $conf, $checkEditAccessInternals) && $this->allowedToEditLanguage($table, $dataArray)) {
 			$editClass = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/classes/class.frontendedit.php']['edit'];
 			if ($editClass) {
-				$edit = GeneralUtility::getUserObj($editClass, FALSE);
+				$edit = GeneralUtility::getUserObj($editClass);
 				if (is_object($edit)) {
 					$allowedActions = $this->getAllowedEditActions($table, $conf, $dataArray['pid']);
 					$content = $edit->editPanel($content, $conf, $currentRecord, $dataArray, $table, $allowedActions, $newUid, $this->getHiddenFields($dataArray));
@@ -363,7 +360,7 @@ class FrontendEditingController {
 	 */
 	public function doDelete($table, $uid) {
 		$cmdData[$table][$uid]['delete'] = 1;
-		if (count($cmdData)) {
+		if (!empty($cmdData)) {
 			$this->initializeTceMain();
 			$this->tce->start(array(), $cmdData);
 			$this->tce->process_cmdmap();
@@ -480,11 +477,11 @@ class FrontendEditingController {
 				if ($table == 'pages') {
 					$allow = $this->getAllowedEditActions($table, $conf, $dataArray['pid'], $allow);
 					// Can only display editbox if there are options in the menu
-					if (count($allow)) {
+					if (!empty($allow)) {
 						$mayEdit = TRUE;
 					}
 				} else {
-					$mayEdit = count($allow) && $perms & Permission::CONTENT_EDIT;
+					$mayEdit = !empty($allow) && $perms & Permission::CONTENT_EDIT;
 				}
 			}
 		}
@@ -512,7 +509,7 @@ class FrontendEditingController {
 			$perms = $GLOBALS['BE_USER']->calcPerms($GLOBALS['TSFE']->page);
 			if ($table == 'pages') {
 				// Rootpage
-				if (count($GLOBALS['TSFE']->config['rootLine']) == 1) {
+				if (count($GLOBALS['TSFE']->config['rootLine']) === 1) {
 					unset($allow['move']);
 					unset($allow['hide']);
 					unset($allow['delete']);

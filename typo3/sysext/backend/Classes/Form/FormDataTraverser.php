@@ -21,9 +21,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Utility class for traversing related fields in the TCA.
- *
- * @author Sebastian Fischer <typo3@evoweb.de>
- * @author Alexander Stehlik <astehlik.deleteme@intera.de>
  */
 class FormDataTraverser {
 
@@ -86,7 +83,7 @@ class FormDataTraverser {
 		$this->currentRow = $row;
 		$this->inlineFirstPid = $inlineFirstPid;
 		$fieldValue = '';
-		if (count($fieldNameArray) > 0) {
+		if (!empty($fieldNameArray)) {
 			$this->initializeOriginalLanguageUid();
 			$fieldValue = $this->getFieldValueRecursive($fieldNameArray);
 		}
@@ -170,9 +167,10 @@ class FormDataTraverser {
 		}
 
 		$relatedRow = FALSE;
-		if (count($possibleUids) === 1) {
+		$possibleUidsCount = count($possibleUids);
+		if ($possibleUidsCount === 1) {
 			$relatedRow = $this->getRecordRow($possibleUids[0]);
-		} elseif (count($possibleUids) > 1) {
+		} elseif ($possibleUidsCount > 1) {
 			$relatedRow = $this->getMatchingRecordRowByTranslation($possibleUids, $fieldConfig);
 		}
 
@@ -208,7 +206,7 @@ class FormDataTraverser {
 			$relatedUids[] = $foreignUid;
 		}
 
-		if (count($relatedUids) > 0) {
+		if (!empty($relatedUids)) {
 			$this->currentTable = $allowedTable;
 		}
 

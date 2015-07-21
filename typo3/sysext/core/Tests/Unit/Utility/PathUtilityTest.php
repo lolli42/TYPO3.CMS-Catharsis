@@ -17,8 +17,6 @@ use TYPO3\CMS\Core\Tests\Unit\Utility\Fixtures\WindowsPathUtilityFixture;
 
 /**
  * Testcase for class \TYPO3\CMS\Core\Utility\PathUtility
- *
- * @author Oliver Hader <oliver.hader@typo3.org>
  */
 class PathUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -70,7 +68,6 @@ class PathUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					'/var/www/myhost.com/uploads/directory/',
 					'/var/www/myhost.com/typo3/sysext/',
-					'/var/www/myhost.com/typo3/contrib/',
 					'/var/www/myhost.com/t3lib/utility/'
 				),
 				'/var/www/myhost.com/'
@@ -107,7 +104,6 @@ class PathUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				array(
 					'C:\\www\\myhost.com\\uploads\\directory\\',
 					'C:\\www\\myhost.com\\typo3\\sysext\\',
-					'C:\\www\\myhost.com\\typo3\\contrib\\',
 					'C:\\www\\myhost.com\\t3lib\\utility\\'
 				),
 				'C:/www/myhost.com/'
@@ -158,7 +154,7 @@ class PathUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'stddb/'
 			),
 			array(
-				PATH_site . 'typo3/sysext/cms/',
+				PATH_site . 'typo3/sysext/frontend/',
 				PATH_site . 't3lib/utility/',
 				'../../../t3lib/utility/'
 			),

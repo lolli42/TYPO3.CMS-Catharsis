@@ -18,9 +18,6 @@ namespace TYPO3\CMS\Scheduler\Task;
  * This is the base class for all Scheduler tasks
  * It's an abstract class, not designed to be instantiated directly
  * All Scheduler tasks should inherit from this class
- *
- * @author François Suter <francois@typo3.org>
- * @author Christian Jul Jensen <julle@typo3.org>
  */
 abstract class AbstractTask {
 
@@ -417,7 +414,7 @@ abstract class AbstractTask {
 				$runningExecutions = unserialize($row['serialized_executions']);
 				// Remove the selected execution
 				unset($runningExecutions[$executionID]);
-				if (count($runningExecutions) > 0) {
+				if (!empty($runningExecutions)) {
 					// Re-serialize the updated executions list (if necessary)
 					$runningExecutionsSerialized = serialize($runningExecutions);
 				} else {

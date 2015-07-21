@@ -2,23 +2,21 @@
 # "Typical" Page TSconfig for htmlArea RTE and Classic RTE
 #
 # Sets Page TSConfig with most commonly used features representing a good start for typical sites.
-#
-# @author	Stanislas Rolland <typo3(arobas)sjbr.ca>
 # ***************************************************************************************
 
 	## Define labels and styles to be applied to class selectors in the interface of the RTE
 	## The examples included here make partial re-use of color scheme and frame scheme from CSS Styled Content extension
 RTE.classes {
 	align-left {
-		name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifyleft
+		name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifyleft
 		value = text-align: left;
 	}
 	align-center {
-		name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifycenter
+		name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifycenter
 		value = text-align: center;
 	}
 	align-right {
-		name = LLL:EXT:rtehtmlarea/htmlarea/locallang_tooltips.xlf:justifyright
+		name = LLL:EXT:rtehtmlarea/Resources/Private/Language/locallang_tooltips.xlf:justifyright
 		value = text-align: right;
 	}
 	csc-frame-frame1 {
@@ -176,4 +174,3 @@ RTE.default.FE.showStatusBar = 0
 RTE.default.FE.hideButtons = chMode, blockstyle, textstyle, underline, strikethrough, subscript, superscript, lefttoright, righttoleft, left, center, right, justifyfull, table, inserttag, findreplace, removeformat, copy, cut, paste
 RTE.default.FE.FE >
 RTE.default.FE.userElements >
-RTE.default.FE.userLinks >

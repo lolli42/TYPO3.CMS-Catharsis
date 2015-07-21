@@ -1,0 +1,25 @@
+{
+	"name": "typo3/cms-compatibility6",
+	"type": "typo3-cms-extension",
+	"description": "TYPO3 Core",
+	"homepage": "http://typo3.org",
+	"license": ["GPL-2.0+"],
+	"version": "7.4.0",
+
+	"require": {
+		"typo3/cms-core": "*"
+	},
+	"replace": {
+		"compatibility6": "*"
+	},
+	"extra": {
+		"class-alias-maps": [
+			"Migrations/Code/ClassAliasMap.php"
+		]
+	},
+	"autoload": {
+		"psr-4": {
+			"TYPO3\\CMS\\Compatibility6\\": "Classes/"
+		}
+	}
+}

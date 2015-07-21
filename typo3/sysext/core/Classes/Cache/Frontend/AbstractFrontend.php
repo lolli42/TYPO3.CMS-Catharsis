@@ -23,9 +23,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * An abstract cache
  *
  * This file is a backport from FLOW3
- *
- * @author Robert Lemke <robert@typo3.org>
- * @author Karsten Dambekalns <karsten@typo3.org>
  * @api
  */
 abstract class AbstractFrontend implements FrontendInterface {
@@ -45,7 +42,7 @@ abstract class AbstractFrontend implements FrontendInterface {
 	/**
 	 * Constructs the cache
 	 *
-	 * @param string $identifier A identifier which describes this cache
+	 * @param string $identifier An identifier which describes this cache
 	 * @param BackendInterface $backend Backend to be used for this cache
 	 * @throws \InvalidArgumentException if the identifier doesn't match PATTERN_ENTRYIDENTIFIER
 	 */

@@ -215,6 +215,7 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'actions-edit-merge-localization',
 	'actions-edit-pick-date',
 	'actions-edit-rename',
+	'actions-edit-replace',
 	'actions-edit-restore',
 	'actions-edit-undelete-edit',
 	'actions-edit-undo',
@@ -496,25 +497,12 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'status-version-no-version',
 	'status-warning-in-use',
 	'status-warning-lock',
-	'treeline-blank',
-	'treeline-join',
-	'treeline-joinbottom',
-	'treeline-jointop',
-	'treeline-line',
-	'treeline-minus',
-	'treeline-minusbottom',
-	'treeline-minusonly',
-	'treeline-minustop',
-	'treeline-plus',
-	'treeline-plusbottom',
-	'treeline-plusonly',
-	'treeline-stopper',
 	'module-web',
 	'module-file',
 	'module-system',
 	'module-tools',
 	'module-user',
-	'module-help',
+	'module-help'
 );
 
 
@@ -582,5 +570,13 @@ if (TYPO3_MODE === 'BE' || TYPO3_MODE === 'FE' && isset($GLOBALS['BE_USER'])) {
 		$flagIcons[] = 'flags-' . $flagName . '-overlay';
 	}
 	\TYPO3\CMS\Backend\Sprite\SpriteManager::addIconSprite($flagIcons);
+
+	$GLOBALS['TBE_STYLES']['skins']['core'] = array(
+		'name' => 'core',
+		'stylesheetDirectories' => array(
+			'css' => 'EXT:core/Resources/Public/Css/'
+		)
+	);
+
 	unset($flagNames, $flagName, $flagIcons);
 }

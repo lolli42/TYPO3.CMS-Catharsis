@@ -16,11 +16,10 @@ namespace TYPO3\CMS\Form\Domain\Model\Element;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Filter\FilterInterface;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Abstract for the form elements
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 abstract class AbstractElement {
 
@@ -351,7 +350,7 @@ abstract class AbstractElement {
 	 */
 	protected function createAttributes() {
 		$className = \TYPO3\CMS\Form\Domain\Model\Attribute\AttributesAttribute::class;
-		$this->attributes = GeneralUtility::makeInstance($className, $this->elementId);
+		$this->attributes = ObjectFactory::createFormObject($className, $this->elementId);
 	}
 
 	/**
@@ -455,8 +454,7 @@ abstract class AbstractElement {
 	 * @return void
 	 */
 	protected function createAdditional() {
-		$className = \TYPO3\CMS\Form\Domain\Model\Additional\AdditionalAdditionalElement::class;
-		$this->additional = GeneralUtility::makeInstance($className);
+		$this->additional = GeneralUtility::makeInstance(\TYPO3\CMS\Form\Domain\Model\Additional\AdditionalAdditionalElement::class);
 	}
 
 	/**

@@ -16,14 +16,13 @@ namespace TYPO3\CMS\IndexedSearch\Controller;
 
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Index search frontend
  *
  * Creates a searchform for indexed search. Indexing must be enabled
  * for this to make sense.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 
@@ -33,14 +32,6 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @var string
 	 */
 	public $prefixId = 'tx_indexedsearch';
-
-	/**
-	 * Path to this script relative to the extension dir.
-	 *
-	 * @var string
-	 * @TODO This is still set to the "old" class location since the locallang.xlf file in the same dir is loaded by pi_loadLL
-	 */
-	public $scriptRelPath = 'pi/class.tx_indexedsearch.php';
 
 	/**
 	 * Extension key.
@@ -165,6 +156,9 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public $indexerConfig = array();
 
+	/**
+	 * @var bool
+	 */
 	public $enableMetaphoneSearch = FALSE;
 
 	public $storeMetaphoneInfoAsWords;
@@ -188,7 +182,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function main($content, $conf) {
 		// Initialize:
 		$this->conf = $conf;
-		$this->pi_loadLL();
+		$this->LOCAL_LANG = $this->getLanguageService()->includeLLFile('EXT:indexed_search/Resources/Private/Language/locallang_pi.xlf' , FALSE, TRUE);
 		$this->pi_setPiVarDefaults();
 		// Initialize:
 		$this->initialize();
@@ -210,7 +204,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	public function initialize() {
 		// Indexer configuration from Extension Manager interface:
 		$this->indexerConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['indexed_search']);
-		$this->enableMetaphoneSearch = $this->indexerConfig['enableMetaphoneSearch'] ? TRUE : FALSE;
+		$this->enableMetaphoneSearch = (bool)$this->indexerConfig['enableMetaphoneSearch'];
 		$this->storeMetaphoneInfoAsWords = !\TYPO3\CMS\IndexedSearch\Utility\IndexedSearchUtility::isTableUsed('index_words');
 		// Initialize external document parsers for icon display and other soft operations
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['indexed_search']['external_parsers'])) {
@@ -671,7 +665,8 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 				$this->internal['res_count'] = $resData['count'];
 				$this->internal['results_at_a_time'] = $this->piVars['results'];
 				$this->internal['maxPages'] = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($this->conf['search.']['page_links'], 1, 100, 10);
-				$addString = $resData['count'] && $this->piVars['group'] == 'sections' && $freeIndexUid <= 0 ? ' ' . sprintf($this->pi_getLL((count($this->resultSections) > 1 ? 'inNsections' : 'inNsection')), count($this->resultSections)) : '';
+				$resultSectionsCount = count($this->resultSections);
+				$addString = $resData['count'] && $this->piVars['group'] == 'sections' && $freeIndexUid <= 0 ? ' ' . sprintf($this->pi_getLL(($resultSectionsCount > 1 ? 'inNsections' : 'inNsection')), $resultSectionsCount) : '';
 				$browseBox1 = $this->pi_list_browseresults(1, $addString, $this->printResultSectionLinks(), $freeIndexUid);
 				$browseBox2 = $this->pi_list_browseresults(0, '', '', $freeIndexUid);
 			}
@@ -753,9 +748,10 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 						} else {
 							$sectionTitleLinked = htmlspecialchars($sectionName);
 						}
-						$this->resultSections[$id] = array($sectionName, count($resultRows));
+						$resultRowsCount = count($resultRows);
+						$this->resultSections[$id] = array($sectionName, $resultRowsCount);
 						// Add content header:
-						$content .= $this->makeSectionHeader($id, $sectionTitleLinked, count($resultRows));
+						$content .= $this->makeSectionHeader($id, $sectionTitleLinked, $resultRowsCount);
 						// Render result rows:
 						$resultlist = '';
 						foreach ($resultRows as $row) {
@@ -1484,7 +1480,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return 	string
 	 */
 	public function printResultSectionLinks() {
-		if (count($this->resultSections)) {
+		if (!empty($this->resultSections)) {
 			$lines = array();
 			$html = $this->cObj->getSubpart($this->templateCode, '###RESULT_SECTION_LINKS###');
 			$item = $this->cObj->getSubpart($this->templateCode, '###RESULT_SECTION_LINKS_LINK###');
@@ -2087,7 +2083,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 * @return string <img> tag if access is limited.
 	 */
 	public function makeAccessIndication($id) {
-		if (is_array($this->fe_groups_required[$id]) && count($this->fe_groups_required[$id])) {
+		if (is_array($this->fe_groups_required[$id]) && !empty($this->fe_groups_required[$id])) {
 			return '<img src="' . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::siteRelPath('indexed_search') . 'pi/res/locked.gif" width="12" height="15" vspace="5" title="' . sprintf($this->pi_getLL('res_memberGroups', '', TRUE), implode(',', array_unique($this->fe_groups_required[$id]))) . '" alt="" />';
 		}
 	}
@@ -2121,15 +2117,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$this->getPathFromPageId($id);
 		}
 		// If external domain, then link to that:
-		if (count($this->domain_records[$id])) {
+		if (!empty($this->domain_records[$id])) {
 			reset($this->domain_records[$id]);
 			$firstDom = current($this->domain_records[$id]);
 			$scheme = GeneralUtility::getIndpEnv('TYPO3_SSL') ? 'https://' : 'http://';
 			$addParams = '';
-			if (is_array($urlParameters)) {
-				if (count($urlParameters)) {
-					$addParams .= GeneralUtility::implodeArrayForUrl('', $urlParameters);
-				}
+			if (is_array($urlParameters) && !empty($urlParameters)) {
+				$addParams .= GeneralUtility::implodeArrayForUrl('', $urlParameters);
 			}
 			if ($target = $this->conf['search.']['detect_sys_domain_records.']['target']) {
 				$target = ' target="' . $target . '"';
@@ -2182,7 +2176,7 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 			$rl = $this->getRootLine($id, $pathMP);
 			$hitRoot = 0;
 			$path = '';
-			if (is_array($rl) && count($rl)) {
+			if (is_array($rl) && !empty($rl)) {
 				foreach ($rl as $k => $v) {
 					// Check fe_user
 					if ($v['fe_group'] && ($v['uid'] == $id || $v['extendToSubpages'])) {
@@ -2369,5 +2363,13 @@ class SearchFormController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 	 */
 	public function getJoinPagesForQuery() {
 		return (bool)$this->join_pages;
+	}
+
+	/**
+	 * Returns the Language Service
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 }

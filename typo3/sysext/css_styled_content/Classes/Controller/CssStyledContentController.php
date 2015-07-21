@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 /**
  * Plugin class - instantiated from TypoScript.
  * Rendering some content elements from tt_content table.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlugin {
 
@@ -257,7 +255,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			// Explode into an array:
 			$fileArray = GeneralUtility::trimExplode(',', $fileList, TRUE);
 			// If there were files to list...:
-			if (count($fileArray)) {
+			if (!empty($fileArray)) {
 				// Get the descriptions for the files (if any):
 				$descriptions = GeneralUtility::trimExplode(LF, $this->cObj->data['imagecaption']);
 				// Get the titles for the files (if any)
@@ -449,8 +447,6 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 	 * @param string $content Content input. Not used, ignore.
 	 * @param array $conf TypoScript configuration. See TSRef "IMGTEXT". This function aims to be compatible.
 	 * @return string HTML output.
-	 * @coauthor Ernesto Baschny <ernst@cron-it.de>
-	 * @coauthor Patrick Broens <patrick@patrickbroens.nl>
 	 */
 	public function render_textpic($content, $conf) {
 		// Look for hook before running default code for function
@@ -484,7 +480,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 			return $content;
 		}
 		$imgs = GeneralUtility::trimExplode(',', $imgList, TRUE);
-		if (count($imgs) === 0) {
+		if (empty($imgs)) {
 			// The imgList was not empty but did only contain empty values
 			if ($restoreRegisters) {
 				$this->cObj->cObjGetSingle('RESTORE_REGISTER', array());
@@ -994,7 +990,7 @@ class CssStyledContentController extends \TYPO3\CMS\Frontend\Plugin\AbstractPlug
 					}
 					$this->frontendController->register['columnwidth'] = $maxImageSpace + $tmpColspacing;
 					// Close this row at the end (colCount), or the last row at the final end
-					if ($separateRows && $i + 1 == count($imgsTag)) {
+					if ($separateRows && $i + 1 === count($imgsTag)) {
 						// Close the very last row with either normal configuration or lastRow stdWrap
 						$allRows .= $this->cObj->stdWrap(
 							$thisRow,

@@ -22,9 +22,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Class for handling backend live search.
- *
- * @author Michael Klapper <michael.klapper@aoemedia.de>
- * @author Jeff Segars <jeff@webempoweredchurch.org>
  */
 class LiveSearch {
 
@@ -151,6 +148,10 @@ class LiveSearch {
 		$limit = $this->limitCount;
 		$getRecordArray = array();
 		foreach ($GLOBALS['TCA'] as $tableName => $value) {
+			// if no access for the table (read or write), skip this table
+			if (!$GLOBALS['BE_USER']->check('tables_select', $tableName) && !$GLOBALS['BE_USER']->check('tables_modify', $tableName) ){
+				continue;
+			}
 			$recordArray = $this->findByTable($tableName, $pageIdList, '0,' . $limit);
 			$recordCount = count($recordArray);
 			if ($recordCount) {
@@ -179,7 +180,7 @@ class LiveSearch {
 	protected function findByTable($tableName, $pageIdList, $limit) {
 		$fieldsToSearchWithin = $this->extractSearchableFieldsFromTable($tableName);
 		$getRecordArray = array();
-		if (count($fieldsToSearchWithin) > 0) {
+		if (!empty($fieldsToSearchWithin)) {
 			$pageBasedPermission = $tableName == 'pages' && $this->userPermissions ? $this->userPermissions : '1=1 ';
 			$where = 'pid IN (' . $pageIdList . ') AND ' . $pageBasedPermission . $this->makeQuerySearchByTable($tableName, $fieldsToSearchWithin);
 			$getRecordArray = $this->getRecordArray($tableName, $where, $this->makeOrderByTable($tableName), $limit);
@@ -215,9 +216,9 @@ class LiveSearch {
 			$collect[] = array(
 				'id' => $tableName . ':' . $row['uid'],
 				'pageId' => $tableName === 'pages' ? $row['uid'] : $row['pid'],
-				'recordTitle' => $isFirst ? $this->getRecordTitlePrep($this->getTitleOfCurrentRecordType($tableName), self::GROUP_TITLE_MAX_LENGTH) : '',
+				'typeLabel' =>  $this->getTitleOfCurrentRecordType($tableName),
 				'iconHTML' => IconUtility::getSpriteIconForRecord($tableName, $row, array('title' => 'id=' . $row['uid'] . ', pid=' . $row['pid'])),
-				'title' => $this->getRecordTitlePrep(BackendUtility::getRecordTitle($tableName, $row), self::RECORD_TITLE_MAX_LENGTH),
+				'title' => BackendUtility::getRecordTitle($tableName, $row),
 				'editLink' => $this->getEditLink($tableName, $row)
 			);
 			$isFirst = FALSE;
@@ -334,7 +335,7 @@ class LiveSearch {
 			}
 		}
 		// If at least one condition was defined, create the search query
-		if (count($whereParts) > 0) {
+		if (!empty($whereParts)) {
 			$queryPart = ' AND (' . implode(' OR ', $whereParts) . ')';
 			// And the relevant conditions for deleted and versioned records
 			$queryPart .= BackendUtility::deleteClause($tableName);
@@ -438,7 +439,6 @@ class LiveSearch {
 	 * @return string Comma separated list of uids
 	 */
 	protected function getAvailablePageIds($id, $depth) {
-		$idList = '';
 		$tree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\PageTreeView::class);
 		$tree->init('AND ' . $this->userPermissions);
 		$tree->makeHTML = 0;

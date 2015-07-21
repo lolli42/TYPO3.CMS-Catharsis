@@ -16,14 +16,13 @@ namespace TYPO3\CMS\Core\TypoScript\Parser;
 
 use TYPO3\CMS\Core\TimeTracker\TimeTracker;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\TypoScript\ExtendedTemplateService;
 
 /**
  * The TypoScript parser
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class TypoScriptParser {
 
@@ -544,7 +543,7 @@ class TypoScriptParser {
 			case 'removeFromList':
 				$existingElements = GeneralUtility::trimExplode(',', $currentValue);
 				$removeElements = GeneralUtility::trimExplode(',', $modifierArgument);
-				if (count($removeElements)) {
+				if (!empty($removeElements)) {
 					$newValue = implode(',', array_diff($existingElements, $removeElements));
 				}
 				break;
@@ -579,7 +578,7 @@ class TypoScriptParser {
 				} else {
 					GeneralUtility::sysLog(
 						'Missing function definition for ' . $modifierName . ' on TypoScript',
-						'Core',
+						'core',
 						GeneralUtility::SYSLOG_SEVERITY_WARNING
 					);
 				}
@@ -779,7 +778,7 @@ class TypoScriptParser {
 	static public function checkIncludeLines($string, $cycle_counter = 1, $returnFiles = FALSE, $parentFilenameOrPath = '') {
 		$includedFiles = array();
 		if ($cycle_counter > 100) {
-			GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+			GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 			if ($returnFiles) {
 				return array(
 					'typoscript' => '',
@@ -977,7 +976,7 @@ class TypoScriptParser {
 	 * @static
 	 */
 	static protected function typoscriptIncludeError($error) {
-		GeneralUtility::sysLog($error, 'Core', 2);
+		GeneralUtility::sysLog($error, 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 		return "\n###\n### ERROR: " . $error . "\n###\n\n";
 	}
 
@@ -1009,7 +1008,7 @@ class TypoScriptParser {
 	 */
 	static public function extractIncludes($string, $cycle_counter = 1, array $extractedFileNames = array(), $parentFilenameOrPath = '') {
 		if ($cycle_counter > 10) {
-			GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+			GeneralUtility::sysLog('It appears like TypoScript code is looping over itself. Check your templates for "&lt;INCLUDE_TYPOSCRIPT: ..." tags', 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 			return '
 ###
 ### ERROR: Recursion!
@@ -1134,7 +1133,7 @@ class TypoScriptParser {
 					// an additional empty line, remove this again
 					$skipNextLineIfEmpty = TRUE;
 				} else {
-					// If this is not a ending commented include statement this line goes into the file content
+					// If this is not an ending commented include statement this line goes into the file content
 					$fileContent[] = $line;
 				}
 			}
@@ -1249,7 +1248,7 @@ class TypoScriptParser {
 				$lineC .= $this->highLightStyles['error'][0] . '<strong> - ERROR:</strong> ' . htmlspecialchars(implode(';', $errA[$rawP])) . $this->highLightStyles['error'][1];
 			}
 			if ($highlightBlockMode && $this->highLightData_bracelevel[$rawP]) {
-				$lineC = str_pad('', $this->highLightData_bracelevel[$rawP] * 2, ' ', STR_PAD_LEFT) . '<span style="' . $this->highLightBlockStyles . ($this->highLightBlockStyles_basecolor ? 'background-color: ' . GeneralUtility::modifyHTMLColorAll($this->highLightBlockStyles_basecolor, -$this->highLightData_bracelevel[$rawP] * 16) : '') . '">' . ($lineC !== '' ? $lineC : '&nbsp;') . '</span>';
+				$lineC = str_pad('', $this->highLightData_bracelevel[$rawP] * 2, ' ', STR_PAD_LEFT) . '<span style="' . $this->highLightBlockStyles . ($this->highLightBlockStyles_basecolor ? 'background-color: ' . $this->modifyHTMLColorAll($this->highLightBlockStyles_basecolor, -$this->highLightData_bracelevel[$rawP] * 16) : '') . '">' . ($lineC !== '' ? $lineC : '&nbsp;') . '</span>';
 			}
 			if (is_array($lineNumDat)) {
 				$lineNum = $rawP + $lineNumDat[0];
@@ -1270,4 +1269,34 @@ class TypoScriptParser {
 		return isset($GLOBALS['TT']) ? $GLOBALS['TT'] : NULL;
 	}
 
+
+	/**
+	 * Modifies a HTML Hex color by adding/subtracting $R,$G and $B integers
+	 *
+	 * @param string $color A hexadecimal color code, #xxxxxx
+	 * @param int $R Offset value 0-255
+	 * @param int $G Offset value 0-255
+	 * @param int $B Offset value 0-255
+	 * @return string A hexadecimal color code, #xxxxxx, modified according to input vars
+	 * @see modifyHTMLColorAll()
+	 */
+	protected function modifyHTMLColor($color, $R, $G, $B) {
+		// This takes a hex-color (# included!) and adds $R, $G and $B to the HTML-color (format: #xxxxxx) and returns the new color
+		$nR = MathUtility::forceIntegerInRange(hexdec(substr($color, 1, 2)) + $R, 0, 255);
+		$nG = MathUtility::forceIntegerInRange(hexdec(substr($color, 3, 2)) + $G, 0, 255);
+		$nB = MathUtility::forceIntegerInRange(hexdec(substr($color, 5, 2)) + $B, 0, 255);
+		return '#' . substr(('0' . dechex($nR)), -2) . substr(('0' . dechex($nG)), -2) . substr(('0' . dechex($nB)), -2);
+	}
+
+	/**
+	 * Modifies a HTML Hex color by adding/subtracting $all integer from all R/G/B channels
+	 *
+	 * @param string $color A hexadecimal color code, #xxxxxx
+	 * @param int $all Offset value 0-255 for all three channels.
+	 * @return string A hexadecimal color code, #xxxxxx, modified according to input vars
+	 * @see modifyHTMLColor()
+	 */
+	protected function modifyHTMLColorAll($color, $all) {
+		return $this->modifyHTMLColor($color, $all, $all, $all);
+	}
 }

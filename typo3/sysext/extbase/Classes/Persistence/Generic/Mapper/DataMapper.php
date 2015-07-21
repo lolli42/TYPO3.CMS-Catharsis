@@ -83,6 +83,12 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	protected $objectManager;
 
 	/**
+	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
+	 * @inject
+	 */
+	protected $signalSlotDispatcher;
+
+	/**
 	 * Maps the given rows on objects
 	 *
 	 * @param string $className The name of the class
@@ -133,10 +139,20 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 			$object = $this->createEmptyObject($className);
 			$this->persistenceSession->registerObject($object, $row['uid']);
 			$this->thawProperties($object, $row);
+			$this->emitAfterMappingSingleRow($object);
 			$object->_memorizeCleanState();
 			$this->persistenceSession->registerReconstitutedEntity($object);
 		}
 		return $object;
+	}
+
+	/**
+	 * Emits a signal after mapping a single row.
+	 *
+	 * @param DomainObjectInterface $object The mapped object
+	 */
+	protected function emitAfterMappingSingleRow(DomainObjectInterface $object) {
+		$this->signalSlotDispatcher->dispatch(__CLASS__, 'afterMappingSingleRow', array($object));
 	}
 
 	/**
@@ -382,7 +398,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 		} else {
 			$constraint = $query->in('uid', \TYPO3\CMS\Core\Utility\GeneralUtility::intExplode(',', $fieldValue));
 		}
-		if (count($relationTableMatchFields) > 0) {
+		if (!empty($relationTableMatchFields)) {
 			foreach ($relationTableMatchFields as $relationTableMatchFieldName => $relationTableMatchFieldValue) {
 				$constraint = $query->logicalAnd($constraint, $query->equals($relationTableMatchFieldName, $relationTableMatchFieldValue));
 			}

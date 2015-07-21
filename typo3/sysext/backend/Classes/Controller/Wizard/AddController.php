@@ -24,8 +24,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Script Class for adding new items to a group/select field. Performs proper redirection as needed.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class AddController extends AbstractWizardController {
 
@@ -211,7 +209,7 @@ class AddController extends AbstractWizardController {
 			$redirectUrl = BackendUtility::getModuleUrl('record_edit', array(
 				'returnEditConf' => 1,
 				'edit[' . $this->P['params']['table'] . '][' . $this->pid . ']' => 'new',
-				'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+				'returnUrl' => GeneralUtility::removeXSS(GeneralUtility::getIndpEnv('REQUEST_URI'))
 			));
 			HttpUtility::redirect($redirectUrl);
 		}

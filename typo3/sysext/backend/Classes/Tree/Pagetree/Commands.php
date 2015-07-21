@@ -22,8 +22,6 @@ use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * Page Tree and Context Menu Commands
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 class Commands {
 
@@ -200,17 +198,17 @@ class Commands {
 		$tce->stripslashes_values = 0;
 		$tce->start($data, $cmd);
 		$tce->copyTree = MathUtility::forceIntegerInRange($GLOBALS['BE_USER']->uc['copyLevels'], 0, 100);
-		if (count($cmd)) {
+		if (!empty($cmd)) {
 			$tce->process_cmdmap();
 			$returnValues = $tce->copyMappingArray_merged;
-		} elseif (count($data)) {
+		} elseif (!empty($data)) {
 			$tce->process_datamap();
 			$returnValues = $tce->substNEWwithIDs;
 		} else {
 			$returnValues = array();
 		}
 		// check errors
-		if (count($tce->errorLog)) {
+		if (!empty($tce->errorLog)) {
 			throw new \RuntimeException(implode(LF, $tce->errorLog), 1333754629);
 		}
 		return $returnValues;

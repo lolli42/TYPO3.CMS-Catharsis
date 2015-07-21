@@ -50,9 +50,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  * Check 2: "File Mounts" of the User (act as subsets / filters to the identifiers) [is the user allowed to do something in this folder?]
  * Check 3: "Capabilities" of Storage (then: of Driver) [is the storage/driver writable?]
  * Check 4: "File permissions" of the Driver [is the folder writable?]
- *
- * @author Andreas Wolf <andreas.wolf@typo3.org>
- * @author Ingmar Schlecht <ingmar@typo3.org>
  */
 class ResourceStorage implements ResourceStorageInterface {
 
@@ -539,7 +536,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 *
 	 * This method, by design, does not throw exceptions or do logging.
 	 * Besides the usage from other methods in this class, it is also used by
-	 * the File List UI to check whether an action is allowed and whether action
+	 * the Filelist UI to check whether an action is allowed and whether action
 	 * related UI elements should thus be shown (move icon, edit icon, etc.)
 	 *
 	 * @param string $action action, can be read, write, delete
@@ -557,11 +554,11 @@ class ResourceStorage implements ResourceStorageInterface {
 			return FALSE;
 		}
 		$isReadCheck = FALSE;
-		if (in_array($action, array('read', 'copy', 'move'), TRUE)) {
+		if (in_array($action, array('read', 'copy', 'move', 'replace'), TRUE)) {
 			$isReadCheck = TRUE;
 		}
 		$isWriteCheck = FALSE;
-		if (in_array($action, array('add', 'write', 'move', 'rename', 'unzip', 'delete'), TRUE)) {
+		if (in_array($action, array('add', 'write', 'move', 'rename', 'replace', 'unzip', 'delete'), TRUE)) {
 			$isWriteCheck = TRUE;
 		}
 		// Check 3: Does the user have the right to perform the action?
@@ -780,6 +777,25 @@ class ResourceStorage implements ResourceStorageInterface {
 		}
 		if (!$this->checkFileExtensionPermission($file->getName())) {
 			throw new Exception\IllegalFileExtensionException('You are not allowed to edit a file with extension "' . $file->getExtension() . '"', 1366711933);
+		}
+	}
+
+	/**
+	 * Assure replace permission for given file.
+	 *
+	 * @param FileInterface $file
+	 * @return void
+	 * @throws Exception\InsufficientFileWritePermissionsException
+	 * @throws Exception\InsufficientFolderWritePermissionsException
+	 */
+	protected function assureFileReplacePermissions(FileInterface $file) {
+		// Check if user is allowed to replace the file and $file is writable
+		if (!$this->checkFileActionPermission('replace', $file)) {
+			throw new Exception\InsufficientFileWritePermissionsException('Replacing file "' . $file->getIdentifier() . '" is not allowed.', 1436899571);
+		}
+		// Check if parentFolder is writable for the user
+		if (!$this->checkFolderActionPermission('write', $file->getParentFolder())) {
+			throw new Exception\InsufficientFolderWritePermissionsException('You are not allowed to write to the target folder "' . $file->getIdentifier() . '"', 1436899572);
 		}
 	}
 
@@ -1037,6 +1053,30 @@ class ResourceStorage implements ResourceStorageInterface {
 		}
 	}
 
+	/**
+	 * Process uploaded file name
+	 *
+	 * @param Folder $targetFolder The target folder where the file should be added
+	 * @param string $targetFileName The name of the file to be add, If not set, the local file name is used
+	 *
+	 * @throws \InvalidArgumentException
+	 * @throws Exception\ExistingTargetFileNameException
+	 * @return FileInterface
+	 */
+	public function processUploadedFileName(Folder $targetFolder, $targetFileName) {
+
+		$targetFolder = $targetFolder ?: $this->getDefaultFolder();
+		$targetFileName = $this->driver->sanitizeFileName($targetFileName);
+
+		$this->assureFileAddPermissions($targetFolder, $targetFileName);
+
+		// The file name could be changed by an external slot
+		$targetFileName = $this->emitPreFileAddSignal($targetFileName, $targetFolder);
+
+		return $targetFileName;
+	}
+
+
 	/********************
 	 * FILE ACTIONS
 	 ********************/
@@ -1261,7 +1301,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
-	 * Unsets the file and folder name filters, thus making this storage return unfiltered file lists.
+	 * Unsets the file and folder name filters, thus making this storage return unfiltered filelists.
 	 *
 	 * @return void
 	 */
@@ -1737,7 +1777,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @throws \InvalidArgumentException
 	 */
 	public function replaceFile(FileInterface $file, $localFilePath) {
-		$this->assureFileWritePermissions($file);
+		$this->assureFileReplacePermissions($file);
 		if (!$this->checkFileExtensionPermission($localFilePath)) {
 			throw new Exception\IllegalFileExtensionException('Source file extension not allowed.', 1378132239);
 		}
@@ -1745,12 +1785,12 @@ class ResourceStorage implements ResourceStorageInterface {
 			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1325842622);
 		}
 		$this->emitPreFileReplaceSignal($file, $localFilePath);
-		$result = $this->driver->replaceFile($file->getIdentifier(), $localFilePath);
+		$this->driver->replaceFile($file->getIdentifier(), $localFilePath);
 		if ($file instanceof File) {
 			$this->getIndexer()->updateIndexEntry($file);
 		}
 		$this->emitPostFileReplaceSignal($file, $localFilePath);
-		return $result;
+		return $file;
 	}
 
 	/**
@@ -1770,6 +1810,7 @@ class ResourceStorage implements ResourceStorageInterface {
 		if ($targetFileName === NULL) {
 			$targetFileName = $uploadedFileData['name'];
 		}
+		$targetFileName = $this->driver->sanitizeFileName($targetFileName);
 
 		$this->assureFileUploadPermissions($localFilePath, $targetFolder, $targetFileName, $uploadedFileData['size']);
 		if ($this->hasFileInFolder($targetFileName, $targetFolder) && $conflictMode === 'replace') {
@@ -2090,10 +2131,11 @@ class ResourceStorage implements ResourceStorageInterface {
 	 *
 	 * @param string $folderName The new folder name
 	 * @param Folder $parentFolder (optional) the parent folder to create the new folder inside of. If not given, the root folder is used
-	 *
+	 * @return Folder
+	 * @throws Exception\ExistingTargetFolderException
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 * @throws Exception\InsufficientFolderWritePermissionsException
-	 * @throws \InvalidArgumentException
-	 * @return Folder The new folder object
+	 * @throws \Exception
 	 */
 	public function createFolder($folderName, Folder $parentFolder = NULL) {
 		if ($parentFolder === NULL) {
@@ -2103,6 +2145,9 @@ class ResourceStorage implements ResourceStorageInterface {
 		}
 		if (!$this->checkFolderActionPermission('add', $parentFolder)) {
 			throw new Exception\InsufficientFolderWritePermissionsException('You are not allowed to create directories in the folder "' . $parentFolder->getIdentifier() . '"', 1323059807);
+		}
+		if ($this->driver->folderExists($folderName)) {
+			throw new Exception\ExistingTargetFolderException('Folder "' . $folderName . '" already exists.', 1423347324);
 		}
 
 		$this->emitPreFolderAddSignal($parentFolder, $folderName);
@@ -2201,7 +2246,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @return Folder
 	 */
 	public function getRootLevelFolder($respectFileMounts = TRUE) {
-		if ($respectFileMounts && count($this->fileMounts)) {
+		if ($respectFileMounts && !empty($this->fileMounts)) {
 			$mount = reset($this->fileMounts);
 			return $mount['folder'];
 		} else {
@@ -2217,7 +2262,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $sourceFilePath
 	 * @return string Modified target file name
 	 */
-	protected function emitPreFileAddSignal($targetFileName, Folder $targetFolder, $sourceFilePath) {
+	protected function emitPreFileAddSignal($targetFileName, Folder $targetFolder, $sourceFilePath = '') {
 		$this->getSignalSlotDispatcher()->dispatch(\TYPO3\CMS\Core\Resource\ResourceStorage::class, self::SIGNAL_PreFileAdd, array(&$targetFileName, $targetFolder, $sourceFilePath, $this, $this->driver));
 		return $targetFileName;
 	}

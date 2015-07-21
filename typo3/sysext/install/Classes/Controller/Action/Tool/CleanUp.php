@@ -127,13 +127,15 @@ class CleanUp extends Action\AbstractAction {
 	protected function clearSelectedTables() {
 		$clearedTables = array();
 		$database = $this->getDatabaseConnection();
-		foreach ($this->postValues['values'] as $tableName => $selected) {
-			if ($selected == 1) {
-				$database->exec_TRUNCATEquery($tableName);
-				$clearedTables[] = $tableName;
+		if (isset($this->postValues['values']) && is_array($this->postValues['values'])) {
+			foreach ($this->postValues['values'] as $tableName => $selected) {
+				if ($selected == 1) {
+					$database->exec_TRUNCATEquery($tableName);
+					$clearedTables[] = $tableName;
+				}
 			}
 		}
-		if (count($clearedTables)) {
+		if (!empty($clearedTables)) {
 			/** @var OkStatus $message */
 			$message = $this->objectManager->get(OkStatus::class);
 			$message->setTitle('Cleared tables');

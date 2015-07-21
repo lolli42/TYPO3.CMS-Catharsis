@@ -553,6 +553,9 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 				// make sure to update the hidden field value when modifying the select value
 				FormEngine.updateHiddenFieldValueFromSelect($listFieldEl, FormEngine.getFieldElement(fieldName));
 				FormEngine.legacyFieldChangedCb();
+				if (typeof FormEngine.Validation !== 'undefined' && typeof FormEngine.Validation.validate === 'function') {
+					FormEngine.Validation.validate();
+				}
 			}
 		});
 
@@ -571,6 +574,38 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 					FormEngine.setSelectOptionFromExternalSource(fieldName, $optionEl.prop('value'), $optionEl.text(), $optionEl.prop('title'), exclusiveValues);
 				});
 			}
+		});
+
+		$(document).on('click', '.t3js-editform-close', function(e) {
+			e.preventDefault();
+			FormEngine.preventExitIfNotSaved();
+		});
+
+		$(document).on('click', '.t3js-editform-delete-record', function(e) {
+			e.preventDefault();
+			var title = TYPO3.lang['label.confirm.delete_record.title'] || 'Delete this record?';
+			var content = TYPO3.lang['label.confirm.delete_record.content'] || 'Are you sure you want to delete this record?';
+			var $anchorElement = $(this);
+			$modal = top.TYPO3.Modal.confirm(title, content, top.TYPO3.Severity.warning, [
+				{
+					text: TYPO3.lang['buttons.confirm.delete_record.no'] || 'No, I will continue editing',
+					active: true,
+					name: 'no'
+				},
+				{
+					text: TYPO3.lang['buttons.confirm.delete_record.yes'] || 'Yes, delete this record',
+					btnClass: 'btn-warning',
+					name: 'yes'
+				}
+			]);
+			$modal.on('button.clicked', function(e) {
+				if (e.target.name === 'no') {
+					top.TYPO3.Modal.dismiss();
+				} else if (e.target.name === 'yes') {
+					deleteRecord($anchorElement.data('table'), $anchorElement.data('uid'), $anchorElement.data('return-url'));
+					top.TYPO3.Modal.dismiss();
+				}
+			});
 		});
 	};
 
@@ -729,16 +764,17 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 				$('.t3js-clearable').clearable();
 			});
 		}
+		if ($('.t3-form-suggest').length) {
+			require(['TYPO3/CMS/Backend/FormEngineSuggest'], function(Suggest) {
+				Suggest($('.t3-form-suggest'));
+			});
+		}
 		// apply DatePicker to all date time fields
 		require(['TYPO3/CMS/Backend/DateTimePicker'], function(DateTimePicker) {
 			DateTimePicker.initialize();
 		});
 		FormEngine.convertTextareasResizable();
 		FormEngine.convertTextareasEnableTab();
-		$(document).on('click', '.t3js-editform-close', function(e) {
-			e.preventDefault();
-			FormEngine.preventExitIfNotSaved();
-		});
 	};
 
 	/**

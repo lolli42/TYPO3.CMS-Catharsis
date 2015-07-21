@@ -14,7 +14,9 @@ namespace TYPO3\CMS\Core\Core;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * This class encapsulates bootstrap related methods.
@@ -26,8 +28,6 @@ use TYPO3\CMS\Core\Utility;
  * a method at the beginning has lower dependencies than a method further
  * down. Do not fiddle with the load order in own scripts except you know
  * exactly what you are doing!
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class Bootstrap {
 
@@ -61,20 +61,17 @@ class Bootstrap {
 	protected $installToolPath;
 
 	/**
-	 * @var string The currently active exception handling class. It is set after LocalConfiguration is included and might be changed after ex_localconf.php are loaded.
-	 */
-	protected $activeExceptionHandlerClassName;
-
-	/**
-	 * @var string The currently active error handling class. It is set after LocalConfiguration is included and might be changed after ex_localconf.php are loaded.
-	 */
-	protected $activeErrorHandlerClassName;
-
-	/**
-	 * registered request handlers
-	 * @var RequestHandlerInterface[]
+	 * A list of all registered request handlers, see the Application class / entry points for the registration
+	 * @var \TYPO3\CMS\Core\Http\RequestHandlerInterface[]|\TYPO3\CMS\Core\Console\RequestHandlerInterface[]
 	 */
 	protected $availableRequestHandlers = array();
+
+	/**
+	 * The Response object when using Request/Response logic
+	 * @var \Psr\Http\Message\ResponseInterface
+	 * @see shutdown()
+	 */
+	protected $response;
 
 	/**
 	 * @var bool
@@ -114,10 +111,8 @@ class Bootstrap {
 	 */
 	static public function getInstance() {
 		if (is_null(static::$instance)) {
-			$composerClassLoader = self::initializeComposerClassLoader();
 			$applicationContext = getenv('TYPO3_CONTEXT') ?: (getenv('REDIRECT_TYPO3_CONTEXT') ?: 'Production');
 			self::$instance = new static($applicationContext);
-			self::$instance->setEarlyInstance(\Composer\Autoload\ClassLoader::class, $composerClassLoader);
 		}
 		return static::$instance;
 	}
@@ -157,38 +152,21 @@ class Bootstrap {
 
 	/**
 	 * Main entry point called at every request usually from Global scope. Checks if everything is correct,
-	 * and sets up the base request information for a regular request, then
-	 * resolves the RequestHandler which handles the request.
+	 * and loads the Configuration.
 	 *
-	 * @param string $relativePathPart Relative path of entry script back to document root
+	 * Make sure that the baseSetup() is called before and the class loader is present
+	 *
 	 * @return Bootstrap
 	 */
-	public function run($relativePathPart = '') {
-		$this->baseSetup($relativePathPart);
+	public function configure() {
+		$this->startOutputBuffering()
+			->loadConfigurationAndInitialize()
+			->loadTypo3LoadedExtAndExtLocalconf(TRUE)
+			->setFinalCachingFrameworkCacheConfiguration()
+			->defineLoggingAndExceptionConstants()
+			->unsetReservedGlobalVariables()
+			->initializeTypo3DbGlobal();
 
-		// Failsafe minimal setup mode for the install tool
-		if (defined('TYPO3_enterInstallScript')) {
-			$this->startOutputBuffering()
-				->loadConfigurationAndInitialize(FALSE, \TYPO3\CMS\Core\Package\FailsafePackageManager::class);
-		} elseif (!$this->checkIfEssentialConfigurationExists() && !defined('TYPO3_cliMode')) {
-			// Redirect to install tool if base configuration is not found
-			$this->redirectToInstallTool($relativePathPart);
-		} else {
-			// Regular request (Frontend, AJAX, Backend, CLI)
-			$this->startOutputBuffering()
-				->loadConfigurationAndInitialize()
-				->loadTypo3LoadedExtAndExtLocalconf(TRUE)
-				->initializeExceptionHandling()
-				->setFinalCachingFrameworkCacheConfiguration()
-				->defineLoggingAndExceptionConstants()
-				->unsetReservedGlobalVariables()
-				->initializeTypo3DbGlobal();
-		}
-
-		// Resolve request handler that were registered based on TYPO3_MODE
-		$this->registerRequestHandlers();
-		$requestHandler = $this->resolveRequestHandler();
-		$requestHandler->handleRequest();
 		return $this;
 	}
 
@@ -207,28 +185,23 @@ class Bootstrap {
 		if (!self::$usesComposerClassLoading) {
 			ClassLoadingInformation::registerClassLoadingInformation();
 		}
-		Utility\GeneralUtility::presetApplicationContext($this->applicationContext);
+		GeneralUtility::presetApplicationContext($this->applicationContext);
 		return $this;
 	}
 
 	/**
-	 * @return \Composer\Autoload\ClassLoader|\Helhum\ClassAliasLoader\Composer\ClassAliasLoader
+	 * Sets the class loader to the bootstrap
+	 *
+	 * @param \Composer\Autoload\ClassLoader|\Helhum\ClassAliasLoader\Composer\ClassAliasLoader $classLoader an instance of the class loader
+	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	static protected function initializeComposerClassLoader() {
-		$possiblePaths = array(
-			'distribution' => __DIR__ . '/../../../../../../Packages/Libraries/autoload.php',
-			'fallback' => __DIR__ . '/../../../../contrib/vendor/autoload.php',
-		);
-		foreach ($possiblePaths as $autoLoadType => $possiblePath) {
-			if (file_exists($possiblePath)) {
-				if ($autoLoadType === 'distribution') {
-					self::$usesComposerClassLoading = TRUE;
-				}
-				return include $possiblePath;
-			}
+	public function initializeClassLoader($classLoader) {
+		$this->setEarlyInstance(\Composer\Autoload\ClassLoader::class, $classLoader);
+		if (defined('TYPO3_COMPOSER_MODE') && TYPO3_COMPOSER_MODE) {
+			self::$usesComposerClassLoading = TRUE;
 		}
-
-		throw new \LogicException('No class loading information found for TYPO3 CMS. Please make sure you installed TYPO3 with composer or the typo3/contrib/vendor folder is present.', 1425153762);
+		return $this;
 	}
 
 	/**
@@ -236,50 +209,34 @@ class Bootstrap {
 	 * used to see if a redirect to the install tool is needed
 	 *
 	 * @return bool TRUE when the essential configuration is available, otherwise FALSE
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function checkIfEssentialConfigurationExists() {
+	public function checkIfEssentialConfigurationExists() {
 		$configurationManager = new \TYPO3\CMS\Core\Configuration\ConfigurationManager;
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class, $configurationManager);
-		return (!file_exists($configurationManager->getLocalConfigurationFileLocation()) || !file_exists(PATH_typo3conf . 'PackageStates.php')) ? FALSE : TRUE;
+		return file_exists($configurationManager->getLocalConfigurationFileLocation()) && file_exists(PATH_typo3conf . 'PackageStates.php');
 	}
 
 	/**
 	 * Redirect to install tool if LocalConfiguration.php is missing.
 	 *
-	 * @param string $relativePathPart Can contain '../' if called from a sub directory
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function redirectToInstallTool($relativePathPart = '') {
 		$backPathToSiteRoot = str_repeat('../', count(explode('/', $relativePathPart)) - 1);
 		header('Location: ' . $backPathToSiteRoot . 'typo3/sysext/install/Start/Install.php');
+		die;
 	}
 
 	/**
-	 * Adds available request handlers, which currently hard-coded here based on the TYPO3_MODE. The extensability
-	 * of adding own request handlers would be too complex for now, but can be added later.
+	 * Adds available request handlers usually done via an application from the outside.
 	 *
+	 * @param string $requestHandler class which implements the request handler interface
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	protected function registerRequestHandlers() {
-		// Use the install tool handler if in install tool mode
-		if (!$this->checkIfEssentialConfigurationExists() || (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_INSTALL)) {
-			$this->availableRequestHandlers = array(
-				\TYPO3\CMS\Install\RequestHandler::class
-			);
-		} elseif (TYPO3_MODE == 'BE') {
-			$this->availableRequestHandlers = array(
-				\TYPO3\CMS\Backend\RequestHandler::class,
-				\TYPO3\CMS\Backend\BackendModuleRequestHandler::class,
-				\TYPO3\CMS\Backend\AjaxRequestHandler::class,
-				\TYPO3\CMS\Backend\CliRequestHandler::class
-			);
-		} elseif (TYPO3_MODE == 'FE') {
-			$this->availableRequestHandlers = array(
-				\TYPO3\CMS\Frontend\RequestHandler::class,
-				\TYPO3\CMS\Frontend\EidRequestHandler::class
-			);
-		}
+	public function registerRequestHandlerImplementation($requestHandler) {
+		$this->availableRequestHandlers[] = $requestHandler;
 		return $this;
 	}
 
@@ -288,15 +245,17 @@ class Bootstrap {
 	 * Be sure to always have the constants that are defined in $this->defineTypo3RequestTypes() are set,
 	 * so most RequestHandlers can check if they can handle the request.
 	 *
-	 * @return RequestHandlerInterface
+	 * @param \Psr\Http\Message\ServerRequestInterface|\Symfony\Component\Console\Input\InputInterface $request
+	 * @return \TYPO3\CMS\Core\Http\RequestHandlerInterface|\TYPO3\CMS\Core\Console\RequestHandlerInterface
 	 * @throws \TYPO3\CMS\Core\Exception
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
-	public function resolveRequestHandler() {
+	protected function resolveRequestHandler($request) {
 		$suitableRequestHandlers = array();
 		foreach ($this->availableRequestHandlers as $requestHandlerClassName) {
-			$requestHandler = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($requestHandlerClassName, $this);
-			if ($requestHandler->canHandleRequest()) {
+			/** @var \TYPO3\CMS\Core\Http\RequestHandlerInterface|\TYPO3\CMS\Core\Console\RequestHandlerInterface $requestHandler */
+			$requestHandler = GeneralUtility::makeInstance($requestHandlerClassName, $this);
+			if ($requestHandler->canHandleRequest($request)) {
 				$priority = $requestHandler->getPriority();
 				if (isset($suitableRequestHandlers[$priority])) {
 					throw new \TYPO3\CMS\Core\Exception('More than one request handler with the same priority can handle the request, but only one handler may be active at a time!', 1176471352);
@@ -304,11 +263,49 @@ class Bootstrap {
 				$suitableRequestHandlers[$priority] = $requestHandler;
 			}
 		}
-		if (count($suitableRequestHandlers) === 0) {
+		if (empty($suitableRequestHandlers)) {
 			throw new \TYPO3\CMS\Core\Exception('No suitable request handler found.', 1225418233);
 		}
 		ksort($suitableRequestHandlers);
 		return array_pop($suitableRequestHandlers);
+	}
+
+	/**
+	 * Builds a Request instance from the current process, and then resolves the request
+	 * through the request handlers depending on Frontend, Backend, CLI etc.
+	 *
+	 * @param \Psr\Http\Message\RequestInterface|\Symfony\Component\Console\Input\InputInterface $request
+	 * @return Bootstrap
+	 * @throws \TYPO3\CMS\Core\Exception
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function handleRequest($request) {
+
+		// Resolve request handler that were registered based on the Application
+		$requestHandler = $this->resolveRequestHandler($request);
+
+		// Execute the command which returns a Response object or NULL
+		$this->response = $requestHandler->handleRequest($request);
+		return $this;
+	}
+
+	/**
+	 * Outputs content if there is a proper Response object.
+	 *
+	 * @return Bootstrap
+	 */
+	protected function sendResponse() {
+		if ($this->response instanceof \Psr\Http\Message\ResponseInterface) {
+			if (!headers_sent()) {
+				foreach ($this->response->getHeaders() as $name => $values) {
+					header($name . ': ' . implode(', ', $values), FALSE);
+				}
+				// send the response type
+				header('HTTP/' . $this->response->getProtocolVersion() . ' ' . $this->response->getStatusCode() . ' ' . $this->response->getReasonPhrase());
+			}
+			echo $this->response->getBody()->__toString();
+		}
+		return $this;
 	}
 
 	/**
@@ -319,6 +316,7 @@ class Bootstrap {
 	 * @param string $objectName Object name, as later used by the Object Manager
 	 * @param object $instance The instance to register
 	 * @return void
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function setEarlyInstance($objectName, $instance) {
 		$this->earlyInstances[$objectName] = $instance;
@@ -330,6 +328,7 @@ class Bootstrap {
 	 * @param string $objectName Object name of the registered instance
 	 * @return object
 	 * @throws \TYPO3\CMS\Core\Exception
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function getEarlyInstance($objectName) {
 		if (!isset($this->earlyInstances[$objectName])) {
@@ -342,6 +341,7 @@ class Bootstrap {
 	 * Returns all registered early instances indexed by object name
 	 *
 	 * @return array
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function getEarlyInstances() {
 		return $this->earlyInstances;
@@ -357,7 +357,8 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadConfigurationAndInitialize($allowCaching = TRUE, $packageManagerClassName = \TYPO3\CMS\Core\Package\PackageManager::class) {
-		$this->populateLocalConfiguration();
+		$this->populateLocalConfiguration()
+			->initializeErrorHandling();
 		if (!$allowCaching) {
 			$this->disableCoreCache();
 		}
@@ -372,9 +373,6 @@ class Bootstrap {
 			->setDefaultTimezone()
 			->initializeL10nLocales()
 			->convertPageNotFoundHandlingToBoolean()
-			->registerGlobalDebugFunctions()
-			->configureExceptionHandling()
-			->initializeExceptionHandling()
 			->setMemoryLimit()
 			->defineTypo3RequestTypes();
 		if ($allowCaching) {
@@ -395,11 +393,13 @@ class Bootstrap {
 		/** @var \TYPO3\CMS\Core\Package\PackageManager $packageManager */
 		$packageManager = new $packageManagerClassName();
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
-		Utility\ExtensionManagementUtility::setPackageManager($packageManager);
+		ExtensionManagementUtility::setPackageManager($packageManager);
 		$packageManager->injectCoreCache($this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core'));
-		$packageManager->injectDependencyResolver(Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Package\DependencyResolver::class));
+		$dependencyResolver = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Package\DependencyResolver::class);
+		$dependencyResolver->injectDependencyOrderingService(GeneralUtility::makeInstance(\TYPO3\CMS\Core\Service\DependencyOrderingService::class));
+		$packageManager->injectDependencyResolver($dependencyResolver);
 		$packageManager->initialize($this);
-		Utility\GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
+		GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Package\PackageManager::class, $packageManager);
 		return $this;
 	}
 
@@ -442,22 +442,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadTypo3LoadedExtAndExtLocalconf($allowCaching = TRUE) {
-		Utility\ExtensionManagementUtility::loadExtLocalconf($allowCaching);
-		return $this;
-	}
-
-	/**
-	 * Throws an exception if no browser could be identified
-	 *
-	 * @return Bootstrap
-	 * @throws \RuntimeException
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function checkValidBrowserOrDie() {
-		// Checks for proper browser
-		if (empty($GLOBALS['CLIENT']['BROWSER'])) {
-			throw new \RuntimeException('Browser Error: Your browser version looks incompatible with this TYPO3 version!', 1294587023);
-		}
+		ExtensionManagementUtility::loadExtLocalconf($allowCaching);
 		return $this;
 	}
 
@@ -466,6 +451,7 @@ class Bootstrap {
 	 * Since makeInstance relies on the object configuration, we create it here with new instead.
 	 *
 	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function populateLocalConfiguration() {
 		try {
@@ -526,44 +512,46 @@ class Bootstrap {
 	 */
 	protected function registerExtDirectComponents() {
 		if (TYPO3_MODE === 'BE') {
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+			ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.PageTree.DataProvider',
 				\TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeDataProvider::class
 			);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+			ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.PageTree.Commands',
 				\TYPO3\CMS\Backend\Tree\Pagetree\ExtdirectTreeCommands::class
 			);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+			ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.PageTree.ContextMenuDataProvider',
 				\TYPO3\CMS\Backend\ContextMenu\Pagetree\Extdirect\ContextMenuConfiguration::class
 			);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
-				'TYPO3.LiveSearchActions.ExtDirect',
-				\TYPO3\CMS\Backend\Search\LiveSearch\ExtDirect\LiveSearchDataProvider::class,
-				'web_list',
-				'user,group'
-			);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+			ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.ExtDirectStateProvider.ExtDirect',
 				\TYPO3\CMS\Backend\InterfaceState\ExtDirect\DataProvider::class
 			);
-			Utility\ExtensionManagementUtility::registerExtDirectComponent(
+			ExtensionManagementUtility::registerExtDirectComponent(
 				'TYPO3.Components.DragAndDrop.CommandController',
-				Utility\ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
+				ExtensionManagementUtility::extPath('backend') . 'Classes/View/PageLayout/Extdirect/ExtdirectPageCommands.php:' . \TYPO3\CMS\Backend\View\PageLayout\ExtDirect\ExtdirectPageCommands::class
 			);
 		}
 		return $this;
 	}
 
 	/**
-	 * Initialize caching framework
+	 * Initialize caching framework, and re-initializes it (e.g. in the install tool) by recreating the instances
+	 * again despite the Singleton instance
 	 *
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function initializeCachingFramework() {
-		$this->setEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class, \TYPO3\CMS\Core\Cache\Cache::initializeCachingFramework());
+		$cacheManager = new \TYPO3\CMS\Core\Cache\CacheManager();
+		$cacheManager->setCacheConfigurations($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']);
+		GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Cache\CacheManager::class, $cacheManager);
+
+		$cacheFactory = new \TYPO3\CMS\Core\Cache\CacheFactory('production', $cacheManager);
+		GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Cache\CacheFactory::class, $cacheFactory);
+
+		$this->setEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class, $cacheManager);
 		return $this;
 	}
 
@@ -576,7 +564,7 @@ class Bootstrap {
 	protected function transferDeprecatedCurlSettings() {
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']) && empty($GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_host'])) {
 			$curlProxy = rtrim(preg_replace('#^https?://#', '', $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']), '/');
-			$proxyParts = Utility\GeneralUtility::revExplode(':', $curlProxy, 2);
+			$proxyParts = GeneralUtility::revExplode(':', $curlProxy, 2);
 			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_host'] = $proxyParts[0];
 			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_port'] = $proxyParts[1];
 		}
@@ -598,14 +586,14 @@ class Bootstrap {
 	 */
 	protected function setCacheHashOptions() {
 		$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash'] = array(
-			'cachedParametersWhiteList' => Utility\GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashOnlyForParameters'], TRUE),
-			'excludedParameters' => Utility\GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'], TRUE),
-			'requireCacheHashPresenceParameters' => Utility\GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashRequiredParameters'], TRUE)
+			'cachedParametersWhiteList' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashOnlyForParameters'], TRUE),
+			'excludedParameters' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParameters'], TRUE),
+			'requireCacheHashPresenceParameters' => GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashRequiredParameters'], TRUE)
 		);
 		if (trim($GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParametersIfEmpty']) === '*') {
 			$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludeAllEmptyParameters'] = TRUE;
 		} else {
-			$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParametersIfEmpty'] = Utility\GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParametersIfEmpty'], TRUE);
+			$GLOBALS['TYPO3_CONF_VARS']['FE']['cacheHash']['excludedParametersIfEmpty'] = GeneralUtility::trimExplode(',', $GLOBALS['TYPO3_CONF_VARS']['FE']['cHashExcludedParametersIfEmpty'], TRUE);
 		}
 		return $this;
 	}
@@ -656,45 +644,55 @@ class Bootstrap {
 	}
 
 	/**
-	 * Register xdebug(), debug(), debugBegin() and debugEnd() as global functions
-	 *
-	 * Note: Yes, this is possible in php! xdebug() is then a global function, even
-	 * if registerGlobalDebugFunctions() is encapsulated in class scope.
-	 *
-	 * @return Bootstrap
-	 */
-	protected function registerGlobalDebugFunctions() {
-		require_once('GlobalDebugFunctions.php');
-		return $this;
-	}
-
-	/**
 	 * Configure and set up exception and error handling
 	 *
 	 * @return Bootstrap
+	 * @throws \RuntimeException
 	 */
-	protected function configureExceptionHandling() {
-		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['productionExceptionHandler'];
-		$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors'];
-		$doesIpMatch = Utility\GeneralUtility::cmpIP(Utility\GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask']);
-		$displayErrors = (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors'];
-		// Turn error logging on/off.
-		if ($displayErrors !== -1) {
-			// Special value "2" enables this feature only if $GLOBALS['TYPO3_CONF_VARS'][SYS][devIPmask] matches
-			if ($displayErrors === 2) {
-				$displayErrors = (int)$doesIpMatch;
+	protected function initializeErrorHandling() {
+		$productionExceptionHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SYS']['productionExceptionHandler'];
+		$debugExceptionHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SYS']['debugExceptionHandler'];
+
+		$errorHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'];
+		$errorHandlerErrors = $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandlerErrors'];
+		$exceptionalErrors = $GLOBALS['TYPO3_CONF_VARS']['SYS']['exceptionalErrors'];
+
+		$displayErrorsSetting = (int)$GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors'];
+		switch ($displayErrorsSetting) {
+			case 2:
+				GeneralUtility::deprecationLog('The option "$TYPO3_CONF_VARS[SYS][displayErrors]" is set to "2" which is deprecated as of TYPO3 CMS 7, and will be removed with TYPO3 CMS 8. Please change the value to "-1"');
+				// intentionally fall through
+			case -1:
+				$ipMatchesDevelopmentSystem = GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['SYS']['devIPmask']);
+				$exceptionHandlerClassName = $ipMatchesDevelopmentSystem ? $debugExceptionHandlerClassName : $productionExceptionHandlerClassName;
+				$displayErrors = $ipMatchesDevelopmentSystem ? 1 : 0;
+				$exceptionalErrors = $ipMatchesDevelopmentSystem ? $exceptionalErrors : 0;
+				break;
+			case 0:
+				$exceptionHandlerClassName = $productionExceptionHandlerClassName;
+				$displayErrors = 0;
+				break;
+			case 1:
+				$exceptionHandlerClassName = $debugExceptionHandlerClassName;
+				$displayErrors = 1;
+				break;
+			default:
+				// Throw exception if an invalid option is set.
+				throw new \RuntimeException('The option $TYPO3_CONF_VARS[SYS][displayErrors] is not set to "-1", "0" or "1".');
+		}
+		@ini_set('display_errors', $displayErrors);
+
+		if (!empty($errorHandlerClassName)) {
+			// Register an error handler for the given errorHandlerError
+			$errorHandler = GeneralUtility::makeInstance($errorHandlerClassName, $errorHandlerErrors);
+			$errorHandler->setExceptionalErrors($exceptionalErrors);
+			if (is_callable(array($errorHandler, 'setDebugMode'))) {
+				$errorHandler->setDebugMode($displayErrors === 1);
 			}
-			if ($displayErrors === 0) {
-				$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors'] = 0;
-			}
-			if ($displayErrors === 1) {
-				$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['debugExceptionHandler'];
-				define('TYPO3_ERRORHANDLER_MODE', 'debug');
-			}
-			@ini_set('display_errors', $displayErrors);
-		} elseif ($doesIpMatch) {
-			// With displayErrors = -1 (default), turn on debugging if devIPmask matches:
-			$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] = $GLOBALS['TYPO3_CONF_VARS']['SYS']['debugExceptionHandler'];
+		}
+		if (!empty($exceptionHandlerClassName)) {
+			// Registering the exception handler is done in the constructor
+			GeneralUtility::makeInstance($exceptionHandlerClassName);
 		}
 		return $this;
 	}
@@ -725,41 +723,6 @@ class Bootstrap {
 		define('TYPO3_REQUESTTYPE_AJAX', 8);
 		define('TYPO3_REQUESTTYPE_INSTALL', 16);
 		define('TYPO3_REQUESTTYPE', (TYPO3_MODE == 'FE' ? TYPO3_REQUESTTYPE_FE : 0) | (TYPO3_MODE == 'BE' ? TYPO3_REQUESTTYPE_BE : 0) | (defined('TYPO3_cliMode') && TYPO3_cliMode ? TYPO3_REQUESTTYPE_CLI : 0) | (defined('TYPO3_enterInstallScript') && TYPO3_enterInstallScript ? TYPO3_REQUESTTYPE_INSTALL : 0) | ($GLOBALS['TYPO3_AJAX'] ? TYPO3_REQUESTTYPE_AJAX : 0));
-		return $this;
-	}
-
-	/**
-	 * Initialize exception handling
-	 * This method is called twice. First when LocalConfiguration has been loaded
-	 * and a second time after extension ext_localconf.php have been included to allow extensions
-	 * to change the exception and error handler configuration.
-	 *
-	 * @return Bootstrap
-	 * @internal This is not a public API method, do not use in own extensions
-	 */
-	public function initializeExceptionHandling() {
-		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'])) {
-			if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'])) {
-				if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'] !== $this->activeErrorHandlerClassName) {
-					$this->activeErrorHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandler'];
-					// Register an error handler for the given errorHandlerErrors
-					$errorHandler = Utility\GeneralUtility::makeInstance($this->activeErrorHandlerClassName, $GLOBALS['TYPO3_CONF_VARS']['SYS']['errorHandlerErrors']);
-					// Set errors which will be converted in an exception
-					$errorHandler->setExceptionalErrors($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionalErrors']);
-				}
-			} elseif (!empty($this->activeErrorHandlerClassName)) {
-				// Restore error handler in case extensions have unset the configuration in ext_localconf.php
-				restore_error_handler();
-			}
-			if ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'] !== $this->activeExceptionHandlerClassName) {
-				$this->activeExceptionHandlerClassName = $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['errors']['exceptionHandler'];
-				// Registering the exception handler is done in the constructor
-				Utility\GeneralUtility::makeInstance($this->activeExceptionHandlerClassName);
-			}
-		} elseif (!empty($this->activeExceptionHandlerClassName)) {
-			// Restore exception handler in case extensions have unset the configuration in ext_localconf.php
-			restore_exception_handler();
-		}
 		return $this;
 	}
 
@@ -817,7 +780,7 @@ class Bootstrap {
 	 */
 	public function initializeTypo3DbGlobal() {
 		/** @var $databaseConnection \TYPO3\CMS\Core\Database\DatabaseConnection */
-		$databaseConnection = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
+		$databaseConnection = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\DatabaseConnection::class);
 		$databaseConnection->setDatabaseName(TYPO3_db);
 		$databaseConnection->setDatabaseUsername(TYPO3_db_username);
 		$databaseConnection->setDatabasePassword(TYPO3_db_password);
@@ -854,7 +817,7 @@ class Bootstrap {
 		}
 
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit'])) {
-			$commandsAfterConnect = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(
+			$commandsAfterConnect = GeneralUtility::trimExplode(
 				LF,
 				str_replace('\' . LF . \'', LF, $GLOBALS['TYPO3_CONF_VARS']['SYS']['setDBinit']),
 				TRUE
@@ -883,7 +846,7 @@ class Bootstrap {
 			throw new \RuntimeException('TYPO3 Backend locked: Backend and Install Tool are locked for maintenance. [BE][adminOnly] is set to "' . (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['adminOnly'] . '".', 1294586847);
 		}
 		if (@is_file(PATH_typo3conf . 'LOCK_BACKEND') && $forceProceeding === FALSE) {
-			$fileContent = Utility\GeneralUtility::getUrl(PATH_typo3conf . 'LOCK_BACKEND');
+			$fileContent = GeneralUtility::getUrl(PATH_typo3conf . 'LOCK_BACKEND');
 			if ($fileContent) {
 				header('Location: ' . $fileContent);
 			} else {
@@ -904,7 +867,7 @@ class Bootstrap {
 	 */
 	public function checkBackendIpOrDie() {
 		if (trim($GLOBALS['TYPO3_CONF_VARS']['BE']['IPmaskList'])) {
-			if (!Utility\GeneralUtility::cmpIP(Utility\GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['BE']['IPmaskList'])) {
+			if (!GeneralUtility::cmpIP(GeneralUtility::getIndpEnv('REMOTE_ADDR'), $GLOBALS['TYPO3_CONF_VARS']['BE']['IPmaskList'])) {
 				throw new \RuntimeException('TYPO3 Backend access denied: The IP address of your client does not match the list of allowed IP addresses.', 1389265900);
 			}
 		}
@@ -927,16 +890,16 @@ class Bootstrap {
 				$sslPortSuffix = '';
 			}
 			if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 3) {
-				$requestStr = substr(Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT'), strlen(Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir));
-				if ($requestStr === 'index.php' && !Utility\GeneralUtility::getIndpEnv('TYPO3_SSL')) {
-					list(, $url) = explode('://', Utility\GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 2);
+				$requestStr = substr(GeneralUtility::getIndpEnv('TYPO3_REQUEST_SCRIPT'), strlen(GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir));
+				if ($requestStr === 'index.php' && !GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+					list(, $url) = explode('://', GeneralUtility::getIndpEnv('TYPO3_REQUEST_URL'), 2);
 					list($server, $address) = explode('/', $url, 2);
 					header('Location: https://' . $server . $sslPortSuffix . '/' . $address);
 					die;
 				}
-			} elseif (!Utility\GeneralUtility::getIndpEnv('TYPO3_SSL')) {
+			} elseif (!GeneralUtility::getIndpEnv('TYPO3_SSL')) {
 				if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['lockSSL'] === 2) {
-					list(, $url) = explode('://', Utility\GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir, 2);
+					list(, $url) = explode('://', GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir, 2);
 					list($server, $address) = explode('/', $url, 2);
 					header('Location: https://' . $server . $sslPortSuffix . '/' . $address);
 					die;
@@ -988,8 +951,8 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function loadExtensionTables($allowCaching = TRUE) {
-		Utility\ExtensionManagementUtility::loadBaseTca($allowCaching);
-		Utility\ExtensionManagementUtility::loadExtTables($allowCaching);
+		ExtensionManagementUtility::loadBaseTca($allowCaching);
+		ExtensionManagementUtility::loadExtTables($allowCaching);
 		$this->executeExtTablesAdditionalFile();
 		$this->runExtTablesPostProcessingHooks();
 		return $this;
@@ -1017,7 +980,7 @@ class Bootstrap {
 		// Load additional ext tables script if the file exists
 		$extTablesFile = PATH_typo3conf . TYPO3_extTableDef_script;
 		if (file_exists($extTablesFile) && is_file($extTablesFile)) {
-			Utility\GeneralUtility::deprecationLog(
+			GeneralUtility::deprecationLog(
 				'Using typo3conf/' . TYPO3_extTableDef_script . ' is deprecated and will be removed with TYPO3 CMS 8. Please move your TCA overrides'
 				. ' to Configuration/TCA/Overrides of your project specific extension, or slot the signal "tcaIsBeingBuilt" for further processing.'
 			);
@@ -1035,9 +998,12 @@ class Bootstrap {
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'])) {
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['extTablesInclusion-PostProcessing'] as $classReference) {
 				/** @var $hookObject \TYPO3\CMS\Core\Database\TableConfigurationPostProcessingHookInterface */
-				$hookObject = Utility\GeneralUtility::getUserObj($classReference);
+				$hookObject = GeneralUtility::getUserObj($classReference);
 				if (!$hookObject instanceof \TYPO3\CMS\Core\Database\TableConfigurationPostProcessingHookInterface) {
-					throw new \UnexpectedValueException('$hookObject must implement interface TYPO3\\CMS\\Core\\Database\\TableConfigurationPostProcessingHookInterface', 1320585902);
+					throw new \UnexpectedValueException(
+						'$hookObject "' . $classReference . '" must implement interface TYPO3\\CMS\\Core\\Database\\TableConfigurationPostProcessingHookInterface',
+						1320585902
+					);
 				}
 				$hookObject->processData();
 			}
@@ -1063,7 +1029,7 @@ class Bootstrap {
 	 */
 	public function initializeBackendUser() {
 		/** @var $backendUser \TYPO3\CMS\Core\Authentication\BackendUserAuthentication */
-		$backendUser = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
+		$backendUser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Authentication\BackendUserAuthentication::class);
 		$backendUser->warningEmail = $GLOBALS['TYPO3_CONF_VARS']['BE']['warning_email_addr'];
 		$backendUser->lockIP = $GLOBALS['TYPO3_CONF_VARS']['BE']['lockIP'];
 		$backendUser->auth_timeout_field = (int)$GLOBALS['TYPO3_CONF_VARS']['BE']['sessionTimeout'];
@@ -1098,7 +1064,7 @@ class Bootstrap {
 	 */
 	public function initializeLanguageObject() {
 		/** @var $GLOBALS['LANG'] \TYPO3\CMS\Lang\LanguageService */
-		$GLOBALS['LANG'] = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
+		$GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Lang\LanguageService::class);
 		$GLOBALS['LANG']->init($GLOBALS['BE_USER']->uc['lang']);
 		return $this;
 	}
@@ -1122,7 +1088,7 @@ class Bootstrap {
 	 */
 	public function initializeOutputCompression() {
 		if (extension_loaded('zlib') && $GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel']) {
-			if (Utility\MathUtility::canBeInterpretedAsInteger($GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel'])) {
+			if (MathUtility::canBeInterpretedAsInteger($GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel'])) {
 				@ini_set('zlib.output_compression_level', $GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel']);
 			}
 			ob_start('ob_gzhandler');
@@ -1154,6 +1120,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function shutdown() {
+		$this->sendResponse();
 		return $this;
 	}
 
@@ -1165,7 +1132,7 @@ class Bootstrap {
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
 	public function initializeBackendTemplate() {
-		$GLOBALS['TBE_TEMPLATE'] = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
+		$GLOBALS['TBE_TEMPLATE'] = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		return $this;
 	}
 

@@ -15,11 +15,10 @@ namespace TYPO3\CMS\Form\View\Confirmation\Element;
  */
 
 use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Abstract class for the form element containers (FORM and FIELDSET) view
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class ContainerElementView extends \TYPO3\CMS\Form\View\Confirmation\Element\AbstractElementView {
 
@@ -78,7 +77,7 @@ class ContainerElementView extends \TYPO3\CMS\Form\View\Confirmation\Element\Abs
 		$class = \TYPO3\CMS\Form\Utility\FormUtility::getInstance()->getLastPartOfClassName($modelChild);
 		$className = 'TYPO3\\CMS\\Form\\View\\Confirmation\\Element\\' . ucfirst($class) . 'ElementView';
 		if (class_exists($className)) {
-			$childElement = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $modelChild);
+			$childElement = ObjectFactory::createFormObject($className, $modelChild);
 		}
 		return $childElement;
 	}

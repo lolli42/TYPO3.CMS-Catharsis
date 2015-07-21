@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for display up to 10 upload fields
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FileUploadController {
 
@@ -110,7 +108,7 @@ class FileUploadController {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_upload.html');
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">';
+		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" enctype="multipart/form-data">';
 	}
 
 	/**
@@ -152,7 +150,7 @@ class FileUploadController {
 		// Make checkbox for "overwrite"
 		$content = '
 			<div id="c-override">
-				<p><label for="overwriteExistingFiles"><input type="checkbox" class="checkbox" name="overwriteExistingFiles" id="overwriteExistingFiles" value="1" /> ' . $this->getLanguageService()->getLL('overwriteExistingFiles', 1) . '</label></p>
+				<p><label for="overwriteExistingFiles"><input type="checkbox" class="checkbox" name="overwriteExistingFiles" id="overwriteExistingFiles" value="replace" /> ' . $this->getLanguageService()->getLL('overwriteExistingFiles', 1) . '</label></p>
 				<p>&nbsp;</p>
 				<p>' . $this->getLanguageService()->getLL('uploadMultipleFilesInfo', TRUE) . '</p>
 			</div>

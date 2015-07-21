@@ -27,8 +27,6 @@ use TYPO3\CMS\Lang\LanguageService;
 /**
  * TSParser extension class to TemplateService
  * Contains functions for the TS module in TYPO3 backend
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ExtendedTemplateService extends TemplateService {
 
@@ -471,7 +469,7 @@ class ExtendedTemplateService extends TemplateService {
 							$ln = '';
 						}
 						if ($this->tsbrowser_searchKeys[$depth] & 4) {
-							$label = '<strong style="color: red;">' . $label . '</strong>';
+							$label = '<strong class="text-danger">' . $label . '</strong>';
 						}
 						// The key has matched the search string
 						$label = '<a href="' . htmlspecialchars($aHref) . '" title="' . htmlspecialchars($ln) . '">' . $label . '</a>';
@@ -487,7 +485,7 @@ class ExtendedTemplateService extends TemplateService {
 					}
 					// The value has matched the search string
 					if ($this->tsbrowser_searchKeys[$depth] & 2) {
-						$HTML .= '&nbsp;=&nbsp;<strong style="color: red;">' . htmlspecialchars($theValue) . '</strong>';
+						$HTML .= '&nbsp;=&nbsp;<strong class="text-danger">' . htmlspecialchars($theValue) . '</strong>';
 					} else {
 						$HTML .= '&nbsp;=&nbsp;<strong>' . htmlspecialchars($theValue) . '</strong>';
 					}
@@ -667,7 +665,6 @@ class ExtendedTemplateService extends TemplateService {
 			$row = $arr[$key];
 			$LN = $a == $c ? 'blank' : 'line';
 			$BTM = $a == $c ? 'top' : '';
-			$PM = 'join';
 			$HTML .= $depthData;
 			$alttext = '[' . $row['templateID'] . ']';
 			$alttext .= $row['pid'] ? ' - ' . BackendUtility::getRecordPath($row['pid'], $GLOBALS['SOBE']->perms_clause, 20) : '';
@@ -690,7 +687,7 @@ class ExtendedTemplateService extends TemplateService {
 				$A_B = '';
 				$A_E = '';
 			}
-			$HTML .= ($first ? '' : IconUtility::getSpriteIcon('treeline-' . $PM . $BTM)) . $icon . $A_B
+			$HTML .= ($first ? '' : '<span class="treeline-icon treeline-icon-join' . $BTM . '"></span>') . $icon . $A_B
 				. htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['title'], $GLOBALS['BE_USER']->uc['titleLen']))
 				. $A_E . '&nbsp;&nbsp;';
 			$RL = $this->ext_getRootlineNumber($row['pid']);
@@ -704,7 +701,7 @@ class ExtendedTemplateService extends TemplateService {
 							<td>' . ($row['next'] ? '&nbsp;' . $row['next'] . '&nbsp;&nbsp;' : '') . '</td>
 						</tr>';
 			if ($deeper) {
-				$keyArray = $this->ext_getTemplateHierarchyArr($arr[$key . '.'], $depthData . ($first ? '' : IconUtility::getSpriteIcon('treeline-' . $LN)), $keyArray);
+				$keyArray = $this->ext_getTemplateHierarchyArr($arr[$key . '.'], $depthData . ($first ? '' : '<span class="treeline-icon treeline-icon-' . $LN . '"></span>'), $keyArray);
 			}
 		}
 		return $keyArray;
@@ -820,10 +817,10 @@ class ExtendedTemplateService extends TemplateService {
 			$cArr[$k] = $lineNum . str_replace(' ', '&nbsp;', $v);
 			$firstChar = substr(trim($v), 0, 1);
 			if ($firstChar == '[') {
-				$cArr[$k] = '<strong style="color: green">' . $cArr[$k] . '</strong>';
+				$cArr[$k] = '<strong class="text-success">' . $cArr[$k] . '</strong>';
 			} elseif ($firstChar == '/' || $firstChar == '#') {
 				if ($comments) {
-					$cArr[$k] = '<span class="typo3-dimmed">' . $cArr[$k] . '</span>';
+					$cArr[$k] = '<span class="text-muted">' . $cArr[$k] . '</span>';
 				} else {
 					unset($cArr[$k]);
 				}
@@ -988,7 +985,7 @@ class ExtendedTemplateService extends TemplateService {
 		// Returns array used for labels in the menu.
 		$retArr = array();
 		foreach ($this->categories as $k => $v) {
-			if (count($v)) {
+			if (!empty($v)) {
 				$retArr[$k] = strtoupper($k) . ' (' . count($v) . ')';
 			}
 		}
@@ -1144,7 +1141,7 @@ class ExtendedTemplateService extends TemplateService {
 					}
 					$label = $this->getLanguageService()->sL($params['label']);
 					$label_parts = explode(':', $label, 2);
-					if (count($label_parts) == 2) {
+					if (count($label_parts) === 2) {
 						$head = trim($label_parts[0]);
 						$body = trim($label_parts[1]);
 					} else {
@@ -1318,7 +1315,7 @@ class ExtendedTemplateService extends TemplateService {
 					$constantEditRow = '<div class="typo3-tstemplate-ceditor-row" id="' . $userTyposcriptID . '" '
 						. $userTyposcriptStyle . '>' . $deleteIconHTML . $p_field . $color . '</div>';
 					$constantLabel = '<dt class="typo3-tstemplate-ceditor-label">' . htmlspecialchars($head) . '</dt>';
-					$constantName = '<dt class="typo3-dimmed">[' . $params['name'] . ']</dt>';
+					$constantName = '<dt class="text-muted">[' . $params['name'] . ']</dt>';
 					$constantDescription = $body ? '<dd>' . htmlspecialchars($body) . '</dd>' : '';
 					$constantData = '<dd>' . $constantCheckbox . $constantEditRow . $constantDefaultRow . '</dd>';
 					$output .= '<a name="' . $raname . '"></a>' . $help['constants'][$params['name']];
@@ -1405,7 +1402,7 @@ class ExtendedTemplateService extends TemplateService {
 		if (isset($this->objReg[$key])) {
 			$lineNum = $this->objReg[$key];
 			$parts = explode('=', $this->raw[$lineNum], 2);
-			if (count($parts) == 2) {
+			if (count($parts) === 2) {
 				$parts[1] = $theValue;
 			}
 			$this->raw[$lineNum] = implode($parts, '=');

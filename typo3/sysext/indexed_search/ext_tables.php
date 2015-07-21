@@ -14,7 +14,7 @@ if (TYPO3_MODE === 'BE') {
 		),
 		array(
 			'access' => 'admin',
-			'icon'   => 'EXT:indexed_search/Resources/Public/Icons/module-indexed_search.png',
+			'icon'   => 'EXT:indexed_search/Resources/Public/Icons/module-indexed_search.svg',
 			'labels' => 'LLL:EXT:indexed_search/mod/locallang_mod.xlf',
 		)
 	);
@@ -24,4 +24,4 @@ if (TYPO3_MODE === 'BE') {
 }
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('index_config');
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('index_config', 'EXT:indexed_search/locallang_csh_indexcfg.xlf');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('index_config', 'EXT:indexed_search/Resources/Private/Language/locallang_csh_indexcfg.xlf');

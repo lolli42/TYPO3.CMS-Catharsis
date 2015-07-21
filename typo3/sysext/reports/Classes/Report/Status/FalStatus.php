@@ -18,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Performs several checks about the FAL status
- *
- * @author Frans Saris <franssaris@gmail.com>
  */
 class FalStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 
@@ -61,7 +59,7 @@ class FalStatus implements \TYPO3\CMS\Reports\StatusProviderInterface {
 			}
 		}
 
-		if (count($storages)) {
+		if (!empty($storages)) {
 			$count = $GLOBALS['TYPO3_DB']->exec_SELECTcountRows(
 				'*',
 				'sys_file',

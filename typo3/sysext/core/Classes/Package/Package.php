@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Package;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 /**
  * A Package representing the details of an extension and/or a composer package
  * Adapted from FLOW for TYPO3 CMS
@@ -76,12 +78,6 @@ class Package implements PackageInterface {
 	protected $packageMetaData;
 
 	/**
-	 * The namespace of the classes contained in this package
-	 * @var string
-	 */
-	protected $namespace;
-
-	/**
 	 * @var PackageManager
 	 */
 	protected $packageManager;
@@ -110,11 +106,12 @@ class Package implements PackageInterface {
 		$this->packageKey = $packageKey;
 		$this->packagePath = $packagePath;
 		try {
-			$this->composerManifest = $this->packageManager->getComposerManifest($this->packagePath);
+			$this->composerManifest = $packageManager->getComposerManifest($this->packagePath);
 		} catch (Exception\MissingPackageManifestException $exception) {
 			if (!$this->loadExtensionEmconf()) {
 				throw new Exception\InvalidPackageManifestException('No valid ext_emconf.php file found for package "' . $packageKey . '".', 1360403545);
 			}
+			$this->mapExtensionManagerConfigurationToComposerManifest();
 		}
 		$this->loadFlagsFromComposerManifest();
 	}
@@ -148,15 +145,6 @@ class Package implements PackageInterface {
 	 */
 	public function isPartOfMinimalUsableSystem() {
 		return $this->partOfMinimalUsableSystem;
-	}
-
-	/**
-	 * Invokes custom PHP code directly after the package manager has been initialized.
-	 *
-	 * @param \TYPO3\CMS\Core\Core\Bootstrap $bootstrap The current bootstrap
-	 * @return void
-	 */
-	public function boot(\TYPO3\CMS\Core\Core\Bootstrap $bootstrap) {
 	}
 
 	/**
@@ -201,37 +189,9 @@ class Package implements PackageInterface {
 	}
 
 	/**
-	 * Returns the full path to this package's Classes directory
+	 * Fetches MetaData information from ext_emconf.php, used for
+	 * resolving dependencies as well.
 	 *
-	 * @return string Path to this package's Classes directory
-	 * @api
-	 */
-	public function getClassesPath() {
-		return $this->packagePath . self::DIRECTORY_CLASSES;
-	}
-
-	/**
-	 * Returns the full path to this package's Resources directory
-	 *
-	 * @return string Path to this package's Resources directory
-	 * @api
-	 */
-	public function getResourcesPath() {
-		return $this->packagePath . self::DIRECTORY_RESOURCES;
-	}
-
-	/**
-	 * Returns the full path to this package's Configuration directory
-	 *
-	 * @return string Path to this package's Configuration directory
-	 * @api
-	 */
-	public function getConfigurationPath() {
-		return $this->packagePath . self::DIRECTORY_CONFIGURATION;
-	}
-
-	/**
-	 * Fetches MetaData information from ext_emconf.php, used for resolving dependencies as well
 	 * @return bool
 	 */
 	protected function loadExtensionEmconf() {
@@ -242,7 +202,6 @@ class Package implements PackageInterface {
 			include $path;
 			if (is_array($EM_CONF[$_EXTKEY])) {
 				$this->extensionManagerConfiguration = $EM_CONF[$_EXTKEY];
-				$this->mapExtensionManagerConfigurationToComposerManifest();
 				return TRUE;
 			}
 		}
@@ -304,7 +263,16 @@ class Package implements PackageInterface {
 		if ($this->packageMetaData === NULL) {
 			$this->packageMetaData = new MetaData($this->getPackageKey());
 			$this->packageMetaData->setDescription($this->getValueFromComposerManifest('description'));
-			$this->packageMetaData->setVersion($this->getValueFromComposerManifest('version'));
+			$version = $this->getValueFromComposerManifest('version');
+			if ($version !== NULL) {
+				$this->packageMetaData->setVersion($version);
+			} else {
+				// As version is important within the core we need to make sure it is available
+				// Fetch it from ext_emconf.php
+				if ($this->loadExtensionEmconf()) {
+					$this->packageMetaData->setVersion($this->extensionManagerConfiguration['version']);
+				}
+			}
 			$requirements = $this->getValueFromComposerManifest('require');
 			if ($requirements !== NULL) {
 				foreach ($requirements as $requirement => $version) {
@@ -313,6 +281,12 @@ class Package implements PackageInterface {
 						continue;
 					}
 					$packageKey = $this->packageManager->getPackageKeyFromComposerName($requirement);
+					// dynamically migrate 'cms' dependency to 'core' dependency
+					// see also \TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility::convertDependenciesToObjects
+					if ($packageKey === 'cms') {
+						GeneralUtility::deprecationLog('Extension "' . $this->packageKey . '" defines a dependency on ext:cms, which has been removed. Please remove the dependency.');
+						$packageKey = 'core';
+					}
 					$constraint = new MetaData\PackageConstraint(MetaData::CONSTRAINT_TYPE_DEPENDS, $packageKey);
 					$this->packageMetaData->addConstraint($constraint);
 				}
@@ -341,57 +315,6 @@ class Package implements PackageInterface {
 	public function getPackageReplacementKeys() {
 		// The cast to array is required since the manifest returns data with type mixed
 		return (array)$this->getValueFromComposerManifest('replace') ?: array();
-	}
-
-	/**
-	 * Returns the PHP namespace of classes in this package, also uses a fallback for extensions without having a "."
-	 * in the package key.
-	 *
-	 * @return string
-	 */
-	public function getNamespace() {
-		if (!$this->namespace) {
-			$packageKey = $this->getPackageKey();
-			if (strpos($packageKey, '.') === FALSE) {
-				// Old school with unknown vendor name
-				$this->namespace =  '*\\' . \TYPO3\CMS\Core\Utility\GeneralUtility::underscoredToUpperCamelCase($packageKey);
-			} else {
-				$this->namespace = str_replace('.', '\\', $packageKey);
-			}
-		}
-		return $this->namespace;
-	}
-
-	/**
-	 * @return array
-	 */
-	public function getClassFilesFromAutoloadRegistry() {
-		$autoloadRegistryPath = $this->packagePath . 'ext_autoload.php';
-		if (@file_exists($autoloadRegistryPath)) {
-			return require $autoloadRegistryPath;
-		}
-		return array();
-	}
-
-	/**
-	 * Fetches class aliases registered via Migrations/Code/ClassAliasMap.php
-	 *
-	 * @return array
-	 */
-	public function getClassAliases() {
-		if (!is_array($this->classAliases)) {
-			try {
-				$extensionClassAliasMapPathAndFilename = $this->packagePath . 'Migrations/Code/ClassAliasMap.php';
-				if (@file_exists($extensionClassAliasMapPathAndFilename)) {
-					$this->classAliases = require $extensionClassAliasMapPathAndFilename;
-				}
-			} catch (\BadFunctionCallException $e) {
-			}
-			if (!is_array($this->classAliases)) {
-				$this->classAliases = array();
-			}
-		}
-		return $this->classAliases;
 	}
 
 	/**

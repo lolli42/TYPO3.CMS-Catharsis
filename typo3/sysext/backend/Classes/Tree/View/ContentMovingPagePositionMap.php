@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Backend\Tree\View;
 /**
  * Position map class for moving content elements,
  * previously resided in typo3/move_el.php
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ContentMovingPagePositionMap extends PagePositionMap {
 
@@ -32,7 +30,7 @@ class ContentMovingPagePositionMap extends PagePositionMap {
 	 *
 	 * @var string
 	 */
-	protected $pageTreeClassName = MoveElementPageTreeView::class;
+	protected $pageTreeClassName = PageTreeView::class;
 
 	/**
 	 * Wrapping page title.

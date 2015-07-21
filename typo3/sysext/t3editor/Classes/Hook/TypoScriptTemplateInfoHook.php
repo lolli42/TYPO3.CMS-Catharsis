@@ -16,8 +16,6 @@ namespace TYPO3\CMS\T3editor\Hook;
 
 /**
  * Hook for tstemplate info
- *
- * @author Tobias Liebig <mail_typo3@etobi.de>
  */
 class TypoScriptTemplateInfoHook {
 
@@ -104,7 +102,7 @@ class TypoScriptTemplateInfoHook {
 			$tmpl->init();
 			// Get the row of the first VISIBLE template of the page. whereclause like the frontend.
 			$tplRow = $tmpl->ext_getFirstTemplate($pageId, $template_uid);
-			$existTemplate = is_array($tplRow) ? TRUE : FALSE;
+			$existTemplate = is_array($tplRow);
 			if ($existTemplate) {
 				$saveId = $tplRow['_ORIG_uid'] ?: $tplRow['uid'];
 				// Update template ?
@@ -124,7 +122,7 @@ class TypoScriptTemplateInfoHook {
 							}
 						}
 					}
-					if (count($recData)) {
+					if (!empty($recData)) {
 						// process template row before saving
 						$tstemplateinfo = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController::class);
 						/* @var $tstemplateinfo \TYPO3\CMS\Tstemplate\Controller\TypoScriptTemplateInformationModuleFunctionController */

@@ -14,12 +14,11 @@ namespace TYPO3\CMS\T3editor\Hook;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * File edit hook for t3editor
- *
- * @author Tobias Liebig <mail_typo3@etobi.de>
  */
 class FileEditHook {
 
@@ -56,7 +55,6 @@ class FileEditHook {
 		if (!$t3editor->getMode()) {
 			return;
 		}
-		$parameters['content'] = str_replace('<!--###POSTJSMARKER###-->', '<!--###POSTJSMARKER###-->' . $t3editor->getModeSpecificJavascriptCode(), $parameters['content']);
 	}
 
 	/**
@@ -71,7 +69,7 @@ class FileEditHook {
 		if (GeneralUtility::_GET('M') === 'file_edit') {
 			$t3editor = $this->getT3editor();
 			$documentTemplate->JScode .= $t3editor->getJavascriptCode($documentTemplate);
-			$documentTemplate->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/T3editor/FileEdit');
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/T3editor/FileEdit');
 		}
 	}
 
@@ -110,6 +108,13 @@ class FileEditHook {
 			$savingsuccess = is_array($result) && $result['editfile'][0];
 		}
 		return $savingsuccess;
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 
 }

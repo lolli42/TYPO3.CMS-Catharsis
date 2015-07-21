@@ -23,8 +23,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * and TCEforms hooks
  *
  * Note: This is now also used by sys_file_category table (fieldname "folder")!
- *
- * @author Benjamin Mack <benni@typo3.org>
  */
 class UserFileMountService {
 
@@ -54,7 +52,7 @@ class UserFileMountService {
 				$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 				$queue = $flashMessageService->getMessageQueueByIdentifier();
 				$queue->enqueue(new FlashMessage('Storage #' . $storageUid . ' does not exist. No folder is currently selectable.', '', FlashMessage::ERROR));
-				if (!count($PA['items'])) {
+				if (empty($PA['items'])) {
 					$PA['items'][] = array(
 						$PA['row'][$PA['field']],
 						$PA['row'][$PA['field']]
@@ -86,7 +84,7 @@ class UserFileMountService {
 				$flashMessageService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 				$queue = $flashMessageService->getMessageQueueByIdentifier();
 				$queue->enqueue(new FlashMessage('Storage "' . $storage->getName() . '" is not browsable. No folder is currently selectable.', '', FlashMessage::WARNING));
-				if (!count($PA['items'])) {
+				if (empty($PA['items'])) {
 					$PA['items'][] = array(
 						$PA['row'][$PA['field']],
 						$PA['row'][$PA['field']]

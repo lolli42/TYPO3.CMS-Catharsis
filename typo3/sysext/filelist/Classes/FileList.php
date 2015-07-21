@@ -33,8 +33,6 @@ use TYPO3\CMS\Core\Resource\FolderInterface;
 
 /**
  * Class for rendering of File>Filelist
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FileList extends AbstractRecordList {
 
@@ -216,7 +214,7 @@ class FileList extends AbstractRecordList {
 	}
 
 	/**
-	 * Return the buttons used by the file list to include in the top header
+	 * Return the buttons used by the filelist to include in the top header
 	 *
 	 * @param Folder $folderObject
 	 * @return array
@@ -254,7 +252,7 @@ class FileList extends AbstractRecordList {
 			// Add paste button if clipboard is initialized
 			if ($this->clipObj instanceof Clipboard && $folderObject->checkActionPermission('write')) {
 				$elFromTable = $this->clipObj->elFromTable('_FILE');
-				if (count($elFromTable)) {
+				if (!empty($elFromTable)) {
 					$addPasteButton = TRUE;
 					$elToConfirm = array();
 					foreach ($elFromTable as $key => $element) {
@@ -394,7 +392,7 @@ class FileList extends AbstractRecordList {
 					$cells = array();
 					$table = '_FILE';
 					$elFromTable = $this->clipObj->elFromTable($table);
-					if (count($elFromTable) && $this->folderObject->checkActionPermission('write')) {
+					if (!empty($elFromTable) && $this->folderObject->checkActionPermission('write')) {
 						$addPasteButton = TRUE;
 						$elToConfirm = array();
 						foreach ($elFromTable as $key => $element) {
@@ -429,7 +427,7 @@ class FileList extends AbstractRecordList {
 			// finish
 			$out = '
 		<!--
-			File list table:
+			Filelist table:
 		-->
 			<div class="table-fit">
 				<table class="table table-striped table-hover" id="typo3-filelist">
@@ -615,7 +613,7 @@ class FileList extends AbstractRecordList {
 	 *
 	 * @return string URL
 	 */
-	public function listURL() {
+	public function listURL($altId = '') {
 		return GeneralUtility::linkThisScript(array(
 			'target' => rawurlencode($this->folderObject->getCombinedIdentifier()),
 			'imagemode' => $this->thumbs
@@ -785,7 +783,7 @@ class FileList extends AbstractRecordList {
 	}
 
 	/**
-	 * Wraps the directory-titles ($code) in a link to filelist/mod1/index.php (id=$path) and sorting commands...
+	 * Wraps the directory-titles ($code) in a link to filelist/Modules/Filelist/index.php (id=$path) and sorting commands...
 	 *
 	 * @param string $code String to be wrapped
 	 * @param string $folderIdentifier ID (path)
@@ -838,7 +836,7 @@ class FileList extends AbstractRecordList {
 		}
 		// Display PASTE button, if directory:
 		$elFromTable = $this->clipObj->elFromTable('_FILE');
-		if ($fileOrFolderObject instanceof Folder && count($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
+		if ($fileOrFolderObject instanceof Folder && !empty($elFromTable) && $fileOrFolderObject->checkActionPermission('write')) {
 			$addPasteButton = TRUE;
 			$elToConfirm = array();
 			foreach ($elFromTable as $key => $element) {
@@ -866,6 +864,7 @@ class FileList extends AbstractRecordList {
 	public function makeEdit($fileOrFolderObject) {
 		$cells = array();
 		$fullIdentifier = $fileOrFolderObject->getCombinedIdentifier();
+
 		// Edit file content (if editable)
 		if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
 			$url = BackendUtility::getModuleUrl('file_edit', array('target' => $fullIdentifier));
@@ -885,6 +884,14 @@ class FileList extends AbstractRecordList {
 		} else {
 			$cells['view'] = $this->spaceIcon;
 		}
+
+		// replace file
+		if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('replace')) {
+			$url = BackendUtility::getModuleUrl('file_replace', array('target' => $fullIdentifier, 'uid' => $fileOrFolderObject->getUid()));
+			$replaceOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
+			$cells['replace'] = '<a href="#" class="btn btn-default" onclick="' . $replaceOnClick . '"  title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.replace') . '">' . IconUtility::getSpriteIcon('actions-edit-replace') . '</a>';
+		}
+
 		// rename the file
 		if ($fileOrFolderObject->checkActionPermission('rename')) {
 			$url = BackendUtility::getModuleUrl('file_rename', array('target' => $fullIdentifier));
@@ -929,6 +936,7 @@ class FileList extends AbstractRecordList {
 
 		// Hook for manipulating edit icons.
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['fileList']['editIconsHook'])) {
+			$cells['__fileOrFolderObject'] = $fileOrFolderObject;
 			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['fileList']['editIconsHook'] as $classData) {
 				$hookObject = GeneralUtility::getUserObj($classData);
 				if (!$hookObject instanceof FileListEditIconHookInterface) {
@@ -939,6 +947,7 @@ class FileList extends AbstractRecordList {
 				}
 				$hookObject->manipulateEditIcons($cells, $this);
 			}
+			unset($cells['__fileOrFolderObject']);
 		}
 		// Compile items into a DIV-element:
 		return '<div class="btn-group">' . implode('', $cells) . '</div>';

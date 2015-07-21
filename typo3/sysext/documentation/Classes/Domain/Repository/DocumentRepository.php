@@ -18,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * An extension helper repository to be used in ext:documentation context
- *
- * @author Xavier Perseguers <xavier@typo3.org>
  */
 class DocumentRepository {
 
@@ -172,7 +170,7 @@ class DocumentRepository {
 						case 'pdf':
 							// Retrieve first PDF
 							$files = GeneralUtility::getFilesInDir(PATH_site . $formatPath . $format, 'pdf');
-							if (count($files) > 0) {
+							if (is_array($files) && !empty($files)) {
 								$documentFile = current($files);
 							}
 							break;
@@ -187,7 +185,7 @@ class DocumentRepository {
 					}
 				}
 
-				if (count($documentTranslation->getFormats()) > 0) {
+				if (!empty($documentTranslation->getFormats())) {
 					$document->addTranslation($documentTranslation);
 					$documents[$documentKey] = $document;
 				}

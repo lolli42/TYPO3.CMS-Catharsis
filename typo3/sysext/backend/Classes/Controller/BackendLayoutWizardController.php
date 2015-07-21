@@ -14,18 +14,17 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 
 /**
  * Script Class for grid wizard
- *
- * @author T3UXW09 Team1 <modernbe@cybercraft.de>
  */
 class BackendLayoutWizardController {
 
@@ -81,9 +80,10 @@ class BackendLayoutWizardController {
 		// Initialize document object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$pageRenderer = $this->doc->getPageRenderer();
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadExtJS();
 		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/JavaScript/grideditor.js');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tooltip');
 		$pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_cshmanual'));
 		$pageRenderer->addJsInlineCode('storeData', '
 			function storeData(data) {
@@ -129,7 +129,7 @@ class BackendLayoutWizardController {
 				for ($j = 1; $j <= $colCount; $j++) {
 					$cellData = array();
 					if (!$spannedMatrix[$i][$j]) {
-						if (is_array($columns) && count($columns)) {
+						if (is_array($columns) && !empty($columns)) {
 							$column = array_shift($columns);
 							if (isset($column['colspan'])) {
 								$cellData['colspan'] = (int)$column['colspan'];
@@ -178,7 +178,6 @@ class BackendLayoutWizardController {
 				}
 			}
 		}
-		$pageRenderer->enableExtJSQuickTips();
 		$pageRenderer->addExtOnReadyCode('
 			t3Grid = new TYPO3.Backend.t3Grid({
 				data: ' . json_encode($rows, JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) . ',

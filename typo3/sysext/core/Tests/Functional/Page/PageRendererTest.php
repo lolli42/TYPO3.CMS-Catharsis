@@ -78,21 +78,9 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$subject->addCssInlineBlock('general2', 'body {margin:20px;}');
 		$subject->addCssInlineBlock('general3', 'h1 {margin:20px;}', NULL, TRUE);
 
-		$expectedLoadPrototypeRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/prototype\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
-		$subject->loadPrototype();
-
-		$subject->loadScriptaculous('slider,controls');
-		$expectedScriptaculousMain = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/scriptaculous.js" type="text/javascript"></script>';
-		$expectedScriptaculousEffects = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/effects.js" type="text/javascript"></script>';
-		$expectedScriptaculousControls = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/controls.js" type="text/javascript"></script>';
-		$expectedScriptaculousSlider  = '<script src="sysext/core/Resources/Public/JavaScript/Contrib/scriptaculous/slider.js" type="text/javascript"></script>';
-
 		$subject->loadJquery();
-		$expectedJqueryRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedJqueryRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$expectedJqueryStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.jQuery = jQuery.noConflict(true);';
-
-		$subject->loadExtJS(TRUE, TRUE, 'jquery');
-		$expectedExtJsRegExp = '#<script src="contrib/extjs/adapter/jquery/ext-jquery-adapter\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>' . LF . '<script src="contrib/extjs/ext-all\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#m';
 
 		$expectedBodyContent = $this->getUniqueId('ABCDE-');
 		$subject->setBodyContent($expectedBodyContent);
@@ -114,14 +102,8 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 		$this->assertContains($expectedExtOnReadyCodePartTwo, $renderedString);
 		$this->assertContains($expectedCssFileString, $renderedString);
 		$this->assertContains($expectedCssInlineBlockOnTopString, $renderedString);
-		$this->assertRegExp($expectedLoadPrototypeRegExp, $renderedString);
-		$this->assertContains($expectedScriptaculousMain, $renderedString);
-		$this->assertContains($expectedScriptaculousEffects, $renderedString);
-		$this->assertContains($expectedScriptaculousControls, $renderedString);
-		$this->assertContains($expectedScriptaculousSlider, $renderedString);
 		$this->assertRegExp($expectedJqueryRegExp, $renderedString);
 		$this->assertContains($expectedJqueryStatement, $renderedString);
-		$this->assertRegExp($expectedExtJsRegExp, $renderedString);
 		$this->assertContains($expectedBodyContent, $renderedString);
 	}
 
@@ -189,61 +171,10 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	/**
 	 * @test
 	 */
-	public function isScriptaculousLoadedCompressedIfConfiguredAndClientIsCapable() {
-		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
-
-		$_SERVER['HTTP_ACCEPT_ENCODING'] = 'gzip,deflate';
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel'] = '5';
-		$subject->loadScriptaculous('slider,controls');
-		$subject->enableCompressJavascript();
-		$out = $subject->render();
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/scriptaculous-[a-f0-9]+.js.gzip" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/effects-[a-f0-9]+.js.gzip" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/controls-[a-f0-9]+.js.gzip" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/slider-[a-f0-9]+.js.gzip" type="text/javascript"></script>#', $out);
-	}
-
-	/**
-	 * @test
-	 */
-	public function isScriptaculousNotLoadedCompressedIfClientCannotHandleCompression() {
-		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
-
-		$_SERVER['HTTP_ACCEPT_ENCODING'] = '';
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel'] = '5';
-		$subject->loadScriptaculous('slider,controls');
-		$subject->enableCompressJavascript();
-		$out = $subject->render();
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/scriptaculous-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/effects-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/controls-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/slider-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-	}
-
-	/**
-	 * @test
-	 */
-	public function isScriptaculousNotLoadedCompressedIfCompressionIsNotConfigured() {
-		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
-
-		$_SERVER['HTTP_ACCEPT_ENCODING'] = 'gzip,deflate';
-		$GLOBALS['TYPO3_CONF_VARS']['BE']['compressionLevel'] = '';
-		$subject->loadScriptaculous('slider,controls');
-		$subject->enableCompressJavascript();
-		$out = $subject->render();
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/scriptaculous-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/effects-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/controls-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-		$this->assertRegExp('#<script src="[^"]*/typo3temp/compressor/slider-[a-f0-9]+.js" type="text/javascript"></script>#', $out);
-	}
-
-	/**
-	 * @test
-	 */
 	public function loadJqueryRespectsGivenNamespace() {
 		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-		$expectedRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$expectedStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.MyNameSpace = jQuery.noConflict(true);';
 		$subject->loadJquery(NULL, NULL, 'MyNameSpace');
 		$out = $subject->render();
@@ -257,7 +188,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function loadJqueryWithDefaultNoConflictModeDoesNotSetNamespace() {
 		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-		$expectedRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$expectedStatement = 'jQuery.noConflict();';
 		$subject->loadJquery(NULL, NULL, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_DEFAULT_NOCONFLICT);
 		$out = $subject->render();
@@ -272,7 +203,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function loadJqueryWithNamespaceNoneDoesNotIncludeNoConflictHandling() {
 		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-		$expectedRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.min\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$subject->loadJquery(NULL, NULL, \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_NAMESPACE_NONE);
 		$out = $subject->render();
 		$this->assertRegExp($expectedRegExp, $out);
@@ -285,7 +216,7 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function loadJqueryLoadsTheLatestJqueryVersionInNoConflictModeUncompressedInDebugMode() {
 		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-		$expectedRegExp = '#<script src="contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/jquery/jquery-' . \TYPO3\CMS\Core\Page\PageRenderer::JQUERY_VERSION_LATEST . '\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
 		$expectedStatement = 'var TYPO3 = TYPO3 || {}; TYPO3.jQuery = jQuery.noConflict(true);';
 		$subject->loadJquery();
 		$subject->enableDebugMode();
@@ -353,34 +284,9 @@ class PageRendererTest extends \TYPO3\CMS\Core\Tests\FunctionalTestCase {
 	public function loadExtJsInDebugLoadsDebugExtJs() {
 		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
 
-		$expectedRegExp = '#<script src="contrib/extjs/ext-all-debug\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
-		$subject->loadExtJS(TRUE, TRUE, 'jquery');
+		$expectedRegExp = '#<script src="sysext/core/Resources/Public/JavaScript/Contrib/extjs/ext-all-debug\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
+		$subject->loadExtJS(TRUE, TRUE);
 		$subject->enableExtJsDebug();
-		$out = $subject->render();
-		$this->assertRegExp($expectedRegExp, $out);
-	}
-
-	/**
-	 * @test
-	 */
-	public function loadExtCoreLoadsExtCore() {
-		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
-
-		$expectedRegExp = '#<script src="contrib/extjs/ext-core\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
-		$subject->loadExtCore();
-		$out = $subject->render();
-		$this->assertRegExp($expectedRegExp, $out);
-	}
-
-	/**
-	 * @test
-	 */
-	public function loadExtCoreInDebugLoadsDebugExtCore() {
-		$subject = new \TYPO3\CMS\Core\Page\PageRenderer();
-
-		$expectedRegExp = '#<script src="contrib/extjs/ext-core-debug\\.(js|\\d+\\.js|js\\?\\d+)" type="text/javascript"></script>#';
-		$subject->loadExtCore();
-		$subject->enableExtCoreDebug();
 		$out = $subject->render();
 		$this->assertRegExp($expectedRegExp, $out);
 	}

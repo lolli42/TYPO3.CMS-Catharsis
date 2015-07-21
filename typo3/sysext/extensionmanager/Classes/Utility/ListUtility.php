@@ -27,8 +27,6 @@ use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
  * - The methods depend on each other, they take each others result, that could be done internally
  * - There is no good wording to distinguish existing and loaded extensions
  * - The name 'listUtility' is not good, the methods could be moved to some 'extensionInformationUtility', or a repository?
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
 class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -65,18 +63,12 @@ class ListUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	/**
 	 * Returns the list of available, but not necessarily loaded extensions
 	 *
-	 * @return array Array with two sub-arrays, list array (all extensions with info) and category index
-	 * @see getInstExtList()
+	 * @return array[] All extensions with info
 	 */
 	public function getAvailableExtensions() {
 		$this->emitPackagesMayHaveChangedSignal();
 		$extensions = array();
 		foreach ($this->packageManager->getAvailablePackages() as $package) {
-			// Only TYPO3 related packages could be handled by the extension manager
-			// Composer packages from "Packages" folder will be instantiated as \TYPO3\Flow\Package\Package
-			if (!($package instanceof \TYPO3\CMS\Core\Package\PackageInterface)) {
-				continue;
-			}
 			$installationType = $this->getInstallTypeForPackage($package);
 			$extensions[$package->getPackageKey()] = array(
 				'siteRelPath' => str_replace(PATH_site, '', $package->getPackagePath()),

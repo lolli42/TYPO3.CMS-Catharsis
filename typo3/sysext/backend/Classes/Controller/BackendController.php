@@ -14,19 +14,19 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
+use TYPO3\CMS\Rsaauth\RsaEncryptionEncoder;
 
 /**
  * Class for rendering the TYPO3 backend
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class BackendController {
 
@@ -86,14 +86,16 @@ class BackendController {
 	protected $moduleLoader;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 * @var PageRenderer
 	 */
 	protected $pageRenderer;
 
 	/**
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 * @return PageRenderer
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function getPageRenderer() {
+		GeneralUtility::logDeprecatedFunction();
 		return $this->pageRenderer;
 	}
 
@@ -108,11 +110,10 @@ class BackendController {
 		// Initializes the backend modules structure for use later.
 		$this->moduleLoader = GeneralUtility::makeInstance(ModuleLoader::class);
 		$this->moduleLoader->load($GLOBALS['TBE_MODULES']);
-		$this->pageRenderer = $this->getDocumentTemplate()->getPageRenderer();
+		$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$this->pageRenderer->loadExtJS();
 		// included for the module menu JavaScript, please note that this is subject to change
 		$this->pageRenderer->loadJquery();
-		$this->pageRenderer->enableExtJSQuickTips();
 		$this->pageRenderer->addJsInlineCode('consoleOverrideWithDebugPanel', '//already done', FALSE);
 		$this->pageRenderer->addExtDirectCode();
 		// Add default BE javascript
@@ -152,6 +153,10 @@ class BackendController {
 
 		// load debug console
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DebugConsole');
+
+		// Load RSA encryption
+		$rsaEncryptionEncoder = GeneralUtility::makeInstance(RsaEncryptionEncoder::class);
+		$rsaEncryptionEncoder->enableRsaEncryption(TRUE);
 
 		$this->pageRenderer->addInlineSetting('ShowItem', 'moduleUrl', BackendUtility::getModuleUrl('show_item'));
 
@@ -240,7 +245,7 @@ class BackendController {
 		$view = $this->getFluidTemplateObject($this->templatePath . 'Backend/Main.html');
 
 		// Render the TYPO3 logo in the left corner
-		$logoUrl = $GLOBALS['TBE_STYLES']['logo'] ?: 'gfx/typo3-topbar@2x.png';
+		$logoUrl = $GLOBALS['TBE_STYLES']['logo'] ?: 'sysext/backend/Resources/Public/Images/typo3-topbar@2x.png';
 		$logoPath = GeneralUtility::resolveBackPath(PATH_typo3 . $logoUrl);
 		list($logoWidth, $logoHeight) = @getimagesize($logoPath);
 
@@ -458,10 +463,11 @@ class BackendController {
 			'be_locked' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.be_locked'),
 			'refresh_login_countdown_singular' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_countdown_singular'),
 			'refresh_login_countdown' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_countdown'),
-			'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire'),
+			'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_refresh_about_to_expire'),
 			'login_about_to_expire_title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire_title'),
+			'refresh_login_abort_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_abort_button'),
+			'refresh_login_confirm_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_confirm_button'),
 			'refresh_login_refresh_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_refresh_button'),
-			'refresh_direct_logout_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_direct_logout_button'),
 			'tabs_closeAll' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:tabs.closeAll'),
 			'tabs_closeOther' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:tabs.closeOther'),
 			'tabs_close' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:tabs.close'),
@@ -571,6 +577,7 @@ class BackendController {
 			'PATH_typo3' => $pathTYPO3,
 			'PATH_typo3_enc' => rawurlencode($pathTYPO3),
 			'username' => htmlspecialchars($beUser->user['username']),
+			'userUid' => htmlspecialchars($beUser->user['uid']),
 			'uniqueID' => GeneralUtility::shortMD5(uniqid('', TRUE)),
 			'securityLevel' => trim($GLOBALS['TYPO3_CONF_VARS']['BE']['loginSecurityLevel']) ?: 'normal',
 			'TYPO3_mainDir' => TYPO3_mainDir,

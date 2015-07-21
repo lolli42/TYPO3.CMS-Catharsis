@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Form\Domain\Model\Element;
 
 /**
  * Textline model object
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class TextlineElement extends \TYPO3\CMS\Form\Domain\Model\Element\AbstractElement {
 
@@ -42,7 +40,8 @@ class TextlineElement extends \TYPO3\CMS\Form\Domain\Model\Element\AbstractEleme
 		'tabindex' => '',
 		'title' => '',
 		'type' => 'text',
-		'value' => ''
+		'value' => '',
+		'placeholder' => '',
 	);
 
 	/**

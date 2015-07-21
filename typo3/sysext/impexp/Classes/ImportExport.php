@@ -42,7 +42,7 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  * Adding all the relations (recursively in 5 levels so relations has THEIR relations registered as well)
  * for($a=0;$a<5;$a++) {
  * $addR = $this->export->export_addDBRelations($a);
- * if (!count($addR)) break;
+ * if (empty($addR)) break;
  * }
  *
  * Finally load all the files.
@@ -54,8 +54,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * T3D file Import/Export library (TYPO3 Record Document)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ImportExport {
 
@@ -1575,7 +1573,7 @@ class ImportExport {
 				foreach ($this->storageObjects as $localStorage) {
 					// check the available storage for Local, writable and online ones
 					if ($localStorage->getDriverType() === 'Local' && $localStorage->isWritable() && $localStorage->isOnline()) {
-						// check if there is already a identical storage present (same pathType and basePath)
+						// check if there is already an identical storage present (same pathType and basePath)
 						$storageRecordConfiguration = ResourceFactory::getInstance()->convertFlexFormDataToConfigurationArray($storageRecord['configuration']);
 						$localStorageRecordConfiguration = $localStorage->getConfiguration();
 						if (
@@ -1625,7 +1623,7 @@ class ImportExport {
 			$this->import_mapId['sys_file_storage'][$sysFileStorageUidToBeResetToDefaultStorage] = $defaultStorageUid;
 		}
 
-		// unset the sys_file_storage records to prevent a import in writeRecords_records
+		// unset the sys_file_storage records to prevent an import in writeRecords_records
 		unset($this->dat['header']['records']['sys_file_storage']);
 	}
 
@@ -1671,7 +1669,7 @@ class ImportExport {
 			$originalStorageUid = $fileRecord['storage'];
 			$useStorageFromStorageRecords = FALSE;
 
-			// replace storage id, if a alternative one was registered
+			// replace storage id, if an alternative one was registered
 			if (isset($this->import_mapId['sys_file_storage'][$fileRecord['storage']])) {
 				$fileRecord['storage'] = $this->import_mapId['sys_file_storage'][$fileRecord['storage']];
 				$useStorageFromStorageRecords = TRUE;
@@ -1699,7 +1697,7 @@ class ImportExport {
 
 			$newFile = NULL;
 
-			// check, if there is a identical file
+			// check, if there is an identical file
 			try {
 				if ($storage->hasFile($fileRecord['identifier'])) {
 						$file = $storage->getFile($fileRecord['identifier']);
@@ -1748,7 +1746,7 @@ class ImportExport {
 
 		}
 
-		// unset the sys_file records to prevent a import in writeRecords_records
+		// unset the sys_file records to prevent an import in writeRecords_records
 		unset($this->dat['header']['records']['sys_file']);
 	}
 
@@ -1893,7 +1891,7 @@ class ImportExport {
 				}
 			}
 			// Then add all remaining pages not in tree on root level:
-			if (count($pageRecords)) {
+			if (!empty($pageRecords)) {
 				$remainingPageUids = array_keys($pageRecords);
 				foreach ($remainingPageUids as $pUid) {
 					$this->addSingle('pages', $pUid, $pid);
@@ -1948,7 +1946,7 @@ class ImportExport {
 			}
 		}
 		// Execute the move commands if any:
-		if (count($cmd_data)) {
+		if (!empty($cmd_data)) {
 			$tce = $this->getNewTCE();
 			$this->callHook('before_writeRecordsPagesOrder', array(
 				'tce' => &$tce,
@@ -2059,7 +2057,7 @@ class ImportExport {
 			}
 		}
 		// Execute the move commands if any:
-		if (count($cmd_data)) {
+		if (!empty($cmd_data)) {
 			$tce = $this->getNewTCE();
 			$this->callHook('before_writeRecordsRecordsOrder', array(
 				'tce' => &$tce,
@@ -2275,14 +2273,14 @@ class ImportExport {
 						}
 						switch ((string)$config['type']) {
 							case 'db':
-								if (is_array($config['itemArray']) && count($config['itemArray'])) {
+								if (is_array($config['itemArray']) && !empty($config['itemArray'])) {
 									$itemConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 									$valArray = $this->setRelations_db($config['itemArray'], $itemConfig);
 									$updateData[$table][$thisNewUid][$field] = implode(',', $valArray);
 								}
 								break;
 							case 'file':
-								if (is_array($config['newValueFiles']) && count($config['newValueFiles'])) {
+								if (is_array($config['newValueFiles']) && !empty($config['newValueFiles'])) {
 									$valArr = array();
 									foreach ($config['newValueFiles'] as $fI) {
 										$valArr[] = $this->import_addFileNameToBeCopied($fI);
@@ -2344,7 +2342,7 @@ class ImportExport {
 				$this->error('Error: this records is NOT created it seems! (' . $table . ':' . $uid . ')', 1);
 			}
 		}
-		if (count($updateData)) {
+		if (!empty($updateData)) {
 			$tce = $this->getNewTCE();
 			$tce->isImporting = TRUE;
 			$this->callHook('before_setRelation', array(
@@ -2482,7 +2480,7 @@ class ImportExport {
 						// Get XML content and set as default value (string, non-processed):
 						$updateData[$table][$thisNewUid][$field] = $this->dat['records'][$table . ':' . $uid]['data'][$field];
 						// If there has been registered relations inside the flex form field, run processing on the content:
-						if (count($config['flexFormRels']['db']) || count($config['flexFormRels']['file'])) {
+						if (!empty($config['flexFormRels']['db']) || !empty($config['flexFormRels']['file'])) {
 							$origRecordRow = BackendUtility::getRecord($table, $thisNewUid, '*');
 							// This will fetch the new row for the element (which should be updated with any references to data structures etc.)
 							$conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
@@ -2511,7 +2509,7 @@ class ImportExport {
 				}
 			}
 		}
-		if (count($updateData)) {
+		if (!empty($updateData)) {
 			$tce = $this->getNewTCE();
 			$tce->isImporting = TRUE;
 			$this->callHook('before_setFlexFormRelations', array(
@@ -2661,7 +2659,7 @@ class ImportExport {
 				}
 			}
 			// If any was found, do processing:
-			if (count($thisSoftRefCfgList)) {
+			if (!empty($thisSoftRefCfgList)) {
 				// Get tokenizedContent string and proceed only if that is not blank:
 				$tokenizedContent = $this->dat['records'][$table . ':' . $origUid]['rels'][$field]['flexFormRels']['softrefs'][$path]['tokenizedContent'];
 				if (strlen($tokenizedContent)) {
@@ -3408,7 +3406,7 @@ class ImportExport {
 						<td>' . $this->renderControls($r) . '</td>
 						<td nowrap="nowrap">' . $r['preCode'] . $r['title'] . '</td>
 						<td nowrap="nowrap">' . GeneralUtility::formatSize($r['size']) . '</td>
-						<td nowrap="nowrap">' . ($r['msg'] && !$this->doesImport ? '<span class="typo3-red">' . htmlspecialchars($r['msg']) . '</span>' : '') . '</td>
+						<td nowrap="nowrap">' . ($r['msg'] && !$this->doesImport ? '<span class="text-danger">' . htmlspecialchars($r['msg']) . '</span>' : '') . '</td>
 						' . ($this->update ? '<td nowrap="nowrap">' . $r['updateMode'] . '</td>' : '') . '
 						' . ($this->update ? '<td nowrap="nowrap">' . $r['updatePath'] . '</td>' : '') . '
 						' . ($this->showDiff ? '<td>' . $r['showDiffContent'] . '</td>' : '') . '
@@ -3427,7 +3425,7 @@ class ImportExport {
 					$this->traversePageRecords($this->remainHeader['records']['pages'], $lines);
 				}
 				$this->traverseAllRecords($this->remainHeader['records'], $lines);
-				if (count($lines)) {
+				if (!empty($lines)) {
 					$rows = array();
 					$rows[] = '
 					<tr class="bgColor5 tableheader">
@@ -3444,7 +3442,7 @@ class ImportExport {
 							<td>' . $this->renderControls($r) . '</td>
 							<td nowrap="nowrap">' . $r['preCode'] . $r['title'] . '</td>
 							<td nowrap="nowrap">' . GeneralUtility::formatSize($r['size']) . '</td>
-							<td nowrap="nowrap">' . ($r['msg'] && !$this->doesImport ? '<span class="typo3-red">' . htmlspecialchars($r['msg']) . '</span>' : '') . '</td>
+							<td nowrap="nowrap">' . ($r['msg'] && !$this->doesImport ? '<span class="text-danger">' . htmlspecialchars($r['msg']) . '</span>' : '') . '</td>
 							' . ($this->update ? '<td nowrap="nowrap">' . $r['updateMode'] . '</td>' : '') . '
 							' . ($this->update ? '<td nowrap="nowrap">' . $r['updatePath'] . '</td>' : '') . '
 							' . ($this->showDiff ? '<td>' . $r['showDiffContent'] . '</td>' : '') . '
@@ -3670,7 +3668,7 @@ class ImportExport {
 			$this->addRelations($record['rels'], $lines, $preCode);
 		}
 		// Soft ref
-		if (count($record['softrefs'])) {
+		if (!empty($record['softrefs'])) {
 			$preCode_A = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;';
 			$preCode_B = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 			foreach ($record['softrefs'] as $info) {
@@ -3731,7 +3729,8 @@ class ImportExport {
 				$this->error($pInfo['ref'] . ' was recursive...');
 				continue;
 			}
-			$Iprepend = '';
+			$spriteIconName = 'status-status-checked';
+			$spriteIconClass = '';
 			$staticFixed = FALSE;
 			$record = NULL;
 			if ($uid > 0) {
@@ -3739,7 +3738,7 @@ class ImportExport {
 				if (!is_array($record)) {
 					if ($this->isTableStatic($table) || $this->isExcluded($table, $uid) || $dat['tokenID'] && !$this->includeSoftref($dat['tokenID'])) {
 						$pInfo['title'] = htmlspecialchars('STATIC: ' . $pInfo['ref']);
-						$Iprepend = '_static';
+						$spriteIconClass = 'text-info';
 						$staticFixed = TRUE;
 					} else {
 						$doesRE = $this->doesRecordExist($table, $uid);
@@ -3747,7 +3746,8 @@ class ImportExport {
 						$pInfo['title'] = htmlspecialchars($pInfo['ref']);
 						$pInfo['title'] = '<span title="' . htmlspecialchars($lostPath) . '">' . $pInfo['title'] . '</span>';
 						$pInfo['msg'] = 'LOST RELATION' . (!$doesRE ? ' (Record not found!)' : ' (Path: ' . $lostPath . ')');
-						$Iprepend = '_lost';
+						$spriteIconClass = 'text-danger';
+						$spriteIconName = 'status-dialog-warning';
 					}
 				} else {
 					$pInfo['title'] = htmlspecialchars($record['title']);
@@ -3758,7 +3758,10 @@ class ImportExport {
 				$pInfo['title'] = htmlspecialchars('FIXED: ' . $pInfo['ref']);
 				$staticFixed = TRUE;
 			}
-			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], ('gfx/rel_db' . $Iprepend . '.gif'), 'width="13" height="12"') . ' align="top" title="' . htmlspecialchars($pInfo['ref']) . '" alt="" />';
+
+			$spriteIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($spriteIconName, array('class' => $spriteIconClass, 'title' => $pInfo['ref']));
+
+			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;' . $spriteIcon;
 			$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 			$pInfo['type'] = 'rel';
 			if (!$staticFixed || $this->showStaticRelations) {
@@ -3890,7 +3893,7 @@ class ImportExport {
 	public function checkDokType($checkTable, $doktype) {
 		$allowedTableList = isset($GLOBALS['PAGES_TYPES'][$doktype]['allowedTables']) ? $GLOBALS['PAGES_TYPES'][$doktype]['allowedTables'] : $GLOBALS['PAGES_TYPES']['default']['allowedTables'];
 		$allowedArray = GeneralUtility::trimExplode(',', $allowedTableList, TRUE);
-		// If all tables or the table is listed as a allowed type, return TRUE
+		// If all tables or the table is listed as an allowed type, return TRUE
 		if (strstr($allowedTableList, '*') || in_array($checkTable, $allowedArray)) {
 			return TRUE;
 		}
@@ -4132,7 +4135,7 @@ class ImportExport {
 				}
 			}
 			// Create output:
-			if (count($output)) {
+			if (!empty($output)) {
 				$tRows = array();
 				foreach ($output as $fN => $state) {
 					$tRows[] = '
@@ -4218,7 +4221,7 @@ class ImportExport {
 	 * @return string HTML print of error log
 	 */
 	public function printErrorLog() {
-		return count($this->errorLog) ? \TYPO3\CMS\Core\Utility\DebugUtility::viewArray($this->errorLog) : '';
+		return !empty($this->errorLog) ? \TYPO3\CMS\Core\Utility\DebugUtility::viewArray($this->errorLog) : '';
 	}
 
 }

@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
 
 /**
  * Utility for dealing with database related operations
- *
- * @author Susanne Moog <susanne.moog@typo3.org>
  */
 class DatabaseUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -86,7 +84,7 @@ class DatabaseUtility implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 		}
 		// Compile final output:
-		if (count($lines)) {
+		if (!empty($lines)) {
 			$dump = trim('
 #
 # Table structure for table "' . $table . '"

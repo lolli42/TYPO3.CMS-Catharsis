@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * A repository for extension configuration items
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
 class ConfigurationItemRepository {
 
@@ -53,7 +51,7 @@ class ConfigurationItemRepository {
 		$defaultConfiguration = $configurationUtility->getDefaultConfigurationFromExtConfTemplateAsValuedArray($extensionKey);
 
 		$resultArray = array();
-		if (count($defaultConfiguration) > 0) {
+		if (!empty($defaultConfiguration)) {
 			$metaInformation = $this->addMetaInformation($defaultConfiguration);
 			$configuration = $this->mergeWithExistingConfiguration($defaultConfiguration, $extensionKey);
 			$hierarchicConfiguration = array();

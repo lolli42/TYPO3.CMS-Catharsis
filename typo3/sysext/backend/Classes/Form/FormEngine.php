@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Form;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -22,15 +23,12 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Form\Container\FullRecordContainer;
-use TYPO3\CMS\Backend\Form\Container\SoloFieldContainer;
-use TYPO3\CMS\Backend\Form\Container\InlineRecordContainer;
-use TYPO3\CMS\Backend\Form\Container\ListOfFieldsContainer;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 
 /**
  * This is form engine - Class for creating the backend editing forms.
@@ -206,6 +204,19 @@ class FormEngine {
 	protected $nodeFactory;
 
 	/**
+	 * Array with requireJS modules, use module name as key, the value could be callback code.
+	 * Use NULL as value if no callback is used.
+	 *
+	 * @var array
+	 */
+	protected $requireJsModules = array();
+
+	/**
+	 * @var PageRenderer
+	 */
+	protected $pageRenderer = NULL;
+
+	/**
 	 * Constructor function, setting internal variables, loading the styles used.
 	 *
 	 */
@@ -352,6 +363,36 @@ class FormEngine {
 		foreach ($resultArray['additionalJavaScriptSubmit'] as $element) {
 			$this->additionalJS_submit[] = $element;
 		}
+		if (!empty($resultArray['requireJsModules'])) {
+			foreach ($resultArray['requireJsModules'] as $module) {
+				$moduleName = NULL;
+				$callback = NULL;
+				if (is_string($module)) {
+					// if $module is a string, no callback
+					$moduleName = $module;
+					$callback = NULL;
+				} elseif (is_array($module)) {
+					// if $module is an array, callback is possible
+					foreach ($module as $key => $value) {
+						$moduleName = $key;
+						$callback = $value;
+						break;
+					}
+				}
+				if ($moduleName !== NULL) {
+					if (!empty($this->requireJsModules[$moduleName]) && $callback !== NULL) {
+						$existingValue = $this->requireJsModules[$moduleName];
+						if (!is_array($existingValue)) {
+							$existingValue = array($existingValue);
+						}
+						$existingValue[] = $callback;
+						$this->requireJsModules[$moduleName] = $existingValue;
+					} else {
+						$this->requireJsModules[$moduleName] = $callback;
+					}
+				}
+			}
+		}
 		$this->extJSCODE = $this->extJSCODE . LF . $resultArray['extJSCODE'];
 		$this->inlineData = $resultArray['inlineData'];
 		foreach ($resultArray['additionalHiddenFields'] as $element) {
@@ -392,7 +433,6 @@ class FormEngine {
 			'inlineStructure' => $this->inlineStackProcessor->getStructure(),
 			'overruleTypesArray' => array(),
 			'hiddenFieldListArray' => $this->hiddenFieldListArr,
-			'isAjaxContext' => FALSE,
 			'flexFormFieldIdentifierPrefix' => 'ID',
 			'nodeFactory' => $this->nodeFactory,
 		);
@@ -409,7 +449,7 @@ class FormEngine {
 	public function processInlineAjaxRequest($_, AjaxRequestHandler $ajaxObj) {
 		$ajaxArguments = GeneralUtility::_GP('ajax');
 		$ajaxIdParts = explode('::', $GLOBALS['ajaxID'], 2);
-		if (isset($ajaxArguments) && is_array($ajaxArguments) && count($ajaxArguments)) {
+		if (isset($ajaxArguments) && is_array($ajaxArguments) && !empty($ajaxArguments)) {
 			$ajaxMethod = $ajaxIdParts[1];
 			$ajaxObj->setContentFormat('jsonbody');
 			// Construct runtime environment for Inline Relational Record Editing
@@ -495,22 +535,17 @@ class FormEngine {
 		$options['inlineRelatedRecordToRender'] = $record;
 		$options['inlineRelatedRecordConfig'] = $config;
 		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
-		$options['isAjaxContext'] = TRUE;
 
 		$options['renderType'] = 'inlineRecordContainer';
-		$childArray = $this->nodeFactory->create($options)->render();
 
-		if ($childArray === FALSE) {
+		try {
+			// Access to this record my be denied, create an according error message in this case
+			$childArray = $this->nodeFactory->create($options)->render();
+		} catch (AccessDeniedException $e) {
 			return $this->getErrorMessageForAJAX('Access denied');
 		}
 
-		// @todo: Refactor this mess ... see other methods like getMainFields, too
-		$this->additionalJS_post = $childArray['additionalJavaScriptPost'];
-		$this->additionalJS_submit = $childArray['additionalJavaScriptSubmit'];
-		$this->extJSCODE = $childArray['extJSCODE'];
-		$this->inlineData = $childArray['inlineData'];
-		$this->hiddenFieldAccum = $childArray['additionalHiddenFields'];
-		$this->additionalCode_pre = $childArray['additionalHeadTags'];
+		$this->mergeResult($childArray);
 
 		$jsonArray = array(
 			'data' => $childArray['html'],
@@ -623,22 +658,17 @@ class FormEngine {
 		$options['inlineRelatedRecordToRender'] = $record;
 		$options['inlineRelatedRecordConfig'] = $config;
 		$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
-		$options['isAjaxContext'] = TRUE;
 
 		$options['renderType'] = 'inlineRecordContainer';
-		$childArray = $this->nodeFactory->create($options)->render();
 
-		if ($childArray === FALSE) {
+		try {
+			// Access to this record my be denied, create an according error message in this case
+			$childArray = $this->nodeFactory->create($options)->render();
+		} catch (AccessDeniedException $e) {
 			return $this->getErrorMessageForAJAX('Access denied');
 		}
 
-		// @todo: Refactor this mess ... see other methods like getMainFields, too
-		$this->additionalJS_post = $childArray['additionalJavaScriptPost'];
-		$this->additionalJS_submit = $childArray['additionalJavaScriptSubmit'];
-		$this->extJSCODE = $childArray['extJSCODE'];
-		$this->inlineData = $childArray['inlineData'];
-		$this->hiddenFieldAccum = $childArray['additionalHiddenFields'];
-		$this->additionalCode_pre = $childArray['additionalHeadTags'];
+		$this->mergeResult($childArray);
 
 		$jsonArray = array(
 			'data' => $childArray['html'],
@@ -659,9 +689,6 @@ class FormEngine {
 		if (!$collapseAll && $expandSingle) {
 			$jsonArray['scriptCall'][] = 'inline.collapseAllRecords(' . GeneralUtility::quoteJSvalue($objectId) . ', ' . GeneralUtility::quoteJSvalue($objectPrefix) . ', ' . GeneralUtility::quoteJSvalue($record['uid']) . ');';
 		}
-		// Tell the browser to scroll to the newly created record
-
-		$jsonArray['scriptCall'][] = 'Element.scrollTo(' . GeneralUtility::quoteJSvalue($objectId . '_div') . ');';
 		// Fade out and fade in the new record in the browser view to catch the user's eye
 		$jsonArray['scriptCall'][] = 'inline.fadeOutFadeIn(' . GeneralUtility::quoteJSvalue($objectId . '_div') . ');';
 
@@ -728,10 +755,15 @@ class FormEngine {
 				$options['inlineRelatedRecordToRender'] = $row;
 				$options['inlineRelatedRecordConfig'] = $parent['config'];
 				$options['inlineStructure'] = $this->inlineStackProcessor->getStructure();
-				$options['isAjaxContext'] = TRUE;
 
 				$options['renderType'] = 'inlineRecordContainer';
-				$childArray = $this->nodeFactory->create($options)->render();
+				try {
+					// Access to this record my be denied, create an according error message in this case
+					$childArray = $this->nodeFactory->create($options)->render();
+				} catch (AccessDeniedException $e) {
+					return $this->getErrorMessageForAJAX('Access denied');
+				}
+
 				$html .= $childArray['html'];
 				$childArray['html'] = '';
 
@@ -767,13 +799,7 @@ class FormEngine {
 				array_unshift($jsonArray['scriptCall'], 'inline.domAddNewRecord(\'bottom\', ' . GeneralUtility::quoteJSvalue($nameObject . '_records') . ', ' . GeneralUtility::quoteJSvalue($nameObjectForeignTable) . ', json.data);');
 			}
 
-			// @todo: Refactor this mess ... see other methods like getMainFields, too
-			$this->additionalJS_post = $resultArray['additionalJavaScriptPost'];
-			$this->additionalJS_submit = $resultArray['additionalJavaScriptSubmit'];
-			$this->extJSCODE = $resultArray['extJSCODE'];
-			$this->inlineData = $resultArray['inlineData'];
-			$this->hiddenFieldAccum = $resultArray['additionalHiddenFields'];
-			$this->additionalCode_pre = $resultArray['additionalHeadTags'];
+			$this->mergeResult($resultArray);
 
 			$jsonArray = $this->getInlineAjaxCommonScriptCalls($jsonArray, $parent['config'], $inlineFirstPid);
 		}
@@ -976,6 +1002,23 @@ class FormEngine {
 		if ($this->extJSCODE) {
 			$jsonArray['scriptCall'][] = $this->extJSCODE;
 		}
+
+		// require js handling
+		foreach ($this->requireJsModules as $moduleName => $callbacks) {
+			if (!is_array($callbacks)) {
+				$callbacks = array($callbacks);
+			}
+			foreach ($callbacks as $callback) {
+				$inlineCodeKey = $moduleName;
+				$javaScriptCode = 'require(["' . $moduleName . '"]';
+				if ($callback !== NULL) {
+					$inlineCodeKey .= sha1($callback);
+					$javaScriptCode .= ', ' . $callback;
+				}
+				$javaScriptCode .= ');';
+				$jsonArray['scriptCall'][] = '/*RequireJS-Module-' . $inlineCodeKey . '*/' . LF . $javaScriptCode;
+			}
+		}
 		return $jsonArray;
 	}
 
@@ -987,7 +1030,7 @@ class FormEngine {
 	 */
 	protected function getInlineHeadTags() {
 		$headTags = array();
-		$headDataRaw = $this->JStop() . $this->getJavaScriptAndStyleSheetsOfPageRenderer();
+		$headDataRaw = $this->JStop() . $this->getJavaScriptOfPageRenderer();
 		if ($headDataRaw) {
 			// Create instance of the HTML parser:
 			$parseObj = GeneralUtility::makeInstance(HtmlParser::class);
@@ -996,7 +1039,10 @@ class FormEngine {
 			// Removes leading spaces of a multi-line string:
 			$headDataRaw = trim(preg_replace('/(^|\\r|\\n)( |\\t)+/', '$1', $headDataRaw));
 			// Get script and link tags:
-			$tags = array_merge($parseObj->getAllParts($parseObj->splitTags('link', $headDataRaw)), $parseObj->getAllParts($parseObj->splitIntoBlock('script', $headDataRaw)));
+			$tags = array_merge(
+				$parseObj->getAllParts($parseObj->splitTags('link', $headDataRaw)),
+				$parseObj->getAllParts($parseObj->splitIntoBlock('script', $headDataRaw))
+			);
 			foreach ($tags as $tagData) {
 				$tagAttributes = $parseObj->get_tag_attributes($parseObj->getFirstTag($tagData), TRUE);
 				$headTags[] = array(
@@ -1018,13 +1064,12 @@ class FormEngine {
 	 * @return string
 	 * @todo: aaaargs ...
 	 */
-	protected function getJavaScriptAndStyleSheetsOfPageRenderer() {
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = clone $GLOBALS['SOBE']->doc->getPageRenderer();
+	protected function getJavaScriptOfPageRenderer() {
+		/** @var $pageRenderer PageRenderer */
+		$pageRenderer = clone $this->getPageRenderer();
 		$pageRenderer->setCharSet($this->getLanguageService()->charSet);
 		$pageRenderer->setTemplateFile('EXT:backend/Resources/Private/Templates/helper_javascript_css.html');
-		$javaScriptAndStyleSheets = $pageRenderer->render();
-		return $javaScriptAndStyleSheets;
+		return $pageRenderer->render();
 	}
 
 	/**
@@ -1163,12 +1208,8 @@ class FormEngine {
 	 */
 	public function JStop() {
 		$out = '';
-		// Additional top HTML:
-		if (count($this->additionalCode_pre)) {
-			$out .= implode('
-
-				<!-- NEXT: -->
-			', $this->additionalCode_pre);
+		if (!empty($this->additionalCode_pre)) {
+			$out = implode(LF, $this->additionalCode_pre) . LF;
 		}
 		return $out;
 	}
@@ -1189,15 +1230,27 @@ class FormEngine {
 			if ($this->loadMD5_JS) {
 				$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/md5.js');
 			}
-			$pageRenderer = $this->getPageRenderer();
 			// load the main module for FormEngine with all important JS functions
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngine', 'function(FormEngine) {
+			$this->requireJsModules['TYPO3/CMS/Backend/FormEngine'] = 'function(FormEngine) {
 				FormEngine.setBrowserUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('browser')) . ');
-			}');
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineValidation');
-			$pageRenderer->loadPrototype();
+			}';
+			$this->requireJsModules['TYPO3/CMS/Backend/FormEngineValidation'] = 'function(FormEngineValidation) {
+				FormEngineValidation.setUsMode(' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ');
+				FormEngineValidation.registerReady();
+			}';
+
+			$pageRenderer = $this->getPageRenderer();
+			foreach ($this->requireJsModules as $moduleName => $callbacks) {
+				if (!is_array($callbacks)) {
+					$callbacks = array($callbacks);
+				}
+				foreach ($callbacks as $callback) {
+					$pageRenderer->loadRequireJsModule($moduleName, $callback);
+				}
+			}
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
+			$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/tree.js');
 			$beUserAuth = $this->getBackendUserAuthentication();
 			// Make textareas resizable and flexible ("autogrow" in height)
 			$textareaSettings = array(
@@ -1205,7 +1258,6 @@ class FormEngine {
 			);
 			$pageRenderer->addInlineSettingArray('Textarea', $textareaSettings);
 
-			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.evalfield.js');
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tbe_editor.js');
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ValueSlider');
 			// Needed for FormEngine manipulation (date picker)
@@ -1218,12 +1270,6 @@ class FormEngine {
 				$this->loadJavascriptLib('sysext/core/Resources/Public/JavaScript/Contrib/placeholders.jquery.min.js');
 			}
 
-			// @todo: remove scriptaclous once suggest & flex form foo is moved to RequireJS, see #55575
-			$pageRenderer->loadScriptaculous();
-			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/tceforms.js');
-			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.tceforms_suggest.js');
-
-			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/FormEngineFlexForm');
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
 			$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DragUploader');
 
@@ -1239,9 +1285,6 @@ class FormEngine {
 			';
 
 			$out .= '
-			TBE_EDITOR.images.req.src = "' . IconUtility::skinImg('', 'gfx/required_h.gif', '', 1) . '";
-			TBE_EDITOR.images.clear.src = "clear.gif";
-
 			TBE_EDITOR.formname = "' . $formname . '";
 			TBE_EDITOR.formnameUENC = "' . rawurlencode($formname) . '";
 			TBE_EDITOR.backPath = "";
@@ -1253,8 +1296,6 @@ class FormEngine {
 			TBE_EDITOR.labels.refresh_login = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login')) . ';
 			TBE_EDITOR.labels.onChangeAlert = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:mess.onChangeAlert')) . ';
 			TBE_EDITOR.labels.remainingCharacters = ' . GeneralUtility::quoteJSvalue($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remainingCharacters')) . ';
-			evalFunc.USmode = ' . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '1' : '0') . ';
-
 			TBE_EDITOR.customEvalFunctions = {};
 
 			';
@@ -1290,10 +1331,8 @@ class FormEngine {
 	 * @return string
 	 */
 	public function printNeededJSFunctions() {
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $this->getControllerDocumentTemplate()->getPageRenderer();
-
 		// set variables to be accessible for JS
+		$pageRenderer = $this->getPageRenderer();
 		$pageRenderer->addInlineSetting('FormEngine', 'formName', 'editform');
 		$pageRenderer->addInlineSetting('FormEngine', 'backPath', '');
 
@@ -1317,7 +1356,7 @@ class FormEngine {
 	 * backpath is automatically applied.
 	 * This method acts as wrapper for $GLOBALS['SOBE']->doc->loadJavascriptLib($lib).
 	 *
-	 * @param string $lib Library name. Call it with the full path like "contrib/prototype/prototype.js" to load it
+	 * @param string $lib Library name. Call it with the full path like "sysext/core/Resources/Public/JavaScript/QueryGenerator.js" to load it
 	 * @return void
 	 */
 	public function loadJavascriptLib($lib) {
@@ -1430,7 +1469,11 @@ class FormEngine {
 	 * @return \TYPO3\CMS\Core\Page\PageRenderer
 	 */
 	protected function getPageRenderer() {
-		return $this->getControllerDocumentTemplate()->getPageRenderer();
+		if ($this->pageRenderer === NULL) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

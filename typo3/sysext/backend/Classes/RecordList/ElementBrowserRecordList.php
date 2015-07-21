@@ -22,8 +22,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Displays the page/file tree for browsing database records or files.
  * Used from TCEFORMS an other elements
  * In other words: This is the ELEMENT BROWSER!
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList {
 
@@ -117,7 +115,7 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 					$parameters['values'] = array($table . '_' . $row['uid']);
 					$parameters['tcaFieldConfig'] = $tcaFieldConfig;
 					$valueArray = GeneralUtility::callUserFunction($filter['userFunc'], $parameters, $this);
-					if (count($valueArray) === 0) {
+					if (empty($valueArray)) {
 						$returnValue = FALSE;
 					}
 				}

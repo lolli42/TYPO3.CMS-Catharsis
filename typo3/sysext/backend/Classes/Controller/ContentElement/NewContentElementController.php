@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for the New Content element wizard
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class NewContentElementController {
 
@@ -127,7 +125,7 @@ class NewContentElementController {
 		$lang = $this->getLanguageService();
 		$lang->includeLLFile('EXT:lang/locallang_misc.xlf');
 		$LOCAL_LANG_orig = $GLOBALS['LOCAL_LANG'];
-		$lang->includeLLFile('EXT:cms/layout/locallang_db_new_content_el.xlf');
+		$lang->includeLLFile('EXT:backend/Resources/Private/Language/locallang_db_new_content_el.xlf');
 		\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($LOCAL_LANG_orig, $GLOBALS['LOCAL_LANG']);
 		$GLOBALS['LOCAL_LANG'] = $LOCAL_LANG_orig;
 
@@ -385,7 +383,7 @@ class NewContentElementController {
 							}
 						}
 					}
-					if (count($groupItems)) {
+					if (!empty($groupItems)) {
 						$wizardItems[$groupKey] = $this->wizard_getGroupHeader($groupKey, $wizardGroup);
 						$wizardItems = array_merge($wizardItems, $groupItems);
 					}
@@ -496,7 +494,7 @@ class NewContentElementController {
 						if (!isset($keepItems[$fN])) {
 							$keepItems[$fN] = GeneralUtility::trimExplode(',', $TCEFORM_TSconfig[$fN]['keepItems'], TRUE);
 						}
-						$isNotInKeepItems = count($keepItems[$fN]) && !in_array($fV, $keepItems[$fN]);
+						$isNotInKeepItems = !empty($keepItems[$fN]) && !in_array($fV, $keepItems[$fN]);
 						if ($authModeDeny || $fN === 'CType' && in_array($fV, $removeItems[$fN]) || $isNotInKeepItems) {
 							// Remove element all together:
 							unset($wizardItems[$key]);

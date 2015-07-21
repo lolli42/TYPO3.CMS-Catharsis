@@ -15,7 +15,7 @@ namespace TYPO3\CMS\Install\Service;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\OpcodeCacheUtility;
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Install\FolderStructure\DefaultFactory;
 use TYPO3\CMS\Install\Service\Exception\RemoteFetchException;
@@ -166,7 +166,7 @@ class CoreUpdateService {
 		$folderStructureFacade = $this->objectManager->get(DefaultFactory::class)->getStructure();
 		$folderStructureErrors = $statusUtility->filterBySeverity($folderStructureFacade->getStatus(), 'error');
 		$folderStructureWarnings = $statusUtility->filterBySeverity($folderStructureFacade->getStatus(), 'warning');
-		if (count($folderStructureErrors) > 0 || count($folderStructureWarnings) > 0) {
+		if (!empty($folderStructureErrors) || !empty($folderStructureWarnings)) {
 			$success = FALSE;
 			/** @var $message StatusInterface */
 			$message = $this->objectManager->get(ErrorStatus::class);
@@ -484,7 +484,7 @@ class CoreUpdateService {
 				}
 				$symlinkResult = symlink($newCoreLocation, $this->symlinkToCoreFiles);
 				if ($symlinkResult) {
-					OpcodeCacheUtility::clearAllActive();
+					GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive();
 				} else {
 					$success = FALSE;
 					/** @var $message StatusInterface */

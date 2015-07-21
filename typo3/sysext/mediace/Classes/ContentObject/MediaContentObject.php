@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Mediace\ContentObject;
 
 /**
  * Contains MEDIA class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
 
@@ -43,7 +40,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		$conf['type'] = $this->doFlexFormOverlay($conf, 'type');
 		// Video sources
 		$sources = $this->doFlexFormOverlay($conf, 'sources', 'mmSourcesContainer');
-		if (is_array($sources) && count($sources)) {
+		if (is_array($sources) && !empty($sources)) {
 			$conf['sources'] = array();
 			foreach ($sources as $key => $source) {
 				if (isset($source['mmSource'])) {
@@ -65,7 +62,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 		}
 		// Audio sources
 		$audioSources = $this->doFlexFormOverlay($conf, 'audioSources', 'mmAudioSourcesContainer');
-		if (is_array($audioSources) && count($audioSources)) {
+		if (is_array($audioSources) && !empty($audioSources)) {
 			$conf['audioSources'] = array();
 			foreach ($audioSources as $key => $source) {
 				if (isset($source['mmAudioSource'])) {
@@ -123,7 +120,7 @@ class MediaContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConte
 						$rawTS = $val['mmParamCustomEntry'];
 						// Read and merge
 						$tmp = \TYPO3\CMS\Core\Utility\GeneralUtility::trimExplode(LF, $rawTS);
-						if (count($tmp)) {
+						if (!empty($tmp)) {
 							foreach ($tmp as $tsLine) {
 								if ($tsLine[0] !== '#' && ($pos = strpos($tsLine, '.'))) {
 									$parts[0] = substr($tsLine, 0, $pos);

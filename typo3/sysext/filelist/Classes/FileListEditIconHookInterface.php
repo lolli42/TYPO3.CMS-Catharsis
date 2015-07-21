@@ -15,9 +15,7 @@ namespace TYPO3\CMS\Filelist;
  */
 
 /**
- * Interface for classes which hook into file list module and manipulated edit icon array
- *
- * @author Steffen Kamper <info@sk-typo3.de>
+ * Interface for classes which hook into filelist module and manipulated edit icon array
  */
 interface FileListEditIconHookInterface {
 

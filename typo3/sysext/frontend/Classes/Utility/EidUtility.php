@@ -29,38 +29,8 @@ use TYPO3\CMS\Lang\LanguageService;
  * this class seeks to provide functions that can
  * initialize parts of the FE environment as needed,
  * eg. Frontend User session, Database connection etc.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Dmitry Dulepov <dmitry@typo3.org>
  */
 class EidUtility {
-
-	/**
-	 * Returns true if within an eID-request. False if not.
-	 *
-	 * @return bool
-	 */
-	static public function isEidRequest() {
-		return GeneralUtility::_GP('eID') ? TRUE : FALSE;
-	}
-
-	/**
-	 * Returns the script path associated with the requested eID identifier.
-	 *
-	 * @return string eID associated script path
-	 * @throws \TYPO3\CMS\Core\Exception
-	 */
-	static public function getEidScriptPath() {
-		$eID = GeneralUtility::_GP('eID');
-		if (!$eID || !isset($GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include'][$eID])) {
-			throw new \TYPO3\CMS\Core\Exception('eID not registered in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'eID_include\'].', 1415714161);
-		}
-		$scriptPath = GeneralUtility::getFileAbsFileName($GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include'][$eID]);
-		if ($scriptPath === '') {
-			throw new \TYPO3\CMS\Core\Exception('Registered eID has invalid script path.', 1416391467);
-		}
-		return $scriptPath;
-	}
 
 	/**
 	 * Load and initialize Frontend User. Note, this process is slow because

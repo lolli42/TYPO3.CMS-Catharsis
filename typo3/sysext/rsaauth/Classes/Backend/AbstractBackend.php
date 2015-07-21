@@ -30,8 +30,6 @@ namespace TYPO3\CMS\Rsaauth\Backend;
  * To decode data, the decrypt() method should be called with the private key
  * created at the previous step and the data to decode. If the data is decoded
  * successfully, the result is a string. Otherwise it is NULL.
- *
- * @author Dmitry Dulepov <dmitry@typo3.org>
  */
 abstract class AbstractBackend {
 
@@ -58,7 +56,7 @@ abstract class AbstractBackend {
 	 *
 	 * @param string $privateKey The private key (obtained from a call to createNewKeyPair())
 	 * @param string $data Data to decrypt (base64-encoded)
-	 * @return string Decrypted data or NULL in case of a error
+	 * @return string Decrypted data or NULL in case of an error
 	 */
 	abstract public function decrypt($privateKey, $data);
 
@@ -70,9 +68,9 @@ abstract class AbstractBackend {
 	abstract public function isAvailable();
 
 	/**
-	 * Retrieves a error message.
+	 * Retrieves an error message.
 	 *
-	 * @return string A error message or empty string if there were no error
+	 * @return string An error message or empty string if there were no error
 	 */
 	public function getLastError() {
 		return $this->error;

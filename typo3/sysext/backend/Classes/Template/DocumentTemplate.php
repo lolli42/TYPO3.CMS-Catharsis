@@ -35,8 +35,6 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
  * After this file $LANG and $TBE_TEMPLATE are global variables / instances of their respective classes.
  *
  * Please refer to Inside TYPO3 for a discussion of how to use this API.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class DocumentTemplate {
 
@@ -352,9 +350,9 @@ function jumpToUrl(URL) {
 	public $hasDocheader = TRUE;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 * @var PageRenderer
 	 */
-	protected $pageRenderer;
+	protected $pageRenderer = NULL;
 
 	/**
 	 * Alternative template file
@@ -385,7 +383,7 @@ function jumpToUrl(URL) {
 	 */
 	public function __construct() {
 		// Initializes the page rendering object:
-		$this->getPageRenderer();
+		$this->initPageRenderer();
 
 		// load Legacy CSS Support
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyCssClasses');
@@ -434,36 +432,47 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * Gets instance of PageRenderer configured with the current language, file references and debug settings
-	 *
-	 * @return \TYPO3\CMS\Core\Page\PageRenderer
+	 * Initializes the page renderer object
 	 */
-	public function getPageRenderer() {
-		if (!isset($this->pageRenderer)) {
-			$this->pageRenderer = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Page\PageRenderer::class);
-			$this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
-			$this->pageRenderer->enableConcatenateFiles();
-			$this->pageRenderer->enableCompressCss();
-			$this->pageRenderer->enableCompressJavascript();
-			// Add all JavaScript files defined in $this->jsFiles to the PageRenderer
-			foreach ($this->jsFilesNoConcatenation as $file) {
-				$this->pageRenderer->addJsFile(
-					$GLOBALS['BACK_PATH'] . $file,
-					'text/javascript',
-					TRUE,
-					FALSE,
-					'',
-					TRUE
-				);
-			}
-			// Add all JavaScript files defined in $this->jsFiles to the PageRenderer
-			foreach ($this->jsFiles as $file) {
-				$this->pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . $file);
-			}
+	protected function initPageRenderer() {
+		if ($this->pageRenderer !== NULL) {
+			return;
+		}
+		$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		$this->pageRenderer->setLanguage($GLOBALS['LANG']->lang);
+		$this->pageRenderer->enableConcatenateFiles();
+		$this->pageRenderer->enableCompressCss();
+		$this->pageRenderer->enableCompressJavascript();
+		// Add all JavaScript files defined in $this->jsFiles to the PageRenderer
+		foreach ($this->jsFilesNoConcatenation as $file) {
+			$this->pageRenderer->addJsFile(
+				$GLOBALS['BACK_PATH'] . $file,
+				'text/javascript',
+				TRUE,
+				FALSE,
+				'',
+				TRUE
+			);
+		}
+		// Add all JavaScript files defined in $this->jsFiles to the PageRenderer
+		foreach ($this->jsFiles as $file) {
+			$this->pageRenderer->addJsFile($GLOBALS['BACK_PATH'] . $file);
 		}
 		if ((int)$GLOBALS['TYPO3_CONF_VARS']['BE']['debug'] === 1) {
 			$this->pageRenderer->enableDebugMode();
 		}
+	}
+
+	/**
+	 * Gets instance of PageRenderer configured with the current language, file references and debug settings
+	 *
+	 * @return PageRenderer
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8.
+	 */
+	public function getPageRenderer() {
+		GeneralUtility::logDeprecatedFunction();
+		$this->initPageRenderer();
+
 		return $this->pageRenderer;
 	}
 
@@ -622,25 +631,29 @@ function jumpToUrl(URL) {
 	 * @param string $gvList Is the list of GET variables to store (if any)
 	 * @param string $setList Is the list of SET[] variables to store (if any) - SET[] variables a stored in $GLOBALS["SOBE"]->MOD_SETTINGS for backend modules
 	 * @param string $modName Module name string
-	 * @param string $motherModName Is used to enter the "parent module name" if the module is a submodule under eg. Web>* or File>*. You can also set this value to "1" in which case the currentLoadedModule is sent to the shortcut script (so - not a fixed value!) - that is used in file_edit and wizard_rte modules where those are really running as a part of another module.
+	 * @param string|int $motherModName Is used to enter the "parent module name" if the module is a submodule under eg. Web>* or File>*. You can also set this value to 1 in which case the currentLoadedModule is sent to the shortcut script (so - not a fixed value!) - that is used in file_edit and wizard_rte modules where those are really running as a part of another module.
 	 * @return string HTML content
 	 */
 	public function makeShortcutIcon($gvList, $setList, $modName, $motherModName = '') {
 		$storeUrl = $this->makeShortcutUrl($gvList, $setList);
 		$pathInfo = parse_url(GeneralUtility::getIndpEnv('REQUEST_URI'));
-		// Add the module identifier automatically if typo3/mod.php is used:
-		if (preg_match('/typo3\\/mod\\.php$/', $pathInfo['path']) && isset($GLOBALS['TBE_MODULES']['_PATHS'][$modName])) {
-			$storeUrl = '&M=' . $modName . $storeUrl;
+		// Fallback for alt_mod. We still pass in the old xMOD... stuff, but TBE_MODULES only knows about "record_edit".
+		// We still need to pass the xMOD name to createShortcut below, since this is used for icons.
+		$moduleName = $modName === 'xMOD_alt_doc.php' ? 'record_edit' : $modName;
+		// Add the module identifier automatically if typo3/index.php is used:
+		if (GeneralUtility::_GET('M') !== NULL && isset($GLOBALS['TBE_MODULES']['_PATHS'][$moduleName])) {
+			$storeUrl = '&M=' . $moduleName . $storeUrl;
 		}
 		if ((int)$motherModName === 1) {
-			$mMN = '&motherModName=\'+top.currentModuleLoaded+\'';
+			$motherModule = 'top.currentModuleLoaded';
 		} elseif ($motherModName) {
-			$mMN = '&motherModName=' . rawurlencode($motherModName);
+			$motherModule = GeneralUtility::quoteJSvalue($motherModName);
 		} else {
-			$mMN = '';
+			$motherModule = '\'\'';
 		}
 		$confirmationText = GeneralUtility::quoteJSvalue($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark'));
-		$onClick = 'top.TYPO3.ShortcutMenu.createShortcut(' . GeneralUtility::quoteJSvalue(rawurlencode($modName)) . ', ' . GeneralUtility::quoteJSvalue(rawurlencode($pathInfo['path'] . '?' . $storeUrl) . $mMN) . ', ' . $confirmationText . ');return false;';
+		$url = GeneralUtility::quoteJSvalue(rawurlencode($pathInfo['path'] . '?' . $storeUrl));
+		$onClick = 'top.TYPO3.ShortcutMenu.createShortcut(' . GeneralUtility::quoteJSvalue(rawurlencode($modName)) . ', ' . $url . ', ' . $confirmationText . ', ' . $motherModule . ');return false;';
 		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
 	}
 
@@ -792,7 +805,7 @@ function jumpToUrl(URL) {
 
 		// Include the JS for the Context Sensitive Help
 		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
-		// the extension. The core provides a API for adding help, and rendering help, but the rendering
+		// the extension. The core provides an API for adding help, and rendering help, but the rendering
 		// should be up to the extension itself
 		if ($includeCsh && ExtensionManagementUtility::isLoaded('cshmanual')) {
 			$this->loadCshJavascript();
@@ -839,7 +852,7 @@ function jumpToUrl(URL) {
 		foreach ($this->JScodeArray as $name => $code) {
 			$this->pageRenderer->addJsInlineCode($name, $code, FALSE);
 		}
-		if (count($this->JScodeLibArray)) {
+		if (!empty($this->JScodeLibArray)) {
 			GeneralUtility::deprecationLog('DocumentTemplate->JScodeLibArray is deprecated since TYPO3 CMS 7. Use the functionality within pageRenderer directly');
 			foreach ($this->JScodeLibArray as $library) {
 				$this->pageRenderer->addHeaderData($library);
@@ -1423,9 +1436,9 @@ function jumpToUrl(URL) {
 			$cls = array();
 			$valign = 'middle';
 			$cls[] = '<td valign="' . $valign . '">' . $arr1[$a][0] . '</td><td>' . $arr1[$a][1] . '</td>';
-			if (count($arr2)) {
+			if (!empty($arr2)) {
 				$cls[] = '<td valign="' . $valign . '">' . $arr2[$a][0] . '</td><td>' . $arr2[$a][1] . '</td>';
-				if (count($arr3)) {
+				if (!empty($arr3)) {
 					$cls[] = '<td valign="' . $valign . '">' . $arr3[$a][0] . '</td><td>' . $arr3[$a][1] . '</td>';
 				}
 			}
@@ -1460,10 +1473,11 @@ function jumpToUrl(URL) {
 	 * Includes a javascript library that exists in the core /typo3/ directory. The
 	 * backpath is automatically applied
 	 *
-	 * @param string $lib: Library name. Call it with the full path like "contrib/prototype/prototype.js" to load it
+	 * @param string $lib: Library name. Call it with the full path like "sysext/core/Resources/Public/JavaScript/QueryGenerator.js" to load it
 	 * @return void
 	 */
 	public function loadJavascriptLib($lib) {
+		// @todo: maybe we can remove this one as well
 		$this->pageRenderer->addJsFile($this->backPath . $lib);
 	}
 
@@ -1579,7 +1593,7 @@ function jumpToUrl(URL) {
 	 * @return string
 	 */
 	public function getDynamicTabMenu(array $menuItems, $identString, $defaultTabIndex = 1, $collapseable = FALSE, $wrapContent = TRUE, $storeLastActiveTab = TRUE) {
-		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Tabs');
+		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tabs');
 		$templatePathAndFileName = 'EXT:backend/Resources/Private/Templates/DocumentTemplate/' . ($collapseable ? 'Collapse.html' : 'Tabs.html');
 		$view = GeneralUtility::makeInstance(StandaloneView::class);
 		$view->setTemplatePathAndFilename(GeneralUtility::getFileAbsFileName($templatePathAndFileName));
@@ -1883,7 +1897,7 @@ function jumpToUrl(URL) {
 	 */
 	public function collapseableSection($title, $html, $id, $saveStatePointer = '') {
 		GeneralUtility::logDeprecatedFunction();
-		$hasSave = $saveStatePointer ? TRUE : FALSE;
+		$hasSave = (bool)$saveStatePointer;
 		$collapsedStyle = ($collapsedClass = '');
 		if ($hasSave) {
 			/** @var $userSettingsController \TYPO3\CMS\Backend\Controller\UserSettingsController */
@@ -1941,7 +1955,7 @@ function jumpToUrl(URL) {
 	* @return string
 	*/
 	protected function getBackendFavicon() {
-		return IconUtility::skinImg($this->backPath, 'gfx/favicon.ico', '', 1);
+		return $GLOBALS['TBE_STYLES']['favicon'] ?: $this->backPath . 'sysext/backend/Resources/Public/Icons/favicon.ico';
 	}
 
 }

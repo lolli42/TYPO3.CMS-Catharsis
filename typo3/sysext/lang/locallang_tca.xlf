@@ -54,6 +54,9 @@
 			<trans-unit id="be_users.password">
 				<source>Password:</source>
 			</trans-unit>
+			<trans-unit id="be_users.avatar">
+				<source>Avatar</source>
+			</trans-unit>
 			<trans-unit id="be_users.usergroup">
 				<source>Group:</source>
 			</trans-unit>
@@ -98,6 +101,9 @@
 			</trans-unit>
 			<trans-unit id="be_users.file_permissions.files_rename">
 				<source>Files: Rename</source>
+			</trans-unit>
+			<trans-unit id="be_groups.file_permissions.files_replace">
+				<source>Files: Replace</source>
 			</trans-unit>
 			<trans-unit id="be_users.file_permissions.files_move">
 				<source>Files: Move</source>
@@ -486,9 +492,6 @@
 			<trans-unit id="sys_file.size">
 				<source>Size</source>
 			</trans-unit>
-			<trans-unit id="sys_file.identifier">
-				<source>Identifier</source>
-			</trans-unit>
 			<trans-unit id="sys_file.usage_count">
 				<source>Usage Count</source>
 			</trans-unit>
@@ -575,6 +578,9 @@
 			</trans-unit>
 			<trans-unit id="sys_file_collection.folder">
 				<source>Folder</source>
+			</trans-unit>
+			<trans-unit id="sys_file_collection.recursive">
+				<source>Recursive</source>
 			</trans-unit>
 			<trans-unit id="sys_file_collection.category">
 				<source>Category</source>

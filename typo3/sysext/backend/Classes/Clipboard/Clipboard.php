@@ -24,8 +24,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * TYPO3 clipboard for records and files
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class Clipboard {
 
@@ -268,9 +266,11 @@ class Clipboard {
 		if (!$this->fileMode && $elementCount) {
 			$optionArray[] = '<li><a href="#" onclick="' . htmlspecialchars(('window.location.href=' . GeneralUtility::quoteJSvalue($this->editUrl() . '&returnUrl=') . '+top.rawurlencode(window.location.href);')) . '">' . $this->clLabel('edit', 'rm') . '</a></li>';
 		}
+
 		$deleteLink = '';
-		// Delete:
+		$menuSelector = '';
 		if ($elementCount) {
+			// Delete:
 			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($removeAllUrl) . '#clip_head">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE))) . '</a>';
 			if ($this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)) {
 				$js = '
@@ -282,9 +282,9 @@ class Clipboard {
 				$js = ' window.location.href=' . GeneralUtility::quoteJSvalue($this->deleteUrl(0, ($this->fileMode ? 1 : 0)) . '&redirect=') . '+top.rawurlencode(window.location.href); ';
 			}
 			$optionArray[] = '<li><a href="#" onclick="' . htmlspecialchars($js) . '">' . $this->clLabel('delete', 'rm') . '</a></li>';
-		}
 
-		$menuSelector = '
+			// menuSelector
+			$menuSelector = '
 			<div class="btn-group">
 				<button class="btn btn-default dropdown-toggle" type="button" id="menuSelector" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 					' . $this->clLabel('menu', 'rm') . '
@@ -295,18 +295,22 @@ class Clipboard {
 				</ul>
 			</div>
 			';
+		}
 
 		$out[] = '
 			<tr>
 				<td colspan="2" nowrap="nowrap" width="95%">' . $copymodeSelector . ' ' . $menuSelector . '</td>
 				<td nowrap="nowrap" class="col-control">' . $deleteLink . '</td>
 			</tr>';
+
 		// Print header and content for the NORMAL tab:
+		// check for current item so it can be wrapped in strong tag
+		$current = ($this->current == 'normal');
 		$out[] = '
 			<tr>
 				<td colspan="3"><a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('CB' => array('setP' => 'normal')))) . '#clip_head" title="' . $this->clLabel('normal-description') . '">'
-					. IconUtility::getSpriteIcon(('actions-view-table-' . ($this->current == 'normal' ? 'collapse' : 'expand')))
-					. $this->padTitleWrap($this->clLabel('normal'), 'normal')
+					. '<span class="t3-icon fa ' . ($current ? 'fa-check-circle' : 'fa-circle-o') . '"></span>'
+					. $this->padTitleWrap($this->clLabel('normal'), 'normal', $current)
 					. '</a></td>
 			</tr>';
 		if ($this->current == 'normal') {
@@ -314,11 +318,13 @@ class Clipboard {
 		}
 		// Print header and content for the NUMERIC tabs:
 		for ($a = 1; $a <= $this->numberTabs; $a++) {
+			// check for current item so it can be wrapped in strong tag
+			$current = ($this->current == 'tab_' . $a);
 			$out[] = '
 				<tr>
 					<td colspan="3"><a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('CB' => array('setP' => ('tab_' . $a))))) . '#clip_head" title="' . $this->clLabel('cliptabs-description') . '">'
-						. IconUtility::getSpriteIcon(('actions-view-table-' . ($this->current == 'tab_' . $a ? 'collapse' : 'expand')))
-						. $this->padTitleWrap(sprintf($this->clLabel('cliptabs-name'), $a), ('tab_' . $a))
+						. '<span class="t3-icon fa ' . ($current ? 'fa-check-circle' : 'fa-circle-o') . '"></span>'
+						. $this->padTitleWrap(sprintf($this->clLabel('cliptabs-name'), $a), ('tab_' . $a), $current)
 						. '</a></td>
 				</tr>';
 			if ($this->current == 'tab_' . $a) {
@@ -421,13 +427,6 @@ class Clipboard {
 				}
 			}
 		}
-		if (!count($lines)) {
-			$lines[] = '
-								<tr>
-									<td class="col-icon"></td>
-									<td colspan="2 nowrap="nowrap" width="95%"><em>(' . $this->clLabel('clipNoEl') . ')</em>&nbsp;</td>
-								</tr>';
-		}
 		$this->endClipboard();
 		return $lines;
 	}
@@ -490,16 +489,21 @@ class Clipboard {
 	}
 
 	/**
-	 * Wraps title of pad in bold-tags and maybe the number of elements if any.
+	 * Wraps title of pad in bold-tag and maybe the number of elements if any.
+	 * Only applies bold-tag if the item is active
 	 *
-	 * @param string $str String (already htmlspecialchars()'ed)
-	 * @param string $pad Pad reference
+	 * @param string  $str String (already htmlspecialchars()'ed)
+	 * @param string  $pad Pad reference
+	 * @param boolean $active is currently active
 	 * @return string HTML output (htmlspecialchar'ed content inside of tags.)
 	 */
-	public function padTitleWrap($str, $pad) {
+	public function padTitleWrap($str, $pad, $active) {
 		$el = count($this->elFromTable($this->fileMode ? '_FILE' : '', $pad));
 		if ($el) {
-			return '<strong>' . $str . '</strong> (' . ($pad == 'normal' ? ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) : htmlspecialchars($el)) . ')';
+			$str .=  ' (' . ($pad == 'normal' ? ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) : htmlspecialchars($el)) . ')';
+		}
+		if ($active === TRUE) {
+			return '<strong>' . $str . '</strong>';
 		} else {
 			return '<span class="text-muted">' . $str . '</span>';
 		}
@@ -878,7 +882,7 @@ class Clipboard {
 	 * @return bool TRUE if elements exist.
 	 */
 	public function isElements() {
-		return is_array($this->clipData[$this->current]['el']) && count($this->clipData[$this->current]['el']);
+		return is_array($this->clipData[$this->current]['el']) && !empty($this->clipData[$this->current]['el']);
 	}
 
 	/*****************************************

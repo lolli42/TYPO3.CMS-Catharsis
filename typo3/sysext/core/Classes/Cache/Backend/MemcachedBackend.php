@@ -38,11 +38,6 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  * the data will be split into chunks to make them fit into the memcached limits.
  *
  * This file is a backport from FLOW3 by Ingo Renner.
- *
- * @author Robert Lemke <robert@typo3.org>
- * @author Christian Jul Jensen <julle@typo3.org>
- * @author Karsten Dambekalns <karsten@typo3.org>
- * @author Dmitry Dulepov <dmitry@typo3.org>
  * @api
  */
 class MemcachedBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implements \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface {
@@ -130,7 +125,7 @@ class MemcachedBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend imp
 	 * @throws \TYPO3\CMS\Core\Cache\Exception
 	 */
 	public function initializeObject() {
-		if (!count($this->servers)) {
+		if (empty($this->servers)) {
 			throw new \TYPO3\CMS\Core\Cache\Exception('No servers were given to Memcache', 1213115903);
 		}
 		$this->memcache = new \Memcache();
@@ -216,7 +211,7 @@ class MemcachedBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend imp
 				throw new \TYPO3\CMS\Core\Cache\Exception('Could not set data to memcache server.', 1275830266);
 			}
 		} catch (\Exception $exception) {
-			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('Memcache: could not set value. Reason: ' . $exception->getMessage(), 'Core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_WARNING);
+			\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog('Memcache: could not set value. Reason: ' . $exception->getMessage(), 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_WARNING);
 		}
 	}
 
@@ -361,7 +356,7 @@ class MemcachedBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend imp
 			// anywhere.
 			if (($key = array_search($entryIdentifier, $identifiers)) !== FALSE) {
 				unset($identifiers[$key]);
-				if (count($identifiers)) {
+				if (!empty($identifiers)) {
 					$this->memcache->set($this->identifierPrefix . 'tag_' . $tag, $identifiers);
 				} else {
 					$this->memcache->delete($this->identifierPrefix . 'tag_' . $tag, 0);

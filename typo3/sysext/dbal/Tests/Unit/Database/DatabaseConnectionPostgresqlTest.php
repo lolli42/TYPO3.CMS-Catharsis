@@ -144,4 +144,108 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/67445
+	 */
+	public function alterTableAddKeyStatementIsRemappedToCreateIndex() {
+		$parseString = 'ALTER TABLE sys_collection ADD KEY parent (pid,deleted)';
+		$components = $this->subject->SQLparser->_callRef('parseALTERTABLE', $parseString);
+		$this->assertInternalType('array', $components);
+
+		$result = $this->subject->SQLparser->_callRef('compileALTERTABLE', $components);
+		$expected = array('CREATE INDEX "dd81ee97_parent" ON "sys_collection" ("pid", "deleted")');
+		$this->assertSame($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/67445
+	 */
+	public function canParseAlterTableDropKeyStatement() {
+		$parseString = 'ALTER TABLE sys_collection DROP KEY parent';
+		$components = $this->subject->SQLparser->_callRef('parseALTERTABLE', $parseString);
+		$this->assertInternalType('array', $components);
+
+		$result = $this->subject->SQLparser->_callRef('compileALTERTABLE', $components);
+		$expected = array('DROP INDEX "dd81ee97_parent"');
+		$this->assertSame($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/43262
+	 */
+	public function countFieldInOrderByIsInGroupBy() {
+		$result = $this->subject->SELECTquery('COUNT(title)', 'pages', '', 'title', 'title');
+		$expected = 'SELECT COUNT("title") FROM "pages" GROUP BY "title" ORDER BY "title"';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/43262
+	 */
+	public function multipleCountFieldsInOrderByAreInGroupBy() {
+		$result = $this->subject->SELECTquery('COUNT(title), COUNT(pid)', 'pages', '', 'title, pid', 'title, pid');
+		$expected = 'SELECT COUNT("title"), COUNT("pid") FROM "pages" GROUP BY "title", "pid" ORDER BY "title", "pid"';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/43262
+	 */
+	public function countFieldInOrderByIsNotInGroupBy() {
+		$result = $this->subject->SELECTquery('COUNT(title)', 'pages', '', '', 'title');
+		$expected = 'SELECT COUNT("title") FROM "pages"';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/43262
+	 */
+	public function multipleCountFieldsInOrderByAreNotInGroupBy() {
+		$result = $this->subject->SELECTquery('COUNT(title), COUNT(pid)', 'pages', '', '', 'title, pid');
+		$expected = 'SELECT COUNT("title"), COUNT("pid") FROM "pages"';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/43262
+	 */
+	public function someCountFieldsInOrderByAreNotInGroupBy() {
+		$result = $this->subject->SELECTquery('COUNT(title), COUNT(pid)', 'pages', '', 'title', 'title, pid');
+		$expected = 'SELECT COUNT("title"), COUNT("pid") FROM "pages" GROUP BY "title" ORDER BY "title"';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @param string $fieldSQL
+	 * @param string $expected
+	 * @dataProvider equivalentFieldTypeDataProvider
+	 * @see http://forge.typo3.org/issues/67301
+	 */
+	public function suggestEquivalentFieldDefinitions($fieldSQL, $expected) {
+		$actual= $this->subject->getEquivalentFieldDefinition($fieldSQL);
+		$this->assertSame($expected, $actual);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function equivalentFieldTypeDataProvider() {
+		return array(
+			array('int(11) NOT NULL default \'0\'', 'int(11) NOT NULL default \'0\''),
+			array('int(10) NOT NULL', 'int(11) NOT NULL'),
+			array('tinyint(3)', 'smallint(6)'),
+			array('bigint(20) NOT NULL', 'bigint(20) NOT NULL'),
+			array('tinytext NOT NULL', 'varchar(255) NOT NULL default \'\''),
+			array('tinytext', 'varchar(255) default NULL'),
+			array('mediumtext', 'longtext')
+		);
+	}
 }

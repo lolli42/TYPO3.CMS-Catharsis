@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
@@ -71,8 +72,6 @@ use TYPO3\CMS\Lang\LanguageService;
  * $GLOBALS['SOBE']->main();
  * FINALLY THE printContent() FUNCTION WILL OUTPUT THE ACCUMULATED CONTENT
  * $GLOBALS['SOBE']->printContent();
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BaseScriptClass {
 
@@ -190,6 +189,11 @@ class BaseScriptClass {
 	public $extObj;
 
 	/**
+	 * @var PageRenderer
+	 */
+	protected $pageRenderer = NULL;
+
+	/**
 	 * Initializes the backend module by setting internal variables, initializing the menu.
 	 *
 	 * @return void
@@ -279,7 +283,7 @@ class BaseScriptClass {
 
 	/**
 	 * Creates an instance of the class found in $this->extClassConf['name'] in $this->extObj if any (this should hold three keys, "name", "path" and "title" if a "Function menu module" tries to connect...)
-	 * This value in extClassConf might be set by an extension (in a ext_tables/ext_localconf file) which thus "connects" to a module.
+	 * This value in extClassConf might be set by an extension (in an ext_tables/ext_localconf file) which thus "connects" to a module.
 	 * The array $this->extClassConf is set in handleExternalFunctionValue() based on the value of MOD_SETTINGS[function]
 	 * If an instance is created it is initiated with $this passed as value and $this->extClassConf as second argument. Further the $this->MOD_SETTING is cleaned up again after calling the init function.
 	 *
@@ -363,6 +367,17 @@ class BaseScriptClass {
 	 */
 	protected function getDatabaseConnection() {
 		return $GLOBALS['TYPO3_DB'];
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		if ($this->pageRenderer === NULL) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

@@ -28,8 +28,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  * Input GET var, &size: integer-values defining size of thumbnail, format '[int]' or '[int]x[int]'
  *
  * Relative paths MUST BE the first two characters ONLY: eg: '../dir/file.gif', otherwise it is expect to be absolute
- *
- * @author Kasper Skårhøj	<kasperYYYY@typo3.com>
  * @deprecated since TYPO3 CMS 7, will be removed with TYPO3 CMS 8, use the corresponding Resource objects and Processing functionality
  */
 class ThumbnailView {
@@ -263,12 +261,13 @@ class ThumbnailView {
 			throw new \RuntimeException('TYPO3 Fatal Error: No gdlib. ' . $l1 . ' ' . $l2 . ' ' . $l3, 1270853954);
 		}
 		// Creates the basis for the error image
+		$basePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Public/Images/';
 		if ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png']) {
 			header('Content-type: image/png');
-			$im = imagecreatefrompng(PATH_typo3 . 'gfx/notfound_thumb.png');
+			$im = imagecreatefrompng($basePath . 'NotFound.png');
 		} else {
 			header('Content-type: image/gif');
-			$im = imagecreatefromgif(PATH_typo3 . 'gfx/notfound_thumb.gif');
+			$im = imagecreatefromgif($basePath . 'NotFound.gif');
 		}
 		// Sets background color and print color.
 		$white = imageColorAllocate($im, 255, 255, 255);

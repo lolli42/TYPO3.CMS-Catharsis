@@ -20,8 +20,6 @@ use TYPO3\CMS\Backend\Utility\IconUtility;
 
 /**
  * Adds action links to the backend's toolbar
- *
- * @author Steffen Kamper <info@sk-typo3.de>
  */
 class ActionToolbarItem implements ToolbarItemInterface {
 
@@ -34,7 +32,7 @@ class ActionToolbarItem implements ToolbarItemInterface {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->getLanguageService()->includeLLFile('EXT:sys_action/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:sys_action/Resources/Private/Language/locallang.xlf');
 		$this->initializeActionEntries();
 	}
 
@@ -136,7 +134,7 @@ class ActionToolbarItem implements ToolbarItemInterface {
 	 */
 	public function checkAccess() {
 		$result = FALSE;
-		if (count($this->actionEntries)) {
+		if (!empty($this->actionEntries)) {
 			$result = TRUE;
 		}
 		return $result;

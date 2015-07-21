@@ -18,9 +18,6 @@ use TYPO3\CMS\Core\Utility\ArrayUtility;
 
 /**
  * Contains SWFOBJECT content object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 class ShockwaveFlashObjectContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
 
@@ -40,11 +37,9 @@ class ShockwaveFlashObjectContentObject extends \TYPO3\CMS\Frontend\ContentObjec
 		}
 		$type = isset($conf['type.']) ? $this->cObj->stdWrap($conf['type'], $conf['type.']) : $conf['type'];
 		$typeConf = $conf[$type . '.'];
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $GLOBALS['TSFE']->getPageRenderer();
 
 		// Add SWFobject js-file
-		$pageRenderer->addJsFile($this->getPathToLibrary('flashmedia/swfobject/swfobject.js'));
+		$this->getPageRenderer()->addJsFile($this->getPathToLibrary('flashmedia/swfobject/swfobject.js'));
 		$player = isset($typeConf['player.']) ? $this->cObj->stdWrap($typeConf['player'], $typeConf['player.']) : $typeConf['player'];
 		if (strpos($player, 'EXT:') === 0) {
 			$player = $prefix . $GLOBALS['TSFE']->tmpl->getFileName($player);
@@ -92,15 +87,15 @@ class ShockwaveFlashObjectContentObject extends \TYPO3\CMS\Frontend\ContentObjec
 		if (is_array($conf['flashvars.']) && is_array($typeConf['mapping.']['flashvars.'])) {
 			ArrayUtility::remapArrayKeys($conf['flashvars.'], $typeConf['mapping.']['flashvars.']);
 		}
-		$flashvars = 'var flashvars = ' . (count($conf['flashvars.']) ? json_encode($conf['flashvars.']) : '{}') . ';';
+		$flashvars = 'var flashvars = ' . (!empty($conf['flashvars.']) ? json_encode($conf['flashvars.']) : '{}') . ';';
 		if (is_array($conf['params.']) && is_array($typeConf['mapping.']['params.'])) {
 			ArrayUtility::remapArrayKeys($conf['params.'], $typeConf['mapping.']['params.']);
 		}
-		$params = 'var params = ' . (count($conf['params.']) ? json_encode($conf['params.']) : '{}') . ';';
+		$params = 'var params = ' . (!empty($conf['params.']) ? json_encode($conf['params.']) : '{}') . ';';
 		if (is_array($conf['attributes.']) && is_array($typeConf['attributes.']['params.'])) {
 			ArrayUtility::remapArrayKeys($conf['attributes.'], $typeConf['attributes.']['params.']);
 		}
-		$attributes = 'var attributes = ' . (count($conf['attributes.']) ? json_encode($conf['attributes.']) : '{}') . ';';
+		$attributes = 'var attributes = ' . (!empty($conf['attributes.']) ? json_encode($conf['attributes.']) : '{}') . ';';
 		$flashVersion = isset($conf['flashVersion.']) ? $this->cObj->stdWrap($conf['flashVersion'], $conf['flashVersion.']) : $conf['flashVersion'];
 		if (!$flashVersion) {
 			$flashVersion = '9';
@@ -122,7 +117,7 @@ class ShockwaveFlashObjectContentObject extends \TYPO3\CMS\Frontend\ContentObjec
 		$embed = 'swfobject.embedSWF("' . $conf['player'] . '", "' . $replaceElementIdString . '", "' . $width . '", "' . $height . '",
 				"' . $flashVersion . '", "' . $installUrl . '", ' . $conf['embedParams'] . ');';
 		$script = $flashvars . $params . $attributes . $embed;
-		$pageRenderer->addJsInlineCode($replaceElementIdString, $script);
+		$this->getPageRenderer()->addJsInlineCode($replaceElementIdString, $script);
 		if (isset($conf['stdWrap.'])) {
 			$content = $this->cObj->stdWrap($content, $conf['stdWrap.']);
 		}

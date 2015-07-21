@@ -25,8 +25,6 @@ use TYPO3\CMS\Lowlevel\Utility\ArrayBrowser;
 
 /**
  * Script class for the Config module
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ConfigurationView extends BaseScriptClass {
 
@@ -61,7 +59,7 @@ class ConfigurationView extends BaseScriptClass {
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:lowlevel/Resources/Private/Templates/config.html');
 		$this->doc->form = '<form action="" method="post">';
-		$this->doc->addStyleSheet('module', 'sysext/lowlevel/Resources/Public/Styles/styles.css');
+		$this->doc->addStyleSheet('module', 'sysext/lowlevel/Resources/Public/Css/styles.css');
 	}
 
 	/**

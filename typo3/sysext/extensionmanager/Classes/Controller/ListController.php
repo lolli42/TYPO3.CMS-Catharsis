@@ -22,8 +22,6 @@ use TYPO3\CMS\Extensionmanager\Utility\Repository\Helper;
 
 /**
  * Controller for extension listings (TER or local extensions)
- *
- * @author Susanne Moog <typo3@susannemoog.de>
  */
 class ListController extends AbstractController {
 
@@ -52,10 +50,19 @@ class ListController extends AbstractController {
 	protected $dependencyUtility;
 
 	/**
+	 * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
+	 * @inject
+	 */
+	protected $configurationUtility;
+
+	/**
 	 * Add the needed JavaScript files for all actions
 	 */
 	public function initializeAction() {
 		$this->pageRenderer->addInlineLanguageLabelFile('EXT:extensionmanager/Resources/Private/Language/locallang.xlf');
+		if ($this->configurationUtility->getCurrentConfiguration('extensionmanager')['offlineMode']['value']) {
+			$this->settings['offlineMode'] = TRUE;
+		}
 	}
 
 	/**

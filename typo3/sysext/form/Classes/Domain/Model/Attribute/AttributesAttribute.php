@@ -15,11 +15,10 @@ namespace TYPO3\CMS\Form\Domain\Model\Attribute;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Attribute class for the form elements
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class AttributesAttribute {
 
@@ -67,7 +66,7 @@ class AttributesAttribute {
 	public function addAttribute($class, $value) {
 		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\Domain\\Model\\Attribute\\' . ucfirst($class) . 'Attribute';
-		$this->attributes[$class] = GeneralUtility::makeInstance($className, $value, $this->elementId);
+		$this->attributes[$class] = ObjectFactory::createFormObject($className, $value, $this->elementId);
 		return $this;
 	}
 

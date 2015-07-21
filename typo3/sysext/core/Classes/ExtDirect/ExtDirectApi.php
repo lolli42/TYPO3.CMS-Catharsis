@@ -18,9 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Ext Direct API Generator
- *
- * @author Sebastian Kurfürst <sebastian@typo3.org>
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 class ExtDirectApi {
 
@@ -66,7 +63,7 @@ class ExtDirectApi {
 	public function getApiPhp(array $filterNamespaces) {
 		$javascriptNamespaces = $this->getExtDirectApi($filterNamespaces);
 		// Return the generated javascript API configuration
-		if (count($javascriptNamespaces)) {
+		if (!empty($javascriptNamespaces)) {
 			return '
 				if (!Ext.isObject(Ext.app.ExtDirectAPI)) {
 					Ext.app.ExtDirectAPI = {};
@@ -107,7 +104,7 @@ class ExtDirectApi {
 				}
 				if (is_array($configuration)) {
 					$className = $configuration['callbackClass'];
-					$serverObject = GeneralUtility::getUserObj($className, FALSE);
+					$serverObject = GeneralUtility::getUserObj($className);
 					$javascriptNamespaces[$javascriptNamespace]['actions'][$javascriptObjectName] = array();
 					foreach (get_class_methods($serverObject) as $methodName) {
 						$reflectionMethod = new \ReflectionMethod($serverObject, $methodName);
@@ -151,7 +148,7 @@ class ExtDirectApi {
 	 * @return string $javascriptNamespaces
 	 */
 	protected function getExtDirectApi(array $filterNamespaces) {
-		$noCache = GeneralUtility::_GET('no_cache') ? TRUE : FALSE;
+		$noCache = (bool)GeneralUtility::_GET('no_cache');
 		// Look up into the cache
 		$cacheIdentifier = 'ExtDirectApi';
 		$cacheHash = md5($cacheIdentifier . implode(',', $filterNamespaces) . GeneralUtility::getIndpEnv('TYPO3_SSL') . serialize($this->settings) . TYPO3_MODE . GeneralUtility::getIndpEnv('HTTP_HOST'));
@@ -159,7 +156,7 @@ class ExtDirectApi {
 		// Generate the javascript content if it wasn't found inside the cache and cache it!
 		if ($noCache || !is_array(($javascriptNamespaces = \TYPO3\CMS\Frontend\Page\PageRepository::getHash($cacheHash)))) {
 			$javascriptNamespaces = $this->generateAPI($filterNamespaces);
-			if (count($javascriptNamespaces)) {
+			if (!empty($javascriptNamespaces)) {
 				\TYPO3\CMS\Frontend\Page\PageRepository::storeHash($cacheHash, $javascriptNamespaces, $cacheIdentifier);
 			}
 		}
@@ -173,7 +170,7 @@ class ExtDirectApi {
 	 * @return string $errorMessage
 	 */
 	protected function getNamespaceError(array $filterNamespaces) {
-		if (count($filterNamespaces)) {
+		if (!empty($filterNamespaces)) {
 			// Namespace error
 			$errorMessage = sprintf($GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:ExtDirect.namespaceError'), __CLASS__, implode(',', $filterNamespaces));
 		} else {

@@ -33,8 +33,6 @@ namespace TYPO3\CMS\Core\Cache\Backend;
  * - MD5 of script path and filename and SAPI name
  * This prefix makes sure that keys from the different installations do not
  * conflict.
- *
- * @author Tobias Burger <tobias_burger@hotmail.com>
  */
 class WincacheBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend implements \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface {
 
@@ -232,7 +230,7 @@ class WincacheBackend extends \TYPO3\CMS\Core\Cache\Backend\AbstractBackend impl
 			// anywhere.
 			if (($key = array_search($entryIdentifier, $identifiers)) !== FALSE) {
 				unset($identifiers[$key]);
-				if (count($identifiers)) {
+				if (!empty($identifiers)) {
 					wincache_ucache_set($this->identifierPrefix . 'tag_' . $tag, $identifiers);
 				} else {
 					wincache_ucache_delete($this->identifierPrefix . 'tag_' . $tag);

@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Install\SystemEnvironment;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\Status;
 
 /**
@@ -43,8 +45,6 @@ use TYPO3\CMS\Install\Status;
  * The status messages and title *must not* include HTML, use plain
  * text only. The return values of this class are not bound to HTML
  * and can be used in different scopes (eg. as json array).
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class Check {
 
@@ -76,6 +76,7 @@ class Check {
 	public function getStatus() {
 		$statusArray = array();
 		$statusArray[] = $this->checkCurrentDirectoryIsInIncludePath();
+		$statusArray[] = $this->checkTrustedHostPattern();
 		$statusArray[] = $this->checkFileUploadEnabled();
 		$statusArray[] = $this->checkMaximumFileUploadSize();
 		$statusArray[] = $this->checkPostUploadSizeIsHigherOrEqualMaximumFileUploadSize();
@@ -99,6 +100,7 @@ class Check {
 			$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsPhar();
 			$statusArray[] = $this->checkSuhosinExecutorIncludeWhitelistContainsVfs();
 		}
+		$statusArray[] = $this->checkMaxInputVars();
 		$statusArray[] = $this->checkSomePhpOpcodeCacheIsLoaded();
 		$statusArray[] = $this->checkReflectionDocComment();
 		$statusArray[] = $this->checkSystemLocale();
@@ -146,6 +148,30 @@ class Check {
 	}
 
 	/**
+	 * Checks the status of the trusted hosts pattern check
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkTrustedHostPattern() {
+		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] === GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL) {
+			$status = new Status\WarningStatus();
+			$status->setTitle('Trusted hosts pattern is insecure');
+			$status->setMessage('Trusted hosts pattern is configured to allow all header values. Check the pattern defined in Install Tool -> All configuration -> System -> trustedHostsPattern and adapt it to expected host value(s).');
+		} else {
+			if (GeneralUtility::hostHeaderValueMatchesTrustedHostsPattern($_SERVER['HTTP_HOST'])) {
+				$status = new Status\OkStatus();
+				$status->setTitle('Trusted hosts pattern is configured to allow current host value.');
+			} else {
+				$status = new Status\ErrorStatus();
+				$status->setTitle('Trusted hosts pattern mismatch');
+				$status->setMessage('The trusted hosts pattern will be configured to allow all header values. This is because your $SERVER_NAME is "' . htmlspecialchars($_SERVER['SERVER_NAME']) . '" while your HTTP_HOST is "'. htmlspecialchars($_SERVER['HTTP_HOST']) . '". Check the pattern defined in Install Tool -> All configuration -> System -> trustedHostsPattern and adapt it to expected host value(s).');
+			}
+		}
+
+		return $status;
+	}
+
+	/**
 	 * Check if file uploads are enabled in PHP
 	 *
 	 * @return Status\StatusInterface
@@ -160,9 +186,7 @@ class Check {
 				' If this flag is disabled in PHP, you won\'t be able to upload files.' .
 				' But it doesn\'t end here, because not only are files not accepted by' .
 				' the server - ALL content in the forms are discarded and therefore' .
-				' nothing at all will be editable if you don\'t set this flag!' .
-				' However if you cannot enable fileupload for some reason in PHP, alternatively' .
-				' change the default form encoding value with $GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'form_enctype\'].'
+				' nothing at all will be editable if you don\'t set this flag!'
 			);
 		} else {
 			$status = new Status\OkStatus();
@@ -398,7 +422,7 @@ class Check {
 		}
 
 		if ($disabledFunctions !== '') {
-			if (count($disabledFunctionsArray) > 0) {
+			if (!empty($disabledFunctionsArray)) {
 				$status = new Status\ErrorStatus();
 				$status->setTitle('Some PHP functions disabled');
 				$status->setMessage(
@@ -570,6 +594,43 @@ class Check {
 			);
 		}
 
+		return $status;
+	}
+
+	/**
+	 * Get max_input_vars status
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkMaxInputVars() {
+		$recommendedMaxInputVars = 1500;
+		$minimumMaxInputVars = 1000;
+		$currentMaxInputVars = ini_get('max_input_vars');
+
+		if ($currentMaxInputVars < $minimumMaxInputVars) {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('PHP max_input_vars too low');
+			$status->setMessage(
+				'max_input_vars=' . $currentMaxInputVars . LF .
+				'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+				' (as the install tool does). It is highly recommended to raise this' .
+				' to at least ' . $recommendedMaxInputVars . ':' . LF .
+				'max_input_vars=' . $recommendedMaxInputVars
+			);
+		} elseif ($currentMaxInputVars < $recommendedMaxInputVars) {
+			$status = new Status\WarningStatus();
+			$status->setTitle('PHP max_input_vars very low');
+			$status->setMessage(
+				'max_input_vars=' . $currentMaxInputVars . LF .
+				'This setting can lead to lost information if submitting forms with lots of data in TYPO3 CMS' .
+				' (as the install tool does). It is highly recommended to raise this' .
+				' to at least ' . $recommendedMaxInputVars . ':' . LF .
+				'max_input_vars=' . $recommendedMaxInputVars
+			);
+		} else {
+			$status = new Status\OkStatus();
+			$status->setTitle('PHP max_input_vars ok');
+		}
 		return $status;
 	}
 
@@ -873,8 +934,8 @@ class Check {
 	protected function checkSomePhpOpcodeCacheIsLoaded() {
 		// Link to our wiki page, so we can update opcode cache issue information independent of TYPO3 CMS releases.
 		$wikiLink = 'For more information take a look in our wiki ' . TYPO3_URL_WIKI_OPCODECACHE . '.';
-		$opcodeCaches = \TYPO3\CMS\Core\Utility\OpcodeCacheUtility::getAllActive();
-		if (count($opcodeCaches) === 0) {
+		$opcodeCaches = GeneralUtility::makeInstance(OpcodeCacheService::class)->getAllActive();
+		if (empty($opcodeCaches)) {
 			// Set status to notice. It needs to be notice so email won't be triggered.
 			$status = new Status\NoticeStatus();
 			$status->setTitle('No PHP opcode cache loaded');

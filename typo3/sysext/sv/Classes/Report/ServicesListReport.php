@@ -24,8 +24,6 @@ use TYPO3\CMS\Reports\ReportInterface;
 /**
  * This class provides a report displaying a list of all installed services
  * Code inspired by EXT:dam/lib/class.tx_dam_svlist.php by René Fritz
- *
- * @author Francois Suter <francois@typo3.org>
  */
 class ServicesListReport implements ReportInterface {
 
@@ -170,7 +168,7 @@ class ServicesListReport implements ReportInterface {
 	protected function renderExecutablesSearchPathList() {
 		$searchPaths = CommandUtility::getPaths(TRUE);
 		$content = '<h3>' . $this->getLanguageService()->getLL('search_paths') . '</h3>';
-		if (count($searchPaths) === 0) {
+		if (empty($searchPaths)) {
 			$content .= '<p>' . $this->getLanguageService()->getLL('no_search_paths') . '</p>';
 		} else {
 			$content .= '
@@ -234,7 +232,7 @@ class ServicesListReport implements ReportInterface {
 	 *
 	 * @param array $a First service to compare
 	 * @param array $b Second service to compare
-	 * @return int 1, 0 or -1 if a is smaller, equal or greater than b, respectively
+	 * @return int 1, 0 or -1 if $a is smaller, equal or greater than $b, respectively
 	 */
 	protected function sortServices(array $a, array $b) {
 		$result = 0;

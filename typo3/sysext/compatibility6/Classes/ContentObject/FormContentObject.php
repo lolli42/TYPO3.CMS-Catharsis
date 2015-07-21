@@ -18,9 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Contains FORM class object.
- *
- * @author Xavier Perseguers <typo3@perseguers.ch>
- * @author Steffen Kamper <steffen@typo3.org>
  */
 class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractContentObject {
 
@@ -146,7 +143,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 				}
 				$typeParts = explode('=', $fParts[0]);
 				$confData['type'] = trim(strtolower(end($typeParts)));
-				if (count($typeParts) == 1) {
+				if (count($typeParts) === 1) {
 					$confData['fieldname'] = $this->cleanFormName($parts[0]);
 					if (strtolower(preg_replace('/[^[:alnum:]]/', '', $confData['fieldname'])) == 'email') {
 						$confData['fieldname'] = 'email';
@@ -216,7 +213,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 						}
 						$noValueInsert = isset($conf['noValueInsert.']) ? $this->cObj->stdWrap($conf['noValueInsert'], $conf['noValueInsert.']) : $conf['noValueInsert'];
 						$default = $this->getFieldDefaultValue($noValueInsert, $confData['fieldname'], str_replace('\\n', LF, trim($parts[2])));
-						$fieldCode = sprintf('<textarea name="%s"%s cols="%s" rows="%s"%s%s>%s</textarea>', $confData['fieldname'], $elementIdAttribute, $cols, $rows, $wrap, $addParams, GeneralUtility::formatForTextarea($default));
+						$fieldCode = sprintf('<textarea name="%s"%s cols="%s" rows="%s"%s%s>%s</textarea>', $confData['fieldname'], $elementIdAttribute, $cols, $rows, $wrap, $addParams, htmlspecialchars($default));
 						break;
 					case 'input':
 
@@ -614,7 +611,7 @@ class FormContentObject extends \TYPO3\CMS\Frontend\ContentObject\AbstractConten
 		$theTarget = $theRedirect ? $LD['target'] : $LD_A['target'];
 		$method = isset($conf['method.']) ? $this->cObj->stdWrap($conf['method'], $conf['method.']) : $conf['method'];
 		$content = array(
-			'<form' . ' action="' . htmlspecialchars($action) . '"' . ' id="' . $formName . '"' . ($xhtmlStrict ? '' : ' name="' . $formName . '"') . ' enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '"' . ' method="' . ($method ? $method : 'post') . '"' . ($theTarget ? ' target="' . $theTarget . '"' : '') . $validateForm . '>',
+			'<form' . ' action="' . htmlspecialchars($action) . '"' . ' id="' . $formName . '"' . ($xhtmlStrict ? '' : ' name="' . $formName . '"') . ' enctype="multipart/form-data"' . ' method="' . ($method ? $method : 'post') . '"' . ($theTarget ? ' target="' . $theTarget . '"' : '') . $validateForm . '>',
 			$hiddenfields . $content,
 			'</form>'
 		);

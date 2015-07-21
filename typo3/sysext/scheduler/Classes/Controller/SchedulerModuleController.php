@@ -14,14 +14,15 @@ namespace TYPO3\CMS\Scheduler\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Database\DatabaseConnection;
-use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
-use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
 use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 use TYPO3\CMS\Saltedpasswords\Utility\SaltedPasswordsUtility;
@@ -29,10 +30,6 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
 /**
  * Module 'TYPO3 Scheduler administration module' for the 'scheduler' extension.
- *
- * @author François Suter <francois@typo3.org>
- * @author Christian Jul Jensen <julle@typo3.org>
- * @author Ingo Renner <ingo@typo3.org>
  */
 class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
@@ -67,11 +64,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	 * @var \TYPO3\CMS\Scheduler\Scheduler Local scheduler instance
 	 */
 	protected $scheduler;
-
-	/**
-	 * @var \TYPO3\CMS\Core\Page\PageRenderer
-	 */
-	protected $pageRenderer;
 
 	/**
 	 * @var string
@@ -109,6 +101,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$this->view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 		$this->view->getRequest()->setControllerExtensionName('scheduler');
 		$this->moduleUri = BackendUtility::getModuleUrl($this->moduleName);
+
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
 	}
 
 	/**
@@ -125,8 +120,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$this->doc->backPath = $this->backPath;
 		$this->doc->bodyTagId = 'typo3-mod-php';
 		$this->doc->bodyTagAdditions = 'class="tx_scheduler_mod1"';
-
-		$this->pageRenderer = $this->doc->getPageRenderer();
 
 		// Create scheduler instance
 		$this->scheduler = GeneralUtility::makeInstance(\TYPO3\CMS\Scheduler\Scheduler::class);
@@ -435,7 +428,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	protected function infoScreenAction() {
 		$registeredClasses = $this->getRegisteredClasses();
 		// No classes available, display information message
-		if (count($registeredClasses) == 0) {
+		if (empty($registeredClasses)) {
 			$this->view->setTemplatePathAndFilename($this->backendTemplatePath . 'InfoScreenNoClasses.html');
 			return $this->view->render();
 		}
@@ -569,7 +562,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				$taskInfo['task_group'] = $taskRecord['task_group'];
 
 				// Check that the task object is valid
-				if ($this->scheduler->isValidTaskObject($task)) {
+				if (isset($registeredClasses[get_class($task)]) && $this->scheduler->isValidTaskObject($task)) {
 					// The task object is valid, process with fetching current data
 					$taskInfo['class'] = get_class($task);
 					// Get execution information
@@ -620,7 +613,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 
 		// If some data was already submitted, use it to override
 		// existing data
-		if (count($this->submittedData) > 0) {
+		if (!empty($this->submittedData)) {
 			\TYPO3\CMS\Core\Utility\ArrayUtility::mergeRecursiveWithOverrule($taskInfo, $this->submittedData);
 		}
 
@@ -647,9 +640,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		}
 
 		// Load necessary JavaScript
-		$this->pageRenderer->loadJquery();
-		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
-		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
+		$this->getPageRenderer()->loadJquery();
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
 
 		// Start rendering the add/edit form
 		$this->view->assign('uid', htmlspecialchars($this->submittedData['uid']));
@@ -842,7 +835,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$this->scheduler->scheduleNextSchedulerRunUsingAtDaemon();
 		}
 		// Continue if some elements have been chosen for execution
-		if (isset($this->submittedData['execute']) && count($this->submittedData['execute']) > 0) {
+		if (isset($this->submittedData['execute']) && !empty($this->submittedData['execute'])) {
 			// Get list of registered classes
 			$registeredClasses = $this->getRegisteredClasses();
 			// Loop on all selected tasks
@@ -921,8 +914,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$this->view->setTemplatePathAndFilename($this->backendTemplatePath . 'ListTasksNoTasks.html');
 			return $this->view->render();
 		} else {
-			$this->pageRenderer->loadJquery();
-			$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
+			$this->getPageRenderer()->loadJquery();
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Scheduler/Scheduler');
 			$table = array();
 			// Header row
 			$table[] =
@@ -950,6 +943,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				$temporaryResult[$row['task_group']]['groupDescription'] = $row['taskGroupDescription'];
 				$temporaryResult[$row['task_group']]['tasks'][] = $row;
 			}
+			$registeredClasses = $this->getRegisteredClasses();
 			foreach ($temporaryResult as $taskGroup) {
 				if (!empty($taskGroup['groupName'])) {
 					$groupText = '<strong>' . htmlspecialchars($taskGroup['groupName']) . '</strong>';
@@ -960,7 +954,8 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 				}
 
 				foreach ($taskGroup['tasks'] as $schedulerRecord) {// Define action icons
-					$editAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:edit', TRUE) . '" class="icon">' .
+					$link = htmlspecialchars($this->moduleUri . '&CMD=edit&tx_scheduler[uid]=' . $schedulerRecord['uid']);
+					$editAction = '<a class="btn btn-default" href="' . $link . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:edit', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 					if ((int)$schedulerRecord['disable'] === 1) {
 						$translationKey = 'enable';
@@ -971,9 +966,19 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 					}
 					$toggleHiddenAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&CMD=toggleHidden&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:' . $translationKey, TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon($spriteIcon) . '</a>';
-					$deleteAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" onclick="return confirm(' . GeneralUtility::quoteJSvalue($this->getLanguageService()->getLL('msg.delete')) . ');" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="icon">' .
+					$deleteAction = '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=delete&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
+						. ' data-severity="warning"'
+						. ' data-title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '"'
+						. ' data-button-close-text="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '"'
+						. ' data-content="' . $this->getLanguageService()->getLL('msg.delete', TRUE) . '"'
+						. ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
-					$stopAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" onclick="return confirm(' . GeneralUtility::quoteJSvalue($this->getLanguageService()->getLL('msg.stop')) . ');" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon">' .
+					$stopAction = '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($this->moduleUri . '&CMD=stop&tx_scheduler[uid]=' . $schedulerRecord['uid']) . '" '
+						. ' data-severity="warning"'
+						. ' data-title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '"'
+						. ' data-button-close-text="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '"'
+						. ' data-content="' . $this->getLanguageService()->getLL('msg.stop', TRUE) . '"'
+						. ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('actions-document-close') . '</a>';
 					$runAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('extensions-scheduler-run-task') . '</a>';
@@ -1001,7 +1006,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						$lastExecution .= ' (' . $context . ')';
 					}
 
-					if ($this->scheduler->isValidTaskObject($task)) {
+					if (isset($registeredClasses[get_class($task)]) && $this->scheduler->isValidTaskObject($task)) {
 						// The task object is valid
 						$labels = array();
 						$name = htmlspecialchars($registeredClasses[$class]['title'] . ' (' . $registeredClasses[$class]['extension'] . ')');
@@ -1011,7 +1016,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 							$name .= $this->renderTaskProgressBar($progress);
 						}
 						if (!empty($additionalInformation)) {
-							$name .= '<div class="additional-information"><span title="' . htmlspecialchars($additionalInformation) . '">[' . GeneralUtility::fixed_lgd_cs(htmlspecialchars($additionalInformation), (int)$this->getBackendUser()->uc['titleLen']) . ']</span></div>';
+							$name .= '<div class="additional-information">' . nl2br(htmlspecialchars($additionalInformation)) . '</div>';
 						}
 						// Check if task currently has a running execution
 						if (!empty($schedulerRecord['serialized_executions'])) {
@@ -1098,17 +1103,17 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						}
 						// Format the execution status,
 						// including failure feedback, if any
+						$taskDesc = '';
 						if ($schedulerRecord['description'] !== '') {
-							$taskName = '<span title="' . htmlspecialchars($schedulerRecord['description']) . '">' . $name . '</span>';
-						} else {
-							$taskName = $name;
+							$taskDesc = '<span class="description">' . nl2br(htmlspecialchars($schedulerRecord['description'])) . '</span>';
 						}
+						$taskName = '<span class="name"><a href="' . $link . '">' . $name . '</a></span>';
 
 						$table[] =
 							'<tr class="' . ($showAsDisabled ? 'disabled' : '') . '">'
 								. '<td>' . $startExecutionElement . '</td>'
 								. '<td class="right">' . $schedulerRecord['uid'] . '</td>'
-								. '<td>' . $taskName . ' ' . $this->makeStatusLabel($labels) . '</td>'
+								. '<td>' . $this->makeStatusLabel($labels) . $taskName . $taskDesc . '</td>'
 								. '<td>' . $execType . '</td>'
 								. '<td>' . $frequency . '</td>'
 								. '<td>' . $multiple . '</td>'
@@ -1128,9 +1133,9 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 								. '<td class="right">' . $schedulerRecord['uid'] . '</td>'
 								. '<td colspan="6">' . $executionStatusOutput . '</td>'
 								. '<td nowrap="nowrap"><div class="btn-group" role="group">'
+									. '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>'
+									. '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>'
 									. $deleteAction
-									. '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>'
-									. '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>'
 									. '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>'
 								. '</div></td>'
 							. '</tr>';
@@ -1139,7 +1144,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			}
 			$this->getDatabaseConnection()->sql_free_result($res);
 
-			$this->view->assign('table', '<div class="table-fit"><table class="table table-striped table-hover">' . implode(LF, $table) . '</table></div>');
+			$this->view->assign('table', '<table class="table table-striped table-hover">' . implode(LF, $table) . '</table>');
 
 			// Server date time
 			$dateFormat = $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] . ' ' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['hhmm'] . ' T (e';
@@ -1161,7 +1166,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			if (empty($label['text'])) {
 				continue;
 			}
-			$htmlLabels[] = '<span class="label label-' . $label['class'] . '" title="' . htmlspecialchars($label['description']) . '">' . $label['text'] . '</span>';
+			$htmlLabels[] = '<span class="label label-' . htmlspecialchars($label['class']) . ' pull-right" title="' . htmlspecialchars($label['description']) . '">' . htmlspecialchars($label['text']) . '</span>';
 		}
 
 		return implode('&nbsp;', $htmlLabels);
@@ -1517,7 +1522,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		);
 		if (empty($this->CMD) || $this->CMD === 'list' || $this->CMD === 'delete' || $this->CMD === 'stop' || $this->CMD === 'toggleHidden') {
 			$buttons['reload'] = '<a href="' . htmlspecialchars($this->moduleUri) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
-			if ($this->MOD_SETTINGS['function'] === 'scheduler' && count($this->getRegisteredClasses())) {
+			if ($this->MOD_SETTINGS['function'] === 'scheduler' && !empty($this->getRegisteredClasses())) {
 				$link = $this->moduleUri . '&CMD=add';
 				$image = IconUtility::getSpriteIcon('actions-document-new', array('alt' => $this->getLanguageService()->getLL('action.add')));
 				$buttons['addtask'] = '<a href="' . htmlspecialchars($link) . '" ' . 'title="' . $this->getLanguageService()->getLL('action.add') . '">' . $image . '</a>';

@@ -24,7 +24,7 @@
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"vendor-dir": "typo3/contrib/vendor",
+		"vendor-dir": "typo3/vendor",
 		"bin-dir": "bin"
 	},
 	"require": {
@@ -34,18 +34,20 @@
 		"ext-session": "*",
 		"ext-xml": "*",
 		"psr/log": "1.0.*@dev",
-		"pear/http_request2": "2.2.1",
-		"phpwhois/idna-convert": "0.8.2",
-		"swiftmailer/swiftmailer": "5.4.1",
-		"symfony/console": "2.5.11",
-		"symfony/finder": "2.6.9",
-		"doctrine/instantiator": "1.0.4",
-		"helhum/class-alias-loader": "1.1.5",
-		"typo3/cms-composer-installers": "1.1.4"
+		"pear/http_request2": "~2.2.1",
+		"phpwhois/idna-convert": "~0.8.2",
+		"swiftmailer/swiftmailer": "~5.4.1",
+		"symfony/console": "~2.5.11",
+		"symfony/finder": "^2.6.9",
+		"doctrine/instantiator": "~1.0.4",
+		"helhum/class-alias-loader": "^1.1.9",
+		"typo3/cms-composer-installers": "^1.2.2",
+		"psr/http-message": "~1.0"
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.4.*@dev",
-		"phpunit/phpunit": "~4.7.0"
+		"phpunit/phpunit": "~4.7.0",
+		"codeception/codeception": "~2.1.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -57,11 +59,7 @@
 	"extra": {
 		"branch-alias": {
 			"dev-master": "7.x-dev"
-		},
-		"class-alias-maps": [
-			"typo3/sysext/core/Migrations/Code/ClassAliasMap.php",
-			"typo3/sysext/form/Migrations/Code/ClassAliasMap.php"
-		]
+		}
 	},
 	"replace": {
 		"typo3/cms-about": "self.version",
@@ -70,7 +68,6 @@
 		"typo3/cms-backend": "self.version",
 		"typo3/cms-belog": "self.version",
 		"typo3/cms-beuser": "self.version",
-		"typo3/cms-cms": "self.version",
 		"typo3/cms-context-help": "self.version",
 		"typo3/cms-core": "self.version",
 		"typo3/cms-cshmanual": "self.version",
@@ -151,7 +148,6 @@
 			"TYPO3\\CMS\\Lang\\": "typo3/sysext/lang/Classes/",
 			"TYPO3\\CMS\\Linkvalidator\\": "typo3/sysext/linkvalidator/Classes/",
 			"TYPO3\\CMS\\Lowlevel\\": "typo3/sysext/lowlevel/Classes/",
-			"TYPO3\\CMS\\Mediace\\": "typo3/sysext/mediace/Classes/",
 			"TYPO3\\CMS\\Opendocs\\": "typo3/sysext/opendocs/Classes/",
 			"TYPO3\\CMS\\Openid\\": "typo3/sysext/openid/Classes/",
 			"TYPO3\\CMS\\Recordlist\\": "typo3/sysext/recordlist/Classes/",
@@ -177,6 +173,9 @@
 		},
 		"classmap": [
 			"typo3/sysext/core/Resources/PHP/"
+		],
+		"files": [
+			"typo3/sysext/core/Resources/PHP/GlobalDebugFunctions.php"
 		]
 	},
 	"autoload-dev": {
@@ -209,6 +208,6 @@
 		}
 	},
 	"include-path": [
-		"typo3/contrib/vendor/pear/http_request2/"
+		"typo3/vendor/pear/http_request2/"
 	]
 }

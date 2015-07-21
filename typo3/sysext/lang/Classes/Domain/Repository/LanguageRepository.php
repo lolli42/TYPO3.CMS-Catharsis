@@ -18,9 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Language repository
- *
- * @author Sebastian Fischer <typo3@evoweb.de>
- * @author Kai Vogel <k.vogel@reply.de>
  */
 class LanguageRepository {
 
@@ -79,11 +76,11 @@ class LanguageRepository {
 	 * @return \TYPO3\CMS\Lang\Domain\Model\Language[] The language objects
 	 */
 	public function findAll() {
-		if (!count($this->languages)) {
+		if (empty($this->languages)) {
 			$languages = $this->locales->getLanguages();
 			array_shift($languages);
 			foreach ($languages as $locale => $language) {
-				$label = htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:setup/mod/locallang.xlf:lang_' . $locale));
+				$label = htmlspecialchars($GLOBALS['LANG']->sL('LLL:EXT:setup/Resources/Private/Language/locallang.xlf:lang_' . $locale));
 				if ($label === '') {
 					$label = htmlspecialchars($language);
 				}
@@ -135,7 +132,7 @@ class LanguageRepository {
 		foreach ($languages as $language) {
 			$dependencies = array_merge($dependencies, $this->locales->getLocaleDependencies($language));
 		}
-		if (count($dependencies)) {
+		if (!empty($dependencies)) {
 			$languages = array_unique(array_merge($languages, $dependencies));
 		}
 		$dir = count($languages) - count($this->selectedLocales);
@@ -145,7 +142,7 @@ class LanguageRepository {
 			array('availableLanguages' => $languages)
 		);
 		return array(
-			'success' => count($diff) > 0,
+			'success' => !empty($diff),
 			'dir' => $dir,
 			'diff' => array_values($diff),
 			'languages' => $languages

@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Impexp;
 
 /**
  * Adding Import/Export clickmenu item
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class Clickmenu {
 
@@ -73,7 +71,7 @@ class Clickmenu {
 	 * @return array Local lang array
 	 */
 	public function includeLL() {
-		return $GLOBALS['LANG']->includeLLFile('EXT:impexp/app/locallang.xlf', FALSE);
+		return $GLOBALS['LANG']->includeLLFile('EXT:impexp/Resources/Private/Language/locallang.xlf', FALSE);
 	}
 
 }

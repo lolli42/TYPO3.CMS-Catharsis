@@ -20,15 +20,11 @@ namespace TYPO3\CMS\Core\Error;
  * information.
  *
  * This file is a backport from TYPO3 Flow
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class DebugExceptionHandler extends AbstractExceptionHandler {
 
 	/**
 	 * Constructs this exception handler - registers itself as the default exception handler.
-	 *
-	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function __construct() {
 		set_exception_handler(array($this, 'handleException'));
@@ -39,7 +35,6 @@ class DebugExceptionHandler extends AbstractExceptionHandler {
 	 *
 	 * @param \Exception $exception The exception object
 	 * @return void
-	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function echoExceptionWeb(\Exception $exception) {
 		$this->sendStatusHeaders($exception);
@@ -117,7 +112,6 @@ class DebugExceptionHandler extends AbstractExceptionHandler {
 	 *
 	 * @param \Exception $exception The exception object
 	 * @return void
-	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	public function echoExceptionCLI(\Exception $exception) {
 		$filePathAndName = $exception->getFile();
@@ -137,11 +131,10 @@ Uncaught TYPO3 Exception ' . $exceptionCodeNumber . $exception->getMessage() . L
 	 *
 	 * @param array $trace The trace
 	 * @return string Backtrace information
-	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	protected function getBacktraceCode(array $trace) {
 		$backtraceCode = '';
-		if (count($trace)) {
+		if (!empty($trace)) {
 			foreach ($trace as $index => $step) {
 				$class = isset($step['class']) ? $step['class'] . '<span style="color:white;">::</span>' : '';
 				$arguments = '';
@@ -191,7 +184,6 @@ Uncaught TYPO3 Exception ' . $exceptionCodeNumber . $exception->getMessage() . L
 	 * @param string $filePathAndName Absolute path and file name of the PHP file
 	 * @param int $lineNumber Line number defining the center of the code snippet
 	 * @return string The code snippet
-	 * @author Robert Lemke <robert@typo3.org>
 	 */
 	protected function getCodeSnippet($filePathAndName, $lineNumber) {
 		$codeSnippet = '<br />';
@@ -199,7 +191,8 @@ Uncaught TYPO3 Exception ' . $exceptionCodeNumber . $exception->getMessage() . L
 			$phpFile = @file($filePathAndName);
 			if (is_array($phpFile)) {
 				$startLine = $lineNumber > 2 ? $lineNumber - 2 : 1;
-				$endLine = $lineNumber < count($phpFile) - 2 ? $lineNumber + 3 : count($phpFile) + 1;
+				$phpFileCount = count($phpFile);
+				$endLine = $lineNumber < $phpFileCount - 2 ? $lineNumber + 3 : $phpFileCount + 1;
 				if ($endLine > $startLine) {
 					$codeSnippet = '<br /><span style="font-size:10px;">' . $filePathAndName . ':</span><br /><pre>';
 					for ($line = $startLine; $line < $endLine; $line++) {

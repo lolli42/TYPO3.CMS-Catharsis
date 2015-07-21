@@ -18,10 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * TYPO3 database abstraction layer
- *
- * @author Kasper Skårhøj <kasper@typo3.com>
- * @author Karsten Dambekalns <k.dambekalns@fishfarm.de>
- * @author Xavier Perseguers <xavier@typo3.org>
  */
 class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 
@@ -312,7 +308,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @return void
 	 */
 	protected function analyzeCachingTables() {
-		$this->parseAndAnalyzeSql(\TYPO3\CMS\Core\Cache\Cache::getDatabaseTableDefinitions());
+		$schemaService = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\DatabaseSchemaService::class);
+		$this->parseAndAnalyzeSql($schemaService->getCachingFrameworkRequiredDatabaseSchema());
 	}
 
 	/**
@@ -804,7 +801,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			$remappedParameters = $this->map_remapSELECTQueryParts($select_fields, $from, $where_clause, $groupBy, $orderBy);
 		}
 		// Get handler key and select API:
-		if (count($remappedParameters) > 0) {
+		if (!empty($remappedParameters)) {
 			$mappedQueryParts = $this->compileSelectParameters($remappedParameters);
 			$fromTable = $mappedQueryParts[1];
 		} else {
@@ -815,7 +812,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		$sqlResult = NULL;
 		switch ($hType) {
 			case 'native':
-				if (count($remappedParameters) > 0) {
+				if (!empty($remappedParameters)) {
 					list($select_fields, $from_table, $where_clause, $groupBy, $orderBy) = $this->compileSelectParameters($remappedParameters);
 				}
 				$this->lastQuery = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
@@ -834,14 +831,14 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						$numrows = $splitLimit[0];
 						$offset = 0;
 					}
-					if (count($remappedParameters) > 0) {
+					if (!empty($remappedParameters)) {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->SelectLimit($this->SELECTqueryFromArray($remappedParameters), $numrows, $offset);
 					} else {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->SelectLimit($this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy), $numrows, $offset);
 					}
 					$this->lastQuery = $sqlResult->sql;
 				} else {
-					if (count($remappedParameters) > 0) {
+					if (!empty($remappedParameters)) {
 						$this->lastQuery = $this->SELECTqueryFromArray($remappedParameters);
 					} else {
 						$this->lastQuery = $this->SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
@@ -856,7 +853,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$sqlResult->TYPO3_DBAL_tableList = $ORIG_tableName;
 				break;
 			case 'userdefined':
-				if (count($remappedParameters) > 0) {
+				if (!empty($remappedParameters)) {
 					list($select_fields, $from_table, $where_clause, $groupBy, $orderBy) = $this->compileSelectParameters($remappedParameters);
 				}
 				$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->exec_SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
@@ -1017,7 +1014,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function INSERTquery($table, $fields_values, $no_quote_fields = FALSE) {
 		// Table and fieldnames should be "SQL-injection-safe" when supplied to this function (contrary to values in the arrays which may be insecure).
-		if (!is_array($fields_values) || count($fields_values) === 0) {
+		if (!is_array($fields_values) || empty($fields_values)) {
 			return '';
 		}
 		foreach ($this->preProcessHookObjects as $hookObject) {
@@ -1051,9 +1048,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$nArr[$this->quoteFieldNames($k)] = !in_array($k, $no_quote_fields) ? $this->fullQuoteStr($v, $table, TRUE) : $v;
 			}
 		}
-		if (count($blobFields) || count($clobFields)) {
+		if (!empty($blobFields) || !empty($clobFields)) {
 			$query = array();
-			if (count($nArr)) {
+			if (!empty($nArr)) {
 				$query[0] = 'INSERT INTO ' . $this->quoteFromTables($table) . '
 				(
 					' . implode(',
@@ -1063,10 +1060,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					', $nArr) . '
 				)';
 			}
-			if (count($blobFields)) {
+			if (!empty($blobFields)) {
 				$query[1] = $blobFields;
 			}
-			if (count($clobFields)) {
+			if (!empty($clobFields)) {
 				$query[2] = $clobFields;
 			}
 			if (isset($query[0]) && ($this->debugOutput || $this->store_lastBuiltQuery)) {
@@ -1136,7 +1133,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			}
 			$blobFields = $clobFields = array();
 			$nArr = array();
-			if (is_array($fields_values) && count($fields_values)) {
+			if (is_array($fields_values) && !empty($fields_values)) {
 				if (is_string($no_quote_fields)) {
 					$no_quote_fields = explode(',', $no_quote_fields);
 				} elseif (!is_array($no_quote_fields)) {
@@ -1164,9 +1161,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					}
 				}
 			}
-			if (count($blobFields) || count($clobFields)) {
+			if (!empty($blobFields) || !empty($clobFields)) {
 				$query = array();
-				if (count($nArr)) {
+				if (!empty($nArr)) {
 					$query[0] = 'UPDATE ' . $this->quoteFromTables($table) . '
 						SET
 							' . implode(',
@@ -1174,10 +1171,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						WHERE
 							' . $this->quoteWhereClause($where) : '');
 				}
-				if (count($blobFields)) {
+				if (!empty($blobFields)) {
 					$query[1] = $blobFields;
 				}
-				if (count($clobFields)) {
+				if (!empty($clobFields)) {
 					$query[2] = $clobFields;
 				}
 				if (isset($query[0]) && ($this->debugOutput || $this->store_lastBuiltQuery)) {
@@ -1255,6 +1252,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		$where_clause = $this->quoteWhereClause($where_clause);
 		$groupBy = $this->quoteGroupBy($groupBy);
 		$orderBy = $this->quoteOrderBy($orderBy);
+		$this->dbmsSpecifics->transformQueryParts($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
 		// Call parent method to build actual query
 		$query = parent::SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
 		if ($this->debugOutput || $this->store_lastBuiltQuery) {
@@ -1275,19 +1273,20 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		// $from_table
 		$params[1] = $this->_quoteFromTables($params[1]);
 		// $where_clause
-		if (count($params[2]) > 0) {
+		if (!empty($params[2])) {
 			$params[2] = $this->_quoteWhereClause($params[2]);
 		}
 		// $group_by
-		if (count($params[3]) > 0) {
+		if (!empty($params[3])) {
 			$params[3] = $this->_quoteGroupBy($params[3]);
 		}
 		// $order_by
-		if (count($params[4]) > 0) {
+		if (!empty($params[4])) {
 			$params[4] = $this->_quoteOrderBy($params[4]);
 		}
 		// Compile the SELECT parameters
 		list($select_fields, $from_table, $where_clause, $groupBy, $orderBy) = $this->compileSelectParameters($params);
+		$this->dbmsSpecifics->transformQueryParts($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
 		// Call parent method to build actual query
 		$query = parent::SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
 		if ($this->debugOutput || $this->store_lastBuiltQuery) {
@@ -1306,9 +1305,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	protected function compileSelectParameters(array $params) {
 		$select_fields = $this->SQLparser->compileFieldList($params[0]);
 		$from_table = $this->SQLparser->compileFromTables($params[1]);
-		$where_clause = count($params[2]) > 0 ? $this->SQLparser->compileWhereClause($params[2]) : '';
-		$groupBy = count($params[3]) > 0 ? $this->SQLparser->compileFieldList($params[3]) : '';
-		$orderBy = count($params[4]) > 0 ? $this->SQLparser->compileFieldList($params[4]) : '';
+		$where_clause = !empty($params[2]) ? $this->SQLparser->compileWhereClause($params[2]) : '';
+		$groupBy = !empty($params[3]) ? $this->SQLparser->compileFieldList($params[3]) : '';
+		$orderBy = !empty($params[4]) ? $this->SQLparser->compileFieldList($params[4]) : '';
 		return array($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
 	}
 
@@ -1372,7 +1371,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			}
 		}
 		$ORIG_tableName = '';
-		if (count($precompiledParts) == 0) {
+		if (empty($precompiledParts)) {
 			// Map table / field names if needed:
 			$ORIG_tableName = $from_table;
 			// Saving table names in $ORIG_from_table since $from_table is transformed beneath:
@@ -1512,6 +1511,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$precompiledParts['queryParts'] = explode($parameterWrap, $query);
 				break;
 			case 'adodb':
+				$this->dbmsSpecifics->transformQueryParts($select_fields, $from_table, $where_clause, $groupBy, $orderBy, $limit);
 				$query = parent::SELECTquery($select_fields, $from_table, $where_clause, $groupBy, $orderBy);
 				$precompiledParts['queryParts'] = explode($parameterWrap, $query);
 				$precompiledParts['LIMIT'] = $limit;
@@ -1976,8 +1976,24 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * @param int $maxLength
 	 * @throws \RuntimeException
 	 * @return string Meta type (currently ADOdb syntax only, http://phplens.com/lens/adodb/docs-adodb.htm#metatype)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use getMetadata() instead
 	 */
 	public function MetaType($type, $table, $maxLength = -1) {
+		GeneralUtility::logDeprecatedFunction();
+		return $this->getMetadata($type, $table, 'dummyFieldToBypassCache', $maxLength);
+	}
+
+	/**
+	 * Return Metadata for native field type (ADOdb only!)
+	 *
+	 * @param string $type  Native type as reported by admin_get_fields()
+	 * @param string $table Table name for which the type is queried. Important for detection of DBMS handler of the query!
+	 * @param string $field Field name for which the type is queried. Important for accessing the field information cache.
+	 * @param int    $maxLength
+	 * @throws \RuntimeException
+	 * @return string Meta type (currently ADOdb syntax only, http://phplens.com/lens/adodb/docs-adodb.htm#metatype)
+	 */
+	public function getMetadata($type, $table, $field, $maxLength = -1) {
 		$this->lastHandlerKey = $this->handler_getFromTableList($table);
 		$str = '';
 		switch ((string)$this->handlerCfg[$this->lastHandlerKey]['type']) {
@@ -1985,7 +2001,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$str = $type;
 				break;
 			case 'adodb':
-				if (in_array($table, $this->cache_fieldType)) {
+				if (!empty($this->cache_fieldType[$table][$field])) {
+					$str = $this->cache_fieldType[$table][$field]['metaType'];
+				} else {
 					$rs = $this->handlerInstance[$this->lastHandlerKey]->SelectLimit('SELECT * FROM ' . $this->quoteFromTables($table), 1);
 					$str = $rs->MetaType($type, $maxLength);
 				}
@@ -2021,6 +2039,73 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function MySQLActualType($meta) {
 		GeneralUtility::logDeprecatedFunction();
 		return $this->dbmsSpecifics->getNativeFieldType($meta);
+	}
+
+	/*********************************************
+	 *
+	 * SqlSchemaMigrationService helper functions
+	 *
+	 *********************************************/
+	/**
+	 * Remove the index prefix length information from columns in an index definition.
+	 * Partial indexes based on a prefix are not supported by all databases.
+	 *
+	 * @param string $indexSQL
+	 * @return string
+	 */
+	public function getEquivalentIndexDefinition($indexSQL) {
+		if ($this->dbmsSpecifics->specificExists(Specifics\AbstractSpecifics::PARTIAL_STRING_INDEX) && (bool)$this->dbmsSpecifics->getSpecific(Specifics\AbstractSpecifics::PARTIAL_STRING_INDEX)) {
+			return $indexSQL;
+		}
+
+		$strippedIndexSQL = preg_replace_callback(
+			'/\A([^(]+)\((.*)\)\Z/',
+			function($matches) {
+				return $matches[1] . '(' . preg_replace('/\((\d+)\)/', '', $matches[2]) . ')';
+			},
+			$indexSQL
+		);
+
+		return $strippedIndexSQL === NULL ? $indexSQL : $strippedIndexSQL;
+	}
+
+	/**
+	 * Convert the native MySQL Field type to the closest matching equivalent field type supported by the DBMS.
+	 * INTEGER and TINYTEXT colums need to be further processed due to MySQL limitations / non-standard features.
+	 *
+	 * @param string $fieldSQL
+	 * @return string
+	 */
+	public function getEquivalentFieldDefinition($fieldSQL) {
+		if (!preg_match('/^([a-z0-9]+)(\(([^\)]+)\))?(.*)/', $fieldSQL, $components)) {
+			return $fieldSQL;
+		}
+
+		$metaType = $this->dbmsSpecifics->getMetaFieldType($components[1]);
+		$replacementType = $this->dbmsSpecifics->getNativeFieldType($metaType);
+		$replacementLength = $components[2];
+		$replacementExtra = '';
+
+		// MySQL INT types support a display length that has no effect on the
+		// actual range of values that can be stored, normalize to the default
+		// display length returned by DBAL.
+		if (substr($metaType, 0, 1) === 'I') {
+			$replacementLength = $this->dbmsSpecifics->getNativeFieldLength($replacementType, $components[3]);
+		}
+
+		// MySQL TINYTEXT is equivalent to VARCHAR(255) DEFAULT NULL. MySQL TEXT
+		// columns can not have a default value in contrast to VARCHAR, so the
+		// `default NULL` gets appended to avoid false-positive schema changes.
+		if ($components[1] === 'tinytext') {
+			$replacementLength = '(255)';
+			if (FALSE !== stripos($components[0], ' NOT NULL')) {
+				$replacementExtra = ' default \'\'';
+			} else {
+				$replacementExtra = ' default NULL';
+			}
+		}
+
+		return str_replace($components[1] . $components[2], strtolower($replacementType) . $replacementLength, $components[0]) . $replacementExtra;
 	}
 
 	/**************************************
@@ -2117,7 +2202,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				break;
 			case 'adodb':
 				// Check if method exists for the current $res object.
-				// If a table exists in TCA but not in the db, a error
+				// If a table exists in TCA but not in the db, an error
 				// occurred because $res is not a valid object.
 				if (method_exists($res, 'FetchRow')) {
 					$output = $res->FetchRow();
@@ -2185,7 +2270,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				break;
 			case 'adodb':
 				// Check if method exists for the current $res object.
-				// If a table exists in TCA but not in the db, a error
+				// If a table exists in TCA but not in the db, an error
 				// occurred because $res is not a valid object.
 				if (method_exists($res, 'FetchRow')) {
 					$output = $res->FetchRow();
@@ -2479,7 +2564,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		if (!$ret) {
 			GeneralUtility::sysLog(
 				'Could not select MySQL database ' . $databaseName . ': ' . $this->sql_error(),
-				'Core',
+				'core',
 				GeneralUtility::SYSLOG_SEVERITY_FATAL
 			);
 		}
@@ -2567,7 +2652,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 							// Skip tables from the Oracle 10 Recycle Bin
 							continue;
 						}
-						$whichTables[$theTable] = $theTable;
+						$whichTables[$theTable] = array('Name' => $theTable);
 					}
 				}
 				break;
@@ -2576,7 +2661,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				break;
 		}
 		// Check mapping:
-		if (is_array($this->mapping) && count($this->mapping)) {
+		if (is_array($this->mapping) && !empty($this->mapping)) {
 			// Mapping table names in reverse, first getting list of real table names:
 			$tMap = array();
 			foreach ($this->mapping as $tN => $tMapInfo) {
@@ -2589,6 +2674,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			foreach ($whichTables as $tN => $tDefinition) {
 				if (isset($tMap[$tN])) {
 					$tN = $tMap[$tN];
+					$tDefinition = array('Name' => $tN);
 				}
 				$newList[$tN] = $tDefinition;
 			}
@@ -2597,7 +2683,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		// Adding tables configured to reside in other DBMS (handler by other handlers than the default):
 		if (is_array($this->table2handlerKeys)) {
 			foreach ($this->table2handlerKeys as $key => $handlerKey) {
-				$whichTables[$key] = $key;
+				$whichTables[$key] = array('Name' => $key);
 			}
 		}
 		return $whichTables;
@@ -2640,7 +2726,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				if (is_array($fieldRows)) {
 					foreach ($fieldRows as $k => $fieldRow) {
 						settype($fieldRow, 'array');
-						$metaType = $this->MetaType($fieldRow['type'], $tableName, $fieldRow['name']);
+						$metaType = $this->getMetadata($fieldRow['type'], $tableName, $fieldRow['name']);
 						$output[$fieldRow['name']] = $this->dbmsSpecifics->transformFieldRowToMySQL($fieldRow, $metaType);
 					}
 				}
@@ -2699,7 +2785,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					foreach ($keyRows as $k => $theKey) {
 						$theKey['Table'] = $tableName;
 						$theKey['Non_unique'] = (int)(!$theKey['unique']);
-						$theKey['Key_name'] = str_replace($tableName . '_', '', $k);
+						$theKey['Key_name'] = str_replace(hash('crc32b', $tableName) . '_', '', $k);
 						// the following are probably not needed anyway...
 						$theKey['Collation'] = '';
 						$theKey['Cardinality'] = '';
@@ -2882,7 +2968,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 			$_tableList = $tableList;
 			$tableArray = $this->SQLparser->parseFromTables($_tableList);
 			// If success, traverse the tables:
-			if (is_array($tableArray) && count($tableArray)) {
+			if (is_array($tableArray) && !empty($tableArray)) {
 				$outputHandlerKey = '';
 				foreach ($tableArray as $vArray) {
 					// Find handler key, select "_DEFAULT" if none is specifically configured:
@@ -2954,7 +3040,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					if ($link->set_charset($this->connectionCharset) === FALSE) {
 						GeneralUtility::sysLog(
 							'Error setting connection charset to "' . $this->connectionCharset . '"',
-							'Core',
+							'core',
 							GeneralUtility::SYSLOG_SEVERITY_ERROR
 						);
 					}
@@ -2968,7 +3054,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 							if ($this->query($command) === FALSE) {
 								GeneralUtility::sysLog(
 									'Could not initialize DB connection with query "' . $command . '": ' . $this->sql_error(),
-									'Core',
+									'core',
 									GeneralUtility::SYSLOG_SEVERITY_ERROR
 								);
 							}
@@ -2979,7 +3065,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 
 					$output = TRUE;
 				} else {
-					GeneralUtility::sysLog('Could not connect to MySQL server ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'Core', 4);
+					GeneralUtility::sysLog('Could not connect to MySQL server ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'core', GeneralUtility::SYSLOG_SEVERITY_FATAL);
 				}
 				break;
 			case 'adodb':
@@ -3009,7 +3095,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				}
 				if (!$this->handlerInstance[$handlerKey]->isConnected()) {
 					$dsn = $cfgArray['config']['driver'] . '://' . $cfgArray['config']['username'] . ((string)$cfgArray['config']['password'] !== '' ? ':XXXX@' : '') . $cfgArray['config']['host'] . (isset($cfgArray['config']['port']) ? ':' . $cfgArray['config']['port'] : '') . '/' . $cfgArray['config']['database'] . ($GLOBALS['TYPO3_CONF_VARS']['SYS']['no_pconnect'] ? '' : '?persistent=1');
-					GeneralUtility::sysLog('Could not connect to DB server using ADOdb on ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'Core', 4);
+					GeneralUtility::sysLog('Could not connect to DB server using ADOdb on ' . $cfgArray['config']['host'] . ' with user ' . $cfgArray['config']['username'] . '.', 'core', GeneralUtility::SYSLOG_SEVERITY_FATAL);
 					error_log('DBAL error: Connection to ' . $dsn . ' failed. Maybe PHP doesn\'t support the database?');
 					$output = FALSE;
 				} else {
@@ -3344,9 +3430,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						case 'CASE':
 							if (isset($sqlPartArray[$k]['case_field'])) {
 								$fieldArray = explode('.', $sqlPartArray[$k]['case_field']);
-								if (count($fieldArray) == 1 && is_array($this->mapping[$defaultTableKey]['mapFieldNames']) && isset($this->mapping[$defaultTableKey]['mapFieldNames'][$fieldArray[0]])) {
+								$fieldArrayCount = count($fieldArray);
+								if ($fieldArrayCount === 1 && is_array($this->mapping[$defaultTableKey]['mapFieldNames']) && isset($this->mapping[$defaultTableKey]['mapFieldNames'][$fieldArray[0]])) {
 									$sqlPartArray[$k]['case_field'] = $this->mapping[$defaultTableKey]['mapFieldNames'][$fieldArray[0]];
-								} elseif (count($fieldArray) == 2) {
+								} elseif ($fieldArrayCount === 2) {
 									// Map the external table
 									$table = $fieldArray[0];
 									$tableKey = $this->getMappingKey($table);
@@ -3402,10 +3489,11 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					// Mapping field name in SQL-functions like MIN(), MAX() or SUM()
 					if ($this->mapping[$t]['mapFieldNames']) {
 						$fieldArray = explode('.', $sqlPartArray[$k]['func_content']);
-						if (count($fieldArray) == 1 && is_array($this->mapping[$t]['mapFieldNames']) && isset($this->mapping[$t]['mapFieldNames'][$fieldArray[0]])) {
+						$fieldArrayCount = count($fieldArray);
+						if ($fieldArrayCount === 1 && is_array($this->mapping[$t]['mapFieldNames']) && isset($this->mapping[$t]['mapFieldNames'][$fieldArray[0]])) {
 							$sqlPartArray[$k]['func_content.'][0]['func_content'] = $this->mapping[$t]['mapFieldNames'][$fieldArray[0]];
 							$sqlPartArray[$k]['func_content'] = $this->mapping[$t]['mapFieldNames'][$fieldArray[0]];
-						} elseif (count($fieldArray) == 2) {
+						} elseif ($fieldArrayCount === 2) {
 							// Map the external table
 							$table = $fieldArray[0];
 							$tableKey = $this->getMappingKey($table);
@@ -3450,9 +3538,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					// this is a very simplistic check, beware
 					if (!is_numeric($sqlPartArray[$k]['value'][0]) && !isset($sqlPartArray[$k]['value'][1])) {
 						$fieldArray = explode('.', $sqlPartArray[$k]['value'][0]);
-						if (count($fieldArray) == 1 && is_array($this->mapping[$t]['mapFieldNames']) && isset($this->mapping[$t]['mapFieldNames'][$fieldArray[0]])) {
+						$fieldArrayCount = count($fieldArray);
+						if ($fieldArrayCount === 1 && is_array($this->mapping[$t]['mapFieldNames']) && isset($this->mapping[$t]['mapFieldNames'][$fieldArray[0]])) {
 							$sqlPartArray[$k]['value'][0] = $this->mapping[$t]['mapFieldNames'][$fieldArray[0]];
-						} elseif (count($fieldArray) == 2) {
+						} elseif ($fieldArrayCount === 2) {
 							// Map the external table
 							$table = $fieldArray[0];
 							$tableKey = $this->getMappingKey($table);
@@ -3669,7 +3758,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 								unset($parseResults[$k]);
 							}
 						}
-						if (count($parseResults)) {
+						if (!empty($parseResults)) {
 							$data['parseError'] = $parseResults;
 							$errorFlag |= 2;
 						}
@@ -3723,10 +3812,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	public function debug_log($query, $ms, $data, $join, $errorFlag, $script = '') {
 		if (is_array($query)) {
 			$queryToLog = $query[0] . ' --  ';
-			if (count($query[1])) {
+			if (!empty($query[1])) {
 				$queryToLog .= count($query[1]) . ' BLOB FIELDS: ' . implode(', ', array_keys($query[1]));
 			}
-			if (count($query[2])) {
+			if (!empty($query[2])) {
 				$queryToLog .= count($query[2]) . ' CLOB FIELDS: ' . implode(', ', array_keys($query[2]));
 			}
 		} else {

@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script class for the Element Browser window.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
@@ -42,7 +40,7 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
 	public $RTEProperties = array();
 
-	public $anchorTypes = array('page', 'url', 'file', 'mail', 'spec');
+	public $anchorTypes = array('page', 'url', 'file', 'mail');
 
 	public $classesAnchorDefault = array();
 
@@ -75,7 +73,7 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
 		// Initializing hooking browsers
 		$this->initHookObjects('ext/rtehtmlarea/mod3/class.tx_rtehtmlarea_browse_links.php');
-		$this->allowedItems = $this->getAllowedItems('page,file,folder,url,mail,spec');
+		$this->allowedItems = $this->getAllowedItems('page,file,folder,url,mail');
 		$this->initCurrentUrl();
 		// Determine nature of current url:
 		$this->act = GeneralUtility::_GP('act');
@@ -135,10 +133,10 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 		$this->doc->getContextMenuCode();
 		// Apply the same styles as those of the base script
 		$this->doc->bodyTagId = 'typo3-browse-links-php';
-		$this->doc->getPageRenderer()->addCssFile($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
+		$this->getPageRenderer()->addCssFile($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
 		// Add attributes to body tag. Note: getBodyTagAdditions will invoke the hooks
 		$this->doc->bodyTagAdditions = $this->getBodyTagAdditions();
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
 			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
 		}');
 	}
@@ -303,7 +301,7 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 			var add_class=' . GeneralUtility::quoteJSvalue($this->setClass ? '&curUrl[class]=' . rawurlencode($this->setClass) : '') . ';
 			var add_title=' . GeneralUtility::quoteJSvalue($this->setTitle ? '&curUrl[title]=' . rawurlencode($this->setTitle) : '') . ';
 			var add_params=' . GeneralUtility::quoteJSvalue($this->bparams ? '&bparams=' . rawurlencode($this->bparams) : '') . ';
-			var additionalValues = ' . (count($this->additionalAttributes) ? json_encode($this->additionalAttributes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) : '{}') . ';';
+			var additionalValues = ' . (!empty($this->additionalAttributes) ? json_encode($this->additionalAttributes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) : '{}') . ';';
 		// Attributes setting functions
 		$JScode .= '
 			var cur_href=' . GeneralUtility::quoteJSvalue($this->curUrlArray['href'] ? ($this->curUrlInfo['query'] ? substr($this->curUrlArray['href'], 0, -strlen($this->curUrlInfo['query'])) : $this->curUrlArray['href']) : '') . ';
@@ -354,14 +352,6 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				if (document.ltargetform.anchor_class) browse_links_setClass(document.ltargetform.anchor_class.value);
 				if (document.ltargetform.ltarget) browse_links_setTarget(document.ltargetform.ltarget.value);
 				if (document.ltargetform.lrel) browse_links_setAdditionalValue("rel", document.ltargetform.lrel.value);
-				browse_links_setAdditionalValue("data-htmlarea-external", "");
-				plugin.createLink(theLink,cur_target,cur_class,cur_title,additionalValues);
-				return false;
-			}
-			function link_spec(theLink) {
-				if (document.ltargetform.anchor_title) browse_links_setTitle(document.ltargetform.anchor_title.value);
-				if (document.ltargetform.anchor_class) browse_links_setClass(document.ltargetform.anchor_class.value);
-				if (document.ltargetform.ltarget) browse_links_setTarget(document.ltargetform.ltarget.value);
 				browse_links_setAdditionalValue("data-htmlarea-external", "");
 				plugin.createLink(theLink,cur_target,cur_class,cur_title,additionalValues);
 				return false;
@@ -458,9 +448,6 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				$content .= $this->addAttributesForm();
 				$content .= $this->getFileSelectorHtml(\TYPO3\CMS\Rtehtmlarea\FolderTree::class);
 				break;
-			case 'spec':
-				$content .= $this->getUserLinkSelectorHtml();
-				break;
 			case 'page':
 				$content .= $this->addAttributesForm();
 				$content .= $this->getPageSelectorHtml(\TYPO3\CMS\Rtehtmlarea\PageTree::class);
@@ -521,12 +508,6 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 			$menuDef['mail']['label'] = $GLOBALS['LANG']->getLL('email', TRUE);
 			$menuDef['mail']['url'] = '#';
 			$menuDef['mail']['addParams'] = 'onclick="jumpToUrl(' . GeneralUtility::quoteJSvalue('?act=mail&mode=' . $this->mode . '&bparams=' . $this->bparams) . ');return false;"';
-		}
-		if (is_array($this->thisConfig['userLinks.']) && in_array('spec', $this->allowedItems)) {
-			$menuDef['spec']['isActive'] = $this->act == 'spec';
-			$menuDef['spec']['label'] = $GLOBALS['LANG']->getLL('special', TRUE);
-			$menuDef['spec']['url'] = '#';
-			$menuDef['spec']['addParams'] = 'onclick="jumpToUrl(' . GeneralUtility::quoteJSvalue('?act=spec&mode=' . $this->mode . '&bparams=' . $this->bparams) . ');return false;"';
 		}
 		// call hook for extra options
 		foreach ($this->hookObjects as $hookObject) {
@@ -590,70 +571,6 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				</td>
 			</tr>';
 		return $extUrl;
-	}
-
-	/**
-	 * Returns HTML of the user defined link selector
-	 *
-	 * @return string
-	 */
-	protected function getUserLinkSelectorHtml() {
-		if (!is_array($this->thisConfig['userLinks.'])) {
-			return '';
-		}
-		$subcats = array();
-		$v = $this->thisConfig['userLinks.'];
-		foreach ($v as $k2 => $dummyValue) {
-			$k2i = (int)$k2;
-			if (substr($k2, -1) == '.' && is_array($v[$k2i . '.'])) {
-				// Title:
-				$title = trim($v[$k2i]);
-				if (!$title) {
-					$title = $v[$k2i . '.']['url'];
-				} else {
-					$title = $GLOBALS['LANG']->sL($title);
-				}
-				// Description:
-				$description = $v[$k2i . '.']['description'] ? $GLOBALS['LANG']->sL($v[($k2i . '.')]['description'], TRUE) . '<br />' : '';
-				// URL + onclick event:
-				$onClickEvent = '';
-				if (isset($v[$k2i . '.']['target'])) {
-					$onClickEvent .= 'browse_links_setTarget(\'' . $v[($k2i . '.')]['target'] . '\');';
-				}
-				$v[$k2i . '.']['url'] = str_replace('###_URL###', $this->siteURL, $v[$k2i . '.']['url']);
-				if (substr($v[$k2i . '.']['url'], 0, 7) == 'http://' || substr($v[$k2i . '.']['url'], 0, 7) == 'mailto:') {
-					$onClickEvent .= 'cur_href=' . GeneralUtility::quoteJSvalue($v[($k2i . '.')]['url']) . ';link_current();';
-				} else {
-					$onClickEvent .= 'link_spec(' . GeneralUtility::quoteJSvalue($this->siteURL . $v[($k2i . '.')]['url']) . ');';
-				}
-				// Link:
-				$A = array('<a href="#" onclick="' . htmlspecialchars($onClickEvent) . 'return false;">', '</a>');
-				// Adding link to menu of user defined links:
-				$icon = $this->curUrlInfo['info'] == $v[$k2i . '.']['url']
-					? '<img' . \TYPO3\CMS\Backend\Utility\IconUtility::skinImg($GLOBALS['BACK_PATH'], 'gfx/blinkarrow_right.gif', 'width="5" height="9"') . ' class="c-blinkArrowR" alt="" />'
-					: '';
-				$subcats[$k2i] = '
-								<tr>
-									<td class="bgColor4">' . $A[0]
-					. '<strong>' . htmlspecialchars($title) . $icon . '</strong><br />' . $description . $A[1] . '</td>
-								</tr>';
-			}
-		}
-		// Sort by keys:
-		ksort($subcats);
-		// Add menu to content:
-		$content = '
-			<!--
-				Special userdefined menu:
-			-->
-						<table border="0" cellpadding="1" cellspacing="1" id="typo3-linkSpecial">
-							<tr>
-								<td class="bgColor5" class="c-wCell" valign="top"><strong>' . $GLOBALS['LANG']->getLL('special', TRUE) . '</strong></td>
-							</tr>
-							' . implode('', $subcats) . '
-						</table>
-						';
-		return $content;
 	}
 
 	/**
@@ -973,9 +890,9 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 							<td><label for="rtehtmlarea-browse-links-anchor_title" id="rtehtmlarea-browse-links-title-label">' . $GLOBALS['LANG']->getLL('anchor_title', TRUE) . ':</label></td>
 							<td colspan="3">
 								<span id="rtehtmlarea-browse-links-title-input" style="display: ' . ($readOnly ? 'none' : 'inline') . ';">
-									<input type="text" id="rtehtmlarea-browse-links-anchor_title" name="anchor_title" value="' . $title . '" ' . $this->doc->formWidth(30) . ' />
+									<input type="text" id="rtehtmlarea-browse-links-anchor_title" name="anchor_title" value="' . htmlspecialchars($title) . '" ' . $this->doc->formWidth(30) . ' />
 								</span>
-								<span id="rtehtmlarea-browse-links-title-readonly" style="display: ' . ($readOnly ? 'inline' : 'none') . ';">' . $title . '</span>
+								<span id="rtehtmlarea-browse-links-title-readonly" style="display: ' . ($readOnly ? 'inline' : 'none') . ';">' . htmlspecialchars($title) . '</span>
 							</td>
 						</tr>';
 	}
@@ -994,7 +911,7 @@ class BrowseLinks extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	 * Localize a label obtained from Page TSConfig
 	 *
 	 * @param string $string The label to be localized
-	 * @param bool $JScharCode If needs to be converted to a array of char numbers
+	 * @param bool $JScharCode If needs to be converted to an array of char numbers
 	 * @return string Localized string
 	 */
 	public function getPageConfigLabel($string, $JScharCode = TRUE) {

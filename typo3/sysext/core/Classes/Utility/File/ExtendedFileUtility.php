@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Resource\Exception;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -51,8 +52,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * You should always exclude php-files from the webspace. This will keep people from uploading, copy/moving and renaming files to become executable php scripts.
  * You should never mount a ftp_space 'below' the webspace so that it reaches into the webspace. This is because if somebody unzips a zip-file in the ftp-space so that it reaches out into the webspace this will be a violation of the safety
  * For example this is a bad idea: you have an ftp-space that is '/www/' and a web-space that is '/www/htdocs/'
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ExtendedFileUtility extends BasicFileUtility {
 
@@ -69,8 +68,16 @@ class ExtendedFileUtility extends BasicFileUtility {
 	 * If set, the uploaded files will overwrite existing files.
 	 *
 	 * @var bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public $dontCheckForUnique = 0;
+
+	/**
+	 * Defines behaviour when uploading files with names that already exist; possible value are 'cancel', 'replace', 'changeName'
+	 *
+	 * @var string
+	 */
+	protected $existingFilesConflictMode;
 
 	/**
 	 * This array is self-explaining (look in the class below).
@@ -139,6 +146,28 @@ class ExtendedFileUtility extends BasicFileUtility {
 	protected $fileFactory;
 
 	/**
+	 * Get existingFilesConflictMode
+	 *
+	 * @return string
+	 */
+	public function getExistingFilesConflictMode() {
+		return $this->existingFilesConflictMode;
+	}
+
+	/**
+	 * Set existingFilesConflictMode
+	 *
+	 * @param string $existingFilesConflictMode
+	 * @throws Exception
+	 */
+	public function setExistingFilesConflictMode($existingFilesConflictMode) {
+		if (!in_array($existingFilesConflictMode, array('cancel', 'replace', 'changeName'))) {
+			throw new Exception(sprintf('Invalid argument, received: "%s", expected: "cancel", "replace" or "changeName"', $existingFilesConflictMode));
+		}
+		$this->existingFilesConflictMode = $existingFilesConflictMode;
+	}
+
+	/**
 	 * Initialization of the class
 	 *
 	 * @param array $fileCmds Array with the commands to execute. See "TYPO3 Core API" document
@@ -194,7 +223,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 						unset($this->fileCmdMap['upload'][$upload['data']]);
 					}
 				}
-				if (count($this->fileCmdMap['upload']) == 0) {
+				if (empty($this->fileCmdMap['upload'])) {
 					$this->writelog(1, 1, 108, 'No file was uploaded!', '');
 				}
 			}
@@ -206,7 +235,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 						unset($this->fileCmdMap['newfolder'][$key]);
 					}
 				}
-				if (count($this->fileCmdMap['newfolder']) === 0) {
+				if (empty($this->fileCmdMap['newfolder'])) {
 					$this->writeLog(6, 1, 108, 'No name for new folder given!', '');
 				}
 			}
@@ -244,6 +273,9 @@ class ExtendedFileUtility extends BasicFileUtility {
 								break;
 							case 'upload':
 								$result[$action][] = $this->func_upload($cmdArr);
+								break;
+							case 'replace':
+								$result[$action][] = $this->replaceFile($cmdArr);
 								break;
 							case 'unzip':
 								$result[$action][] = $this->func_unzip($cmdArr);
@@ -360,7 +392,7 @@ class ExtendedFileUtility extends BasicFileUtility {
 					. ' AND tablename != ' . $databaseConnection->fullQuoteStr('sys_file_metadata', $table)
 			);
 			$deleteFile = TRUE;
-			if (count($refIndexRecords) > 0) {
+			if (!empty($refIndexRecords)) {
 				$shortcutContent = array();
 				$brokenReferences = array();
 
@@ -937,21 +969,23 @@ class ExtendedFileUtility extends BasicFileUtility {
 				'size' => $uploadedFileData['size'][$i]
 			);
 			try {
-				// @todo can be improved towards conflict mode naming
-				if ($this->dontCheckForUnique) {
-					$conflictMode = 'replace';
-				} else {
-					$conflictMode = 'cancel';
+
+				if ((int)$this->dontCheckForUnique === 1) {
+					GeneralUtility::deprecationLog('dontCheckForUnique = 1 is deprecated. Use setExistingFilesConflictMode(\'replace\');. Support for dontCheckForUnique will be removed in TYPO3 CMS 8.');
+					$this->existingFilesConflictMode = 'replace';
 				}
+
 				/** @var $fileObject File */
-				$fileObject = $targetFolderObject->addUploadedFile($fileInfo, $conflictMode);
+				$fileObject = $targetFolderObject->addUploadedFile($fileInfo, $this->existingFilesConflictMode);
 				$fileObject = ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($targetFolderObject->getStorage()->getUid(), $fileObject->getIdentifier());
-				if ($conflictMode === 'replace') {
+				if ($this->existingFilesConflictMode === 'replace') {
 					$this->getIndexer($fileObject->getStorage())->updateIndexEntry($fileObject);
 				}
 				$resultObjects[] = $fileObject;
 				$this->internalUploadMap[$uploadPosition] = $fileObject->getCombinedIdentifier();
 				$this->writelog(1, 0, 1, 'Uploading file "%s" to "%s"', array($fileInfo['name'], $targetFolderObject->getIdentifier()));
+			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileWritePermissionsException $e) {
+				$this->writelog(1, 1, 107, 'You are not allowed to override "%s"!', array($fileInfo['name']));
 			} catch (\TYPO3\CMS\Core\Resource\Exception\UploadException $e) {
 				$this->writelog(1, 2, 106, 'The upload has failed, no uploaded file found!', '');
 			} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientUserPermissionsException $e) {
@@ -1022,6 +1056,70 @@ class ExtendedFileUtility extends BasicFileUtility {
 			$this->writelog(7, 1, 100, 'File "%s" or destination "%s" was not within your mountpoints!', array($theFile, $theDest));
 			return FALSE;
 		}
+	}
+
+	/**
+	 * Replaces a file on the filesystem and changes the identifier of the persisted file object in sys_file if keepFilename
+	 * is not checked. If keepFilename is checked, only the file content will be replaced.
+	 *
+	 * @param array $cmdArr
+	 * @return array|bool
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException
+	 * @throws \TYPO3\CMS\Core\Resource\Exception\InvalidFileException
+	 */
+	protected function replaceFile(array $cmdArr) {
+		if (!$this->isInit) {
+			return FALSE;
+		}
+
+		$uploadPosition = $cmdArr['data'];
+		$fileInfo = $_FILES['replace_' . $uploadPosition];
+		if (empty($fileInfo['name'])) {
+			$this->writelog(1, 2, 108, 'No file was uploaded for replacing!', '');
+			return FALSE;
+		}
+
+		$keepFileName = ($cmdArr['keepFilename'] == 1) ? TRUE : FALSE;
+		$resultObjects = array();
+
+		try {
+			$fileObjectToReplace = $this->getFileObject($cmdArr['uid']);
+			$folder = $fileObjectToReplace->getParentFolder();
+			$resourceStorage = $fileObjectToReplace->getStorage();
+
+			$fileObject = $resourceStorage->addUploadedFile($fileInfo, $folder, $fileObjectToReplace->getName(), 'replace');
+
+			// Check if there is a file that is going to be uploaded that has a different name as the replacing one
+			// but exists in that folder as well.
+			// rename to another name, but check if the name is already given
+			if ($keepFileName === FALSE) {
+				// if a file with the same name already exists, we need to change it to _01 etc.
+				// if the file does not exist, we can do a simple rename
+				$resourceStorage->moveFile($fileObject, $folder, $fileInfo['name'], 'renameNewFile');
+			}
+
+			$resultObjects[] = $fileObject;
+			$this->internalUploadMap[$uploadPosition] = $fileObject->getCombinedIdentifier();
+
+			$this->writelog(1, 0, 1, 'Replacing file "%s" to "%s"', array($fileInfo['name'], $fileObjectToReplace->getIdentifier()));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFileWritePermissionsException $e) {
+			$this->writelog(1, 1, 107, 'You are not allowed to override "%s"!', array($fileInfo['name']));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\UploadException $e) {
+			$this->writelog(1, 2, 106, 'The upload has failed, no uploaded file found!', '');
+		} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientUserPermissionsException $e) {
+			$this->writelog(1, 1, 105, 'You are not allowed to upload files!', '');
+		} catch (\TYPO3\CMS\Core\Resource\Exception\UploadSizeException $e) {
+			$this->writelog(1, 1, 104, 'The uploaded file "%s" exceeds the size-limit', array($fileInfo['name']));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\InsufficientFolderWritePermissionsException $e) {
+			$this->writelog(1, 1, 103, 'Destination path "%s" was not within your mountpoints!', array($fileObjectToReplace->getIdentifier()));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\IllegalFileExtensionException $e) {
+			$this->writelog(1, 1, 102, 'Extension of file name "%s" is not allowed in "%s"!', array($fileInfo['name'], $fileObjectToReplace->getIdentifier()));
+		} catch (\TYPO3\CMS\Core\Resource\Exception\ExistingTargetFileNameException $e) {
+			$this->writelog(1, 1, 101, 'No unique filename available in "%s"!', array($fileObjectToReplace->getIdentifier()));
+		} catch (\RuntimeException $e) {
+			throw $e;
+		}
+		return $resultObjects;
 	}
 
 	/**

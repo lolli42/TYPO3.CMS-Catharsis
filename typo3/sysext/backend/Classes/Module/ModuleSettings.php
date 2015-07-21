@@ -54,8 +54,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *   ),
  *   'another id' => ...
  * )
- *
- * @author René Fritz <r.fritz@colorcube.de>
  */
 class ModuleSettings {
 
@@ -368,7 +366,7 @@ class ModuleSettings {
 		$codeTD = array();
 		$code = '';
 		// LOAD, REMOVE, but also show selector so you can overwrite an entry with SAVE
-		if ($storedEntries && count($showElements)) {
+		if ($storedEntries && !empty($showElements)) {
 			// Selector box
 			$onChange = 'document.forms[' . GeneralUtility::quoteJSvalue($this->formName) . '][\'storeControl[title]\'].value= this.options[this.selectedIndex].value!=0 ? this.options[this.selectedIndex].text : \'\';';
 			$code = '
@@ -416,7 +414,7 @@ class ModuleSettings {
 		}
 		if ($useOwnForm && trim($code)) {
 			$code = '
-		<form action="' . GeneralUtility::getIndpEnv('SCRIPT_NAME') . '" method="post" name="' . $this->formName . '" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '">' . $code . '</form>';
+		<form action="' . GeneralUtility::getIndpEnv('SCRIPT_NAME') . '" method="post" name="' . $this->formName . '" enctype="multipart/form-data">' . $code . '</form>';
 		}
 		return $code;
 	}

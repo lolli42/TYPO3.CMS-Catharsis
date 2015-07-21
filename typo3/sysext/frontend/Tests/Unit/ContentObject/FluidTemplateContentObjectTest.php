@@ -23,8 +23,6 @@ use TYPO3\CMS\Frontend\ContentObject\FluidTemplateContentObject;
 
 /**
  * Testcase
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -135,6 +133,36 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 			->method('stdWrap')
 			->with('foo', array('bar' => 'baz'));
 		$this->subject->render(array('file' => 'foo', 'file.' => array('bar' => 'baz')));
+	}
+
+	/**
+	 * @test
+	 */
+	public function renderCallsStandardWrapForGivenTemplateRootPathsWithStandardWrap() {
+		$this->addMockViewToSubject();
+		$this->contentObjectRenderer
+			->expects($this->at(0))
+			->method('stdWrap')
+			->with('FILE', array('file' => 'dummyPath5/'));
+		$this->contentObjectRenderer
+			->expects($this->at(1))
+			->method('stdWrap')
+			->with('FILE', array('file' => 'dummyPath25/'));
+		$this->subject->render(array(
+				'templateName' => 'foobar',
+				'templateRootPaths.' => array(
+					10 => 'FILE',
+					'10.' => array(
+						'file' => 'dummyPath5/',
+					),
+					15 => 'dummyPath6/',
+					25 => 'FILE',
+					'25.' => array(
+						'file' => 'dummyPath25/',
+					),
+				)
+			)
+		);
 	}
 
 	/**
@@ -262,6 +290,28 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 	/**
 	 * @test
 	 */
+	public function layoutRootPathsHasStdWrapSupport() {
+		$this->addMockViewToSubject();
+		$this->contentObjectRenderer
+			->expects($this->at(0))
+			->method('stdWrap')
+			->with('FILE', array('file' => 'foo/bar.html'));
+		$this->subject->render(
+			array(
+				'layoutRootPaths.' => array(
+					10 => 'FILE',
+					'10.' => array(
+						'file' => 'foo/bar.html',
+					),
+					20 => 'foo/bar2.html',
+				)
+			)
+		);
+	}
+
+	/**
+	 * @test
+	 */
 	public function fallbacksForLayoutRootPathAreSet() {
 		$this->addMockViewToSubject();
 		$this->standaloneView
@@ -293,6 +343,28 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 			->method('setPartialRootPaths')
 			->with(array(PATH_site . 'foo/bar.html'));
 		$this->subject->render(array('partialRootPath' => 'foo/bar.html'));
+	}
+
+	/**
+	 * @test
+	 */
+	public function partialRootPathsHasStdWrapSupport() {
+		$this->addMockViewToSubject();
+		$this->contentObjectRenderer
+			->expects($this->at(0))
+			->method('stdWrap')
+			->with('FILE', array('file' => 'foo/bar.html'));
+		$this->subject->render(
+			array(
+				'partialRootPaths.' => array(
+					10 => 'FILE',
+					'10.' => array(
+						'file' => 'foo/bar.html',
+					),
+					20 => 'foo/bar2.html',
+				)
+			)
+		);
 	}
 
 	/**
@@ -615,9 +687,9 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 			->method('cObjGetSingle')
 			->will($this->returnValue('foo'));
 		$this->standaloneView
-			->expects($this->at(1))
-			->method('assign')
-			->with('aVar', 'foo');
+			->expects($this->once())
+			->method('assignMultiple')
+			->with(array('aVar' => 'foo', 'data' => array(), 'current' => NULL));
 		$this->subject->render($configuration);
 	}
 
@@ -628,9 +700,9 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 		$this->addMockViewToSubject();
 		$this->contentObjectRenderer->data = array('foo');
 		$this->standaloneView
-			->expects($this->at(1))
-			->method('assign')
-			->with('data', array('foo'));
+			->expects($this->once())
+			->method('assignMultiple')
+			->with(array('data' => array('foo'), 'current' => NULL));
 		$this->subject->render(array());
 	}
 
@@ -640,11 +712,11 @@ class FluidTemplateContentObjectTest extends \TYPO3\CMS\Core\Tests\UnitTestCase 
 	public function renderAssignsContentObjectRendererCurrentValueToView() {
 		$this->addMockViewToSubject();
 		$this->contentObjectRenderer->data = array('currentKey' => 'currentValue');
-		$this->contentObjectRenderer->currentValKey= 'currentKey';
+		$this->contentObjectRenderer->currentValKey = 'currentKey';
 		$this->standaloneView
-			->expects($this->at(2))
-			->method('assign')
-			->with('current', 'currentValue');
+			->expects($this->once())
+			->method('assignMultiple')
+			->with(array('data' => array('currentKey' => 'currentValue'), 'current' => 'currentValue'));
 		$this->subject->render(array());
 	}
 

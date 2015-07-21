@@ -31,8 +31,6 @@ use TYPO3\CMS\Fluid\ViewHelpers\Be\InfoboxViewHelper;
  * Module: TypoScript Tools
  *
  * $TYPO3_CONF_VARS["MODS"]["web_ts"]["onlineResourceDir"]  = Directory of default resources. Eg. "fileadmin/res/" or so.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class TypoScriptTemplateModuleController extends BaseScriptClass {
 
@@ -97,7 +95,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->getLanguageService()->includeLLFile('EXT:tstemplate/ts/locallang.xlf');
+		$this->getLanguageService()->includeLLFile('EXT:tstemplate/Resources/Private/Language/locallang.xlf');
 
 		$this->MCONF = array(
 			'name' => $this->moduleName
@@ -155,7 +153,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:tstemplate/Resources/Private/Templates/tstemplate.html');
-		$this->doc->addStyleSheet('module', 'sysext/tstemplate/Resources/Public/Styles/styles.css');
+		$this->doc->addStyleSheet('module', 'sysext/tstemplate/Resources/Public/Css/styles.css');
 
 		$lang = $this->getLanguageService();
 
@@ -165,7 +163,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 				'template' => 'all'
 			);
 			$aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-			$this->doc->form = '<form action="' . htmlspecialchars($aHref) . '" method="post" enctype="' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['form_enctype'] . '" name="editForm">';
+			$this->doc->form = '<form action="' . htmlspecialchars($aHref) . '" method="post" enctype="multipart/form-data" name="editForm">';
 
 			// JavaScript
 			$this->doc->JScode = '
@@ -300,7 +298,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 					$url = BackendUtility::getModuleUrl('web_ts', array('id' => $this->id));
 					$buttons['close'] = '<a href="' . htmlspecialchars($url) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' .  IconUtility::getSpriteIcon('actions-document-close') .'</a>';
 				}
-			} elseif ($this->extClassConf['name'] === TypoScriptTemplateConstantEditorModuleFunctionController::class && count($this->MOD_MENU['constant_editor_cat'])) {
+			} elseif ($this->extClassConf['name'] === TypoScriptTemplateConstantEditorModuleFunctionController::class && !empty($this->MOD_MENU['constant_editor_cat'])) {
 				// SAVE button
 				$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" class="c-inputButton" name="submit" src="clear.gif" ' . 'title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" ' . 'value="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" ' . '/>'));
 			} elseif ($this->extClassConf['name'] === TypoScriptTemplateObjectBrowserModuleFunctionController::class) {
@@ -526,7 +524,7 @@ page.10.value = HELLO WORLD!
 		$cEl = current($rlArr);
 		$pArray[$cEl['uid']] = htmlspecialchars($cEl['title']);
 		array_shift($rlArr);
-		if (count($rlArr)) {
+		if (!empty($rlArr)) {
 			if (!isset($pArray[($cEl['uid'] . '.')])) {
 				$pArray[$cEl['uid'] . '.'] = array();
 			}
@@ -555,14 +553,14 @@ page.10.value = HELLO WORLD!
 			if (MathUtility::canBeInterpretedAsInteger($k)) {
 				if (isset($pArray[$k . '_'])) {
 					$lines[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">
-						<td nowrap><img src="clear.gif" width="1" height="1" hspace=' . $c * 10 . ' align="top">' . '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('id' => $k))) . '">' . IconUtility::getSpriteIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k), array('title' => ('ID: ' . $k))) . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</a></td>
+						<td nowrap><span style="width: 1px; height: 1px; display:inline-block; margin-left: ' . $c * 20 . 'px"></span>' . '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('id' => $k))) . '">' . IconUtility::getSpriteIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k), array('title' => ('ID: ' . $k))) . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</a></td>
 						<td>' . $pArray[($k . '_')]['count'] . '</td>
 						<td>' . ($pArray[$k . '_']['root_max_val'] > 0 ? IconUtility::getSpriteIcon('status-status-checked') : '&nbsp;') . '</td>
 						<td>' . ($pArray[$k . '_']['root_min_val'] == 0 ? IconUtility::getSpriteIcon('status-status-checked') : '&nbsp;') . '</td>
 						</tr>';
 				} else {
 					$lines[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">
-						<td nowrap ><img src="clear.gif" width="1" height="1" hspace=' . $c * 10 . ' align=top>' . IconUtility::getSpriteIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k)) . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</td>
+						<td nowrap><span style="width: 1px; height: 1px; display:inline-block; margin-left: ' . $c * 20 . 'px"></span>' . IconUtility::getSpriteIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k)) . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</td>
 						<td></td>
 						<td></td>
 						<td></td>

@@ -31,8 +31,6 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  * Notes:
  * These functions are strongly related to the interface of TYPO3.
  * Static class, functions called without making a class instance.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class IconUtility {
 
@@ -182,7 +180,7 @@ class IconUtility {
 		$deleted = FALSE;
 		// Set, if a page-record (only pages!) has the extend-to-subpages flag set.
 		$protectSection = FALSE;
-		$noIconFound = $row['_NO_ICON_FOUND'] ? TRUE : FALSE;
+		$noIconFound = (bool)$row['_NO_ICON_FOUND'];
 		// + $shaded which is also boolean!
 		// Icon state based on "enableFields":
 		if (is_array($GLOBALS['TCA'][$table]['ctrl']['enablecolumns'])) {
@@ -315,7 +313,7 @@ class IconUtility {
 				$wHattribs = 'width="' . round($iInfo[0] * $scaleFactor) . '" height="' . round($iInfo[1] * $scaleFactor) . '"';
 			}
 			// In any case, set currect src / wHattrib - this way we make sure that an entry IS found next time we hit the function,
-			// regardless of whether it points to a alternative icon or just the current.
+			// regardless of whether it points to an alternative icon or just the current.
 			$GLOBALS['TBE_STYLES']['skinImg'][$srcKey] = array($src, $wHattribs);
 		}
 		// Rendering disabled (greyed) icons using _i (inactive) as name suffix ("_d" is already used)
@@ -366,10 +364,7 @@ class IconUtility {
 		$iconFileName = 'icon_' . GeneralUtility::shortMD5(($iconfile . '|' . $mode . '|-' . $user . '|' . $protectSection)) . '_' . $iconFileName_stateTagged . '.' . ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] ? 'png' : 'gif');
 		$mainpath = '../typo3temp/' . $iconFileName;
 		$path = PATH_site . 'typo3temp/' . $iconFileName;
-		if (file_exists(PATH_typo3 . 'icons/' . $iconFileName)) {
-			// Returns if found in typo3/icons/
-			return 'icons/' . $iconFileName;
-		} elseif (file_exists($path)) {
+		if (file_exists($path)) {
 			// Returns if found in ../typo3temp/icons/
 			return $mainpath;
 		} else {
@@ -401,7 +396,7 @@ class IconUtility {
 							$white = ImageColorAllocate($im, 255, 255, 255);
 							imagestring($im, 1, 1, 1, $user, $white);
 						}
-						$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_group.gif');
+						$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_group.gif');
 						if ($ol_im < 0) {
 							return $iconfile;
 						}
@@ -412,19 +407,19 @@ class IconUtility {
 						unset($ol_im);
 						switch ($mode) {
 							case 'deleted':
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_deleted.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_deleted.gif');
 								break;
 							case 'futuretiming':
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_timing.gif');
 								break;
 							case 'timing':
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_timing.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_timing.gif');
 								break;
 							case 'hiddentiming':
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden_timing.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_hidden_timing.gif');
 								break;
 							case 'no_icon_found':
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_no_icon_found.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_no_icon_found.gif');
 								break;
 							case 'disabled':
 								// is already greyed - nothing more
@@ -433,7 +428,7 @@ class IconUtility {
 							case 'hidden':
 
 							default:
-								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_hidden.gif');
+								$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_hidden.gif');
 						}
 						if ($ol_im < 0) {
 							return $iconfile;
@@ -444,7 +439,7 @@ class IconUtility {
 					}
 					// Protect-section icon:
 					if ($protectSection) {
-						$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'gfx/overlay_sub5.gif');
+						$ol_im = self::imagecreatefrom($GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/overlay_sub5.gif');
 						if ($ol_im < 0) {
 							return $iconfile;
 						}
@@ -459,7 +454,7 @@ class IconUtility {
 					return $iconfile;
 				}
 			} else {
-				return $GLOBALS['BACK_PATH'] . 'gfx/default.gif';
+				return $GLOBALS['BACK_PATH'] . 'typo3/sysext/backend/Resources/Public/Images/Overlay/default.gif';
 			}
 		}
 	}
@@ -754,7 +749,7 @@ class IconUtility {
 				}
 
 				if ($iconName === NULL) {
-					// in folder tree view $options['folder-open'] can define a open folder icon
+					// in folder tree view $options['folder-open'] can define an open folder icon
 					if (!empty($options['folder-open'])) {
 						$iconName = 'apps-filetree-folder-opened';
 					} else {
@@ -942,8 +937,8 @@ class IconUtility {
 			'fe_group' => FALSE,
 			'deleted' => FALSE,
 			'protectedSection' => FALSE,
-			'nav_hide' => $row['nav_hide'] ? TRUE : FALSE,
-			'noIconFound' => $row['_NO_ICON_FOUND'] ? TRUE : FALSE
+			'nav_hide' => (bool)$row['nav_hide'],
+			'noIconFound' => (bool)$row['_NO_ICON_FOUND']
 		);
 		// Icon state based on "enableFields":
 		if (is_array($tcaCtrl['enablecolumns'])) {

@@ -26,6 +26,7 @@ use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
+use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
@@ -224,7 +225,13 @@ class InlineControlContainer extends AbstractContainer {
 				$options['renderType'] = 'inlineRecordContainer';
 				/** @var NodeFactory $nodeFactory */
 				$nodeFactory = $this->globalOptions['nodeFactory'];
-				$childArray = $nodeFactory->create($options)->render();
+				try {
+					// This container may raise an access denied exception, to not kill further processing,
+					// just a simple "empty" return is created here to ignore this field.
+					$childArray = $nodeFactory->create($options)->render();
+				} catch (AccessDeniedException $e) {
+					$childArray = $this->initializeResultArray();
+				}
 				$html .= $childArray['html'];
 				$childArray['html'] = '';
 				$resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $childArray);
@@ -276,7 +283,7 @@ class InlineControlContainer extends AbstractContainer {
 	 */
 	protected function getUniqueIds($records, $conf = array(), $splitValue = FALSE) {
 		$uniqueIds = array();
-		if (isset($conf['foreign_unique']) && $conf['foreign_unique'] && count($records)) {
+		if (isset($conf['foreign_unique']) && $conf['foreign_unique'] && !empty($records)) {
 			foreach ($records as $rec) {
 				// Skip virtual records (e.g. shown in localization mode):
 				if (!isset($rec['__virtual']) || !$rec['__virtual']) {
@@ -623,7 +630,7 @@ class InlineControlContainer extends AbstractContainer {
 				// Add a "Create new relation" link for adding new relations
 				// This is necessary, if the size of the selector is "1" or if
 				// there is only one record item in the select-box, that is selected by default
-				// The selector-box creates a new relation on using a onChange event (see some line above)
+				// The selector-box creates a new relation on using an onChange event (see some line above)
 				if (!empty($conf['appearance']['createNewRelationLinkTitle'])) {
 					$createNewRelationText = $this->getLanguageService()->sL($conf['appearance']['createNewRelationLinkTitle'], TRUE);
 				} else {

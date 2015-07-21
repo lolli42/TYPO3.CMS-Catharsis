@@ -19,8 +19,6 @@ use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
  * Microdata Schema extension for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class MicroDataSchema extends RteHtmlAreaApi {
 
@@ -30,13 +28,6 @@ class MicroDataSchema extends RteHtmlAreaApi {
 	 * @var string
 	 */
 	protected $pluginName = 'MicrodataSchema';
-
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = 'extensions/MicrodataSchema/locallang.xlf';
 
 	/**
 	 * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar
@@ -57,25 +48,23 @@ class MicroDataSchema extends RteHtmlAreaApi {
 	/**
 	 * Return JS configuration of the htmlArea plugins registered by the extension
 	 *
-	 * @param string $rteNumberPlaceholder A dummy string for JS arrays
 	 * @return string JS configuration for registered plugins
 	 */
-	public function buildJavascriptConfiguration($rteNumberPlaceholder) {
-		$registerRTEinJavascriptString = '';
+	public function buildJavascriptConfiguration() {
 		$schema = array(
 			'types' => array(),
 			'properties' => array()
 		);
 		// Parse configured schemas
-		if (is_array($this->thisConfig['schema.']) && is_array($this->thisConfig['schema.']['sources.'])) {
-			foreach ($this->thisConfig['schema.']['sources.'] as $source) {
+		if (is_array($this->configuration['thisConfig']['schema.']) && is_array($this->configuration['thisConfig']['schema.']['sources.'])) {
+			foreach ($this->configuration['thisConfig']['schema.']['sources.'] as $source) {
 				$fileName = trim($source);
 				$absolutePath = GeneralUtility::getFileAbsFileName($fileName);
 				// Fallback to default schema file if configured file does not exists or is of zero size
 				if (!$fileName || !file_exists($absolutePath) || !filesize($absolutePath)) {
 					$fileName = 'EXT:' . $this->extensionKey . '/Resources/Public/Rdf/MicrodataSchema/SchemaOrgAll.rdf';
 				}
-				$fileName = $this->htmlAreaRTE->getFullFileName($fileName);
+				$fileName = $this->getFullFileName($fileName);
 				$rdf = GeneralUtility::getUrl($fileName);
 				if ($rdf) {
 					$this->parseSchema($rdf, $schema);
@@ -85,22 +74,13 @@ class MicroDataSchema extends RteHtmlAreaApi {
 		uasort($schema['types'], array($this, 'compareLabels'));
 		uasort($schema['properties'], array($this, 'compareLabels'));
 		// Insert no type and no property entries
-		if ($this->htmlAreaRTE->is_FE()) {
-			$noSchema = $GLOBALS['TSFE']->getLLL('No type', $this->LOCAL_LANG);
-			$noProperty = $GLOBALS['TSFE']->getLLL('No property', $this->LOCAL_LANG);
-		} else {
-			$noSchema = $GLOBALS['LANG']->getLL('No type');
-			$noProperty = $GLOBALS['LANG']->getLL('No property');
-		}
+		$languageService = $this->getLanguageService();
+		$noSchema = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/MicrodataSchema/locallang.xlf:No type');
+		$noProperty = $languageService->sL('LLL:EXT:rtehtmlarea/Resources/Private/Language/Plugins/MicrodataSchema/locallang.xlf:No property');
 		array_unshift($schema['types'], array('name' => 'none', 'label' => $noSchema));
 		array_unshift($schema['properties'], array('name' => 'none', 'label' => $noProperty));
-		// Convert character set
-		if ($this->htmlAreaRTE->is_FE()) {
-			$GLOBALS['TSFE']->csConvObj->convArray($schema, $this->htmlAreaRTE->outputCharset, 'utf-8');
-		}
 		// Store json encoded array in temporary file
-		$registerRTEinJavascriptString = LF . TAB . 'RTEarea[editornumber].schemaUrl = "' . ($this->htmlAreaRTE->is_FE() && $GLOBALS['TSFE']->absRefPrefix ? $GLOBALS['TSFE']->absRefPrefix : '') . $this->htmlAreaRTE->writeTemporaryFile('', ('schema_' . $this->htmlAreaRTE->language), 'js', json_encode($schema), TRUE) . '";';
-		return $registerRTEinJavascriptString;
+		return 'RTEarea[editornumber].schemaUrl = "' . $this->writeTemporaryFile('schema_' . $this->configuration['language'], 'js', json_encode($schema)) . '";';
 	}
 
 	/**
@@ -122,7 +102,6 @@ class MicroDataSchema extends RteHtmlAreaApi {
 	 * @return void
 	 */
 	protected function parseSchema($string, &$schema) {
-		$resources = array();
 		$types = array();
 		$properties = array();
 		// Load the document
@@ -131,7 +110,6 @@ class MicroDataSchema extends RteHtmlAreaApi {
 		if ($document) {
 			// Scan resource descriptions
 			$items = $document->getElementsByTagName('Description');
-			$itemsCount = $items->length;
 			foreach ($items as $item) {
 				$name = $item->getAttribute('rdf:about');
 				$type = $item->getElementsByTagName('type');

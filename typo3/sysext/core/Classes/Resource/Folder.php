@@ -28,9 +28,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
  * local disk, S3 buckets or Flickr users). Other folders just group files by a
  * certain criterion, e.g. a tag.
  * The way this is implemented depends on the storage driver.
- *
- * @author Andreas Wolf <andreas.wolf@ikt-werk.de>
- * @author Ingmar Schlecht <ingmar@typo3.org>
  */
 class Folder implements FolderInterface {
 
@@ -58,7 +55,7 @@ class Folder implements FolderInterface {
 	protected $name;
 
 	/**
-	 * The filters this folder should use for a file list.
+	 * The filters this folder should use for a filelist.
 	 *
 	 * @var callable[]
 	 */
@@ -105,16 +102,18 @@ class Folder implements FolderInterface {
 	 * @return string
 	 */
 	public function getReadablePath($rootId = NULL) {
-		$oldPermissionFlag = $this->getStorage()->getEvaluatePermissions();
-		$this->getStorage()->setEvaluatePermissions(FALSE);
 		if ($rootId === NULL) {
-			$rootId = $this->storage->getRootLevelFolder(FALSE)->getIdentifier();
+			$rootId = $this->storage->getRootLevelFolder()->getIdentifier();
 		}
-		$readablePath = '';
+		$readablePath = '/';
 		if ($this->identifier !== $rootId) {
-			$readablePath = $this->getParentFolder()->getReadablePath($rootId);
+			try {
+				$readablePath = $this->getParentFolder()->getReadablePath($rootId);
+			} catch (Exception\InsufficientFolderAccessPermissionsException $e) {
+				// May no access to parent folder (e.g. because of mount point)
+				$readablePath = '/';
+			}
 		}
-		$this->getStorage()->setEvaluatePermissions($oldPermissionFlag);
 		return $readablePath . $this->name . '/';
 	}
 
@@ -189,7 +188,7 @@ class Folder implements FolderInterface {
 	 *
 	 * @param int $start The item to start at
 	 * @param int $numberOfItems The number of items to return
-	 * @param int $filterMode The filter mode to use for the file list.
+	 * @param int $filterMode The filter mode to use for the filelist.
 	 * @param bool $recursive
 	 * @param string $sort Property name used to sort the items.
 	 *                     Among them may be: '' (empty, no sorting), name,
@@ -247,12 +246,13 @@ class Folder implements FolderInterface {
 	 *
 	 * @param int $start The item to start at
 	 * @param int $numberOfItems The number of items to return
-	 * @param int $filterMode The filter mode to use for the file list.
+	 * @param int $filterMode The filter mode to use for the filelist.
+	 * @param bool $recursive
 	 * @return Folder[]
 	 */
-	public function getSubfolders($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS) {
+	public function getSubfolders($start = 0, $numberOfItems = 0, $filterMode = self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS, $recursive = FALSE) {
 		list($backedUpFilters, $useFilters) = $this->prepareFiltersInStorage($filterMode);
-		$folderObjects = $this->storage->getFoldersInFolder($this, $start, $numberOfItems, $useFilters);
+		$folderObjects = $this->storage->getFoldersInFolder($this, $start, $numberOfItems, $useFilters, $recursive);
 		$this->restoreBackedUpFiltersInStorage($backedUpFilters);
 		return $folderObjects;
 	}
@@ -413,7 +413,7 @@ class Folder implements FolderInterface {
 				break;
 
 			case self::FILTER_MODE_USE_OWN_AND_STORAGE_FILTERS:
-				if (count($this->fileAndFolderNameFilters) > 0) {
+				if (!empty($this->fileAndFolderNameFilters)) {
 					$backedUpFilters = $this->storage->getFileAndFolderNameFilters();
 					foreach ($this->fileAndFolderNameFilters as $filter) {
 						$this->storage->addFileAndFolderNameFilter($filter);

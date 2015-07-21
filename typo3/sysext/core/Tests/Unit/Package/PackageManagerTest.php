@@ -11,8 +11,12 @@ namespace TYPO3\CMS\Core\Tests\Unit\Package;
  * The TYPO3 project - inspiring people to share!                         *
  *                                                                        */
 
+use TYPO3\CMS\Core\Package\DependencyResolver;
 use TYPO3\CMS\Core\Package\PackageInterface;
 use org\bovigo\vfs\vfsStream;
+use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Package\Package;
+use TYPO3\CMS\Core\Service\DependencyOrderingService;
 
 /**
  * Testcase for the default package manager
@@ -21,7 +25,7 @@ use org\bovigo\vfs\vfsStream;
 class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
-	 * @var \TYPO3\CMS\Core\Package\PackageManager
+	 * @var PackageManager
 	 */
 	protected $packageManager;
 
@@ -38,7 +42,7 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$mockCache->expects($this->any())->method('set')->will($this->returnValue(TRUE));
 		$mockCache->expects($this->any())->method('getBackend')->will($this->returnValue($mockCacheBackend));
 		$mockCacheBackend->expects($this->any())->method('getCacheDirectory')->will($this->returnValue('vfs://Test/Cache'));
-		$this->packageManager = $this->getAccessibleMock(\TYPO3\CMS\Core\Package\PackageManager::class, array('sortAndSavePackageStates', 'sortAvailablePackagesByDependencies', 'registerAutoloadInformationInClassLoader'));
+		$this->packageManager = $this->getAccessibleMock(PackageManager::class, array('sortAndSavePackageStates', 'sortAvailablePackagesByDependencies', 'registerAutoloadInformationInClassLoader'));
 
 		mkdir('vfs://Test/Packages/Application', 0700, TRUE);
 		mkdir('vfs://Test/Configuration');
@@ -57,14 +61,14 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
 	/**
 	 * @param string $packageKey
-	 * @return \TYPO3\CMS\Core\Package\Package
+	 * @return Package
 	 */
 	protected function createPackage($packageKey) {
 		$packagePath = 'vfs://Test/Packages/Application/' . $packageKey . '/';
 		mkdir($packagePath, 0770, TRUE);
 		file_put_contents($packagePath . 'ext_emconf.php', '');
 		file_put_contents($packagePath . 'composer.json', '');
-		$package = new \TYPO3\CMS\Core\Package\Package($this->packageManager, $packageKey, $packagePath);
+		$package = new Package($this->packageManager, $packageKey, $packagePath);
 		$this->packageManager->registerPackage($package);
 		$this->packageManager->activatePackage($packageKey);
 
@@ -75,10 +79,10 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getPackageReturnsTheSpecifiedPackage() {
-		$this->createPackage('TYPO3.Flow');
-		$package = $this->packageManager->getPackage('TYPO3.Flow');
+		$this->createPackage('TYPO3.MyPackage');
+		$package = $this->packageManager->getPackage('TYPO3.MyPackage');
 
-		$this->assertInstanceOf(\TYPO3\CMS\Core\Package\PackageInterface::class, $package, 'The result of getPackage() was no valid package object.');
+		$this->assertInstanceOf(Package::class, $package, 'The result of getPackage() was no valid package object.');
 	}
 
 	/**
@@ -105,11 +109,10 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$packagePath = 'vfs://Test/Packages/Application/' . $packageKey . '/';
 
 			mkdir($packagePath, 0770, TRUE);
-			mkdir($packagePath . 'Classes');
 			file_put_contents($packagePath . 'composer.json', '{"name": "' . $packageKey . '", "type": "typo3-test"}');
 		}
 
-		$packageManager = $this->getAccessibleMock(\TYPO3\CMS\Core\Package\PackageManager::class, array('sortAndSavePackageStates'));
+		$packageManager = $this->getAccessibleMock(PackageManager::class, array('sortAndSavePackageStates'));
 		$packageManager->_set('packagesBasePath', 'vfs://Test/Packages/');
 		$packageManager->_set('packageStatesPathAndFilename', 'vfs://Test/Configuration/PackageStates.php');
 
@@ -136,19 +139,26 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$packagePath = 'vfs://Test/Packages/Application/' . $packageKey . '/';
 
 			mkdir($packagePath, 0770, TRUE);
-			mkdir($packagePath . 'Classes');
 			file_put_contents($packagePath . 'composer.json', '{"name": "' . $packageKey . '", "type": "typo3-cms-test"}');
 			file_put_contents($packagePath . 'ext_emconf.php', '');
 		}
 
-		$packageManager = $this->getAccessibleMock(\TYPO3\CMS\Core\Package\PackageManager::class, array('dummy'));
+		/** @var PackageManager|\PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface $packageManager */
+		$packageManager = $this->getAccessibleMock(PackageManager::class, array('dummy'));
 		$packageManager->_set('packagesBasePaths', array('local' => 'vfs://Test/Packages/Application'));
 		$packageManager->_set('packagesBasePath', 'vfs://Test/Packages/');
 		$packageManager->_set('packageStatesPathAndFilename', 'vfs://Test/Configuration/PackageStates.php');
 
-		$dependencyResolver = $this->getMock(\TYPO3\CMS\Core\Package\DependencyResolver::class, array('dummy'));
+		/** @var DependencyResolver|\PHPUnit_Framework_MockObject_MockObject $dependencyResolver */
+		$dependencyResolver = $this->getMock(DependencyResolver::class);
+		$dependencyResolver
+			->expects($this->any())
+			->method('sortPackageStatesConfigurationByDependency')
+			->willReturnArgument(0);
+
 		$packageManager->injectDependencyResolver($dependencyResolver);
 
+		$packageKey = $expectedPackageKeys[0];
 		$packageManager->_set('packageStatesConfiguration', array(
 			'packages' => array(
 				$packageKey => array(
@@ -180,17 +190,22 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			$packagePath = 'vfs://Test/Packages/Application/' . $packageKey . '/';
 
 			mkdir($packagePath, 0770, TRUE);
-			mkdir($packagePath . 'Classes');
 			file_put_contents($packagePath . 'composer.json', '{"name": "' . $packageKey . '", "type": "typo3-cms-test"}');
 			file_put_contents($packagePath . 'ext_emconf.php', '');
 		}
 
-		$packageManager = $this->getAccessibleMock(\TYPO3\CMS\Core\Package\PackageManager::class, array('dummy'));
+		$packageManager = $this->getAccessibleMock(PackageManager::class, array('dummy'));
 		$packageManager->_set('packagesBasePaths', array('local' => 'vfs://Test/Packages/Application'));
 		$packageManager->_set('packagesBasePath', 'vfs://Test/Packages/');
 		$packageManager->_set('packageStatesPathAndFilename', 'vfs://Test/Configuration/PackageStates.php');
 
-		$dependencyResolver = $this->getMock(\TYPO3\CMS\Core\Package\DependencyResolver::class, array('dummy'));
+		/** @var DependencyResolver|\PHPUnit_Framework_MockObject_MockObject $dependencyResolver */
+		$dependencyResolver = $this->getMock(DependencyResolver::class);
+		$dependencyResolver
+			->expects($this->any())
+			->method('sortPackageStatesConfigurationByDependency')
+			->willReturnArgument(0);
+
 		$packageManager->injectDependencyResolver($dependencyResolver);
 
 		$packageManager->_set('packages', array());
@@ -322,7 +337,7 @@ class PackageManagerTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			)
 		);
 
-		$packageManager = $this->getAccessibleMock(\TYPO3\CMS\Core\Package\PackageManager::class, array('resolvePackageDependencies'));
+		$packageManager = $this->getAccessibleMock(PackageManager::class, array('resolvePackageDependencies'));
 		$packageManager->_set('packageStatesConfiguration', $packageStatesConfiguration);
 
 		$this->assertEquals($packageKey, $packageManager->_call('getPackageKeyFromComposerName', $composerName));

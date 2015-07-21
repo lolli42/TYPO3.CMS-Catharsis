@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\Exception;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\Utility\ListUtility;
@@ -29,8 +30,6 @@ use TYPO3\CMS\Filelist\FileList;
 
 /**
  * Script Class for creating the list of files in the File > Filelist module
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FileListController {
 
@@ -110,12 +109,14 @@ class FileListController {
 	public $cmd;
 
 	/**
-	 * @var bool
+	 * Defines behaviour when uploading files with names that already exist; possible value are 'cancel', 'replace', 'changeName'
+	 *
+	 * @var string
 	 */
-	public $overwriteExistingFiles;
+	protected $overwriteExistingFiles;
 
 	/**
-	 * The file list object
+	 * The filelist object
 	 *
 	 * @var FileList
 	 */
@@ -142,6 +143,7 @@ class FileListController {
 	 *
 	 * @return void
 	 * @throws \RuntimeException
+	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function init() {
 		// Setting GPvars:
@@ -151,6 +153,11 @@ class FileListController {
 		$this->imagemode = GeneralUtility::_GP('imagemode');
 		$this->cmd = GeneralUtility::_GP('cmd');
 		$this->overwriteExistingFiles = GeneralUtility::_GP('overwriteExistingFiles');
+
+		if ($this->overwriteExistingFiles === '1') {
+			GeneralUtility::deprecationLog('overwriteExitingFiles = 1 is deprecated. Use overwriteExitingFiles = "replace". Support for old behavior will be removed in TYPO3 CMS 8.');
+			$this->overwriteExistingFiles = 'replace';
+		}
 
 		try {
 			if ($combinedIdentifier) {
@@ -163,9 +170,12 @@ class FileListController {
 				}
 
 				$this->folderObject = $fileFactory->getFolderObjectFromCombinedIdentifier($storage->getUid() . ':' . $identifier);
+				// Disallow access to fallback storage 0
+				if ($storage->getUid() === 0) {
+					throw new Exception\InsufficientFolderAccessPermissionsException('You are not allowed to access files outside your storages', 1434539815);
+				}
 				// Disallow the rendering of the processing folder (e.g. could be called manually)
-				// and all folders without any defined storage
-				if ($this->folderObject && ($storage->getUid() === 0 || $storage->isProcessingFolder($this->folderObject))) {
+				if ($this->folderObject && $storage->isProcessingFolder($this->folderObject)) {
 					$this->folderObject = $storage->getRootLevelFolder();
 				}
 			} else {
@@ -265,8 +275,7 @@ class FileListController {
 		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:filelist/Resources/Private/Templates/file_list.html');
 
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $this->doc->getPageRenderer();
+		$pageRenderer = $this->getPageRenderer();
 		$pageRenderer->loadJQuery();
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Filelist/FileListLocalisation');
 
@@ -319,17 +328,28 @@ class FileListController {
 			// If the "cmd" was to delete files from the list (clipboard thing), do that:
 			if ($this->cmd == 'delete') {
 				$items = $this->filelist->clipObj->cleanUpCBC(GeneralUtility::_POST('CBC'), '_FILE', 1);
-				if (count($items)) {
+				if (!empty($items)) {
 					// Make command array:
 					$FILE = array();
 					foreach ($items as $v) {
 						$FILE['delete'][] = array('data' => $v);
 					}
+					switch ($this->overwriteExistingFiles) {
+						case 'replace':
+						case 'changeName':
+							$conflictMode = $this->overwriteExistingFiles;
+							break;
+						default:
+							$conflictMode = 'cancel';
+							break;
+					}
+
 					// Init file processing object for deleting and pass the cmd array.
+					/** @var ExtendedFileUtility $fileProcessor */
 					$fileProcessor = GeneralUtility::makeInstance(ExtendedFileUtility::class);
 					$fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 					$fileProcessor->setActionPermissions();
-					$fileProcessor->dontCheckForUnique = $this->overwriteExistingFiles ? 1 : 0;
+					$fileProcessor->setExistingFilesConflictMode($conflictMode);
 					$fileProcessor->start($FILE);
 					$fileProcessor->processData();
 					$fileProcessor->pushErrorMessagesToFlashMessageQueue();
@@ -534,6 +554,13 @@ class FileListController {
 	 */
 	protected function getBackendUser() {
 		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 
 }

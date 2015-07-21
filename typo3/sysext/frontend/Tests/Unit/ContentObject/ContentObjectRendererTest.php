@@ -20,12 +20,10 @@ use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\AbstractContentObject;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 
 /**
  * Testcase for TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer
- *
- * @author Oliver Hader <oliver@typo3.org>
- * @author Oliver Klee <typo3-coding@oliverklee.de>
  */
 class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -3310,6 +3308,13 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				'<a href="http://typo3.org" title="Open new window" target="_blank" class="url-class">TYPO3</a>',
 			),
+			'Link to url with script tag' => array(
+				'',
+				array(
+					'parameter' => 'http://typo3.org<script>alert(123)</script>',
+				),
+				'<a href="http://typo3.org&lt;script&gt;alert(123)&lt;/script&gt;">http://typo3.org&lt;script&gt;alert(123)&lt;/script&gt;</a>',
+			),
 			'Link to email address' => array(
 				'Email address',
 				array(
@@ -3351,6 +3356,20 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider typolinkReturnsCorrectLinksForEmailsAndUrlsDataProvider
 	 */
 	public function typolinkReturnsCorrectLinksForEmailsAndUrls($linkText, $configuration, $expectedResult) {
+		$templateServiceObjectMock = $this->getMock(\TYPO3\CMS\Core\TypoScript\TemplateService::class, array('dummy'));
+		$templateServiceObjectMock->setup = array(
+			'lib.' => array(
+				'parseFunc.' => $this->getLibParseFunc(),
+			),
+		);
+		$typoScriptFrontendControllerMockObject = $this->getMock(\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class, array(), array(), '', FALSE);
+		$typoScriptFrontendControllerMockObject->config = array(
+			'config' => array(),
+			'mainScript' => 'index.php',
+		);
+		$typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
+		$GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+
 		$this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
 	}
 
@@ -3405,6 +3424,28 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 					'title' => 'Page title',
 				),
 				'<a href="index.php?id=42" title="Link to internal page" target="_self" class="page-class">My page</a>',
+			),
+			'Link to page with bold tag in title' => array(
+				'',
+				array(
+					'parameter' => 42,
+				),
+				array(
+					'uid' => 42,
+					'title' => 'Page <b>title</b>',
+				),
+				'<a href="index.php?id=42">Page <b>title</b></a>',
+			),
+			'Link to page with script tag in title' => array(
+				'',
+				array(
+					'parameter' => 42,
+				),
+				array(
+					'uid' => 42,
+					'title' => '<script>alert(123)</script>Page title',
+				),
+				'<a href="index.php?id=42">&lt;script&gt;alert(123)&lt;/script&gt;Page title</a>',
 			),
 		);
 	}
@@ -3474,6 +3515,13 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				),
 				'<a href="fileadmin/foo.bar" title="Title of the file" target="_blank" class="file-class">My file</a>',
 			),
+			'Link to file with script tag in name' => array(
+				'',
+				array(
+					'parameter' => 'fileadmin/<script>alert(123)</script>',
+				),
+				'<a href="fileadmin/&lt;script&gt;alert(123)&lt;/script&gt;">fileadmin/&lt;script&gt;alert(123)&lt;/script&gt;</a>',
+			),
 		);
 	}
 
@@ -3485,7 +3533,131 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider typolinkReturnsCorrectLinksFilesDataProvider
 	 */
 	public function typolinkReturnsCorrectLinksFiles($linkText, $configuration, $expectedResult) {
+		$templateServiceObjectMock = $this->getMock(\TYPO3\CMS\Core\TypoScript\TemplateService::class, array('dummy'));
+		$templateServiceObjectMock->setup = array(
+			'lib.' => array(
+				'parseFunc.' => $this->getLibParseFunc(),
+			),
+		);
+		$typoScriptFrontendControllerMockObject = $this->getMock(\TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::class, array(), array(), '', FALSE);
+		$typoScriptFrontendControllerMockObject->config = array(
+			'config' => array(),
+			'mainScript' => 'index.php',
+		);
+		$typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
+		$GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+
 		$this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
+	}
+
+	/**
+	 * @test
+	 */
+	public function stdWrap_splitObjReturnsCount() {
+		$conf = array(
+			'token' => ',',
+			'returnCount' => 1
+		);
+		$expectedResult = 5;
+		$amountOfEntries = $this->subject->splitObj('1, 2, 3, 4, 5', $conf);
+		$this->assertSame(
+			$expectedResult,
+			$amountOfEntries
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getWhereReturnCorrectQueryDataProvider() {
+		return array(
+			array(
+				array(
+					'tt_content' => array(
+						'ctrl' => array(
+						),
+						'columns' => array(
+						)
+					),
+				),
+				'tt_content',
+				array(
+					'uidInList' => '42',
+					'pidInList' => 43,
+					'where' => 'tt_content.cruser_id=5',
+					'andWhere' => 'tt_content.crdate>0',
+					'groupBy' => 'tt_content.title',
+					'orderBy' => 'tt_content.sorting',
+				),
+				'WHERE tt_content.uid=42 AND tt_content.pid IN (43) AND tt_content.cruser_id=5 AND tt_content.crdate>0 GROUP BY tt_content.title ORDER BY tt_content.sorting',
+			),
+			array(
+				array(
+					'tt_content' => array(
+						'ctrl' => array(
+							'delete' => 'deleted',
+							'enablecolumns' => array(
+								'disabled' => 'hidden',
+								'starttime' => 'startdate',
+								'endtime' => 'enddate',
+							),
+							'languageField' => 'sys_language_uid',
+							'transOrigPointerField' => 'l18n_parent',
+						),
+						'columns' => array(
+						)
+					),
+				),
+				'tt_content',
+				array(
+					'uidInList' => 42,
+					'pidInList' => 43,
+					'where' => 'tt_content.cruser_id=5',
+					'andWhere' => 'tt_content.crdate>0',
+					'groupBy' => 'tt_content.title',
+					'orderBy' => 'tt_content.sorting',
+				),
+				'WHERE tt_content.uid=42 AND tt_content.pid IN (43) AND tt_content.cruser_id=5 AND (tt_content.sys_language_uid = 13) AND tt_content.crdate>0 AND tt_content.deleted=0 AND tt_content.hidden=0 AND tt_content.startdate<=4242 AND (tt_content.enddate=0 OR tt_content.enddate>4242) GROUP BY tt_content.title ORDER BY tt_content.sorting',
+			),
+			array(
+				array(
+					'tt_content' => array(
+						'ctrl' => array(
+							'languageField' => 'sys_language_uid',
+							'transOrigPointerField' => 'l18n_parent',
+						),
+						'columns' => array(
+						)
+					),
+				),
+				'tt_content',
+				array(
+					'uidInList' => 42,
+					'pidInList' => 43,
+					'where' => 'tt_content.cruser_id=5',
+					'languageField' => 0,
+				),
+				'WHERE tt_content.uid=42 AND tt_content.pid IN (43) AND tt_content.cruser_id=5',
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @param array $tca
+	 * @param string $table
+	 * @param array $configuration
+	 * @param string $expectedResult
+	 * @dataProvider getWhereReturnCorrectQueryDataProvider
+	 */
+	public function getWhereReturnCorrectQuery($tca, $table, $configuration, $expectedResult) {
+		$GLOBALS['TCA'] = $tca;
+		$GLOBALS['SIM_ACCESS_TIME'] = '4242';
+		$GLOBALS['TSFE']->sys_language_content = 13;
+		/** @var \PHPUnit_Framework_MockObject_MockObject|ContentObjectRenderer $contentObjectRenderer */
+		$contentObjectRenderer = $this->getMock(ContentObjectRenderer::class, array('checkPidArray'));
+		$contentObjectRenderer->expects($this->any())->method('checkPidArray')->willReturn(explode(',', $configuration['pidInList']));
+		$this->assertEquals($expectedResult, $contentObjectRenderer->getWhere($table, $configuration));
 	}
 
 }

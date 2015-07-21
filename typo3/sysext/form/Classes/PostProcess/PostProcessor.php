@@ -15,11 +15,10 @@ namespace TYPO3\CMS\Form\PostProcess;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * The post processor
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class PostProcessor {
 
@@ -81,7 +80,7 @@ class PostProcessor {
 					$layout = $this->typoscriptFactory->getLayoutFromTypoScript($this->typoScript[$processorName . '.']);
 					$layoutHandler->setLayout($layout);
 
-					$processor = GeneralUtility::makeInstance($className, $this->form, $processorArguments);
+					$processor = ObjectFactory::createFormObject($className, $this->form, $processorArguments);
 					if ($processor instanceof PostProcessorInterface) {
 						$html .= $processor->process();
 					}

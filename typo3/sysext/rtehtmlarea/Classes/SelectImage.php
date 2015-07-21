@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Resource;
 
 /**
  * Script Class
- *
- * @author Kasper Skårhøj <kasper@typo3.com>
  */
 class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
@@ -132,17 +130,17 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 
 		$this->doc->bodyTagId = 'typo3-browse-links-php';
 		$this->doc->bodyTagAdditions = $this->getBodyTagAdditions();
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
 			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
 		}');
-		$this->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Rtehtmlarea/Modules/SelectImage', 'function(SelectImage) {
+		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Rtehtmlarea/Modules/SelectImage', 'function(SelectImage) {
 			SelectImage.editorNo = ' . GeneralUtility::quoteJSvalue($this->editorNo) . ';
 			SelectImage.act = ' . GeneralUtility::quoteJSvalue(($this->act ?: reset($this->allowedItems))) . ';
 			SelectImage.sys_language_content = ' . GeneralUtility::quoteJSvalue($this->sys_language_content) . ';
 			SelectImage.RTEtsConfigParams = ' . GeneralUtility::quoteJSvalue(rawurlencode($this->RTEtsConfigParams)) . ';
 			SelectImage.bparams = ' . GeneralUtility::quoteJSvalue($this->bparams) . ';
 		}');
-		$this->doc->getPageRenderer()->addCssFile($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
+		$this->getPageRenderer()->addCssFile($this->doc->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
 		$this->doc->getContextMenuCode();
 	}
 
@@ -381,7 +379,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				foreach ($labels as $label) {
 					$localizedLabels[$label] = $GLOBALS['LANG']->getLL($label);
 				}
-				$localizedLabels['image_zoom'] = $GLOBALS['LANG']->sL('LLL:EXT:cms/locallang_ttc.xlf:image_zoom', TRUE);
+				$localizedLabels['image_zoom'] = $GLOBALS['LANG']->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:image_zoom', TRUE);
 				$JScode = '
 					require(["TYPO3/CMS/Rtehtmlarea/Modules/SelectImage"], function(SelectImage) {
 						SelectImage.editorNo = "' . $this->editorNo . '";
@@ -487,7 +485,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 				$this->content .= '<br />';
 				break;
 			case 'dragdrop':
-				$foldertree = GeneralUtility::makeInstance(\TYPO3\CMS\Recordlist\Tree\View\ElementBrowserFolderTreeView::class);
+				$foldertree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView::class);
 				$foldertree->thisScript = $this->thisScript;
 				$foldertree->ext_noTempRecyclerDirs = TRUE;
 				$tree = $foldertree->getBrowsableTree();
@@ -717,7 +715,7 @@ class SelectImage extends \TYPO3\CMS\Recordlist\Browser\ElementBrowser {
 	}
 
 	/**
-	 * Checks if the given file is selectable in the file list.
+	 * Checks if the given file is selectable in the filelist.
 	 *
 	 * In "plain" RTE mode only image files with a maximum width and height are selectable.
 	 *

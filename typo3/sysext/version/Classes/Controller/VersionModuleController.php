@@ -21,8 +21,6 @@ use TYPO3\CMS\Backend\Utility\IconUtility;
 
 /**
  * Versioning module, including workspace management
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 
@@ -109,7 +107,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 * Initialize language files
 	 */
 	public function __construct() {
-		$GLOBALS['LANG']->includeLLFile('EXT:version/locallang.xlf');
+		$GLOBALS['LANG']->includeLLFile('EXT:version/Resources/Private/Language/locallang.xlf');
 	}
 
 	/**

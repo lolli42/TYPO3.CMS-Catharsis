@@ -38,11 +38,11 @@ use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
  * </output>
  *
  * <code title="All options">
- * <f:be.container pageTitle="foo" enableClickMenu="false" loadPrototype="false" loadScriptaculous="false" scriptaculousModule="someModule,someOtherModule" loadExtJs="true" loadExtJsTheme="false" extJsAdapter="jQuery" enableExtJsDebug="true" loadJQuery="true" includeCssFiles="0: '{f:uri.resource(path:\'Styles/Styles.css\')}'" includeJsFiles="0: '{f:uri.resource(path:\'JavaScript/Library1.js\')}', 1: '{f:uri.resource(path:\'JavaScript/Library2.js\')}'" addJsInlineLabels="{0: 'label1', 1: 'label2'}" includeCsh="true">your module content</f:be.container>
+ * <f:be.container pageTitle="foo" enableClickMenu="false" loadExtJs="true" loadExtJsTheme="false" extJsAdapter="jQuery" enableExtJsDebug="true" loadJQuery="true" includeCssFiles="0: '{f:uri.resource(path:\'Css/Styles.css\')}'" includeJsFiles="0: '{f:uri.resource(path:\'JavaScript/Library1.js\')}', 1: '{f:uri.resource(path:\'JavaScript/Library2.js\')}'" addJsInlineLabels="{0: 'label1', 1: 'label2'}" includeCsh="true">your module content</f:be.container>
  * </code>
  * <output>
  * "your module content" wrapped with proper head & body tags.
- * Custom CSS file EXT:your_extension/Resources/Public/Styles/styles.css and
+ * Custom CSS file EXT:your_extension/Resources/Public/Css/styles.css and
  * JavaScript files EXT:your_extension/Resources/Public/JavaScript/Library1.js and EXT:your_extension/Resources/Public/JavaScript/Library2.js
  * will be loaded, plus ExtJS and jQuery and some inline labels for usage in JS code.
  * </output>
@@ -54,12 +54,8 @@ class ContainerViewHelper extends AbstractBackendViewHelper {
 	 *
 	 * @param string $pageTitle title tag of the module. Not required by default, as BE modules are shown in a frame
 	 * @param bool $enableClickMenu If TRUE, loads clickmenu.js required by BE context menus. Defaults to TRUE
-	 * @param bool $loadPrototype specifies whether to load prototype library. Defaults to TRUE
-	 * @param bool $loadScriptaculous specifies whether to load scriptaculous libraries. Defaults to FALSE
-	 * @param string $scriptaculousModule additionales modules for scriptaculous
 	 * @param bool $loadExtJs specifies whether to load ExtJS library. Defaults to FALSE
 	 * @param bool $loadExtJsTheme whether to load ExtJS "grey" theme. Defaults to FALSE
-	 * @param string $extJsAdapter load alternative adapter (ext-base is default adapter)
 	 * @param bool $enableExtJsDebug if TRUE, debug version of ExtJS is loaded. Use this for development only
 	 * @param bool $loadJQuery whether to load jQuery library. Defaults to FALSE
 	 * @param array $includeCssFiles List of custom CSS file to be loaded
@@ -71,23 +67,17 @@ class ContainerViewHelper extends AbstractBackendViewHelper {
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate
 	 * @see \TYPO3\CMS\Core\Page\PageRenderer
 	 */
-	public function render($pageTitle = '', $enableClickMenu = TRUE, $loadPrototype = TRUE, $loadScriptaculous = FALSE, $scriptaculousModule = '', $loadExtJs = FALSE, $loadExtJsTheme = TRUE, $extJsAdapter = '', $enableExtJsDebug = FALSE, $loadJQuery = FALSE, $includeCssFiles = NULL, $includeJsFiles = NULL, $addJsInlineLabels = NULL, $includeCsh = TRUE, $includeRequireJsModules = NULL) {
+	public function render($pageTitle = '', $enableClickMenu = TRUE, $loadExtJs = FALSE, $loadExtJsTheme = TRUE, $enableExtJsDebug = FALSE, $loadJQuery = FALSE, $includeCssFiles = NULL, $includeJsFiles = NULL, $addJsInlineLabels = NULL, $includeCsh = TRUE, $includeRequireJsModules = NULL) {
+		$pageRenderer = $this->getPageRenderer();
 		$doc = $this->getDocInstance();
-		$pageRenderer = $doc->getPageRenderer();
 		$doc->JScode .= $doc->wrapScriptTags($doc->redirectUrls());
 
 		// Load various standard libraries
 		if ($enableClickMenu) {
 			$doc->getContextMenuCode();
 		}
-		if ($loadPrototype) {
-			$pageRenderer->loadPrototype();
-		}
-		if ($loadScriptaculous) {
-			$pageRenderer->loadScriptaculous($scriptaculousModule);
-		}
 		if ($loadExtJs) {
-			$pageRenderer->loadExtJS(TRUE, $loadExtJsTheme, $extJsAdapter);
+			$pageRenderer->loadExtJS(TRUE, $loadExtJsTheme);
 			if ($enableExtJsDebug) {
 				$pageRenderer->enableExtJsDebug();
 			}

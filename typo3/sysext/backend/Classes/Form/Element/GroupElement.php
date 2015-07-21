@@ -97,7 +97,7 @@ class GroupElement extends AbstractFormElement {
 				// Fall through
 			case 'file':
 				// Creating string showing allowed types:
-				if (!count($allowed)) {
+				if (empty($allowed)) {
 					$allowed = array('*');
 				}
 				// Making the array of file items:
@@ -259,7 +259,7 @@ class GroupElement extends AbstractFormElement {
 						'name' => htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.allTables'))
 					);
 				} elseif ($allowed) {
-					$onlySingleTableAllowed = count($allowed) == 1;
+					$onlySingleTableAllowed = count($allowed) === 1;
 					foreach ($allowed as $allowedTable) {
 						$allowedTables[] = array(
 							'name' => htmlspecialchars($languageService->sL($GLOBALS['TCA'][$allowedTable]['ctrl']['title'])),
@@ -324,13 +324,9 @@ class GroupElement extends AbstractFormElement {
 				break;
 		}
 		// Wizards:
-		$altItem = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
 		if (!$disabled) {
 			$html = $this->renderWizards(
-				array(
-					$html,
-					$altItem
-				),
+				array($html),
 				$config['wizards'],
 				$table,
 				$row,

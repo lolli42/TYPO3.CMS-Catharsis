@@ -76,28 +76,33 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 	 */
 	ShortcutMenu.deleteShortcut = function($shortcutRecord) {
 		// @todo: translations
-		if (confirm('Do you really want to remove this bookmark?')) {
-			$.ajax({
-				url: TYPO3.settings.ajaxUrls['ShortcutMenu::delete'],
-				data: {
-					shortcutId: $shortcutRecord.data('shortcutid')
-				},
-				type: 'post',
-				cache: false
-			}).done(function() {
-				// a reload is used in order to restore the original behaviour
-				// e.g. remove groups that are now empty because the last one in the group
-				// was removed
-				ShortcutMenu.refreshMenu();
+		top.TYPO3.Modal.confirm('Delete bookmark', 'Do you really want to remove this bookmark?')
+			.on('confirm.button.ok', function() {
+				$.ajax({
+					url: TYPO3.settings.ajaxUrls['ShortcutMenu::delete'],
+					data: {
+						shortcutId: $shortcutRecord.data('shortcutid')
+					},
+					type: 'post',
+					cache: false
+				}).done(function() {
+					// a reload is used in order to restore the original behaviour
+					// e.g. remove groups that are now empty because the last one in the group
+					// was removed
+					ShortcutMenu.refreshMenu();
+				});
+				$(this).trigger('modal-dismiss');
+			})
+			.on('confirm.button.cancel', function() {
+				$(this).trigger('modal-dismiss');
 			});
-		}
 	};
 
 	/**
 	 * makes a call to the backend class to create a new shortcut,
 	 * when finished it reloads the menu
 	 */
-	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText) {
+	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText, motherModule) {
 		var shouldCreateShortcut = true;
 		if (typeof confirmationText !== 'undefined') {
 			shouldCreateShortcut = window.confirm(confirmationText);
@@ -113,7 +118,8 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 				type: 'post',
 				data: {
 					module: moduleName,
-					url: url
+					url: url,
+					motherModName: motherModule
 				},
 				cache: false
 			}).done(function() {

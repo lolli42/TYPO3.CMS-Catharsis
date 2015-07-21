@@ -13,38 +13,45 @@ namespace TYPO3\CMS\Backend\Tree\View;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
+use \TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Generate a page-tree, non-browsable.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @coauthor René Fritz <r.fritz@colorcube.de>
  */
-class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
+class PageTreeView extends AbstractTreeView {
 
 	/**
 	 * @var array
 	 */
 	public $fieldArray = array(
 		'uid',
+		'pid',
 		'title',
 		'doktype',
 		'nav_title',
 		'mount_pid',
 		'php_tree_stop',
 		't3ver_id',
-		't3ver_state'
+		't3ver_state',
+		'hidden',
+		'starttime',
+		'endtime',
+		'fe_group',
+		'module',
+		'extendToSubpages',
+		'nav_hide'
 	);
 
 	/**
+	 * override to use this treeName
 	 * @var string
 	 */
-	public $defaultList = 'uid,pid,tstamp,sorting,deleted,perms_userid,perms_groupid,perms_user,perms_group,perms_everybody,crdate,cruser_id';
+	public $treeName = 'pages';
 
 	/**
-	 * @var int
+	 * override to use this table
+	 * @var string
 	 */
-	public $setRecs = 0;
+	public $table = 'pages';
 
 	/**
 	 * Init function
@@ -56,17 +63,6 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 */
 	public function init($clause = '', $orderByFields = '') {
 		parent::init(' AND deleted=0 ' . $clause, 'sorting');
-		$this->fieldArray = array_merge($this->fieldArray, array(
-			'hidden',
-			'starttime',
-			'endtime',
-			'fe_group',
-			'module',
-			'extendToSubpages',
-			'nav_hide'
-		));
-		$this->table = 'pages';
-		$this->treeName = 'pages';
 	}
 
 	/**
@@ -87,16 +83,13 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 	 * @param int $a The current entry number
 	 * @param int $c The total number of entries. If equal to $a, a 'bottom' element is returned.
 	 * @param int $nextCount The number of sub-elements to the current element.
-	 * @param bool $exp The element was expanded to render subelements if this flag is set.
+	 * @param bool $isExpand The element was expanded to render subelements if this flag is set.
 	 * @return string Image tag with the plus/minus icon.
 	 * @access private
-	 * @see AbstarctTreeView::PMicon()
+	 * @see AbstractTreeView::PMicon()
 	 */
-	public function PMicon($row, $a, $c, $nextCount, $exp) {
-		$PM = 'join';
-		$BTM = $a == $c ? 'bottom' : '';
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('treeline-' . $PM . $BTM);
-		return $icon;
+	public function PMicon($row, $a, $c, $nextCount, $isExpand) {
+		return '<span class="treeline-icon treeline-icon-join' . ($a == $c ? 'bottom' : '') . '"></span>';
 	}
 
 	/**
@@ -124,7 +117,7 @@ class PageTreeView extends \TYPO3\CMS\Backend\Tree\View\AbstractTreeView {
 		} else {
 			$title = htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['title'], $titleLen));
 			if (trim($row['nav_title']) !== '') {
-				$title = '<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:cms/locallang_tca.xlf:pages.nav_title', TRUE) . ' ' . htmlspecialchars(trim($row['nav_title'])) . '">' . $title . '</span>';
+				$title = '<span title="' . $GLOBALS['LANG']->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.nav_title', TRUE) . ' ' . htmlspecialchars(trim($row['nav_title'])) . '">' . $title . '</span>';
 			}
 			$title = trim($row['title']) === '' ? '<em>[' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', TRUE) . ']</em>' : $title;
 		}

@@ -23,8 +23,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
  *
  * Class contains a bunch of cool functions for manipulating graphics with GDlib/Freetype and ImageMagick.
  * VERY OFTEN used with gifbuilder that extends this class and provides a TypoScript API to using these functions
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class GraphicalFunctions {
 
@@ -980,7 +978,7 @@ class GraphicalFunctions {
 					$calc = ImageTTFBBox(GeneralUtility::freetypeDpiComp($sF * $strCfg['fontSize']), $angle, $fontFile, $strCfg['str']);
 				} while ($calc[2] < 0 && $try++ < 10);
 				// Calculate offsets:
-				if (!count($offsetInfo)) {
+				if (empty($offsetInfo)) {
 					// First run, just copy over.
 					$offsetInfo = $calc;
 				} else {
@@ -1097,7 +1095,7 @@ class GraphicalFunctions {
 								}
 							}
 							// Set the new result as result array:
-							if (count($newResult)) {
+							if (!empty($newResult)) {
 								$result = $newResult;
 							}
 						}
@@ -1171,7 +1169,7 @@ class GraphicalFunctions {
 								}
 							}
 							// Set the new result as result array:
-							if (count($newResult)) {
+							if (!empty($newResult)) {
 								$result = $newResult;
 							}
 						}
@@ -2522,7 +2520,7 @@ class GraphicalFunctions {
 	}
 
 	/**
-	 * Executes a ImageMagick "convert" on two filenames, $input and $output using $params before them.
+	 * Executes an ImageMagick "convert" on two filenames, $input and $output using $params before them.
 	 * Can be used for many things, mostly scaling and effects.
 	 *
 	 * @param string $input The relative (to PATH_site) image filepath, input file (read from)
@@ -2550,7 +2548,7 @@ class GraphicalFunctions {
 	}
 
 	/**
-	 * Executes a ImageMagick "combine" (or composite in newer times) on four filenames - $input, $overlay and $mask as input files and $output as the output filename (written to)
+	 * Executes an ImageMagick "combine" (or composite in newer times) on four filenames - $input, $overlay and $mask as input files and $output as the output filename (written to)
 	 * Can be used for many things, mostly scaling and effects.
 	 *
 	 * @param string $input The relative (to PATH_site) image filepath, bottom file
@@ -2864,7 +2862,7 @@ class GraphicalFunctions {
 
 	/**
 	 * Creates a new GDlib image resource based on the input image filename.
-	 * If it fails creating a image from the input file a blank gray image with the dimensions of the input image will be created instead.
+	 * If it fails creating an image from the input file a blank gray image with the dimensions of the input image will be created instead.
 	 *
 	 * @param string $sourceImg Image filename
 	 * @return resource Image Resource pointer
@@ -2935,7 +2933,7 @@ class GraphicalFunctions {
 	 */
 	public function unifyColors(&$img, $colArr, $closest = FALSE) {
 		$retCol = -1;
-		if (is_array($colArr) && count($colArr) && function_exists('imagepng') && function_exists('imagecreatefrompng')) {
+		if (is_array($colArr) && !empty($colArr) && function_exists('imagepng') && function_exists('imagecreatefrompng')) {
 			$firstCol = array_shift($colArr);
 			$firstColArr = $this->convertColor($firstCol);
 			if (count($colArr) > 1) {
@@ -2995,10 +2993,11 @@ class GraphicalFunctions {
 			throw new \RuntimeException('TYPO3 Fatal Error: No gdlib. ' . $textline1 . ' ' . $textline2 . ' ' . $textline3, 1270853952);
 		}
 		// Creates the basis for the error image
+		$basePath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('core') . 'Resources/Public/Images/';
 		if (!empty($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'])) {
-			$im = imagecreatefrompng(PATH_typo3 . 'gfx/notfound_thumb.png');
+			$im = imagecreatefrompng($basePath . 'NotFound.png');
 		} else {
-			$im = imagecreatefromgif(PATH_typo3 . 'gfx/notfound_thumb.gif');
+			$im = imagecreatefromgif($basePath . 'NotFound.gif');
 		}
 		// Sets background color and print color.
 		$white = imageColorAllocate($im, 255, 255, 255);

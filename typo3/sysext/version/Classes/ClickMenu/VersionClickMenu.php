@@ -18,8 +18,6 @@ use TYPO3\CMS\Backend\ClickMenu\ClickMenu;
 
 /**
  * "Versioning" item added to click menu of elements.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class VersionClickMenu {
 
@@ -45,7 +43,7 @@ class VersionClickMenu {
 			$url = \TYPO3\CMS\Backend\Utility\BackendUtility::getModuleUrl('web_txversionM1', array('table' => $table, 'uid' => $uid));
 			$localItems[] = $backRef->linkItem(
 				$GLOBALS['LANG']->getLLL('title', $LL),
-				$backRef->excludeIcon('<img src="' . $backRef->backPath . \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extRelPath('version') . 'Resources/Public/Icons/module-version.png" width="15" height="12" border="0" align="top" alt="" />'),
+				$backRef->excludeIcon('<span class="t3-icon fa fa-refresh"></span>'),
 				$backRef->urlRefForCM($url),
 				TRUE
 			);
@@ -71,7 +69,7 @@ class VersionClickMenu {
 	 * @return array Local lang array
 	 */
 	public function includeLL() {
-		return $GLOBALS['LANG']->includeLLFile('EXT:version/locallang.xlf', FALSE);
+		return $GLOBALS['LANG']->includeLLFile('EXT:version/Resources/Private/Language/locallang.xlf', FALSE);
 	}
 
 }

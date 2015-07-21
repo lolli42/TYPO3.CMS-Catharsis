@@ -26,8 +26,6 @@ require_once ExtensionManagementUtility::extPath('openid') . 'lib/php-openid/Aut
 
 /**
  * Service "OpenID Authentication" for the "openid" extension.
- *
- * @author Dmitry Dulepov <dmitry@typo3.org>
  */
 class OpenidService extends AbstractService {
 
@@ -418,7 +416,7 @@ class OpenidService extends AbstractService {
 			// It is much easier for the Backend to manage users.
 			// Notice: 'login_status' parameter name cannot be changed!
 			// It is essential for BE user authentication.
-			$returnURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . 'sysext/' . $this->extKey . '/class.tx_openid_return.php?login_status=login';
+			$returnURL = GeneralUtility::getIndpEnv('TYPO3_SITE_URL') . TYPO3_mainDir . 'index.php?login_status=login';
 		}
 		if (GeneralUtility::_GP('tx_openid_mode') === 'finish') {
 			$requestURL = GeneralUtility::_GP('tx_openid_location');
@@ -504,9 +502,9 @@ class OpenidService extends AbstractService {
 	 * @return string
 	 */
 	protected function getFinalOpenIDIdentifier() {
-		$result = $this->getSignedParameter('openid_identity');
+		$result = $this->getSignedParameter('openid_claimed_id');
 		if (!$result) {
-			$result = $this->getSignedParameter('openid_claimed_id');
+			$result = $this->getSignedParameter('openid_identity');
 		}
 		if (!$result) {
 			$result = $this->getSignedClaimedOpenIDIdentifier();

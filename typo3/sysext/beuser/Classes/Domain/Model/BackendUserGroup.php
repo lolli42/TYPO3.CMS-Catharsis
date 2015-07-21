@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Beuser\Domain\Model;
 
 /**
  * Model for backend user group
- *
- * @author Felix Kopp <felix-source@phorax.com>
  */
 class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 
@@ -25,6 +23,11 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 * @var string
 	 */
 	protected $title;
+
+	/**
+	 * @var string
+	 */
+	protected $description;
 
 	/**
 	 * @var bool
@@ -49,6 +52,20 @@ class BackendUserGroup extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
 	 */
 	public function getTitle() {
 		return $this->title;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getDescription() {
+		return $this->description;
+	}
+
+	/**
+	 * @param string $description
+	 */
+	public function setDescription($description) {
+		$this->description = $description;
 	}
 
 	/**

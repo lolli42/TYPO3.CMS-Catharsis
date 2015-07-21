@@ -13,11 +13,10 @@ namespace TYPO3\CMS\Form\View\Mail\Plain\Element;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Form\ObjectFactory;
 
 /**
  * Main view layer for plain mail container content.
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class ContainerElementView extends \TYPO3\CMS\Form\View\Mail\Plain\Element\AbstractElementView {
 
@@ -46,7 +45,7 @@ class ContainerElementView extends \TYPO3\CMS\Form\View\Mail\Plain\Element\Abstr
 		$className = 'TYPO3\\CMS\\Form\\View\\Mail\\Plain\\Element\\' . ucfirst($class) . 'ElementView';
 		if (class_exists($className)) {
 			/** @var $childElement \TYPO3\CMS\Form\View\Mail\Plain\Element\AbstractElementView */
-			$childElement = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className, $modelChild, $spaces);
+			$childElement = ObjectFactory::createFormObject($className, $modelChild, $spaces);
 			$elementContent = $childElement->render();
 			if ($elementContent != '') {
 				$content = $childElement->render() . LF;

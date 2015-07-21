@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class for the record history display module show_rechis
- *
- * @author Sebastian Kurfürst <sebastian@garbage-group.de>
  */
 class RecordHistory {
 
@@ -748,7 +746,7 @@ class RecordHistory {
 	 * @return string HTML output
 	 */
 	public function createRollbackLink($key, $alt = '', $type = 0) {
-		return $this->linkPage('<img ' . IconUtility::skinImg('', ('gfx/revert_' . $type . '.gif'), 'width="33" height="33"') . ' alt="' . $alt . '" title="' . $alt . '" align="middle" />', array('rollbackFields' => $key));
+		return $this->linkPage('<span class="btn btn-default">' . $alt . '</span>', array('rollbackFields' => $key));
 	}
 
 	/**

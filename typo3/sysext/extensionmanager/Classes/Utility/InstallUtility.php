@@ -14,12 +14,14 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
+use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
+use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 use TYPO3\CMS\Impexp\Utility\ImportExportUtility;
 
 /**
  * Extension Manager Install Utility
- *
- * @author Susanne Moog <susanne.moog@typo3.org>
  */
 class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -94,7 +96,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * also processes db updates and clears the cache if the extension asks for it
 	 *
 	 * @param string $extensionKey
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @throws ExtensionManagerException
 	 * @return void
 	 */
 	public function install($extensionKey) {
@@ -120,13 +122,13 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Helper function to uninstall an extension
 	 *
 	 * @param string $extensionKey
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @throws ExtensionManagerException
 	 * @return void
 	 */
 	public function uninstall($extensionKey) {
 		$dependentExtensions = $this->dependencyUtility->findInstalledExtensionsThatDependOnMe($extensionKey);
-		if (is_array($dependentExtensions) && count($dependentExtensions) > 0) {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+		if (is_array($dependentExtensions) && !empty($dependentExtensions)) {
+			throw new ExtensionManagerException(
 				\TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate(
 					'extensionList.uninstall.dependencyError',
 					'extensionmanager',
@@ -205,19 +207,19 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @param string $extensionKey
 	 * @access private
 	 * @return array
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @throws ExtensionManagerException
 	 */
 	public function enrichExtensionWithDetails($extensionKey) {
 		$availableExtensions = $this->listUtility->getAvailableExtensions();
 		if (isset($availableExtensions[$extensionKey])) {
 			$extension = $availableExtensions[$extensionKey];
 		} else {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1342864081);
+			throw new ExtensionManagerException('Extension ' . $extensionKey . ' is not available', 1342864081);
 		}
 		$availableAndInstalledExtensions = $this->listUtility->enrichExtensionsWithEmConfAndTerInformation(array($extensionKey => $extension));
 
 		if (!isset($availableAndInstalledExtensions[$extensionKey])) {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+			throw new ExtensionManagerException(
 				'Please check your uploaded extension "' . $extensionKey . '". The configuration file "ext_emconf.php" seems to be invalid.',
 				1391432222
 			);
@@ -245,7 +247,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$extTablesSqlFile = PATH_site . $extension['siteRelPath'] . 'ext_tables.sql';
 		$extTablesSqlContent = '';
 		if (file_exists($extTablesSqlFile)) {
-			$extTablesSqlContent .= \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($extTablesSqlFile);
+			$extTablesSqlContent .= GeneralUtility::getUrl($extTablesSqlFile);
 		}
 		if ($extTablesSqlContent !== '') {
 			$this->updateDbWithExtTablesSql($extTablesSqlContent);
@@ -273,7 +275,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $extensionKey
 	 * @return mixed
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @throws ExtensionManagerException
 	 */
 	protected function emitTablesDefinitionIsBeingBuiltSignal($extensionKey) {
 		$signalReturn = $this->signalSlotDispatcher->dispatch(__CLASS__, 'tablesDefinitionIsBeingBuilt', array(array(), $extensionKey));
@@ -281,7 +283,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		$signalReturn = array_values($signalReturn);
 		$sqlString = $signalReturn[0];
 		if (!is_array($sqlString)) {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException(
+			throw new ExtensionManagerException(
 				sprintf(
 					'The signal %s of class %s returned a value of type %s, but array was expected.',
 					'tablesDefinitionIsBeingBuilt',
@@ -300,6 +302,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @return void
 	 */
 	public function reloadCaches() {
+		GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive();
 		\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::loadExtLocalconf(FALSE);
 		\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->loadExtensionTables(FALSE);
 	}
@@ -324,7 +327,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function updateDbWithExtTablesSql($rawDefinitions) {
 		$fieldDefinitionsFromFile = $this->installToolSqlParser->getFieldDefinitions_fileContent($rawDefinitions);
-		if (count($fieldDefinitionsFromFile)) {
+		if (!empty($fieldDefinitionsFromFile)) {
 			$fieldDefinitionsFromCurrentDatabase = $this->installToolSqlParser->getFieldDefinitions_database();
 			$diff = $this->installToolSqlParser->getDatabaseExtra($fieldDefinitionsFromFile, $fieldDefinitionsFromCurrentDatabase);
 			$updateStatements = $this->installToolSqlParser->getUpdateSuggestions($diff);
@@ -368,7 +371,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Remove an extension (delete the directory)
 	 *
 	 * @param string $extension
-	 * @throws \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException
+	 * @throws ExtensionManagerException
 	 * @return void
 	 */
 	public function removeExtension($extension) {
@@ -382,7 +385,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 				$this->fileHandlingUtility->removeDirectory($absolutePath);
 			}
 		} else {
-			throw new \TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException('No valid extension path given.', 1342875724);
+			throw new ExtensionManagerException('No valid extension path given.', 1342875724);
 		}
 	}
 
@@ -409,7 +412,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function getSqlDataDumpForFile($sqlFile) {
 		$sqlData = '';
 		if (file_exists($sqlFile)) {
-			$sqlContent = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($sqlFile);
+			$sqlContent = GeneralUtility::getUrl($sqlFile);
 			$fieldDefinitions = $this->installToolSqlParser->getFieldDefinitions_fileContent($sqlContent);
 			$sqlData = $this->databaseUtility->dumpStaticTables($fieldDefinitions);
 		}
@@ -421,10 +424,10 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Checks if an update for an extension is available which also resolves dependencies.
 	 *
 	 * @internal
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData
+	 * @param Extension $extensionData
 	 * @return bool
 	 */
-	public function isUpdateAvailable(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData) {
+	public function isUpdateAvailable(Extension $extensionData) {
 		return (bool)$this->getUpdateableVersion($extensionData);
 	}
 
@@ -432,11 +435,10 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 	 * Returns the updateable version for an extension which also resolves dependencies.
 	 *
 	 * @internal
-	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData
-	 * @return bool|\TYPO3\CMS\Extensionmanager\Domain\Model\Extension FALSE if no update available otherwise latest
-	 *                                                                 possible update
+	 * @param Extension $extensionData
+	 * @return bool|Extension FALSE if no update available otherwise latest possible update
 	 */
-	public function getUpdateableVersion(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extensionData) {
+	public function getUpdateableVersion(Extension $extensionData) {
 		// Only check for update for TER extensions
 		$version = $extensionData->getIntegerVersion();
 
@@ -487,7 +489,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		if ($importFileToUse !== NULL) {
 			/** @var ImportExportUtility $importExportUtility */
-			$importExportUtility = $this->objectManager->get(\TYPO3\CMS\Impexp\Utility\ImportExportUtility::class);
+			$importExportUtility = $this->objectManager->get(ImportExportUtility::class);
 			try {
 				$importResult = $importExportUtility->importT3DFile(PATH_site . $importFileToUse, 0);
 				$this->registry->set('extensionDataImport', $extensionSiteRelPath . 'Initialisation/dataImported', 1);
@@ -522,7 +524,7 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 		if (!$this->registry->get('extensionDataImport', $extTablesStaticSqlRelFile)) {
 			$extTablesStaticSqlFile = PATH_site . $extTablesStaticSqlRelFile;
 			if (file_exists($extTablesStaticSqlFile)) {
-				$extTablesStaticSqlContent = \TYPO3\CMS\Core\Utility\GeneralUtility::getUrl($extTablesStaticSqlFile);
+				$extTablesStaticSqlContent = GeneralUtility::getUrl($extTablesStaticSqlFile);
 				$this->importStaticSql($extTablesStaticSqlContent);
 			}
 			$this->registry->set('extensionDataImport', $extTablesStaticSqlRelFile, 1);
@@ -554,11 +556,11 @@ class InstallUtility implements \TYPO3\CMS\Core\SingletonInterface {
 				$destinationRelPath = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileadminDir'] . $extensionKey;
 				$destinationAbsolutePath = PATH_site . $destinationRelPath;
 				if (!file_exists($destinationAbsolutePath) &&
-					\TYPO3\CMS\Core\Utility\GeneralUtility::isAllowedAbsPath($destinationAbsolutePath)
+					GeneralUtility::isAllowedAbsPath($destinationAbsolutePath)
 				) {
-					\TYPO3\CMS\Core\Utility\GeneralUtility::mkdir($destinationAbsolutePath);
+					GeneralUtility::mkdir($destinationAbsolutePath);
 				}
-				\TYPO3\CMS\Core\Utility\GeneralUtility::copyDirectory($importRelFolder, $destinationRelPath);
+				GeneralUtility::copyDirectory($importRelFolder, $destinationRelPath);
 				$this->registry->set('extensionDataImport', $importRelFolder, 1);
 				$this->emitAfterExtensionFileImportSignal($destinationAbsolutePath);
 			}

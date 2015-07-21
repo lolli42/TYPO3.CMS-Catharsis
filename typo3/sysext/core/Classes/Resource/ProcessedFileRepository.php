@@ -15,14 +15,11 @@ namespace TYPO3\CMS\Core\Resource;
  */
 
 use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\Utility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Repository for accessing files
  * it also serves as the public API for the indexing part of files in general
- *
- * @author Benjamin Mack <benni@typo3.org>
- * @author Ingmar Schlecht <ingmar@typo3.org>
  */
 class ProcessedFileRepository extends AbstractRepository {
 
@@ -57,7 +54,7 @@ class ProcessedFileRepository extends AbstractRepository {
 	 * Creates this object.
 	 */
 	public function __construct() {
-		$this->resourceFactory = Utility\GeneralUtility::makeInstance(ResourceFactory::class);
+		$this->resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
 		$this->databaseConnection = $GLOBALS['TYPO3_DB'];
 	}
 
@@ -70,7 +67,7 @@ class ProcessedFileRepository extends AbstractRepository {
 	 * @return ProcessedFile
 	 */
 	public function createNewProcessedFileObject(FileInterface $originalFile, $taskType, array $configuration) {
-		return Utility\GeneralUtility::makeInstance(
+		return GeneralUtility::makeInstance(
 			$this->objectType,
 			$originalFile,
 			$taskType,
@@ -88,7 +85,7 @@ class ProcessedFileRepository extends AbstractRepository {
 		$taskType = $databaseRow['task_type'];
 		$configuration = unserialize($databaseRow['configuration']);
 
-		return Utility\GeneralUtility::makeInstance(
+		return GeneralUtility::makeInstance(
 			$this->objectType,
 			$originalFile,
 			$taskType,
@@ -248,7 +245,7 @@ class ProcessedFileRepository extends AbstractRepository {
 	 * @return \TYPO3\CMS\Core\Log\Logger
 	 */
 	protected function getLogger() {
-		return Utility\GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
+		return GeneralUtility::makeInstance(LogManager::class)->getLogger(__CLASS__);
 	}
 
 }

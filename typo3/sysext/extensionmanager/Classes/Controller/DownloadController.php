@@ -19,8 +19,6 @@ use TYPO3\CMS\Extensionmanager\Domain\Model\Extension;
 
 /**
  * Controller for actions related to the TER download of an extension
- *
- * @author Susanne Moog, <typo3@susannemoog.de>
  */
 class DownloadController extends AbstractController {
 
@@ -73,7 +71,7 @@ class DownloadController extends AbstractController {
 		$hasErrors = FALSE;
 		try {
 			$dependencyTypes = $this->managementService->getAndResolveDependencies($extension);
-			if (count($dependencyTypes) > 0) {
+			if (!empty($dependencyTypes)) {
 				$hasDependencies = TRUE;
 				$message = '<p>' . $this->translate('downloadExtension.dependencies.headline') . '</p>';
 				foreach ($dependencyTypes as $dependencyType => $dependencies) {
@@ -128,7 +126,7 @@ class DownloadController extends AbstractController {
 	 * @throws \Exception
 	 */
 	public function installExtensionWithoutSystemDependencyCheckAction(\TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension) {
-		$this->managementService->setSkipSystemDependencyCheck(TRUE);
+		$this->managementService->setSkipDependencyCheck(TRUE);
 		$this->forward('installFromTer', NULL, NULL, array('extension' => $extension, 'downloadPath' => 'Local'));
 	}
 

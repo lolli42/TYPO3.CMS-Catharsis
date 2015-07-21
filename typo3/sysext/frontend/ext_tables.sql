@@ -246,10 +246,12 @@ CREATE TABLE tt_content (
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	crdate int(11) unsigned DEFAULT '0' NOT NULL,
 	cruser_id int(11) unsigned DEFAULT '0' NOT NULL,
+	editlock tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	hidden tinyint(4) unsigned DEFAULT '0' NOT NULL,
 	sorting int(11) unsigned DEFAULT '0' NOT NULL,
 	CType varchar(255) DEFAULT '' NOT NULL,
 	header varchar(255) DEFAULT '' NOT NULL,
+	rowDescription text,
 	bodytext mediumtext,
 
 	# Even though we're using FAL and an IRRE field for images
@@ -281,7 +283,7 @@ CREATE TABLE tt_content (
 	linkToTop tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	file_collections text,
 	filelink_size tinyint(3) unsigned DEFAULT '0' NOT NULL,
-	filelink_sorting tinytext NOT NULL,
+	filelink_sorting varchar(10) DEFAULT '' NOT NULL,
 	target varchar(30) DEFAULT '' NOT NULL,
 	date int(10) unsigned DEFAULT '0' NOT NULL,
 	recursive tinyint(3) unsigned DEFAULT '0' NOT NULL,
@@ -296,6 +298,11 @@ CREATE TABLE tt_content (
 	l18n_diffsource mediumblob,
 	selected_categories text,
 	category_field varchar(64) DEFAULT '' NOT NULL,
+	table_caption varchar(255) DEFAULT NULL,
+	table_delimiter smallint(6) unsigned DEFAULT '0' NOT NULL,
+	table_enclosure smallint(6) unsigned DEFAULT '0' NOT NULL,
+	table_header_position tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	table_tfoot tinyint(1) unsigned DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY t3ver_oid (t3ver_oid,t3ver_wsid),

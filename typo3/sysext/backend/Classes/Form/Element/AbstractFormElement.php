@@ -85,7 +85,7 @@ abstract class AbstractFormElement extends AbstractNode {
 	}
 
 	/**
-	 * Returns the max width in pixels for a elements like input and text
+	 * Returns the max width in pixels for an elements like input and text
 	 *
 	 * @param int $size The abstract size value (1-48)
 	 * @return int Maximum width in pixels
@@ -101,7 +101,7 @@ abstract class AbstractFormElement extends AbstractNode {
 	/**
 	 * Rendering wizards for form fields.
 	 *
-	 * @param array $itemKinds Array with the real item in the first value, and an alternative item in the second value.
+	 * @param array $itemKinds Array with the real item in the first value
 	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
 	 * @param string $table Table name
 	 * @param array $row The record array
@@ -336,7 +336,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$aOnClick =
 						'this.blur();' .
 						'vHWin=window.open('. GeneralUtility::quoteJSvalue($url) . '+\'&P[currentValue]=\'+TBE_EDITOR.rawurlencode(' .
-							'document.editform[\'' . $itemName . '\'].value,200' .
+							'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value,200' .
 							')' .
 							'+\'&P[currentSelectedValues]=\'+TBE_EDITOR.curSelected(' . GeneralUtility::quoteJSvalue($itemName . $listFlag) . '),' .
 							GeneralUtility::quoteJSvalue('popUp' . $md5ID) . ',' .
@@ -345,25 +345,8 @@ abstract class AbstractFormElement extends AbstractNode {
 						'vHWin.focus();' .
 						'return false;';
 
-					$dim = GeneralUtility::intExplode('x', $wizardConfiguration['dim']);
-					$dX = MathUtility::forceIntegerInRange($dim[0], 1, 200, 20);
-					$dY = MathUtility::forceIntegerInRange($dim[1], 1, 200, 20);
-					$color = $PA['itemFormElValue'] ? ' bgcolor="' . htmlspecialchars($PA['itemFormElValue']) . '"' : '';
-					$skinImg = IconUtility::skinImg(
-						'',
-						$PA['itemFormElValue'] === '' ? 'gfx/colorpicker_empty.png' : 'gfx/colorpicker.png',
-						'width="' . $dX . '" height="' . $dY . '"' . BackendUtility::titleAltAttrib(trim($iTitle . ' ' . $PA['itemFormElValue'])) . ' border="0"'
-					);
-					$otherWizards[] =
-						'<table border="0" id="' . $md5ID . '"' . $color . ' style="' . htmlspecialchars($wizardConfiguration['tableStyle']) . '">' .
-							'<tr>' .
-								'<td>' .
-									'<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . '<img ' . $skinImg . '>' . '</a>' .
-								'</td>' .
-							'</tr>' .
-						'</table>';
+					$otherWizards[] = '<a id="' . $md5ID . '" class="btn btn-default" href="#" onclick="' . htmlspecialchars($aOnClick) . '"><span class="t3-icon fa fa-eyedropper"></span></a>';
 					break;
-
 				case 'slider':
 					$params = array();
 					$params['fieldConfig'] = $fieldConfig;
@@ -422,34 +405,10 @@ abstract class AbstractFormElement extends AbstractNode {
 					$otherWizards[] = $suggestWizard->renderSuggestSelector($PA['itemFormElName'], $table, $field, $row, $PA);
 					break;
 			}
-
-			// Hide the real form element?
-			if (is_array($wizardConfiguration['hideParent']) || $wizardConfiguration['hideParent']) {
-				// Setting the item to a hidden-field.
-				$item = $itemKinds[1];
-				if (is_array($wizardConfiguration['hideParent'])) {
-					$options = $this->globalOptions;
-					$options['parameterArray'] = array(
-						'fieldConf' => array(
-							'config' => $wizardConfiguration['hideParent'],
-						),
-						'itemFormElValue' => $PA['itemFormElValue'],
-					);
-					$options['renderType'] = 'none';
-					/** @var NodeFactory $nodeFactory */
-					$nodeFactory = $this->globalOptions['nodeFactory'];
-					$noneElementResult = $nodeFactory->create($options)->render();
-					$item .= $noneElementResult['html'];
-				}
-			}
 		}
 
 		// For each rendered wizard, put them together around the item.
 		if (!empty($buttonWizards) || !empty($otherWizards)) {
-			if ($wizConf['_HIDDENFIELD']) {
-				$item = $itemKinds[1];
-			}
-
 			$innerContent = '';
 			if (!empty($buttonWizards)) {
 				$innerContent .= '<div class="btn-group' . ($wizConf['_VERTICAL'] ? ' btn-group-vertical' : '') . '">' . implode('', $buttonWizards) . '</div>';
@@ -639,7 +598,7 @@ abstract class AbstractFormElement extends AbstractNode {
 				}
 			}
 			$clipElements = $this->getClipboardElements($allowed, $mode);
-			if (count($clipElements)) {
+			if (!empty($clipElements)) {
 				$aOnClick = '';
 				foreach ($clipElements as $elValue) {
 					if ($mode == 'db') {

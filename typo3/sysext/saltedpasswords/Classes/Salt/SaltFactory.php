@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Saltedpasswords\Salt;
 /**
  * Class that implements Blowfish salted hashing based on PHP's
  * crypt() function.
- *
- * @author Marcus Krause <marcus#exp2009@t3sec.info>
  */
 class SaltFactory {
 
@@ -40,7 +38,7 @@ class SaltFactory {
 		$saltMethods = static::getDefaultSaltMethods();
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/saltedpasswords']['saltMethods'])) {
 			$configuredMethods = (array)$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['ext/saltedpasswords']['saltMethods'];
-			if (count($configuredMethods) > 0) {
+			if (!empty($configuredMethods)) {
 				if (isset($configuredMethods[0])) {
 					// ensure the key of the array is not numeric, but a class name
 					foreach ($configuredMethods as $method) {

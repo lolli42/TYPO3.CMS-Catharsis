@@ -18,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Befunc service
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class BackendUtilityHook implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -61,7 +59,7 @@ class BackendUtilityHook implements \TYPO3\CMS\Core\SingletonInterface {
 	}
 
 	/**
-	 * Use that hook to show a info message in case someone starts editing
+	 * Use that hook to show an info message in case someone starts editing
 	 * a staged element
 	 *
 	 * @param array $params

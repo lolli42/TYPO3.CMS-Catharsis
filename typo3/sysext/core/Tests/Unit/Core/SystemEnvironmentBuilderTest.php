@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Core\Tests\Unit\Core;
 
 /**
  * Testcase
- *
- * @author Christia Kuhn <lolli@schwarzbu.ch>
  */
 class SystemEnvironmentBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -125,15 +123,6 @@ class SystemEnvironmentBuilderTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$GLOBALS['error'] = 'foo';
 		$this->subject->_call('initializeGlobalVariables');
 		$this->assertFalse(isset($GLOBALS['error']));
-	}
-
-	/**
-	 * @test
-	 */
-	public function initializeGlobalVariablesSetsGlobalClientArray() {
-		unset($GLOBALS['CLIENT']);
-		$this->subject->_call('initializeGlobalVariables');
-		$this->assertArrayHasKey('CLIENT', $GLOBALS);
 	}
 
 	/**

@@ -14,13 +14,13 @@ namespace TYPO3\CMS\Compatibility6\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\MailUtility;
+use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Formmail class
  * used to submit data, and hooks into TSFE
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FormDataSubmissionController {
 
@@ -122,8 +122,8 @@ class FormDataSubmissionController {
 		// Checks if any email-submissions
 		$formtype_mail = isset($_POST['formtype_mail']) || isset($_POST['formtype_mail_x']);
 		if ($formtype_mail) {
-			$refInfo = parse_url(Utility\GeneralUtility::getIndpEnv('HTTP_REFERER'));
-			if (Utility\GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY') == $refInfo['host'] || $this->frontendController->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
+			$refInfo = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
+			if (GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY') == $refInfo['host'] || $this->frontendController->TYPO3_CONF_VARS['SYS']['doNotCheckReferer']) {
 				if ($this->locDataCheck($_POST['locationData'])) {
 					if ($formtype_mail) {
 						$this->prepareAndSend();
@@ -146,11 +146,10 @@ class FormDataSubmissionController {
 		$locData = explode(':', $locationData);
 		if (!$locData[1] || $this->frontendController->sys_page->checkRecord($locData[1], $locData[2], 1)) {
 			// $locData[1] -check means that a record is checked only if the locationData has a value for a record else than the page.
-			if (count($this->frontendController->sys_page->getPage($locData[0]))) {
+			if (!empty($this->frontendController->sys_page->getPage($locData[0]))) {
 				return 1;
-			} else {
-				$GLOBALS['TT']->setTSlogMessage('LocationData Error: The page pointed to by location data (' . $locationData . ') was not accessible.', 2);
 			}
+			$GLOBALS['TT']->setTSlogMessage('LocationData Error: The page pointed to by location data (' . $locationData . ') was not accessible.', 2);
 		} else {
 			$GLOBALS['TT']->setTSlogMessage('LocationData Error: Location data (' . $locationData . ') record pointed to was not accessible.', 2);
 		}
@@ -162,7 +161,7 @@ class FormDataSubmissionController {
 	 * @return void
 	 */
 	protected function prepareAndSend() {
-		$EMAIL_VARS = Utility\GeneralUtility::_POST();
+		$EMAIL_VARS = GeneralUtility::_POST();
 		$locationData = $EMAIL_VARS['locationData'];
 		unset($EMAIL_VARS['locationData']);
 		unset($EMAIL_VARS['formtype_mail'], $EMAIL_VARS['formtype_mail_x'], $EMAIL_VARS['formtype_mail_y']);
@@ -194,7 +193,7 @@ class FormDataSubmissionController {
 		// Hook for preprocessing of the content for formmails:
 		if (is_array($this->frontendController->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'])) {
 			foreach ($this->frontendController->TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['sendFormmail-PreProcClass'] as $_classRef) {
-				$_procObj = Utility\GeneralUtility::getUserObj($_classRef);
+				$_procObj = GeneralUtility::getUserObj($_classRef);
 				$EMAIL_VARS = $_procObj->sendFormmail_preProcessVariables($EMAIL_VARS, $this);
 			}
 		}
@@ -239,7 +238,7 @@ class FormDataSubmissionController {
 	 * @return void
 	 */
 	public function start($valueList, $base64 = FALSE) {
-		$this->mailMessage = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
+		$this->mailMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 		if ($GLOBALS['TSFE']->config['config']['formMailCharset']) {
 			// Respect formMailCharset if it was set
 			$this->characterSet = $GLOBALS['TSFE']->csConvObj->parse_charset($GLOBALS['TSFE']->config['config']['formMailCharset']);
@@ -255,7 +254,7 @@ class FormDataSubmissionController {
 		}
 		if (isset($valueList['recipient'])) {
 			// Convert form data from renderCharset to mail charset
-			$this->subject = $valueList['subject'] ? $valueList['subject'] : 'Formmail on ' . Utility\GeneralUtility::getIndpEnv('HTTP_HOST');
+			$this->subject = $valueList['subject'] ? $valueList['subject'] : 'Formmail on ' . GeneralUtility::getIndpEnv('HTTP_HOST');
 			$this->subject = $this->sanitizeHeaderString($this->subject);
 			$this->fromName = $valueList['from_name'] ? $valueList['from_name'] : ($valueList['name'] ? $valueList['name'] : '');
 			$this->fromName = $this->sanitizeHeaderString($this->fromName);
@@ -264,20 +263,20 @@ class FormDataSubmissionController {
 			$this->organisation = $valueList['organisation'] ? $valueList['organisation'] : '';
 			$this->organisation = $this->sanitizeHeaderString($this->organisation);
 			$this->fromAddress = $valueList['from_email'] ? $valueList['from_email'] : ($valueList['email'] ? $valueList['email'] : '');
-			if (!Utility\GeneralUtility::validEmail($this->fromAddress)) {
-				$this->fromAddress = Utility\MailUtility::getSystemFromAddress();
-				$this->fromName = Utility\MailUtility::getSystemFromName();
+			if (!GeneralUtility::validEmail($this->fromAddress)) {
+				$this->fromAddress = MailUtility::getSystemFromAddress();
+				$this->fromName = MailUtility::getSystemFromName();
 			}
 			$this->replyToAddress = $valueList['replyto_email'] ? $valueList['replyto_email'] : $this->fromAddress;
-			$this->priority = $valueList['priority'] ? Utility\MathUtility::forceIntegerInRange($valueList['priority'], 1, 5) : 3;
+			$this->priority = $valueList['priority'] ? MathUtility::forceIntegerInRange($valueList['priority'], 1, 5) : 3;
 			// Auto responder
 			$this->autoRespondMessage = trim($valueList['auto_respond_msg']) && $this->fromAddress ? trim($valueList['auto_respond_msg']) : '';
 			if ($this->autoRespondMessage !== '') {
 				// Check if the value of the auto responder message has been modified with evil intentions
 				$autoRespondChecksum = $valueList['auto_respond_checksum'];
-				$correctHmacChecksum = Utility\GeneralUtility::hmac($this->autoRespondMessage, 'content_form');
+				$correctHmacChecksum = GeneralUtility::hmac($this->autoRespondMessage, 'content_form');
 				if ($autoRespondChecksum !== $correctHmacChecksum) {
-					Utility\GeneralUtility::sysLog('Possible misuse of DataSubmissionController auto respond method. Subject: ' . $valueList['subject'], 'Core', Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+					GeneralUtility::sysLog('Possible misuse of DataSubmissionController auto respond method. Subject: ' . $valueList['subject'], 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 					return;
 				} else {
 					$this->autoRespondMessage = $this->sanitizeHeaderString($this->autoRespondMessage);
@@ -288,7 +287,7 @@ class FormDataSubmissionController {
 			// Runs through $V and generates the mail
 			if (is_array($valueList)) {
 				foreach ($valueList as $key => $val) {
-					if (!Utility\GeneralUtility::inList($this->reserved_names, $key)) {
+					if (!GeneralUtility::inList($this->reserved_names, $key)) {
 						$space = strlen($val) > 60 ? LF : '';
 						$val = is_array($val) ? implode($val, LF) : $val;
 						// Convert form data from renderCharset to mail charset (HTML may use entities)
@@ -314,27 +313,27 @@ class FormDataSubmissionController {
 				}
 
 				if ($_FILES[$variableName]['error'] !== UPLOAD_ERR_OK) {
-					Utility\GeneralUtility::sysLog(
+					GeneralUtility::sysLog(
 						'Error in uploaded file in DataSubmissionController: temporary file "' .
 							$_FILES[$variableName]['tmp_name'] . '" ("' . $_FILES[$variableName]['name'] . '") Error code: ' .
 							$_FILES[$variableName]['error'],
-						'Core',
-						Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR
+						'core',
+						GeneralUtility::SYSLOG_SEVERITY_ERROR
 					);
 					continue;
 				}
 
 				if (!is_uploaded_file($_FILES[$variableName]['tmp_name'])) {
-					Utility\GeneralUtility::sysLog(
+					GeneralUtility::sysLog(
 						'Possible abuse of DataSubmissionController: temporary file "' . $_FILES[$variableName]['tmp_name'] .
 							'" ("' . $_FILES[$variableName]['name'] . '") was not an uploaded file.',
-						'Core',
-						Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR
+						'core',
+						GeneralUtility::SYSLOG_SEVERITY_ERROR
 					);
 					continue;
 				}
 
-				$theFile = Utility\GeneralUtility::upload_to_tempfile($_FILES[$variableName]['tmp_name']);
+				$theFile = GeneralUtility::upload_to_tempfile($_FILES[$variableName]['tmp_name']);
 				$theName = $_FILES[$variableName]['name'];
 				if ($theFile && file_exists($theFile)) {
 					if (filesize($theFile) < $GLOBALS['TYPO3_CONF_VARS']['FE']['formmailMaxAttachmentSize']) {
@@ -357,9 +356,9 @@ class FormDataSubmissionController {
 			// is not worth the trouble
 			// Log dirty header lines
 			if ($this->dirtyHeaders) {
-				Utility\GeneralUtility::sysLog('Possible misuse of DataSubmissionController: see TYPO3 devLog', 'Core', Utility\GeneralUtility::SYSLOG_SEVERITY_ERROR);
+				GeneralUtility::sysLog('Possible misuse of DataSubmissionController: see TYPO3 devLog', 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 				if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['enable_DLOG']) {
-					Utility\GeneralUtility::devLog('DataSubmissionController: ' . Utility\GeneralUtility::arrayToLogString($this->dirtyHeaders, '', 200), 'Core', 3);
+					GeneralUtility::devLog('DataSubmissionController: ' . GeneralUtility::arrayToLogString($this->dirtyHeaders, '', 200), 'Core', 3);
 				}
 			}
 		}
@@ -393,7 +392,7 @@ class FormDataSubmissionController {
 	 */
 	protected function parseAddresses($rawAddresses = '') {
 		/** @var $addressParser \TYPO3\CMS\Core\Mail\Rfc822AddressesParser */
-		$addressParser = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\Rfc822AddressesParser::class, $rawAddresses);
+		$addressParser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\Rfc822AddressesParser::class, $rawAddresses);
 		$addresses = $addressParser->parseAddressList();
 		$addressList = array();
 		foreach ($addresses as $address) {
@@ -429,7 +428,7 @@ class FormDataSubmissionController {
 				$theParts[1]
 			);
 			/** @var $autoRespondMail \TYPO3\CMS\Core\Mail\MailMessage */
-			$autoRespondMail = Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
+			$autoRespondMail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
 			$autoRespondMail->setTo($this->fromAddress)->setSubject($theParts[0])->setFrom($this->recipient)->setBody($theParts[1]);
 			$autoRespondMail->send();
 		}
@@ -441,8 +440,8 @@ class FormDataSubmissionController {
 	 */
 	public function __destruct() {
 		foreach ($this->temporaryFiles as $file) {
-			if (Utility\GeneralUtility::isAllowedAbsPath($file) && Utility\GeneralUtility::isFirstPartOfStr($file, PATH_site . 'typo3temp/upload_temp_')) {
-				Utility\GeneralUtility::unlink_tempfile($file);
+			if (GeneralUtility::isAllowedAbsPath($file) && GeneralUtility::isFirstPartOfStr($file, PATH_site . 'typo3temp/upload_temp_')) {
+				GeneralUtility::unlink_tempfile($file);
 			}
 		}
 	}

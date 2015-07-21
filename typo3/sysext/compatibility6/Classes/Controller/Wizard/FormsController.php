@@ -104,8 +104,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  *
  * The XML/phpArray structure is the internal format of the wizard.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizardController {
 
@@ -200,7 +198,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 		if ($this->P['table'] && $this->P['field'] && $this->P['uid']) {
 			$this->content .= $this->doc->section($this->getLanguageService()->getLL('forms_title'), $this->formsWizard(), 0, 1);
 		} else {
-			$this->content .= $this->doc->section($this->getLanguageService()->getLL('forms_title'), '<span class="typo3-red">' . $this->getLanguageService()->getLL('table_noData', 1) . '</span>', 0, 1);
+			$this->content .= $this->doc->section($this->getLanguageService()->getLL('forms_title'), '<span class="text-danger">' . $this->getLanguageService()->getLL('table_noData', 1) . '</span>', 0, 1);
 		}
 		// Setting up the buttons and markers for docheader
 		$docHeaderButtons = $this->getButtons();
@@ -244,11 +242,11 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 			// Close
 			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '\')); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
 			// Save
-			$buttons['save'] = '<input type="image" class="c-inputButton" name="savedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/savedok.gif') . ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />';
+			$buttons['save'] = '<button class="c-inputButton" name="savedok">' . IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE))) . '</button>';
 			// Save & Close
-			$buttons['save_close'] = '<input type="image" class="c-inputButton" name="saveandclosedok"' . IconUtility::skinImg($this->doc->backPath, 'gfx/saveandclosedok.gif') . ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />';
+			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok">' . IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE))) . '</button>';
 			// Reload
-			$buttons['reload'] = '<input type="image" class="c-inputButton" name="_refresh"' . IconUtility::skinImg('', 'gfx/refresh_n.gif') . ' title="' . $this->getLanguageService()->getLL('forms_refresh', TRUE) . '" />';
+			$buttons['reload'] = '<button class="c-inputButton" name="_refresh">' . IconUtility::getSpriteIcon('actions-system-refresh', array('title' => $this->getLanguageService()->getLL('forms_refresh', TRUE))) . '</button>';
 		}
 		return $buttons;
 	}
@@ -450,7 +448,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 					}
 					// Default data
 					if ($confData['type'] == 'select' || $confData['type'] == 'radio') {
-						$temp_cells[$this->getLanguageService()->getLL('forms_options')] = '<textarea ' . $this->doc->formWidth(15) . ' rows="4" name="FORMCFG[c][' . ($k + 1) * 2 . '][options]" title="' . $this->getLanguageService()->getLL('forms_options', TRUE) . '">' . GeneralUtility::formatForTextarea($confData['default']) . '</textarea>';
+						$temp_cells[$this->getLanguageService()->getLL('forms_options')] = '<textarea ' . $this->doc->formWidth(15) . ' rows="4" name="FORMCFG[c][' . ($k + 1) * 2 . '][options]" title="' . $this->getLanguageService()->getLL('forms_options', TRUE) . '">' . htmlspecialchars($confData['default']) . '</textarea>';
 					} elseif ($confData['type'] == 'check') {
 						$temp_cells[$this->getLanguageService()->getLL('forms_checked')] = '<input type="checkbox" name="FORMCFG[c][' . ($k + 1) * 2 . '][default]" value="1"' . (trim($confData['default']) ? ' checked="checked"' : '') . ' title="' . $this->getLanguageService()->getLL('forms_checked', TRUE) . '" />';
 					} elseif ($confData['type'] && $confData['type'] != 'file') {
@@ -463,19 +461,18 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 					$onClick = ' onclick="' . htmlspecialchars($onClick) . '"';
 					// @todo $inputStyle undefined
 					$brTag = $inputStyle ? '' : '<br />';
-					if ($k != 0) {
-						$ctrl .= '<input type="image" name="FORMCFG[row_up][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2up.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_up', TRUE) . '" />' . $brTag;
-					} else {
-						$ctrl .= '<input type="image" name="FORMCFG[row_bottom][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_up.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_bottom', TRUE) . '" />' . $brTag;
+					if ($k != 1) {
+						$ctrl .= '<button name="FORMCFG[row_top][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-to-top', array('title' => $this->getLanguageService()->getLL('table_top', TRUE))) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_up][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-up', array('title' => $this->getLanguageService()->getLL('table_up', TRUE))) . '</button>' . $brTag;
 					}
-					$ctrl .= '<input type="image" name="FORMCFG[row_remove][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/garbage.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_removeRow', TRUE) . '" />' . $brTag;
-					// @todo $tLines undefined
-					if ($k + 1 != count($tLines)) {
-						$ctrl .= '<input type="image" name="FORMCFG[row_down][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/pil2down.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_down', TRUE) . '" />' . $brTag;
-					} else {
-						$ctrl .= '<input type="image" name="FORMCFG[row_top][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/turn_down.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_top', TRUE) . '" />' . $brTag;
+					$ctrl .= '<button name="FORMCFG[row_remove][' . ($k + 1) * 2 . ']" ' . $onClick . '>' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $this->getLanguageService()->getLL('table_removeRow', TRUE))) . '</button>' . $brTag;
+
+					if ($k != (count($formCfgArray)/2)) {
+						$ctrl .= '<button name="FORMCFG[row_down][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-down', array('title' => $this->getLanguageService()->getLL('table_down', TRUE))) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_bottom][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-to-bottom', array('title' => $this->getLanguageService()->getLL('table_bottom', TRUE))) . '</button>' . $brTag;
 					}
-					$ctrl .= '<input type="image" name="FORMCFG[row_add][' . ($k + 1) * 2 . ']"' . IconUtility::skinImg($this->doc->backPath, 'gfx/add.gif', '') . $onClick . ' title="' . $this->getLanguageService()->getLL('table_addRow', TRUE) . '" />' . $brTag;
+
+					$ctrl .= '<button name="FORMCFG[row_add][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_addRow', TRUE) . '">' . IconUtility::getSpriteIcon('actions-template-new') . '</button>' . $brTag;
 					$ctrl = '<span class="c-wizButtonsV">' . $ctrl . '</span>';
 					// Finally, put together the full row from the generated content above:
 					$bgC = $confData['type'] ? ' class="bgColor5"' : '';
@@ -700,7 +697,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 							break;
 					}
 					$tArr = $this->cleanT($tArr);
-					if (count($tArr)) {
+					if (!empty($tArr)) {
 						$thisLine[1] .= ',' . implode(',', $tArr);
 					}
 					$thisLine[1] = str_replace('|', '', $thisLine[1]);
@@ -765,7 +762,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 				$typeParts = GeneralUtility::trimExplode('=', $fParts[0]);
 				$confData['type'] = trim(strtolower(end($typeParts)));
 				if ($confData['type']) {
-					if (count($typeParts) == 1) {
+					if (count($typeParts) === 1) {
 						$confData['fieldname'] = substr(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', trim($parts[0]))), 0, 30);
 						// Attachment names...
 						if ($confData['type'] == 'file') {

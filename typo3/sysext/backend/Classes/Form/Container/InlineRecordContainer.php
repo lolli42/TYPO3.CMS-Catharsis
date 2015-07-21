@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -30,6 +31,7 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
+use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
 use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
@@ -105,9 +107,8 @@ class InlineRecordContainer extends AbstractContainer {
 			$record[$foreign_selector] = $this->normalizeUid($record[$foreign_selector]);
 		}
 		if (!$this->checkAccess(($isNewRecord ? 'new' : 'edit'), $foreign_table, $record['uid'])) {
-			// @todo: Suddenly returning something different than the usual return array is not a cool thing ...
-			// @todo: Inline ajax relies on this at the moment, though.
-			return FALSE;
+			// This is caught by InlineControlContainer or FormEngine, they need to handle this case differently
+			throw new AccessDeniedException('Access denied', 1437081986);
 		}
 		// Get the current naming scheme for DOM name/id attributes:
 		$appendFormFieldNames = '[' . $foreign_table . '][' . $record['uid'] . ']';
@@ -119,14 +120,14 @@ class InlineRecordContainer extends AbstractContainer {
 			// Get configuration:
 			$collapseAll = isset($config['appearance']['collapseAll']) && $config['appearance']['collapseAll'];
 			$expandAll = isset($config['appearance']['collapseAll']) && !$config['appearance']['collapseAll'];
-			$ajaxLoad = isset($config['appearance']['ajaxLoad']) && !$config['appearance']['ajaxLoad'] ? FALSE : TRUE;
+			$ajaxLoad = !isset($config['appearance']['ajaxLoad']) || $config['appearance']['ajaxLoad'];
 			if ($isNewRecord) {
 				// Show this record expanded or collapsed
 				$isExpanded = $expandAll || (!$collapseAll ? 1 : 0);
 			} else {
 				$isExpanded = $config['renderFieldsOnly'] || !$collapseAll && $this->getExpandedCollapsedState($foreign_table, $record['uid']) || $expandAll;
 			}
-			// Render full content ONLY IF this is a AJAX-request, a new record, the record is not collapsed or AJAX-loading is explicitly turned off
+			// Render full content ONLY IF this is an AJAX request, a new record, the record is not collapsed or AJAX loading is explicitly turned off
 			if ($isNewRecord || $isExpanded || !$ajaxLoad) {
 				$combinationChildArray = $this->renderCombinationTable($record, $appendFormFieldNames, $config);
 				$combinationHtml = $combinationChildArray['html'];
@@ -224,7 +225,7 @@ class InlineRecordContainer extends AbstractContainer {
 	}
 
 	/**
-	 * Render a table with FormEngine, that occurs on a intermediate table but should be editable directly,
+	 * Render a table with FormEngine, that occurs on an intermediate table but should be editable directly,
 	 * so two tables are combined (the intermediate table with attributes and the sub-embedded table).
 	 * -> This is a direct embedding over two levels!
 	 *
@@ -429,9 +430,10 @@ class InlineRecordContainer extends AbstractContainer {
 		$isParentExisting = MathUtility::canBeInterpretedAsInteger($parentUid);
 		$tcaTableCtrl = &$GLOBALS['TCA'][$foreign_table]['ctrl'];
 		$tcaTableCols = &$GLOBALS['TCA'][$foreign_table]['columns'];
-		$isPagesTable = $foreign_table == 'pages' ? TRUE : FALSE;
+		$isPagesTable = $foreign_table === 'pages';
+		$isSysFileReferenceTable = $foreign_table === 'sys_file_reference';
 		$isOnSymmetricSide = RelationHandler::isOnSymmetricSide($parentUid, $config, $rec);
-		$enableManualSorting = $tcaTableCtrl['sortby'] || $config['MM'] || !$isOnSymmetricSide && $config['foreign_sortby'] || $isOnSymmetricSide && $config['symmetric_sortby'] ? TRUE : FALSE;
+		$enableManualSorting = $tcaTableCtrl['sortby'] || $config['MM'] || !$isOnSymmetricSide && $config['foreign_sortby'] || $isOnSymmetricSide && $config['symmetric_sortby'];
 		$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
 		$nameObjectFt = $nameObject . '-' . $foreign_table;
 		$nameObjectFtId = $nameObjectFt . '-' . $rec['uid'];
@@ -527,7 +529,9 @@ class InlineRecordContainer extends AbstractContainer {
 				}
 			}
 			// "Delete" link:
-			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & Permission::PAGE_DELETE || !$isPagesTable && $calcPerms & Permission::CONTENT_EDIT)) {
+			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & Permission::PAGE_DELETE
+					|| !$isPagesTable && $calcPerms & Permission::CONTENT_EDIT
+					|| $isSysFileReferenceTable && $calcPerms & Permission::PAGE_EDIT)) {
 				$onClick = 'inline.deleteRecord(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ');';
 				$cells['delete'] = '
 					<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('if (confirm(' . GeneralUtility::quoteJSvalue($languageService->getLL('deleteWarning')) . ')) {	' . $onClick . ' } return false;')) . '">
@@ -579,9 +583,7 @@ class InlineRecordContainer extends AbstractContainer {
 			$hookObj->renderForeignRecordHeaderControl_postProcess($parentUid, $foreign_table, $rec, $config, $isVirtualRecord, $cells);
 		}
 
-		$out = '
-			<!-- CONTROL PANEL: ' . $foreign_table . ':' . $rec['uid'] . ' -->
-			<img name="' . $nameObjectFtId . '_req" src="clear.gif" alt="" />';
+		$out = '';
 		if (!empty($cells)) {
 			$out .= ' <div class="btn-group btn-group-sm" role="group">' . implode('', $cells) . '</div>';
 		}
@@ -624,8 +626,14 @@ class InlineRecordContainer extends AbstractContainer {
 					// Are we allowed to create new subpages?
 					$hasAccess = (bool)($CALC_PERMS & Permission::PAGE_NEW);
 				} else {
-					// Are we allowed to edit content on this page?
-					$hasAccess = (bool)($CALC_PERMS & Permission::CONTENT_EDIT);
+					// Are we allowed to edit the page?
+					if ($table === 'sys_file_reference' && $this->isMediaOnPages($theUid)) {
+						$hasAccess = (bool)($CALC_PERMS & Permission::PAGE_EDIT);
+					}
+					if (!$hasAccess) {
+						// Are we allowed to edit content on this page?
+						$hasAccess = (bool)($CALC_PERMS & Permission::CONTENT_EDIT);
+					}
 				}
 			} else {
 				$hasAccess = TRUE;
@@ -642,7 +650,12 @@ class InlineRecordContainer extends AbstractContainer {
 				} else {
 					// Fetching pid-record first.
 					$CALC_PERMS = $backendUser->calcPerms(BackendUtility::getRecord('pages', $calcPRec['pid']));
-					$hasAccess = (bool)($CALC_PERMS & Permission::CONTENT_EDIT);
+					if ($table === 'sys_file_reference' && $this->isMediaOnPages($theUid)) {
+						$hasAccess = (bool)($CALC_PERMS & Permission::PAGE_EDIT);
+					}
+					if (!$hasAccess) {
+						$hasAccess = (bool)($CALC_PERMS & Permission::CONTENT_EDIT);
+					}
 				}
 				// Check internals regarding access
 				$isRootLevelRestrictionIgnored = BackendUtility::isRootLevelRestrictionIgnored($table);
@@ -653,6 +666,20 @@ class InlineRecordContainer extends AbstractContainer {
 		}
 		if (!$backendUser->check('tables_modify', $table)) {
 			$hasAccess = FALSE;
+		}
+		if (
+			!empty($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['checkAccess'])
+			&& is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['checkAccess'])
+		) {
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tceforms_inline.php']['checkAccess'] as $_funcRef) {
+				$_params = array(
+					'table' => $table,
+					'uid' => $theUid,
+					'cmd' => $cmd,
+					'hasAccess' => $hasAccess
+				);
+				$hasAccess = GeneralUtility::callUserFunction($_funcRef, $_params, $this);
+			}
 		}
 		if (!$hasAccess) {
 			$deniedAccessReason = $backendUser->errorMsg;
@@ -714,6 +741,20 @@ class InlineRecordContainer extends AbstractContainer {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Check if the record is a media element on a page.
+	 *
+	 * @param string $theUid Uid of the sys_file_reference record to be checked
+	 * @return bool TRUE if the record has media in the column 'fieldname' and pages in the column 'tablenames'
+	 */
+	protected function isMediaOnPages($theUid) {
+		if (StringUtility::beginsWith($theUid, 'NEW')) {
+			return TRUE;
+		}
+		$row = BackendUtility::getRecord('sys_file_reference', $theUid);
+		return ($row['fieldname'] === 'media') && ($row['tablenames'] === 'pages');
 	}
 
 	/**

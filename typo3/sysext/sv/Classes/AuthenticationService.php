@@ -18,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Authentication services class
- *
- * @author René Fritz <r.fritz@colorcube.de>
  */
 class AuthenticationService extends AbstractAuthenticationService {
 
@@ -63,7 +61,7 @@ class AuthenticationService extends AbstractAuthenticationService {
 			// Failed login attempt (no username found)
 			$this->writelog(255, 3, 3, 2, 'Login-attempt from %s (%s), username \'%s\' not found!!', array($this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']));
 			// Logout written to log
-			GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\' not found!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+			GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\' not found!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 		} else {
 			if ($this->writeDevLog) {
 				GeneralUtility::devLog('User found: ' . GeneralUtility::arrayToLogString($user, array($this->db_user['userid_column'], $this->db_user['username_column'])), AuthenticationService::class);
@@ -94,7 +92,7 @@ class AuthenticationService extends AbstractAuthenticationService {
 				// Failed login attempt (wrong password) - write that to the log!
 				if ($this->writeAttemptLog) {
 					$this->writelog(255, 3, 3, 1, 'Login-attempt from %s (%s), username \'%s\', password not accepted!', array($this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']));
-					GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\', password not accepted!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+					GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\', password not accepted!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 				}
 				if ($this->writeDevLog) {
 					GeneralUtility::devLog('Password not accepted: ' . $this->login['uident'], AuthenticationService::class, 2);
@@ -105,7 +103,7 @@ class AuthenticationService extends AbstractAuthenticationService {
 				// Lock domain didn't match, so error:
 				if ($this->writeAttemptLog) {
 					$this->writelog(255, 3, 3, 1, 'Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!', array($this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']));
-					GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']), 'Core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
+					GeneralUtility::sysLog(sprintf('Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!', $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']), 'core', GeneralUtility::SYSLOG_SEVERITY_WARNING);
 				}
 				$OK = 0;
 			}
@@ -172,7 +170,7 @@ class AuthenticationService extends AbstractAuthenticationService {
 	 * \TYPO3\CMS\Core\Authentication\BackendUserAuthentication->fetchGroups and has been slightly modified.
 	 *
 	 * @param string $grList Commalist of fe_groups uid numbers
-	 * @param string $idList List of already processed fe_groups-uids so the function will not fall into a eternal recursion.
+	 * @param string $idList List of already processed fe_groups-uids so the function will not fall into an eternal recursion.
 	 * @param array $groups
 	 * @return array
 	 * @access private

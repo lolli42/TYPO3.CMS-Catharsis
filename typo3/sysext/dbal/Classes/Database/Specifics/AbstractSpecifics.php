@@ -25,6 +25,7 @@ abstract class AbstractSpecifics {
 	const TABLE_MAXLENGTH = 'table_maxlength';
 	const FIELD_MAXLENGTH = 'field_maxlength';
 	const LIST_MAXEXPRESSIONS = 'list_maxexpressions';
+	const PARTIAL_STRING_INDEX = 'partial_string_index';
 
 	/**
 	 * Contains the specifics of a DBMS.
@@ -147,6 +148,19 @@ abstract class AbstractSpecifics {
 
 		return array_chunk($expressionList, $this->getSpecific(self::LIST_MAXEXPRESSIONS), $preserveArrayKeys);
 	}
+
+	/**
+	 * Adjust query parts for DBMS
+	 *
+	 * @param string $select_fields
+	 * @param string $from_table
+	 * @param string $where_clause
+	 * @param string $groupBy
+	 * @param string $orderBy
+	 * @param string $limit
+	 * @return void
+	 */
+	public function transformQueryParts(&$select_fields, &$from_table, &$where_clause, &$groupBy = '', &$orderBy = '', &$limit = '') {}
 
 	/**
 	 * Transforms a database specific representation of field information and translates it

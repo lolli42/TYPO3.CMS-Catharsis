@@ -18,9 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Ext Direct Router
- *
- * @author Sebastian Kurfürst <sebastian@typo3.org>
- * @author Stefan Galinski <stefan.galinski@gmail.com>
  */
 class ExtDirectRouter {
 
@@ -134,7 +131,7 @@ class ExtDirectRouter {
 				), TRUE);
 			}
 		}
-		$endpointObject = GeneralUtility::getUserObj($callbackClass, FALSE);
+		$endpointObject = GeneralUtility::getUserObj($callbackClass);
 		return call_user_func_array(array($endpointObject, $singleRequest->method), is_array($singleRequest->data) ? $singleRequest->data : array());
 	}
 

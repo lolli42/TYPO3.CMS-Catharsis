@@ -14,18 +14,18 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Tree\TableConfiguration\ExtJsArrayTreeRenderer;
 use TYPO3\CMS\Core\Tree\TableConfiguration\TableConfigurationTree;
 use TYPO3\CMS\Core\Tree\TableConfiguration\TreeDataProviderFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Render data as a tree.
@@ -62,8 +62,7 @@ class SelectTreeElement extends AbstractFormElement {
 
 		// Wizards:
 		if (!$disabled) {
-			$altItem = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
-			$html = $this->renderWizards(array($html, $altItem), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
+			$html = $this->renderWizards(array($html), $config['wizards'], $table, $row, $field, $parameterArray, $parameterArray['itemFormElName'], $specConf);
 		}
 		$resultArray['html'] = $html;
 		return $resultArray;
@@ -87,7 +86,7 @@ class SelectTreeElement extends AbstractFormElement {
 		if (!empty($PA['itemFormElValue'])) {
 			$valueArray = explode(',', $PA['itemFormElValue']);
 		}
-		if (count($valueArray)) {
+		if (!empty($valueArray)) {
 			foreach ($valueArray as $selectedValue) {
 				$temp = explode('|', $selectedValue);
 				$selectedNodes[] = $temp[0];
@@ -144,8 +143,8 @@ class SelectTreeElement extends AbstractFormElement {
 		$width = 280;
 		$appearance = $PA['fieldConf']['config']['treeConfig']['appearance'];
 		if (is_array($appearance)) {
-			$header = $appearance['showHeader'] ? TRUE : FALSE;
-			$expanded = $appearance['expandAll'] === TRUE;
+			$header = (bool)$appearance['showHeader'];
+			$expanded = (bool)$appearance['expandAll'];
 			if (isset($appearance['width'])) {
 				$width = (int)$appearance['width'];
 			}
@@ -168,8 +167,8 @@ class SelectTreeElement extends AbstractFormElement {
 				$onChange .= 'if (TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
 			}
 		}
-		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
-		$pageRenderer = $GLOBALS['SOBE']->doc->getPageRenderer();
+		/** @var $pageRenderer PageRenderer */
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadExtJs();
 		$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/tree.js');
 		$pageRenderer->addInlineLanguageLabelFile(ExtensionManagementUtility::extPath('lang') . 'locallang_csh_corebe.xlf', 'tcatree');
@@ -229,7 +228,7 @@ class SelectTreeElement extends AbstractFormElement {
 			) . LF .
 			'(function() {
 					tree' . $id . '.render("tree_' . $id . '");
-				}).defer(20);
+				}).defer(200);
 		');
 		$formField = '
 			<div class="typo3-tceforms-tree">

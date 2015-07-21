@@ -19,9 +19,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * This class provides Check Internal Links plugin implementation
- *
- * @author Dimitri König <dk@cabag.ch>
- * @author Michael Miousse <michael.miousse@infoglobe.ca>
  */
 class InternalLinktype extends AbstractLinktype {
 
@@ -298,7 +295,7 @@ class InternalLinktype extends AbstractLinktype {
 		$domain = rtrim(GeneralUtility::getIndpEnv('TYPO3_SITE_URL'), '/');
 		$rootLine = BackendUtility::BEgetRootLine($row['record_pid']);
 		// checks alternate domains
-		if (count($rootLine) > 0) {
+		if (!empty($rootLine)) {
 			$protocol = GeneralUtility::getIndpEnv('TYPO3_SSL') ? 'https://' : 'http://';
 			$domainRecord = BackendUtility::firstDomainRecord($rootLine);
 			if (!empty($domainRecord)) {

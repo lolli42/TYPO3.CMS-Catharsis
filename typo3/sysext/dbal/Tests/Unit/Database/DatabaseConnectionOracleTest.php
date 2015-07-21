@@ -152,8 +152,9 @@ class DatabaseConnectionOracleTest extends AbstractTestCase {
 		$components = $this->subject->SQLparser->_callRef('parseINSERT', $parseString);
 		$this->assertTrue(is_array($components), $components);
 		$insert = $this->subject->SQLparser->_callRef('compileINSERT', $components);
-		$this->assertEquals(4, count($insert));
-		for ($i = 0; $i < count($insert); $i++) {
+		$insertCount = count($insert);
+		$this->assertEquals(4, $insertCount);
+		for ($i = 0; $i < $insertCount; $i++) {
 			foreach ($tableFields as $field) {
 				$this->assertTrue(isset($insert[$i][$field]), 'Could not find ' . $field . ' column');
 			}
@@ -174,8 +175,9 @@ class DatabaseConnectionOracleTest extends AbstractTestCase {
 		$expected[0] = 'INSERT INTO "tt_content" ( "uid", "pid", "title", "body" ) VALUES ( \'1\', \'2\', \'Title #1\', \'Content #1\' )';
 		$expected[1] = 'INSERT INTO "tt_content" ( "uid", "pid", "title", "body" ) VALUES ( \'3\', \'4\', \'Title #2\', \'Content #2\' )';
 		$expected[2] = 'INSERT INTO "tt_content" ( "uid", "pid", "title", "body" ) VALUES ( \'5\', \'6\', \'Title #3\', \'Content #3\' )';
-		$this->assertEquals(count($expected), count($result));
-		for ($i = 0; $i < count($result); $i++) {
+		$resultCount = count($result);
+		$this->assertEquals(count($expected), $resultCount);
+		for ($i = 0; $i < $resultCount; $i++) {
 			$this->assertTrue(is_array($result[$i]), 'Expected array: ' . $result[$i]);
 			$this->assertEquals(1, count($result[$i]));
 			$this->assertEquals($expected[$i], $this->cleanSql($result[$i][0]));
@@ -313,6 +315,20 @@ class DatabaseConnectionOracleTest extends AbstractTestCase {
 		$expected .= ' INNER JOIN "ext_tt_news" ON "ext_tt_news"."news_uid"="ext_tt_news_cat_mm"."local_uid"';
 		$expected .= ' WHERE 1 = 1';
 		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see https://forge.typo3.org/issues/67067
+	 */
+	public function tablesAreUnmappedInAdminGetTables() {
+		$handlerMock = $this->getMock('\ADODB_mock', array('MetaTables'), array(), '', FALSE);
+		$handlerMock->expects($this->any())->method('MetaTables')->will($this->returnValue(array('cf_cache_hash')));
+		$this->subject->handlerInstance['_DEFAULT'] = $handlerMock;
+
+		$actual = $this->subject->admin_get_tables();
+		$expected = array('cachingframework_cache_hash' => array('Name' => 'cachingframework_cache_hash'));
+		$this->assertSame($expected, $actual);
 	}
 
 	/**

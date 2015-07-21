@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\MathUtility;
 
 /**
  * Stages service
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class StagesService {
 
@@ -79,7 +77,6 @@ class StagesService {
 	 * @param array $workspaceItems
 	 * @param array $byTableName
 	 * @return array Current and next highest possible stage
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function getPreviousStageForElementCollection(
 		$workspaceItems,
@@ -128,7 +125,6 @@ class StagesService {
 	 * @param array $workspaceItems
 	 * @param array $byTableName
 	 * @return array Current and next possible stage.
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function getNextStageForElementCollection(
 		$workspaceItems,
@@ -547,7 +543,7 @@ class StagesService {
 		$requiredGroups = GeneralUtility::intExplode(',', $grList, TRUE);
 		$existingGroups = array_keys($this->userGroups);
 		$missingGroups = array_diff($requiredGroups, $existingGroups);
-		if (count($missingGroups) > 0) {
+		if (!empty($missingGroups)) {
 			$this->fetchGroupsFromDB($missingGroups);
 		}
 		// Traversing records in the correct order

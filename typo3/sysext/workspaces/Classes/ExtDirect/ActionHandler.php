@@ -20,8 +20,6 @@ use TYPO3\CMS\Workspaces\Service\StagesService;
 
 /**
  * ExtDirect action handler
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class ActionHandler extends AbstractHandler {
 
@@ -357,7 +355,6 @@ class ActionHandler extends AbstractHandler {
 	 *
 	 * @param int $pageId
 	 * @return array
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function discardStagesFromPage($pageId) {
 		$cmdMapArray = array();
@@ -390,7 +387,6 @@ class ActionHandler extends AbstractHandler {
 	 *
 	 * @param stdClass $parameters
 	 * @return array
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function sentCollectionToStage(\stdClass $parameters) {
 		$cmdMapArray = array();
@@ -399,7 +395,7 @@ class ActionHandler extends AbstractHandler {
 		if (\TYPO3\CMS\Core\Utility\MathUtility::canBeInterpretedAsInteger($stageId) === FALSE) {
 			throw new \InvalidArgumentException('Missing "stageId" in $parameters array.', 1319488194);
 		}
-		if (!is_object($parameters->affects) || count($parameters->affects) == 0) {
+		if (!is_object($parameters->affects) || empty($parameters->affects)) {
 			throw new \InvalidArgumentException('Missing "affected items" in $parameters array.', 1319488195);
 		}
 		$recipients = $this->getRecipientList($parameters->receipients, $parameters->additional, $stageId);
@@ -424,7 +420,7 @@ class ActionHandler extends AbstractHandler {
 		return array(
 			'success' => TRUE,
 			// force refresh after publishing changes
-			'refreshLivePanel' => $parameters->stageId == -20 ? TRUE : FALSE
+			'refreshLivePanel' => $parameters->stageId == -20
 		);
 	}
 
@@ -433,7 +429,6 @@ class ActionHandler extends AbstractHandler {
 	 *
 	 * @param array $cmdMapArray
 	 * @return array
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	protected function processTcaCmd(array $cmdMapArray) {
 		$result = array();
@@ -727,7 +722,6 @@ class ActionHandler extends AbstractHandler {
 	 *
 	 * @param int $id Current page id to process items to previous stage.
 	 * @return array
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function sendPageToPreviousStage($id) {
 		$workspaceService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\WorkspaceService::class);
@@ -746,7 +740,6 @@ class ActionHandler extends AbstractHandler {
 	/**
 	 * @param int $id Current Page id to select Workspace items from.
 	 * @return array
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function sendPageToNextStage($id) {
 		$workspaceService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\WorkspaceService::class);
@@ -767,7 +760,6 @@ class ActionHandler extends AbstractHandler {
 	 *
 	 * @param int $id
 	 * @return array Contains the visibility state and label of the stage change buttons.
-	 * @author Michael Klapper <development@morphodo.com>
 	 */
 	public function updateStageChangeButtons($id) {
 		$stageService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\StagesService::class);
@@ -778,15 +770,15 @@ class ActionHandler extends AbstractHandler {
 		list(, $previousStage) = $stageService->getPreviousStageForElementCollection($workspaceItemsArray);
 		$toolbarButtons = array(
 			'feToolbarButtonNextStage' => array(
-				'visible' => is_array($nextStage) && count($nextStage) > 0,
+				'visible' => is_array($nextStage) && !empty($nextStage),
 				'text' => $nextStage['title']
 			),
 			'feToolbarButtonPreviousStage' => array(
-				'visible' => is_array($previousStage) && count($previousStage),
+				'visible' => is_array($previousStage) && !empty($previousStage),
 				'text' => $previousStage['title']
 			),
 			'feToolbarButtonDiscardStage' => array(
-				'visible' => is_array($nextStage) && count($nextStage) > 0 || is_array($previousStage) && count($previousStage) > 0,
+				'visible' => is_array($nextStage) && !empty($nextStage) || is_array($previousStage) && !empty($previousStage),
 				'text' => $GLOBALS['LANG']->sL('LLL:EXT:workspaces/Resources/Private/Language/locallang.xlf:label_doaction_discard', TRUE)
 			)
 		);

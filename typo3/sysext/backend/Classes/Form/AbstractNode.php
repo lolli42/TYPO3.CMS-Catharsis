@@ -60,6 +60,8 @@ abstract class AbstractNode implements NodeInterface {
 			'additionalJavaScriptSubmit' => array(),
 			'additionalHiddenFields' => array(),
 			'additionalHeadTags' => array(),
+			// can hold strings or arrays, string = requireJS module, array = requireJS module + callback e.g. array('TYPO3/Foo/Bar', 'function() {}')
+			'requireJsModules' => array(),
 			'extJSCODE' => '',
 			'inlineData' => array(),
 			'html' => '',
@@ -91,6 +93,11 @@ abstract class AbstractNode implements NodeInterface {
 		}
 		foreach ($childReturn['additionalHeadTags'] as $value) {
 			$existing['additionalHeadTags'][] = $value;
+		}
+		if (!empty($childReturn['requireJsModules'])) {
+			foreach ($childReturn['requireJsModules'] as $module) {
+				$existing['requireJsModules'][] = $module;
+			}
 		}
 		if (!empty($childReturn['inlineData'])) {
 			$existingInlineData = $existing['inlineData'];
@@ -146,6 +153,22 @@ abstract class AbstractNode implements NodeInterface {
 	 */
 	protected function getValidationDataAsJsonString(array $config) {
 		$validationRules = array();
+		if (!empty($config['eval'])) {
+			$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
+			unset($config['eval']);
+			foreach ($evalList as $evalType) {
+				$validationRules[] = array(
+					'type' => $evalType,
+					'config' => $config
+				);
+			}
+		}
+		if (!empty($config['range'])) {
+			$validationRules[] = array(
+				'type' => 'range',
+				'config' => $config['range']
+			);
+		}
 		if (!empty($config['maxitems']) || !empty($config['minitems'])) {
 			$minItems = (isset($config['minitems'])) ? (int)$config['minitems'] : 0;
 			$maxItems = (isset($config['maxitems'])) ? (int)$config['maxitems'] : 10000;

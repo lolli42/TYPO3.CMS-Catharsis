@@ -15,12 +15,12 @@ namespace TYPO3\CMS\WizardSortpages\View;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Creates the "Sort pages" wizard
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
 
@@ -31,7 +31,9 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
 	 */
 	public function main() {
 		$lang = $this->getLanguageService();
-		$lang->includeLLFile('EXT:wizard_sortpages/locallang.xlf');
+		$lang->includeLLFile('EXT:wizard_sortpages/Resources/Private/Language/locallang.xlf');
+		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
 		$out = $this->pObj->doc->header($lang->getLL('wiz_sort'));
 		if ($this->getBackendUser()->workspace === 0) {
 			$theCode = '';
@@ -93,7 +95,7 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
 				$lines[] = $this->wiz_linkOrder($lang->getLL('wiz_changeOrder_REVERSE'), 'REV');
 				$theCode .= '<h4>' . $lang->getLL('wiz_changeOrder') . '</h4><p>' . implode(' ', $lines) . '</p>';
 			} else {
-				$flashMessage = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class, $lang->getLL('no_subpages'), '', \TYPO3\CMS\Core\Messaging\FlashMessage::NOTICE);
+				$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('no_subpages'), '', FlashMessage::NOTICE);
 				$theCode .= $flashMessage->render();
 			}
 			// CSH:
@@ -113,14 +115,18 @@ class SortPagesWizardModuleFunction extends \TYPO3\CMS\Backend\Module\AbstractFu
 	 * @return string HTML string
 	 */
 	protected function wiz_linkOrder($title, $order) {
-		return '<a class="btn btn-default" href="' . htmlspecialchars(
-			BackendUtility::getModuleUrl('web_func',
-				array(
-					'id' => $GLOBALS['SOBE']->id,
-					'sortByField' => $order
-				)
+		$href = BackendUtility::getModuleUrl('web_func',
+			array(
+				'id' => $GLOBALS['SOBE']->id,
+				'sortByField' => $order
 			)
-		) . '" onclick="return confirm(' . GeneralUtility::quoteJSvalue($this->getLanguageService()->getLL('wiz_changeOrder_msg1')) . ')">' . htmlspecialchars($title) . '</a>';
+		);
+		return '<a class="btn btn-default t3js-modal-trigger" href="' . htmlspecialchars($href) . '" '
+			. ' data-severity="warning"'
+			. ' data-title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:pleaseConfirm', TRUE) . '"'
+			. ' data-button-close-text="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '"'
+			. ' data-content="' . $this->getLanguageService()->getLL('wiz_changeOrder_msg1', TRUE) . '"'
+			. ' >' . htmlspecialchars($title) . '</a>';
 	}
 
 	/**

@@ -19,8 +19,6 @@ use TYPO3\CMS\Form\Request;
 
 /**
  * Abstract for validation
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 abstract class AbstractValidator implements \TYPO3\CMS\Form\Validation\ValidatorInterface {
 
@@ -249,7 +247,7 @@ abstract class AbstractValidator implements \TYPO3\CMS\Form\Validation\Validator
 	 * @param string $type The type
 	 * @return string The local language message label
 	 */
-	protected function getLocalLanguageLabel($type) {
+	protected function getLocalLanguageLabel($type = '') {
 		$label = static::LOCALISATION_OBJECT_NAME . '.' . $type;
 		$message = $this->localizationHandler->getLocalLanguageLabel($label);
 		return $message;

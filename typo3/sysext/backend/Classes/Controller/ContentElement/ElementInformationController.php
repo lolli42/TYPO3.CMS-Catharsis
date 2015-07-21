@@ -20,11 +20,10 @@ use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
 
 /**
  * Script Class for showing information about an item.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ElementInformationController {
 
@@ -360,18 +359,22 @@ class ElementInformationController {
 			}
 			// show the backend username who created the issue
 			if ($name === 'cruser_id' && $rowValue) {
-				$userTemp = $this->getDatabaseConnection()->exec_SELECTgetSingleRow('username, realName', 'be_users', 'uid = ' . (int)$rowValue);
-				if ($userTemp['username'] !== '') {
-					$rowValue = $userTemp['username'];
-					if ($userTemp['realName'] !== '') {
-						$rowValue .= ' - ' . $userTemp['realName'];
-					}
+				$creatorRecord = BackendUtility::getRecord('be_users', $rowValue);
+				if ($creatorRecord) {
+					/** @var Avatar $avatar */
+					$avatar = GeneralUtility::makeInstance(Avatar::class);
+					$icon = $avatar->render($creatorRecord);
+
+					$rowValue = '<span class="pull-left">' . $icon . '</span>' .
+					'<strong>' . htmlspecialchars($GLOBALS['BE_USER']->user['username']) . '</strong><br />'
+					. ($GLOBALS['BE_USER']->user['realName']) ? $GLOBALS['BE_USER']->user['realName'] : '';
 				}
 			}
+
 			$tableRows[] = '
 				<tr>
 					<th>' . rtrim($fieldLabel, ':') . '</th>
-					<td>' . htmlspecialchars($rowValue) . '</td>
+					<td>' . ($name === 'cruser_id' ? $rowValue : htmlspecialchars($rowValue)) . '</td>
 				</tr>';
 		}
 
@@ -619,7 +622,7 @@ class ElementInformationController {
 		// Compile information for title tag:
 		$infoData = array();
 		$infoDataHeader = '';
-		if (count($rows)) {
+		if (!empty($rows)) {
 			$infoDataHeader = '
 				<tr>
 					<th class="col-icon"></th>
@@ -690,7 +693,7 @@ class ElementInformationController {
 			}
 		}
 		$referenceLine = '';
-		if (count($infoData)) {
+		if (!empty($infoData)) {
 			$referenceLine = '
 				<div class="table-fit">
 					<table class="table table-striped table-hover">
@@ -720,7 +723,7 @@ class ElementInformationController {
 		// Compile information for title tag:
 		$infoData = array();
 		$infoDataHeader = '';
-		if (count($rows)) {
+		if (!empty($rows)) {
 			$infoDataHeader = '
 				<tr>
 					<th class="col-icon"></th>

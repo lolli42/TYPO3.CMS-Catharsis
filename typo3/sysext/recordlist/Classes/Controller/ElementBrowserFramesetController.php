@@ -22,8 +22,6 @@ use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Script Class, putting the frameset together.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class ElementBrowserFramesetController {
 
@@ -33,6 +31,11 @@ class ElementBrowserFramesetController {
 	 * @var string
 	 */
 	public $content;
+
+	/**
+	 * @var PageRenderer
+	 */
+	protected $pageRenderer = NULL;
 
 	/**
 	 * Main function.
@@ -67,7 +70,7 @@ class ElementBrowserFramesetController {
 
 		// Create the frameset for the window
 		// Formerly there were a ' onunload="closing();"' in the <frameset> tag - but it failed on Safari browser on Mac unless the handler was "onUnload"
-		$this->content = $documentTemplate->getPageRenderer()->render(PageRenderer::PART_HEADER) .
+		$this->content = $this->getPageRenderer()->render(PageRenderer::PART_HEADER) .
 			'<frameset rows="*,1" framespacing="0" frameborder="0" border="0">
 				<frame name="content" src="' . htmlspecialchars($url) . '" marginwidth="0" marginheight="0" frameborder="0" scrolling="auto" noresize="noresize" />
 				<frame name="menu" src="' . htmlspecialchars(BackendUtility::getModuleUrl('dummy')) . '" marginwidth="0" marginheight="0" frameborder="0" scrolling="no" noresize="noresize" />
@@ -97,6 +100,17 @@ class ElementBrowserFramesetController {
 	 */
 	protected function getLanguageService() {
 		return $GLOBALS['LANG'];
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		if ($this->pageRenderer === NULL) {
+			$this->pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+		}
+
+		return $this->pageRenderer;
 	}
 
 }

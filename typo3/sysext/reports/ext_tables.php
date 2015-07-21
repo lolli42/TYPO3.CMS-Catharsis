@@ -11,14 +11,14 @@ if (TYPO3_MODE === 'BE') {
 			'Report' => 'index,detail'
 		), array(
 			'access' => 'admin',
-			'icon' => 'EXT:reports/Resources/Public/Icons/module-reports.png',
+			'icon' => 'EXT:reports/Resources/Public/Icons/module-reports.svg',
 			'labels' => 'LLL:EXT:reports/Resources/Private/Language/locallang.xlf'
 		)
 	);
 	$statusReport = array(
-		'title' => 'LLL:EXT:reports/reports/locallang.xlf:status_report_title',
-		'icon' => 'EXT:reports/Resources/Public/Icons/module-reports.png',
-		'description' => 'LLL:EXT:reports/reports/locallang.xlf:status_report_description',
+		'title' => 'LLL:EXT:reports/Resources/Private/Language/locallang_reports.xlf:status_report_title',
+		'icon' => 'EXT:reports/Resources/Public/Icons/module-reports.svg',
+		'description' => 'LLL:EXT:reports/Resources/Private/Language/locallang_reports.xlf:status_report_description',
 		'report' => \TYPO3\CMS\Reports\Report\Status\Status::class
 	);
 	if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['reports']['tx_reports']['status'])) {

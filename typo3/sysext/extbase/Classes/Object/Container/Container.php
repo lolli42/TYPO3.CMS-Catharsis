@@ -16,10 +16,6 @@ namespace TYPO3\CMS\Extbase\Object\Container;
 
 /**
  * Internal TYPO3 Dependency Injection container
- *
- * @author Daniel Pötzinger
- * @author Sebastian Kurfürst
- * @author Timo Schmidt
  */
 class Container implements \TYPO3\CMS\Core\SingletonInterface {
 
@@ -35,7 +31,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * registered alternative implementations of a class
-	 * e.g. used to know the class for a AbstractClass or a Dependency
+	 * e.g. used to know the class for an AbstractClass or a Dependency
 	 *
 	 * @var array
 	 */
@@ -162,7 +158,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$className = \TYPO3\CMS\Core\Core\ClassLoadingInformation::getClassNameForAlias($className);
 		if (isset($this->singletonInstances[$className])) {
-			if (count($givenConstructorArguments) > 0) {
+			if (!empty($givenConstructorArguments)) {
 				throw new \TYPO3\CMS\Extbase\Object\Exception('Object "' . $className . '" fetched from singleton cache, thus, explicit constructor arguments are not allowed.', 1292857934);
 			}
 			return $this->singletonInstances[$className];
@@ -197,7 +193,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 	protected function instanciateObject(\TYPO3\CMS\Extbase\Object\Container\ClassInfo $classInfo, array $givenConstructorArguments) {
 		$className = $classInfo->getClassName();
 		$classIsSingleton = $classInfo->getIsSingleton();
-		if ($classIsSingleton && count($givenConstructorArguments) > 0) {
+		if ($classIsSingleton && !empty($givenConstructorArguments)) {
 			throw new \TYPO3\CMS\Extbase\Object\Exception('Object "' . $className . '" has explicit constructor arguments but is a singleton; this is not allowed.', 1292858051);
 		}
 		$constructorArguments = $this->getConstructorArguments($className, $classInfo, $givenConstructorArguments);
@@ -266,7 +262,7 @@ class Container implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * register a classname that should be used if a dependency is required.
-	 * e.g. used to define default class for a interface
+	 * e.g. used to define default class for an interface
 	 *
 	 * @param string $className
 	 * @param string $alternativeClassName

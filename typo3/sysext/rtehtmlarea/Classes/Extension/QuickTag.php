@@ -15,12 +15,9 @@ namespace TYPO3\CMS\Rtehtmlarea\Extension;
  */
 
 use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
-use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaBase;
 
 /**
  * CharacterMap plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class QuickTag extends RteHtmlAreaApi {
 
@@ -53,19 +50,5 @@ class QuickTag extends RteHtmlAreaApi {
 	 * @var string
 	 */
 	protected $requiredPlugins = 'TYPO3Color';
-
-	/**
-	 * Returns TRUE if the plugin is available and correctly initialized
-	 *
-	 * @param RteHtmlAreaBase $parentObject parent object
-	 * @return bool TRUE if this plugin object should be made available in the current environment and is correctly initialized
-	 */
-	public function main($parentObject) {
-		$available = parent::main($parentObject);
-		if ($this->thisConfig['disableSelectColor'] && $this->htmlAreaRTE->client['browser'] != 'gecko') {
-			$this->requiredPlugins = 'DefaultColor';
-		}
-		return $available;
-	}
 
 }

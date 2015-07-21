@@ -16,8 +16,6 @@ namespace TYPO3\CMS\Form\Validation;
 
 /**
  * Alphabetic rule
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class AlphabeticValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 
@@ -62,8 +60,7 @@ class AlphabeticValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 		if ($this->requestHandler->has($this->fieldName)) {
 			$value = $this->requestHandler->getByMethod($this->fieldName);
 			if ($this->filter === NULL) {
-				$className = \TYPO3\CMS\Form\Filter\AlphabeticFilter::class;
-				$this->filter = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($className);
+				$this->filter = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Form\Filter\AlphabeticFilter::class);
 			}
 			$this->filter->setAllowWhiteSpace($this->allowWhiteSpace);
 			if ($this->filter->filter($value) !== $value) {
@@ -92,10 +89,11 @@ class AlphabeticValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator {
 	 * Get the local language label(s) for the message
 	 * Overrides the abstract
 	 *
+	 * @param string $type
 	 * @return string The local language message label
 	 * @see \TYPO3\CMS\Form\Validation\AbstractValidator::_getLocalLanguageLabel()
 	 */
-	protected function getLocalLanguageLabel() {
+	protected function getLocalLanguageLabel($type = '') {
 		$label = static::LOCALISATION_OBJECT_NAME . '.message';
 		$messages[] = $this->localizationHandler->getLocalLanguageLabel($label);
 		if ($this->allowWhiteSpace) {

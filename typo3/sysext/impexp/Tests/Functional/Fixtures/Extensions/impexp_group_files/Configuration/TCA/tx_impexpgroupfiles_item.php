@@ -28,7 +28,7 @@ return array(
 		'showRecordFieldList' => 'sys_language_uid, l10n_parent, l10n_diffsource, hidden, title, images, image_references, flexform',
 	),
 	'types' => array(
-		'1' => array('showitem' => 'hidden, title, images, image_references, flexform, --div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.access,starttime, endtime'),
+		'1' => array('showitem' => 'hidden, title, images, image_references, flexform, --div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access,starttime, endtime'),
 	),
 	'palettes' => array(
 		'1' => array('showitem' => ''),
@@ -149,14 +149,14 @@ return array(
 															<link type="array">
 																<type>popup</type>
 																<title>Link</title>
-																<icon>link_popup.gif</icon>
+																<icon>EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_link.gif</icon>
 																<module type="array">
 																	<name>wizard_element_browser</name>
 																	<urlParameters type="array">
 																		<mode>wizard</mode>
 																	</urlParameters>
 																</module>
-																<JSopenParams>height=300,width=500,status=0,menubar=0,scrollbars=1</JSopenParams>
+																<JSopenParams>width=800,height=600,status=0,menubar=0,scrollbars=1</JSopenParams>
 															</link>
 														</wizards>
 													</config>

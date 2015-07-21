@@ -17,23 +17,21 @@
  * This script is a gateway for POST forms to \TYPO3\CMS\Core\DataHandling\DataHandler
  * that manipulates all information in the database!!
  * For syntax and API information, see the document 'TYPO3 Core APIs'
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
-define('TYPO3_MODE', 'BE');
+call_user_func(function() {
+	$classLoader = require __DIR__ . '/vendor/autoload.php';
+	(new \TYPO3\CMS\Backend\Http\Application($classLoader))->run(function() {
+		\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
+			'The entry point to data handling via DataHandler was moved to an own module. Please use BackendUtility::getModuleUrl(\'tce_db\') to link to tce_db.php / DataHandler. This script will be removed in TYPO3 CMS 8.'
+		);
 
-require __DIR__ . '/sysext/core/Classes/Core/Bootstrap.php';
-\TYPO3\CMS\Core\Core\Bootstrap::getInstance()->run('typo3/');
+		$simpleDataHandlerController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\SimpleDataHandlerController::class);
 
-\TYPO3\CMS\Core\Utility\GeneralUtility::deprecationLog(
-	'The entry point to data handling via DataHandler was moved to an own module. Please use BackendUtility::getModuleUrl(\'tce_db\') to link to tce_db.php / DataHandler. This script will be removed in TYPO3 CMS 8.'
-);
-
-$simpleDataHandlerController = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Controller\SimpleDataHandlerController::class);
-
-$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
-if ($formprotection->validateToken(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('formToken'), 'tceAction')) {
-	$simpleDataHandlerController->initClipboard();
-	$simpleDataHandlerController->main();
-}
-$simpleDataHandlerController->finish();
+		$formprotection = \TYPO3\CMS\Core\FormProtection\FormProtectionFactory::get();
+		if ($formprotection->validateToken(\TYPO3\CMS\Core\Utility\GeneralUtility::_GP('formToken'), 'tceAction')) {
+			$simpleDataHandlerController->initClipboard();
+			$simpleDataHandlerController->main();
+		}
+		$simpleDataHandlerController->finish();
+	});
+});

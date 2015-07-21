@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Implements the preview controller of the workspace module.
- *
- * @author Workspaces Team (http://forge.typo3.org/projects/show/typo3v4-workspaces)
  */
 class PreviewController extends AbstractController {
 
@@ -45,10 +43,9 @@ class PreviewController extends AbstractController {
 		$this->stageService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\StagesService::class);
 		$this->workspaceService = GeneralUtility::makeInstance(\TYPO3\CMS\Workspaces\Service\WorkspaceService::class);
 		$this->template->setExtDirectStateProvider();
-		$resourcePath = ExtensionManagementUtility::extRelPath('workspaces') . 'Resources/Public/StyleSheet/preview.css';
+		$resourcePath = ExtensionManagementUtility::extRelPath('workspaces') . 'Resources/Public/Css/preview.css';
 		$GLOBALS['TBE_STYLES']['extJS']['theme'] = $resourcePath;
 		$this->pageRenderer->loadExtJS();
-		$this->pageRenderer->enableExtJSQuickTips();
 		// Load  JavaScript:
 		$this->pageRenderer->addExtDirectCode(array(
 			'TYPO3.Workspaces',
@@ -167,7 +164,7 @@ class PreviewController extends AbstractController {
 	 * @return bool
 	 */
 	protected function isInvalidStage($stageArray) {
-		return !(is_array($stageArray) && count($stageArray) > 0);
+		return !(is_array($stageArray) && !empty($stageArray));
 	}
 
 	/**
@@ -185,7 +182,7 @@ class PreviewController extends AbstractController {
 	/**
 	 * Generates the JavaScript code for the backend,
 	 * and since we're loading a backend module outside of the actual backend
-	 * this copies parts of the backend.php
+	 * this copies parts of the index.php?M=main module
 	 *
 	 * @return string
 	 */

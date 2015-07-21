@@ -18,8 +18,6 @@ namespace TYPO3\CMS\Rsaauth\Backend;
  * This class contains a PHP OpenSSL backend for the TYPO3 RSA authentication
  * service. See class \TYPO3\CMS\Rsaauth\Backend\AbstractBackend for the information on using
  * backends.
- *
- * @author Dmitry Dulepov <dmitry@typo3.org>
  */
 class PhpBackend extends AbstractBackend {
 	/**
@@ -71,7 +69,7 @@ class PhpBackend extends AbstractBackend {
 	 *
 	 * @param string $privateKey The private key (obtained from a call to createNewKeyPair())
 	 * @param string $data Data to decrypt (base64-encoded)
-	 * @return string|NULL Decrypted data or NULL in case of a error
+	 * @return string|NULL Decrypted data or NULL in case of an error
 	 * @see \TYPO3\CMS\Rsaauth\Backend\AbstractBackend::decrypt()
 	 */
 	public function decrypt($privateKey, $data) {

@@ -26,8 +26,6 @@ use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Script class for the DB int module
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class DatabaseIntegrityView extends BaseScriptClass {
 
@@ -271,7 +269,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 		$this->view->assign('PATH_typo3', PATH_typo3);
 
 		if (GeneralUtility::_GP('_update') || GeneralUtility::_GP('_check')) {
-			$testOnly = GeneralUtility::_GP('_check') ? TRUE : FALSE;
+			$testOnly = (bool)GeneralUtility::_GP('_check');
 			// Call the functionality
 			$refIndexObj = GeneralUtility::makeInstance(ReferenceIndex::class);
 			list(,$bodyContent) = $refIndexObj->updateIndex($testOnly);
@@ -289,9 +287,13 @@ class DatabaseIntegrityView extends BaseScriptClass {
 		$searchMode = $this->MOD_SETTINGS['search'];
 		$fullsearch = GeneralUtility::makeInstance(QueryView::class);
 		$fullsearch->setFormName($this->formName);
-		$submenu = BackendUtility::getFuncMenu(0, 'SET[search]', $searchMode, $this->MOD_MENU['search']);
+		$submenu = '<div class="form-inline form-inline-spaced">';
+		$submenu .= BackendUtility::getDropdownMenu(0, 'SET[search]', $searchMode, $this->MOD_MENU['search']);
 		if ($this->MOD_SETTINGS['search'] == 'query') {
-			$submenu .= BackendUtility::getFuncMenu(0, 'SET[search_query_makeQuery]', $this->MOD_SETTINGS['search_query_makeQuery'], $this->MOD_MENU['search_query_makeQuery']) . '<br />';
+			$submenu .= BackendUtility::getDropdownMenu(0, 'SET[search_query_makeQuery]', $this->MOD_SETTINGS['search_query_makeQuery'], $this->MOD_MENU['search_query_makeQuery']) . '<br />';
+		}
+		$submenu .= '</div>';
+		if ($this->MOD_SETTINGS['search'] == 'query') {
 			$submenu .= '<div class="checkbox"><label for="checkSearch_query_smallparts">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_query_smallparts]', $this->MOD_SETTINGS['search_query_smallparts'], '', '', 'id="checkSearch_query_smallparts"') . $lang->getLL('showSQL') . '</label></div>';
 			$submenu .= '<div class="checkbox"><label for="checkSearch_result_labels">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[search_result_labels]', $this->MOD_SETTINGS['search_result_labels'], '', '', 'id="checkSearch_result_labels"') . $lang->getLL('useFormattedStrings') . '</label></div>';
 			$submenu .= '<div class="checkbox"><label for="checkLabels_noprefix">' . BackendUtility::getFuncCheck($GLOBALS['SOBE']->id, 'SET[labels_noprefix]', $this->MOD_SETTINGS['labels_noprefix'], '', '', 'id="checkLabels_noprefix"') . $lang->getLL('dontUseOrigValues') . '</label></div>';
@@ -302,6 +304,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 		$this->view->assign('searchMode', $searchMode);
 		switch ($searchMode) {
 			case 'query':
+				$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Core/QueryGenerator');
 				$this->view->assign('queryMaker', $fullsearch->queryMaker());
 				break;
 			case 'raw':
@@ -320,9 +323,8 @@ class DatabaseIntegrityView extends BaseScriptClass {
 
 		/** @var $admin DatabaseIntegrityCheck */
 		$admin = GeneralUtility::makeInstance(DatabaseIntegrityCheck::class);
-		$admin->genTree_makeHTML = 0;
 		$admin->backPath = $GLOBALS['BACK_PATH'];
-		$admin->genTree(0, '');
+		$admin->genTree(0);
 
 		// Pages stat
 		$pageStatistic = array(
@@ -364,7 +366,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 		if ($admin->fixLostRecord(GeneralUtility::_GET('fixLostRecords_table'), GeneralUtility::_GET('fixLostRecords_uid'))) {
 			$admin = GeneralUtility::makeInstance(DatabaseIntegrityCheck::class);
 			$admin->backPath = $GLOBALS['BACK_PATH'];
-			$admin->genTree(0, '');
+			$admin->genTree(0);
 			$id_list = '-1,0,' . implode(',', array_keys($admin->page_idArray));
 			$id_list = rtrim($id_list, ',');
 			$admin->lostRecords($id_list);
@@ -390,7 +392,7 @@ class DatabaseIntegrityView extends BaseScriptClass {
 				if (is_array($admin->lRecords[$t])) {
 					foreach ($admin->lRecords[$t] as $data) {
 						if (!GeneralUtility::inList($admin->lostPagesList, $data['pid'])) {
-							$lr .= '<div class="record"><a href="' . htmlspecialchars((BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=records&fixLostRecords_table=' . $t . '&fixLostRecords_uid=' . $data['uid'])) . '"><img src="' . $GLOBALS['BACK_PATH'] . 'gfx/required_h.gif" width="10" height="10" title="' . $lang->getLL('fixLostRecord') . '"></a>uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</div>';
+							$lr .= '<div class="record"><a href="' . htmlspecialchars((BackendUtility::getModuleUrl('system_dbint') . '&SET[function]=records&fixLostRecords_table=' . $t . '&fixLostRecords_uid=' . $data['uid'])) . '">' . IconUtility::getSpriteIcon('status-dialog-error', array('title' => $lang->getLL('fixLostRecord'))) . '</a>uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</div>';
 						} else {
 							$lr .= '<div class="record-noicon">uid:' . $data['uid'] . ', pid:' . $data['pid'] . ', ' . htmlspecialchars(GeneralUtility::fixed_lgd_cs(strip_tags($data['title']), 20)) . '</div>';
 						}
@@ -419,7 +421,6 @@ class DatabaseIntegrityView extends BaseScriptClass {
 	 */
 	public function func_relations() {
 		$admin = GeneralUtility::makeInstance(DatabaseIntegrityCheck::class);
-		$admin->genTree_makeHTML = 0;
 		$admin->backPath = $GLOBALS['BACK_PATH'];
 		$fkey_arrays = $admin->getGroupFields('');
 		$admin->selectNonEmptyRecordsWithFkeys($fkey_arrays);

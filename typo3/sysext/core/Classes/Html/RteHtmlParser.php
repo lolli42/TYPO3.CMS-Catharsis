@@ -18,11 +18,10 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Resource;
+use TYPO3\CMS\Frontend\Service\TypoLinkCodecService;
 
 /**
  * Class for parsing HTML for the Rich Text Editor. (also called transformations)
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 
@@ -585,7 +584,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					}
 				}
 				// Only if href, target, class and tile are the only attributes, we can alter the link!
-				if (!count($attribArray_copy)) {
+				if (empty($attribArray_copy)) {
 					// Quoting class and title attributes if they contain spaces
 					$attribArray['class'] = preg_match('/ /', $attribArray['class']) ? '"' . $attribArray['class'] . '"' : $attribArray['class'];
 					$attribArray['title'] = preg_match('/ /', $attribArray['title']) ? '"' . $attribArray['title'] . '"' : $attribArray['title'];
@@ -665,9 +664,11 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 			$external = FALSE;
 			// Block
 			if ($k % 2) {
-				$tagCode = GeneralUtility::unQuoteFilenames(trim(substr($this->getFirstTag($v), 0, -1)), TRUE);
-				$link_param = $tagCode[1];
-				$href = '';
+				// split away the first "<link" part
+				$typolink = explode(' ', substr($this->getFirstTag($v), 0, -1), 2)[1];
+				$tagCode = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($typolink);
+
+				$link_param = $tagCode['url'];
 				// Parsing the typolink data. This parsing is roughly done like in \TYPO3\CMS\Frontend\ContentObject->typolink()
 				// Parse URL:
 				$pU = parse_url($link_param);
@@ -726,7 +727,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							}
 						} else {
 							// integer or alias (alias is without slashes or periods or commas, that is 'nospace,alphanum_x,lower,unique' according to tables.php!!)
-							// Splitting the parameter by ',' and if the array counts more than 1 element it's a id/type/parameters triplet
+							// Splitting the parameter by ',' and if the array counts more than 1 element it's an id/type/parameters triplet
 							$pairParts = GeneralUtility::trimExplode(',', $link_param, TRUE);
 							$idPart = $pairParts[0];
 							$link_params_parts = explode('#', $idPart);
@@ -755,7 +756,12 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					}
 				}
 				// Setting the A-tag:
-				$bTag = '<a href="' . htmlspecialchars($href) . '"' . ($tagCode[2] && $tagCode[2] != '-' ? ' target="' . htmlspecialchars($tagCode[2]) . '"' : '') . ($tagCode[3] && $tagCode[3] != '-' ? ' class="' . htmlspecialchars($tagCode[3]) . '"' : '') . ($tagCode[4] ? ' title="' . htmlspecialchars($tagCode[4]) . '"' : '') . ($external ? ' data-htmlarea-external="1"' : '') . ($error ? ' rteerror="' . htmlspecialchars($error) . '" style="background-color: yellow; border:2px red solid; color: black;"' : '') . '>';
+				$bTag = '<a href="' . htmlspecialchars($href) . '"'
+					. ($tagCode['target'] ? ' target="' . htmlspecialchars($tagCode['target']) . '"' : '')
+					. ($tagCode['class'] ? ' class="' . htmlspecialchars($tagCode['class']) . '"' : '')
+					. ($tagCode['title'] ? ' title="' . htmlspecialchars($tagCode['title']) . '"' : '')
+					. ($external ? ' data-htmlarea-external="1"' : '')
+					. ($error ? ' rteerror="' . htmlspecialchars($error) . '" style="background-color: yellow; border:2px red solid; color: black;"' : '') . '>';
 				$eTag = '</a>';
 				// Modify parameters
 				if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc']) && is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_parsehtml_proc.php']['modifyParams_LinksRte_PostProc'])) {
@@ -883,25 +889,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 					case 'ol':
 
 					case 'ul':
-						// Transform lists into <typolist>-tags:
-						if (!$css) {
-							if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
-								$parts = $this->getAllParts($this->splitIntoBlock('LI', $this->removeFirstAndLastTag($blockSplit[$k])), 1, 0);
-								foreach ($parts as $k2 => $value) {
-									$parts[$k2] = preg_replace('/[' . LF . CR . ']+/', '', $parts[$k2]);
-									// remove all linesbreaks!
-									$parts[$k2] = $this->defaultTStagMapping($parts[$k2], 'db');
-									$parts[$k2] = $this->cleanFontTags($parts[$k2], 0, 0, 0);
-									$parts[$k2] = $this->HTMLcleaner_db($parts[$k2], strtolower($this->procOptions['allowTagsInTypolists'] ? $this->procOptions['allowTagsInTypolists'] : 'br,font,b,i,u,a,img,span,strong,em'));
-								}
-								if ($tagName == 'ol') {
-									$params = ' type="1"';
-								} else {
-									$params = '';
-								}
-								$blockSplit[$k] = '<typolist' . $params . '>' . LF . implode(LF, $parts) . LF . '</typolist>' . $lastBR;
-							}
-						} else {
+						if ($css) {
 							$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
 						}
 						break;
@@ -928,12 +916,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							$attribArray = $this->get_tag_attributes_classic($tag);
 							// Processing inner content here:
 							$innerContent = $this->HTMLcleaner_db($this->removeFirstAndLastTag($blockSplit[$k]));
-							if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
-								$type = (int)substr($tagName, 1);
-								$blockSplit[$k] = '<typohead' . ($type != 6 ? ' type="' . $type . '"' : '') . ($attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '') . ($attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '') . '>' . $innerContent . '</typohead>' . $lastBR;
-							} else {
-								$blockSplit[$k] = '<' . $tagName . ($attribArray['align'] ? ' align="' . htmlspecialchars($attribArray['align']) . '"' : '') . ($attribArray['class'] ? ' class="' . htmlspecialchars($attribArray['class']) . '"' : '') . '>' . $innerContent . '</' . $tagName . '>' . $lastBR;
-							}
+							$blockSplit[$k] = '<' . $tagName . ($attribArray['align'] ? ' align="' . htmlspecialchars($attribArray['align']) . '"' : '') . ($attribArray['class'] ? ' class="' . htmlspecialchars($attribArray['class']) . '"' : '') . '>' . $innerContent . '</' . $tagName . '>' . $lastBR;
 						} else {
 							// Eliminate true linebreaks inside Hx tags
 							$blockSplit[$k] = preg_replace(('/[' . LF . CR . ']+/'), ' ', $this->transformStyledATags($blockSplit[$k])) . $lastBR;
@@ -1000,7 +983,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 */
 	public function TS_transform_rte($value, $css = 0) {
 		// Split the content from database by the occurrence of the block elements
-		$blockElementList = 'TABLE,BLOCKQUOTE,TYPOLIST,TYPOHEAD,' . ($this->procOptions['preserveDIVSections'] ? 'DIV,' : '') . $this->blockElementList;
+		$blockElementList = 'TABLE,BLOCKQUOTE,' . ($this->procOptions['preserveDIVSections'] ? 'DIV,' : '') . $this->blockElementList;
 		$blockSplit = $this->splitIntoBlock($blockElementList, $value);
 		// Traverse the blocks
 		foreach ($blockSplit as $k => $v) {
@@ -1030,30 +1013,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 
 					case 'aside':
 						$blockSplit[$k] = $tag . $this->TS_transform_rte($this->removeFirstAndLastTag($blockSplit[$k]), $css) . '</' . $tagName . '>';
-						break;
-					case 'typolist':
-						// Transform typolist blocks into OL/UL lists. Type 1 is expected to be numerical block
-						if (!isset($this->procOptions['typolist']) || $this->procOptions['typolist']) {
-							$tListContent = $this->removeFirstAndLastTag($blockSplit[$k]);
-							$tListContent = preg_replace('/^[ ]*' . LF . '/', '', $tListContent);
-							$tListContent = preg_replace('/' . LF . '[ ]*$/', '', $tListContent);
-							$lines = explode(LF, $tListContent);
-							$typ = $attribArray['type'] == 1 ? 'ol' : 'ul';
-							$blockSplit[$k] = '<' . $typ . '>' . LF . '<li>' . implode(('</li>' . LF . '<li>'), $lines) . '</li>' . '</' . $typ . '>';
-						}
-						break;
-					case 'typohead':
-						// Transform typohead into Hx tags.
-						if (!isset($this->procOptions['typohead']) || $this->procOptions['typohead']) {
-							$tC = $this->removeFirstAndLastTag($blockSplit[$k]);
-							$typ = \TYPO3\CMS\Core\Utility\MathUtility::forceIntegerInRange($attribArray['type'], 0, 6);
-							if (!$typ) {
-								$typ = 6;
-							}
-							$align = $attribArray['align'] ? ' align="' . $attribArray['align'] . '"' : '';
-							$class = $attribArray['class'] ? ' class="' . $attribArray['class'] . '"' : '';
-							$blockSplit[$k] = '<h' . $typ . $align . $class . '>' . $tC . '</h' . $typ . '>';
-						}
 						break;
 				}
 				$blockSplit[$k + 1] = preg_replace('/^[ ]*' . LF . '/', '', $blockSplit[$k + 1]);
@@ -1265,10 +1224,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 	 * @see setDivTags()
 	 */
 	public function divideIntoLines($value, $count = 5, $returnArray = FALSE) {
-		// Internalize font tags (move them from OUTSIDE p/div to inside it that is the case):
-		if ($this->procOptions['internalizeFontTags']) {
-			$value = $this->internalizeFontTags($value);
-		}
 		// Setting configuration for processing:
 		$allowTagsOutside = GeneralUtility::trimExplode(',', strtolower($this->procOptions['allowTagsOutside'] ? 'hr,' . $this->procOptions['allowTagsOutside'] : 'hr,img'), TRUE);
 		$remapParagraphTag = strtoupper($this->procOptions['remapParagraphTag']);
@@ -1314,7 +1269,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						$attribs = $this->get_tag_attributes($fTag);
 						// Keep attributes (lowercase)
 						$newAttribs = array();
-						if (count($keepAttribListArr)) {
+						if (!empty($keepAttribListArr)) {
 							foreach ($keepAttribListArr as $keepA) {
 								if (isset($attribs[0][$keepA])) {
 									$newAttribs[$keepA] = $attribs[0][$keepA];
@@ -1329,7 +1284,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						// CLASS attribute:
 						// Set to whatever value
 						if (!$this->procOptions['skipClass'] && trim($attribs[0]['class']) !== '') {
-							if (!count($this->allowedClasses) || in_array($attribs[0]['class'], $this->allowedClasses)) {
+							if (empty($this->allowedClasses) || in_array($attribs[0]['class'], $this->allowedClasses)) {
 								$newAttribs['class'] = $attribs[0]['class'];
 							} else {
 								$classes = GeneralUtility::trimExplode(' ', $attribs[0]['class'], TRUE);
@@ -1339,7 +1294,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 										$newClasses[] = $class;
 									}
 								}
-								if (count($newClasses)) {
+								if (!empty($newClasses)) {
 									$newAttribs['class'] = implode(' ', $newClasses);
 								}
 							}
@@ -1347,7 +1302,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 						// Remove any line break char (10 or 13)
 						$subLines[$sk] = preg_replace('/' . LF . '|' . CR . '/', '', $subLines[$sk]);
 						// If there are any attributes or if we are supposed to remap the tag, then do so:
-						if (count($newAttribs) && $remapParagraphTag !== '1') {
+						if (!empty($newAttribs) && $remapParagraphTag !== '1') {
 							if ($remapParagraphTag === 'P') {
 								$tagName = 'p';
 							}
@@ -1429,49 +1384,6 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 		return implode(LF, $parts);
 	}
 
-	/**
-	 * This splits the $value in font-tag chunks.
-	 * If there are any <P>/<DIV> sections inside of them, the font-tag is wrapped AROUND the content INSIDE of the P/DIV sections and the outer font-tag is removed.
-	 * This functions seems to be a good choice for pre-processing content if it has been pasted into the RTE from eg. star-office.
-	 * In that case the font-tags are normally on the OUTSIDE of the sections.
-	 * This function is used by eg. divideIntoLines() if the procesing option 'internalizeFontTags' is set.
-	 *
-	 * @param string Input content
-	 * @return string Output content
-	 * @see divideIntoLines()
-	 */
-	public function internalizeFontTags($value) {
-		// Splitting into font tag blocks:
-		$fontSplit = $this->splitIntoBlock('font', $value);
-		foreach ($fontSplit as $k => $v) {
-			// Inside
-			if ($k % 2) {
-				// Fint font-tag
-				$fTag = $this->getFirstTag($v);
-				$divSplit_sub = $this->splitIntoBlock('div,p', $this->removeFirstAndLastTag($v), 1);
-				// If there were div/p sections inside the font-tag, do something about it...
-				if (count($divSplit_sub) > 1) {
-					// Traverse those sections:
-					foreach ($divSplit_sub as $k2 => $v2) {
-						// Inside
-						if ($k2 % 2) {
-							// Fint font-tag
-							$div_p = $this->getFirstTag($v2);
-							// Fint font-tag
-							$div_p_tagname = $this->getFirstTagName($v2);
-							// ... and remove it from original.
-							$v2 = $this->removeFirstAndLastTag($v2);
-							$divSplit_sub[$k2] = $div_p . $fTag . $v2 . '</font>' . '</' . $div_p_tagname . '>';
-						} elseif (trim(strip_tags($v2))) {
-							$divSplit_sub[$k2] = $fTag . $v2 . '</font>';
-						}
-					}
-					$fontSplit[$k] = implode('', $divSplit_sub);
-				}
-			}
-		}
-		return implode('', $fontSplit);
-	}
 
 	/**
 	 * Returns SiteURL based on thisScript.

@@ -20,8 +20,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Global error handler for TYPO3
  *
  * This file is a backport from TYPO3 Flow
- *
- * @author Rupert Germann <rupi@gmx.li>
  */
 class ErrorHandler implements ErrorHandlerInterface {
 
@@ -31,6 +29,13 @@ class ErrorHandler implements ErrorHandlerInterface {
 	 * @var array
 	 */
 	protected $exceptionalErrors = array();
+
+	/**
+	 * Whether to write a flash message in case of an error
+	 *
+	 * @var bool
+	 */
+	protected $debugMode = FALSE;
 
 	/**
 	 * Registers this class as default error handler
@@ -52,6 +57,13 @@ class ErrorHandler implements ErrorHandlerInterface {
 	 */
 	public function setExceptionalErrors($exceptionalErrors) {
 		$this->exceptionalErrors = (int)$exceptionalErrors;
+	}
+
+	/**
+	 * @param bool $debugMode
+	 */
+	public function setDebugMode($debugMode) {
+		$this->debugMode = (bool)$debugMode;
 	}
 
 	/**
@@ -92,13 +104,6 @@ class ErrorHandler implements ErrorHandlerInterface {
 					'line ' . $errorLine;
 				die($message);
 			}
-			// We need to manually require the exception classes in case
-			// the autoloader is not available at this point yet.
-			// @see http://forge.typo3.org/issues/23444
-			if (!class_exists(\TYPO3\CMS\Core\Error\Exception::class, FALSE)) {
-				require_once PATH_site . 'typo3/sysext/core/Classes/Exception.php';
-				require_once PATH_site . 'typo3/sysext/core/Classes/Error/Exception.php';
-			}
 			throw new Exception($message, 1);
 		} else {
 			switch ($errorLevel) {
@@ -114,26 +119,27 @@ class ErrorHandler implements ErrorHandlerInterface {
 					$severity = 0;
 			}
 			$logTitle = 'Core: Error handler (' . TYPO3_MODE . ')';
+			$message = $logTitle . ': ' . $message;
 			// Write error message to the configured syslogs,
 			// see: $TYPO3_CONF_VARS['SYS']['systemLog']
 			if ($errorLevel & $GLOBALS['TYPO3_CONF_VARS']['SYS']['syslogErrorReporting']) {
-				GeneralUtility::sysLog($message, $logTitle, $severity);
+				GeneralUtility::sysLog($message, 'core', $severity + 1);
 			}
 			// Write error message to devlog extension(s),
 			// see: $TYPO3_CONF_VARS['SYS']['enable_errorDLOG']
 			if (TYPO3_ERROR_DLOG) {
-				GeneralUtility::devLog($message, $logTitle, $severity + 1);
+				GeneralUtility::devLog($message, 'core', $severity + 1);
 			}
 			// Write error message to TSlog (admin panel)
 			if (is_object($GLOBALS['TT'])) {
-				$GLOBALS['TT']->setTSlogMessage($logTitle . ': ' . $message, $severity + 1);
+				$GLOBALS['TT']->setTSlogMessage($message, $severity + 1);
 			}
 			// Write error message to sys_log table (ext: belog, Tools->Log)
 			if ($errorLevel & $GLOBALS['TYPO3_CONF_VARS']['SYS']['belogErrorReporting']) {
 				// Silently catch in case an error occurs before a database connection exists,
 				// but DatabaseConnection fails to connect.
 				try {
-					$this->writeLog($logTitle . ': ' . $message, $severity);
+					$this->writeLog($message, $severity);
 				} catch (\Exception $e) {
 				}
 			}
@@ -141,8 +147,7 @@ class ErrorHandler implements ErrorHandlerInterface {
 				// Let the internal handler continue. This will stop the script
 				return FALSE;
 			} else {
-				// Add error message to the flashmessageQueue
-				if (defined('TYPO3_ERRORHANDLER_MODE') && TYPO3_ERRORHANDLER_MODE == 'debug') {
+				if ($this->debugMode) {
 					/** @var $flashMessage \TYPO3\CMS\Core\Messaging\FlashMessage */
 					$flashMessage = GeneralUtility::makeInstance(
 						\TYPO3\CMS\Core\Messaging\FlashMessage::class,

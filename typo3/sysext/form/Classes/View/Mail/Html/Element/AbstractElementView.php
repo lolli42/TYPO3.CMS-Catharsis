@@ -16,12 +16,11 @@ namespace TYPO3\CMS\Form\View\Mail\Html\Element;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Form\Domain\Model\Element\AbstractElement;
+use TYPO3\CMS\Form\ObjectFactory;
 use TYPO3\CMS\Form\View\Mail\Html\Additional\AdditionalElementView;
 
 /**
  * Abstract class for the form elements view
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 abstract class AbstractElementView {
 
@@ -119,11 +118,10 @@ abstract class AbstractElementView {
 							}
 							break;
 						case 'inputvalue':
-							if (array_key_exists('checked', $this->model->getAllowedAttributes())) {
-								if (!$this->model->hasAttribute('checked')) {
-									$emptyElement = TRUE;
-								}
-							} elseif (array_key_exists('selected', $this->model->getAllowedAttributes()) && !$this->model->hasAttribute('selected')) {
+							if (
+								(array_key_exists('checked', $this->model->getAllowedAttributes()) && !$this->model->hasAttribute('checked'))
+								|| (array_key_exists('selected', $this->model->getAllowedAttributes()) && !$this->model->hasAttribute('selected'))
+							) {
 								$emptyElement = TRUE;
 							} else {
 								$inputValue = $this->getInputValue();
@@ -284,7 +282,7 @@ abstract class AbstractElementView {
 	protected function createAdditional($class) {
 		$class = strtolower((string)$class);
 		$className = 'TYPO3\\CMS\\Form\\View\\Mail\\Html\\Additional\\' . ucfirst($class) . 'AdditionalElementView';
-		return GeneralUtility::makeInstance($className, $this->model);
+		return ObjectFactory::createFormObject($className, $this->model);
 	}
 
 	/**
@@ -352,7 +350,7 @@ abstract class AbstractElementView {
 
 	/**
 	 * Read the noWrap value of an element
-	 * if TRUE the element does not need a element wrap
+	 * if TRUE the element does not need an element wrap
 	 * like <li>element</li>
 	 *
 	 * @return bool

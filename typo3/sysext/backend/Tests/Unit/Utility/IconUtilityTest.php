@@ -18,9 +18,6 @@ use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\IconUtilityFixture;
 
 /**
  * Test case
- *
- * @author Fabien Udriot <fabien.udriot@ecodev.ch>
- * @author Oliver Klee <typo3-coding@oliverklee.de>
  */
 class IconUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -494,7 +491,7 @@ class IconUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Tests whether a overrideIconOverlay hook is called.
+	 * Tests whether an overrideIconOverlay hook is called.
 	 *
 	 * @test
 	 */
@@ -685,7 +682,7 @@ class IconUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	}
 
 	/**
-	 * Tests whether a overrideResourceIcon hook is called.
+	 * Tests whether an overrideResourceIcon hook is called.
 	 *
 	 * @test
 	 */

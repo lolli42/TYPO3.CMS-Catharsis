@@ -2,6 +2,7 @@
 return array(
 	'ctrl' => array(
 		'label' => 'username',
+		'descriptionColumn' => 'description',
 		'tstamp' => 'tstamp',
 		'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users',
 		'crdate' => 'crdate',
@@ -31,7 +32,7 @@ return array(
 		'searchFields' => 'username,email,realName'
 	),
 	'interface' => array(
-		'showRecordFieldList' => 'username,usergroup,db_mountpoints,file_mountpoints,admin,options,file_permissions,userMods,lockToDomain,realName,email,disable,starttime,endtime,lastlogin'
+		'showRecordFieldList' => 'username,description,usergroup,db_mountpoints,file_mountpoints,admin,options,file_permissions,userMods,lockToDomain,realName,email,disable,starttime,endtime,lastlogin'
 	),
 	'columns' => array(
 		'username' => array(
@@ -41,6 +42,15 @@ return array(
 				'size' => '20',
 				'max' => '50',
 				'eval' => 'nospace,trim,lower,unique,required'
+			)
+		),
+		'description' => array(
+			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
+			'config' => array(
+				'type' => 'text',
+				'rows' => 5,
+				'cols' => 30,
+				'max' => '2000',
 			)
 		),
 		'password' => array(
@@ -71,13 +81,13 @@ return array(
 							'name' => 'wizard_edit',
 						),
 						'popup_onlyOpenIfSelected' => 1,
-						'icon' => 'edit2.gif',
-						'JSopenParams' => 'height=350,width=580,status=0,menubar=0,scrollbars=1'
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_edit.gif',
+						'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
 					),
 					'add' => array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup_add_title',
-						'icon' => 'add.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_add.gif',
 						'params' => array(
 							'table' => 'be_groups',
 							'pid' => '0',
@@ -90,7 +100,7 @@ return array(
 					'list' => array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.usergroup_list_title',
-						'icon' => 'list.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_list.gif',
 						'params' => array(
 							'table' => 'be_groups',
 							'pid' => '0'
@@ -100,6 +110,14 @@ return array(
 						)
 					)
 				)
+			)
+		),
+		'avatar' => array(
+			'label' => 'LLL:EXT:lang/locallang_tca.xlf:be_users.avatar',
+			'config' => \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::getFileFieldTCAConfig(
+				'avatar',
+				array('maxitems' => 1),
+				$GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext']
 			)
 		),
 		'lockToDomain' => array(
@@ -147,14 +165,14 @@ return array(
 						'module' => array(
 							'name' => 'wizard_edit',
 						),
-						'icon' => 'edit2.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_edit.gif',
 						'popup_onlyOpenIfSelected' => 1,
-						'JSopenParams' => 'height=350,width=580,status=0,menubar=0,scrollbars=1'
+						'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
 					),
 					'add' => array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_add_title',
-						'icon' => 'add.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_add.gif',
 						'params' => array(
 							'table' => 'sys_filemounts',
 							'pid' => '0',
@@ -167,7 +185,7 @@ return array(
 					'list' => array(
 						'type' => 'script',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:file_mountpoints_list_title',
-						'icon' => 'list.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_list.gif',
 						'params' => array(
 							'table' => 'sys_filemounts',
 							'pid' => '0'
@@ -247,6 +265,7 @@ return array(
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_write', 'writeFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_add', 'addFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_rename', 'renameFile', 'mimetypes-other-other'),
+					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_replace', 'replaceFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_move', 'moveFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.file_permissions.files_copy', 'copyFile', 'mimetypes-other-other'),
 					array('LLL:EXT:lang/locallang_tca.xlf:be_groups.fileoper_perms_unzip', 'unzipFile', 'mimetypes-other-other'),
@@ -255,7 +274,7 @@ return array(
 				'renderMode' => 'checkbox',
 				'size' => 17,
 				'maxitems' => 17,
-				'default' => 'readFolder,writeFolder,addFolder,renameFolder,moveFolder,deleteFolder,readFile,writeFile,addFile,renameFile,moveFile,files_copy,deleteFile'
+				'default' => 'readFolder,writeFolder,addFolder,renameFolder,moveFolder,deleteFolder,readFile,writeFile,addFile,renameFile,replaceFile,moveFile,files_copy,deleteFile'
 			)
 		),
 		'workspace_perms' => array(
@@ -364,16 +383,24 @@ return array(
 				'minitems' => 0,
 				'maxitems' => 9999
 			)
+		),
+		'description' => array(
+			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
+			'config' => array(
+				'type' => 'text',
+				'rows' => 5,
+				'cols' => 30
+			)
 		)
 	),
 	'types' => array(
-		'0' => array('showitem' => 'disable, username, password, usergroup, admin, realName, email, lang, lastlogin,
+		'0' => array('showitem' => 'disable, username, password, description, avatar, usergroup, admin, realName, email, lang, lastlogin,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.rights, userMods, allowed_languages,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.mounts_and_workspaces, workspace_perms, db_mountpoints, options, file_mountpoints, file_permissions, category_perms,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.options, lockToDomain, disableIPlock, TSconfig,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.access, starttime,endtime,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.extended'),
-		'1' => array('showitem' => 'disable, username, password, usergroup, admin, realName, email, lang, lastlogin,
+		'1' => array('showitem' => 'disable, username, password, avatar,description, usergroup, admin, realName, email, lang, lastlogin,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.options, disableIPlock, TSconfig, db_mountpoints, options, file_mountpoints,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.access, starttime,endtime,
 			--div--;LLL:EXT:lang/locallang_tca.xlf:be_users.tabs.extended')

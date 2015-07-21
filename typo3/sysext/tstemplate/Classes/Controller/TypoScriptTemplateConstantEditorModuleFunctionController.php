@@ -32,8 +32,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  * $GLOBALS['TYPO3_CONF_VARS']['MODS']['web_ts']['onlineResourceDir'] = 'fileadmin/fonts/';
  * // This is the path (must be in "fileadmin/" !!) where the web_ts/constant-editor submodule fetches online resources.
  * Put fonts (ttf) and standard images here!
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractFunctionModule {
 
@@ -124,7 +122,7 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
 			$tplRow = $this->getTemplateRow();
 			$theConstants = $this->getConstants();
 
-			$this->pObj->doc->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Tstemplate/ConstantEditor');
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Tstemplate/ConstantEditor');
 			$saveId = $tplRow['_ORIG_uid'] ? $tplRow['_ORIG_uid'] : $tplRow['uid'];
 			// Update template ?
 			if (GeneralUtility::_POST('submit') || MathUtility::canBeInterpretedAsInteger(GeneralUtility::_POST('submit_x')) && MathUtility::canBeInterpretedAsInteger(GeneralUtility::_POST('submit_y'))) {
@@ -157,8 +155,10 @@ class TypoScriptTemplateConstantEditorModuleFunctionController extends AbstractF
 				$theOutput .= $this->pObj->doc->section('', $manyTemplatesMenu);
 			}
 			$theOutput .= $this->pObj->doc->spacer(10);
-			if (count($this->pObj->MOD_MENU['constant_editor_cat'])) {
-				$menu = BackendUtility::getFuncMenu($this->pObj->id, 'SET[constant_editor_cat]', $this->pObj->MOD_SETTINGS['constant_editor_cat'], $this->pObj->MOD_MENU['constant_editor_cat']);
+			if (!empty($this->pObj->MOD_MENU['constant_editor_cat'])) {
+				$menu = '<div class="form-inline form-inline-spaced">';
+				$menu .= BackendUtility::getDropdownMenu($this->pObj->id, 'SET[constant_editor_cat]', $this->pObj->MOD_SETTINGS['constant_editor_cat'], $this->pObj->MOD_MENU['constant_editor_cat']);
+				$menu .= '</div>';
 				$theOutput .= $this->pObj->doc->section($lang->getLL('category', TRUE), '<span class="text-nowrap">' . $menu . '</span>', FALSE);
 			} else {
 				$theOutput .= $this->pObj->doc->section($lang->getLL('noConstants', TRUE), $lang->getLL('noConstantsDescription', TRUE), FALSE, FALSE, 1);

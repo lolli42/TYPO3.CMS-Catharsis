@@ -21,6 +21,7 @@ return array(
 		'languageField' => 'sys_language_uid',
 		'transOrigPointerField' => 'l10n_parent',
 		'transOrigDiffSourceField' => 'l10n_diffsource',
+		'rootLevel' => -1,
 		// records can and should be edited in workspaces
 		'shadowColumnsForNewPlaceholders' => 'tablenames,fieldname,uid_local,uid_foreign',
 		'enablecolumns' => array(
@@ -152,7 +153,7 @@ return array(
 			)
 		),
 		'title' => array(
-			'l10n_mode' => 'mergeIfNotBlank',
+			'l10n_mode' => 'prefixLangTitle',
 			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.title',
 			'config' => array(
@@ -165,7 +166,6 @@ return array(
 			)
 		),
 		'link' => array(
-			'l10n_mode' => 'mergeIfNotBlank',
 			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
 			'config' => array(
@@ -176,14 +176,14 @@ return array(
 					'link' => array(
 						'type' => 'popup',
 						'title' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.link',
-						'icon' => 'link_popup.gif',
+						'icon' => 'EXT:backend/Resources/Public/Images/FormFieldWizard/wizard_link.gif',
 						'module' => array(
 							'name' => 'wizard_element_browser',
 							'urlParameters' => array(
 								'mode' => 'wizard'
 							)
 						),
-						'JSopenParams' => 'height=300,width=500,status=0,menubar=0,scrollbars=1'
+						'JSopenParams' => 'width=800,height=600,status=0,menubar=0,scrollbars=1'
 					)
 				),
 				'softref' => 'typolink'
@@ -191,7 +191,7 @@ return array(
 		),
 		'description' => array(
 			// This is used for captions in the frontend
-			'l10n_mode' => 'mergeIfNotBlank',
+			'l10n_mode' => 'prefixLangTitle',
 			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.description',
 			'config' => array(
@@ -205,7 +205,7 @@ return array(
 			)
 		),
 		'alternative' => array(
-			'l10n_mode' => 'mergeIfNotBlank',
+			'l10n_mode' => 'prefixLangTitle',
 			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.alternative',
 			'config' => array(
@@ -260,11 +260,11 @@ return array(
 		)
 	),
 	'palettes' => array(
-		// Used for basic overlays: having a file list etc
+		// Used for basic overlays: having a filelist etc
 		'basicoverlayPalette' => array(
 			'showitem' => 'title,description',
 		),
-		// Used for everything that is an image (because it has a link and a alternative text)
+		// Used for everything that is an image (because it has a link and an alternative text)
 		'imageoverlayPalette' => array(
 			'showitem' => '
 				title,alternative,--linebreak--,

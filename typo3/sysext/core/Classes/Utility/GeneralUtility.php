@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Core\Utility;
 use TYPO3\CMS\Core\Core\ApplicationContext;
 use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
+use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
@@ -31,8 +32,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
  * The class is intended to be used without creating an instance of it.
  * So: Don't instantiate - call functions with "\TYPO3\CMS\Core\Utility\GeneralUtility::" prefixed the function name.
  * So use \TYPO3\CMS\Core\Utility\GeneralUtility::[method-name] to refer to the functions, eg. '\TYPO3\CMS\Core\Utility\GeneralUtility::milliseconds()'
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class GeneralUtility {
 
@@ -370,11 +369,11 @@ class GeneralUtility {
 	 */
 	static public function cmpIPv4($baseIP, $list) {
 		$IPpartsReq = explode('.', $baseIP);
-		if (count($IPpartsReq) == 4) {
+		if (count($IPpartsReq) === 4) {
 			$values = self::trimExplode(',', $list, TRUE);
 			foreach ($values as $test) {
 				$testList = explode('/', $test);
-				if (count($testList) == 2) {
+				if (count($testList) === 2) {
 					list($test, $mask) = $testList;
 				} else {
 					$mask = FALSE;
@@ -421,7 +420,7 @@ class GeneralUtility {
 		$values = self::trimExplode(',', $list, TRUE);
 		foreach ($values as $test) {
 			$testList = explode('/', $test);
-			if (count($testList) == 2) {
+			if (count($testList) === 2) {
 				list($test, $mask) = $testList;
 			} else {
 				$mask = FALSE;
@@ -501,7 +500,7 @@ class GeneralUtility {
 		}
 		// Count 2 if if address has hidden zero blocks
 		$chunks = explode('::', $address);
-		if (count($chunks) == 2) {
+		if (count($chunks) === 2) {
 			$chunksLeft = explode(':', $chunks[0]);
 			$chunksRight = explode(':', $chunks[1]);
 			$left = count($chunksLeft);
@@ -621,7 +620,9 @@ class GeneralUtility {
 		foreach ($values as $test) {
 			$hostNameParts = explode('.', $test);
 			// To match hostNameParts can only be shorter (in case of wildcards) or equal
-			if (count($hostNameParts) > count($baseHostNameParts)) {
+			$hostNamePartsCount = count($hostNameParts);
+			$baseHostNamePartsCount = count($baseHostNameParts);
+			if ($hostNamePartsCount > $baseHostNamePartsCount) {
 				continue;
 			}
 			$yes = TRUE;
@@ -631,10 +632,10 @@ class GeneralUtility {
 					// Wildcard valid for one or more hostname-parts
 					$wildcardStart = $index + 1;
 					// Wildcard as last/only part always matches, otherwise perform recursive checks
-					if ($wildcardStart < count($hostNameParts)) {
+					if ($wildcardStart < $hostNamePartsCount) {
 						$wildcardMatched = FALSE;
 						$tempHostName = implode('.', array_slice($hostNameParts, $index + 1));
-						while ($wildcardStart < count($baseHostNameParts) && !$wildcardMatched) {
+						while ($wildcardStart < $baseHostNamePartsCount && !$wildcardMatched) {
 							$tempBaseHostName = implode('.', array_slice($baseHostNameParts, $wildcardStart));
 							$wildcardMatched = self::cmpFQDN($tempBaseHostName, $tempHostName);
 							$wildcardStart++;
@@ -857,7 +858,7 @@ class GeneralUtility {
 	 */
 	static public function dirname($path) {
 		$p = self::revExplode('/', $path, 2);
-		return count($p) == 2 ? $p[0] : '';
+		return count($p) === 2 ? $p[0] : '';
 	}
 
 	/**
@@ -869,8 +870,10 @@ class GeneralUtility {
 	 * @param int $B Offset value 0-255
 	 * @return string A hexadecimal color code, #xxxxxx, modified according to input vars
 	 * @see modifyHTMLColorAll()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function modifyHTMLColor($color, $R, $G, $B) {
+		self::logDeprecatedFunction();
 		// This takes a hex-color (# included!) and adds $R, $G and $B to the HTML-color (format: #xxxxxx) and returns the new color
 		$nR = MathUtility::forceIntegerInRange(hexdec(substr($color, 1, 2)) + $R, 0, 255);
 		$nG = MathUtility::forceIntegerInRange(hexdec(substr($color, 3, 2)) + $G, 0, 255);
@@ -885,8 +888,10 @@ class GeneralUtility {
 	 * @param int $all Offset value 0-255 for all three channels.
 	 * @return string A hexadecimal color code, #xxxxxx, modified according to input vars
 	 * @see modifyHTMLColor()
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function modifyHTMLColorAll($color, $all) {
+		self::logDeprecatedFunction();
 		return self::modifyHTMLColor($color, $all, $all, $all);
 	}
 
@@ -1079,8 +1084,10 @@ class GeneralUtility {
 	 *   by || with the rest in this function.
 	 *
 	 * @return bool TRUE if mail() does not accept recipient name
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function isBrokenEmailEnvironment() {
+		self::logDeprecatedFunction();
 		return TYPO3_OS == 'WIN' || FALSE !== strpos(ini_get('sendmail_path'), 'mini_sendmail');
 	}
 
@@ -1089,8 +1096,10 @@ class GeneralUtility {
 	 *
 	 * @param string $address Address to adjust
 	 * @return string Adjusted address
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function normalizeMailAddress($address) {
+		self::logDeprecatedFunction();
 		if (self::isBrokenEmailEnvironment() && FALSE !== ($pos1 = strrpos($address, '<'))) {
 			$pos2 = strpos($address, '>', $pos1);
 			$address = substr($address, $pos1 + 1, ($pos2 ? $pos2 : strlen($address)) - $pos1 - 1);
@@ -1105,8 +1114,10 @@ class GeneralUtility {
 	 *
 	 * @param string $content Input string to be formatted.
 	 * @return string Formatted for <textarea>-tags
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function formatForTextarea($content) {
+		self::logDeprecatedFunction();
 		return LF . htmlspecialchars($content);
 	}
 
@@ -1886,15 +1897,18 @@ class GeneralUtility {
 	 *
 	 * @param string $string XML data input
 	 * @param int $depth Number of element levels to resolve the XML into an array. Any further structure will be set as XML.
+	 * @param array $parserOptions Options that will be passed to PHP's xml_parser_set_option()
 	 * @return mixed The array with the parsed structure unless the XML parser returns with an error in which case the error message string is returned.
-	 * @author bisqwit at iki dot fi dot not dot for dot ads dot invalid / http://dk.php.net/xml_parse_into_struct + kasperYYYY@typo3.com
 	 */
-	static public function xml2tree($string, $depth = 999) {
+	static public function xml2tree($string, $depth = 999, $parserOptions = array()) {
 		$parser = xml_parser_create();
 		$vals = array();
 		$index = array();
 		xml_parser_set_option($parser, XML_OPTION_CASE_FOLDING, 0);
 		xml_parser_set_option($parser, XML_OPTION_SKIP_WHITE, 0);
+		foreach ($parserOptions as $option => $value) {
+			xml_parser_set_option($parser, $option, $value);
+		}
 		xml_parse_into_struct($parser, $string, $vals, $index);
 		if (xml_get_error_code($parser)) {
 			return 'Line ' . xml_get_current_line_number($parser) . ': ' . xml_error_string(xml_get_error_code($parser));
@@ -2578,56 +2592,55 @@ Connection: close
 	 * @return mixed TRUE on success, FALSE on error, always TRUE on Windows OS
 	 */
 	static public function fixPermissions($path, $recursive = FALSE) {
-		if (TYPO3_OS != 'WIN') {
-			$result = FALSE;
-			// Make path absolute
-			if (!self::isAbsPath($path)) {
-				$path = self::getFileAbsFileName($path, FALSE);
+		if (TYPO3_OS === 'WIN') {
+			return TRUE;
+		}
+		$result = FALSE;
+		// Make path absolute
+		if (!self::isAbsPath($path)) {
+			$path = self::getFileAbsFileName($path, FALSE);
+		}
+		if (self::isAllowedAbsPath($path)) {
+			if (@is_file($path)) {
+				$targetFilePermissions = isset($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'])
+					? octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'])
+					: octdec('0644');
+				// "@" is there because file is not necessarily OWNED by the user
+				$result = @chmod($path, $targetFilePermissions);
+			} elseif (@is_dir($path)) {
+				$targetDirectoryPermissions = isset($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'])
+					? octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'])
+					: octdec('0755');
+				// "@" is there because file is not necessarily OWNED by the user
+				$result = @chmod($path, $targetDirectoryPermissions);
 			}
-			if (self::isAllowedAbsPath($path)) {
-				if (@is_file($path)) {
-					$targetFilePermissions = isset($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'])
-						? octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['fileCreateMask'])
-						: octdec('0644');
-					// "@" is there because file is not necessarily OWNED by the user
-					$result = @chmod($path, $targetFilePermissions);
-				} elseif (@is_dir($path)) {
-					$targetDirectoryPermissions = isset($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'])
-						? octdec($GLOBALS['TYPO3_CONF_VARS']['BE']['folderCreateMask'])
-						: octdec('0755');
-					// "@" is there because file is not necessarily OWNED by the user
-					$result = @chmod($path, $targetDirectoryPermissions);
-				}
-				// Set createGroup if not empty
-				if (
-					isset($GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'])
-					&& $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] !== ''
-				) {
-					// "@" is there because file is not necessarily OWNED by the user
-					$changeGroupResult = @chgrp($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup']);
-					$result = $changeGroupResult ? $result : FALSE;
-				}
-				// Call recursive if recursive flag if set and $path is directory
-				if ($recursive && @is_dir($path)) {
-					$handle = opendir($path);
-					while (($file = readdir($handle)) !== FALSE) {
-						$recursionResult = NULL;
-						if ($file !== '.' && $file !== '..') {
-							if (@is_file(($path . '/' . $file))) {
-								$recursionResult = self::fixPermissions($path . '/' . $file);
-							} elseif (@is_dir(($path . '/' . $file))) {
-								$recursionResult = self::fixPermissions($path . '/' . $file, TRUE);
-							}
-							if (isset($recursionResult) && !$recursionResult) {
-								$result = FALSE;
-							}
+			// Set createGroup if not empty
+			if (
+				isset($GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'])
+				&& $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup'] !== ''
+			) {
+				// "@" is there because file is not necessarily OWNED by the user
+				$changeGroupResult = @chgrp($path, $GLOBALS['TYPO3_CONF_VARS']['BE']['createGroup']);
+				$result = $changeGroupResult ? $result : FALSE;
+			}
+			// Call recursive if recursive flag if set and $path is directory
+			if ($recursive && @is_dir($path)) {
+				$handle = opendir($path);
+				while (($file = readdir($handle)) !== FALSE) {
+					$recursionResult = NULL;
+					if ($file !== '.' && $file !== '..') {
+						if (@is_file(($path . '/' . $file))) {
+							$recursionResult = self::fixPermissions($path . '/' . $file);
+						} elseif (@is_dir(($path . '/' . $file))) {
+							$recursionResult = self::fixPermissions($path . '/' . $file, TRUE);
+						}
+						if (isset($recursionResult) && !$recursionResult) {
+							$result = FALSE;
 						}
 					}
-					closedir($handle);
 				}
+				closedir($handle);
 			}
-		} else {
-			$result = TRUE;
 		}
 		return $result;
 	}
@@ -2777,7 +2790,7 @@ Connection: close
 		if (file_exists($path)) {
 			$OK = TRUE;
 			if (!is_link($path) && is_dir($path)) {
-				if ($removeNonEmpty == TRUE && ($handle = opendir($path))) {
+				if ($removeNonEmpty == TRUE && ($handle = @opendir($path))) {
 					while ($OK && FALSE !== ($file = readdir($handle))) {
 						if ($file == '.' || $file == '..') {
 							continue;
@@ -2790,14 +2803,14 @@ Connection: close
 					$OK = @rmdir($path);
 				}
 			} elseif (is_link($path) && is_dir($path) && TYPO3_OS === 'WIN') {
-				$OK = rmdir($path);
+				$OK = @rmdir($path);
 			} else {
 				// If $path is a file, simply remove it
-				$OK = unlink($path);
+				$OK = @unlink($path);
 			}
 			clearstatcache();
 		} elseif (is_link($path)) {
-			$OK = unlink($path);
+			$OK = @unlink($path);
 			clearstatcache();
 		}
 		return $OK;
@@ -2819,7 +2832,9 @@ Connection: close
 		if (is_dir($directory)) {
 			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove', TRUE) . '/';
 			if (rename($directory, $temporaryDirectory)) {
-				$flushOpcodeCache && OpcodeCacheUtility::clearAllActive($directory);
+				if ($flushOpcodeCache) {
+					GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive($directory);
+				}
 				if ($keepOriginalDirectory) {
 					self::mkdir($directory);
 				}
@@ -3090,10 +3105,9 @@ Connection: close
 	 * = FALSE (BE) / "querystring" (FE) : add timestamp as parameter
 	 *
 	 * @param string $file Relative path to file including all potential query parameters (not htmlspecialchared yet)
-	 * @param bool $forceQueryString If settings would suggest to embed in filename, this parameter allows us to force the versioning to occur in the query string. This is needed for scriptaculous.js which cannot have a different filename in order to load its modules (?load=...)
 	 * @return string Relative path with version filename including the timestamp
 	 */
-	static public function createVersionNumberedFilename($file, $forceQueryString = FALSE) {
+	static public function createVersionNumberedFilename($file) {
 		$lookupFile = explode('?', $file);
 		$path = self::resolveBackPath(self::dirname(PATH_thisScript) . '/' . $lookupFile[0]);
 
@@ -3116,7 +3130,7 @@ Connection: close
 			// File not found, return filename unaltered
 			$fullName = $file;
 		} else {
-			if (!$mode || $forceQueryString) {
+			if (!$mode) {
 				// If use of .htaccess rule is not configured,
 				// we use the default query-string method
 				if ($lookupFile[1]) {
@@ -3147,8 +3161,10 @@ Connection: close
 	 * Returns the HOST+DIR-PATH of the current script (The URL, but without 'http://' and without script-filename)
 	 *
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use GeneralUtility::getIndpEnv* instead
 	 */
 	static public function getThisUrl() {
+		self::logDeprecatedFunction();
 		// Url of this script
 		$p = parse_url(self::getIndpEnv('TYPO3_REQUEST_SCRIPT'));
 		$dir = self::dirname($p['path']) . '/';
@@ -3313,7 +3329,7 @@ Connection: close
 				if (self::cmpIP($_SERVER['REMOTE_ADDR'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'])) {
 					$ip = self::trimExplode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
 					// Choose which IP in list to use
-					if (count($ip)) {
+					if (!empty($ip)) {
 						switch ($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyHeaderMultiValue']) {
 							case 'last':
 								$ip = array_pop($ip);
@@ -3337,7 +3353,7 @@ Connection: close
 				if (self::cmpIP($_SERVER['REMOTE_ADDR'], $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'])) {
 					$host = self::trimExplode(',', $_SERVER['HTTP_X_FORWARDED_HOST']);
 					// Choose which host in list to use
-					if (count($host)) {
+					if (!empty($host)) {
 						switch ($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyHeaderMultiValue']) {
 							case 'last':
 								$host = array_pop($host);
@@ -3451,7 +3467,7 @@ Connection: close
 				if (self::cmpIP($_SERVER['REMOTE_ADDR'], $proxySSL)) {
 					$retVal = TRUE;
 				} else {
-					$retVal = $_SERVER['SSL_SESSION_ID'] || strtolower($_SERVER['HTTPS']) === 'on' || (string)$_SERVER['HTTPS'] === '1' ? TRUE : FALSE;
+					$retVal = $_SERVER['SSL_SESSION_ID'] || strtolower($_SERVER['HTTPS']) === 'on' || (string)$_SERVER['HTTPS'] === '1';
 				}
 				break;
 			case '_ARRAY':
@@ -3494,6 +3510,7 @@ Connection: close
 	/**
 	 * Checks if the provided host header value matches the trusted hosts pattern.
 	 * If the pattern is not defined (which only can happen early in the bootstrap), deny any value.
+	 * The result is saved, so the check needs to be executed only once.
 	 *
 	 * @param string $hostHeaderValue HTTP_HOST header value as sent during the request (may include port)
 	 * @return bool
@@ -3514,23 +3531,38 @@ Connection: close
 
 		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] === self::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL) {
 			static::$allowHostHeaderValue = TRUE;
-		} elseif ($GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] === self::ENV_TRUSTED_HOSTS_PATTERN_SERVER_NAME) {
+		} else {
+			static::$allowHostHeaderValue = static::hostHeaderValueMatchesTrustedHostsPattern($hostHeaderValue);
+		}
+
+		return static::$allowHostHeaderValue;
+	}
+
+	/**
+	 * Checks if the provided host header value matches the trusted hosts pattern without any preprocessing.
+	 *
+	 * @param string $hostHeaderValue
+	 * @return bool
+	 * @internal
+	 */
+	static public function hostHeaderValueMatchesTrustedHostsPattern($hostHeaderValue) {
+		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] === self::ENV_TRUSTED_HOSTS_PATTERN_SERVER_NAME) {
 			// Allow values that equal the server name
 			// Note that this is only secure if name base virtual host are configured correctly in the webserver
 			$defaultPort = self::getIndpEnv('TYPO3_SSL') ? '443' : '80';
 			$parsedHostValue = parse_url('http://' . $hostHeaderValue);
 			if (isset($parsedHostValue['port'])) {
-				static::$allowHostHeaderValue = (strtolower($parsedHostValue['host']) === strtolower($_SERVER['SERVER_NAME']) && (string)$parsedHostValue['port'] === $_SERVER['SERVER_PORT']);
+				$hostMatch = (strtolower($parsedHostValue['host']) === strtolower($_SERVER['SERVER_NAME']) && (string)$parsedHostValue['port'] === $_SERVER['SERVER_PORT']);
 			} else {
-				static::$allowHostHeaderValue = (strtolower($hostHeaderValue) === strtolower($_SERVER['SERVER_NAME']) && $defaultPort === $_SERVER['SERVER_PORT']);
+				$hostMatch = (strtolower($hostHeaderValue) === strtolower($_SERVER['SERVER_NAME']) && $defaultPort === $_SERVER['SERVER_PORT']);
 			}
 		} else {
 			// In case name based virtual hosts are not possible, we allow setting a trusted host pattern
 			// See https://typo3.org/teams/security/security-bulletins/typo3-core/typo3-core-sa-2014-001/ for further details
-			static::$allowHostHeaderValue = (bool)preg_match('/^' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] . '$/i', $hostHeaderValue);
+			$hostMatch = (bool)preg_match('/^' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] . '$/i', $hostHeaderValue);
 		}
 
-		return static::$allowHostHeaderValue;
+		return $hostMatch;
 	}
 
 	/**
@@ -3538,11 +3570,13 @@ Connection: close
 	 * We accept this risk to have the install tool always available.
 	 * Also CLI needs to be allowed as unfortunately AbstractUserAuthentication::getAuthInfoArray()
 	 * accesses HTTP_HOST without reason on CLI
+	 * Additionally, allows requests when no REQUESTTYPE is set, which can happen quite early in the
+	 * Bootstrap. See Application.php in EXT:backend/Classes/Http/.
 	 *
 	 * @return bool
 	 */
 	static protected function isInternalRequestType() {
-		return (defined('TYPO3_REQUESTTYPE') && TYPO3_REQUESTTYPE & (TYPO3_REQUESTTYPE_INSTALL | TYPO3_REQUESTTYPE_CLI));
+		return (!defined('TYPO3_REQUESTTYPE') || (defined('TYPO3_REQUESTTYPE') && TYPO3_REQUESTTYPE & (TYPO3_REQUESTTYPE_INSTALL | TYPO3_REQUESTTYPE_CLI)));
 	}
 
 	/**
@@ -3815,7 +3849,7 @@ Connection: close
 			}
 		}
 		if (!empty($url) && empty($sanitizedUrl)) {
-			self::sysLog('The URL "' . $url . '" is not considered to be local and was denied.', 'Core', self::SYSLOG_SEVERITY_NOTICE);
+			self::sysLog('The URL "' . $url . '" is not considered to be local and was denied.', 'core', self::SYSLOG_SEVERITY_NOTICE);
 		}
 		return $sanitizedUrl;
 	}
@@ -3826,7 +3860,6 @@ Connection: close
 	 * @param string $source Source file, absolute path
 	 * @param string $destination Destination file, absolute path
 	 * @return bool Returns TRUE if the file was moved.
-	 * @coauthor Dennis Petersen <fessor@software.dk>
 	 * @see upload_to_tempfile()
 	 */
 	static public function upload_copy_move($source, $destination) {
@@ -3944,11 +3977,7 @@ Connection: close
 	 * @return bool TRUE if the page should be hidden
 	 */
 	static public function hideIfNotTranslated($l18n_cfg_fieldValue) {
-		if ($GLOBALS['TYPO3_CONF_VARS']['FE']['hidePagesIfNotTranslatedByDefault']) {
-			return $l18n_cfg_fieldValue & 2 ? FALSE : TRUE;
-		} else {
-			return $l18n_cfg_fieldValue & 2 ? TRUE : FALSE;
-		}
+		return $GLOBALS['TYPO3_CONF_VARS']['FE']['hidePagesIfNotTranslatedByDefault'] XOR ($l18n_cfg_fieldValue & 2);
 	}
 
 	/**
@@ -3959,7 +3988,7 @@ Connection: close
 	 * @return bool
 	 */
 	static public function hideIfDefaultLanguage($localizationConfiguration) {
-		return $localizationConfiguration & 1;
+		return (bool)($localizationConfiguration & 1);
 	}
 
 	/**
@@ -3970,8 +3999,10 @@ Connection: close
 	 * @param string $charset Character set (option); if not set, determined by the language key
 	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
 	 * @return array Value of $LOCAL_LANG found in the included file. If that array is found it will returned.
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function readLLfile($fileRef, $langKey, $charset = '', $errorMode = 0) {
+		self::logDeprecatedFunction();
 		/** @var $languageFactory \TYPO3\CMS\Core\Localization\LocalizationFactory */
 		$languageFactory = self::makeInstance(\TYPO3\CMS\Core\Localization\LocalizationFactory::class);
 		return $languageFactory->getParsedData($fileRef, $langKey, $charset, $errorMode);
@@ -4105,7 +4136,7 @@ Connection: close
 			return call_user_func_array($funcName, array(&$params, &$ref));
 		}
 		// Check persistent object and if found, call directly and exit.
-		if (is_array($GLOBALS['T3_VAR']['callUserFunction'][$funcName])) {
+		if (isset($GLOBALS['T3_VAR']['callUserFunction'][$funcName]) && is_array($GLOBALS['T3_VAR']['callUserFunction'][$funcName])) {
 			return call_user_func_array(array(
 				&$GLOBALS['T3_VAR']['callUserFunction'][$funcName]['obj'],
 				$GLOBALS['T3_VAR']['callUserFunction'][$funcName]['method']
@@ -4130,7 +4161,7 @@ Connection: close
 		}
 		// Call function or method:
 		$parts = explode('->', $funcRef);
-		if (count($parts) == 2) {
+		if (count($parts) === 2) {
 			// Class
 			// Check if class/method exists:
 			if (class_exists($parts[0])) {
@@ -5050,7 +5081,9 @@ Connection: close
 	}
 
 	/**
-	 * Explode a string (normally a list of filenames) with whitespaces by considering quotes in that string. This is mostly needed by the imageMagickCommand function above.
+	 * Explode a string (normally a list of filenames) with whitespaces by considering quotes in that string.
+	 *
+	 * This is mostly needed by the imageMagickCommand function above.
 	 *
 	 * @param string $parameters The whole parameters string
 	 * @param bool $unQuote If set, the elements of the resulting array are unquoted.
@@ -5076,8 +5109,8 @@ Connection: close
 		}
 		if ($unQuote) {
 			foreach ($paramsArr as $key => &$val) {
-				$val = preg_replace('/(^"|"$)/', '', $val);
-				$val = preg_replace('/(^\'|\'$)/', '', $val);
+				$val = preg_replace('/(?:^"|"$)/', '', $val);
+				$val = preg_replace('/(?:^\'|\'$)/', '', $val);
 			}
 			unset($val);
 		}
@@ -5110,8 +5143,10 @@ Connection: close
 	 * Ends and cleans all output buffers
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in CMS 8, use ob_* functions directly or self::flushOutputBuffers
 	 */
 	static public function cleanOutputBuffers() {
+		self::logDeprecatedFunction();
 		while (ob_end_clean()) {
 
 		}

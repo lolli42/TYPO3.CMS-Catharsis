@@ -66,6 +66,8 @@ class SilentConfigurationUpgradeService {
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TceformsUpdateWizard',
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TtContentUploadsUpdateWizard',
 		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\TruncateSysFileProcessedFileTable',
+		// #68183
+		'INSTALL/wizardDone/TYPO3\\CMS\\Install\\Updates\\MigrateShortcutUrlsUpdate',
 		// #63818
 		'BE/staticFileEditPath',
 		// #64226
@@ -92,6 +94,8 @@ class SilentConfigurationUpgradeService {
 		'GFX/png_to_gif',
 		// #67411
 		'SYS/caching/cacheConfigurations/cache_classes',
+		// #68178
+		'SYS/form_enctype',
 	);
 
 	/**
@@ -268,7 +272,7 @@ class SilentConfigurationUpgradeService {
 				$changedValues['GFX/gdlib'] = 0;
 			}
 		}
-		if (count($changedValues) > 0) {
+		if (!empty($changedValues)) {
 			$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
 			$this->throwRedirectException();
 		}
@@ -330,7 +334,7 @@ class SilentConfigurationUpgradeService {
 				$changedValues['GFX/thumbnails'] = 0;
 			}
 		}
-		if (count($changedValues) > 0) {
+		if (!empty($changedValues)) {
 			$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
 			$this->throwRedirectException();
 		}
@@ -376,7 +380,7 @@ class SilentConfigurationUpgradeService {
 				}
 			}
 		}
-		if (count($changedValues) > 0) {
+		if (!empty($changedValues)) {
 			$this->configurationManager->setLocalConfigurationValuesByPathValuePairs($changedValues);
 			$this->throwRedirectException();
 		}

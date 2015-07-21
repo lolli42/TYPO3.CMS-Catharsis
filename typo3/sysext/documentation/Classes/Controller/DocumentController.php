@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Main controller of the Documentation module.
- *
- * @author Andrea Schmuttermair <spam@schmutt.de>
  */
 class DocumentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
 
@@ -65,12 +63,12 @@ class DocumentController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionControl
 		// Filter documents to be shown for current user
 		$hideDocuments = $this->getBackendUser()->getTSConfigVal('mod.help_DocumentationDocumentation.documents.hide');
 		$hideDocuments = GeneralUtility::trimExplode(',', $hideDocuments, TRUE);
-		if (count($hideDocuments) > 0) {
+		if (!empty($hideDocuments)) {
 			$documents = array_diff_key($documents, array_flip($hideDocuments));
 		}
 		$showDocuments = $this->getBackendUser()->getTSConfigVal('mod.help_DocumentationDocumentation.documents.show');
 		$showDocuments = GeneralUtility::trimExplode(',', $showDocuments, TRUE);
-		if (count($showDocuments) > 0) {
+		if (!empty($showDocuments)) {
 			$documents = array_intersect_key($documents, array_flip($showDocuments));
 		}
 

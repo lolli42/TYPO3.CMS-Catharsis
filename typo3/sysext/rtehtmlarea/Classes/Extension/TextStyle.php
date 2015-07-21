@@ -18,8 +18,6 @@ use TYPO3\CMS\Rtehtmlarea\RteHtmlAreaApi;
 
 /**
  * TextStyle plugin for htmlArea RTE
- *
- * @author Stanislas Rolland <typo3(arobas)sjbr.ca>
  */
 class TextStyle extends RteHtmlAreaApi {
 
@@ -29,13 +27,6 @@ class TextStyle extends RteHtmlAreaApi {
 	 * @var string
 	 */
 	protected $pluginName = 'TextStyle';
-
-	/**
-	 * Path to this main locallang file of the extension relative to the extension directory
-	 *
-	 * @var string
-	 */
-	protected $relativePathToLocallangFile = 'extensions/TextStyle/locallang.xlf';
 
 	/**
 	 * The comma-separated list of button names that the registered plugin is adding to the htmlArea RTE toolbar

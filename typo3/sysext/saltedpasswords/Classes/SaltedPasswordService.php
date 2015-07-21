@@ -17,9 +17,6 @@ namespace TYPO3\CMS\Saltedpasswords;
 /**
  * Class implements salted-password hashes authentication service.
  * Contains authentication service class for salted hashed passwords.
- *
- * @author Marcus Krause <marcus#exp2009@t3sec.info>
- * @author Steffen Ritter <info@rs-websystems.de>
  * @since 2009-06-14
  */
 class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService {
@@ -191,7 +188,7 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 					$this->authInfo['REMOTE_HOST'],
 					$this->login['uname']
 				));
-				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'Core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_INFO);
+				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $this->login['uname']), 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_INFO);
 			} elseif ($validPasswd && $user['lockToDomain'] && strcasecmp($user['lockToDomain'], $this->authInfo['HTTP_HOST'])) {
 				// Lock domain didn't match, so error:
 				$errorMessage = 'Login-attempt from %s (%s), username \'%s\', locked domain \'%s\' did not match \'%s\'!';
@@ -203,7 +200,7 @@ class SaltedPasswordService extends \TYPO3\CMS\Sv\AbstractAuthenticationService 
 					$user['lockToDomain'],
 					$this->authInfo['HTTP_HOST']
 				));
-				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']), 'Core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_INFO);
+				\TYPO3\CMS\Core\Utility\GeneralUtility::sysLog(sprintf($errorMessage, $this->authInfo['REMOTE_ADDR'], $this->authInfo['REMOTE_HOST'], $user[$this->db_user['username_column']], $user['lockToDomain'], $this->authInfo['HTTP_HOST']), 'core', \TYPO3\CMS\Core\Utility\GeneralUtility::SYSLOG_SEVERITY_INFO);
 				$OK = 0;
 			} elseif ($validPasswd) {
 				$this->writeLogMessage(TYPO3_MODE . ' Authentication successful for username \'%s\'', $this->login['uname']);

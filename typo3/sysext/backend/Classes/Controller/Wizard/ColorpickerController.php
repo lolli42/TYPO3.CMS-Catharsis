@@ -16,14 +16,11 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Script Class for colorpicker wizard
- *
- * @author Mathias Schreiber <schreiber@wmdb.de>
- * @author Peter Kühn <peter@kuehn.com>
- * @author Kasper Skårhøj <typo3@typo3.com>
  */
 class ColorpickerController extends AbstractWizardController {
 
@@ -293,7 +290,7 @@ class ColorpickerController extends AbstractWizardController {
 				'fieldChangeFuncHash' => $this->P['fieldChangeFuncHash'],
 			)
 		);
-		$this->content = $this->getDocumentTemplate()->getPageRenderer()->render(\TYPO3\CMS\Core\Page\PageRenderer::PART_HEADER) . '
+		$this->content = $this->getPageRenderer()->render(PageRenderer::PART_HEADER) . '
 			<frameset rows="*,1" framespacing="0" frameborder="0" border="0">
 				<frame name="content" src="' . htmlspecialchars($url) . '" marginwidth="0" marginheight="0" frameborder="0" scrolling="auto" noresize="noresize" />
 				<frame name="menu" src="' . htmlspecialchars(BackendUtility::getModuleUrl('dummy')) . '" marginwidth="0" marginheight="0" frameborder="0" scrolling="no" noresize="noresize" />
@@ -432,6 +429,13 @@ class ColorpickerController extends AbstractWizardController {
 	 */
 	protected function areFieldChangeFunctionsValid() {
 		return $this->fieldChangeFunc && $this->fieldChangeFuncHash && $this->fieldChangeFuncHash === GeneralUtility::hmac($this->fieldChangeFunc);
+	}
+
+	/**
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		return GeneralUtility::makeInstance(PageRenderer::class);
 	}
 
 }

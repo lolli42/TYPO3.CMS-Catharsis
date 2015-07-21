@@ -21,8 +21,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * Used with the TypoScript parser.
  * Matches browserinfo, IPnumbers for use with templates
- *
- * @author Oliver Hader <oliver@typo3.org>
  */
 abstract class AbstractConditionMatcher {
 
@@ -84,7 +82,7 @@ abstract class AbstractConditionMatcher {
 	 * @return void
 	 */
 	public function setRootline(array $rootline) {
-		if (count($rootline)) {
+		if (!empty($rootline)) {
 			$this->rootline = $rootline;
 		}
 	}
@@ -151,7 +149,7 @@ abstract class AbstractConditionMatcher {
 			return $this->simulateMatchResult;
 		}
 		// Return directly if matching for specific condition is simulated only:
-		if (count($this->simulateMatchConditions)) {
+		if (!empty($this->simulateMatchConditions)) {
 			return in_array($expression, $this->simulateMatchConditions);
 		}
 		// Sets the current pageId if not defined yet:
@@ -469,7 +467,7 @@ abstract class AbstractConditionMatcher {
 	protected function parseUserFuncArguments($arguments) {
 		$result = array();
 		$arguments = trim($arguments);
-		while ($arguments) {
+		while ($arguments !== '') {
 			if ($arguments[0] === ',') {
 				$result[] = '';
 				$arguments = substr($arguments, 1);
@@ -504,7 +502,7 @@ abstract class AbstractConditionMatcher {
 	 */
 	protected function getVariableCommon(array $vars) {
 		$value = NULL;
-		if (count($vars) == 1) {
+		if (count($vars) === 1) {
 			$value = $this->getGlobal($vars[0]);
 		} else {
 			$splitAgain = explode('|', $vars[1], 2);

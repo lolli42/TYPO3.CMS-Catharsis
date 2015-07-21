@@ -299,6 +299,34 @@ class SqlParserTest extends AbstractTestCase {
 
 	/**
 	 * @test
+	 * @see http://forge.typo3.org/issues/67445
+	 */
+	public function canParseAlterTableAddKeyStatement() {
+		$parseString = 'ALTER TABLE sys_collection ADD KEY parent (pid,deleted)';
+		$components = $this->subject->_callRef('parseALTERTABLE', $parseString);
+		$this->assertInternalType('array', $components);
+
+		$result = $this->subject->_callRef('compileALTERTABLE', $components);
+		$expected = 'ALTER TABLE sys_collection ADD KEY parent (pid,deleted)';
+		$this->assertSame($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/67445
+	 */
+	public function canParseAlterTableDropKeyStatement() {
+		$parseString = 'ALTER TABLE sys_collection DROP KEY parent';
+		$components = $this->subject->_callRef('parseALTERTABLE', $parseString);
+		$this->assertInternalType('array', $components);
+
+		$result = $this->subject->_callRef('compileALTERTABLE', $components);
+		$expected = 'ALTER TABLE sys_collection DROP KEY parent';
+		$this->assertSame($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
 	 * @see http://forge.typo3.org/issues/23087
 	 */
 	public function canParseFindInSetStatement() {
@@ -423,6 +451,30 @@ class SqlParserTest extends AbstractTestCase {
 
 		$result = $this->subject->debug_testSQL($sql);
 		$expected = 'SELECT * FROM sys_file_processedfile LEFT JOIN sys_registry ON entry_key=sys_file_processedfile.uid AND entry_namespace=\'ProcessedFileChecksumUpdate\'';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/67708
+	 */
+	public function canParseMultiJoinConditionsWithStringsAndLeftCast() {
+		$sql = 'SELECT * FROM sys_file_processedfile LEFT JOIN sys_registry ON CAST(entry_key AS INTEGER) = sys_file_processedfile.uid AND entry_namespace = \'ProcessedFileChecksumUpdate\'';
+
+		$result = $this->subject->debug_testSQL($sql);
+		$expected = 'SELECT * FROM sys_file_processedfile LEFT JOIN sys_registry ON CAST(entry_key AS INTEGER)=sys_file_processedfile.uid AND entry_namespace=\'ProcessedFileChecksumUpdate\'';
+		$this->assertEquals($expected, $this->cleanSql($result));
+	}
+
+	/**
+	 * @test
+	 * @see http://forge.typo3.org/issues/67708
+	 */
+	public function canParseMultiJoinConditionsWithStringsAndRightCast() {
+		$sql = 'SELECT * FROM sys_file_processedfile LEFT JOIN sys_registry ON entry_key = CAST(sys_file_processedfile.uid AS CHAR) AND entry_namespace = \'ProcessedFileChecksumUpdate\'';
+
+		$result = $this->subject->debug_testSQL($sql);
+		$expected = 'SELECT * FROM sys_file_processedfile LEFT JOIN sys_registry ON entry_key=CAST(sys_file_processedfile.uid AS CHAR) AND entry_namespace=\'ProcessedFileChecksumUpdate\'';
 		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
@@ -702,7 +754,8 @@ class SqlParserTest extends AbstractTestCase {
 		$sql = 'SELECT * FROM pages WHERE pid = ? AND timestamp < ? AND title != \'How to test?\'';
 		$parameterValues = array(12, 1281782690);
 		$components = $this->subject->_callRef('parseSELECT', $sql);
-		for ($i = 0; $i < count($components['parameters']['?']); $i++) {
+		$questionMarkParamCount = count($components['parameters']['?']);
+		for ($i = 0; $i < $questionMarkParamCount; $i++) {
 			$components['parameters']['?'][$i][0] = $parameterValues[$i];
 		}
 

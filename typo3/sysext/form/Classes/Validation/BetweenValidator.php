@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Form\Validation;
 /**
  * Between rule
  * Value must be between the min and max. inclusively optional
- *
- * @author Patrick Broens <patrick@patrickbroens.nl>
  */
 class BetweenValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator implements \TYPO3\CMS\Form\Validation\ValidatorInterface {
 
@@ -127,7 +125,7 @@ class BetweenValidator extends \TYPO3\CMS\Form\Validation\AbstractValidator impl
 	 * @return string The local language message label
 	 * @see \TYPO3\CMS\Form\Validation\AbstractValidator::_getLocalLanguageLabel()
 	 */
-	protected function getLocalLanguageLabel($type) {
+	protected function getLocalLanguageLabel($type = '') {
 		$label = static::LOCALISATION_OBJECT_NAME . '.' . $type;
 		$messages[] = $this->localizationHandler->getLocalLanguageLabel($label);
 		if ($this->inclusive) {

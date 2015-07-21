@@ -30,7 +30,7 @@ class RendererRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			->setMethods(array('createRendererInstance'))
 			->getMock();
 
-		if (count($createsRendererInstances)) {
+		if (!empty($createsRendererInstances)) {
 			$rendererRegistry->expects($this->any())
 				->method('createRendererInstance')
 				->will($this->returnValueMap($createsRendererInstances));
@@ -109,7 +109,7 @@ class RendererRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	/**
 	 * @test
 	 */
-	public function registeredFileRendererClassWithSamePriorityAreReturnedInSameOrderAsTheyWereAdded() {
+	public function registeredFileRendererClassWithSamePriorityAreAllReturned() {
 		$rendererClass1 = $this->getUniqueId('myRenderer1');
 		$rendererObject1 = $this->getMock(\TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface::class, array(), array(), $rendererClass1);
 		$rendererObject1->expects($this->any())->method('getPriority')->will($this->returnValue(1));
@@ -128,8 +128,8 @@ class RendererRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$rendererRegistry->registerRendererClass($rendererClass2);
 
 		$rendererInstances = $rendererRegistry->getRendererInstances();
-		$this->assertTrue($rendererInstances[0] instanceof $rendererClass1);
-		$this->assertTrue($rendererInstances[1] instanceof $rendererClass2);
+		$this->assertContains($rendererObject1, $rendererInstances);
+		$this->assertContains($rendererObject2, $rendererInstances);
 	}
 
 	/**
@@ -137,7 +137,7 @@ class RendererRegistryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function getRendererReturnsCorrectInstance() {
 
-		$this->markTestSkipped('Test triggers a error this is known PHP bug - http://stackoverflow.com/questions/3235387/usort-array-was-modified-by-the-user-comparison-function)');
+		$this->markTestSkipped('Test triggers an error. This is a known PHP bug (http://stackoverflow.com/questions/3235387/usort-array-was-modified-by-the-user-comparison-function)');
 
 		$rendererClass1 = $this->getUniqueId('myVideoRenderer');
 		$rendererObject1 = $this->getMock(\TYPO3\CMS\Core\Resource\Rendering\FileRendererInterface::class, array('getPriority', 'canRender', 'render'), array(), $rendererClass1);

@@ -17,8 +17,6 @@ namespace TYPO3\CMS\Reports\Task;
 /**
  * Additional field to set the notification email address(es) for system health
  * issue notifications.
- *
- * @author Ingo Renner <ingo@typo3.org>
  */
 class SystemStatusUpdateTaskNotificationEmailField implements \TYPO3\CMS\Scheduler\AdditionalFieldProviderInterface {
 
@@ -57,7 +55,7 @@ class SystemStatusUpdateTaskNotificationEmailField implements \TYPO3\CMS\Schedul
 		$additionalFields = array();
 		$additionalFields[$fieldId] = array(
 			'code' => $fieldHtml,
-			'label' => 'LLL:EXT:reports/reports/locallang.xlf:status_updateTaskField_notificationEmails',
+			'label' => 'LLL:EXT:reports/Resources/Private/Language/locallang_reports.xlf:status_updateTaskField_notificationEmails',
 			'cshKey' => '',
 			'cshLabel' => $fieldId
 		);
@@ -82,7 +80,7 @@ class SystemStatusUpdateTaskNotificationEmailField implements \TYPO3\CMS\Schedul
 			}
 		}
 		if (empty($submittedData[$this->fieldPrefix . 'NotificationEmail']) || !$validInput) {
-			$schedulerModule->addMessage($GLOBALS['LANG']->sL('LLL:EXT:reports/reports/locallang.xlf:status_updateTaskField_notificationEmails_invalid'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
+			$schedulerModule->addMessage($GLOBALS['LANG']->sL('LLL:EXT:reports/Resources/Private/Language/locallang_reports.xlf:status_updateTaskField_notificationEmails_invalid'), \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR);
 			$validInput = FALSE;
 		}
 		return $validInput;

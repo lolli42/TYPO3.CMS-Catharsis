@@ -16,9 +16,6 @@ namespace TYPO3\CMS\Backend\Tree;
 
 /**
  * Tree Node Collection
- *
- * @author Stefan Galinski <stefan.galinski@gmail.com>
- * @author Steffen Ritter <info@steffen-ritter.net>
  */
 class TreeNodeCollection extends \ArrayObject {
 
@@ -31,7 +28,7 @@ class TreeNodeCollection extends \ArrayObject {
 	 * @param array $data
 	 */
 	public function __construct(array $data = array()) {
-		if (count($data)) {
+		if (!empty($data)) {
 			$this->dataFromArray($data);
 		}
 	}

@@ -20,9 +20,6 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 /**
  * Class used in module tools/dbint (advanced search) and which may hold code specific for that module
  * However the class has a general principle in it which may be used in the web/export module.
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
- * @author Jo Hasenau <info@cybercraft.de>
  */
 class QueryView {
 
@@ -391,7 +388,7 @@ class QueryView {
 						$out .= GeneralUtility::callUserFunction($_funcRef, $GLOBALS['SOBE']->MOD_SETTINGS, $this);
 					}
 				}
-				if (count($rowArr)) {
+				if (!empty($rowArr)) {
 					$out .= '<table class="table table-striped table-hover">' . $this->resultRowTitles($lrow, $GLOBALS['TCA'][$table], $table) . implode(LF, $rowArr) . '</table>';
 				}
 				if (!$out) {
@@ -410,8 +407,8 @@ class QueryView {
 					}
 					$rowArr[] = $this->csvValues($row, ',', '"', $GLOBALS['TCA'][$table], $table);
 				}
-				if (count($rowArr)) {
-					$out .= '<textarea name="whatever" rows="20" wrap="off"' . $GLOBALS['SOBE']->doc->formWidth($this->formW) . ' class="text-monospace">' . GeneralUtility::formatForTextarea(implode(LF, $rowArr)) . '</textarea>';
+				if (!empty($rowArr)) {
+					$out .= '<textarea name="whatever" rows="20" wrap="off"' . $GLOBALS['SOBE']->doc->formWidth($this->formW) . ' class="text-monospace">' . htmlspecialchars(implode(LF, $rowArr)) . '</textarea>';
 					if (!$this->noDownloadB) {
 						$out .= '<br><input class="btn btn-default" type="submit" name="download_file" value="Click to download file" onClick="window.location.href=\'' . $this->downloadScript . '\';">';
 					}

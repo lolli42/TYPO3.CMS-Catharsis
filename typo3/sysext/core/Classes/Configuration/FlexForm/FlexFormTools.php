@@ -19,8 +19,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Contains functions for manipulating flex form data
- *
- * @author Kasper Skårhøj <kasperYYYY@typo3.com>
  */
 class FlexFormTools {
 
@@ -132,7 +130,7 @@ class FlexFormTools {
 			foreach ($languages as $lInfo) {
 				$editData['meta']['currentLangId'][] = $lInfo['ISOcode'];
 			}
-			if (!count($editData['meta']['currentLangId'])) {
+			if (empty($editData['meta']['currentLangId'])) {
 				$editData['meta']['currentLangId'] = array('DEF');
 			}
 			$editData['meta']['currentLangId'] = array_unique($editData['meta']['currentLangId']);
@@ -351,19 +349,15 @@ class FlexFormTools {
 		if (!is_array($pathArray)) {
 			$pathArray = explode('/', $pathArray);
 		}
-		if (is_array($array)) {
-			if (count($pathArray)) {
-				$key = array_shift($pathArray);
-				if (isset($array[$key])) {
-					if (!count($pathArray)) {
-						return $array[$key];
-					} else {
-						return $this->getArrayValueByPath($pathArray, $array[$key]);
-					}
-				} else {
-					return NULL;
+		if (is_array($array) && !empty($pathArray)) {
+			$key = array_shift($pathArray);
+			if (isset($array[$key])) {
+				if (empty($pathArray)) {
+					return $array[$key];
 				}
+				return $this->getArrayValueByPath($pathArray, $array[$key]);
 			}
+			return NULL;
 		}
 	}
 
@@ -380,19 +374,17 @@ class FlexFormTools {
 			if (!is_array($pathArray)) {
 				$pathArray = explode('/', $pathArray);
 			}
-			if (is_array($array)) {
-				if (count($pathArray)) {
-					$key = array_shift($pathArray);
-					if (!count($pathArray)) {
-						$array[$key] = $value;
-						return TRUE;
-					} else {
-						if (!isset($array[$key])) {
-							$array[$key] = array();
-						}
-						return $this->setArrayValueByPath($pathArray, $array[$key], $value);
-					}
+			if (is_array($array) && !empty($pathArray)) {
+				$key = array_shift($pathArray);
+				if (empty($pathArray)) {
+					$array[$key] = $value;
+					return TRUE;
 				}
+				if (!isset($array[$key])) {
+					$array[$key] = array();
+				}
+				return $this->setArrayValueByPath($pathArray, $array[$key], $value);
+
 			}
 		}
 	}

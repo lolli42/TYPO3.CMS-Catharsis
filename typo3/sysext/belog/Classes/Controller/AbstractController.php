@@ -14,10 +14,10 @@ namespace TYPO3\CMS\Belog\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Page\PageRenderer;
+
 /**
  * Abstract class to show log entries from sys_log
- *
- * @author Christian Kuhn <lolli@schwarzbu.ch>
  */
 abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\ActionController {
 
@@ -77,7 +77,7 @@ abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\Acti
 	protected $logEntryRepository = NULL;
 
 	/**
-	 * @var \TYPO3\CMS\Core\Page\PageRenderer
+	 * @var PageRenderer
 	 */
 	protected $pageRenderer;
 
@@ -86,7 +86,7 @@ abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\Acti
 	 * @return void
 	 */
 	public function initializeAction() {
-		$this->pageRenderer = $this->objectManager->get(\TYPO3\CMS\Core\Page\PageRenderer::class);
+		$this->pageRenderer = $this->objectManager->get(PageRenderer::class);
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
 	}
 
