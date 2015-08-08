@@ -41,7 +41,7 @@ notifications:
 
 before_script:
   - >
-    if [[ "$TRAVIS_PHP_VERSION" < "7.0" && -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]]; then
+    if [[ "$TRAVIS_PHP_VERSION" < "7" && -e ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini ]]; then
         echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
         echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
     fi
