@@ -17,7 +17,10 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -103,9 +106,15 @@ class TableController extends AbstractWizardController {
 	public $tableParsing_delimiter;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
 		$GLOBALS['SOBE'] = $this;
 
@@ -128,7 +137,6 @@ class TableController extends AbstractWizardController {
 		$this->inputStyle = isset($this->TABLECFG['textFields']) ? (bool)$this->TABLECFG['textFields'] : TRUE;
 		// Document template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $this->getBackPath();
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/wizard_table.html');
 		// Setting form tag:
 		list($rUri) = explode('#', GeneralUtility::getIndpEnv('REQUEST_URI'));
@@ -188,13 +196,14 @@ class TableController extends AbstractWizardController {
 			// CSH Buttons
 			$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_table_wiz_buttons');
 			// Close
-			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
+			$title = 'title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '"';
+			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '); return false;')) . '" ' . $title . '>' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 			// Save
-			$buttons['save'] = '<button class="c-inputButton" name="savedok">' . IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE))) . '</button>';
+			$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<button class="c-inputButton" name="savedok" value="1"></button>', 'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)));
 			// Save & Close
-			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok">' . IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE))) . '</button>';
+			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<button class="c-inputButton" name="saveandclosedok" value="1"></button>', 'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)));
 			// Reload
-			$buttons['reload'] = '<button class="c-inputButton" name="_refresh">' . IconUtility::getSpriteIcon('actions-system-refresh', array('title' => $this->getLanguageService()->getLL('forms_refresh', TRUE))) . '</button>';
+			$buttons['reload'] = IconUtility::getSpriteIcon('actions-system-refresh', array('html' => '<button class="c-inputButton" name="_refresh" value="1"></button>', 'title' => $this->getLanguageService()->getLL('forms_refresh', TRUE)));
 		}
 		return $buttons;
 	}
@@ -261,19 +270,28 @@ class TableController extends AbstractWizardController {
 				$configuration = $this->cfgString2CfgArray($bodyText, $row[$this->colsFieldName]);
 			}
 			// If a save button has been pressed, then save the new field content:
-			if ($_POST['savedok_x'] || $_POST['saveandclosedok_x']) {
+			if ($_POST['savedok'] || $_POST['saveandclosedok']) {
 				// Get DataHandler object:
 				/** @var DataHandler $dataHandler */
 				$dataHandler = GeneralUtility::makeInstance(DataHandler::class);
 				$dataHandler->stripslashes_values = FALSE;
 				// Put content into the data array:
 				$data = array();
-				$data[$this->P['table']][$this->P['uid']][$this->P['field']] = $bodyText;
+				if ($this->P['flexFormPath']) {
+					// Current value of flexForm path:
+					$currentFlexFormData = GeneralUtility::xml2array($row[$this->P['field']]);
+					/** @var FlexFormTools $flexFormTools */
+					$flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
+					$flexFormTools->setArrayValueByPath($this->P['flexFormPath'], $currentFlexFormData, $bodyText);
+					$data[$this->P['table']][$this->P['uid']][$this->P['field']] = $currentFlexFormData;
+				} else {
+					$data[$this->P['table']][$this->P['uid']][$this->P['field']] = $bodyText;
+				}
 				// Perform the update:
 				$dataHandler->start($data, array());
 				$dataHandler->process_datamap();
 				// If the save/close button was pressed, then redirect the screen:
-				if ($_POST['saveandclosedok_x']) {
+				if ($_POST['saveandclosedok']) {
 					HttpUtility::redirect(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
 				}
 			}
@@ -282,8 +300,17 @@ class TableController extends AbstractWizardController {
 			if ($this->xmlStorage) {
 				$configuration = GeneralUtility::xml2array($row[$this->P['field']]);
 			} else {
-				// Regular line based table configuration:
-				$configuration = $this->cfgString2CfgArray($row[$this->P['field']], $row[$this->colsFieldName]);
+				if ($this->P['flexFormPath']) {
+					// Current value of flexForm path:
+					$currentFlexFormData = GeneralUtility::xml2array($row[$this->P['field']]);
+					/** @var FlexFormTools $flexFormTools */
+					$flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
+					$configuration = $flexFormTools->getArrayValueByPath($this->P['flexFormPath'], $currentFlexFormData);
+					$configuration = $this->cfgString2CfgArray($configuration, 0);
+				} else {
+					// Regular line based table configuration:
+					$configuration = $this->cfgString2CfgArray($row[$this->P['field']], $row[$this->colsFieldName]);
+				}
 			}
 			$configuration = is_array($configuration) ? $configuration : array();
 		}

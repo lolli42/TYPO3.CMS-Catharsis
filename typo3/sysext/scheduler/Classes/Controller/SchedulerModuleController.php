@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Scheduler\Controller;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -32,13 +34,6 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
  * Module 'TYPO3 Scheduler administration module' for the 'scheduler' extension.
  */
 class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
-
-	/**
-	 * Back path to typo3 main dir
-	 *
-	 * @var string
-	 */
-	public $backPath;
 
 	/**
 	 * Array containing submitted data when editing or adding a task
@@ -88,6 +83,11 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 	protected $moduleUri;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * @return \TYPO3\CMS\Scheduler\Controller\SchedulerModuleController
 	 */
 	public function __construct() {
@@ -95,12 +95,12 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		$this->MCONF = array(
 			'name' => $this->moduleName,
 		);
-		$this->backPath = $GLOBALS['BACK_PATH'];
 		$this->cshKey = '_MOD_' . $this->moduleName;
 		$this->backendTemplatePath = ExtensionManagementUtility::extPath('scheduler') . 'Resources/Private/Templates/Backend/SchedulerModule/';
 		$this->view = GeneralUtility::makeInstance(\TYPO3\CMS\Fluid\View\StandaloneView::class);
 		$this->view->getRequest()->setControllerExtensionName('scheduler');
 		$this->moduleUri = BackendUtility::getModuleUrl($this->moduleName);
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
 		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
@@ -117,7 +117,6 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 		// Initialize document
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate(ExtensionManagementUtility::extPath('scheduler') . 'Resources/Private/Templates/Module.html');
-		$this->doc->backPath = $this->backPath;
 		$this->doc->bodyTagId = 'typo3-mod-php';
 		$this->doc->bodyTagAdditions = 'class="tx_scheduler_mod1"';
 
@@ -979,7 +978,7 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 						. ' data-button-close-text="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '"'
 						. ' data-content="' . $this->getLanguageService()->getLL('msg.stop', TRUE) . '"'
 						. ' title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:stop', TRUE) . '" class="icon">' .
-						IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+						$this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 					$runAction = '<a class="btn btn-default" href="' . htmlspecialchars($this->moduleUri . '&tx_scheduler[execute][]=' . $schedulerRecord['uid']) . '" title="' . $this->getLanguageService()->getLL('action.run_task', TRUE) . '" class="icon">' .
 						IconUtility::getSpriteIcon('extensions-scheduler-run-task') . '</a>';
 
@@ -1524,18 +1523,18 @@ class SchedulerModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClas
 			$buttons['reload'] = '<a href="' . htmlspecialchars($this->moduleUri) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
 			if ($this->MOD_SETTINGS['function'] === 'scheduler' && !empty($this->getRegisteredClasses())) {
 				$link = $this->moduleUri . '&CMD=add';
-				$image = IconUtility::getSpriteIcon('actions-document-new', array('alt' => $this->getLanguageService()->getLL('action.add')));
+				$image = $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL);
 				$buttons['addtask'] = '<a href="' . htmlspecialchars($link) . '" ' . 'title="' . $this->getLanguageService()->getLL('action.add') . '">' . $image . '</a>';
 			}
 		}
 		if ($this->CMD === 'add' || $this->CMD === 'edit') {
-			$buttons['close'] = '<a href="#" onclick="document.location=' . htmlspecialchars(GeneralUtility::quoteJSvalue($this->moduleUri)) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
-			$buttons['save'] = '<button style="padding: 0; margin: 0; cursor: pointer;" type="submit" name="CMD" value="save" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:save', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save') . '</button>';
-			$buttons['saveclose'] = '<button style="padding: 0; margin: 0; cursor: pointer;" type="submit" name="CMD" value="saveclose" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:saveAndClose', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-close') . '</button>';
-			$buttons['savenew'] = '<button style="padding: 0; margin: 0; cursor: pointer;" type="submit" name="CMD" value="savenew" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:saveAndCreateNewDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-new') . '</button>';
+			$buttons['close'] = '<a href="#" onclick="document.location=' . htmlspecialchars(GeneralUtility::quoteJSvalue($this->moduleUri)) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+			$buttons['save'] = '<button name="CMD" value="save" class="c-inputButton" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:save', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save') . '</button>';
+			$buttons['saveclose'] = '<button name="CMD" value="saveclose" class="c-inputButton" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:saveAndClose', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-close') . '</button>';
+			$buttons['savenew'] = '<button name="CMD" value="savenew" class="c-inputButton" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:saveAndCreateNewDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-new') . '</button>';
 		}
 		if ($this->CMD === 'edit') {
-			$buttons['delete'] = '<button style="padding: 0; margin: 0; cursor: pointer;" type="submit" name="CMD" value="delete" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</button>';
+			$buttons['delete'] = '<button name="CMD" value="delete" class="c-inputButton" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</button>';
 		}
 		return $buttons;
 	}

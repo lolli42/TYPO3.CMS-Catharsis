@@ -36,10 +36,11 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 				1 => $GLOBALS['LANG']->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:pages_1')
 			),
 			'depth' => array(
-				0 => $GLOBALS['LANG']->getLL('depth_0'),
-				1 => $GLOBALS['LANG']->getLL('depth_1'),
-				2 => $GLOBALS['LANG']->getLL('depth_2'),
-				3 => $GLOBALS['LANG']->getLL('depth_3'),
+				0 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_0'),
+				1 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_1'),
+				2 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_2'),
+				3 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_3'),
+				4 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_4'),
 				999 => $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_infi')
 			)
 		);
@@ -53,7 +54,6 @@ class PageInformationController extends \TYPO3\CMS\Backend\Module\AbstractFuncti
 	public function main() {
 		$dblist = GeneralUtility::makeInstance(PageLayoutView::class);
 		$dblist->descrTable = '_MOD_' . $GLOBALS['MCONF']['name'];
-		$dblist->backPath = $GLOBALS['BACK_PATH'];
 		$dblist->thumbs = 0;
 		$dblist->script = BackendUtility::getModuleUrl('web_info');
 		$dblist->showIcon = 0;

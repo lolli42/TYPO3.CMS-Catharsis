@@ -39,6 +39,10 @@
 		margin-right: 6px;
 		.c-inputButton {
 			color: inherit;
+			padding: 0;
+		}
+		input.c-inputButton {
+			text-indent: -1000px;
 		}
 	}
 
@@ -51,6 +55,16 @@
 
 		&:hover {
 			color: #000;
+		}
+
+	    &.active {
+		    color: @docheader-border;
+		}
+
+	    &.active {
+		    span {
+			    cursor: default;
+			}
 		}
 	}
 

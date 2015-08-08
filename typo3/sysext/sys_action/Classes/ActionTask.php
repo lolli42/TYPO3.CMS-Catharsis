@@ -14,6 +14,9 @@ namespace TYPO3\CMS\SysAction;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
@@ -42,9 +45,15 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 	protected $moduleUrl;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct(\TYPO3\CMS\Taskcenter\Controller\TaskModuleController $taskObject) {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$this->moduleUrl = BackendUtility::getModuleUrl('user_task');
 		$this->taskObject = $taskObject;
 		$this->getLanguageService()->includeLLFile('EXT:sys_action/Resources/Private/Language/locallang.xlf');
@@ -84,6 +93,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 				// Output depends on the type
 				switch ($record['type']) {
 					case 1:
+						$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+						$pageRenderer->loadRequireJsModule('TYPO3/CMS/SysAction/ActionTask');
 						$content .= $this->viewNewBackendUser($record);
 						break;
 					case 2:
@@ -164,7 +175,10 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 					FALSE,
 					TRUE
 				);
-				$editActionLink = '<a class="edit" href="' . $link . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->getLanguageService()->getLL('edit-sys_action'))) . $this->getLanguageService()->getLL('edit-sys_action') . '</a>';
+				$title = 'title="' . $this->getLanguageService()->getLL('edit-sys_action') . '"';
+				$icon = $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL);
+				$editActionLink = '<a class="edit" href="' . $link . '"' . $title . '>';
+				$editActionLink .= $icon . $this->getLanguageService()->getLL('edit-sys_action') . '</a>';
 			}
 			$actionList[] = array(
 				'uid' => $actionRow['uid'],
@@ -207,7 +221,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 			);
 			$content .= '<p>' .
 				'<a href="' . $link . '" title="' . $this->getLanguageService()->getLL('new-sys_action') . '">' .
-				\TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-new', array('class' => 'icon', 'title' => $this->getLanguageService()->getLL('new-sys_action'))) .
+				$this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL) .
 				$this->getLanguageService()->getLL('new-sys_action') .
 				'</a></p>';
 		}
@@ -401,9 +415,8 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 		$href = $this->moduleUrl . '&SET[function]=sys_action.TYPO3\\CMS\\SysAction\\ActionTask&show=' . (int)$sysActionUid . '&be_users_uid=' . (int)$userId;
 		$link = '<a href="' . htmlspecialchars($href) . '">' . htmlspecialchars($username) . '</a>';
 		// Link to delete the user record
-		$onClick = ' onClick="return confirm(' . GeneralUtility::quoteJSvalue($this->getLanguageService()->getLL('lDelete_warning')) . ');"';
 		$link .= '
-				<a href="' . htmlspecialchars(($href . '&delete=1')) . '" ' . $onClick . '>'
+				<a href="' . htmlspecialchars(($href . '&delete=1')) . '" class="t3js-confirm-trigger" data-title="' . $this->getLanguageService()->getLL('lDelete_warning_title', TRUE) . '" data-message="' . $this->getLanguageService()->getLL('lDelete_warning', TRUE) . '">'
 					. \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-delete') .
 				'</a>';
 		return $link;
@@ -733,7 +746,7 @@ class ActionTask implements \TYPO3\CMS\Taskcenter\TaskInterface {
 							. '&id=' . '&SET[function]=search' . '&SET[search]=query'
 							. '&storeControl[STORE]=-' . $record['uid'] . '&storeControl[LOAD]=1')
 						. '">'
-						. \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-info')
+						. $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)
 						. $this->getLanguageService()->getLL(($queryIsEmpty ? 'action_createQuery'
 						: 'action_editQuery')) . '</a><br /><br />';
 				}

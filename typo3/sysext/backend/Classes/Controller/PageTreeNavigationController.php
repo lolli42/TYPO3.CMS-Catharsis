@@ -59,11 +59,6 @@ class PageTreeNavigationController {
 	/**
 	 * @var string
 	 */
-	public $backPath;
-
-	/**
-	 * @var string
-	 */
 	public $currentSubScript;
 
 	/**
@@ -90,8 +85,6 @@ class PageTreeNavigationController {
 	public function __construct() {
 		GeneralUtility::deprecationLog('PageTreeNavigationController is deprecated in favor of new pagetrees');
 		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
-
 		$this->init();
 	}
 
@@ -101,8 +94,6 @@ class PageTreeNavigationController {
 	 * @return void
 	 */
 	protected function init() {
-		// Setting backPath
-		$this->backPath = $GLOBALS['BACK_PATH'];
 		// Setting GPvars:
 		$this->cMR = (bool)GeneralUtility::_GP('cMR');
 		$this->currentSubScript = GeneralUtility::_GP('currentSubScript');
@@ -137,7 +128,6 @@ class PageTreeNavigationController {
 		$doHighlight = !$this->getBackendUser()->getTSConfigVal('options.pageTree.disableTitleHighlight');
 		// Create template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_db_navframe.html');
 		$this->doc->showFlashMessages = FALSE;
 		// Get HTML-Template

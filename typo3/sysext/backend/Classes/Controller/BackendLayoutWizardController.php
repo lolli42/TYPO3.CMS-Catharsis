@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Backend\Controller;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TypoScript\Parser\TypoScriptParser;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -79,12 +81,16 @@ class BackendLayoutWizardController {
 		$uid = (int)$this->P['uid'];
 		// Initialize document object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadExtJS();
 		$pageRenderer->addJsFile(ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/JavaScript/grideditor.js');
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Tooltip');
-		$pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_cshmanual'));
+		$pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_CshmanualCshmanual', array(
+			'tx_cshmanual_help_cshmanualcshmanual' => array(
+				'controller' => 'Help',
+				'action' => 'detail'
+			)
+		)));
 		$pageRenderer->addJsInlineCode('storeData', '
 			function storeData(data) {
 				if (parent.opener && parent.opener.document && parent.opener.document.' . $this->formName . ' && parent.opener.document.' . $this->formName . '[' . GeneralUtility::quoteJSvalue($this->fieldName) . ']) {
@@ -196,11 +202,13 @@ class BackendLayoutWizardController {
 	 * @return void
 	 */
 	public function main() {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$lang = $this->getLanguageService();
 		$resourcePath = ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Images/BackendLayoutWizard/';
 		$content = '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());return true;">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
 		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());window.close();return true;">' . IconUtility::getSpriteIcon('actions-document-save-close') . '</a>';
-		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" onclick="window.close();return true;">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" onclick="window.close();return true;">' . $iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 		$content .= $this->doc->spacer(10);
 		$content .= '
 		<table border="0" width="90%" height="90%" id="outer_container">

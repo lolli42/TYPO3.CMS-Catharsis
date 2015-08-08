@@ -45,14 +45,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		$(document).find('.' + FormEngineValidation.errorClass).removeClass(FormEngineValidation.errorClass);
 
 		// Initialize input fields
-		$(document).find(FormEngineValidation.inputSelector).each(function() {
-			var config = $(this).data('formengine-input-params');
-			var fieldName = config.field;
-			var $field = $('[name="' + fieldName + '"]');
-			$field.data('main-field', fieldName);
-			$field.data('config', config);
-			FormEngineValidation.initializeInputField(fieldName);
-		}).promise().done(function () {
+		FormEngineValidation.initializeInputFields().promise().done(function () {
 			// Bind to field changes
 			$(document).on('change', FormEngineValidation.rulesSelector, function() {
 				// we need to wait, because the update of the select fields needs some time
@@ -79,6 +72,26 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		FormEngineValidation.lastTime = 0;
 		FormEngineValidation.refDate = today;
 		FormEngineValidation.USmode = 0;
+	};
+
+	/**
+	 * initialize all input fields
+	 *
+	 * @returns {*|jQuery}
+	 */
+	FormEngineValidation.initializeInputFields = function() {
+		return $(document).find(FormEngineValidation.inputSelector).each(function() {
+			var config = $(this).data('formengine-input-params');
+			var fieldName = config.field;
+			var $field = $('[name="' + fieldName + '"]');
+
+			// ignore fields which already have been initialized
+			if ($field.data('main-field') === undefined) {
+				$field.data('main-field', fieldName);
+				$field.data('config', config);
+				FormEngineValidation.initializeInputField(fieldName);
+			}
+		});
 	};
 
 	/**
@@ -117,7 +130,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 				for (var i = 0; i < evalList.length; i++) {
 					value = FormEngineValidation.formatValue(evalList[i], value, config)
 				}
-				if (value.length) {
+				// Prevent password fields to be overwritten with original value
+				if (value.length && $humanReadableField.attr('type') != 'password') {
 					$humanReadableField.val(value);
 				}
 				if ($checkboxField.length) {
@@ -131,6 +145,7 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		$humanReadableField.on('change', function() {
 			FormEngineValidation.updateInputField($(this).attr('name'));
 		});
+		$humanReadableField.on('keyup', FormEngineValidation.validate);
 
 		$checkboxField.data('main-field', fieldName);
 		$checkboxField.data('config', config);
@@ -237,11 +252,11 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	FormEngineValidation.validateField = function($field, value) {
 		value = value || FormEngineValidation.ltrim($field.val());
 
-		var $rules = $field.data('formengine-validation-rules');
+		var rules = $field.data('formengine-validation-rules');
 		var markParent = false;
 		var selected = 0;
 		var returnValue = value;
-		$.each($rules, function(k, rule) {
+		$.each(rules, function(k, rule) {
 			switch (rule.type) {
 				case 'required':
 					if (value === '') {
@@ -474,10 +489,31 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 		$(FormEngineValidation.rulesSelector).each(function() {
 			var $field = $(this);
 			var newValue = FormEngineValidation.validateField($field);
-			if (newValue.length) {
+			if (newValue.length && $field.val() !== newValue) {
 				$field.val(newValue);
+				FormEngineValidation.setCaretPosition($field, 0);
 			}
 		});
+	};
+
+	/**
+	 * Set the caret position in a text field
+	 */
+	FormEngineValidation.setCaretPosition = function($element, caretPos) {
+		var elem = $element.get(0);
+
+		if (elem.createTextRange) {
+			var range = elem.createTextRange();
+			range.move('character', caretPos);
+			range.select();
+		} else {
+			if (elem.selectionStart) {
+				elem.focus();
+				elem.setSelectionRange(caretPos, caretPos);
+			} else {
+				elem.focus();
+			}
+		}
 	};
 
 	/**
@@ -897,7 +933,8 @@ define('TYPO3/CMS/Backend/FormEngineValidation', ['jquery', 'TYPO3/CMS/Backend/F
 	 */
 	FormEngineValidation.markParentTab = function($element) {
 		var $panes = $element.parents('.tab-pane');
-		$.each($panes, function(k, $pane) {
+		$panes.each(function() {
+			var $pane = $(this);
 			var id = $pane.attr('id');
 			$(document)
 				.find('a[href="#' + id + '"]')

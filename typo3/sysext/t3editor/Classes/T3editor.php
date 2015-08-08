@@ -99,6 +99,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 	 */
 	public function setModeByFile($file) {
 		$fileInfo = GeneralUtility::split_fileref($file);
+		// @TODO: @FIXME: the method setModeByType returns void, so this method will never return a string
 		return $this->setModeByType($fileInfo['fileext']);
 	}
 
@@ -181,11 +182,7 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 		/** @var $pageRenderer \TYPO3\CMS\Core\Page\PageRenderer */
 		$pageRenderer = $this->getPageRenderer();
 
-		// Include editor-css
-		$cssFile = GeneralUtility::createVersionNumberedFilename(
-			$this->relExtPath . 'Resources/Public/Css/t3editor.css'
-		);
-		$doc->addStyleSheet('t3editor', $cssFile);
+		$doc->addStyleSheet('t3editor', $this->relExtPath . 'Resources/Public/Css/t3editor.css');
 
 		// Include editor-js-lib
 		$doc->loadJavascriptLib($this->codemirrorPath . 'codemirror.js');
@@ -236,13 +233,13 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 				$parserfile = array('tokenizetyposcript.js', 'parsejavascript.js');
 				break;
 			case self::MODE_CSS:
-				$parserfile = 'parsecss.js';
+				$parserfile = array('parsecss.js');
 				break;
 			case self::MODE_XML:
-				$parserfile = 'parsexml.js';
+				$parserfile = array('parsexml.js');
 				break;
 			case self::MODE_SPARQL:
-				$parserfile = 'parsesparql.js';
+				$parserfile = array('parsesparql.js');
 				break;
 			case self::MODE_HTML:
 				$parserfile = array('tokenizejavascript.js', 'parsejavascript.js', 'parsecss.js', 'parsexml.js', 'parsehtmlmixed.js');
@@ -344,13 +341,6 @@ class T3editor implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * Save the content from t3editor retrieved via Ajax
-	 *
-	 * new Ajax.Request('/dev/t3e/dummy/typo3/ajax.php', {
-	 * parameters: {
-	 * ajaxID: 'T3editor::saveCode',
-	 * t3editor_savetype: 'TypoScriptTemplateInformationModuleFunctionController'
-	 * }
-	 * });
 	 *
 	 * @param array $params Parameters (not used yet)
 	 * @param \TYPO3\CMS\Core\Http\AjaxRequestHandler $ajaxObj AjaxRequestHandler to handle response

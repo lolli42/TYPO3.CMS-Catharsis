@@ -70,8 +70,6 @@ class FileUploadController {
 	public function __construct() {
 		$GLOBALS['SOBE'] = $this;
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
-		$GLOBALS['BACK_PATH'] = '';
-
 		$this->init();
 	}
 
@@ -107,7 +105,6 @@ class FileUploadController {
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_upload.html');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform" enctype="multipart/form-data">';
 	}
 

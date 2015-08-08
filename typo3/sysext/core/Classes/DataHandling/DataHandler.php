@@ -1635,7 +1635,8 @@ class DataHandler {
 		if ((int)$id !== 0) {
 			// Get current value:
 			$curValueRec = $this->recordInfo($table, $id, $field);
-			if (isset($curValueRec[$field])) {
+			// isset() won't work here, since values can be NULL
+			if (array_key_exists($field, $curValueRec)) {
 				$curValue = $curValueRec[$field];
 			}
 		}
@@ -1804,7 +1805,7 @@ class DataHandler {
 		}
 		// Secures the string-length to be less than max.
 		if ((int)$tcaFieldConf['max'] > 0) {
-			$value = $GLOBALS['LANG']->csConvObj->substr($GLOBALS['LANG']->charSet, $value, 0, (int)$tcaFieldConf['max']);
+			$value = $GLOBALS['LANG']->csConvObj->substr($GLOBALS['LANG']->charSet, (string)$value, 0, (int)$tcaFieldConf['max']);
 		}
 		// Checking range of value:
 		if ($tcaFieldConf['range'] && $value != $tcaFieldConf['checkbox'] && (int)$value !== (int)$tcaFieldConf['default']) {
@@ -3269,6 +3270,9 @@ class DataHandler {
 						case 'inlineLocalizeSynchronize':
 							$this->inlineLocalizeSynchronize($table, $id, $value);
 							break;
+						case 'copyFromLanguage':
+							$this->copyRecordFromLanguage($table, $id, $value);
+							break;
 						case 'delete':
 							$this->deleteAction($table, $id);
 							break;
@@ -3326,9 +3330,10 @@ class DataHandler {
 	 * @param array $overrideValues Associative array with field/value pairs to override directly. Notice; Fields must exist in the table record and NOT be among excluded fields!
 	 * @param string $excludeFields Commalist of fields to exclude from the copy process (might get default values)
 	 * @param int $language Language ID (from sys_language table)
+	 * @param bool $ignoreLocalization If TRUE, any localization routine is skipped
 	 * @return int|null ID of new record, if any
 	 */
-	public function copyRecord($table, $uid, $destPid, $first = FALSE, $overrideValues = array(), $excludeFields = '', $language = 0) {
+	public function copyRecord($table, $uid, $destPid, $first = FALSE, $overrideValues = array(), $excludeFields = '', $language = 0, $ignoreLocalization = FALSE) {
 		$uid = ($origUid = (int)$uid);
 		// Only copy if the table is defined in $GLOBALS['TCA'], a uid is given and the record wasn't copied before:
 		if (!$GLOBALS['TCA'][$table] || !$uid || $this->isRecordCopied($table, $uid)) {
@@ -3353,7 +3358,7 @@ class DataHandler {
 
 		$fullLanguageCheckNeeded = $table != 'pages';
 		//Used to check language and general editing rights
-		if (($language <= 0 || !$this->BE_USER->checkLanguageAccess($language)) && !$this->BE_USER->recordEditAccessInternals($table, $uid, FALSE, FALSE, $fullLanguageCheckNeeded)) {
+		if (!$ignoreLocalization && ($language <= 0 || !$this->BE_USER->checkLanguageAccess($language)) && !$this->BE_USER->recordEditAccessInternals($table, $uid, FALSE, FALSE, $fullLanguageCheckNeeded)) {
 			if ($this->enableLogging) {
 				$this->log($table, $uid, 3, 0, 1, 'Attempt to copy record without having permissions to do so. [' . $this->BE_USER->errorMsg . '].');
 			}
@@ -3392,12 +3397,14 @@ class DataHandler {
 				$conf = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 				// Preparation/Processing of the value:
 				// "pid" is hardcoded of course:
+				// isset() won't work here, since values can be NULL in each of the arrays
+				// except setDefaultOnCopyArray, since we exploded that from a string
 				if ($field == 'pid') {
 					$value = $destPid;
-				} elseif (isset($overrideValues[$field])) {
+				} elseif (array_key_exists($field, $overrideValues)) {
 					// Override value...
 					$value = $overrideValues[$field];
-				} elseif (isset($copyAfterFields[$field])) {
+				} elseif (array_key_exists($field, $copyAfterFields)) {
 					// Copy-after value if available:
 					$value = $copyAfterFields[$field];
 				} elseif ($GLOBALS['TCA'][$table]['ctrl']['setToDefaultOnCopy'] && isset($setDefaultOnCopyArray[$field])) {
@@ -3445,7 +3452,7 @@ class DataHandler {
 		$this->cachedTSconfig = $copyTCE->cachedTSconfig;
 		$this->errorLog = array_merge($this->errorLog, $copyTCE->errorLog);
 		unset($copyTCE);
-		if ($language == 0) {
+		if (!$ignoreLocalization && $language == 0) {
 			//repointing the new translation records to the parent record we just created
 			$overrideValues[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] = $theNewSQLID;
 			$this->copyL10nOverlayRecords($table, $uid, $destPid, $first, $overrideValues, $excludeFields);
@@ -4643,6 +4650,27 @@ class DataHandler {
 		}
 	}
 
+	/**
+	 * Creates a independent copy of content elements into another language.
+	 *
+	 * @param string $table The table of the localized parent record
+	 * @param string $id Comma separated list of content element ids
+	 * @param string $value Comma separated list of the destination and the target language
+	 * @return void
+	 */
+	public function copyRecordFromLanguage($table, $id, $value) {
+		list($destination, $language) = GeneralUtility::intExplode(',', $value);
+
+		// array_reverse is required to keep the order of elements
+		$idList = array_reverse(GeneralUtility::intExplode(',', $id, TRUE));
+		foreach ($idList as $contentElementUid) {
+			$this->copyRecord($table, $contentElementUid, $destination, TRUE, array(
+				$GLOBALS['TCA'][$table]['ctrl']['languageField'] => $language,
+				$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] => 0
+			), '', 0, TRUE);
+		}
+	}
+
 	/*********************************************
 	 *
 	 * Cmd: Deleting
@@ -4993,46 +5021,46 @@ class DataHandler {
 	 */
 	public function canDeletePage($uid) {
 		// If we may at all delete this page
-		if ($this->doesRecordExist('pages', $uid, 'delete')) {
-			if ($this->deleteTree) {
-				// Returns the branch
-				$brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
-				// Checks if we had permissions
-				if ($brExist != -1) {
-					if ($this->noRecordsFromUnallowedTables($brExist . $uid)) {
-						$pagesInBranch = GeneralUtility::trimExplode(',', $brExist . $uid, TRUE);
-						foreach ($pagesInBranch as $pageInBranch) {
-							if (!$this->BE_USER->recordEditAccessInternals('pages', $pageInBranch, FALSE, FALSE, TRUE)) {
-								return 'Attempt to delete page which has prohibited localizations.';
-							}
-						}
-						return $pagesInBranch;
-					} else {
-						return 'Attempt to delete records from disallowed tables';
-					}
-				} else {
-					return 'Attempt to delete pages in branch without permissions';
-				}
-			} else {
-				// returns the branch
-				$brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
-				// Checks if branch exists
-				if ($brExist == '') {
-					if ($this->noRecordsFromUnallowedTables($uid)) {
-						if ($this->BE_USER->recordEditAccessInternals('pages', $uid, FALSE, FALSE, TRUE)) {
-							return array($uid);
-						} else {
-							return 'Attempt to delete page which has prohibited localizations.';
-						}
-					} else {
-						return 'Attempt to delete records from disallowed tables';
-					}
-				} else {
-					return 'Attempt to delete page which has subpages';
+		if (!$this->doesRecordExist('pages', $uid, 'delete')) {
+			return 'Attempt to delete page without permissions';
+		}
+
+		if ($this->deleteTree) {
+			// Returns the branch
+			$brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
+			// Checks if we had permissions
+			if ($brExist == -1) {
+				return 'Attempt to delete pages in branch without permissions';
+			}
+
+			if (!$this->noRecordsFromUnallowedTables($brExist . $uid)) {
+				return 'Attempt to delete records from disallowed tables';
+			}
+
+			$pagesInBranch = GeneralUtility::trimExplode(',', $brExist . $uid, TRUE);
+			foreach ($pagesInBranch as $pageInBranch) {
+				if (!$this->BE_USER->recordEditAccessInternals('pages', $pageInBranch, FALSE, FALSE, TRUE)) {
+					return 'Attempt to delete page which has prohibited localizations.';
 				}
 			}
+			return $pagesInBranch;
 		} else {
-			return 'Attempt to delete page without permissions';
+			// returns the branch
+			$brExist = $this->doesBranchExist('', $uid, $this->pMap['delete'], 1);
+			// Checks if branch exists
+			if ($brExist != '') {
+				return 'Attempt to delete page which has subpages';
+			}
+
+			if (!$this->noRecordsFromUnallowedTables($uid)) {
+				return 'Attempt to delete records from disallowed tables';
+			}
+
+			if ($this->BE_USER->recordEditAccessInternals('pages', $uid, FALSE, FALSE, TRUE)) {
+				return array($uid);
+			} else {
+				return 'Attempt to delete page which has prohibited localizations.';
+			}
 		}
 	}
 

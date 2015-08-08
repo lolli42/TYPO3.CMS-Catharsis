@@ -14,6 +14,7 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Filelist\FileListFolderTree;
@@ -44,11 +45,6 @@ class FileSystemNavigationFrameController {
 	 */
 	public $doc;
 
-	/**
-	 * @var string
-	 */
-	public $backPath;
-
 	// Internal, static: GPvar:
 	/**
 	 * @var string
@@ -75,7 +71,6 @@ class FileSystemNavigationFrameController {
 	 */
 	public function __construct() {
 		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
 		$this->init();
 	}
 
@@ -85,8 +80,6 @@ class FileSystemNavigationFrameController {
 	 * @return void
 	 */
 	protected function init() {
-		// Setting backPath
-		$this->backPath = $GLOBALS['BACK_PATH'];
 		// Setting GPvars:
 		$this->currentSubScript = GeneralUtility::_GP('currentSubScript');
 		$this->cMR = GeneralUtility::_GP('cMR');
@@ -100,18 +93,23 @@ class FileSystemNavigationFrameController {
 
 		// Create folder tree object:
 		if (!empty($this->scopeData)) {
-			$this->foldertree = GeneralUtility::makeInstance($this->scopeData['class']);
+			$className = $this->scopeData['class'];
+			$this->foldertree = GeneralUtility::makeInstance($className);
 			$this->foldertree->thisScript = $this->scopeData['script'];
 			$this->foldertree->ext_noTempRecyclerDirs = $this->scopeData['ext_noTempRecyclerDirs'];
 			$GLOBALS['SOBE']->browser = new \stdClass();
 			$GLOBALS['SOBE']->browser->mode = $this->scopeData['browser']['mode'];
 			$GLOBALS['SOBE']->browser->act = $this->scopeData['browser']['act'];
 		} else {
-			$this->foldertree = GeneralUtility::makeInstance(FileListFolderTree::class);
+			$className = FileListFolderTree::class;
+			$this->foldertree = GeneralUtility::makeInstance($className);
 			$this->foldertree->thisScript = BackendUtility::getModuleUrl('file_navframe');
 		}
-
-		$this->foldertree->ext_IconMode = $this->getBackendUser()->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
+		// Only set ext_IconMode if we are not running an ajax request from the ElementBrowser,
+		// which has this property hardcoded to 1.
+		if ($className !== ElementBrowserFolderTreeView::class) {
+			$this->foldertree->ext_IconMode = $this->getBackendUser()->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
+		}
 	}
 
 	/**
@@ -125,7 +123,6 @@ class FileSystemNavigationFrameController {
 		$this->doHighlight = !$this->getBackendUser()->getTSConfigVal('options.pageTree.disableTitleHighlight');
 		// Create template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_file_navframe.html');
 		$this->doc->showFlashMessages = FALSE;
 		// Adding javascript code for drag&drop and the filetree as well as the click menu code

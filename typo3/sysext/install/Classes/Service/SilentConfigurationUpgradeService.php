@@ -33,13 +33,11 @@ class SilentConfigurationUpgradeService {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManager
-	 * @inject
 	 */
 	protected $objectManager = NULL;
 
 	/**
 	 * @var \TYPO3\CMS\Core\Configuration\ConfigurationManager
-	 * @inject
 	 */
 	protected $configurationManager = NULL;
 
@@ -99,6 +97,20 @@ class SilentConfigurationUpgradeService {
 	);
 
 	/**
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager
+	 */
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManager $objectManager) {
+		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager
+	 */
+	public function injectConfigurationManager(\TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager) {
+		$this->configurationManager = $configurationManager;
+	}
+
+	/**
 	 * Executed configuration upgrades. Single upgrade methods must throw a
 	 * RedirectException if something was written to LocalConfiguration.
 	 *
@@ -109,6 +121,7 @@ class SilentConfigurationUpgradeService {
 		$this->configureBackendLoginSecurity();
 		$this->configureSaltedPasswords();
 		$this->setProxyAuthScheme();
+		$this->transferDeprecatedCurlSettings();
 		$this->disableImageMagickAndGdlibIfImageProcessingIsDisabled();
 		$this->disableImageMagickDetailSettingsIfImageMagickIsDisabled();
 		$this->setImageMagickDetailSettings();
@@ -233,6 +246,68 @@ class SilentConfigurationUpgradeService {
 		}
 		if ($currentValueInLocalConfiguration !== 'digest') {
 			$this->configurationManager->removeLocalConfigurationKeysByPath(array('HTTP/proxy_auth_scheme'));
+			$this->throwRedirectException();
+		}
+	}
+
+	/**
+	 * Parse old curl options and set new http ones instead
+	 *
+	 * @return void
+	 */
+	protected function transferDeprecatedCurlSettings() {
+		$changed = FALSE;
+		try {
+			$curlProxyServer = $this->configurationManager->getLocalConfigurationValueByPath('SYS/curlProxyServer');
+		} catch (\RuntimeException $e) {
+			$curlProxyServer = '';
+		}
+		try {
+			$proxyHost = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_host');
+		} catch (\RuntimeException $e) {
+			$proxyHost = '';
+		}
+		if (!empty($curlProxyServer) && empty($proxyHost)) {
+			$curlProxy = rtrim(preg_replace('#^https?://#', '', $curlProxyServer), '/');
+			$proxyParts = GeneralUtility::revExplode(':', $curlProxy, 2);
+			$this->configurationManager->setLocalConfigurationValueByPath('HTTP/proxy_host', $proxyParts[0]);
+			$this->configurationManager->setLocalConfigurationValueByPath('HTTP/proxy_port', $proxyParts[1]);
+			$changed = TRUE;
+		}
+
+		try {
+			$curlProxyUserPass = $this->configurationManager->getLocalConfigurationValueByPath('SYS/curlProxyUserPass');
+		} catch (\RuntimeException $e) {
+			$curlProxyUserPass = '';
+		}
+		try {
+			$proxyUser = $this->configurationManager->getLocalConfigurationValueByPath('HTTP/proxy_user');
+		} catch (\RuntimeException $e) {
+			$proxyUser = '';
+		}
+		if (!empty($curlProxyUserPass) && empty($proxyUser)) {
+			$userPassParts = explode(':', $curlProxyUserPass, 2);
+			$this->configurationManager->setLocalConfigurationValueByPath('HTTP/proxy_user', $userPassParts[0]);
+			$this->configurationManager->setLocalConfigurationValueByPath('HTTP/proxy_password', $userPassParts[1]);
+			$changed = TRUE;
+		}
+
+		try {
+			$curlUse = $this->configurationManager->getLocalConfigurationValueByPath('SYS/curlUse');
+		} catch (\RuntimeException $e) {
+			$curlUse = '';
+		}
+		try {
+			$adapter = $this->configurationManager->getConfigurationValueByPath('HTTP/adapter');
+		} catch (\RuntimeException $e) {
+			$adapter = '';
+		}
+		if (!empty($curlUse) && $adapter !== 'curl') {
+			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['adapter'] = 'curl';
+			$this->configurationManager->setLocalConfigurationValueByPath('HTTP/adapter', 'curl');
+			$changed = TRUE;
+		}
+		if ($changed) {
 			$this->throwRedirectException();
 		}
 	}

@@ -79,8 +79,6 @@ class CreateFolderController {
 	 */
 	public function __construct() {
 		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
-
 		$this->init();
 	}
 
@@ -114,7 +112,6 @@ class CreateFolderController {
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_newfolder.html');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->JScode = $this->doc->wrapScriptTags('
 			var path = "' . $this->target . '";
 

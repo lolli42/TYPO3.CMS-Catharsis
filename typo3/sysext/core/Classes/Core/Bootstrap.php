@@ -192,7 +192,7 @@ class Bootstrap {
 	/**
 	 * Sets the class loader to the bootstrap
 	 *
-	 * @param \Composer\Autoload\ClassLoader|\Helhum\ClassAliasLoader\Composer\ClassAliasLoader $classLoader an instance of the class loader
+	 * @param \Composer\Autoload\ClassLoader|\Helhum\ClassAliasLoader\ClassAliasLoader $classLoader an instance of the class loader
 	 * @return Bootstrap
 	 * @internal This is not a public API method, do not use in own extensions
 	 */
@@ -298,10 +298,15 @@ class Bootstrap {
 		if ($this->response instanceof \Psr\Http\Message\ResponseInterface) {
 			if (!headers_sent()) {
 				foreach ($this->response->getHeaders() as $name => $values) {
-					header($name . ': ' . implode(', ', $values), FALSE);
+					header($name . ': ' . implode(', ', $values));
 				}
-				// send the response type
-				header('HTTP/' . $this->response->getProtocolVersion() . ' ' . $this->response->getStatusCode() . ' ' . $this->response->getReasonPhrase());
+				// If the response code was not changed by legacy code (still is 200)
+				// then allow the PSR-7 response object to explicitly set it.
+				// Otherwise let legacy code take precedence.
+				// This code path can be deprecated once we expose the response object to third party code
+				if (http_response_code() === 200) {
+					header('HTTP/' . $this->response->getProtocolVersion() . ' ' . $this->response->getStatusCode() . ' ' . $this->response->getReasonPhrase());
+				}
 			}
 			echo $this->response->getBody()->__toString();
 		}
@@ -368,7 +373,6 @@ class Bootstrap {
 			->defineDatabaseConstants()
 			->defineUserAgentConstant()
 			->registerExtDirectComponents()
-			->transferDeprecatedCurlSettings()
 			->setCacheHashOptions()
 			->setDefaultTimezone()
 			->initializeL10nLocales()
@@ -411,7 +415,7 @@ class Bootstrap {
 	 */
 	public function ensureClassLoadingInformationExists() {
 		if (!self::$usesComposerClassLoading && !ClassLoadingInformation::classLoadingInformationExists()) {
-			ClassLoadingInformation::writeClassLoadingInformation();
+			ClassLoadingInformation::dumpClassLoadingInformation();
 			ClassLoadingInformation::registerClassLoadingInformation();
 		}
 		return $this;
@@ -552,30 +556,6 @@ class Bootstrap {
 		GeneralUtility::setSingletonInstance(\TYPO3\CMS\Core\Cache\CacheFactory::class, $cacheFactory);
 
 		$this->setEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class, $cacheManager);
-		return $this;
-	}
-
-	/**
-	 * Parse old curl options and set new http ones instead
-	 *
-	 * @TODO: Move this functionality to the silent updater in the Install Tool
-	 * @return Bootstrap
-	 */
-	protected function transferDeprecatedCurlSettings() {
-		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']) && empty($GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_host'])) {
-			$curlProxy = rtrim(preg_replace('#^https?://#', '', $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyServer']), '/');
-			$proxyParts = GeneralUtility::revExplode(':', $curlProxy, 2);
-			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_host'] = $proxyParts[0];
-			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_port'] = $proxyParts[1];
-		}
-		if (!empty($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyUserPass']) && empty($GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_user'])) {
-			$userPassParts = explode(':', $GLOBALS['TYPO3_CONF_VARS']['SYS']['curlProxyUserPass'], 2);
-			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_user'] = $userPassParts[0];
-			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy_password'] = $userPassParts[1];
-		}
-		if ($GLOBALS['TYPO3_CONF_VARS']['SYS']['curlUse']) {
-			$GLOBALS['TYPO3_CONF_VARS']['HTTP']['adapter'] = 'curl';
-		}
 		return $this;
 	}
 
@@ -1022,6 +1002,52 @@ class Bootstrap {
 	}
 
 	/**
+	 * Initialize the Routing for the TYPO3 Backend
+	 * Loads all routes registered inside all packages and stores them inside the Router
+	 *
+	 * @return Bootstrap
+	 * @internal This is not a public API method, do not use in own extensions
+	 */
+	public function initializeBackendRouter() {
+		$packageManager = $this->getEarlyInstance(\TYPO3\CMS\Core\Package\PackageManager::class);
+
+		// See if the Routes.php from all active packages have been built together already
+		$cacheIdentifier = 'BackendRoutesFromPackages_' . sha1((TYPO3_version . PATH_site . 'BackendRoutesFromPackages'));
+
+		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
+		$codeCache = $this->getEarlyInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('cache_core');
+		$routesFromPackages = array();
+		if ($codeCache->has($cacheIdentifier)) {
+			// substr is necessary, because the php frontend wraps php code around the cache value
+			$routesFromPackages = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
+		} else {
+			// Loop over all packages and check for a Configuration/Backend/Routes.php file
+			$packages = $packageManager->getActivePackages();
+			foreach ($packages as $package) {
+				$routesFileNameForPackage = $package->getPackagePath() . 'Configuration/Backend/Routes.php';
+				if (file_exists($routesFileNameForPackage)) {
+					$definedRoutesInPackage = require $routesFileNameForPackage;
+					if (is_array($definedRoutesInPackage)) {
+						$routesFromPackages += $definedRoutesInPackage;
+					}
+				}
+			}
+			// Store the data from all packages in the cache
+			$codeCache->set($cacheIdentifier, serialize($routesFromPackages));
+		}
+
+		// Build Route objects from the data
+		$router = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\Router::class);
+		foreach ($routesFromPackages as $name => $options) {
+			$path = $options['path'];
+			unset($options['path']);
+			$route = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\Route::class, $path, $options);
+			$router->addRoute($name, $route);
+		}
+		return $this;
+	}
+
+	/**
 	 * Initialize backend user object in globals
 	 *
 	 * @return Bootstrap
@@ -1051,7 +1077,6 @@ class Bootstrap {
 	 * @return \TYPO3\CMS\Core\Core\Bootstrap
 	 */
 	public function initializeBackendAuthentication($proceedIfNoUserIsLoggedIn = FALSE) {
-		$GLOBALS['BE_USER']->checkCLIuser();
 		$GLOBALS['BE_USER']->backendCheckLogin($proceedIfNoUserIsLoggedIn);
 		return $this;
 	}

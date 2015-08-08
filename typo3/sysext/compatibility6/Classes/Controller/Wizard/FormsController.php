@@ -182,7 +182,6 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 		$this->xmlStorage = $this->P['params']['xmlOutput'];
 		// Document template object:
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->backPath = $this->getBackPath();
 		$this->doc->setModuleTemplate('EXT:compatibility6/Resources/Private/Templates/Wizard/Forms.html');
 		// Setting form tag:
 		list($rUri) = explode('#', GeneralUtility::getIndpEnv('REQUEST_URI'));
@@ -855,7 +854,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 		// Add a cell which will set a minimum width:
 		$lines[] = '
 			<tr>
-				<td nowrap="nowrap"><img src="clear.gif" width="70" height="1" alt="" /></td>
+				<td nowrap="nowrap"><span style="width: 70px; height: 1px;"></span></td>
 				<td></td>
 			</tr>';
 		// Wrap in table and return:

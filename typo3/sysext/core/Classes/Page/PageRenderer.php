@@ -1114,9 +1114,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$type = 'text/javascript';
 		}
 		if (!isset($this->jsFiles[$file])) {
-			if (strpos($file, 'ajax.php?') !== FALSE) {
-				$compress = FALSE;
-			}
 			$this->jsFiles[$file] = array(
 				'file' => $file,
 				'type' => $type,
@@ -1151,9 +1148,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			$type = 'text/javascript';
 		}
 		if (!isset($this->jsFiles[$file])) {
-			if (strpos($file, 'ajax.php?') !== FALSE) {
-				$compress = FALSE;
-			}
 			$this->jsFiles[$file] = array(
 				'file' => $file,
 				'type' => $type,
@@ -1481,12 +1475,11 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			if (GeneralUtility::getApplicationContext()->isDevelopment()) {
 				$this->requireJsConfig['urlArgs'] = 'bust=' . $GLOBALS['EXEC_TIME'];
 			} else {
-				$this->requireJsConfig['urlArgs'] = 'bust=' . GeneralUtility::shortMD5(TYPO3_version);
+				$this->requireJsConfig['urlArgs'] = 'bust=' . GeneralUtility::hmac(TYPO3_version . PATH_site);
 			}
 			// first, load all paths for the namespaces, and configure contrib libs.
 			$this->requireJsConfig['paths'] = array(
 				'jquery-ui' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery-ui',
-				'jquery' => $this->backPath . rtrim($this->jQueryPath, '/'),
 				'datatables' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/jquery.dataTables',
 				'nprogress' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/nprogress',
 				'moment' => $this->backPath . 'sysext/core/Resources/Public/JavaScript/Contrib/moment',
@@ -1630,7 +1623,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param string $fileRef Input is a file-reference (see GeneralUtility::getFileAbsFileName). That file is expected to be a 'locallang.xlf' file containing a valid XML TYPO3 language structure.
 	 * @param string $selectionPrefix Prefix to select the correct labels (default: '')
-	 * @param string $stripFromSelectionName Sub-prefix to be removed from label names in the result (default: '')
+	 * @param string $stripFromSelectionName String to be removed from the label names in the output. (default: '')
 	 * @param int $errorMode Error mode (when file could not be found): 0 - syslog entry, 1 - do nothing, 2 - throw an exception
 	 * @return void
 	 */
@@ -1997,8 +1990,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			$out .= $this->inlineJavascriptWrap[0] . '
 				Ext.ns("TYPO3");
-				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";
-				Ext.SSL_SECURE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl(($this->backPath . 'gfx/clear.gif'))) . '";' . LF
+				Ext.BLANK_IMAGE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl($this->backPath . 'sysext/t3skin/icons/gfx/clear.gif')) . '";
+				Ext.SSL_SECURE_URL = "' . htmlspecialchars(GeneralUtility::locationHeaderUrl($this->backPath . 'sysext/t3skin/icons/gfx/clear.gif')) . '";' . LF
 				. $inlineSettings
 				. 'Ext.onReady(function() {'
 					. $code
@@ -2029,7 +2022,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 				// make sure the global TYPO3 is available
 				$inlineSettings = 'var TYPO3 = TYPO3 || {};' . CRLF . $inlineSettings;
 				$out .= $this->inlineJavascriptWrap[0] . $inlineSettings . $this->inlineJavascriptWrap[1];
-				if (TYPO3_MODE === 'BE') {
+				// Add language module only if also jquery is guaranteed to be there
+				if (TYPO3_MODE === 'BE' && !empty($this->jQueryVersions)) {
 					$this->loadRequireJsModule('TYPO3/CMS/Lang/Lang');
 				}
 			}
@@ -2337,8 +2331,6 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		}
 		$labelsFromFile = array();
 		$allLabels = $this->readLLfile($fileRef, $errorMode);
-		// Regular expression to strip the selection prefix and possibly something from the label name:
-		$labelPattern = '#^' . preg_quote($selectionPrefix, '#') . '(' . preg_quote($stripFromSelectionName, '#') . ')?#';
 		if ($allLabels !== FALSE) {
 			// Merge language specific translations:
 			if ($this->lang !== 'default' && isset($allLabels[$this->lang])) {
@@ -2348,10 +2340,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 			}
 			// Iterate through all locallang labels:
 			foreach ($labels as $label => $value) {
-				if ($selectionPrefix === '') {
-					$labelsFromFile[$label] = $value;
-				} elseif (strpos($label, $selectionPrefix) === 0) {
-					preg_replace($labelPattern, '', $label);
+				// If $selectionPrefix is set, only respect labels that start with $selectionPrefix
+				if ($selectionPrefix === '' || strpos($label, $selectionPrefix) === 0) {
+					// Remove substring $stripFromSelectionName from label
+					$label = str_replace($stripFromSelectionName, '', $label);
 					$labelsFromFile[$label] = $value;
 				}
 			}

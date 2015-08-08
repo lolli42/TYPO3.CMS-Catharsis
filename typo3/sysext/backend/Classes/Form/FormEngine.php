@@ -399,7 +399,10 @@ class FormEngine {
 			$this->hiddenFieldAccum[] = $element;
 		}
 		foreach ($resultArray['additionalHeadTags'] as $element) {
-			$this->additionalCode_pre[] = $element;
+			// prevent multiple include of the same files
+			if (!in_array($element, $this->additionalCode_pre)) {
+				$this->additionalCode_pre[] = $element;
+			}
 		}
 
 		if (!empty($resultArray['inlineData'])) {
@@ -863,7 +866,6 @@ class FormEngine {
 		// Create an instance of the document template object
 		// @todo: resolve clash getDocumentTemplate() / getControllerDocumenttemplate()
 		$GLOBALS['SOBE']->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$GLOBALS['SOBE']->doc->backPath = $GLOBALS['BACK_PATH'];
 		// Initialize FormEngine (rendering the forms)
 		// @todo: check if this is still needed, simplify
 		$GLOBALS['SOBE']->tceforms = $this;
@@ -905,7 +907,7 @@ class FormEngine {
 	 * The "entry" pid for inline records. Nested inline records can potentially hang around on different
 	 * pid's, but the entry pid is needed for AJAX calls, so that they would know where the action takes place on the page structure.
 	 *
-	 * @return integer
+	 * @return int
 	 */
 	protected function getInlineFirstPid() {
 		$table = $this->table;
@@ -1250,7 +1252,16 @@ class FormEngine {
 			}
 			$pageRenderer->loadJquery();
 			$pageRenderer->loadExtJS();
+			// Load tree stuff here
 			$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/tree.js');
+			$pageRenderer->addInlineLanguageLabelFile(ExtensionManagementUtility::extPath('lang') . 'locallang_csh_corebe.xlf', 'tcatree');
+			$pageRenderer->addJsFile('sysext/backend/Resources/Public/JavaScript/notifications.js');
+			if (ExtensionManagementUtility::isLoaded('rtehtmlarea')) {
+				// This js addition is hackish ... it will always load this file even if not RTE
+				// is added here. But this simplifies RTE initialization a lot and is thus kept for now.
+				$pageRenderer->addJsFile('sysext/rtehtmlarea/Resources/Public/JavaScript/HTMLArea/NameSpace/NameSpace.js');
+			}
+
 			$beUserAuth = $this->getBackendUserAuthentication();
 			// Make textareas resizable and flexible ("autogrow" in height)
 			$textareaSettings = array(
@@ -1277,7 +1288,10 @@ class FormEngine {
 				\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('lang') . 'locallang_core.xlf',
 				'file_upload'
 			);
-
+			// Load codemirror for T3Editor
+			if (ExtensionManagementUtility::isLoaded('t3editor')) {
+				$this->loadJavascriptLib('sysext/t3editor/Resources/Public/JavaScript/Contrib/codemirror/js/codemirror.js');
+			}
 			// We want to load jQuery-ui inside our js. Enable this using requirejs.
 			$this->loadJavascriptLib('sysext/backend/Resources/Public/JavaScript/jsfunc.inline.js');
 			$out .= '

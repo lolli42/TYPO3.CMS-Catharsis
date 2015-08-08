@@ -145,7 +145,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	/**
 	 * SQL parser
 	 *
-	 * @var \TYPO3\CMS\Core\Database\SqlParser
+	 * @var \TYPO3\CMS\Dbal\Database\SqlParser
 	 */
 	public $SQLparser;
 
@@ -209,7 +209,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 */
 	public function __construct() {
 		// Set SQL parser object for internal use:
-		$this->SQLparser = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\SqlParser::class, $this);
+		$this->SQLparser = GeneralUtility::makeInstance(\TYPO3\CMS\Dbal\Database\SqlParser::class, $this);
 		$this->installerSql = GeneralUtility::makeInstance(\TYPO3\CMS\Install\Service\SqlSchemaMigrationService::class);
 		$this->queryCache = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class)->getCache('dbal');
 		// Set internal variables with configuration:
@@ -936,7 +936,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	 * Executes a query.
 	 * EXPERIMENTAL since TYPO3 4.4.
 	 *
-	 * @param array $queryParts SQL parsed by method parseSQL() of \TYPO3\CMS\Core\Database\SqlParser
+	 * @param array $queryParts SQL parsed by method parseSQL() of \TYPO3\CMS\Dbal\Database\SqlParser
 	 * @return \mysqli_result|object MySQLi result object / DBAL object
 	 * @see self::sql_query()
 	 */
@@ -1753,7 +1753,17 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 						// but it's not overridden from \TYPO3\CMS\Core\Database\DatabaseConnection at the moment...
 						$patternForLike = $this->escapeStrForLike($pattern, $where_clause[$k]['func']['table']);
 						$where_clause[$k]['func']['str_like'] = $patternForLike;
-						// Intentional fallthrough
+						if ($where_clause[$k]['func']['table'] !== '') {
+							$where_clause[$k]['func']['table'] = $this->quoteName($v['func']['table']);
+						}
+						if ($where_clause[$k]['func']['field'] !== '') {
+							if ($this->dbmsSpecifics->getSpecific(Specifics\AbstractSpecifics::CAST_FIND_IN_SET)) {
+								$where_clause[$k]['func']['field'] = 'CAST(' . $this->quoteName($v['func']['field']) . ' AS CHAR)';
+							} else {
+								$where_clause[$k]['func']['field'] = $this->quoteName($v['func']['field']);
+							}
+						}
+						break;
 					case 'IFNULL':
 						// Intentional fallthrough
 					case 'LOCATE':
@@ -2891,9 +2901,9 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 		// Process query based on type:
 		switch ($parsedQuery['type']) {
 			case 'CREATETABLE':
-
 			case 'ALTERTABLE':
-
+				$this->createMappingsIfRequired($parsedQuery);
+				// Fall-through next instruction
 			case 'DROPTABLE':
 				$this->clearCachedFieldInfo();
 				$this->map_genericQueryParsed($parsedQuery);
@@ -3407,7 +3417,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	}
 
 	/**
-	 * Generic mapping of table/field names arrays (as parsed by \TYPO3\CMS\Core\Database\SqlParser)
+	 * Generic mapping of table/field names arrays (as parsed by \TYPO3\CMS\Dbal\Database\SqlParser)
 	 *
 	 * @param array $sqlPartArray Array with parsed SQL parts; Takes both fields, tables, where-parts, group and order-by. Passed by reference.
 	 * @param string $defaultTable Default table name to assume if no table is found in $sqlPartArray
@@ -3602,10 +3612,10 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 	}
 
 	/**
-	 * Will do table/field mapping on a general \TYPO3\CMS\Core\Database\SqlParser-compliant SQL query
+	 * Will do table/field mapping on a general \TYPO3\CMS\Dbal\Database\SqlParser-compliant SQL query
 	 * (May still not support all query types...)
 	 *
-	 * @param array $parsedQuery Parsed QUERY as from \TYPO3\CMS\Core\Database\SqlParser::parseSQL(). NOTICE: Passed by reference!
+	 * @param array $parsedQuery Parsed QUERY as from \TYPO3\CMS\Dbal\Database\SqlParser::parseSQL(). NOTICE: Passed by reference!
 	 * @throws \InvalidArgumentException
 	 * @return void
 	 * @see \TYPO3\CMS\Core\Database\SqlParser::parseSQL()
@@ -3676,6 +3686,51 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					$fieldArray[$k] = $this->mapping[$table]['mapFieldNames'][$v];
 				}
 			}
+		}
+	}
+
+	/**
+	 * Create a mapping for each table and field if required.
+	 *
+	 * @param array $parsedQuery The parsed query
+	 * @return void
+	 */
+	protected function createMappingsIfRequired($parsedQuery) {
+		if (
+			!$this->dbmsSpecifics->specificExists(Specifics\AbstractSpecifics::TABLE_MAXLENGTH)
+			&& !$this->dbmsSpecifics->specificExists(Specifics\AbstractSpecifics::FIELD_MAXLENGTH)
+		) {
+			return;
+		}
+
+		$mappingConfiguration = array();
+		$table = $parsedQuery['TABLE'];
+		if (!isset($this->mapping[$table])) {
+			$truncatedTable = $this->dbmsSpecifics->truncateIdentifier($table, Specifics\AbstractSpecifics::TABLE_MAXLENGTH);
+			if ($table !== $truncatedTable) {
+				$mappingConfiguration['mapTableName'] = $truncatedTable;
+			}
+		}
+		foreach ($parsedQuery['FIELDS'] as $field => $_) {
+			if (!isset($this->mapping[$table]['mapFieldNames'][$field])) {
+				$truncatedField = $this->dbmsSpecifics->truncateIdentifier($field, Specifics\AbstractSpecifics::FIELD_MAXLENGTH);
+				if ($field !== $truncatedField) {
+					$mappingConfiguration['mapFieldNames'][$field] = $truncatedField;
+				}
+			}
+		}
+		if (!empty($mappingConfiguration)) {
+			/** @var \TYPO3\CMS\Extbase\Object\ObjectManager $objectManager */
+			$objectManager = GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\Object\ObjectManager::class);
+			/** @var \TYPO3\CMS\Core\Configuration\ConfigurationManager $configurationManager */
+			$configurationManager = $objectManager->get(\TYPO3\CMS\Core\Configuration\ConfigurationManager::class);
+			$configurationManager->setLocalConfigurationValueByPath(
+				'EXTCONF/dbal/mapping/' . $table,
+				$mappingConfiguration
+			);
+
+			// renew mapping information
+			$this->mapping = array_merge($this->mapping, array($table => $mappingConfiguration));
 		}
 	}
 

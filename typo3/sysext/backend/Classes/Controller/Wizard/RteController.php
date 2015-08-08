@@ -20,6 +20,8 @@ use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -70,9 +72,15 @@ class RteController extends AbstractWizardController {
 	public $MCONF = array();
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
 		$GLOBALS['SOBE'] = $this;
 
@@ -93,7 +101,6 @@ class RteController extends AbstractWizardController {
 		$this->MCONF['name'] = 'wizard_rte';
 		// Starting the document template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $this->getBackPath();
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/wizard_rte.html');
 		// Need to NOT have the page wrapped in DIV since if we do that we destroy
 		// the feature that the RTE spans the whole height of the page!!!
@@ -222,13 +229,19 @@ class RteController extends AbstractWizardController {
 				$undoButton = 1;
 			}
 			// Close
-			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($closeUrl) . '); return false;') . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($closeUrl) . '); return false;') . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 			// Save
-			$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="_savedok" class="c-inputButton" src="clear.gif" onclick="TBE_EDITOR.checkAndDoSubmit(1); return false;" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+			$buttons['save'] = '<button class="c-inputButton" name="_savedok_x" onclick="TBE_EDITOR.checkAndDoSubmit(1); return false;">'
+				. IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+				. '</button>';
 			// Save & View
-			$buttons['save_view'] = IconUtility::getSpriteIcon('actions-document-save-view', array('html' => '<input type="image" class="c-inputButton" name="_savedokview" src="clear.gif" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '" />'));
+			$buttons['save_view'] = '<button class="c-inputButton" name="_savedokview_x" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '">'
+				. IconUtility::getSpriteIcon('actions-document-save-view', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE)))
+				. '</button>';
 			// Save & Close
-			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<input type="image" class="c-inputButton" name="_saveandclosedok" src="clear.gif" onclick="' . htmlspecialchars('document.editform.redirect.value=' . GeneralUtility::quoteJSvalue($closeUrl) . '; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />'));
+			$buttons['save_close'] = '<button class="c-inputButton" name="_saveandclosedok_x" onclick="' . htmlspecialchars('document.editform.redirect.value=' . GeneralUtility::quoteJSvalue($closeUrl) . '; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '">'
+				. IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)))
+				. '</button>';
 			// Undo/Revert:
 			if ($undoButton) {
 				$aOnClick = 'window.location.href=' .

@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Backend\Controller;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -157,13 +159,6 @@ class PageLayoutController {
 	public $doc;
 
 	/**
-	 * Back path of the module
-	 *
-	 * @var string
-	 */
-	public $backPath;
-
-	/**
 	 * "Pseudo" Description -table name
 	 *
 	 * @var string
@@ -291,6 +286,26 @@ class PageLayoutController {
 	protected $closeUrl;
 
 	/**
+	 * Caches the available languages in a colPos
+	 *
+	 * @var array
+	 */
+	protected $languagesInColumnCache = array();
+
+	/**
+	 * Caches the amount of content elements as a matrix
+	 *
+	 * @var array
+	 * @internal
+	 */
+	public $contentElementCache = array();
+
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Initializing the module
 	 *
 	 * @return void
@@ -301,7 +316,6 @@ class PageLayoutController {
 		// Setting module configuration / page select clause
 		$this->MCONF = $GLOBALS['MCONF'];
 		$this->perms_clause = $this->getBackendUser()->getPagePermsClause(1);
-		$this->backPath = $GLOBALS['BACK_PATH'];
 		// Get session data
 		$sessionData = $this->getBackendUser()->getSessionData(RecordList::class);
 		$this->search_field = !empty($sessionData['search_field']) ? $sessionData['search_field'] : '';
@@ -504,7 +518,6 @@ class PageLayoutController {
 
 			// Start document template object:
 			$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-			$this->doc->backPath = $GLOBALS['BACK_PATH'];
 			$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_layout.html');
 
 			// override the default jumpToUrl
@@ -525,7 +538,7 @@ class PageLayoutController {
 			$this->doc->JScode .= $this->doc->wrapScriptTags('
 				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
 				if (top.fsMod) top.fsMod.navFrameHighlightedID["web"] = "pages' . (int)$this->id . '_"+top.fsMod.currentBank; ' . (int)$this->id . ';
-			' . ($this->popView ? BackendUtility::viewOnClick($this->id, $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->id)) : '') . '
+			' . ($this->popView ? BackendUtility::viewOnClick($this->id, '', BackendUtility::BEgetRootLine($this->id)) : '') . '
 
 				function deleteRecord(table,id,url) {	//
 					if (confirm(' . GeneralUtility::quoteJSvalue($lang->getLL('deleteWarning')) . ')) {
@@ -654,7 +667,6 @@ class PageLayoutController {
 		} else {
 			// If no access or id value, create empty document:
 			$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-			$this->doc->backPath = $GLOBALS['BACK_PATH'];
 			$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_layout.html');
 			$this->doc->JScode = $this->doc->wrapScriptTags('
 				if (top.fsMod) top.fsMod.recentIds["web"] = ' . (int)$this->id . ';
@@ -928,7 +940,6 @@ class PageLayoutController {
 		// Select element matrix:
 		if ($this->eRParts[0] == 'tt_content' && MathUtility::canBeInterpretedAsInteger($this->eRParts[1])) {
 			$posMap = GeneralUtility::makeInstance(ContentLayoutPagePositionMap::class);
-			$posMap->backPath = $GLOBALS['BACK_PATH'];
 			$posMap->cur_sys_language = $this->current_sys_language;
 			$HTMLcode = '';
 			// CSH:
@@ -949,7 +960,6 @@ class PageLayoutController {
 	public function renderListContent() {
 		/** @var $dbList \TYPO3\CMS\Backend\View\PageLayoutView */
 		$dbList = GeneralUtility::makeInstance(PageLayoutView::class);
-		$dbList->backPath = $GLOBALS['BACK_PATH'];
 		$dbList->thumbs = $this->imagemode;
 		$dbList->no_noWrap = 1;
 		$dbList->descrTable = $this->descrTable;
@@ -1103,6 +1113,9 @@ class PageLayoutController {
 	 * @return array all available buttons as an assoc. array
 	 */
 	protected function getButtons($function = '') {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
 		$lang = $this->getLanguageService();
 		$buttons = array(
 			'view' => '',
@@ -1126,7 +1139,7 @@ class PageLayoutController {
 		);
 		// View page
 		if (!VersionState::cast($this->pageinfo['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		}
 		// Shortcut
 		if ($this->getBackendUser()->mayMakeShortcut()) {
@@ -1191,13 +1204,17 @@ class PageLayoutController {
 			}
 			if ($function == 'quickEdit') {
 				// Save record
-				$buttons['savedok'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="_savedok" class="c-inputButton" src="clear.gif" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+				$buttons['savedok'] = '<button class="c-inputButton" name="_savedok_x">'
+					. IconUtility::getSpriteIcon('actions-document-save', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+					. '</button>';
 				// Save and close
-				$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<input type="image" class="c-inputButton" src="clear.gif" name="_saveandclosedok" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />'));
+				$buttons['save_close'] = '<button class="c-inputButton" name="_saveandclosedok_x">'
+					. IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)))
+					. '</button>';
 				// Save record and show page
 				$buttons['savedokshow'] = '<a href="#" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-view') . '</a>';
 				// Close record
-				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($this->closeUrl) . '); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($this->closeUrl) . '); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 				// Delete record
 				if ($this->deleteButton) {
 					$buttons['deletedok'] = '<a href="#" onclick="' . htmlspecialchars('return deleteRecord(' . GeneralUtility::quoteJSvalue($this->eRParts[0]) . ',' . GeneralUtility::quoteJSvalue($this->eRParts[1]) . ',' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?id=' . $this->id) . ');') . '" title="' . $lang->getLL('deleteItem', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
@@ -1207,7 +1224,6 @@ class PageLayoutController {
 					$buttons['undo'] = '<a href="#"
 						onclick="' . htmlspecialchars('window.location.href=' .
 							GeneralUtility::quoteJSvalue(
-								$GLOBALS['BACK_PATH'] .
 								BackendUtility::getModuleUrl(
 									'record_history',
 									array(
@@ -1223,7 +1239,6 @@ class PageLayoutController {
 					$buttons['history_record'] = '<a href="#"
 						onclick="' . htmlspecialchars('jumpToUrl(' .
 							GeneralUtility::quoteJSvalue(
-								$GLOBALS['BACK_PATH'] .
 								BackendUtility::getModuleUrl(
 									'record_history',
 									array(
@@ -1232,7 +1247,7 @@ class PageLayoutController {
 									)
 								) . '#latest'
 							) . ');return false;') . '"
-						title="' . $lang->getLL('recordHistory', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
+						title="' . $lang->getLL('recordHistory', TRUE) . '">' . $iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '</a>';
 				}
 			}
 		}
@@ -1298,6 +1313,92 @@ class PageLayoutController {
 				'sys_language.title'
 			);
 		}
+	}
+
+	/**
+	 * Get used languages in a colPos of a page
+	 *
+	 * @param int $pageId
+	 * @param int $colPos
+	 * @return bool|\mysqli_result|object
+	 */
+	public function getUsedLanguagesInPageAndColumn($pageId, $colPos) {
+		if (!isset($languagesInColumnCache[$pageId])) {
+			$languagesInColumnCache[$pageId] = array();
+		}
+		if (!isset($languagesInColumnCache[$pageId][$colPos])) {
+			$languagesInColumnCache[$pageId][$colPos] = array();
+		}
+
+		if (empty($languagesInColumnCache[$pageId][$colPos])) {
+			$exQ = BackendUtility::deleteClause('tt_content') .
+				($this->getBackendUser()->isAdmin() ? '' : ' AND sys_language.hidden=0');
+
+			$databaseConnection = $this->getDatabaseConnection();
+			$res = $databaseConnection->exec_SELECTquery(
+				'sys_language.*',
+				'tt_content,sys_language',
+				'tt_content.sys_language_uid=sys_language.uid AND tt_content.colPos = ' . (int)$colPos . ' AND tt_content.pid=' . (int)$pageId . $exQ .
+				BackendUtility::versioningPlaceholderClause('tt_content'),
+				'tt_content.sys_language_uid,sys_language.uid,sys_language.pid,sys_language.tstamp,sys_language.hidden,sys_language.title,sys_language.language_isocode,sys_language.static_lang_isocode,sys_language.flag',
+				'sys_language.title'
+			);
+			while ($row = $databaseConnection->sql_fetch_assoc($res)) {
+				$languagesInColumnCache[$pageId][$colPos][$row['uid']] = $row;
+			}
+			$databaseConnection->sql_free_result($res);
+		}
+
+		return $languagesInColumnCache[$pageId][$colPos];
+	}
+
+	/**
+	 * Check if a column of a page for a language is empty. Translation records are ignored here!
+	 *
+	 * @param int $colPos
+	 * @param int $languageId
+	 * @return bool
+	 */
+	public function isColumnEmpty($colPos, $languageId) {
+		foreach ($this->contentElementCache[$languageId][$colPos] as $uid => $row) {
+			if ((int)$row['l18n_parent'] === 0) {
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+
+	/**
+	 * Get elements for a column and a language
+	 *
+	 * @param int $pageId
+	 * @param int $colPos
+	 * @param int $languageId
+	 * @return array
+	 */
+	public function getElementsFromColumnAndLanguage($pageId, $colPos, $languageId) {
+		if (!isset($this->contentElementCache[$languageId][$colPos])) {
+			$languageId = (int)$languageId;
+			$whereClause = 'tt_content.pid=' . (int)$pageId . ' AND tt_content.colPos=' . (int)$colPos . ' AND tt_content.sys_language_uid=' . $languageId . BackendUtility::deleteClause('tt_content');
+			if ($languageId > 0) {
+				$whereClause .= ' AND tt_content.l18n_parent=0 AND sys_language.uid=' . $languageId . ($this->getBackendUser()->isAdmin() ? '' : ' AND sys_language.hidden=0');
+			}
+
+			$databaseConnection = $this->getDatabaseConnection();
+			$res = $databaseConnection->exec_SELECTquery(
+				'tt_content.uid',
+				'tt_content,sys_language',
+				$whereClause
+			);
+			while ($row = $databaseConnection->sql_fetch_assoc($res)) {
+				$this->contentElementCache[$languageId][$colPos][$row['uid']] = $row;
+			}
+			$databaseConnection->sql_free_result($res);
+		}
+		if (is_array($this->contentElementCache[$languageId][$colPos])) {
+			return array_keys($this->contentElementCache[$languageId][$colPos]);
+		}
+		return array();
 	}
 
 	/**

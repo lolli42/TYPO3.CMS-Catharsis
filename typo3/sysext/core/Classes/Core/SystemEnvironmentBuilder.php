@@ -71,7 +71,6 @@ class SystemEnvironmentBuilder {
 		self::defineBaseConstants();
 		self::definePaths($relativePathPart);
 		self::checkMainPathsExist();
-		self::handleMagicQuotesGpc();
 		self::initializeGlobalVariables();
 		self::initializeGlobalTimeTrackingVariables();
 		self::initializeBasicErrorReporting();
@@ -84,19 +83,18 @@ class SystemEnvironmentBuilder {
 	 */
 	static protected function defineBaseConstants() {
 		// This version, branch and copyright
-		define('TYPO3_version', '7.4-dev');
-		define('TYPO3_branch', '7.4');
+		define('TYPO3_version', '7.5.0-dev');
+		define('TYPO3_branch', '7.5');
 		define('TYPO3_copyright_year', '1998-2015');
 
 		// TYPO3 external links
 		define('TYPO3_URL_GENERAL', 'http://typo3.org/');
-		define('TYPO3_URL_ORG', 'http://typo3.org/');
-		define('TYPO3_URL_LICENSE', 'http://typo3.org/licenses');
+		define('TYPO3_URL_LICENSE', 'http://typo3.org/typo3-cms/overview/licenses/');
 		define('TYPO3_URL_EXCEPTION', 'http://typo3.org/go/exception/CMS/');
 		define('TYPO3_URL_MAILINGLISTS', 'http://lists.typo3.org/cgi-bin/mailman/listinfo');
 		define('TYPO3_URL_DOCUMENTATION', 'http://typo3.org/documentation/');
-		define('TYPO3_URL_DOCUMENTATION_TSREF', 'http://docs.typo3.org/typo3cms/TyposcriptReference/');
-		define('TYPO3_URL_DOCUMENTATION_TSCONFIG', 'http://docs.typo3.org/typo3cms/TSconfigReference/');
+		define('TYPO3_URL_DOCUMENTATION_TSREF', 'https://docs.typo3.org/typo3cms/TyposcriptReference/');
+		define('TYPO3_URL_DOCUMENTATION_TSCONFIG', 'https://docs.typo3.org/typo3cms/TSconfigReference/');
 		define('TYPO3_URL_CONSULTANCY', 'http://typo3.org/support/professional-services/');
 		define('TYPO3_URL_CONTRIBUTE', 'http://typo3.org/contribute/');
 		define('TYPO3_URL_SECURITY', 'http://typo3.org/teams/security/');
@@ -188,20 +186,6 @@ class SystemEnvironmentBuilder {
 				. '* A symlink "typo3_src" pointing to the TYPO3 CMS core.' . LF
 				. '* A symlink "typo3" - the backend entry point - pointing to "typo3_src/typo3"' . LF
 				. '* A symlink "index.php" - the frontend entry point - points to "typo3_src/index.php"');
-		}
-	}
-
-	/**
-	 * Compatibility layer for magic quotes
-	 *
-	 * @return void
-	 */
-	static protected function handleMagicQuotesGpc() {
-		if (!get_magic_quotes_gpc()) {
-			GeneralUtility::addSlashesOnArray($_GET);
-			GeneralUtility::addSlashesOnArray($_POST);
-			$GLOBALS['HTTP_GET_VARS'] = $_GET;
-			$GLOBALS['HTTP_POST_VARS'] = $_POST;
 		}
 	}
 

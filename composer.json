@@ -37,10 +37,10 @@
 		"pear/http_request2": "~2.2.1",
 		"phpwhois/idna-convert": "~0.8.2",
 		"swiftmailer/swiftmailer": "~5.4.1",
-		"symfony/console": "~2.5.11",
-		"symfony/finder": "^2.6.9",
+		"symfony/console": "~2.7.0",
+		"symfony/finder": "~2.7.0",
 		"doctrine/instantiator": "~1.0.4",
-		"helhum/class-alias-loader": "^1.1.9",
+		"helhum/class-alias-loader": "^2.0.0",
 		"typo3/cms-composer-installers": "^1.2.2",
 		"psr/http-message": "~1.0"
 	},
@@ -197,6 +197,7 @@
 			"TYPO3\\CMS\\Install\\Tests\\": "typo3/sysext/install/Tests/",
 			"TYPO3\\CMS\\Lang\\Tests\\": "typo3/sysext/lang/Tests/",
 			"TYPO3\\CMS\\Lowlevel\\Tests\\": "typo3/sysext/lowlevel/Tests/",
+			"TYPO3\\CMS\\Mediace\\": "typo3/sysext/mediace/Classes/",
 			"TYPO3\\CMS\\Mediace\\Tests\\": "typo3/sysext/mediace/Tests/",
 			"TYPO3\\CMS\\Recordlist\\Tests\\": "typo3/sysext/recordlist/Tests/",
 			"TYPO3\\CMS\\Reports\\Tests\\": "typo3/sysext/reports/Tests/",
@@ -205,7 +206,8 @@
 			"TYPO3\\CMS\\Scheduler\\Tests\\": "typo3/sysext/scheduler/Tests/",
 			"TYPO3\\CMS\\Sv\\Tests\\": "typo3/sysext/sv/Tests/",
 			"TYPO3\\CMS\\Workspaces\\Tests\\": "typo3/sysext/workspaces/Tests/"
-		}
+		},
+		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
 	},
 	"include-path": [
 		"typo3/vendor/pear/http_request2/"

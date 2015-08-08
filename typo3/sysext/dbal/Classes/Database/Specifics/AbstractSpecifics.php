@@ -26,6 +26,7 @@ abstract class AbstractSpecifics {
 	const FIELD_MAXLENGTH = 'field_maxlength';
 	const LIST_MAXEXPRESSIONS = 'list_maxexpressions';
 	const PARTIAL_STRING_INDEX = 'partial_string_index';
+	const CAST_FIND_IN_SET = 'cast_find_in_set';
 
 	/**
 	 * Contains the specifics of a DBMS.
@@ -147,6 +148,28 @@ abstract class AbstractSpecifics {
 		}
 
 		return array_chunk($expressionList, $this->getSpecific(self::LIST_MAXEXPRESSIONS), $preserveArrayKeys);
+	}
+
+	/**
+	 * Truncates the name of the identifier.
+	 * Based on TYPO3.FLOWs' FlowAnnotationDriver::truncateIdentifier()
+	 *
+	 * @param string $identifier
+	 * @param string $specific
+	 * @return string
+	 */
+	public function truncateIdentifier($identifier, $specific) {
+		if (!$this->specificExists($specific)) {
+			return $identifier;
+		}
+
+		$maxLength = $this->getSpecific($specific);
+		if (strlen($identifier) > $maxLength) {
+			$truncateChars = 10;
+			$identifier = substr($identifier, 0, $maxLength - $truncateChars) . '_' . substr(sha1($identifier), 0, $truncateChars - 1);
+		}
+
+		return $identifier;
 	}
 
 	/**

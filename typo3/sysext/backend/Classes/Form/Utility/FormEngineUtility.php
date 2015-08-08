@@ -195,7 +195,11 @@ class FormEngineUtility {
 		} elseif (substr($icon, 0, 3) == '../') {
 			$selIconFile = GeneralUtility::resolveBackPath($icon);
 			if (is_file(PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3)))) {
-				$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
+				if (\TYPO3\CMS\Core\Utility\StringUtility::endsWith($icon, '.svg')) {
+					$selIconInfo = TRUE;
+				} else {
+					$selIconInfo = getimagesize((PATH_site . GeneralUtility::resolveBackPath(substr($icon, 3))));
+				}
 			}
 		} elseif (substr($icon, 0, 4) == 'ext/' || substr($icon, 0, 7) == 'sysext/') {
 			$selIconFile = $icon;
@@ -650,7 +654,7 @@ class FormEngineUtility {
 	 * Get inlineFirstPid from a given objectId string
 	 *
 	 * @param string $domObjectId The id attribute of an element
-	 * @return integer|NULL Pid or null
+	 * @return int|NULL Pid or null
 	 * @internal
 	 */
 	static public function getInlineFirstPidFromDomObjectId($domObjectId) {

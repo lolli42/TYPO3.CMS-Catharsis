@@ -24,39 +24,75 @@ class DownloadController extends AbstractController {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
-	 * @inject
 	 */
 	protected $extensionRepository;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility
-	 * @inject
 	 */
 	protected $fileHandlingUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Service\ExtensionManagementService
-	 * @inject
 	 */
 	protected $managementService;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\InstallUtility
-	 * @inject
 	 */
 	protected $installUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\DownloadUtility
-	 * @inject
 	 */
 	protected $downloadUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
-	 * @inject
 	 */
 	protected $configurationUtility;
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
+	 */
+	public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository) {
+		$this->extensionRepository = $extensionRepository;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility $fileHandlingUtility
+	 */
+	public function injectFileHandlingUtility(\TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility $fileHandlingUtility) {
+		$this->fileHandlingUtility = $fileHandlingUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Service\ExtensionManagementService $managementService
+	 */
+	public function injectManagementService(\TYPO3\CMS\Extensionmanager\Service\ExtensionManagementService $managementService) {
+		$this->managementService = $managementService;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility
+	 */
+	public function injectInstallUtility(\TYPO3\CMS\Extensionmanager\Utility\InstallUtility $installUtility) {
+		$this->installUtility = $installUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\DownloadUtility $downloadUtility
+	 */
+	public function injectDownloadUtility(\TYPO3\CMS\Extensionmanager\Utility\DownloadUtility $downloadUtility) {
+		$this->downloadUtility = $downloadUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility
+	 */
+	public function injectConfigurationUtility(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility) {
+		$this->configurationUtility = $configurationUtility;
+	}
 
 	/**
 	 * Check extension dependencies
@@ -69,34 +105,41 @@ class DownloadController extends AbstractController {
 		$title = '';
 		$hasDependencies = FALSE;
 		$hasErrors = FALSE;
-		try {
-			$dependencyTypes = $this->managementService->getAndResolveDependencies($extension);
-			if (!empty($dependencyTypes)) {
-				$hasDependencies = TRUE;
-				$message = '<p>' . $this->translate('downloadExtension.dependencies.headline') . '</p>';
-				foreach ($dependencyTypes as $dependencyType => $dependencies) {
-					$extensions = '';
-					foreach ($dependencies as $extensionKey => $dependency) {
-						$extensions .= $this->translate('downloadExtension.dependencies.extensionWithVersion', array(
-								$extensionKey, $dependency->getVersion()
-							)) . '<br />';
+		if ($this->configurationUtility->getCurrentConfiguration('extensionmanager')['automaticInstallation']['value']) {
+			$action = 'installFromTer';
+			try {
+				$dependencyTypes = $this->managementService->getAndResolveDependencies($extension);
+				if (!empty($dependencyTypes)) {
+					$hasDependencies = TRUE;
+					$message = '<p>' . $this->translate('downloadExtension.dependencies.headline') . '</p>';
+					foreach ($dependencyTypes as $dependencyType => $dependencies) {
+						$extensions = '';
+						foreach ($dependencies as $extensionKey => $dependency) {
+							$extensions .= $this->translate('downloadExtension.dependencies.extensionWithVersion', array(
+									$extensionKey, $dependency->getVersion()
+								)) . '<br />';
+						}
+						$message .= $this->translate('downloadExtension.dependencies.typeHeadline',
+							array(
+								$this->translate('downloadExtension.dependencyType.' . $dependencyType),
+								$extensions
+							)
+						);
 					}
-					$message .= $this->translate('downloadExtension.dependencies.typeHeadline',
-						array(
-							$this->translate('downloadExtension.dependencyType.' . $dependencyType),
-							$extensions
-						)
-					);
+					$title = $this->translate('downloadExtension.dependencies.resolveAutomatically');
 				}
-				$title = $this->translate('downloadExtension.dependencies.resolveAutomatically');
+				$this->view->assign('dependencies', $dependencyTypes);
+			} catch (\Exception $e) {
+				$hasErrors = TRUE;
+				$title = $this->translate('downloadExtension.dependencies.errorTitle');
+				$message = $e->getMessage();
 			}
-			$this->view->assign('dependencies', $dependencyTypes);
-		} catch (\Exception $e) {
-			$hasErrors = TRUE;
-			$title = $this->translate('downloadExtension.dependencies.errorTitle');
-			$message = $e->getMessage();
+		} else {
+			// if automatic installation is deactivated, no dependency check is needed (download only)
+			$action = 'installExtensionWithoutSystemDependencyCheck';
 		}
 		$this->view->assign('extension', $extension)
+			->assign('action', $action)
 			->assign('hasDependencies', $hasDependencies)
 			->assign('hasErrors', $hasErrors)
 			->assign('message', $message)
@@ -246,7 +289,7 @@ class DownloadController extends AbstractController {
 	}
 
 	/**
-	 * Install an action from TER
+	 * Install an extension from TER
 	 * Downloads the extension, resolves dependencies and installs it
 	 *
 	 * @param \TYPO3\CMS\Extensionmanager\Domain\Model\Extension $extension

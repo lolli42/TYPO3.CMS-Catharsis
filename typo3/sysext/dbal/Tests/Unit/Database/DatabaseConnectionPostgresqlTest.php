@@ -90,7 +90,7 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 	 */
 	public function findInSetIsProperlyRemapped() {
 		$result = $this->subject->SELECTquery('*', 'fe_users', 'FIND_IN_SET(10, usergroup)');
-		$expected = 'SELECT * FROM "fe_users" WHERE FIND_IN_SET(10, "usergroup") != 0';
+		$expected = 'SELECT * FROM "fe_users" WHERE FIND_IN_SET(10, CAST("usergroup" AS CHAR)) != 0';
 		$this->assertEquals($expected, $this->cleanSql($result));
 	}
 
@@ -153,7 +153,7 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 		$components = $this->subject->SQLparser->_callRef('parseALTERTABLE', $parseString);
 		$this->assertInternalType('array', $components);
 
-		$result = $this->subject->SQLparser->_callRef('compileALTERTABLE', $components);
+		$result = $this->subject->SQLparser->compileSQL($components);
 		$expected = array('CREATE INDEX "dd81ee97_parent" ON "sys_collection" ("pid", "deleted")');
 		$this->assertSame($expected, $this->cleanSql($result));
 	}
@@ -167,7 +167,7 @@ class DatabaseConnectionPostgresqlTest extends AbstractTestCase {
 		$components = $this->subject->SQLparser->_callRef('parseALTERTABLE', $parseString);
 		$this->assertInternalType('array', $components);
 
-		$result = $this->subject->SQLparser->_callRef('compileALTERTABLE', $components);
+		$result = $this->subject->SQLparser->compileSQL($components);
 		$expected = array('DROP INDEX "dd81ee97_parent"');
 		$this->assertSame($expected, $this->cleanSql($result));
 	}

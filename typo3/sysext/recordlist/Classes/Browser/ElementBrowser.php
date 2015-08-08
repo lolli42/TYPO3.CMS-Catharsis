@@ -17,11 +17,15 @@ namespace TYPO3\CMS\Recordlist\Browser;
 use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Backend\RecordList\ElementBrowserRecordList;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
+use TYPO3\CMS\Backend\Tree\View\ElementBrowserPageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\ElementBrowser\ElementBrowserHookInterface;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\Exception;
@@ -253,6 +257,18 @@ class ElementBrowser {
 	protected $pageRenderer = NULL;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	* Construct
+	*/
+	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
+
+	/**
 	 * Sets the script url depending on being a module or script request
 	 */
 	protected function determineScriptUrl() {
@@ -366,9 +382,10 @@ class ElementBrowser {
 		// Creating backend template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->bodyTagId = 'typo3-browse-links-php';
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
-		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/BrowseLinks');
-		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree');
+		$pageRenderer = $this->getPageRenderer();
+		$pageRenderer->loadJquery();
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/BrowseLinks');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree');
 	}
 
 	/**
@@ -478,7 +495,7 @@ class ElementBrowser {
 	 */
 	protected function getRTEConfig() {
 		$RTEtsConfigParts = explode(':', $this->RTEtsConfigParams);
-		$RTEsetup = $this->getBackendUserAuthentication()->getTSConfig('RTE', BackendUtility::getPagesTSconfig($RTEtsConfigParts[5]));
+		$RTEsetup = $this->getBackendUser()->getTSConfig('RTE', BackendUtility::getPagesTSconfig($RTEtsConfigParts[5]));
 		return BackendUtility::RTEsetup($RTEsetup['properties'], $RTEtsConfigParts[0], $RTEtsConfigParts[2], $RTEtsConfigParts[4]);
 	}
 
@@ -905,7 +922,7 @@ class ElementBrowser {
 				}
 		}
 		$lang = $this->getLanguageService();
-		if (in_array('params', $allowedFields, TRUE)) {
+		if (in_array('params', $allowedFields, TRUE) && $this->act !== 'url') {
 			$content .= '
 				<!--
 					Selecting params for link:
@@ -1191,11 +1208,12 @@ class ElementBrowser {
 	 * @param string $treeClassName
 	 * @return string
 	 */
-	protected function getFileSelectorHtml($treeClassName = \TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView::class) {
+	protected function getFileSelectorHtml($treeClassName = ElementBrowserFolderTreeView::class) {
+		/** @var ElementBrowserFolderTreeView $folderTree */
 		$folderTree = GeneralUtility::makeInstance($treeClassName);
 		$folderTree->thisScript = $this->thisScript;
 		$tree = $folderTree->getBrowsableTree();
-		$backendUser = $this->getBackendUserAuthentication();
+		$backendUser = $this->getBackendUser();
 		if (!$this->curUrlInfo['value'] || $this->curUrlInfo['act'] != $this->act) {
 			$cmpPath = '';
 		} else {
@@ -1280,8 +1298,10 @@ class ElementBrowser {
 	 * @param string $treeClassName name of the class used for page tree rendering
 	 * @return string
 	 */
-	protected function getPageSelectorHtml($treeClassName = \TYPO3\CMS\Backend\Tree\View\ElementBrowserPageTreeView::class) {
-		$backendUser = $this->getBackendUserAuthentication();
+	protected function getPageSelectorHtml($treeClassName = ElementBrowserPageTreeView::class) {
+		$backendUser = $this->getBackendUser();
+
+		/** @var ElementBrowserPageTreeView $pageTree */
 		$pageTree = GeneralUtility::makeInstance($treeClassName);
 		$pageTree->thisScript = $this->thisScript;
 		$pageTree->ext_showPageId = $backendUser->getTSConfigVal('options.pageTree.showPageIdWithTitle');
@@ -1319,7 +1339,7 @@ class ElementBrowser {
 		// Init variable:
 		$pArr = explode('|', $this->bparams);
 		$tables = $pArr[3];
-		$backendUser = $this->getBackendUserAuthentication();
+		$backendUser = $this->getBackendUser();
 
 		// Making the browsable pagetree:
 		/** @var \TYPO3\CMS\Recordlist\Tree\View\ElementBrowserPageTreeView $pageTree */
@@ -1398,7 +1418,7 @@ class ElementBrowser {
 		if ($allowed !== 'sys_file' && $allowed !== '*' && !empty($allowed)) {
 			$allowedFileExtensions = $allowed;
 		}
-		$backendUser = $this->getBackendUserAuthentication();
+		$backendUser = $this->getBackendUser();
 
 		if (isset($allowedFileExtensions)) {
 			// Create new filter object
@@ -1462,8 +1482,8 @@ class ElementBrowser {
 		}
 		$noThumbs = $noThumbs ?: !$_MOD_SETTINGS['displayThumbs'];
 		// Create folder tree:
-		/** @var \TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView $folderTree */
-		$folderTree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView::class);
+		/** @var ElementBrowserFolderTreeView $folderTree */
+		$folderTree = GeneralUtility::makeInstance(ElementBrowserFolderTreeView::class);
 		$folderTree->thisScript = $this->thisScript;
 		$folderTree->ext_noTempRecyclerDirs = $this->mode == 'filedrag';
 		$tree = $folderTree->getBrowsableTree();
@@ -1533,11 +1553,11 @@ class ElementBrowser {
 			$createFolder = '';
 		}
 		// Create folder tree:
-		/** @var \TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView $folderTree */
-		$folderTree = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView::class);
+		/** @var ElementBrowserFolderTreeView $folderTree */
+		$folderTree = GeneralUtility::makeInstance(ElementBrowserFolderTreeView::class);
 		$folderTree->thisScript = $this->thisScript;
-		$folderTree->ext_noTempRecyclerDirs = $this->mode == 'filedrag';
-		$tree = $folderTree->getBrowsableTree(FALSE);
+		$folderTree->ext_noTempRecyclerDirs = $this->mode === 'filedrag';
+		$tree = $folderTree->getBrowsableTree();
 		$folders = '';
 		if ($this->selectedFolder) {
 			if ($this->mode == 'filedrag') {
@@ -1592,16 +1612,23 @@ class ElementBrowser {
 		// Draw the record list IF there is a page id to expand:
 		if ($expPageId
 			&& MathUtility::canBeInterpretedAsInteger($expPageId)
-			&& $this->getBackendUserAuthentication()->isInWebMount($expPageId)
+			&& $this->getBackendUser()->isInWebMount($expPageId)
 		) {
 			// Set header:
 			$out .= $this->barheader($this->getLanguageService()->getLL('contentElements') . ':');
 			// Create header for listing, showing the page title/icon:
 			$mainPageRec = BackendUtility::getRecordWSOL('pages', $expPageId);
 			$db = $this->getDatabaseConnection();
-			$picon = IconUtility::getSpriteIconForRecord('pages', $mainPageRec);
-			$picon .= BackendUtility::getRecordTitle('pages', $mainPageRec, TRUE);
-			$out .= $picon . '<ul class="list-tree flat-tree-root">';
+			$out .= '
+				<ul class="list-tree list-tree-root list-tree-root-clean">
+					<li class="list-tree-control-open">
+						<span class="list-tree-group">
+							<span class="list-tree-icon">' . IconUtility::getSpriteIconForRecord('pages', $mainPageRec) . '</span>
+							<span class="list-tree-title">' . BackendUtility::getRecordTitle('pages', $mainPageRec, TRUE) . '</span>
+						</span>
+						<ul>
+				';
+
 			// Look up tt_content elements from the expanded page:
 			$res = $db->exec_SELECTquery(
 				'uid,header,hidden,starttime,endtime,fe_group,CType,colPos,bodytext',
@@ -1619,14 +1646,29 @@ class ElementBrowser {
 				$icon = IconUtility::getSpriteIconForRecord('tt_content', $row);
 				$selected = '';
 				if ($this->curUrlInfo['act'] == 'page' && $this->curUrlInfo['cElement'] == $row['uid']) {
-					$selected = ' class="bg-success"';
+					$selected = ' class="active"';
 				}
 				// Putting list element HTML together:
-				$out .= '<li>'
-					. '<a href="#"' . $selected . ' onclick="return link_typo3Page(\'' . $expPageId . '\',\'#' . $row['uid'] . '\');">'
-					. $icon . BackendUtility::getRecordTitle('tt_content', $row, TRUE) . '</a></li>';
+				$out .= '
+					<li' . $selected . '>
+						<span class="list-tree-group">
+							<span class="list-tree-icon">
+								' . $icon . '
+							</span>
+							<span class="list-tree-title">
+								<a href="#" onclick="return link_typo3Page(\'' . $expPageId . '\',\'#' . $row['uid'] . '\');">
+									' . BackendUtility::getRecordTitle('tt_content', $row, TRUE) . '
+								</a>
+							</span>
+						</span>
+					</li>
+					';
 			}
-			$out .= '</ul>';
+			$out .= '
+						</ul>
+					</li>
+				</ul>
+				';
 		}
 		return $out;
 	}
@@ -1638,7 +1680,7 @@ class ElementBrowser {
 	 * @return string HTML output.
 	 */
 	public function TBE_expandPage($tables) {
-		$backendUser = $this->getBackendUserAuthentication();
+		$backendUser = $this->getBackendUser();
 		if (!MathUtility::canBeInterpretedAsInteger($this->expandPage)
 			|| $this->expandPage < 0
 			|| !$backendUser->isInWebMount($this->expandPage)
@@ -1688,7 +1730,6 @@ class ElementBrowser {
 			$dbList = GeneralUtility::makeInstance(ElementBrowserRecordList::class);
 		}
 		$dbList->thisScript = $this->thisScript;
-		$dbList->backPath = $GLOBALS['BACK_PATH'];
 		$dbList->thumbs = 0;
 		$dbList->localizationView = 1;
 		$dbList->setIsEditable(FALSE);
@@ -1770,15 +1811,18 @@ class ElementBrowser {
 			$currentIdentifier = $this->curUrlInfo['info'];
 		}
 		// Create header element; The folder from which files are listed.
-		$titleLen = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
+		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
 		$folderIcon = IconUtility::getSpriteIconForResource($folder);
 		$folderIcon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($folder->getIdentifier(), $titleLen));
 		$selected = '';
 		if ($this->curUrlInfo['act'] == 'folder' && $currentIdentifier == $folder->getCombinedIdentifier()) {
 			$selected = ' class="bg-success"';
 		}
-		$out .= '<a href="#"' . $selected . ' title="' . htmlspecialchars($folder->getIdentifier()) . '" onclick="return link_folder(\'file:' . $folder->getCombinedIdentifier() . '\');">'
-			. $folderIcon . '</a><br />';
+		$out .= '
+			<a href="#"' . $selected . ' title="' . htmlspecialchars($folder->getIdentifier()) . '" onclick="return link_folder(\'file:' . $folder->getCombinedIdentifier() . '\');">
+				' . $folderIcon . '
+			</a>
+			';
 		// Get files from the folder:
 		if ($renderFolders) {
 			$items = $folder->getSubfolders();
@@ -1788,7 +1832,7 @@ class ElementBrowser {
 		$c = 0;
 
 		if (!empty($items)) {
-			$out .= '<ul class="list-tree flat-tree-root">';
+			$out .= '<ul class="list-tree list-tree-root">';
 			foreach ($items as $fileOrFolderObject) {
 				$c++;
 				if ($renderFolders) {
@@ -1813,14 +1857,16 @@ class ElementBrowser {
 				if (($this->curUrlInfo['act'] == 'file' || $this->curUrlInfo['act'] == 'folder')
 					&& $currentIdentifier == $fileIdentifier
 				) {
-					$selected = ' class="bg-success"';
+					$selected = ' class="active"';
 				}
 				// Put it all together for the file element:
 				$out .=
-					'<li><a href="#"' . $selected . ' title="' . htmlspecialchars($fileOrFolderObject->getName()) . '" onclick="return link_folder(\'' . $itemUid . '\');">' .
-						$icon .
-						htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileOrFolderObject->getName(), $titleLen)) .
-					'</a></li>';
+					'<li' . $selected . '>
+						<a href="#"title="' . htmlspecialchars($fileOrFolderObject->getName()) . '" onclick="return link_folder(\'' . $itemUid . '\');">
+							' .	$icon . '
+							' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileOrFolderObject->getName(), $titleLen)) . '
+						</a>
+					</li>';
 			}
 			$out .= '</ul>';
 		}
@@ -1862,7 +1908,7 @@ class ElementBrowser {
 		$out .= $this->barheader(sprintf($lang->getLL('files') . ' (%s):', $filesCount));
 		$out .= '<div id="filelist">';
 		$out .= $this->getBulkSelector($filesCount);
-		$titleLen = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
+		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
 		// Create the header of current folder:
 		if ($folder) {
 			$folderIcon = IconUtility::getSpriteIconForResource($folder);
@@ -1928,9 +1974,12 @@ class ElementBrowser {
 				$bulkCheckBox = '';
 			}
 			// Create link to showing details about the file in a window:
-			$Ahref = $GLOBALS['BACK_PATH'] . 'show_item.php?type=file&table=_FILE&uid='
-				. rawurlencode($fileObject->getCombinedIdentifier())
-				. '&returnUrl=' . rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'));
+			$Ahref = BackendUtility::getModuleUrl('show_item', array(
+				'type' => 'file',
+				'table' => '_FILE',
+				'uid' => $fileObject->getCombinedIdentifier(),
+				'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+			));
 			$ATag2 = '<a href="' . htmlspecialchars($Ahref) . '">';
 			$ATag2_e = '</a>';
 			// Combine the stuff:
@@ -1943,7 +1992,7 @@ class ElementBrowser {
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td>' . $ATag . IconUtility::getSpriteIcon('actions-edit-add', array('title' =>  $lang->getLL('addToList', TRUE))) . $ATag_e . '</td>
-						<td nowrap="nowrap">' . $ATag2 . IconUtility::getSpriteIcon('actions-document-info', array('title' => $lang->getLL('info', TRUE))) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
+						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td nowrap="nowrap">&nbsp;' . $pDim . '</td>
 					</tr>';
 				$lines[] = '
@@ -1955,7 +2004,7 @@ class ElementBrowser {
 					<tr class="file_list_normal">
 						<td nowrap="nowrap">' . $filenameAndIcon . '&nbsp;</td>
 						<td>' . $ATag . IconUtility::getSpriteIcon('actions-edit-add', array('title' =>  $lang->getLL('addToList', TRUE))) . $ATag_e . '</td>
-						<td nowrap="nowrap">' . $ATag2 . IconUtility::getSpriteIcon('actions-document-info', array('title' => $lang->getLL('info', TRUE))) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
+						<td nowrap="nowrap"><a href="' . htmlspecialchars($Ahref) . '" title="' . $lang->getLL('info', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . $lang->getLL('info', TRUE) . $ATag2_e . '</td>
 						<td>&nbsp;</td>
 					</tr>';
 			}
@@ -2000,7 +2049,7 @@ class ElementBrowser {
 		$folderIdentifier = $baseFolder->getCombinedIdentifier();
 		// Create headline (showing number of folders):
 		$content .= $this->barheader(sprintf($lang->getLL('folders') . ' (%s):', count($folders)));
-		$titleLength = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
+		$titleLength = (int)$this->getBackendUser()->uc['titleLen'];
 		// Create the header of current folder:
 		$aTag = '<a href="#" onclick="return insertElement(\'\',' . GeneralUtility::quoteJSvalue($folderIdentifier)
 			. ', \'folder\', ' . GeneralUtility::quoteJSvalue($folderIdentifier) . ', ' . GeneralUtility::quoteJSvalue($folderIdentifier)
@@ -2087,8 +2136,8 @@ class ElementBrowser {
 		$lang = $this->getLanguageService();
 		if (!$folder->getStorage()->isPublic()) {
 			// Print this warning if the folder is NOT a web folder
-			return $this->barheader($lang->getLL('files'))
-				. $this->getMsgBox($lang->getLL('noWebFolder'), 'status-dialog-warning');
+			return GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('noWebFolder'), $lang->getLL('files'), FlashMessage::WARNING)
+				->render();
 		}
 		$out = '';
 
@@ -2097,16 +2146,18 @@ class ElementBrowser {
 		$files = $this->getFilesInFolder($folder, $extensionList);
 
 		$out .= $this->barheader(sprintf($lang->getLL('files') . ' (%s):', count($files)));
-		$titleLen = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
+		$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
 		$picon = IconUtility::getSpriteIcon('apps-filetree-folder-default');
 		$picon .= htmlspecialchars(GeneralUtility::fixed_lgd_cs(basename($folder->getName()), $titleLen));
 		$out .= $picon . '<br />';
 		// Init row-array:
 		$lines = array();
 		// Add "drag-n-drop" message:
+		$infoText = GeneralUtility::makeInstance(FlashMessage::class, $lang->getLL('findDragDrop'), '', FlashMessage::INFO)
+			->render();
 		$lines[] = '
 			<tr>
-				<td colspan="2">' . $this->getMsgBox($lang->getLL('findDragDrop')) . '</td>
+				<td colspan="2">' . $infoText . '</td>
 			</tr>';
 		// Traverse files:
 		foreach ($files as $fileObject) {
@@ -2191,24 +2242,6 @@ class ElementBrowser {
 		return '
 			<!-- Bar header: -->
 			<h3>' . htmlspecialchars($str) . '</h3>
-			';
-	}
-
-	/**
-	 * Displays a message box with the input message
-	 *
-	 * @param string $inputMessage Input message to show (will be htmlspecialchars()'ed inside of this function)
-	 * @param string $icon Sprite sprite name. Default is 'actions-document-info'.
-	 * @return string HTML for the message (wrapped in a table).
-	 */
-	public function getMsgBox($inputMessage, $icon = 'actions-document-info') {
-		return '
-			<!-- Message box -->
-			<table cellspacing="0" class="bgColor4" id="typo3-msgBox">
-				<tr>
-					<td>' . IconUtility::getSpriteIcon($icon) . htmlspecialchars($inputMessage) . '</td>
-				</tr>
-			</table>
 			';
 	}
 
@@ -2306,7 +2339,7 @@ class ElementBrowser {
 							$id = (int)$idPartR['uid'];
 						}
 						$pageRow = BackendUtility::getRecordWSOL('pages', $id);
-						$titleLen = (int)$this->getBackendUserAuthentication()->uc['titleLen'];
+						$titleLen = (int)$this->getBackendUser()->uc['titleLen'];
 						$info['value'] = ((((($lang->getLL('page', TRUE) . ' \'')
 										. htmlspecialchars(GeneralUtility::fixed_lgd_cs($pageRow['title'], $titleLen)))
 										. '\' (ID:') . $id) . ($uP['fragment'] ? ', #' . $uP['fragment'] : '')) . ')';
@@ -2366,7 +2399,7 @@ class ElementBrowser {
 			return '';
 		}
 		// Read configuration of upload field count
-		$userSetting = $this->getBackendUserAuthentication()->getTSConfigVal('options.folderTree.uploadFieldsInLinkBrowser');
+		$userSetting = $this->getBackendUser()->getTSConfigVal('options.folderTree.uploadFieldsInLinkBrowser');
 		$count = isset($userSetting) ? $userSetting : 1;
 		if ($count === '0') {
 			return '';
@@ -2436,7 +2469,7 @@ class ElementBrowser {
 		if (!$folderObject->checkActionPermission('write')) {
 			return '';
 		}
-		$backendUser = $this->getBackendUserAuthentication();
+		$backendUser = $this->getBackendUser();
 		if (!($backendUser->isAdmin() || $backendUser->getTSConfigVal('options.createFoldersInEB'))) {
 			return '';
 		}
@@ -2500,9 +2533,10 @@ class ElementBrowser {
 		$labelToggleSelection = $lang->sL('LLL:EXT:lang/locallang_browse_links.xlf:toggleSelection', TRUE);
 		$labelImportSelection = $lang->sL('LLL:EXT:lang/locallang_browse_links.xlf:importSelection', TRUE);
 		// Getting flag for showing/not showing thumbnails:
-		$noThumbsInEB = $this->getBackendUserAuthentication()->getTSConfigVal('options.noThumbsInEB');
-		$out = $this->doc->spacer(10) . '<div>' . '<a href="#" onclick="BrowseLinks.Selector.handle()">'
-			. IconUtility::getSpriteIcon('actions-document-import-t3d', array('title' => $labelImportSelection))
+		$noThumbsInEB = $this->getBackendUser()->getTSConfigVal('options.noThumbsInEB');
+		$out = $this->doc->spacer(10) . '<div>' . '<a href="#" onclick="BrowseLinks.Selector.handle()"'
+			. 'title="' . $labelImportSelection . '">'
+			. $this->iconFactory->getIcon('actions-document-import-t3d', Icon::SIZE_SMALL)
 			. $labelImportSelection . '</a>&nbsp;&nbsp;&nbsp;'
 			. '<a href="#" onclick="BrowseLinks.Selector.toggle()">'
 			. IconUtility::getSpriteIcon('actions-document-select', array('title' => $labelToggleSelection))
@@ -2560,7 +2594,7 @@ class ElementBrowser {
 	 * @return string
 	 */
 	protected function getTemporaryTreeMountCancelNotice() {
-		if ((int)$this->getBackendUserAuthentication()->getSessionData('pageTree_temporaryMountPoint') === 0) {
+		if ((int)$this->getBackendUser()->getSessionData('pageTree_temporaryMountPoint') === 0) {
 			return '';
 		}
 		$link = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('setTempDBmount' => 0))) . '">'
@@ -2602,7 +2636,7 @@ class ElementBrowser {
 	/**
 	 * @return BackendUserAuthentication
 	 */
-	protected function getBackendUserAuthentication() {
+	protected function getBackendUser() {
 		return $GLOBALS['BE_USER'];
 	}
 

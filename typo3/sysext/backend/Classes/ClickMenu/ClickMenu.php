@@ -18,6 +18,8 @@ use TYPO3\CMS\Backend\Clipboard\Clipboard;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
@@ -148,13 +150,19 @@ class ClickMenu {
 	protected $backendUser;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * @param LanguageService $languageService Language Service to inject
 	 * @param BackendUserAuthentication $backendUser
 	 */
 	public function __construct(LanguageService $languageService = NULL, BackendUserAuthentication $backendUser = NULL) {
-			$this->languageService = $languageService ?: $GLOBALS['LANG'];
-			$this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
-		}
+		$this->languageService = $languageService ?: $GLOBALS['LANG'];
+		$this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
 
 	/**
 	 * Initialize click menu
@@ -546,7 +554,7 @@ class ClickMenu {
 	 * @internal
 	 */
 	public function DB_info($table, $uid) {
-		return $this->linkItem($this->label('info'), IconUtility::getSpriteIcon('actions-document-info'), 'top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($uid) . ');');
+		return $this->linkItem($this->label('info'), $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL), 'top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($uid) . ');');
 	}
 
 	/**
@@ -559,7 +567,7 @@ class ClickMenu {
 	 */
 	public function DB_history($table, $uid) {
 		$url = BackendUtility::getModuleUrl('record_history', array('element' => $table . ':' . $uid));
-		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_history')), IconUtility::getSpriteIcon('actions-document-history-open'), $this->urlRefForCM($url, 'returnUrl'), 0);
+		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_history')), $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL), $this->urlRefForCM($url, 'returnUrl'), 0);
 	}
 
 	/**
@@ -658,7 +666,7 @@ class ClickMenu {
 			'columnsOnly' => rawurlencode((implode(',', $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']) . ($table === 'pages' ? ',extendToSubpages' : ''))),
 			'edit[' . $table . '][' . $uid . ']' => 'edit'
 		));
-		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_editAccess')), IconUtility::getSpriteIcon('actions-document-edit-access'), $this->urlRefForCM($url, 'returnUrl'), 1);
+		return $this->linkItem($this->languageService->makeEntities($this->languageService->getLL('CM_editAccess')), $this->iconFactory->getIcon('actions-document-edit-access', Icon::SIZE_SMALL), $this->urlRefForCM($url, 'returnUrl'), 1);
 	}
 
 	/**

@@ -62,11 +62,6 @@ abstract class AbstractRecordList {
 	public $oddColumnsCssClass = '';
 
 	/**
-	 * @var string
-	 */
-	public $backPath = '';
-
-	/**
 	 * Decides the columns shown. Filled with values that refers to the keys of the data-array. $this->fieldArray[0] is the title column.
 	 *
 	 * @var array
@@ -206,9 +201,10 @@ abstract class AbstractRecordList {
 		$colType = ($colType === 'th') ? 'th' : 'td';
 		$noWrap = $this->no_noWrap ? '' : ' nowrap="nowrap"';
 		// Start up:
+		$parent = isset($data['parent']) ? (int)$data['parent'] : 0;
 		$out = '
 		<!-- Element, begin: -->
-		<tr ' . $rowParams . ' data-uid="' . (int)$data['uid'] . '">';
+		<tr ' . $rowParams . ' data-uid="' . (int)$data['uid'] . '" data-l10nparent="' . $parent . '">';
 		// Show icon and lines
 		if ($this->showIcon) {
 			$out .= '

@@ -1,4 +1,5 @@
 <?php
+
 namespace TYPO3\CMS\Frontend\Controller;
 
 /*
@@ -17,12 +18,26 @@ namespace TYPO3\CMS\Frontend\Controller;
 use TYPO3\CMS\Backend\Tree\View\PageTreeView;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class for displaying translation status of pages in the tree.
  */
 class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunctionModule {
+
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * Construct for initialize class variables
+	 */
+	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
 
 	/**
 	 * Returns the menu array
@@ -33,10 +48,11 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 		$lang = $this->getLanguageService();
 		$menuArray = array(
 			'depth' => array(
-				0 => $lang->getLL('depth_0'),
-				1 => $lang->getLL('depth_1'),
-				2 => $lang->getLL('depth_2'),
-				3 => $lang->getLL('depth_3'),
+				0 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_0'),
+				1 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_1'),
+				2 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_2'),
+				3 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_3'),
+				4 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_4'),
 				999 => $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.depth_infi')
 			)
 		);
@@ -125,7 +141,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 			// DEFAULT language:
 			// "View page" link is created:
 			$viewPageLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick(
-					$data['row']['uid'], $GLOBALS['BACK_PATH'], '', '', '', '&L=###LANG_UID###')
+					$data['row']['uid'], '', '', '', '', '&L=###LANG_UID###')
 				) . '" title="' . $lang->sL('LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_viewPage') . '">' .
 				IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			$status = $data['row']['l18n_cfg'] & 1 ? 'danger' : 'success';
@@ -223,7 +239,7 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 			$editIco = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
 				. '" title="' . $lang->sL(
 					'LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_renderl10n_editPageProperties'
-				) . '">' . IconUtility::getSpriteIcon('actions-document-new') . '</a>';
+				) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 		} else {
 			$editIco = '';
 		}
@@ -247,14 +263,18 @@ class TranslationStatusController extends \TYPO3\CMS\Backend\Module\AbstractFunc
 					$tCells[] = '<td>&nbsp;</td>';
 				}
 				// Create new overlay records:
-				$params = '\'' .
-					$newOL_js[$langRow['uid']] .
-					'+\'&columnsOnly=title,hidden,sys_language_uid&defVals[pages_language_overlay][sys_language_uid]=' .
-					$langRow['uid'];
-				$tCells[] = '<td><a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
+				$params = '&columnsOnly=title,hidden,sys_language_uid&overrideVals[pages_language_overlay][sys_language_uid]=' . $langRow['uid'];
+				$onClick = BackendUtility::editOnClick($params);
+				if (!empty($newOL_js[$langRow['uid']])) {
+					$onClickArray = explode('?', $onClick, 2);
+					$lastElement = array_pop($onClickArray);
+					array_push($onClickArray, '\'' . $newOL_js[$langRow['uid']] . ' + \'&' . $lastElement);
+					$onClick = implode('?', $onClickArray);
+				}
+				$tCells[] = '<td><a href="#" onclick="' . htmlspecialchars($onClick)
 					. '" title="' . $lang->sL(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_webinfo.xlf:lang_getlangsta_createNewTranslationHeaders'
-					) . '">' . IconUtility::getSpriteIcon('actions-document-new') . '</a></td>';
+					) . '">' . $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL) . '</a></td>';
 			}
 		}
 

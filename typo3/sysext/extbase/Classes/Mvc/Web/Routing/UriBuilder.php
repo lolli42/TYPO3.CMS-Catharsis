@@ -29,13 +29,11 @@ class UriBuilder {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface
-	 * @inject
 	 */
 	protected $configurationManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\ExtensionService
-	 * @inject
 	 */
 	protected $extensionService;
 
@@ -130,9 +128,29 @@ class UriBuilder {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Service\EnvironmentService
-	 * @inject
 	 */
 	protected $environmentService;
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager
+	 */
+	public function injectConfigurationManager(\TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface $configurationManager) {
+		$this->configurationManager = $configurationManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Service\ExtensionService $extensionService
+	 */
+	public function injectExtensionService(\TYPO3\CMS\Extbase\Service\ExtensionService $extensionService) {
+		$this->extensionService = $extensionService;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService
+	 */
+	public function injectEnvironmentService(\TYPO3\CMS\Extbase\Service\EnvironmentService $environmentService) {
+		$this->environmentService = $environmentService;
+	}
 
 	/**
 	 * Life-cycle method that is called by the DI container as soon as this object is completely built
@@ -641,10 +659,11 @@ class UriBuilder {
 		$this->lastArguments = $arguments;
 		$moduleName = $arguments['M'];
 		unset($arguments['M'], $arguments['moduleToken']);
+		$backendUriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
 		if ($this->request instanceof WebRequest && $this->createAbsoluteUri) {
-			$uri = BackendUtility::getModuleUrl($moduleName, $arguments, NULL, TRUE);
+			$uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments, \TYPO3\CMS\Backend\Routing\UriBuilder::ABSOLUTE_URL);
 		} else {
-			$uri = BackendUtility::getModuleUrl($moduleName, $arguments);
+			$uri = (string)$backendUriBuilder->buildUriFromModule($moduleName, $arguments);
 		}
 		if ($this->section !== '') {
 			$uri .= '#' . $this->section;

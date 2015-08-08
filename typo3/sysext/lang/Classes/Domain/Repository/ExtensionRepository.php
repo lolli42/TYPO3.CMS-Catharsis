@@ -23,13 +23,11 @@ class ExtensionRepository {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
-	 * @inject
 	 */
 	protected $objectManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
-	 * @inject
 	 */
 	protected $listUtility;
 
@@ -37,6 +35,20 @@ class ExtensionRepository {
 	 * @var array
 	 */
 	protected $extensions = array();
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 */
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
+		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
+	 */
+	public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility) {
+		$this->listUtility = $listUtility;
+	}
 
 	/**
 	 * Returns all objects of this repository
@@ -55,8 +67,12 @@ class ExtensionRepository {
 					$this->getExtensionIconWithPath($entry)
 				);
 				$extension->setVersionFromString($entry['version']);
-				$extension->setIconWidth($entry['ext_icon_width']);
-				$extension->setIconHeight($entry['ext_icon_height']);
+				if ($entry['ext_icon_width'] > 0) {
+					$extension->setIconWidth($entry['ext_icon_width']);
+				}
+				if ($entry['ext_icon_height'] > 0) {
+					$extension->setIconHeight($entry['ext_icon_height']);
+				}
 
 				$this->extensions[$entry['key']] = $extension;
 			}
@@ -103,7 +119,7 @@ class ExtensionRepository {
 			$extensionIcon = ExtensionManagementUtility::getExtensionIcon(PATH_site . $extensionEntry['siteRelPath'] . '/');
 		}
 		if (empty($extensionIcon)) {
-			$extensionIcon = '/typo3/clear.gif';
+			$extensionIcon = '/typo3/sysext/core/ext_icon.png';
 		} else {
 			$extensionIcon = '../' . $extensionEntry['siteRelPath'] . '/' . $extensionIcon;
 		}

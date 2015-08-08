@@ -54,10 +54,10 @@ started:
   date official news, information about events, access to downloading the
   products and extensions.
 
-* http://wiki.typo3.org is a collaborative wiki, providing access to
+* https://wiki.typo3.org is a collaborative wiki, providing access to
   all kind of information around the TYPO3 ecosphere.
 
-* http://docs.typo3.org/: TYPO3 is one of the most thoroughly
+* https://docs.typo3.org/: TYPO3 is one of the most thoroughly
   documented OpenSource products around, with manuals covering basic
   tutorials, TypoScript, administration, development, core structure, etc.
   You should make the time to locate the various documents, and read those
@@ -89,7 +89,7 @@ Contributing
 If you want to contribute to the TYPO3 CMS source code, take a look at our
 Contributors Walkthrough and Review System:
 
-* http://wiki.typo3.org/CWT
+* https://wiki.typo3.org/CWT
 * https://review.typo3.org/
 
 The [repository at GitHub](https://github.com/TYPO3/TYPO3.CMS) is a

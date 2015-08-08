@@ -102,31 +102,40 @@ define('TYPO3/CMS/Backend/Toolbar/ShortcutMenu', ['jquery'], function($) {
 	 * makes a call to the backend class to create a new shortcut,
 	 * when finished it reloads the menu
 	 */
-	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText, motherModule) {
-		var shouldCreateShortcut = true;
+	ShortcutMenu.createShortcut = function(moduleName, url, confirmationText, motherModule, shortcutButton) {
 		if (typeof confirmationText !== 'undefined') {
-			shouldCreateShortcut = window.confirm(confirmationText);
+			// @todo: translations
+			top.TYPO3.Modal.confirm('Create bookmark', confirmationText)
+				.on('confirm.button.ok', function() {
+ 					var $toolbarItemIcon = $(ShortcutMenu.options.toolbarIconSelector, ShortcutMenu.options.containerSelector);
+					var $spinner = ShortcutMenu.$spinnerElement.clone();
+					var $existingItem = $toolbarItemIcon.replaceWith($spinner);
+
+					$.ajax({
+						url: TYPO3.settings.ajaxUrls['ShortcutMenu::create'],
+						type: 'post',
+						data: {
+							module: moduleName,
+							url: url,
+							motherModName: motherModule
+						},
+						cache: false
+					}).done(function() {
+						ShortcutMenu.refreshMenu();
+						$spinner.replaceWith($existingItem);
+						if (typeof shortcutButton === 'object') {
+							$(shortcutButton).addClass('active');
+							$(shortcutButton).attr('title', null);
+							$(shortcutButton).attr('onclick', null);
+						}
+					});
+					$(this).trigger('modal-dismiss');
+				})
+				.on('confirm.button.cancel', function() {
+					$(this).trigger('modal-dismiss');
+				});
 		}
 
-		if (shouldCreateShortcut) {
-			var $toolbarItemIcon = $(ShortcutMenu.options.toolbarIconSelector, ShortcutMenu.options.containerSelector);
-			var $spinner = ShortcutMenu.$spinnerElement.clone();
-			var $existingItem = $toolbarItemIcon.replaceWith($spinner);
-
-			$.ajax({
-				url: TYPO3.settings.ajaxUrls['ShortcutMenu::create'],
-				type: 'post',
-				data: {
-					module: moduleName,
-					url: url,
-					motherModName: motherModule
-				},
-				cache: false
-			}).done(function() {
-				ShortcutMenu.refreshMenu();
-				$spinner.replaceWith($existingItem);
-			});
-		}
 	};
 
 	/**

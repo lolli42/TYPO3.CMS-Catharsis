@@ -17,6 +17,8 @@ namespace TYPO3\CMS\Filelist\Controller;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Resource\Exception;
@@ -272,7 +274,6 @@ class FileListController {
 	public function main() {
 		// Initialize the template object
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:filelist/Resources/Private/Templates/file_list.html');
 
 		$pageRenderer = $this->getPageRenderer();
@@ -284,7 +285,6 @@ class FileListController {
 
 			// Create filelisting object
 			$this->filelist = GeneralUtility::makeInstance(FileList::class);
-			$this->filelist->backPath = $GLOBALS['BACK_PATH'];
 			// Apply predefined values for hidden checkboxes
 			// Set predefined value for DisplayBigControlPanel:
 			$backendUser = $this->getBackendUser();
@@ -402,7 +402,7 @@ class FileListController {
 					<!--
 						Listing options for extended view, clipboard and thumbnails
 					-->
-					<div id="typo3-listOptions">
+					<div class="typo3-listOptions">
 				';
 				// Add "display bigControlPanel" checkbox:
 				if ($backendUser->getTSConfigVal('options.file_list.enableDisplayBigControlPanel') === 'selectable') {
@@ -499,6 +499,9 @@ class FileListController {
 	 * @return array All available buttons as an assoc. array
 	 */
 	public function getButtons() {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
 		$buttons = array(
 			'csh' => '',
 			'shortcut' => '',
@@ -513,8 +516,8 @@ class FileListController {
 		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'filelist_module');
 		// Upload button (only if upload to this directory is allowed)
 		if ($this->folderObject && $this->folderObject->getStorage()->checkUserActionPermission('add', 'File') && $this->folderObject->checkActionPermission('write')) {
-			$buttons['upload'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH']
-				. BackendUtility::getModuleUrl(
+			$buttons['upload'] = '<a href="' . htmlspecialchars(
+				BackendUtility::getModuleUrl(
 					'file_upload',
 					array(
 						'target' => $this->folderObject->getCombinedIdentifier(),
@@ -526,14 +529,14 @@ class FileListController {
 		if ($this->folderObject && $this->folderObject->checkActionPermission('write')
 			&& ($this->folderObject->getStorage()->checkUserActionPermission('add', 'File') || $this->folderObject->checkActionPermission('add'))
 		) {
-			$buttons['new'] = '<a href="' . htmlspecialchars($GLOBALS['BACK_PATH']
-				. BackendUtility::getModuleUrl(
+			$buttons['new'] = '<a href="' . htmlspecialchars(
+				BackendUtility::getModuleUrl(
 					'file_newfolder',
 					array(
 						'target' => $this->folderObject->getCombinedIdentifier(),
 						'returnUrl' => $this->filelist->listURL(),
 					)
-				)) . '" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . IconUtility::getSpriteIcon('actions-document-new') . '</a>';
+				)) . '" title="' . $this->getLanguageService()->makeEntities($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.new', TRUE)) . '">' . $iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL) . '</a>';
 		}
 		return $buttons;
 	}

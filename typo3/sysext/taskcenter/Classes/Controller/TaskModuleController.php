@@ -50,7 +50,6 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 		// Initialize document
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate(ExtensionManagementUtility::extPath('taskcenter') . 'Resources/Private/Templates/mod_template.html');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->getPageRenderer()->loadJquery();
 		$this->doc->addStyleSheet('tx_taskcenter', '../' . ExtensionManagementUtility::siteRelPath('taskcenter') . 'Resources/Public/Css/styles.css');
 	}
@@ -239,11 +238,11 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 						$absIconPath = GeneralUtility::getFileAbsFilename($item['icon']);
 						// If the file indeed exists, assemble relative path to it
 						if (file_exists($absIconPath)) {
-							$icon = $GLOBALS['BACK_PATH'] . '../' . str_replace(PATH_site, '', $absIconPath);
+							$icon = '../' . str_replace(PATH_site, '', $absIconPath);
 							$icon = '<img src="' . $icon . '" title="' . $title . '" alt="' . $title . '" />';
 						}
 						if (@is_file($icon)) {
-							$icon = '<img' . IconUtility::skinImg($GLOBALS['BACK_PATH'], $icon, 'width="16" height="16"') . ' title="' . $title . '" alt="' . $title . '" />';
+							$icon = '<img' . IconUtility::skinImg('', $icon, 'width="16" height="16"') . ' title="' . $title . '" alt="' . $title . '" />';
 						}
 					} else {
 						$icon = $item['icon'];
@@ -268,9 +267,8 @@ class TaskModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass {
 				$active = (string)$this->MOD_SETTINGS['function'] == $item['uid'] ? ' active-task' : '';
 				// Main menu: Render additional syntax to sort tasks
 				if ($mainMenu) {
-					$dragIcon = IconUtility::getSpriteIcon('actions-document-move', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE)));
-					$section = '<div class="down">&nbsp;</div>
-								<div class="drag">' . $dragIcon . '</div>';
+					$section = '<div class="down"><i class="fa fa-caret-down fa-fw"></i></div>
+								<div class="drag"><i class="fa fa-arrows"></i></div>';
 					$backgroundClass = 't3-row-header ';
 				} else {
 					$backgroundClass = '';

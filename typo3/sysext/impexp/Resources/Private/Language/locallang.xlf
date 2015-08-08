@@ -63,24 +63,6 @@
 			<trans-unit id="makeconfig_expandedTree">
 				<source>Expanded tree</source>
 			</trans-unit>
-			<trans-unit id="makeconfig_onlyThisPage">
-				<source>Only this page</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_1Level">
-				<source>1 level</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_2Levels">
-				<source>2 levels</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_3Levels">
-				<source>3 levels</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_4Levels">
-				<source>4 levels</source>
-			</trans-unit>
-			<trans-unit id="makeconfig_infinite">
-				<source>Infinite</source>
-			</trans-unit>
 			<trans-unit id="makeconfig_levels">
 				<source>Levels:</source>
 			</trans-unit>
@@ -161,6 +143,9 @@
 			</trans-unit>
 			<trans-unit id="makesavefo_save">
 				<source>Save</source>
+			</trans-unit>
+			<trans-unit id="pleaseConfirm">
+				<source>Please confirm</source>
 			</trans-unit>
 			<trans-unit id="makesavefo_areYouSure">
 				<source>Are you sure?</source>

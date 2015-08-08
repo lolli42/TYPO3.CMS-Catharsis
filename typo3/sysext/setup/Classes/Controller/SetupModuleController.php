@@ -323,7 +323,6 @@ class SetupModuleController {
 		}
 		// Create instance of object for output of data
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:setup/Resources/Private/Templates/setup.html');
 		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="multipart/form-data">';
 		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Css/styles.css');
@@ -461,7 +460,9 @@ class SetupModuleController {
 			'shortcut' => ''
 		);
 		$buttons['csh'] = BackendUtility::cshItem('_MOD_user_setup', '');
-		$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="data[save]" class="c-inputButton" src="clear.gif" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+		$buttons['save'] = '<button class="c-inputButton" name="data[save]">'
+			. IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+			. '</button>';
 		if ($this->getBackendUser()->mayMakeShortcut()) {
 			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', '', $this->moduleName);
 		}
@@ -921,7 +922,7 @@ class SetupModuleController {
 					'pid' => 0,
 					'table_local' => 'sys_file',
 				);
-				$storeRec['be_users'][(int)$beUserId] = array('avatar' => 'NEW1234');
+				$storeRec['be_users'][(int)$beUserId]['avatar'] = 'NEW1234';
 			}
 		}
 	}

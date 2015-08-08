@@ -14,8 +14,11 @@ namespace TYPO3\CMS\Extensionmanager\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use TYPO3\CMS\Extensionmanager\Domain\Model\Dependency;
 use TYPO3\CMS\Extensionmanager\Exception\ExtensionManagerException;
 use TYPO3\CMS\Extensionmanager\Utility\ExtensionModelUtility;
 use TYPO3\CMS\Extensionmanager\Utility\Repository\Helper;
@@ -27,33 +30,63 @@ class ListController extends AbstractController {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository
-	 * @inject
 	 */
 	protected $extensionRepository;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ListUtility
-	 * @inject
 	 */
 	protected $listUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Core\Page\PageRenderer
-	 * @inject
 	 */
 	protected $pageRenderer;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility
-	 * @inject
 	 */
 	protected $dependencyUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility
-	 * @inject
 	 */
 	protected $configurationUtility;
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository
+	 */
+	public function injectExtensionRepository(\TYPO3\CMS\Extensionmanager\Domain\Repository\ExtensionRepository $extensionRepository) {
+		$this->extensionRepository = $extensionRepository;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility
+	 */
+	public function injectListUtility(\TYPO3\CMS\Extensionmanager\Utility\ListUtility $listUtility) {
+		$this->listUtility = $listUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Core\Page\PageRenderer $pageRenderer
+	 */
+	public function injectPageRenderer(\TYPO3\CMS\Core\Page\PageRenderer $pageRenderer) {
+		$this->pageRenderer = $pageRenderer;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility
+	 */
+	public function injectDependencyUtility(\TYPO3\CMS\Extensionmanager\Utility\DependencyUtility $dependencyUtility) {
+		$this->dependencyUtility = $dependencyUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility
+	 */
+	public function injectConfigurationUtility(\TYPO3\CMS\Extensionmanager\Utility\ConfigurationUtility $configurationUtility) {
+		$this->configurationUtility = $configurationUtility;
+	}
 
 	/**
 	 * Add the needed JavaScript files for all actions
@@ -66,11 +99,31 @@ class ListController extends AbstractController {
 	}
 
 	/**
+	 * Adds an information about composer mode
+	 */
+	protected function addComposerModeNotification() {
+		if (Bootstrap::usesComposerClassLoading()) {
+			$this->addFlashMessage(
+				LocalizationUtility::translate(
+					'composerMode.message',
+					'extensionmanager'
+				),
+				LocalizationUtility::translate(
+					'composerMode.title',
+					'extensionmanager'
+				),
+				FlashMessage::WARNING
+			);
+		}
+	}
+
+	/**
 	 * Shows list of extensions present in the system
 	 *
 	 * @return void
 	 */
 	public function indexAction() {
+		$this->addComposerModeNotification();
 		$availableAndInstalledExtensions = $this->listUtility->getAvailableAndInstalledExtensionsWithAdditionalInformation();
 		$this->view->assign('extensions', $availableAndInstalledExtensions);
 		$this->handleTriggerArguments();
@@ -110,6 +163,7 @@ class ListController extends AbstractController {
 	 * @return void
 	 */
 	public function terAction($search = '') {
+		$this->addComposerModeNotification();
 		if (!empty($search)) {
 			$extensions = $this->extensionRepository->findByTitleOrAuthorNameOrExtensionKey($search);
 		} else {
@@ -124,9 +178,11 @@ class ListController extends AbstractController {
 	/**
 	 * Action for listing all possible distributions
 	 *
+	 * @param bool $showUnsuitableDistributions
 	 * @return void
 	 */
-	public function distributionsAction() {
+	public function distributionsAction($showUnsuitableDistributions = FALSE) {
+		$this->addComposerModeNotification();
 		$importExportInstalled = ExtensionManagementUtility::isLoaded('impexp');
 		if ($importExportInstalled) {
 			try {
@@ -143,12 +199,23 @@ class ListController extends AbstractController {
 			}
 
 			$officialDistributions = $this->extensionRepository->findAllOfficialDistributions();
-			$this->view->assign('officialDistributions', $officialDistributions);
+			if (!$showUnsuitableDistributions) {
+				$suitableOfficialDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($officialDistributions->toArray());
+				$this->view->assign('officialDistributions', $suitableOfficialDistributions);
+			} else {
+				$this->view->assign('officialDistributions', $officialDistributions);
+			}
 
 			$communityDistributions = $this->extensionRepository->findAllCommunityDistributions();
-			$this->view->assign('communityDistributions', $communityDistributions);
+			if (!$showUnsuitableDistributions) {
+				$suitableCommunityDistributions = $this->dependencyUtility->getExtensionsSuitableForTypo3Version($communityDistributions->toArray());
+				$this->view->assign('communityDistributions', $suitableCommunityDistributions);
+			} else {
+				$this->view->assign('communityDistributions', $communityDistributions);
+			}
 		}
 		$this->view->assign('enableDistributionsView', $importExportInstalled);
+		$this->view->assign('showUnsuitableDistributions', $showUnsuitableDistributions);
 	}
 
 	/**

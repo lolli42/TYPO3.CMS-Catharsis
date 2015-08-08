@@ -27,19 +27,16 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Reflection\ReflectionService
-	 * @inject
 	 */
 	protected $reflectionService;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory
-	 * @inject
 	 */
 	protected $qomFactory;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Session
-	 * @inject
 	 */
 	protected $persistenceSession;
 
@@ -59,13 +56,11 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapFactory
-	 * @inject
 	 */
 	protected $dataMapFactory;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface
-	 * @inject
 	 */
 	protected $queryFactory;
 
@@ -78,15 +73,62 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\Object\ObjectManagerInterface
-	 * @inject
 	 */
 	protected $objectManager;
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
-	 * @inject
 	 */
 	protected $signalSlotDispatcher;
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService
+	 */
+	public function injectReflectionService(\TYPO3\CMS\Extbase\Reflection\ReflectionService $reflectionService) {
+		$this->reflectionService = $reflectionService;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory $qomFactory
+	 */
+	public function injectQomFactory(\TYPO3\CMS\Extbase\Persistence\Generic\Qom\QueryObjectModelFactory $qomFactory) {
+		$this->qomFactory = $qomFactory;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Session $persistenceSession
+	 */
+	public function injectPersistenceSession(\TYPO3\CMS\Extbase\Persistence\Generic\Session $persistenceSession) {
+		$this->persistenceSession = $persistenceSession;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapFactory $dataMapFactory
+	 */
+	public function injectDataMapFactory(\TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapFactory $dataMapFactory) {
+		$this->dataMapFactory = $dataMapFactory;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory
+	 */
+	public function injectQueryFactory(\TYPO3\CMS\Extbase\Persistence\Generic\QueryFactoryInterface $queryFactory) {
+		$this->queryFactory = $queryFactory;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager
+	 */
+	public function injectObjectManager(\TYPO3\CMS\Extbase\Object\ObjectManagerInterface $objectManager) {
+		$this->objectManager = $objectManager;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher
+	 */
+	public function injectSignalSlotDispatcher(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher) {
+		$this->signalSlotDispatcher = $signalSlotDispatcher;
+	}
 
 	/**
 	 * Maps the given rows on objects
@@ -233,7 +275,7 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 						break;
 					default:
 						if ($propertyData['type'] === 'DateTime' || in_array('DateTime', class_parents($propertyData['type']))) {
-							$propertyValue = $this->mapDateTime($row[$columnName], $columnMap->getDateTimeStorageFormat());
+							$propertyValue = $this->mapDateTime($row[$columnName], $columnMap->getDateTimeStorageFormat(), $propertyData['type']);
 						} elseif (TypeHandlingUtility::isCoreType($propertyData['type'])) {
 							$propertyValue = $this->mapCoreType($propertyData['type'], $row[$columnName]);
 						} else {
@@ -269,20 +311,21 @@ class DataMapper implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * @param int|string $value Unix timestamp or date/datetime value
 	 * @param NULL|string $storageFormat Storage format for native date/datetime fields
+	 * @param NULL|string $targetType The object class name to be created
 	 * @return \DateTime
 	 */
-	protected function mapDateTime($value, $storageFormat = NULL) {
+	protected function mapDateTime($value, $storageFormat = NULL, $targetType = 'DateTime') {
 		if (empty($value) || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
 			// 0 -> NULL !!!
 			return NULL;
 		} elseif ($storageFormat === 'date' || $storageFormat === 'datetime') {
 			// native date/datetime values are stored in UTC
 			$utcTimeZone = new \DateTimeZone('UTC');
-			$utcDateTime = new \DateTime($value, $utcTimeZone);
+			$utcDateTime = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($targetType, $value, $utcTimeZone);
 			$currentTimeZone = new \DateTimeZone(date_default_timezone_get());
 			return $utcDateTime->setTimezone($currentTimeZone);
 		} else {
-			return new \DateTime(date('c', $value));
+			return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance($targetType, date('c', $value));
 		}
 	}
 

@@ -268,7 +268,6 @@ class RecordList {
 		$access = is_array($this->pageinfo) ? 1 : 0;
 		// Start document template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:recordlist/Resources/Private/Templates/db_list.html');
 		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/AjaxDataHandler');
 		$calcPerms = $backendUser->calcPerms($this->pageinfo);
@@ -305,7 +304,6 @@ class RecordList {
 		// Initialize the dblist object:
 		/** @var $dblist RecordList\DatabaseRecordList */
 		$dblist = GeneralUtility::makeInstance(RecordList\DatabaseRecordList::class);
-		$dblist->backPath = $GLOBALS['BACK_PATH'];
 		$dblist->script = BackendUtility::getModuleUrl('web_list');
 		$dblist->calcPerms = $calcPerms;
 		$dblist->thumbs = $backendUser->uc['thumbnailsByDefault'];
@@ -390,7 +388,7 @@ class RecordList {
 			}
 			// Render the list of tables:
 			$dblist->generateList();
-			$listUrl = substr($dblist->listURL(), strlen($GLOBALS['BACK_PATH']));
+			$listUrl = $dblist->listURL();
 			// Add JavaScript functions to the page:
 			$this->doc->JScode = $this->doc->wrapScriptTags('
 				function jumpExt(URL,anchor) {	//
@@ -475,7 +473,7 @@ class RecordList {
 					<!--
 						Listing options for extended view, clipboard and localization view
 					-->
-					<div id="typo3-listOptions">
+					<div class="typo3-listOptions">
 						<form action="" method="post">';
 
 			// Add "display bigControlPanel" checkbox:

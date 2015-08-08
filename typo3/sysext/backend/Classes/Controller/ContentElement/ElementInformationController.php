@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -103,10 +105,15 @@ class ElementInformationController {
 	protected $titleTag;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		$GLOBALS['BACK_PATH'] = '';
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$GLOBALS['SOBE'] = $this;
 
 		$this->init();
@@ -367,7 +374,7 @@ class ElementInformationController {
 
 					$rowValue = '<span class="pull-left">' . $icon . '</span>' .
 					'<strong>' . htmlspecialchars($GLOBALS['BE_USER']->user['username']) . '</strong><br />'
-					. ($GLOBALS['BE_USER']->user['realName']) ? $GLOBALS['BE_USER']->user['realName'] : '';
+					. ($GLOBALS['BE_USER']->user['realName'] ? htmlspecialchars($GLOBALS['BE_USER']->user['realName']) : '');
 				}
 			}
 
@@ -571,7 +578,7 @@ class ElementInformationController {
 			) . '; return false;';
 		$pageActionIcons .= '
 			<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($historyOnClick) . '">
-				' . IconUtility::getSpriteIcon('actions-document-history-open') . '
+				' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '
 			</a>';
 
 		if ($table === 'pages') {
@@ -681,7 +688,7 @@ class ElementInformationController {
 				$infoData[] = '
 				<tr>
 					<td class="col-icon"></td>
-					<td class="col-title">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:show_item.php.missing_record') . ' (uid=' . $row['recuid'] . ')</td>
+					<td class="col-title">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:show_item.php.missing_record') . ' (uid=' . (int)$row['recuid'] . ')</td>
 					<td>' . htmlspecialchars($lang->sL($GLOBALS['TCA'][$row['tablename']]['ctrl']['title']) ?: $row['tablename']) . '</td>
 					<td></td>
 					<td>' . htmlspecialchars($this->getLabelForTableColumn($row['tablename'], $row['field'])) . '</td>
@@ -740,10 +747,11 @@ class ElementInformationController {
 		}
 		foreach ($rows as $row) {
 			$record = BackendUtility::getRecord($row['ref_table'], $row['ref_uid']);
-			$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
-			$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
-			$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit');
-			$infoData[] = '
+			if ($record) {
+				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
+				$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
+				$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit');
+				$infoData[] = '
 				<tr>
 					<td class="col-icon">
 						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '">
@@ -764,6 +772,21 @@ class ElementInformationController {
 					<td>' . htmlspecialchars($row['ref_string']) . '</td>
 					<td class="col-control">' . $actions . '</td>
 				</tr>';
+			} else {
+				$infoData[] = '
+				<tr>
+					<td class="col-icon"></td>
+					<td class="col-title">' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:show_item.php.missing_record') . ' (uid=' . (int)$row['recuid'] . ')</td>
+					<td>' . $lang->sL($GLOBALS['TCA'][$row['ref_table']]['ctrl']['title'], TRUE) . '</td>
+					<td></td>
+					<td>' . htmlspecialchars($this->getLabelForTableColumn($table, $row['field'])) . '</td>
+					<td>' . htmlspecialchars($row['flexpointer']) . '</td>
+					<td>' . htmlspecialchars($row['softref_key']) . '</td>
+					<td>' . htmlspecialchars($row['sorting']) . '</td>
+					<td>' . htmlspecialchars($row['ref_string']) . '</td>
+					<td class="col-control"></td>
+				</tr>';
+			}
 		}
 
 		if (empty($infoData)) {

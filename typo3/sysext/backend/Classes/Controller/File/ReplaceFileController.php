@@ -75,8 +75,6 @@ class ReplaceFileController {
 	 */
 	public function __construct() {
 		$GLOBALS['SOBE'] = $this;
-		$GLOBALS['BACK_PATH'] = '';
-
 		$this->init();
 	}
 
@@ -122,7 +120,6 @@ class ReplaceFileController {
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_replace.html');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->JScode = $this->doc->wrapScriptTags('
 			function backToList() {	//
 				top.goToModule("file_list");
@@ -184,7 +181,7 @@ class ReplaceFileController {
 		$docHeaderButtons = array(
 				'back' => ''
 		);
-		$docHeaderButtons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_rename', $GLOBALS['BACK_PATH']);
+		$docHeaderButtons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_rename');
 		// Back
 		if ($this->returnUrl) {
 			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisUrl($this->returnUrl))

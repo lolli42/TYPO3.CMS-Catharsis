@@ -18,6 +18,8 @@ use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\RecordList\RecordListGetTableHookInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -192,6 +194,18 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 	protected $editable = TRUE;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
+
+	/**
 	 * Create the panel of buttons for submitting the form or otherwise perform
 	 * operations.
 	 *
@@ -240,7 +254,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				);
 			}
 			if (!in_array($this->pageRow['doktype'], $noViewDokTypes)) {
-				$onClick = htmlspecialchars(BackendUtility::viewOnClick($this->id, $this->backPath, BackendUtility::BEgetRootLine($this->id)));
+				$onClick = htmlspecialchars(BackendUtility::viewOnClick($this->id, '', BackendUtility::BEgetRootLine($this->id)));
 				$buttons['view'] = '<a href="#" onclick="' . $onClick . '" title="'
 					. $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">'
 					. IconUtility::getSpriteIcon('actions-document-view') . '</a>';
@@ -250,7 +264,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				$onClick = htmlspecialchars('return jumpExt(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['id' => $this->id])) . ');');
 				$buttons['new_record'] = '<a href="#" onclick="' . $onClick . '" title="'
 					. $lang->getLL('newRecordGeneral', TRUE) . '">'
-					. IconUtility::getSpriteIcon('actions-document-new') . '</a>';
+					. $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL) . '</a>';
 			}
 			// If edit permissions are set, see
 			// \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
@@ -291,7 +305,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 					$buttons['export'] = '<a href="' . htmlspecialchars($url . '&tx_impexp[list][]='
 							. rawurlencode($this->table . ':' . $this->id)) . '" title="'
 						. $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.export', TRUE) . '">'
-						. IconUtility::getSpriteIcon('actions-document-export-t3d') . '</a>';
+						. $this->iconFactory->getIcon('actions-document-export-t3d', Icon::SIZE_SMALL) . '</a>';
 				}
 			}
 			// Reload
@@ -821,6 +835,13 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		$this->addElement_tdCssClass['_LOCALIZATION_b'] = 'col-localizationb';
 		// Create element in table cells:
 		$theData['uid'] = $row['uid'];
+		if (
+			isset($GLOBALS['TCA'][$table]['ctrl']['languageField'])
+			&& isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])
+			&& !isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerTable'])
+		) {
+			$theData['parent'] = $row[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']];
+		}
 		$rowOutput .= $this->addelement(1, $theIcon, $theData, $row_bgColor);
 		// Finally, return table row element:
 		return $rowOutput;
@@ -905,9 +926,13 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 						// The "edit marked" link:
 						$editIdList = implode(',', $currentIdList);
 						$editIdList = '\'+editList(\'' . $table . '\',\'' . $editIdList . '\')+\'';
-						$params = '&edit[' . $table . '][' . $editIdList . ']=edit';
-						$onClick = htmlspecialchars(BackendUtility::editOnClick($params, '', -1));
-						$cells['edit'] = '<a class="btn btn-default" href="#" onclick="' . $onClick . '" title="'
+						$params = 'edit[' . $table . '][' . $editIdList . ']=edit';
+						$onClick = BackendUtility::editOnClick('', '', -1);
+						$onClickArray = explode('?', $onClick, 2);
+						$lastElement = array_pop($onClickArray);
+						array_push($onClickArray, $params . '&' . $lastElement);
+						$onClick = implode('?', $onClickArray);
+						$cells['edit'] = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
 							. $lang->getLL('clip_editMarked', TRUE) . '">'
 							. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
 						// The "Delete marked" link:
@@ -957,7 +982,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 								$tmpTSc = BackendUtility::getModTSconfig($this->pageinfo['uid'], 'mod.web_list');
 								$tmpTSc = $tmpTSc['properties']['newContentWiz.']['overrideWithExtension'];
 								$newContentWizScriptPath = ExtensionManagementUtility::isLoaded($tmpTSc)
-									? $this->backPath . ExtensionManagementUtility::extRelPath($tmpTSc) . 'mod1/db_new_content_el.php?id=' . $this->id
+									? ExtensionManagementUtility::extRelPath($tmpTSc) . 'mod1/db_new_content_el.php?id=' . $this->id
 									: BackendUtility::getModuleUrl('new_content_element', array('id' => $this->id));
 
 								$onClick = 'return jumpExt(' . GeneralUtility::quoteJSvalue($newContentWizScriptPath) . ');';
@@ -1204,7 +1229,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				. htmlspecialchars(
 					BackendUtility::viewOnClick(
 						($table === 'tt_content' ? $this->id : $row['uid']),
-						$this->backPath,
+						'',
 						'',
 						($table === 'tt_content' ? '#' . $row['uid'] : '')
 					)
@@ -1225,24 +1250,24 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 		// "Info": (All records)
 		$onClick = 'top.launchView(\'' . $table . '\', \'' . $row['uid'] . '\'); return false;';
 		$viewBigAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->getLL('showInfo', TRUE) . '">'
-			. IconUtility::getSpriteIcon('actions-document-info') . '</a>';
+			. $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . '</a>';
 		$this->addActionToCellGroup($cells, $viewBigAction, 'viewBig');
 		// "Move" wizard link for pages/tt_content elements:
 		if ($permsEdit && ($table === 'tt_content' || $table === 'pages')) {
-			$onClick = 'return jumpExt(\'' . $this->backPath . BackendUtility::getModuleUrl('move_element') . '&table=' . $table . '&uid=' . $row['uid'] . '\');';
+			$onClick = 'return jumpExt(\'' . BackendUtility::getModuleUrl('move_element') . '&table=' . $table . '&uid=' . $row['uid'] . '\');';
 			$linkTitleLL = $this->getLanguageService()->getLL('move_' . ($table === 'tt_content' ? 'record' : 'page'), TRUE);
-			$spriteIcon = $table === 'tt_content' ? 'actions-document-move' : 'actions-page-move';
-			$moveAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $linkTitleLL . '">' . IconUtility::getSpriteIcon($spriteIcon) . '</a>';
+			$icon = ($table == 'pages' ? IconUtility::getSpriteIcon('actions-page-move') : $this->iconFactory->getIcon('actions-document-move', Icon::SIZE_SMALL));
+			$moveAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $linkTitleLL . '">' . $icon . '</a>';
 			$this->addActionToCellGroup($cells, $moveAction, 'move');
 		}
 		// If the table is NOT a read-only table, then show these links:
 		if ($this->isEditable($table)) {
 			// "Revert" link (history/undo)
 			$moduleUrl = BackendUtility::getModuleUrl('record_history', array('element' => $table . ':' . $row['uid']));
-			$onClick = 'return jumpExt(' . GeneralUtility::quoteJSvalue($this->backPath . $moduleUrl) . ',\'#latest\');';
+			$onClick = 'return jumpExt(' . GeneralUtility::quoteJSvalue($moduleUrl) . ',\'#latest\');';
 			$historyAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '" title="'
 				. $this->getLanguageService()->getLL('history', TRUE) . '">'
-				. IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
+				. $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '</a>';
 			$this->addActionToCellGroup($cells, $historyAction, 'history');
 			// Versioning:
 			if (ExtensionManagementUtility::isLoaded('version') && !ExtensionManagementUtility::isLoaded('workspaces')) {
@@ -1253,7 +1278,7 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 					if (count($vers) > 1) {
 						$versionIcon = count($vers) - 1;
 					}
-					$href = $this->backPath . BackendUtility::getModuleUrl('web_txversionM1', array(
+					$href = BackendUtility::getModuleUrl('web_txversionM1', array(
 						'table' => $table, 'uid' => $row['uid']
 					));
 					$versionAction = '<a class="btn btn-default" href="' . htmlspecialchars($href) . '" title="'
@@ -1276,9 +1301,10 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 				if ($table !== 'pages' && $this->calcPerms & Permission::CONTENT_EDIT || $table === 'pages' && $this->calcPerms & Permission::PAGE_NEW) {
 					if ($this->showNewRecLink($table)) {
 						$params = '&edit[' . $table . '][' . -($row['_MOVE_PLH'] ? $row['_MOVE_PLH_uid'] : $row['uid']) . ']=new';
+						$icon = ($table == 'pages' ? IconUtility::getSpriteIcon('actions-page-new') : $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL));
 						$newAction = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', -1))
 							. '" title="' . $this->getLanguageService()->getLL('new' . ($table == 'pages ' ? 'Page' : 'Record'), TRUE) . '">'
-							. ($table == 'pages' ? IconUtility::getSpriteIcon('actions-page-new') : IconUtility::getSpriteIcon('actions-document-new')) . '</a>';
+							. $icon . '</a>';
 						$this->addActionToCellGroup($cells, $newAction, 'new');
 					}
 				}
@@ -1608,8 +1634,8 @@ class DatabaseRecordList extends AbstractDatabaseRecordList {
 			// Traverse page translations and add icon for each language that does NOT yet exist:
 			$lNew = '';
 			foreach ($this->pageOverlays as $lUid_OnPage => $lsysRec) {
-				if ($this->isEditable && !isset($translations['translations'][$lUid_OnPage]) && $this->getBackendUserAuthentication()->checkLanguageAccess($lUid_OnPage)) {
-					$url = substr($this->listURL(), strlen($this->backPath));
+				if ($this->isEditable($table) && !isset($translations['translations'][$lUid_OnPage]) && $this->getBackendUserAuthentication()->checkLanguageAccess($lUid_OnPage)) {
+					$url = $this->listURL();
 					$href = $this->getModule()->doc->issueCommand(
 						'&cmd[' . $table . '][' . $row['uid'] . '][localize]=' . $lUid_OnPage,
 						$url . '&justLocalized=' . rawurlencode($table . ':' . $row['uid'] . ':' . $lUid_OnPage)

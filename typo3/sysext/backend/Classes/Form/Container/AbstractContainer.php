@@ -160,11 +160,9 @@ abstract class AbstractContainer extends AbstractNode {
 	protected function overrideTypeWithValueFromDefaultLanguageRecord($table, array $row, $field, $fieldConf) {
 		$value = $row[$field];
 		if (is_array($this->defaultLanguageData[$table . ':' . $row['uid']])) {
-			// @todo: Is this a bug? Currently the field from default lang is picked in mergeIfNotBlank mode if the
-			// @todo: default value is not empty, but imho it should only be picked if the language overlay record *is* empty?!
 			if (
 				$fieldConf['l10n_mode'] === 'exclude'
-				|| $fieldConf['l10n_mode'] === 'mergeIfNotBlank' && trim($this->defaultLanguageData[$table . ':' . $row['uid']][$field]) !== ''
+				|| ($fieldConf['l10n_mode'] === 'mergeIfNotBlank' && trim($row[$field] === ''))
 			) {
 				$value = $this->defaultLanguageData[$table . ':' . $row['uid']][$field];
 			}
@@ -264,9 +262,10 @@ abstract class AbstractContainer extends AbstractNode {
 	 *
 	 * @param string $displayCondition The condition to evaluate
 	 * @param array $flexFormData Given data the condition is based on
+	 * @param string $flexFormLanguage Flex form language key
 	 * @return bool TRUE if condition matched
 	 */
-	protected function evaluateFlexFormDisplayCondition($displayCondition, $flexFormData) {
+	protected function evaluateFlexFormDisplayCondition($displayCondition, $flexFormData, $flexFormLanguage) {
 		$elementConditionMatcher = GeneralUtility::makeInstance(ElementConditionMatcher::class);
 
 		$splitCondition = GeneralUtility::trimExplode(':', $displayCondition);
@@ -274,11 +273,10 @@ abstract class AbstractContainer extends AbstractNode {
 		$fakeRow = array();
 		switch ($splitCondition[0]) {
 			case 'FIELD':
-				// @todo: Not 100% sure if that is correct this way
 				list($_sheetName, $fieldName) = GeneralUtility::trimExplode('.', $splitCondition[1]);
-				$fieldValue = $flexFormData[$fieldName];
+				$fieldValue = $flexFormData[$_sheetName][$flexFormLanguage][$fieldName];
 				$splitCondition[1] = $fieldName;
-				$dataStructure['ROOT']['TCEforms']['displayCond'] = join(':', $splitCondition);
+				$displayCondition = join(':', $splitCondition);
 				$fakeRow = array($fieldName => $fieldValue);
 				break;
 			case 'HIDE_FOR_NON_ADMINS':

@@ -38,11 +38,21 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_befunc.php']['displ
 );
 
 // eID for FrontendLoginRsaPublicKey
-$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['FrontendLoginRsaPublicKey'] = 'EXT:rsaauth/Resources/PHP/FrontendLoginRsaPublicKey.php';
+$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['RsaPublicKeyGenerationController'] = \TYPO3\CMS\Rsaauth\Controller\RsaPublicKeyGenerationController::class;
 
 \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher::class)->connect(
 	\TYPO3\CMS\Backend\LoginProvider\UsernamePasswordLoginProvider::class,
 	\TYPO3\CMS\Backend\LoginProvider\UsernamePasswordLoginProvider::SIGNAL_getPageRenderer,
 	\TYPO3\CMS\Rsaauth\Slot\UsernamePasswordProviderSlot::class,
 	'getPageRenderer'
+);
+
+// Register automatic decryption in DataHandler
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass']['rsaauth'] = \TYPO3\CMS\Rsaauth\Hook\DecryptionHook::class;
+
+// Add own form element
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry'][1436965601] = array(
+	'nodeName' => 'rsaInput',
+	'priority' => '70',
+	'class' => \TYPO3\CMS\Rsaauth\Form\Element\RsaInputElement::class,
 );

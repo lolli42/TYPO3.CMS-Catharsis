@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Backend\Clipboard;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -66,11 +68,6 @@ class Clipboard {
 	public $current = '';
 
 	/**
-	 * @var string
-	 */
-	public $backPath = '';
-
-	/**
 	 * @var int
 	 */
 	public $lockToNormal = 0;
@@ -81,6 +78,18 @@ class Clipboard {
 	 * @var int
 	 */
 	public $fileMode = 0;
+
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * Construct
+	 */
+	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
 
 	/*****************************************
 	 *
@@ -93,7 +102,6 @@ class Clipboard {
 	 * @return void
 	 */
 	public function initializeClipboard() {
-		$this->backPath = $GLOBALS['BACK_PATH'];
 		// Get data
 		$clipData = $this->getBackendUser()->getModuleData('clipboard', $this->getBackendUser()->getTSConfigVal('options.saveClipboard') ? '' : 'ses');
 		// NumberTabs
@@ -271,7 +279,7 @@ class Clipboard {
 		$menuSelector = '';
 		if ($elementCount) {
 			// Delete:
-			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($removeAllUrl) . '#clip_head">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE))) . '</a>';
+			$deleteLink = '<a class="btn btn-danger" href="' . htmlspecialchars($removeAllUrl) . '#clip_head" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:buttons.clear', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 			if ($this->getBackendUser()->jsConfirmation(JsConfirmation::DELETE)) {
 				$js = '
 			if (confirm(' . GeneralUtility::quoteJSvalue(sprintf($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:mess.deleteClip'), $elementCount)) . ')){
@@ -392,7 +400,7 @@ class Clipboard {
 									<td nowrap="nowrap" width="95%">' . $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs($fileObject->getName(), $this->getBackendUser()->uc['titleLen'])), $fileObject->getName()) . ($pad == 'normal' ? ' <strong>(' . ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) . ')</strong>' : '') . '&nbsp;' . $thumb . '</td>
 									<td nowrap="nowrap" class="col-control">
 										<div class="btn-group">
-											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($v) . '); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl('_FILE', GeneralUtility::shortmd5($v))) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
+											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($v) . '); return false;')) . '"title="' . $this->clLabel('info', 'cm') .'">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl('_FILE', GeneralUtility::shortmd5($v))) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
 										</div>
 									</td>
 								</tr>';
@@ -411,7 +419,7 @@ class Clipboard {
 									<td nowrap="nowrap" width="95%">' . $this->linkItemText(htmlspecialchars(GeneralUtility::fixed_lgd_cs(BackendUtility::getRecordTitle($table, $rec), $this->getBackendUser()->uc['titleLen'])), $rec, $table) . ($pad == 'normal' ? ' <strong>(' . ($this->clipData['normal']['mode'] == 'copy' ? $this->clLabel('copy', 'cm') : $this->clLabel('cut', 'cm')) . ')</strong>' : '') . '&nbsp;</td>
 									<td nowrap="nowrap" class="col-control">
 										<div class="btn-group">
-											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', \'' . (int)$uid . '\'); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-info', array('title' => $this->clLabel('info', 'cm'))) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
+											<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', \'' . (int)$uid . '\'); return false;')) . '" title="' . $this->clLabel('info', 'cm') .'">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL) . '</a>' . '<a class="btn btn-default" href="' . htmlspecialchars($this->removeUrl($table, $uid)) . '#clip_head">' . IconUtility::getSpriteIcon('actions-selection-delete', array('title' => $this->clLabel('removeItem'))) . '</a>
 										</div>
 									</td>
 								</tr>';
@@ -494,7 +502,7 @@ class Clipboard {
 	 *
 	 * @param string  $str String (already htmlspecialchars()'ed)
 	 * @param string  $pad Pad reference
-	 * @param boolean $active is currently active
+	 * @param bool $active is currently active
 	 * @return string HTML output (htmlspecialchar'ed content inside of tags.)
 	 */
 	public function padTitleWrap($str, $pad, $active) {
@@ -529,7 +537,7 @@ class Clipboard {
 				$str = '<span class="text-muted">' . $str . '</span>';
 			} else {
 				if (ExtensionManagementUtility::isLoaded('filelist')) {
-					$str = '<a href="' . htmlspecialchars(($this->backPath . BackendUtility::getModuleUrl('file_list') . '&id=' . dirname($rec))) . '">' . $str . '</a>';
+					$str = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('file_list', array('id' => dirname($rec)))) . '">' . $str . '</a>';
 				}
 			}
 		}

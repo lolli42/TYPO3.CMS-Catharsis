@@ -72,7 +72,6 @@ abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\Acti
 
 	/**
 	 * @var \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository
-	 * @inject
 	 */
 	protected $logEntryRepository = NULL;
 
@@ -80,6 +79,13 @@ abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\Acti
 	 * @var PageRenderer
 	 */
 	protected $pageRenderer;
+
+	/**
+	 * @param \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository $logEntryRepository
+	 */
+	public function injectLogEntryRepository(\TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository $logEntryRepository) {
+		$this->logEntryRepository = $logEntryRepository;
+	}
 
 	/**
 	 * init all actions
@@ -276,10 +282,12 @@ abstract class AbstractController extends \TYPO3\CMS\Extbase\Mvc\Controller\Acti
 	 */
 	protected function createPageDepthOptions() {
 		$options = array(
-			0 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_mod_web_info.xlf:depth_0', 'lang'),
-			1 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_mod_web_info.xlf:depth_1', 'lang'),
-			2 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_mod_web_info.xlf:depth_2', 'lang'),
-			3 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_mod_web_info.xlf:depth_3', 'lang')
+			0 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_0', 'lang'),
+			1 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_1', 'lang'),
+			2 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_2', 'lang'),
+			3 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_3', 'lang'),
+			4 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_4', 'lang'),
+			999 => \TYPO3\CMS\Extbase\Utility\LocalizationUtility::translate('LLL:EXT:lang/locallang_core.xlf:labels.depth_infi', 'lang')
 		);
 		return $options;
 	}

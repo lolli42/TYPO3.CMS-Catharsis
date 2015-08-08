@@ -15,9 +15,13 @@ namespace TYPO3\CMS\Backend\Utility;
  */
 
 use TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider;
+use TYPO3\CMS\Backend\Routing\Generator\UrlGenerator;
+use TYPO3\CMS\Backend\Routing\Router;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Database\PreparedStatement;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -32,6 +36,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Frontend\Page\PageRepository;
@@ -148,7 +153,7 @@ class BackendUtility {
 	 * @param string $table Table name (not necessarily in TCA)
 	 * @param string $where WHERE clause
 	 * @param string $fields $fields is a list of fields to select, default is '*'
-	 * @return array First row found, if any, FALSE otherwise
+	 * @return array|bool First row found, if any, FALSE otherwise
 	 */
 	static public function getRecordRaw($table, $where = '', $fields = '*') {
 		$row = FALSE;
@@ -348,6 +353,7 @@ class BackendUtility {
 					'pid' => $val['pid'],
 					'title' => $val['title'],
 					'doktype' => $val['doktype'],
+					'tsconfig_includes' => $val['tsconfig_includes'],
 					'TSconfig' => $val['TSconfig'],
 					'is_siteroot' => $val['is_siteroot'],
 					't3ver_oid' => $val['t3ver_oid'],
@@ -381,7 +387,7 @@ class BackendUtility {
 			$row = $getPageForRootline_cache[$ident];
 		} else {
 			$db = static::getDatabaseConnection();
-			$res = $db->exec_SELECTquery('pid,uid,title,doktype,TSconfig,is_siteroot,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
+			$res = $db->exec_SELECTquery('pid,uid,title,doktype,tsconfig_includes,TSconfig,is_siteroot,t3ver_oid,t3ver_wsid,t3ver_state,t3ver_stage,backend_layout_next_level', 'pages', 'uid=' . (int)$uid . ' ' . self::deleteClause('pages') . ' ' . $clause);
 			$row = $db->sql_fetch_assoc($res);
 			if ($row) {
 				$newLocation = FALSE;
@@ -1234,6 +1240,30 @@ class BackendUtility {
 			// Setting default configuration
 			$TSdataArray['defaultPageTSconfig'] = $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'];
 			foreach ($rootLine as $k => $v) {
+				if (trim($v['tsconfig_includes'])) {
+					$includeTsConfigFileList = GeneralUtility::trimExplode(',', $v['tsconfig_includes'], TRUE);
+					// Traversing list
+					foreach ($includeTsConfigFileList as $key => $includeTsConfigFile) {
+						if (StringUtility::beginsWith($includeTsConfigFile, 'EXT:')) {
+							list($includeTsConfigFileExtensionKey, $includeTsConfigFilename) = explode(
+								'/',
+								substr($includeTsConfigFile, 4),
+								2
+							);
+							if (
+								(string)$includeTsConfigFileExtensionKey !== ''
+								&& ExtensionManagementUtility::isLoaded($includeTsConfigFileExtensionKey)
+								&& (string)$includeTsConfigFilename !== ''
+							) {
+								$includeTsConfigFileAndPath = ExtensionManagementUtility::extPath($includeTsConfigFileExtensionKey) .
+									$includeTsConfigFilename;
+								if (file_exists($includeTsConfigFileAndPath)) {
+									$TSdataArray['uid_' . $v['uid'] . '_static_' . $key] = GeneralUtility::getUrl($includeTsConfigFileAndPath);
+								}
+							}
+						}
+					}
+				}
 				$TSdataArray['uid_' . $v['uid']] = $v['TSconfig'];
 			}
 			$TSdataArray = static::emitGetPagesTSconfigPreIncludeSignal($TSdataArray, $id, $rootLine, $returnPartArray);
@@ -1613,7 +1643,7 @@ class BackendUtility {
 	 * @param bool $linkInfoPopup Whether to wrap with a link opening the info popup
 	 * @return string Thumbnail image tag.
 	 */
-	static public function thumbCode($row, $table, $field, $backPath, $thumbScript = '', $uploaddir = NULL, $abs = 0, $tparams = '', $size = '', $linkInfoPopup = TRUE) {
+	static public function thumbCode($row, $table, $field, $backPath = '', $thumbScript = '', $uploaddir = NULL, $abs = 0, $tparams = '', $size = '', $linkInfoPopup = TRUE) {
 		// Check and parse the size parameter
 		$size = trim($size);
 		$sizeParts = array(64, 64);
@@ -2032,7 +2062,7 @@ class BackendUtility {
 			$l10n_mode = isset($GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode'])
 				? $GLOBALS['TCA'][$originalTable]['columns'][$field]['l10n_mode']
 				: '';
-			if ($l10n_mode === 'exclude' || ($l10n_mode === 'mergeIfNotBlank' && trim($originalRow[$field]) !== '')) {
+			if ($l10n_mode === 'exclude' || ($l10n_mode === 'mergeIfNotBlank' && trim($row[$field]) === '')) {
 				$row[$field] = $originalRow[$field];
 			}
 		}
@@ -2600,12 +2630,12 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name
 	 * @param string $field Field name
-	 * @param string $BACK_PATH UNUSED
+	 * @param string $_ UNUSED
 	 * @param bool $force Force display of icon no matter BE_USER setting for help
 	 * @return string HTML content for a help icon/text
 	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use cshItem() instead
 	 */
-	static public function helpTextIcon($table, $field, $BACK_PATH = '', $force = FALSE) {
+	static public function helpTextIcon($table, $field, $_ = '', $force = FALSE) {
 		GeneralUtility::logDeprecatedFunction();
 		if (is_array($GLOBALS['TCA_DESCR'][$table]) && is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])) {
 			return self::wrapInHelp($table, $field);
@@ -2731,12 +2761,12 @@ class BackendUtility {
 	 *
 	 * @param string $table Table name ('_MOD_'+module name)
 	 * @param string $field Field name (CSH locallang main key)
-	 * @param string $BACK_PATH Back path, not needed anymore, don't use
+	 * @param string $_ (unused)
 	 * @param string $wrap Wrap code for icon-mode, splitted by "|". Not used for full-text mode.
 	 * @return string HTML content for help text
 	 * @see helpTextIcon()
 	 */
-	static public function cshItem($table, $field, $BACK_PATH = NULL, $wrap = '') {
+	static public function cshItem($table, $field, $_ = '', $wrap = '') {
 		static::getLanguageService()->loadSingleTableDescription($table);
 		if (is_array($GLOBALS['TCA_DESCR'][$table])
 			&& is_array($GLOBALS['TCA_DESCR'][$table]['columns'][$field])) {
@@ -2756,13 +2786,13 @@ class BackendUtility {
 	 * REMEMBER to always htmlspecialchar() content in href-properties to ampersands get converted to entities (XHTML requirement and XSS precaution)
 	 *
 	 * @param string $params Parameters sent along to EditDocumentController. This requires a much more details description which you must seek in Inside TYPO3s documentation of the FormEngine API. And example could be '&edit[pages][123] = edit' which will show edit form for page record 123.
-	 * @param string $backPath (unused)
+	 * @param string $_ (unused)
 	 * @param string $requestUri An optional returnUrl you can set - automatically set to REQUEST_URI.
 	 *
 	 * @return string
 	 * @see \TYPO3\CMS\Backend\Template\DocumentTemplate::issueCommand()
 	 */
-	static public function editOnClick($params, $backPath = '', $requestUri = '') {
+	static public function editOnClick($params, $_ = '', $requestUri = '') {
 		if ($requestUri == -1) {
 			$returnUrl = 'T3_THIS_LOCATION';
 		} else {
@@ -3266,16 +3296,15 @@ class BackendUtility {
 	 * @return string Calculated URL
 	 */
 	static public function getModuleUrl($moduleName, $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
-		$urlParameters = array(
-			'M' => $moduleName,
-			'moduleToken' => FormProtectionFactory::get()->generateToken('moduleCall', $moduleName)
-		) + $urlParameters;
-		$url = 'index.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', $urlParameters, '', TRUE, TRUE), '&');
-		if ($returnAbsoluteUrl) {
-			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
-		} else {
-			return PathUtility::getAbsoluteWebPath(PATH_typo3 . $url);
+		/** @var UriBuilder $uriBuilder */
+		$uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+		try {
+			$uri = $uriBuilder->buildUriFromRoute($moduleName, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
+		} catch (\TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException $e) {
+			// no route registered, use the fallback logic to check for a module
+			$uri = $uriBuilder->buildUriFromModule($moduleName, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
 		}
+		return (string)$uri;
 	}
 
 	/**
@@ -3293,18 +3322,9 @@ class BackendUtility {
 	 * @internal
 	 */
 	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
-		$additionalUrlParameters = array(
-			'ajaxID' => $ajaxIdentifier
-		);
-		if (!empty($GLOBALS['TYPO3_CONF_VARS']['BE']['AJAX'][$ajaxIdentifier]['csrfTokenCheck'])) {
-			$additionalUrlParameters['ajaxToken'] = FormProtectionFactory::get()->generateToken('ajaxCall', $ajaxIdentifier);
-		}
-		$url = 'index.php?' . ltrim(GeneralUtility::implodeArrayForUrl('', ($additionalUrlParameters + $urlParameters), '', TRUE, TRUE), '&');
-		if ($returnAbsoluteUrl) {
-			return GeneralUtility::getIndpEnv('TYPO3_REQUEST_DIR') . $url;
-		} else {
-			return PathUtility::getAbsoluteWebPath(PATH_typo3 . $url);
-		}
+		/** @var UriBuilder $uriBuilder */
+		$uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+		return (string)$uriBuilder->buildUriFromAjaxId($ajaxIdentifier, $urlParameters, $returnAbsoluteUrl ? UriBuilder::ABSOLUTE_URL : UriBuilder::ABSOLUTE_PATH);
 	}
 
 	/**
@@ -3473,7 +3493,6 @@ class BackendUtility {
 	 * Special markers are:
 	 * ###REC_FIELD_[field name]###
 	 * ###THIS_UID### - is current element uid (zero if new).
-	 * ###THIS_CID###
 	 * ###CURRENT_PID### - is the current page id (pid of the record).
 	 * ###STORAGE_PID###
 	 * ###SITEROOT###
@@ -3507,7 +3526,6 @@ class BackendUtility {
 			array (
 				'###CURRENT_PID###',
 				'###THIS_UID###',
-				'###THIS_CID###',
 				'###STORAGE_PID###',
 				'###SITEROOT###',
 				'###PAGE_TSCONFIG_ID###',
@@ -3517,7 +3535,6 @@ class BackendUtility {
 			array(
 				(int)$tsConfig['_CURRENT_PID'],
 				(int)$tsConfig['_THIS_UID'],
-				(int)$tsConfig['_THIS_CID'],
 				(int)$tsConfig['_STORAGE_PID'],
 				(int)$tsConfig['_SITEROOT'],
 				(int)$tsConfig[$field]['PAGE_TSCONFIG_ID'],
@@ -3559,7 +3576,6 @@ class BackendUtility {
 		}
 		$res['_CURRENT_PID'] = $cPid;
 		$res['_THIS_UID'] = $row['uid'];
-		$res['_THIS_CID'] = $row['cid'];
 		// So the row will be passed to foreign_table_where_query()
 		$res['_THIS_ROW'] = $row;
 		$rootLine = self::BEgetRootLine($TScID, '', TRUE);
@@ -4392,6 +4408,14 @@ class BackendUtility {
 		$simTime = '';
 		if ($pageInfo['fe_group'] > 0) {
 			$simUser = '&ADMCMD_simUser=' . $pageInfo['fe_group'];
+		} elseif ((int)$pageInfo['fe_group'] === -2) {
+			// -2 means "show at any login". We simulate first available fe_group.
+			/** @var PageRepository $sysPage */
+			$sysPage = GeneralUtility::makeInstance(PageRepository::class);
+			$activeFeGroupRow = BackendUtility::getRecordRaw('fe_groups', '1=1' . $sysPage->enableFields('fe_groups'), 'uid');
+			if (!empty($activeFeGroupRow)) {
+				$simUser = '&ADMCMD_simUser=' . $activeFeGroupRow['uid'];
+			}
 		}
 		if ($pageInfo['starttime'] > $GLOBALS['EXEC_TIME']) {
 			$simTime = '&ADMCMD_simTime=' . $pageInfo['starttime'];
@@ -4502,6 +4526,33 @@ class BackendUtility {
 	 */
 	static public function isRootLevelRestrictionIgnored($table) {
 		return !empty($GLOBALS['TCA'][$table]['ctrl']['security']['ignoreRootLevelRestriction']);
+	}
+
+	/**
+	 * Exists already a shortcut entry for this TYPO3 url?
+	 *
+	 * @param string $url
+	 *
+	 * @return bool
+	 */
+	static public function shortcutExists($url) {
+		$statement = self::getDatabaseConnection()->prepare_SELECTquery(
+			'uid',
+			'sys_be_shortcuts',
+			'userid = :userid AND url = :url'
+		);
+
+		$statement->bindValues([
+			':userid' => self::getBackendUserAuthentication()->user['uid'],
+			':url' => $url
+		]
+		);
+
+		$statement->execute();
+		$rows = $statement->fetch(PreparedStatement::FETCH_ASSOC);
+		$statement->free();
+
+		return !empty($rows);
 	}
 
 	/**

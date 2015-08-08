@@ -386,7 +386,7 @@ class PageGenerator {
 		$pageRenderer->addInlineComment('	This website is powered by TYPO3 - inspiring people to share!
 	TYPO3 is a free open source Content Management Framework initially created by Kasper Skaarhoj and licensed under GNU/GPL.
 	TYPO3 is copyright ' . TYPO3_copyright_year . ' of Kasper Skaarhoj. Extensions are copyright of their respective owners.
-	Information and contribution at ' . TYPO3_URL_ORG . '
+	Information and contribution at ' . TYPO3_URL_GENERAL . '
 ');
 		if ($tsfe->baseUrl) {
 			$pageRenderer->setBaseUrl($tsfe->baseUrl);
@@ -405,7 +405,7 @@ class PageGenerator {
 		}
 		// Including CSS files
 		if (is_array($tsfe->tmpl->setup['plugin.'])) {
-			$temp_styleLines = array();
+			$stylesFromPlugins = '';
 			foreach ($tsfe->tmpl->setup['plugin.'] as $key => $iCSScode) {
 				if (is_array($iCSScode)) {
 					if ($iCSScode['_CSS_DEFAULT_STYLE'] && empty($tsfe->config['config']['removeDefaultCss'])) {
@@ -414,23 +414,20 @@ class PageGenerator {
 						} else {
 							$cssDefaultStyle = $iCSScode['_CSS_DEFAULT_STYLE'];
 						}
-						$temp_styleLines[] = '/* default styles for extension "' . substr($key, 0, -1) . '" */' . LF . $cssDefaultStyle;
+						$stylesFromPlugins .= '/* default styles for extension "' . substr($key, 0, -1) . '" */' . LF . $cssDefaultStyle . LF;
 					}
 					if ($iCSScode['_CSS_PAGE_STYLE'] && empty($tsfe->config['config']['removePageCss'])) {
 						$cssPageStyle = implode(LF, $iCSScode['_CSS_PAGE_STYLE']);
 						if (isset($iCSScode['_CSS_PAGE_STYLE.'])) {
 							$cssPageStyle = $tsfe->cObj->stdWrap($cssPageStyle, $iCSScode['_CSS_PAGE_STYLE.']);
 						}
-						$temp_styleLines[] = '/* specific page styles for extension "' . substr($key, 0, -1) . '" */' . LF . $cssPageStyle;
+						$cssPageStyle = '/* specific page styles for extension "' . substr($key, 0, -1) . '" */' . LF . $cssPageStyle;
+						self::addCssToPageRenderer($cssPageStyle, TRUE);
 					}
 				}
 			}
-			if (!empty($temp_styleLines)) {
-				if ($tsfe->config['config']['inlineStyle2TempFile']) {
-					$pageRenderer->addCssFile(self::inline2TempFile(implode(LF, $temp_styleLines), 'css'));
-				} else {
-					$pageRenderer->addCssInlineBlock('TSFEinlineStyle', implode(LF, $temp_styleLines));
-				}
+			if (!empty($stylesFromPlugins)) {
+				self::addCssToPageRenderer($stylesFromPlugins);
 			}
 		}
 		if ($tsfe->pSetup['stylesheet']) {
@@ -538,29 +535,11 @@ class PageGenerator {
 			$style .= '
 	BODY {margin: ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px ' . $margins . 'px;}';
 		}
-		if ($tsfe->pSetup['adminPanelStyles']) {
-			$style .= '
-
-	/* Default styles for the Admin Panel */
-	TABLE.typo3-adminPanel { border: 1px solid black; background-color: #F6F2E6; }
-	TABLE.typo3-adminPanel TR.typo3-adminPanel-hRow TD { background-color: #9BA1A8; }
-	TABLE.typo3-adminPanel TR.typo3-adminPanel-itemHRow TD { background-color: #ABBBB4; }
-	TABLE.typo3-adminPanel TABLE, TABLE.typo3-adminPanel TD { border: 0px; }
-	TABLE.typo3-adminPanel TD FONT { font-family: verdana; font-size: 10px; color: black; }
-	TABLE.typo3-adminPanel TD A FONT { font-family: verdana; font-size: 10px; color: black; }
-	TABLE.typo3-editPanel { border: 1px solid black; background-color: #F6F2E6; }
-	TABLE.typo3-editPanel TD { border: 0px; }
-			';
-		}
 		// CSS_inlineStyle from TS
 		$style .= trim($tsfe->pSetup['CSS_inlineStyle']);
 		$style .= $tsfe->cObj->cObjGet($tsfe->pSetup['cssInline.'], 'cssInline.');
 		if (trim($style)) {
-			if ($tsfe->config['config']['inlineStyle2TempFile']) {
-				$pageRenderer->addCssFile(self::inline2TempFile($style, 'css'));
-			} else {
-				$pageRenderer->addCssInlineBlock('additionalTSFEInlineStyle', $style);
-			}
+			self::addCssToPageRenderer($style, TRUE, 'additionalTSFEInlineStyle');
 		}
 		// Javascript Libraries
 		if (is_array($tsfe->pSetup['javascriptLibs.'])) {
@@ -890,6 +869,23 @@ class PageGenerator {
 				$pageRenderer->addJsFooterInlineCode('TS_inlineFooter', $inlineFooterJs, $tsfe->config['config']['compressJs']);
 			}
 		}
+		if (is_array($tsfe->pSetup['inlineLanguageLabelFiles.'])) {
+			foreach ($tsfe->pSetup['inlineLanguageLabelFiles.'] as $key => $languageFile) {
+				if (is_array($languageFile)) {
+					continue;
+				}
+				$languageFileConfig = &$tsfe->pSetup['inlineLanguageLabelFiles.'][$key . '.'];
+				if (isset($languageFileConfig['if.']) && !$tsfe->cObj->checkIf($languageFileConfig['if.'])) {
+					continue;
+				}
+				$pageRenderer->addInlineLanguageLabelFile(
+					$languageFile,
+					$languageFileConfig['selectionPrefix'] ?: '',
+					$languageFileConfig['stripFromSelectionName'] ?: '',
+					$languageFileConfig['errorMode'] ? (int)$languageFileConfig['errorMode'] : 0
+				);
+			}
+		}
 		// ExtJS specific code
 		if (is_array($tsfe->pSetup['inlineLanguageLabel.'])) {
 			$pageRenderer->addInlineLanguageLabelArray($tsfe->pSetup['inlineLanguageLabel.'], TRUE);
@@ -1196,5 +1192,29 @@ class PageGenerator {
 	 */
 	static protected function getPageRenderer() {
 		return GeneralUtility::makeInstance(PageRenderer::class);
+	}
+
+	/**
+	 * Adds inline CSS code, by respecting the inlineStyle2TempFile option
+	 *
+	 * @param string $cssStyles the inline CSS styling
+	 * @param bool $excludeFromConcatenation option to see if it should be conctatenated
+	 * @param string $inlineBlockName the block name to add it
+	 */
+	static protected function addCssToPageRenderer($cssStyles, $excludeFromConcatenation = FALSE, $inlineBlockName = 'TSFEinlineStyle') {
+		if (empty($GLOBALS['TSFE']->config['config']['inlineStyle2TempFile'])) {
+			self::getPageRenderer()->addCssInlineBlock($inlineBlockName, $cssStyles, !empty($GLOBALS['TSFE']->config['config']['compressCss']));
+		} else {
+			self::getPageRenderer()->addCssFile(
+				self::inline2TempFile($cssStyles, 'css'),
+				'stylesheet',
+				'all',
+				'',
+				(bool)$GLOBALS['TSFE']->config['config']['compressCss'],
+				FALSE,
+				'',
+				$excludeFromConcatenation
+			);
+		}
 	}
 }

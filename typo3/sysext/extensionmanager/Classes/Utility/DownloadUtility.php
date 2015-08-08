@@ -15,19 +15,17 @@ namespace TYPO3\CMS\Extensionmanager\Utility;
  */
 
 /**
- * Utility for dealing with ext_emconf
+ * Utility for Downloading Extensions
  */
 class DownloadUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility
-	 * @inject
 	 */
 	protected $terUtility;
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper
-	 * @inject
 	 */
 	protected $repositoryHelper;
 
@@ -38,9 +36,29 @@ class DownloadUtility implements \TYPO3\CMS\Core\SingletonInterface {
 
 	/**
 	 * @var \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility
-	 * @inject
 	 */
 	protected $fileHandlingUtility;
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility $terUtility
+	 */
+	public function injectTerUtility(\TYPO3\CMS\Extensionmanager\Utility\Connection\TerUtility $terUtility) {
+		$this->terUtility = $terUtility;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\Repository\Helper $repositoryHelper
+	 */
+	public function injectRepositoryHelper(\TYPO3\CMS\Extensionmanager\Utility\Repository\Helper $repositoryHelper) {
+		$this->repositoryHelper = $repositoryHelper;
+	}
+
+	/**
+	 * @param \TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility $fileHandlingUtility
+	 */
+	public function injectFileHandlingUtility(\TYPO3\CMS\Extensionmanager\Utility\FileHandlingUtility $fileHandlingUtility) {
+		$this->fileHandlingUtility = $fileHandlingUtility;
+	}
 
 	/**
 	 * Download an extension

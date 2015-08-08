@@ -21,6 +21,8 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -413,11 +415,17 @@ class EditDocumentController {
 	protected $previewData = [];
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
 		$GLOBALS['SOBE'] = $this;
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_alt_doc.xlf');
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 	}
 
 	/**
@@ -507,7 +515,7 @@ class EditDocumentController {
 	 * @return bool TRUE, then save the document (data submitted)
 	 */
 	public function doProcessData() {
-		$out = $this->doSave || isset($_POST['_savedok_x']) || isset($_POST['_saveandclosedok_x']) || isset($_POST['_savedokview_x']) || isset($_POST['_savedoknew_x']) || isset($_POST['_translation_savedok_x']) || isset($_POST['_translation_savedokclear_x']);
+		$out = $this->doSave || isset($_POST['_savedok']) || isset($_POST['_saveandclosedok']) || isset($_POST['_savedokview']) || isset($_POST['_savedoknew']) || isset($_POST['_translation_savedok_x']) || isset($_POST['_translation_savedokclear_x']);
 		return $out;
 	}
 
@@ -615,7 +623,7 @@ class EditDocumentController {
 				$this->fixWSversioningInEditConf($tce->autoVersionIdMap);
 			}
 			// If a document is saved and a new one is created right after.
-			if (isset($_POST['_savedoknew_x']) && is_array($this->editconf)) {
+			if (isset($_POST['_savedoknew']) && is_array($this->editconf)) {
 				// Finding the current table:
 				reset($this->editconf);
 				$nTable = key($this->editconf);
@@ -636,7 +644,7 @@ class EditDocumentController {
 				$this->compileStoreDat();
 			}
 			// If a preview is requested
-			if (isset($_POST['_savedokview_x'])) {
+			if (isset($_POST['_savedokview'])) {
 				// Get the first table and id of the data array from DataHandler
 				$table = reset(array_keys($this->data));
 				$id = reset(array_keys($this->data[$table]));
@@ -647,11 +655,11 @@ class EditDocumentController {
 				$this->previewData['table'] = $table;
 				$this->previewData['id'] = $id;
 			}
-			$tce->printLogErrorMessages(isset($_POST['_saveandclosedok_x']) || isset($_POST['_translation_savedok_x']) ? $this->retUrl : $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars));
+			$tce->printLogErrorMessages(isset($_POST['_saveandclosedok']) || isset($_POST['_translation_savedok_x']) ? $this->retUrl : $this->R_URL_parts['path'] . '?' . GeneralUtility::implodeArrayForUrl('', $this->R_URL_getvars));
 		}
 		//  || count($tce->substNEWwithIDs)... If any new items has been save, the document is CLOSED
 		// because if not, we just get that element re-listed as new. And we don't want that!
-		if (isset($_POST['_saveandclosedok_x']) || isset($_POST['_translation_savedok_x']) || $this->closeDoc < 0) {
+		if (isset($_POST['_saveandclosedok']) || isset($_POST['_translation_savedok_x']) || $this->closeDoc < 0) {
 			$this->closeDocument(abs($this->closeDoc));
 		}
 	}
@@ -681,9 +689,8 @@ class EditDocumentController {
 		$this->doc = $GLOBALS['TBE_TEMPLATE'];
 		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->addInlineLanguageLabelFile('EXT:lang/locallang_alt_doc.xlf');
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_doc.html');
-		$this->doc->form = '<form action="' . htmlspecialchars($this->R_URI) . '" method="post" enctype="multipart/form-data" name="editform" onsubmit="document.editform._scrollPosition.value=(document.documentElement.scrollTop || document.body.scrollTop); return TBE_EDITOR.checkSubmit(1);">';
+		$this->doc->form = '<form action="' . htmlspecialchars($this->R_URI) . '" method="post" enctype="multipart/form-data" name="editform" onsubmit="document.editform._scrollPosition.value=(document.documentElement.scrollTop || document.body.scrollTop); return TBE_EDITOR.checkAndDoSubmit(1);">';
 		// override the default jumpToUrl
 		$this->doc->JScodeArray['jumpToUrl'] = '
 			function jumpToUrl(URL,formEl) {
@@ -734,7 +741,7 @@ class EditDocumentController {
 			}
 		';
 
-		$previewCode = isset($_POST['_savedokview_x']) && $this->popViewId ? $this->generatePreviewCode() : '';
+		$previewCode = isset($_POST['_savedokview']) && $this->popViewId ? $this->generatePreviewCode() : '';
 
 		$this->doc->JScode = $this->doc->wrapScriptTags($javascript . $previewCode);
 		// Setting up the context sensitive menu:
@@ -1117,7 +1124,7 @@ class EditDocumentController {
 		// The action of each button is decided by its name attribute. (See doProcessData())
 		if (!$this->errorC && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly']) {
 			// SAVE button:
-			$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="image" name="_savedok" class="c-inputButton" src="clear.gif" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
+			$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<input type="submit" name="_savedok" class="c-inputButton" value="" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" />'));
 			// SAVE / VIEW button:
 			if ($this->viewId && !$this->noView && $this->getNewIconMode($this->firstEl['table'], 'saveDocView')) {
 				$pagesTSconfig = BackendUtility::getPagesTSconfig($this->pageinfo['uid']);
@@ -1128,15 +1135,15 @@ class EditDocumentController {
 					$excludeDokTypes = array(PageRepository::DOKTYPE_RECYCLER, PageRepository::DOKTYPE_SYSFOLDER, PageRepository::DOKTYPE_SPACER);
 				}
 				if (!in_array((int)$this->pageinfo['doktype'], $excludeDokTypes, TRUE) || isset($pagesTSconfig['TCEMAIN.']['preview.'][$this->firstEl['table'].'.']['previewPageId'])) {
-					$buttons['save_view'] = IconUtility::getSpriteIcon('actions-document-save-view', array('html' => '<input onclick="window.open(\'\', \'newTYPO3frontendWindow\');" type="image" class="c-inputButton" name="_savedokview" src="clear.gif" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '" />'));
+					$buttons['save_view'] = IconUtility::getSpriteIcon('actions-document-save-view', array('html' => '<input onclick="window.open(\'\', \'newTYPO3frontendWindow\');" type="submit" class="c-inputButton" name="_savedokview"  value="" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '" />'));
 				}
 			}
 			// SAVE / NEW button:
 			if (count($this->elementsData) === 1 && $this->getNewIconMode($this->firstEl['table'])) {
-				$buttons['save_new'] = IconUtility::getSpriteIcon('actions-document-save-new', array('html' => '<input type="image" class="c-inputButton" name="_savedoknew" src="clear.gif" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveNewDoc', TRUE) . '" />'));
+				$buttons['save_new'] = IconUtility::getSpriteIcon('actions-document-save-new', array('html' => '<input type="submit" class="c-inputButton" name="_savedoknew" value="" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveNewDoc', TRUE) . '" />'));
 			}
 			// SAVE / CLOSE
-			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<input type="image" class="c-inputButton" name="_saveandclosedok" src="clear.gif" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />'));
+			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<input type="submit" class="c-inputButton" name="_saveandclosedok" value="" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" />'));
 			// FINISH TRANSLATION / SAVE / CLOSE
 			if ($GLOBALS['TYPO3_CONF_VARS']['BE']['explicitConfirmationOfTranslation']) {
 				$buttons['translation_save'] = '<input type="image" class="c-inputButton" name="_translation_savedok" src="sysext/t3skin/images/icons/actions/document-save-translation.png" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.translationSaveDoc', TRUE) . '" /> ';
@@ -1144,7 +1151,7 @@ class EditDocumentController {
 			}
 		}
 		// CLOSE button:
-		$buttons['close'] = '<a href="#" class="t3js-editform-close" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-close') . '</a>';
+		$buttons['close'] = '<a href="#" class="t3js-editform-close" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 		// DELETE + UNDO buttons:
 		if (!$this->errorC && !$GLOBALS['TCA'][$this->firstEl['table']]['ctrl']['readOnly'] && count($this->elementsData) === 1) {
 			if ($this->firstEl['cmd'] != 'new' && MathUtility::canBeInterpretedAsInteger($this->firstEl['uid'])) {
@@ -1180,7 +1187,7 @@ class EditDocumentController {
 								)
 							)
 						) . '; return false;';
-					$buttons['history'] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . IconUtility::getSpriteIcon('actions-document-history-open') . '</a>';
+					$buttons['history'] = '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '</a>';
 				}
 				// If only SOME fields are shown in the form, this will link the user to the FULL form:
 				if ($this->columnsOnly) {

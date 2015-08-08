@@ -52,7 +52,8 @@ class FlexFormNoTabsContainer extends AbstractContainer {
 			$displayConditionDefinition = $flexFormDataStructureArray['ROOT']['TCEforms']['displayCond'];
 			$displayConditionResult = $this->evaluateFlexFormDisplayCondition(
 				$displayConditionDefinition,
-				$flexFormRowDataSubPart
+				$flexFormRowDataSubPart,
+				$flexFormCurrentLanguage
 			);
 		}
 		if (!$displayConditionResult) {
@@ -69,7 +70,9 @@ class FlexFormNoTabsContainer extends AbstractContainer {
 		$dsPointerFields = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['columns'][$fieldName]['config']['ds_pointerField'], TRUE);
 		$parameterArray['_cshKey'] = $table . '.' . $fieldName;
 		foreach ($dsPointerFields as $key) {
-			$parameterArray['_cshKey'] .= '.' . $row[$key];
+			if ((string)$row[$key] !== '') {
+				$parameterArray['_cshKey'] .= '.' . $row[$key];
+			}
 		}
 
 		$options = $this->globalOptions;

@@ -138,7 +138,6 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		$this->REQUEST_URI = str_replace('&sendToReview=1', '', GeneralUtility::getIndpEnv('REQUEST_URI'));
 		// Draw the header.
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:version/Resources/Private/Templates/version.html');
 		// Add styles
 		$this->doc->inDocStylesArray[$GLOBALS['MCONF']['name']] = '
@@ -249,7 +248,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// CSH
 		if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
 			// View page
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], $GLOBALS['BACK_PATH'], BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			// Shortcut
 			if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
 				$buttons['shortcut'] = $this->doc->makeShortcutIcon('id, edit_record, pointer, new_unique_uid, search_field, search_levels, showLimit', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name']);
@@ -483,12 +482,12 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
 			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . IconUtility::getSpriteIcon('actions-system-list-open') . '</a>';
 			// "View page" icon is added:
-			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['uid']))) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], '', BackendUtility::BEgetRootLine($row['uid']))) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 		} else {
 			if ($row['pid'] == -1) {
 				$getVars = '&ADMCMD_vPrev[' . rawurlencode(($table . ':' . $row['t3ver_oid'])) . ']=' . $row['uid'];
 				// "View page" icon is added:
-				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], $this->doc->backPath, BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], '', BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
 			}
 		}
 		return $adminLink;

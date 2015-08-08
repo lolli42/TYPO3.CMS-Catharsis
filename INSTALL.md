@@ -44,6 +44,18 @@ STRICT_ALL_TABLES (especially true with MySQL 5.6, as this is a new default),
 you need to configure setDBinit in the Install Tool. See question 2 in the
 "Installation FAQ" below for more information.
 
+### MySQL required privileges
+
+The MySQL user needs a least the following privileges on the TYPO3 database:
+
+* SELECT, INSERT, UPDATE, DELETE
+* CREATE, DROP, INDEX, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES
+
+It is recommended to also grant the following privileges:
+
+* CREATE VIEW, SHOW VIEW
+* EXECUTE, CREATE ROUTINE, ALTER ROUTINE
+
 ### PHP environment
 
 * memory_limit set to at least 64M
@@ -251,7 +263,7 @@ TYPO3 core and the extensions up to date.
 * Please refer to official TYPO3 Security Guide for further information
   about security-related topics of TYPO3 CMS and the resources compiled by
   the Security Team.
-  http://docs.typo3.org/typo3cms/SecurityGuide/
+  https://docs.typo3.org/typo3cms/SecurityGuide/
   http://typo3.org/teams/security/resources/
 
 Installation FAQ

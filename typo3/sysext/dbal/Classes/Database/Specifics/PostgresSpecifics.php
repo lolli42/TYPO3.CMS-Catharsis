@@ -22,6 +22,15 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class PostgresSpecifics extends AbstractSpecifics {
 	/**
+	 * Contains the specifics that need to be taken care of for PostgreSQL DBMS.
+	 *
+	 * @var array
+	 */
+	protected $specificProperties = array(
+		self::CAST_FIND_IN_SET => TRUE
+	);
+
+	/**
 	 * Contains the DBMS specific mapping overrides for native MySQL to ADOdb meta field types
 	 */
 	protected $nativeToMetaFieldTypeOverrides = array(
@@ -50,7 +59,7 @@ class PostgresSpecifics extends AbstractSpecifics {
 	 * Determine the native field length information for a table field.
 	 *
 	 * @param string $mysqlType
-	 * @param integer $maxLength
+	 * @param int $maxLength
 	 * @return string
 	 */
 	public function getNativeFieldLength($mysqlType, $maxLength) {

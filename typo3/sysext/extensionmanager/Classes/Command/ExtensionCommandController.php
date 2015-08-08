@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Extensionmanager\Command;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Extbase\Mvc\Controller\CommandController;
 
 /**
@@ -28,9 +30,15 @@ class ExtensionCommandController extends CommandController {
 
 	/**
 	 * @var \TYPO3\CMS\Extbase\SignalSlot\Dispatcher
-	 * @inject
 	 */
 	protected $signalSlotDispatcher;
+
+	/**
+	 * @param \TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher
+	 */
+	public function injectSignalSlotDispatcher(\TYPO3\CMS\Extbase\SignalSlot\Dispatcher $signalSlotDispatcher) {
+		$this->signalSlotDispatcher = $signalSlotDispatcher;
+	}
 
 	/**
 	 * Installs an extension by key
@@ -62,6 +70,24 @@ class ExtensionCommandController extends CommandController {
 		/** @var $service \TYPO3\CMS\Extensionmanager\Utility\InstallUtility */
 		$service = $this->objectManager->get(\TYPO3\CMS\Extensionmanager\Utility\InstallUtility::class);
 		$service->uninstall($extensionKey);
+	}
+
+	/**
+	 * Updates class loading information.
+	 *
+	 * This command is only needed during development. The extension manager takes care
+	 * creating or updating this info properly during extension (de-)activation.
+	 *
+	 * @return void
+	 */
+	public function dumpClassLoadingInformationCommand() {
+		if (Bootstrap::usesComposerClassLoading()) {
+			$this->output->outputLine('<error>Class loading information is managed by composer. Use "composer dump-autoload" command to update the information.</error>');
+			$this->quit(1);
+		} else {
+			ClassLoadingInformation::dumpClassLoadingInformation();
+			$this->output->outputLine('Class Loading information has been updated.');
+		}
 	}
 
 	/**

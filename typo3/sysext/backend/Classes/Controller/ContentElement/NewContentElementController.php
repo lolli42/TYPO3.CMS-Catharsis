@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * Script Class for the New Content element wizard
@@ -141,7 +142,6 @@ class NewContentElementController {
 		$this->config = $config['mod.']['wizards.']['newContentElement.'];
 		// Starting the document template object:
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
-		$this->doc->backPath = $GLOBALS['BACK_PATH'];
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/db_new_content_el.html');
 		$this->doc->JScode = '';
 		$this->doc->form = '<form action="" name="editForm"><input type="hidden" name="defValues" value="" />';
@@ -164,7 +164,6 @@ class NewContentElementController {
 			// Init position map object:
 			$posMap = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Tree\View\ContentCreationPagePositionMap::class);
 			$posMap->cur_sys_language = $this->sys_language;
-			$posMap->backPath = $GLOBALS['BACK_PATH'];
 			// If a column is pre-set:
 			if (isset($this->colPos)) {
 				if ($this->uid_pid < 0) {
@@ -238,24 +237,25 @@ class NewContentElementController {
 					}
 
 					$icon = $wInfo['icon'];
-					if (strpos($wInfo['icon'], '..') === FALSE) {
+					if (strpos($wInfo['icon'], '..') === FALSE && !GeneralUtility::isAbsPath($icon)) {
 						$icon = GeneralUtility::getFileAbsFileName($icon, TRUE, TRUE);
-						$icon = substr($icon, strlen(PATH_typo3));
+						$pathInfo = PathUtility::pathinfo($icon);
+						$path = PathUtility::getRelativePathTo($pathInfo['dirname']);
+						$icon = $path . $pathInfo['basename'];
 					}
 					$menuItems[$key]['content'] .= '
 						<div class="media">
-							' . $content . '
-							<div class="media-left">
-								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-									<img' . IconUtility::skinImg($this->doc->backPath, $icon) . ' alt="" />
-								</a>
-							</div>
-							<div class="media-body">
-								<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
-									<strong>' . htmlspecialchars($wInfo['title']) . '</strong>
-									<br />' . nl2br(htmlspecialchars(trim($wInfo['description']))) .
-								'</a>
-							</div>
+							<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">
+								' . $content . '
+								<div class="media-left">
+									<img' . IconUtility::skinImg('', $icon) . ' alt="" />
+								</div>
+								<div class="media-body">
+									<strong>' . htmlspecialchars($wInfo['title']) . '</strong>' .
+									'<br />' .
+									nl2br(htmlspecialchars(trim($wInfo['description']))) .
+								'</div>
+							</a>
 						</div>';
 					$cc++;
 				}
