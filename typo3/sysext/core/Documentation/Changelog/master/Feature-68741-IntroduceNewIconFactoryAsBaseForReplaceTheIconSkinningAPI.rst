@@ -26,6 +26,30 @@ The core implement three icon provider classes, which all implements the ``IconP
 Third party extensions can provide own icon provider classes, each class must implement the ``IconProviderInterface``.
 
 
+BitmapIconProvider
+------------------
+
+The ``BitmapIconProvider`` has the following options
+
+* ``source`` The path to the bitmap file, this can also contains the EXT: prefix
+
+
+FontawesomeIconProvider
+-----------------------
+
+The ``FontawesomeIconProvider`` has the following options
+
+* ``name`` The name of the icon whithout the icon prefix e.g. ``check`` instead of ``fa-check``
+
+
+SvgIconProvider
+---------------
+
+The ``SvgIconProvider`` has the following options
+
+* ``source`` The path to the svg file, this can also contains the EXT: prefix
+
+
 Register an icon
 ----------------
 
@@ -69,11 +93,11 @@ The core provides a fluid ViewHelper which makes it really easy to use icons wit
 .. code-block:: html
 
 	{namespace core = TYPO3\CMS\Core\ViewHelpers}
-	<core:icon identifier="my-icon-identifier" size="small" />
-	<!-- use the "default" size if none given ->
+	<core:icon identifier="my-icon-identifier" />
+	<!-- use the "small" size if none given ->
 	<core:icon identifier="my-icon-identifier" />
 	<core:icon identifier="my-icon-identifier" size="large" />
-	<core:icon identifier="my-icon-identifier" size="small" overlay="overlay-identifier" />
+	<core:icon identifier="my-icon-identifier" overlay="overlay-identifier" />
 	<core:icon identifier="my-icon-identifier" size="default" overlay="overlay-identifier" />
 	<core:icon identifier="my-icon-identifier" size="large" overlay="overlay-identifier" />
 

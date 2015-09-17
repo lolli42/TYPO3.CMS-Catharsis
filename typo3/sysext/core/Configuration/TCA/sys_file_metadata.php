@@ -6,7 +6,7 @@ return array(
 		'tstamp' => 'tstamp',
 		'crdate' => 'crdate',
 		'cruser_id' => 'cruser_id',
-		'type' => 'type',
+		'type' => 'file:type',
 		'hideTable' => TRUE,
 		'rootLevel' => TRUE,
 		'languageField' => 'sys_language_uid',
@@ -38,7 +38,8 @@ return array(
 				'items' => array(
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1),
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l10n_parent' => array(
@@ -51,13 +52,15 @@ return array(
 					array('', 0)
 				),
 				'foreign_table' => 'sys_file_metadata',
-				'foreign_table_where' => 'AND sys_file_metadata.uid=###REC_FIELD_l10n_parent### AND sys_file_metadata.sys_language_uid IN (-1,0)'
+				'foreign_table_where' => 'AND sys_file_metadata.uid=###REC_FIELD_l10n_parent### AND sys_file_metadata.sys_language_uid IN (-1,0)',
+				'default' => 0
 			)
 		),
 		'l10n_diffsource' => array(
 			'exclude' => 0,
 			'config' => array(
-				'type' => 'passthrough'
+				'type' => 'passthrough',
+				'default' => ''
 			)
 		),
 		't3ver_label' => array(
@@ -85,6 +88,7 @@ return array(
 				'minitems' => 1,
 				'maxitems' => 1,
 				'size' => 1,
+				'default' => 0,
 			)
 		),
 		'title' => array(

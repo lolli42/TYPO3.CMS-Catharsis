@@ -14,13 +14,16 @@ namespace TYPO3\CMS\Backend\Tests\Unit\Utility;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForGroupWithOneAllowedTableFixture;
-use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForGroupWithMultipleAllowedTablesFixture;
-use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForSelectWithMMRelationFixture;
-use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\LabelFromItemListMergedReturnsCorrectFieldsFixture;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
+use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\BackendUtilityFixture;
 use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ExcludeFieldsReturnsCorrectFieldListFixture;
 use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ExcludeFieldsReturnsCorrectListWithFlexFormFieldsFixture;
+use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\LabelFromItemListMergedReturnsCorrectFieldsFixture;
+use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForGroupWithMultipleAllowedTablesFixture;
+use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForGroupWithOneAllowedTableFixture;
+use TYPO3\CMS\Backend\Tests\Unit\Utility\Fixtures\ProcessedValueForSelectWithMMRelationFixture;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Charset\CharsetConverter;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
@@ -117,6 +120,7 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider calcAgeDataProvider
+	 *
 	 * @param int $seconds
 	 * @param string $expectedLabel
 	 */
@@ -218,28 +222,29 @@ class BackendUtilityTest extends UnitTestCase {
 		$GLOBALS['TYPO3_DB'] = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
 		$GLOBALS['TYPO3_DB']->expects($this->any())->method('fullQuoteStr')
 			->will($this->returnCallback(
-				function($quoteStr) {
+				function ($quoteStr) {
 					return "'" . $quoteStr . "'";
 				}
-			));
+			)
+			);
 		$GLOBALS['TYPO3_DB']->expects($this->any())->method('exec_SELECTquery')->will($this->returnValue(0));
 		$GLOBALS['TYPO3_DB']->expects($this->any())->method('sql_free_result');
 		$GLOBALS['TYPO3_DB']->expects($this->any())->method('sql_fetch_assoc')
 			->will($this->returnCallback(
-				function() {
+				function () {
 					static $called = 0;
 					++$called;
 					switch ($called) {
 						// SELECT * FROM sys_category_record_mm
 						case 1:
 							return array(
-								'uid_local' => 1,	// uid of a sys_category record
-								'uid_foreign' => 1,	// uid of a pages record
+								'uid_local' => 1,    // uid of a sys_category record
+								'uid_foreign' => 1,    // uid of a pages record
 							);
 						case 2:
 							return array(
-								'uid_local' => 2,	// uid of a sys_category record
-								'uid_foreign' => 1,	// uid of a pages record
+								'uid_local' => 2,    // uid of a sys_category record
+								'uid_foreign' => 1,    // uid of a pages record
 							);
 						case 3:
 							return NULL;
@@ -259,7 +264,8 @@ class BackendUtilityTest extends UnitTestCase {
 					}
 					return NULL;
 				}
-			));
+			)
+			);
 
 		$GLOBALS['TCA'] = array(
 			'pages' => array(
@@ -294,6 +300,88 @@ class BackendUtilityTest extends UnitTestCase {
 		);
 
 		$this->assertSame('Category 1; Category 2', ProcessedValueForSelectWithMMRelationFixture::getProcessedValue('pages', 'categories', '2', 0, FALSE, FALSE, 1));
+	}
+
+	/**
+	 * @test
+	 */
+	public function getProcessedValueDisplaysAgeForDateInputFieldsIfSettingAbsent() {
+		/** @var ObjectProphecy $languageServiceProphecy */
+		$languageServiceProphecy = $this->prophesize(LanguageService::class);
+		$languageServiceProphecy->sL(Argument::cetera())->willReturn(' min| hrs| days| yrs| min| hour| day| year');
+		$GLOBALS['LANG'] = $languageServiceProphecy->reveal();
+
+		$GLOBALS['EXEC_TIME'] = mktime(0, 0, 0, 8, 30, 2015);
+
+		$GLOBALS['TCA'] = [
+			'tt_content' => [
+				'columns' => [
+					'date' => [
+						'config' => [
+							'type' => 'input',
+							'eval' => 'date',
+						],
+					],
+				],
+			],
+		];
+		$this->assertSame('28-08-15 (-2 days)', BackendUtility::getProcessedValue('tt_content', 'date', mktime(0, 0, 0, 8, 28, 2015)));
+	}
+
+	/**
+	 * @return array
+	 */
+	public function inputTypeDateDisplayOptions() {
+		return [
+			'typeSafe Setting' => [
+				TRUE,
+				'28-08-15',
+			],
+			'non typesafe setting' => [
+				1,
+				'28-08-15',
+			],
+			'setting disabled typesafe' => [
+				FALSE,
+				'28-08-15 (-2 days)',
+			],
+			'setting disabled not typesafe' => [
+				0,
+				'28-08-15 (-2 days)',
+			],
+		];
+	}
+
+	/**
+	 * @test
+	 *
+	 * @dataProvider inputTypeDateDisplayOptions
+	 *
+	 * @param string $input
+	 * @param string $expected
+	 */
+	public function getProcessedValueHandlesAgeDisplayCorrectly($input, $expected) {
+		/** @var ObjectProphecy $languageServiceProphecy */
+		$languageServiceProphecy = $this->prophesize(LanguageService::class);
+		$languageServiceProphecy->sL(Argument::cetera())->willReturn(' min| hrs| days| yrs| min| hour| day| year');
+		$GLOBALS['LANG'] = $languageServiceProphecy->reveal();
+
+		$GLOBALS['EXEC_TIME'] = mktime(0, 0, 0, 8, 30, 2015);
+
+		$GLOBALS['TCA'] = [
+			'tt_content' => [
+				'columns' => [
+					'date' => [
+						'config' => [
+							'type' => 'input',
+							'eval' => 'date',
+							'disableAgeDisplay' => $input,
+						],
+					],
+				],
+			],
+		];
+		$this->assertSame($expected, BackendUtility::getProcessedValue('tt_content', 'date', mktime(0, 0, 0, 8, 28, 2015)));
 	}
 
 	/**
@@ -402,6 +490,7 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider getCommonSelectFieldsReturnsCorrectFieldsDataProvider
+	 *
 	 * @param string $table
 	 * @param string $prefix
 	 * @param array $presetFields
@@ -489,6 +578,7 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider getLabelFromItemlistReturnsCorrectFieldsDataProvider
+	 *
 	 * @param string $table
 	 * @param string $col
 	 * @param string $key
@@ -558,6 +648,7 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider getLabelFromItemListMergedReturnsCorrectFieldsDataProvider
+	 *
 	 * @param int $pageId
 	 * @param string $table
 	 * @param string $column
@@ -638,6 +729,7 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider getLabelsFromItemsListDataProvider
+	 *
 	 * @param string $table
 	 * @param string $col
 	 * @param string $keyList
@@ -651,7 +743,7 @@ class BackendUtilityTest extends UnitTestCase {
 		$GLOBALS['LANG']->expects($this->any())->method('sL')->will($this->returnArgument(0));
 
 		$GLOBALS['TCA'][$table] = $tca;
-		$label = BackendUtility::getLabelsFromItemsList($table, $col, $keyList,$pageTsConfig);
+		$label = BackendUtility::getLabelsFromItemsList($table, $col, $keyList, $pageTsConfig);
 		$this->assertEquals($expectedLabel, $label);
 	}
 
@@ -719,217 +811,6 @@ class BackendUtilityTest extends UnitTestCase {
 	}
 
 	/**
-	 * Tests concerning getExcludeFields
-	 */
-
-	/**
-	 * @return array
-	 */
-	public function getExcludeFieldsDataProvider() {
-		return array(
-			'getExcludeFields does not return fields not configured as exclude field' => array(
-				array(
-					'tx_foo' => array(
-						'ctrl' => array(
-							'title' => 'foo',
-						),
-						'columns' => array(
-							'bar' => array(
-								'label' => 'bar',
-								'exclude' => 1
-							),
-							'baz' => array(
-								'label' => 'bar',
-							),
-						)
-					)
-				),
-				array(
-					array(
-						'foo: bar',
-						'tx_foo:bar',
-					),
-				)
-			),
-			'getExcludeFields returns fields from root level tables if root level restriction should be ignored' => array(
-				array(
-					'tx_foo' => array(
-						'ctrl' => array(
-							'title' => 'foo',
-							'rootLevel' => TRUE,
-							'security' => array(
-								'ignoreRootLevelRestriction' => TRUE,
-							),
-						),
-						'columns' => array(
-							'bar' => array(
-								'label' => 'bar',
-								'exclude' => 1
-							),
-						)
-					)
-				),
-				array(
-					array(
-						'foo: bar',
-						'tx_foo:bar',
-					),
-				)
-			),
-			'getExcludeFields does not return fields from root level tables' => array(
-				array(
-					'tx_foo' => array(
-						'ctrl' => array(
-							'title' => 'foo',
-							'rootLevel' => TRUE,
-						),
-						'columns' => array(
-							'bar' => array(
-								'label' => 'bar',
-								'exclude' => 1
-							),
-						)
-					)
-				),
-				array()
-			),
-			'getExcludeFields does not return fields from admin only level tables' => array(
-				array(
-					'tx_foo' => array(
-						'ctrl' => array(
-							'title' => 'foo',
-							'adminOnly' => TRUE,
-						),
-						'columns' => array(
-							'bar' => array(
-								'label' => 'bar',
-								'exclude' => 1
-							),
-						)
-					)
-				),
-				array()
-			),
-		);
-	}
-
-	/**
-	 * @param $tca
-	 * @param $expected
-	 *
-	 * @test
-	 * @dataProvider getExcludeFieldsDataProvider
-	 */
-	public function getExcludeFieldsReturnsCorrectFieldList($tca, $expected) {
-		$GLOBALS['TCA'] = $tca;
-
-		// Stub LanguageService and let sL() return the same value that came in again
-		$GLOBALS['LANG'] = $this->getMock(LanguageService::class, array(), array(), '', FALSE);
-		$GLOBALS['LANG']->expects($this->any())->method('sL')->will($this->returnArgument(0));
-
-		$this->assertSame($expected, ExcludeFieldsReturnsCorrectFieldListFixture::getExcludeFields());
-	}
-
-	/**
-	 * @test
-	 */
-	public function getExcludeFieldsReturnsCorrectListWithFlexFormFields() {
-		$GLOBALS['TCA'] = array(
-			'tx_foo' => array(
-				'ctrl' => array(
-					'title' => 'foo'
-				),
-				'columns' => array(
-					'foo' => array(
-						'label' => 'foo',
-						'exclude' => 1
-					),
-					'bar' => array(
-						'label' => 'bar',
-						'exclude' => 1
-					),
-					'abarfoo' => array(
-						'label' => 'abarfoo',
-						'config' => array(
-							'type' => 'flex',
-							'ds' => array(
-								'*,dummy' => '',
-							)
-						)
-					)
-				)
-			),
-			'tx_foobar' => array(
-				'ctrl' => array(
-					'title' => 'foobar'
-				),
-				'columns' => array(
-					'foo' => array(
-						'label' => 'foo',
-						'exclude' => 1
-					),
-					'bar' => array(
-						'label' => 'bar',
-						'exclude' => 1
-					)
-				)
-			),
-			'tx_bar' => array(
-				'ctrl' => array(
-					'title' => 'bar'
-				),
-				'columns' => array(
-					'foo' => array(
-						'label' => 'foo',
-						'exclude' => 1
-					),
-					'bar' => array(
-						'label' => 'bar',
-						'exclude' => 1
-					)
-				)
-			)
-		);
-
-		$expectedResult = array(
-			array(
-				'bar: bar',
-				'tx_bar:bar'
-			),
-			array(
-				'bar: foo',
-				'tx_bar:foo'
-			),
-			array(
-				'abarfoo dummy: The Title:',
-				'tx_foo:abarfoo;dummy;sGeneral;xmlTitle'
-			),
-			array(
-				'foo: bar',
-				'tx_foo:bar'
-			),
-			array(
-				'foo: foo',
-				'tx_foo:foo'
-			),
-			array(
-				'foobar: bar',
-				'tx_foobar:bar'
-			),
-			array(
-				'foobar: foo',
-				'tx_foobar:foo'
-			),
-		);
-
-		// Stub LanguageService and let sL() return the same value that came in again
-		$GLOBALS['LANG'] = $this->getMock(LanguageService::class, array(), array(), '', FALSE);
-		$GLOBALS['LANG']->expects($this->any())->method('sL')->will($this->returnArgument(0));
-
-		$this->assertSame($expectedResult, ExcludeFieldsReturnsCorrectListWithFlexFormFieldsFixture::getExcludeFields());
-	}
-
-	/**
 	 * Tests concerning viewOnClick
 	 */
 
@@ -947,196 +828,6 @@ class BackendUtilityTest extends UnitTestCase {
 			$onclickCode,
 			BackendUtility::viewOnClick(NULL, NULL, NULL, NULL, $alternativeUrl, NULL, FALSE)
 		);
-	}
-
-	/**
-	 * Tests concerning replaceMarkersInWhereClause
-	 */
-
-	/**
-	 * @return array
-	 */
-	public function replaceMarkersInWhereClauseDataProvider() {
-		return array(
-			'replaceMarkersInWhereClause replaces record field marker with quoted string' => array(
-				' AND dummytable.title=\'###REC_FIELD_dummyfield###\'',
-				array(
-					'_THIS_ROW' => array(
-						'dummyfield' => 'Hello World'
-					)
-				),
-				' AND dummytable.title=\'Hello World\''
-			),
-			'replaceMarkersInWhereClause replaces record field marker with fullquoted string' => array(
-				' AND dummytable.title=###REC_FIELD_dummyfield###',
-				array(
-					'_THIS_ROW' => array(
-						'dummyfield' => 'Hello World'
-					)
-				),
-				' AND dummytable.title=\'Hello World\''
-			),
-			'replaceMarkersInWhereClause replaces multiple record field markers' => array(
-				' AND dummytable.title=\'###REC_FIELD_dummyfield###\' AND dummytable.pid=###REC_FIELD_pid###',
-				array(
-					'_THIS_ROW' => array(
-						'dummyfield' => 'Hello World',
-						'pid' => 42
-					)
-				),
-				' AND dummytable.title=\'Hello World\' AND dummytable.pid=\'42\''
-			),
-			'replaceMarkersInWhereClause replaces current pid with integer' => array(
-				' AND dummytable.uid=###CURRENT_PID###',
-				array(
-					'_CURRENT_PID' => 42
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces current pid with string' => array(
-				' AND dummytable.uid=###CURRENT_PID###',
-				array(
-					'_CURRENT_PID' => '42string'
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces current record uid with integer' => array(
-				' AND dummytable.uid=###THIS_UID###',
-				array(
-					'_THIS_UID' => 42
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces current record uid with string' => array(
-				' AND dummytable.uid=###THIS_UID###',
-				array(
-					'_THIS_UID' => '42string'
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces storage pid with integer' => array(
-				' AND dummytable.uid=###STORAGE_PID###',
-				array(
-					'_STORAGE_PID' => 42
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces storage pid with string' => array(
-				' AND dummytable.uid=###STORAGE_PID###',
-				array(
-					'_STORAGE_PID' => '42string'
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces siteroot uid with integer' => array(
-				' AND dummytable.uid=###SITEROOT###',
-				array(
-					'_SITEROOT' => 42
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces siteroot uid with string' => array(
-				' AND dummytable.uid=###SITEROOT###',
-				array(
-					'_SITEROOT' => '42string'
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces page tsconfig id with integer' => array(
-				' AND dummytable.uid=###PAGE_TSCONFIG_ID###',
-				array(
-					'dummyfield' => array(
-						'PAGE_TSCONFIG_ID' => 42
-					)
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces page tsconfig id with string' => array(
-				' AND dummytable.uid=###PAGE_TSCONFIG_ID###',
-				array(
-					'dummyfield' => array(
-						'PAGE_TSCONFIG_ID' => '42string'
-					)
-				),
-				' AND dummytable.uid=42'
-			),
-			'replaceMarkersInWhereClause replaces page tsconfig string' => array(
-				' AND dummytable.title=\'###PAGE_TSCONFIG_STR###\'',
-				array(
-					'dummyfield' => array(
-						'PAGE_TSCONFIG_STR' => '42'
-					)
-				),
-				' AND dummytable.title=\'42\''
-			),
-			'replaceMarkersInWhereClause replaces all markers' => array(
-				' AND dummytable.title=\'###REC_FIELD_dummyfield###\'' .
-				' AND dummytable.uid=###REC_FIELD_uid###' .
-				' AND dummytable.pid=###CURRENT_PID###' .
-				' AND dummytable.l18n_parent=###THIS_UID###' .
-				' AND dummytable.storage_pid=###STORAGE_PID###' .
-				' AND dummytable.siteroot=###SITEROOT###' .
-				' AND dummytable.config_uid=###PAGE_TSCONFIG_ID###' .
-				' AND dummytable.idlist IN (###PAGE_TSCONFIG_IDLIST###)' .
-				' AND dummytable.string=\'###PAGE_TSCONFIG_STR###\'',
-				array(
-					'_THIS_ROW' => array(
-						'dummyfield' => 'Hello World',
-						'uid' => 42
-					),
-					'_CURRENT_PID' => '1',
-					'_THIS_UID' => 2,
-					'_STORAGE_PID' => 4,
-					'_SITEROOT' => 5,
-					'dummyfield' => array(
-						'PAGE_TSCONFIG_ID' => 6,
-						'PAGE_TSCONFIG_IDLIST' => '1,2,3',
-						'PAGE_TSCONFIG_STR' => 'string'
-					)
-				),
-				' AND dummytable.title=\'Hello World\' AND dummytable.uid=\'42\' AND dummytable.pid=1' .
-				' AND dummytable.l18n_parent=2 AND dummytable.storage_pid=4' .
-				' AND dummytable.siteroot=5 AND dummytable.config_uid=6 AND dummytable.idlist IN (1,2,3)' .
-				' AND dummytable.string=\'string\'',
-			),
-		);
-	}
-
-	/**
-	 * @test
-	 * @dataProvider replaceMarkersInWhereClauseDataProvider
-	 * @param string $whereClause
-	 * @param array $tsConfig
-	 * @param string $expected
-	 * @throws \PHPUnit_Framework_Exception
-	 */
-	public function replaceMarkersInWhereClauseReturnsValidWhereClause($whereClause, array $tsConfig, $expected) {
-		// Mock TYPO3_DB and let it return same values that came in
-		$GLOBALS['TYPO3_DB'] = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
-		$GLOBALS['TYPO3_DB']->expects($this->any())->method('quoteStr')->will($this->returnArgument(0));
-		$GLOBALS['TYPO3_DB']->expects($this->any())->method('fullQuoteStr')
-			->will($this->returnCallback(
-				function($quoteStr) {
-					return "'" . $quoteStr . "'";
-				}
-			));
-		$GLOBALS['TYPO3_DB']->expects($this->any())->method('cleanIntList')->will($this->returnArgument(0));
-		$this->assertSame($expected, BackendUtility::replaceMarkersInWhereClause($whereClause, 'dummytable', 'dummyfield', $tsConfig));
-	}
-
-	/**
-	 * @test
-	 */
-	public function replaceMarkersInWhereClauseCleansIdList() {
-		$GLOBALS['TYPO3_DB'] = $this->getMock(DatabaseConnection::class, array(), array(), '', FALSE);
-		$GLOBALS['TYPO3_DB']->expects($this->once())->method('cleanIntList')->with('1,a,2,b,3,c');
-		$where = ' AND dummytable.uid IN (###PAGE_TSCONFIG_IDLIST###)';
-		$tsConfig = array(
-			'dummyfield' => array(
-				'PAGE_TSCONFIG_IDLIST' => '1,a,2,b,3,c'
-			),
-		);
-		BackendUtility::replaceMarkersInWhereClause($where, 'dummytable', 'dummyfield', $tsConfig);
 	}
 
 	/**
@@ -1160,23 +851,12 @@ class BackendUtilityTest extends UnitTestCase {
 		$GLOBALS['BE_USER']->expects($this->at(0))->method('getTSConfig')->will($this->returnValue($completeConfiguration));
 		$GLOBALS['BE_USER']->expects($this->at(1))->method('getTSConfig')->will($this->returnValue(array('value' => NULL, 'properties' => NULL)));
 
-		$className = $this->getUniqueId('BackendUtility');
-		/** @var \PHPUnit_Framework_MockObject_MockObject|BackendUtility $subject */
-		$subject = __NAMESPACE__ . '\\' . $className;
-		eval(
-			'namespace ' . __NAMESPACE__ . ';' .
-			'class ' . $className . ' extends \\TYPO3\\CMS\\Backend\\Utility\\BackendUtility {' .
-			'  static public function getPagesTSconfig($id, $rootLine = NULL, $returnPartArray = false) {' .
-			'    return array();' .
-			'  }' .
-			'}'
-		);
-
-		$this->assertSame($completeConfiguration, $subject::getModTSconfig(42, 'notrelevant'));
+		$this->assertSame($completeConfiguration, BackendUtilityFixture::getModTSconfig(42, 'notrelevant'));
 	}
 
 	/**
 	 * Data provider for replaceL10nModeFieldsReplacesFields
+	 *
 	 * @return array
 	 */
 	public function replaceL10nModeFieldsReplacesFieldsDataProvider() {
@@ -1311,11 +991,13 @@ class BackendUtilityTest extends UnitTestCase {
 	/**
 	 * @test
 	 * @dataProvider replaceL10nModeFieldsReplacesFieldsDataProvider
+	 *
 	 * @param string $table
 	 * @param array $row
 	 * @param array $tca
 	 * @param array $originalRow
 	 * @param array $expected
+	 *
 	 * @throws \InvalidArgumentException
 	 * @throws \PHPUnit_Framework_Exception
 	 */
@@ -1327,6 +1009,27 @@ class BackendUtilityTest extends UnitTestCase {
 		/** @var \PHPUnit_Framework_MockObject_MockObject|\TYPO3\CMS\Core\Tests\AccessibleObjectInterface|BackendUtility $subject */
 		$subject = $this->getAccessibleMock(BackendUtility::class, array('dummy'));
 		$this->assertSame($expected, $subject->_call('replaceL10nModeFields', $table, $row));
+	}
+
+	/**
+	 * @test
+	 */
+	public function getRecordTitleHavingLabelUserFuncCachesValue() {
+		$table = 'tx_mytable';
+		$row = ['uid' => 1];
+
+		$mock = $this->getMock('stdClass', ['labelUserFunc']);
+		$mock->expects($this->once())->method('labelUserFunc')->willReturn('Test');
+
+		// Use wrapping closure for GeneralUtility::callUserFunction()
+		$GLOBALS['TCA'][$table]['ctrl']['label_userFunc'] = function(&$parameters) use ($mock) {
+			$parameters['title'] = $mock->labelUserFunc();
+		};
+
+		$this->assertEquals('Test', BackendUtility::getRecordTitle($table, $row));
+
+		// Call a second time to make sure labelUserFunc is not called again ($this->once())
+		$this->assertEquals('Test', BackendUtility::getRecordTitle($table, $row));
 	}
 
 	/**
@@ -1354,5 +1057,4 @@ class BackendUtilityTest extends UnitTestCase {
 		);
 		$this->assertEquals($expected, BackendUtility::getSpecConfParts($defaultExtras));
 	}
-
 }

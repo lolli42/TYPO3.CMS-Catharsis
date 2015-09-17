@@ -38,10 +38,9 @@ define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/Notifi
 		$(document).on('click', '.t3js-record-hide', function(evt) {
 			evt.preventDefault();
 			var $anchorElement   = $(this);
-			var $iconElement     = $anchorElement.find('span');
+			var $iconElement     = $anchorElement.find('i');
 			var $rowElement      = $anchorElement.closest('tr[data-uid]');
 			var params           = $anchorElement.data('params');
-
 			var removeClass      = $anchorElement.data('state') === 'visible' ? 'fa-toggle-on' : 'fa-toggle-off';
 
 			// add a spinner
@@ -99,19 +98,31 @@ define('TYPO3/CMS/Backend/AjaxDataHandler', ['jquery', 'TYPO3/CMS/Backend/Notifi
 		var $anchorElement = $rowElement.find('.t3js-record-hide');
 		var table = $anchorElement.closest('table[data-table]').data('table');
 		var params = $anchorElement.data('params');
-		var nextParams, nextState;
+		var nextParams, nextState, className;
 
 		if ($anchorElement.data('state') === 'hidden') {
 			nextState = 'visible';
 			nextParams = params.replace('=0', '=1');
+			className = 'fa-toggle-on';
 		} else {
 			nextState = 'hidden';
 			nextParams = params.replace('=1', '=0');
+			className = 'fa-toggle-off';
 		}
 		$anchorElement.data('state', nextState).data('params', nextParams);
 
-		var $iconElement = $anchorElement.find('span');
-		$iconElement.toggleClass('fa-toggle-on').toggleClass('fa-toggle-off');
+		// Update tooltip title
+		$anchorElement.tooltip('hide').one('hidden.bs.tooltip', function() {
+			var nextTitle = $anchorElement.data('toggleTitle');
+			// Bootstrap Tooltip internally uses only .attr('data-original-title')
+			$anchorElement
+				.data('toggleTitle', $anchorElement.attr('data-original-title'))
+				.attr('data-original-title', nextTitle)
+				.tooltip('show');
+		});
+
+		var $iconElement = $anchorElement.find('i');
+		$iconElement.addClass(className);
 
 		var $icon = $rowElement.find('td.col-icon span.t3-icon');
 		var $overlayIcon = $icon.find('span.t3-icon');

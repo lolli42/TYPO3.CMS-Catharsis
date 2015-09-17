@@ -16,14 +16,17 @@ namespace TYPO3\CMS\Backend\RecordList;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Recordlist\Browser\ElementBrowser;
+use TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList;
 
 /**
  * Displays the page/file tree for browsing database records or files.
  * Used from TCEFORMS an other elements
  * In other words: This is the ELEMENT BROWSER!
  */
-class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordList {
+class ElementBrowserRecordList extends DatabaseRecordList {
 
 	/**
 	 * Table name of the field pointing to this element browser
@@ -40,13 +43,26 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	protected $relatingField;
 
 	/**
-	 * Initializes the script path
+	 * Back-reference to ElementBrowser class
 	 *
-	 * @return void
+	 * @var ElementBrowser
+	 */
+	protected $elementBrowser;
+
+	/**
+	 * Initializes the script path
 	 */
 	public function __construct() {
 		parent::__construct();
 		$this->determineScriptUrl();
+	}
+
+	/**
+	 * @param ElementBrowser $elementBrowser
+	 * @return void
+	 */
+	public function setElementBrowser(ElementBrowser $elementBrowser) {
+		$this->elementBrowser = $elementBrowser;
 	}
 
 	/**
@@ -57,8 +73,15 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 * @param string $exclList Commalist of fields NOT to pass as parameters (currently "sortField" and "sortRev")
 	 * @return string Query-string for URL
 	 */
-	public function listURL($altId = '', $table = -1, $exclList = '') {
-		return $this->getThisScript() . 'id=' . ($altId !== '' ? $altId : $this->id) . '&table=' . rawurlencode(($table == -1 ? $this->table : $table)) . ($this->thumbs ? '&imagemode=' . $this->thumbs : '') . ($this->searchString ? '&search_field=' . rawurlencode($this->searchString) : '') . ($this->searchLevels ? '&search_levels=' . rawurlencode($this->searchLevels) : '') . ((!$exclList || !GeneralUtility::inList($exclList, 'sortField')) && $this->sortField ? '&sortField=' . rawurlencode($this->sortField) : '') . ((!$exclList || !GeneralUtility::inList($exclList, 'sortRev')) && $this->sortRev ? '&sortRev=' . rawurlencode($this->sortRev) : '') . $this->ext_addP();
+	public function listURL($altId = '', $table = '-1', $exclList = '') {
+		return $this->getThisScript() . 'id=' . ($altId !== '' ? $altId : $this->id)
+			. '&table=' . rawurlencode((int)$table === -1 ? $this->table : $table)
+			. ($this->thumbs ? '&imagemode=' . $this->thumbs : '')
+			. ($this->searchString ? '&search_field=' . rawurlencode($this->searchString) : '')
+			. ($this->searchLevels ? '&search_levels=' . rawurlencode($this->searchLevels) : '')
+			. ((!$exclList || !GeneralUtility::inList($exclList, 'sortField')) && $this->sortField ? '&sortField=' . rawurlencode($this->sortField) : '')
+			. ((!$exclList || !GeneralUtility::inList($exclList, 'sortRev')) && $this->sortRev ? '&sortRev=' . rawurlencode($this->sortRev) : '')
+			. $this->ext_addP();
 	}
 
 	/**
@@ -67,8 +90,7 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 * @return string
 	 */
 	public function ext_addP() {
-		$str = '&act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandPage=' . $GLOBALS['SOBE']->browser->expandPage . '&bparams=' . rawurlencode($GLOBALS['SOBE']->browser->bparams);
-		return $str;
+		return '&act=' . $this->elementBrowser->act . '&mode=' . $this->elementBrowser->mode . '&expandPage=' . $this->elementBrowser->expandPage . '&bparams=' . rawurlencode($this->elementBrowser->bparams);
 	}
 
 	/**
@@ -82,17 +104,17 @@ class ElementBrowserRecordList extends \TYPO3\CMS\Recordlist\RecordList\Database
 	 */
 	public function linkWrapItems($table, $uid, $code, $row) {
 		if (!$code) {
-			$code = '<i>[' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', TRUE) . ']</i>';
+			$code = '<i>[' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.no_title', TRUE) . ']</i>';
 		} else {
 			$code = BackendUtility::getRecordTitlePrep($code, $this->fixedL);
 		}
 		$title = BackendUtility::getRecordTitle($table, $row, FALSE, TRUE);
 		$ficon = IconUtility::getSpriteIconForRecord($table, $row);
 		$aOnClick = 'return insertElement(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($row['uid']) . ', \'db\', ' . GeneralUtility::quoteJSvalue($title) . ', \'\', \'\', ' . GeneralUtility::quoteJSvalue($ficon) . ');';
-		$ATag = '<a href="#" onclick="' . $aOnClick . '">';
+		$ATag = '<a href="#" onclick="' . $aOnClick . '" title="' . $this->getLanguageService()->getLL('addToList', TRUE) . '">';
 		$ATag_alt = substr($ATag, 0, -4) . ',\'\',1);">';
 		$ATag_e = '</a>';
-		return $ATag . IconUtility::getSpriteIcon('actions-edit-add', array('title' => $GLOBALS['LANG']->getLL('addToList', TRUE))) . $ATag_e . $ATag_alt . $code . $ATag_e;
+		return $ATag . $this->iconFactory->getIcon('actions-edit-add', Icon::SIZE_SMALL) . $ATag_e . $ATag_alt . $code . $ATag_e;
 	}
 
 	/**

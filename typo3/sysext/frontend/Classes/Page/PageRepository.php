@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Frontend\Page;
  */
 
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\FileRepository;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -66,6 +67,11 @@ class PageRepository {
 	 * @var bool
 	 */
 	public $versioningPreview = FALSE;
+
+	/**
+	 * @var string
+	 */
+	public $versioningPreview_where_hid_del = '';
 
 	/**
 	 * Workspace ID for preview
@@ -124,6 +130,21 @@ class PageRepository {
 	protected $tableNamesAllowedOnRootLevel = array(
 		'sys_file_metadata',
 		'sys_category',
+	);
+
+	/**
+	 * Computed properties that are added to database rows.
+	 *
+	 * @var array
+	 */
+	protected $computedPropertyNames = array(
+		'_LOCALIZED_UID',
+		'_MP_PARAM',
+		'_ORIG_uid',
+		'_ORIG_pid',
+		'_PAGES_OVERLAY',
+		'_PAGES_OVERLAY_UID',
+		'_PAGES_OVERLAY_LANGUAGE',
 	);
 
 	/**
@@ -216,8 +237,9 @@ class PageRepository {
 			return $this->cache_getPage[$uid][$cacheKey];
 		}
 		$workspaceVersion = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, 'pages', $uid);
+		$db = $this->getDatabaseConnection();
 		if (is_array($workspaceVersion)) {
-			$workspaceVersionAccess = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
+			$workspaceVersionAccess = $db->exec_SELECTgetSingleRow(
 				'uid',
 				'pages',
 				'uid=' . intval($workspaceVersion['uid']) . $this->where_hid_del . $accessCheck
@@ -227,9 +249,7 @@ class PageRepository {
 			}
 		}
 		$result = array();
-		$res = $this->getDatabaseConnection()->exec_SELECTquery('*', 'pages', 'uid=' . (int)$uid . $this->where_hid_del . $accessCheck);
-		$row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-		$this->getDatabaseConnection()->sql_free_result($res);
+		$row = $db->exec_SELECTgetSingleRow('*', 'pages', 'uid=' . (int)$uid . $this->where_hid_del . $accessCheck);
 		if ($row) {
 			$this->versionOL('pages', $row);
 			if (is_array($row)) {
@@ -299,10 +319,9 @@ class PageRepository {
 		if ($this->cache_getPageIdFromAlias[$alias]) {
 			return $this->cache_getPageIdFromAlias[$alias];
 		}
-		$res = $this->getDatabaseConnection()->exec_SELECTquery('uid', 'pages', 'alias=' . $this->getDatabaseConnection()->fullQuoteStr($alias, 'pages') . ' AND pid>=0 AND pages.deleted=0');
+		$db = $this->getDatabaseConnection();
+		$row = $db->exec_SELECTgetSingleRow('uid', 'pages', 'alias=' . $db->fullQuoteStr($alias, 'pages') . ' AND pid>=0 AND pages.deleted=0');
 		// "AND pid>=0" because of versioning (means that aliases sent MUST be online!)
-		$row = $this->getDatabaseConnection()->sql_fetch_assoc($res);
-		$this->getDatabaseConnection()->sql_free_result($res);
 		if ($row) {
 			$this->cache_getPageIdFromAlias[$alias] = $row['uid'];
 			return $row['uid'];
@@ -332,9 +351,9 @@ class PageRepository {
 	 * @param int $lUid Language UID if you want to set an alternative value to $this->sys_language_uid which is default. Should be >=0
 	 * @throws \UnexpectedValueException
 	 * @return array Page rows which are overlayed with language_overlay record.
-	 *			   If the input was an array of integers, missing records are not
-	 *			   included. If the input were page rows, untranslated pages
-	 *			   are returned.
+	 *               If the input was an array of integers, missing records are not
+	 *               included. If the input were page rows, untranslated pages
+	 *               are returned.
 	 */
 	public function getPagesOverlay(array $pagesInput, $lUid = -1) {
 		if (empty($pagesInput)) {
@@ -386,14 +405,15 @@ class PageRepository {
 				// However you may argue that the showHiddenField flag should
 				// determine this. But that's not how it's done right now.
 				// Selecting overlay record:
-				$res = $this->getDatabaseConnection()->exec_SELECTquery(
+				$db = $this->getDatabaseConnection();
+				$res = $db->exec_SELECTquery(
 					implode(',', $fieldArr),
 					'pages_language_overlay',
-					'pid IN(' . implode(',', $this->getDatabaseConnection()->cleanIntArray($page_ids)) . ')'
-						. ' AND sys_language_uid=' . (int)$lUid . $this->enableFields('pages_language_overlay')
+					'pid IN(' . implode(',', $db->cleanIntArray($page_ids)) . ')'
+					. ' AND sys_language_uid=' . (int)$lUid . $this->enableFields('pages_language_overlay')
 				);
 				$overlays = array();
-				while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+				while ($row = $db->sql_fetch_assoc($res)) {
 					$this->versionOL('pages_language_overlay', $row);
 					if (is_array($row)) {
 						$row['_PAGES_OVERLAY'] = TRUE;
@@ -406,7 +426,7 @@ class PageRepository {
 						$overlays[$origUid] = $row;
 					}
 				}
-				$this->getDatabaseConnection()->sql_free_result($res);
+				$db->sql_free_result($res);
 			}
 		}
 		// Create output:
@@ -525,111 +545,257 @@ class PageRepository {
 	 ************************************************/
 
 	/**
-	 * Returns an array with pagerows for subpages with pid=$uid (which is pid
-	 * here!). This is used for menus. If there are mount points in overlay mode
-	 * the _MP_PARAM field is set to the corret MPvar.
+	 * Returns an array with page rows for subpages of a certain page ID. This is used for menus in the frontend.
+	 * If there are mount points in overlay mode the _MP_PARAM field is set to the corret MPvar.
 	 *
-	 * If the $uid being input does in itself require MPvars to define a correct
+	 * If the $pageId being input does in itself require MPvars to define a correct
 	 * rootline these must be handled externally to this function.
 	 *
-	 * @param int|int[] $uid The page id (or array of page ids) for which to fetch subpages (PID)
+	 * @param int|int[] $pageId The page id (or array of page ids) for which to fetch subpages (PID)
 	 * @param string $fields List of fields to select. Default is "*" = all
 	 * @param string $sortField The field to sort by. Default is "sorting
-	 * @param string $addWhere Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
+	 * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
 	 * @param bool $checkShortcuts Check if shortcuts exist, checks by default
 	 * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageShortcut(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::makeMenu()
 	 * @see \TYPO3\CMS\WizardCrpages\Controller\CreatePagesWizardModuleFunctionController, \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
 	 */
-	public function getMenu($uid, $fields = '*', $sortField = 'sorting', $addWhere = '', $checkShortcuts = TRUE) {
-		$output = array();
-		$query = 'pid IN (' . implode(',', $this->getDatabaseConnection()->cleanIntArray((array)$uid)) .
-			')' . $this->where_hid_del . $this->where_groupAccess . ' ' . $addWhere;
+	public function getMenu($pageId, $fields = '*', $sortField = 'sorting', $additionalWhereClause = '', $checkShortcuts = TRUE) {
+		return $this->getSubpagesForPages((array)$pageId, $fields, $sortField, $additionalWhereClause, $checkShortcuts);
+	}
+
+	/**
+	 * Returns an array with page-rows for pages with uid in $pageIds.
+	 *
+	 * This is used for menus. If there are mount points in overlay mode
+	 * the _MP_PARAM field is set to the correct MPvar.
+	 *
+	 * @param int[] $pageIds Array of page ids to fetch
+	 * @param string $fields List of fields to select. Default is "*" = all
+	 * @param string $sortField The field to sort by. Default is "sorting"
+	 * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
+	 * @param bool $checkShortcuts Check if shortcuts exist, checks by default
+	 * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
+	 */
+	public function getMenuForPages(array $pageIds, $fields = '*', $sortField = 'sorting', $additionalWhereClause = '', $checkShortcuts = TRUE) {
+		return $this->getSubpagesForPages($pageIds, $fields, $sortField, $additionalWhereClause, $checkShortcuts, FALSE);
+	}
+
+	/**
+	 * Internal method used by getMenu() and getMenuForPages()
+	 * Returns an array with page rows for subpages with pid is in $pageIds or uid is in $pageIds, depending on $parentPages
+	 * This is used for menus. If there are mount points in overlay mode
+	 * the _MP_PARAM field is set to the corret MPvar.
+	 *
+	 * If the $pageIds being input does in itself require MPvars to define a correct
+	 * rootline these must be handled externally to this function.
+	 *
+	 * @param int[] $pageIds The page id (or array of page ids) for which to fetch subpages (PID)
+	 * @param string $fields List of fields to select. Default is "*" = all
+	 * @param string $sortField The field to sort by. Default is "sorting
+	 * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
+	 * @param bool $checkShortcuts Check if shortcuts exist, checks by default
+	 * @param bool $parentPages Whether the uid list is meant as list of parent pages or the page itself TRUE means id list is checked agains pid field
+	 * @return array Array with key/value pairs; keys are page-uid numbers. values are the corresponding page records (with overlayed localized fields, if any)
+	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getPageShortcut(), \TYPO3\CMS\Frontend\ContentObject\Menu\AbstractMenuContentObject::makeMenu()
+	 * @see \TYPO3\CMS\WizardCrpages\Controller\CreatePagesWizardModuleFunctionController, \TYPO3\CMS\WizardSortpages\View\SortPagesWizardModuleFunction
+	 */
+	protected function getSubpagesForPages(array $pageIds, $fields = '*', $sortField = 'sorting', $additionalWhereClause = '', $checkShortcuts = TRUE, $parentPages = TRUE) {
+		$pages = [];
+		$relationField = $parentPages ? 'pid' : 'uid';
+		$db = $this->getDatabaseConnection();
+
+		$whereStatement = $relationField . ' IN ('
+			. implode(',', $db->cleanIntArray($pageIds)) . ')'
+			. $this->where_hid_del
+			. $this->where_groupAccess
+			. ' '
+			. $additionalWhereClause;
+
+		// Check the user group access for draft pages in preview
 		if ($this->versioningWorkspaceId != 0) {
-			$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery(
+			$databaseResource = $db->exec_SELECTquery(
 				'uid',
 				'pages',
-				'pid IN (' . implode(',', $this->getDatabaseConnection()->cleanIntArray((array)$uid)) .
-				')' . $this->where_hid_del . ' ' . $addWhere,
+				$relationField . ' IN (' . implode(',', $db->cleanIntArray($pageIds)) . ')'
+					. $this->where_hid_del . ' ' . $additionalWhereClause,
 				'',
 				$sortField
 			);
-			while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res)) {
-			$workspaceRow = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, 'pages', $row['uid']);
-			$realUid = is_array($workspaceRow) ? $workspaceRow['uid'] : $row['uid'];
-				$result = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow(
-					'uid',
-					'pages',
-					'uid=' . intval($realUid) . $this->where_hid_del . $this->where_groupAccess . ' ' . $addWhere,
-					'',
-					$sortField
-				);
-				if (is_array($result)) {
-					$recordArray[] = $row['uid'];
-				}
-			}
-			if (is_array($recordArray)) {
-				$query = 'uid IN (' . implode(',', $recordArray) . ')';
+
+			$draftUserGroupAccessWhereStatement = $this->getDraftUserGroupAccessWhereStatement(
+				$databaseResource,
+				$sortField,
+				$additionalWhereClause
+			);
+
+			if ($draftUserGroupAccessWhereStatement !== FALSE) {
+				$whereStatement = $draftUserGroupAccessWhereStatement;
 			}
 		};
-		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery($fields, 'pages', $query, '', $sortField);
-		while (($row = $this->getDatabaseConnection()->sql_fetch_assoc($res))) {
-			$this->versionOL('pages', $row, TRUE);
-			if (is_array($row)) {
-				// Keep mount point:
-				$origUid = $row['uid'];
-				// $row MUST have "uid", "pid", "doktype", "mount_pid", "mount_pid_ol" fields
-				// in it
-				$mount_info = $this->getMountPointInfo($origUid, $row);
-				// There is a valid mount point.
-				if (is_array($mount_info) && $mount_info['overlay']) {
-					// Using "getPage" is OK since we need the check for enableFields AND for type 2
-					// of mount pids we DO require a doktype < 200!
-					$mp_row = $this->getPage($mount_info['mount_pid']);
-					if (!empty($mp_row)) {
-						$row = $mp_row;
-						$row['_MP_PARAM'] = $mount_info['MPvar'];
-					} else {
-						unset($row);
-					}
-				}
-				// If shortcut, look up if the target exists and is currently visible
-				$doktype = (int)$row['doktype'];
-				$shortcutMode = (int)$row['shortcut_mode'];
-				if ($doktype === self::DOKTYPE_SHORTCUT && ($row['shortcut'] || $shortcutMode) && $checkShortcuts) {
-					if ($shortcutMode === self::SHORTCUT_MODE_NONE) {
-						// No shortcut_mode set, so target is directly set in $row['shortcut']
-						$searchField = 'uid';
-						$searchUid = (int)$row['shortcut'];
-					} elseif ($shortcutMode === self::SHORTCUT_MODE_FIRST_SUBPAGE || $shortcutMode === self::SHORTCUT_MODE_RANDOM_SUBPAGE) {
-						// Check subpages - first subpage or random subpage
-						$searchField = 'pid';
-						// If a shortcut mode is set and no valid page is given to select subpags
-						// from use the actual page.
-						$searchUid = (int)$row['shortcut'] ?: $row['uid'];
-					} elseif ($shortcutMode === self::SHORTCUT_MODE_PARENT_PAGE) {
-						// Shortcut to parent page
-						$searchField = 'uid';
-						$searchUid = $row['pid'];
-					}
-					$count = $this->getDatabaseConnection()->exec_SELECTcountRows('uid', 'pages', $searchField . '=' . $searchUid . $this->where_hid_del . $this->where_groupAccess . ' ' . $addWhere);
-					if (!$count) {
-						unset($row);
-					}
-				} elseif ($doktype === self::DOKTYPE_SHORTCUT && $checkShortcuts) {
-					// Neither shortcut target nor mode is set. Remove the page from the menu.
-					unset($row);
-				}
-				if (is_array($row)) {
-					$output[$origUid] = $row;
-				}
+
+		$databaseResource = $db->exec_SELECTquery(
+			$fields,
+			'pages',
+			$whereStatement,
+			'',
+			$sortField
+		);
+
+		while (($page = $db->sql_fetch_assoc($databaseResource))) {
+			$originalUid = $page['uid'];
+
+			// Versioning Preview Overlay
+			$this->versionOL('pages', $page, TRUE);
+
+			// Add a mount point parameter if needed
+			$page = $this->addMountPointParameterToPage((array)$page);
+
+			// If shortcut, look up if the target exists and is currently visible
+			if ($checkShortcuts) {
+				$page = $this->checkValidShortcutOfPage((array)$page, $additionalWhereClause);
+			}
+
+			// If the page still is there, we add it to the output
+			if (!empty($page)) {
+				$pages[$originalUid] = $page;
 			}
 		}
-		$this->getDatabaseConnection()->sql_free_result($res);
-        // Finally load language overlays
-		return $this->getPagesOverlay($output);
+
+		$db->sql_free_result($databaseResource);
+
+		// Finally load language overlays
+		return $this->getPagesOverlay($pages);
 	}
 
+	/**
+	 * Prevent pages being shown in menu's for preview which contain usergroup access rights in a draft workspace
+	 *
+	 * Returns an adapted "WHERE" statement if pages are in draft
+	 *
+	 * @param bool|\mysqli_result|object $databaseResource MySQLi result object / DBAL object
+	 * @param string $sortField The field to sort by
+	 * @param string $addWhere Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
+	 * @return bool|string FALSE if no records are available in draft, a WHERE statement with the uid's if available
+	 */
+	protected function getDraftUserGroupAccessWhereStatement($databaseResource, $sortField, $addWhere) {
+		$draftUserGroupAccessWhereStatement = FALSE;
+		$recordArray = [];
+
+		while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($databaseResource)) {
+			$workspaceRow = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, 'pages', $row['uid']);
+
+			$realUid = is_array($workspaceRow) ? $workspaceRow['uid'] : $row['uid'];
+
+			$result = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
+				'uid',
+				'pages',
+				'uid=' . intval($realUid)
+				. $this->where_hid_del
+				. $this->where_groupAccess
+				. ' ' . $addWhere,
+				'',
+				$sortField
+			);
+
+			if (is_array($result)) {
+				$recordArray[] = $row['uid'];
+			}
+		}
+
+		if (!empty($recordArray)) {
+			$draftUserGroupAccessWhereStatement = 'uid IN (' . implode(',', $recordArray) . ')';
+		}
+
+		return $draftUserGroupAccessWhereStatement;
+	}
+
+	/**
+	 * Add the mount point parameter to the page if needed
+	 *
+	 * @param array $page The page to check
+	 * @return array
+	 */
+	protected function addMountPointParameterToPage(array $page) {
+		if (empty($page)) {
+			return [];
+		}
+
+		// $page MUST have "uid", "pid", "doktype", "mount_pid", "mount_pid_ol" fields in it
+		$mountPointInfo = $this->getMountPointInfo($page['uid'], $page);
+
+		// There is a valid mount point.
+		if (is_array($mountPointInfo) && $mountPointInfo['overlay']) {
+
+			// Using "getPage" is OK since we need the check for enableFields AND for type 2
+			// of mount pids we DO require a doktype < 200!
+			$mountPointPage = $this->getPage($mountPointInfo['mount_pid']);
+
+			if (!empty($mountPointPage)) {
+				$page = $mountPointPage;
+				$page['_MP_PARAM'] = $mountPointInfo['MPvar'];
+			} else {
+				$page = [];
+			}
+		}
+		return $page;
+	}
+
+	/**
+	 * If shortcut, look up if the target exists and is currently visible
+	 *
+	 * @param array $page The page to check
+	 * @param string $additionalWhereClause Optional additional where clauses. Like "AND title like '%blabla%'" for instance.
+	 * @return array
+	 */
+	protected function checkValidShortcutOfPage(array $page, $additionalWhereClause) {
+		if (empty($page)) {
+			return [];
+		}
+
+		$dokType = (int)$page['doktype'];
+		$shortcutMode = (int)$page['shortcut_mode'];
+
+		if ($dokType === self::DOKTYPE_SHORTCUT && ($page['shortcut'] || $shortcutMode)) {
+			if ($shortcutMode === self::SHORTCUT_MODE_NONE) {
+				// No shortcut_mode set, so target is directly set in $page['shortcut']
+				$searchField = 'uid';
+				$searchUid = (int)$page['shortcut'];
+			} elseif ($shortcutMode === self::SHORTCUT_MODE_FIRST_SUBPAGE || $shortcutMode === self::SHORTCUT_MODE_RANDOM_SUBPAGE) {
+				// Check subpages - first subpage or random subpage
+				$searchField = 'pid';
+				// If a shortcut mode is set and no valid page is given to select subpags
+				// from use the actual page.
+				$searchUid = (int)$page['shortcut'] ?: $page['uid'];
+			} elseif ($shortcutMode === self::SHORTCUT_MODE_PARENT_PAGE) {
+				// Shortcut to parent page
+				$searchField = 'uid';
+				$searchUid = $page['pid'];
+			} else {
+				$searchField = '';
+				$searchUid = 0;
+			}
+
+			$whereStatement = $searchField . '=' . $searchUid
+				. $this->where_hid_del
+				. $this->where_groupAccess
+				. ' ' . $additionalWhereClause;
+
+			$count = $this->getDatabaseConnection()->exec_SELECTcountRows(
+				'uid',
+				'pages',
+				$whereStatement
+			);
+
+			if (!$count) {
+				$page = [];
+			}
+		} elseif ($dokType === self::DOKTYPE_SHORTCUT) {
+			// Neither shortcut target nor mode is set. Remove the page from the menu.
+			$page = [];
+		}
+		return $page;
+	}
 	/**
 	 * Will find the page carrying the domain record matching the input domain.
 	 * Might exit after sending a redirect-header IF a found domain record
@@ -673,6 +839,7 @@ class PageRepository {
 				return $row['uid'];
 			}
 		}
+		return '';
 	}
 
 	/**
@@ -724,16 +891,16 @@ class PageRepository {
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::getConfigArray()
 	 */
 	public function getPathFromRootline($rl, $len = 20) {
+		$path = '';
 		if (is_array($rl)) {
 			$c = count($rl);
-			$path = '';
 			for ($a = 0; $a < $c; $a++) {
 				if ($rl[$a]['uid']) {
 					$path .= '/' . GeneralUtility::fixed_lgd_cs(strip_tags($rl[$a]['title']), $len);
 				}
 			}
-			return $path;
 		}
+		return $path;
 	}
 
 	/**
@@ -742,7 +909,7 @@ class PageRepository {
 	 *
 	 * @param array $pagerow The page row to return URL type for
 	 * @param bool $disable A flag to simply disable any output from here. - deprecated - don't use anymore.
-	 * @return string The URL type from $this->urltypes array. False if not found or disabled.
+	 * @return string|bool The URL type from $this->urltypes array. False if not found or disabled.
 	 * @see \TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController::setExternalJumpUrl()
 	 */
 	public function getExtURL($pagerow, $disable = FALSE) {
@@ -760,6 +927,7 @@ class PageRepository {
 			}
 			return $redirectTo;
 		}
+		return FALSE;
 	}
 
 	/**
@@ -769,7 +937,7 @@ class PageRepository {
 	 * has a run-away break so it can't go into infinite loops.
 	 *
 	 * @param int $pageId Page id for which to look for a mount pid. Will be returned only if mount pages are enabled, the correct doktype (7) is set for page and there IS a mount_pid (which has a valid record that is not deleted...)
-	 * @param array $pageRec Optional page record for the page id. If not supplied it will be looked up by the system. Must contain at least uid,pid,doktype,mount_pid,mount_pid_ol
+	 * @param array|bool $pageRec Optional page record for the page id. If not supplied it will be looked up by the system. Must contain at least uid,pid,doktype,mount_pid,mount_pid_ol
 	 * @param array $prevMountPids Array accumulating formerly tested page ids for mount points. Used for recursivity brake.
 	 * @param int $firstPageUid The first page id.
 	 * @return mixed Returns FALSE if no mount point was found, "-1" if there should have been one, but no connection to it, otherwise an array with information about mount pid and modes.
@@ -836,8 +1004,8 @@ class PageRepository {
 	 *
 	 * @param string $table The table name to search
 	 * @param int $uid The uid to look up in $table
-	 * @param bool $checkPage If checkPage is set, it's also required that the page on which the record resides is accessible
-	 * @return mixed Returns array (the record) if OK, otherwise blank/0 (zero)
+	 * @param bool|int $checkPage If checkPage is set, it's also required that the page on which the record resides is accessible
+	 * @return array|int Returns array (the record) if OK, otherwise blank/0 (zero)
 	 */
 	public function checkRecord($table, $uid, $checkPage = 0) {
 		$uid = (int)$uid;
@@ -863,6 +1031,7 @@ class PageRepository {
 				}
 			}
 		}
+		return 0;
 	}
 
 	/**
@@ -890,6 +1059,7 @@ class PageRepository {
 				}
 			}
 		}
+		return 0;
 	}
 
 	/**
@@ -918,6 +1088,7 @@ class PageRepository {
 				return $rows;
 			}
 		}
+		return NULL;
 	}
 
 	/********************************
@@ -934,12 +1105,12 @@ class PageRepository {
 	 * like PageRepository::getHash()
 	 *
 	 * @param string $hash The hash-string which was used to store the data value
-	 * @param int The expiration time (not used anymore)
 	 * @return mixed The "data" from the cache
 	 * @see tslib_TStemplate::start(), storeHash()
 	 */
-	static public function getHash($hash, $expTime = 0) {
+	static public function getHash($hash) {
 		$hashContent = NULL;
+		/** @var \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface $contentHashCache */
 		$contentHashCache = GeneralUtility::makeInstance(CacheManager::class)->getCache('cache_hash');
 		$cacheEntry = $contentHashCache->get($hash);
 		if ($cacheEntry) {
@@ -1126,6 +1297,8 @@ class PageRepository {
 	 */
 	public function fixVersioningPid($table, &$rr) {
 		if ($this->versioningPreview && is_array($rr) && (int)$rr['pid'] === -1 && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
+			$oid = 0;
+			$wsid = 0;
 			// Have to hardcode it for "pages" table since TCA is not loaded at this moment!
 			// Check values for t3ver_oid and t3ver_wsid:
 			if (isset($rr['t3ver_oid']) && isset($rr['t3ver_wsid'])) {
@@ -1189,7 +1362,9 @@ class PageRepository {
 			$movePldSwap = $this->movePlhOL($table, $row);
 			// implode(',',array_keys($row)) = Using fields from original record to make
 			// sure no additional fields are selected. This is best for eg. getPageOverlay()
-			if ($wsAlt = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, $table, $row['uid'], implode(',', array_keys($row)), $bypassEnableFieldsCheck)) {
+			// Computed properties are excluded since those would lead to SQL errors.
+			$fieldNames = implode(',', array_keys($this->purgeComputedProperties($row)));
+			if ($wsAlt = $this->getWorkspaceVersionOfRecord($this->versioningWorkspaceId, $table, $row['uid'], $fieldNames, $bypassEnableFieldsCheck)) {
 				if (is_array($wsAlt)) {
 					// Always fix PID (like in fixVersioningPid() above). [This is usually not
 					// the important factor for versioning OL]
@@ -1236,7 +1411,9 @@ class PageRepository {
 					// Notice, that unless $bypassEnableFieldsCheck is TRUE, the $row is unset if
 					// enablefields for BOTH the version AND the online record deselects it. See
 					// note for $bypassEnableFieldsCheck
-					if ($wsAlt <= -1 || VersionState::cast($row['t3ver_state'])->indicatesPlaceholder()) {
+					/** @var \TYPO3\CMS\Core\Versioning\VersionState $versionState */
+					$versionState = VersionState::cast($row['t3ver_state']);
+					if ($wsAlt <= -1 || $versionState->indicatesPlaceholder()) {
 						// Unset record if it turned out to be "hidden"
 						$row = FALSE;
 					}
@@ -1364,7 +1541,7 @@ class PageRepository {
 	 * @return bool <code>TRUE</code> if has access
 	 */
 	public function checkWorkspaceAccess($wsid) {
-		if (!$GLOBALS['BE_USER'] || !ExtensionManagementUtility::isLoaded('workspaces')) {
+		if (!$this->getBackendUser() || !ExtensionManagementUtility::isLoaded('workspaces')) {
 			return FALSE;
 		}
 		if (isset($this->workspaceCache[$wsid])) {
@@ -1379,7 +1556,7 @@ class PageRepository {
 			} else {
 				$ws = $wsid;
 			}
-			$ws = $GLOBALS['BE_USER']->checkWorkspace($ws);
+			$ws = $this->getBackendUser()->checkWorkspace($ws);
 			$this->workspaceCache[$wsid] = $ws;
 		}
 		return (string)$ws['_ACCESS'] !== '';
@@ -1399,7 +1576,23 @@ class PageRepository {
 		$currentId = !empty($element['uid']) ? $element['uid'] : 0;
 
 		// Fetch the references of the default element
-		$references = $fileRepository->findByRelation($tableName, $fieldName, $currentId);
+		try {
+			$references = $fileRepository->findByRelation($tableName, $fieldName, $currentId);
+		} catch (FileDoesNotExistException $e) {
+			/**
+			 * We just catch the exception here
+			 * Reasoning: There is nothing an editor or even admin could do
+			 */
+			return array();
+		} catch (\InvalidArgumentException $e) {
+			/**
+			 * The storage does not exist anymore
+			 * Log the exception message for admins as they maybe can restore the storage
+			 */
+			$logMessage = $e->getMessage() . ' (table: "' . $tableName . '", fieldName: "' . $fieldName . '", currentId: ' . $currentId . ')';
+			GeneralUtility::sysLog($logMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
+			return array();
+		}
 
 		$localizedId = NULL;
 		if (isset($element['_LOCALIZED_UID'])) {
@@ -1425,6 +1618,22 @@ class PageRepository {
 		}
 
 		return $references;
+	}
+
+	/**
+	 * Purges computed properties from database rows,
+	 * such as _ORIG_uid or _ORIG_pid for instance.
+	 *
+	 * @param array $row
+	 * @return array
+	 */
+	protected function purgeComputedProperties(array $row) {
+		foreach ($this->computedPropertyNames as $computedPropertyName) {
+			if (array_key_exists($computedPropertyName, $row)) {
+				unset($row[$computedPropertyName]);
+			}
+		}
+		return $row;
 	}
 
 	/**
@@ -1474,6 +1683,15 @@ class PageRepository {
 	 */
 	protected function getTypoScriptFrontendController() {
 		return $GLOBALS['TSFE'];
+	}
+
+	/**
+	 * Returns the current BE user.
+	 *
+	 * @return \TYPO3\CMS\Core\Authentication\BackendUserAuthentication
+	 */
+	protected function getBackendUser() {
+		return $GLOBALS['BE_USER'];
 	}
 
 }

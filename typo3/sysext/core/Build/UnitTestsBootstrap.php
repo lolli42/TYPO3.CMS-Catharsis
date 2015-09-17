@@ -26,12 +26,12 @@ use TYPO3\CMS\Core\Core\Bootstrap;
  * But it is also possible to use other installations of PHPUnit and VFS
  *
  *  * Call whole unit test suite, example:
- * - cd /var/www/t3master/foo  # Document root of TYPO3 CMS instance (location of index.php)
- * - typo3conf/ext/phpunit/Composer/vendor/bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
+ * - cd /var/www/t3master/foo  # Document root of TYPO3 CMS sources (location of index.php)
+ * - typo3/../bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
  *
  * Call single test case, example:
  * - cd /var/www/t3master/foo  # Document root of TYPO3 CMS instance (location of index.php)
- * - typo3conf/ext/phpunit/Composer/vendor/bin/phpunit \
+ * - typo3/../bin/phpunit \
  *     --bootstrap typo3/sysext/core/Build/UnitTestsBootstrap.php \
  *     typo3/sysext/core/Tests/Uinit/DataHandling/DataHandlerTest.php
  */
@@ -77,7 +77,7 @@ class UnitTestsBootstrap {
 		array_shift($_SERVER['argv']);
 		$flatArguments = implode(' ', $_SERVER['argv']);
 		echo 'Please run the unit tests using the following command:' . chr(10) .
-			sprintf('./bin/phpunit %s', $flatArguments) . chr(10) .
+			sprintf('typo3/../bin/phpunit %s', $flatArguments) . chr(10) .
 			chr(10);
 
 		exit(1);
@@ -95,6 +95,10 @@ class UnitTestsBootstrap {
 		define('PATH_thisScript', PATH_site . 'typo3/cli_dispatch.phpsh');
 		$_SERVER['SCRIPT_NAME'] = PATH_thisScript;
 
+		if (!file_exists(PATH_thisScript)) {
+			die('Unable to determine path to entry script. Please check your path or set an environment variable \'TYPO3_PATH_WEB\' to your root path.');
+		}
+
 		return $this;
 	}
 
@@ -105,12 +109,11 @@ class UnitTestsBootstrap {
 	 */
 	protected function getWebRoot() {
 		if (getenv('TYPO3_PATH_WEB')) {
-			$webRoot = getenv('TYPO3_PATH_WEB') . '/';
+			$webRoot = getenv('TYPO3_PATH_WEB');
 		} else {
-			$webRoot = getcwd() . '/';
+			$webRoot = getcwd();
 		}
-
-		return strtr($webRoot, '\\', '/');
+		return rtrim(strtr($webRoot, '\\', '/'), '/') . '/';
 	}
 
 	/**
@@ -171,7 +174,7 @@ class UnitTestsBootstrap {
 	 * @return UnitTestsBootstrap fluent interface
 	 */
 	protected function includeAndStartCoreBootstrap() {
-		$classLoaderFilepath = PATH_site . '/typo3/vendor/autoload.php';
+		$classLoaderFilepath = __DIR__ . '/../../../../vendor/autoload.php';
 		if (!file_exists($classLoaderFilepath)) {
 			die('ClassLoader can\'t be loaded. Please check your path or set an environment variable \'TYPO3_PATH_WEB\' to your root path.');
 		}

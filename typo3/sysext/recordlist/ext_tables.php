@@ -2,10 +2,6 @@
 defined('TYPO3_MODE') or die();
 
 if (TYPO3_MODE === 'BE') {
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
-		'web_list',
-		'EXT:recordlist/Modules/Recordlist/'
-	);
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModule(
 		'web',
 		'list',
@@ -22,11 +18,5 @@ if (TYPO3_MODE === 'BE') {
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_web_list.xlf',
 			),
 		)
-	);
-
-	// Register element browser wizard
-	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addModulePath(
-		'wizard_element_browser',
-		'EXT:recordlist/Modules/Wizards/ElementBrowserWizard/'
 	);
 }

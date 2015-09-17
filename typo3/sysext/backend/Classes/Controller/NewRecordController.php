@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
@@ -152,9 +154,15 @@ class NewRecordController {
 	public $tRows;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$GLOBALS['SOBE'] = $this;
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
 		$this->init();
@@ -221,6 +229,21 @@ class NewRecordController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Main processing, creating the list of new record tables to select from
 	 *
 	 * @return void
@@ -248,7 +271,7 @@ class NewRecordController {
 				$iconImgTag = IconUtility::getSpriteIconForRecord('pages', $this->pageinfo, array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
 				$title = strip_tags($this->pageinfo[$GLOBALS['TCA']['pages']['ctrl']['label']]);
 			} else {
-				$iconImgTag = IconUtility::getSpriteIcon('apps-pagetree-root', array('title' => htmlspecialchars($this->pageinfo['_thePath'])));
+				$iconImgTag = '<span title="' . htmlspecialchars($this->pageinfo['_thePath']) . '">' . $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL) . '</span>';
 				$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 			}
 			$this->code = '<span class="typo3-moduleHeader">' . $this->doc->wrapClickMenuOnIcon($iconImgTag, 'pages', $this->pageinfo['uid']) . htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, 45)) . '</span><br />';
@@ -291,7 +314,9 @@ class NewRecordController {
 		if (!$this->pagesOnly) {
 			// New page
 			if ($this->showNewRecLink('pages')) {
-				$buttons['new_page'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
+				$buttons['new_page'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => '1'))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL)
+					. '</a>';
 			}
 			// CSH
 			$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'new_regular');
@@ -302,7 +327,7 @@ class NewRecordController {
 		}
 		// Back
 		if ($this->R_URI) {
-			$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
+			$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '</a>';
 		}
 		if (is_array($this->pageinfo) && $this->pageinfo['uid']) {
 			// View
@@ -314,7 +339,7 @@ class NewRecordController {
 				$excludeDokTypes = array(PageRepository::DOKTYPE_RECYCLER, PageRepository::DOKTYPE_SYSFOLDER, PageRepository::DOKTYPE_SPACER);
 			}
 			if (!in_array((int)$this->pageinfo['doktype'], $excludeDokTypes, TRUE)) {
-				$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+				$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 			}
 		}
 		return $buttons;
@@ -336,10 +361,16 @@ class NewRecordController {
 			$this->code .= $positionMap->positionTree($this->id, $this->pageinfo, $this->perms_clause, $this->R_URI);
 		} else {
 			// No pages yet, no need to prompt for position, redirect to page creation.
-			$javascript = stripslashes(BackendUtility::editOnClick('&edit[pages][0]=new&returnNewPageId=1', '', BackendUtility::getModuleUrl('db_new', array('id' => $this->id, 'pagesOnly' => '1'))));
-			$startPos = strpos($javascript, 'href=\'') + 6;
-			$endPos = strpos($javascript, '\';');
-			$url = substr($javascript, $startPos, $endPos - $startPos);
+			$urlParameters = [
+				'edit' => [
+					'pages' => [
+						0 => 'new'
+					]
+				],
+				'returnNewPageId' => 1,
+				'returnUrl' => BackendUtility::getModuleUrl('db_new', array('id' => $this->id, 'pagesOnly' => '1'))
+			];
+			$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 			@ob_end_clean();
 			HttpUtility::redirect($url);
 		}
@@ -351,6 +382,7 @@ class NewRecordController {
 	 * @return void
 	 */
 	public function regularNew() {
+
 		/** @var IconFactory $iconFactory */
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$lang = $this->getLanguageService();
@@ -371,7 +403,7 @@ class NewRecordController {
 		$table = 'pages';
 		$v = $GLOBALS['TCA'][$table];
 		$pageIcon = IconUtility::getSpriteIconForRecord($table, array());
-		$newPageIcon = IconUtility::getSpriteIcon('actions-page-new');
+		$newPageIcon = $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL);
 		$rowContent = '';
 		// New pages INSIDE this pages
 		$newPageLinks = array();
@@ -384,7 +416,7 @@ class NewRecordController {
 			$newPageLinks[] = $this->linkWrap($pageIcon . $lang->sL($v['ctrl']['title'], TRUE) . ' (' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:db_new.php.after', TRUE) . ')', 'pages', -$this->id);
 		}
 		// New pages at selection position
-		if ($this->newPagesSelectPosition) {
+		if ($this->newPagesSelectPosition && $this->showNewRecLink('pages')) {
 			// Link to page-wizard:
 			$newPageLinks[] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('pagesOnly' => 1))) . '">' . $pageIcon . htmlspecialchars($lang->getLL('pageSelectPosition')) . '</a>';
 		}
@@ -393,16 +425,14 @@ class NewRecordController {
 		for ($i = 0; $i < $numPageLinks; $i++) {
 			$rowContent .= '<li>' . $newPageLinks[$i] . '</li>';
 		}
-		// Add row header and half-line if not empty
-		if (!empty($rowContent)) {
+		if ($this->showNewRecLink('pages')) {
 			$rowContent = '<ul class="list-tree"><li>' .$newPageIcon . '<strong>' .
 				$lang->getLL('createNewPage') . '</strong><ul>' . $rowContent . '</ul></li>';
+		} else {
+			$rowContent = '<ul class="list-tree"><li><ul>' . $rowContent . '</li></ul>';
 		}
-		// Compile table row to show the icon for "new page (select position)"
-		$startRows = array();
-		if ($this->showNewRecLink('pages') && !empty($rowContent)) {
-			$startRows[] = $rowContent;
-		}
+		// Compile table row
+		$startRows = array($rowContent);
 		$iconFile = array();
 		// New tables (but not pages) INSIDE this pages
 		$isAdmin = $this->getBackendUserAuthentication()->isAdmin();
@@ -474,7 +504,7 @@ class NewRecordController {
 								}
 								$_EXTKEY = 'system';
 								$thisTitle = $lang->getLL('system_records');
-								$iconFile['system'] = IconUtility::getSpriteIcon('apps-pagetree-root');
+								$iconFile['system'] = $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL);
 							}
 							if ($groupName == '' || $groupName != $_EXTKEY) {
 								$groupName = empty($v['ctrl']['groupName']) ? $_EXTKEY : $v['ctrl']['groupName'];
@@ -547,8 +577,10 @@ class NewRecordController {
 	 * Ending page output and echo'ing content to browser.
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -562,14 +594,22 @@ class NewRecordController {
 	 * @return string The link.
 	 */
 	public function linkWrap($linkText, $table, $pid, $addContentTable = FALSE) {
-		$parameters = '&edit[' . $table . '][' . $pid . ']=new';
+		$urlParameters = [
+			'edit' => [
+				$table => [
+					$pid => 'new'
+				]
+			],
+			'returnUrl' => $this->returnUrl
+		];
 		if ($table == 'pages' && $addContentTable) {
-			$parameters .= '&edit[tt_content][prev]=new&returnNewPageId=1';
+			$urlParameters['tt_content']['prev'] = 'new';
+			$urlParameters['returnNewPageId'] = 1;
 		} elseif ($table == 'pages_language_overlay') {
-			$parameters .= '&overrideVals[pages_language_overlay][doktype]=' . (int)$this->pageinfo['doktype'];
+			$urlParameters['overrideVals']['pages_language_overlay']['doktype'] = (int)$this->pageinfo['doktype'];
 		}
-		$onClick = BackendUtility::editOnClick($parameters, '', $this->returnUrl);
-		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $linkText . '</a>';
+		$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+		return '<a href="' . htmlspecialchars($url) . '">' . $linkText . '</a>';
 	}
 
 	/**

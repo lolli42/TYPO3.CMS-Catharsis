@@ -15,13 +15,18 @@ namespace TYPO3\CMS\Core\Tests\Unit\Imaging;
  */
 
 use Prophecy\Argument;
-use Prophecy\Prophecy\ObjectProphecy;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconProvider\FontawesomeIconProvider;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\FolderInterface;
+use TYPO3\CMS\Core\Resource\InaccessibleFolder;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
- * Testcase for \TYPO3\CMS\Core\Imaging\IconFactory
+ * TestCase for \TYPO3\CMS\Core\Imaging\IconFactory
  */
 class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 
@@ -41,6 +46,11 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $registeredIconIdentifier = 'actions-document-close';
 
 	/**
+	 * @var string
+	 */
+	protected $registeredSpinningIconIdentifier = 'spinning-icon';
+
+	/**
 	 * @var \TYPO3\CMS\Core\Imaging\IconRegistry
 	 */
 	protected $iconRegistryMock;
@@ -55,6 +65,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->subject = new IconFactory($this->iconRegistryMock->reveal());
 
 		$this->iconRegistryMock->isRegistered(Argument::any())->willReturn(TRUE);
+		$this->iconRegistryMock->isDeprecated(Argument::any())->willReturn(FALSE);
 		$this->iconRegistryMock->getIconConfigurationByIdentifier(Argument::any())->willReturn([
 			'provider' => FontawesomeIconProvider::class,
 			'options' => array(
@@ -89,7 +100,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @test
 	 */
 	public function getIconByIdentifierReturnsIconWithCorrectMarkupIfRegisteredIconIdentifierIsUsed() {
-		$this->assertContains('<span class="icon icon-size-default icon-actions-document-close">',
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-actions-document-close">',
 			$this->subject->getIcon($this->registeredIconIdentifier)->render());
 	}
 
@@ -98,7 +109,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider differentSizesDataProvider
 	 */
 	public function getIconByIdentifierAndSizeReturnsIconWithCorrectMarkupIfRegisteredIconIdentifierIsUsed($size) {
-		$this->assertContains('<span class="icon icon-size-' . $size['expected'] . ' icon-actions-document-close">',
+		$this->assertContains('<span class="icon icon-size-' . $size['expected'] . ' icon-state-default icon-actions-document-close">',
 			$this->subject->getIcon($this->registeredIconIdentifier, $size['input'])->render());
 	}
 
@@ -107,8 +118,8 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider differentSizesDataProvider
 	 */
 	public function getIconByIdentifierAndSizeAndWithOverlayReturnsIconWithCorrectOverlayMarkupIfRegisteredIconIdentifierIsUsed($size) {
-		$this->assertContains('<span class="icon-overlay icon-overlay-read-only">',
-			$this->subject->getIcon($this->registeredIconIdentifier, $size['input'], 'overlay-read-only')->render());
+		$this->assertContains('<span class="icon-overlay icon-overlay-readonly">',
+			$this->subject->getIcon($this->registeredIconIdentifier, $size['input'], 'overlay-readonly')->render());
 	}
 
 	/**
@@ -124,7 +135,7 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'additionalClasses' => 'fa-fw'
 			)
 		]);
-		$this->assertContains('<span class="icon icon-size-default icon-default-not-found">',
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-default-not-found">',
 			$this->subject->getIcon($this->notRegisteredIconIdentifier)->render());
 	}
 
@@ -142,17 +153,34 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'additionalClasses' => 'fa-fw'
 			)
 		]);
-		$this->assertContains('<span class="icon icon-size-' . $size['expected'] . ' icon-default-not-found">',
+		$this->assertContains('<span class="icon icon-size-' . $size['expected'] . ' icon-state-default icon-default-not-found">',
 			$this->subject->getIcon($this->notRegisteredIconIdentifier, $size['input'])->render());
 	}
 
 	/**
 	 * @test
+	 */
+	public function getIconReturnsCorrectMarkupIfIconIsRegisteredAsSpinningIcon() {
+		$this->iconRegistryMock->getIconConfigurationByIdentifier($this->registeredSpinningIconIdentifier)->willReturn([
+			'provider' => FontawesomeIconProvider::class,
+			'options' => array(
+				'name' => 'times-circle',
+				'additionalClasses' => 'fa-fw',
+				'spinning' => TRUE
+			)
+		]);
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-' . $this->registeredSpinningIconIdentifier . ' icon-spin">',
+			$this->subject->getIcon($this->registeredSpinningIconIdentifier)->render());
+	}
+
+	/**
+	 * @test
 	 * @dataProvider differentSizesDataProvider
+	 * @param string $size
 	 */
 	public function getIconByIdentifierAndSizeAndOverlayReturnsNotFoundIconWithCorrectMarkupIfUnregisteredIdentifierIsUsed($size) {
-		$this->assertContains('<span class="icon-overlay icon-overlay-read-only">',
-			$this->subject->getIcon($this->notRegisteredIconIdentifier, $size['input'], 'overlay-read-only')->render());
+		$this->assertContains('<span class="icon-overlay icon-overlay-readonly">',
+			$this->subject->getIcon($this->notRegisteredIconIdentifier, $size['input'], 'overlay-readonly')->render());
 	}
 
 	/**
@@ -161,6 +189,105 @@ class IconFactoryTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	public function getIconThrowsExceptionIfInvalidSizeIsGiven() {
 		$this->setExpectedException('InvalidArgumentException');
 		$this->subject->getIcon($this->registeredIconIdentifier, 'foo')->render();
+	}
+
+	/**
+	 * @test
+	 * @param $deprecationSettings
+	 * @param $expected
+	 * @dataProvider getIconReturnsReplacementIconWhenDeprecatedDataProvider
+	 */
+	public function getIconReturnsReplacementIconWhenDeprecated($deprecationSettings, $expected) {
+		$this->iconRegistryMock->isDeprecated($this->registeredIconIdentifier)->willReturn(TRUE);
+		$this->iconRegistryMock->getDeprecationSettings($this->registeredIconIdentifier)->willReturn($deprecationSettings);
+
+		$this->assertContains(
+			$expected,
+			$this->subject->getIcon($this->registeredIconIdentifier, Icon::SIZE_SMALL)->render()
+		);
+	}
+
+	/**
+	 * Data provider for getIconReturnsReplacementIconWhenDeprecated
+	 *
+	 * @return array
+	 */
+	public function getIconReturnsReplacementIconWhenDeprecatedDataProvider() {
+		return array(
+			'Deprecated icon returns replacement' => [
+				[
+					'message' => '%s is deprecated since TYPO3 CMS 7, this icon will be removed in TYPO3 CMS 8',
+					'replacement' => 'alternative-icon-identifier' // must be registered
+				],
+				'<span class="icon icon-size-small icon-state-default icon-alternative-icon-identifier">'
+			],
+			'Deprecated icon returns default icon' => [
+				[
+					'message' => '%s is deprecated since TYPO3 CMS 7, this icon will be removed in TYPO3 CMS 8'
+				],
+				'<span class="icon icon-size-small icon-state-default icon-actions-document-close">'
+			],
+		);
+	}
+
+	//
+	// Tests for getIconForFileExtension
+	//
+
+	/**
+	 * Tests the return of an icon for a file without extension
+	 *
+	 * @test
+	 */
+	public function getIconForFileWithNoFileTypeReturnsDefaultFileIcon() {
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-other-other">',
+			$this->subject->getIconForFileExtension('')->render());
+	}
+
+	/**
+	 * Tests the return of an icon for an unknown file type
+	 *
+	 * @test
+	 */
+	public function getIconForFileWithUnknownFileTypeReturnsDefaultFileIcon() {
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-other-other">',
+			$this->subject->getIconForFileExtension('foo')->render());
+	}
+
+	/**
+	 * Tests the return of an icon for a file with extension pdf
+	 *
+	 * @test
+	 */
+	public function getIconForFileWithFileTypePdfReturnsPdfSprite() {
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-pdf">',
+			$this->subject->getIconForFileExtension('pdf')->render());
+	}
+
+	/**
+	 * Tests the return of an icon for a file with extension png
+	 *
+	 * @test
+	 */
+	public function getIconForFileWithFileTypePngReturnsPngSprite() {
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-media-image">',
+			$this->subject->getIconForFileExtension('png')->render());
+	}
+
+	//
+	// Tests for getIconForResource
+	//
+
+	/**
+	 * @test
+	 */
+	public function getIconForResourceReturnsCorrectMarkupForFileResources() {
+		$resourceProphecy = $this->prophesize(File::class);
+		$resourceProphecy->isMissing()->willReturn(FALSE);
+		$resourceProphecy->getExtension()->willReturn('pdf');
+
+		$this->assertContains('<span class="icon icon-size-default icon-state-default icon-mimetypes-pdf">',
+			$this->subject->getIconForResource($resourceProphecy->reveal())->render());
 	}
 
 }

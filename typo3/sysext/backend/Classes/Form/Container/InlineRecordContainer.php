@@ -15,8 +15,14 @@ namespace TYPO3\CMS\Backend\Form\Container;
  */
 
 use TYPO3\CMS\Backend\Form\Element\InlineElementHookInterface;
+use TYPO3\CMS\Backend\Form\Exception\AccessDeniedContentEditException;
+use TYPO3\CMS\Backend\Form\FormDataCompiler;
+use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -31,8 +37,6 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Backend\Form\InlineRelatedRecordResolver;
-use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
-use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
  * Render a single inline record relation.
@@ -66,34 +70,50 @@ class InlineRecordContainer extends AbstractContainer {
 	protected $hookObjects = array();
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * Default constructor
+	 *
+	 * @param NodeFactory $nodeFactory
+	 * @param array $data
+	 */
+	public function __construct(NodeFactory $nodeFactory, array $data) {
+		parent::__construct($nodeFactory, $data);
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
+
+	/**
 	 * Entry method
 	 *
 	 * @return array As defined in initializeResultArray() of AbstractNode
+	 * @throws AccessDeniedContentEditException
 	 */
 	public function render() {
-		$this->inlineData = $this->globalOptions['inlineData'];
+		$this->inlineData = $this->data['inlineData'];
 
 		/** @var InlineStackProcessor $inlineStackProcessor */
 		$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
 		$this->inlineStackProcessor = $inlineStackProcessor;
-		$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+		$inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
 
 		$this->initHookObjects();
 
-		$row = $this->globalOptions['databaseRow'];
+		$row = $this->data['databaseRow'];
 		$parentUid = $row['uid'];
-		$record = $this->globalOptions['inlineRelatedRecordToRender'];
-		$config = $this->globalOptions['inlineRelatedRecordConfig'];
+		$record = $this->data['inlineRelatedRecordToRender'];
+		$config = $this->data['inlineRelatedRecordConfig'];
 
 		$foreign_table = $config['foreign_table'];
 		$foreign_selector = $config['foreign_selector'];
 		$resultArray = $this->initializeResultArray();
-		$html = '';
 
 		// Send a mapping information to the browser via JSON:
 		// e.g. data[<curTable>][<curId>][<curField>] => data-<pid>-<parentTable>-<parentId>-<parentField>-<curTable>-<curId>-<curField>
 		$formPrefix = $inlineStackProcessor->getCurrentStructureFormPrefix();
-		$domObjectId = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+		$domObjectId = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 		$this->inlineData['map'][$formPrefix] = $domObjectId;
 
 		$resultArray['inlineData'] = $this->inlineData;
@@ -104,11 +124,17 @@ class InlineRecordContainer extends AbstractContainer {
 		$isVirtualRecord = isset($record['__virtual']) && $record['__virtual'];
 		// If there is a selector field, normalize it:
 		if ($foreign_selector) {
-			$record[$foreign_selector] = $this->normalizeUid($record[$foreign_selector]);
+			$valueToNormalize = $record[$foreign_selector];
+			if (is_array($record[$foreign_selector])) {
+				// @todo: this can be kicked again if always prepared rows are handled here
+				$valueToNormalize = implode(',', $record[$foreign_selector]);
+			}
+			$record[$foreign_selector] = $this->normalizeUid($valueToNormalize);
 		}
 		if (!$this->checkAccess(($isNewRecord ? 'new' : 'edit'), $foreign_table, $record['uid'])) {
 			// This is caught by InlineControlContainer or FormEngine, they need to handle this case differently
-			throw new AccessDeniedException('Access denied', 1437081986);
+			// @todo: This is actually not the correct exception, but this code will vanish if inline data stuff is within provider
+			throw new AccessDeniedContentEditException('Access denied', 1437081986);
 		}
 		// Get the current naming scheme for DOM name/id attributes:
 		$appendFormFieldNames = '[' . $foreign_table . '][' . $record['uid'] . ']';
@@ -208,20 +234,48 @@ class InlineRecordContainer extends AbstractContainer {
 	 * @return string The rendered form
 	 */
 	protected function renderRecord($table, array $row, array $overruleTypesArray = array()) {
-		$domObjectId = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
-		$options = $this->globalOptions;
-		$options['inlineData'] = $this->inlineData;
-		$options['databaseRow'] = $row;
-		$options['table'] = $table;
+		$domObjectId = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
+
+		$options = $this->data['tabAndInlineStack'];
 		$options['tabAndInlineStack'][] = array(
 			'inline',
 			$domObjectId . '-' . $table . '-' . $row['uid'],
 		);
-		$options['overruleTypesArray'] = $overruleTypesArray;
+
+		$command = 'edit';
+		$vanillaUid = (int)$row['uid'];
+
+		// If dealing with a new record, take pid as vanillaUid and set command to new
+		if (!MathUtility::canBeInterpretedAsInteger($row['uid'])) {
+			$command = 'new';
+			$vanillaUid = (int)$row['pid'];
+		}
+
+		/** @var TcaDatabaseRecord $formDataGroup */
+		$formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
+		/** @var FormDataCompiler $formDataCompiler */
+		$formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
+		$formDataCompilerInput = [
+			'command' => $command,
+			'vanillaUid' => $vanillaUid,
+			'tableName' => $table,
+			'inlineData' => $this->inlineData,
+			'tabAndInlineStack' => $options['tabAndInlineStack'],
+			'overruleTypesArray' => $overruleTypesArray,
+			'inlineStructure' => $this->data['inlineStructure'],
+		];
+		$options = $formDataCompiler->compile($formDataCompilerInput);
 		$options['renderType'] = 'fullRecordContainer';
-		/** @var NodeFactory $nodeFactory */
-		$nodeFactory = $this->globalOptions['nodeFactory'];
-		return $nodeFactory->create($options)->render();
+
+		// @todo: This hack merges data from already prepared row over fresh row again.
+		// @todo: This really must fall ...
+		foreach ($row as $field => $value) {
+			if ($command === 'new' && is_string($value) && $value !== '' && array_key_exists($field, $options['databaseRow'])) {
+				$options['databaseRow'][$field] = $value;
+			}
+		}
+
+		return $this->nodeFactory->create($options)->render();
 	}
 
 	/**
@@ -229,7 +283,7 @@ class InlineRecordContainer extends AbstractContainer {
 	 * so two tables are combined (the intermediate table with attributes and the sub-embedded table).
 	 * -> This is a direct embedding over two levels!
 	 *
-	 * @param array $record The table record of the child/embedded table (normaly post-processed by \TYPO3\CMS\Backend\Form\DataPreprocessor)
+	 * @param array $record The table record of the child/embedded table
 	 * @param string $appendFormFieldNames The [<table>][<uid>] of the parent record (the intermediate table)
 	 * @param array $config content of $PA['fieldConf']['config']
 	 * @return array As defined in initializeResultArray() of AbstractNode
@@ -244,13 +298,13 @@ class InlineRecordContainer extends AbstractContainer {
 		if ($foreign_selector && $config['appearance']['useCombination']) {
 			$comboConfig = $GLOBALS['TCA'][$foreign_table]['columns'][$foreign_selector]['config'];
 			// If record does already exist, load it:
+			/** @var InlineRelatedRecordResolver $inlineRelatedRecordResolver */
+			$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
 			if ($record[$foreign_selector] && MathUtility::canBeInterpretedAsInteger($record[$foreign_selector])) {
-				$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
 				$comboRecord = $inlineRelatedRecordResolver->getRecord($comboConfig['foreign_table'], $record[$foreign_selector]);
 				$isNewRecord = FALSE;
 			} else {
-				$inlineRelatedRecordResolver = GeneralUtility::makeInstance(InlineRelatedRecordResolver::class);
-				$comboRecord = $inlineRelatedRecordResolver->getNewRecord($this->globalOptions['inlineFirstPid'], $comboConfig['foreign_table']);
+				$comboRecord = $inlineRelatedRecordResolver->getNewRecord($this->data['inlineFirstPid'], $comboConfig['foreign_table']);
 				$isNewRecord = TRUE;
 			}
 
@@ -300,7 +354,7 @@ class InlineRecordContainer extends AbstractContainer {
 	 */
 	protected function renderForeignRecordHeader($parentUid, $foreign_table, $rec, $config, $isVirtualRecord = FALSE) {
 		// Init:
-		$domObjectId = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+		$domObjectId = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 		$objectId = $domObjectId . '-' . $foreign_table . '-' . $rec['uid'];
 		// We need the returnUrl of the main script when loading the fields via AJAX-call (to correct wizard code, so include it as 3rd parameter)
 		// Pre-Processing:
@@ -363,11 +417,20 @@ class InlineRecordContainer extends AbstractContainer {
 				$recTitle = BackendUtility::getNoRecordTitle(TRUE);
 			}
 		} else {
-			$recTitle = BackendUtility::getRecordTitle($foreign_table, $rec, TRUE);
+			$recTitle = BackendUtility::getRecordTitle($foreign_table, FormEngineUtility::databaseRowCompatibility($rec), TRUE);
 		}
 
 		$altText = BackendUtility::getRecordIconAltText($rec, $foreign_table);
-		$iconImg = IconUtility::getSpriteIconForRecord($foreign_table, $rec, array('title' => htmlspecialchars($altText), 'id' => $objectId . '_icon'));
+
+		// @todo: Hack for getSpriteIconForRecord
+		$recordForIconUtility = $rec;
+		if (isset($GLOBALS['TCA'][$foreign_table]['ctrl']['typeicon_column']) && is_array($rec[$GLOBALS['TCA'][$foreign_table]['ctrl']['typeicon_column']])) {
+			$recordForIconUtility[$GLOBALS['TCA'][$foreign_table]['ctrl']['typeicon_column']] = implode(
+				',',
+				$rec[$GLOBALS['TCA'][$foreign_table]['ctrl']['typeicon_column']]
+			);
+		}
+		$iconImg = IconUtility::getSpriteIconForRecord($foreign_table, $recordForIconUtility, array('title' => htmlspecialchars($altText), 'id' => $objectId . '_icon'));
 		$label = '<span id="' . $objectId . '_label">' . $recTitle . '</span>';
 		$ctrl = $this->renderForeignRecordHeaderControl($parentUid, $foreign_table, $rec, $config, $isVirtualRecord);
 		$thumbnail = FALSE;
@@ -442,7 +505,7 @@ class InlineRecordContainer extends AbstractContainer {
 		$isSysFileReferenceTable = $foreign_table === 'sys_file_reference';
 		$isOnSymmetricSide = RelationHandler::isOnSymmetricSide($parentUid, $config, $rec);
 		$enableManualSorting = $tcaTableCtrl['sortby'] || $config['MM'] || !$isOnSymmetricSide && $config['foreign_sortby'] || $isOnSymmetricSide && $config['symmetric_sortby'];
-		$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+		$nameObject = $this->inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 		$nameObjectFt = $nameObject . '-' . $foreign_table;
 		$nameObjectFtId = $nameObjectFt . '-' . $rec['uid'];
 		$calcPerms = $backendUser->calcPerms(BackendUtility::readPageAccess($rec['pid'], $backendUser->getPagePermsClause(1)));
@@ -461,9 +524,13 @@ class InlineRecordContainer extends AbstractContainer {
 			$hookObj->renderForeignRecordHeaderControl_preProcess($parentUid, $foreign_table, $rec, $config, $isVirtualRecord, $enabledControls);
 		}
 		if (isset($rec['__create'])) {
-			$cells['localize.isLocalizable'] = IconUtility::getSpriteIcon('actions-edit-localize-status-low', array('title' => $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize.isLocalizable', TRUE)));
+			$cells['localize.isLocalizable'] = '<span title="' . $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize.isLocalizable', TRUE) . '">'
+				. $this->iconFactory->getIcon('actions-edit-localize-status-low', Icon::SIZE_SMALL)
+				. '</span>';
 		} elseif (isset($rec['__remove'])) {
-			$cells['localize.wasRemovedInOriginal'] = IconUtility::getSpriteIcon('actions-edit-localize-status-high', array('title' => $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize.wasRemovedInOriginal', TRUE)));
+			$cells['localize.wasRemovedInOriginal'] = '<span title="' . $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize.wasRemovedInOriginal', TRUE) . '">'
+				. $this->iconFactory->getIcon('actions-edit-localize-status-high', Icon::SIZE_SMALL)
+				. '</span>';
 		}
 		// "Info": (All records)
 		if ($enabledControls['info'] && !$isNewItem) {
@@ -475,8 +542,8 @@ class InlineRecordContainer extends AbstractContainer {
 				$table = $foreign_table;
 			}
 			$cells['info'] = '
-				<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($uid) . '); return false;')) . '">
-					' . IconUtility::getSpriteIcon('status-dialog-information', array('title' => $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:showInfo', TRUE))) . '
+				<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('top.launchView(' . GeneralUtility::quoteJSvalue($table) . ', ' . GeneralUtility::quoteJSvalue($uid) . '); return false;')) . '" title="' . $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:showInfo', TRUE) . '">
+					' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)->render()  . '
 				</a>';
 		}
 		// If the table is NOT a read-only table, then show these links:
@@ -490,8 +557,8 @@ class InlineRecordContainer extends AbstractContainer {
 						$style = ' style="' . $config['inline']['inlineNewButtonStyle'] . '"';
 					}
 					$cells['new'] = '
-						<a class="btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'] . '" href="#" onclick="' . htmlspecialchars($onClick) . '"' . $style . '>
-							' . IconUtility::getSpriteIcon(('actions-' . ($isPagesTable ? 'page' : 'document') . '-new'), array('title' => $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:new' . ($isPagesTable ? 'Page' : 'Record')), TRUE))) . '
+						<a class="btn btn-default inlineNewButton ' . $this->inlineData['config'][$nameObject]['md5'] . '" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:new' . ($isPagesTable ? 'Page' : 'Record')), TRUE) . '" ' . $style . '>
+							' . $this->iconFactory->getIcon('actions-' . ($isPagesTable ? 'page' : 'document') . '-new', Icon::SIZE_SMALL)->render()  . '
 						</a>';
 				}
 			}
@@ -501,23 +568,27 @@ class InlineRecordContainer extends AbstractContainer {
 				$onClick = 'return inline.changeSorting(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ', \'1\')';
 				$style = $config['inline']['first'] == $rec['uid'] ? 'style="visibility: hidden;"' : '';
 				$cells['sort.up'] = '
-					<a class="btn btn-default sortingUp" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . '>
-						' . IconUtility::getSpriteIcon('actions-move-up', array('title' => $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:moveUp', TRUE))) . '
+					<a class="btn btn-default sortingUp" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . ' title="' . $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:moveUp', TRUE) . '">
+						' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '
 					</a>';
 				// Down
 				$onClick = 'return inline.changeSorting(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ', \'-1\')';
 				$style = $config['inline']['last'] == $rec['uid'] ? 'style="visibility: hidden;"' : '';
 				$cells['sort.down'] = '
-					<a class="btn btn-default sortingDown" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . '>
-						' . IconUtility::getSpriteIcon('actions-move-down', array('title' => $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:moveDown', TRUE))) . '
+					<a class="btn btn-default sortingDown" href="#" onclick="' . htmlspecialchars($onClick) . '" ' . $style . ' title="' . $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:moveDown', TRUE) . '">
+						' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '
 					</a>';
 			}
 			// "Edit" link:
 			if (($rec['table_local'] === 'sys_file') && !$isNewItem) {
+				$sys_language_uid = 0;
+				if (!empty($rec['sys_language_uid'])) {
+					$sys_language_uid = $rec['sys_language_uid'][0];
+				}
 				$recordInDatabase = $this->getDatabaseConnection()->exec_SELECTgetSingleRow(
 					'uid',
 					'sys_file_metadata',
-					'file = ' . (int)substr($rec['uid_local'], 9) . ' AND sys_language_uid = ' . $rec['sys_language_uid']
+					'file = ' . (int)substr($rec['uid_local'], 9) . ' AND sys_language_uid = ' . $sys_language_uid
 				);
 				if ($backendUser->check('tables_modify', 'sys_file_metadata')) {
 					$url = BackendUtility::getModuleUrl('record_edit', array(
@@ -532,7 +603,7 @@ class InlineRecordContainer extends AbstractContainer {
 					$title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata');
 					$cells['editmetadata'] = '
 						<a class="btn btn-default" href="#" class="btn" onclick="' . htmlspecialchars($editOnClick) . '" title="' . htmlspecialchars($title) . '">
-							' . IconUtility::getSpriteIcon('actions-document-open') . '
+							' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '
 						</a>';
 				}
 			}
@@ -540,42 +611,50 @@ class InlineRecordContainer extends AbstractContainer {
 			if ($enabledControls['delete'] && ($isPagesTable && $localCalcPerms & Permission::PAGE_DELETE
 					|| !$isPagesTable && $calcPerms & Permission::CONTENT_EDIT
 					|| $isSysFileReferenceTable && $calcPerms & Permission::PAGE_EDIT)) {
-				$onClick = 'inline.deleteRecord(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ');';
-				$cells['delete'] = '
-					<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(('if (confirm(' . GeneralUtility::quoteJSvalue($languageService->getLL('deleteWarning')) . ')) {	' . $onClick . ' } return false;')) . '">
-						' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:delete', TRUE))) . '
-					</a>';
+				$onClick = htmlspecialchars(('if (confirm('
+					. GeneralUtility::quoteJSvalue($languageService->getLL('deleteWarning')) . ')) {	'
+					. 'inline.deleteRecord(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ');'
+					. ' } return false;'));
+				$title = $languageService->sL('LLL:EXT:lang/locallang_mod_web_list.xlf:delete', TRUE);
+				$icon = $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL);
+				$cells['delete'] = '<a class="btn btn-default" href="#" onclick="' . $onClick . '" title="' . $title
+					. '">' . $icon . '</a>';
 			}
 
 			// "Hide/Unhide" links:
 			$hiddenField = $tcaTableCtrl['enablecolumns']['disabled'];
 			if ($enabledControls['hide'] && $permsEdit && $hiddenField && $tcaTableCols[$hiddenField] && (!$tcaTableCols[$hiddenField]['exclude'] || $backendUser->check('non_exclude_fields', $foreign_table . ':' . $hiddenField))) {
 				$onClick = 'return inline.enableDisableRecord(' . GeneralUtility::quoteJSvalue($nameObjectFtId) . ')';
+				$className = 't3js-' . $nameObjectFtId . '_disabled';
 				if ($rec[$hiddenField]) {
+					$title = $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:unHide' . ($isPagesTable ? 'Page' : '')), TRUE);
 					$cells['hide.unhide'] = '
-						<a class="btn btn-default hiddenHandle" href="#" onclick="' . htmlspecialchars($onClick) . '">
-							' . IconUtility::getSpriteIcon('actions-edit-unhide', array('title' => $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:unHide' . ($isPagesTable ? 'Page' : '')), TRUE), 'id' => ($nameObjectFtId . '_disabled'))) . '
+						<a class="btn btn-default hiddenHandle ' . $className . '" href="#" onclick="'
+							. htmlspecialchars($onClick) . '"' . 'title="' . $title . '">' .
+							$this->iconFactory->getIcon('actions-edit-unhide', Icon::SIZE_SMALL) . '
 						</a>';
 				} else {
+					$title = $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:hide' . ($isPagesTable ? 'Page' : '')), TRUE);
 					$cells['hide.hide'] = '
-						<a class="btn btn-default hiddenHandle" href="#" onclick="' . htmlspecialchars($onClick) . '">
-							' . IconUtility::getSpriteIcon('actions-edit-hide', array('title' => $languageService->sL(('LLL:EXT:lang/locallang_mod_web_list.xlf:hide' . ($isPagesTable ? 'Page' : '')), TRUE), 'id' => ($nameObjectFtId . '_disabled'))) . '
+						<a class="btn btn-default hiddenHandle ' . $className . '" href="#" onclick="'
+							. htmlspecialchars($onClick) . '"' . 'title="' . $title . '">' .
+							$this->iconFactory->getIcon('actions-edit-hide', Icon::SIZE_SMALL) . '
 						</a>';
 				}
 			}
 			// Drag&Drop Sorting: Sortable handler for script.aculo.us
 			if ($enabledControls['dragdrop'] && $permsEdit && $enableManualSorting && $config['appearance']['useSortable']) {
 				$additionalCells['dragdrop'] = '
-					<span class="btn btn-default">
-						' . IconUtility::getSpriteIcon('actions-move-move', array('data-id' => $rec['uid'], 'class' => 'sortableHandle', 'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE))) . '
+					<span class="btn btn-default sortableHandle" data-id="' . htmlspecialchars($rec['uid']) . '" title="' . $languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move', TRUE) . '">
+						' . $this->iconFactory->getIcon('actions-move-move', Icon::SIZE_SMALL) . '
 					</span>';
 			}
 		} elseif ($isVirtualRecord && $isParentExisting) {
 			if ($enabledControls['localize'] && isset($rec['__create'])) {
 				$onClick = 'inline.synchronizeLocalizeRecords(' . GeneralUtility::quoteJSvalue($nameObjectFt) . ', ' . GeneralUtility::quoteJSvalue($rec['uid']) . ');';
 				$cells['localize'] = '
-					<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . '">
-						' . IconUtility::getSpriteIcon('actions-document-localize', array('title' => $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize', TRUE))) . '
+					<a class="btn btn-default" href="#" onclick="' . htmlspecialchars($onClick) . 'title="' . $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:localize', TRUE) . '">
+						' . $this->iconFactory->getIcon('actions-document-localize', Icon::SIZE_SMALL) . '
 					</a>';
 			}
 		}
@@ -583,7 +662,7 @@ class InlineRecordContainer extends AbstractContainer {
 		if ($lockInfo = BackendUtility::isRecordLocked($foreign_table, $rec['uid'])) {
 			$cells['locked'] = '
 				<a class="btn btn-default" href="#" onclick="alert(' . GeneralUtility::quoteJSvalue($lockInfo['msg']) . ');return false;">
-					' . IconUtility::getSpriteIcon('status-warning-in-use', array('title' => $lockInfo['msg'])) . '
+					' . '<span title="' . htmlspecialchars($lockInfo['msg']) . '">' . $this->iconFactory->getIcon('status-warning-in-use', Icon::SIZE_SMALL) . '</span>' . '
 				</a>';
 		}
 		// Hook: Post-processing of single controls for specific child records:
@@ -611,6 +690,7 @@ class InlineRecordContainer extends AbstractContainer {
 	 * @return bool Returns TRUE is the user has access, or FALSE if not
 	 */
 	protected function checkAccess($cmd, $table, $theUid) {
+		// @todo This should be within data provider
 		$backendUser = $this->getBackendUserAuthentication();
 		// Checking if the user has permissions? (Only working as a precaution, because the final permission check is always down in TCE. But it's good to notify the user on beforehand...)
 		// First, resetting flags.
@@ -622,8 +702,8 @@ class InlineRecordContainer extends AbstractContainer {
 		// If the command is to create a NEW record...:
 		if ($cmd === 'new') {
 			// If the pid is numerical, check if it's possible to write to this page:
-			if (MathUtility::canBeInterpretedAsInteger($this->globalOptions['inlineFirstPid'])) {
-				$calcPRec = BackendUtility::getRecord('pages', $this->globalOptions['inlineFirstPid']);
+			if (MathUtility::canBeInterpretedAsInteger($this->data['inlineFirstPid'])) {
+				$calcPRec = BackendUtility::getRecord('pages', $this->data['inlineFirstPid']);
 				if (!is_array($calcPRec)) {
 					return FALSE;
 				}
@@ -706,7 +786,7 @@ class InlineRecordContainer extends AbstractContainer {
 	 * @return bool TRUE=expand, FALSE=collapse
 	 */
 	protected function getExpandedCollapsedState($table, $uid) {
-		$inlineView = $this->globalOptions['inlineExpandCollapseStateArray'];
+		$inlineView = $this->data['inlineExpandCollapseStateArray'];
 		// @todo Add checking/cleaning for unused tables, records, etc. to save space in uc-field
 		if (isset($inlineView[$table]) && is_array($inlineView[$table])) {
 			if (in_array($uid, $inlineView[$table]) !== FALSE) {

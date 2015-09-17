@@ -16,6 +16,8 @@ namespace TYPO3\CMS\Beuser\ViewHelpers;
 
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Beuser\Domain\Model\BackendUser;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
@@ -52,15 +54,15 @@ class SwitchUserViewHelper extends AbstractViewHelper implements CompilableInter
 	 */
 	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
 		$backendUser = $arguments['backendUser'];
-
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		if ($backendUser->getUid() == $GLOBALS['BE_USER']->user['uid'] || !$backendUser->isActive()) {
-			return '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+			return '<span class="btn btn-default disabled">' . $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
 		}
 		$title = LocalizationUtility::translate('switchBackMode', 'beuser');
 		return '<a class="btn btn-default" href="' .
 			htmlspecialchars(GeneralUtility::linkThisScript(array('SwitchUser' => $backendUser->getUid()))) .
 			'" target="_top" title="' . htmlspecialchars($title) . '">' .
-			IconUtility::getSpriteIcon(('actions-system-backend-user-switch')) . '</a>';
+			$iconFactory->getIcon('actions-system-backend-user-switch', Icon::SIZE_SMALL)->render() . '</a>';
 	}
 
 }

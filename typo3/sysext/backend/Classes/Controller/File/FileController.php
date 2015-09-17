@@ -14,7 +14,10 @@ namespace TYPO3\CMS\Backend\Controller\File;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Resource\DuplicationBehavior;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
@@ -44,9 +47,10 @@ class FileController {
 	protected $CB;
 
 	/**
-	 * Defines behaviour when uploading files with names that already exist; possible value are 'cancel', 'replace', 'changeName'
+	 * Defines behaviour when uploading files with names that already exist; possible values are
+	 * the values of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 *
-	 * @var string
+	 * @var \TYPO3\CMS\Core\Resource\DuplicationBehavior
 	 */
 	protected $overwriteExistingFiles;
 
@@ -97,13 +101,7 @@ class FileController {
 		// Set the GPvars from outside
 		$this->file = GeneralUtility::_GP('file');
 		$this->CB = GeneralUtility::_GP('CB');
-		$this->overwriteExistingFiles = GeneralUtility::_GP('overwriteExistingFiles');
-
-		if ((string)$this->overwriteExistingFiles === '1') {
-			GeneralUtility::deprecationLog('overwriteExitingFiles = 1 is deprecated. Use overwriteExitingFiles = "replace". Support for old behavior will be removed in TYPO3 CMS 8.');
-			$this->overwriteExistingFiles = 'replace';
-		}
-
+		$this->overwriteExistingFiles = DuplicationBehavior::cast(GeneralUtility::_GP('overwriteExistingFiles'));
 		$this->vC = GeneralUtility::_GP('vC');
 		$this->redirect = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GP('redirect'));
 		$this->initClipboard();
@@ -140,16 +138,7 @@ class FileController {
 		// Initializing:
 		$this->fileProcessor->init(array(), $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']);
 		$this->fileProcessor->setActionPermissions();
-		switch ($this->overwriteExistingFiles) {
-			case 'replace':
-			case 'changeName':
-				$conflictMode = $this->overwriteExistingFiles;
-				break;
-			default:
-				$conflictMode = 'cancel';
-				break;
-		}
-		$this->fileProcessor->setExistingFilesConflictMode($conflictMode);
+		$this->fileProcessor->setExistingFilesConflictMode($this->overwriteExistingFiles);
 		// Checking referrer / executing:
 		$refInfo = parse_url(GeneralUtility::getIndpEnv('HTTP_REFERER'));
 		$httpHost = GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY');
@@ -177,6 +166,30 @@ class FileController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it just redirects to the given URL afterwards.
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		// Push errors to flash message queue, if there are any
+		$this->fileProcessor->pushErrorMessagesToFlashMessageQueue();
+		BackendUtility::setUpdateSignal('updateFolderTree');
+
+		if ($this->redirect) {
+			$response = $response->withHeader('Location', GeneralUtility::locationHeaderUrl($this->redirect));
+			return $response->withStatus(303);
+		} else {
+			// empty response
+			return $response;
+		}
+	}
+
+	/**
 	 * Handles the actual process from within the ajaxExec function
 	 * therefore, it does exactly the same as the real typo3/tce_file.php
 	 * but without calling the "finish" method, thus makes it simpler to deal with the
@@ -187,7 +200,6 @@ class FileController {
 	 * @return void
 	 */
 	public function processAjaxRequest(array $params, AjaxRequestHandler $ajaxObj) {
-		$this->init();
 		$this->main();
 		$errors = $this->fileProcessor->getErrorMessages();
 		if (!empty($errors)) {

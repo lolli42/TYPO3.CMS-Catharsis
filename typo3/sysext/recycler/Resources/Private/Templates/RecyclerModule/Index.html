@@ -1,7 +1,8 @@
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
 <f:layout name="Default" />
 
 <f:section name="iconButtons">
-	<a data-action="reload"><f:be.buttons.icon icon="actions-system-refresh" title="{f:translate(key:'button.reload')}" /></a>
+	<a data-action="reload" title="{f:translate(key:'button.reload')}"><core:icon identifier="actions-refresh" /></a>
 </f:section>
 
 <f:section name="content">
@@ -10,7 +11,7 @@
 			<div class="input-group">
 				<input type="text" name="search-text" class="form-control">
 				<span class="input-group-btn">
-					<button type="submit" class="btn btn-default disabled"><span class="t3-icon fa fa-search"></span></button>
+					<button type="submit" class="btn btn-default disabled"><core:icon identifier="actions-search" /></button>
 				</span>
 			</div>
 			<select name="depth" class="form-control">

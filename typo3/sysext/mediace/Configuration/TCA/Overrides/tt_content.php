@@ -6,8 +6,6 @@ defined('TYPO3_MODE') or die();
  */
 $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes']['multimedia'] = 'mimetypes-x-content-multimedia';
 $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes']['media'] = 'mimetypes-x-content-multimedia';
-$GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['multimedia'] = 'tt_content_mm.gif';
-$GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['media'] = 'tt_content_mm.gif';
 
 
 // Register new CType in item list just before "menu"
@@ -15,7 +13,7 @@ $GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['media'] = 'tt_content_mm.gif
 	array(
 		'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.7',
 		'multimedia',
-		'i/tt_content_mm.gif'
+		'EXT:t3skin/icons/gfx/i/tt_content_mm.gif'
 	),
 	'menu', 'before'
 );
@@ -23,7 +21,7 @@ $GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['media'] = 'tt_content_mm.gif
 	array(
 		'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.18',
 		'media',
-		'i/tt_content_mm.gif'
+		'EXT:t3skin/icons/gfx/i/tt_content_mm.gif'
 	),
 	'menu', 'before'
 );

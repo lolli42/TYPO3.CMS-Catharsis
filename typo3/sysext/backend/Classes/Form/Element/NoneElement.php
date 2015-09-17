@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Backend\Form\Element;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Form\FormEngine;
 
 /**
  * Generation of TCEform elements where no rendering could be found
@@ -30,7 +29,7 @@ class NoneElement extends AbstractFormElement {
 	 * @return string The HTML code for the TCEform field
 	 */
 	public function render() {
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$parameterArray = $this->data['parameterArray'];
 		$config = $parameterArray['fieldConf']['config'];
 		$itemValue = $parameterArray['itemFormElValue'];
 
@@ -154,14 +153,12 @@ class NoneElement extends AbstractFormElement {
 			case 'user':
 				$func = trim($config['format.']['userFunc']);
 				if ($func) {
-					$dummyFormEngine = new FormEngine;
-					$params = array(
+					$params = [
 						'value' => $itemValue,
 						'args' => $config['format.']['userFunc'],
 						'config' => $config,
-						'pObj' => $dummyFormEngine
-					);
-					$itemValue = GeneralUtility::callUserFunction($func, $params, $dummyFormEngine);
+					];
+					$itemValue = GeneralUtility::callUserFunction($func, $params, $this);
 				}
 				break;
 			default:

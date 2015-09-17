@@ -550,7 +550,7 @@ class AbstractPlugin {
 		$wrapper['disabledLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
 		$wrapper['inactiveLinkWrap'] = '<td nowrap="nowrap"><p>|</p></td>';
 		$wrapper['activeLinkWrap'] = '<td' . $this->pi_classParam('browsebox-SCell') . ' nowrap="nowrap"><p>|</p></td>';
-		$wrapper['browseLinksWrap'] = trim(('<table ' . $tableParams)) . '><tr>|</tr></table>';
+		$wrapper['browseLinksWrap'] = rtrim('<table ' . $tableParams) . '><tr>|</tr></table>';
 		$wrapper['showResultsWrap'] = '<p>|</p>';
 		$wrapper['browseBoxWrap'] = '
 		<!--
@@ -670,7 +670,7 @@ class AbstractPlugin {
 		-->
 		<div' . $this->pi_classParam('searchbox') . '>
 			<form action="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '" method="post" style="margin: 0 0 0 0;">
-			<' . trim(('table ' . $tableParams)) . '>
+			<' . rtrim('table ' . $tableParams) . '>
 				<tr>
 					<td><input type="text" name="' . $this->prefixId . '[sword]" value="' . htmlspecialchars($this->piVars['sword']) . '"' . $this->pi_classParam('searchbox-sword') . ' /></td>
 					<td><input type="submit" value="' . $this->pi_getLL('pi_list_searchBox_search', 'Search', TRUE) . '"' . $this->pi_classParam('searchbox-button') . ' />' . '<input type="hidden" name="no_cache" value="1" />' . '<input type="hidden" name="' . $this->prefixId . '[pointer]" value="" />' . '</td>
@@ -700,7 +700,7 @@ class AbstractPlugin {
 			Mode selector (menu for list):
 		-->
 		<div' . $this->pi_classParam('modeSelector') . '>
-			<' . trim(('table ' . $tableParams)) . '>
+			<' . rtrim('table ' . $tableParams) . '>
 				<tr>
 					' . implode('', $cells) . '
 				</tr>
@@ -738,7 +738,7 @@ class AbstractPlugin {
 			Record list:
 		-->
 		<div' . $this->pi_classParam('listrow') . '>
-			<' . trim(('table ' . $tableParams)) . '>
+			<' . rtrim('table ' . $tableParams) . '>
 				' . implode('', $tRows) . '
 			</table>
 		</div>';
@@ -971,25 +971,32 @@ class AbstractPlugin {
 	}
 
 	/**
-	 * Loads local-language values by looking for a "locallang" file in the
-	 * plugin class directory ($this->scriptRelPath) and if found includes it.
+	 * Loads local-language values from the file passed as a parameter or
+	 * by looking for a "locallang" file in the
+	 * plugin class directory ($this->scriptRelPath).
 	 * Also locallang values set in the TypoScript property "_LOCAL_LANG" are
 	 * merged onto the values found in the "locallang" file.
 	 * Supported file extensions xlf, xml
 	 *
+	 * @param string $languageFilePath path to the plugin language file in format EXT:....
 	 * @return void
 	 */
-	public function pi_loadLL() {
-		if (!$this->LOCAL_LANG_loaded && $this->scriptRelPath) {
+	public function pi_loadLL($languageFilePath = '') {
+		if ($this->LOCAL_LANG_loaded) {
+			return;
+		}
+
+		if ($languageFilePath === '' && $this->scriptRelPath) {
+			$languageFilePath = 'EXT:' . $this->extKey . '/' . dirname($this->scriptRelPath) . '/locallang.xlf';
+		}
+		if ($languageFilePath !== '') {
 			/** @var $languageFactory LocalizationFactory */
 			$languageFactory = GeneralUtility::makeInstance(LocalizationFactory::class);
-
-			$basePath = 'EXT:' . $this->extKey . '/' . dirname($this->scriptRelPath) . '/locallang.xlf';
 			// Read the strings in the required charset (since TYPO3 4.2)
-			$this->LOCAL_LANG = $languageFactory->getParsedData($basePath, $this->LLkey, $this->frontendController->renderCharset);
+			$this->LOCAL_LANG = $languageFactory->getParsedData($languageFilePath, $this->LLkey, $this->frontendController->renderCharset);
 			$alternativeLanguageKeys = GeneralUtility::trimExplode(',', $this->altLLkey, TRUE);
 			foreach ($alternativeLanguageKeys as $languageKey) {
-				$tempLL = $languageFactory->getParsedData($basePath, $languageKey);
+				$tempLL = $languageFactory->getParsedData($languageFilePath, $languageKey);
 				if ($this->LLkey !== 'default' && isset($tempLL[$languageKey])) {
 					$this->LOCAL_LANG[$languageKey] = $tempLL[$languageKey];
 				}

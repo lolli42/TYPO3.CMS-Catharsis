@@ -14,27 +14,31 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Filelist\FileListFolderTree;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Recordlist\Browser\ElementBrowser;
 
 /**
  * Main script class for rendering of the folder tree
  */
 class FileSystemNavigationFrameController {
 
-	// Internal, dynamic:
-	// Content accumulates in this variable.
 	/**
+	 * Content accumulates in this variable.
+	 *
 	 * @var string
 	 */
 	public $content;
 
 	/**
-	 * @var \TYPO3\CMS\Filelist\FileListFolderTree
+	 * @var \TYPO3\CMS\Backend\Tree\View\FolderTreeView
 	 */
 	public $foldertree;
 
@@ -45,7 +49,6 @@ class FileSystemNavigationFrameController {
 	 */
 	public $doc;
 
-	// Internal, static: GPvar:
 	/**
 	 * @var string
 	 */
@@ -75,6 +78,19 @@ class FileSystemNavigationFrameController {
 	}
 
 	/**
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->initPage();
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Initialiation of the script class
 	 *
 	 * @return void
@@ -93,21 +109,22 @@ class FileSystemNavigationFrameController {
 
 		// Create folder tree object:
 		if (!empty($this->scopeData)) {
-			$className = $this->scopeData['class'];
-			$this->foldertree = GeneralUtility::makeInstance($className);
+			$this->foldertree = GeneralUtility::makeInstance($this->scopeData['class']);
 			$this->foldertree->thisScript = $this->scopeData['script'];
 			$this->foldertree->ext_noTempRecyclerDirs = $this->scopeData['ext_noTempRecyclerDirs'];
-			$GLOBALS['SOBE']->browser = new \stdClass();
-			$GLOBALS['SOBE']->browser->mode = $this->scopeData['browser']['mode'];
-			$GLOBALS['SOBE']->browser->act = $this->scopeData['browser']['act'];
+			if ($this->foldertree instanceof ElementBrowserFolderTreeView) {
+				$browser = GeneralUtility::makeInstance(ElementBrowser::class);
+				$browser->mode = $this->scopeData['browser']['mode'];
+				$browser->act = $this->scopeData['browser']['act'];
+				$this->foldertree->setElementBrowser($browser);
+			}
 		} else {
-			$className = FileListFolderTree::class;
-			$this->foldertree = GeneralUtility::makeInstance($className);
+			$this->foldertree = GeneralUtility::makeInstance(FileListFolderTree::class);
 			$this->foldertree->thisScript = BackendUtility::getModuleUrl('file_navframe');
 		}
 		// Only set ext_IconMode if we are not running an ajax request from the ElementBrowser,
 		// which has this property hardcoded to 1.
-		if ($className !== ElementBrowserFolderTreeView::class) {
+		if (!$this->foldertree instanceof ElementBrowserFolderTreeView) {
 			$this->foldertree->ext_IconMode = $this->getBackendUser()->getTSConfigVal('options.folderTree.disableIconLinkToContextmenu');
 		}
 	}
@@ -123,6 +140,7 @@ class FileSystemNavigationFrameController {
 		$this->doHighlight = !$this->getBackendUser()->getTSConfigVal('options.pageTree.disableTitleHighlight');
 		// Create template object:
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
+		$this->doc->bodyTagId = 'ext-backend-Modules-FileSystemNavigationFrame-index-php';
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/alt_file_navframe.html');
 		$this->doc->showFlashMessages = FALSE;
 		// Adding javascript code for drag&drop and the filetree as well as the click menu code
@@ -187,8 +205,10 @@ class FileSystemNavigationFrameController {
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -202,8 +222,9 @@ class FileSystemNavigationFrameController {
 			'csh' => '',
 			'refresh' => ''
 		);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		// Refresh
-		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
+		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL) . '</a>';
 		// CSH
 		$buttons['csh'] = str_replace('typo3-csh-inline', 'typo3-csh-inline show-right', BackendUtility::cshItem('xMOD_csh_corebe', 'filetree'));
 		return $buttons;
@@ -223,7 +244,6 @@ class FileSystemNavigationFrameController {
 	 * @return void
 	 */
 	public function ajaxExpandCollapse($params, $ajaxObj) {
-		$this->init();
 		$tree = $this->foldertree->getBrowsableTree();
 		if ($this->foldertree->getAjaxStatus() === FALSE) {
 			$ajaxObj->setError($tree);

@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
@@ -146,6 +148,20 @@ class TableController extends AbstractWizardController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Main function, rendering the table wizard
 	 *
 	 * @return void
@@ -171,8 +187,10 @@ class TableController extends AbstractWizardController {
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -199,11 +217,17 @@ class TableController extends AbstractWizardController {
 			$title = 'title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '"';
 			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(' . GeneralUtility::quoteJSvalue(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '); return false;')) . '" ' . $title . '>' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 			// Save
-			$buttons['save'] = IconUtility::getSpriteIcon('actions-document-save', array('html' => '<button class="c-inputButton" name="savedok" value="1"></button>', 'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)));
+			$buttons['save'] = '<button class="c-inputButton" name="savedok" value="1" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '">'
+				. $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)
+				. '</button>';
 			// Save & Close
-			$buttons['save_close'] = IconUtility::getSpriteIcon('actions-document-save-close', array('html' => '<button class="c-inputButton" name="saveandclosedok" value="1"></button>', 'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)));
+			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok" value="1" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '">'
+				. $this->iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL)
+				. '</button>';
 			// Reload
-			$buttons['reload'] = IconUtility::getSpriteIcon('actions-system-refresh', array('html' => '<button class="c-inputButton" name="_refresh" value="1"></button>', 'title' => $this->getLanguageService()->getLL('forms_refresh', TRUE)));
+			$buttons['reload'] = '<button class="c-inputButton" name="_refresh" value="1" title="' . $this->getLanguageService()->getLL('forms_refresh', TRUE) . '">'
+				. $this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)
+				. '</button>';
 		}
 		return $buttons;
 	}

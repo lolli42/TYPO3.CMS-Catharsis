@@ -290,7 +290,6 @@ if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('css_styled_co
  * CType "search"
  */
 $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes']['search'] = 'mimetypes-x-content-form-search';
-$GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['search'] = 'tt_content_search.gif';
 $GLOBALS['TCA']['tt_content']['types']['search'] = array(
 	'showitem' => '--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.general;general,
 			--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.header;header,
@@ -313,7 +312,7 @@ $GLOBALS['TCA']['tt_content']['palettes']['searchform'] = array(
 $additionalCTypeItem = array(
 	'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.9',
 	'search',
-	'i/tt_content_search.gif'
+	'EXT:t3skin/icons/gfx/i/tt_content_search.gif'
 );
 
 $existingCTypeItems = $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'];
@@ -344,7 +343,6 @@ if ($groupFound && $groupPosition) {
  */
 if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('form')) {
 	$GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes']['mailform'] = 'mimetypes-x-content-form';
-	$GLOBALS['TCA']['tt_content']['ctrl']['typeicons']['mailform'] = 'tt_content_form.gif';
 	$GLOBALS['TCA']['tt_content']['columns']['bodytext']['config']['wizards']['forms'] = array(
 		'notNewRecords' => 1,
 		'enableByTypeConfig' => 1,
@@ -365,7 +363,7 @@ if (!\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::isLoaded('form')) {
 	\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTcaSelectItem('tt_content', 'CType', array(
 			'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.8',
 			'mailform',
-			'i/tt_content_form.gif'
+			'EXT:t3skin/icons/gfx/i/tt_content_form.gif'
 		),
 		'search',
 		'before'

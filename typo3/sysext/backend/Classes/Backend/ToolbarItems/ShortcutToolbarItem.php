@@ -20,6 +20,8 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\PreparedStatement;
 use TYPO3\CMS\Core\Http\AjaxRequestHandler;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -66,9 +68,15 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 	protected $groupLabels;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		if (TYPO3_REQUESTTYPE & TYPO3_REQUESTTYPE_AJAX) {
 			$this->getLanguageService()->includeLLFile('EXT:lang/locallang_misc.xlf');
 			// Needed to get the correct icons when reloading the menu after saving it
@@ -105,12 +113,8 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 	 * @return string HTML
 	 */
 	public function getItem() {
-		return IconUtility::getSpriteIcon(
-			'apps-toolbar-menu-shortcut',
-			array(
-				'title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE),
-			)
-		);
+		$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE);
+		return '<span title="' . $title . '">' . $this->iconFactory->getIcon('apps-toolbar-menu-shortcut', Icon::SIZE_SMALL)->render() . '</span>';
 	}
 
 	/**
@@ -123,8 +127,10 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		$shortcutGroup = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksGroup', TRUE);
 		$shortcutEdit = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksEdit', TRUE);
 		$shortcutDelete = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarksDelete', TRUE);
-		$editIcon = '<a href="#" class="dropdown-list-link-edit shortcut-edit">' . IconUtility::getSpriteIcon('actions-document-open', array('title' => $shortcutEdit)) . '</a>';
-		$deleteIcon = '<a href="#" class="dropdown-list-link-delete shortcut-delete">' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $shortcutDelete)) . '</a>';
+		$editIcon = '<a href="#" class="dropdown-list-link-edit shortcut-edit" ' . $shortcutEdit . '>'
+			. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
+		$deleteIcon = '<a href="#" class="dropdown-list-link-delete shortcut-delete" title="' . $shortcutDelete . '">'
+			. $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</a>';
 
 		$shortcutMenu[] = '<ul class="dropdown-list">';
 
@@ -175,9 +181,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 		if (count($shortcutMenu) === 2) {
 			// No shortcuts added yet, show a small help message how to add shortcuts
 			$title = $languageService->sL('LLL:EXT:lang/locallang_core.xlf:toolbarItems.bookmarks', TRUE);
-			$icon = IconUtility::getSpriteIcon('actions-system-shortcut-new', array(
-				'title' => $title
-			));
+			$icon = '<span title="' . $title . '">' . $this->iconFactory->getIcon('actions-system-shortcut-new', Icon::SIZE_SMALL)->render() . '</span>';
 			$label = str_replace('%icon%', $icon, $languageService->sL('LLL:EXT:lang/locallang_misc.xlf:bookmarkDescription'));
 			$compiledShortcutMenu = '<p>' . $label . '</p>';
 		} else {
@@ -758,10 +762,10 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 				}
 				break;
 			case 'file_edit':
-				$icon = IconUtility::getSpriteIcon('mimetypes-text-html', array('title' => $titleAttribute));
+				$icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon('mimetypes-text-html', Icon::SIZE_SMALL)->render() . '</span>';
 				break;
 			case 'wizard_rte':
-				$icon = IconUtility::getSpriteIcon('mimetypes-word', array('title' => $titleAttribute));
+				$icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon('mimetypes-word', Icon::SIZE_SMALL)->render() . '</span>';
 				break;
 			default:
 				if ($languageService->moduleLabels['tabs_images'][$row['module_name'] . '_tab']) {
@@ -774,7 +778,7 @@ class ShortcutToolbarItem implements ToolbarItemInterface {
 					// @todo: hardcoded width as we don't have a way to address module icons with an API yet.
 					$icon = '<img src="' . htmlspecialchars($icon) . '" alt="' . $titleAttribute . '" width="16">';
 				} else {
-					$icon = IconUtility::getSpriteIcon('empty-empty', array('title' => $titleAttribute));
+					$icon = '<span title="' . $titleAttribute . '">' . $this->iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
 				}
 		}
 		return $icon;

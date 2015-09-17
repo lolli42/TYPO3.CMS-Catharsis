@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Database;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
@@ -54,10 +56,16 @@ class QueryView {
 	protected $formName = '';
 
 	/**
+	 * @var \TYPO3\CMS\Core\Imaging\IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * constructor
 	 */
 	public function __construct() {
 		$GLOBALS['LANG']->includeLLFile('EXT:lang/locallang_t3lib_fullsearch.xlf');
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 	}
 
 	/**
@@ -524,6 +532,8 @@ class QueryView {
 	 * @return string
 	 */
 	public function resultRowDisplay($row, $conf, $table) {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$SET = $GLOBALS['SOBE']->MOD_SETTINGS;
 		$out = '<tr>';
 		foreach ($row as $fieldName => $fieldValue) {
@@ -539,14 +549,15 @@ class QueryView {
 		$params = '&edit[' . $table . '][' . $row['uid'] . ']=edit';
 		$out .= '<td><div class="btn-group">';
 		if (!$row['deleted']) {
-			$out .= '<a class="btn btn-default" href="#" onClick="top.launchView(\'' . $table . '\',' . $row['uid'] . ',\'' . $GLOBALS['BACK_PATH'] . '\');return false;">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-dialog-information') . '</a>';
-			$out .= '<a class="btn btn-default" href="#" onClick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', GeneralUtility::getIndpEnv('REQUEST_URI') . GeneralUtility::implodeArrayForUrl('SET', (array)GeneralUtility::_POST('SET')))) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$out .= '<a class="btn btn-default" href="#" onClick="top.launchView(\'' . $table . '\',' . $row['uid'] . ',\'' . $GLOBALS['BACK_PATH'] . '\');return false;">' . $iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)->render() . '</a>';
+			$out .= '<a class="btn btn-default" href="#" onClick="' . htmlspecialchars(BackendUtility::editOnClick($params, '', GeneralUtility::getIndpEnv('REQUEST_URI') . GeneralUtility::implodeArrayForUrl('SET', (array)GeneralUtility::_POST('SET')))) . '">' . $iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 		} else {
 			$out .= '<a class="btn btn-default" href="' . GeneralUtility::linkThisUrl(BackendUtility::getModuleUrl('tce_db'), array(
 					('cmd[' . $table . '][' . $row['uid'] . '][undelete]') => '1',
 					'redirect' => GeneralUtility::linkThisScript(array())
-				)) . BackendUtility::getUrlToken('tceAction') . '">';
-			$out .= \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-restore', array('title' => 'undelete only')) . '</a>';
+				)) . '" title="' . $GLOBALS['LANG']->getLL('undelete_only', TRUE) . '">';
+			$out .= $this->iconFactory->getIcon('actions-edit-restore', Icon::SIZE_SMALL) . '</a>';
 			$formEngineParameters = array(
 				'edit[' . $table . '][' . $row['uid'] . ']' => 'edit',
 				'returnUrl' => GeneralUtility::linkThisScript(array())
@@ -555,8 +566,8 @@ class QueryView {
 			$out .= '<a class="btn btn-default" href="' . GeneralUtility::linkThisUrl(BackendUtility::getModuleUrl('tce_db'), array(
 					('cmd[' . $table . '][' . $row['uid'] . '][undelete]') => '1',
 					'redirect' => $redirectUrl
-				)) . BackendUtility::getUrlToken('tceAction') . '">';
-			$out .= \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-edit-restore-edit', array('title' => 'undelete and edit')) . '</a>';
+				)) . '" title="' . $GLOBALS['LANG']->getLL('undelete_and_edit', TRUE) . '">';
+			$out .= $this->iconFactory->getIcon('actions-edit-restore-edit', Icon::SIZE_SMALL) . '</a>';
 		}
 		$_params = array($table => $row);
 		if (is_array($this->hookArray['additionalButtons'])) {

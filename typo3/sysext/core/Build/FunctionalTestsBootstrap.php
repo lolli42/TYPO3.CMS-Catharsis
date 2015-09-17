@@ -57,7 +57,7 @@ class FunctionalTestsBootstrap {
 		}
 		if (!class_exists(BaseTestCase::class)) {
 			// PHPUnit is invoked globally, so we need to include the project autoload file
-			require_once __DIR__ . '/../../../vendor/autoload.php';
+			require_once __DIR__ . '/../../../../vendor/autoload.php';
 		}
 
 		return $this;
@@ -74,6 +74,10 @@ class FunctionalTestsBootstrap {
 		if (!defined('ORIGINAL_ROOT')) {
 			/** @var string */
 			define('ORIGINAL_ROOT', $this->getWebRoot());
+		}
+
+		if (!file_exists(ORIGINAL_ROOT . 'typo3/cli_dispatch.phpsh')) {
+			die('Unable to determine path to entry script. Please check your path or set an environment variable \'TYPO3_PATH_WEB\' to your root path.');
 		}
 
 		return $this;
@@ -118,12 +122,11 @@ class FunctionalTestsBootstrap {
 	 */
 	protected function getWebRoot() {
 		if (getenv('TYPO3_PATH_WEB')) {
-			$webRoot = getenv('TYPO3_PATH_WEB') . '/';
+			$webRoot = getenv('TYPO3_PATH_WEB');
 		} else {
-			$webRoot = getcwd() . '/';
+			$webRoot = getcwd();
 		}
-
-		return strtr($webRoot, '\\', '/');
+		return rtrim(strtr($webRoot, '\\', '/'), '/') . '/';
 	}
 }
 

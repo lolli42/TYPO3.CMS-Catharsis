@@ -15,11 +15,10 @@ namespace TYPO3\CMS\Rsaauth\Form\Element;
  */
 
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
-use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Generation of form element of the type rsaInput
@@ -34,10 +33,10 @@ class RsaInputElement extends AbstractFormElement {
 	public function render() {
 		$languageService = $this->getLanguageService();
 
-		$table = $this->globalOptions['table'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$row = $this->globalOptions['databaseRow'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$table = $this->data['tableName'];
+		$fieldName = $this->data['fieldName'];
+		$row = $this->data['databaseRow'];
+		$parameterArray = $this->data['parameterArray'];
 		$resultArray = $this->initializeResultArray();
 		$resultArray['requireJsModules'] = array('TYPO3/CMS/Rsaauth/RsaEncryptionModule');
 
@@ -52,10 +51,9 @@ class RsaInputElement extends AbstractFormElement {
 			'value' => '',
 		);
 
-		// readonly
-		if ($this->isGlobalReadonly() || $config['readOnly']) {
+		if ($config['readOnly']) {
 			$itemFormElValue = $parameterArray['itemFormElValue'];
-			$options = $this->globalOptions;
+			$options = $this->data;
 			$options['parameterArray'] = array(
 				'fieldConf' => array(
 					'config' => $config,
@@ -63,9 +61,7 @@ class RsaInputElement extends AbstractFormElement {
 				'itemFormElValue' => $itemFormElValue,
 			);
 			$options['renderType'] = 'none';
-			/** @var NodeFactory $nodeFactory */
-			$nodeFactory = $this->globalOptions['nodeFactory'];
-			return $nodeFactory->create($options)->render();
+			return $this->nodeFactory->create($options)->render();
 		}
 
 		// @todo: The whole eval handling is a mess and needs refactoring
@@ -112,8 +108,8 @@ class RsaInputElement extends AbstractFormElement {
 		// calculate attributes
 		$attributes['data-formengine-validation-rules'] = $this->getValidationDataAsJsonString($config);
 		$attributes['data-formengine-input-params'] = json_encode($paramsList);
-		$attributes['id'] = str_replace('.', '', uniqid('formengine-input-', TRUE));
-		$attributes['name'] = $parameterArray['itemFormElName'] . '_hr';
+		$attributes['data-formengine-input-name'] = htmlspecialchars($parameterArray['itemFormElName']);
+		$attributes['id'] = StringUtility::getUniqueId('formengine-input-');
 		if (isset($config['max']) && (int)$config['max'] > 0) {
 			$attributes['maxlength'] = (int)$config['max'];
 		}
@@ -165,7 +161,8 @@ class RsaInputElement extends AbstractFormElement {
 			$row,
 			$fieldName,
 			$parameterArray,
-			$parameterArray['itemFormElName'] . '_hr', $specConf
+			$parameterArray['itemFormElName'],
+			$specConf
 		);
 
 		// Add a wrapper to remain maximum width

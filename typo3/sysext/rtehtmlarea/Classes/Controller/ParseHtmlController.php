@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -49,6 +51,13 @@ class ParseHtmlController {
 	public $prefixId = 'TYPO3HtmlParser';
 
 	/**
+	 * Initialize
+	 */
+	public function __construct() {
+		$this->init();
+	}
+
+	/**
 	 * @return void
 	 */
 	public function init() {
@@ -63,11 +72,29 @@ class ParseHtmlController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main_parse_html() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->content .= $this->main_parse_html($this->modData['openKeys']);
+
+		$response->getBody()->write($this->content);
+		$response = $response->withHeader('Content-Type', 'text/plain; charset=utf-8');
+		return $response;
+	}
+
+	/**
 	 * Main function
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use main_parse_html() instead
 	 */
 	public function main() {
+		GeneralUtility::logDeprecatedFunction();
 		$this->content .= $this->main_parse_html($this->modData['openKeys']);
 		header('Content-Type: text/plain; charset=utf-8');
 	}
@@ -76,8 +103,10 @@ class ParseHtmlController {
 	 * Print content
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 

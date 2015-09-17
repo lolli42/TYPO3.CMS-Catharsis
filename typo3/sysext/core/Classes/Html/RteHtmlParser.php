@@ -451,7 +451,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							}
 						}
 					}
-					// Remove width and heigth from style attribute
+					// Remove width and height from style attribute
 					$attribArray['style'] = preg_replace('/((?:^|)\\s*(?:width|height)\\s*:[^;]*(?:$|;))/si', '', $attribArray['style']);
 					// Must have alt attribute
 					if (!isset($attribArray['alt'])) {
@@ -669,7 +669,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 				$tagCode = GeneralUtility::makeInstance(TypoLinkCodecService::class)->decode($typolink);
 
 				$link_param = $tagCode['url'];
-				// Parsing the typolink data. This parsing is roughly done like in \TYPO3\CMS\Frontend\ContentObject->typolink()
+				// Parsing the typolink data. This parsing is roughly done like in \TYPO3\CMS\Frontend\ContentObject->typoLink()
 				// Parse URL:
 				$pU = parse_url($link_param);
 				if (strstr($link_param, '@') && (!$pU['scheme'] || $pU['scheme'] == 'mailto')) {
@@ -1309,7 +1309,7 @@ class RteHtmlParser extends \TYPO3\CMS\Core\Html\HtmlParser {
 							if ($remapParagraphTag === 'DIV') {
 								$tagName = 'div';
 							}
-							$subLines[$sk] = '<' . trim(($tagName . ' ' . $this->compileTagAttribs($newAttribs))) . '>' . $subLines[$sk] . '</' . $tagName . '>';
+							$subLines[$sk] = '<' . trim($tagName . ' ' . $this->compileTagAttribs($newAttribs)) . '>' . $subLines[$sk] . '</' . $tagName . '>';
 						}
 					}
 				}

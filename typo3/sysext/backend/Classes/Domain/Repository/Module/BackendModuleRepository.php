@@ -242,7 +242,7 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 				'name' => $moduleName,
 				'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$moduleName . '_tab'],
 				'onclick' => 'top.goToModule(' . GeneralUtility::quoteJSvalue($moduleName) . ');',
-				'icon' => $this->getModuleIcon($moduleName, $moduleData),
+				'icon' => $this->getModuleIcon($moduleName . '_tab', $moduleData),
 				'link' => $moduleLink,
 				'description' => $GLOBALS['LANG']->moduleLabels['labels'][$moduleKey . 'label']
 			);
@@ -270,16 +270,7 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 					$submoduleKey = $moduleName . '_' . $submoduleName . '_tab';
 					$submoduleDescription = $GLOBALS['LANG']->moduleLabels['labels'][$submoduleKey . 'label'];
 					$originalLink = $submoduleLink;
-					if (isset($submoduleData['navigationFrameModule'])) {
-						$navigationFrameScript = BackendUtility::getModuleUrl(
-							$submoduleData['navigationFrameModule'],
-							isset($submoduleData['navigationFrameModuleParameters'])
-								? $submoduleData['navigationFrameModuleParameters']
-								: array()
-						);
-					} else {
-						$navigationFrameScript = $submoduleData['navFrameScript'];
-					}
+					$navigationFrameScript = $submoduleData['navFrameScript'];
 					$modules[$moduleKey]['subitems'][$submoduleKey] = array(
 						'name' => $moduleName . '_' . $submoduleName,
 						'title' => $GLOBALS['LANG']->moduleLabels['tabs'][$submoduleKey],
@@ -345,8 +336,8 @@ class BackendModuleRepository implements \TYPO3\CMS\Core\SingletonInterface {
 		$icon = '';
 
 		// add as a sprite icon
-		if ($moduleData['configuration']['icon']) {
-			$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($moduleData['configuration']['icon'], array('tagName' => 'i'));
+		if (!empty($moduleData['iconIdentifier'])) {
+			$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($moduleData['iconIdentifier'], array('tagName' => 'i'));
 		} elseif (!empty($GLOBALS['LANG']->moduleLabels['tabs_images'][$moduleKey])) {
 			$imageReference = $GLOBALS['LANG']->moduleLabels['tabs_images'][$moduleKey];
 			$iconFileRelative = $this->getModuleIconRelative($imageReference);

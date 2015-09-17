@@ -365,14 +365,6 @@ $GLOBALS['TCA']['tt_content']['ctrl']['typeicon_classes'] = array_merge(
 		'text' => 'mimetypes-x-content-text'
 	)
 );
-$GLOBALS['TCA']['tt_content']['ctrl']['typeicons'] = array_merge(
-	$GLOBALS['TCA']['tt_content']['ctrl']['typeicons'],
-	array(
-		'textpic' => 'tt_content_textpic.gif',
-		'image' => 'tt_content_image.gif',
-		'text' => 'tt_content.gif'
-	)
-);
 array_splice(
 	$GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'],
 	2,
@@ -381,17 +373,17 @@ array_splice(
 		array(
 			'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.1',
 			'text',
-			'i/tt_content.gif'
+			'EXT:t3skin/icons/gfx/i/tt_content.gif'
 		),
 		array(
 			'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.2',
 			'textpic',
-			'i/tt_content_textpic.gif'
+			'EXT:t3skin/icons/gfx/i/tt_content_textpic.gif'
 		),
 		array(
 			'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.3',
 			'image',
-			'i/tt_content_image.gif'
+			'EXT:t3skin/icons/gfx/i/tt_content_image.gif'
 		)
 	)
 );
@@ -685,3 +677,5 @@ $GLOBALS['TCA']['tt_content']['columns']['section_frame']['config']['items'][9] 
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addStaticFile('css_styled_content', 'static/', 'CSS Styled Content');
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addStaticFile('css_styled_content', 'static/v6.2/', 'CSS Styled Content TYPO3 v6.2');
+
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::makeCategorizable('css_styled_content', 'tt_content', 'categories', array(), TRUE);

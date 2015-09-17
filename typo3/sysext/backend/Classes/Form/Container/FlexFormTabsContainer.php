@@ -17,7 +17,6 @@ namespace TYPO3\CMS\Backend\Form\Container;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
-use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
  * Handle flex forms that have tabs (multiple "sheets").
@@ -36,15 +35,15 @@ class FlexFormTabsContainer extends AbstractContainer {
 		$languageService = $this->getLanguageService();
 		$docTemplate = $this->getDocumentTemplate();
 
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldName = $this->globalOptions['fieldName']; // field name of the flex form field in DB
-		$parameterArray = $this->globalOptions['parameterArray'];
-		$flexFormDataStructureArray = $this->globalOptions['flexFormDataStructureArray'];
-		$flexFormCurrentLanguage = $this->globalOptions['flexFormCurrentLanguage'];
-		$flexFormRowData = $this->globalOptions['flexFormRowData'];
+		$table = $this->data['tableName'];
+		$row = $this->data['databaseRow'];
+		$fieldName = $this->data['fieldName']; // field name of the flex form field in DB
+		$parameterArray = $this->data['parameterArray'];
+		$flexFormDataStructureArray = $this->data['flexFormDataStructureArray'];
+		$flexFormCurrentLanguage = $this->data['flexFormCurrentLanguage'];
+		$flexFormRowData = $this->data['flexFormRowData'];
 
-		$tabId = 'TCEFORMS:flexform:' . $this->globalOptions['parameterArray']['itemFormElName'] . $flexFormCurrentLanguage;
+		$tabId = 'TCEFORMS:flexform:' . $this->data['parameterArray']['itemFormElName'] . $flexFormCurrentLanguage;
 		$tabIdString = $docTemplate->getDynTabMenuId($tabId);
 		$tabCounter = 0;
 
@@ -55,8 +54,8 @@ class FlexFormTabsContainer extends AbstractContainer {
 
 			// Evaluate display condition for this sheet if there is one
 			$displayConditionResult = TRUE;
-			if (!empty($sheetDataStructure['ROOT']['TCEforms']['displayCond'])) {
-				$displayConditionDefinition = $sheetDataStructure['ROOT']['TCEforms']['displayCond'];
+			if (!empty($sheetDataStructure['ROOT']['displayCond'])) {
+				$displayConditionDefinition = $sheetDataStructure['ROOT']['displayCond'];
 				$displayConditionResult = $this->evaluateFlexFormDisplayCondition(
 					$displayConditionDefinition,
 					$flexFormRowData['data'],
@@ -84,7 +83,7 @@ class FlexFormTabsContainer extends AbstractContainer {
 				}
 			}
 
-			$options = $this->globalOptions;
+			$options = $this->data;
 			$options['flexFormDataStructureArray'] = $sheetDataStructure['ROOT']['el'];
 			$options['flexFormRowData'] = $flexFormRowSheetDataSubPart;
 			$options['flexFormFormPrefix'] = '[data][' . $sheetName . '][' . $flexFormCurrentLanguage . ']';
@@ -96,15 +95,13 @@ class FlexFormTabsContainer extends AbstractContainer {
 				$tabIdString . '-' . $tabCounter,
 			);
 			$options['renderType'] = 'flexFormElementContainer';
-			/** @var NodeFactory $nodeFactory */
-			$nodeFactory = $this->globalOptions['nodeFactory'];
-			$childReturn = $nodeFactory->create($options)->render();
+			$childReturn = $this->nodeFactory->create($options)->render();
 
 			$tabsContent[] = array(
-				'label' => !empty($sheetDataStructure['ROOT']['TCEforms']['sheetTitle']) ? $languageService->sL($sheetDataStructure['ROOT']['TCEforms']['sheetTitle']) : $sheetName,
+				'label' => !empty($sheetDataStructure['ROOT']['sheetTitle']) ? $languageService->sL($sheetDataStructure['ROOT']['sheetTitle']) : $sheetName,
 				'content' => $childReturn['html'],
-				'description' => $sheetDataStructure['ROOT']['TCEforms']['sheetDescription'] ? $languageService->sL($sheetDataStructure['ROOT']['TCEforms']['sheetDescription']) : '',
-				'linkTitle' => $sheetDataStructure['ROOT']['TCEforms']['sheetShortDescr'] ? $languageService->sL($sheetDataStructure['ROOT']['TCEforms']['sheetShortDescr']) : '',
+				'description' => $sheetDataStructure['ROOT']['sheetDescription'] ? $languageService->sL($sheetDataStructure['ROOT']['sheetDescription']) : '',
+				'linkTitle' => $sheetDataStructure['ROOT']['sheetShortDescr'] ? $languageService->sL($sheetDataStructure['ROOT']['sheetShortDescr']) : '',
 			);
 
 			$childReturn['html'] = '';

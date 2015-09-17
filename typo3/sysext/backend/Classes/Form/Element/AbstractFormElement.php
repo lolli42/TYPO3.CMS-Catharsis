@@ -14,15 +14,18 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Form\FormEngine;
-use TYPO3\CMS\Backend\Form\DataPreprocessor;
+use TYPO3\CMS\Backend\Form\FormDataCompiler;
+use TYPO3\CMS\Backend\Form\FormDataGroup\OnTheFly;
+use TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\Form\Wizard\SuggestWizard;
 use TYPO3\CMS\Backend\Form\Wizard\ValueSliderWizard;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
@@ -64,24 +67,23 @@ abstract class AbstractFormElement extends AbstractNode {
 	protected $clipboard = NULL;
 
 	/**
-	 * @return bool TRUE if field is set to read only
+	 * Container objects give $nodeFactory down to other containers.
+	 *
+	 * @param NodeFactory $nodeFactory
+	 * @param array $data
 	 */
-	protected function isGlobalReadonly() {
-		return !empty($this->globalOptions['renderReadonly']);
+	public function __construct(NodeFactory $nodeFactory, array $data) {
+		parent::__construct($nodeFactory, $data);
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		// @todo: this must vanish as soon as elements are clean
+		$this->nodeFactory = $nodeFactory;
 	}
 
 	/**
 	 * @return bool TRUE if wizards are disabled on a global level
 	 */
 	protected function isWizardsDisabled() {
-		return !empty($this->globalOptions['disabledWizards']);
-	}
-
-	/**
-	 * @return string URL to return to this entry script
-	 */
-	protected function getReturnUrl() {
-		return isset($this->globalOptions['returnUrl']) ? $this->globalOptions['returnUrl'] : '';
+		return !empty($this->data['disabledWizards']);
 	}
 
 	/**
@@ -99,10 +101,15 @@ abstract class AbstractFormElement extends AbstractNode {
 	}
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Rendering wizards for form fields.
 	 *
 	 * @param array $itemKinds Array with the real item in the first value
-	 * @param array $wizConf The "wizard" key from the config array for the field (from TCA)
+	 * @param array $wizConf The "wizards" key from the config array for the field (from TCA)
 	 * @param string $table Table name
 	 * @param array $row The record array
 	 * @param string $field The field name
@@ -154,7 +161,7 @@ abstract class AbstractFormElement extends AbstractNode {
 		foreach ($wizConf as $wizardIdentifier => $wizardConfiguration) {
 			if (!isset($wizardConfiguration['module']['name']) && isset($wizardConfiguration['script'])) {
 				throw new \InvalidArgumentException('The way registering a wizard in TCA has changed in 6.2 and was removed in CMS 7. '
-					. 'Please set module[name]=module_name instead of using script=path/to/sctipt.php in your TCA. ', 1437750231);
+					. 'Please set module[name]=module_name instead of using script=path/to/script.php in your TCA. ', 1437750231);
 			}
 
 			// If an identifier starts with "_", this is a configuration option like _POSITION and not a wizard
@@ -212,7 +219,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params['field'] = $field;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
-					$params['returnUrl'] = $this->getReturnUrl();
+					$params['returnUrl'] = $this->data['returnUrl'];
 
 					$params['formName'] = 'editform';
 					$params['itemName'] = $itemName;
@@ -225,8 +232,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params['iTitle'] = $iTitle;
 					$params['wConf'] = $wizardConfiguration;
 					$params['row'] = $row;
-					$formEngineDummy = new FormEngine;
-					$otherWizards[] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $formEngineDummy);
+					$otherWizards[] = GeneralUtility::callUserFunction($wizardConfiguration['userFunc'], $params, $this);
 					break;
 
 				case 'script':
@@ -243,7 +249,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params['field'] = $field;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
-					$params['returnUrl'] = $this->getReturnUrl();
+					$params['returnUrl'] = $this->data['returnUrl'];
 
 					// Resolving script filename and setting URL.
 					$urlParameters = array();
@@ -269,7 +275,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params['field'] = $field;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
-					$params['returnUrl'] = $this->getReturnUrl();
+					$params['returnUrl'] = $this->data['returnUrl'];
 
 					$params['formName'] = 'editform';
 					$params['itemName'] = $itemName;
@@ -324,7 +330,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					$params['field'] = $field;
 					$params['flexFormPath'] = $flexFormPath;
 					$params['md5ID'] = $md5ID;
-					$params['returnUrl'] = $this->getReturnUrl();
+					$params['returnUrl'] = $this->data['returnUrl'];
 
 					$params['formName'] = 'editform';
 					$params['itemName'] = $itemName;
@@ -371,20 +377,52 @@ abstract class AbstractFormElement extends AbstractNode {
 					break;
 
 				case 'select':
-					$fieldValue = array('config' => $wizardConfiguration);
-					$TSconfig = FormEngineUtility::getTSconfigForTableRow($table, $row);
-					$TSconfig[$field] = $TSconfig[$field]['wizards.'][$wizardIdentifier . '.'];
-					$selItems = FormEngineUtility::addSelectOptionsToItemArray(FormEngineUtility::initItemArray($fieldValue), $fieldValue, $TSconfig, $field);
-					// Process items by a user function:
-					if (!empty($wizardConfiguration['itemsProcFunc'])) {
-						$funcConfig = !empty($wizardConfiguration['itemsProcFunc.']) ? $wizardConfiguration['itemsProcFunc.'] : array();
-						$dataPreprocessor = GeneralUtility::makeInstance(DataPreprocessor::class);
-						$selItems = $dataPreprocessor->procItems($selItems, $funcConfig, $wizardConfiguration, $table, $row, $field);
+					// The select wizard is a select drop down added to the main element. It provides all the functionality
+					// that select items can do for us, so we process this element via data processing.
+					// @todo: This should be embedded in an own provider called in the main data group to not handle this on the fly here
+
+					// Select wizard page TS can be set in TCEFORM."table"."field".wizards."wizardName"
+					$pageTsConfig = [];
+					if (isset($this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'])
+						&& is_array($this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'])
+					) {
+						$pageTsConfig['TCEFORM.']['dummySelectWizard.'][$wizardIdentifier . '.'] = $this->data['pageTsConfig']['TCEFORM.'][$table . '.'][$field . '.']['wizards.'][$wizardIdentifier . '.'];
 					}
-					$options = array();
+					$selectWizardDataInput = [
+						'tableName' => 'dummySelectWizard',
+						'command' => 'edit',
+						'pageTsConfigMerged' => $pageTsConfig,
+						'vanillaTableTca' => [
+							'ctrl' => [],
+							'columns' => [
+								$wizardIdentifier => [
+									'type' => 'select',
+									'config' => $wizardConfiguration,
+								],
+							],
+						],
+						'processedTca' => [
+							'ctrl' => [],
+							'columns' => [
+								$wizardIdentifier => [
+									'type' => 'select',
+									'config' => $wizardConfiguration,
+								],
+							],
+						],
+					];
+					/** @var OnTheFly $formDataGroup */
+					$formDataGroup = GeneralUtility::makeInstance(OnTheFly::class);
+					$formDataGroup->setProviderList([ TcaSelectItems::class ]);
+					/** @var FormDataCompiler $formDataCompiler */
+					$formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
+					$compilerResult = $formDataCompiler->compile($selectWizardDataInput);
+					$selectWizardItems = $compilerResult['processedTca']['columns'][$wizardIdentifier]['config']['items'];
+
+					$options = [];
 					$options[] = '<option>' . $iTitle . '</option>';
-					foreach ($selItems as $p) {
-						$options[] = '<option value="' . htmlspecialchars($p[1]) . '">' . htmlspecialchars($p[0]) . '</option>';
+					foreach ($selectWizardItems as $selectWizardItem) {
+						$options[] = '<option value="' . htmlspecialchars($selectWizardItem[1]) . '">' . htmlspecialchars($selectWizardItem[0]) . '</option>';
 					}
 					if ($wizardConfiguration['mode'] == 'append') {
 						$assignValue = 'document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value=\'\'+this.options[this.selectedIndex].value+document.editform[' . GeneralUtility::quoteJSvalue($itemName) . '].value';
@@ -395,7 +433,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					}
 					$otherWizards[] =
 						'<select' .
-							' id="' . str_replace('.', '', uniqid('tceforms-select-', TRUE)) . '"' .
+							' id="' . StringUtility::getUniqueId('tceforms-select-') . '"' .
 							' class="form-control tceforms-select tceforms-wizardselect"' .
 							' name="_WIZARD' . $fName . '"' .
 							' onchange="' . htmlspecialchars($assignValue . ';this.blur();this.selectedIndex=0;' . implode('', $fieldChangeFunc)) . '"'.
@@ -462,11 +500,12 @@ abstract class AbstractFormElement extends AbstractNode {
 	 * @param array $config (optional) The TCA field config
 	 * @return string The form fields for the selection.
 	 * @throws \UnexpectedValueException
+	 * @todo: Hack this mess into pieces and inline to group / select element depending on what they need
 	 */
 	protected function dbFileIcons($fName, $mode, $allowed, $itemArray, $selector = '', $params = array(), $onFocus = '', $table = '', $field = '', $uid = '', $config = array()) {
 		$languageService = $this->getLanguageService();
 		$disabled = '';
-		if ($this->isGlobalReadonly() || $params['readOnly']) {
+		if ($params['readOnly']) {
 			$disabled = ' disabled="disabled"';
 		}
 		// INIT
@@ -523,10 +562,10 @@ abstract class AbstractFormElement extends AbstractNode {
 			: $params['size'];
 		if (!$selector) {
 			$isMultiple = $params['maxitems'] != 1 && $params['size'] != 1;
-			$selector = '<select id="' . str_replace('.', '', uniqid('tceforms-multiselect-', TRUE)) . '" '
+			$selector = '<select id="' . StringUtility::getUniqueId('tceforms-multiselect-') . '" '
 				. ($params['noList'] ? 'style="display: none"' : 'size="' . $sSize . '" class="form-control tceforms-multiselect"')
 				. ($isMultiple ? ' multiple="multiple"' : '')
-				. ' name="' . $fName . '_list" ' . $this->getValidationDataAsDataAttribute($config) . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
+				. ' data-formengine-input-name="' . htmlspecialchars($fName) . '" ' . $this->getValidationDataAsDataAttribute($config) . $onFocus . $params['style'] . $disabled . '>' . implode('', $opt)
 				. '</select>';
 		}
 		$icons = array(
@@ -539,12 +578,12 @@ abstract class AbstractFormElement extends AbstractNode {
 				// Check against inline uniqueness
 				/** @var InlineStackProcessor $inlineStackProcessor */
 				$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-				$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+				$inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
 				$inlineParent = $inlineStackProcessor->getStructureLevel(-1);
 				$aOnClickInline = '';
 				if (is_array($inlineParent) && $inlineParent['uid']) {
 					if ($inlineParent['config']['foreign_table'] == $table && $inlineParent['config']['foreign_unique'] == $field) {
-						$objectPrefix = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']) . '-' . $table;
+						$objectPrefix = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']) . '-' . $table;
 						$aOnClickInline = $objectPrefix . '|inline.checkUniqueElement|inline.setUniqueElement';
 						$rOnClickInline = 'inline.revertUnique(' . GeneralUtility::quoteJSvalue($objectPrefix) . ',null,' . GeneralUtility::quoteJSvalue($uid) . ');';
 					}
@@ -566,7 +605,7 @@ abstract class AbstractFormElement extends AbstractNode {
 						onclick="' . htmlspecialchars($aOnClick) . '"
 						class="btn btn-default"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.browse_' . ($mode == 'db' ? 'db' : 'file'))) . '">
-						' . IconUtility::getSpriteIcon('actions-insert-record') . '
+						' . $this->iconFactory->getIcon('actions-insert-record', Icon::SIZE_SMALL) . '
 					</a>';
 			}
 			if (!$params['dontShowMoveIcons']) {
@@ -576,7 +615,7 @@ abstract class AbstractFormElement extends AbstractNode {
 							class="btn btn-default t3-btn-moveoption-top"
 							data-fieldname="' . $fName . '"
 							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_top')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-top') . '
+							' . $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL) . '
 						</a>';
 
 				}
@@ -585,14 +624,14 @@ abstract class AbstractFormElement extends AbstractNode {
 						class="btn btn-default t3-btn-moveoption-up"
 						data-fieldname="' . $fName . '"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_up')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-up') . '
+						' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '
 					</a>';
 				$icons['L'][] = '
 					<a href="#"
 						class="btn btn-default t3-btn-moveoption-down"
 						data-fieldname="' . $fName . '"
 						title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_down')) . '">
-						' . IconUtility::getSpriteIcon('actions-move-down') . '
+						' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '
 					</a>';
 				if ($sSize >= 5) {
 					$icons['L'][] = '
@@ -600,7 +639,7 @@ abstract class AbstractFormElement extends AbstractNode {
 							class="btn btn-default t3-btn-moveoption-bottom"
 							data-fieldname="' . $fName . '"
 							title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.move_to_bottom')) . '">
-							' . IconUtility::getSpriteIcon('actions-move-to-bottom') . '
+							' . $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL) . '
 						</a>';
 				}
 			}
@@ -625,7 +664,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					<a href="#"
 						onclick="' . htmlspecialchars($aOnClick) . '"
 						title="' . htmlspecialchars(sprintf($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.clipInsert_' . ($mode == 'db' ? 'db' : 'file')), count($clipElements))) . '">
-						' . IconUtility::getSpriteIcon('actions-document-paste-into') . '
+						' . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL) . '
 					</a>';
 			}
 		}
@@ -636,7 +675,7 @@ abstract class AbstractFormElement extends AbstractNode {
 					onClick="' . $rOnClickInline . '"
 					data-fieldname="' . $fName . '"
 					title="' . htmlspecialchars($languageService->sL('LLL:EXT:lang/locallang_core.xlf:labels.remove_selected')) . '">
-					' . IconUtility::getSpriteIcon('actions-selection-delete') . '
+					' . $this->iconFactory->getIcon('actions-selection-delete', Icon::SIZE_SMALL) . '
 				</a>';
 		}
 

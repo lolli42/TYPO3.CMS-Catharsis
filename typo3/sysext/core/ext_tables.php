@@ -38,14 +38,11 @@ $GLOBALS['PAGES_TYPES'] = array(
 	),
 );
 
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_category');
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_category,sys_file_reference,sys_file_collection');
 
 /** @var \TYPO3\CMS\Core\Resource\Driver\DriverRegistry $registry */
 $registry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Resource\Driver\DriverRegistry::class);
 $registry->addDriversToTCA();
-
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_file_reference');
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::allowTableOnStandardPages('sys_file_collection');
 
 /**
  * $TBE_MODULES contains the structure of the backend modules as they are
@@ -67,61 +64,45 @@ $GLOBALS['TBE_MODULES'] = array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_web.xlf'
 			),
-			'configuration' => array(
-				'name' => 'web',
-				'access' => 'user,group',
-				'icon' => 'module-web'
-			)
+			'name' => 'web',
+			'iconIdentifier' => 'module-web'
 		),
 		'file' => array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_file.xlf'
 			),
-			'configuration' => array(
-				'name' => 'file',
-				'access' => 'user,group',
-				'workspaces' => 'online,custom',
-				'icon' => 'module-file'
-			)
+			'navigationFrameModule' => 'file_navframe',
+			'name' => 'file',
+			'workspaces' => 'online,custom',
+			'iconIdentifier' => 'module-file'
 		),
 		'user' => array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_usertools.xlf'
 			),
-			'configuration' => array(
-				'name' => 'user',
-				'access' => 'user,group',
-				'icon' => 'status-user-backend'
-			)
+			'name' => 'user',
+			'iconIdentifier' => 'status-user-backend'
 		),
 		'tools' => array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_admintools.xlf'
 			),
-			'configuration' => array(
-				'name' => 'tools',
-				'access' => 'admin',
-				'icon' => 'module-tools'
-			)
+			'name' => 'tools',
+			'iconIdentifier' => 'module-tools'
 		),
 		'system' => array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_system.xlf'
 			),
-			'configuration' => array(
-				'name' => 'system',
-				'access' => 'admin',
-				'icon' => 'module-system'
-			)
+			'name' => 'system',
+			'iconIdentifier' => 'module-system'
 		),
 		'help' => array(
 			'labels' => array(
 				'll_ref' => 'LLL:EXT:lang/locallang_mod_help.xlf'
 			),
-			'configuration' => array(
-				'name' => 'help',
-				'icon' => 'module-help'
-			)
+			'name' => 'help',
+			'iconIdentifier' => 'module-help'
 		)
 	)
 );
@@ -138,12 +119,6 @@ $GLOBALS['TBE_MODULES'] = array(
  * documentation found in "Inside TYPO3"
  */
 $GLOBALS['TBE_STYLES'] = array(
-	'colorschemes' => array(
-		'0' => '#E4E0DB,#CBC7C3,#EDE9E5'
-	),
-	'borderschemes' => array(
-		'0' => array('border:solid 1px black;', 5)
-	),
 	'skinImg' => array()
 );
 
@@ -161,8 +136,6 @@ $GLOBALS['TBE_STYLES'] = array(
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('sys_news', 'EXT:lang/locallang_csh_sysnews.xlf');
 // General Core
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('xMOD_csh_corebe', 'EXT:lang/locallang_csh_corebe.xlf');
-// Extension manager
-\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_tools_em', 'EXT:lang/locallang_csh_em.xlf');
 // Web > Info
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addLLrefForTCAdescr('_MOD_web_info', 'EXT:lang/locallang_csh_web_info.xlf');
 // Web > Func
@@ -444,57 +417,6 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['coreSpriteImageNames'] = array(
 	'status-user-frontend',
 	'status-user-group-backend',
 	'status-user-group-frontend',
-	'status-version-1',
-	'status-version-2',
-	'status-version-3',
-	'status-version-4',
-	'status-version-5',
-	'status-version-6',
-	'status-version-7',
-	'status-version-8',
-	'status-version-9',
-	'status-version-10',
-	'status-version-11',
-	'status-version-12',
-	'status-version-13',
-	'status-version-14',
-	'status-version-15',
-	'status-version-16',
-	'status-version-17',
-	'status-version-18',
-	'status-version-19',
-	'status-version-20',
-	'status-version-21',
-	'status-version-22',
-	'status-version-23',
-	'status-version-24',
-	'status-version-25',
-	'status-version-26',
-	'status-version-27',
-	'status-version-28',
-	'status-version-29',
-	'status-version-30',
-	'status-version-31',
-	'status-version-32',
-	'status-version-33',
-	'status-version-34',
-	'status-version-35',
-	'status-version-36',
-	'status-version-37',
-	'status-version-38',
-	'status-version-39',
-	'status-version-40',
-	'status-version-41',
-	'status-version-42',
-	'status-version-43',
-	'status-version-44',
-	'status-version-45',
-	'status-version-46',
-	'status-version-47',
-	'status-version-48',
-	'status-version-49',
-	'status-version-50',
-	'status-version-no-version',
 	'status-warning-in-use',
 	'status-warning-lock',
 	'module-web',
@@ -529,9 +451,6 @@ $GLOBALS['TBE_STYLES']['spriteIconApi']['spriteIconRecordOverlayNames'] = array(
 	'translated' => 'status-overlay-translated',
 	'protectedSection' => 'status-overlay-includes-subpages'
 );
-
-// add stylesheets from the core
-$GLOBALS['TBE_STYLES']['skins']['core']['stylesheetDirectories']['Base'] = 'EXT:core/Resources/Public/StyleSheets/';
 
 // Adding flags to the sprite manager
 if (TYPO3_MODE === 'BE' || TYPO3_MODE === 'FE' && isset($GLOBALS['BE_USER'])) {

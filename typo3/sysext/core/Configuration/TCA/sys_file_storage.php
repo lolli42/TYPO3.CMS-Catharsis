@@ -16,7 +16,7 @@ return array(
 		'searchFields' => 'name,description'
 	),
 	'interface' => array(
-		'showRecordFieldList' => 'name,description,driver,processingfolder,configuration'
+		'showRecordFieldList' => 'name,description,driver,processingfolder,configuration,auto_extract_metadata'
 	),
 	'columns' => array(
 		'name' => array(
@@ -63,7 +63,7 @@ return array(
 			'config' => array(
 				'default' => TRUE,
 				'type' => 'user',
-				'userFunc' => 'typo3/sysext/core/Classes/Resource/Service/UserStorageCapabilityService.php:TYPO3\CMS\Core\Resource\Service\UserStorageCapabilityService->renderIsPublic',
+				'userFunc' => \TYPO3\CMS\Core\Resource\Service\UserStorageCapabilityService::class . '->renderIsPublic',
 			)
 		),
 		'is_writable' => array(
@@ -77,6 +77,14 @@ return array(
 		'is_online' => array(
 			'exclude' => 0,
 			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_storage.is_online',
+			'config' => array(
+				'type' => 'check',
+				'default' => 1
+			)
+		),
+		'auto_extract_metadata' => array(
+			'exclude' => 0,
+			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_storage.auto_extract_metadata',
 			'config' => array(
 				'type' => 'check',
 				'default' => 1
@@ -112,7 +120,7 @@ return array(
 		)
 	),
 	'types' => array(
-		'0' => array('showitem' => 'name, description, --div--;Configuration, driver, configuration, is_default, processingfolder, --div--;Access, --palette--;Capabilities;capabilities, is_online')
+		'0' => array('showitem' => 'name, description, --div--;Configuration, driver, configuration, is_default, auto_extract_metadata, processingfolder, --div--;Access, --palette--;Capabilities;capabilities, is_online')
 	),
 	'palettes' => array(
 		'capabilities' => array(

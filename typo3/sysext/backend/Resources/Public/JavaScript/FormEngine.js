@@ -423,8 +423,17 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 
 		// if an appendix is set, return the field with the appendix (like _mul or _list)
 		if (appendix) {
-			var $fieldEl = $(':input[name="' + fieldName + appendix + '"]', $formEl);
-			if ($fieldEl.length > 0 || noFallback === true) {
+			var $fieldEl;
+			switch (appendix) {
+				case '_list':
+					$fieldEl = $(':input.tceforms-multiselect[data-formengine-input-name="' + fieldName + '"]', $formEl);
+					break;
+				case '_mul':
+				case '_hr':
+					$fieldEl = $(':input[type=hidden][data-formengine-input-name="' + fieldName + '"]', $formEl);
+					break;
+			}
+			if (($fieldEl && $fieldEl.length > 0) || noFallback === true) {
 				return $fieldEl;
 			}
 		}
@@ -606,6 +615,12 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 					top.TYPO3.Modal.dismiss();
 				}
 			});
+		});
+
+		// remember the clicked submit button. we need to know that in TBE_EDITOR.submitForm();
+		$(document).on('click', '.t3js-editform-submitButton', function(event) {
+			var $elem = $('<input />').attr('type', 'hidden').attr('name', this.name).attr('value', '1');
+			$(this).parents('form').append($elem);
 		});
 	};
 
@@ -849,23 +864,22 @@ define('TYPO3/CMS/Backend/FormEngine', ['jquery'], function ($) {
 	/**
 	 * initialize function, always require possible post-render hooks return the main object
 	 */
-	return function() {
-		// the functions are both using delegates, thus no need to be called again
-		FormEngine.initializeEvents();
-		FormEngine.SelectBoxFilter.initializeEvents();
-		FormEngine.reinitialize();
 
-		// load required modules to hook in the post initialize function
-		if (undefined !== TYPO3.settings.RequireJS && undefined !== TYPO3.settings.RequireJS.PostInitializationModules['TYPO3/CMS/Backend/FormEngine']) {
-			$.each(TYPO3.settings.RequireJS.PostInitializationModules['TYPO3/CMS/Backend/FormEngine'], function(pos, moduleName) {
-				require([moduleName]);
-			});
-		}
+	// the functions are both using delegates, thus no need to be called again
+	FormEngine.initializeEvents();
+	FormEngine.SelectBoxFilter.initializeEvents();
+	FormEngine.reinitialize();
 
-		// make the form engine object publically visible for other objects in the TYPO3 namespace
-		TYPO3.FormEngine = FormEngine;
+	// load required modules to hook in the post initialize function
+	if (undefined !== TYPO3.settings.RequireJS && undefined !== TYPO3.settings.RequireJS.PostInitializationModules['TYPO3/CMS/Backend/FormEngine']) {
+		$.each(TYPO3.settings.RequireJS.PostInitializationModules['TYPO3/CMS/Backend/FormEngine'], function(pos, moduleName) {
+			require([moduleName]);
+		});
+	}
 
-		// return the object in the global space
-		return FormEngine;
-	}();
+	// make the form engine object publically visible for other objects in the TYPO3 namespace
+	TYPO3.FormEngine = FormEngine;
+
+	// return the object in the global space
+	return FormEngine;
 });

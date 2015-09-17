@@ -14,7 +14,9 @@ namespace TYPO3\CMS\Documentation\ViewHelpers;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
@@ -52,14 +54,18 @@ class FormatsViewHelper extends AbstractViewHelper implements CompilableInterfac
 	 * @return string
 	 */
 	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
+		/** @var \TYPO3\CMS\Documentation\Domain\Model\DocumentTranslation $documentTranslation */
 		$documentTranslation = $arguments['documentTranslation'];
 
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$emptyIcon = $iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render();
 		$icons = array(
-			'html' => '<a class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>',
-			'pdf' => '<a class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>',
-			'sxw' => '<a class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</a>'
+			'html' => '<a class="btn btn-default disabled">' . $emptyIcon . '</a>',
+			'pdf' => '<a class="btn btn-default disabled">' . $emptyIcon . '</a>',
+			'sxw' => '<a class="btn btn-default disabled">' . $emptyIcon . '</a>'
 		);
 		$formats = $documentTranslation->getFormats();
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
 		foreach ($formats as $format) {
 			$output = '';
@@ -76,7 +82,7 @@ class FormatsViewHelper extends AbstractViewHelper implements CompilableInterfac
 				if ($extension === 'json') {
 					$extension = 'js';
 				}
-				$output .= 'href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($uri) . ')" class="btn btn-default"';
+				$output .= 'href="#" onclick="top.TYPO3.Backend.ContentContainer.setUrl(' . GeneralUtility::quoteJSvalue($uri) . ')" class="btn btn-default"';
 			}
 
 			$xliff = 'LLL:EXT:documentation/Resources/Private/Language/locallang.xlf';
@@ -85,7 +91,7 @@ class FormatsViewHelper extends AbstractViewHelper implements CompilableInterfac
 				$format->getFormat()
 			);
 			$output .= ' title="' . htmlspecialchars($title) . '">';
-			$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile($extension);
+			$spriteIconHtml = $iconFactory->getIconForFileExtension($extension, Icon::SIZE_SMALL)->render();
 			$output .= $spriteIconHtml . '</a>' . LF;
 			$keyFormat = $format->getFormat();
 			if ($keyFormat === 'json') {

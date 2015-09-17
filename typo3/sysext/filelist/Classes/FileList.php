@@ -20,6 +20,8 @@ use TYPO3\CMS\Backend\RecordList\AbstractRecordList;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -30,6 +32,7 @@ use TYPO3\CMS\Core\Resource\Utility\ListUtility;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\FolderInterface;
+use TYPO3\CMS\Filelist\Controller\FileListController;
 
 /**
  * Class for rendering of File>Filelist
@@ -63,11 +66,6 @@ class FileList extends AbstractRecordList {
 	 * @var int
 	 */
 	public $fixedL = 30;
-
-	/**
-	 * @var string
-	 */
-	public $script = '';
 
 	/**
 	 * If TRUE click menus are generated on files and folders
@@ -175,6 +173,24 @@ class FileList extends AbstractRecordList {
 	}
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * @var FileListController
+	 */
+	protected $fileListController;
+
+	/**
+	 * Construct
+	 */
+	public function __construct(FileListController $fileListController) {
+		$this->fileListController = $fileListController;
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
+
+	/**
 	 * Initialization of class
 	 *
 	 * @param Folder $folderObject The folder to work on
@@ -186,7 +202,6 @@ class FileList extends AbstractRecordList {
 	 * @return void
 	 */
 	public function start(Folder $folderObject, $pointer, $sort, $sortRev, $clipBoard = FALSE, $bigControlPanel = FALSE) {
-		$this->script = BackendUtility::getModuleUrl('file_list');
 		$this->folderObject = $folderObject;
 		$this->counter = 0;
 		$this->totalbytes = 0;
@@ -233,21 +248,20 @@ class FileList extends AbstractRecordList {
 		);
 		// Makes the code for the folder icon in the top
 		if ($folderObject) {
-			$title = htmlspecialchars($folderObject->getReadablePath());
+			$title = $folderObject->getReadablePath();
 			// Start compiling the HTML
 			// If this is some subFolder under the mount root....
 			if ($folderObject->getStorage()->isWithinFileMountBoundaries($folderObject)) {
 				// The icon with link
-				$otherMarkers['PAGE_ICON'] = IconUtility::getSpriteIconForResource($folderObject, array('title' => $title));
-				// No HTML specialchars here - HTML like <strong> </strong> is allowed
-				$otherMarkers['TITLE'] .= GeneralUtility::removeXSS(GeneralUtility::fixed_lgd_cs($title, -($this->fixedL + 20)));
+				$otherMarkers['PAGE_ICON'] = '<span title="' . htmlspecialchars($title) . '">' . $this->iconFactory->getIconForResource($folderObject, Icon::SIZE_SMALL) . '</span>';
 			} else {
 				// This is the root folder
-				$otherMarkers['PAGE_ICON'] = IconUtility::getSpriteIconForResource($folderObject, array('title' => $title, 'mount-root' => TRUE));
-				$otherMarkers['TITLE'] .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, -($this->fixedL + 20)));
+				$otherMarkers['PAGE_ICON'] = '<span title="' . htmlspecialchars($title) . '">' . $this->iconFactory->getIconForResource($folderObject, Icon::SIZE_SMALL, NULL, array('mount-root' => TRUE)) . '</span>';
 			}
+			$otherMarkers['TITLE'] .= htmlspecialchars(GeneralUtility::fixed_lgd_cs($title, -($this->fixedL + 20)));
+
 			if ($this->clickMenus) {
-				$otherMarkers['PAGE_ICON'] = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($otherMarkers['PAGE_ICON'], $folderObject->getCombinedIdentifier());
+				$otherMarkers['PAGE_ICON'] = $this->fileListController->doc->wrapClickMenuOnIcon($otherMarkers['PAGE_ICON'], $folderObject->getCombinedIdentifier());
 			}
 			// Add paste button if clipboard is initialized
 			if ($this->clipObj instanceof Clipboard && $folderObject->checkActionPermission('write')) {
@@ -260,17 +274,16 @@ class FileList extends AbstractRecordList {
 						if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $folderObject)) {
 							$addPasteButton = FALSE;
 						}
-						$fileInfo = $clipBoardElement->getStorage()->getFileInfoByIdentifier(substr(strstr($element, ':'), 1));
-						$elToConfirm[$key] = $fileInfo['name'];
+						$elToConfirm[$key] = $clipBoardElement->getName();
 					}
 					if ($addPasteButton) {
-						$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+						$buttons['PASTE'] = '<a href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-paste-after', Icon::SIZE_SMALL) . '</a>';
 					}
 				}
 			}
 
 		}
-		$buttons['refresh'] = '<a href="' . htmlspecialchars($this->listURL()) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
+		$buttons['refresh'] = '<a href="' . htmlspecialchars($this->listURL()) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.reload', TRUE) . '">' . $this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL) . '</a>';
 		return array($buttons, $otherMarkers);
 	}
 
@@ -299,7 +312,7 @@ class FileList extends AbstractRecordList {
 	 */
 	public function getTable($rowlist) {
 		// prepare space icon
-		$this->spaceIcon = '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+		$this->spaceIcon = '<span class="btn btn-default disabled">' . $this->iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL) . '</span>';
 
 		// @todo use folder methods directly when they support filters
 		$storage = $this->folderObject->getStorage();
@@ -400,18 +413,17 @@ class FileList extends AbstractRecordList {
 							if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $this->folderObject)) {
 								$addPasteButton = FALSE;
 							}
-							$fileInfo = $clipBoardElement->getStorage()->getFileInfoByIdentifier(substr(strstr($element, ':'), 1));
-							$elToConfirm[$key] = $fileInfo['name'];
+							$elToConfirm[$key] = $clipBoardElement->getName();
 						}
 						if ($addPasteButton) {
-							$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', 1) . '">' . IconUtility::getSpriteIcon('actions-document-paste-after') . '</a>';
+							$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $this->folderObject->getCombinedIdentifier())) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $this->path, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_paste', 1) . '">' . $this->iconFactory->getIcon('actions-document-paste-after', Icon::SIZE_SMALL) . '</a>';
 						}
 					}
 					if ($this->clipObj->current !== 'normal' && $iOut) {
-						$cells[] = $this->linkClipboardHeaderIcon(IconUtility::getSpriteIcon('actions-edit-copy', array('title' => $this->getLanguageService()->getLL('clip_selectMarked', TRUE))), $table, 'setCB');
-						$cells[] = $this->linkClipboardHeaderIcon(IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $this->getLanguageService()->getLL('clip_deleteMarked'))), $table, 'delete', $this->getLanguageService()->getLL('clip_deleteMarkedWarning'));
+						$cells[] = $this->linkClipboardHeaderIcon('<span title="' . $this->getLanguageService()->getLL('clip_selectMarked', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL) . '</span>', $table, 'setCB');
+						$cells[] = $this->linkClipboardHeaderIcon('<span title="' . $this->getLanguageService()->getLL('clip_deleteMarked', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL), $table, 'delete', $this->getLanguageService()->getLL('clip_deleteMarkedWarning'));
 						$onClick = 'checkOffCB(\'' . implode(',', $this->CBnames) . '\', this); return false;';
-						$cells[] = '<a class="btn btn-default" rel="" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->getLL('clip_markRecords', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-select') . '</a>';
+						$cells[] = '<a class="btn btn-default" rel="" href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->getLL('clip_markRecords', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-select', Icon::SIZE_SMALL) . '</a>';
 					}
 					$theData[$v] = implode('', $cells);
 				} else {
@@ -457,10 +469,9 @@ class FileList extends AbstractRecordList {
 			$parentFolder = $currentFolder->getParentFolder();
 			if ($parentFolder->getIdentifier() !== $currentFolder->getIdentifier() && $currentStorage->isWithinFileMountBoundaries($parentFolder)) {
 				$levelUp = $this->linkWrapDir(
-					IconUtility::getSpriteIcon(
-						'actions-view-go-up',
-						array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.php:labels.upOneLevel', TRUE))
-					),
+					'<span title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.php:labels.upOneLevel', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL)
+					. '</span>',
 					$parentFolder
 				);
 			}
@@ -509,9 +520,9 @@ class FileList extends AbstractRecordList {
 			$this->counter++;
 
 			// The icon with link
-			$theIcon = IconUtility::getSpriteIconForResource($folderObject, array('title' => $folderName));
+			$theIcon = '<span title="' . htmlspecialchars($folderName) . '">' . $this->iconFactory->getIconForResource($folderObject, Icon::SIZE_SMALL) . '</span>';
 			if (!$isLocked && $this->clickMenus) {
-				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $folderObject->getCombinedIdentifier());
+				$theIcon = $this->fileListController->doc->wrapClickMenuOnIcon($theIcon, $folderObject->getCombinedIdentifier());
 			}
 
 			// Preparing and getting the data-array
@@ -572,7 +583,7 @@ class FileList extends AbstractRecordList {
 	 * @return string HTML
 	 */
 	public function linkWrapDir($title, Folder $folderObject) {
-		$href = $this->script . '&id=' . rawurlencode($folderObject->getCombinedIdentifier());
+		$href = BackendUtility::getModuleUrl('file_FilelistList', ['id' => $folderObject->getCombinedIdentifier()]);
 		$onclick = ' onclick="' . htmlspecialchars(('top.document.getElementsByName("navigation")[0].contentWindow.Tree.highlightActiveItem("file","folder' . GeneralUtility::md5int($folderObject->getCombinedIdentifier()) . '_"+top.fsMod.currentBank)')) . '"';
 		// Sometimes $code contains plain HTML tags. In such a case the string should not be modified!
 		if ((string)$title === strip_tags($title)) {
@@ -593,12 +604,17 @@ class FileList extends AbstractRecordList {
 		try {
 			if ($fileObject instanceof File && $fileObject->isIndexed() && $fileObject->checkActionPermission('write') && $this->getBackendUser()->check('tables_modify', 'sys_file_metadata')) {
 				$metaData = $fileObject->_getMetaData();
-				$data = array(
-					'sys_file_metadata' => array($metaData['uid'] => 'edit')
-				);
-				$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), '', $this->listUrl());
+				$urlParameters = [
+					'edit' => [
+						'sys_file_metadata' => [
+							$metaData['uid'] => 'edit'
+						]
+					],
+					'returnUrl' => $this->listURL()
+				];
+				$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 				$title = htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editMetadata'));
-				$code = '<a href="#" title="' . $title . '" onclick="' . htmlspecialchars($editOnClick) . '">' . GeneralUtility::fixed_lgd_cs($code, $this->fixedL) . '</a>';
+				$code = '<a href="' . htmlspecialchars($url) . '" title="' . $title . '">' . GeneralUtility::fixed_lgd_cs($code, $this->fixedL) . '</a>';
 			}
 		} catch (\Exception $e) {
 			// intentional fall-through
@@ -645,9 +661,10 @@ class FileList extends AbstractRecordList {
 			$ext = $fileObject->getExtension();
 			$fileName = trim($fileObject->getName());
 			// The icon with link
-			$theIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileName . ' [' . (int)$fileObject->getUid() . ']'));
+			$theIcon = '<span title="' . htmlspecialchars($fileName . ' [' . (int)$fileObject->getUid() . ']') . '">'
+				. $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
 			if ($this->clickMenus) {
-				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
+				$theIcon = $this->fileListController->doc->wrapClickMenuOnIcon($theIcon, $fileObject->getCombinedIdentifier());
 			}
 			// Preparing and getting the data-array
 			$theData = array();
@@ -681,22 +698,28 @@ class FileList extends AbstractRecordList {
 								$languageId = $language['uid'];
 								$flagIcon = $language['flagIcon'];
 								if (array_key_exists($languageId, $translations)) {
-									$flagButtonIcon = IconUtility::getSpriteIcon(
-										'actions-document-open',
-										array('title' => sprintf($GLOBALS['LANG']->getLL('editMetadataForLanguage'), $language['title'])),
-										array($flagIcon . '-overlay' => array()));
-									$data = array(
-										'sys_file_metadata' => array($translations[$languageId]['uid'] => 'edit')
-									);
-									$editOnClick = BackendUtility::editOnClick(GeneralUtility::implodeArrayForUrl('edit', $data), '', $this->listUrl());
-									$languageCode .= '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '">' . $flagButtonIcon . '</a>';
+									$title = htmlspecialchars(sprintf($GLOBALS['LANG']->getLL('editMetadataForLanguage'), $language['title']));
+									// @todo the overlay for the flag needs to be added ($flagIcon . '-overlay')
+									$flagButtonIcon = $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
+									$urlParameters = [
+										'edit' => [
+											'sys_file_metadata' => [
+												$translations[$languageId]['uid'] => 'edit'
+											]
+										],
+										'returnUrl' => $this->listURL()
+									];
+									$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
+									$languageCode .= '<a href="' . htmlspecialchars($url)
+										. '" class="btn btn-default" title="' . $title . '">'
+										. $flagButtonIcon . '</a>';
 								} else {
 									$parameters = [
 										'justLocalized' => 'sys_file_metadata:' . $metaDataRecord['uid'] . ':' . $languageId,
 										'returnUrl' => $this->listURL()
 									];
-									$returnUrl = BackendUtility::getModuleUrl('record_edit', $parameters) . BackendUtility::getUrlToken('editRecord');
-									$href = $GLOBALS['SOBE']->doc->issueCommand(
+									$returnUrl = BackendUtility::getModuleUrl('record_edit', $parameters);
+									$href = $this->fileListController->doc->issueCommand(
 										'&cmd[sys_file_metadata][' . $metaDataRecord['uid'] . '][localize]=' . $languageId,
 										$returnUrl
 									);
@@ -713,12 +736,9 @@ class FileList extends AbstractRecordList {
 							$theData[$field] = ' <div class="localisationData btn-group" data-fileid="' . $fileObject->getUid() . '"' .
 								(empty($translations) ? ' style="display: none;"' : '') . '>' . $languageCode . '</div>';
 							$theData[$field] .= '<a class="btn btn-default filelist-translationToggler" data-fileid="' . $fileObject->getUid() . '">' .
-								IconUtility::getSpriteIcon(
-									'mimetypes-x-content-page-language-overlay',
-									array(
-										'title' => $GLOBALS['LANG']->getLL('translateMetadata')
-									)
-								) . '</a>';
+								'<span title="' . $GLOBALS['LANG']->getLL('translateMetadata', TRUE) . '">'
+								. $this->iconFactory->getIcon('mimetypes-x-content-page-language-overlay', Icon::SIZE_SMALL) . '</span>'
+								. '</a>';
 						}
 						break;
 					case '_REF_':
@@ -732,7 +752,7 @@ class FileList extends AbstractRecordList {
 							$flashMessage = \TYPO3\CMS\Core\Resource\Utility\BackendUtility::getFlashMessageForMissingFile($fileObject);
 							$theData[$field] .= $flashMessage->render();
 							// Thumbnails?
-						} elseif ($this->thumbs && $this->isImage($ext)) {
+						} elseif ($this->thumbs && ($this->isImage($ext) || $this->isMediaFile($ext))) {
 							$processedFile = $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array());
 							if ($processedFile) {
 								$thumbUrl = $processedFile->getPublicUrl(TRUE);
@@ -783,6 +803,16 @@ class FileList extends AbstractRecordList {
 	}
 
 	/**
+	 * Returns TRUE if $ext is an media-extension according to $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext']
+	 *
+	 * @param string $ext File extension
+	 * @return bool
+	 */
+	public function isMediaFile($ext) {
+		return GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext'], strtolower($ext));
+	}
+
+	/**
 	 * Wraps the directory-titles ($code) in a link to filelist/Modules/Filelist/index.php (id=$path) and sorting commands...
 	 *
 	 * @param string $code String to be wrapped
@@ -791,15 +821,17 @@ class FileList extends AbstractRecordList {
 	 * @return string HTML
 	 */
 	public function linkWrapSort($code, $folderIdentifier, $col) {
+		$params = ['id' => $folderIdentifier, 'SET' => [ 'sort' => $col ]];
+
 		if ($this->sort === $col) {
 			// Check reverse sorting
-			$params = '&SET[sort]=' . $col . '&SET[reverse]=' . ($this->sortRev ? '0' : '1');
-			$sortArrow = IconUtility::getSpriteIcon('status-status-sorting-light-' . ($this->sortRev ? 'desc' : 'asc'));
+			$params['SET']['reverse'] = ($this->sortRev ? '0' : '1');
+			$sortArrow = $this->iconFactory->getIcon('status-status-sorting-light-' . ($this->sortRev ? 'desc' : 'asc'), Icon::SIZE_SMALL);
 		} else {
-			$params = '&SET[sort]=' . $col . '&SET[reverse]=0';
+			$params['SET']['reverse'] = 0;
 			$sortArrow = '';
 		}
-		$href = GeneralUtility::resolveBackPath($this->script) . '&id=' . rawurlencode($folderIdentifier) . $params;
+		$href = BackendUtility::getModuleUrl('file_FilelistList', $params);
 		return '<a href="' . htmlspecialchars($href) . '">' . $code . ' ' . $sortArrow . '</a>';
 	}
 
@@ -818,12 +850,23 @@ class FileList extends AbstractRecordList {
 		$fullName = $fileOrFolderObject->getName();
 		$md5 = GeneralUtility::shortmd5($fullIdentifier);
 		// For normal clipboard, add copy/cut buttons:
-		if ($this->clipObj->current == 'normal') {
+		if ($this->clipObj->current === 'normal') {
 			$isSel = $this->clipObj->isSelected('_FILE', $md5);
-			$cells[] = '<a class="btn btn-default"" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 1, ($isSel == 'copy'))) . '">' . IconUtility::getSpriteIcon(('actions-edit-copy' . ($isSel == 'copy' ? '-release' : '')), array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.copy', TRUE))) . '</a>';
+			$copyTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.copy', TRUE);
+			$cutTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut', TRUE);
+			$copyIcon = $this->iconFactory->getIcon('actions-edit-copy', Icon::SIZE_SMALL);
+			$cutIcon = $this->iconFactory->getIcon('actions-edit-cut', Icon::SIZE_SMALL);
+
+			if ($isSel === 'copy') {
+				$copyIcon = $this->iconFactory->getIcon('actions-edit-copy-release', Icon::SIZE_SMALL);
+			} elseif ($isSel === 'cut') {
+				$cutIcon = $this->iconFactory->getIcon('actions-edit-cut-release', Icon::SIZE_SMALL);
+			}
+
+			$cells[] = '<a class="btn btn-default"" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 1, ($isSel === 'copy'))) . '" title="' . $copyTitle . '">' . $copyIcon . '</a>';
 			// we can only cut if file can be moved
 			if ($fileOrFolderObject->checkActionPermission('move')) {
-				$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 0, ($isSel == 'cut'))) . '">' . IconUtility::getSpriteIcon(('actions-edit-cut' . ($isSel == 'cut' ? '-release' : '')), array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.cut', TRUE))) . '</a>';
+				$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->selUrlFile($fullIdentifier, 0, ($isSel === 'cut'))) . '" title="' . $cutTitle . '">' . $cutIcon . '</a>';
 			} else {
 				$cells[] = $this->spaceIcon;
 			}
@@ -844,11 +887,10 @@ class FileList extends AbstractRecordList {
 				if ($clipBoardElement instanceof Folder && $clipBoardElement->getStorage()->isWithinFolder($clipBoardElement, $fileOrFolderObject)) {
 					$addPasteButton = FALSE;
 				}
-				$fileInfo = $clipBoardElement->getStorage()->getFileInfoByIdentifier(substr(strstr($element, ':'), 1));
-				$elToConfirm[$key] = $fileInfo['name'];
+				$elToConfirm[$key] = $clipBoardElement->getName();
 			}
 			if ($addPasteButton) {
-				$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $fullIdentifier)) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $fullName, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_pasteInto', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
+				$cells[] = '<a class="btn btn-default" href="' . htmlspecialchars($this->clipObj->pasteUrl('_FILE', $fullIdentifier)) . '" onclick="return ' . htmlspecialchars($this->clipObj->confirmMsg('_FILE', $fullName, 'into', $elToConfirm)) . '" title="' . $this->getLanguageService()->getLL('clip_pasteInto', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL) . '</a>';
 			}
 		}
 		// Compile items into a DIV-element:
@@ -869,7 +911,9 @@ class FileList extends AbstractRecordList {
 		if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('write') && GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'], $fileOrFolderObject->getExtension())) {
 			$url = BackendUtility::getModuleUrl('file_edit', array('target' => $fullIdentifier));
 			$editOnClick = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
-			$cells['edit'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
+			$cells['edit'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($editOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.editcontent') . '">'
+				. $this->iconFactory->getIcon('actions-page-open', Icon::SIZE_SMALL)
+				. '</a>';
 		} else {
 			$cells['edit'] = $this->spaceIcon;
 		}
@@ -877,7 +921,7 @@ class FileList extends AbstractRecordList {
 			$fileUrl = $fileOrFolderObject->getPublicUrl(TRUE);
 			if ($fileUrl) {
 				$aOnClick = 'return top.openUrlInWindow(' . GeneralUtility::quoteJSvalue($fileUrl) . ', \'WebFile\');';
-				$cells['view'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($aOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.view') . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+				$cells['view'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($aOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.view') . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 			} else {
 				$cells['view'] = $this->spaceIcon;
 			}
@@ -889,14 +933,14 @@ class FileList extends AbstractRecordList {
 		if ($fileOrFolderObject instanceof File && $fileOrFolderObject->checkActionPermission('replace')) {
 			$url = BackendUtility::getModuleUrl('file_replace', array('target' => $fullIdentifier, 'uid' => $fileOrFolderObject->getUid()));
 			$replaceOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
-			$cells['replace'] = '<a href="#" class="btn btn-default" onclick="' . $replaceOnClick . '"  title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.replace') . '">' . IconUtility::getSpriteIcon('actions-edit-replace') . '</a>';
+			$cells['replace'] = '<a href="#" class="btn btn-default" onclick="' . $replaceOnClick . '"  title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.replace') . '">' . $this->iconFactory->getIcon('actions-edit-replace', Icon::SIZE_SMALL) . '</a>';
 		}
 
 		// rename the file
 		if ($fileOrFolderObject->checkActionPermission('rename')) {
 			$url = BackendUtility::getModuleUrl('file_rename', array('target' => $fullIdentifier));
 			$renameOnClick = 'top.content.list_frame.location.href = ' . GeneralUtility::quoteJSvalue($url) . '+\'&returnUrl=\'+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);return false;';
-			$cells['rename'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($renameOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . IconUtility::getSpriteIcon('actions-edit-rename') . '</a>';
+			$cells['rename'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($renameOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.rename') . '">' . $this->iconFactory->getIcon('actions-edit-rename', Icon::SIZE_SMALL) . '</a>';
 		} else {
 			$cells['rename'] = $this->spaceIcon;
 		}
@@ -907,7 +951,7 @@ class FileList extends AbstractRecordList {
 			} elseif ($fileOrFolderObject instanceof File) {
 				$infoOnClick = 'top.launchView( \'_FILE\', ' . GeneralUtility::quoteJSvalue($fullIdentifier) . ');return false;';
 			}
-			$cells['info'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($infoOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.info') . '">' . IconUtility::getSpriteIcon('status-dialog-information') . '</a>';
+			$cells['info'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($infoOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.info') . '">' . $this->iconFactory->getIcon('actions-document-info', Icon::SIZE_SMALL)->render() . '</a>';
 		} else {
 			$cells['info'] = $this->spaceIcon;
 		}
@@ -927,9 +971,9 @@ class FileList extends AbstractRecordList {
 				$confirmationCheck = '1 == 1';
 			}
 
-			$removeOnClick = 'if (' . $confirmationCheck . ') { top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_file') .'&file[delete][0][data]=' . rawurlencode($fileOrFolderObject->getCombinedIdentifier()) . '&vC=' . $this->getBackendUser()->veriCode() . BackendUtility::getUrlToken('tceAction') . '&redirect=') . '+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);};';
+			$removeOnClick = 'if (' . $confirmationCheck . ') { top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_file') .'&file[delete][0][data]=' . rawurlencode($fileOrFolderObject->getCombinedIdentifier()) . '&vC=' . $this->getBackendUser()->veriCode() . '&redirect=') . '+top.rawurlencode(top.content.list_frame.document.location.pathname+top.content.list_frame.document.location.search);};';
 
-			$cells['delete'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($removeOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete') . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+			$cells['delete'] = '<a href="#" class="btn btn-default" onclick="' . htmlspecialchars($removeOnClick) . '"  title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete') . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</a>';
 		} else {
 			$cells['delete'] = $this->spaceIcon;
 		}
@@ -980,6 +1024,7 @@ class FileList extends AbstractRecordList {
 
 	/**
 	 * Returns the database connection
+	 *
 	 * @return DatabaseConnection
 	 */
 	protected function getDatabaseConnection() {

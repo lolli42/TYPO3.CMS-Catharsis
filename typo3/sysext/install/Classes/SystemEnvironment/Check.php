@@ -85,6 +85,8 @@ class Check {
 		$statusArray[] = $this->checkMaxExecutionTime();
 		$statusArray[] = $this->checkDisableFunctions();
 		$statusArray[] = $this->checkDownloadsPossible();
+		$statusArray[] = $this->checkMysqliReconnectSetting();
+		$statusArray[] = $this->checkAlwaysPopulateRawPostDataSetting();
 		$statusArray[] = $this->checkDocRoot();
 		$statusArray[] = $this->checkOpenBaseDir();
 		$statusArray[] = $this->checkXdebugMaxNestingLevel();
@@ -467,6 +469,60 @@ class Check {
 			$status->setMessage(
 				'Either enable PHP runtime setting "allow_url_fopen"' . LF . 'or enable curl by setting [SYS][curlUse] accordingly.'
 			);
+		}
+		return $status;
+	}
+
+	/**
+	 * Verify that mysqli.reconnect is set to 0 in order to avoid improper reconnects
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkMysqliReconnectSetting() {
+
+		$currentMysqliReconnectSetting = ini_get('mysqli.reconnect');
+		if ($currentMysqliReconnectSetting === '1') {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('PHP mysqli.reconnect is enabled');
+			$status->setMessage(
+				'mysqli.reconnect=1' . LF .
+				'PHP is configured to automatically reconnect the database connection on disconnection.' . LF .
+				' Warning: If (e.g. during a long-running task) the connection is dropped and automatically reconnected, ' .
+				' it may not be reinitialized properly (e.g. charset) and write mangled data to the database!'
+			);
+		} else {
+			$status = new Status\OkStatus();
+			$status->setTitle('PHP mysqli.reconnect is fine');
+		}
+		return $status;
+	}
+
+	/**
+	 * Check that always_populate_raw_post_data has been set to -1 on PHP 5.6 or newer
+	 *
+	 * @return Status\StatusInterface
+	 */
+	protected function checkAlwaysPopulateRawPostDataSetting() {
+		$minimumPhpVersion = '5.6.0';
+		$maximumPhpVersion = '7.0.0';
+		$currentPhpVersion = phpversion();
+		$currentAlwaysPopulaterRawPostDataSetting = ini_get('always_populate_raw_post_data');
+		if (version_compare($currentPhpVersion, $maximumPhpVersion) >= 0) {
+			$status = new Status\OkStatus();
+			$status->setTitle('PHP always_populate_raw_post_data is removed as of PHP 7.0 or newer');
+		} elseif (version_compare($currentPhpVersion, $minimumPhpVersion) >= 0 && $currentAlwaysPopulaterRawPostDataSetting !== '-1') {
+			$status = new Status\ErrorStatus();
+			$status->setTitle('PHP always_populate_raw_post_data is deprecated');
+			$status->setMessage(
+				'always_populate_raw_post_data=' . $currentAlwaysPopulaterRawPostDataSetting . LF .
+				'PHP is configured to automatically populate $HTTP_RAW_POST_DATA.' . LF .
+				' Warning: Expect fatal errors in central parts of the CMS' .
+				' if the value is not changed to:' . LF .
+				'always_populate_raw_post_data=-1'
+			);
+		} else {
+			$status = new Status\OkStatus();
+			$status->setTitle('PHP always_populate_raw_post_data is fine');
 		}
 		return $status;
 	}

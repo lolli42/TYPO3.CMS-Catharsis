@@ -88,8 +88,8 @@ class SqlParser {
 	 */
 	public function __construct(DatabaseConnection $databaseConnection = NULL) {
 		$this->databaseConnection = $databaseConnection ?: $GLOBALS['TYPO3_DB'];
-		$this->sqlCompiler = GeneralUtility::makeInstance(SqlCompilers\Adodb::class);
-		$this->nativeSqlCompiler = GeneralUtility::makeInstance(SqlCompilers\Mysql::class);
+		$this->sqlCompiler = GeneralUtility::makeInstance(SqlCompilers\Adodb::class, $this->databaseConnection);
+		$this->nativeSqlCompiler = GeneralUtility::makeInstance(SqlCompilers\Mysql::class, $this->databaseConnection);
 	}
 
 	/**
@@ -1433,7 +1433,7 @@ class SqlParser {
 		$this->parse_error = '';
 		$result = array();
 		// Field type:
-		if ($result['fieldType'] = $this->nextPart($parseString, '^(int|smallint|tinyint|mediumint|bigint|double|numeric|decimal|float|varchar|char|text|tinytext|mediumtext|longtext|blob|tinyblob|mediumblob|longblob)([[:space:],]+|\\()')) {
+		if ($result['fieldType'] = $this->nextPart($parseString, '^(int|smallint|tinyint|mediumint|bigint|double|numeric|decimal|float|varchar|char|text|tinytext|mediumtext|longtext|blob|tinyblob|mediumblob|longblob|date|datetime|time|year|timestamp)([[:space:],]+|\\()')) {
 			// Looking for value:
 			if ($parseString[0] === '(') {
 				$parseString = substr($parseString, 1);

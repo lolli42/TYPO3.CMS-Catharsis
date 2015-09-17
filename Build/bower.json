@@ -23,12 +23,12 @@
   "homepage": "https://typo3.org/",
   "private": true,
   "devDependencies": {
-    "fontawesome": "4.3.0",
+    "fontawesome": "4.4.0",
     "bootstrap": "3.3.5"
   },
   "dependencies": {
-    "requirejs": "2.1.15",
-    "jquery": "1.11.3",
+    "requirejs": "2.1.20",
+    "jquery": "2.1.4",
     "jquery-ui": "1.11.4",
     "eonasdan-bootstrap-datetimepicker": "4.7.14",
     "moment": "2.10.3",

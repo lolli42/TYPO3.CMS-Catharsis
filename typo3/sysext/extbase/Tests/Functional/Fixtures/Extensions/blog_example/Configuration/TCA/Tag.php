@@ -17,7 +17,8 @@ $TCA['tx_blogexample_domain_model_tag'] = array(
 				'items' => Array(
 					Array('LLL:EXT:lang/locallang_general.php:LGL.allLanguages',-1),
 					Array('LLL:EXT:lang/locallang_general.php:LGL.default_value',0)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l18n_parent' => Array (
@@ -31,11 +32,6 @@ $TCA['tx_blogexample_domain_model_tag'] = array(
 				),
 				'foreign_table' => 'tx_blogexample_domain_model_tag',
 				'foreign_table_where' => 'AND tx_blogexample_domain_model_tag.uid=###REC_FIELD_l18n_parent### AND tx_blogexample_domain_model_tag.sys_language_uid IN (-1,0)',
-			)
-		),
-		'l18n_diffsource' => Array(
-			'config'=>array(
-				'type'=>'passthrough'
 			)
 		),
 		'hidden' => array(

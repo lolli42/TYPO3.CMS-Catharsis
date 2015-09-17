@@ -145,7 +145,7 @@ var TBE_EDITOR = {
 
 		// modify the "field has changed" info by adding a class to the container element (based on palette or main field)
 		var $formField = TYPO3.jQuery('[name="' + el + '"]');
-		var $humanReadableField = TYPO3.jQuery('[name="' + el + '_hr"]');
+		var $humanReadableField = TYPO3.jQuery('[data-formengine-input-name="' + el + '"]');
 		$humanReadableField.triggerHandler('change');
 		var $paletteField = $formField.closest('.t3js-formengine-palette-field');
 		$paletteField.addClass('has-change');
@@ -166,7 +166,11 @@ var TBE_EDITOR = {
 				TBE_EDITOR.setImage(imgReqObjName,TBE_EDITOR.images.req);
 			}
 		}
-		if (TBE_EDITOR.isPalettedoc) { TBE_EDITOR.setOriginalFormFieldValue(theField) };
+		if (TBE_EDITOR.isPalettedoc) { TBE_EDITOR.setOriginalFormFieldValue(theField) }
+		if (TYPO3.FormEngine && TYPO3.FormEngine.Validation) {
+			TYPO3.FormEngine.Validation.updateInputField(theField);
+			TYPO3.FormEngine.Validation.validate();
+		}
 	},
 	setOriginalFormFieldValue: function(theField) {
 		if (TBE_EDITOR.isPalettedoc && (TBE_EDITOR.isPalettedoc).document[TBE_EDITOR.formname] && (TBE_EDITOR.isPalettedoc).document[TBE_EDITOR.formname][theField]) {
@@ -255,7 +259,7 @@ var TBE_EDITOR = {
 		// EXT:backend/Resources/Public/JavaScript/FormEngine.js (reference: http://forge.typo3.org/issues/58755).
 		// TODO: This should be solved in a better way when this script is refactored.
 		window.setTimeout(function() {
-			document.getElementsByName(TBE_EDITOR.formname).submit();
+			document.getElementsByName(TBE_EDITOR.formname).item(0).submit();
 		}, 10);
 	},
 	split: function(theStr1, delim, index) {
@@ -383,16 +387,14 @@ var typo3form = {
 		$formFieldItemWrapper.find('.t3js-formengine-placeholder-formfield').toggle(!showPlaceholder);
 	},
 	fieldSet: function(theField, evallist, is_in, checkbox, checkboxValue) {
-		var i;
-
 		if (document[TBE_EDITOR.formname][theField]) {
 			var theFObj = new evalFunc_dummy (evallist,is_in, checkbox, checkboxValue);
 			var theValue = document[TBE_EDITOR.formname][theField].value;
 			if (checkbox && theValue==checkboxValue) {
-				document[TBE_EDITOR.formname][theField+"_hr"].value="";
+				document.querySelector('form[name="' + TBE_EDITOR.formname + '"] [data-formengine-input-name="' + theField + '"]').value = "";
 				if (document[TBE_EDITOR.formname][theField+"_cb"])	document[TBE_EDITOR.formname][theField+"_cb"].checked = "";
 			} else {
-				document[TBE_EDITOR.formname][theField+"_hr"].value = evalFunc.outputObjValue(theFObj, theValue);
+				document.querySelector('form[name="' + TBE_EDITOR.formname + '"] [data-formengine-input-name="' + theField + '"]').value = evalFunc.outputObjValue(theFObj, theValue);
 				if (document[TBE_EDITOR.formname][theField+"_cb"])	document[TBE_EDITOR.formname][theField+"_cb"].checked = "on";
 			}
 		}
@@ -419,7 +421,7 @@ var typo3form = {
 					document[TBE_EDITOR.formname][theField].value=checkboxValue;
 				}
 			}else{
-				document[TBE_EDITOR.formname][theField].value = evalFunc.evalObjValue(theFObj, document[TBE_EDITOR.formname][theField+"_hr"].value);
+				document[TBE_EDITOR.formname][theField].value = evalFunc.evalObjValue(theFObj, document.querySelector('form[name="' + TBE_EDITOR.formname + '"] [data-formengine-input-name="' + theField + '"]').value);
 			}
 			typo3form.fieldSet(theField, evallist, is_in, checkbox, checkboxValue);
 		}

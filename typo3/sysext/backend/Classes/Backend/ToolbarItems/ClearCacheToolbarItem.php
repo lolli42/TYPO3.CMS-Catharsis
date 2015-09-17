@@ -18,6 +18,8 @@ use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Toolbar\ClearCacheActionsHookInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Page\PageRenderer;
 
@@ -44,6 +46,7 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 	public function __construct() {
 		$backendUser = $this->getBackendUser();
 		$languageService = $this->getLanguageService();
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 
 		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/Toolbar/ClearCacheMenu');
 
@@ -53,8 +56,8 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'id' => 'pages',
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushPageCachesDescription', TRUE),
-				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'pages', 'ajaxCall' => 1]) . BackendUtility::getUrlToken('tceAction'),
-				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-low')
+				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'pages', 'ajaxCall' => 1]),
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-low', Icon::SIZE_SMALL)
 			);
 			$this->optionValues[] = 'pages';
 		}
@@ -65,8 +68,8 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'id' => 'all',
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushGeneralCachesDescription', TRUE),
-				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'all', 'ajaxCall' => 1]) . BackendUtility::getUrlToken('tceAction'),
-				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-medium')
+				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'all', 'ajaxCall' => 1]),
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-medium', Icon::SIZE_SMALL)
 			);
 			$this->optionValues[] = 'all';
 		}
@@ -81,8 +84,8 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 				'id' => 'system',
 				'title' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesTitle', TRUE),
 				'description' => $languageService->sL('LLL:EXT:lang/locallang_core.xlf:flushSystemCachesDescription', TRUE),
-				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'system', 'ajaxCall' => 1]) . BackendUtility::getUrlToken('tceAction'),
-				'icon' => IconUtility::getSpriteIcon('actions-system-cache-clear-impact-high')
+				'href' => BackendUtility::getModuleUrl('tce_db', ['vC' => $backendUser->veriCode(), 'cacheCmd' => 'system', 'ajaxCall' => 1]),
+				'icon' => $iconFactory->getIcon('actions-system-cache-clear-impact-high', Icon::SIZE_SMALL)
 			);
 			$this->optionValues[] = 'system';
 		}
@@ -126,7 +129,8 @@ class ClearCacheToolbarItem implements ToolbarItemInterface {
 	 */
 	public function getItem() {
 		$title = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.clearCache_clearCache', TRUE);
-		return IconUtility::getSpriteIcon('apps-toolbar-menu-cache', array('title' => $title));
+		$iconRegistry = GeneralUtility::makeInstance(IconFactory::class);
+		return '<span title="' . $title . '">' . $iconRegistry->getIcon('apps-toolbar-menu-cache', Icon::SIZE_SMALL)->render() . '</span>';
 	}
 
 	/**

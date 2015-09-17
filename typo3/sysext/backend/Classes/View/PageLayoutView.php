@@ -25,7 +25,10 @@ use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
+use TYPO3\CMS\Extbase\Service\FlexFormService;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
  * Child class for the Web > Page module
@@ -171,6 +174,13 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @var int
 	 */
 	public $ext_CALC_PERMS;
+
+	/**
+	 * Current ids page record
+	 *
+	 * @var array
+	 */
+	protected $pageinfo;
 
 	/**
 	 * @var IconFactory
@@ -334,7 +344,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						rtrim(trim($this->getLanguageService()->sL(BackendUtility::getItemLabel('pages', $field))), ':')
 					);
 					$eI = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
-						. '" title="' . htmlspecialchars($iTitle) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+						. '" title="' . htmlspecialchars($iTitle) . '">'
+						. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 				} else {
 					$eI = '';
 				}
@@ -385,6 +396,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @return string HTML for the listing
 	 */
 	public function getTable_tt_content($id) {
+		$backendUser = $this->getBackendUser();
+		$this->pageinfo = BackendUtility::readPageAccess($this->id, $backendUser->getPagePermsClause($this->ext_CALC_PERMS));
 		$this->initializeLanguages();
 		$this->initializeClipboard();
 		$pageTitleParamForAltDoc = '&recTitle=' . rawurlencode(BackendUtility::getRecordTitle('pages', BackendUtility::getRecordWSOL('pages', $id), TRUE));
@@ -392,7 +405,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		$pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LayoutModule/DragDrop');
 		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/Modal');
-		$userCanEditPage = $this->ext_CALC_PERMS & Permission::PAGE_EDIT && !empty($this->id);
+		$userCanEditPage = $this->ext_CALC_PERMS & Permission::PAGE_EDIT && !empty($this->id) && ($backendUser->isAdmin() || (int)$this->pageinfo['editlock'] === 0);
 		if ($this->tt_contentConfig['languageColsPointer'] > 0) {
 			$userCanEditPage = $this->getBackendUser()->check('tables_modify', 'pages_language_overlay');
 		}
@@ -472,8 +485,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						. $this->getLanguageService()->getLL('content', TRUE) . '</a>';
 				}
 				$content[$key] .= '
-				<div class="t3-page-ce t3js-page-ce" data-page="' . (int)$id . '" id="' . str_replace('.', '', uniqid('', TRUE)) . '">
-					<div class="t3js-page-new-ce t3-page-ce-wrapper-new-ce" id="colpos-' . $key . '-' . 'page-' . $id . '-' . uniqid('', TRUE) . '">'
+				<div class="t3-page-ce t3js-page-ce" data-page="' . (int)$id . '" id="' . StringUtility::getUniqueId() . '">
+					<div class="t3js-page-new-ce t3-page-ce-wrapper-new-ce" id="colpos-' . $key . '-' . 'page-' . $id . '-' . StringUtility::getUniqueId() . '">'
 						. $link
 					. '</div>
 					<div class="t3-page-ce-dropzone-available t3js-page-ce-dropzone-available"></div>
@@ -498,12 +511,12 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					if (is_array($row) && !VersionState::cast($row['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
 						$singleElementHTML = '';
 						if (!$lP && ($this->defLangBinding || $row['sys_language_uid'] != -1)) {
-							$defLanguageCount[$key][] = $row['uid'];
+							$defLanguageCount[$key][] = (isset($row['_ORIG_uid']) ? $row['_ORIG_uid'] : $row['uid']);
 						}
 						$editUidList .= $row['uid'] . ',';
 						$disableMoveAndNewButtons = $this->defLangBinding && $lP > 0;
 						if (!$this->tt_contentConfig['languageMode']) {
-							$singleElementHTML .= '<div class="t3-page-ce-dragitem" id="' . str_replace('.', '', uniqid('', TRUE)) . '">';
+							$singleElementHTML .= '<div class="t3-page-ce-dragitem" id="' . StringUtility::getUniqueId() . '">';
 						}
 						$singleElementHTML .= $this->tt_content_drawHeader(
 							$row,
@@ -526,7 +539,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 							$singleElementHTML .= '<div class="t3-page-ce t3js-page-ce">';
 						}
 						$singleElementHTML .= '<div class="t3js-page-new-ce t3-page-ce-wrapper-new-ce" id="colpos-' . $key . '-' . 'page-' . $id .
-							'-' . str_replace('.', '', uniqid('', TRUE)) . '">';
+							'-' . StringUtility::getUniqueId() . '">';
 						// Add icon "new content element below"
 						if (!$disableMoveAndNewButtons && $this->getPageLayoutController()->pageIsNotLockedForEditors()) {
 							// New content element:
@@ -687,7 +700,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 				$viewLink = '';
 				if (!VersionState::cast($this->getPageLayoutController()->pageinfo['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
 					$onClick = BackendUtility::viewOnClick($this->id, '', BackendUtility::BEgetRootLine($this->id), '', '', ('&L=' . $lP));
-					$viewLink = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+					$viewLink = '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 				}
 				// Language overlay page header:
 				if ($lP) {
@@ -701,11 +714,21 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					) . $viewLink . ($this->getBackendUser()->check('tables_modify', 'pages_language_overlay')
 							? '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
 								. '" title="' . $this->getLanguageService()->getLL('edit', TRUE) . '">'
-								. IconUtility::getSpriteIcon('actions-document-open') . '</a>'
+								. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>'
 							: ''
 						) . htmlspecialchars(GeneralUtility::fixed_lgd_cs($lpRecord['title'], 20));
 				} else {
-					$lPLabel = $viewLink;
+					$params = '&edit[pages][' . $this->id . ']=edit';
+					$lPLabel = $this->getPageLayoutController()->doc->wrapClickMenuOnIcon(
+							IconUtility::getSpriteIconForRecord('pages', $this->pageRecord),
+							'pages',
+							$this->id
+						) . $viewLink . ($this->getBackendUser()->check('tables_modify', 'pages_language_overlay')
+							? '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
+							. '" title="' . $this->getLanguageService()->getLL('edit', TRUE) . '">'
+							. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>'
+							: ''
+						) . htmlspecialchars(GeneralUtility::fixed_lgd_cs($this->pageRecord['title'], 20));
 				}
 				$sCont[$lP] = '
 					<td nowrap="nowrap" class="t3-page-column t3-page-lang-label">' . $lPLabel . '</td>';
@@ -825,7 +848,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					if ($this->doEdit) {
 						$Nrow['__editIconLink__'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick($params))
 							. '" title="' . $this->getLanguageService()->getLL('edit', TRUE) . '">'
-							. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+							. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 					} else {
 						$Nrow['__editIconLink__'] = $this->noEditIcon();
 					}
@@ -1030,7 +1053,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						$eI = '<a href="#" onclick="'
 							. htmlspecialchars(BackendUtility::editOnClick($params))
 							. '" title="' . $this->getLanguageService()->getLL('editThisPage', TRUE) . '">'
-							. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+							. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 					} else {
 						$eI = '';
 					}
@@ -1093,17 +1116,17 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 				$iconsArr['edit'] = '<a href="#" onclick="'
 					. htmlspecialchars(BackendUtility::editOnClick($editParams)) . '" title="'
 					. $this->getLanguageService()->getLL('editColumn', TRUE) . '">'
-					. IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+					. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 			}
 			if ($pasteParams) {
 				$elFromTable = $this->clipboard->elFromTable('tt_content');
-				if (!empty($elFromTable)) {
+				if (!empty($elFromTable) && $this->getPageLayoutController()->pageIsNotLockedForEditors()) {
 					$iconsArr['paste'] = '<a href="'
 						. htmlspecialchars($this->clipboard->pasteUrl('tt_content', $this->id, TRUE, $pasteParams))
 						. '" onclick="' . htmlspecialchars(('return '
 						. $this->clipboard->confirmMsg('pages', $this->pageRecord, 'into', $elFromTable, $colName)))
-						. '" title="' . $this->getLanguageService()->getLL('clip_paste', TRUE) . '">'
-						. IconUtility::getSpriteIcon('actions-document-paste-into') . '</a>';
+						. '" title="' . $this->getLanguageService()->getLL('pasteIntoColumn', TRUE) . '">'
+						. $this->iconFactory->getIcon('actions-document-paste-into', Icon::SIZE_SMALL) . '</a>';
 				}
 			}
 		}
@@ -1187,7 +1210,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					)) . '" title="' . htmlspecialchars($this->nextThree > 1
 						? sprintf($this->getLanguageService()->getLL('nextThree'), $this->nextThree)
 						: $this->getLanguageService()->getLL('edit'))
-					. '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+					. '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 				// Hide element:
 				$hiddenField = $GLOBALS['TCA']['tt_content']['ctrl']['enablecolumns']['disabled'];
 				if (
@@ -1206,7 +1229,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						. '][' . $hiddenField . ']=' . $value;
 					$out .= '<a class="btn btn-default" href="' . htmlspecialchars($this->getPageLayoutController()->doc->issueCommand($params))
 						. '" title="' . $this->getLanguageService()->getLL($label, TRUE) . '">'
-						. IconUtility::getSpriteIcon('actions-edit-' . strtolower($label)) . '</a>';
+						. $this->iconFactory->getIcon('actions-edit-' . strtolower($label), Icon::SIZE_SMALL) . '</a>';
 				}
 				// Delete
 				$params = '&cmd[tt_content][' . $row['uid'] . '][delete]=1';
@@ -1220,7 +1243,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 					. ' data-content="' . htmlspecialchars($confirm) . '" '
 					. ' data-button-close-text="' . htmlspecialchars($this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:cancel')) . '"'
 					. ' title="' . $this->getLanguageService()->getLL('deleteItem', TRUE) . '">'
-					. IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+					. $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</a>';
 				if ($out) {
 					$out = '<div class="btn-group btn-group-sm" role="group">' . $out . '</div>';
 				}
@@ -1233,12 +1256,12 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						$moveButtonContent .= '<a class="btn btn-default" href="'
 							. htmlspecialchars($this->getPageLayoutController()->doc->issueCommand($params))
 							. '" title="' . $this->getLanguageService()->getLL('moveUp', TRUE) . '">'
-							. IconUtility::getSpriteIcon('actions-move-up') . '</a>';
+							. $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '</a>';
 						if (!$dragDropEnabled) {
 							$displayMoveButtons = TRUE;
 						}
 					} else {
-						$moveButtonContent .= '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+						$moveButtonContent .= '<span class="btn btn-default disabled">' . $this->iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
 					}
 					// Move element down:
 					if ($this->tt_contentData['next'][$row['uid']]) {
@@ -1246,12 +1269,12 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 						$moveButtonContent .= '<a class="btn btn-default" href="'
 							. htmlspecialchars($this->getPageLayoutController()->doc->issueCommand($params))
 							. '" title="' . $this->getLanguageService()->getLL('moveDown', TRUE) . '">'
-							. IconUtility::getSpriteIcon('actions-move-down') . '</a>';
+							. $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '</a>';
 						if (!$dragDropEnabled) {
 							$displayMoveButtons = TRUE;
 						}
 					} else {
-						$moveButtonContent .= '<span class="btn btn-default disabled">' . IconUtility::getSpriteIcon('empty-empty') . '</span>';
+						$moveButtonContent .= '<span class="btn btn-default disabled">' . $this->iconFactory->getIcon('empty-empty', Icon::SIZE_SMALL)->render() . '</span>';
 					}
 					if ($displayMoveButtons) {
 						$out .= '<div class="btn-group btn-group-sm" role="group">' . $moveButtonContent . '</div>';
@@ -1266,7 +1289,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		if ($lockInfo = BackendUtility::isRecordLocked('tt_content', $row['uid'])) {
 			$additionalIcons[] = '<a href="#" onclick="alert(' . GeneralUtility::quoteJSvalue($lockInfo['msg'])
 				. ');return false;" title="' . htmlspecialchars($lockInfo['msg']) . '">'
-				. IconUtility::getSpriteIcon('status-warning-in-use') . '</a>';
+				. $this->iconFactory->getIcon('status-warning-in-use', Icon::SIZE_SMALL) . '</a>';
 		}
 		// Call stats information hook
 		if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['GLOBAL']['recStatInfoHooks'])) {
@@ -1277,7 +1300,7 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 		}
 		// Wrap the whole header
 		// NOTE: end-tag for <div class="t3-page-ce-body"> is in getTable_tt_content()
-		return '<div class="t3-page-ce-header ' . ($this->getBackendUser()->user['admin'] || (int)$row['editlock'] === 0 ? 't3-page-ce-header-draggable t3js-page-ce-draghandle' : '') . '">
+		return '<div class="t3-page-ce-header ' . ($this->getBackendUser()->user['admin'] || ((int)$row['editlock'] === 0 && (int)$this->pageinfo['editlock'] === 0)  ? 't3-page-ce-header-draggable t3js-page-ce-draghandle' : '') . '">
 					<div class="t3-page-ce-header-icons-left">' . implode('', $additionalIcons) . '</div>
 					<div class="t3-page-ce-header-icons-right">' . ($out ? '<div class="btn-toolbar">' .$out . '</div>' : '') . '</div>
 				</div>
@@ -1324,6 +1347,36 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 				$hookObject->preProcess($this, $drawItem, $outHeader, $out, $row);
 			}
 		}
+
+		// If the previous hook did not render something,
+		// then check if a Fluid-based preview template was defined for this CType
+		// and render it via Fluid. Possible option:
+		// mod.web_layout.tt_content.preview.media = EXT:site_mysite/Resources/Private/Templates/Preview/Media.html
+		if ($drawItem) {
+			$tsConfig = BackendUtility::getModTSconfig($row['pid'], 'mod.web_layout.tt_content.preview');
+			if (!empty($tsConfig['properties'][$row['CType']])) {
+				$fluidTemplateFile = $tsConfig['properties'][$row['CType']];
+				$fluidTemplateFile = GeneralUtility::getFileAbsFileName($fluidTemplateFile);
+				if ($fluidTemplateFile) {
+					try {
+						/** @var StandaloneView $view */
+						$view = GeneralUtility::makeInstance(StandaloneView::class);
+						$view->setTemplatePathAndFilename($fluidTemplateFile);
+						$view->assignMultiple($row);
+						if (!empty($row['pi_flexform'])) {
+							/** @var FlexFormService $flexFormService */
+							$flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
+							$view->assign('pi_flexform_transformed', $flexFormService->convertFlexFormContentToArray($row['pi_flexform']));
+						}
+						$out = $view->render();
+						$drawItem = FALSE;
+					} catch (\Exception $e) {
+						// Catch any exception to avoid breaking the view
+					}
+				}
+			}
+		}
+
 		// Draw preview of the item depending on its CType (if not disabled by previous hook):
 		if ($drawItem) {
 			switch ($row['CType']) {
@@ -1494,14 +1547,16 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	public function getNonTranslatedTTcontentUids($defLanguageCount, $id, $lP) {
 		if ($lP && !empty($defLanguageCount)) {
 			// Select all translations here:
-			$queryParts = $this->makeQueryArray('tt_content', $id, 'AND sys_language_uid=' . (int)$lP
-				. ' AND l18n_parent IN (' . implode(',', $defLanguageCount) . ')');
-			$result = $this->getDatabase()->exec_SELECT_queryArray($queryParts);
+			$where = 'sys_language_uid=' . intval($lP) . ' AND l18n_parent IN ('
+				. implode(',', $defLanguageCount) . ')'
+				. BackendUtility::deleteClause('tt_content');
+			$rowArr = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows('*', 'tt_content', $where);
+
 			// Flip uids:
 			$defLanguageCount = array_flip($defLanguageCount);
 			// Traverse any selected elements and unset original UID if any:
-			$rowArr = $this->getResult($result);
 			foreach ($rowArr as $row) {
+				BackendUtility::workspaceOL('tt_content', $row);
 				unset($defLanguageCount[$row['l18n_parent']]);
 			}
 			// Flip again:
@@ -1948,10 +2003,8 @@ class PageLayoutView extends \TYPO3\CMS\Recordlist\RecordList\AbstractDatabaseRe
 	 * @return string IMG tag for icon.
 	 */
 	public function noEditIcon($label = 'noEditItems') {
-		return IconUtility::getSpriteIcon(
-			'status-edit-read-only',
-			array('title' => $this->getLanguageService()->getLL($label, TRUE))
-		);
+		$title = $this->getLanguageService()->getLL($label, TRUE);
+		return '<span title="' . $title . '">' . $this->iconFactory->getIcon('status-status-edit-read-only', Icon::SIZE_SMALL)->render() . '</span>';
 	}
 
 	/**

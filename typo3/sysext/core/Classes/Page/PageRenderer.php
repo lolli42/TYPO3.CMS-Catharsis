@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Core\Page;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Localization\LocalizationFactory;
+use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -29,7 +30,7 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	const PART_HEADER = 1;
 	const PART_FOOTER = 2;
 	// jQuery Core version that is shipped with TYPO3
-	const JQUERY_VERSION_LATEST = '1.11.3';
+	const JQUERY_VERSION_LATEST = '2.1.4';
 	// jQuery namespace options
 	const JQUERY_NAMESPACE_NONE = 'none';
 	const JQUERY_NAMESPACE_DEFAULT = 'jQuery';
@@ -289,10 +290,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 *
 	 * The type "source" describes where the jQuery core should be included from
 	 * currently, TYPO3 supports "local" (make use of jQuery path), "google",
-	 * "jquery" and "msn".
-	 * Currently there are downsides to "local" and "jquery", as "local" only
-	 * supports the latest/shipped jQuery core out of the box, and
-	 * "jquery" does not have SSL support.
+	 * "jquery", "msn" and "cloudflare".
+	 *
+	 * Currently there are downsides to "local" which supports only the latest/shipped
+	 * jQuery core out of the box.
 	 *
 	 * @var array
 	 */
@@ -313,9 +314,10 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 	 * @var array
 	 */
 	protected $jQueryCdnUrls = array(
-		'google' => '//ajax.googleapis.com/ajax/libs/jquery/%1$s/jquery%2$s.js',
-		'msn' => '//ajax.aspnetcdn.com/ajax/jQuery/jquery-%1$s%2$s.js',
-		'jquery' => 'http://code.jquery.com/jquery-%1$s%2$s.js'
+		'google' => 'https://ajax.googleapis.com/ajax/libs/jquery/%1$s/jquery%2$s.js',
+		'msn' => 'https://ajax.aspnetcdn.com/ajax/jQuery/jquery-%1$s%2$s.js',
+		'jquery' => 'https://code.jquery.com/jquery-%1$s%2$s.js',
+		'cloudflare' => 'https://cdnjs.cloudflare.com/ajax/libs/jquery/%1$s/jquery%2$s.js'
 	);
 
 	/**
@@ -1725,7 +1727,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		// This means that you can only register footer files *after* the header has been already rendered.
 		// In case you render the footer part first, header files can only be added *after* the footer has been rendered
 		$this->reset();
-		return trim(\TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markerArray, '###|###'));
+		$templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
+		return trim($templateService->substituteMarkerArray($template, $markerArray, '###|###'));
 	}
 
 	/**
@@ -1739,7 +1742,8 @@ class PageRenderer implements \TYPO3\CMS\Core\SingletonInterface {
 		$this->prepareRendering();
 		$markerArray = $this->getPreparedMarkerArrayForPageWithUncachedObjects($substituteHash);
 		$template = $this->getTemplateForPart(self::PART_COMPLETE);
-		return trim(\TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($template, $markerArray, '###|###'));
+		$templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
+		return trim($templateService->substituteMarkerArray($template, $markerArray, '###|###'));
 	}
 
 	/**

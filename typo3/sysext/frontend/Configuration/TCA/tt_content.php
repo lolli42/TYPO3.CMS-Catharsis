@@ -44,19 +44,6 @@ return array(
 			'html' => 'mimetypes-x-content-html',
 			'default' => 'mimetypes-x-content-text'
 		),
-		'typeicons' => array(
-			'header' => 'tt_content_header.gif',
-			'bullets' => 'tt_content_bullets.gif',
-			'table' => 'tt_content_table.gif',
-			'uploads' => 'tt_content_uploads.gif',
-			'menu' => 'tt_content_menu.gif',
-			'list' => 'tt_content_list.gif',
-			'login' => 'tt_content_login.gif',
-			'shortcut' => 'tt_content_shortcut.gif',
-			'script' => 'tt_content_script.gif',
-			'div' => 'tt_content_div.gif',
-			'html' => 'tt_content_html.gif'
-		),
 		'thumbnail' => 'image',
 		'requestUpdate' => 'list_type,menu_type',
 		'searchFields' => 'header,header_link,subheader,bodytext,pi_flexform'
@@ -78,7 +65,7 @@ return array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.0',
 						'header',
-						'i/tt_content_header.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_header.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.div.lists',
@@ -87,17 +74,17 @@ return array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.4',
 						'bullets',
-						'i/tt_content_bullets.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_bullets.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.5',
 						'table',
-						'i/tt_content_table.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_table.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.6',
 						'uploads',
-						'i/tt_content_uploads.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_uploads.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.div.special',
@@ -106,33 +93,32 @@ return array(
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.12',
 						'menu',
-						'i/tt_content_menu.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_menu.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.13',
 						'shortcut',
-						'i/tt_content_shortcut.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_shortcut.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.14',
 						'list',
-						'i/tt_content_list.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_list.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.16',
 						'div',
-						'i/tt_content_div.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_div.gif'
 					),
 					array(
 						'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:CType.I.17',
 						'html',
-						'i/tt_content_html.gif'
+						'EXT:t3skin/icons/gfx/i/tt_content_html.gif'
 					)
 				),
 				'default' => 'text',
 				'authMode' => $GLOBALS['TYPO3_CONF_VARS']['BE']['explicitADmode'],
 				'authMode_enforce' => 'strict',
-				'iconsInOptionTags' => 1,
 				'noIconsBelowSelect' => 1
 			)
 		),
@@ -167,7 +153,7 @@ return array(
 				'type' => 'input',
 				'size' => '13',
 				'eval' => 'datetime',
-				'default' => '0'
+				'default' => 0
 			),
 			'l10n_mode' => 'exclude',
 			'l10n_display' => 'defaultAsReadonly'
@@ -179,9 +165,9 @@ return array(
 				'type' => 'input',
 				'size' => '13',
 				'eval' => 'datetime',
-				'default' => '0',
+				'default' => 0,
 				'range' => array(
-					'upper' => mktime(0, 0, 0, 12, 31, 2020)
+					'upper' => mktime(0, 0, 0, 1, 1, 2038)
 				)
 			),
 			'l10n_mode' => 'exclude',
@@ -229,12 +215,13 @@ return array(
 						'LLL:EXT:lang/locallang_general.xlf:LGL.default_value',
 						0
 					)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l18n_parent' => array(
-			'displayCond' => 'FIELD:sys_language_uid:>:0',
 			'exclude' => 1,
+			'displayCond' => 'FIELD:sys_language_uid:>:0',
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.l18n_parent',
 			'config' => array(
 				'type' => 'select',
@@ -245,7 +232,8 @@ return array(
 					)
 				),
 				'foreign_table' => 'tt_content',
-				'foreign_table_where' => 'AND tt_content.pid=###CURRENT_PID### AND tt_content.sys_language_uid IN (-1,0)'
+				'foreign_table_where' => 'AND tt_content.pid=###CURRENT_PID### AND tt_content.sys_language_uid IN (-1,0)',
+				'default' => 0
 			)
 		),
 		'layout' => array(
@@ -271,7 +259,7 @@ return array(
 						'3'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'colPos' => array(
@@ -298,7 +286,7 @@ return array(
 						'3'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'date' => array(
@@ -309,7 +297,7 @@ return array(
 				'size' => '13',
 				'max' => '20',
 				'eval' => 'date',
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'header' => array(
@@ -319,10 +307,11 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '50',
-				'max' => '256'
+				'max' => '255'
 			)
 		),
 		'rowDescription' => array(
+			'exclude' => 1,
 			'label' => 'LLL:EXT:lang/locallang_general.xlf:LGL.description',
 			'config' => array(
 				'type' => 'text',
@@ -331,8 +320,8 @@ return array(
 			)
 		),
 		'header_link' => array(
-			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:header_link',
 			'exclude' => 1,
+			'label' => 'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:header_link',
 			'config' => array(
 				'type' => 'input',
 				'size' => 50,
@@ -390,7 +379,7 @@ return array(
 						'100'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'subheader' => array(
@@ -399,7 +388,7 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '50',
-				'max' => '256',
+				'max' => '255',
 				'softref' => 'email[subst]'
 			)
 		),
@@ -576,8 +565,7 @@ return array(
 					)
 				),
 				'selicon_cols' => 6,
-				'default' => '0',
-				'iconsInOptionTags' => 1
+				'default' => 0,
 			)
 		),
 		'imageborder' => array(
@@ -692,7 +680,7 @@ return array(
 						'9'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'pages' => array(
@@ -743,7 +731,7 @@ return array(
 						'250'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'menu_type' => array(
@@ -796,7 +784,7 @@ return array(
 						'categorized_content'
 					)
 				),
-				'default' => '0'
+				'default' => 0
 			)
 		),
 		'list_type' => array(
@@ -813,7 +801,6 @@ return array(
 				'itemsProcFunc' => \TYPO3\CMS\Frontend\Hooks\TableColumnHooks::class . '->sortPluginList',
 				'default' => '',
 				'authMode' => $GLOBALS['TYPO3_CONF_VARS']['BE']['explicitADmode'],
-				'iconsInOptionTags' => 1,
 				'noIconsBelowSelect' => 1
 			)
 		),
@@ -1000,7 +987,8 @@ return array(
 		),
 		'l18n_diffsource' => array(
 			'config' => array(
-				'type' => 'passthrough'
+				'type' => 'passthrough',
+				'default' => ''
 			)
 		),
 		't3ver_label' => array(
@@ -1136,19 +1124,19 @@ return array(
 		),
 		'table' => array(
 			'showitem' => '
-					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.general;general,
-					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.header;header,
-					bodytext;LLL:EXT:frontend/Resources/Private/Language/TCA.xlf:field.table.bodytext;tableconfiguration;nowrap:wizards[table],
+					--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.general;general,
+					--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.header;header,
+					bodytext;LLL:EXT:frontend/Resources/Private/Language/TCA.xlf:field.table.bodytext,
+					--palette--;;tableconfiguration,
 					table_caption,
-				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.appearance,
-					layout;LLL:EXT:cms/locallang_ttc.xlf:layout_formlabel,
-					behaviour,
-					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.table_layout;tablelayout,
+				--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.appearance,
+					layout;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:layout_formlabel,
+					--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.table_layout;tablelayout,
 					--palette--;LLL:EXT:frontend/Resources/Private/Language/TCA.xlf:palette.appearanceLinks;appearanceLinks,
-				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.access,
+				--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.access,
 					hidden;LLL:EXT:frontend/Resources/Private/Language/TCA.xlf:field.default.hidden,
-					--palette--;LLL:EXT:cms/locallang_ttc.xlf:palette.access;access,
-				--div--;LLL:EXT:cms/locallang_ttc.xlf:tabs.extended
+					--palette--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:palette.access;access,
+				--div--;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:tabs.extended
 			'
 		),
 	),
@@ -1220,17 +1208,26 @@ return array(
 				endtime;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:endtime_formlabel,
 				--linebreak--,
 				fe_group;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:fe_group_formlabel,
-				--linebreak--,editlock,
+				--linebreak--,editlock
 			',
 		),
 		'uploadslayout' => array(
-			'showitem' => 'filelink_size;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:filelink_size_formlabel',
+			'showitem' => '
+				filelink_size;LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:filelink_size_formlabel
+			',
 		),
 		'tableconfiguration' => array(
-			'showitem' => 'table_delimiter,table_enclosure'
+			'showitem' => '
+				table_delimiter,
+				table_enclosure
+			'
 		),
 		'tablelayout' => array(
-			'showitem' => 'cols,table_header_position,table_tfoot'
+			'showitem' => '
+				cols,
+				table_header_position,
+				table_tfoot
+			'
 		)
 	)
 );

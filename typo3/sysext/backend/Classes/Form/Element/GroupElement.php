@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Backend\Form\Element;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
@@ -36,10 +37,10 @@ class GroupElement extends AbstractFormElement {
 	 * @return array As defined in initializeResultArray() of AbstractNode
 	 */
 	public function render() {
-		$table = $this->globalOptions['table'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$row = $this->globalOptions['databaseRow'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$table = $this->data['tableName'];
+		$fieldName = $this->data['fieldName'];
+		$row = $this->data['databaseRow'];
+		$parameterArray = $this->data['parameterArray'];
 		$config = $parameterArray['fieldConf']['config'];
 		$show_thumbs = $config['show_thumbs'];
 		$resultArray = $this->initializeResultArray();
@@ -53,7 +54,7 @@ class GroupElement extends AbstractFormElement {
 		$thumbnails = array();
 		$allowed = GeneralUtility::trimExplode(',', $config['allowed'], TRUE);
 		$disallowed = GeneralUtility::trimExplode(',', $config['disallowed'], TRUE);
-		$disabled = ($this->isGlobalReadonly() || $config['readOnly']);
+		$disabled = $config['readOnly'];
 		$info = array();
 		$parameterArray['itemFormElID_file'] = $parameterArray['itemFormElID'] . '_files';
 
@@ -88,7 +89,7 @@ class GroupElement extends AbstractFormElement {
 				. ', \'RemoveFirstIfFull\', ' . GeneralUtility::quoteJSvalue($maxitems) . '); ' . $parameterArray['fieldChangeFunc']['TBE_EDITOR_fieldChanged'];
 		}
 
-		$html = '<input type="hidden" class="t3js-group-hidden-field" name="' . $parameterArray['itemFormElName'] . '_mul" value="' . ($config['multiple'] ? 1 : 0) . '"' . $disabled . ' />';
+		$html = '<input type="hidden" class="t3js-group-hidden-field" data-formengine-input-name="' . htmlspecialchars($parameterArray['itemFormElName']) . '" value="' . ($config['multiple'] ? 1 : 0) . '"' . $disabled . ' />';
 
 		// Define parameters for all types below
 		$commonParameters = array(
@@ -144,10 +145,11 @@ class GroupElement extends AbstractFormElement {
 									'image' => $fileObject->process(ProcessedFile::CONTEXT_IMAGEPREVIEW, array())->getPublicUrl(TRUE)
 								);
 							} else {
+								$name = htmlspecialchars($fileObject->getName());
 								// Icon
 								$thumbnails[] = array(
-									'name' => htmlspecialchars($fileObject->getName()),
-									'image' => IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()))
+									'name' => $name,
+									'image' => '<span title="' . $name . '">' . $this->iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>'
 								);
 							}
 						} else {
@@ -217,7 +219,7 @@ class GroupElement extends AbstractFormElement {
 						$html .= '
 							<div id="' . $parameterArray['itemFormElID_file'] . '">
 								<input type="file"' . $multipleAttribute . '
-									name="data_files' . $this->globalOptions['elementBaseName'] . $multipleFilenameSuffix . '"
+									name="data_files' . $this->data['elementBaseName'] . $multipleFilenameSuffix . '"
 									size="35" onchange="' . implode('', $parameterArray['fieldChangeFunc']) . '"
 								/>
 							</div>';
@@ -255,6 +257,7 @@ class GroupElement extends AbstractFormElement {
 					$onlySingleTableAllowed = count($allowed) === 1;
 					foreach ($allowed as $allowedTable) {
 						$allowedTables[] = array(
+							// @todo: access to globals!
 							'name' => htmlspecialchars($languageService->sL($GLOBALS['TCA'][$allowedTable]['ctrl']['title'])),
 							'icon' => IconUtility::getSpriteIconForRecord($allowedTable, array()),
 							'onClick' => 'setFormValueOpenBrowser(\'db\', ' . GeneralUtility::quoteJSvalue($parameterArray['itemFormElName'] . '|||' . $allowedTable) . '); return false;'
@@ -265,6 +268,7 @@ class GroupElement extends AbstractFormElement {
 				$itemArray = array();
 
 				// Thumbnails:
+				// @todo: this is data processing - must be extracted
 				$temp_itemArray = GeneralUtility::trimExplode(',', $parameterArray['itemFormElValue'], TRUE);
 				foreach ($temp_itemArray as $dbRead) {
 					$recordParts = explode('|', $dbRead);

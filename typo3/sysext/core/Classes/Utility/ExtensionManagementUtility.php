@@ -916,12 +916,7 @@ class ExtensionManagementUtility {
 		$fullModuleSignature = $main . ($sub ? '_' . $sub : '');
 		// Adding path:
 		if ($path) {
-			if (\TYPO3\CMS\Core\Utility\StringUtility::beginsWith($path, 'EXT:')) {
-				list($extensionKey, $relativePath) = explode('/', substr($path, 4), 2);
-				$path = ExtensionManagementUtility::extPath($extensionKey) . $relativePath;
-			}
-
-			$GLOBALS['TBE_MODULES']['_PATHS'][$fullModuleSignature] = $path;
+			self::addModulePath($fullModuleSignature, $path);
 		}
 
 		// add additional configuration
@@ -1293,7 +1288,7 @@ class ExtensionManagementUtility {
 			);
 		}
 		if ($extensionKey && !$itemArray[2] && isset($GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]['ext_icon'])) {
-			$itemArray[2] = self::extRelPath($extensionKey) . $GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]['ext_icon'];
+			$itemArray[2] = 'EXT:' . $extensionKey . '/' . $GLOBALS['TYPO3_LOADED_EXT'][$extensionKey]['ext_icon'];
 		}
 		if (is_array($GLOBALS['TCA']['tt_content']['columns']) && is_array($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'])) {
 			foreach ($GLOBALS['TCA']['tt_content']['columns'][$type]['config']['items'] as $k => $v) {
@@ -1662,7 +1657,9 @@ tt_content.' . $key . $suffix . ' {
 			$codeCache = static::getCacheManager()->getCache('cache_core');
 			if ($codeCache->has($cacheIdentifier)) {
 				// substr is necessary, because the php frontend wraps php code around the cache value
-				$GLOBALS['TCA'] = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
+				$cacheData = unserialize(substr($codeCache->get($cacheIdentifier), 6, -2));
+				$GLOBALS['TCA'] = $cacheData['tca'];
+				GeneralUtility::setSingletonInstance(CategoryRegistry::class, $cacheData['categoryRegistry']);
 			} else {
 				static::buildBaseTcaFromSingleFiles();
 				static::createBaseTcaCacheFile();
@@ -1769,7 +1766,7 @@ tt_content.' . $key . $suffix . ' {
 	static protected function createBaseTcaCacheFile() {
 		/** @var $codeCache \TYPO3\CMS\Core\Cache\Frontend\PhpFrontend */
 		$codeCache = self::getCacheManager()->getCache('cache_core');
-		$codeCache->set(static::getBaseTcaCacheIdentifier(), serialize($GLOBALS['TCA']));
+		$codeCache->set(static::getBaseTcaCacheIdentifier(), serialize(array('tca' => $GLOBALS['TCA'], 'categoryRegistry' => CategoryRegistry::getInstance())));
 	}
 
 	/**
@@ -1778,7 +1775,7 @@ tt_content.' . $key . $suffix . ' {
 	 * @return string
 	 */
 	static protected function getBaseTcaCacheIdentifier() {
-		return 'tca_base_' . sha1(TYPO3_version . PATH_site . 'tca' . serialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']));
+		return 'tca_base_' . sha1(TYPO3_version . PATH_site . 'tca_with_category_registry' . serialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['runtimeActivatedPackages']));
 	}
 
 	/**
@@ -1997,12 +1994,13 @@ tt_content.' . $key . $suffix . ' {
 	 * @param string $tableName Name of the table to be categorized
 	 * @param string $fieldName Name of the field to be used to store categories
 	 * @param array $options Additional configuration options
+	 * @param bool $override If TRUE, any category configuration for the same table / field is removed before the new configuration is added
 	 * @see addTCAcolumns
 	 * @see addToAllTCAtypes
 	 */
-	static public function makeCategorizable($extensionKey, $tableName, $fieldName = 'categories', array $options = array()) {
+	static public function makeCategorizable($extensionKey, $tableName, $fieldName = 'categories', array $options = array(), $override = FALSE) {
 		// Update the category registry
-		$result = CategoryRegistry::getInstance()->add($extensionKey, $tableName, $fieldName, $options);
+		$result = CategoryRegistry::getInstance()->add($extensionKey, $tableName, $fieldName, $options, $override);
 		if ($result === FALSE) {
 			$message = CategoryRegistry::class . ': no category registered for table "%s". Key was already registered.';
 			/** @var $logger \TYPO3\CMS\Core\Log\Logger */

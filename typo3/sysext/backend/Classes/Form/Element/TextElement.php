@@ -17,8 +17,8 @@ namespace TYPO3\CMS\Backend\Form\Element;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Backend\Form\NodeFactory;
 
 /**
  * Generation of TCEform elements of the type "text"
@@ -41,10 +41,10 @@ class TextElement extends AbstractFormElement {
 	public function render() {
 		$languageService = $this->getLanguageService();
 
-		$table = $this->globalOptions['table'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$row = $this->globalOptions['databaseRow'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$table = $this->data['tableName'];
+		$fieldName = $this->data['fieldName'];
+		$row = $this->data['databaseRow'];
+		$parameterArray = $this->data['parameterArray'];
 		$resultArray = $this->initializeResultArray();
 		$backendUser = $this->getBackendUserAuthentication();
 
@@ -72,11 +72,11 @@ class TextElement extends AbstractFormElement {
 
 		// must be called after the cols and rows calculation, so the parameters are applied
 		// to read-only fields as well.
-		// @todo: Same as in InputElement ...
-		if ($this->isGlobalReadonly() || $config['readOnly']) {
+		// @todo: Same as in InputTextElement ...
+		if ($config['readOnly']) {
 			$config['cols'] = $cols;
 			$config['rows'] = $rows;
-			$options = $this->globalOptions;
+			$options = $this->data;
 			$options['parameterArray'] = array(
 				'fieldConf' => array(
 					'config' => $config,
@@ -84,9 +84,7 @@ class TextElement extends AbstractFormElement {
 				'itemFormElValue' => $parameterArray['itemFormElValue'],
 			);
 			$options['renderType'] = 'none';
-			/** @var NodeFactory $nodeFactory */
-			$nodeFactory = $this->globalOptions['nodeFactory'];
-			return $nodeFactory->create($options)->render();
+			return $this->nodeFactory->create($options)->render();
 		}
 
 		$evalList = GeneralUtility::trimExplode(',', $config['eval'], TRUE);
@@ -107,7 +105,7 @@ class TextElement extends AbstractFormElement {
 					// @todo: This is ugly: The code should find out on it's own whether a eval definition is a
 					// @todo: keyword like "date", or a class reference. The global registration could be dropped then
 					// Pair hook to the one in \TYPO3\CMS\Core\DataHandling\DataHandler::checkValue_input_Eval()
-					// There is a similar hook for "evaluateFieldValue" in DataHandler and InputElement
+					// There is a similar hook for "evaluateFieldValue" in DataHandler and InputTextElement
 					if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['tce']['formevals'][$func])) {
 						if (class_exists($func)) {
 							$evalObj = GeneralUtility::makeInstance($func);
@@ -142,7 +140,7 @@ class TextElement extends AbstractFormElement {
 			}
 
 			// calculate attributes
-			$attributes['id'] = str_replace('.', '', uniqid('formengine-textarea-', TRUE));
+			$attributes['id'] = StringUtility::getUniqueId('formengine-textarea-');
 			$attributes['name'] = $parameterArray['itemFormElName'];
 			if (!empty($styles)) {
 				$attributes['style'] = implode(' ', $styles);

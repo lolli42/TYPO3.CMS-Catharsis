@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -195,6 +197,24 @@ class ColorpickerController extends AbstractWizardController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$this->content .= $this->doc->endPage();
+		$this->content = $this->doc->insertStylesAndJS($this->content);
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Main Method, rendering either colorpicker or frameset depending on ->showPicker
 	 *
 	 * @return void
@@ -252,8 +272,10 @@ class ColorpickerController extends AbstractWizardController {
 	 * Returns the sourcecode to the browser
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		$this->content .= $this->doc->endPage();
 		$this->content = $this->doc->insertStylesAndJS($this->content);
 		echo $this->content;

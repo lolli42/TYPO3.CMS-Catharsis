@@ -16,7 +16,6 @@ namespace TYPO3\CMS\Frontend\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Http\ControllerInterface;
 use TYPO3\CMS\Frontend\Utility\EidUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Http\AjaxRequestHandler;
@@ -24,7 +23,7 @@ use TYPO3\CMS\Core\Http\AjaxRequestHandler;
 /**
  * eID controller for ExtDirect
  */
-class ExtDirectEidController implements ControllerInterface {
+class ExtDirectEidController {
 
 	/**
 	 * Ajax Instance
@@ -52,13 +51,14 @@ class ExtDirectEidController implements ControllerInterface {
 	 * Renders/Echoes the ajax output
 	 *
 	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
 	 * @return ResponseInterface|NULL
 	 * @throws \InvalidArgumentException
 	 */
-	public function processRequest(ServerRequestInterface $request) {
+	public function processRequest(ServerRequestInterface $request, ResponseInterface $response) {
 		$action = isset($request->getParsedBody()['action'])
 			? $request->getParsedBody()['action']
-			: isset($request->getQueryParams()['action']) ? $request->getQueryParams()['action'] : '';
+			: (isset($request->getQueryParams()['action']) ? $request->getQueryParams()['action'] : '');
 		if (!in_array($action, array('route', 'getAPI'), TRUE)) {
 			return NULL;
 		}

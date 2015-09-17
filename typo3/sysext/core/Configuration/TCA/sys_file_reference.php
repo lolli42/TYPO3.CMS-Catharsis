@@ -59,7 +59,8 @@ return array(
 				'items' => array(
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1),
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l10n_parent' => array(
@@ -72,13 +73,15 @@ return array(
 					array('', 0)
 				),
 				'foreign_table' => 'sys_file_reference',
-				'foreign_table_where' => 'AND sys_file_reference.uid=###REC_FIELD_l10n_parent### AND sys_file_reference.sys_language_uid IN (-1,0)'
+				'foreign_table_where' => 'AND sys_file_reference.uid=###REC_FIELD_l10n_parent### AND sys_file_reference.sys_language_uid IN (-1,0)',
+				'default' => 0
 			)
 		),
 		'l10n_diffsource' => array(
 			'exclude' => 0,
 			'config' => array(
-				'type' => 'passthrough'
+				'type' => 'passthrough',
+				'default' => ''
 			)
 		),
 		'hidden' => array(
@@ -223,7 +226,15 @@ return array(
 			'config' => array(
 				'type' => 'imageManipulation'
 			)
-		)
+		),
+		'autoplay' => array(
+			'exclude' => 1,
+			'label' => 'LLL:EXT:lang/locallang_tca.xlf:sys_file_reference.autoplay',
+			'config' => array(
+				'type' => 'check',
+				'default' => 0
+			)
+		),
 	),
 	'types' => array(
 		// Note that at the moment we define the same fields for every media type.
@@ -270,6 +281,20 @@ return array(
 				title,alternative,--linebreak--,
 				link,description,--linebreak--,crop
 				',
+		),
+		// Used for everything that is a video
+		'videoOverlayPalette' => array(
+			'showitem' => '
+				title,description,--linebreak--,autoplay
+				',
+			'canNotCollapse' => TRUE
+		),
+		// Used for everything that is a audio file
+		'audioOverlayPalette' => array(
+			'showitem' => '
+				title,description,--linebreak--,autoplay
+				',
+			'canNotCollapse' => TRUE
 		),
 		// File palette, hidden but needs to be included all the time
 		'filePalette' => array(

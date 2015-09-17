@@ -14,7 +14,12 @@ namespace TYPO3\CMS\Version\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
+use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
@@ -104,9 +109,23 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	public $recIndex = array();
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * The name of the module
+	 *
+	 * @var string
+	 */
+	protected $moduleName = 'web_txversionM1';
+
+	/**
 	 * Initialize language files
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$GLOBALS['SOBE'] = $this;
 		$GLOBALS['LANG']->includeLLFile('EXT:version/Resources/Private/Language/locallang.xlf');
 	}
 
@@ -117,7 +136,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 */
 	public function menuConfig() {
 		// CLEANSE SETTINGS
-		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->MCONF['name'], 'ses');
+		$this->MOD_SETTINGS = BackendUtility::getModuleData($this->MOD_MENU, GeneralUtility::_GP('SET'), $this->moduleName, 'ses');
 	}
 
 	/**
@@ -134,16 +153,12 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			'CONTENT' => ''
 		);
 		// Setting module configuration:
-		$this->MCONF = $GLOBALS['MCONF'];
+		$this->MCONF['name'] = $this->moduleName;
 		$this->REQUEST_URI = str_replace('&sendToReview=1', '', GeneralUtility::getIndpEnv('REQUEST_URI'));
 		// Draw the header.
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:version/Resources/Private/Templates/version.html');
-		// Add styles
-		$this->doc->inDocStylesArray[$GLOBALS['MCONF']['name']] = '
-.version-diff-1 { background-color: green; }
-.version-diff-2 { background-color: red; }
-';
+
 		// Setting up the context sensitive menu:
 		$this->doc->getContextMenuCode();
 		// Getting input data:
@@ -170,7 +185,6 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		$pidValue = $this->table === 'pages' ? $this->uid : $record['pid'];
 		// Checking access etc.
 		if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS'] && !$this->id) {
-			$this->doc->form = '<form action="" method="post">';
 			$this->uid = $record['uid'];
 			// Might have changed if new live record was found!
 			// Access check!
@@ -178,25 +192,6 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 			$this->pageinfo = BackendUtility::readPageAccess($pidValue, $this->perms_clause);
 			$access = is_array($this->pageinfo) ? 1 : 0;
 			if ($pidValue && $access || $GLOBALS['BE_USER']->user['admin'] && !$pidValue) {
-				// JavaScript
-				$this->doc->JScode .= $this->doc->wrapScriptTags('
-
-						function hlSubelements(origId, verId, over, diffLayer)	{	//
-							if (over) {
-								document.getElementById(\'orig_\'+origId).attributes.getNamedItem("class").nodeValue = \'typo3-ver-hl\';
-								document.getElementById(\'ver_\'+verId).attributes.getNamedItem("class").nodeValue = \'typo3-ver-hl\';
-								if (diffLayer) {
-									document.getElementById(\'diff_\'+verId).style.visibility = \'visible\';
-								}
-							} else {
-								document.getElementById(\'orig_\'+origId).attributes.getNamedItem("class").nodeValue = \'typo3-ver\';
-								document.getElementById(\'ver_\'+verId).attributes.getNamedItem("class").nodeValue = \'typo3-ver\';
-								if (diffLayer) {
-									document.getElementById(\'diff_\'+verId).style.visibility = \'hidden\';
-								}
-							}
-						}
-				');
 				// If another page module was specified, replace the default Page module with the new one
 				$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
 				$this->pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
@@ -204,7 +199,6 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 				$this->publishAccess = $GLOBALS['BE_USER']->workspacePublishAccess($GLOBALS['BE_USER']->workspace);
 				$this->versioningMgm();
 			}
-			$this->content .= $this->doc->spacer(10);
 			// Setting up the buttons and markers for docheader
 			$docHeaderButtons = $this->getButtons();
 			$markers['CSH'] = $docHeaderButtons['csh'];
@@ -228,8 +222,10 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 * Outputs accumulated module content to browser.
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -248,10 +244,13 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		// CSH
 		if ($this->recordFound && $GLOBALS['TCA'][$this->table]['ctrl']['versioningWS']) {
 			// View page
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '
+				<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">
+					' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '
+				</a>';
 			// Shortcut
 			if ($GLOBALS['BE_USER']->mayMakeShortcut()) {
-				$buttons['shortcut'] = $this->doc->makeShortcutIcon('id, edit_record, pointer, new_unique_uid, search_field, search_levels, showLimit', implode(',', array_keys($this->MOD_MENU)), $this->MCONF['name']);
+				$buttons['shortcut'] = $this->doc->makeShortcutIcon('id, edit_record, pointer, new_unique_uid, search_field, search_levels, showLimit', implode(',', array_keys($this->MOD_MENU)), $this->moduleName);
 			}
 			// If access to Web>List for user, then link to that module.
 			$buttons['record_list'] = BackendUtility::getListViewLink(array(
@@ -278,25 +277,29 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		$diff_2 = GeneralUtility::_POST('diff_2');
 		if (GeneralUtility::_POST('do_diff')) {
 			$content = '';
-			$content .= '<h3>' . $GLOBALS['LANG']->getLL('diffing') . ':</h3>';
+			$content .= '<div class="panel panel-space panel-default">';
+			$content .= '<div class="panel-heading">' . $GLOBALS['LANG']->getLL('diffing') . '</div>';
 			if ($diff_1 && $diff_2) {
 				$diff_1_record = BackendUtility::getRecord($this->table, $diff_1);
 				$diff_2_record = BackendUtility::getRecord($this->table, $diff_2);
 				if (is_array($diff_1_record) && is_array($diff_2_record)) {
-					$diffUtility = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Utility\DiffUtility::class);
-					$tRows = array();
-					$tRows[] = '
-									<tr class="bgColor5 tableheader">
-										<td>' . $GLOBALS['LANG']->getLL('fieldname') . '</td>
-										<td width="98%">' . $GLOBALS['LANG']->getLL('coloredDiffView') . ':</td>
+					$diffUtility = GeneralUtility::makeInstance(DiffUtility::class);
+					$rows = array();
+					$rows[] = '
+									<tr>
+										<th>' . $GLOBALS['LANG']->getLL('fieldname') . '</th>
+										<th width="98%">' . $GLOBALS['LANG']->getLL('coloredDiffView') . ':</th>
 									</tr>
 								';
 					foreach ($diff_1_record as $fN => $fV) {
 						if ($GLOBALS['TCA'][$this->table]['columns'][$fN] && $GLOBALS['TCA'][$this->table]['columns'][$fN]['config']['type'] !== 'passthrough' && !GeneralUtility::inList('t3ver_label', $fN)) {
 							if ((string)$diff_1_record[$fN] !== (string)$diff_2_record[$fN]) {
-								$diffres = $diffUtility->makeDiffDisplay(BackendUtility::getProcessedValue($this->table, $fN, $diff_2_record[$fN], 0, 1), BackendUtility::getProcessedValue($this->table, $fN, $diff_1_record[$fN], 0, 1));
-								$tRows[] = '
-									<tr class="bgColor4">
+								$diffres = $diffUtility->makeDiffDisplay(
+									BackendUtility::getProcessedValue($this->table, $fN, $diff_2_record[$fN], 0, 1),
+									BackendUtility::getProcessedValue($this->table, $fN, $diff_1_record[$fN], 0, 1)
+								);
+								$rows[] = '
+									<tr>
 										<td>' . $fN . '</td>
 										<td width="98%">' . $diffres . '</td>
 									</tr>
@@ -304,53 +307,65 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 							}
 						}
 					}
-					if (count($tRows) > 1) {
-						$content .= '<table border="0" cellpadding="1" cellspacing="1" width="100%">' . implode('', $tRows) . '</table><br /><br />';
+					if (count($rows) > 1) {
+						$content .= '<div class="table-fit"><table class="table">' . implode('', $rows) . '</table></div>';
 					} else {
-						$content .= $GLOBALS['LANG']->getLL('recordsMatchesCompletely');
+						$content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('recordsMatchesCompletely') . '</div>';
 					}
 				} else {
-					$content .= $GLOBALS['LANG']->getLL('errorRecordsNotFound');
+					$content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('errorRecordsNotFound') . '</div>';
 				}
 			} else {
-				$content .= $GLOBALS['LANG']->getLL('errorDiffSources');
+				$content .= '<div class="panel-body">' . $GLOBALS['LANG']->getLL('errorDiffSources') . '</div>';
 			}
+			$content .= '</div>';
 		}
 		// Element:
 		$record = BackendUtility::getRecord($this->table, $this->uid);
-		$recordIcon = IconUtility::getSpriteIconForRecord($this->table, $record);
 		$recTitle = BackendUtility::getRecordTitle($this->table, $record, TRUE);
 		// Display versions:
 		$content .= '
-			' . $recordIcon . $recTitle . '
 			<form name="theform" action="' . str_replace('&sendToReview=1', '', $this->REQUEST_URI) . '" method="post">
-			<table border="0" cellspacing="1" cellpadding="1">';
-		$content .= '
-				<tr class="bgColor5 tableheader">
-					<td>&nbsp;</td>
-					<td>&nbsp;</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_title') . '">' . $GLOBALS['LANG']->getLL('tblHeader_title') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_uid') . '">' . $GLOBALS['LANG']->getLL('tblHeader_uid') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_oid') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_oid') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_id') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_id') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_wsid') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_wsid') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_state') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_state') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_stage') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_stage') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_count') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_count') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_pid') . '">' . $GLOBALS['LANG']->getLL('tblHeader_pid') . '</td>
-					<td title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_label') . '">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . '</td>
-					<td colspan="2"><input class="btn btn-default" type="submit" name="do_diff" value="' . $GLOBALS['LANG']->getLL('diff') . '" /></td>
-				</tr>';
+				<div class="panel panel-space panel-default">
+				<div class="panel-heading">' . $recTitle . '</div>
+					<div class="table-fit">
+						<table class="table">
+							<thead>
+								<tr>
+									<th colspan="2" class="col-icon"></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_title') . '">' . $GLOBALS['LANG']->getLL('tblHeader_title') . '</th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_uid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_uid') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_oid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_oid') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_id') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_id') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_wsid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_wsid') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_state', TRUE) . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_state') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_stage') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_stage') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_count') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_count') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_pid') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_pid') . '</i></th>
+									<th title="' . $GLOBALS['LANG']->getLL('tblHeaderDesc_t3ver_label') . '"><i>' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . '</i></th>
+									<th></th>
+									<th colspan="2">
+										<button class="btn btn-default btn-sm" type="submit"  name="do_diff" value="true">
+											' . $GLOBALS['LANG']->getLL('diff') . '
+										</button>
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+			';
 		$versions = BackendUtility::selectVersionsOfRecord($this->table, $this->uid, '*', $GLOBALS['BE_USER']->workspace);
 		foreach ($versions as $row) {
 			$adminLinks = $this->adminLinks($this->table, $row);
 			$content .= '
-				<tr class="' . ($row['uid'] != $this->uid ? 'bgColor4' : 'bgColor2 tableheader') . '">
-					<td>' . ($row['uid'] != $this->uid ?
-						'<a href="' . $this->doc->issueCommand('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap') . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . IconUtility::getSpriteIcon('actions-version-swap-version') . '</a>' :
-							IconUtility::getSpriteIcon('status-status-current', array('title' => $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE)))) . '</td>
-					<td nowrap="nowrap">' . $adminLinks . '</td>
-					<td nowrap="nowrap">' . BackendUtility::getRecordTitle($this->table, $row, TRUE) . '</td>
+				<tr' . ($row['uid'] != $this->uid ? '' : ' class="active"') . '>
+					<td  class="col-icon">' .
+						($row['uid'] != $this->uid ?
+							'<a href="' . $this->doc->issueCommand('&cmd[' . $this->table . '][' . $this->uid . '][version][swapWith]=' . $row['uid'] . '&cmd[' . $this->table . '][' . $this->uid . '][version][action]=swap') . '" title="' . $GLOBALS['LANG']->getLL('swapWithCurrent', TRUE) . '">' . $this->iconFactory->getIcon('actions-version-swap-version', Icon::SIZE_SMALL) . '</a>' :
+							'<span title="' . $GLOBALS['LANG']->getLL('currentOnlineVersion', TRUE) . '">' . $this->iconFactory->getIcon('status-status-current', Icon::SIZE_SMALL) . '</span>'
+						) . '
+					</td>
+					<td  class="col-icon">' . IconUtility::getSpriteIconForRecord($this->table, $row) . '</td>
+					<td>' . BackendUtility::getRecordTitle($this->table, $row, TRUE) . '</td>
 					<td>' . $row['uid'] . '</td>
 					<td>' . $row['t3ver_oid'] . '</td>
 					<td>' . $row['t3ver_id'] . '</td>
@@ -359,40 +374,56 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 					<td>' . $row['t3ver_stage'] . '</td>
 					<td>' . $row['t3ver_count'] . '</td>
 					<td>' . $row['pid'] . '</td>
-					<td nowrap="nowrap"><a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>' . htmlspecialchars($row['t3ver_label']) . '</td>
-					<td class="version-diff-1"><input type="radio" name="diff_1" value="' . $row['uid'] . '"' . ($diff_1 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
-					<td class="version-diff-2"><input type="radio" name="diff_2" value="' . $row['uid'] . '"' . ($diff_2 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
+					<td>
+						<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick('&edit[' . $this->table . '][' . $row['uid'] . ']=edit&columnsOnly=t3ver_label')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">
+							' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '
+						</a>' . htmlspecialchars($row['t3ver_label']) . '
+					</td>
+					<td class="col-control">' . $adminLinks . '</td>
+					<td class="text-center success"><input type="radio" name="diff_1" value="' . $row['uid'] . '"' . ($diff_1 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
+					<td class="text-center danger"><input type="radio" name="diff_2" value="' . $row['uid'] . '"' . ($diff_2 == $row['uid'] ? ' checked="checked"' : '') . '/></td>
 				</tr>';
 			// Show sub-content if the table is pages AND it is not the online branch (because that will mostly render the WHOLE tree below - not smart;)
-			if ($this->table == 'pages' && $row['uid'] != $this->uid) {
+			if ($this->table === 'pages' && $row['uid'] != $this->uid) {
 				$sub = $this->pageSubContent($row['uid']);
 				if ($sub) {
 					$content .= '
 						<tr>
-							<td></td>
-							<td></td>
-							<td colspan="10">' . $sub . '</td>
 							<td colspan="2"></td>
+							<td colspan="11">' . $sub . '</td>
+							<td class="success"></td>
+							<td class="danger"></td>
 						</tr>';
 				}
 			}
 		}
-		$content .= '</table></form>';
+		$content .= '
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</form>';
 		$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('title'), $content, 0, 1);
 		// Create new:
 		$content = '
-
 			<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_db')) . '" method="post">
-			' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . ': <input type="text" name="cmd[' . $this->table . '][' . $this->uid . '][version][label]" /><br />
-			<br /><input type="hidden" name="cmd[' . $this->table . '][' . $this->uid . '][version][action]" value="new" />
-			<input type="hidden" name="prErr" value="1" />
-			<input type="hidden" name="redirect" value="' . htmlspecialchars($this->REQUEST_URI) . '" />
-			<input class="btn btn-default" type="submit" name="_" value="' . $GLOBALS['LANG']->getLL('createNewVersion') . '" />
-			' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
+				<div class="row">
+					<div class="col-sm-6 col-md-4 col-lg-3">
+						<div class="form-group">
+							<label for="typo3-new-version-label">' . $GLOBALS['LANG']->getLL('tblHeader_t3ver_label') . '</label>
+							<input id="typo3-new-version-label" class="form-control" type="text" name="cmd[' . $this->table . '][' . $this->uid . '][version][label]" />
+						</div>
+						<div class="form-group">
+							<input type="hidden" name="cmd[' . $this->table . '][' . $this->uid . '][version][action]" value="new" />
+							<input type="hidden" name="prErr" value="1" />
+							<input type="hidden" name="redirect" value="' . htmlspecialchars($this->REQUEST_URI) . '" />
+							<input class="btn btn-default" type="submit" name="_" value="' . $GLOBALS['LANG']->getLL('createNewVersion') . '" />
+						</div>
+					</div>
+				</div>
 			</form>
 
 		';
-		$this->content .= $this->doc->spacer(15);
 		$this->content .= $this->doc->section($GLOBALS['LANG']->getLL('createNewVersion'), $content, 0, 1);
 	}
 
@@ -407,26 +438,28 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 		$tableNames = ArrayUtility::removeArrayEntryByValue(array_keys($GLOBALS['TCA']), 'pages');
 		$tableNames[] = 'pages';
 		$content = '';
-		foreach ($tableNames as $tN) {
+		foreach ($tableNames as $table) {
 			// Basically list ALL tables - not only those being copied might be found!
-			$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $tN, 'pid=' . (int)$pid . BackendUtility::deleteClause($tN), '', $GLOBALS['TCA'][$tN]['ctrl']['sortby'] ? $GLOBALS['TCA'][$tN]['ctrl']['sortby'] : '');
+			$mres = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', $table, 'pid=' . (int)$pid . BackendUtility::deleteClause($table), '', $GLOBALS['TCA'][$table]['ctrl']['sortby'] ? $GLOBALS['TCA'][$table]['ctrl']['sortby'] : '');
 			if ($GLOBALS['TYPO3_DB']->sql_num_rows($mres)) {
 				$content .= '
-					<tr>
-						<td colspan="4" class="' . ($GLOBALS['TCA'][$tN]['ctrl']['versioning_followPages'] ? 'bgColor6' : ($tN == 'pages' ? 'bgColor5' : 'bgColor-10')) . '"' . (!$GLOBALS['TCA'][$tN]['ctrl']['versioning_followPages'] && $tN !== 'pages' ? ' style="color: #666666; font-style:italic;"' : '') . '>' . $tN . '</td>
-					</tr>';
+					<table class="table">
+						<tr>
+							<th class="col-icon">' . IconUtility::getSpriteIconForRecord($table, array()) . '</th>
+							<th class="col-title">' . $GLOBALS['LANG']->sL($GLOBALS['TCA'][$table]['ctrl']['title'], TRUE) . '</th>
+							<th></th>
+							<th></th>
+						</tr>';
 				while ($subrow = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($mres)) {
-					$ownVer = $this->lookForOwnVersions($tN, $subrow['uid']);
+					$ownVer = $this->lookForOwnVersions($table, $subrow['uid']);
 					$content .= '
 						<tr>
-							<td>' . $this->adminLinks($tN, $subrow) . '</td>
-							<td>' . $subrow['uid'] . '</td>
-							' . ($ownVer > 1 ? '<td style="font-weight: bold; background-color: yellow;"><a href="' .
-							htmlspecialchars(BackendUtility::getModuleUrl('web_txversionM1', array('table' => $tN, 'uid' => $subrow['uid']))) .
-							'">' . ($ownVer - 1) . '</a></td>' : '<td></td>') . '
-							<td width="98%">' . BackendUtility::getRecordTitle($tN, $subrow, TRUE) . '</td>
+							<td class="col-icon">' . IconUtility::getSpriteIconForRecord($table, $subrow) . '</td>
+							<td class="col-title">' . BackendUtility::getRecordTitle($table, $subrow, TRUE) . '</td>
+							<td>' . ($ownVer > 1 ? '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_txversionM1', array('table' => $table, 'uid' => $subrow['uid']))) . '">' . ($ownVer - 1) . '</a>' : '') . '</td>
+							<td class="col-control">' . $this->adminLinks($table, $subrow) . '</td>
 						</tr>';
-					if ($tN == 'pages' && $c < 100) {
+					if ($table == 'pages' && $c < 100) {
 						$sub = $this->pageSubContent($subrow['uid'], $c + 1);
 						if ($sub) {
 							$content .= '
@@ -439,10 +472,11 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 						}
 					}
 				}
+				$content .= '</table>';
 			}
 			$GLOBALS['TYPO3_DB']->sql_free_result($mres);
 		}
-		return $content ? '<table border="1" cellpadding="1" cellspacing="0" width="100%">' . $content . '</table>' : '';
+		return $content;
 	}
 
 	/**
@@ -453,7 +487,7 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 * @return int Number of versions for record, FALSE if none.
 	 */
 	public function lookForOwnVersions($table, $uid) {
-		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid');
+		$versions = BackendUtility::selectVersionsOfRecord($table, $uid, 'uid', NULL);
 		if (is_array($versions)) {
 			return count($versions);
 		}
@@ -469,28 +503,45 @@ class VersionModuleController extends \TYPO3\CMS\Backend\Module\BaseScriptClass 
 	 */
 	public function adminLinks($table, $row) {
 		// Edit link:
-		$adminLink = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick('&edit[' . $table . '][' . $row['uid'] . ']=edit')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-open') . '</a>';
+		$adminLink = '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::editOnClick('&edit[' . $table . '][' . $row['uid'] . ']=edit')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.edit', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</a>';
 		// Delete link:
-		$adminLink .= '<a href="' . htmlspecialchars($this->doc->issueCommand('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+		$adminLink .= '<a class="btn btn-default" href="' . htmlspecialchars($this->doc->issueCommand('&cmd[' . $table . '][' . $row['uid'] . '][delete]=1')) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:cm.delete', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</a>';
 		if ($table === 'pages') {
 			// If another page module was specified, replace the default Page module with the new one
 			$newPageModule = trim($GLOBALS['BE_USER']->getTSConfigVal('options.overridePageModule'));
 			$pageModule = BackendUtility::isModuleSetInTBE_MODULES($newPageModule) ? $newPageModule : 'web_layout';
-			// Perform some acccess checks:
+			// Perform some access checks:
 			$a_wl = $GLOBALS['BE_USER']->check('modules', 'web_list');
 			$a_wp = $GLOBALS['BE_USER']->check('modules', $pageModule);
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">' . IconUtility::getSpriteIcon('actions-page-open') . '</a>';
-			$adminLink .= '<a href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . IconUtility::getSpriteIcon('actions-system-list-open') . '</a>';
+			$adminLink .= '<a class="btn btn-default" href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'' . $pageModule . '\'); return false;">'
+				. $this->iconFactory->getIcon('actions-page-open', Icon::SIZE_SMALL)
+				. '</a>';
+			$adminLink .= '<a class="btn btn-default" href="#" onclick="top.loadEditId(' . $row['uid'] . ');top.goToModule(\'web_list\'); return false;">' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL) . '</a>';
 			// "View page" icon is added:
-			$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], '', BackendUtility::BEgetRootLine($row['uid']))) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$adminLink .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['uid'], '', BackendUtility::BEgetRootLine($row['uid']))) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 		} else {
 			if ($row['pid'] == -1) {
 				$getVars = '&ADMCMD_vPrev[' . rawurlencode(($table . ':' . $row['t3ver_oid'])) . ']=' . $row['uid'];
 				// "View page" icon is added:
-				$adminLink .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], '', BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+				$adminLink .= '<a class="btn btn-default" href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($row['_REAL_PID'], '', BackendUtility::BEgetRootLine($row['_REAL_PID']), '', '', $getVars)) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 			}
 		}
-		return $adminLink;
+		return '<div class="btn-group btn-group-sm" role="group">' . $adminLink . '</div>';
 	}
 
+
+	/**
+	 * Injects the request object for the current request and gathers all data.
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response the prepared response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->init();
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
 }

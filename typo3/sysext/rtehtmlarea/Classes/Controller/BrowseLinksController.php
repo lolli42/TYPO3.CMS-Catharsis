@@ -25,16 +25,6 @@ use TYPO3\CMS\Rtehtmlarea\BrowseLinks;
 class BrowseLinksController extends ElementBrowserController {
 
 	/**
-	 * @var string
-	 */
-	public $button = 'link';
-
-	/**
-	 * @var BrowseLinks
-	 */
-	public $browser;
-
-	/**
 	 * Initialize controller
 	 */
 	protected function init() {

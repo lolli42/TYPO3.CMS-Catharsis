@@ -28,10 +28,9 @@ class UserStorageCapabilityService {
 	 * for storages driven by special driver such as Flickr, ...
 	 *
 	 * @param array $propertyArray the array with additional configuration options.
-	 * @param \TYPO3\CMS\Backend\Form\FormEngine $tceformsObj the TCEforms parent object
 	 * @return string
 	 */
-	public function renderIsPublic(array $propertyArray, \TYPO3\CMS\Backend\Form\FormEngine $tceformsObj) {
+	public function renderIsPublic(array $propertyArray) {
 
 		$isPublic = $GLOBALS['TCA']['sys_file_storage']['columns']['is_public']['config']['default'];
 		$fileRecord = $propertyArray['row'];
@@ -40,10 +39,10 @@ class UserStorageCapabilityService {
 		if ((int)$propertyArray['row']['uid'] > 0) {
 			$storage = ResourceFactory::getInstance()->getStorageObject($fileRecord['uid']);
 			$storageRecord = $storage->getStorageRecord();
-			$isPublic = $storage->isPublic();
+			$isPublic = $storage->isPublic() && $storageRecord['is_public'];
 
 			// Display a warning to the BE User in case settings is not inline with storage capability.
-			if ($storageRecord['is_public'] != $storage->isPublic()) {
+			if ($storageRecord['is_public'] && !$storage->isPublic()) {
 				$message = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Messaging\FlashMessage::class,
 					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.message.storage_is_no_public'),
 					$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:warning.header.storage_is_no_public'),
@@ -71,8 +70,12 @@ class UserStorageCapabilityService {
 	protected function renderFileInformationContent(array $fileRecord, $isPublic) {
 		$template = '
 		<div class="t3-form-field-item">
-			<input name="data[sys_file_storage][{uid}][is_public]" value="0" type="hidden">
-			<input class="checkbox" value="1" name="data[sys_file_storage][{uid}][is_public]_0" type="checkbox" %s>
+			<div class="checkbox">
+				<label>
+					<input name="data[sys_file_storage][{uid}][is_public]" value="0" type="hidden">
+					<input class="checkbox" value="1" name="data[sys_file_storage][{uid}][is_public]_0" type="checkbox" %s>
+				</label>
+			</div>
 		</div>';
 
 		$content = sprintf($template,

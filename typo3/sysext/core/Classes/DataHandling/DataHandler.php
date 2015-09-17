@@ -32,6 +32,7 @@ use TYPO3\CMS\Core\Utility\File\BasicFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
@@ -2079,7 +2080,7 @@ class DataHandler {
 		}
 		if (!$unsetResult) {
 			$newVal = $this->checkValue_checkMax($tcaFieldConf, $valueArray);
-			$res['value'] = implode(',', $newVal);
+			$res['value'] = $this->castReferenceValue(implode(',', $newVal), $tcaFieldConf);
 		} else {
 			unset($res['value']);
 		}
@@ -2446,7 +2447,7 @@ class DataHandler {
 			if (!is_array($currentValueArray)) {
 				$currentValueArray = array();
 			}
-			if (is_array($currentValueArray['meta']['currentLangId'])) {
+			if (isset($currentValueArray['meta']['currentLangId'])) {
 				unset($currentValueArray['meta']['currentLangId']);
 			}
 			// Remove all old meta for languages...
@@ -2891,18 +2892,18 @@ class DataHandler {
 	 * @return array Modified value array
 	 */
 	public function checkValue_group_select_processDBdata($valueArray, $tcaFieldConf, $id, $status, $type, $currentTable, $currentField) {
-		$tables = $type == 'group' ? $tcaFieldConf['allowed'] : $tcaFieldConf['foreign_table'] . ',' . $tcaFieldConf['neg_foreign_table'];
-		$prep = $type == 'group' ? $tcaFieldConf['prepend_tname'] : $tcaFieldConf['neg_foreign_table'];
+		$tables = $type == 'group' ? $tcaFieldConf['allowed'] : $tcaFieldConf['foreign_table'];
+		$prep = $type == 'group' ? $tcaFieldConf['prepend_tname'] : '';
 		$newRelations = implode(',', $valueArray);
 		/** @var $dbAnalysis RelationHandler */
 		$dbAnalysis = $this->createRelationHandlerInstance();
-		$dbAnalysis->registerNonTableValues = $tcaFieldConf['allowNonIdValues'] ? 1 : 0;
+		$dbAnalysis->registerNonTableValues = !empty($tcaFieldConf['allowNonIdValues']);
 		$dbAnalysis->start($newRelations, $tables, '', 0, $currentTable, $tcaFieldConf);
 		if ($tcaFieldConf['MM']) {
 			if ($status == 'update') {
 				/** @var $oldRelations_dbAnalysis RelationHandler */
 				$oldRelations_dbAnalysis = $this->createRelationHandlerInstance();
-				$oldRelations_dbAnalysis->registerNonTableValues = $tcaFieldConf['allowNonIdValues'] ? 1 : 0;
+				$oldRelations_dbAnalysis->registerNonTableValues = !empty($tcaFieldConf['allowNonIdValues']);
 				// Db analysis with $id will initialize with the existing relations
 				$oldRelations_dbAnalysis->start('', $tables, $tcaFieldConf['MM'], $id, $currentTable, $tcaFieldConf);
 				$oldRelations = implode(',', $oldRelations_dbAnalysis->getValueArray());
@@ -2920,9 +2921,6 @@ class DataHandler {
 			$valueArray = $dbAnalysis->countItems();
 		} else {
 			$valueArray = $dbAnalysis->getValueArray($prep);
-			if ($type == 'select' && $prep) {
-				$valueArray = $dbAnalysis->convertPosNeg($valueArray, $tcaFieldConf['foreign_table'], $tcaFieldConf['neg_foreign_table']);
-			}
 		}
 		// Here we should see if 1) the records exist anymore, 2) which are new and check if the BE_USER has read-access to the new ones.
 		return $valueArray;
@@ -3154,11 +3152,12 @@ class DataHandler {
 				$valueArray = $dbAnalysis->getValueArray();
 				// Checking that the number of items is correct:
 				$valueArray = $this->checkValue_checkMax($tcaFieldConf, $valueArray);
+				$valueData = $this->castReferenceValue(implode(',', $valueArray), $tcaFieldConf);
 				// If a valid translation of the 'keep' mode is active, update relations in the original(!) record:
 				if ($keepTranslation) {
-					$this->updateDB($table, $transOrigPointer, array($field => implode(',', $valueArray)));
+					$this->updateDB($table, $transOrigPointer, array($field => $valueData));
 				} else {
-					$newValue = implode(',', $valueArray);
+					$newValue = $valueData;
 				}
 			}
 		}
@@ -3377,7 +3376,7 @@ class DataHandler {
 		}
 
 		// Initializing:
-		$theNewID = uniqid('NEW', TRUE);
+		$theNewID = StringUtility::getUniqueId('NEW');
 		$enableField = isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']) ? $GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled'] : '';
 		$headerField = $GLOBALS['TCA'][$table]['ctrl']['label'];
 		// Getting default data:
@@ -3630,7 +3629,7 @@ class DataHandler {
 	 * @return int Returns the new ID of the record (if applicable)
 	 */
 	public function insertNewCopyVersion($table, $fieldArray, $realPid) {
-		$id = uniqid('NEW', TRUE);
+		$id = StringUtility::getUniqueId('NEW');
 		// $fieldArray is set as current record.
 		// The point is that when new records are created as copies with flex type fields there might be a field containing information about which DataStructure to use and without that information the flexforms cannot be correctly processed.... This should be OK since the $checkValueRecord is used by the flexform evaluation only anyways...
 		$this->checkValue_currentRecord = $fieldArray;
@@ -3722,8 +3721,8 @@ class DataHandler {
 	 * @return mixed
 	 */
 	protected function copyRecord_processManyToMany($table, $uid, $field, $value, $conf, $language, $localizationMode, $inlineSubType) {
-		$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
-		$prependName = $conf['type'] == 'group' ? $conf['prepend_tname'] : $conf['neg_foreign_table'];
+		$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'];
+		$prependName = $conf['type'] == 'group' ? $conf['prepend_tname'] : '';
 		$mmTable = isset($conf['MM']) && $conf['MM'] ? $conf['MM'] : '';
 		$localizeForeignTable = isset($conf['foreign_table']) && BackendUtility::isTableLocalizable($conf['foreign_table']);
 		$localizeReferences = $localizeForeignTable && isset($conf['localizeReferencesAtParentLocalization']) && $conf['localizeReferencesAtParentLocalization'];
@@ -5166,7 +5165,7 @@ class DataHandler {
 				}
 			}
 		} elseif ($this->isReferenceField($conf)) {
-			$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
+			$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'];
 			$dbAnalysis = $this->createRelationHandlerInstance();
 			$dbAnalysis->start($value, $allowedTables, $conf['MM'], $uid, $table, $conf);
 			foreach ($dbAnalysis->itemArray as $v) {
@@ -5339,8 +5338,8 @@ class DataHandler {
 		foreach ($GLOBALS['TCA'][$table]['columns'] as $field => $fConf) {
 			$conf = $fConf['config'];
 			if ($this->isReferenceField($conf)) {
-				$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
-				$prependName = $conf['type'] == 'group' ? $conf['prepend_tname'] : $conf['neg_foreign_table'];
+				$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'];
+				$prependName = $conf['type'] == 'group' ? $conf['prepend_tname'] : '';
 				if ($conf['MM']) {
 					/** @var $dbAnalysis RelationHandler */
 					$dbAnalysis = $this->createRelationHandlerInstance();
@@ -5390,8 +5389,8 @@ class DataHandler {
 		// Extract parameters:
 		list($table, $uid, $field) = $pParams;
 		if ($this->isReferenceField($dsConf)) {
-			$allowedTables = $dsConf['type'] == 'group' ? $dsConf['allowed'] : $dsConf['foreign_table'] . ',' . $dsConf['neg_foreign_table'];
-			$prependName = $dsConf['type'] == 'group' ? $dsConf['prepend_tname'] : $dsConf['neg_foreign_table'];
+			$allowedTables = $dsConf['type'] == 'group' ? $dsConf['allowed'] : $dsConf['foreign_table'];
+			$prependName = $dsConf['type'] == 'group' ? $dsConf['prepend_tname'] : '';
 			if ($dsConf['MM']) {
 				/** @var $dbAnalysis RelationHandler */
 				$dbAnalysis = $this->createRelationHandlerInstance();
@@ -5550,14 +5549,14 @@ class DataHandler {
 		// Will be set TRUE if an upgrade should be done...
 		$set = FALSE;
 		// Allowed tables for references.
-		$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
+		$allowedTables = $conf['type'] == 'group' ? $conf['allowed'] : $conf['foreign_table'];
 		// Table name to prepend the UID
 		$prependName = $conf['type'] == 'group' ? $conf['prepend_tname'] : '';
 		// Which tables that should possibly not be remapped
 		$dontRemapTables = GeneralUtility::trimExplode(',', $conf['dontRemapTablesOnCopy'], TRUE);
 		// Convert value to list of references:
 		$dbAnalysis = $this->createRelationHandlerInstance();
-		$dbAnalysis->registerNonTableValues = $conf['type'] == 'select' && $conf['allowNonIdValues'] ? 1 : 0;
+		$dbAnalysis->registerNonTableValues = $conf['type'] == 'select' && $conf['allowNonIdValues'];
 		$dbAnalysis->start($value, $allowedTables, $conf['MM'], $MM_localUid, $table, $conf);
 		// Traverse those references and map IDs:
 		foreach ($dbAnalysis->itemArray as $k => $v) {
@@ -5595,11 +5594,7 @@ class DataHandler {
 			if ($conf['MM']) {
 				$dbAnalysis->writeMM($conf['MM'], $MM_localUid, $prependName);
 			} else {
-				$vArray = $dbAnalysis->getValueArray($prependName);
-				if ($conf['type'] == 'select') {
-					$vArray = $dbAnalysis->convertPosNeg($vArray, $conf['foreign_table'], $conf['neg_foreign_table']);
-				}
-				return $vArray;
+				return $dbAnalysis->getValueArray($prependName);
 			}
 		}
 		return NULL;
@@ -5715,6 +5710,9 @@ class DataHandler {
 				// If array is returned, check for maxitems condition, if string is returned this was already done:
 				if (is_array($newValue)) {
 					$newValue = implode(',', $this->checkValue_checkMax($tcaFieldConf, $newValue));
+					// The reference casting is only required if
+					// checkValue_group_select_processDBdata() returns an array
+					$newValue = $this->castReferenceValue($newValue, $tcaFieldConf);
 				}
 				// Update in database (list of children (csv) or number of relations (foreign_field)):
 				if (!empty($field)) {
@@ -7223,6 +7221,34 @@ class DataHandler {
 	}
 
 	/**
+	 * Casts a reference value. In case MM relations or foreign_field
+	 * references are used. All other configurations, as well as
+	 * foreign_table(!) could be stored as comma-separated-values
+	 * as well. Since the system is not able to determine the default
+	 * value automatically then, the TCA default value is used if
+	 * it has been defined.
+	 *
+	 * @param int|string $value The value to be casted (e.g. '', '0', '1,2,3')
+	 * @param array $configuration The TCA configuration of the accordant field
+	 * @return int|string
+	 */
+	protected function castReferenceValue($value, array $configuration) {
+		if ((string)$value !== '') {
+			return $value;
+		}
+
+		if (!empty($configuration['MM']) || !empty($configuration['foreign_field'])) {
+			return 0;
+		}
+
+		if (array_key_exists('default', $configuration)) {
+			return $configuration['default'];
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Returns TRUE if the TCA/columns field type is a DB reference field
 	 *
 	 * @param array $conf Config array for TCA/columns field
@@ -7269,7 +7295,7 @@ class DataHandler {
 	public function getCopyHeader($table, $pid, $field, $value, $count, $prevTitle = '') {
 		// Set title value to check for:
 		if ($count) {
-			$checkTitle = $value . rtrim((' ' . sprintf($this->prependLabel($table), $count)));
+			$checkTitle = $value . rtrim(' ' . sprintf($this->prependLabel($table), $count));
 		} else {
 			$checkTitle = $value;
 		}

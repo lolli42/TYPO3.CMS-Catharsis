@@ -138,7 +138,7 @@ CREATE TABLE pages (
 	layout int(11) unsigned DEFAULT '0' NOT NULL,
 	url_scheme tinyint(3) unsigned DEFAULT '0' NOT NULL,
 	target varchar(80) DEFAULT '' NOT NULL,
-	media text,
+	media int(11) unsigned DEFAULT '0' NOT NULL,
 	lastUpdated int(10) unsigned DEFAULT '0' NOT NULL,
 	keywords text,
 	cache_timeout int(10) unsigned DEFAULT '0' NOT NULL,
@@ -259,6 +259,7 @@ CREATE TABLE sys_file_storage (
 	is_public tinyint(4) DEFAULT '0' NOT NULL,
 	is_writable tinyint(4) DEFAULT '0' NOT NULL,
 	is_online tinyint(4) DEFAULT '1' NOT NULL,
+	auto_extract_metadata tinyint(4) DEFAULT '1' NOT NULL,
 	processingfolder tinytext,
 
 	PRIMARY KEY (uid),
@@ -416,6 +417,7 @@ CREATE TABLE sys_file_reference (
 	link varchar(1024) DEFAULT '' NOT NULL,
 	downloadname tinytext,
 	crop varchar(4000) DEFAULT '' NOT NULL,
+	autoplay tinyint(4) DEFAULT '0' NOT NULL,
 
 	PRIMARY KEY (uid),
 	KEY parent (pid,deleted),
@@ -603,7 +605,7 @@ CREATE TABLE sys_log (
 	details text NOT NULL,
 	tstamp int(11) unsigned DEFAULT '0' NOT NULL,
 	type tinyint(3) unsigned DEFAULT '0' NOT NULL,
-	details_nr tinyint(3) unsigned DEFAULT '0' NOT NULL,
+	details_nr tinyint(3) DEFAULT '0' NOT NULL,
 	IP varchar(39) DEFAULT '' NOT NULL,
 	log_data text,
 	event_pid int(11) DEFAULT '-1' NOT NULL,

@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Core\Migrations;
  */
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Migrate TCA from old to new syntax. Used in bootstrap and Flex Form Data Structures.
@@ -44,6 +45,8 @@ class TcaMigration {
 		$tca = $this->migrateT3editorWizardWithEnabledByTypeConfigToColumnsOverrides($tca);
 		$tca = $this->migrateShowItemAdditionalPaletteToOwnPalette($tca);
 		$tca = $this->migrateIconsForFormFieldWizardsToNewLocation($tca);
+		$tca = $this->migrateExtAndSysextPathToEXTPath($tca);
+		$tca = $this->migrateIconsInOptionTags($tca);
 		// @todo: if showitem/defaultExtras wizards[xy] is migrated to columnsOverrides here, enableByTypeConfig could be dropped
 		return $tca;
 	}
@@ -388,6 +391,75 @@ class TcaMigration {
 							}
 						}
 					}
+				}
+			}
+		}
+
+		return $newTca;
+	}
+
+	/**
+	 * Migrate file reference which starts with ext/ or sysext/ to EXT:
+	 *
+	 * @param array $tca Incoming TCA
+	 * @return array Migrated TCA
+	 */
+	protected function migrateExtAndSysextPathToEXTPath($tca) {
+		foreach ($tca as $table => &$tableDefinition) {
+			if (!isset($tableDefinition['columns']) || !is_array($tableDefinition['columns'])) {
+				continue;
+			}
+			foreach ($tableDefinition['columns'] as $fieldName => &$fieldConfig) {
+				if (
+					!empty($fieldConfig['config']['type']) // type is set
+					&& trim($fieldConfig['config']['type']) === 'select' // to "select"
+					&& isset($fieldConfig['config']['items'])
+					&& is_array($fieldConfig['config']['items']) // and there are items
+				) {
+					foreach ($fieldConfig['config']['items'] as &$itemConfig) {
+						// more then two values? then the third entry is the image path
+						if (!empty($itemConfig[2])) {
+							// If the path starts with ext/ or sysext/ migrate it
+							if (
+								StringUtility::beginsWith($itemConfig[2], 'ext/')
+								|| StringUtility::beginsWith($itemConfig[2], 'sysext/')
+							) {
+								$tcaPath = implode('.', [$table, 'columns', $fieldName, 'config', 'items']);
+								$pathParts = GeneralUtility::trimExplode('/', $itemConfig[2]);
+								// remove first element (ext or sysext)
+								array_shift($pathParts);
+								$path = implode('/', $pathParts);
+								$this->messages[] = '[' . $tcaPath . '] ext/ or sysext/ within the path (' . $path . ') in items array is deprecated, use EXT: reference';
+								$itemConfig[2] = 'EXT:' . $path;
+							} elseif (StringUtility::beginsWith($itemConfig[2], 'i/')) {
+								$this->messages[] = '[' . $tcaPath . '] i/ within the path (' . $path . ') in items array is deprecated, use EXT: reference';
+								$itemConfig[2] = 'EXT:t3skin/icons/gfx/' . $itemConfig[2];
+							}
+						}
+					}
+				}
+			}
+		}
+		return $tca;
+	}
+
+	/**
+	 * Migrate "iconsInOptionTags" for "select" TCA fields
+	 *
+	 * @param array $tca Incoming TCA
+	 * @return array Migrated TCA
+	 */
+	protected function migrateIconsInOptionTags($tca) {
+		$newTca = $tca;
+
+		foreach ($newTca as $table => &$tableDefinition) {
+			if (!isset($tableDefinition['columns']) || !is_array($tableDefinition['columns'])) {
+				continue;
+			}
+			foreach ($tableDefinition['columns'] as $fieldName => &$fieldConfig) {
+				if (isset($fieldConfig['config']['iconsInOptionTags'])) {
+					unset($fieldConfig['config']['iconsInOptionTags']);
+					$this->messages[] = 'Configuration option "iconsInOptionTags" was removed from field "' . $fieldName . '" in TCA table "' . $table . '"';
 				}
 			}
 		}

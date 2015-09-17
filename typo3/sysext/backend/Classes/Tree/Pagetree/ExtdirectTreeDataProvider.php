@@ -15,6 +15,8 @@ namespace TYPO3\CMS\Backend\Tree\Pagetree;
  */
 
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -29,6 +31,18 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 	 * @var \TYPO3\CMS\Backend\Tree\Pagetree\DataProvider
 	 */
 	protected $dataProvider = NULL;
+
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
 
 	/**
 	 * Sets the data provider
@@ -181,13 +195,15 @@ class ExtdirectTreeDataProvider extends \TYPO3\CMS\Backend\Tree\AbstractExtJsTre
 				'temporaryMountPoint' => Commands::getMountPointPath()
 			),
 			'Sprites' => array(
-				'Filter' => IconUtility::getSpriteIconClasses('actions-system-tree-search-open'),
-				'NewNode' => IconUtility::getSpriteIconClasses('actions-page-new'),
-				'Refresh' => IconUtility::getSpriteIconClasses('actions-system-refresh'),
 				'InputClear' => IconUtility::getSpriteIconClasses('actions-input-clear'),
 				'TrashCan' => IconUtility::getSpriteIconClasses('actions-edit-delete'),
 				'TrashCanRestore' => IconUtility::getSpriteIconClasses('actions-edit-restore'),
 				'Info' => IconUtility::getSpriteIconClasses('actions-document-info')
+			),
+			'Icons' => array(
+				'NewNode' => (string)$this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL),
+				'Filter' => (string)$this->iconFactory->getIcon('actions-filter', Icon::SIZE_SMALL),
+				'Refresh' => (string)$this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)
 			)
 		);
 		return $configuration;

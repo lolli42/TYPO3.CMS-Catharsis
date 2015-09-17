@@ -522,11 +522,18 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 				$this->lastQuery = $this->INSERTquery($table, $fields_values, $no_quote_fields);
 				if (is_string($this->lastQuery)) {
 					$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery, FALSE);
+					if ($this->handlerInstance[$this->lastHandlerKey]->hasInsertID && !empty($this->cache_autoIncFields[$table])) {
+						// The table is able to retrieve the ID of the last insert, use it to update the blob below
+						$new_id = $this->handlerInstance[$this->lastHandlerKey]->Insert_ID($table, $this->cache_autoIncFields[$table]);
+						if ($table !== 'tx_dbal_debuglog') {
+							$this->handlerInstance[$this->lastHandlerKey]->last_insert_id = $new_id;
+						}
+					}
 				} else {
 					$this->handlerInstance[$this->lastHandlerKey]->StartTrans();
 					if ((string)$this->lastQuery[0] !== '') {
 						$sqlResult = $this->handlerInstance[$this->lastHandlerKey]->_query($this->lastQuery[0], FALSE);
-						if ($this->handlerInstance[$this->lastHandlerKey]->hasInsertID) {
+						if ($this->handlerInstance[$this->lastHandlerKey]->hasInsertID && !empty($this->cache_autoIncFields[$table])) {
 							// The table is able to retrieve the ID of the last insert, use it to update the blob below
 							$new_id = $this->handlerInstance[$this->lastHandlerKey]->Insert_ID($table, $this->cache_autoIncFields[$table]);
 							if ($table !== 'tx_dbal_debuglog') {
@@ -1799,9 +1806,7 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 					}
 				} else {
 					// Detecting value type; list or plain:
-					if (GeneralUtility::inList('NOTIN,IN', strtoupper(str_replace(array(' ', '
-', '
-', '	'), '', $where_clause[$k]['comparator'])))) {
+					if (GeneralUtility::inList('NOTIN,IN', strtoupper(str_replace(array(' ', LF, CR, TAB), '', $where_clause[$k]['comparator'])))) {
 						if (isset($v['subquery'])) {
 							$where_clause[$k]['subquery'] = $this->quoteSELECTsubquery($v['subquery']);
 						}
@@ -1811,6 +1816,8 @@ class DatabaseConnection extends \TYPO3\CMS\Core\Database\DatabaseConnection {
 							&& is_string($where_clause[$k]['value'][0]) && strstr($where_clause[$k]['value'][0], '.')
 						) {
 							$where_clause[$k]['value'][0] = $this->quoteFieldNames($where_clause[$k]['value'][0]);
+						} elseif ($this->runningADOdbDriver('mssql')) {
+							$where_clause[$k]['value'][0] = substr($this->handlerInstance[$this->lastHandlerKey]->qstr($where_clause[$k]['value'][0]), 1, -1);
 						}
 					}
 				}

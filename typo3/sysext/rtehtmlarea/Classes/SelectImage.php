@@ -17,10 +17,14 @@ namespace TYPO3\CMS\Rtehtmlarea;
 use TYPO3\CMS\Backend\Tree\View\ElementBrowserFolderTreeView;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Resource;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\FileInterface;
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\Service\MagicImageService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Resource;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Recordlist\Browser\ElementBrowser;
 
@@ -46,10 +50,19 @@ class SelectImage extends ElementBrowser {
 	 */
 	public $content;
 
+	/**
+	 * @var array
+	 */
 	public $allowedItems;
 
+	/**
+	 * @var array
+	 */
 	public $allowedFileTypes = array();
 
+	/**
+	 * @var string
+	 */
 	protected $defaultClass;
 
 	/**
@@ -66,22 +79,35 @@ class SelectImage extends ElementBrowser {
 	 */
 	protected $plainMaxHeight;
 
+	/**
+	 * @var string
+	 */
 	protected $imgPath;
 
+	/**
+	 * @var int
+	 */
 	public $editorNo;
 
+	/**
+	 * @var int
+	 */
 	public $sys_language_content;
 
-	public $thisConfig;
-
+	/**
+	 * @var array
+	 */
 	public $buttonConfig;
 
-	protected $imgObj;
+	/**
+	 * @var bool
+	 */
+	public $addModifyTab;
 
 	/**
 	 * @var string
 	 */
-	public $addModifyTab;
+	protected $hookName = 'ext/rtehtmlarea/mod4/class.tx_rtehtmlarea_select_image.php';
 
 	/**
 	 * Initialisation
@@ -90,8 +116,8 @@ class SelectImage extends ElementBrowser {
 	 */
 	public function init() {
 		$this->initVariables();
-		$this->initConfiguration();
-		$this->initHookObjects('ext/rtehtmlarea/mod4/class.tx_rtehtmlarea_select_image.php');
+
+		$this->initHookObjects();
 		$this->allowedItems = $this->getAllowedItems('magic,plain,image');
 		// Insert the image and exit
 		$this->insertImage();
@@ -106,12 +132,13 @@ class SelectImage extends ElementBrowser {
 	 */
 	public function initVariables() {
 		parent::initVariables();
+
 		// Get "act"
 		$this->act = GeneralUtility::_GP('act');
 		if (!$this->act) {
 			$this->act = FALSE;
 		}
-		$this->addModifyTab = GeneralUtility::_GP('addModifyTab');
+		$this->addModifyTab = (bool)GeneralUtility::_GP('addModifyTab');
 		// Process bparams
 		$pArr = explode('|', $this->bparams);
 		$pRteArr = explode(':', $pArr[1]);
@@ -125,11 +152,16 @@ class SelectImage extends ElementBrowser {
 		}
 		$pArr[1] = implode(':', array($this->editorNo, $this->sys_language_content));
 		$pArr[2] = $this->RTEtsConfigParams;
-		if ($this->act == 'dragdrop' || $this->act == 'plain') {
+		if ($this->act === 'dragdrop' || $this->act === 'plain') {
 			$this->allowedFileTypes = explode(',', self::PLAIN_MODE_IMAGE_FILE_EXTENSIONS);
 		}
 		$pArr[3] = implode(',', $this->allowedFileTypes);
 		$this->bparams = implode('|', $pArr);
+
+		$this->buttonConfig = $this->getButtonConfig();
+		$this->imgPath = $this->getImgPath();
+		$this->defaultClass = $this->getDefaultClass();
+		$this->setMaximumPlainImageDimensions();
 	}
 
 	/**
@@ -140,29 +172,20 @@ class SelectImage extends ElementBrowser {
 	protected function initDocumentTemplate() {
 		parent::initDocumentTemplate();
 
-		$this->doc->bodyTagId = 'typo3-browse-links-php';
-		$this->doc->bodyTagAdditions = $this->getBodyTagAdditions();
-		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
+		$this->doc->bodyTagAdditions = 'onload="SelectImage.initEventListeners();"';
+
+		$pageRenderer = $this->getPageRenderer();
+		$pageRenderer->addCssFile(ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyTree', 'function(Tree) {
 			Tree.ajaxID = "SC_alt_file_navframe::expandCollapse";
 		}');
-		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Rtehtmlarea/Modules/SelectImage', 'function(SelectImage) {
+		$pageRenderer->loadRequireJsModule('TYPO3/CMS/Rtehtmlarea/Modules/SelectImage', 'function(SelectImage) {
 			SelectImage.editorNo = ' . GeneralUtility::quoteJSvalue($this->editorNo) . ';
 			SelectImage.act = ' . GeneralUtility::quoteJSvalue($this->act ?: reset($this->allowedItems)) . ';
 			SelectImage.sys_language_content = ' . GeneralUtility::quoteJSvalue($this->sys_language_content) . ';
 			SelectImage.RTEtsConfigParams = ' . GeneralUtility::quoteJSvalue(rawurlencode($this->RTEtsConfigParams)) . ';
 			SelectImage.bparams = ' . GeneralUtility::quoteJSvalue($this->bparams) . ';
 		}');
-		$this->getPageRenderer()->addCssFile(ExtensionManagementUtility::extRelPath('t3skin') . 'rtehtmlarea/htmlarea.css');
-		$this->doc->getContextMenuCode();
-	}
-
-	/**
-	 * Provide the additional parameters to be included in the template body tag
-	 *
-	 * @return string the body tag additions
-	 */
-	public function getBodyTagAdditions() {
-		return 'onload="SelectImage.initEventListeners();"';
 	}
 
 	/**
@@ -172,50 +195,51 @@ class SelectImage extends ElementBrowser {
 	 */
 	protected function insertImage() {
 		$uidList = (string)GeneralUtility::_GP('uidList');
-		if (GeneralUtility::_GP('insertImage') && $uidList) {
-			$uids = explode('|', $uidList);
-			$insertJsStatements = array();
-			foreach ($uids as $uid) {
-				/** @var $fileObject Resource\File */
-				$fileObject = Resource\ResourceFactory::getInstance()->getFileObject((int)$uid);
-				// Get default values for alt and title attributes from file properties
-				$altText = $fileObject->getProperty('alternative');
-				$titleText = $fileObject->getProperty('title');
-				switch ($this->act) {
-					case 'magic':
-						$insertJsStatements[] = $this->insertMagicImage($fileObject, $altText, $titleText, 'data-htmlarea-file-uid="' . $uid . '"');
-						break;
-					case 'plain':
-						$insertJsStatements[] = $this->insertPlainImage($fileObject, $altText, $titleText, 'data-htmlarea-file-uid="' . $uid . '"');
-						break;
-					default:
-						// Call hook
-						foreach ($this->hookObjects as $hookObject) {
-							if (method_exists($hookObject, 'insertElement')) {
-								$hookObject->insertElement($this->act);
-							}
-						}
-				}
-			}
-			$this->insertImages($insertJsStatements);
-			die;
+		if (!GeneralUtility::_GP('insertImage') || !$uidList) {
+			return;
 		}
+		$uids = explode('|', $uidList);
+		$insertJsStatements = array();
+		foreach ($uids as $uid) {
+			/** @var $fileObject File */
+			$fileObject = ResourceFactory::getInstance()->getFileObject((int)$uid);
+			// Get default values for alt and title attributes from file properties
+			$altText = $fileObject->getProperty('alternative');
+			$titleText = $fileObject->getProperty('title');
+			switch ($this->act) {
+				case 'magic':
+					$insertJsStatements[] = $this->insertMagicImage($fileObject, $altText, $titleText, 'data-htmlarea-file-uid="' . $uid . '"');
+					break;
+				case 'plain':
+					$insertJsStatements[] = $this->insertPlainImage($fileObject, $altText, $titleText, 'data-htmlarea-file-uid="' . $uid . '"');
+					break;
+				default:
+					// Call hook
+					foreach ($this->hookObjects as $hookObject) {
+						if (method_exists($hookObject, 'insertElement')) {
+							$hookObject->insertElement($this->act);
+						}
+					}
+			}
+		}
+		$this->insertImages($insertJsStatements);
+		die;
 	}
 
 	/**
 	 * Insert a magic image
 	 *
-	 * @param Resource\File $fileObject: the image file
+	 * @param File $fileObject: the image file
 	 * @param string $altText: text for the alt attribute of the image
 	 * @param string $titleText: text for the title attribute of the image
 	 * @param string $additionalParams: text representing more HTML attributes to be added on the img tag
 	 * @return string the magic image JS insertion statement
 	 */
-	public function insertMagicImage(Resource\File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
+	public function insertMagicImage(File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
 		// Create the magic image service
 		/** @var $magicImageService MagicImageService */
 		$magicImageService = GeneralUtility::makeInstance(MagicImageService::class);
-		$magicImageService->setMagicImageMaximumDimensions($this->thisConfig);
+		$magicImageService->setMagicImageMaximumDimensions($this->RTEProperties['default.']);
 		// Create the magic image
 		$imageConfiguration = array(
 			'width' => GeneralUtility::_GP('cWidth'),
@@ -240,7 +264,7 @@ class SelectImage extends ElementBrowser {
 	 * @param string $additionalParams: text representing more HTML attributes to be added on the img tag
 	 * @return string the plain image JS insertion statement
 	 */
-	public function insertPlainImage(Resource\File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
+	public function insertPlainImage(File $fileObject, $altText = '', $titleText = '', $additionalParams = '') {
 		$width = $fileObject->getProperty('width');
 		$height = $fileObject->getProperty('height');
 		if (!$width || !$height) {
@@ -286,18 +310,19 @@ class SelectImage extends ElementBrowser {
 <head>
 	<title>Untitled</title>
 	<script type="text/javascript">
-	/*<![CDATA[*/
 		var plugin = window.parent.RTEarea[' . GeneralUtility::quoteJSvalue($this->editorNo) . '].editor.getPlugin("TYPO3Image");
 		var imageTags = [];
 		function insertImage(file,width,height,alt,title,additionalParams) {
-			imageTags.push(\'<img src="\'+file+\'" width="\'+parseInt(width)+\'" height="\'+parseInt(height)+\'"\'' . ($this->defaultClass ? '+\' class="' . $this->defaultClass . '"\'' : '') . '+(alt?\' alt="\'+alt+\'"\':\'\')+(title?\' title="\'+title+\'"\':\'\')+(additionalParams?\' \'+additionalParams:\'\')+\' />\');
+			imageTags.push(\'<img src="\'+file+\'" width="\'+parseInt(width)+\'" height="\'+parseInt(height)+\'"\''
+			. ($this->defaultClass ? '+\' class="' . $this->defaultClass . '"\'' : '')
+			. '+ (alt ? \' alt="\' + alt + \'"\' : \'\') + (title ? \' title="\' + title + \'"\' : \'\') + (additionalParams ? \' \' + additionalParams : \'\') +\' />\');
 		}
-	/*]]>*/
 	</script>
 </head>
 <body>
 <script type="text/javascript">
-/*<![CDATA[*/' . implode (LF, $insertJsStatements) . 'plugin.insertImage(imageTags.join(\' \'));/*]]>*/
+' . implode (LF, $insertJsStatements) . '
+plugin.insertImage(imageTags.join(\' \'));
 </script>
 </body>
 </html>';
@@ -312,7 +337,7 @@ class SelectImage extends ElementBrowser {
 	 * @return string the generated JS code
 	 */
 	public function getJSCode($act, $editorNo, $sys_language_content) {
-		$JScode = '
+		return '
 			function insertElement(table, uid, type, fileName, filePath, fileExt, fileIcon, action, close) {
 				return SelectImage.jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript()) . ' + "insertImage=1&uidList=" + uid);
 			}
@@ -323,7 +348,6 @@ class SelectImage extends ElementBrowser {
 			function jumpToUrl(URL,anchor) {
 				SelectImage.jumpToUrl(URL, anchor);
 			};';
-		return $JScode;
 	}
 
 	/**
@@ -335,8 +359,8 @@ class SelectImage extends ElementBrowser {
 	 */
 	public function processSessionData($data) {
 		$store = FALSE;
-		if ($this->act != 'image') {
-			if (isset($this->act)) {
+		if ($this->act !== 'image') {
+			if ($this->act) {
 				$data['act'] = $this->act;
 				$store = TRUE;
 			} else {
@@ -359,7 +383,7 @@ class SelectImage extends ElementBrowser {
 	 * @return string Modified content variable.
 	 * @return string
 	 */
-	public function main_rte($wiz = FALSE) {
+	protected function main_rte($wiz = FALSE) {
 		// Starting content:
 		$lang = $this->getLanguageService();
 		$this->content = $this->doc->startPage($lang->getLL('Insert Image', TRUE));
@@ -367,7 +391,7 @@ class SelectImage extends ElementBrowser {
 		$this->content .= $this->doc->getTabMenuRaw($this->buildMenuArray($wiz, $this->allowedItems));
 		switch ($this->act) {
 			case 'image':
-				$classesImage = $this->buttonConfig['properties.']['class.']['allowedClasses'] || $this->thisConfig['classesImage'] ? 'true' : 'false';
+				$classesImage = $this->buttonConfig['properties.']['class.']['allowedClasses'] || $this->RTEProperties['default.']['classesImage'] ? 'true' : 'false';
 				$removedProperties = array();
 				if (is_array($this->buttonConfig['properties.'])) {
 					if ($this->buttonConfig['properties.']['removeItems']) {
@@ -384,8 +408,8 @@ class SelectImage extends ElementBrowser {
 				}
 				$lockPlainWidth = 'false';
 				$lockPlainHeight = 'false';
-				if (is_array($this->thisConfig['proc.']) && $this->thisConfig['proc.']['plainImageMode']) {
-					$plainImageMode = $this->thisConfig['proc.']['plainImageMode'];
+				if (is_array($this->RTEProperties['default.']['proc.']) && $this->RTEProperties['default.']['proc.']['plainImageMode']) {
+					$plainImageMode = $this->RTEProperties['default.']['proc.']['plainImageMode'];
 					$lockPlainWidth = $plainImageMode == 'lockDimensions' ? 'true' : 'false';
 					$lockPlainHeight = $lockPlainWidth || $plainImageMode == 'lockRatio' || $plainImageMode == 'lockRatioWhenSmaller' ? 'true' : 'false';
 				}
@@ -426,14 +450,14 @@ class SelectImage extends ElementBrowser {
 				if ($this->expandFolder) {
 					$fileOrFolderObject = NULL;
 					try {
-						$fileOrFolderObject = Resource\ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
+						$fileOrFolderObject = ResourceFactory::getInstance()->retrieveFileOrFolderObject($this->expandFolder);
 					} catch (\Exception $e) {
 						// No path is selected
 					}
-					if ($fileOrFolderObject instanceof Resource\Folder) {
+					if ($fileOrFolderObject instanceof Folder) {
 						// it's a folder
 						$selectedFolder = $fileOrFolderObject;
-					} elseif ($fileOrFolderObject instanceof Resource\FileInterface) {
+					} elseif ($fileOrFolderObject instanceof FileInterface) {
 						// it's a file
 						try {
 							$selectedFolder = $fileOrFolderObject->getParentFolder();
@@ -465,7 +489,11 @@ class SelectImage extends ElementBrowser {
 				// Render the filelist if there is a folder selected
 				$files = '';
 				if ($selectedFolder) {
-					$files = $this->TBE_expandFolder($selectedFolder, $this->act === 'plain' ? self::PLAIN_MODE_IMAGE_FILE_EXTENSIONS : $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $backendUser->getTSConfigVal('options.noThumbsInRTEimageSelect'));
+					$files = $this->TBE_expandFolder(
+						$selectedFolder,
+						$this->act === 'plain' ? self::PLAIN_MODE_IMAGE_FILE_EXTENSIONS : $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'],
+						$backendUser->getTSConfigVal('options.noThumbsInRTEimageSelect')
+					);
 				}
 				// Setup filelist indexed elements:
 				$this->doc->JScode .= $this->doc->wrapScriptTags('
@@ -500,6 +528,7 @@ class SelectImage extends ElementBrowser {
 				break;
 			case 'dragdrop':
 				$foldertree = GeneralUtility::makeInstance(ElementBrowserFolderTreeView::class);
+				$foldertree->setElementBrowser($this);
 				$foldertree->thisScript = $this->thisScript;
 				$foldertree->ext_noTempRecyclerDirs = TRUE;
 				$tree = $foldertree->getBrowsableTree();
@@ -513,7 +542,7 @@ class SelectImage extends ElementBrowser {
 				$selectedFolder = FALSE;
 				if ($this->expandFolder) {
 					try {
-						$selectedFolder = Resource\ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($this->expandFolder);
+						$selectedFolder = ResourceFactory::getInstance()->getFolderObjectFromCombinedIdentifier($this->expandFolder);
 					} catch (\Exception $e) {
 					}
 				}
@@ -546,8 +575,8 @@ class SelectImage extends ElementBrowser {
 	/**
 	 * Returns an array definition of the top menu
 	 *
-	 * @param $wiz
-	 * @param $allowedItems
+	 * @param bool $wiz
+	 * @param array $allowedItems
 	 * @return array
 	 */
 	protected function buildMenuArray($wiz, $allowedItems) {
@@ -593,19 +622,6 @@ class SelectImage extends ElementBrowser {
 	}
 
 	/**
-	 * Initializes the configuration variables
-	 *
-	 * @return void
-	 */
-	public function initConfiguration() {
-		$this->thisConfig = $this->getRTEConfig();
-		$this->buttonConfig = $this->getButtonConfig();
-		$this->imgPath = $this->getImgPath();
-		$this->defaultClass = $this->getDefaultClass();
-		$this->setMaximumPlainImageDimensions();
-	}
-
-	/**
 	 * Get the path of the image to be inserted or modified
 	 *
 	 * @return string path to the image
@@ -621,7 +637,9 @@ class SelectImage extends ElementBrowser {
 	 * @return array the configuration array of the image button
 	 */
 	protected function getButtonConfig() {
-		return is_array($this->thisConfig['buttons.']) && is_array($this->thisConfig['buttons.']['image.']) ? $this->thisConfig['buttons.']['image.'] : array();
+		return isset($this->RTEProperties['default.']['buttons.']['image.'])
+			? $this->RTEProperties['default.']['buttons.']['image.']
+			: array();
 	}
 
 	/**
@@ -647,6 +665,11 @@ class SelectImage extends ElementBrowser {
 		// Remove options according to RTE configuration
 		if (is_array($this->buttonConfig['options.']) && $this->buttonConfig['options.']['removeItems']) {
 			$allowedItems = array_diff($allowedItems, GeneralUtility::trimExplode(',', $this->buttonConfig['options.']['removeItems'], TRUE));
+		}
+
+		reset($allowedItems);
+		if (!in_array($this->act, $allowedItems)) {
+			$this->act = current($allowedItems);
 		}
 		return $allowedItems;
 	}
@@ -732,11 +755,11 @@ class SelectImage extends ElementBrowser {
 	 *
 	 * In "plain" RTE mode only image files with a maximum width and height are selectable.
 	 *
-	 * @param Resource\FileInterface $file
+	 * @param FileInterface $file
 	 * @param array $imgInfo Image dimensions from \TYPO3\CMS\Core\Imaging\GraphicalFunctions::getImageDimensions()
 	 * @return bool TRUE if file is selectable.
 	 */
-	protected function fileIsSelectableInFileList(Resource\FileInterface $file, array $imgInfo) {
+	protected function fileIsSelectableInFileList(FileInterface $file, array $imgInfo) {
 		return (
 			$this->act !== 'plain'
 			|| (

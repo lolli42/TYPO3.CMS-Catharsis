@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Core\Tests\Unit\Html;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Html\HtmlParser;
+
 /**
  * Testcase for \TYPO3\CMS\Core\Html\HtmlParser
  */
@@ -25,209 +27,7 @@ class HtmlParserTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $subject = NULL;
 
 	protected function setUp() {
-		$this->subject = new \TYPO3\CMS\Core\Html\HtmlParser();
-	}
-
-	/**
-	 * Data provider for substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArray
-	 */
-	public function substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArrayDataProvider() {
-		$template = '###SINGLEMARKER1###
-<!-- ###FOO### begin -->
-<!-- ###BAR### begin -->
-###SINGLEMARKER2###
-<!-- ###BAR### end -->
-<!-- ###FOOTER### begin -->
-###SINGLEMARKER3###
-<!-- ###FOOTER### end -->
-<!-- ###FOO### end -->';
-
-		$expected ='Value 1
-
-
-Value 2.1
-
-Value 2.2
-
-
-Value 3.1
-
-Value 3.2
-
-';
-
-		return array(
-			'Single marker' => array(
-				'###SINGLEMARKER###',
-				array(
-					'###SINGLEMARKER###' => 'Value 1'
-				),
-				'',
-				FALSE,
-				FALSE,
-				'Value 1'
-			),
-			'Subpart marker' => array(
-				$template,
-				array(
-					'###SINGLEMARKER1###' => 'Value 1',
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								),
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.2'
-								)
-							),
-							'###FOOTER###' => array(
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.1'
-								),
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'',
-				FALSE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with wrap' => array(
-				$template,
-				array(
-					'SINGLEMARKER1' => 'Value 1',
-					'FOO' => array(
-						array(
-							'BAR' => array(
-								array(
-									'SINGLEMARKER2' => 'Value 2.1'
-								),
-								array(
-									'SINGLEMARKER2' => 'Value 2.2'
-								)
-							),
-							'FOOTER' => array(
-								array(
-									'SINGLEMARKER3' => 'Value 3.1'
-								),
-								array(
-									'SINGLEMARKER3' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'###|###',
-				FALSE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with lower marker array keys' => array(
-				$template,
-				array(
-					'###singlemarker1###' => 'Value 1',
-					'###foo###' => array(
-						array(
-							'###bar###' => array(
-								array(
-									'###singlemarker2###' => 'Value 2.1'
-								),
-								array(
-									'###singlemarker2###' => 'Value 2.2'
-								)
-							),
-							'###footer###' => array(
-								array(
-									'###singlemarker3###' => 'Value 3.1'
-								),
-								array(
-									'###singlemarker3###' => 'Value 3.2'
-								)
-							)
-						)
-					)
-				),
-				'',
-				TRUE,
-				FALSE,
-				$expected
-			),
-			'Subpart marker with unused markers' => array(
-				$template,
-				array(
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								)
-							),
-							'###FOOTER###' => array(
-								array(
-									'###SINGLEMARKER3###' => 'Value 3.1'
-								)
-							)
-						)
-					)
-				),
-				'',
-				FALSE,
-				TRUE,
-				'
-
-
-Value 2.1
-
-
-Value 3.1
-
-'
-			),
-			'Subpart marker with empty subpart' => array(
-				$template,
-				array(
-					'###SINGLEMARKER1###' => 'Value 1',
-					'###FOO###' => array(
-						array(
-							'###BAR###' => array(
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.1'
-								),
-								array(
-									'###SINGLEMARKER2###' => 'Value 2.2'
-								)
-							),
-							'###FOOTER###' => array()
-						)
-					)
-				),
-				'',
-				FALSE,
-				FALSE,
-				'Value 1
-
-
-Value 2.1
-
-Value 2.2
-
-
-'
-			)
-		);
-	}
-
-	/**
-	 * @test
-	 * @dataProvider substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArrayDataProvider
-	 */
-	public function substituteMarkerAndSubpartArrayRecursiveResolvesMarkersAndSubpartsArray($template, $markersAndSubparts, $wrap, $uppercase, $deleteUnused, $expected) {
-		$this->assertSame($expected, $this->subject->substituteMarkerAndSubpartArrayRecursive($template, $markersAndSubparts, $wrap, $uppercase, $deleteUnused));
+		$this->subject = new HtmlParser();
 	}
 
 	/**
@@ -252,6 +52,76 @@ Value 2.2
 				'/*<![CDATA[*/' . LF . '<hello world>' . LF . '/*]]>*/',
 			),
 		);
+	}
+
+	/**
+	 * Data provider for splitIntoBlock
+	 *
+	 * @return array
+	 */
+	public function splitIntoBlockDataProvider() {
+		return array(
+			'splitBlock' => array(
+				'h1,span',
+				'<body><h1>Title</h1><span>Note</span></body>',
+				FALSE,
+				array('<body>',
+					'<h1>Title</h1>',
+					'',
+					'<span>Note</span>',
+					'</body>')
+			),
+			'splitBlock br' => array(
+				'h1,span',
+				'<body><h1>Title</h1><br /><span>Note</span><br /></body>',
+				FALSE,
+				array('<body>',
+					'<h1>Title</h1>',
+					'<br />',
+					'<span>Note</span>',
+					'<br /></body>')
+			),
+			'splitBlock with attribute' => array(
+				'h1,span',
+				'<body><h1 class="title">Title</h1><span>Note</span></body>',
+				FALSE,
+				array('<body>',
+					'<h1 class="title">Title</h1>',
+					'',
+					'<span>Note</span>',
+					'</body>')
+			),
+			'splitBlock span with attribute' => array(
+				'span',
+				'<body><h1>Title</h1><span class="title">Note</span></body>',
+				FALSE,
+				array('<body><h1>Title</h1>',
+					'<span class="title">Note</span>',
+					'</body>')
+			),
+			'splitBlock without extra end tags' => array(
+				'h1,span,div',
+				'<body><h1>Title</h1><span>Note</span></body></div>',
+				TRUE,
+				array('<body>',
+					'<h1>Title</h1>',
+					'',
+					'<span>Note</span>',
+					'</body>')
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @param string $tag List of tags, comma separated.
+	 * @param string $content HTML-content
+	 * @param bool $eliminateExtraEndTags If set, excessive end tags are ignored - you should probably set this in most cases.
+	 * @param array $expected The expected result
+	 * @dataProvider splitIntoBlockDataProvider
+	 */
+	public function splitIntoBlock($tag, $content, $eliminateExtraEndTags, $expected) {
+		$this->assertSame($expected, $this->subject->splitIntoBlock($tag, $content, $eliminateExtraEndTags));
 	}
 
 	/**
@@ -287,6 +157,8 @@ Value 2.2
 
 	/**
 	 * @test
+	 * @param string $content
+	 * @param string $expectedResult
 	 * @dataProvider spanTagCorrectlyRemovedWhenRmTagIfNoAttribIsConfiguredDataProvider
 	 */
 	public function tagCorrectlyRemovedWhenRmTagIfNoAttribIsConfigured($content, $expectedResult) {
@@ -318,6 +190,8 @@ Value 2.2
 
 	/**
 	 * Data provider for localNestingCorrectlyRemovesInvalidTags
+	 *
+	 * @return array
 	 */
 	public static function localNestingCorrectlyRemovesInvalidTagsDataProvider() {
 		return array(
@@ -360,6 +234,8 @@ Value 2.2
 
 	/**
 	 * Data provider for globalNestingCorrectlyRemovesInvalidTags
+	 *
+	 * @return array
 	 */
 	public static function globalNestingCorrectlyRemovesInvalidTagsDataProvider() {
 		return array(
@@ -459,4 +335,101 @@ Value 2.2
 		$config = $this->subject->HTMLparserConfig($tsConfig);
 		return $this->subject->HTMLcleaner($content, $config[0], $config[1], $config[2], $config[3]);
 	}
+
+	/**
+	 * Data provider for getFirstTag
+	 *
+	 * @return array
+	 */
+	public function getFirstTagDataProvider() {
+		return array(
+			array('<body><span></span></body>', '<body>'),
+			array('<span>Wrapper<div>Some content</div></span>', '<span>'),
+			array('Something before<span>Wrapper<div>Some content</div></span>Something after', 'Something before<span>'),
+			array('Something without tag', '')
+		);
+	}
+
+	/**
+	 * Returns the first tag in $str
+	 * Actually everything from the beginning of the $str is returned, so you better make sure the tag is the first thing...
+	 *
+	 * @test
+	 * @dataProvider getFirstTagDataProvider
+	 *
+	 * @param string $str HTML string with tags
+	 * @param string $expected The expected result.
+	 */
+	public function getFirstTag($str, $expected) {
+		$this->assertEquals($expected, $this->subject->getFirstTag($str));
+	}
+
+	/**
+	 * Data provider for getFirstTagName
+	 *
+	 * @return array
+	 */
+	public function getFirstTagNameDataProvider() {
+		return array(
+			array('<body><span></span></body>',
+				FALSE,
+				'BODY'),
+			array('<body><span></span></body>',
+				TRUE,
+				'body'),
+			array('<div class="test"><span></span></div>',
+				FALSE,
+				'DIV'),
+			array('<div><span class="test"></span></div>',
+				FALSE,
+				'DIV'),
+			array('<br /><span class="test"></span>',
+				FALSE,
+				'BR'),
+			array('<img src="test.jpg" />',
+				FALSE,
+				'IMG'),
+		);
+	}
+
+	/**
+	 * Returns the NAME of the first tag in $str
+	 *
+	 * @test
+	 * @dataProvider getFirstTagNameDataProvider
+	 *
+	 * @param string $str HTML tag (The element name MUST be separated from the attributes by a space character! Just *whitespace* will not do)
+	 * @param bool $preserveCase If set, then the tag is NOT converted to uppercase by case is preserved.
+	 * @param string $expected The expected result.
+	 */
+	public function getFirstTagName($str, $preserveCase, $expected) {
+		$this->assertEquals($expected, $this->subject->getFirstTagName($str, $preserveCase));
+	}
+
+	/**
+	 * @return array
+	 */
+	public function removeFirstAndLastTagDataProvider() {
+		return array(
+			array('<span>Wrapper<div>Some content</div></span>', 'Wrapper<div>Some content</div>'),
+			array('<td><tr>Some content</tr></td>', '<tr>Some content</tr>'),
+			array('Something before<span>Wrapper<div>Some content</div></span>Something after', 'Wrapper<div>Some content</div>'),
+			array('<span class="hidden">Wrapper<div>Some content</div></span>', 'Wrapper<div>Some content</div>'),
+			array('<span>Wrapper<div class="hidden">Some content</div></span>', 'Wrapper<div class="hidden">Some content</div>'),
+		);
+	}
+
+	/**
+	 * Removes the first and last tag in the string
+	 * Anything before the first and after the last tags respectively is also removed
+	 *
+	 * @test
+	 * @dataProvider removeFirstAndLastTagDataProvider
+	 * @param string $str String to process
+	 * @param string $expectedResult
+	 */
+	public function removeFirstAndLastTag($str, $expectedResult) {
+		$this->assertEquals($expectedResult, $this->subject->removeFirstAndLastTag($str));
+	}
+
 }

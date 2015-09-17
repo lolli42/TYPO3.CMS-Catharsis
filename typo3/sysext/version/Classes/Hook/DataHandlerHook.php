@@ -17,6 +17,7 @@ namespace TYPO3\CMS\Version\Hook;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ReferenceIndex;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
@@ -589,8 +590,9 @@ class DataHandlerHook {
 						$emailMessage = $languageObject->sL($emailMessage);
 					}
 				}
-				$emailSubject = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($emailSubject, $markers, '', TRUE, TRUE);
-				$emailMessage = \TYPO3\CMS\Core\Html\HtmlParser::substituteMarkerArray($emailMessage, $markers, '', TRUE, TRUE);
+				$templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
+				$emailSubject = $templateService->substituteMarkerArray($emailSubject, $markers, '', TRUE, TRUE);
+				$emailMessage = $templateService->substituteMarkerArray($emailMessage, $markers, '', TRUE, TRUE);
 				// Send an email to the recipient
 				/** @var $mail \TYPO3\CMS\Core\Mail\MailMessage */
 				$mail = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Mail\MailMessage::class);
@@ -1293,10 +1295,13 @@ class DataHandlerHook {
 			$newVersion_placeholderFieldArray['t3ver_wsid'] = $tcemainObj->BE_USER->workspace;
 			$newVersion_placeholderFieldArray[$GLOBALS['TCA'][$table]['ctrl']['label']] = '[MOVE-TO PLACEHOLDER for #' . $uid . ', WS#' . $tcemainObj->BE_USER->workspace . ']';
 			// moving localized records requires to keep localization-settings for the placeholder too
-			if (array_key_exists('languageField', $GLOBALS['TCA'][$table]['ctrl']) && array_key_exists('transOrigPointerField', $GLOBALS['TCA'][$table]['ctrl'])) {
+			if (isset($GLOBALS['TCA'][$table]['ctrl']['languageField']) && isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'])) {
 				$l10nParentRec = BackendUtility::getRecord($table, $uid);
 				$newVersion_placeholderFieldArray[$GLOBALS['TCA'][$table]['ctrl']['languageField']] = $l10nParentRec[$GLOBALS['TCA'][$table]['ctrl']['languageField']];
 				$newVersion_placeholderFieldArray[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']] = $l10nParentRec[$GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']];
+				if (isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
+					$newVersion_placeholderFieldArray[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']] = $l10nParentRec[$GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField']];
+				}
 				unset($l10nParentRec);
 			}
 			// Initially, create at root level.

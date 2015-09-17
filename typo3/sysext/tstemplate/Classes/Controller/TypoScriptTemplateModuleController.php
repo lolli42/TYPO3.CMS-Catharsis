@@ -280,7 +280,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 
 		if ($this->id && $this->access) {
 			// View page
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 			if ($this->extClassConf['name'] == TypoScriptTemplateInformationModuleFunctionController::class) {
 				// NEW button
 				$urlParameters = array(
@@ -293,12 +293,12 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 					// no NEW-button while edit
 					$buttons['new'] = '';
 					// SAVE button
-					$buttons['save'] = '<button type="submit" class="c-inputButton" name="submit">'
-						. IconUtility::getSpriteIcon('actions-document-save', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+					$buttons['save'] = '<button type="submit" class="c-inputButton" name="submit" value="1" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '">'
+						. $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)
 						. '</button>';
 					// SAVE AND CLOSE button
-					$buttons['save_close'] = '<button type="submit" class="c-inputButton" name="saveclose">'
-						. IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)))
+					$buttons['save_close'] = '<button type="submit" class="c-inputButton" name="saveclose" value="1" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '">'
+						. $this->iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL)
 						. '</button>';
 					// CLOSE button
 					$url = BackendUtility::getModuleUrl('web_ts', array('id' => $this->id));
@@ -306,8 +306,8 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 				}
 			} elseif ($this->extClassConf['name'] === TypoScriptTemplateConstantEditorModuleFunctionController::class && !empty($this->MOD_MENU['constant_editor_cat'])) {
 				// SAVE button
-				$buttons['save'] = '<button class="c-inputButton" name="submit">'
-					. IconUtility::getSpriteIcon('actions-document-save', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+				$buttons['save'] = '<button class="c-inputButton" name="submit" value="1" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)
 					. '</button>';
 			} elseif ($this->extClassConf['name'] === TypoScriptTemplateObjectBrowserModuleFunctionController::class) {
 				if (!empty($this->sObj)) {
@@ -316,7 +316,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 						'id' => $this->id
 					);
 					$aHref = BackendUtility::getModuleUrl('web_ts', $urlParameters);
-					$buttons['back'] = '<a href="' . htmlspecialchars($aHref) . '" class="typo3-goBack" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
+					$buttons['back'] = '<a href="' . htmlspecialchars($aHref) . '" class="typo3-goBack" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '</a>';
 				}
 			}
 			// Shortcut
@@ -470,7 +470,7 @@ class TypoScriptTemplateModuleController extends BaseScriptClass {
 		$tce = GeneralUtility::makeInstance(DataHandler::class);
 		$tce->stripslashes_values = FALSE;
 
-		if (GeneralUtility::_GP('createExtension') || GeneralUtility::_GP('createExtension_x')) {
+		if (GeneralUtility::_GP('createExtension')) {
 			$recData['sys_template']['NEW'] = array(
 				'pid' => $actTemplateId ? -1 * $actTemplateId : $id,
 				'title' => '+ext'
@@ -557,14 +557,15 @@ page.10.value = HELLO WORLD!
 			return $lines;
 		}
 
+		$statusCheckedIcon = $this->iconFactory->getIcon('status-status-checked', Icon::SIZE_SMALL)->render();
 		foreach ($pArray as $k => $v) {
 			if (MathUtility::canBeInterpretedAsInteger($k)) {
 				if (isset($pArray[$k . '_'])) {
 					$lines[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">
 						<td nowrap><span style="width: 1px; height: 1px; display:inline-block; margin-left: ' . $c * 20 . 'px"></span>' . '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('id' => $k))) . '">' . IconUtility::getSpriteIconForRecord('pages', BackendUtility::getRecordWSOL('pages', $k), array('title' => ('ID: ' . $k))) . GeneralUtility::fixed_lgd_cs($pArray[$k], 30) . '</a></td>
 						<td>' . $pArray[($k . '_')]['count'] . '</td>
-						<td>' . ($pArray[$k . '_']['root_max_val'] > 0 ? IconUtility::getSpriteIcon('status-status-checked') : '&nbsp;') . '</td>
-						<td>' . ($pArray[$k . '_']['root_min_val'] == 0 ? IconUtility::getSpriteIcon('status-status-checked') : '&nbsp;') . '</td>
+						<td>' . ($pArray[$k . '_']['root_max_val'] > 0 ? $statusCheckedIcon : '&nbsp;') . '</td>
+						<td>' . ($pArray[$k . '_']['root_min_val'] == 0 ? $statusCheckedIcon : '&nbsp;') . '</td>
 						</tr>';
 				} else {
 					$lines[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">

@@ -15,10 +15,11 @@ namespace TYPO3\CMS\Backend\Controller\File;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for rendering the file editing screen
@@ -111,15 +112,17 @@ class EditFileController {
 		}
 
 		// Setting the title and the icon
-		$icon = IconUtility::getSpriteIcon('apps-filetree-root');
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon = $iconFactory->getIcon('apps-filetree-root', Icon::SIZE_SMALL);
 		$this->title = $icon . htmlspecialchars($this->fileObject->getStorage()->getName()) . ': ' . htmlspecialchars($this->fileObject->getIdentifier());
 
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_edit.html');
 		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function backToList() {	//
-				top.goToModule("file_list");
+			function backToList() {
+				top.goToModule("file_FilelistList");
 			}
 		');
 		$this->doc->form = '<form action="' . htmlspecialchars(BackendUtility::getModuleUrl('tce_file')) . '" method="post" name="editform">';
@@ -167,7 +170,6 @@ class EditFileController {
 					<textarea rows="30" name="file[editfile][0][data]" wrap="off" ' . $this->doc->formWidth(48, TRUE, 'width:98%;height:80%') . ' class="text-monospace t3js-enable-tab">' . htmlspecialchars($fileContent) . '</textarea>
 					<input type="hidden" name="file[editfile][0][target]" value="' . $this->fileObject->getUid() . '" />
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($hValue) . '" />
-					' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
 				</div>
 				<br />';
 			// Make shortcut:
@@ -209,11 +211,27 @@ class EditFileController {
 	}
 
 	/**
+	 * Processes the request, currently everything is handled and put together via "main()"
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the mainAction() method instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -228,10 +246,10 @@ class EditFileController {
 		// CSH button
 		$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_edit');
 		// Save button
-		$theIcon = IconUtility::getSpriteIcon('actions-document-save');
+		$theIcon = $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL);
 		$buttons['SAVE'] = '<a href="#" onclick="document.editform.submit();" title="' . $lang->makeEntities($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.submit', TRUE)) . '">' . $theIcon . '</a>';
 		// Save and Close button
-		$theIcon = IconUtility::getSpriteIcon('actions-document-save-close');
+		$theIcon = $this->iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL);
 		$buttons['SAVE_CLOSE'] = '<a href="#" onclick="document.editform.redirect.value=' . htmlspecialchars(GeneralUtility::quoteJSvalue($this->returnUrl)) . '; document.editform.submit();" title="' . $lang->makeEntities($lang->sL('LLL:EXT:lang/locallang_core.xlf:file_edit.php.saveAndClose', TRUE)) . '">' . $theIcon . '</a>';
 		// Cancel button
 		$theIcon = $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL);

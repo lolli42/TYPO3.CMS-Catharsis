@@ -15,6 +15,7 @@ namespace TYPO3\CMS\Extbase\Persistence\Generic;
  */
 
 use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
+use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\ColumnMap;
 use TYPO3\CMS\Extbase\Persistence\ObjectMonitoringInterface;
 
 /**
@@ -600,7 +601,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 			$row = array();
 			$parentKeyFieldName = $parentColumnMap->getParentKeyFieldName();
 			if ($parentKeyFieldName !== NULL) {
-				$row[$parentKeyFieldName] = '';
+				$row[$parentKeyFieldName] = 0;
 				$parentTableFieldName = $parentColumnMap->getParentTableFieldName();
 				if ($parentTableFieldName !== NULL) {
 					$row[$parentTableFieldName] = '';
@@ -640,9 +641,35 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 		}
 		$dataMap = $this->dataMapper->getDataMap(get_class($object));
 		$row = array();
+		$properties = $object->_getProperties();
+		foreach ($properties as $propertyName => $propertyValue) {
+			if (!$dataMap->isPersistableProperty($propertyName) || $this->propertyValueIsLazyLoaded($propertyValue)) {
+				continue;
+			}
+			$columnMap = $dataMap->getColumnMap($propertyName);
+			if ($columnMap->getTypeOfRelation() === ColumnMap::RELATION_HAS_ONE) {
+				$row[$columnMap->getColumnName()] = 0;
+			} elseif ($columnMap->getTypeOfRelation() !== ColumnMap::RELATION_NONE) {
+				if ($columnMap->getParentKeyFieldName() === NULL) {
+					// CSV type relation
+					$row[$columnMap->getColumnName()] = '';
+				} else {
+					// MM type relation
+					$row[$columnMap->getColumnName()] = 0;
+				}
+			} elseif ($propertyValue !== NULL) {
+				$row[$columnMap->getColumnName()] = $this->dataMapper->getPlainValue($propertyValue);
+			}
+		}
 		$this->addCommonFieldsToRow($object, $row);
 		if ($dataMap->getLanguageIdColumnName() !== NULL) {
 			$row[$dataMap->getLanguageIdColumnName()] = -1;
+		}
+		if ($dataMap->getTranslationOriginColumnName() !== NULL) {
+			$row[$dataMap->getTranslationOriginColumnName()] = 0;
+		}
+		if ($dataMap->getTranslationOriginDiffSourceName() !== NULL) {
+			$row[$dataMap->getTranslationOriginDiffSourceName()] = '';
 		}
 		if ($parentObject !== NULL && $parentPropertyName) {
 			$parentColumnDataMap = $this->dataMapper->getDataMap(get_class($parentObject))->getColumnMap($parentPropertyName);
@@ -872,7 +899,7 @@ class Backend implements \TYPO3\CMS\Extbase\Persistence\Generic\BackendInterface
 		$this->addCommonFieldsToRow($object, $row);
 		$row['uid'] = $object->getUid();
 		if ($dataMap->getLanguageIdColumnName() !== NULL) {
-			$row[$dataMap->getLanguageIdColumnName()] = $object->_getProperty('_languageUid');
+			$row[$dataMap->getLanguageIdColumnName()] = (int)$object->_getProperty('_languageUid');
 			if ($object->_getProperty('_localizedUid') !== NULL) {
 				$row['uid'] = $object->_getProperty('_localizedUid');
 			}

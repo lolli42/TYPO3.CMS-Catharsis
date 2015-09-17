@@ -14,8 +14,12 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -80,6 +84,11 @@ class MoveElementController {
 	public $content;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -111,6 +120,22 @@ class MoveElementController {
 		// Starting document content (header):
 		$this->content = '';
 		$this->content .= $this->doc->header($this->getLanguageService()->getLL('movingElement'));
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+	}
+
+	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
 	}
 
 	/**
@@ -150,7 +175,7 @@ class MoveElementController {
 						$pidPageInfo = BackendUtility::readPageAccess($pageInfo['pid'], $this->perms_clause);
 						if (is_array($pidPageInfo)) {
 							if ($backendUser->isInWebMount($pidPageInfo['pid'], $this->perms_clause)) {
-								$code .= '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('uid' => (int)$pageInfo['pid'], 'moveUid' => $this->moveUid))) . '">' . IconUtility::getSpriteIcon('actions-view-go-up') . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '</a><br />';
+								$code .= '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array('uid' => (int)$pageInfo['pid'], 'moveUid' => $this->moveUid))) . '">' . $this->iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL) . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '</a><br />';
 							} else {
 								$code .= IconUtility::getSpriteIconForRecord('pages', $pidPageInfo) . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '<br />';
 							}
@@ -200,7 +225,7 @@ class MoveElementController {
 								$code .= '<a href="' . htmlspecialchars(GeneralUtility::linkThisScript(array(
 									'uid' => (int)$pageInfo['pid'],
 									'moveUid' => $this->moveUid
-								))) . '">' . IconUtility::getSpriteIcon('actions-view-go-up') . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '</a><br />';
+								))) . '">' . $this->iconFactory->getIcon('actions-view-go-up', Icon::SIZE_SMALL) . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '</a><br />';
 							} else {
 								$code .= IconUtility::getSpriteIconForRecord('pages', $pidPageInfo) . BackendUtility::getRecordTitle('pages', $pidPageInfo, TRUE) . '<br />';
 							}
@@ -228,8 +253,10 @@ class MoveElementController {
 	 * Print out the accumulated content:
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -243,6 +270,7 @@ class MoveElementController {
 			'csh' => '',
 			'back' => ''
 		);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		if ($this->page_id) {
 			if ((string)$this->table == 'pages') {
 				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_pages');
@@ -250,7 +278,7 @@ class MoveElementController {
 				$buttons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'move_el_cs');
 			}
 			if ($this->R_URI) {
-				$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $this->getLanguageService()->getLL('goBack', TRUE) . '">' . IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
+				$buttons['back'] = '<a href="' . htmlspecialchars($this->R_URI) . '" class="typo3-goBack" title="' . $this->getLanguageService()->getLL('goBack', TRUE) . '">' . $iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '</a>';
 			}
 		}
 		return $buttons;

@@ -50,7 +50,8 @@ return array(
 				'items' => array(
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.allLanguages', -1),
 					array('LLL:EXT:lang/locallang_general.xlf:LGL.default_value', 0)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l10n_parent' => array(
@@ -68,7 +69,8 @@ return array(
 		),
 		'l10n_diffsource' => array(
 			'config' => array(
-				'type' => 'passthrough'
+				'type' => 'passthrough',
+				'default' => ''
 			)
 		),
 		'hidden' => array(

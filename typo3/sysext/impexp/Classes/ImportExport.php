@@ -17,10 +17,14 @@ namespace TYPO3\CMS\Impexp;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Exception;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Resource\DuplicationBehavior;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\File\ExtendedFileUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * EXAMPLE for using the impexp-class for exporting stuff:
@@ -2104,11 +2108,11 @@ class ImportExport {
 					$this->import_mapId['sys_file_metadata'][$record['uid']] = $recordInDatabase['uid'];
 					$ID = $recordInDatabase['uid'];
 				} else {
-					$ID = uniqid('NEW', TRUE);
+					$ID = StringUtility::getUniqueId('NEW');
 				}
 
 			} else {
-				$ID = uniqid('NEW', TRUE);
+				$ID = StringUtility::getUniqueId('NEW');
 			}
 			$this->import_newId[$table . ':' . $ID] = array('table' => $table, 'uid' => $uid);
 			if ($table == 'pages') {
@@ -2306,13 +2310,13 @@ class ImportExport {
 
 											if ($fileObject === NULL) {
 												try {
-													$fileObject = $this->legacyImportFolder->addFile($tempFile, $fileName, 'changeName');
+													$fileObject = $this->legacyImportFolder->addFile($tempFile, $fileName, DuplicationBehavior::RENAME);
 												} catch (\TYPO3\CMS\Core\Exception $e) {
 													$this->error('Error: no file could be added to the storage for file name' . $this->alternativeFileName[$tempFile]);
 												}
 											}
 											if ($fileObject !== NULL) {
-												$refId = uniqid('NEW', TRUE);
+												$refId = StringUtility::getUniqueId('NEW');
 												$refIds[] = $refId;
 												$updateData['sys_file_reference'][$refId] = array(
 													'uid_local' => $fileObject->getUid(),
@@ -2994,7 +2998,7 @@ class ImportExport {
 
 		if ($fileObject === NULL) {
 			try {
-				$fileObject = $importFolder->addFile($temporaryFile, $fileName, 'changeName');
+				$fileObject = $importFolder->addFile($temporaryFile, $fileName, DuplicationBehavior::RENAME);
 			} catch (\TYPO3\CMS\Core\Exception $e) {
 				$this->error('Error: no file could be added to the storage for file name ' . $this->alternativeFileName[$temporaryFile]);
 			}
@@ -3632,7 +3636,7 @@ class ImportExport {
 						$pInfo['updateMode'] = $this->renderSelectBox('tx_impexp[import_mode][' . $table . ':' . $uid . ']', $this->import_mode[$table . ':' . $uid], $optValues);
 					}
 				}
-				// Diff vieiw:
+				// Diff view:
 				if ($this->showDiff) {
 					// For IMPORTS, get new id:
 					if ($newUid = $this->import_mapId[$table][$uid]) {
@@ -3669,11 +3673,13 @@ class ImportExport {
 		}
 		// Soft ref
 		if (!empty($record['softrefs'])) {
+			/** @var IconFactory $iconFactory */
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 			$preCode_A = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;';
 			$preCode_B = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 			foreach ($record['softrefs'] as $info) {
 				$pInfo = array();
-				$pInfo['preCode'] = $preCode_A . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-reference-soft');
+				$pInfo['preCode'] = $preCode_A . $iconFactory->getIcon('status-status-reference-soft', Icon::SIZE_SMALL);
 				$pInfo['title'] = '<em>' . $info['field'] . ', "' . $info['spKey'] . '" </em>: <span title="' . htmlspecialchars($info['matchString']) . '">' . htmlspecialchars(GeneralUtility::fixed_lgd_cs($info['matchString'], 60)) . '</span>';
 				if ($info['subst']['type']) {
 					if (strlen($info['subst']['title'])) {
@@ -3720,6 +3726,9 @@ class ImportExport {
 	 * @see singleRecordLines()
 	 */
 	public function addRelations($rels, &$lines, $preCode, $recurCheck = array(), $htmlColorClass = '') {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
 		foreach ($rels as $dat) {
 			$table = $dat['table'];
 			$uid = $dat['id'];
@@ -3729,8 +3738,8 @@ class ImportExport {
 				$this->error($pInfo['ref'] . ' was recursive...');
 				continue;
 			}
-			$spriteIconName = 'status-status-checked';
-			$spriteIconClass = '';
+			$iconName = 'status-status-checked';
+			$iconClass = '';
 			$staticFixed = FALSE;
 			$record = NULL;
 			if ($uid > 0) {
@@ -3738,7 +3747,7 @@ class ImportExport {
 				if (!is_array($record)) {
 					if ($this->isTableStatic($table) || $this->isExcluded($table, $uid) || $dat['tokenID'] && !$this->includeSoftref($dat['tokenID'])) {
 						$pInfo['title'] = htmlspecialchars('STATIC: ' . $pInfo['ref']);
-						$spriteIconClass = 'text-info';
+						$iconClass = 'text-info';
 						$staticFixed = TRUE;
 					} else {
 						$doesRE = $this->doesRecordExist($table, $uid);
@@ -3746,8 +3755,8 @@ class ImportExport {
 						$pInfo['title'] = htmlspecialchars($pInfo['ref']);
 						$pInfo['title'] = '<span title="' . htmlspecialchars($lostPath) . '">' . $pInfo['title'] . '</span>';
 						$pInfo['msg'] = 'LOST RELATION' . (!$doesRE ? ' (Record not found!)' : ' (Path: ' . $lostPath . ')');
-						$spriteIconClass = 'text-danger';
-						$spriteIconName = 'status-dialog-warning';
+						$iconClass = 'text-danger';
+						$iconName = 'status-dialog-warning';
 					}
 				} else {
 					$pInfo['title'] = htmlspecialchars($record['title']);
@@ -3759,9 +3768,9 @@ class ImportExport {
 				$staticFixed = TRUE;
 			}
 
-			$spriteIcon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon($spriteIconName, array('class' => $spriteIconClass, 'title' => $pInfo['ref']));
+			$icon = '<span class="' . $iconClass . '" title="' . htmlspecialchars($pInfo['ref']) . '">' . $iconFactory->getIcon($iconName, Icon::SIZE_SMALL) . '</span>';
 
-			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;' . $spriteIcon;
+			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;' . $icon;
 			$pInfo['class'] = $htmlColorClass ?: 'bgColor3';
 			$pInfo['type'] = 'rel';
 			if (!$staticFixed || $this->showStaticRelations) {
@@ -3786,6 +3795,9 @@ class ImportExport {
 	 * @see singleRecordLines()
 	 */
 	public function addFiles($rels, &$lines, $preCode, $htmlColorClass = '', $tokenID = '') {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
 		foreach ($rels as $ID) {
 			// Process file:
 			$pInfo = array();
@@ -3798,7 +3810,7 @@ class ImportExport {
 					return;
 				}
 			}
-			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('status-status-reference-hard');
+			$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;' . $iconFactory->getIcon('status-status-reference-hard', Icon::SIZE_SMALL);
 			$pInfo['title'] = htmlspecialchars($fI['filename']);
 			$pInfo['ref'] = 'FILE';
 			$pInfo['size'] = $fI['filesize'];
@@ -3849,7 +3861,7 @@ class ImportExport {
 					$this->error('MISSING RTE original FILE: ' . $ID, 1);
 				}
 				$pInfo['showDiffContent'] = PathUtility::stripPathSitePrefix($this->fileIDMap[$ID]);
-				$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-reference-file');
+				$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $iconFactory->getIcon('status-status-reference-hard', Icon::SIZE_SMALL);
 				$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Original)</em>';
 				$pInfo['ref'] = 'FILE';
 				$pInfo['size'] = $fI['filesize'];
@@ -3870,7 +3882,7 @@ class ImportExport {
 						$pInfo['updatePath'] = $fI['parentRelFileName'];
 					}
 					$pInfo['showDiffContent'] = PathUtility::stripPathSitePrefix($this->fileIDMap[$extID]);
-					$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-insert-reference');
+					$pInfo['preCode'] = $preCode . '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $iconFactory->getIcon('actions-insert-reference', Icon::SIZE_SMALL);
 					$pInfo['title'] = htmlspecialchars($fI['filename']) . ' <em>(Resource)</em>';
 					$pInfo['ref'] = 'FILE';
 					$pInfo['size'] = $fI['filesize'];

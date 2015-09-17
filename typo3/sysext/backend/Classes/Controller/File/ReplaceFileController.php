@@ -16,12 +16,15 @@ namespace TYPO3\CMS\Backend\Controller\File;
 
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFileAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Lang\LanguageService;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for the rename-file form
@@ -115,14 +118,16 @@ class ReplaceFileController {
 			}
 		}
 		// Setting icon and title
-		$icon = IconUtility::getSpriteIcon('apps-filetree-root');
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon = $iconFactory->getIcon('apps-filetree-root', Icon::SIZE_SMALL);
 		$this->title = $icon . htmlspecialchars($this->fileOrFolderObject->getStorage()->getName()) . ': ' . htmlspecialchars($this->fileOrFolderObject->getIdentifier());
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_replace.html');
 		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function backToList() {	//
-				top.goToModule("file_list");
+			function backToList() {
+				top.goToModule("file_FilelistList");
 			}
 		');
 	}
@@ -172,7 +177,6 @@ class ReplaceFileController {
 					<input class="btn btn-primary" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_replace.php.submit', TRUE) . '" />
 					<input class="btn btn-danger" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel', TRUE) . '" onclick="backToList(); return false;" />
 					<input type="hidden" name="redirect" value="' . htmlspecialchars($this->returnUrl) . '" />
-					' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
 				</div>
 		';
 		$code .= '</form>';
@@ -184,9 +188,10 @@ class ReplaceFileController {
 		$docHeaderButtons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_rename');
 		// Back
 		if ($this->returnUrl) {
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(GeneralUtility::linkThisUrl($this->returnUrl))
 				. '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">'
-				. IconUtility::getSpriteIcon('actions-view-go-back')
+				. $iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL)
 				. '</a>';
 		}
 		// Add the HTML as a section:
@@ -202,11 +207,27 @@ class ReplaceFileController {
 	}
 
 	/**
+	 * Processes the request, currently everything is handled and put together via "main()"
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the mainAction() method instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 

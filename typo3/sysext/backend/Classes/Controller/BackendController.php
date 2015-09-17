@@ -14,12 +14,12 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Domain\Repository\Module\BackendModuleRepository;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Backend\Toolbar\ToolbarItemInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -30,7 +30,7 @@ use TYPO3\CMS\Rsaauth\RsaEncryptionEncoder;
 /**
  * Class for rendering the TYPO3 backend
  */
-class BackendController implements \TYPO3\CMS\Core\Http\ControllerInterface {
+class BackendController {
 
 	/**
 	 * @var string
@@ -245,15 +245,13 @@ class BackendController implements \TYPO3\CMS\Core\Http\ControllerInterface {
 	/**
 	 * Injects the request object for the current request or subrequest
 	 * As this controller goes only through the render() method, it is rather simple for now
-	 * This will be split up in an abstract controller once proper routing/dispatcher is in place.
 	 *
-	 * @param ServerRequestInterface $request
-	 * @return \Psr\Http\Message\ResponseInterface $response
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
 	 */
-	public function processRequest(ServerRequestInterface $request) {
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
 		$this->render();
-		/** @var Response $response */
-		$response = GeneralUtility::makeInstance(Response::class);
 		$response->getBody()->write($this->content);
 		return $response;
 	}
@@ -445,7 +443,7 @@ class BackendController implements \TYPO3\CMS\Core\Http\ControllerInterface {
 	}
 
 	/**
-	 * Returns the file name  to the LLL JavaScript, containing the localized labels,
+	 * Returns the file name to the LLL JavaScript, containing the localized labels,
 	 * which can be used in JavaScript code.
 	 *
 	 * @return string File name of the JS file, relative to TYPO3_mainDir
@@ -453,11 +451,12 @@ class BackendController implements \TYPO3\CMS\Core\Http\ControllerInterface {
 	 */
 	protected function getLocalLangFileName() {
 		$code = $this->generateLocalLang();
-		$filePath = 'typo3temp/locallang-BE-' . sha1($code) . '.js';
-		if (!file_exists((PATH_site . $filePath))) {
+		$filePath = 'typo3temp/Language/Backend-' . sha1($code) . '.js';
+		if (!file_exists(PATH_site . $filePath)) {
 			// writeFileToTypo3tempDir() returns NULL on success (please double-read!)
-			if (GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filePath, $code) !== NULL) {
-				throw new \RuntimeException('LocalLangFile could not be written to ' . $filePath, 1295193026);
+			$error = GeneralUtility::writeFileToTypo3tempDir(PATH_site . $filePath, $code);
+			if ($error !== NULL) {
+				throw new \RuntimeException('Locallang JS file could not be written to ' . $filePath . '. Reason: ' . $error, 1295193026);
 			}
 		}
 		return '../' . $filePath;
@@ -489,8 +488,7 @@ class BackendController implements \TYPO3\CMS\Core\Http\ControllerInterface {
 			'refresh_login_countdown' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_countdown'),
 			'login_about_to_expire' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_refresh_about_to_expire'),
 			'login_about_to_expire_title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.login_about_to_expire_title'),
-			'refresh_login_abort_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_abort_button'),
-			'refresh_login_confirm_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_confirm_button'),
+			'refresh_login_logout_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_logout_button'),
 			'refresh_login_refresh_button' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:mess.refresh_login_refresh_button'),
 			'tabs_closeAll' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:tabs.closeAll'),
 			'tabs_closeOther' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:tabs.closeOther'),

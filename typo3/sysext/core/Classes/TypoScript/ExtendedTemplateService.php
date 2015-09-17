@@ -23,6 +23,8 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Dbal\Database\DatabaseConnection;
 use TYPO3\CMS\Frontend\Configuration\TypoScript\ConditionMatching\ConditionMatcher;
 use TYPO3\CMS\Lang\LanguageService;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 
 /**
  * TSParser extension class to TemplateService
@@ -661,6 +663,8 @@ class ExtendedTemplateService extends TemplateService {
 		$a = 0;
 		$c = count($keyArr);
 		static $i = 0;
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		foreach ($keyArr as $key => $value) {
 			$HTML = '';
 			$a++;
@@ -673,7 +677,7 @@ class ExtendedTemplateService extends TemplateService {
 			$alttext .= $row['pid'] ? ' - ' . BackendUtility::getRecordPath($row['pid'], $GLOBALS['SOBE']->perms_clause, 20) : '';
 			$icon = substr($row['templateID'], 0, 3) === 'sys'
 				? IconUtility::getSpriteIconForRecord('sys_template', $row, array('title' => $alttext))
-				: IconUtility::getSpriteIcon('mimetypes-x-content-template-static', array('title' => $alttext));
+				: '<span title="' . htmlspecialchars($alttext) . '">' . $iconFactory->getIcon('mimetypes-x-content-template-static', Icon::SIZE_SMALL)->render() . '</span>';
 			if (in_array($row['templateID'], $this->clearList_const) || in_array($row['templateID'], $this->clearList_setup)) {
 				$urlParameters = array(
 					'id' => $GLOBALS['SOBE']->id,
@@ -694,11 +698,12 @@ class ExtendedTemplateService extends TemplateService {
 				. htmlspecialchars(GeneralUtility::fixed_lgd_cs($row['title'], $GLOBALS['BE_USER']->uc['titleLen']))
 				. $A_E . '&nbsp;&nbsp;';
 			$RL = $this->ext_getRootlineNumber($row['pid']);
+			$statusCheckedIcon = $iconFactory->getIcon('status-status-checked', Icon::SIZE_SMALL)->render();
 			$keyArray[] = '<tr class="' . ($i++ % 2 == 0 ? 'bgColor4' : 'bgColor6') . '">
 							<td nowrap="nowrap">' . $HTML . '</td>
-							<td align="center">' . ($row['root'] ? IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;</td>
-							<td align="center">' . ($row['clConf'] ? IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
-							<td align="center">' . ($row['clConst'] ? IconUtility::getSpriteIcon('status-status-checked') : '') . '&nbsp;&nbsp;' . '</td>
+							<td align="center">' . ($row['root'] ? $statusCheckedIcon : '') . '&nbsp;&nbsp;</td>
+							<td align="center">' . ($row['clConf'] ? $statusCheckedIcon : '') . '&nbsp;&nbsp;' . '</td>
+							<td align="center">' . ($row['clConst'] ? $statusCheckedIcon : '') . '&nbsp;&nbsp;' . '</td>
 							<td align="center">' . ($row['pid'] ?: '') . '</td>
 							<td align="center">' . ($RL >= 0 ? $RL : '') . '</td>
 							<td>' . ($row['next'] ? '&nbsp;' . $row['next'] . '&nbsp;&nbsp;' : '') . '</td>
@@ -1134,6 +1139,8 @@ class ExtendedTemplateService extends TemplateService {
 			if (!$this->doNotSortCategoriesBeforeMakingForm) {
 				asort($this->categories[$category]);
 			}
+			/** @var IconFactory $iconFactory */
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 			foreach ($this->categories[$category] as $name => $type) {
 				$params = $theConstants[$name];
 				if (is_array($params)) {
@@ -1162,6 +1169,7 @@ class ExtendedTemplateService extends TemplateService {
 					$raname = substr(md5($params['name']), 0, 10);
 					$aname = '\'' . $raname . '\'';
 					list($fN, $fV, $params, $idName) = $this->ext_fNandV($params);
+					$idName = htmlspecialchars($idName);
 					switch ($typeDat['type']) {
 						case 'int':
 
@@ -1294,18 +1302,16 @@ class ExtendedTemplateService extends TemplateService {
 							$userTyposcriptStyle = 'style="display:none;"';
 							$defaultTyposcriptStyle = '';
 						}
-						$deleteIconHTML = IconUtility::getSpriteIcon('actions-edit-undo', array(
-							'class' => 'typo3-tstemplate-ceditor-control undoIcon',
-							'alt' => 'Revert to default Constant',
-							'title' => 'Revert to default Constant',
-							'rel' => $idName
-						));
-						$editIconHTML = IconUtility::getSpriteIcon('actions-document-open', array(
-							'class' => 'typo3-tstemplate-ceditor-control editIcon',
-							'alt' => 'Edit this Constant',
-							'title' => 'Edit this Constant',
-							'rel' => $idName
-						));
+						$deleteTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.deleteTitle', TRUE);
+						$deleteIcon = $iconFactory->getIcon('actions-edit-undo', Icon::SIZE_SMALL);
+						$deleteIconHTML = '<span title="' . $deleteTitle . '" alt="' . $deleteTitle . '"'
+							. ' class="typo3-tstemplate-ceditor-control undoIcon" rel="' . $idName . '">'
+							. $deleteIcon . '</span>';
+						$editTitle = $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.editTitle', TRUE);
+						$editIcon = $iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
+						$editIconHTML = '<span title="' . $editTitle . '" alt="' . $editTitle . '"'
+							. ' class="typo3-tstemplate-ceditor-control editIcon" rel="' . $idName . '">'
+							. $editIcon . '</span>';
 						$constantCheckbox = '<input type="hidden" name="' . $checkboxName . '" id="' . $checkboxID . '" value="' . $checkboxValue . '"/>';
 						// If there's no default value for the field, use a static label.
 						if (!$params['default_value']) {

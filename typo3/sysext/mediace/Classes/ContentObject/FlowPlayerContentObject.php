@@ -16,6 +16,7 @@ namespace TYPO3\CMS\Mediace\ContentObject;
 
 use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Contains FlowPlayer class object.
@@ -211,7 +212,7 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 			$prefix = $GLOBALS['TSFE']->absRefPrefix;
 		}
 		// Initialize content
-		$replaceElementIdString = str_replace('.', '', uniqid('mmswf', TRUE));
+		$replaceElementIdString = StringUtility::getUniqueId('mmswf');
 		$GLOBALS['TSFE']->register['MMSWFID'] = $replaceElementIdString;
 		$layout = isset($conf['layout.']) ? $this->cObj->stdWrap($conf['layout'], $conf['layout.']) : $conf['layout'];
 		$content = str_replace('###ID###', $replaceElementIdString, $layout);
@@ -415,6 +416,16 @@ class FlowPlayerContentObject extends \TYPO3\CMS\Frontend\ContentObject\Abstract
 		$alternativeContent = isset($conf['alternativeContent.']) ? $this->cObj->stdWrap($conf['alternativeContent'], $conf['alternativeContent.']) : $conf['alternativeContent'];
 		// Render video
 		if ($conf['type'] === 'video') {
+			// add preview image, html5 poster attribute
+			$sourceBasePath = substr($conf['sources'][1], 0, strrpos($conf['sources'][1], '.'));
+			foreach (['.jpg', '.jpeg', '.png'] as $fileExtension) {
+				$posterFilePath = $GLOBALS['TSFE']->tmpl->getFileName($sourceBasePath . $fileExtension);
+				if (file_exists($posterFilePath)) {
+					$attributes .= ' poster="' . htmlspecialchars($posterFilePath) . '"';
+					break;
+				}
+			}
+
 			if ($conf['preferFlashOverHtml5']) {
 				// Flash with video tag fallback
 				$conf['params.']['playerFallbackOrder'] = array('flash', 'html5');

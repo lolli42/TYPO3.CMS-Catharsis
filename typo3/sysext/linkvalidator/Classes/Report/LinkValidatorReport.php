@@ -17,10 +17,12 @@ namespace TYPO3\CMS\Linkvalidator\Report;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Html\HtmlParser;
 use TYPO3\CMS\Linkvalidator\LinkAnalyzer;
 
 /**
@@ -120,6 +122,11 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	 * @var string
 	 */
 	protected $refreshListHtml = '';
+
+	/**
+	 * @var MarkerBasedTemplateService
+	 */
+	protected $templateService;
 
 	/**
 	 * Main method of modfuncreport
@@ -237,6 +244,8 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$this->getPageRenderer()->loadJquery();
 		$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Linkvalidator/Linkvalidator');
 
+		$this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
+
 		// Don't access in workspace
 		if ($this->getBackendUser()->workspace !== 0) {
 			$this->isAccessibleForCurrentUser = FALSE;
@@ -337,7 +346,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		foreach ($availableOptions as $optionValue => $optionLabel) {
 			$options[] = '<option value="' . $optionValue . '"' . ($optionValue === (int)$this->searchLevel ? ' selected="selected"' : '') . '>' . htmlspecialchars($optionLabel) . '</option>';
 		}
-		return '<select name="search_levels">' . implode('', $options) . '</select>';
+		return '<select name="search_levels" class="form-control">' . implode('', $options) . '</select>';
 	}
 
 	/**
@@ -347,7 +356,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	 */
 	protected function renderBrokenLinksTable() {
 		$brokenLinkItems = '';
-		$brokenLinksTemplate = HtmlParser::getSubpart($this->doc->moduleTemplate, '###NOBROKENLINKS_CONTENT###');
+		$brokenLinksTemplate = $this->templateService->getSubpart($this->doc->moduleTemplate, '###NOBROKENLINKS_CONTENT###');
 		$keyOpt = array();
 		if (is_array($this->checkOpt)) {
 			$keyOpt = array_keys($this->checkOpt);
@@ -377,8 +386,8 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			);
 			if (!empty($records)) {
 				// Display table with broken links
-				$brokenLinksTemplate = HtmlParser::getSubpart($this->doc->moduleTemplate, '###BROKENLINKS_CONTENT###');
-				$brokenLinksItemTemplate = HtmlParser::getSubpart($this->doc->moduleTemplate, '###BROKENLINKS_ITEM###');
+				$brokenLinksTemplate = $this->templateService->getSubpart($this->doc->moduleTemplate, '###BROKENLINKS_CONTENT###');
+				$brokenLinksItemTemplate = $this->templateService->getSubpart($this->doc->moduleTemplate, '###BROKENLINKS_ITEM###');
 
 				// Table rows containing the broken links
 				$items = array();
@@ -392,12 +401,12 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		} else {
 			$brokenLinksMarker = $this->getNoBrokenLinkMessage($brokenLinksMarker);
 		}
-		$brokenLinksTemplate = HtmlParser::substituteMarkerArray(
+		$brokenLinksTemplate = $this->templateService->substituteMarkerArray(
 			$brokenLinksTemplate,
 			$brokenLinksMarker, '###|###',
 			TRUE
 		);
-		return HtmlParser::substituteSubpart($brokenLinksTemplate, '###BROKENLINKS_ITEM', $brokenLinkItems);
+		return $this->templateService->substituteSubpart($brokenLinksTemplate, '###BROKENLINKS_ITEM', $brokenLinkItems);
 	}
 
 	/**
@@ -453,6 +462,9 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 	 * @return string HTML of the rendered row
 	 */
 	protected function renderTableRow($table, array $row, $brokenLinksItemTemplate) {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
 		$markerArray = array();
 		$fieldName = '';
 		// Restore the linktype object
@@ -469,7 +481,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			$requestUri
 		));
 		$actionLink .= '" title="' . $this->getLanguageService()->getLL('list.edit') . '">';
-		$actionLink .= IconUtility::getSpriteIcon('actions-document-open');
+		$actionLink .= $iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL);
 		$actionLink .= '</a>';
 		$elementHeadline = $row['headline'];
 		if (empty($elementHeadline)) {
@@ -511,7 +523,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		$markerArray['lastcheck'] = sprintf($this->getLanguageService()->getLL('list.msg.lastRun'), $lastRunDate, $lastRunTime);
 
 		// Return the table html code as string
-		return HtmlParser::substituteMarkerArray($brokenLinksItemTemplate, $markerArray, '###|###', TRUE, TRUE);
+		return $this->templateService->substituteMarkerArray($brokenLinksItemTemplate, $markerArray, '###|###', TRUE, TRUE);
 	}
 
 	/**
@@ -528,8 +540,8 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 		} else {
 			$additionalAttr = ' class="refresh"';
 		}
-		$checkOptionsTemplate = HtmlParser::getSubpart($this->doc->moduleTemplate, '###CHECKOPTIONS_SECTION###');
-		$hookSectionTemplate = HtmlParser::getSubpart($checkOptionsTemplate, '###HOOK_SECTION###');
+		$checkOptionsTemplate = $this->templateService->getSubpart($this->doc->moduleTemplate, '###CHECKOPTIONS_SECTION###');
+		$hookSectionTemplate = $this->templateService->getSubpart($checkOptionsTemplate, '###HOOK_SECTION###');
 		$markerArray['statistics_header'] = $this->doc->sectionHeader($this->getLanguageService()->getLL('report.statistics.header'));
 		$markerArray['total_count_label'] = BackendUtility::wrapInHelp('linkvalidator', 'checkboxes', $this->getLanguageService()->getLL('overviews.nbtotal'));
 		$markerArray['total_count'] = $brokenLinkOverView['brokenlinkCount'] ?: '0';
@@ -550,9 +562,9 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 						$translation = $this->getLanguageService()->getLL('hooks.' . $type) ?: $type;
 						$hookSectionMarker['option'] = '<input type="checkbox"' . $additionalAttr . ' id="' . $prefix . 'SET_' . $type . '" name="' . $prefix
 							. 'SET[' . $type . ']" value="1"' . ($this->pObj->MOD_SETTINGS[$type] ? ' checked="checked"' : '') . '/>' . '<label for="'
-							. $prefix . 'SET_' . $type . '">' . htmlspecialchars($translation) . '</label>';
+							. $prefix . 'SET_' . $type . '">&nbsp;' . htmlspecialchars($translation) . '</label>';
 
-						$hookSectionContent .= HtmlParser::substituteMarkerArray(
+						$hookSectionContent .= $this->templateService->substituteMarkerArray(
 							$hookSectionTemplate,
 							$hookSectionMarker, '###|###',
 							TRUE,
@@ -562,12 +574,12 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 				}
 			}
 		}
-		$checkOptionsTemplate = HtmlParser::substituteSubpart(
+		$checkOptionsTemplate = $this->templateService->substituteSubpart(
 			$checkOptionsTemplate,
 			'###HOOK_SECTION###',
 			$hookSectionContent
 		);
-		return HtmlParser::substituteMarkerArray($checkOptionsTemplate, $markerArray, '###|###', TRUE, TRUE);
+		return $this->templateService->substituteMarkerArray($checkOptionsTemplate, $markerArray, '###|###', TRUE, TRUE);
 	}
 
 	/**
@@ -609,7 +621,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			'CONTENT' => $this->content,
 			'CHECKOPTIONS' => $this->checkOptionsHtml,
 			'ID' => '<input type="hidden" name="id" value="' . $this->pObj->id . '" />',
-			'REFRESH' => '<input type="submit" name="refreshLinkList" id="refreshLinkList" value="' . $this->getLanguageService()->getLL('label_refresh') . '" />',
+			'REFRESH' => '<input type="submit" class="btn btn-default" name="refreshLinkList" id="refreshLinkList" value="' . $this->getLanguageService()->getLL('label_refresh') . '" />',
 			'UPDATE' => '',
 		);
 	}
@@ -628,7 +640,7 @@ class LinkValidatorReport extends \TYPO3\CMS\Backend\Module\AbstractFunctionModu
 			'CHECKOPTIONS' => $this->checkOptionsHtmlCheck,
 			'ID' => '<input type="hidden" name="id" value="' . $this->pObj->id . '" />',
 			'REFRESH' => '',
-			'UPDATE' => '<input type="submit" name="updateLinkList" id="updateLinkList" value="' . $this->getLanguageService()->getLL('label_update') . '"/>',
+			'UPDATE' => '<input type="submit" class="btn btn-default" name="updateLinkList" id="updateLinkList" value="' . $this->getLanguageService()->getLL('label_update') . '"/>',
 		);
 	}
 

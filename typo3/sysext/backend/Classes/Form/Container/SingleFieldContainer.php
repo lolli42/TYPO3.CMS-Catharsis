@@ -15,14 +15,13 @@ namespace TYPO3\CMS\Backend\Form\Container;
  */
 
 use TYPO3\CMS\Backend\Form\ElementConditionMatcher;
-use TYPO3\CMS\Backend\Form\NodeFactory;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Backend\Form\Utility\FormEngineUtility;
-use TYPO3\CMS\Core\Utility\ArrayUtility;
 use TYPO3\CMS\Lang\LanguageService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Utility\DiffUtility;
 use TYPO3\CMS\Backend\Form\InlineStackProcessor;
 use TYPO3\CMS\Core\Database\RelationHandler;
@@ -30,11 +29,11 @@ use TYPO3\CMS\Core\Database\RelationHandler;
 /**
  * Container around a "single field".
  *
- * This container is the last one in the chain before processing is hand over to single element classes.
- * If a single field is of type flex or inline, it however creates FlexFormContainer or InlineControlContainer.
+ * This container is the last one in the chain before processing is handed over to single element classes.
+ * If a single field is of type flex or inline, it however creates FlexFormLanguageContainer or InlineControlContainer.
  *
  * The container does various checks and processing for a given single fields, for example it resolves
- * display conditions and the HTML to compare compare different languages.
+ * display conditions and the HTML to compare different languages.
  */
 class SingleFieldContainer extends AbstractContainer {
 
@@ -48,37 +47,32 @@ class SingleFieldContainer extends AbstractContainer {
 		$languageService = $this->getLanguageService();
 		$resultArray = $this->initializeResultArray();
 
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldName = $this->globalOptions['fieldName'];
+		$table = $this->data['tableName'];
+		$row = $this->data['databaseRow'];
+		$fieldName = $this->data['fieldName'];
 
-		if (!is_array($GLOBALS['TCA'][$table]['columns'][$fieldName])) {
+		// @todo: it should be safe at this point, this array exists ...
+		if (!is_array($this->data['processedTca']['columns'][$fieldName])) {
 			return $resultArray;
 		}
 
 		$parameterArray = array();
-		$parameterArray['fieldConf'] = $GLOBALS['TCA'][$table]['columns'][$fieldName];
+		$parameterArray['fieldConf'] = $this->data['processedTca']['columns'][$fieldName];
 
-		// Overlay fieldConf with possible defined columnsOverrides of given record type
-		$recordTypeValue = $this->globalOptions['recordTypeValue'];
-		// Hint: 0 is a valid $recordTypeValue, !empty() does not work here
-		if (trim($recordTypeValue) !== '' && is_array($GLOBALS['TCA'][$table]['types'][$recordTypeValue]['columnsOverrides'][$fieldName])) {
-			// Merge columnsOverrides of this field over existing field configuration
-			ArrayUtility::mergeRecursiveWithOverrule(
-				$parameterArray['fieldConf'],
-				$GLOBALS['TCA'][$table]['types'][$recordTypeValue]['columnsOverrides'][$fieldName]
-			);
-		}
+		$languageField = $this->data['processedTca']['ctrl']['languageField'];
 
 		// A couple of early returns in case the field should not be rendered
 		// Check if this field is configured and editable according to exclude fields and other configuration
 		if (
+			// Return if BE-user has no access rights to this field, @todo: another user access rights check!
 			$parameterArray['fieldConf']['exclude'] && !$backendUser->check('non_exclude_fields', $table . ':' . $fieldName)
 			|| $parameterArray['fieldConf']['config']['type'] === 'passthrough'
 			// @todo: Drop option "showIfRTE" ?
 			|| !$backendUser->isRTE() && $parameterArray['fieldConf']['config']['showIfRTE']
-			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && !$parameterArray['fieldConf']['l10n_display'] && $parameterArray['fieldConf']['l10n_mode'] === 'exclude' && ($row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0)
-			|| $GLOBALS['TCA'][$table]['ctrl']['languageField'] && $this->globalOptions['localizationMode'] && $this->globalOptions['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
+			// Return if field should not be rendered in translated records
+			|| $languageField && !$parameterArray['fieldConf']['l10n_display'] && $parameterArray['fieldConf']['l10n_mode'] === 'exclude' && is_array($row[$languageField]) && $row[$languageField][0] > 0
+			// @todo: localizationMode still needs handling!
+			|| $languageField && $this->data['localizationMode'] && $this->data['localizationMode'] !== $parameterArray['fieldConf']['l10n_cat']
 			|| $this->inlineFieldShouldBeSkipped()
 		) {
 			return $resultArray;
@@ -92,8 +86,13 @@ class SingleFieldContainer extends AbstractContainer {
 				return $resultArray;
 			}
 		}
-		// Fetching the TSconfig for the current table/field. This includes the $row which means that
-		$parameterArray['fieldTSConfig'] = FormEngineUtility::getTSconfigForTableRow($table, $row, $fieldName);
+
+		$parameterArray['fieldTSConfig'] = [];
+		if (isset($this->data['pageTsConfigMerged']['TCEFORM.'][$table . '.'][$fieldName . '.'])
+			&& is_array($this->data['pageTsConfigMerged']['TCEFORM.'][$table . '.'][$fieldName . '.'])
+		) {
+			$parameterArray['fieldTSConfig'] = $this->data['pageTsConfigMerged']['TCEFORM.'][$table . '.'][$fieldName . '.'];
+		}
 		if ($parameterArray['fieldTSConfig']['disabled']) {
 			return $resultArray;
 		}
@@ -102,31 +101,31 @@ class SingleFieldContainer extends AbstractContainer {
 		$parameterArray['fieldConf']['config'] = FormEngineUtility::overrideFieldConf($parameterArray['fieldConf']['config'], $parameterArray['fieldTSConfig']);
 		$parameterArray['itemFormElName'] = 'data[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
 		$parameterArray['itemFormElID'] = 'data_' . $table . '_' . $row['uid'] . '_' . $fieldName;
-		$newElementBaseName = $this->globalOptions['elementBaseName'] . '[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
+		$newElementBaseName = $this->data['elementBaseName'] . '[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']';
 
 		// The value to show in the form field.
 		$parameterArray['itemFormElValue'] = $row[$fieldName];
 		// Set field to read-only if configured for translated records to show default language content as readonly
 		if ($parameterArray['fieldConf']['l10n_display']
 			&& GeneralUtility::inList($parameterArray['fieldConf']['l10n_display'], 'defaultAsReadonly')
-			&& $row[$GLOBALS['TCA'][$table]['ctrl']['languageField']] > 0
+			&& is_array($row[$languageField]) && $row[$languageField][0] > 0
 		) {
 			$parameterArray['fieldConf']['config']['readOnly'] = TRUE;
-			$parameterArray['itemFormElValue'] = $this->globalOptions['defaultLanguageData'][$table . ':' . $row['uid']][$fieldName];
+			$parameterArray['itemFormElValue'] = $this->data['defaultLanguageData'][$table . ':' . $row['uid']][$fieldName];
 		}
 
-		if (strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':') === FALSE) {
-			$typeField = $GLOBALS['TCA'][$table]['ctrl']['type'];
+		if (strpos($this->data['processedTca']['ctrl']['type'], ':') === FALSE) {
+			$typeField = $this->data['processedTca']['ctrl']['type'];
 		} else {
-			$typeField = substr($GLOBALS['TCA'][$table]['ctrl']['type'], 0, strpos($GLOBALS['TCA'][$table]['ctrl']['type'], ':'));
+			$typeField = substr($this->data['processedTca']['ctrl']['type'], 0, strpos($this->data['processedTca']['ctrl']['type'], ':'));
 		}
 		// Create a JavaScript code line which will ask the user to save/update the form due to changing the element.
 		// This is used for eg. "type" fields and others configured with "requestUpdate"
 		if (
-			!empty($GLOBALS['TCA'][$table]['ctrl']['type'])
+			!empty($this->data['processedTca']['ctrl']['type'])
 			&& $fieldName === $typeField
-			|| !empty($GLOBALS['TCA'][$table]['ctrl']['requestUpdate'])
-			&& GeneralUtility::inList(str_replace(' ', '', $GLOBALS['TCA'][$table]['ctrl']['requestUpdate']), $fieldName)
+			|| !empty($this->data['processedTca']['ctrl']['requestUpdate'])
+			&& GeneralUtility::inList(str_replace(' ', '', $this->data['processedTca']['ctrl']['requestUpdate']), $fieldName)
 		) {
 			if ($backendUser->jsConfirmation(1)) {
 				$alertMsgOnChange = 'if (confirm(TBE_EDITOR.labels.onChangeAlert) && TBE_EDITOR.checkSubmit(-1)){ TBE_EDITOR.submitForm() };';
@@ -137,13 +136,15 @@ class SingleFieldContainer extends AbstractContainer {
 			$alertMsgOnChange = '';
 		}
 
-
-		if (in_array($fieldName, $this->globalOptions['hiddenFieldListArray'], TRUE)) {
-			// Render as a hidden field if this field had a forced value in overrideVals
-			// @todo: This is an ugly concept ... search for overrideVals and defVals for a full picture of this madness
-			$resultArray = $this->initializeResultArray();
-			// This hidden field can not just be returned as casual html since upper containers will then render a label and wrapping stuff - this is not wanted here
-			$resultArray['additionalHiddenFields'][] = '<input type="hidden" name="' . $parameterArray['itemFormElName'] . '" value="' . htmlspecialchars($parameterArray['itemFormElValue']) . '" />';
+		if (array_key_exists($fieldName, $this->data['overrideValues'])) {
+			$options = [
+				'parameterArray' => [
+						'itemFormElName' => 'data[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']',
+						'itemFormElValue' => $this->data['overrideValues'][$fieldName]
+				],
+				'renderType' => 'hidden'
+			];
+			$resultArray = $this->nodeFactory->create($options)->render();
 		} else {
 			// JavaScript code for event handlers:
 			$parameterArray['fieldChangeFunc'] = array();
@@ -154,8 +155,8 @@ class SingleFieldContainer extends AbstractContainer {
 			if ($this->isInlineChildAndLabelField($table, $fieldName)) {
 				/** @var InlineStackProcessor $inlineStackProcessor */
 				$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-				$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
-				$inlineDomObjectId = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->globalOptions['inlineFirstPid']);
+				$inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
+				$inlineDomObjectId = $inlineStackProcessor->getCurrentStructureDomObjectIdPrefix($this->data['inlineFirstPid']);
 				$inlineObjectId = implode(
 					'-',
 					array(
@@ -168,7 +169,7 @@ class SingleFieldContainer extends AbstractContainer {
 			}
 
 			// Based on the type of the item, call a render function on a child element
-			$options = $this->globalOptions;
+			$options = $this->data;
 			$options['parameterArray'] = $parameterArray;
 			$options['elementBaseName'] = $newElementBaseName;
 			if (!empty($parameterArray['fieldConf']['config']['renderType'])) {
@@ -177,9 +178,7 @@ class SingleFieldContainer extends AbstractContainer {
 				// Fallback to type if no renderType is given
 				$options['renderType'] = $parameterArray['fieldConf']['config']['type'];
 			}
-			/** @var NodeFactory $nodeFactory */
-			$nodeFactory = $this->globalOptions['nodeFactory'];
-			$resultArray = $nodeFactory->create($options)->render();
+			$resultArray = $this->nodeFactory->create($options)->render();
 			$html = $resultArray['html'];
 
 			// @todo: the language handling, the null and the placeholder stuff should be embedded in the single
@@ -219,7 +218,7 @@ class SingleFieldContainer extends AbstractContainer {
 				// If the value of the field *is* NULL at the moment, an additional class is set
 				// @todo: This does not work well at the moment, but is kept for now. see input_14 of ext:styleguide as example
 				$checked = ' checked="checked"';
-				if ($this->globalOptions['databaseRow'][$fieldName] === NULL) {
+				if ($this->data['databaseRow'][$fieldName] === NULL) {
 					$fieldItemClasses[] = 'disabled';
 					$checked = '';
 				}
@@ -270,9 +269,7 @@ class SingleFieldContainer extends AbstractContainer {
 				$options['parameterArray'] = $parameterArray;
 				$options['parameterArray']['itemFormElValue'] = GeneralUtility::fixed_lgd_cs($placeholder, 30);
 				$options['renderType'] = 'none';
-				/** @var NodeFactory $nodeFactory */
-				$nodeFactory = $this->globalOptions['nodeFactory'];
-				$noneElementResult = $nodeFactory->create($options)->render();
+				$noneElementResult = $this->nodeFactory->create($options)->render();
 				$noneElementHtml = $noneElementResult['html'];
 
 				$placeholderWrap = array();
@@ -312,8 +309,7 @@ class SingleFieldContainer extends AbstractContainer {
 
 	/**
 	 * Renders the display of default language record content around current field.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
+	 * Will render content if any is found in the internal array.
 	 *
 	 * @param string $table Table name of the record being edited
 	 * @param string $field Field name represented by $item
@@ -322,36 +318,37 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @return string Item string returned again, possibly with the original value added to.
 	 */
 	protected function renderDefaultLanguageContent($table, $field, $row, $item) {
-		if (is_array($this->globalOptions['defaultLanguageData'][$table . ':' . $row['uid']])) {
+		if (is_array($this->data['defaultLanguageRow'])) {
 			$defaultLanguageValue = BackendUtility::getProcessedValue(
 				$table,
 				$field,
-				$this->globalOptions['defaultLanguageData'][$table . ':' . $row['uid']][$field],
+				$this->data['defaultLanguageRow'][$field],
 				0,
 				1,
 				FALSE,
-				$this->globalOptions['defaultLanguageData'][$table . ':' . $row['uid']]['uid']
+				$this->data['defaultLanguageRow']['uid']
 			);
-			$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field];
+			$fieldConfig = $this->data['processedTca']['columns'][$field];
 			// Don't show content if it's for IRRE child records:
 			if ($fieldConfig['config']['type'] !== 'inline') {
 				if ($defaultLanguageValue !== '') {
-					$item .= '<div class="t3-form-original-language">' . FormEngineUtility::getLanguageIcon($table, $row, 0)
+					$item .= '<div class="t3-form-original-language" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank', TRUE) . '">'
+						. FormEngineUtility::getLanguageIcon($table, $row, 0)
 						. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
 						. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 				}
-				$additionalPreviewLanguages = $this->globalOptions['additionalPreviewLanguages'];
+				$additionalPreviewLanguages = $this->data['additionalLanguageRows'];
 				foreach ($additionalPreviewLanguages as $previewLanguage) {
 					$defaultLanguageValue = BackendUtility::getProcessedValue(
 						$table,
 						$field,
-						$this->globalOptions['additionalPreviewLanguageData'][$table . ':' . $row['uid']][$previewLanguage['uid']][$field],
+						$previewLanguage[$field],
 						0,
-						1
+						TRUE
 					);
 					if ($defaultLanguageValue !== '') {
-						$item .= '<div class="t3-form-original-language">'
-							. FormEngineUtility::getLanguageIcon($table, $row, ('v' . $previewLanguage['ISOcode']))
+						$item .= '<div class="t3-form-original-language" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank', TRUE) . '">'
+							. FormEngineUtility::getLanguageIcon($table, $row, $previewLanguage['sys_language_uid'])
 							. $this->getMergeBehaviourIcon($fieldConfig['l10n_mode'])
 							. $this->previewFieldValue($defaultLanguageValue, $fieldConfig, $field) . '</div>';
 					}
@@ -373,18 +370,16 @@ class SingleFieldContainer extends AbstractContainer {
 	protected function getMergeBehaviourIcon($l10nMode) {
 		$icon = '';
 		if ($l10nMode === 'mergeIfNotBlank') {
-			$icon = IconUtility::getSpriteIcon(
-				'actions-edit-merge-localization',
-				array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_misc.xlf:localizeMergeIfNotBlank'))
-			);
+			/** @var IconFactory $iconFactory */
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$icon = $iconFactory->getIcon('actions-edit-merge-localization', Icon::SIZE_SMALL);
 		}
 		return $icon;
 	}
 
 	/**
 	 * Renders the diff-view of default language record content compared with what the record was originally translated from.
-	 * Will render content if any is found in the internal array, $this->defaultLanguageData,
-	 * depending on registerDefaultLanguageData() being called prior to this.
+	 * Will render content if any is found in the internal array
 	 *
 	 * @param string $table Table name of the record being edited
 	 * @param string $field Field name represented by $item
@@ -393,11 +388,11 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @return string Item string returned again, possibly with the original value added to.
 	 */
 	protected function renderDefaultLanguageDiff($table, $field, $row, $item) {
-		if (is_array($this->globalOptions['defaultLanguageDataDiff'][$table . ':' . $row['uid']])) {
+		if (is_array($this->data['defaultLanguageDataDiff'][$table . ':' . $row['uid']])) {
 			// Initialize:
 			$dLVal = array(
-				'old' => $this->globalOptions['defaultLanguageDataDiff'][$table . ':' . $row['uid']],
-				'new' => $this->globalOptions['defaultLanguageData'][$table . ':' . $row['uid']]
+				'old' => $this->data['defaultLanguageDataDiff'][$table . ':' . $row['uid']],
+				'new' => $this->data['defaultLanguageData'][$table . ':' . $row['uid']]
 			);
 			// There must be diff-data:
 			if (isset($dLVal['old'][$field])) {
@@ -432,12 +427,12 @@ class SingleFieldContainer extends AbstractContainer {
 	protected function isInlineChildAndLabelField($table, $field) {
 		/** @var InlineStackProcessor $inlineStackProcessor */
 		$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-		$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+		$inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
 		$level = $inlineStackProcessor->getStructureLevel(-1);
 		if ($level['config']['foreign_label']) {
 			$label = $level['config']['foreign_label'];
 		} else {
-			$label = $GLOBALS['TCA'][$table]['ctrl']['label'];
+			$label = $this->data['processedTca']['ctrl']['label'];
 		}
 		return $level['config']['foreign_table'] === $table && $label === $field;
 	}
@@ -448,14 +443,14 @@ class SingleFieldContainer extends AbstractContainer {
 	 * @return bool TRUE if field should be skipped based on inline configuration
 	 */
 	protected function inlineFieldShouldBeSkipped() {
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$fieldConfig = $GLOBALS['TCA'][$table]['columns'][$fieldName]['config'];
+		$table = $this->data['tableName'];
+		$row = $this->data['databaseRow'];
+		$fieldName = $this->data['fieldName'];
+		$fieldConfig = $this->data['processedTca']['columns'][$fieldName]['config'];
 
 		/** @var InlineStackProcessor $inlineStackProcessor */
 		$inlineStackProcessor = GeneralUtility::makeInstance(InlineStackProcessor::class);
-		$inlineStackProcessor->initializeByGivenStructure($this->globalOptions['inlineStructure']);
+		$inlineStackProcessor->initializeByGivenStructure($this->data['inlineStructure']);
 		$structureDepth = $inlineStackProcessor->getStructureDepth();
 
 		$skipThisField = FALSE;

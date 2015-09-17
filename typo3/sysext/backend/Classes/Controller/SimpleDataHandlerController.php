@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -225,8 +227,10 @@ class SimpleDataHandlerController {
 	 * Might also display error messages directly, if any.
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	public function finish() {
+		GeneralUtility::logDeprecatedFunction();
 		// Prints errors, if...
 		if ($this->prErr) {
 			$this->tce->printLogErrorMessages($this->redirect);
@@ -234,6 +238,30 @@ class SimpleDataHandlerController {
 		if ($this->redirect) {
 			HttpUtility::redirect($this->redirect);
 		}
+	}
+
+	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it just redirects to the given URL afterwards.
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->initClipboard();
+		$this->main();
+
+		// Write errors to flash message queue
+		if ($this->prErr) {
+			$this->tce->printLogErrorMessages($this->redirect);
+		}
+		if ($this->redirect) {
+			$response = $response
+				->withHeader('Location', GeneralUtility::locationHeaderUrl($this->redirect))
+				->withStatus(303);
+		}
+		return $response;
 	}
 
 	/**

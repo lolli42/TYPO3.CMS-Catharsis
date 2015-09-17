@@ -13,8 +13,8 @@ namespace TYPO3\CMS\Rtehtmlarea\Controller;
  *
  * The TYPO3 project - inspiring people to share!
  */
-
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -55,6 +55,8 @@ class UserElementsController {
 	public function __construct() {
 		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_userelementscontroller.xlf');
 		$GLOBALS['LANG']->includeLLFile('EXT:rtehtmlarea/Resources/Private/Language/locallang_dialogs.xlf');
+
+		$this->init();
 	}
 
 	/**
@@ -118,11 +120,27 @@ class UserElementsController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main_user() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response the prepared response object
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$content = $this->main_user($this->modData['openKeys']);
+		$response->getBody()->write($content);
+		return $response;
+	}
+
+	/**
 	 * Main function
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use main_user() instead
 	 */
 	public function main() {
+		GeneralUtility::logDeprecatedFunction();
 		$this->content = '';
 		$this->content .= $this->main_user($this->modData['openKeys']);
 	}
@@ -131,8 +149,10 @@ class UserElementsController {
 	 * Print content
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -271,7 +291,11 @@ class UserElementsController {
 				} else {
 					$title = $GLOBALS['LANG']->sL($title, TRUE);
 				}
-				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl($GLOBALS['MCONF']['name'], array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK))) . ');return false;"><i class="fa fa-caret-square-o-' . ($openKeys[$openK] ? 'left' : 'right') . '" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '"></i><strong>' . $title . '</strong></a></td></tr>';
+
+				$uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+				$url = (string)$uriBuilder->buildUriFromRoute('rtehtmlarea_wizard_user_elements', array('OC_key' => ($openKeys[$openK] ? 'C|' : 'O|') . $openK));
+
+				$lines[] = '<tr><td colspan="3" class="bgColor5"><a href="#" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '" onClick="jumpToUrl(' . GeneralUtility::quoteJSvalue($url) . ');return false;"><i class="fa fa-caret-square-o-' . ($openKeys[$openK] ? 'left' : 'right') . '" title="' . $GLOBALS['LANG']->getLL('expand', TRUE) . '"></i><strong>' . $title . '</strong></a></td></tr>';
 				$lines[] = $v;
 			}
 			$content .= '<table border="0" cellpadding="1" cellspacing="1">' . implode('', $lines) . '</table>';

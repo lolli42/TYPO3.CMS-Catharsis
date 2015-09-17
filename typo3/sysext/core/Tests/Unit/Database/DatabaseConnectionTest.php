@@ -131,6 +131,14 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 				'AND'
 			),
 
+			'One search word with special chars (for like)' => array(
+				'(pages.title LIKE \'%TYPO3\\_100\\%%\')',
+				array('TYPO3_100%'),
+				array('title'),
+				'pages',
+				'AND'
+			),
+
 			'One search word in multiple fields' => array(
 				'(pages.title LIKE \'%TYPO3%\' OR pages.keyword LIKE \'%TYPO3%\' OR pages.description LIKE \'%TYPO3%\')',
 				array('TYPO3'),
@@ -360,6 +368,16 @@ class DatabaseConnectionTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$subject = new \TYPO3\CMS\Core\Database\DatabaseConnection();
 		$sanitizedArray = $subject->cleanIntArray($exampleData);
 		$this->assertEquals($expectedResult, $sanitizedArray);
+	}
+
+	/**
+	 * @test
+	 */
+	public function sqlForSelectMmQuery() {
+		$subject = new \TYPO3\CMS\Core\Database\DatabaseConnection();
+		$result = $subject->SELECT_mm_query('*', 'sys_category', 'sys_category_record_mm', 'tt_content', 'AND sys_category.uid = 1', '', 'sys_category.title DESC');
+		$expected = 'SELECT * FROM sys_category,sys_category_record_mm,tt_content WHERE sys_category.uid=sys_category_record_mm.uid_local AND tt_content.uid=sys_category_record_mm.uid_foreign AND sys_category.uid = 1 ORDER BY sys_category.title DESC';
+		$this->assertEquals($expected, $result);
 	}
 
 }

@@ -18,6 +18,8 @@ use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\View\PageTreeView;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -80,9 +82,15 @@ class PageTreeNavigationController {
 	public $template;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		GeneralUtility::deprecationLog('PageTreeNavigationController is deprecated in favor of new pagetrees');
 		$GLOBALS['SOBE'] = $this;
 		$this->init();
@@ -102,8 +110,8 @@ class PageTreeNavigationController {
 		$beUser = $this->getBackendUser();
 		$this->pagetree = GeneralUtility::makeInstance(PageTreeView::class);
 		$this->pagetree->ext_IconMode = $beUser->getTSConfigVal('options.pageTree.disableIconLinkToContextmenu');
-		$this->pagetree->ext_showPageId = $beUser->getTSConfigVal('options.pageTree.showPageIdWithTitle');
-		$this->pagetree->ext_showNavTitle = $beUser->getTSConfigVal('options.pageTree.showNavTitle');
+		$this->pagetree->ext_showPageId = (bool)$beUser->getTSConfigVal('options.pageTree.showPageIdWithTitle');
+		$this->pagetree->ext_showNavTitle = (bool)$beUser->getTSConfigVal('options.pageTree.showNavTitle');
 		$this->pagetree->ext_separateNotinmenuPages = $beUser->getTSConfigVal('options.pageTree.separateNotinmenuPages');
 		$this->pagetree->ext_alphasortNotinmenuPages = $beUser->getTSConfigVal('options.pageTree.alphasortNotinmenuPages');
 		$this->pagetree->thisScript = 'alt_db_navframe.php';
@@ -221,11 +229,14 @@ class PageTreeNavigationController {
 			'new_page' => '',
 			'refresh' => ''
 		);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		// New Page
 		$onclickNewPageWizard = 'top.content.list_frame.location.href=' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('db_new', ['pagesOnly' => 1, 'id' => ''])) . '+Tree.pageID;';
-		$buttons['new_page'] = '<a href="#" onclick="' . $onclickNewPageWizard . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-page-new') . '</a>';
+		$buttons['new_page'] = '<a href="#" onclick="' . $onclickNewPageWizard . '" title="' . $this->getLanguageService()->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:newPage', TRUE) . '">'
+			. $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL)
+			. '</a>';
 		// Refresh
-		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.refresh', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-refresh') . '</a>';
+		$buttons['refresh'] = '<a href="' . htmlspecialchars(GeneralUtility::getIndpEnv('REQUEST_URI')) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.refresh', TRUE) . '">' . $iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL)->render() . '</a>';
 		// CSH
 		$buttons['csh'] = str_replace('typo3-csh-inline', 'typo3-csh-inline show-right', BackendUtility::cshItem('xMOD_csh_corebe', 'pagetree'));
 		return $buttons;
@@ -239,13 +250,10 @@ class PageTreeNavigationController {
 	protected function getWorkspaceInfo() {
 		if (ExtensionManagementUtility::isLoaded('workspaces') && ($this->getBackendUser()->workspace !== 0 || $this->getBackendUser()->getTSConfigVal('options.pageTree.onlineWorkspaceInfo'))) {
 			$wsTitle = htmlspecialchars(WorkspaceService::getWorkspaceTitle($this->getBackendUser()->workspace));
-			$workspaceInfo = '
-				<div class="bgColor4 workspace-info">' . IconUtility::getSpriteIcon('apps-toolbar-menu-workspace', array(
-				'title' => $wsTitle,
-				'onclick' => 'top.goToModule(\'web_WorkspacesWorkspaces\');',
-				'style' => 'cursor:pointer;'
-			)) . $wsTitle . '</div>
-			';
+
+			$workspaceInfo = '<div class="bgColor4 workspace-info"><span title="' . $wsTitle . '" onclick="top.goToModule(\'web_WorkspacesWorkspaces\');" style="cursor:pointer;">'
+					. $this->iconFactory->getIcon('apps-toolbar-menu-workspace', Icon::SIZE_SMALL)->render() . '</span>'
+					. $wsTitle . '</div>';
 		} else {
 			$workspaceInfo = '';
 		}

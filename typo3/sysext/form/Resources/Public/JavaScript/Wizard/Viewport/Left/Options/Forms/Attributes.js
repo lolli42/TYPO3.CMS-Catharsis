@@ -157,6 +157,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
@@ -275,6 +279,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 							'spin': {
 								scope: this,
 								fn: this.storeValue
+							},
+							'blur': {
+								scope: this,
+								fn: this.storeValue
 							}
 						}
 					});
@@ -333,6 +341,18 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						}
 					});
 					break;
+				case 'placeholder':
+					formItems.push({
+						fieldLabel: TYPO3.l10n.localize('attributes_placeholder'),
+						name: 'placeholder',
+						listeners: {
+							'triggerclick': {
+								scope: this,
+								fn: this.storeValue
+							}
+						}
+					});
+					break;
 				case 'readonly':
 					formItems.push({
 						xtype: 'checkbox',
@@ -355,6 +375,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						allowBlank: false,
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -382,6 +406,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						xtype: 'spinnerfield',
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}
@@ -419,6 +447,10 @@ TYPO3.Form.Wizard.Viewport.Left.Options.Forms.Attributes = Ext.extend(Ext.FormPa
 						xtype: 'spinnerfield',
 						listeners: {
 							'spin': {
+								scope: this,
+								fn: this.storeValue
+							},
+							'blur': {
 								scope: this,
 								fn: this.storeValue
 							}

@@ -14,8 +14,11 @@ namespace TYPO3\CMS\Compatibility6\Controller\Wizard;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -159,9 +162,15 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 	public $special;
 
 	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$this->getLanguageService()->includeLLFile('EXT:lang/locallang_wizards.xlf');
 		$GLOBALS['SOBE'] = $this;
 
@@ -186,6 +195,21 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 		// Setting form tag:
 		list($rUri) = explode('#', GeneralUtility::getIndpEnv('REQUEST_URI'));
 		$this->doc->form = '<form action="' . htmlspecialchars($rUri) . '" method="post" name="wizardForm">';
+	}
+
+	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
 	}
 
 	/**
@@ -214,8 +238,10 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 
@@ -239,13 +265,13 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 			// CSH Buttons
 			$buttons['csh_buttons'] = BackendUtility::cshItem('xMOD_csh_corebe', 'wizard_forms_wiz_buttons');
 			// Close
-			$buttons['close'] = '<a href="#" onclick="' . htmlspecialchars(('jumpToUrl(unescape(\'' . rawurlencode(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl'])) . '\')); return false;')) . '">' . IconUtility::getSpriteIcon('actions-document-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE))) . '</a>';
+			$buttons['close'] = '<button class="c-inputButton" name="closedok" value="1" title=' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '>' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</button>';
 			// Save
-			$buttons['save'] = '<button class="c-inputButton" name="savedok">' . IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE))) . '</button>';
+			$buttons['save'] = '<button class="c-inputButton" name="savedok" value="1" title=' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '>' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</button>';
 			// Save & Close
-			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok">' . IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE))) . '</button>';
+			$buttons['save_close'] = '<button class="c-inputButton" name="saveandclosedok" value="1" title=' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '>' . $this->iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL) . '</button>';
 			// Reload
-			$buttons['reload'] = '<button class="c-inputButton" name="_refresh">' . IconUtility::getSpriteIcon('actions-system-refresh', array('title' => $this->getLanguageService()->getLL('forms_refresh', TRUE))) . '</button>';
+			$buttons['reload'] = '<button class="c-inputButton" name="_refresh" value="1" title="' . $this->getLanguageService()->getLL('forms_refresh', TRUE) . '">' . $this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL) . '</button>';
 		}
 		return $buttons;
 	}
@@ -305,7 +331,7 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 				$cfgArr = $this->cfgString2CfgArray($bodyText);
 			}
 			// If a save button has been pressed, then save the new field content:
-			if ($_POST['savedok_x'] || $_POST['saveandclosedok_x']) {
+			if (isset($_POST['savedok']) || isset($_POST['saveandclosedok'])) {
 				// Make TCEmain object:
 				$tce = GeneralUtility::makeInstance(\TYPO3\CMS\Core\DataHandling\DataHandler::class);
 				$tce->stripslashes_values = 0;
@@ -320,10 +346,10 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 				$tce->process_datamap();
 				// Re-load the record content:
 				$row = BackendUtility::getRecord($this->P['table'], $this->P['uid']);
-				// If the save/close button was pressed, then redirect the screen:
-				if ($_POST['saveandclosedok_x']) {
-					\TYPO3\CMS\Core\Utility\HttpUtility::redirect(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
-				}
+			}
+			// If the save/close or close button was pressed, then redirect the screen:
+			if (isset($_POST['saveandclosedok']) || isset($_POST['closedok'])) {
+				\TYPO3\CMS\Core\Utility\HttpUtility::redirect(GeneralUtility::sanitizeLocalUrl($this->P['returnUrl']));
 			}
 		} else {
 			// If nothing has been submitted, load the $bodyText variable from the selected database row:
@@ -461,17 +487,17 @@ class FormsController extends \TYPO3\CMS\Backend\Controller\Wizard\AbstractWizar
 					// @todo $inputStyle undefined
 					$brTag = $inputStyle ? '' : '<br />';
 					if ($k != 1) {
-						$ctrl .= '<button name="FORMCFG[row_top][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-to-top', array('title' => $this->getLanguageService()->getLL('table_top', TRUE))) . '</button>' . $brTag;
-						$ctrl .= '<button name="FORMCFG[row_up][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-up', array('title' => $this->getLanguageService()->getLL('table_up', TRUE))) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_top][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_top', TRUE) . '">' . $this->iconFactory->getIcon('actions-move-to-top', Icon::SIZE_SMALL) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_up][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_up', TRUE) . '">' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '</button>' . $brTag;
 					}
-					$ctrl .= '<button name="FORMCFG[row_remove][' . ($k + 1) * 2 . ']" ' . $onClick . '>' . IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $this->getLanguageService()->getLL('table_removeRow', TRUE))) . '</button>' . $brTag;
+					$ctrl .= '<button name="FORMCFG[row_remove][' . ($k + 1) * 2 . ']" ' . $onClick . ' title = "' . $this->getLanguageService()->getLL('table_removeRow', TRUE) . '">' . $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_LARGE) . '</button>' . $brTag;
 
 					if ($k != (count($formCfgArray)/2)) {
-						$ctrl .= '<button name="FORMCFG[row_down][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-down', array('title' => $this->getLanguageService()->getLL('table_down', TRUE))) . '</button>' . $brTag;
-						$ctrl .= '<button name="FORMCFG[row_bottom][' . ($k + 1) * 2 . ']"' . $onClick . '>' . IconUtility::getSpriteIcon('actions-move-to-bottom', array('title' => $this->getLanguageService()->getLL('table_bottom', TRUE))) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_down][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_down', TRUE) . '">' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '</button>' . $brTag;
+						$ctrl .= '<button name="FORMCFG[row_bottom][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_bottom', TRUE) . '">' . $this->iconFactory->getIcon('actions-move-to-bottom', Icon::SIZE_SMALL) . '</button>' . $brTag;
 					}
 
-					$ctrl .= '<button name="FORMCFG[row_add][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_addRow', TRUE) . '">' . IconUtility::getSpriteIcon('actions-template-new') . '</button>' . $brTag;
+					$ctrl .= '<button name="FORMCFG[row_add][' . ($k + 1) * 2 . ']"' . $onClick . ' title="' . $this->getLanguageService()->getLL('table_addRow', TRUE) . '">' . $this->iconFactory->getIcon('actions-template-new', Icon::SIZE_SMALL) . '</button>' . $brTag;
 					$ctrl = '<span class="c-wizButtonsV">' . $ctrl . '</span>';
 					// Finally, put together the full row from the generated content above:
 					$bgC = $confData['type'] ? ' class="bgColor5"' : '';

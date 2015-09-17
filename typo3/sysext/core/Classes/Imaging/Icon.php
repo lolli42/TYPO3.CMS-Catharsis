@@ -13,6 +13,8 @@ namespace TYPO3\CMS\Core\Imaging;
  *
  * The TYPO3 project - inspiring people to share!
  */
+
+use TYPO3\CMS\Core\Type\Icon\IconState;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -44,21 +46,38 @@ class Icon {
 
 	/**
 	 * The identifier which the PHP code that calls the IconFactory hands over
+	 *
 	 * @var string
 	 */
 	protected $identifier;
 
 	/**
 	 * The identifier for a possible overlay icon
+	 *
 	 * @var Icon
 	 */
 	protected $overlayIcon = NULL;
 
 	/**
 	 * Contains the size string ("large", "small" or "default")
+	 *
 	 * @var string
 	 */
 	protected $size = '';
+
+	/**
+	 * Flag to indicate if the icon has a spinning animation
+	 *
+	 * @var bool
+	 */
+	protected $spinning = FALSE;
+
+	/**
+	 * Contains the state information
+	 *
+	 * @var IconState
+	 */
+	protected $state;
 
 	/**
 	 * @var Dimension
@@ -122,11 +141,42 @@ class Icon {
 
 	/**
 	 * Sets the size and creates the new dimension
+	 *
 	 * @param string $size
 	 */
 	public function setSize($size) {
 		$this->size = $size;
 		$this->dimension = GeneralUtility::makeInstance(Dimension::class, $size);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isSpinning() {
+		return $this->spinning;
+	}
+
+	/**
+	 * @param bool $spinning
+	 */
+	public function setSpinning($spinning) {
+		$this->spinning = $spinning;
+	}
+
+	/**
+	 * @return IconState
+	 */
+	public function getState() {
+		return $this->state;
+	}
+
+	/**
+	 * Sets the state of the icon
+	 *
+	 * @param IconState $state
+	 */
+	public function setState(IconState $state) {
+		$this->state = $state;
 	}
 
 	/**
@@ -142,15 +192,6 @@ class Icon {
 	 * @return string
 	 */
 	public function render() {
-		return $this->__toString();
-	}
-
-	/**
-	 * Render the icon as HTML code
-	 *
-	 * @return string
-	 */
-	public function __toString() {
 		$overlayIconMarkup = '';
 		if ($this->overlayIcon !== NULL) {
 			$overlayIconMarkup = '<span class="icon-overlay icon-' . htmlspecialchars($this->overlayIcon->getIdentifier()) . '">' . $this->overlayIcon->getMarkup() . '</span>';
@@ -159,13 +200,31 @@ class Icon {
 	}
 
 	/**
+	 * Render the icon as HTML code
+	 *
+	 * @return string
+	 */
+	public function __toString() {
+		return $this->render();
+	}
+
+	/**
 	 * Wrap icon markup in unified HTML code
 	 *
 	 * @return string
 	 */
 	protected function wrappedIcon() {
+		$classes = array();
+		$classes[] = 'icon';
+		$classes[] = 'icon-size-' . $this->size;
+		$classes[] = 'icon-state-' . htmlspecialchars((string)$this->state);
+		$classes[] = 'icon-' . $this->getIdentifier();
+		if ($this->isSpinning()) {
+			$classes[] = 'icon-spin';
+		}
+
 		$markup = array();
-		$markup[] = '<span class="icon icon-size-' . $this->size . ' icon-' . htmlspecialchars($this->getIdentifier()) . '">';
+		$markup[] = '<span class="' . htmlspecialchars(implode(' ', $classes)) . '">';
 		$markup[] = '	<span class="icon-markup">';
 		$markup[] = $this->getMarkup();
 		$markup[] = '	</span>';

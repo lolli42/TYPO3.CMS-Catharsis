@@ -34,7 +34,8 @@ return array(
 				'items' => array(
 					array('LLL:EXT:lang/locallang_general.xml:LGL.allLanguages', -1),
 					array('LLL:EXT:lang/locallang_general.xml:LGL.default_value', 0)
-				)
+				),
+				'default' => 0
 			)
 		),
 		'l18n_parent' => array(
@@ -48,11 +49,13 @@ return array(
 				),
 				'foreign_table' => 'tx_irretutorial_mnasym_price',
 				'foreign_table_where' => 'AND tx_irretutorial_mnasym_price.pid=###CURRENT_PID### AND tx_irretutorial_mnasym_price.sys_language_uid IN (-1,0)',
+				'default' => 0,
 			)
 		),
 		'l18n_diffsource' => array(
 			'config' => array(
-				'type' => 'passthrough'
+				'type' => 'passthrough',
+				'default' => ''
 			)
 		),
 		'hidden' => array(

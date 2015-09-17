@@ -13,6 +13,9 @@ namespace TYPO3\CMS\Backend\Tree\View;
  *
  * The TYPO3 project - inspiring people to share!
  */
+use TYPO3\CMS\Core\Resource\Folder;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Recordlist\Browser\ElementBrowser;
 
 /**
  * Base extension class which generates the folder tree.
@@ -30,6 +33,13 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	public $ext_IconMode = 1;
 
 	/**
+	 * Back-reference to ElementBrowser class
+	 *
+	 * @var ElementBrowser
+	 */
+	protected $elementBrowser;
+
+	/**
 	 * Initializes the script path
 	 */
 	public function __construct() {
@@ -38,15 +48,23 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	}
 
 	/**
+	 * @param ElementBrowser $elementBrowser
+	 * @return void
+	 */
+	public function setElementBrowser(ElementBrowser $elementBrowser) {
+		$this->elementBrowser = $elementBrowser;
+	}
+
+	/**
 	 * Wrapping the title in a link, if applicable.
 	 *
 	 * @param string $title Title, ready for output.
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject The "record
+	 * @param Folder $folderObject The "record
 	 * @return string Wrapping title string.
 	 */
-	public function wrapTitle($title, \TYPO3\CMS\Core\Resource\Folder $folderObject) {
+	public function wrapTitle($title, Folder $folderObject) {
 		if ($this->ext_isLinkable($folderObject)) {
-			$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $GLOBALS['SOBE']->browser->act . '&mode=' . $GLOBALS['SOBE']->browser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())) . ');';
+			$aOnClick = 'return jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript() . 'act=' . $this->elementBrowser->act . '&mode=' . $this->elementBrowser->mode . '&expandFolder=' . rawurlencode($folderObject->getCombinedIdentifier())) . ');';
 			return '<a href="#" onclick="' . htmlspecialchars($aOnClick) . '">' . $title . '</a>';
 		} else {
 			return '<span class="text-muted">' . $title . '</span>';
@@ -56,10 +74,10 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	/**
 	 * Returns TRUE if the input "record" contains a folder which can be linked.
 	 *
-	 * @param \TYPO3\CMS\Core\Resource\Folder $folderObject Object with information about the folder element. Contains keys like title, uid, path, _title
+	 * @param Folder $folderObject Object with information about the folder element. Contains keys like title, uid, path, _title
 	 * @return bool TRUE is returned if the path is found in the web-part of the server and is NOT a recycler or temp folder AND if ->ext_noTempRecyclerDirs is not set.
 	 */
-	public function ext_isLinkable(\TYPO3\CMS\Core\Resource\Folder $folderObject) {
+	public function ext_isLinkable(Folder $folderObject) {
 		if ($this->ext_noTempRecyclerDirs && (substr($folderObject->getIdentifier(), -7) === '_temp_/' || substr($folderObject->getIdentifier(), -11) === '_recycler_/')) {
 			return FALSE;
 		} else {
@@ -72,7 +90,7 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 	 *
 	 * @param string $icon HTML string to wrap, probably an image tag.
 	 * @param string $cmd Command for 'PM' get var
-	 * @param bool $bMark If set, the link will have an anchor point (=$bMark) and a name attribute (=$bMark)
+	 * @param bool|string $bMark If set, the link will have an anchor point (=$bMark) and a name attribute (=$bMark)
 	 * @param bool $isOpen check if the item has children
 	 * @return string Link-wrapped input string
 	 * @access private
@@ -83,8 +101,33 @@ class ElementBrowserFolderTreeView extends FolderTreeView {
 			$anchor = '#' . $bMark;
 			$name = ' name="' . $bMark . '"';
 		}
-		$aOnClick = 'return jumpToUrl(' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($this->getThisScript() . 'PM=' . $cmd) . ',' . \TYPO3\CMS\Core\Utility\GeneralUtility::quoteJSvalue($anchor) . ');';
+		$aOnClick = 'return jumpToUrl(' . GeneralUtility::quoteJSvalue($this->getThisScript() . 'PM=' . $cmd) . ',' . GeneralUtility::quoteJSvalue($anchor) . ');';
 		return '<a href="#"' . htmlspecialchars($name) . ' onclick="' . htmlspecialchars($aOnClick) . '">' . $icon . '</a>';
+	}
+
+	/**
+	 * Wrap the plus/minus icon in a link
+	 *
+	 * @param string $icon HTML string to wrap, probably an image tag.
+	 * @param string $cmd Command for 'PM' get var
+	 * @param bool $isExpand Whether to be expanded
+	 * @return string Link-wrapped input string
+	 * @internal
+	 */
+	public function PMiconATagWrap($icon, $cmd, $isExpand = TRUE) {
+		if (empty($this->scope)) {
+			$this->scope = array(
+				'class' => get_class($this),
+				'script' => $this->thisScript,
+				'ext_noTempRecyclerDirs' => $this->ext_noTempRecyclerDirs,
+				'browser' => array(
+					'mode' => $this->elementBrowser->mode,
+					'act' => $this->elementBrowser->act,
+				),
+			);
+		}
+
+		return parent::PMiconATagWrap($icon, $cmd, $isExpand);
 	}
 
 }

@@ -3369,6 +3369,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
 		$GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+		$this->subject->_set('typoScriptFrontendController', $typoScriptFrontendControllerMockObject);
 
 		$this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
 	}
@@ -3475,6 +3476,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$typoScriptFrontendControllerMockObject->sys_page = $pageRepositoryMockObject;
 		$typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
 		$GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+		$this->subject->_set('typoScriptFrontendController', $typoScriptFrontendControllerMockObject);
 
 		$this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
 	}
@@ -3546,6 +3548,7 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		);
 		$typoScriptFrontendControllerMockObject->tmpl = $templateServiceObjectMock;
 		$GLOBALS['TSFE'] = $typoScriptFrontendControllerMockObject;
+		$this->subject->_set('typoScriptFrontendController', $typoScriptFrontendControllerMockObject);
 
 		$this->assertEquals($expectedResult, $this->subject->typoLink($linkText, $configuration));
 	}
@@ -3660,4 +3663,24 @@ class ContentObjectRendererTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 		$this->assertEquals($expectedResult, $contentObjectRenderer->getWhere($table, $configuration));
 	}
 
+	/////////////////////////////////////
+	// Test concerning link generation //
+	/////////////////////////////////////
+
+	/**
+	 * @test
+	 */
+	public function filelinkCreatesCorrectUrlForFileWithUrlEncodedSpecialChars() {
+
+		$fileNameAndPath = PATH_site . 'typo3temp/phpunitJumpUrlTestFile with spaces & amps.txt';
+		file_put_contents($fileNameAndPath, 'Some test data');
+		$relativeFileNameAndPath = substr($fileNameAndPath, strlen(PATH_site));
+		$fileName = substr($fileNameAndPath, strlen(PATH_site . 'typo3temp/'));
+
+		$expectedLink = str_replace('%2F', '/', rawurlencode($relativeFileNameAndPath));
+		$result = $this->subject->filelink($fileName, array('path' => 'typo3temp/'));
+		$this->assertEquals('<a href="' . $expectedLink . '">' . $fileName . '</a>', $result);
+
+		\TYPO3\CMS\Core\Utility\GeneralUtility::unlink_tempfile($fileNameAndPath);
+	}
 }

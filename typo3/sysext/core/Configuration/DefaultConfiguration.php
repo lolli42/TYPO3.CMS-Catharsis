@@ -85,7 +85,8 @@ return array(
 		 * @deprecated since 4.6 - will be removed in 6.2.
 		 */
 		'curlTimeout' => 0,						// Integer: Timeout value for cURL requests in seconds. 0 means to wait indefinitely. Deprecated since 4.6 - will be removed in 6.2. See below for http options.
-		'textfile_ext' => 'txt,ts,html,htm,css,tmpl,js,sql,xml,csv,xlf',		// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
+		'textfile_ext' => 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf',	// Text file extensions. Those that can be edited. Executable PHP files may not be editable in webspace if disallowed!
+		'mediafile_ext' => 'gif,jpg,jpeg,bmp,png,pdf,svg,ai,mov,avi,youtube,vimeo',	// Commalist of file extensions perceived as media files by TYPO3. Lowercase and no spaces between!
 		'binPath' => '',						// String: List of absolute paths where external programs should be searched for. Eg. <code>/usr/local/webbin/,/home/xyz/bin/</code>. (ImageMagick path have to be configured separately)
 		'binSetup' => '',						// String (textarea): List of programs (separated by newline or comma). By default programs will be searched in default paths and the special paths defined by 'binPath'. When PHP has openbasedir enabled the programs can not be found and have to be configured here. Example: <code>perl=/usr/bin/perl,unzip=/usr/local/bin/unzip</code>
 		't3lib_cs_convMethod' => '',			// String (values: "iconv", "recode", "mbstring", default is homemade PHP-code). Defines which of these PHP-features to use for various charset conversion functions in \TYPO3\CMS\Core\Charset\CharsetConverter. Will speed up charset conversion radically.
@@ -256,22 +257,235 @@ return array(
 				'static' => \TYPO3\CMS\Core\Resource\Collection\StaticFileCollection::class,
 				'folder' => \TYPO3\CMS\Core\Resource\Collection\FolderBasedFileCollection::class,
 				'category' => \TYPO3\CMS\Core\Resource\Collection\CategoryBasedFileCollection::class,
-			)
+			),
+			'onlineMediaHelpers' => array(
+				'youtube' => \TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\YouTubeHelper::class,
+				'vimeo' => \TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\VimeoHelper::class,
+			),
 		),
 		'FileInfo' => array(
 			// Static mapping for file extensions to mime types.
 			// In special cases the mime type is not detected correctly.
 			// Use this array only if the automatic detection does not work correct!
 			'fileExtensionToMimeType' => array(
-				'svg' => 'image/svg+xml'
+				'svg' => 'image/svg+xml',
+				'youtube' => 'video/youtube',
+				'vimeo' => 'video/vimeo',
 			)
 		),
 		'livesearch' => array(),	// Array: keywords used for commands to search for specific tables
 		'isInitialInstallationInProgress' => FALSE,		// Boolean: If TRUE, the installation is 'in progress'. This value is handled within the install tool step installer internally.
+		'isInitialDatabaseImportDone' => TRUE,		// Boolean: If TRUE, the database import is finished. This value is handled within the install tool step installer internally.
 		'clearCacheSystem' => FALSE,		// Boolean: If set, the toolbar menu entry for clearing system caches (core cache, class cache, etc.) is visible for admin users.
 		'formEngine' => array(
 			'nodeRegistry' => array(), // Array: Registry to add or overwrite FormEngine nodes. Main key is a timestamp of the date when an entry is added, sub keys type, priority and class are required. Class must implement TYPO3\CMS\Backend\Form\NodeInterface.
 			'nodeResolver' => array(), // Array: Additional node resolver. Main key is a timestamp of the date when an entry is added, sub keys type, priority and class are required. Class must implement TYPO3\CMS\Backend\Form\NodeResolverInterface.
+			'formDataGroup' => array( // Array: Registry of form data providers for form data groups
+				'tcaDatabaseRecord' => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\ReturnUrl::class => array(),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\ReturnUrl::class,
+						)
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEditRow::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEffectivePid::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseParentPageRow::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageRootline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEffectivePid::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageRootline::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseEffectivePid::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\ParentPageTca::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowInitializeNew::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUserPermissionCheck::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\ParentPageTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUniqueUidNewRow::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowInitializeNew::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDateTimeFields::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseUniqueUidNewRow::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowInitializeNew::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDateTimeFields::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseSystemLanguageRows::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageLanguageOverlayRows::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseSystemLanguageRows::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseLanguageRows::class => array(
+						'depends' => array(
+							// Language stuff depends on user ts, but it *may* also depend on new row defaults
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowInitializeNew::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageLanguageOverlayRows::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseLanguageRows::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfig::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TableTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaColumnsOverrides::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRecordTypeValue::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseSystemLanguageRows::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaColumnsOverrides::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\UserTsConfig::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexPrepare::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexProcess::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexPrepare::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabasePageRootline::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\PageTsConfigMerged::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\InitializeProcessedTca::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaTypesShowitem::class,
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class,
+							// GeneralUtility::getFlexFormDS() needs unchanged databaseRow values as string
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaFlexFetch::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class,
+						),
+					),
+				),
+				'flexFormSegment' => array(
+					\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class => array(),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaGroup::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaRadioItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaCheckboxItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\DatabaseRowDefaultValues::class,
+						),
+					),
+					\TYPO3\CMS\Backend\Form\FormDataProvider\TcaInline::class => array(
+						'depends' => array(
+							\TYPO3\CMS\Backend\Form\FormDataProvider\TcaSelectItems::class,
+						),
+					),
+				),
+			),
 		),
 	),
 	'EXT' => array( // Options related to the Extension Management
@@ -304,7 +518,6 @@ return array(
 			'debug' => FALSE
 		),
 		'unzip_path' => '',								// Path to "unzip". Only specify the path here, do not include the program name, it is expected to be called "unzip".
-		'diff_path' => 'diff',							// Path to "diff" including the program name. Example: /somepath/specialdiff<br />For Windows this program can be downloaded here: <a href="http://unxutils.sourceforge.net/" target="_blank">unxutils.sourceforge.net</a>
 		'fileadminDir' => 'fileadmin/',					// Path to the fileadmin dir. This is relative to PATH_site, DefaultStorage will be created with that configuration, do not access manually but ResourceFactory::getDefaultStorage()
 		'RTE_imageStorageDir' => 'uploads/',			// Default storage directory for Rich Text Editor files
 		'lockRootPath' => '',							// This path is used to evaluate if paths outside of PATH_site should be allowed. Ending slash required!
@@ -355,7 +568,7 @@ return array(
 							100 {
 								name = history
 								label = LLL:EXT:lang/locallang_misc.xlf:CM_history
-								spriteIcon = actions-document-history-open
+								iconName = actions-document-history-open
 								displayCondition = canShowHistory != 0
 								callbackAction = openHistoryPopUp
 							}
@@ -370,7 +583,7 @@ return array(
 							100 {
 								name = view
 								label = LLL:EXT:lang/locallang_core.xlf:cm.view
-								spriteIcon = actions-document-view
+								iconName = actions-document-view
 								displayCondition = canBeViewed != 0
 								callbackAction = viewPage
 							}
@@ -379,7 +592,7 @@ return array(
 							200 {
 								name = new
 								label = LLL:EXT:lang/locallang_core.xlf:cm.new
-								spriteIcon = actions-page-new
+								iconName = actions-page-new
 								displayCondition = canCreateNewPages != 0
 								callbackAction = newPageWizard
 							}
@@ -390,7 +603,7 @@ return array(
 							400 {
 								name = history
 								label = LLL:EXT:lang/locallang_misc.xlf:CM_history
-								spriteIcon = actions-document-history-open
+								iconName = actions-document-history-open
 								displayCondition = canShowHistory != 0
 								callbackAction = openHistoryPopUp
 							}
@@ -405,7 +618,7 @@ return array(
 							100 {
 								name = view
 								label = LLL:EXT:lang/locallang_core.xlf:cm.view
-								spriteIcon = actions-document-view
+								iconName = actions-document-view
 								displayCondition = canBeViewed != 0
 								callbackAction = viewPage
 							}
@@ -416,7 +629,7 @@ return array(
 							300 {
 								name = disable
 								label = LLL:EXT:lang/locallang_common.xlf:disable
-								spriteIcon = actions-edit-hide
+								iconName = actions-edit-hide
 								displayCondition = getRecord|hidden = 0 && canBeDisabledAndEnabled != 0
 								callbackAction = disablePage
 							}
@@ -425,7 +638,7 @@ return array(
 							400 {
 								name = enable
 								label = LLL:EXT:lang/locallang_common.xlf:enable
-								spriteIcon = actions-edit-unhide
+								iconName = actions-edit-unhide
 								displayCondition = getRecord|hidden = 1 && canBeDisabledAndEnabled != 0
 								callbackAction = enablePage
 							}
@@ -434,7 +647,7 @@ return array(
 							500 {
 								name = edit
 								label = LLL:EXT:lang/locallang_core.xlf:cm.edit
-								spriteIcon = actions-page-open
+								iconName = actions-page-open
 								displayCondition = canBeEdited != 0
 								callbackAction = editPageProperties
 							}
@@ -443,7 +656,7 @@ return array(
 							600 {
 								name = info
 								label = LLL:EXT:lang/locallang_core.xlf:cm.info
-								spriteIcon = actions-document-info
+								iconName = actions-document-info
 								displayCondition = canShowInfo != 0
 								callbackAction = openInfoPopUp
 							}
@@ -452,7 +665,7 @@ return array(
 							700 {
 								name = history
 								label = LLL:EXT:lang/locallang_misc.xlf:CM_history
-								spriteIcon = actions-document-history-open
+								iconName = actions-document-history-open
 								displayCondition = canShowHistory != 0
 								callbackAction = openHistoryPopUp
 							}
@@ -467,7 +680,7 @@ return array(
 								100 {
 									name = new
 									label = LLL:EXT:lang/locallang_core.xlf:cm.new
-									spriteIcon = actions-page-new
+									iconName = actions-page-new
 									displayCondition = canCreateNewPages != 0
 									callbackAction = newPageWizard
 								}
@@ -478,7 +691,7 @@ return array(
 								300 {
 									name = cut
 									label = LLL:EXT:lang/locallang_core.xlf:cm.cut
-									spriteIcon = actions-edit-cut
+									iconName = actions-edit-cut
 									displayCondition = isInCutMode = 0 && canBeCut != 0 && isMountPoint != 1
 									callbackAction = enableCutMode
 								}
@@ -487,7 +700,7 @@ return array(
 								400 {
 									name = cut
 									label = LLL:EXT:lang/locallang_core.xlf:cm.cut
-									spriteIcon = actions-edit-cut-release
+									iconName = actions-edit-cut-release
 									displayCondition = isInCutMode = 1 && canBeCut != 0
 									callbackAction = disableCutMode
 								}
@@ -496,7 +709,7 @@ return array(
 								500 {
 									name = copy
 									label = LLL:EXT:lang/locallang_core.xlf:cm.copy
-									spriteIcon = actions-edit-copy
+									iconName = actions-edit-copy
 									displayCondition = isInCopyMode = 0 && canBeCopied != 0
 									callbackAction = enableCopyMode
 								}
@@ -505,7 +718,7 @@ return array(
 								600 {
 									name = copy
 									label = LLL:EXT:lang/locallang_core.xlf:cm.copy
-									spriteIcon = actions-edit-copy-release
+									iconName = actions-edit-copy-release
 									displayCondition = isInCopyMode = 1 && canBeCopied != 0
 									callbackAction = disableCopyMode
 								}
@@ -514,7 +727,7 @@ return array(
 								700 {
 									name = pasteInto
 									label = LLL:EXT:lang/locallang_core.xlf:cm.pasteinto
-									spriteIcon = actions-document-paste-into
+									iconName = actions-document-paste-into
 									displayCondition = getContextInfo|inCopyMode = 1 || getContextInfo|inCutMode = 1 && canBePastedInto != 0
 									callbackAction = pasteIntoNode
 								}
@@ -523,7 +736,7 @@ return array(
 								800 {
 									name = pasteAfter
 									label = LLL:EXT:lang/locallang_core.xlf:cm.pasteafter
-									spriteIcon = actions-document-paste-after
+									iconName = actions-document-paste-after
 									displayCondition = getContextInfo|inCopyMode = 1 || getContextInfo|inCutMode = 1 && canBePastedAfter != 0
 									callbackAction = pasteAfterNode
 								}
@@ -534,7 +747,7 @@ return array(
 								1000 {
 									name = delete
 									label = LLL:EXT:lang/locallang_core.xlf:cm.delete
-									spriteIcon = actions-edit-delete
+									iconName = actions-edit-delete
 									displayCondition = canBeRemoved != 0 && isMountPoint != 1
 									callbackAction = removeNode
 								}
@@ -548,7 +761,7 @@ return array(
 								100 {
 									name = mountAsTreeroot
 									label = LLL:EXT:lang/locallang_core.xlf:cm.tempMountPoint
-									spriteIcon = actions-system-extension-documentation
+									iconName = actions-pagetree-mountroot
 									displayCondition = canBeTemporaryMountPoint != 0 && isMountPoint = 0
 									callbackAction = mountAsTreeRoot
 								}
@@ -559,7 +772,7 @@ return array(
 								300 {
 									name = expandBranch
 									label = LLL:EXT:lang/locallang_core.xlf:cm.expandBranch
-									spriteIcon = actions-pagetree-expand
+									iconName = actions-pagetree-expand
 									displayCondition =
 									callbackAction = expandBranch
 								}
@@ -568,7 +781,7 @@ return array(
 								400 {
 									name = collapseBranch
 									label = LLL:EXT:lang/locallang_core.xlf:cm.collapseBranch
-									spriteIcon = actions-pagetree-collapse
+									iconName = actions-pagetree-collapse
 									displayCondition =
 									callbackAction = collapseBranch
 								}
@@ -656,19 +869,19 @@ return array(
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::createNewRecord' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::getRecordDetails' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::synchronizeLocalizeRecords' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_inline::setExpandedCollapsedState' => array(
-				'callbackMethod' => \TYPO3\CMS\Backend\Form\FormEngine::class . '->processInlineAjaxRequest',
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\FormInlineAjaxController::class . '->processInlineAjaxRequest',
 				'csrfTokenCheck' => TRUE
 			),
 			't3lib_TCEforms_suggest::searchRecord' => array(
@@ -756,6 +969,10 @@ return array(
 			'LiveSearch' => array(
 				'callbackMethod' => \TYPO3\CMS\Backend\Controller\LiveSearchController::class . '->liveSearchAction',
 				'csrfTokenCheck' => TRUE
+			),
+			'OnlineMedia::add' => array(
+				'callbackMethod' => \TYPO3\CMS\Backend\Controller\OnlineMediaController::class . '->addAjaxAction',
+				'csrfTokenCheck' => TRUE
 			)
 		),
 		'toolbarItems' => array(), // Array: Registered toolbar items classes
@@ -808,7 +1025,7 @@ return array(
 		'eID_include' => array(),		// Array of key/value pairs where key is "tx_[ext]_[optional suffix]" and value is relative filename of class to include. Key is used as "?eID=" for index_ts.php to include the code file which renders the page from that point. (Useful for functionality that requires a low initialization footprint, eg. frontend ajax applications)
 		'disableNoCacheParameter' => FALSE,		// Boolean: If set, the no_cache request parameter will become ineffective. This is currently still an experimental feature and will require a website only with plugins that don't use this parameter. However, using "&amp;no_cache=1" should be avoided anyway because there are better ways to disable caching for a certain part of the website (see COA_INT/USER_INT documentation in TSref).
 		'cacheHash' => array(),		// Array: Processed values of the cHash* parameters, handled by core bootstrap internally
-		'cHashExcludedParameters' => 'L',		// String: The the given parameters will be ignored in the cHash calculation. Example: L,tx_search_pi1[query]
+		'cHashExcludedParameters' => 'L, pk_campaign, pk_kwd, utm_source, utm_medium, utm_campaign, utm_term, utm_content',		// String: The the given parameters will be ignored in the cHash calculation. Example: L,tx_search_pi1[query]
 		'cHashOnlyForParameters' => '',		// String: Only the given parameters will be evaluated in the cHash calculation. Example: tx_news_pi1[uid]
 		'cHashRequiredParameters' => '',		// Optional: Configure Parameters that require a cHash. If no cHash is given but one of the parameters are set, then TYPO3 triggers the configured cHash Error behaviour
 		'cHashExcludedParametersIfEmpty' => '',		// Optional: Configure Parameters that are only relevant for the chash if there's an associated value available. And asterisk "*" can be used to skip all empty parameters.
@@ -824,7 +1041,7 @@ return array(
 		'transport_smtp_encrypt' => '',		// String: <em>only with transport=smtp</em>: Connect to the server using the specified transport protocol. Requires openssl library. Usually available: <em>ssl, sslv2, sslv3, tls</em>. Check <a href="http://www.php.net/stream_get_transports" target="_blank">stream_get_transports()</a>.
 		'transport_smtp_username' => '',		// String: <em>only with transport=smtp</em>: If your SMTP server requires authentication, enter your username here.
 		'transport_smtp_password' => '',		// String: <em>only with transport=smtp</em>: If your SMTP server requires authentication, enter your password here.
-		'transport_sendmail_command' => '/usr/sbin/sendmail -bs',		// String: <em>only with transport=sendmail</em>: The command to call to send a mail locally. The default works on most modern UNIX based mail server (sendmail, postfix, exim)
+		'transport_sendmail_command' => '',		// String: <em>only with transport=sendmail</em>: The command to call to send a mail locally.
 		'transport_mbox_file' => '',		// String: <em>only with transport=mbox</em>: The file where to write the mails into. This file will be conforming the mbox format described in RFC 4155. It is a simple text file with a concatenation of all mails. Path must be absolute.
 		'defaultMailFromAddress' => '',		// String: This default email address is used when no other "from" address is set for a TYPO3-generated email. You can specify an email address only (ex. info@example.org).
 		'defaultMailFromName' => '',		// String: This default name is used when no other "from" name is set for a TYPO3-generated email.

@@ -38,6 +38,12 @@ notifications:
       - lolli@schwarzbu.ch
     on_success: change
     on_failure: always
+  webhooks:
+    urls:
+      - http://www.t3bot.de/hooks/travis/index.php
+    on_success: always
+    on_failure: always
+    on_start: never
 
 before_script:
   - >
@@ -54,7 +60,7 @@ script:
     if [[ "$UNIT_TESTS" == "yes" ]]; then
       echo;
       echo "Running unit tests";
-      ./bin/phpunit --colors -c typo3/sysext/core/Build/UnitTests.xml
+      ./bin/phpunit -c typo3/sysext/core/Build/UnitTests.xml
     fi
   - >
     if [[ "$FUNCTIONAL_TESTS" == "yes" ]]; then
@@ -63,13 +69,13 @@ script:
         export typo3DatabaseHost="localhost";
         export typo3DatabaseUsername="root";
         export typo3DatabasePassword="";
-        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit --colors -c typo3/sysext/core/Build/FunctionalTests.xml {}'
+        find . -wholename '*typo3/sysext/*/Tests/Functional/*Test.php' | parallel --gnu 'echo; echo "Running functional test suite {}"; ./bin/phpunit -c typo3/sysext/core/Build/FunctionalTests.xml {}'
     fi
   - >
     if [[ "$PHP_LINT" == "yes" ]]; then
         echo;
         echo "Running php lint";
-        find typo3/ -name \*.php -not -path "typo3/vendor/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
+        find typo3/ -name \*.php -not -path "vendor/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
     fi
   - >
     if [[ "$XLF_CHECK" == "yes" ]]; then

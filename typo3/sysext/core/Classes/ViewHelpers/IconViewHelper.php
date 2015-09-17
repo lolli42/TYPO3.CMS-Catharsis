@@ -16,13 +16,14 @@ namespace TYPO3\CMS\Core\ViewHelpers;
 
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Type\Icon\IconState;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Facets\CompilableInterface;
 
 /**
- * Displays sprite icon identified by iconName key
+ * Displays icon identified by icon identifier
  */
 class IconViewHelper extends AbstractViewHelper implements CompilableInterface {
 
@@ -32,14 +33,16 @@ class IconViewHelper extends AbstractViewHelper implements CompilableInterface {
 	 * @param string $identifier
 	 * @param string $size
 	 * @param string $overlay
+	 * @param string $state
 	 * @return string
 	 */
-	public function render($identifier, $size = Icon::SIZE_SMALL, $overlay = NULL) {
+	public function render($identifier, $size = Icon::SIZE_SMALL, $overlay = NULL, $state = IconState::STATE_DEFAULT) {
 		return static::renderStatic(
 			array(
 				'identifier' => $identifier,
 				'size' => $size,
-				'overlay' => $overlay
+				'overlay' => $overlay,
+				'state' => $state
 			),
 			$this->buildRenderChildrenClosure(),
 			$this->renderingContext
@@ -58,9 +61,10 @@ class IconViewHelper extends AbstractViewHelper implements CompilableInterface {
 		$identifier = $arguments['identifier'];
 		$size = $arguments['size'];
 		$overlay = $arguments['overlay'];
+		$state = IconState::cast($arguments['state']);
 		/** @var IconFactory $iconFactory */
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-		return $iconFactory->getIcon($identifier, $size, $overlay)->render();
+		return $iconFactory->getIcon($identifier, $size, $overlay, $state)->render();
 	}
 
 }

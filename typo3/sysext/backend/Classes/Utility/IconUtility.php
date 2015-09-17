@@ -106,7 +106,7 @@ class IconUtility {
 		'potx' => 'mimetypes-powerpoint',
 		'mount' => 'apps-filetree-mount',
 		'folder' => 'apps-filetree-folder-default',
-		'default' => 'mimetypes-other-other',
+		'default' => 'mimetypes-other-other'
 	);
 
 	/**
@@ -157,9 +157,7 @@ class IconUtility {
 				$iconfile = $GLOBALS['PAGES_TYPES']['default']['icon'];
 			}
 		} else {
-			if (!($iconfile = $GLOBALS['TCA'][$table]['ctrl']['typeicons'][$row[$GLOBALS['TCA'][$table]['ctrl']['typeicon_column']]])) {
-				$iconfile = $GLOBALS['TCA'][$table]['ctrl']['iconfile'] ?: $table . '.gif';
-			}
+			$iconfile = $GLOBALS['TCA'][$table]['ctrl']['iconfile'] ?: $table . '.gif';
 		}
 		// Setting path of iconfile if not already set. Default is "gfx/i/"
 		if (!strstr($iconfile, '/')) {
@@ -340,6 +338,7 @@ class IconUtility {
 				break;
 		}
 		$cachedSkinImages[$imageId] = $output;
+
 		return $output;
 	}
 
@@ -361,11 +360,11 @@ class IconUtility {
 	 * @access private
 	 */
 	static public function makeIcon($iconfile, $mode, $user, $protectSection, $absFile, $iconFileName_stateTagged) {
-		$iconFileName = 'icon_' . GeneralUtility::shortMD5(($iconfile . '|' . $mode . '|-' . $user . '|' . $protectSection)) . '_' . $iconFileName_stateTagged . '.' . ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] ? 'png' : 'gif');
-		$mainpath = '../typo3temp/' . $iconFileName;
-		$path = PATH_site . 'typo3temp/' . $iconFileName;
+		$iconFileName = GeneralUtility::shortMD5(($iconfile . '|' . $mode . '|-' . $user . '|' . $protectSection)) . '_' . $iconFileName_stateTagged . '.' . ($GLOBALS['TYPO3_CONF_VARS']['GFX']['gdlib_png'] ? 'png' : 'gif');
+		$mainpath = '../typo3temp/Icons/' . $iconFileName;
+		$path = PATH_site . 'typo3temp/Icons/' . $iconFileName;
 		if (file_exists($path)) {
-			// Returns if found in ../typo3temp/icons/
+			// Returns if found in ../typo3temp/Icons/
 			return $mainpath;
 		} else {
 			// Makes icon:
@@ -446,9 +445,14 @@ class IconUtility {
 						self::imagecopyresized($im, $ol_im, 0, 0, 0, 0, imagesx($ol_im), imagesy($ol_im), imagesx($ol_im), imagesy($ol_im));
 					}
 					// Create the image as file, destroy GD image and return:
+					$targetDirectory = dirname($path);
+					if (!@is_dir($targetDirectory)) {
+						GeneralUtility::mkdir($targetDirectory);
+					}
 					@self::imagemake($im, $path);
 					GraphicalFunctions::gifCompress($path, 'IM');
 					ImageDestroy($im);
+
 					return $mainpath;
 				} else {
 					return $iconfile;
@@ -466,7 +470,7 @@ class IconUtility {
 	 * onto a first created true color image.
 	 * However it has turned out that this method will not work if the indexed png-files contains transparency.
 	 * So I had to turn my attention to ImageMagick - my 'enemy of death'.
-	 * And so it happend - ImageMagick is now used to combine my two indexed-color images with transparency. And that works.
+	 * And so it happened - ImageMagick is now used to combine my two indexed-color images with transparency. And that works.
 	 * Of course it works only if ImageMagick is able to create valid png-images - which you cannot be sure of with older versions (still 5+)
 	 * The only drawback is (apparently) that IM creates true-color png's. The transparency of these will not be shown by MSIE on windows at this time (although it's straight 0%/100% transparency!) and the file size may be larger.
 	 *
@@ -525,7 +529,7 @@ class IconUtility {
 	}
 
 	/**********************************************
-	 *		 SPRITE ICON API
+	 * SPRITE ICON API
 	 *
 	 * The Sprite Icon API helps you to quickly get the HTML for any icon you want
 	 * this is typically wrapped in a <span> tag with corresponding CSS classes that
@@ -534,16 +538,16 @@ class IconUtility {
 	 * There are four ways to use this API:
 	 *
 	 * 1) for any given TCA record
-	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('pages', $row);
+	 *  $spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForRecord('pages', $row);
 	 *
 	 * 2) for any given File of Folder object
-	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForResource($fileOrFolderObject);
+	 *  $spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForResource($fileOrFolderObject);
 	 *
 	 * 3) for any given file
-	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile('myimage.png');
+	 *  $spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIconForFile('myimage.png');
 	 *
 	 * 4) for any other icon you know the name
-	 *	$spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open');
+	 *  $spriteIconHtml = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-document-open');
 	 *
 	 **********************************************/
 	/**
@@ -561,7 +565,6 @@ class IconUtility {
 	 * @param string $iconName The name of the icon to fetch
 	 * @param array $options An associative array with additional options and attributes for the tag. by default, the key is the name of the attribute, and the value is the parameter string that is set. However, there are some additional special reserved keywords that can be used as keys: "html" (which is the HTML that will be inside the icon HTML tag), "tagName" (which is an alternative tagName than "span"), and "class" (additional class names that will be merged with the sprite icon CSS classes)
 	 * @param array $overlays An associative array with the icon-name as key, and the options for this overlay as an array again (see the parameter $options again)
-	 *
 	 * @return string The full HTML tag (usually a <span>)
 	 * @access public
 	 */
@@ -602,6 +605,7 @@ class IconUtility {
 		if ($iconIsCacheable) {
 			static::$spriteIconCache[$iconName] = $spriteHtml;
 		}
+
 		return $spriteHtml;
 	}
 
@@ -670,6 +674,7 @@ class IconUtility {
 			$fileExtension = 'default';
 		}
 		$iconName = self::$fileSpriteIconNames[$fileExtension];
+
 		return $iconName;
 	}
 
@@ -813,7 +818,7 @@ class IconUtility {
 	 * see ext:core/Configuration/TCA/pages.php for an example with the TCA table "pages"
 	 *
 	 * @param string $table The TCA table
-	 * @param array	$row The selected record
+	 * @param array $row The selected record
 	 * @return string The CSS class for the sprite icon of that DB record
 	 * @access private
 	 */
@@ -834,7 +839,7 @@ class IconUtility {
 	 *
 	 * see ext:core/Configuration/TCA/pages.php for an example with the TCA table "pages"
 	 *
-	 * @param string $tableThe TCA table
+	 * @param string $table The TCA table
 	 * @param array $row The selected record
 	 * @return string The CSS class for the sprite icon of that DB record
 	 * @access private
@@ -904,6 +909,7 @@ class IconUtility {
 				}
 			}
 		}
+
 		return 'status-status-icon-missing';
 	}
 
@@ -922,7 +928,7 @@ class IconUtility {
 	 * $GLOBALS['TYPO3_CONF_VARS']['BE']['spriteIconRecordOverlayNames'] that shows
 	 * the list of CSS classes that will be used for the sprites, mapped to the statuses here
 	 *
-	 * @param string $table	The TCA table
+	 * @param string $table The TCA table
 	 * @param array $row The selected record
 	 * @return string The CSS class for the sprite icon of that DB record
 	 * @access private
@@ -999,6 +1005,7 @@ class IconUtility {
 				}
 			}
 		}
+
 		return $iconName;
 	}
 
@@ -1023,6 +1030,7 @@ class IconUtility {
 			$cssClasses .= ' ' . ($baseCssClass . '-' . substr($iconName, (strlen($parts[0]) + 1)));
 		}
 		static::emitBuildSpriteIconClassesSignal($iconName, $cssClasses);
+
 		return $cssClasses;
 	}
 

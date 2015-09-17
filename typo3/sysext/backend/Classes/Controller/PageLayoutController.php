@@ -14,13 +14,18 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Backend\Form\Exception\AccessDeniedException;
+use TYPO3\CMS\Backend\Form\FormDataCompiler;
+use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
+use TYPO3\CMS\Backend\Form\FormResultCompiler;
+use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -32,8 +37,6 @@ use TYPO3\CMS\Frontend\Page\PageRepository;
 use TYPO3\CMS\Backend\Module\ModuleLoader;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
-use TYPO3\CMS\Backend\Form\DataPreprocessor;
-use TYPO3\CMS\Backend\Form\FormEngine;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Backend\View\PageLayoutView;
 use TYPO3\CMS\Backend\Tree\View\ContentLayoutPagePositionMap;
@@ -311,6 +314,7 @@ class PageLayoutController {
 	 * @return void
 	 */
 	public function init() {
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$this->getLanguageService()->includeLLFile('EXT:backend/Resources/Private/Language/locallang_layout.xlf');
 
 		// Setting module configuration / page select clause
@@ -542,73 +546,9 @@ class PageLayoutController {
 
 				function deleteRecord(table,id,url) {	//
 					if (confirm(' . GeneralUtility::quoteJSvalue($lang->getLL('deleteWarning')) . ')) {
-						window.location.href = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_db') . '&cmd[') . '+table+"]["+id+"][delete]=1&redirect="+escape(url)+"&vC=' . $this->getBackendUser()->veriCode() . BackendUtility::getUrlToken('tceAction') . '&prErr=1&uPT=1";
+						window.location.href = ' . GeneralUtility::quoteJSvalue(BackendUtility::getModuleUrl('tce_db') . '&cmd[') . '+table+"]["+id+"][delete]=1&redirect="+escape(url)+"&vC=' . $this->getBackendUser()->veriCode() . '&prErr=1&uPT=1";
 					}
 					return false;
-				}
-			');
-			$this->doc->JScode .= $this->doc->wrapScriptTags('
-				var DTM_array = new Array();
-				var DTM_origClass = new String();
-
-					// if tabs are used in a popup window the array might not exists
-				if(!top.DTM_currentTabs) {
-					top.DTM_currentTabs = new Array();
-				}
-
-				function DTM_activate(idBase,index,doToogle) {	//
-						// Hiding all:
-					if (DTM_array[idBase]) {
-						for(cnt = 0; cnt < DTM_array[idBase].length ; cnt++) {
-							if (DTM_array[idBase][cnt] != idBase+"-"+index) {
-								document.getElementById(DTM_array[idBase][cnt]+"-DIV").className = "tab-pane";
-								document.getElementById(DTM_array[idBase][cnt]+"-MENU").attributes.getNamedItem("class").value = "tab";
-							}
-						}
-					}
-
-						// Showing one:
-					if (document.getElementById(idBase+"-"+index+"-DIV")) {
-						if (doToogle && document.getElementById(idBase+"-"+index+"-DIV").className === "tab-pane active") {
-							document.getElementById(idBase+"-"+index+"-DIV").className = "tab-pane";
-							if(DTM_origClass=="") {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").value = "tab";
-							} else {
-								DTM_origClass = "tab";
-							}
-							top.DTM_currentTabs[idBase] = -1;
-						} else {
-							document.getElementById(idBase+"-"+index+"-DIV").className = "tab-pane active";
-							if(DTM_origClass=="") {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").value = "active";
-							} else {
-								DTM_origClass = "active";
-							}
-							top.DTM_currentTabs[idBase] = index;
-						}
-					}
-				}
-				function DTM_toggle(idBase,index,isInit) {	//
-						// Showing one:
-					if (document.getElementById(idBase+"-"+index+"-DIV")) {
-						if (document.getElementById(idBase+"-"+index+"-DIV").style.display == "block") {
-							document.getElementById(idBase+"-"+index+"-DIV").className = "tab-pane";
-							if(isInit) {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").value = "tab";
-							} else {
-								DTM_origClass = "tab";
-							}
-							top.DTM_currentTabs[idBase+"-"+index] = 0;
-						} else {
-							document.getElementById(idBase+"-"+index+"-DIV").className = "tab-pane active";
-							if(isInit) {
-								document.getElementById(idBase+"-"+index+"-MENU").attributes.getNamedItem("class").value = "active";
-							} else {
-								DTM_origClass = "active";
-							}
-							top.DTM_currentTabs[idBase+"-"+index] = 1;
-						}
-					}
 				}
 			');
 			// Setting doc-header
@@ -814,11 +754,12 @@ class PageLayoutController {
 		}
 		// Splitting the edit-record cmd value into table/uid:
 		$this->eRParts = explode(':', $edit_record);
+		$tableName = $this->eRParts[0];
 		// Delete-button flag?
-		$this->deleteButton = MathUtility::canBeInterpretedAsInteger($this->eRParts[1]) && $edit_record && ($this->eRParts[0] != 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] == 'pages' && $this->CALC_PERMS & Permission::PAGE_DELETE);
+		$this->deleteButton = MathUtility::canBeInterpretedAsInteger($this->eRParts[1]) && $edit_record && ($tableName !== 'pages' && $this->EDIT_CONTENT || $tableName === 'pages' && $this->CALC_PERMS & Permission::PAGE_DELETE);
 		// If undo-button should be rendered (depends on available items in sys_history)
 		$this->undoButton = FALSE;
-		$undoRes = $databaseConnection->exec_SELECTquery('tstamp', 'sys_history', 'tablename=' . $databaseConnection->fullQuoteStr($this->eRParts[0], 'sys_history') . ' AND recuid=' . (int)$this->eRParts[1], '', 'tstamp DESC', '1');
+		$undoRes = $databaseConnection->exec_SELECTquery('tstamp', 'sys_history', 'tablename=' . $databaseConnection->fullQuoteStr($tableName, 'sys_history') . ' AND recuid=' . (int)$this->eRParts[1], '', 'tstamp DESC', '1');
 		if ($this->undoButtonR = $databaseConnection->sql_fetch_assoc($undoRes)) {
 			$this->undoButton = TRUE;
 		}
@@ -841,58 +782,77 @@ class PageLayoutController {
 		$this->editSelect = '<select name="edit_record" onchange="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue(
 			BackendUtility::getModuleUrl('web_layout') . '&id=' . $this->id . '&edit_record='
 		) . '+escape(this.options[this.selectedIndex].value)' . $retUrlStr . ',this);') . '">' . implode('', $opt) . '</select>';
-		$content = '';
+
 		// Creating editing form:
-		if ($beUser->check('tables_modify', $this->eRParts[0]) && $edit_record && ($this->eRParts[0] !== 'pages' && $this->EDIT_CONTENT || $this->eRParts[0] === 'pages' && $this->CALC_PERMS & Permission::PAGE_SHOW)) {
+		$content = '';
+
+		if ($edit_record) {
 			// Splitting uid parts for special features, if new:
-			list($uidVal, $ex_pid, $ex_colPos) = explode('/', $this->eRParts[1]);
-			// Convert $uidVal to workspace version if any:
-			if ($uidVal != 'new') {
-				if ($draftRecord = BackendUtility::getWorkspaceVersionOfRecord($beUser->workspace, $this->eRParts[0], $uidVal, 'uid')) {
-					$uidVal = $draftRecord['uid'];
+			list($uidVal, $neighborRecordUid, $ex_colPos) = explode('/', $this->eRParts[1]);
+
+			if ($uidVal === 'new') {
+				$command = 'new';
+				// Page id of this new record
+				$theUid = $this->id;
+				if ($neighborRecordUid) {
+					$theUid = $neighborRecordUid;
+				}
+			} else {
+				$command = 'edit';
+				$theUid = $uidVal;
+				// Convert $uidVal to workspace version if any:
+				$draftRecord = BackendUtility::getWorkspaceVersionOfRecord($beUser->workspace, $tableName, $theUid, 'uid');
+				if ($draftRecord) {
+					$theUid = $draftRecord['uid'];
 				}
 			}
-			// Initializing transfer-data object:
-			$trData = GeneralUtility::makeInstance(DataPreprocessor::class);
-			$trData->addRawData = TRUE;
-			$trData->defVals[$this->eRParts[0]] = array(
+
+			// @todo: Hack because DatabaseInitializeNewRow reads from _GP directly
+			$GLOBALS['_GET']['defVals'][$tableName] = array(
 				'colPos' => (int)$ex_colPos,
 				'sys_language_uid' => (int)$this->current_sys_language
 			);
-			$trData->lockRecords = 1;
-			// 'new'
-			$trData->fetchRecord($this->eRParts[0], $uidVal == 'new' ? $this->id : $uidVal, $uidVal);
-			$new_unique_uid = '';
-			// Getting/Making the record:
-			reset($trData->regTableItems_data);
-			$rec = current($trData->regTableItems_data);
-			if ($uidVal == 'new') {
-				$new_unique_uid = uniqid('NEW', TRUE);
-				$rec['uid'] = $new_unique_uid;
-				$rec['pid'] = (int)$ex_pid ?: $this->id;
-				$recordAccess = TRUE;
-			} else {
-				$rec['uid'] = $uidVal;
-				// Checking internals access:
-				$recordAccess = $beUser->recordEditAccessInternals($this->eRParts[0], $uidVal);
-			}
-			if (!$recordAccess) {
-				// If no edit access, print error message:
-				$content = $this->doc->section($lang->getLL('noAccess'), $lang->getLL('noAccess_msg') . '<br /><br />' . ($beUser->errorMsg ? 'Reason: ' . $beUser->errorMsg . '<br /><br />' : ''), 0, 1);
-			} elseif (is_array($rec)) {
-				// If the record is an array (which it will always be... :-)
-				// Create instance of TCEforms, setting defaults:
-				$tceForms = GeneralUtility::makeInstance(FormEngine::class);
-				// Render form, wrap it:
-				$panel = '';
-				$panel .= $tceForms->getMainFields($this->eRParts[0], $rec);
-				$panel = $tceForms->wrapTotal($panel, $rec, $this->eRParts[0]);
-				// Add hidden fields:
-				$theCode = $panel;
-				if ($uidVal == 'new') {
-					$theCode .= '<input type="hidden" name="data[' . $this->eRParts[0] . '][' . $rec['uid'] . '][pid]" value="' . $rec['pid'] . '" />';
+
+			/** @var TcaDatabaseRecord $formDataGroup */
+			$formDataGroup = GeneralUtility::makeInstance(TcaDatabaseRecord::class);
+			/** @var FormDataCompiler $formDataCompiler */
+			$formDataCompiler = GeneralUtility::makeInstance(FormDataCompiler::class, $formDataGroup);
+			/** @var NodeFactory $nodeFactory */
+			$nodeFactory = GeneralUtility::makeInstance(NodeFactory::class);
+
+			try {
+				$formDataCompilerInput = [
+					'tableName' => $tableName,
+					'vanillaUid' => (int)$theUid,
+					'command' => $command,
+				];
+				$formData = $formDataCompiler->compile($formDataCompilerInput);
+
+				if ($command !== 'new') {
+					BackendUtility::lockRecords($tableName, $formData['databaseRow']['uid'], $tableName === 'tt_content' ? $formData['databaseRow']['pid'] : 0);
 				}
-				$theCode .= '
+
+				$formData['renderType'] = 'outerWrapContainer';
+				$formResult = $nodeFactory->create($formData)->render();
+
+				$panel = $formResult['html'];
+				$formResult['html'] = '';
+
+				/** @var FormResultCompiler $formResultCompiler */
+				$formResultCompiler = GeneralUtility::makeInstance(FormResultCompiler::class);
+				$formResultCompiler->mergeResult($formResult);
+
+				$row = $formData['databaseRow'];
+				$new_unique_uid = '';
+				if ($command === 'new') {
+					$new_unique_uid = $row['uid'];
+				}
+
+				// Add hidden fields:
+				if ($uidVal == 'new') {
+					$panel .= '<input type="hidden" name="data[' . $tableName . '][' . $row['uid'] . '][pid]" value="' . $row['pid'] . '" />';
+				}
+				$panel .= '
 					<input type="hidden" name="_serialNumber" value="' . md5(microtime()) . '" />
 					<input type="hidden" name="edit_record" value="' . $edit_record . '" />
 					<input type="hidden" name="redirect" value="' . htmlspecialchars(($uidVal == 'new' ? BackendUtility::getModuleUrl(
@@ -903,26 +863,36 @@ class PageLayoutController {
 							'returnUrl' => $this->returnUrl
 						)
 					) : $this->R_URI)) . '" />
-					' . FormEngine::getHiddenTokenField('tceAction');
+					';
 				// Add JavaScript as needed around the form:
-				$theCode = $tceForms->printNeededJSFunctions_top() . $theCode . $tceForms->printNeededJSFunctions();
-				// Add warning sign if record was "locked":
-				if ($lockInfo = BackendUtility::isRecordLocked($this->eRParts[0], $rec['uid'])) {
-					/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
-					$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($lockInfo['msg']), '', FlashMessage::WARNING);
-					/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
-					$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
-					/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
-					$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
-					$defaultFlashMessageQueue->enqueue($flashMessage);
+				$panel = $formResultCompiler->JStop() . $panel . $formResultCompiler->printNeededJSFunctions();
+				$content = $this->doc->section('', $panel);
+
+				// Display "is-locked" message:
+				if ($command === 'edit') {
+					$lockInfo = BackendUtility::isRecordLocked($tableName, $formData['databaseRow']['uid']);
+					if ($lockInfo) {
+						/** @var \TYPO3\CMS\Core\Messaging\FlashMessage $flashMessage */
+						$flashMessage = GeneralUtility::makeInstance(FlashMessage::class, htmlspecialchars($lockInfo['msg']), '', FlashMessage::WARNING);
+						/** @var $flashMessageService \TYPO3\CMS\Core\Messaging\FlashMessageService */
+						$flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+						/** @var $defaultFlashMessageQueue \TYPO3\CMS\Core\Messaging\FlashMessageQueue */
+						$defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
+						$defaultFlashMessageQueue->enqueue($flashMessage);
+					}
 				}
-				// Add whole form as a document section:
-				$content = $this->doc->section('', $theCode);
+			} catch (AccessDeniedException $e) {
+				// If no edit access, print error message:
+				$content = $this->doc->section($lang->getLL('noAccess'), $lang->getLL('noAccess_msg')
+					. '<br /><br />'
+					. ($beUser->errorMsg ? 'Reason: ' . $beUser->errorMsg . '<br /><br />' : ''), 0, 1
+				);
 			}
 		} else {
 			// If no edit access, print error message:
 			$content = $this->doc->section($lang->getLL('noAccess'), $lang->getLL('noAccess_msg') . '<br /><br />', 0, 1);
 		}
+
 		// Bottom controls (function menus):
 		$q_count = $this->getNumberOfHiddenElements();
 		if ($q_count) {
@@ -938,7 +908,7 @@ class PageLayoutController {
 		}
 
 		// Select element matrix:
-		if ($this->eRParts[0] == 'tt_content' && MathUtility::canBeInterpretedAsInteger($this->eRParts[1])) {
+		if ($tableName === 'tt_content' && MathUtility::canBeInterpretedAsInteger($this->eRParts[1])) {
 			$posMap = GeneralUtility::makeInstance(ContentLayoutPagePositionMap::class);
 			$posMap->cur_sys_language = $this->current_sys_language;
 			$HTMLcode = '';
@@ -949,6 +919,7 @@ class PageLayoutController {
 			$content .= $this->doc->section($lang->getLL('CEonThisPage'), $HTMLcode, 0, 1);
 			$content .= $this->doc->spacer(20);
 		}
+
 		return $content;
 	}
 
@@ -1078,7 +1049,8 @@ class PageLayoutController {
 		}
 		// Making search form:
 		if (!$this->modTSconfig['properties']['disableSearchBox'] && !empty($tableOutput)) {
-			$this->markers['BUTTONLIST_ADDITIONAL'] = '<a href="#" onclick="toggleSearchToolbox(); return false;" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon', TRUE) . '">'.IconUtility::getSpriteIcon('apps-toolbar-menu-search').'</a>';
+			$this->getPageRenderer()->loadRequireJsModule('TYPO3/CMS/Backend/ToggleSearchToolbox');
+			$this->markers['BUTTONLIST_ADDITIONAL'] = '<a href="#" class="t3js-toggle-search-toolbox" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.title.searchIcon', TRUE) . '">' . $this->iconFactory->getIcon('actions-search', Icon::SIZE_SMALL) . '</a>';
 			$this->markers['SEARCHBOX'] = $dbList->getSearchBox(0);
 		}
 		// Additional footer content
@@ -1113,9 +1085,6 @@ class PageLayoutController {
 	 * @return array all available buttons as an assoc. array
 	 */
 	protected function getButtons($function = '') {
-		/** @var IconFactory $iconFactory */
-		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
-
 		$lang = $this->getLanguageService();
 		$buttons = array(
 			'view' => '',
@@ -1139,7 +1108,7 @@ class PageLayoutController {
 		);
 		// View page
 		if (!VersionState::cast($this->pageinfo['t3ver_state'])->equals(VersionState::DELETE_PLACEHOLDER)) {
-			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+			$buttons['view'] = '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($this->pageinfo['uid'], '', BackendUtility::BEgetRootLine($this->pageinfo['uid']))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 		}
 		// Shortcut
 		if ($this->getBackendUser()->mayMakeShortcut()) {
@@ -1147,7 +1116,7 @@ class PageLayoutController {
 		}
 		// Cache
 		if (!$this->modTSconfig['properties']['disableAdvanced']) {
-			$buttons['cache'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_layout', array('id' => $this->pageinfo['uid'], 'clear_cache' => '1'))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.clear_cache', TRUE) . '">' . IconUtility::getSpriteIcon('actions-system-cache-clear') . '</a>';
+			$buttons['cache'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('web_layout', array('id' => $this->pageinfo['uid'], 'clear_cache' => '1'))) . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.clear_cache', TRUE) . '">' . $this->iconFactory->getIcon('actions-system-cache-clear', Icon::SIZE_SMALL)->render() . '</a>';
 		}
 		if (!$this->modTSconfig['properties']['disableIconToolbar']) {
 			// Move record
@@ -1157,7 +1126,7 @@ class PageLayoutController {
 					'uid' => $this->eRParts[1],
 					'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 				];
-				$buttons['move_record'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('move_element', $urlParameters)) . '">' . IconUtility::getSpriteIcon(('actions-' . ($this->eRParts[0] == 'tt_content' ? 'document' : 'page') . '-move'), array('class' => 'c-inputButton', 'title' => $lang->getLL(('move_' . ($this->eRParts[0] == 'tt_content' ? 'record' : 'page')), TRUE))) . '</a>';
+				$buttons['move_record'] = '<a href="' . htmlspecialchars(BackendUtility::getModuleUrl('move_element', $urlParameters)) . '" title="' . $lang->getLL('move_' . ($this->eRParts[0] == 'tt_content' ? 'record' : 'page'), TRUE) . '">' . $this->iconFactory->getIcon('actions-' . ($this->eRParts[0] == 'tt_content' ? 'document' : 'page') . '-move', Icon::SIZE_SMALL)->render() . '</a>';
 			}
 
 			// Edit page properties and page language overlay icons
@@ -1182,18 +1151,16 @@ class PageLayoutController {
 					$buttons['edit_language'] = '<a href="#" ' .
 						'onclick="' . $editLanguageOnClick . '"' .
 						'title="' . $lang->getLL('editPageLanguageOverlayProperties', TRUE) . '">' .
-						IconUtility::getSpriteIcon('mimetypes-x-content-page-language-overlay') .
+						$this->iconFactory->getIcon('mimetypes-x-content-page-language-overlay', Icon::SIZE_SMALL) .
 						'</a>';
 				}
 
 
 				// Edit page properties
 				$editPageOnClick = htmlspecialchars(BackendUtility::editOnClick('&edit[pages][' . $this->id . ']=edit'));
-				$buttons['edit_page'] = '<a href="#" ' .
-					'onclick="' . $editPageOnClick . '"' .
-					'title="' . $lang->getLL('editPageProperties', TRUE) . '">' .
-					IconUtility::getSpriteIcon('actions-page-open') .
-					'</a>';
+				$buttons['edit_page'] = '<a href="#" onclick="' . $editPageOnClick . '" title="' . $lang->getLL('editPageProperties', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-page-open', Icon::SIZE_SMALL)
+					. '</a>';
 			}
 
 			// Add CSH (Context Sensitive Help) icon to tool bar
@@ -1204,20 +1171,26 @@ class PageLayoutController {
 			}
 			if ($function == 'quickEdit') {
 				// Save record
-				$buttons['savedok'] = '<button class="c-inputButton" name="_savedok_x">'
-					. IconUtility::getSpriteIcon('actions-document-save', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+				$buttons['savedok'] = '<button class="c-inputButton" name="_savedok_x" value="1" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)
 					. '</button>';
 				// Save and close
-				$buttons['save_close'] = '<button class="c-inputButton" name="_saveandclosedok_x">'
-					. IconUtility::getSpriteIcon('actions-document-save-close', array('title' => $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE)))
+				$buttons['save_close'] = '<button class="c-inputButton" name="_saveandclosedok_x" value="1" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL)
 					. '</button>';
 				// Save record and show page
-				$buttons['savedokshow'] = '<a href="#" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-save-view') . '</a>';
+				$buttons['savedokshow'] = '<a href="#" onclick="' . htmlspecialchars('document.editform.redirect.value+=\'&popView=1\'; TBE_EDITOR.checkAndDoSubmit(1); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDocShow', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-document-save-view', Icon::SIZE_SMALL)
+					. '</a>';
 				// Close record
-				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($this->closeUrl) . '); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
+				$buttons['closedok'] = '<a href="#" onclick="' . htmlspecialchars('jumpToUrl(' . GeneralUtility::quoteJSvalue($this->closeUrl) . '); return false;') . '" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '">'
+					. $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL)
+					. '</a>';
 				// Delete record
 				if ($this->deleteButton) {
-					$buttons['deletedok'] = '<a href="#" onclick="' . htmlspecialchars('return deleteRecord(' . GeneralUtility::quoteJSvalue($this->eRParts[0]) . ',' . GeneralUtility::quoteJSvalue($this->eRParts[1]) . ',' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?id=' . $this->id) . ');') . '" title="' . $lang->getLL('deleteItem', TRUE) . '">' . IconUtility::getSpriteIcon('actions-edit-delete') . '</a>';
+					$buttons['deletedok'] = '<a href="#" onclick="' . htmlspecialchars('return deleteRecord(' . GeneralUtility::quoteJSvalue($this->eRParts[0]) . ',' . GeneralUtility::quoteJSvalue($this->eRParts[1]) . ',' . GeneralUtility::quoteJSvalue(GeneralUtility::getIndpEnv('SCRIPT_NAME') . '?id=' . $this->id) . ');') . '" title="' . $lang->getLL('deleteItem', TRUE) . '">'
+						. $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)
+						. '</a>';
 				}
 				if ($this->undoButton) {
 					// Undo button
@@ -1234,7 +1207,7 @@ class PageLayoutController {
 									)
 								)
 							) . '; return false;') . '"
-						title="' . htmlspecialchars(sprintf($lang->getLL('undoLastChange'), BackendUtility::calcAge($GLOBALS['EXEC_TIME'] - $this->undoButtonR['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')))) . '">' . IconUtility::getSpriteIcon('actions-edit-undo') . '</a>';
+						title="' . htmlspecialchars(sprintf($lang->getLL('undoLastChange'), BackendUtility::calcAge($GLOBALS['EXEC_TIME'] - $this->undoButtonR['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')))) . '">' . $this->iconFactory->getIcon('actions-edit-undo', Icon::SIZE_SMALL) . '</a>';
 					// History button
 					$buttons['history_record'] = '<a href="#"
 						onclick="' . htmlspecialchars('jumpToUrl(' .
@@ -1247,7 +1220,7 @@ class PageLayoutController {
 									)
 								) . '#latest'
 							) . ');return false;') . '"
-						title="' . $lang->getLL('recordHistory', TRUE) . '">' . $iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '</a>';
+						title="' . $lang->getLL('recordHistory', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '</a>';
 				}
 			}
 		}
@@ -1407,7 +1380,7 @@ class PageLayoutController {
 	 * @return bool
 	 */
 	public function pageIsNotLockedForEditors() {
-		return !($this->pageinfo['editlock'] && ($this->CALC_PERMS & Permission::PAGE_EDIT));
+		return $this->getBackendUser()->isAdmin() || !($this->CALC_PERMS & Permission::PAGE_EDIT && $this->pageinfo['editlock']);
 	}
 
 	/**
@@ -1437,4 +1410,12 @@ class PageLayoutController {
 		return $GLOBALS['TYPO3_DB'];
 	}
 
+	/**
+	 * Returns current PageRenderer
+	 *
+	 * @return PageRenderer
+	 */
+	protected function getPageRenderer() {
+		return GeneralUtility::makeInstance(PageRenderer::class);
+	}
 }

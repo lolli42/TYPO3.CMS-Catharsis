@@ -18,6 +18,8 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Backend\FrontendBackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Type\Bitmask\JsConfirmation;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
@@ -56,6 +58,11 @@ class FrontendEditPanel {
 	protected $backendUser;
 
 	/**
+	 * @var \TYPO3\CMS\Core\Imaging\IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
 	 * Constructor for the edit panel
 	 *
 	 * @param DatabaseConnection $databaseConnection
@@ -68,6 +75,7 @@ class FrontendEditPanel {
 		$this->backendUser = $backendUser ?: $GLOBALS['BE_USER'];
 		$this->cObj = GeneralUtility::makeInstance(\TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer::class);
 		$this->cObj->start(array());
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 	}
 
 	/**
@@ -102,40 +110,46 @@ class FrontendEditPanel {
 			$panel .= $this->backendUser->adminPanel->ext_makeToolBar();
 		}
 		if (isset($allow['edit'])) {
-			$icon = IconUtility::getSpriteIcon('actions-document-open', array('title' => $this->backendUser->extGetLL('p_editRecord')));
+			$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_editRecord')) . '">' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '</span>';
 			$panel .= $this->editPanelLinkWrap($icon, $formName, 'edit', $dataArr['_LOCALIZED_UID'] ? $table . ':' . $dataArr['_LOCALIZED_UID'] : $currentRecord);
 		}
 		// Hiding in workspaces because implementation is incomplete
 		if (isset($allow['move']) && $sortField && $this->backendUser->workspace === 0) {
-			$icon = IconUtility::getSpriteIcon('actions-move-up', array('title' => $this->backendUser->extGetLL('p_moveUp')));
+			$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_moveUp')) . '">' . $this->iconFactory->getIcon('actions-move-up', Icon::SIZE_SMALL) . '</span>';
 			$panel .= $this->editPanelLinkWrap($icon, $formName, 'up');
-			$icon = IconUtility::getSpriteIcon('actions-move-down', array('title' => $this->backendUser->extGetLL('p_moveDown')));
+			$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_moveDown')) . '">' . $this->iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL) . '</span>';
 			$panel .= $this->editPanelLinkWrap($icon, $formName, 'down');
 		}
 		// Hiding in workspaces because implementation is incomplete
 		// Hiding for localizations because it is unknown what should be the function in that case
 		if (isset($allow['hide']) && $hideField && $this->backendUser->workspace === 0 && !$dataArr['_LOCALIZED_UID']) {
 			if ($dataArr[$hideField]) {
-				$icon = IconUtility::getSpriteIcon('actions-edit-unhide', array('title' => $this->backendUser->extGetLL('p_unhide')));
+				$icon = $this->iconFactory->getIcon('actions-edit-unhide');
 				$panel .= $this->editPanelLinkWrap($icon, $formName, 'unhide');
 			} else {
-				$icon = IconUtility::getSpriteIcon('actions-edit-hide', array('title' => $this->backendUser->extGetLL('p_hide')));
+				$icon = $this->iconFactory->getIcon('actions-edit-hide');
 				$panel .= $this->editPanelLinkWrap($icon, $formName, 'hide', '', $this->backendUser->extGetLL('p_hideConfirm'));
 			}
 		}
 		if (isset($allow['new'])) {
 			if ($table === 'pages') {
-				$icon = IconUtility::getSpriteIcon('actions-page-new', array('title' => $this->backendUser->extGetLL('p_newSubpage')));
+				$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_newSubpage')) . '">'
+					. $this->iconFactory->getIcon('actions-page-new', Icon::SIZE_SMALL)
+					. '</span>';
 				$panel .= $this->editPanelLinkWrap($icon, $formName, 'new', $currentRecord, '');
 			} else {
-				$icon = IconUtility::getSpriteIcon('actions-document-new', array('title' => $this->backendUser->extGetLL('p_newRecordAfter')));
+				$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_newRecordAfter')) . '">'
+					. $this->iconFactory->getIcon('actions-document-new', Icon::SIZE_SMALL)
+					. '</span>';
 				$panel .= $this->editPanelLinkWrap($icon, $formName, 'new', $currentRecord, '', $newUID);
 			}
 		}
 		// Hiding in workspaces because implementation is incomplete
 		// Hiding for localizations because it is unknown what should be the function in that case
 		if (isset($allow['delete']) && $this->backendUser->workspace === 0 && !$dataArr['_LOCALIZED_UID']) {
-			$icon = IconUtility::getSpriteIcon('actions-edit-delete', array('title' => $this->backendUser->extGetLL('p_delete')));
+			$icon = '<span title="' . htmlspecialchars($this->backendUser->extGetLL('p_delete')) . '">'
+				. $this->iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL)
+				. '</span>';
 			$panel .= $this->editPanelLinkWrap($icon, $formName, 'delete', '', $this->backendUser->extGetLL('p_deleteConfirm'));
 		}
 		// Final
@@ -203,12 +217,9 @@ class FrontendEditPanel {
 		// Special content is about to be shown, so the cache must be disabled.
 		$this->frontendController->set_no_cache('Display frontend edit icons', TRUE);
 		$iconTitle = $this->cObj->stdWrap($conf['iconTitle'], $conf['iconTitle.']);
-		$optionsArray = array(
-			'title' => htmlspecialchars($iconTitle, ENT_COMPAT, 'UTF-8', FALSE),
-			'class' => 'frontEndEditIcons',
-			'style' => $conf['styleAttribute'] ? htmlspecialchars($conf['styleAttribute']) : ''
-		);
-		$iconImg = $conf['iconImg'] ? $conf['iconImg'] : IconUtility::getSpriteIcon('actions-document-open', $optionsArray);
+		$iconImg = '<span title="' . htmlspecialchars($iconTitle, ENT_COMPAT, 'UTF-8', FALSE) . '" class="frontEndEditIcons" style="' . ($conf['styleAttribute'] ? htmlspecialchars($conf['styleAttribute']) : '') . '">'
+			. $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL)
+			. '</span>';
 		$nV = GeneralUtility::_GP('ADMCMD_view') ? 1 : 0;
 
 		$url = BackendUtility::getModuleUrl(

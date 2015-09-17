@@ -18,6 +18,7 @@ use TYPO3\CMS\Backend\Module\BaseScriptClass;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Lang\LanguageService;
 
 /**
@@ -1266,7 +1267,7 @@ class QueryGenerator {
 		$prefix = $this->enablePrefix ? $this->table . '.' : '';
 		if (!$first) {
 			// Is it OK to insert the AND operator if none is set?
-			$qs .= trim(($conf['operator'] ?: 'AND')) . ' ';
+			$qs .= trim($conf['operator'] ?: 'AND') . ' ';
 		}
 		$qsTmp = str_replace('#FIELD#', $prefix . trim(substr($conf['type'], 6)), $this->compSQL[$conf['comparison']]);
 		$inputVal = $this->cleanInputVal($conf);
@@ -1604,10 +1605,10 @@ class QueryGenerator {
 	protected function getDateTimePickerField($name, $timestamp, $type) {
 		$dateFormat = $GLOBALS['TYPO3_CONF_VARS']['SYS']['USdateFormat'] ? '%H:%M %m-%d-%Y' : '%H:%M %d-%m-%Y';
 		$value = ($timestamp > 0 ? strftime($dateFormat, $timestamp) : '');
-		$id = uniqid('dt_');
+		$id = StringUtility::getUniqueId('dt_');
 		$html = array();
 		$html[] = '<div class="input-group" id="' . $id . '-wrapper">';
-		$html[] = '		<input name="' . htmlspecialchars($name) . '_hr" value="' . $value . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="' . htmlspecialchars($type) . '" data-date-offset="0" type="text" id="' . $id . '">';
+		$html[] = '		<input data-formengine-input-name="' . htmlspecialchars($name) . '" value="' . $value . '" class="form-control t3js-datetimepicker t3js-clearable" data-date-type="' . htmlspecialchars($type) . '" data-date-offset="0" type="text" id="' . $id . '">';
 		$html[] = '		<input name="' . htmlspecialchars($name) . '" value="' . (int)$timestamp . '" type="hidden">';
 		$html[] = '		<span class="input-group-btn">';
 		$html[] = '			<label class="btn btn-default" for="' . $id . '">';

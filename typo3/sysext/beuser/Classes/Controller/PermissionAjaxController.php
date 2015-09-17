@@ -189,7 +189,7 @@ class PermissionAjaxController {
 		$elementId = 'o_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_owner" id="new_page_owner">' . $options . '</select>';
-		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
+		$saveButton = '<a class="saveowner" data-page="' . $page . '" data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '" title="Change owner">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
 		$cancelButton = '<a class="restoreowner" data-page="' . $page . '"  data-owner="' . $ownerUid . '" data-element-id="' . $elementId . '"' . (!empty($username) ? ' data-username="' . htmlspecialchars($username) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
@@ -231,7 +231,7 @@ class PermissionAjaxController {
 		$elementId = 'g_' . $page;
 		$options = '<option value="0"></option>' . $options;
 		$selector = '<select name="new_page_group" id="new_page_group">' . $options . '</select>';
-		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
+		$saveButton = '<a class="savegroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '" title="Change group">' . $this->iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
 		$cancelButton = '<a class="restoregroup" data-page="' . $page . '" data-group="' . $groupUid . '" data-element-id="' . $elementId . '"' . (!empty($groupname) ? ' data-groupname="' . htmlspecialchars($groupname) . '"' : '') . ' title="Cancel">' . $this->iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 		return '<span id="' . $elementId . '">' . $selector . $saveButton . $cancelButton . '</span>';
 	}
@@ -278,7 +278,7 @@ class PermissionAjaxController {
 	protected function renderToggleEditLock($page, $editLockState) {
 		$page = (int)$page;
 		if ($editLockState === 1) {
-			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . IconUtility::getSpriteIcon('status-warning-lock') . '</a></span>';
+			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="1" title="The page and all content is locked for editing by all non-Admin users.">' . $this->iconFactory->getIcon('status-warning-lock', Icon::SIZE_SMALL) . '</a></span>';
 		} else {
 			$ret = '<span id="el_' . $page . '"><a class="editlock" data-page="' . $page . '" data-lockstate="0" title="Enable the &raquo;Admin-only&laquo; edit lock for this page">[+]</a></span>';
 		}
@@ -298,29 +298,31 @@ class PermissionAjaxController {
 		GeneralUtility::logDeprecatedFunction();
 		$str = '';
 		$permissions = array(1, 16, 2, 4, 8);
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		foreach ($permissions as $permission) {
 			if ($int & $permission) {
-				$str .= IconUtility::getSpriteIcon('status-status-permission-granted', array(
-					'title' => $GLOBALS['LANG']->getLL($permission, TRUE),
-					'class' => 'change-permission text-success',
-					'data-page' => $pageId,
-					'data-permissions' => $int,
-					'data-mode' => 'delete',
-					'data-who' => $who,
-					'data-bits' => $permission,
-					'style' => 'cursor:pointer'
-				));
+				$str .= '<span title="' . $GLOBALS['LANG']->getLL($permission, TRUE)
+					. ' class="change-permission text-success"'
+					. ' data-page="' . (int)$pageId . '"'
+					. ' data-permissions="' . (int)$int . '"'
+					. ' data-mode="delete"'
+					. ' data-who="' . htmlspecialchars($who) . '"'
+					. ' data-bits="' . $permission . '"'
+					. ' style="cursor:pointer">'
+					. $iconFactory->getIcon('status-status-permission-granted', Icon::SIZE_SMALL)
+					. '</span>';
 			} else {
-				$str .= IconUtility::getSpriteIcon('status-status-permission-denied', array(
-					'title' => $GLOBALS['LANG']->getLL($permission, TRUE),
-					'class' => 'change-permission text-danger',
-					'data-page' => $pageId,
-					'data-permissions' => $int,
-					'data-mode' => 'add',
-					'data-who' => $who,
-					'data-bits' => $permission,
-					'style' => 'cursor:pointer'
-				));
+				$str .= '<span title="' . $GLOBALS['LANG']->getLL($permission, TRUE) . '"'
+					. ' class="change-permission text-danger"'
+					. ' data-page="' . (int)$pageId . '"'
+					. ' data-permissions="' . (int)$int . '"'
+					. ' data-mode="add"'
+					. ' data-who="' . htmlspecialchars($who) . '"'
+					. ' data-bits="' . $permission . '"'
+					. ' style="cursor:pointer">'
+					. $iconFactory->getIcon('status-status-permission-denied', Icon::SIZE_SMALL)
+					. '</span>';
 			}
 		}
 		return '<span id="' . $pageId . '_' . $who . '">' . $str . '</span>';

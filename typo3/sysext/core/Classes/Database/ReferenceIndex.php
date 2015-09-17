@@ -758,7 +758,7 @@ class ReferenceIndex {
 			return $dbAnalysis->itemArray;
 			// DB record lists:
 		} elseif ($this->isDbReferenceField($conf)) {
-			$allowedTables = $conf['type'] === 'group' ? $conf['allowed'] : $conf['foreign_table'] . ',' . $conf['neg_foreign_table'];
+			$allowedTables = $conf['type'] === 'group' ? $conf['allowed'] : $conf['foreign_table'];
 			if ($conf['MM_opposite_field']) {
 				return array();
 			}
@@ -1085,6 +1085,10 @@ class ReferenceIndex {
 	 * @return string Fields which could contain a relation
 	 */
 	protected function fetchTableRelationFields($tableName) {
+		if (!isset($GLOBALS['TCA'][$tableName])) {
+			return '';
+		}
+
 		$fields = array();
 
 		foreach ($GLOBALS['TCA'][$tableName]['columns'] as $field => $fieldDefinition) {

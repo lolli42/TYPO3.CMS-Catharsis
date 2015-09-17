@@ -14,8 +14,10 @@ namespace TYPO3\CMS\Core\Resource;
  * The TYPO3 project - inspiring people to share!
  */
 
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Resource\Exception\InvalidTargetFolderException;
 use TYPO3\CMS\Core\Resource\Index\FileIndexRepository;
+use TYPO3\CMS\Core\Resource\Index\Indexer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
@@ -350,6 +352,15 @@ class ResourceStorage implements ResourceStorageInterface {
 	}
 
 	/**
+	 * Returns TRUE if auto extracting of metadata is enabled
+	 *
+	 * @return bool
+	 */
+	public function autoExtractMetadataEnabled() {
+		return !empty($this->storageRecord['auto_extract_metadata']);
+	}
+
+	/**
 	 * Blows the "fuse" and marks the storage as offline.
 	 *
 	 * Can only be modified by an admin.
@@ -572,10 +583,16 @@ class ResourceStorage implements ResourceStorageInterface {
 			$isMissing = $file->isMissing();
 		}
 
+		if ($this->driver->fileExists($file->getIdentifier()) === FALSE) {
+			$file->setMissing(TRUE);
+			$isMissing = TRUE;
+		}
+
 		// Check 4: Check the capabilities of the storage (and the driver)
 		if ($isWriteCheck && ($isMissing || !$this->isWritable())) {
 			return FALSE;
 		}
+
 		// Check 5: "File permissions" of the driver (only when file isn't marked as missing)
 		if (!$isMissing) {
 			$filePermissions = $this->driver->getPermissions($file->getIdentifier());
@@ -1083,32 +1100,37 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param string $localFilePath The file on the server's hard disk to add
 	 * @param Folder $targetFolder The target folder where the file should be added
 	 * @param string $targetFileName The name of the file to be add, If not set, the local file name is used
-	 * @param string $conflictMode possible value are 'cancel', 'replace', 'changeName'
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 *
 	 * @throws \InvalidArgumentException
 	 * @throws Exception\ExistingTargetFileNameException
 	 * @return FileInterface
 	 */
-	public function addFile($localFilePath, Folder $targetFolder, $targetFileName = '', $conflictMode = 'changeName') {
+	public function addFile($localFilePath, Folder $targetFolder, $targetFileName = '', $conflictMode = DuplicationBehavior::RENAME) {
 		$localFilePath = PathUtility::getCanonicalPath($localFilePath);
 		if (!file_exists($localFilePath)) {
 			throw new \InvalidArgumentException('File "' . $localFilePath . '" does not exist.', 1319552745);
 		}
+		$conflictMode = DuplicationBehavior::cast($conflictMode);
 		$targetFolder = $targetFolder ?: $this->getDefaultFolder();
 		$targetFileName = $this->sanitizeFileName($targetFileName ?: PathUtility::basename($localFilePath), $targetFolder);
 
 		$targetFileName = $this->emitPreFileAddSignal($targetFileName, $targetFolder, $localFilePath);
 
 		$this->assureFileAddPermissions($targetFolder, $targetFileName);
-
-		if ($conflictMode === 'cancel' && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
+		if ($conflictMode->equals(DuplicationBehavior::CANCEL) && $this->driver->fileExistsInFolder($targetFileName, $targetFolder->getIdentifier())) {
 			throw new Exception\ExistingTargetFileNameException('File "' . $targetFileName . '" already exists in folder ' . $targetFolder->getIdentifier(), 1322121068);
-		} elseif ($conflictMode === 'changeName') {
+		} elseif ($conflictMode->equals(DuplicationBehavior::RENAME)) {
 			$targetFileName = $this->getUniqueName($targetFolder, $targetFileName);
 		}
 
 		$fileIdentifier = $this->driver->addFile($localFilePath, $targetFolder->getIdentifier(), $targetFileName);
 		$file = ResourceFactory::getInstance()->getFileObjectByStorageAndIdentifier($this->getUid(), $fileIdentifier);
+
+		if ($this->autoExtractMetadataEnabled()) {
+			$indexer = GeneralUtility::makeInstance(Indexer::class, $this);
+			$indexer->extractMetaData($file);
+		}
 
 		$this->emitPostFileAddSignal($file, $targetFolder);
 
@@ -1193,6 +1215,15 @@ class ResourceStorage implements ResourceStorageInterface {
 		if ($this->isOnline()) {
 			// Pre-process the public URL by an accordant slot
 			$this->emitPreGeneratePublicUrlSignal($resourceObject, $relativeToCurrentScript, array('publicUrl' => &$publicUrl));
+
+			if (
+				$publicUrl === NULL
+				&& $resourceObject instanceof File
+				&& ($helper = OnlineMediaHelperRegistry::getInstance()->getOnlineMediaHelper($resourceObject)) !== FALSE
+			) {
+				$publicUrl = $helper->getPublicUrl($resourceObject, $relativeToCurrentScript);
+			}
+
 			// If slot did not handle the signal, use the default way to determine public URL
 			if ($publicUrl === NULL) {
 
@@ -1529,13 +1560,14 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param FileInterface $file
 	 * @param bool $asDownload If set Content-Disposition attachment is sent, inline otherwise
 	 * @param string $alternativeFilename the filename for the download (if $asDownload is set)
+	 * @param string $overrideMimeType If set this will be used as Content-Type header instead of the automatically detected mime type.
 	 * @return void
 	 */
-	public function dumpFileContents(FileInterface $file, $asDownload = FALSE, $alternativeFilename = NULL) {
+	public function dumpFileContents(FileInterface $file, $asDownload = FALSE, $alternativeFilename = NULL, $overrideMimeType = NULL) {
 		$downloadName = $alternativeFilename ?: $file->getName();
 		$contentDisposition = $asDownload ? 'attachment' : 'inline';
 		header('Content-Disposition: ' . $contentDisposition . '; filename="' . $downloadName . '"');
-		header('Content-Type: ' . $file->getMimeType());
+		header('Content-Type: ' . $overrideMimeType ?: $file->getMimeType());
 		header('Content-Length: ' . $file->getSize());
 
 		// Cache-Control header is needed here to solve an issue with browser IE8 and lower
@@ -1631,13 +1663,14 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param FileInterface $file
 	 * @param Folder $targetFolder
 	 * @param string $targetFileName an optional destination fileName
-	 * @param string $conflictMode "overrideExistingFile", "renameNewFile", "cancel
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 *
 	 * @throws \Exception|Exception\AbstractFileOperationException
 	 * @throws Exception\ExistingTargetFileNameException
 	 * @return FileInterface
 	 */
-	public function copyFile(FileInterface $file, Folder $targetFolder, $targetFileName = NULL, $conflictMode = 'renameNewFile') {
+	public function copyFile(FileInterface $file, Folder $targetFolder, $targetFileName = NULL, $conflictMode = DuplicationBehavior::RENAME) {
+		$conflictMode = DuplicationBehavior::cast($conflictMode);
 		if ($targetFileName === NULL) {
 			$targetFileName = $file->getName();
 		}
@@ -1645,11 +1678,11 @@ class ResourceStorage implements ResourceStorageInterface {
 		$this->assureFileCopyPermissions($file, $targetFolder, $sanitizedTargetFileName);
 		$this->emitPreFileCopySignal($file, $targetFolder);
 		// File exists and we should abort, let's abort
-		if ($conflictMode === 'cancel' && $targetFolder->hasFile($sanitizedTargetFileName)) {
+		if ($conflictMode->equals(DuplicationBehavior::CANCEL) && $targetFolder->hasFile($sanitizedTargetFileName)) {
 			throw new Exception\ExistingTargetFileNameException('The target file already exists.', 1320291064);
 		}
 		// File exists and we should find another name, let's find another one
-		if ($conflictMode === 'renameNewFile' && $targetFolder->hasFile($sanitizedTargetFileName)) {
+		if ($conflictMode->equals(DuplicationBehavior::RENAME) && $targetFolder->hasFile($sanitizedTargetFileName)) {
 			$sanitizedTargetFileName = $this->getUniqueName($targetFolder, $sanitizedTargetFileName);
 		}
 		$sourceStorage = $file->getStorage();
@@ -1675,13 +1708,14 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param FileInterface $file
 	 * @param Folder $targetFolder
 	 * @param string $targetFileName an optional destination fileName
-	 * @param string $conflictMode "overrideExistingFile", "renameNewFile", "cancel
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 *
 	 * @throws Exception\ExistingTargetFileNameException
 	 * @throws \RuntimeException
 	 * @return FileInterface
 	 */
-	public function moveFile($file, $targetFolder, $targetFileName = NULL, $conflictMode = 'renameNewFile') {
+	public function moveFile($file, $targetFolder, $targetFileName = NULL, $conflictMode = DuplicationBehavior::RENAME) {
+		$conflictMode = DuplicationBehavior::cast($conflictMode);
 		if ($targetFileName === NULL) {
 			$targetFileName = $file->getName();
 		}
@@ -1690,9 +1724,9 @@ class ResourceStorage implements ResourceStorageInterface {
 		$this->assureFileMovePermissions($file, $targetFolder, $sanitizedTargetFileName);
 		if ($targetFolder->hasFile($sanitizedTargetFileName)) {
 			// File exists and we should abort, let's abort
-			if ($conflictMode === 'renameNewFile') {
+			if ($conflictMode->equals(DuplicationBehavior::RENAME)) {
 				$sanitizedTargetFileName = $this->getUniqueName($targetFolder, $sanitizedTargetFileName);
-			} elseif ($conflictMode === 'cancel') {
+			} elseif ($conflictMode->equals(DuplicationBehavior::CANCEL)) {
 				throw new Exception\ExistingTargetFileNameException('The target file already exists', 1329850997);
 			}
 		}
@@ -1784,7 +1818,12 @@ class ResourceStorage implements ResourceStorageInterface {
 		if ($file instanceof File) {
 			$this->getIndexer()->updateIndexEntry($file);
 		}
+		if ($this->autoExtractMetadataEnabled()) {
+			$indexer = GeneralUtility::makeInstance(Indexer::class, $this);
+			$indexer->extractMetaData($file);
+		}
 		$this->emitPostFileReplaceSignal($file, $localFilePath);
+
 		return $file;
 	}
 
@@ -1794,10 +1833,11 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param array $uploadedFileData contains information about the uploaded file given by $_FILES['file1']
 	 * @param Folder $targetFolder the target folder
 	 * @param string $targetFileName the file name to be written
-	 * @param string $conflictMode possible value are 'cancel', 'replace'
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 * @return FileInterface The file object
 	 */
-	public function addUploadedFile(array $uploadedFileData, Folder $targetFolder = NULL, $targetFileName = NULL, $conflictMode = 'cancel') {
+	public function addUploadedFile(array $uploadedFileData, Folder $targetFolder = NULL, $targetFileName = NULL, $conflictMode = DuplicationBehavior::CANCEL) {
+		$conflictMode = DuplicationBehavior::cast($conflictMode);
 		$localFilePath = $uploadedFileData['tmp_name'];
 		if ($targetFolder === NULL) {
 			$targetFolder = $this->getDefaultFolder();
@@ -1808,11 +1848,11 @@ class ResourceStorage implements ResourceStorageInterface {
 		$targetFileName = $this->driver->sanitizeFileName($targetFileName);
 
 		$this->assureFileUploadPermissions($localFilePath, $targetFolder, $targetFileName, $uploadedFileData['size']);
-		if ($this->hasFileInFolder($targetFileName, $targetFolder) && $conflictMode === 'replace') {
+		if ($this->hasFileInFolder($targetFileName, $targetFolder) && $conflictMode->equals(DuplicationBehavior::REPLACE)) {
 			$file = $this->getFileInFolder($targetFileName, $targetFolder);
 			$resultObject = $this->replaceFile($file, $localFilePath);
 		} else {
-			$resultObject = $this->addFile($localFilePath, $targetFolder, $targetFileName, $conflictMode);
+			$resultObject = $this->addFile($localFilePath, $targetFolder, $targetFileName, (string)$conflictMode);
 		}
 		return $resultObject;
 	}
@@ -1850,14 +1890,14 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param Folder $folderToMove The folder to move.
 	 * @param Folder $targetParentFolder The target parent folder
 	 * @param string $newFolderName
-	 * @param string $conflictMode How to handle conflicts; one of "overrideExistingFile", "renameNewFolder", "cancel
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 *
 	 * @throws \Exception|\TYPO3\CMS\Core\Exception
 	 * @throws \InvalidArgumentException
 	 * @throws InvalidTargetFolderException
 	 * @return Folder
 	 */
-	public function moveFolder(Folder $folderToMove, Folder $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
+	public function moveFolder(Folder $folderToMove, Folder $targetParentFolder, $newFolderName = NULL, $conflictMode = DuplicationBehavior::RENAME) {
 		// @todo add tests
 		$originalFolder = $folderToMove->getParentFolder();
 		$this->assureFolderMovePermissions($folderToMove, $targetParentFolder);
@@ -1914,11 +1954,11 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @param FolderInterface $folderToCopy The folder to copy
 	 * @param FolderInterface $targetParentFolder The target folder
 	 * @param string $newFolderName
-	 * @param string $conflictMode "overrideExistingFolder", "renameNewFolder", "cancel
+	 * @param string $conflictMode a value of the \TYPO3\CMS\Core\Resource\DuplicationBehavior enumeration
 	 * @return Folder The new (copied) folder object
 	 * @throws InvalidTargetFolderException
 	 */
-	public function copyFolder(FolderInterface $folderToCopy, FolderInterface $targetParentFolder, $newFolderName = NULL, $conflictMode = 'renameNewFolder') {
+	public function copyFolder(FolderInterface $folderToCopy, FolderInterface $targetParentFolder, $newFolderName = NULL, $conflictMode = DuplicationBehavior::RENAME) {
 		// @todo implement the $conflictMode handling
 		$this->assureFolderCopyPermissions($folderToCopy, $targetParentFolder);
 		$returnObject = NULL;
@@ -2173,6 +2213,7 @@ class ResourceStorage implements ResourceStorageInterface {
 	 * @throws Exception\InsufficientFolderAccessPermissionsException
 	 */
 	public function getFolder($identifier, $returnInaccessibleFolderObject = FALSE) {
+
 		$data = $this->driver->getFolderInfoByIdentifier($identifier);
 		$folder = ResourceFactory::getInstance()->createFolderObject($this, $data['identifier'], $data['name']);
 

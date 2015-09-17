@@ -22,9 +22,16 @@ if (TYPO3_MODE === 'BE') {
 		'icon-class' => 'fa-key',
 		'label' => 'LLL:EXT:backend/Resources/Private/Language/locallang.xlf:login.link'
 	);
+
+	$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['avatarProviders']['defaultAvatarProvider'] = array(
+		'provider' => \TYPO3\CMS\Backend\Backend\Avatar\DefaultAvatarProvider::class
+	);
 }
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tsfebeuserauth.php']['frontendEditingController']['default'] = \TYPO3\CMS\Core\FrontendEditing\FrontendEditingController::class;
 
 // Register search key shortcuts
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['livesearch']['page'] = 'pages';
+
+// Include base setup for new content element wizard
+\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPageTSConfig('<INCLUDE_TYPOSCRIPT: source="FILE:EXT:backend/Configuration/PageTSconfig/NewContentElementWizard.ts">');

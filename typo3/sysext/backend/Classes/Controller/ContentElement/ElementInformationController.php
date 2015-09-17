@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller\ContentElement;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -160,9 +162,6 @@ class ElementInformationController {
 					$this->access = is_array($this->pageInfo) ? 1 : 0;
 				}
 			}
-			/** @var $treatData \TYPO3\CMS\Backend\Form\DataPreprocessor */
-			$treatData = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Form\DataPreprocessor::class);
-			$treatData->renderRecord($this->table, $this->uid, 0, $this->row);
 		}
 	}
 
@@ -188,6 +187,25 @@ class ElementInformationController {
 				$this->row = array();
 			}
 		}
+	}
+
+	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$content = $this->doc->startPage($this->titleTag);
+		$content .= $this->doc->insertStylesAndJS($this->content);
+		$content .= $this->doc->endPage();
+
+		$response->getBody()->write($content);
+		return $response;
 	}
 
 	/**
@@ -308,7 +326,7 @@ class ElementInformationController {
 			if ($url) {
 				$downloadLink .= '
 					<a class="btn btn-primary" href="' . htmlspecialchars($url) . '" target="_blank">
-						' . IconUtility::getSpriteIcon('actions-edit-download') . '
+						' . $this->iconFactory->getIcon('actions-edit-download', Icon::SIZE_SMALL) . '
 						' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:download', TRUE) . '
 					</a>';
 			}
@@ -467,11 +485,11 @@ class ElementInformationController {
 	 */
 	protected function renderBackButton() {
 		$backLink = '';
-		$returnUrl = GeneralUtility::_GET('returnUrl');
+		$returnUrl = GeneralUtility::sanitizeLocalUrl(GeneralUtility::_GET('returnUrl'));
 		if ($returnUrl) {
 			$backLink .= '
 				<a class="btn btn-primary" href="' . htmlspecialchars($returnUrl) . '>
-					' . IconUtility::getSpriteIcon('actions-view-go-back') . '
+					' . $this->iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '
 					' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:back', TRUE) . '
 				</a>';
 		}
@@ -520,8 +538,10 @@ class ElementInformationController {
 	 * End page and print content
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->doc->startPage($this->titleTag) .
 			$this->doc->insertStylesAndJS($this->content) .
 			$this->doc->endPage();
@@ -559,25 +579,28 @@ class ElementInformationController {
 		}
 
 		// Edit button
-		$editOnClick = BackendUtility::editOnClick('&edit[' . $table . '][' . $uid . ']=edit');
+		$urlParameters = [
+			'edit' => [
+				$table => [
+					$uid => 'edit'
+				]
+			],
+			'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+		];
+		$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 		$pageActionIcons = '
-			<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($editOnClick) . '">
-				' . IconUtility::getSpriteIcon('actions-document-open') . '
+			<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '">
+				' . $this->iconFactory->getIcon('actions-document-open', Icon::SIZE_SMALL) . '
 			</a>';
 
 		// History button
-		$historyOnClick = 'window.location.href=' .
-			GeneralUtility::quoteJSvalue(
-				BackendUtility::getModuleUrl(
-					'record_history',
-					array(
-						'element' => $table . ':' . $uid,
-						'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
-					)
-				)
-			) . '; return false;';
+		$urlParameters = [
+			'element' => $table . ':' . $uid,
+			'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+		];
+		$url = BackendUtility::getModuleUrl('record_history', $urlParameters);
 		$pageActionIcons .= '
-			<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($historyOnClick) . '">
+			<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '">
 				' . $this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL) . '
 			</a>';
 
@@ -586,14 +609,14 @@ class ElementInformationController {
 			$url = BackendUtility::getModuleUrl('web_list', array('id' => $uid, 'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')));
 			$pageActionIcons .= '
 				<a class="btn btn-default btn-sm" href="' . htmlspecialchars($url) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList') . '">
-					' . IconUtility::getSpriteIcon('actions-system-list-open') . '
+					' . $this->iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL) . '
 				</a>';
 
 			// View page button
 			$viewOnClick = BackendUtility::viewOnClick($uid, '', BackendUtility::BEgetRootLine($uid));
 			$pageActionIcons .= '
 				<a class="btn btn-default btn-sm" href="#" onclick="' . htmlspecialchars($viewOnClick) . '" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">
-					' . IconUtility::getSpriteIcon('actions-document-view') . '
+					' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '
 				</a>';
 		}
 
@@ -658,16 +681,24 @@ class ElementInformationController {
 					: '';
 				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
 				$actions = $this->getRecordActions($row['tablename'], $row['recuid']);
-				$editOnClick = BackendUtility::editOnClick('&edit[' . $row['tablename'] . '][' . $row['recuid'] . ']=edit');
+				$urlParameters = [
+					'edit' => [
+						$row['tablename'] => [
+							$row['recuid'] => 'edit'
+						]
+					],
+					'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+				];
+				$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 				$infoData[] = '
 				<tr>
 					<td class="col-icon">
-						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '">
+						<a href="' . htmlspecialchars($url) . '" title="id=' . $record['uid'] . '">
 							' . $icon . '
 						</a>
 					</td>
 					<td class="col-title">
-						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '" >
+						<a href="' . htmlspecialchars($url) . '" title="id=' . $record['uid'] . '" >
 							' . BackendUtility::getRecordTitle($row['tablename'], $record, TRUE) . '
 						</a>
 					</td>
@@ -750,16 +781,25 @@ class ElementInformationController {
 			if ($record) {
 				$icon = IconUtility::getSpriteIconForRecord($row['tablename'], $record);
 				$actions = $this->getRecordActions($row['ref_table'], $row['ref_uid']);
-				$editOnClick = BackendUtility::editOnClick('&edit[' . $row['ref_table'] . '][' . $row['ref_uid'] . ']=edit');
+
+				$urlParameters = [
+					'edit' => [
+						$row['ref_table'] => [
+							$row['ref_uid'] => 'edit'
+						]
+					],
+					'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
+				];
+				$url = BackendUtility::getModuleUrl('record_edit', $urlParameters);
 				$infoData[] = '
 				<tr>
 					<td class="col-icon">
-						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '">
+						<a href="' . htmlspecialchars($url) . '" title="id=' . $record['uid'] . '">
 							' . $icon . '
 						</a>
 					</td>
 					<td class="col-title">
-						<a href="#" onclick="' . htmlspecialchars($editOnClick) . '" title="id=' . $record['uid'] . '" >
+						<a href="' . htmlspecialchars($url) . '" title="id=' . $record['uid'] . '" >
 							' . BackendUtility::getRecordTitle($row['ref_table'], $record, TRUE) . '
 						</a>
 					</td>

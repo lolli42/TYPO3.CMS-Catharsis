@@ -15,31 +15,37 @@ namespace TYPO3\CMS\Backend\Controller\File;
  */
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Script Class for the rename-file form.
  */
 class RenameFileController {
 
-	// Internal, static:
 	/**
 	 * Document template object
 	 *
 	 * @var \TYPO3\CMS\Backend\Template\DocumentTemplate
+	 * @internal
 	 */
 	public $doc;
 
-	// Name of the filemount
 	/**
+	 * Name of the filemount
+	 *
 	 * @var string
 	 */
 	public $title;
 
-	// Internal, static (GPVar):
-	// Set with the target path inputted in &target
 	/**
+	 * Target path
+	 *
 	 * @var string
+	 * @internal
 	 */
 	public $target;
 
@@ -50,16 +56,18 @@ class RenameFileController {
 	 */
 	protected $fileOrFolderObject;
 
-	// Return URL of list module.
 	/**
+	 * Return URL of list module.
+	 *
 	 * @var string
 	 */
 	public $returnUrl;
 
-	// Internal, dynamic:
-	// Accumulating content
 	/**
+	 * Accumulating content
+	 *
 	 * @var string
+	 * @internal
 	 */
 	public $content;
 
@@ -105,14 +113,16 @@ class RenameFileController {
 			}
 		}
 		// Setting icon and title
-		$icon = \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('apps-filetree-root');
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$icon = $iconFactory->getIcon('apps-filetree-root', Icon::SIZE_SMALL);
 		$this->title = $icon . htmlspecialchars($this->fileOrFolderObject->getStorage()->getName()) . ': ' . htmlspecialchars($this->fileOrFolderObject->getIdentifier());
 		// Setting template object
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:backend/Resources/Private/Templates/file_rename.html');
 		$this->doc->JScode = $this->doc->wrapScriptTags('
-			function backToList() {	//
-				top.goToModule("file_list");
+			function backToList() {
+				top.goToModule("file_FilelistList");
 			}
 		');
 	}
@@ -146,7 +156,6 @@ class RenameFileController {
 				<input class="btn btn-primary" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:file_rename.php.submit', TRUE) . '" />
 				<input class="btn btn-danger" type="submit" value="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.cancel', TRUE) . '" onclick="backToList(); return false;" />
 				<input type="hidden" name="redirect" value="' . htmlspecialchars($this->returnUrl) . '" />
-				' . \TYPO3\CMS\Backend\Form\FormEngine::getHiddenTokenField('tceAction') . '
 			</div>
 		';
 		$pageContent .= '</form>';
@@ -156,7 +165,8 @@ class RenameFileController {
 		$docHeaderButtons['csh'] = BackendUtility::cshItem('xMOD_csh_corebe', 'file_rename');
 		// Back
 		if ($this->returnUrl) {
-			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisUrl($this->returnUrl)) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . \TYPO3\CMS\Backend\Utility\IconUtility::getSpriteIcon('actions-view-go-back') . '</a>';
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$docHeaderButtons['back'] = '<a href="' . htmlspecialchars(\TYPO3\CMS\Core\Utility\GeneralUtility::linkThisUrl($this->returnUrl)) . '" class="typo3-goBack" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:labels.goBack', TRUE) . '">' . $iconFactory->getIcon('actions-view-go-back', Icon::SIZE_SMALL) . '</a>';
 		}
 		// Add the HTML as a section:
 		$markerArray = array(
@@ -171,11 +181,27 @@ class RenameFileController {
 	}
 
 	/**
+	 * Processes the request, currently everything is handled and put together via "main()"
+	 *
+	 * @param ServerRequestInterface $request the current request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface the response with the content
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+
+		$response->getBody()->write($this->content);
+		return $response;
+	}
+
+	/**
 	 * Outputting the accumulated content to screen
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use the mainAction() method instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->content;
 	}
 

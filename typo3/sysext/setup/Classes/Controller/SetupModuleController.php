@@ -14,9 +14,10 @@ namespace TYPO3\CMS\Setup\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Backend\Avatar\Avatar;
+use TYPO3\CMS\Backend\Backend\Avatar\DefaultAvatarProvider;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Backend\Utility\IconUtility;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\DatabaseConnection;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -325,7 +326,6 @@ class SetupModuleController {
 		$this->doc = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Template\DocumentTemplate::class);
 		$this->doc->setModuleTemplate('EXT:setup/Resources/Private/Templates/setup.html');
 		$this->doc->form = '<form action="' . BackendUtility::getModuleUrl('user_setup') . '" method="post" name="usersetup" enctype="multipart/form-data">';
-		$this->doc->addStyleSheet('module', 'sysext/setup/Resources/Public/Css/styles.css');
 		$this->doc->JScode .= $this->getJavaScript();
 	}
 
@@ -454,14 +454,16 @@ class SetupModuleController {
 	 * @return array All available buttons as an assoc. array
 	 */
 	protected function getButtons() {
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$buttons = array(
 			'csh' => '',
 			'save' => '',
 			'shortcut' => ''
 		);
 		$buttons['csh'] = BackendUtility::cshItem('_MOD_user_setup', '');
-		$buttons['save'] = '<button class="c-inputButton" name="data[save]">'
-			. IconUtility::getSpriteIcon('actions-document-save', array('title' => $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE)))
+		$buttons['save'] = '<button class="c-inputButton" name="data[save]" title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '">'
+			. $iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL)
 			. '</button>';
 		if ($this->getBackendUser()->mayMakeShortcut()) {
 			$buttons['shortcut'] = $this->doc->makeShortcutIcon('', '', $this->moduleName);
@@ -606,19 +608,26 @@ class SetupModuleController {
 					$avatarFileUid = $this->getAvatarFileUid($this->getBackendUser()->user['uid']);
 
 					if ($avatarFileUid) {
-						$avatar = GeneralUtility::makeInstance(Avatar::class);
-						$icon = $avatar->render();
-						$html .= '<span class="pull-left" style="padding-right: 10px" id="image_' . $fieldName . '">' . $icon . ' </span>';
+						$defaultAvatarProvider = GeneralUtility::makeInstance(DefaultAvatarProvider::class);
+						$avatarImage = $defaultAvatarProvider->getImage($this->getBackendUser()->user, 32);
+						if ($avatarImage) {
+							$icon = '<span class="avatar"><span class="avatar-image">' .
+								'<img src="' . htmlspecialchars($avatarImage->getUrl(TRUE)) . '"' .
+								'width="' . (int)$avatarImage->getWidth() . '" ' .
+								'height="' . (int)$avatarImage->getHeight() . '" />' .
+								'</span></span>';
+							$html .= '<span class="pull-left" style="padding-right: 10px" id="image_' . htmlspecialchars($fieldName) . '">' . $icon . ' </span>';
+						}
 					}
-					$html .= '<input id="field_' . $fieldName . '" type="hidden" ' .
-							'name="data' . $dataAdd . '[' . $fieldName . ']"' . $more .
+					$html .= '<input id="field_' . htmlspecialchars($fieldName) . '" type="hidden" ' .
+							'name="data' . $dataAdd . '[' . htmlspecialchars($fieldName) . ']"' . $more .
 							' value="' . $avatarFileUid . '" />';
 
 					$html .= '<div class="btn-group">';
 					if ($avatarFileUid) {
-						$html .= '<a id="clear_button_' . $fieldName . '" onclick="clearExistingImage(); return false;" class="btn btn-default"><span class="t3-icon fa t3-icon fa fa-remove"> </span></a>';
+						$html .= '<a id="clear_button_' . htmlspecialchars($fieldName) . '" onclick="clearExistingImage(); return false;" class="btn btn-default"><span class="t3-icon fa t3-icon fa fa-remove"> </span></a>';
 					}
-					$html .= '<a id="add_button_' . $fieldName . '" class="btn btn-default btn-add-avatar" onclick="openFileBrowser();return false;"><span class="t3-icon t3-icon-actions t3-icon-actions-insert t3-icon-insert-record"> </span></a>' .
+					$html .= '<a id="add_button_' . htmlspecialchars($fieldName) . '" class="btn btn-default btn-add-avatar" onclick="openFileBrowser();return false;"><span class="t3-icon t3-icon-actions t3-icon-actions-insert t3-icon-insert-record"> </span></a>' .
 							'</div>';
 
 					$this->addAvatarButtonJs($fieldName);
@@ -943,15 +952,15 @@ class SetupModuleController {
 			}
 
 			function clearExistingImage() {
-				TYPO3.jQuery(\'#image_' . $fieldName . '\').hide();
-				TYPO3.jQuery(\'#clear_button_' . $fieldName . '\').hide();
-				TYPO3.jQuery(\'#field_' . $fieldName . '\').val(\'\');
+				TYPO3.jQuery(\'#image_' . htmlspecialchars($fieldName) . '\').hide();
+				TYPO3.jQuery(\'#clear_button_' . htmlspecialchars($fieldName) . '\').hide();
+				TYPO3.jQuery(\'#field_' . htmlspecialchars($fieldName) . '\').val(\'\');
 			}
 
 			function setFileUid(field, value, fileUid) {
 				clearExistingImage();
-				TYPO3.jQuery(\'#field_' . $fieldName . '\').val(fileUid);
-				TYPO3.jQuery(\'#add_button_' . $fieldName . '\').removeClass(\'btn-default\').addClass(\'btn-info\');
+				TYPO3.jQuery(\'#field_' . htmlspecialchars($fieldName) . '\').val(fileUid);
+				TYPO3.jQuery(\'#add_button_' . htmlspecialchars($fieldName) . '\').removeClass(\'btn-default\').addClass(\'btn-info\');
 
 				browserWin.close();
 			}

@@ -14,13 +14,13 @@ namespace TYPO3\CMS\Backend\Form\Element;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Form\NodeFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Resource\Exception\FileDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Extbase\Utility\ArrayUtility;
 
 /**
@@ -54,8 +54,8 @@ class ImageManipulationElement extends AbstractFormElement {
 		$resultArray = $this->initializeResultArray();
 		$languageService = $this->getLanguageService();
 
-		$row = $this->globalOptions['databaseRow'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$row = $this->data['databaseRow'];
+		$parameterArray = $this->data['parameterArray'];
 
 		// If ratios are set do not add default options
 		if (isset($parameterArray['fieldConf']['config']['ratios'])) {
@@ -68,7 +68,7 @@ class ImageManipulationElement extends AbstractFormElement {
 			$config['allowedExtensions'] = $GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'];
 		}
 
-		if ($this->isGlobalReadonly() || $config['readOnly']) {
+		if ($config['readOnly']) {
 			$options = array();
 			$options['parameterArray'] = array(
 				'fieldConf' => array(
@@ -77,14 +77,12 @@ class ImageManipulationElement extends AbstractFormElement {
 				'itemFormElValue' => $parameterArray['itemFormElValue'],
 			);
 			$options['renderType'] = 'none';
-			/** @var NodeFactory $nodeFactory */
-			$nodeFactory = $this->globalOptions['nodeFactory'];
-			return $nodeFactory->create($options)->render();
+			return $this->nodeFactory->create($options)->render();
 		}
 
 		$file = $this->getFile($row, $config['file_field']);
 		if (!$file) {
-			return '';
+			return $resultArray;
 		}
 
 		$content = '';
@@ -99,7 +97,7 @@ class ImageManipulationElement extends AbstractFormElement {
 				$config['ratios'][$ratio] = $languageService->sL($label, TRUE);
 			}
 
-			$formFieldId = str_replace('.', '', uniqid('formengine-image-manipulation-', TRUE));
+			$formFieldId = StringUtility::getUniqueId('formengine-image-manipulation-');
 			$wizardData = array(
 				'file' => $file->getUid(),
 				'zoom' => $config['enableZoom'] ? '1' : '0',
@@ -161,8 +159,13 @@ class ImageManipulationElement extends AbstractFormElement {
 	protected function getFile(array $row, $fieldName) {
 		$file = NULL;
 		$fileUid = !empty($row[$fieldName]) ? $row[$fieldName] : NULL;
-
 		if (strpos($fileUid, 'sys_file_') === 0) {
+			if (strpos($fileUid, '|')) {
+				// @todo: uid_local is a group field that was resolved to table_uid|target - split here again
+				// @todo: this will vanish if group fields are moved to array
+				$fileUid = explode('|', $fileUid);
+				$fileUid = $fileUid[0];
+			}
 			$fileUid = substr($fileUid, 9);
 		}
 		if (MathUtility::canBeInterpretedAsInteger($fileUid)) {

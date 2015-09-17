@@ -24,6 +24,8 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Database\PreparedStatement;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException;
 use TYPO3\CMS\Core\Resource\File;
@@ -56,9 +58,17 @@ class BackendUtility {
 	 * Cache the TCA configuration of tables with their types during runtime
 	 *
 	 * @var array
-	 * @see getTCAtypes()
+	 * @see self::getTCAtypes()
 	 */
 	static protected $tcaTableTypeConfigurationCache = array();
+
+	/**
+	 * Cache the processed titles of records during runtime
+	 *
+	 * @var array
+	 * @see self::getRecordTitle()
+	 */
+	static protected $recordTitleCache = array();
 
 	/*******************************************
 	 *
@@ -486,8 +496,10 @@ class BackendUtility {
 	 * Used for listing the exclude-fields in be_groups forms
 	 *
 	 * @return array Array of arrays with excludeFields (fieldname, table:fieldname) from all TCA entries and from FlexForms (fieldname, table:extkey;sheetname;fieldname)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function getExcludeFields() {
+		GeneralUtility::logDeprecatedFunction();
 		$finalExcludeArray = array();
 
 		// Fetch translations for table names
@@ -533,20 +545,27 @@ class BackendUtility {
 							continue;
 						}
 						foreach ($sheet['ROOT']['el'] as $fieldName => $field) {
-							// Use only excludeable fields
+							// Use only fields that have exclude flag set
 							if (empty($field['TCEforms']['exclude'])) {
 								continue;
 							}
 							$fieldLabel = !empty($field['TCEforms']['label']) ? $lang->sl($field['TCEforms']['label']) : $fieldName;
 							$fieldIdent = $table . ':' . $tableField . ';' . $extIdent . ';' . $sheetName . ';' . $fieldName;
-							$excludeArrayTable[] = array(trim(($labelPrefix . ' ' . $extTitle), ': ') . ': ' . $fieldLabel, $fieldIdent);
+							$excludeArrayTable[] = array(trim($labelPrefix . ' ' . $extTitle, ': ') . ': ' . $fieldLabel, $fieldIdent);
 						}
 					}
 				}
 			}
 			// Sort fields by the translated value
 			if (!empty($excludeArrayTable)) {
-				usort($excludeArrayTable, array(\TYPO3\CMS\Backend\Form\FlexFormsHelper::class, 'compareArraysByFirstValue'));
+				usort($excludeArrayTable, function (array $array1, array $array2) {
+					$array1 = reset($array1);
+					$array2 = reset($array2);
+					if (is_string($array1) && is_string($array2)) {
+						return strcasecmp($array1, $array2);
+					}
+					return 0;
+				});
 				$finalExcludeArray = array_merge($finalExcludeArray, $excludeArrayTable);
 			}
 		}
@@ -559,8 +578,10 @@ class BackendUtility {
 	 * Used for listing these field/value pairs in be_groups forms
 	 *
 	 * @return array Array with information from all of $GLOBALS['TCA']
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function getExplicitAuthFieldValues() {
+		GeneralUtility::logDeprecatedFunction();
 		// Initialize:
 		$lang = static::getLanguageService();
 		$adLabel = array(
@@ -624,8 +645,10 @@ class BackendUtility {
 	 * which will represent the flag of this language.
 	 *
 	 * @return array Array with languages (title, uid, flagIcon - used with IconUtility::getSpriteIcon)
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function getSystemLanguages() {
+		GeneralUtility::logDeprecatedFunction();
 		/** @var TranslationConfigurationProvider $translationConfigurationProvider */
 		$translationConfigurationProvider = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Configuration\TranslationConfigurationProvider::class);
 		$languages = $translationConfigurationProvider->getSystemLanguages();
@@ -810,10 +833,10 @@ class BackendUtility {
 	 * If no "type" field is configured in the "ctrl"-section of the $GLOBALS['TCA'] for the table, zero is used.
 	 * If zero is not an index in the "types" section of $GLOBALS['TCA'] for the table, then the $fieldValue returned will default to 1 (no matter if that is an index or not)
 	 *
-	 * Note: This method is very similar to \TYPO3\CMS\Backend\Form\FormEngine::getRTypeNum(),
+	 * Note: This method is very similar to the type determination of FormDataProvider/DatabaseRecordTypeValue,
 	 * however, it has two differences:
 	 * 1) The method in TCEForms also takes care of localization (which is difficult to do here as the whole infrastructure for language overlays is only in TCEforms).
-	 * 2) The $row array looks different in TCEForms, as in there it's not the raw record but the \TYPO3\CMS\Backend\Form\DataPreprocessor version of it, which changes e.g. how "select"
+	 * 2) The $row array looks different in TCEForms, as in there it's not the raw record but the prepared data from other providers is handled, which changes e.g. how "select"
 	 * and "group" field values are stored, which makes different processing of the "foreign pointer field" type field variant necessary.
 	 *
 	 * @param string $table Table name present in TCA
@@ -951,7 +974,7 @@ class BackendUtility {
 	 * @param bool $WSOL If set, workspace overlay is applied to records. This is correct behaviour for all presentation and export, but NOT if you want a TRUE reflection of how things are in the live workspace.
 	 * @param int $newRecordPidValue SPECIAL CASES: Use this, if the DataStructure may come from a parent record and the INPUT row doesn't have a uid yet (hence, the pid cannot be looked up). Then it is necessary to supply a PID value to search recursively in for the DS (used from TCEmain)
 	 * @return mixed If array, the data structure was found and returned as an array. Otherwise (string) it is an error message.
-	 * @see \TYPO3\CMS\Backend\Form\FormEngine::getSingleField_typeFlex()
+	 * @todo: All those nasty details should be covered with tests, also it is very unfortunate the final $srcPointer is not exposed
 	 */
 	static public function getFlexFormDS($conf, $row, $table, $fieldName = '', $WSOL = TRUE, $newRecordPidValue = 0) {
 		// Get pointer field etc from TCA-config:
@@ -1092,8 +1115,10 @@ class BackendUtility {
 	 * @param string $table The content table
 	 * @return array The data structures with speaking extension title
 	 * @see \TYPO3\CMS\Backend\Utility\BackendUtility::getExcludeFields()
+	 *  @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function getRegisteredFlexForms($table = 'tt_content') {
+		GeneralUtility::logDeprecatedFunction();
 		if (empty($table) || empty($GLOBALS['TCA'][$table]['columns'])) {
 			return array();
 		}
@@ -1620,6 +1645,13 @@ class BackendUtility {
 				 * We just catch the exception here
 				 * Reasoning: There is nothing an editor or even admin could do
 				 */
+			} catch (\InvalidArgumentException $e) {
+				/**
+				 * The storage does not exist anymore
+				 * Log the exception message for admins as they maybe can restore the storage
+				 */
+				$logMessage = $e->getMessage() . ' (table: "' . $tableName . '", fieldName: "' . $fieldName . '", referenceUid: ' . $referenceUid . ')';
+				GeneralUtility::sysLog($logMessage, 'core', GeneralUtility::SYSLOG_SEVERITY_ERROR);
 			}
 		}
 
@@ -1653,6 +1685,7 @@ class BackendUtility {
 		$thumbData = '';
 		$fileReferences = static::resolveFileReferences($table, $field, $row);
 		// FAL references
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		if ($fileReferences !== NULL) {
 			foreach ($fileReferences as $fileReferenceObject) {
 				$fileObject = $fileReferenceObject->getOriginalFile();
@@ -1663,8 +1696,8 @@ class BackendUtility {
 					continue;
 				}
 
-				// Web image
-				if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'], $fileReferenceObject->getExtension())) {
+				// Preview web image or media elements
+				if (GeneralUtility::inList($GLOBALS['TYPO3_CONF_VARS']['GFX']['imagefile_ext'] . ',' . $GLOBALS['TYPO3_CONF_VARS']['SYS']['mediafile_ext'], $fileReferenceObject->getExtension())) {
 					$processedImage = $fileObject->process(ProcessedFile::CONTEXT_IMAGECROPSCALEMASK, array(
 										'width' => $sizeParts[0],
 										'height' => $sizeParts[1] . 'c',
@@ -1677,7 +1710,7 @@ class BackendUtility {
 							'alt="' . htmlspecialchars($fileReferenceObject->getName()) . '" />';
 				} else {
 					// Icon
-					$imgTag = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
+					$imgTag = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
 				}
 				if ($linkInfoPopup) {
 					$onClick = 'top.launchView(\'_FILE\',\'' . (int)$fileObject->getUid() . '\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
@@ -1732,7 +1765,7 @@ class BackendUtility {
 						}
 					} else {
 						// Gets the icon
-						$fileIcon = IconUtility::getSpriteIconForResource($fileObject, array('title' => $fileObject->getName()));
+						$fileIcon = '<span title="' . htmlspecialchars($fileObject->getName()) . '">' . $iconFactory->getIconForResource($fileObject, Icon::SIZE_SMALL) . '</span>';
 						if ($linkInfoPopup) {
 							$onClick = 'top.launchView(\'_FILE\', ' . GeneralUtility::quoteJSvalue($fileName) . ',\'\',' . GeneralUtility::quoteJSvalue($backPath) . '); return false;';
 							$thumbData .= '<a href="#" onclick="' . htmlspecialchars($onClick) . '">' . $fileIcon . '</a> ';
@@ -2080,6 +2113,12 @@ class BackendUtility {
 	 * @return string
 	 */
 	static public function getRecordTitle($table, $row, $prep = FALSE, $forceResult = TRUE) {
+		$cacheIdentifier = $table . '-' . $row['uid'] . '-prep-' . (int)$prep . '-forceResult-' . (int)$forceResult;
+		if (isset(self::$recordTitleCache[$cacheIdentifier])) {
+			return self::$recordTitleCache[$cacheIdentifier];
+		}
+
+		$recordTitle = '';
 		if (is_array($GLOBALS['TCA'][$table])) {
 			// If configured, call userFunc
 			if ($GLOBALS['TCA'][$table]['ctrl']['label_userFunc']) {
@@ -2091,47 +2130,48 @@ class BackendUtility {
 				// Create NULL-reference
 				$null = NULL;
 				GeneralUtility::callUserFunction($GLOBALS['TCA'][$table]['ctrl']['label_userFunc'], $params, $null);
-				$t = $params['title'];
+				$recordTitle = $params['title'];
 			} else {
 				if (is_array($row)) {
 					$row = self::replaceL10nModeFields($table, $row);
 				}
 
 				// No userFunc: Build label
-				$t = self::getProcessedValue($table, $GLOBALS['TCA'][$table]['ctrl']['label'], $row[$GLOBALS['TCA'][$table]['ctrl']['label']], 0, 0, FALSE, $row['uid'], $forceResult);
-				if ($GLOBALS['TCA'][$table]['ctrl']['label_alt'] && ($GLOBALS['TCA'][$table]['ctrl']['label_alt_force'] || (string)$t === '')) {
+				$recordTitle = self::getProcessedValue($table, $GLOBALS['TCA'][$table]['ctrl']['label'], $row[$GLOBALS['TCA'][$table]['ctrl']['label']], 0, 0, FALSE, $row['uid'], $forceResult);
+				if ($GLOBALS['TCA'][$table]['ctrl']['label_alt'] && ($GLOBALS['TCA'][$table]['ctrl']['label_alt_force'] || (string)$recordTitle === '')) {
 					$altFields = GeneralUtility::trimExplode(',', $GLOBALS['TCA'][$table]['ctrl']['label_alt'], TRUE);
 					$tA = array();
-					if (!empty($t)) {
-						$tA[] = $t;
+					if (!empty($recordTitle)) {
+						$tA[] = $recordTitle;
 					}
 					foreach ($altFields as $fN) {
-						$t = trim(strip_tags($row[$fN]));
-						if ((string)$t !== '') {
-							$t = self::getProcessedValue($table, $fN, $t, 0, 0, FALSE, $row['uid']);
+						$recordTitle = trim(strip_tags($row[$fN]));
+						if ((string)$recordTitle !== '') {
+							$recordTitle = self::getProcessedValue($table, $fN, $recordTitle, 0, 0, FALSE, $row['uid']);
 							if (!$GLOBALS['TCA'][$table]['ctrl']['label_alt_force']) {
 								break;
 							}
-							$tA[] = $t;
+							$tA[] = $recordTitle;
 						}
 					}
 					if ($GLOBALS['TCA'][$table]['ctrl']['label_alt_force']) {
-						$t = implode(', ', $tA);
+						$recordTitle = implode(', ', $tA);
 					}
 				}
 			}
 			// If the current result is empty, set it to '[No title]' (localized) and prepare for output if requested
 			if ($prep || $forceResult) {
 				if ($prep) {
-					$t = self::getRecordTitlePrep($t);
+					$recordTitle = self::getRecordTitlePrep($recordTitle);
 				}
-				if (trim($t) === '') {
-					$t = self::getNoRecordTitle($prep);
+				if (trim($recordTitle) === '') {
+					$recordTitle = self::getNoRecordTitle($prep);
 				}
 			}
-			return $t;
 		}
-		return '';
+		self::$recordTitleCache[$cacheIdentifier] = $recordTitle;
+
+		return $recordTitle;
 	}
 
 	/**
@@ -2294,13 +2334,9 @@ class BackendUtility {
 							$lA = array();
 							foreach ($rParts as $rVal) {
 								$rVal = (int)$rVal;
-								if ($rVal > 0) {
-									$r = self::getRecordWSOL($theColConf['foreign_table'], $rVal);
-								} else {
-									$r = self::getRecordWSOL($theColConf['neg_foreign_table'], -$rVal);
-								}
+								$r = self::getRecordWSOL($theColConf['foreign_table'], $rVal);
 								if (is_array($r)) {
-									$lA[] = $lang->sL(($rVal > 0 ? $theColConf['foreign_table_prefix'] : $theColConf['neg_foreign_table_prefix'])) . self::getRecordTitle(($rVal > 0 ? $theColConf['foreign_table'] : $theColConf['neg_foreign_table']), $r, FALSE, $forceResult);
+									$lA[] = $lang->sL($theColConf['foreign_table_prefix']) . self::getRecordTitle($theColConf['foreign_table'], $r, FALSE, $forceResult);
 								} else {
 									$lA[] = $rVal ? '[' . $rVal . '!]' : '';
 								}
@@ -2408,7 +2444,18 @@ class BackendUtility {
 							$value = $value !== $emptyValue ? strtotime($value) : 0;
 						}
 						if (!empty($value)) {
-							$l = self::date($value) . ' (' . ($GLOBALS['EXEC_TIME'] - $value > 0 ? '-' : '') . self::calcAge(abs(($GLOBALS['EXEC_TIME'] - $value)), $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')) . ')';
+							$ageSuffix = '';
+							$dateColumnConfiguration = $GLOBALS['TCA'][$table]['columns'][$col]['config'];
+							$ageDisplayKey = 'disableAgeDisplay';
+
+							// generate age suffix as long as not explicitly suppressed
+							if (!isset($dateColumnConfiguration[$ageDisplayKey])
+									// non typesafe comparison on intention
+								|| $dateColumnConfiguration[$ageDisplayKey] == FALSE) {
+								$ageSuffix = ' (' . ($GLOBALS['EXEC_TIME'] - $value > 0 ? '-' : '') . self::calcAge(abs(($GLOBALS['EXEC_TIME'] - $value)), $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')) . ')';
+							}
+
+							$l = self::date($value) . $ageSuffix;
 						}
 					} elseif (GeneralUtility::inList($theColConf['eval'], 'time')) {
 						if (!empty($value)) {
@@ -2695,7 +2742,9 @@ class BackendUtility {
 		}
 		// Add see also arrow if we have more info
 		if ($helpTextArray['moreInfo']) {
-			$arrow = IconUtility::getSpriteIcon('actions-view-go-forward');
+			/** @var IconFactory $iconFactory */
+			$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+			$arrow = $iconFactory->getIcon('actions-view-go-forward', Icon::SIZE_SMALL)->render();
 		}
 		// Wrap description and arrow in p tag
 		if ($helpTextArray['description'] !== NULL || $arrow) {
@@ -2733,7 +2782,9 @@ class BackendUtility {
 		if ((!empty($helpText) || $hasHelpTextOverload) && ExtensionManagementUtility::isLoaded('cshmanual')) {
 			// If no text was given, just use the regular help icon
 			if ($text == '') {
-				$text = IconUtility::getSpriteIcon('actions-system-help-open');
+				/** @var IconFactory $iconFactory */
+				$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+				$text = $iconFactory->getIcon('actions-system-help-open', Icon::SIZE_SMALL);
 				$abbrClassAdd = '-icon';
 			}
 			$text = '<abbr class="t3-help-teaser' . $abbrClassAdd . '">' . $text . '</abbr>';
@@ -3107,7 +3158,14 @@ class BackendUtility {
 		if (!$script) {
 			$script = basename(PATH_thisScript);
 		}
-		if ($script === 'index.php' && GeneralUtility::_GET('M')) {
+
+		if (GeneralUtility::_GP('route')) {
+			$router = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\Router::class);
+			$route = $router->match(GeneralUtility::_GP('route'));
+			$uriBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Backend\Routing\UriBuilder::class);
+			$scriptUrl = (string)$uriBuilder->buildUriFromRoute($route->getOption('_identifier'));
+			$scriptUrl .= $addParams;
+		} elseif ($script === 'index.php' && GeneralUtility::_GET('M')) {
 			$scriptUrl = self::getModuleUrl(GeneralUtility::_GET('M'), $mainParams) . $addParams;
 		} else {
 			$scriptUrl = $script . '?' . GeneralUtility::implodeArrayForUrl('', $mainParams) . $addParams;
@@ -3319,7 +3377,6 @@ class BackendUtility {
 	 * @param bool $backPathOverride (unused)
 	 * @param bool $returnAbsoluteUrl If set to TRUE, the URL returned will be absolute, $backPathOverride will be ignored in this case
 	 * @return string Calculated URL
-	 * @internal
 	 */
 	static public function getAjaxUrl($ajaxIdentifier, array $urlParameters = array(), $backPathOverride = FALSE, $returnAbsoluteUrl = FALSE) {
 		/** @var UriBuilder $uriBuilder */
@@ -3336,7 +3393,9 @@ class BackendUtility {
 	 * @return string A complete <a href=""> tag
 	 */
 	static public function getListViewLink($urlParameters = array(), $linkTitle = '', $linkText = '') {
-		return '<a href="' . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="' . htmlspecialchars($linkTitle) . '">' . IconUtility::getSpriteIcon('actions-system-list-open') . htmlspecialchars($linkText) . '</a>';
+		/** @var IconFactory $iconFactory */
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		return '<a href="' . htmlspecialchars(self::getModuleUrl('web_list', $urlParameters)) . '" title="' . htmlspecialchars($linkTitle) . '">' . $iconFactory->getIcon('actions-system-list-open', Icon::SIZE_SMALL) . htmlspecialchars($linkText) . '</a>';
 	}
 
 	/**
@@ -3346,8 +3405,10 @@ class BackendUtility {
 	 * @param string $tokenName The name of the token GET variable
 	 * @throws \InvalidArgumentException
 	 * @return string A URL GET variable including ampersand
+	 * @deprecated since TYPO3 7, will be removed in TYPO3 8. All backend modules and routes are secured by default now. If you need a url parameter with a token, use the form protection directly.
 	 */
 	static public function getUrlToken($formName = 'securityToken', $tokenName = 'formToken') {
+		GeneralUtility::logDeprecatedFunction();
 		$formProtection = FormProtectionFactory::get();
 		return '&' . $tokenName . '=' . $formProtection->generateToken($formName);
 	}
@@ -3389,8 +3450,11 @@ class BackendUtility {
 	}
 
 	/**
-	 * Returns information about whether the record from table, $table, with uid, $uid is currently locked (edited by another user - which should issue a warning).
-	 * Notice: Locking is not strictly carried out since locking is abandoned when other backend scripts are activated - which means that a user CAN have a record "open" without having it locked. So this just serves as a warning that counts well in 90% of the cases, which should be sufficient.
+	 * Returns information about whether the record from table, $table, with uid, $uid is currently locked
+	 * (edited by another user - which should issue a warning).
+	 * Notice: Locking is not strictly carried out since locking is abandoned when other backend scripts
+	 * are activated - which means that a user CAN have a record "open" without having it locked.
+	 * So this just serves as a warning that counts well in 90% of the cases, which should be sufficient.
 	 *
 	 * @param string $table Table name
 	 * @param int $uid Record uid
@@ -3401,8 +3465,12 @@ class BackendUtility {
 		if (!is_array($GLOBALS['LOCKED_RECORDS'])) {
 			$GLOBALS['LOCKED_RECORDS'] = array();
 			$db = static::getDatabaseConnection();
-			$res = $db->exec_SELECTquery('*', 'sys_lockedrecords', 'sys_lockedrecords.userid<>' . (int)static::getBackendUserAuthentication()->user['uid'] . '
-								AND sys_lockedrecords.tstamp > ' . ($GLOBALS['EXEC_TIME'] - 2 * 3600));
+			$res = $db->exec_SELECTquery(
+				'*',
+				'sys_lockedrecords',
+				'sys_lockedrecords.userid<>' . (int)static::getBackendUserAuthentication()->user['uid']
+					. ' AND sys_lockedrecords.tstamp > ' . ($GLOBALS['EXEC_TIME'] - 2 * 3600)
+			);
 			while ($row = $db->sql_fetch_assoc($res)) {
 				// Get the type of the user that locked this record:
 				if ($row['userid']) {
@@ -3421,9 +3489,19 @@ class BackendUtility {
 					$userName = $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.unknownUser');
 				}
 				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']] = $row;
-				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
+				$GLOBALS['LOCKED_RECORDS'][$row['record_table'] . ':' . $row['record_uid']]['msg'] = sprintf(
+					$lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser'),
+					$userType,
+					$userName,
+					self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears'))
+				);
 				if ($row['record_pid'] && !isset($GLOBALS['LOCKED_RECORDS'][($row['record_table'] . ':' . $row['record_pid'])])) {
-					$GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf($lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'), $userType, $userName, self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears')));
+					$GLOBALS['LOCKED_RECORDS']['pages:' . $row['record_pid']]['msg'] = sprintf(
+						$lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.lockedRecordUser_content'),
+						$userType,
+						$userName,
+						self::calcAge($GLOBALS['EXEC_TIME'] - $row['tstamp'], $lang->sL('LLL:EXT:lang/locallang_core.xlf:labels.minutesHoursDaysYears'))
+					);
 				}
 			}
 			$db->sql_free_result($res);
@@ -3434,17 +3512,18 @@ class BackendUtility {
 	/**
 	 * Returns select statement for MM relations (as used by TCEFORMs etc)
 	 *
-	 * @param array $fieldValue Configuration array for the field, taken from $GLOBALS['TCA']
+	 * @param array $fieldConfig Configuration array for the field, taken from $GLOBALS['TCA']
 	 * @param string $field Field name
 	 * @param array $TSconfig TSconfig array from which to get further configuration settings for the field name
-	 * @param string $prefix Prefix string for the key "*foreign_table_where" from $fieldValue array
 	 * @return string Part of query
 	 * @internal
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
-	static public function exec_foreign_table_where_query($fieldValue, $field = '', $TSconfig = array(), $prefix = '') {
-		$foreign_table = $fieldValue['config'][$prefix . 'foreign_table'];
+	static public function exec_foreign_table_where_query($fieldConfig, $field = '', $TSconfig = array()) {
+		GeneralUtility::logDeprecatedFunction();
+		$foreign_table = $fieldConfig['config']['foreign_table'];
 		$rootLevel = $GLOBALS['TCA'][$foreign_table]['ctrl']['rootLevel'];
-		$fTWHERE = $fieldValue['config'][$prefix . 'foreign_table_where'];
+		$fTWHERE = $fieldConfig['config']['foreign_table_where'];
 		$fTWHERE = static::replaceMarkersInWhereClause($fTWHERE, $foreign_table, $field, $TSconfig);
 		$db = static::getDatabaseConnection();
 		$wgolParts = $db->splitGroupOrderLimit($fTWHERE);
@@ -3505,8 +3584,10 @@ class BackendUtility {
 	 * @param string $field Field name
 	 * @param array $tsConfig TSconfig array from which to get further configuration settings for the field name
 	 * @return string
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function replaceMarkersInWhereClause($whereClause, $table, $field = '', $tsConfig = array()) {
+		GeneralUtility::logDeprecatedFunction();
 		$db = static::getDatabaseConnection();
 		if (strstr($whereClause, '###REC_FIELD_')) {
 			$whereClauseParts = explode('###REC_FIELD_', $whereClause);
@@ -3956,7 +4037,7 @@ class BackendUtility {
 	 * @param string $table Table name to select from
 	 * @param int $uid Record uid for which to find versions.
 	 * @param string $fields Field list to select
-	 * @param int $workspace Workspace ID, if zero all versions regardless of workspace is found.
+	 * @param int|NULL $workspace Search in workspace ID and Live WS, if 0 search only in LiveWS, if NULL search in all WS.
 	 * @param bool $includeDeletedRecords If set, deleted-flagged versions are included! (Only for clean-up script!)
 	 * @param array $row The current record
 	 * @return array|NULL Array of versions of table/uid
@@ -3964,7 +4045,6 @@ class BackendUtility {
 	static public function selectVersionsOfRecord($table, $uid, $fields = '*', $workspace = 0, $includeDeletedRecords = FALSE, $row = NULL) {
 		$realPid = 0;
 		$outputRows = array();
-		$workspace = (int)$workspace;
 		if ($GLOBALS['TCA'][$table] && $GLOBALS['TCA'][$table]['ctrl']['versioningWS']) {
 			if (is_array($row) && !$includeDeletedRecords) {
 				$row['_CURRENT_VERSION'] = TRUE;
@@ -3980,12 +4060,20 @@ class BackendUtility {
 					$outputRows[] = $row;
 				}
 			}
+			$workspaceSqlPart = '';
+			if ($workspace === 0) {
+				// Only in Live WS
+				$workspaceSqlPart = ' AND t3ver_wsid=0';
+			} elseif ($workspace !== NULL) {
+				// In Live WS and Workspace with given ID
+				$workspaceSqlPart = ' AND t3ver_wsid IN (0,' . (int)$workspace . ')';
+			}
 			// Select all offline versions of record:
 			$rows = static::getDatabaseConnection()->exec_SELECTgetRows(
 				$fields,
 				$table,
 				'pid=-1 AND uid<>' . (int)$uid . ' AND t3ver_oid=' . (int)$uid
-					. ' AND t3ver_wsid' . ($workspace !== 0 ? ' IN (0,' . (int)$workspace . ')' : '=0')
+					. $workspaceSqlPart
 					. ($includeDeletedRecords ? '' : self::deleteClause($table)),
 				'',
 				't3ver_id DESC'
@@ -4048,6 +4136,17 @@ class BackendUtility {
 				if (is_array($oidRec)) {
 					$rr['_ORIG_pid'] = $rr['pid'];
 					$rr['pid'] = $oidRec['pid'];
+				}
+				// Use target PID in case of move pointer
+				if (
+					!isset($rr['t3ver_state'])
+					|| VersionState::cast($rr['t3ver_state'])->equals(VersionState::MOVE_POINTER)
+				) {
+					$movePlaceholder = self::getMovePlaceholder($table, $oid, 'pid');
+					if ($movePlaceholder) {
+						$rr['_ORIG_pid'] = $rr['pid'];
+						$rr['pid'] = $movePlaceholder['pid'];
+					}
 				}
 			}
 		}
@@ -4391,8 +4490,10 @@ class BackendUtility {
 	 *
 	 * @param string $path Path to evaluate
 	 * @return bool
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8
 	 */
 	static public function getPathType_web_nonweb($path) {
+		GeneralUtility::logDeprecatedFunction();
 		return GeneralUtility::isFirstPartOfStr($path, GeneralUtility::getIndpEnv('TYPO3_DOCUMENT_ROOT')) ? 'web' : '';
 	}
 

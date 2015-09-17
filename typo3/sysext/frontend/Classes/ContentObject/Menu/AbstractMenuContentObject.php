@@ -688,6 +688,7 @@ abstract class AbstractMenuContentObject {
 	 */
 	protected function prepareMenuItemsForDirectoryMenu($specialValue, $sortingField) {
 		$tsfe = $this->getTypoScriptFrontendController();
+		$databaseConnection = $this->getDatabaseConnection();
 		$menuItems = array();
 		if ($specialValue == '') {
 			$specialValue = $tsfe->page['uid'];
@@ -708,8 +709,8 @@ abstract class AbstractMenuContentObject {
 				$id = $mount_info['mount_pid'];
 			}
 			// Get sub-pages:
-			$res = $this->getDatabaseConnection()->exec_SELECTquery('uid', 'pages', 'pid=' . intval($id) . $this->sys_page->where_hid_del, '', $sortingField);
-			while ($row = $this->getDatabaseConnection()->sql_fetch_assoc($res)) {
+			$res = $databaseConnection->exec_SELECTquery('uid', 'pages', 'pid=' . intval($id) . $this->sys_page->where_hid_del, '', $sortingField);
+			while ($row = $databaseConnection->sql_fetch_assoc($res)) {
 				$row = $this->sys_page->getPage($row['uid']);
 				$tsfe->sys_page->versionOL('pages', $row, TRUE);
 				if (!empty($row)) {
@@ -738,6 +739,7 @@ abstract class AbstractMenuContentObject {
 					}
 				}
 			}
+			$databaseConnection->sql_free_result($res);
 		}
 		return $menuItems;
 	}
@@ -1719,6 +1721,7 @@ abstract class AbstractMenuContentObject {
 		if (($this->mconf['expAll'] || $this->isNext($uid, $this->getMPvar($this->I['key'])) || is_array($altArray)) && !$this->mconf['sectionIndex']) {
 			try {
 				$menuObjectFactory = GeneralUtility::makeInstance(MenuContentObjectFactory::class);
+				/** @var $submenu AbstractMenuContentObject */
 				$submenu = $menuObjectFactory->getMenuObjectByType($menuType);
 				$submenu->entryLevel = $this->entryLevel + 1;
 				$submenu->rL_uidRegister = $this->rL_uidRegister;

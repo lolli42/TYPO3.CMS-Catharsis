@@ -31,9 +31,11 @@ module.exports = function(grunt) {
 		paths: {
 			resources : 'Resources/',
 			less      : '<%= paths.resources %>Public/Less/',
+			icons     : '<%= paths.resources %>Private/Icons/',
 			root      : '../',
 			sysext    : '<%= paths.root %>typo3/sysext/',
 			t3skin    : '<%= paths.sysext %>t3skin/Resources/',
+			backend   : '<%= paths.sysext %>backend/Resources/',
 			core      : '<%= paths.sysext %>core/Resources/'
 		},
 		less: {
@@ -84,8 +86,8 @@ module.exports = function(grunt) {
 					/**
 					 * copy needed parts of jquery
 					 */
-					'jquery/jquery-1.11.3.js': 'jquery/dist/jquery.js',
-					'jquery/jquery-1.11.3.min.js': 'jquery/dist/jquery.min.js',
+					'jquery/jquery-2.1.4.js': 'jquery/dist/jquery.js',
+					'jquery/jquery-2.1.4.min.js': 'jquery/dist/jquery.min.js',
 					/**
 					 * copy needed parts of jquery-ui
 					 */
@@ -101,44 +103,160 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		copy: {
-			/**
-			 * Copy icons into correct location
-			 */
-			icons: {
-				files: [
-					// Avatar
-					{ src: 'Resources/Private/Icons/avatar-default.svg', dest: '<%= paths.sysext %>backend/Resources/Public/Icons/avatar-default.svg' },
-					// Module Icons
-					{ src: 'Resources/Private/Icons/module-about.svg', dest: '<%= paths.sysext %>about/Resources/Public/Icons/module-about.svg' },
-					{ src: 'Resources/Private/Icons/module-aboutmodules.svg', dest: '<%= paths.sysext %>aboutmodules/Resources/Public/Icons/module-aboutmodules.svg' },
-					{ src: 'Resources/Private/Icons/module-belog.svg', dest: '<%= paths.sysext %>belog/Resources/Public/Icons/module-belog.svg' },
-					{ src: 'Resources/Private/Icons/module-beuser.svg', dest: '<%= paths.sysext %>beuser/Resources/Public/Icons/module-beuser.svg' },
-					{ src: 'Resources/Private/Icons/module-config.svg', dest: '<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-config.svg' },
-					{ src: 'Resources/Private/Icons/module-cshmanual.svg', dest: '<%= paths.sysext %>cshmanual/Resources/Public/Icons/module-cshmanual.svg' },
-					{ src: 'Resources/Private/Icons/module-dbal.svg', dest: '<%= paths.sysext %>dbal/Resources/Public/Icons/module-dbal.svg' },
-					{ src: 'Resources/Private/Icons/module-dbint.svg', dest: '<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-dbint.svg' },
-					{ src: 'Resources/Private/Icons/module-documentation.svg', dest: '<%= paths.sysext %>documentation/Resources/Public/Icons/module-documentation.svg' },
-					{ src: 'Resources/Private/Icons/module-extensionmanager.svg', dest: '<%= paths.sysext %>extensionmanager/Resources/Public/Icons/module-extensionmanager.svg' },
-					{ src: 'Resources/Private/Icons/module-filelist.svg', dest: '<%= paths.sysext %>filelist/Resources/Public/Icons/module-filelist.svg' },
-					{ src: 'Resources/Private/Icons/module-func.svg', dest: '<%= paths.sysext %>func/Resources/Public/Icons/module-func.svg' },
-					{ src: 'Resources/Private/Icons/module-indexed_search.svg', dest: '<%= paths.sysext %>indexed_search/Resources/Public/Icons/module-indexed_search.svg' },
-					{ src: 'Resources/Private/Icons/module-info.svg', dest: '<%= paths.sysext %>info/Resources/Public/Icons/module-info.svg' },
-					{ src: 'Resources/Private/Icons/module-install.svg', dest: '<%= paths.sysext %>install/Resources/Public/Icons/module-install.svg' },
-					{ src: 'Resources/Private/Icons/module-lang.svg', dest: '<%= paths.sysext %>lang/Resources/Public/Icons/module-lang.svg' },
-					{ src: 'Resources/Private/Icons/module-list.svg', dest: '<%= paths.sysext %>recordlist/Resources/Public/Icons/module-list.svg' },
-					{ src: 'Resources/Private/Icons/module-page.svg', dest: '<%= paths.sysext %>backend/Resources/Public/Icons/module-page.svg' },
-					{ src: 'Resources/Private/Icons/module-permission.svg', dest: '<%= paths.sysext %>beuser/Resources/Public/Icons/module-permission.svg' },
-					{ src: 'Resources/Private/Icons/module-recycler.svg', dest: '<%= paths.sysext %>recycler/Resources/Public/Icons/module-recycler.svg' },
-					{ src: 'Resources/Private/Icons/module-reports.svg', dest: '<%= paths.sysext %>reports/Resources/Public/Icons/module-reports.svg' },
-					{ src: 'Resources/Private/Icons/module-scheduler.svg', dest: '<%= paths.sysext %>scheduler/Resources/Public/Icons/module-scheduler.svg' },
-					{ src: 'Resources/Private/Icons/module-setup.svg', dest: '<%= paths.sysext %>setup/Resources/Public/Icons/module-setup.svg' },
-					{ src: 'Resources/Private/Icons/module-taskcenter.svg', dest: '<%= paths.sysext %>taskcenter/Resources/Public/Icons/module-taskcenter.svg' },
-					{ src: 'Resources/Private/Icons/module-tstemplate.svg', dest: '<%= paths.sysext %>tstemplate/Resources/Public/Icons/module-tstemplate.svg' },
-					{ src: 'Resources/Private/Icons/module-version.svg', dest: '<%= paths.sysext %>version/Resources/Public/Icons/module-version.svg' },
-					{ src: 'Resources/Private/Icons/module-viewpage.svg', dest: '<%= paths.sysext %>viewpage/Resources/Public/Icons/module-viewpage.svg' },
-					{ src: 'Resources/Private/Icons/module-workspaces.svg', dest: '<%= paths.sysext %>workspaces/Resources/Public/Icons/module-workspaces.svg' }
+		uglify: {
+			thirdparty: {
+				files: {
+					"<%= paths.core %>Public/JavaScript/Contrib/require.js": ["<%= paths.core %>Public/JavaScript/Contrib/require.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/moment.js": ["<%= paths.core %>Public/JavaScript/Contrib/moment.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/nprogress.js": ["<%= paths.core %>Public/JavaScript/Contrib/nprogress.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/core.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/draggable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/droppable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/droppable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/mouse.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/mouse.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/position.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/position.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/resizable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/resizable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/selectable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/sortable.js"],
+					"<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js": ["<%= paths.core %>Public/JavaScript/Contrib/jquery-ui/widget.js"]
+				}
+			}
+		},
+		svgmin: {
+			options: {
+				plugins: [
+					{ removeViewBox: false }
 				]
+			},
+			// Action Icons
+			icons_action: {
+				files: {
+					'<%= paths.backend %>Public/Icons/Action/actions-document-duplicates-select.svg': '<%= paths.icons %>Action/actions-document-duplicates-select.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-after.svg': '<%= paths.icons %>Action/actions-document-paste-after.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-before.svg': '<%= paths.icons %>Action/actions-document-paste-before.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-paste-into.svg': '<%= paths.icons %>Action/actions-document-paste-into.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-paste.svg': '<%= paths.icons %>Action/actions-document-paste.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save-cleartranslationcache.svg': '<%= paths.icons %>Action/actions-document-save-cleartranslationcache.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save-close.svg': '<%= paths.icons %>Action/actions-document-save-close.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save-new.svg': '<%= paths.icons %>Action/actions-document-save-new.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save-translation.svg': '<%= paths.icons %>Action/actions-document-save-translation.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save-view.svg': '<%= paths.icons %>Action/actions-document-save-view.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-document-save.svg': '<%= paths.icons %>Action/actions-document-save.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-edit-rename.svg': '<%= paths.icons %>Action/actions-edit-rename.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-filter.svg': '<%= paths.icons %>Action/actions-filter.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-page-new.svg': '<%= paths.icons %>Action/actions-page-new.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-page-move.svg': '<%= paths.icons %>Action/actions-page-move.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-page-open.svg': '<%= paths.icons %>Action/actions-page-open.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-refresh.svg': '<%= paths.icons %>Action/actions-refresh.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-search.svg': '<%= paths.icons %>Action/actions-search.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-system-cache-clear-impact-high.svg': '<%= paths.icons %>Action/actions-system-cache-clear-impact-high.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-system-cache-clear-impact-low.svg': '<%= paths.icons %>Action/actions-system-cache-clear-impact-low.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-system-cache-clear-impact-medium.svg': '<%= paths.icons %>Action/actions-system-cache-clear-impact-medium.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-system-help-open.svg': '<%= paths.icons %>Action/actions-system-help-open.svg',
+					'<%= paths.backend %>Public/Icons/Action/actions-system-tree-search-open.svg': '<%= paths.icons %>Action/actions-system-tree-search-open.svg'
+				}
+			},
+			// Action Icons
+			icons_apps: {
+				files: {
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-folder-default.svg': '<%= paths.icons %>App/apps-filetree-folder-default.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-folder-locked.svg': '<%= paths.icons %>App/apps-filetree-folder-locked.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-folder-opened.svg': '<%= paths.icons %>App/apps-filetree-folder-opened.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-folder-recycler.svg': '<%= paths.icons %>App/apps-filetree-folder-recycler.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-folder-temp.svg': '<%= paths.icons %>App/apps-filetree-folder-temp.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-filetree-mount.svg': '<%= paths.icons %>App/apps-filetree-mount.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-pagetree-root.svg': '<%= paths.icons %>App/apps-pagetree-root.svg',
+					'<%= paths.backend %>Public/Icons/App/apps-toolbar-menu-search.svg': '<%= paths.icons %>App/apps-toolbar-menu-search.svg'
+				}
+			},
+			// Avatar Icons
+			icons_avatar: {
+				files: {
+					'<%= paths.sysext %>backend/Resources/Public/Icons/avatar-default.svg': '<%= paths.icons %>Avatar/avatar-default.svg'
+				}
+			},
+			// Default Icons
+			icons_default: {
+				files: {
+					'<%= paths.backend %>Public/Icons/Default/default-not-found.svg': '<%= paths.icons %>Default/default-not-found.svg'
+				}
+			},
+			// Mimetypes
+			icons_mimetypes: {
+				files: {
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-compressed.svg': '<%= paths.icons %>Mimetype/mimetypes-compressed.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-excel.svg': '<%= paths.icons %>Mimetype/mimetypes-excel.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-executable-executable.svg': '<%= paths.icons %>Mimetype/mimetypes-executable-executable.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-audio.svg': '<%= paths.icons %>Mimetype/mimetypes-media-audio.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-flash.svg': '<%= paths.icons %>Mimetype/mimetypes-media-flash.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-image.svg': '<%= paths.icons %>Mimetype/mimetypes-media-image.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-media-video.svg': '<%= paths.icons %>Mimetype/mimetypes-media-video.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-other-other.svg': '<%= paths.icons %>Mimetype/mimetypes-other-other.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-pdf.svg': '<%= paths.icons %>Mimetype/mimetypes-pdf.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-powerpoint.svg': '<%= paths.icons %>Mimetype/mimetypes-powerpoint.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-css.svg': '<%= paths.icons %>Mimetype/mimetypes-text-css.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-csv.svg': '<%= paths.icons %>Mimetype/mimetypes-text-csv.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-html.svg': '<%= paths.icons %>Mimetype/mimetypes-text-html.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-js.svg': '<%= paths.icons %>Mimetype/mimetypes-text-js.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-php.svg': '<%= paths.icons %>Mimetype/mimetypes-text-php.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-text.svg': '<%= paths.icons %>Mimetype/mimetypes-text-text.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-text-ts.svg': '<%= paths.icons %>Mimetype/mimetypes-text-ts.svg',
+					'<%= paths.backend %>Public/Icons/Mimetype/mimetypes-word.svg': '<%= paths.icons %>Mimetype/mimetypes-word.svg'
+				}
+			},
+			// Miscellaneous Icons
+			icons_miscellaneous: {
+				files: {
+					'<%= paths.backend %>Public/Icons/Miscellaneous/miscellaneous-placeholder.svg': '<%= paths.icons %>Miscellaneous/miscellaneous-placeholder.svg'
+				}
+			},
+			// Module Icons
+			icons_module: {
+				files: {
+					'<%= paths.sysext %>about/Resources/Public/Icons/module-about.svg': '<%= paths.icons %>Module/module-about.svg',
+					'<%= paths.sysext %>aboutmodules/Resources/Public/Icons/module-aboutmodules.svg': '<%= paths.icons %>Module/module-aboutmodules.svg',
+					'<%= paths.sysext %>belog/Resources/Public/Icons/module-belog.svg': '<%= paths.icons %>Module/module-belog.svg',
+					'<%= paths.sysext %>beuser/Resources/Public/Icons/module-beuser.svg': '<%= paths.icons %>Module/module-beuser.svg',
+					'<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-config.svg': '<%= paths.icons %>Module/module-config.svg',
+					'<%= paths.sysext %>cshmanual/Resources/Public/Icons/module-cshmanual.svg': '<%= paths.icons %>Module/module-cshmanual.svg',
+					'<%= paths.sysext %>dbal/Resources/Public/Icons/module-dbal.svg': '<%= paths.icons %>Module/module-dbal.svg',
+					'<%= paths.sysext %>lowlevel/Resources/Public/Icons/module-dbint.svg': '<%= paths.icons %>Module/module-dbint.svg',
+					'<%= paths.sysext %>documentation/Resources/Public/Icons/module-documentation.svg': '<%= paths.icons %>Module/module-documentation.svg',
+					'<%= paths.sysext %>extensionmanager/Resources/Public/Icons/module-extensionmanager.svg': '<%= paths.icons %>Module/module-extensionmanager.svg',
+					'<%= paths.sysext %>filelist/Resources/Public/Icons/module-filelist.svg': '<%= paths.icons %>Module/module-filelist.svg',
+					'<%= paths.sysext %>func/Resources/Public/Icons/module-func.svg': '<%= paths.icons %>Module/module-func.svg',
+					'<%= paths.sysext %>indexed_search/Resources/Public/Icons/module-indexed_search.svg': '<%= paths.icons %>Module/module-indexed_search.svg',
+					'<%= paths.sysext %>info/Resources/Public/Icons/module-info.svg': '<%= paths.icons %>Module/module-info.svg',
+					'<%= paths.sysext %>install/Resources/Public/Icons/module-install.svg': '<%= paths.icons %>Module/module-install.svg',
+					'<%= paths.sysext %>lang/Resources/Public/Icons/module-lang.svg': '<%= paths.icons %>Module/module-lang.svg',
+					'<%= paths.sysext %>recordlist/Resources/Public/Icons/module-list.svg': '<%= paths.icons %>Module/module-list.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/module-page.svg': '<%= paths.icons %>Module/module-page.svg',
+					'<%= paths.sysext %>beuser/Resources/Public/Icons/module-permission.svg': '<%= paths.icons %>Module/module-permission.svg',
+					'<%= paths.sysext %>recycler/Resources/Public/Icons/module-recycler.svg': '<%= paths.icons %>Module/module-recycler.svg',
+					'<%= paths.sysext %>reports/Resources/Public/Icons/module-reports.svg': '<%= paths.icons %>Module/module-reports.svg',
+					'<%= paths.sysext %>scheduler/Resources/Public/Icons/module-scheduler.svg': '<%= paths.icons %>Module/module-scheduler.svg',
+					'<%= paths.sysext %>setup/Resources/Public/Icons/module-setup.svg': '<%= paths.icons %>Module/module-setup.svg',
+					'<%= paths.sysext %>taskcenter/Resources/Public/Icons/module-taskcenter.svg': '<%= paths.icons %>Module/module-taskcenter.svg',
+					'<%= paths.sysext %>tstemplate/Resources/Public/Icons/module-tstemplate.svg': '<%= paths.icons %>Module/module-tstemplate.svg',
+					'<%= paths.sysext %>version/Resources/Public/Icons/module-version.svg': '<%= paths.icons %>Module/module-version.svg',
+					'<%= paths.sysext %>viewpage/Resources/Public/Icons/module-viewpage.svg': '<%= paths.icons %>Module/module-viewpage.svg',
+					'<%= paths.sysext %>workspaces/Resources/Public/Icons/module-workspaces.svg': '<%= paths.icons %>Module/module-workspaces.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/Spinner/spinner-circle-dark.svg': '<%= paths.icons %>Spinner/spinner-circle-dark.svg',
+					'<%= paths.sysext %>backend/Resources/Public/Icons/Spinner/spinner-circle-light.svg': '<%= paths.icons %>Spinner/spinner-circle-light.svg'
+				}
+			},
+			// Overlay Icons
+			icons_overlay: {
+				files: {
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-deleted.svg': '<%= paths.icons %>Overlay/overlay-deleted.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-hidden.svg': '<%= paths.icons %>Overlay/overlay-hidden.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-includes-subpages.svg': '<%= paths.icons %>Overlay/overlay-includes-subpages.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-locked.svg': '<%= paths.icons %>Overlay/overlay-locked.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-missing.svg': '<%= paths.icons %>Overlay/overlay-missing.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-readonly.svg': '<%= paths.icons %>Overlay/overlay-readonly.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-restricted.svg': '<%= paths.icons %>Overlay/overlay-restricted.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-scheduled.svg': '<%= paths.icons %>Overlay/overlay-scheduled.svg',
+					'<%= paths.backend %>Public/Icons/Overlay/overlay-translated.svg': '<%= paths.icons %>Overlay/overlay-translated.svg'
+				}
 			}
 		}
 	});
@@ -147,9 +265,10 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-less');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-bowercopy');
-	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-npm-install');
 	grunt.loadNpmTasks('grunt-bower-just-install');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-svgmin');
 
 	/**
 	 * grunt default task
@@ -173,7 +292,15 @@ module.exports = function(grunt) {
 	grunt.registerTask('update', ['npm-install', 'bower_install', 'bowercopy']);
 
 	/**
-	 * grunt task to copy icons into correct location
+	 * grunt build task
+	 *
+	 * call "$ grunt build"
+	 *
+	 * this task does the following things:
+	 * - execute update task
+	 * - compile less files
+	 * - uglify js files
+	 * - minifies svg files
 	 */
-	grunt.registerTask('build', ['copy:icons']);
+	grunt.registerTask('build', ['update', 'less', 'uglify', 'svgmin']);
 };

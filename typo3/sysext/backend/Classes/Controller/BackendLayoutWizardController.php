@@ -14,6 +14,8 @@ namespace TYPO3\CMS\Backend\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\DocumentTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
@@ -59,6 +61,13 @@ class BackendLayoutWizardController {
 	 * @var string
 	 */
 	public $fieldName;
+
+	/**
+	 * Constructor
+	 */
+	public function __construct(){
+		$this->init();
+	}
 
 	/**
 	 * Initialises the Class
@@ -197,6 +206,20 @@ class BackendLayoutWizardController {
 	}
 
 	/**
+	 * Injects the request object for the current request or subrequest
+	 * As this controller goes only through the main() method, it is rather simple for now
+	 *
+	 * @param ServerRequestInterface $request
+	 * @param ResponseInterface $response
+	 * @return ResponseInterface
+	 */
+	public function mainAction(ServerRequestInterface $request, ResponseInterface $response) {
+		$this->main();
+		$response->getBody()->write($this->doc->render('Grid wizard', $this->content));
+		return $response;
+	}
+
+	/**
 	 * Main Method, rendering either colorpicker or frameset depending on ->showPicker
 	 *
 	 * @return void
@@ -206,8 +229,8 @@ class BackendLayoutWizardController {
 		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
 		$lang = $this->getLanguageService();
 		$resourcePath = ExtensionManagementUtility::extRelPath('backend') . 'Resources/Public/Images/BackendLayoutWizard/';
-		$content = '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());return true;">' . IconUtility::getSpriteIcon('actions-document-save') . '</a>';
-		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());window.close();return true;">' . IconUtility::getSpriteIcon('actions-document-save-close') . '</a>';
+		$content = '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());return true;">' . $iconFactory->getIcon('actions-document-save', Icon::SIZE_SMALL) . '</a>';
+		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.saveCloseDoc', TRUE) . '" onclick="storeData(t3Grid.export2LayoutRecord());window.close();return true;">' . $iconFactory->getIcon('actions-document-save-close', Icon::SIZE_SMALL) . '</a>';
 		$content .= '<a href="#" title="' . $lang->sL('LLL:EXT:lang/locallang_core.xlf:rm.closeDoc', TRUE) . '" onclick="window.close();return true;">' . $iconFactory->getIcon('actions-document-close', Icon::SIZE_SMALL) . '</a>';
 		$content .= $this->doc->spacer(10);
 		$content .= '
@@ -245,8 +268,10 @@ class BackendLayoutWizardController {
 	 * Returns the sourcecode to the browser
 	 *
 	 * @return void
+	 * @deprecated since TYPO3 CMS 7, will be removed in TYPO3 CMS 8, use mainAction() instead
 	 */
 	public function printContent() {
+		GeneralUtility::logDeprecatedFunction();
 		echo $this->doc->render('Grid wizard', $this->content);
 	}
 

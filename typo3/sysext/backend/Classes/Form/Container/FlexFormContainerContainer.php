@@ -14,10 +14,11 @@ namespace TYPO3\CMS\Backend\Form\Container;
  * The TYPO3 project - inspiring people to share!
  */
 
-use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Form\NodeFactory;
+use TYPO3\CMS\Lang\LanguageService;
 
 /**
  * Flex form container implementation
@@ -32,37 +33,30 @@ class FlexFormContainerContainer extends AbstractContainer {
 	 * @return array As defined in initializeResultArray() of AbstractNode
 	 */
 	public function render() {
-		$table = $this->globalOptions['table'];
-		$row = $this->globalOptions['databaseRow'];
-		$fieldName = $this->globalOptions['fieldName'];
-		$flexFormFormPrefix = $this->globalOptions['flexFormFormPrefix'];
-		$flexFormContainerElementCollapsed = $this->globalOptions['flexFormContainerElementCollapsed'];
-		$flexFormContainerTitle = $this->globalOptions['flexFormContainerTitle'];
-		$flexFormFieldIdentifierPrefix = $this->globalOptions['flexFormFieldIdentifierPrefix'];
-		$parameterArray = $this->globalOptions['parameterArray'];
+		$table = $this->data['tableName'];
+		$row = $this->data['databaseRow'];
+		$fieldName = $this->data['fieldName'];
+		$flexFormFormPrefix = $this->data['flexFormFormPrefix'];
+		$flexFormContainerElementCollapsed = $this->data['flexFormContainerElementCollapsed'];
+		$flexFormContainerTitle = $this->data['flexFormContainerTitle'];
+		$flexFormFieldIdentifierPrefix = $this->data['flexFormFieldIdentifierPrefix'];
+		$parameterArray = $this->data['parameterArray'];
 
 		// Every container adds its own part to the id prefix
 		$flexFormFieldIdentifierPrefix = $flexFormFieldIdentifierPrefix . '-' . GeneralUtility::shortMd5(uniqid('id', TRUE));
 
-		$toggleIcons = IconUtility::getSpriteIcon(
-			'actions-move-down',
-			array(
-				'class' => 't3-flex-control-toggle-icon-open',
-				'style' => $flexFormContainerElementCollapsed ? 'display: none;' : '',
-			)
-		);
-		$toggleIcons .= IconUtility::getSpriteIcon(
-			'actions-move-right',
-			array(
-				'class' => 't3-flex-control-toggle-icon-close',
-				'style' => $flexFormContainerElementCollapsed ? '' : 'display: none;',
-			)
-		);
+		$iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+		$toggleIcons = '<span class="t3-flex-control-toggle-icon-open" style="' . ($flexFormContainerElementCollapsed ? 'display: none;' : '') . '">'
+			. $iconFactory->getIcon('actions-move-down', Icon::SIZE_SMALL)
+			. '</span>';
+		$toggleIcons .= '<span class="t3-flex-control-toggle-icon-close" style="' . ($flexFormContainerElementCollapsed ? '' : 'display: none;') . '">'
+			. $iconFactory->getIcon('actions-move-right', Icon::SIZE_SMALL)
+			. '</span>';
 
-		$flexFormContainerCounter = $this->globalOptions['flexFormContainerCounter'];
+		$flexFormContainerCounter = $this->data['flexFormContainerCounter'];
 		$actionFieldName = '_ACTION_FLEX_FORM'
 			. $parameterArray['itemFormElName']
-			. $this->globalOptions['flexFormFormPrefix']
+			. $this->data['flexFormFormPrefix']
 			. '[_ACTION]'
 			. '[' . $flexFormContainerCounter . ']';
 		$toggleFieldName = 'data[' . $table . '][' . $row['uid'] . '][' . $fieldName . ']'
@@ -74,31 +68,17 @@ class FlexFormContainerContainer extends AbstractContainer {
 		$userHasAccessToDefaultLanguage = $this->getBackendUserAuthentication()->checkLanguageAccess(0);
 		if ($userHasAccessToDefaultLanguage) {
 			$moveAndDeleteContent[] = '<div class="pull-right">';
-			$moveAndDeleteContent[] = IconUtility::getSpriteIcon(
-				'actions-move-move',
-				array(
-					'title' => 'Drag to Move', // @todo: hardcoded title ...
-					'class' => 't3-js-sortable-handle'
-				)
-			);
-			$moveAndDeleteContent[] = IconUtility::getSpriteIcon(
-				'actions-edit-delete',
-				array(
-					'title' => 'Delete', // @todo: hardcoded title ...
-					'class' => 't3-delete'
-				)
-			);
+			$moveAndDeleteContent[] = '<span title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_core.xlf:sortable.dragmove', TRUE) . '" class="t3-js-sortable-handle">' . $iconFactory->getIcon('actions-move-move', Icon::SIZE_SMALL) . '</span>';
+			$moveAndDeleteContent[] = '<span title="' . $this->getLanguageService()->sL('LLL:EXT:lang/locallang_common.xlf:delete', TRUE) . '" class="t3-js-delete">' . $iconFactory->getIcon('actions-edit-delete', Icon::SIZE_SMALL) . '</span>';
 			$moveAndDeleteContent[] = '</div>';
 		}
 
-		$options = $this->globalOptions;
+		$options = $this->data;
 		$options['flexFormFieldIdentifierPrefix'] = $flexFormFieldIdentifierPrefix;
 		// Append container specific stuff to field prefix
-		$options['flexFormFormPrefix'] =  $flexFormFormPrefix . '[' . $flexFormContainerCounter . '][' .  $this->globalOptions['flexFormContainerName'] . '][el]';
+		$options['flexFormFormPrefix'] =  $flexFormFormPrefix . '[' . $flexFormContainerCounter . '][' .  $this->data['flexFormContainerName'] . '][el]';
 		$options['renderType'] = 'flexFormElementContainer';
-		/** @var NodeFactory $nodeFactory */
-		$nodeFactory = $this->globalOptions['nodeFactory'];
-		$containerContentResult = $nodeFactory->create($options)->render();
+		$containerContentResult = $this->nodeFactory->create($options)->render();
 
 		$html = array();
 		$html[] = '<div id="' . $flexFormFieldIdentifierPrefix . '" class="t3-form-field-container-flexsections t3-flex-section">';
@@ -135,6 +115,13 @@ class FlexFormContainerContainer extends AbstractContainer {
 	 */
 	protected function getBackendUserAuthentication() {
 		return $GLOBALS['BE_USER'];
+	}
+
+	/**
+	 * @return LanguageService
+	 */
+	protected function getLanguageService() {
+		return $GLOBALS['LANG'];
 	}
 
 }

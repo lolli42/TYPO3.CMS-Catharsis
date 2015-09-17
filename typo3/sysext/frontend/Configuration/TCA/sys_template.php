@@ -25,9 +25,6 @@ return array(
 			'default' => 'mimetypes-x-content-template-extension',
 			'1' => 'mimetypes-x-content-template'
 		),
-		'typeicons' => array(
-			'0' => 'template_add.gif'
-		),
 		'searchFields' => 'title,constants,config'
 	),
 	'interface' => array(
@@ -39,7 +36,7 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '25',
-				'max' => '256',
+				'max' => '255',
 				'eval' => 'required'
 			)
 		),
@@ -96,7 +93,7 @@ return array(
 			'config' => array(
 				'type' => 'input',
 				'size' => '25',
-				'max' => '256'
+				'max' => '255'
 			)
 		),
 		'constants' => array(

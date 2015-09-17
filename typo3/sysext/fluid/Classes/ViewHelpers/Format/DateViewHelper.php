@@ -122,6 +122,7 @@ class DateViewHelper extends AbstractViewHelper implements CompilableInterface {
 		$date = $arguments['date'];
 		$format = $arguments['format'];
 		$base = $arguments['base'] === NULL ? time() : $arguments['base'];
+
 		if ($format === '') {
 			$format = $GLOBALS['TYPO3_CONF_VARS']['SYS']['ddmmyy'] ?: 'Y-m-d';
 		}
@@ -132,14 +133,19 @@ class DateViewHelper extends AbstractViewHelper implements CompilableInterface {
 				return '';
 			}
 		}
+
+		if ($date === '') {
+			$date = 'now';
+		}
+
 		if (!$date instanceof \DateTime) {
 			try {
-				$base = $base instanceof \DateTime ? $base->format('U') : strtotime((MathUtility::canBeInterpretedAsInteger($date) ? '@' : '') . $base);
+				$base = $base instanceof \DateTime ? $base->format('U') : strtotime((MathUtility::canBeInterpretedAsInteger($base) ? '@' : '') . $base);
 				$dateTimestamp = strtotime((MathUtility::canBeInterpretedAsInteger($date) ? '@' : '') . $date, $base);
 				$date = new \DateTime('@' . $dateTimestamp);
 				$date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
 			} catch (\Exception $exception) {
-				throw new Exception('"' . $date . '" could not be parsed by \DateTime constructor.', 1241722579);
+				throw new Exception('"' . $date . '" could not be parsed by \DateTime constructor: ' . $exception->getMessage(), 1241722579);
 			}
 		}
 

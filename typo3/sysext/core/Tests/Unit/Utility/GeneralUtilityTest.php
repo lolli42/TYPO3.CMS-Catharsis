@@ -37,6 +37,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	protected $singletonInstances = array();
 
 	protected function setUp() {
+		GeneralUtilityFixture::flushInternalRuntimeCaches();
 		GeneralUtilityFixture::$isAllowedHostHeaderValueCallCount = 0;
 		GeneralUtilityFixture::setAllowHostHeaderValue(FALSE);
 		$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'] = GeneralUtility::ENV_TRUSTED_HOSTS_PATTERN_ALLOW_ALL;
@@ -1550,6 +1551,7 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 * @dataProvider hostnameAndPortDataProvider
 	 */
 	public function getIndpEnvTypo3HostOnlyParsesHostnamesAndIpAdresses($httpHost, $expectedIp) {
+		GeneralUtility::flushInternalRuntimeCaches();
 		$_SERVER['HTTP_HOST'] = $httpHost;
 		$this->assertEquals($expectedIp, GeneralUtility::getIndpEnv('TYPO3_HOST_ONLY'));
 	}
@@ -1714,8 +1716,11 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	 */
 	public function allGetIndpEnvCallsRelatedToHostNamesCallIsAllowedHostHeaderValue() {
 		GeneralUtilityFixture::getIndpEnv('HTTP_HOST');
+		GeneralUtility::flushInternalRuntimeCaches();
 		GeneralUtilityFixture::getIndpEnv('TYPO3_HOST_ONLY');
+		GeneralUtility::flushInternalRuntimeCaches();
 		GeneralUtilityFixture::getIndpEnv('TYPO3_REQUEST_HOST');
+		GeneralUtility::flushInternalRuntimeCaches();
 		GeneralUtilityFixture::getIndpEnv('TYPO3_REQUEST_URL');
 		$this->assertSame(4, GeneralUtilityFixture::$isAllowedHostHeaderValueCallCount);
 	}
@@ -1970,42 +1975,98 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 	// Tests concerning sanitizeLocalUrl
 	////////////////////////////////////////
 	/**
-	 * Data provider for valid sanitizeLocalUrl's
+	 * Data provider for valid sanitizeLocalUrl paths
 	 *
 	 * @return array Valid url
 	 */
-	public function sanitizeLocalUrlValidUrlDataProvider() {
-		$subDirectory = GeneralUtility::getIndpEnv('TYPO3_SITE_PATH');
-		$typo3SiteUrl = GeneralUtility::getIndpEnv('TYPO3_SITE_URL');
-		$typo3RequestHost = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
+	public function sanitizeLocalUrlValidPathsDataProvider() {
 		return array(
 			'alt_intro.php' => array('alt_intro.php'),
 			'alt_intro.php?foo=1&bar=2' => array('alt_intro.php?foo=1&bar=2'),
-			$subDirectory . 'typo3/alt_intro.php' => array($subDirectory . 'typo3/alt_intro.php'),
-			$subDirectory . 'index.php' => array($subDirectory . 'index.php'),
 			'../index.php' => array('../index.php'),
 			'../typo3/alt_intro.php' => array('../typo3/alt_intro.php'),
 			'../~userDirectory/index.php' => array('../~userDirectory/index.php'),
 			'../typo3/index.php?var1=test-case&var2=~user' => array('../typo3/index.php?var1=test-case&var2=~user'),
 			PATH_site . 'typo3/alt_intro.php' => array(PATH_site . 'typo3/alt_intro.php'),
-			$typo3SiteUrl . 'typo3/alt_intro.php' => array($typo3SiteUrl . 'typo3/alt_intro.php'),
-			$typo3RequestHost . $subDirectory . '/index.php' => array($typo3RequestHost . $subDirectory . '/index.php')
 		);
 	}
 
 	/**
 	 * @test
-	 * @dataProvider sanitizeLocalUrlValidUrlDataProvider
+	 * @param string $path
+	 * @dataProvider sanitizeLocalUrlValidPathsDataProvider
 	 */
-	public function sanitizeLocalUrlAcceptsNotEncodedValidUrls($url) {
+	public function sanitizeLocalUrlAcceptsNotEncodedValidPaths($path) {
+		$this->assertEquals($path, GeneralUtility::sanitizeLocalUrl($path));
+	}
+
+	/**
+	 * @test
+	 * @param string $path
+	 * @dataProvider sanitizeLocalUrlValidPathsDataProvider
+	 */
+	public function sanitizeLocalUrlAcceptsEncodedValidPaths($path) {
+		$this->assertEquals(rawurlencode($path), GeneralUtility::sanitizeLocalUrl(rawurlencode($path)));
+	}
+
+	/**
+	 * Data provider for valid sanitizeLocalUrl's
+	 *
+	 * @return array Valid url
+	 */
+	public function sanitizeLocalUrlValidUrlsDataProvider() {
+		$host = 'localhost';
+		$subDirectory = '/cms/';
+
+		return array(
+			$subDirectory . 'typo3/alt_intro.php' => array(
+				$subDirectory . 'typo3/alt_intro.php',
+				$host,
+				$subDirectory,
+			),
+			$subDirectory . 'index.php' => array(
+				$subDirectory . 'index.php',
+				$host,
+				$subDirectory,
+			),
+			'http://' . $host . '/typo3/alt_intro.php' => array(
+				'http://' . $host . '/typo3/alt_intro.php',
+				$host,
+				'',
+			),
+			'http://' . $host . $subDirectory . 'typo3/alt_intro.php' => array(
+				'http://' . $host . $subDirectory . 'typo3/alt_intro.php',
+				$host,
+				$subDirectory,
+			),
+		);
+	}
+
+	/**
+	 * @test
+	 * @param string $url
+	 * @param string $host
+	 * @param string $subDirectory
+	 * @dataProvider sanitizeLocalUrlValidUrlsDataProvider
+	 */
+	public function sanitizeLocalUrlAcceptsNotEncodedValidUrls($url, $host, $subDirectory) {
+		$_SERVER['HTTP_HOST'] = $host;
+		$_SERVER['SCRIPT_NAME'] = $subDirectory . 'typo3/index.php';
+		GeneralUtility::flushInternalRuntimeCaches();
 		$this->assertEquals($url, GeneralUtility::sanitizeLocalUrl($url));
 	}
 
 	/**
 	 * @test
-	 * @dataProvider sanitizeLocalUrlValidUrlDataProvider
+	 * @param string $url
+	 * @param string $host
+	 * @param string $subDirectory
+	 * @dataProvider sanitizeLocalUrlValidUrlsDataProvider
 	 */
-	public function sanitizeLocalUrlAcceptsEncodedValidUrls($url) {
+	public function sanitizeLocalUrlAcceptsEncodedValidUrls($url, $host, $subDirectory) {
+		$_SERVER['HTTP_HOST'] = $host;
+		$_SERVER['SCRIPT_NAME'] = $subDirectory . 'typo3/index.php';
+		GeneralUtility::flushInternalRuntimeCaches();
 		$this->assertEquals(rawurlencode($url), GeneralUtility::sanitizeLocalUrl(rawurlencode($url)));
 	}
 
@@ -2019,7 +2080,8 @@ class GeneralUtilityTest extends \TYPO3\CMS\Core\Tests\UnitTestCase {
 			'empty string' => array(''),
 			'http domain' => array('http://www.google.de/'),
 			'https domain' => array('https://www.google.de/'),
-			'relative path with XSS' => array('../typo3/whatever.php?argument=javascript:alert(0)')
+			'relative path with XSS' => array('../typo3/whatever.php?argument=javascript:alert(0)'),
+			'base64 encoded string' => array('data:%20text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4='),
 		);
 	}
 

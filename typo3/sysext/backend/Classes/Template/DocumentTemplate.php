@@ -17,8 +17,10 @@ namespace TYPO3\CMS\Backend\Template;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\IconUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Html\HtmlParser;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Service\MarkerBasedTemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -366,6 +368,16 @@ function jumpToUrl(URL) {
 	 */
 	public $showFlashMessages = TRUE;
 
+	/**
+	 * @var IconFactory
+	 */
+	protected $iconFactory;
+
+	/**
+	 * @var MarkerBasedTemplateService
+	 */
+	protected $templateService;
+
 	const STATUS_ICON_ERROR = 3;
 	const STATUS_ICON_WARNING = 2;
 	const STATUS_ICON_NOTIFICATION = 1;
@@ -380,6 +392,10 @@ function jumpToUrl(URL) {
 
 		// load Legacy CSS Support
 		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/LegacyCssClasses');
+		$this->iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
+		// initialize Marker Support
+		$this->templateService = GeneralUtility::makeInstance(MarkerBasedTemplateService::class);
 
 		// Setting default scriptID:
 		if (($temp_M = (string)GeneralUtility::_GET('M')) && $GLOBALS['TBE_MODULES']['_PATHS'][$temp_M]) {
@@ -532,7 +548,7 @@ function jumpToUrl(URL) {
 			'returnUrl' => GeneralUtility::getIndpEnv('REQUEST_URI')
 		), $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showList'));
 		// Make link to view page
-		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . IconUtility::getSpriteIcon('actions-document-view') . '</a>';
+		$str .= '<a href="#" onclick="' . htmlspecialchars(BackendUtility::viewOnClick($id, '', BackendUtility::BEgetRootLine($id))) . '" title="' . $GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.showPage', TRUE) . '">' . $this->iconFactory->getIcon('actions-document-view', Icon::SIZE_SMALL) . '</a>';
 		return $str;
 	}
 
@@ -553,7 +569,7 @@ function jumpToUrl(URL) {
 			'uPT' => 1,
 			'vC' => $beUser->veriCode()
 		];
-		$url = BackendUtility::getModuleUrl('tce_db', $urlParameters) . $params . BackendUtility::getUrlToken('tceAction') . '&redirect=';
+		$url = BackendUtility::getModuleUrl('tce_db', $urlParameters) . $params . '&redirect=';
 		if ((int)$redirectUrl === -1) {
 			$url = GeneralUtility::quoteJSvalue($url) . '+T3_THIS_LOCATION';
 		} else {
@@ -583,7 +599,7 @@ function jumpToUrl(URL) {
 			$title = strip_tags(BackendUtility::getRecordTitle($table, $row));
 			$viewPage = $noViewPageIcon ? '' : $this->viewPageIcon($row['uid']);
 		} else {
-			$iconImgTag = IconUtility::getSpriteIcon('apps-pagetree-page-domain', array('title' => htmlspecialchars($path)));
+			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIcon('apps-pagetree-page-domain', Icon::SIZE_SMALL) . '</span>';
 			$title = $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'];
 		}
 
@@ -604,8 +620,12 @@ function jumpToUrl(URL) {
 	 * @return string
 	 */
 	public function getResourceHeader(\TYPO3\CMS\Core\Resource\ResourceInterface $resource, $tWrap = array('', ''), $enableClickMenu = TRUE) {
-		$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
-		$iconImgTag = IconUtility::getSpriteIconForResource($resource, array('title' => htmlspecialchars($path)));
+		try {
+			$path = $resource->getStorage()->getName() . $resource->getParentFolder()->getIdentifier();
+			$iconImgTag = '<span title="' . htmlspecialchars($path) . '">' . $this->iconFactory->getIconForResource($resource, Icon::SIZE_SMALL) . '</span>';
+		} catch (\TYPO3\CMS\Core\Resource\Exception\ResourceDoesNotExistException $e) {
+			$iconImgTag = '';
+		}
 
 		if ($enableClickMenu && ($resource instanceof \TYPO3\CMS\Core\Resource\File)) {
 			$metaData = $resource->_getMetaData();
@@ -646,9 +666,10 @@ function jumpToUrl(URL) {
 		$shortcutUrl = $pathInfo['path'] . '?' . $storeUrl;
 		$shortcutExist = BackendUtility::shortcutExists($shortcutUrl);
 
+		$icon = '<span>' . $this->iconFactory->getIcon('actions-system-shortcut-new', Icon::SIZE_SMALL)->render() . '</span>';
+
 		if ($shortcutExist) {
-			return '<a class="active" title="">' .
-				IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
+			return '<a class="active" title="">' . $icon . '</a>';
 		}
 
 		$url = GeneralUtility::quoteJSvalue(rawurlencode($shortcutUrl));
@@ -656,8 +677,7 @@ function jumpToUrl(URL) {
 			', ' . $url . ', ' . $confirmationText . ', ' . $motherModule . ', this);return false;';
 
 		return '<a href="#" onclick="' . htmlspecialchars($onClick) . '" title="' .
-			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' .
-			IconUtility::getSpriteIcon('actions-system-shortcut-new') . '</a>';
+			$GLOBALS['LANG']->sL('LLL:EXT:lang/locallang_core.xlf:labels.makeBookmark', TRUE) . '">' . $icon . '</a>';
 	}
 
 	/**
@@ -772,11 +792,10 @@ function jumpToUrl(URL) {
 	 * This includes the proper header with charset, title, meta tag and beginning body-tag.
 	 *
 	 * @param string $title HTML Page title for the header
-	 * @param bool $includeCsh flag for including CSH
 	 * @return string Returns the whole header section of a HTML-document based on settings in internal variables (like styles, javascript code, charset, generator and docType)
 	 * @see endPage()
 	 */
-	public function startPage($title, $includeCsh = TRUE) {
+	public function startPage($title) {
 		// hook pre start page
 		if (isset($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preStartPageHook'])) {
 			$preStartPageHook = &$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['typo3/template.php']['preStartPageHook'];
@@ -797,21 +816,11 @@ function jumpToUrl(URL) {
 			}
 		}
 
-
-
 		// Disable rendering of XHTML tags
 		$this->pageRenderer->setRenderXhtml(FALSE);
 
 		$languageCode = $this->pageRenderer->getLanguage() === 'default' ? 'en' : $this->pageRenderer->getLanguage();
 		$this->pageRenderer->setHtmlTag('<html lang="' . $languageCode . '">');
-
-		// Include the JS for the Context Sensitive Help
-		// @todo: right now this is a hard dependency on csh manual, as the whole help system should be moved to
-		// the extension. The core provides an API for adding help, and rendering help, but the rendering
-		// should be up to the extension itself
-		if ($includeCsh && ExtensionManagementUtility::isLoaded('cshmanual')) {
-			$this->loadCshJavascript();
-		}
 
 		$headerStart = '<!DOCTYPE html>';
 		$this->pageRenderer->setXmlPrologAndDocType($headerStart);
@@ -929,11 +938,10 @@ function jumpToUrl(URL) {
 	 *
 	 * @param string $title page title
 	 * @param string $content page content
-	 * @param bool $includeCsh flag for including csh code
 	 * @return string complete page
 	 */
-	public function render($title, $content, $includeCsh = TRUE) {
-		$pageContent = $this->startPage($title, $includeCsh);
+	public function render($title, $content) {
+		$pageContent = $this->startPage($title);
 		$pageContent .= $content;
 		$pageContent .= $this->endPage();
 		return $this->insertStylesAndJS($pageContent);
@@ -950,7 +958,7 @@ function jumpToUrl(URL) {
 		$str = '
 
 	<!-- MAIN Header in page top -->
-	<h1>' . htmlspecialchars($text) . '</h1>
+	<h1 class="t3js-title-inlineedit">' . htmlspecialchars($text) . '</h1>
 ';
 		return $this->sectionEnd() . $str;
 	}
@@ -1102,7 +1110,7 @@ function jumpToUrl(URL) {
 	 * @return string HTML body tag
 	 */
 	public function docBodyTagBegin() {
-		return '<body ' . trim(($this->bodyTagAdditions . ($this->bodyTagId ? ' id="' . $this->bodyTagId . '"' : ''))) . '>';
+		return '<body ' . trim($this->bodyTagAdditions . ($this->bodyTagId ? ' id="' . $this->bodyTagId . '"' : '')) . '>';
 	}
 
 	/**
@@ -1279,7 +1287,7 @@ function jumpToUrl(URL) {
 				// Do nothing
 		}
 		if ($icon) {
-			return IconUtility::getSpriteIcon($icon);
+			return $this->iconFactory->getIcon($icon, Icon::SIZE_SMALL)->render();
 		}
 	}
 
@@ -1503,21 +1511,6 @@ function jumpToUrl(URL) {
 	}
 
 	/**
-	 * This loads everything needed for the Context Sensitive Help (CSH)
-	 *
-	 * @return void
-	 */
-	protected function loadCshJavascript() {
-		$this->pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/ContextHelp');
-		$this->pageRenderer->addInlineSetting('ContextHelp', 'moduleUrl', BackendUtility::getModuleUrl('help_CshmanualCshmanual', array(
-			'tx_cshmanual_help_cshmanualcshmanual' => array(
-				'controller' => 'Help',
-				'action' => 'detail'
-			)
-		)));
-	}
-
-	/**
 	 * Creates a tab menu from an array definition
 	 *
 	 * Returns a tab menu for a module
@@ -1707,7 +1700,7 @@ function jumpToUrl(URL) {
 	 */
 	public function moduleBody($pageRecord = array(), $buttons = array(), $markerArray = array(), $subpartArray = array()) {
 		// Get the HTML template for the module
-		$moduleBody = HtmlParser::getSubpart($this->moduleTemplate, '###FULLDOC###');
+		$moduleBody = $this->templateService->getSubpart($this->moduleTemplate, '###FULLDOC###');
 		// Add CSS
 		$this->inDocStylesArray[] = 'html { overflow: hidden; }';
 		// Get the page path for the docheader
@@ -1720,7 +1713,7 @@ function jumpToUrl(URL) {
 		$markerArray = array_merge($markerArray, $docHeaderButtons);
 		// replacing subparts
 		foreach ($subpartArray as $marker => $content) {
-			$moduleBody = HtmlParser::substituteSubpart($moduleBody, $marker, $content);
+			$moduleBody = $this->templateService->substituteSubpart($moduleBody, $marker, $content);
 		}
 		// adding flash messages
 		if ($this->showFlashMessages) {
@@ -1748,7 +1741,7 @@ function jumpToUrl(URL) {
 			}
 		}
 		// Replacing all markers with the finished markers and return the HTML content
-		return HtmlParser::substituteMarkerArray($moduleBody, $markerArray, '###|###');
+		return $this->templateService->substituteMarkerArray($moduleBody, $markerArray, '###|###');
 	}
 
 	/**
@@ -1788,20 +1781,20 @@ function jumpToUrl(URL) {
 		$floats = array('left', 'right');
 		foreach ($floats as $key) {
 			// Get the template for each float
-			$buttonTemplate = HtmlParser::getSubpart($this->moduleTemplate, '###BUTTON_GROUPS_' . strtoupper($key) . '###');
+			$buttonTemplate = $this->templateService->getSubpart($this->moduleTemplate, '###BUTTON_GROUPS_' . strtoupper($key) . '###');
 			// Fill the button markers in this float
-			$buttonTemplate = HtmlParser::substituteMarkerArray($buttonTemplate, $buttons, '###|###', TRUE);
+			$buttonTemplate = $this->templateService->substituteMarkerArray($buttonTemplate, $buttons, '###|###', TRUE);
 			// getting the wrap for each group
-			$buttonWrap = HtmlParser::getSubpart($this->moduleTemplate, '###BUTTON_GROUP_WRAP###');
+			$buttonWrap = $this->templateService->getSubpart($this->moduleTemplate, '###BUTTON_GROUP_WRAP###');
 			// looping through the groups (max 6) and remove the empty groups
 			for ($groupNumber = 1; $groupNumber < 6; $groupNumber++) {
 				$buttonMarker = '###BUTTON_GROUP' . $groupNumber . '###';
-				$buttonGroup = HtmlParser::getSubpart($buttonTemplate, $buttonMarker);
+				$buttonGroup = $this->templateService->getSubpart($buttonTemplate, $buttonMarker);
 				if (trim($buttonGroup)) {
 					if ($buttonWrap) {
-						$buttonGroup = HtmlParser::substituteMarker($buttonWrap, '###BUTTONS###', $buttonGroup);
+						$buttonGroup = $this->templateService->substituteMarker($buttonWrap, '###BUTTONS###', $buttonGroup);
 					}
-					$buttonTemplate = HtmlParser::substituteSubpart($buttonTemplate, $buttonMarker, trim($buttonGroup));
+					$buttonTemplate = $this->templateService->substituteSubpart($buttonTemplate, $buttonMarker, trim($buttonGroup));
 				}
 			}
 			// Replace the marker with the template and remove all line breaks (for IE compat)
@@ -1872,7 +1865,7 @@ function jumpToUrl(URL) {
 		} else {
 			// On root-level of page tree
 			// Make Icon
-			$iconImg = IconUtility::getSpriteIcon('apps-pagetree-root', array('title' => htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'])));
+			$iconImg = '<span title="' . htmlspecialchars($GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename']) . '">' . $this->iconFactory->getIcon('apps-pagetree-root', Icon::SIZE_SMALL) . '</span>';
 			if ($GLOBALS['BE_USER']->user['admin']) {
 				$theIcon = $GLOBALS['SOBE']->doc->wrapClickMenuOnIcon($iconImg, 'pages', 0);
 			} else {

@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Core\ClassLoadingInformation;
 use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Service\OpcodeCacheService;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Utility\StringUtility;
 use TYPO3\CMS\Frontend\Page\PageRepository;
 
 /**
@@ -108,6 +109,11 @@ class GeneralUtility {
 		'cgi-fcgi',
 		'srv', // HHVM with fastcgi
 	);
+
+	/**
+	 * @var array
+	 */
+	static protected $indpEnvCache = [];
 
 	/*************************
 	 *
@@ -1227,7 +1233,7 @@ class GeneralUtility {
 	static protected function generateRandomBytesFallback($bytesToReturn) {
 		$bytes = '';
 		// We initialize with somewhat random.
-		$randomState = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . base_convert(memory_get_usage() % pow(10, 6), 10, 2) . microtime() . uniqid('', TRUE) . getmypid();
+		$randomState = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] . base_convert(memory_get_usage() % pow(10, 6), 10, 2) . microtime() . StringUtility::getUniqueId() . getmypid();
 		while (!isset($bytes[($bytesToReturn - 1)])) {
 			$randomState = sha1(microtime() . mt_rand() . $randomState);
 			$bytes .= sha1(mt_rand() . $randomState, TRUE);
@@ -2106,6 +2112,7 @@ class GeneralUtility {
 			$array = $firstLevelCache[$identifier];
 		} else {
 			// Look up in second level cache
+			// @todo: Is this cache really required? It basically substitutes a little cpu work with a db query?
 			$array = PageRepository::getHash($identifier, 0);
 			if (!is_array($array)) {
 				$array = self::xml2arrayProcess($string, $NSprefix, $reportDocTag);
@@ -2637,58 +2644,56 @@ Connection: close
 	 * Writes $content to a filename in the typo3temp/ folder (and possibly one or two subfolders...)
 	 * Accepts an additional subdirectory in the file path!
 	 *
-	 * @param string $filepath Absolute file path to write to inside "typo3temp/". First part of this string must match PATH_site."typo3temp/
+	 * @param string $filepath Absolute file path to write to inside "typo3temp/". First part of this string must match PATH_site."typo3temp/"
 	 * @param string $content Content string to write
 	 * @return string Returns NULL on success, otherwise an error string telling about the problem.
 	 */
 	static public function writeFileToTypo3tempDir($filepath, $content) {
+		if (!defined('PATH_site')) {
+			return 'PATH_site constant was NOT defined!';
+		}
+
 		// Parse filepath into directory and basename:
 		$fI = pathinfo($filepath);
 		$fI['dirname'] .= '/';
 		// Check parts:
-		if (self::validPathStr($filepath) && $fI['basename'] && strlen($fI['basename']) < 60) {
-			if (defined('PATH_site')) {
-				// Setting main temporary directory name (standard)
-				$dirName = PATH_site . 'typo3temp/';
-				if (@is_dir($dirName)) {
-					if (self::isFirstPartOfStr($fI['dirname'], $dirName)) {
-						// Checking if the "subdir" is found:
-						$subdir = substr($fI['dirname'], strlen($dirName));
-						if ($subdir) {
-							if (preg_match('/^[[:alnum:]_]+\\/$/', $subdir) || preg_match('/^[[:alnum:]_]+\\/[[:alnum:]_]+\\/$/', $subdir)) {
-								$dirName .= $subdir;
-								if (!@is_dir($dirName)) {
-									self::mkdir_deep(PATH_site . 'typo3temp/', $subdir);
-								}
-							} else {
-								return 'Subdir, "' . $subdir . '", was NOT on the form "[[:alnum:]_]/" or  "[[:alnum:]_]/[[:alnum:]_]/"';
-							}
-						}
-						// Checking dir-name again (sub-dir might have been created):
-						if (@is_dir($dirName)) {
-							if ($filepath == $dirName . $fI['basename']) {
-								self::writeFile($filepath, $content);
-								if (!@is_file($filepath)) {
-									return 'The file was not written to the disk. Please, check that you have write permissions to the typo3temp/ directory.';
-								}
-							} else {
-								return 'Calculated filelocation didn\'t match input $filepath!';
-							}
-						} else {
-							return '"' . $dirName . '" is not a directory!';
-						}
-					} else {
-						return '"' . $fI['dirname'] . '" was not within directory PATH_site + "typo3temp/"';
-					}
-				} else {
-					return 'PATH_site + "typo3temp/" was not a directory!';
-				}
-			} else {
-				return 'PATH_site constant was NOT defined!';
-			}
-		} else {
+		if (!self::validPathStr($filepath) || !$fI['basename'] || strlen($fI['basename']) >= 60) {
 			return 'Input filepath "' . $filepath . '" was generally invalid!';
 		}
+		// Setting main temporary directory name (standard)
+		$dirName = PATH_site . 'typo3temp/';
+		if (!@is_dir($dirName)) {
+			return 'PATH_site + "typo3temp/" was not a directory!';
+		}
+		if (!self::isFirstPartOfStr($fI['dirname'], $dirName)) {
+			return '"' . $fI['dirname'] . '" was not within directory PATH_site + "typo3temp/"';
+		}
+		// Checking if the "subdir" is found:
+		$subdir = substr($fI['dirname'], strlen($dirName));
+		if ($subdir) {
+			if (preg_match('/^[[:alnum:]_]+\\/$/', $subdir) || preg_match('/^[[:alnum:]_]+\\/[[:alnum:]_]+\\/$/', $subdir)) {
+				$dirName .= $subdir;
+				if (!@is_dir($dirName)) {
+					self::mkdir_deep(PATH_site . 'typo3temp/', $subdir);
+				}
+			} else {
+				return 'Subdir, "' . $subdir . '", was NOT on the form "[[:alnum:]_]/" or  "[[:alnum:]_]/[[:alnum:]_]/"';
+			}
+		}
+		// Checking dir-name again (sub-dir might have been created):
+		if (@is_dir($dirName)) {
+			if ($filepath == $dirName . $fI['basename']) {
+				self::writeFile($filepath, $content);
+				if (!@is_file($filepath)) {
+					return 'The file was not written to the disk. Please, check that you have write permissions to the typo3temp/ directory.';
+				}
+			} else {
+				return 'Calculated filelocation didn\'t match input "' . $filepath . '".';
+			}
+		} else {
+			return '"' . $dirName . '" is not a directory!';
+		}
+		return NULL;
 	}
 
 	/**
@@ -2818,7 +2823,7 @@ Connection: close
 		$result = FALSE;
 
 		if (is_dir($directory)) {
-			$temporaryDirectory = rtrim($directory, '/') . '.' . uniqid('remove', TRUE) . '/';
+			$temporaryDirectory = rtrim($directory, '/') . '.' . StringUtility::getUniqueId('remove') . '/';
 			if (rename($directory, $temporaryDirectory)) {
 				if ($flushOpcodeCache) {
 					GeneralUtility::makeInstance(OpcodeCacheService::class)->clearAllActive($directory);
@@ -3213,6 +3218,10 @@ Connection: close
 	 * @throws \UnexpectedValueException
 	 */
 	static public function getIndpEnv($getEnvName) {
+		if (isset(self::$indpEnvCache[$getEnvName])) {
+			return self::$indpEnvCache[$getEnvName];
+		}
+
 		/*
 		Conventions:
 		output from parse_url():
@@ -3492,6 +3501,7 @@ Connection: close
 				$retVal = $out;
 				break;
 		}
+		self::$indpEnvCache[$getEnvName] = $retVal;
 		return $retVal;
 	}
 
@@ -3821,6 +3831,7 @@ Connection: close
 		$sanitizedUrl = '';
 		$decodedUrl = rawurldecode($url);
 		if (!empty($url) && self::removeXSS($decodedUrl) === $decodedUrl) {
+			$parsedUrl = parse_url($decodedUrl);
 			$testAbsoluteUrl = self::resolveBackPath($decodedUrl);
 			$testRelativeUrl = self::resolveBackPath(self::dirname(self::getIndpEnv('SCRIPT_NAME')) . '/' . $decodedUrl);
 			// Pass if URL is on the current host:
@@ -3832,7 +3843,7 @@ Connection: close
 				$sanitizedUrl = $url;
 			} elseif (strpos($testAbsoluteUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] === '/') {
 				$sanitizedUrl = $url;
-			} elseif (strpos($testRelativeUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] !== '/') {
+			} elseif (empty($parsedUrl['scheme']) && strpos($testRelativeUrl, self::getIndpEnv('TYPO3_SITE_PATH')) === 0 && $decodedUrl[0] !== '/') {
 				$sanitizedUrl = $url;
 			}
 		}
@@ -4556,6 +4567,19 @@ Connection: close
 	}
 
 	/**
+	 * Flush internal runtime caches
+	 *
+	 * Used in unit tests only.
+	 *
+	 * @return void
+	 * @internal
+	 */
+	static public function flushInternalRuntimeCaches() {
+		self::$indpEnvCache = [];
+		self::$idnaStringCache = [];
+	}
+
+	/**
 	 * Find the best service and check if it works.
 	 * Returns object of the service class.
 	 *
@@ -5050,7 +5074,7 @@ Connection: close
 		$valListCnt = count($valueList);
 		foreach ($arr as $key => $value) {
 			if (!$valListCnt || in_array($key, $valueList)) {
-				$str .= ((string)$key . trim((': ' . self::fixed_lgd_cs(str_replace(LF, '|', (string)$value), $valueLength)))) . '; ';
+				$str .= (string)$key . trim(': ' . self::fixed_lgd_cs(str_replace(LF, '|', (string)$value), $valueLength)) . '; ';
 			}
 		}
 		return $str;

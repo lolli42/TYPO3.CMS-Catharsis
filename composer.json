@@ -24,7 +24,6 @@
 		"news": "nntp://lists.typo3.org"
 	},
 	"config": {
-		"vendor-dir": "typo3/vendor",
 		"bin-dir": "bin"
 	},
 	"require": {
@@ -42,12 +41,12 @@
 		"doctrine/instantiator": "~1.0.4",
 		"helhum/class-alias-loader": "^2.0.0",
 		"typo3/cms-composer-installers": "^1.2.2",
-		"psr/http-message": "~1.0"
+		"psr/http-message": "~1.0",
+		"cogpowered/finediff": "*"
 	},
 	"require-dev": {
 		"mikey179/vfsStream": "1.4.*@dev",
-		"phpunit/phpunit": "~4.7.0",
-		"codeception/codeception": "~2.1.0"
+		"phpunit/phpunit": "~4.8.0"
 	},
 	"suggest": {
 		"ext-gd": "GDlib/Freetype is required for building images with text (GIFBUILDER) and can also be used to scale images",
@@ -57,6 +56,9 @@
 		"ext-zip": ""
 	},
 	"extra": {
+		"helhum/class-alias-loader": {
+			"always-add-alias-loader": true
+		},
 		"branch-alias": {
 			"dev-master": "7.x-dev"
 		}
@@ -91,6 +93,7 @@
 		"typo3/cms-info": "self.version",
 		"typo3/cms-info-pagetsconfig": "self.version",
 		"typo3/cms-install": "self.version",
+		"typo3/cms-jumpurl": "self.version",
 		"typo3/cms-lang": "self.version",
 		"typo3/cms-linkvalidator": "self.version",
 		"typo3/cms-lowlevel": "self.version",
@@ -145,6 +148,7 @@
 			"TYPO3\\CMS\\Info\\": "typo3/sysext/info/Classes/",
 			"TYPO3\\CMS\\InfoPagetsconfig\\": "typo3/sysext/info_pagetsconfig/Classes/",
 			"TYPO3\\CMS\\Install\\": "typo3/sysext/install/Classes/",
+			"TYPO3\\CMS\\Jumpurl\\": "typo3/sysext/jumpurl/Classes/",
 			"TYPO3\\CMS\\Lang\\": "typo3/sysext/lang/Classes/",
 			"TYPO3\\CMS\\Linkvalidator\\": "typo3/sysext/linkvalidator/Classes/",
 			"TYPO3\\CMS\\Lowlevel\\": "typo3/sysext/lowlevel/Classes/",
@@ -195,6 +199,7 @@
 			"TYPO3\\CMS\\Impexp\\Tests\\": "typo3/sysext/impexp/Tests/",
 			"TYPO3\\CMS\\IndexedSearch\\Tests\\": "typo3/sysext/indexed_search/Tests/",
 			"TYPO3\\CMS\\Install\\Tests\\": "typo3/sysext/install/Tests/",
+			"TYPO3\\CMS\\Jumpurl\\Tests\\": "typo3/sysext/jumpurl/Tests/",
 			"TYPO3\\CMS\\Lang\\Tests\\": "typo3/sysext/lang/Tests/",
 			"TYPO3\\CMS\\Lowlevel\\Tests\\": "typo3/sysext/lowlevel/Tests/",
 			"TYPO3\\CMS\\Mediace\\": "typo3/sysext/mediace/Classes/",
@@ -210,6 +215,6 @@
 		"classmap": ["typo3/sysext/extbase/Tests/Unit/Object/Container/Fixtures/"]
 	},
 	"include-path": [
-		"typo3/vendor/pear/http_request2/"
+		"vendor/pear/http_request2/"
 	]
 }
